@@ -9,3 +9,7 @@ pom.xml.asc
 /.nrepl-port
 .hgignore
 .hg/
+
+# IntelliJ files
+.idea/
+*.iml
