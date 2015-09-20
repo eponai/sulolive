@@ -1,4 +1,4 @@
-(ns budget.core
+(ns flipmunks.budget.core
   (:gen-class))
 
 (defn -main

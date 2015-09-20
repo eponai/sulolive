@@ -4,6 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]]
-  :main ^:skip-aot budget.core
+  :main ^:skip-aot flipmunks.budget.core
   :target-path "target/%s"
+  :source-paths ["src/server"]
   :profiles {:uberjar {:aot :all}})
