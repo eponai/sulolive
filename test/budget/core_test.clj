@@ -4,4 +4,6 @@
 
 (deftest a-test
   (testing "deep merge"
-    (is (= (deep-merge {:a {:b 1 :c 2}} {:a {:d 1}}) {:a {:b 1 :c 2 :d 1}}))))
+    (is (= (deep-merge {:a 1} {:b 2}) {:a 1 :b 2}))
+    (is (= (deep-merge {:a 1} {:a 2}) {:a 2}))
+    (is (= (deep-merge {:a 1}) {:a 1}))))

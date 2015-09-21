@@ -2,7 +2,7 @@
   (:gen-class))
 
 (defn deep-merge [& maps]
-  )
+  (reduce #(conj %1 %2) maps))
 
 (defn -main
   "I don't do a whole lot ... yet."
