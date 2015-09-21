@@ -1,5 +1,9 @@
 (ns flipmunks.budget.core
-  (:gen-class))
+  (:gen-class)
+  (:require clojure.set))
+
+(defn key-sets[& m]
+  (map (into #{} (keys %)) m))
 
 (defn deep-merge [& maps]
   (reduce #(conj %1 %2) maps))
