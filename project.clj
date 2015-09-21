@@ -14,11 +14,18 @@
   :plugins [[lein-npm "0.6.1"]
             [lein-cljsbuild "1.1.0"]
             [lein-figwheel "0.3.9"]]
+
+  ;;;;;;;;;;;;;
+  ;; clj:
+  ;;;;;;;;;;;;;
   :main ^:skip-aot flipmunks.budget.core
   :target-path "target/%s"
   :source-paths ["src/server"]
-  :profiles {:uberjar {:aot :all}}
+  :profiles {:uberjar {:aot :all}} 
+
+  ;;;;;;;;;;;;;
   ;; cljs:
+  ;;;;;;;;;;;;;
   :cljsbuild {:builds
               [{:id "dev"
                 :source-paths ["src/client"]
