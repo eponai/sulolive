@@ -13,3 +13,14 @@ pom.xml.asc
 # IntelliJ files
 .idea/
 *.iml
+
+## Figwheel
+/figwheel_server.log
+
+## lein-npm
+/node_modules
+
+## Generated clojurescript->javascript output
+/resources/public/dev/out
+/resources/public/release/out
+
