@@ -8,6 +8,7 @@
                   :classifier "aot"
                   :exclusion [org.clojure/data.json]]
                  [org.clojure/data.json "0.2.6" :classifier "aot"]
+                 [sablono "0.3.6"]
                  [org.omcljs/om "0.9.0"]]
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]
