@@ -35,5 +35,13 @@
                            :output-to "resources/public/dev/out/budget.js"
                            :output-dir "resources/public/dev/out/"
                            :optimizations :none
-                           :source-map true}}]}
+                           :source-map true}}
+               {:id "release"
+                :source-paths ["src/client"]
+                :compiler {:main "flipmunks.budget.core"
+                           :asset-path "out"
+                           :output-to "resources/public/release/out/budget.js"
+                           :output-dir "resources/public/release/out/"
+                           :optimizations :advanced
+                           }}]}
   :npm {:dependencies [[source-map-support "0.3.2"]]})
