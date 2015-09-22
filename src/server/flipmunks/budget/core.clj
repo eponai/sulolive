@@ -3,12 +3,10 @@
   (:require clojure.set))
 
 (defn deep-merge [& maps]
-  (let [merge-entry (fn [m me]
-                      (let [k (key me)
-                            v (val me)]
-                        (if (map? v)
-                          (assoc m k (deep-merge (k m) v))
-                          (assoc m k v))))
+  (let [merge-entry (fn [m [k v]]
+                      (if (and (map? v))                    ; might need to check if (get m k) is a map as well
+                        (assoc m k (deep-merge (get m k) v))
+                        (assoc m k v)))
         merge1 (fn [m1 m2]
                  (reduce merge-entry m1 m2))]
     (reduce merge1 maps)))
