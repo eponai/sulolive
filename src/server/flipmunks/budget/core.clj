@@ -14,16 +14,15 @@
        (apply clojure.set/intersection)))
 
 (defn deep-merge [maps]
-  (let [map-a (first maps)
-        map-b (second maps)
-        red (fn [m me]
+  (let [merge-entry (fn [m me]
               (let [k (key me)
                     v (val me)]
                 (if (map? v)
                   (assoc m k (deep-merge [(k m) v]))
-                  (assoc m k v))))]
-    (reduce red map-a map-b)))
-
+                  (assoc m k v))))
+        merge1 (fn [m1 m2]
+                 (reduce merge-entry m1 m2))]
+    (reduce merge1 maps)))
 
 (defn -main
   "I don't do a whole lot ... yet."
