@@ -54,3 +54,9 @@
          (prop/for-all [maps (gen/vector (gen-n-level-map 2) 0 10)]
                        (= (apply merge-with #(merge-with merge) maps)
                           (apply deep-merge maps))))
+
+(defspec four-level-maps-are-merged
+         10
+         (prop/for-all [maps (gen/vector (gen-n-level-map 3) 0 10)]
+                       (= (apply merge-with #(merge-with merge-with merge) maps)
+                          (apply deep-merge maps))))
