@@ -1,6 +1,10 @@
 (ns budget.core-test
   (:require [clojure.test :refer :all]
-            [flipmunks.budget.core :refer :all]))
+            [flipmunks.budget.core :refer :all]
+            [clojure.test.check.clojure-test :refer :all]
+            [clojure.test.check :refer :all]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]))
 
 
 (deftest a-test
@@ -24,5 +28,13 @@
                                      :SEK 0.1213}}
                           4 {:purchases [{:name "coffee" :cost {:currency :LEK :price 150}}, {:name "market" :cost {:currency :LEK :price 300}}]
                              :rates {:LEK 0.0081
-                                     :SEK 0.1213}}}}}})
-    ))
+                                     :SEK 0.1213}}}}}})))
+(defspec first-element-is-min-after-sorting ;; the name of the test
+         100 ;; the number of iterations for test.check to test
+         (prop/for-all [v (gen/such-that not-empty (gen/vector gen/int))]
+                       (= (apply min v)
+                          (first (sort v)))))
+(defspec one-level-maps
+         50
+         (prop/for-all [maps (gen/vector (gen/map gen/keyword gen/int) 0 10)]
+                       (= (apply merge maps) (apply deep-merge maps))))
