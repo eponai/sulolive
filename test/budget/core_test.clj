@@ -29,12 +29,28 @@
                           4 {:purchases [{:name "coffee" :cost {:currency :LEK :price 150}}, {:name "market" :cost {:currency :LEK :price 300}}]
                              :rates {:LEK 0.0081
                                      :SEK 0.1213}}}}}})))
-(defspec first-element-is-min-after-sorting ;; the name of the test
-         100 ;; the number of iterations for test.check to test
-         (prop/for-all [v (gen/such-that not-empty (gen/vector gen/int))]
-                       (= (apply min v)
-                          (first (sort v)))))
-(defspec one-level-maps
+
+(defn gen-n-level-map [n]
+  (loop [m (gen/map gen/keyword gen/int)
+         level n]
+    (if (> level 0)
+      (recur (gen/map gen/keyword m) (dec level))
+      m)))
+
+(defspec one-level-maps-are-merged
          50
-         (prop/for-all [maps (gen/vector (gen/map gen/keyword gen/int) 0 10)]
-                       (= (apply merge maps) (apply deep-merge maps))))
+         (prop/for-all [maps (gen/vector (gen-n-level-map 0) 0 10)]
+                       (= (apply merge maps)
+                          (apply deep-merge maps))))
+
+(defspec two-level-maps-are-merged
+         10
+         (prop/for-all [maps (gen/vector (gen-n-level-map 1) 0 10)]
+                       (= (apply merge-with merge maps)
+                          (apply deep-merge maps))))
+
+(defspec three-level-maps-are-merged
+         10
+         (prop/for-all [maps (gen/vector (gen-n-level-map 2) 0 10)]
+                       (= (apply merge-with #(merge-with merge) maps)
+                          (apply deep-merge maps))))
