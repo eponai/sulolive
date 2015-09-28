@@ -33,6 +33,16 @@
     om/IInitState
     (init-state [_]
       {:expanded false})
+    om/IWillMount
+    (will-mount [this] (prn {:will-mount-day day}))
+    om/IDidMount
+    (did-mount [this] (prn {:did-mount-day day }))
+    om/IWillUnmount
+    (will-unmount [this] (prn {:will-unmount-day day}))
+    om/IWillUpdate
+    (will-update [this next-props next-state] (prn {:will-update-day day}))
+    om/IDidUpdate 
+    (did-update [this prev-props prev-state] (prn {:did-update-day day}))
     om/IRenderState
     (render-state [_ {:keys [expanded]}]
       (let [{:keys [purchases rates]} @budget-day
@@ -62,8 +72,7 @@
                (do
                  (om/build (partial day-budget-view day) (get days day))))]))))
 
-(defn widget [data owner]
-  (prn {:widget-render-state @data})
+(defn root-widget [data owner]
   (reify
     om/IRender
     (render [this]
@@ -75,10 +84,16 @@
                (om/build (partial month-budget-view month)
                          (-> data :budget-data (get year) (get month)))])))))
 
+(defn widget [data owner]
+  (prn {:widget-render-state @data})
+  (reify
+    om/IRender
+    (render [this]
+      (om/build root-widget (:level1 data)))))
 
 (defn run []
-  (let [app-state (atom {:date {:year 2015 :month 1}
-                         :budget-data testdata})]
+  (let [app-state (atom {:level1 {:date {:year 2015 :month 1}
+                                  :budget-data testdata}})]
     (om/root widget 
              app-state
              {:target (. js/document (getElementById "my-app"))
