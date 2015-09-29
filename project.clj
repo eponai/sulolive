@@ -8,6 +8,7 @@
                   :classifier "aot"
                   :exclusion [org.clojure/data.json]]
                  [org.clojure/data.json "0.2.6" :classifier "aot"]
+                 [com.cognitect/transit-cljs "0.8.225"]
                  [sablono "0.3.6"]
                  [org.omcljs/om "0.9.0"]
                  [org.clojure/test.check "0.8.2"]

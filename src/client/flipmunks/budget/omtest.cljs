@@ -1,6 +1,7 @@
 (ns flipmunks.budget.omtest
   (:require [om.core :as om]
-            [sablono.core :as html :refer-macros [html]]))
+            [sablono.core :as html :refer-macros [html]]
+            [cognitect.transit :as t]))
 
 (def testdata {2015 {1 {1 {:purchases [{:name "coffee" :cost {:currency "LEK"
                                                               :price 400}}
@@ -84,17 +85,25 @@
                (om/build (partial month-budget-view month)
                          (-> data :budget-data (get year) (get month)))])))))
 
-(defn widget [data owner]
-  (prn {:widget-render-state @data})
+(defn paste-state-field [app-state]
+  [:input {:on-key-down #(when (= (.-keyCode %) 13)
+                           (let [text (.-value (.-target %))
+                                 to-clj (t/read (t/reader :json-verbose) (js/JSON.parse text))]
+                             (reset! app-state to-clj)))}])
+
+(defn widget [app-state data owner]
+  (prn (->> @data (t/write (t/writer :json-verbose))))
   (reify
     om/IRender
     (render [this]
-      (om/build root-widget (:level1 data)))))
+      (html [:div 
+             (om/build root-widget (:level1 data))
+             (paste-state-field app-state)]))))
 
 (defn run []
   (let [app-state (atom {:level1 {:date {:year 2015 :month 1}
                                   :budget-data testdata}})]
-    (om/root widget 
+    (om/root (partial widget app-state)
              app-state
              {:target (. js/document (getElementById "my-app"))
               :instrument (let [desc (om/no-local-descriptor om/no-local-state-methods)]
