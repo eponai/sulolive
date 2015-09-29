@@ -44,26 +44,9 @@
       (recur (partial merge-with fn) (dec level))
       fn)))
 
-(defspec one-level-maps-are-merged
+(defspec n-level-maps-are-merged
          50
-         (prop/for-all [maps (gen/vector (gen-n-level-map 0) 0 10)]
-                       (= (apply (n-level-merge 0) maps)
-                          (apply deep-merge maps))))
-
-(defspec two-level-maps-are-merged
-         10
-         (prop/for-all [maps (gen/vector (gen-n-level-map 1) 0 10)]
-                       (= (apply (n-level-merge 1) maps)
-                          (apply deep-merge maps))))
-
-(defspec three-level-maps-are-merged
-         10
-         (prop/for-all [maps (gen/vector (gen-n-level-map 2) 0 10)]
-                       (= (apply (n-level-merge 2) maps)
-                          (apply deep-merge maps))))
-
-(defspec four-level-maps-are-merged
-         10
-         (prop/for-all [maps (gen/vector (gen-n-level-map 3) 0 10)]
-                       (= (apply (n-level-merge 3) maps)
-                          (apply deep-merge maps))))
+         (prop/for-all [level gen/nat]
+                       (prop/for-all [maps (gen/vector (gen-n-level-map level) 0 10)]
+                                     (= (apply (n-level-merge level) maps)
+                                        (apply deep-merge maps)))))
