@@ -31,32 +31,39 @@
                                      :SEK 0.1213}}}}}})))
 
 (defn gen-n-level-map [n]
-  (loop [m (gen/map gen/keyword gen/int)
+  (loop [m (gen/map (gen/choose 0 1) gen/int)
          level n]
     (if (> level 0)
-      (recur (gen/map gen/keyword m) (dec level))
+      (recur (gen/map (gen/choose 0 1) m) (dec level))
       m)))
+
+(defn n-level-merge [n]
+  (loop [fn merge
+         level n]
+    (if (> level 0)
+      (recur (partial merge-with fn) (dec level))
+      fn)))
 
 (defspec one-level-maps-are-merged
          50
          (prop/for-all [maps (gen/vector (gen-n-level-map 0) 0 10)]
-                       (= (apply merge maps)
+                       (= (apply (n-level-merge 0) maps)
                           (apply deep-merge maps))))
 
 (defspec two-level-maps-are-merged
          10
          (prop/for-all [maps (gen/vector (gen-n-level-map 1) 0 10)]
-                       (= (apply merge-with merge maps)
+                       (= (apply (n-level-merge 1) maps)
                           (apply deep-merge maps))))
 
 (defspec three-level-maps-are-merged
          10
          (prop/for-all [maps (gen/vector (gen-n-level-map 2) 0 10)]
-                       (= (apply merge-with #(merge-with merge) maps)
+                       (= (apply (n-level-merge 2) maps)
                           (apply deep-merge maps))))
 
 (defspec four-level-maps-are-merged
          10
          (prop/for-all [maps (gen/vector (gen-n-level-map 3) 0 10)]
-                       (= (apply merge-with #(merge-with merge-with merge) maps)
+                       (= (apply (n-level-merge 3) maps)
                           (apply deep-merge maps))))
