@@ -1,10 +1,9 @@
 (ns flipmunks.budget.core
   (:gen-class)
-  (:use compojure.core)
-  (:require [compojure.handler :as handler]
+  (:require [compojure.core :refer :all]
+            [compojure.handler :as handler]
             [compojure.route :as route]
-            [ring.middleware.json :as middleware]
-            [clojure.data.json :as json]))
+            [ring.middleware.json :as middleware]))
 
 (def test-data {:currency :USD
                 :dates {2015 {1 {3 {:purchases [{:name "coffee" :cost {:currency :LEK :price 150}}]
@@ -21,7 +20,7 @@
   [& maps]
   (when (some identity maps)
     (let [merge-entry (fn [m [k v]]
-                        (if (and (map? v) (map? (get m k)))                  ; might need to check if (get m k) is a map as well
+                        (if (and (map? v) (map? (get m k)))
                           (assoc m k (deep-merge (get m k) v))
                           (assoc m k v)))
           merge1 (fn [m1 m2]
@@ -36,8 +35,3 @@
 
 (def app
    (middleware/wrap-json-response (middleware/wrap-json-body (handler/api app-routes) {:keywords? true})))
-
-(defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
-  (println "Hello, World!"))
