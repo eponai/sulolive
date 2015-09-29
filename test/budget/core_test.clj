@@ -46,7 +46,11 @@
 
 (defspec n-level-maps-are-merged
          50
-         (prop/for-all [level gen/nat]
-                       (prop/for-all [maps (gen/vector (gen-n-level-map level) 0 10)]
-                                     (= (apply (n-level-merge level) maps)
-                                        (apply deep-merge maps)))))
+         (prop/for-all [[n maps] (gen/bind gen/nat (fn [level]
+                                                     (println level)
+                                                     (gen/bind (gen/vector (gen-n-level-map level) 0 3)
+                                                               (fn [v]
+                                                                 (gen/return [level v])))))]
+                       ;(println n maps)
+                       (= (apply (n-level-merge n) maps)
+                          (apply deep-merge maps))))

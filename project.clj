@@ -26,7 +26,7 @@
   ;;;;;;;;;;;;;
   :main ^:skip-aot flipmunks.budget.core
   :target-path "target/%s"
-  :source-paths ["src/server"]
+  :source-paths ["src/server" "test"]
   :ring {:handler flipmunks.budget.core/app}
   :profiles {:uberjar {:aot :all}} 
 
