@@ -10,11 +10,16 @@
                  [org.clojure/data.json "0.2.6" :classifier "aot"]
                  [sablono "0.3.6"]
                  [org.omcljs/om "0.9.0"]
-                 [org.clojure/test.check "0.8.2"]]
+                 [org.clojure/test.check "0.8.2"]
+                 [compojure "1.4.0"]
+                 [ring/ring-core "1.4.0"]
+                 [ring/ring-jetty-adapter "1.4.0"]
+                 [ring/ring-json "0.4.0"]]
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]
             [lein-cljsbuild "1.1.0"]
-            [lein-figwheel "0.3.9"]]
+            [lein-figwheel "0.3.9"]
+            [lein-ring "0.7.3"]]
 
   ;;;;;;;;;;;;;
   ;; clj:
@@ -22,6 +27,7 @@
   :main ^:skip-aot flipmunks.budget.core
   :target-path "target/%s"
   :source-paths ["src/server"]
+  :ring {:handler flipmunks.budget.core/app}
   :profiles {:uberjar {:aot :all}} 
 
   ;;;;;;;;;;;;;
