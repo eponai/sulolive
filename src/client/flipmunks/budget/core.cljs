@@ -1,9 +1,10 @@
 (ns flipmunks.budget.core
-  (:require [flipmunks.budget.omtest :as om]))
+  (:require [flipmunks.budget.omtest :as om]
+            [flipmunks.budget.views :as views]))
 
 (enable-console-print!)
 
 (println "Hello console")
 
-(om/run)
+#_(om/run)
 

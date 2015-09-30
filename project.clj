@@ -11,6 +11,7 @@
                  [com.cognitect/transit-cljs "0.8.225"]
                  [sablono "0.3.6"]
                  [org.omcljs/om "0.9.0"]
+                 [devcards "0.2.0-1"]
                  [org.clojure/test.check "0.8.2"]
                  [compojure "1.4.0"]
                  [ring/ring-core "1.4.0"]
@@ -44,6 +45,14 @@
                            :output-dir "resources/public/dev/out/"
                            :optimizations :none
                            :source-map true}}
+               {:id "devcards"
+                :source-paths ["src/client"]
+                :figwheel { :devcards true } ;; <- note this
+                :compiler { :main    "flipmunks.budget.core"
+                           :asset-path "js/out"
+                           :output-to  "resources/public/devcards/js/budget.js"
+                           :output-dir "resources/public/devcards/js/out"
+                           :source-map-timestamp true }}
                {:id "release"
                 :source-paths ["src/client"]
                 :compiler {:main "flipmunks.budget.core"
