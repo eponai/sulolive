@@ -40,25 +40,27 @@
                 :source-paths ["src/client"]
                 :figwheel true
                 :compiler {:main "flipmunks.budget.core"
-                           :asset-path "out"
-                           :output-to "resources/public/dev/out/budget.js"
-                           :output-dir "resources/public/dev/out/"
+                           :asset-path "js/out"
+                           :output-to "resources/public/dev/js/out/budget.js"
+                           :output-dir "resources/public/dev/js/out/"
                            :optimizations :none
                            :source-map true}}
                {:id "devcards"
                 :source-paths ["src/client"]
                 :figwheel { :devcards true } ;; <- note this
-                :compiler { :main    "flipmunks.budget.core"
+                :compiler { :main    "flipmunks.budget.views"
                            :asset-path "js/out"
-                           :output-to  "resources/public/devcards/js/budget.js"
+                           :output-to  "resources/public/devcards/js/out/budget.js"
                            :output-dir "resources/public/devcards/js/out"
                            :source-map-timestamp true }}
                {:id "release"
                 :source-paths ["src/client"]
                 :compiler {:main "flipmunks.budget.core"
-                           :asset-path "out"
-                           :output-to "resources/public/release/out/budget.js"
-                           :output-dir "resources/public/release/out/"
+                           :asset-path "js/out"
+                           :output-to "resources/public/release/js/out/budget.js"
+                           :output-dir "resources/public/release/js/out/"
                            :optimizations :advanced
+                        ;; :pseudo-names true
+                        ;; :pretty-print true
                            }}]}
   :npm {:dependencies [[source-map-support "0.3.2"]]})
