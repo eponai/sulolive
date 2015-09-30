@@ -34,16 +34,6 @@
     om/IInitState
     (init-state [_]
       {:expanded false})
-    om/IWillMount
-    (will-mount [this] (prn {:will-mount-day day}))
-    om/IDidMount
-    (did-mount [this] (prn {:did-mount-day day }))
-    om/IWillUnmount
-    (will-unmount [this] (prn {:will-unmount-day day}))
-    om/IWillUpdate
-    (will-update [this next-props next-state] (prn {:will-update-day day}))
-    om/IDidUpdate 
-    (did-update [this prev-props prev-state] (prn {:did-update-day day}))
     om/IRenderState
     (render-state [_ {:keys [expanded]}]
       (let [{:keys [purchases rates]} @budget-day
@@ -68,10 +58,11 @@
     om/IRender
     (render [this]
       (html [:div 
-             (for [day (range (days-in-month month))
-                   :when (contains? @days day)]
-               (do
-                 (om/build (partial day-budget-view day) (get days day))))]))))
+             (when days
+               (for [day (range (days-in-month month))
+                     :when (contains? @days day)]
+                 (do
+                   (om/build (partial day-budget-view day) (get days day)))))]))))
 
 (defn root-widget [data owner]
   (reify
@@ -85,30 +76,25 @@
                (om/build (partial month-budget-view month)
                          (-> data :budget-data (get year) (get month)))])))))
 
-(defn paste-state-field [app-state]
+(defn paste-state-field [data]
   [:input {:on-key-down #(when (= (.-keyCode %) 13)
                            (let [text (.-value (.-target %))
                                  to-clj (t/read (t/reader :json-verbose) (js/JSON.parse text))]
-                             (reset! app-state to-clj)))}])
+                             (om/transact! data (constantly to-clj))))}])
 
-(defn widget [app-state data owner]
-  (prn (->> @data (t/write (t/writer :json-verbose))))
+(defn widget [data owner]
   (reify
     om/IRender
     (render [this]
+      (prn (->> @data (t/write (t/writer :json-verbose))))
       (html [:div 
-             (om/build root-widget (:level1 data))
-             (paste-state-field app-state)]))))
+             (om/build root-widget data)
+             (paste-state-field data)]))))
 
 (defn run []
-  (let [app-state (atom {:level1 {:date {:year 2015 :month 1}
-                                  :budget-data testdata}})]
-    (om/root (partial widget app-state)
+  (let [app-state (atom {:date {:year 2015 :month 1}
+                         :budget-data testdata})]
+    (om/root widget 
              app-state
-             {:target (. js/document (getElementById "my-app"))
-              :instrument (let [desc (om/no-local-descriptor om/no-local-state-methods)]
-                           (fn [f cursor m]
-                            (om/build* f cursor 
-                                       (assoc m :descriptor desc))))
-              })))
+             {:target (. js/document (getElementById "my-app"))})))
 
