@@ -5,13 +5,13 @@
             [compojure.route :as route]
             [ring.middleware.json :as middleware]))
 
-(def test-data {:currency :USD
-                :dates {2015 {1 {3 {:purchases [{:name "coffee" :cost {:currency :LEK :price 150}}]
-                                    :rates {:LEK 0.0081
-                                            :SEK 0.1213}}
-                                 4 {:purchases [{:name "coffee" :cost {:currency :LEK :price 150}}, {:name "market" :cost {:currency :LEK :price 300}}]
-                                    :rates {:LEK 0.0081
-                                            :SEK 0.1213}}}}}})
+(def test-data (atom {:currency :USD
+                      :dates    {2015 {1 {3 {:purchases [{:name "coffee" :cost {:currency :LEK :price 150}}]
+                                             :rates     {:LEK 0.0081
+                                                         :SEK 0.1213}}
+                                          4 {:purchases [{:name "coffee" :cost {:currency :LEK :price 150}}, {:name "market" :cost {:currency :LEK :price 300}}]
+                                             :rates     {:LEK 0.0081
+                                                         :SEK 0.1213}}}}}}))
 (defn deep-merge
   "Returns a map that consists of the rest of the maps merged onto the first.\n
   If a key occurs in more than one map, the mapping from\n  the latter (left-to-right) will be the mapping in the result.\n
@@ -29,8 +29,8 @@
 
 (defroutes app-routes
            (context "/entries" [] (defroutes entries-routes
-                                             (GET "/" [] (str test-data))
-                                             (POST "/" {body :body} (str body))))
+                                             (GET "/" [] (str @test-data))
+                                             (POST "/" {body :body} (str (swap! test-data deep-merge body)))))
            (route/not-found "Not Found"))
 
 (def app
