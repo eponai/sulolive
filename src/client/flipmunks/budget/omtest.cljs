@@ -3,15 +3,6 @@
             [sablono.core :as html :refer-macros [html]]
             [cognitect.transit :as t]))
 
-(def testdata {2015 {1 {1 {:purchases [{:name "coffee" :cost {:currency "LEK"
-                                                              :price 400}}
-                                       {:name "dinner" :cost {:currency "LEK"
-                                                              :price 1000}}]
-                           :rates {"LEK" 0.0081}}
-                        2 {:purchases [{:name "lunch" :cost {:currency "LEK"
-                                                             :price 600}}]
-                           :rates {"LEK" 0.0081}}}}})
-
 (defn days-in-month [x]
   ;;TODO: GET A DATE LIBRARY
   31)
@@ -91,9 +82,9 @@
              (om/build root-widget data)
              (paste-state-field data)]))))
 
-(defn run []
-  (let [app-state (atom {:date {:year 2015 :month 1}
-                         :budget-data testdata})]
+(defn run [data]
+  (let [app-state (atom {:date {:year 2015 :month 1} 
+                         :budget-data data})]
     (om/root widget 
              app-state
              {:target (. js/document (getElementById "my-app"))})))

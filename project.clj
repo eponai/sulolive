@@ -12,6 +12,7 @@
                  [sablono "0.3.6"]
                  [org.omcljs/om "0.9.0"]
                  [devcards "0.2.0-1"]
+                 [cljs-ajax "0.5.0"]
                  [org.clojure/test.check "0.8.2"]
                  [compojure "1.4.0"]
                  [ring/ring-core "1.4.0"]
