@@ -46,9 +46,9 @@
                            :optimizations :none
                            :source-map true}}
                {:id "devcards"
-                :source-paths ["src/client"]
+                :source-paths ["src/client" "test/client"]
                 :figwheel { :devcards true } ;; <- note this
-                :compiler { :main    "flipmunks.budget.views"
+                :compiler { :main    "flipmunks.budget.devcards_test"
                            :asset-path "js/out"
                            :output-to  "resources/public/devcards/js/out/budget.js"
                            :output-dir "resources/public/devcards/js/out"
