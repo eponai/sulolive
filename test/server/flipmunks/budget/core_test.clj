@@ -1,4 +1,4 @@
-(ns budget.core-test
+(ns flipmunks.budget.core-test
   (:require [clojure.test :refer :all]
             [flipmunks.budget.core :refer :all]
             [clojure.test.check.clojure-test :refer :all]
