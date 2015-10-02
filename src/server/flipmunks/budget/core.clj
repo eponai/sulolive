@@ -27,6 +27,27 @@
                    (reduce merge-entry m1 m2))]
       (reduce merge1 maps))))
 
+(defn dates [[year month day]]
+  (let [m (:dates @test-data)]
+    (if (identity year)
+      (let [y (get m year)]
+        (if (identity month)
+          (let [mo (get y month)]
+            (if (identity day)
+              (let [d (get mo day)]
+                d)
+              mo))
+          y))
+      m)))
+
+(defn map-for-path [m path]
+  (if (coll? path)
+    (when (not-empty path)
+      (if (set? path)
+        (select-keys m path)
+        (let [[s e] path]
+           (select-keys m (range s (or e 32))))))))
+
 (defroutes app-routes
            (context "/entries" [] (defroutes entries-routes
                                              (GET "/" [] (str @test-data))

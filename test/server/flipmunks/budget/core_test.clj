@@ -5,9 +5,16 @@
             [clojure.test.check :refer :all]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]))
+(def test-map
+  {:currency :USD
+   :dates {2016 {1 {3 {:purchases [{:name "coffee" :cost {:currency :LEK :price 150}}]
+                       :rates {:LEK 0.0081
+                               :SEK 0.1213}}
+                    4 {:purchases [{:name "coffee" :cost {:currency :LEK :price 150}}, {:name "market" :cost {:currency :LEK :price 300}}]
+                       :rates {:LEK 0.0081
+                               :SEK 0.1213}}}}}})
 
-
-(deftest a-test
+(deftest merge-test
   (testing "deep merge"
     (is (= (deep-merge  {:a 1}) {:a 1}))
     (is (= (deep-merge  {:a 1} {:b 2}) {:a 1 :b 2}))
@@ -22,13 +29,7 @@
                         :dates {2015 {1 {4 {:purchases [{:name "coffee" :cost {:currency :LEK :price 150}}, {:name "market" :cost {:currency :LEK :price 300}}]
                                             :rates {:LEK 0.0081
                                                     :SEK 0.1213}}}}}}))
-        {:currency :USD
-         :dates {2015 {1 {3 {:purchases [{:name "coffee" :cost {:currency :LEK :price 150}}]
-                             :rates {:LEK 0.0081
-                                     :SEK 0.1213}}
-                          4 {:purchases [{:name "coffee" :cost {:currency :LEK :price 150}}, {:name "market" :cost {:currency :LEK :price 300}}]
-                             :rates {:LEK 0.0081
-                                     :SEK 0.1213}}}}}})))
+        test-map)))
 
 (defn gen-n-level-map [n]
   (loop [m (gen/map (gen/choose 0 1) gen/int)
@@ -52,3 +53,10 @@
                                                                  (gen/return [level v])))))]
                        (= (apply (n-level-merge n) maps)
                           (apply deep-merge maps))))
+
+(deftest dates-test
+  (testing "get dates"
+    (is (= (dates [2015]) (get (:dates test-map) 2015)))
+    (is (= (dates [2015 1]) (get (get (:dates test-map) 2015) 1)))
+    (is (= (dates [2015 1 3]) (get (get (get (:dates test-map) 2015) 1) 3)))
+    (is (= (dates [2015 1 [3 4]]) (select-keys (get (get (:dates test-map) 2015) 1) [3 4])))))
