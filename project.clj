@@ -19,7 +19,11 @@
                  [compojure "1.4.0"]
                  [ring/ring-core "1.4.0"]
                  [ring/ring-jetty-adapter "1.4.0"]
-                 [ring/ring-json "0.4.0"]]
+                 [ring/ring-json "0.4.0"]
+                 [clj-http "2.0.0"]
+                 [com.datomic/datomic-pro "0.9.5302"
+                  :exclusions [joda-time]]
+                 [clj-time "0.11.0"]]
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]
             [lein-cljsbuild "1.1.0"]
@@ -33,7 +37,7 @@
   :target-path "target/%s"
   :source-paths ["src/server" "test/server"]
   :ring {:handler flipmunks.budget.core/app}
-  :profiles {:uberjar {:aot :all}} 
+  :profiles {:uberjar {:aot :all}}
 
   ;;;;;;;;;;;;;
   ;; cljs:

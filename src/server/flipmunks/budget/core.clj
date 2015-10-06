@@ -3,7 +3,13 @@
   (:require [compojure.core :refer :all]
             [compojure.handler :as handler]
             [compojure.route :as route]
-            [ring.middleware.json :as middleware]))
+            [ring.middleware.json :as middleware]
+            [clj-http.client :as client]
+            [clojure.data.json :as json]
+            [clj-time.core :as t]
+            [clj-time.format :as f]
+            [clj-time.coerce :as c]
+            [datomic.api :only [q db] :as d]))
 
 (def test-data (atom {:currency :USD
                       :dates    {2015 {1 {3 {:purchases [{:name "coffee" :cost {:currency :LEK :price 150}}]
@@ -27,27 +33,6 @@
                    (reduce merge-entry m1 m2))]
       (reduce merge1 maps))))
 
-(defn dates [[year month day]]
-  (let [m (:dates @test-data)]
-    (if (identity year)
-      (let [y (get m year)]
-        (if (identity month)
-          (let [mo (get y month)]
-            (if (identity day)
-              (let [d (get mo day)]
-                d)
-              mo))
-          y))
-      m)))
-
-(defn map-for-path [m path]
-  (if (coll? path)
-    (when (not-empty path)
-      (if (set? path)
-        (select-keys m path)
-        (let [[s e] path]
-           (select-keys m (range s (or e 32))))))))
-
 (defroutes app-routes
            (context "/entries" [] (defroutes entries-routes
                                              (GET "/" [] (str @test-data))
@@ -56,3 +41,65 @@
 
 (def app
    (middleware/wrap-json-response (middleware/wrap-json-body (handler/api app-routes) {:keywords? true})))
+
+
+
+;; Handle fetch currency data and insert in datomic.
+(def currencies
+  (json/read-str (:body (client/get "https://openexchangerates.org/api/currencies.json?app_id=APP_ID")) :key-fn keyword))
+
+(def currency-rate-data
+  (json/read-str (:body (client/get "https://openexchangerates.org/api/latest.json?app_id=APP_ID")) :key-fn keyword))
+
+(defn currency-enum
+  "Returns a datomic currency enum for the given keyword.\n
+  Example: code-key :SEK returns :currency/SEK."
+  [code-key]
+  (keyword (str "currency/" (name code-key))))
+
+(defn db-enums
+  "Returns vector of datomic entities representing enums using the data from the specified map m.\n
+  Key k in m are represent the db/ident value with the applied enum-fn, (enum-fn k) will be called where enum-fn should take a keyword as argument.\n
+  The values in m are the values for entity attribute attr."
+  [m enum-fn attr]
+  (let [map-fn (fn [[k v]]
+                 {:db/id         (d/tempid :db.part/user)
+                  :db/ident      (enum-fn k)
+                  attr v})]
+    (mapv map-fn m)))
+
+(defn ymd-string
+  "Takes a date and returns a string for that date of the form yyy-MM-dd."
+  [d]
+  (f/unparse-local (f/formatters :date) d))
+
+(defn db-date
+  "Returns a map representing a date datomic entity."
+  [date]
+  {:db/id          (d/tempid :db.part/user)
+   :date/ymd       (ymd-string date)
+   :date/year      (t/year date)
+   :date/month     (t/month date)
+   :date/day       (t/day date)
+   :date/timestamp (c/to-long date)})
+
+(defn db-currency-rates
+  "Returns a vector with datomic entites representing a currency conversions for the given date.\n
+  d a LocalDate to be matched to the conversion.\n
+  m map with timestamp and rates of the form {:timestamp 190293 :rates {:SEK 8.333 ...}}
+  "
+  [d m]
+  (let [timestamp (:timestamp m)
+        date-ymd (ymd-string d)
+        map-fn (fn [[code rate]]
+                 {:db/id                (d/tempid :db.part/user)
+                  :conversion/timestamp timestamp
+                  :conversion/date      [:date/ymd date-ymd]
+                  :conversion/currency  (currency-enum code)
+                  :conversion/rate      (bigdec rate)})]
+    (mapv map-fn (:rates m))))
+
+(defn -main [& args]
+  (println (db-date (t/today)))
+  ;(println (db-enums currencies currency-enum :currency/name))
+  )
