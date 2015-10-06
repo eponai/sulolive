@@ -13,7 +13,8 @@
                  [org.omcljs/om "0.9.0"]
                  [devcards "0.2.0-1"]
                  [cljs-ajax "0.5.0"]
-                 [org.clojure/test.check "0.8.2"]
+                 [datascript "0.13.1"]
+                 [org.clojure/test.check "0.8.1"]
                  [compojure "1.4.0"]
                  [ring/ring-core "1.4.0"]
                  [ring/ring-jetty-adapter "1.4.0"]
@@ -38,8 +39,8 @@
   ;;;;;;;;;;;;;
   :cljsbuild {:builds
               [{:id "dev"
-                :source-paths ["src/client"]
-                :figwheel true
+                :source-paths ["src/client" "test/client"]
+                :figwheel {:on-jsload "flipmunks.budget.client_tests/run"}
                 :compiler {:main "flipmunks.budget.core"
                            :asset-path "js/out"
                            :output-to "resources/public/dev/js/out/budget.js"
