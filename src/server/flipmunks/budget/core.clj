@@ -12,9 +12,12 @@
             [datomic.api :only [q db] :as d])
   (:import (java.util UUID)))
 
+(defn pull-date [date]
+  (d/pull (d/db (d/connect "datomic:dev://localhost:4334/test-budget")) '[:date/ymd {:transaction/_date [:transaction/name :transaction/amount]}] [:date/ymd date]))
+
 (defroutes app-routes
            (context "/entries" [] (defroutes entries-routes
-                                             (GET "/" [] "")
+                                             (GET "/ymd=:date" [date y m d] (str (pull-date date)))
                                              (POST "/" {body :body} "")))
            (route/not-found "Not Found"))
 
