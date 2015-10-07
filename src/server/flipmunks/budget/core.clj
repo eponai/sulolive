@@ -42,7 +42,19 @@
 (def app
    (middleware/wrap-json-response (middleware/wrap-json-body (handler/api app-routes) {:keywords? true})))
 
+(defn key-prefix [k p]
+  (keyword (str p (name k))))
 
+(defn user-tx->db-tx [user-tx]
+  (let [conv-fn {:currency (fn [v] [:currency/code v])
+                 :date     (fn [d] [:date/ymd d])
+                 :tags     (fn [tags] (mapv (fn [n] {:db/id (d/tempid :db.part/user)
+                                                     :tag/name n
+                                                     :tag/persistent false}) tags))
+                 :amount   (fn [a] (bigint a))}
+        map-fn (fn [[k v]]
+             [(key-prefix k "transaction/") ((or (k conv-fn) identity) v)])]
+    (assoc (into {} (map map-fn user-tx)) :db/id (d/tempid :db.part/user))))
 
 ;; Handle fetch currency data and insert in datomic.
 (def currencies
@@ -51,21 +63,21 @@
 (def currency-rate-data
   (json/read-str (:body (client/get "https://openexchangerates.org/api/latest.json?app_id=APP_ID")) :key-fn keyword))
 
-(defn currency-enum
+(defn db-enum
   "Returns a datomic currency enum for the given keyword.\n
   Example: code-key :SEK returns :currency/SEK."
-  [code-key]
-  (keyword (str "currency/" (name code-key))))
+  [prefix code-key]
+  (keyword (str prefix (name code-key))))
 
 (defn db-enums
   "Returns vector of datomic entities representing enums using the data from the specified map m.\n
   Key k in m are represent the db/ident value with the applied enum-fn, (enum-fn k) will be called where enum-fn should take a keyword as argument.\n
   The values in m are the values for entity attribute attr."
-  [m enum-fn attr]
+  [m]
   (let [map-fn (fn [[k v]]
                  {:db/id         (d/tempid :db.part/user)
-                  :db/ident      (enum-fn k)
-                  attr v})]
+                  :currency/code k
+                  :currency/name v})]
     (mapv map-fn m)))
 
 (defn ymd-string
@@ -95,7 +107,7 @@
                  {:db/id                (d/tempid :db.part/user)
                   :conversion/timestamp timestamp
                   :conversion/date      [:date/ymd date-ymd]
-                  :conversion/currency  (currency-enum code)
+                  :conversion/currency  [:currency/code code]
                   :conversion/rate      (bigdec rate)})]
     (mapv map-fn (:rates m))))
 
