@@ -97,13 +97,18 @@
 (defn pull-date [date]
   (d/pull (d/db conn) '[:date/ymd {:transaction/_date [*]}] [:date/ymd date]))
 
-(defn post-transaction [user-tx]
-  (user-tx->db-tx user-tx))
+(defn post-user-tx
+  "Put the user transaction maps into datomic. Will fail if one or more of the following required fields\n
+  are not included in the map: #{:uuid :name :date :amount :currency}."
+  [user-tx]
+  (if (every? #(contains? user-tx %) #{:uuid :name :date :amount :currency})
+    (d/transact conn [(user-tx->db-tx user-tx)])
+    {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
 
 (defroutes app-routes
            (context "/entries" [] (defroutes entries-routes
                                              (GET "/ymd=:date" [date] (str (pull-date date)))
-                                             (POST "/" {body :body} (post-transaction body))))
+                                             (POST "/" {body :body} (str (post-user-tx body)))))
            (route/not-found "Not Found"))
 
 (def app
