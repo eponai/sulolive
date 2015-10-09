@@ -13,14 +13,16 @@
   (:import (java.util UUID)))
 
 (defn key-prefix
-  "Returns a new keyword with k prefixed with p. E.g. (key-prefix :k 'p/') will return :p/k."
+  "Returns a new keyword with k prefixed with p.
+  E.g. (key-prefix :k 'p/') will return :p/k."
   [k p]
   (keyword (str p (name k))))
 
 (defn trans
-  "Transform data by applying key-fn to all the keys in the map, and using a map for applying different\n
-   functions to the values for the given keys in value-fn-map. If no function is specified for a certain key,\n
-   that value will be unchanged."
+  "Transform data by applying key-fn to all the keys in the map,
+  and using a map for applying different functions to the values for the
+  given keys in value-fn-map. If no function is specified for a certain key,
+  that value will be unchanged."
   [data key-fn value-fn-map]
   (let [map-fn (fn [[k v]]
                  [(key-fn k) ((or (k value-fn-map) identity) v)])]
@@ -66,9 +68,10 @@
                  :tag/persistent false}) tags))
 
 (defn user-tx->db-tx
-  "Takes a user input transaction and converts into a datomic entity.\n
-  A conversion function will be applied on the values for the following keys #{:currency :date :tags :amount :uuid}\n
-  as appropriate for the database. All keys will be prefixed with 'transaction/' (e.g. :name -> :transaction/name)"
+  "Takes a user input transaction and converts into a datomic entity.
+  A conversion function will be applied on the values for the following
+  keys #{:currency :date :tags :amount :uuid} as appropriate for the database.
+  All keys will be prefixed with 'transaction/' (e.g. :name -> :transaction/name)"
   [user-tx]
   (let [conv-fn-map {:currency (fn [c] [:currency/code c])
                      :date     (fn [d] (date-str->db-tx d))
@@ -78,10 +81,10 @@
     (assoc (trans user-tx #(key-prefix % "transaction/") conv-fn-map) :db/id (d/tempid :db.part/user))))
 
 (defn cur-rates->db-txs
-  "Returns a vector with datomic entites representing a currency conversions for the given date.\n
-  d a date string of the form \"yy-MM-dd\" to be matched to the conversion.\n
-  m map with timestamp and rates of the form {:timestamp 190293 :rates {:SEK 8.333 ...}}
-  "
+  "Returns a vector with datomic entites representing a currency conversions
+  for the given date. d a date string of the form \"yy-MM-dd\" to be matched
+  to the conversion. m map with timestamp and rates of the form
+  {:timestamp 190293 :rates {:SEK 8.333 ...}}"
   [date-ymd m]
   (let [timestamp (:timestamp m)
         map-fn (fn [[code rate]]
@@ -94,26 +97,27 @@
 
 (def conn (d/connect "datomic:dev://localhost:4334/test-budget"))
 
-(defn distinct-tag-ids
-  "Pull the distinct tag ids that are included in the given transactions."
-  [transactions]
-  (mapv :db/id (distinct (apply concat (mapv :transaction/tags transactions)))))
-
-(defn distinct-cur-ids
-  "Pull distinct currency ids that are included in the given transactions."
-  [transactions]
-  (mapv :db/id (distinct (mapv :transaction/currency transactions))))
+(defn distinct-ids
+  "Get distinct db ids from the nested entity with the given keyword k in a list of entities.
+  If f is provided, it will be applied on the list of entities matching the k keyword.
+  E.g. if k points to a list of values, #(apply concat %) can be provided to fetch
+  the distinct values in all of the lists."
+  ([k entities]
+    (distinct-ids nil k entities))
+  ([f k entities]
+   (mapv :db/id (distinct ((or f identity) (mapv k entities))))))
 
 (defn pull-date [date]
   (let [transactions (:transaction/_date (d/pull (d/db conn) '[{:transaction/_date [*]}] [:date/ymd date]))]
-    [(d/pull (d/db conn) '[*] [:date/ymd date])
-     (d/pull-many (d/db conn) '[*] (distinct-tag-ids transactions))
-     (d/pull-many (d/db conn) '[*] (distinct-cur-ids transactions))
-     transactions]))
+    (into [] (apply concat [[(d/pull (d/db conn) '[*] [:date/ymd date])]
+                            (d/pull-many (d/db conn) '[*] (distinct-ids #(apply concat %) :transaction/tags transactions))
+                            (d/pull-many (d/db conn) '[*] (distinct-ids :transaction/currency transactions))
+                            transactions]))))
 
 (defn post-user-tx
-  "Put the user transaction maps into datomic. Will fail if one or more of the following required fields\n
-  are not included in the map: #{:uuid :name :date :amount :currency}."
+  "Put the user transaction maps into datomic. Will fail if one or
+  more of the following required fields are not included in the map:
+  #{:uuid :name :date :amount :currency}."
   [user-tx]
   (if (every? #(contains? user-tx %) #{:uuid :name :date :amount :currency})
     (d/transact conn [(user-tx->db-tx user-tx)])
