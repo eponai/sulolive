@@ -7,6 +7,13 @@
             [flipmunks.budget.datascript :as budgetd]))
 
 (defmulti read om/dispatch)
+(defmethod read :app/transaction
+  [{:keys [state selector]} _ _]
+  {:value (d/q '[:find [(pull ?e ?selector) ...]
+                 :in $ ?selector
+                 :where [?e :transaction/uuid]]
+               (d/db state) 
+               selector)})
 (defmethod read :app/counter
   [{:keys [state selector]} _ _]
   {:value (d/q '[:find [(pull ?e ?selector) ...]
@@ -21,6 +28,24 @@
   {:value [:app/counter]
    :action #(d/transact! state [(update-in entity [:app/count] inc)])})
 
+(defui DayList
+  static om/IQuery
+  (query [this] [{:app/transaction [{:transaction/date [:date/ymd]}
+                                    :transaction/name
+                                    :transaction/amount
+                                    {:transaction/currency [:currency/name]}]}])
+  Object
+  (render [this]
+          (html [:div
+                 (->> (get-in (om/props this) [:app/transaction])
+                   (map (fn [{:keys [transaction/date
+                                    transaction/name
+                                    transaction/amount
+                                    transaction/currency]}]
+                          [:div 
+                           [:h3 name]
+                           [:p (str "Amount: " amount " " (:currency/name currency))]
+                           [:p (str "Date: " (:date/ymd date))]])))])))
 
 (defui Counter
   static om/IQuery
@@ -60,5 +85,5 @@
     (d/transact conn [{:db/id -1
                        :app/title "Hello, DataScript!"
                        :app/count 0}])
-    (om/add-root! reconciler Counter (gdom/getElement "my-app"))))
+    (om/add-root! reconciler DayList (gdom/getElement "my-app"))))
 
