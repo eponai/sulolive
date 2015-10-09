@@ -107,12 +107,14 @@
   ([f k entities]
    (mapv :db/id (distinct ((or f identity) (mapv k entities))))))
 
-(defn pull-date [date]
+(defn pull-date
+  "Pull transaction data from datomic for the specified date string of the form \"yy-MM-dd\"."
+  [date]
   (let [transactions (:transaction/_date (d/pull (d/db conn) '[{:transaction/_date [*]}] [:date/ymd date]))]
-    (into [] (apply concat [[(d/pull (d/db conn) '[*] [:date/ymd date])]
-                            (d/pull-many (d/db conn) '[*] (distinct-ids #(apply concat %) :transaction/tags transactions))
-                            (d/pull-many (d/db conn) '[*] (distinct-ids :transaction/currency transactions))
-                            transactions]))))
+    (vec (concat transactions
+                 (d/pull-many (d/db conn) '[*] (concat [[:date/ymd date]]
+                                                       (distinct-ids #(apply concat %) :transaction/tags transactions)
+                                                       (distinct-ids :transaction/currency transactions)))))))
 
 (defn post-user-tx
   "Put the user transaction maps into datomic. Will fail if one or
@@ -120,7 +122,7 @@
   #{:uuid :name :date :amount :currency}."
   [user-tx]
   (if (every? #(contains? user-tx %) #{:uuid :name :date :amount :currency})
-    (d/transact conn [(user-tx->db-tx user-tx)])
+    (d/transact conn [(user-tx->db-tx user-tx)])            ;TODO: check if conversions exist for this date, and fetch if not.
     {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
 
 (defroutes app-routes
@@ -133,6 +135,4 @@
   (middleware/wrap-json-response (middleware/wrap-json-body (handler/api app-routes) {:keywords? true})))
 
 (defn -main [& args]
-  ;(println (db-date (t/today)))
-  ;(println (db-enums currencies currency-enum :currency/name))
   )
