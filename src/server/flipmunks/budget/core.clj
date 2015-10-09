@@ -12,18 +12,6 @@
             [datomic.api :only [q db] :as d])
   (:import (java.util UUID)))
 
-(defn pull-date [date]
-  (d/pull (d/db (d/connect "datomic:dev://localhost:4334/test-budget")) '[:date/ymd {:transaction/_date [:transaction/name :transaction/amount]}] [:date/ymd date]))
-
-(defroutes app-routes
-           (context "/entries" [] (defroutes entries-routes
-                                             (GET "/ymd=:date" [date y m d] (str (pull-date date)))
-                                             (POST "/" {body :body} "")))
-           (route/not-found "Not Found"))
-
-(def app
-   (middleware/wrap-json-response (middleware/wrap-json-body (handler/api app-routes) {:keywords? true})))
-
 (defn key-prefix
   "Returns a new keyword with k prefixed with p. E.g. (key-prefix :k 'p/') will return :p/k."
   [k p]
@@ -39,12 +27,15 @@
     (into {} (map map-fn data))))
 
 ;; Handle fetch currency data and insert in datomic.
-(def currencies
-  ;(json/read-str (:body (client/get "https://openexchangerates.org/api/currencies.json?app_id=APP_ID")) :key-fn keyword)
+(defn currencies [app-id]
+  (let [url (str "https://openexchangerates.org/api/currencies.json?app_id=" app-id)]
+    (json/read-str (:body (client/get url)) :key-fn keyword))
   )
 
-(def currency-rate-data
-  ;(json/read-str (:body (client/get "https://openexchangerates.org/api/latest.json?app_id=APP_ID")) :key-fn keyword)
+
+(defn currency-rates [app-id date-str]
+  (let [url (str "https://openexchangerates.org/api/historical/" date-str ".json?app_id=" app-id)]
+    (json/read-str (:body (client/get url)) :key-fn keyword))
   )
 
 (defn date->ymd-string
@@ -79,8 +70,7 @@
   A conversion function will be applied on the values for the following keys #{:currency :date :tags :amount :uuid}\n
   as appropriate for the database. All keys will be prefixed with 'transaction/' (e.g. :name -> :transaction/name)"
   [user-tx]
-  (let [conv-fn-map {:currency (fn [c] {:db/id         (d/tempid :db.part/user)
-                                        :currency/code c})
+  (let [conv-fn-map {:currency (fn [c] [:currency/code c])
                      :date     (fn [d] (date-str->db-tx d))
                      :tags     (fn [tags] (tags->db-tx tags))
                      :amount   (fn [a] (bigint a))
@@ -89,7 +79,7 @@
 
 (defn cur-rates->db-txs
   "Returns a vector with datomic entites representing a currency conversions for the given date.\n
-  d a LocalDate to be matched to the conversion.\n
+  d a date string of the form \"yy-MM-dd\" to be matched to the conversion.\n
   m map with timestamp and rates of the form {:timestamp 190293 :rates {:SEK 8.333 ...}}
   "
   [date-ymd m]
@@ -98,9 +88,26 @@
                  {:db/id                (d/tempid :db.part/user)
                   :conversion/timestamp timestamp
                   :conversion/date      (date-str->db-tx date-ymd)
-                  :conversion/currency  [:currency/code code]
+                  :conversion/currency  [:currency/code (name code)]
                   :conversion/rate      (bigdec rate)})]
     (mapv map-fn (:rates m))))
+
+(def conn (d/connect "datomic:dev://localhost:4334/test-budget"))
+
+(defn pull-date [date]
+  (d/pull (d/db conn) '[:date/ymd {:transaction/_date [*]}] [:date/ymd date]))
+
+(defn post-transaction [user-tx]
+  (user-tx->db-tx user-tx))
+
+(defroutes app-routes
+           (context "/entries" [] (defroutes entries-routes
+                                             (GET "/ymd=:date" [date] (str (pull-date date)))
+                                             (POST "/" {body :body} (post-transaction body))))
+           (route/not-found "Not Found"))
+
+(def app
+  (middleware/wrap-json-response (middleware/wrap-json-body (handler/api app-routes) {:keywords? true})))
 
 (defn -main [& args]
   ;(println (db-date (t/today)))
