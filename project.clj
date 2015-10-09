@@ -4,14 +4,14 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/clojurescript "1.7.48"
+                 [org.clojure/clojurescript "1.7.122"
               ;;  :classifier "aot"
                 :exclusion [org.clojure/data.json]
                  ]
                  [org.clojure/data.json "0.2.6"]
                  [com.cognitect/transit-cljs "0.8.225"]
                  [sablono "0.3.6"]
-                 [org.omcljs/om "0.9.0"]
+                 [org.omcljs/om "0.9.0-SNAPSHOT"]
                  [devcards "0.2.0-1"]
                  [cljs-ajax "0.5.0"]
                  [datascript "0.13.1"]
@@ -27,7 +27,7 @@
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]
             [lein-cljsbuild "1.1.0"]
-            [lein-figwheel "0.3.9"]
+            [lein-figwheel "0.4.1"]
             [lein-ring "0.7.3"]]
 
   ;;;;;;;;;;;;;
