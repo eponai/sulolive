@@ -94,8 +94,22 @@
 
 (def conn (d/connect "datomic:dev://localhost:4334/test-budget"))
 
+(defn distinct-tag-ids
+  "Pull the distinct tag ids that are included in the given transactions."
+  [transactions]
+  (mapv :db/id (distinct (apply concat (mapv :transaction/tags transactions)))))
+
+(defn distinct-cur-ids
+  "Pull distinct currency ids that are included in the given transactions."
+  [transactions]
+  (mapv :db/id (distinct (mapv :transaction/currency transactions))))
+
 (defn pull-date [date]
-  (d/pull (d/db conn) '[:date/ymd {:transaction/_date [*]}] [:date/ymd date]))
+  (let [transactions (:transaction/_date (d/pull (d/db conn) '[{:transaction/_date [*]}] [:date/ymd date]))]
+    [(d/pull (d/db conn) '[*] [:date/ymd date])
+     (d/pull-many (d/db conn) '[*] (distinct-tag-ids transactions))
+     (d/pull-many (d/db conn) '[*] (distinct-cur-ids transactions))
+     transactions]))
 
 (defn post-user-tx
   "Put the user transaction maps into datomic. Will fail if one or more of the following required fields\n
