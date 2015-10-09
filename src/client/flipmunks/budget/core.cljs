@@ -8,5 +8,6 @@
 (println "Hello console")
 
 (comment (om/run (backend/get-dates)))
-(om-next/run)
+(om-next/run
+  (backend/data-provider))
 
