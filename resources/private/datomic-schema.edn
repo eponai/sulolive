@@ -1,0 +1,165 @@
+[
+;; user
+{:db/id #db/id[:db.part/db]
+ :db/ident :user/email
+ :db/valueType :db.type/string
+ :db/cardinality :db.cardinality/one
+ :db/unique :db.unique/identity
+ :db/doc "A user's primary email"
+ :db.install/_attribute :db.part/db}
+
+{:db/id #db/id[:db.part/db]
+ :db/ident :user/transactions
+ :db/valueType :db.type/ref
+ :db/cardinality :db.cardinality/many
+ :db/doc "A user's transactions. Both expenses and income"
+ :db.install/_attribute :db.part/db}
+
+;; transactions
+{:db/id #db/id[:db.part/db]
+ :db.install/_attribute :db.part/db
+ :db/ident :transaction/uuid
+ :db/valueType :db.type/uuid
+ :db/unique :db.unique/identity
+ :db/cardinality :db.cardinality/one}
+
+{:db/id #db/id[:db.part/db]
+ :db/ident :transaction/name
+ :db/valueType :db.type/string
+ :db/cardinality :db.cardinality/one
+ :db/doc "Name of the transaction. I.e. coffee, lunch or salary"
+ :db.install/_attribute :db.part/db}
+
+{:db/id #db/id[:db.part/db]
+ :db.install/_attribute :db.part/db
+ :db/ident :transaction/details
+ :db/valueType :db.type/string
+ :db/cardinality :db.cardinality/one}
+
+{:db/id #db/id[:db.part/db]
+ :db.install/_attribute :db.part/db
+ :db/ident :transaction/date
+ :db/valueType :db.type/ref
+ :db/cardinality :db.cardinality/one}
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :transaction/tags,
+ :db/valueType :db.type/ref,
+ :db/cardinality :db.cardinality/many,
+ :db/doc ""}
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :transaction/amount,
+ :db/valueType :db.type/bigint,
+ :db/cardinality :db.cardinality/one,
+ :db/doc ""}
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :transaction/currency,
+ :db/valueType :db.type/ref,
+ :db/cardinality :db.cardinality/one,
+ :db/doc ""}
+
+;; Conversion
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :conversion/currency,
+ :db/valueType :db.type/ref,
+ :db/cardinality :db.cardinality/one,
+ :db/doc ""}
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :conversion/rate,
+ :db/valueType :db.type/bigdec,
+ :db/cardinality :db.cardinality/one,
+ :db/doc ""}
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :conversion/timestamp,
+ :db/valueType :db.type/long,
+ :db/cardinality :db.cardinality/one,
+ :db/doc ""}
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :conversion/date,
+ :db/valueType :db.type/ref,
+ :db/cardinality :db.cardinality/one,
+ :db/doc ""}
+
+;; Date
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :date/timestamp,
+ :db/valueType :db.type/long,
+ :db/cardinality :db.cardinality/one,
+ :db/doc ""}
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :date/year,
+ :db/valueType :db.type/long,
+ :db/cardinality :db.cardinality/one,
+ :db/doc ""}
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :date/month,
+ :db/valueType :db.type/long,
+ :db/cardinality :db.cardinality/one,
+ :db/doc ""}
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :date/day,
+ :db/valueType :db.type/long,
+ :db/cardinality :db.cardinality/one,
+ :db/doc ""}
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :date/ymd,
+ :db/valueType :db.type/string,
+ :db/cardinality :db.cardinality/one,
+ :db/unique :db.unique/identity
+ :db/doc ""}
+
+;; Tag
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :tag/name,
+ :db/unique :db.unique/identity,
+ :db/valueType :db.type/string,
+ :db/cardinality :db.cardinality/one,
+ :db/doc ""}
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :tag/persistent,
+ :db/valueType :db.type/boolean,
+ :db/cardinality :db.cardinality/one,
+ :db/doc ""}
+
+;; Currency
+
+{:db/id #db/id[:db.part/db],
+ :db/ident :currency/code,
+ :db/unique :db.unique/identity,
+ :db/valueType :db.type/string
+ :db/cardinality :db.cardinality/one,
+ :db.install/_attribute :db.part/db}
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :currency/name,
+ :db/valueType :db.type/string,
+ :db/cardinality :db.cardinality/one,
+ :db/doc ""}
+]
