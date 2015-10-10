@@ -107,7 +107,7 @@
   ([f k entities]
    (mapv :db/id (distinct ((or f identity) (mapv k entities))))))
 
-(defn pull-date
+(defn pull-data
   "Pull transaction data from datomic for the specified date string of the form \"yy-MM-dd\"."
   [date]
   (let [transactions (:transaction/_date (d/pull (d/db conn) '[{:transaction/_date [*]}] [:date/ymd date]))]
@@ -115,6 +115,27 @@
                  (d/pull-many (d/db conn) '[*] (concat [[:date/ymd date]]
                                                        (distinct-ids #(apply concat %) :transaction/tags transactions)
                                                        (distinct-ids :transaction/currency transactions)))))))
+
+(defn pull-schema [data]
+  (let [idents (set (apply concat (mapv keys data)))
+        ident-tuples (mapv #(vector :db/ident %) idents)]
+    (d/pull-many (d/db conn) '[:db/ident {:db/valueType [:db/ident]} {:db/cardinality [:db/ident]} {:db/unique [:db/ident]}] ident-tuples)))
+
+(defn schema-required?
+  "Return true if the entity is required to be passed with schema.
+  Is true if the entity has a type ref, or cardinality many."
+  [db-entity]
+  (or (= (get-in db-entity [:db/valueType :db/ident]) :db.type/ref)
+      (= (get-in db-entity [:db/cardinality :db/ident]) :db.cardinality/many)
+      (get db-entity :db/unique))
+  )
+
+(defn respond-data [date]
+  (let [db-data (pull-data date)
+        db-schema (pull-schema db-data)
+        flatten-fn (fn [m] (reduce (fn [m [k v]] (if (get v :db/ident) (assoc m k (:db/ident v)) (assoc m k v))) {} m))]
+    {:schema (vec (map flatten-fn (filter schema-required? db-schema)))
+     :entities db-data}))
 
 (defn post-user-tx
   "Put the user transaction maps into datomic. Will fail if one or
@@ -127,7 +148,7 @@
 
 (defroutes app-routes
            (context "/entries" [] (defroutes entries-routes
-                                             (GET "/ymd=:date" [date] (str (pull-date date)))
+                                             (GET "/ymd=:date" [date] (str (respond-data date)))
                                              (POST "/" {body :body} (str (post-user-tx body)))))
            (route/not-found "Not Found"))
 
