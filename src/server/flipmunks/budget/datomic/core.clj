@@ -2,7 +2,7 @@
   (:require [flipmunks.budget.datomic.format :as f]
             [datomic.api :only [db] :as d]))
 
-(def conn (d/connect "datomic:dev://localhost:4334/test-budget"))
+(def ^:dynamic conn)
 
 ; Pull and format datomic entries
 

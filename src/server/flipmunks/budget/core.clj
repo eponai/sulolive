@@ -4,6 +4,7 @@
             [compojure.handler :as handler]
             [compojure.route :as route]
             [ring.middleware.json :as middleware]
+            [ring.middleware.resource :as middleware.res]
             [clj-http.client :as client]
             [clojure.data.json :as json]
             [flipmunks.budget.datomic.core :as dt]))
@@ -32,7 +33,10 @@
            (route/not-found "Not Found"))
 
 (def app
-  (middleware/wrap-json-response (middleware/wrap-json-body (handler/api app-routes) {:keywords? true})))
+  (-> (handler/api app-routes)
+      (middleware.res/wrap-resource "public")
+      (middleware/wrap-json-body {:keywords? true})
+      (middleware/wrap-json-response)))
 
 (defn -main [& args]
   )
