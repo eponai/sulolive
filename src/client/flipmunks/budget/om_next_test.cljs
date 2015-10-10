@@ -53,7 +53,8 @@
   static om/IQueryParams
   (params [this]
          {:year 2015 :month 01 :day 01
-          :transaction (om/get-query Transaction)})
+          ;; By conjing the uuid, we know that we can use it for the react-key
+          :transaction (conj (om/get-query Transaction) :transaction/uuid)})
   static om/IQuery
   (query [this]
          '[(:date/ymd {:selector [:date/year :date/month]
@@ -70,7 +71,8 @@
           {:keys [:date/year :date/month]} (get-in props [:date/ymd 0])]
       (html [:div
              [:h1 (str year "-" month)]
-             (map transaction (:transaction/uuid props))]))))
+             (map #(transaction (assoc % :react-key (str (:transaction/uuid %)))) 
+                  (:transaction/uuid props))]))))
 
 (defn find-refs 
   "finds attributes where :db/valueType is ref"

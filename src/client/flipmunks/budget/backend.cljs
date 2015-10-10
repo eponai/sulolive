@@ -66,13 +66,13 @@
              :transaction/amount 180
              :transaction/currency 300}
             {:transaction/name "coffee"
-             :transaction/uuid #uuid "56177857-002d-41b5-99d2-ac527e56fc5c"
+             :transaction/uuid #uuid "5618a1ce-e3db-4a3e-9953-cb4eb67b42c8"
              :transaction/date 4711
              :transaction/tags [3 2]
              :transaction/amount 140
              :transaction/currency 300}
             {:transaction/name "lunch"
-             :transaction/uuid #uuid "56177857-002d-41b5-99d2-ac527e56fc5c"
+             :transaction/uuid #uuid "5618a1cc-f22f-45d3-954b-2e3b16d10086"
              :transaction/date 4712
              :transaction/tags [1 2]
              :transaction/amount 317
