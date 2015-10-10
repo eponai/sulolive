@@ -36,7 +36,7 @@
   ;;;;;;;;;;;;;
   :target-path "target/%s"
   :source-paths ["src/server" "test/server"]
-  :ring {:handler flipmunks.budget.datomic_mem/app}
+  :ring {:handler flipmunks.budget.datomic_dev/app}
   :profiles {:uberjar {:aot :all}}
 
   ;;;;;;;;;;;;;

@@ -2,7 +2,7 @@
   (:require [flipmunks.budget.datomic.format :as f]
             [datomic.api :only [db] :as d]))
 
-(def ^:dynamic conn)
+(def conn (d/connect "datomic:dev://localhost:4334/test-budget"))
 
 ; Pull and format datomic entries
 
@@ -25,13 +25,12 @@
                                                        (distinct-ids #(apply concat %) :transaction/tags transactions)
                                                        (distinct-ids :transaction/currency transactions)))))))
 
-(defn pull-schema [data]
-  (let [idents (set (apply concat (mapv keys data)))
-        ident-tuples (mapv #(vector :db/ident %) idents)]
-    (d/pull-many (d/db conn) '[:db/ident
-                               {:db/valueType [:db/ident]}
-                               {:db/cardinality [:db/ident]}
-                               {:db/unique [:db/ident]}] ident-tuples)))
+(defn pull-schema
+  "Pulls schema for the datomic attributes represented as keys in the given data map,
+  (excludes the :db/id attribute)."
+  [data]
+  (let [idents (set (apply concat (mapv keys data)))]
+    (map #(into {} (d/entity (d/db conn) %)) (disj idents :db/id))))
 
 (defn schema-required?
   "Return true if the entity is required to be passed with schema.
