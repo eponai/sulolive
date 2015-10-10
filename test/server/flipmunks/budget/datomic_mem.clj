@@ -48,9 +48,9 @@
     (let [schema (->> schema-file slurp (edn/read-string {:readers *data-readers*}))
           conn budget.d/conn]
       (d/transact conn schema)
-      (prn (d/transact conn currencies))
+      (d/transact conn currencies)
       (doseq [t transactions]
-        (prn (budget.d/post-user-tx t))))
+        (budget.d/post-user-tx t)))
     ;; reutrn the core/app ring handler
     core/app))
 
