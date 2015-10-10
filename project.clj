@@ -34,7 +34,6 @@
   ;;;;;;;;;;;;;
   ;; clj:
   ;;;;;;;;;;;;;
-  :main ^:skip-aot flipmunks.budget.core
   :target-path "target/%s"
   :source-paths ["src/server" "test/server"]
   :ring {:handler flipmunks.budget.datomic_mem/app}
