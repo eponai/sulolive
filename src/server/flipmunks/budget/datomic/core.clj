@@ -1,6 +1,6 @@
 (ns flipmunks.budget.datomic.core
   (:require [flipmunks.budget.datomic.format :as f]
-            [datomic.api :only [db] :as d]))
+            [datomic.api :as d]))
 
 (def conn (d/connect "datomic:dev://localhost:4334/test-budget"))
 
@@ -21,10 +21,20 @@
   [ids]
   (mapv #(into {:db/id %} (d/entity (d/db conn) %)) ids))
 
+(defn get-query
+  "Create the query for pulling transactions given some date parameters."
+  [params]
+  (let [query '[:find [(pull ?e [*]) ...]
+                :where [?e :transaction/date ?d]]
+        key-map {:y :date/year
+                 :m :date/month
+                 :d :date/day}]
+    (apply conj query (map (fn [[k v]] ['?d (k key-map) (Long/parseLong v)]) params))))
+
 (defn pull-data
-  "Pull transaction data from datomic for the specified date string of the form \"yy-MM-dd\"."
-  [date]
-  (let [transactions (:transaction/_date (d/pull (d/db conn) '[{:transaction/_date [*]}] [:date/ymd date]))]
+  "Pull transaction data for optional given y, m, d parameters."
+  [params]
+  (let [transactions (d/q (get-query params) (d/db conn))]
     (vec (concat transactions
                  (db-entities (distinct-ids :transaction/date transactions))
                  (db-entities (distinct-ids :transaction/currency transactions))

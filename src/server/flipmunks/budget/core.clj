@@ -19,8 +19,10 @@
   (let [url (str "https://openexchangerates.org/api/historical/" date-str ".json?app_id=" app-id)]
     (json/read-str (:body (client/get url)) :key-fn keyword)))
 
-(defn respond-data [date]
-  (let [db-data (dt/pull-data date)
+(defn respond-data
+  "Create request response based on params."
+  [params]
+  (let [db-data (dt/pull-data params)
         db-schema (dt/pull-schema db-data)
         flatten-fn (fn [m] (reduce (fn [m [k v]] (if (get v :db/ident) (assoc m k (:db/ident v)) (assoc m k v))) {} m))]
     {:schema (vec (map flatten-fn (filter dt/schema-required? db-schema)))
@@ -28,7 +30,7 @@
 
 (defroutes app-routes
            (context "/entries" [] (defroutes entries-routes
-                                             (GET "/ymd=:date" [date] (str (respond-data date)))
+                                             (GET "/" {params :params} (str (respond-data params)))
                                              (POST "/" {body :body} (str (dt/post-user-tx body)))))
            (route/not-found "Not Found"))
 
