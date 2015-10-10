@@ -16,21 +16,26 @@
   ([f k entities]
    (mapv :db/id (distinct ((or f identity) (mapv k entities))))))
 
+(defn db-entities
+  "Get vector of entity maps for given entity ids."
+  [ids]
+  (mapv #(into {:db/id %} (d/entity (d/db conn) %)) ids))
+
 (defn pull-data
   "Pull transaction data from datomic for the specified date string of the form \"yy-MM-dd\"."
   [date]
   (let [transactions (:transaction/_date (d/pull (d/db conn) '[{:transaction/_date [*]}] [:date/ymd date]))]
     (vec (concat transactions
-                 (d/pull-many (d/db conn) '[*] (concat [[:date/ymd date]]
-                                                       (distinct-ids #(apply concat %) :transaction/tags transactions)
-                                                       (distinct-ids :transaction/currency transactions)))))))
+                 (db-entities (distinct-ids :transaction/date transactions))
+                 (db-entities (distinct-ids :transaction/currency transactions))
+                 (db-entities (distinct-ids #(apply concat %) :transaction/tags transactions))))))
 
 (defn pull-schema
   "Pulls schema for the datomic attributes represented as keys in the given data map,
   (excludes the :db/id attribute)."
   [data]
   (let [idents (set (apply concat (mapv keys data)))]
-    (map #(into {} (d/entity (d/db conn) %)) (disj idents :db/id))))
+    (mapv #(into {} (d/entity (d/db conn) %)) (disj idents :db/id))))
 
 (defn schema-required?
   "Return true if the entity is required to be passed with schema.

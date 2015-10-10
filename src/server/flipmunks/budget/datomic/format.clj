@@ -25,7 +25,8 @@
   (f/unparse-local (f/formatters :date) d))
 
 (defn date->db-tx
-  "Returns a map representing a date datomic entity for the specified LocalDateTime."
+  "Returns a map representing a date datomic entity for the specified LocalDateTime,
+  given a datomic id function (e.g. d/tempid) and a partition."
   [date dbid-fn part]
   {:db/id          (dbid-fn part)
    :date/ymd       (date->ymd-string date)
@@ -35,19 +36,22 @@
    :date/timestamp (c/to-long date)})
 
 (defn date-str->db-tx
-  "Returns a LocalDateTime for the string of format 'yyy-MM-dd'."
+  "Returns a LocalDateTime for the string of format 'yyy-MM-dd',
+  given a datomic id function (e.g. d/tempid) and a partition."
   [date-str dbid-fn part]
   (date->db-tx (f/parse-local (f/formatters :date) date-str) dbid-fn part))
 
 (defn tags->db-tx
-  "Returns datomic entities representing tags, given a vector of tag names."
+  "Returns datomic entities representing tags, given a vector of tag names,
+  given a datomic id function (e.g. d/tempid) and a partition."
   [tags dbid-fn part]
   (mapv (fn [n] {:db/id          (dbid-fn part)
                  :tag/name       n
                  :tag/persistent false}) tags))
 
 (defn user-tx->db-tx
-  "Takes a user input transaction and converts into a datomic entity.
+  "Takes a user input transaction and converts into a datomic entity,
+  given a datomic id function (e.g. d/tempid) and a partition.
   A conversion function will be applied on the values for the following
   keys #{:currency :date :tags :amount :uuid} as appropriate for the database.
   All keys will be prefixed with 'transaction/' (e.g. :name -> :transaction/name)"
@@ -61,7 +65,8 @@
 
 (defn cur-rates->db-txs
   "Returns a vector with datomic entites representing a currency conversions
-  for the given date. d a date string of the form \"yy-MM-dd\" to be matched
+  for the given date, given a datomic id function (e.g. d/tempid) and a partition.
+  d a date string of the form \"yy-MM-dd\" to be matched
   to the conversion. m map with timestamp and rates of the form
   {:timestamp 190293 :rates {:SEK 8.333 ...}}"
   [date-ymd m dbid-fn part]
