@@ -6,61 +6,71 @@
             [datascript.core :as d]
             [flipmunks.budget.datascript :as budgetd]))
 
-(defmulti read om/dispatch)
-(defmethod read :app/transaction
-  [{:keys [state selector]} _ _]
-  {:value (d/q '[:find [(pull ?e ?selector) ...]
-                 :in $ ?selector
-                 :where [?e :transaction/uuid]]
-               (d/db state) 
-               selector)})
-(defmethod read :app/counter
-  [{:keys [state selector]} _ _]
-  {:value (d/q '[:find [(pull ?e ?selector) ...]
-                 :in $ ?selector
-                 :where [?e :app/title]]
-               (d/db state) 
-               selector)})
+(defn read [{:keys [state] :as env} attr {:keys [filters] :as params}]
+  (let [selector (or (:selector env) (:selector params))
+        q '[:find [(pull ?e ?selector) ...]
+            :in $ ?attr ?selector
+            :where [?e ?attr]]]
+    {:value (d/q (vec (concat q filters))
+                 (d/db state) 
+                 attr
+                 selector)}))
 
 (defmulti mutate om/dispatch)
-(defmethod mutate 'app/increment
-  [{:keys [state]} _ entity]
-  {:value [:app/counter]
-   :action #(d/transact! state [(update-in entity [:app/count] inc)])})
+(comment "om-next datascript tutorial example"
+  (defmethod mutate 'app/increment
+    [{:keys [state]} _ entity]
+    {:value [:app/counter]
+     :action #(d/transact! state [(update-in entity [:app/count] inc)])}))
 
-(defui DayList
-  static om/IQuery
-  (query [this] [{:app/transaction [{:transaction/date [:date/ymd]}
-                                    :transaction/name
-                                    :transaction/amount
-                                    {:transaction/currency [:currency/name]}]}])
-  Object
-  (render [this]
-          (html [:div
-                 (->> (get-in (om/props this) [:app/transaction])
-                   (map (fn [{:keys [transaction/date
-                                    transaction/name
-                                    transaction/amount
-                                    transaction/currency]}]
-                          [:div 
-                           [:h3 name]
-                           [:p (str "Amount: " amount " " (:currency/name currency))]
-                           [:p (str "Date: " (:date/ymd date))]])))])))
-
-(defui Counter
+(defui Transaction
   static om/IQuery
   (query [this]
-         [{:app/counter [:db/id :app/title :app/count]}])
+         [:db/id
+          :transaction/uuid
+          :transaction/name
+          :transaction/amount
+          {:transaction/date     [:date/ymd]}
+          {:transaction/currency [:currency/name]}])
   Object
   (render [this]
-    (let [{:keys [app/title app/count] :as entity} 
-          (get-in (om/props this) [:app/counter 0])]
+          (let [{:keys [db/id
+                        transaction/date
+                        transaction/uuid
+                        transaction/name
+                        transaction/amount
+                        transaction/currency]} (om/props this)]
+            (html 
+              [:div 
+               [:h3 name]
+               [:p (str "Id: " id  " uuid: " uuid)]
+               [:p (str "Amount: " amount " " (:currency/name currency))]
+               [:p (str "Date: " (:date/ymd date))]]))))
+
+(def transaction (om/factory Transaction))
+
+(defui TransactionList
+  static om/IQueryParams
+  (params [this]
+         {:year 2015 :month 01 :day 01
+          :transaction (om/get-query Transaction)})
+  static om/IQuery
+  (query [this]
+         '[(:date/ymd {:selector [:date/year :date/month]
+                       :filter   [[?e :date/year  ?year]
+                                  [?e :date/month ?month]]})
+           (:transaction/uuid {:selector ?transaction
+                               :filters [[?e :transaction/date ?d]
+                                         [?d :date/year  ?year]
+                                         [?d :date/month ?month]
+                                         [?d :date/day   ?day]]})])
+  Object
+  (render [this]
+    (let [props (om/props this)
+          {:keys [:date/year :date/month]} (get-in props [:date/ymd 0])]
       (html [:div
-             [:h2 title]
-             [:span (str "Count: " count)]
-             [:button
-              {:on-click #(om/transact! this `[(app/increment ~entity)])}
-              "Click me!"]]))))
+             [:h1 (str year "-" month)]
+             (map transaction (:transaction/uuid props))]))))
 
 (defn find-refs 
   "finds attributes where :db/valueType is ref"
@@ -82,8 +92,5 @@
         parser     (om/parser {:read read :mutate mutate})
         reconciler (om/reconciler {:state conn :parser parser})] 
     (d/transact conn (budgetd/db-id->temp-id ref-types entities))
-    (d/transact conn [{:db/id -1
-                       :app/title "Hello, DataScript!"
-                       :app/count 0}])
-    (om/add-root! reconciler DayList (gdom/getElement "my-app"))))
+    (om/add-root! reconciler TransactionList (gdom/getElement "my-app"))))
 
