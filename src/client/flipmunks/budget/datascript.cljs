@@ -39,7 +39,6 @@
   "given a set of keys which have values of type db.type/ref, and any datastructure,
   return the same datastructure with {:db/id <id>} entries and {<ref-key> <id>} assigned
   to datascript temporary id's (negative integers)."
-  
   [ref-keys forms]
   (let [kv?    #(and (vector? %) (= 2 (count %)) (keyword? (first %)))
         db-id? #(and (kv? %) (= :db/id (first %)))
@@ -51,7 +50,8 @@
                     (ref? x)   (let [[k v] x]
                                  (cond (number? v) [k (id-gen v)]
                                        (vector? v) [k (mapv id-gen v)]
-                                       :else (throw "unsupported reference value: " v)))
+                                       (map? v) x
+                                       :else (throw (str "unsupported reference value: " x))))
                     :else x))
                 forms)))
 

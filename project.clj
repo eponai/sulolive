@@ -9,6 +9,7 @@
                 :exclusion [org.clojure/data.json]
                  ]
                  [org.clojure/data.json "0.2.6"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [com.cognitect/transit-cljs "0.8.225"]
                  [sablono "0.3.6"]
                  [org.omcljs/om "0.9.0-SNAPSHOT"]

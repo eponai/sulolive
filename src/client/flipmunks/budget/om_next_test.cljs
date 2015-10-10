@@ -1,9 +1,11 @@
 (ns flipmunks.budget.om_next_test
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [goog.dom :as gdom]
             [sablono.core :as html :refer-macros [html]]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
             [datascript.core :as d]
+            [cljs.core.async :as async]
             [flipmunks.budget.datascript :as budgetd]))
 
 (defn read [{:keys [state] :as env} attr {:keys [filters] :as params}]
@@ -52,7 +54,7 @@
 (defui TransactionList
   static om/IQueryParams
   (params [this]
-         {:year 2015 :month 01 :day 01
+         {:year 2015 :month 10 :day 10
           ;; By conjing the uuid, we know that we can use it for the react-key
           :transaction (conj (om/get-query Transaction) :transaction/uuid)})
   static om/IQuery
@@ -84,15 +86,21 @@
                        [?e :db/valueType :db.type/ref]]
               @conn))))
 
+(defn initialize-app [c]
+  (go
+    (let [{:keys [schema entities]} (:data (async/<! c))
+          ref-types  (find-refs schema)
+          ds-schema  (budgetd/schema-datomic->datascript schema)
+          conn       (d/create-conn ds-schema)
+          parser     (om/parser {:read read :mutate mutate})
+          reconciler (om/reconciler {:state conn :parser parser})]
+      (d/transact conn (budgetd/db-id->temp-id ref-types entities))
+      (om/add-root! reconciler TransactionList (gdom/getElement "my-app")))))
+
 (defn run 
   "call data-provider with dates? -> returns {:schema [] :entities []}"
   [data-provider]
-  (let [{:keys [schema entities]} (data-provider {:year 2015 :month 01})
-        ref-types  (find-refs schema)
-        ds-schema  (budgetd/schema-datomic->datascript schema)
-        conn       (d/create-conn ds-schema)
-        parser     (om/parser {:read read :mutate mutate})
-        reconciler (om/reconciler {:state conn :parser parser})] 
-    (d/transact conn (budgetd/db-id->temp-id ref-types entities))
-    (om/add-root! reconciler TransactionList (gdom/getElement "my-app"))))
+  (let [c (async/chan)]
+    (initialize-app c)
+    (data-provider c)))
 
