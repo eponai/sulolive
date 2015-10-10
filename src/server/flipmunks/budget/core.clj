@@ -23,9 +23,8 @@
   "Create request response based on params."
   [params]
   (let [db-data (dt/pull-data params)
-        db-schema (dt/pull-schema db-data)
-        flatten-fn (fn [m] (reduce (fn [m [k v]] (if (get v :db/ident) (assoc m k (:db/ident v)) (assoc m k v))) {} m))]
-    {:schema (vec (map flatten-fn (filter dt/schema-required? db-schema)))
+        db-schema (dt/pull-schema db-data)]
+    {:schema   (vec (filter dt/schema-required? db-schema))
      :entities db-data}))
 
 (defroutes app-routes

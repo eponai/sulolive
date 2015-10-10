@@ -51,8 +51,8 @@
   "Return true if the entity is required to be passed with schema.
   Is true if the entity has a type ref, or cardinality many."
   [db-entity]
-  (or (= (get-in db-entity [:db/valueType :db/ident]) :db.type/ref)
-      (= (get-in db-entity [:db/cardinality :db/ident]) :db.cardinality/many)
+  (or (= (get db-entity :db/valueType) :db.type/ref)
+      (= (get db-entity :db/cardinality) :db.cardinality/many)
       (get db-entity :db/unique)))
 
 ; Transact data to datomic
