@@ -60,10 +60,9 @@
   to be transformed, 2nd the function to user to generate tempi db ids and 3rd
   the partition for the db ids will be called on data to transform into appropriate
   datomic entities."
-  [data format-fn]
+  [format-fn data]
   (let [transactions (format-fn data d/tempid :db.part/user)]
-    (if (vector? transactions)
-      (d/transact conn transactions)
-      (d/transact conn [transactions]))))
+    (println transactions)
+    (d/transact conn (vec transactions))))
 
 

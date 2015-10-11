@@ -3,6 +3,7 @@
             [flipmunks.budget.datomic.core :as budget.d]
             [clojure.tools.reader.edn :as edn]
             [clojure.java.io :as io]
+            [clojure.test :refer [deftest is]]
             [datomic.api :as d]))
 
 (def schema-file (io/file (io/resource "private/datomic-schema.edn")))
@@ -49,8 +50,9 @@
           conn budget.d/conn]
       (d/transact conn schema)
       (d/transact conn currencies)
-      (doseq [t transactions]
-        (budget.d/post-user-tx t)))
+      (core/post-user-txs transactions))
     ;; reutrn the core/app ring handler
     core/app))
 
+(deftest compiles?
+  (is (= app app)))

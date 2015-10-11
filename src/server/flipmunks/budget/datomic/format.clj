@@ -63,6 +63,9 @@
                      :uuid     (fn [uuid] (java.util.UUID/fromString uuid))}]
      (assoc (trans user-tx #(key-prefix % "transaction/") conv-fn-map) :db/id (dbid-fn part))))
 
+(defn user-txs->db-txs [user-txs dbid-fn part]
+  (mapv #(user-tx->db-tx % dbid-fn part) user-txs))
+
 (defn cur-rates->db-txs
   "Returns a vector with datomic entites representing a currency conversions
   for the given date, given a datomic id function (e.g. d/tempid) and a partition.

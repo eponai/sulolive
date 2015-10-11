@@ -31,14 +31,17 @@
     {:schema   (vec (filter dt/schema-required? db-schema))
      :entities db-data}))
 
+(defn valid-user-tx? [user-tx]
+  (every? #(contains? user-tx %) #{:uuid :name :date :amount :currency}))
+
 ; Transact data to datomic
-(defn post-user-tx
+(defn post-user-txs
   "Put the user transaction maps into datomic. Will fail if one or
   more of the following required fields are not included in the map:
   #{:uuid :name :date :amount :currency}."
-  [user-tx]
-  (if (every? #(contains? user-tx %) #{:uuid :name :date :amount :currency})
-    (dt/transact-data f/user-tx->db-tx user-tx);TODO: check if conversions exist for this date, and fetch if not.
+  [user-txs]
+  (if (every? #(valid-user-tx? %) user-txs)
+    (dt/transact-data f/user-txs->db-txs user-txs)          ;TODO: check if conversions exist for this date, and fetch if not.
     {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
 
 (defn post-currency-txs
@@ -49,7 +52,7 @@
 (defroutes app-routes
            (context "/entries" [] (defroutes entries-routes
                                              (GET "/" {params :params} (str (respond-data params)))
-                                             (POST "/" {body :body} (str (post-user-tx body)))))
+                                             (POST "/" {body :body} (str (post-user-txs body)))))
            (route/not-found "Not Found"))
 
 (defn update-currencies
