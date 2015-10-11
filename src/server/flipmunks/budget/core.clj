@@ -7,7 +7,11 @@
             [ring.middleware.resource :as middleware.res]
             [clj-http.client :as client]
             [clojure.data.json :as json]
-            [flipmunks.budget.datomic.core :as dt]))
+            [flipmunks.budget.datomic.core :as dt]
+            [flipmunks.budget.datomic.format :as f]))
+
+(def config
+  (read-string (slurp "budget-private/config.edn")))
 
 ;; Handle fetch currency data.
 (defn currencies [app-id]
@@ -27,11 +31,36 @@
     {:schema   (vec (filter dt/schema-required? db-schema))
      :entities db-data}))
 
+; Transact data to datomic
+(defn post-user-tx
+  "Put the user transaction maps into datomic. Will fail if one or
+  more of the following required fields are not included in the map:
+  #{:uuid :name :date :amount :currency}."
+  [user-tx]
+  (if (every? #(contains? user-tx %) #{:uuid :name :date :amount :currency})
+    (dt/transact-data f/user-tx->db-tx user-tx);TODO: check if conversions exist for this date, and fetch if not.
+    {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
+
+(defn post-currency-txs
+  "Put currencies in datomic given a map of currency codes to currency names. "
+  [currencies]
+  (dt/transact-data currencies f/curs->db-txs))
+
 (defroutes app-routes
            (context "/entries" [] (defroutes entries-routes
                                              (GET "/" {params :params} (str (respond-data params)))
-                                             (POST "/" {body :body} (str (dt/post-user-tx body)))))
+                                             (POST "/" {body :body} (str (post-user-tx body)))))
            (route/not-found "Not Found"))
+
+(defn update-currencies
+  "Fetch currencies (codes and names) from open exchange rates and put into datomic."
+  []
+  (let [app-id (:open-exhange-app-id config)]
+    (dt/transact-data f/curs->db-txs (currencies app-id))))
+
+(defn update-currency-rates [date-str]
+  (let [app-id (:open-exhange-app-id config)]
+    (dt/transact-data f/cur-rates->db-txs (assoc (currency-rates app-id date-str) :date date-str))))
 
 (def app
   (-> (handler/api app-routes)

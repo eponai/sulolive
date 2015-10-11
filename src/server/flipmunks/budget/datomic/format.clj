@@ -61,23 +61,20 @@
                      :tags     (fn [tags] (tags->db-tx tags dbid-fn part))
                      :amount   (fn [a] (bigint a))
                      :uuid     (fn [uuid] (java.util.UUID/fromString uuid))}]
-    (assoc (trans user-tx #(key-prefix % "transaction/") conv-fn-map) :db/id (dbid-fn part))))
+     (assoc (trans user-tx #(key-prefix % "transaction/") conv-fn-map) :db/id (dbid-fn part))))
 
 (defn cur-rates->db-txs
   "Returns a vector with datomic entites representing a currency conversions
   for the given date, given a datomic id function (e.g. d/tempid) and a partition.
-  d a date string of the form \"yy-MM-dd\" to be matched
-  to the conversion. m map with timestamp and rates of the form
-  {:timestamp 190293 :rates {:SEK 8.333 ...}}"
-  [date-ymd m dbid-fn part]
-  (let [timestamp (:timestamp m)
-        map-fn (fn [[code rate]]
+  m map with timestamp and rates of the form
+  {:date \"2015-01-01\" :rates {:SEK 8.333 ...}}"
+  [data dbid-fn part]
+  (let [map-fn (fn [[code rate]]
                  {:db/id                (dbid-fn part)
-                  :conversion/timestamp timestamp
-                  :conversion/date      (date-str->db-tx date-ymd dbid-fn part)
+                  :conversion/date      (date-str->db-tx (:date data) dbid-fn part)
                   :conversion/currency  [:currency/code (name code)]
                   :conversion/rate      (bigdec rate)})]
-    (mapv map-fn (:rates m))))
+    (mapv map-fn (:rates data))))
 
 (defn curs->db-txs [currencies dbid-fn part]
   (let [map-fn (fn [[c n]] {:db/id         (dbid-fn part)

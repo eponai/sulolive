@@ -55,16 +55,15 @@
       (= (get db-entity :db/cardinality) :db.cardinality/many)
       (get db-entity :db/unique)))
 
-; Transact data to datomic
-(defn post-user-tx
-  "Put the user transaction maps into datomic. Will fail if one or
-  more of the following required fields are not included in the map:
-  #{:uuid :name :date :amount :currency}."
-  [user-tx]
-  (if (every? #(contains? user-tx %) #{:uuid :name :date :amount :currency})
-    (d/transact conn [(f/user-tx->db-tx user-tx d/tempid :db.part/user)]) ;TODO: check if conversions exist for this date, and fetch if not.
-    {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
+(defn transact-data
+  "Transact data into datomic. format-fn should take three arguments, 1st the data
+  to be transformed, 2nd the function to user to generate tempi db ids and 3rd
+  the partition for the db ids will be called on data to transform into appropriate
+  datomic entities."
+  [data format-fn]
+  (let [transactions (format-fn data d/tempid :db.part/user)]
+    (if (vector? transactions)
+      (d/transact conn transactions)
+      (d/transact conn [transactions]))))
 
-(defn post-currency-txs
-  (let [currencies])
-  @(d/transact conn (b.f/curs->db-txs currencies d/tempid :db.part/user)))
+
