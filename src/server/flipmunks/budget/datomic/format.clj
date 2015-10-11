@@ -79,3 +79,8 @@
                   :conversion/rate      (bigdec rate)})]
     (mapv map-fn (:rates m))))
 
+(defn curs->db-txs [currencies dbid-fn part]
+  (let [map-fn (fn [[c n]] {:db/id         (dbid-fn part)
+                            :currency/code (name c)
+                            :currency/name n})]
+    (mapv map-fn currencies)))

@@ -64,3 +64,7 @@
   (if (every? #(contains? user-tx %) #{:uuid :name :date :amount :currency})
     (d/transact conn [(f/user-tx->db-tx user-tx d/tempid :db.part/user)]) ;TODO: check if conversions exist for this date, and fetch if not.
     {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
+
+(defn post-currency-txs
+  (let [currencies])
+  @(d/transact conn (b.f/curs->db-txs currencies d/tempid :db.part/user)))

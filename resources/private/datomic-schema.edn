@@ -21,25 +21,28 @@
  :db/ident :transaction/uuid
  :db/valueType :db.type/uuid
  :db/unique :db.unique/identity
+ :db/doc "Unique identifier for a transaction."
  :db/cardinality :db.cardinality/one}
 
 {:db/id #db/id[:db.part/db]
  :db/ident :transaction/name
  :db/valueType :db.type/string
  :db/cardinality :db.cardinality/one
- :db/doc "Name of the transaction. I.e. coffee, lunch or salary"
+ :db/doc "Name of the transaction. E.g. coffee, lunch or salary"
  :db.install/_attribute :db.part/db}
 
 {:db/id #db/id[:db.part/db]
  :db.install/_attribute :db.part/db
  :db/ident :transaction/details
  :db/valueType :db.type/string
+ :db/doc "Details about a transaction. E.g. 'flight to thailand'"
  :db/cardinality :db.cardinality/one}
 
 {:db/id #db/id[:db.part/db]
  :db.install/_attribute :db.part/db
  :db/ident :transaction/date
  :db/valueType :db.type/ref
+ :db/doc "Date of the transaction."
  :db/cardinality :db.cardinality/one}
 
 {:db/id #db/id[:db.part/db],
@@ -47,21 +50,28 @@
  :db/ident :transaction/tags,
  :db/valueType :db.type/ref,
  :db/cardinality :db.cardinality/many,
- :db/doc ""}
+ :db/doc "Unique tags for a transaction. E.g. ['food' 'thailand']."}
+
+{:db/id #db/id[:db.part/db],
+ :db.install/_attribute :db.part/db,
+ :db/ident :transaction/created-at,
+ :db/valueType :db.type/long,
+ :db/cardinality :db.cardinality/one,
+ :db/doc "Timestamp for when the transaction was created."}
 
 {:db/id #db/id[:db.part/db],
  :db.install/_attribute :db.part/db,
  :db/ident :transaction/amount,
  :db/valueType :db.type/bigint,
  :db/cardinality :db.cardinality/one,
- :db/doc ""}
+ :db/doc "Amount of the transaction (cost or income)."}
 
 {:db/id #db/id[:db.part/db],
  :db.install/_attribute :db.part/db,
  :db/ident :transaction/currency,
  :db/valueType :db.type/ref,
  :db/cardinality :db.cardinality/one,
- :db/doc ""}
+ :db/doc "Currency of the transaction."}
 
 ;; Conversion
 
@@ -70,28 +80,21 @@
  :db/ident :conversion/currency,
  :db/valueType :db.type/ref,
  :db/cardinality :db.cardinality/one,
- :db/doc ""}
+ :db/doc "Currency conversion."}
 
 {:db/id #db/id[:db.part/db],
  :db.install/_attribute :db.part/db,
  :db/ident :conversion/rate,
  :db/valueType :db.type/bigdec,
  :db/cardinality :db.cardinality/one,
- :db/doc ""}
-
-{:db/id #db/id[:db.part/db],
- :db.install/_attribute :db.part/db,
- :db/ident :conversion/timestamp,
- :db/valueType :db.type/long,
- :db/cardinality :db.cardinality/one,
- :db/doc ""}
+ :db/doc "Conversion rate."}
 
 {:db/id #db/id[:db.part/db],
  :db.install/_attribute :db.part/db,
  :db/ident :conversion/date,
  :db/valueType :db.type/ref,
  :db/cardinality :db.cardinality/one,
- :db/doc ""}
+ :db/doc "Date of the conversion."}
 
 ;; Date
 {:db/id #db/id[:db.part/db],
@@ -99,28 +102,28 @@
  :db/ident :date/timestamp,
  :db/valueType :db.type/long,
  :db/cardinality :db.cardinality/one,
- :db/doc ""}
+ :db/doc "Date timestamp, at 12:00."}
 
 {:db/id #db/id[:db.part/db],
  :db.install/_attribute :db.part/db,
  :db/ident :date/year,
  :db/valueType :db.type/long,
  :db/cardinality :db.cardinality/one,
- :db/doc ""}
+ :db/doc "Year of date."}
 
 {:db/id #db/id[:db.part/db],
  :db.install/_attribute :db.part/db,
  :db/ident :date/month,
  :db/valueType :db.type/long,
  :db/cardinality :db.cardinality/one,
- :db/doc ""}
+ :db/doc "Month of year."}
 
 {:db/id #db/id[:db.part/db],
  :db.install/_attribute :db.part/db,
  :db/ident :date/day,
  :db/valueType :db.type/long,
  :db/cardinality :db.cardinality/one,
- :db/doc ""}
+ :db/doc "Day of month."}
 
 {:db/id #db/id[:db.part/db],
  :db.install/_attribute :db.part/db,
@@ -128,7 +131,7 @@
  :db/valueType :db.type/string,
  :db/cardinality :db.cardinality/one,
  :db/unique :db.unique/identity
- :db/doc ""}
+ :db/doc "String representation of the date of the form 'yy-MM-dd'."}
 
 ;; Tag
 
@@ -138,14 +141,14 @@
  :db/unique :db.unique/identity,
  :db/valueType :db.type/string,
  :db/cardinality :db.cardinality/one,
- :db/doc ""}
+ :db/doc "Unique tag name."}
 
 {:db/id #db/id[:db.part/db],
  :db.install/_attribute :db.part/db,
  :db/ident :tag/persistent,
  :db/valueType :db.type/boolean,
  :db/cardinality :db.cardinality/one,
- :db/doc ""}
+ :db/doc "Whether the tag is persistent, i.e. will be automatically assigned to new transactions."}
 
 ;; Currency
 
@@ -154,6 +157,7 @@
  :db/unique :db.unique/identity,
  :db/valueType :db.type/string
  :db/cardinality :db.cardinality/one,
+ :db/doc "Three letter currency code, e.g. 'USD'."
  :db.install/_attribute :db.part/db}
 
 {:db/id #db/id[:db.part/db],
@@ -161,5 +165,5 @@
  :db/ident :currency/name,
  :db/valueType :db.type/string,
  :db/cardinality :db.cardinality/one,
- :db/doc ""}
+ :db/doc "Name of the currency."}
 ]
