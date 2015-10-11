@@ -47,6 +47,10 @@
   (let [idents (set (apply concat (mapv keys data)))]
     (mapv #(into {} (d/entity (d/db conn) %)) (disj idents :db/id))))
 
+(defn pull-currencies [db]
+  (d/q '[:find [(pull ?e [*]) ...]
+         :where [?e :currency/code]] db))
+
 (defn schema-required?
   "Return true if the entity is required to be passed with schema.
   Is true if the entity has a type ref, or cardinality many."
