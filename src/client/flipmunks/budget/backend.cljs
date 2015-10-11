@@ -64,7 +64,7 @@
 ;; TODO: implement for reals
 (defn data-provider []
   (fn [c]
-    (http/GET (str "/entries/ymd=2015-10-10")
+    (http/GET (str "/entries/?y=2015&m=10&d=10")
               {:handler (fn [res] 
                           (let [data (r/read-string res)]
                             (async/put! c {:data data})))
