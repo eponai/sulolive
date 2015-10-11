@@ -37,13 +37,15 @@
 
 (defn date-str->db-tx
   "Returns a LocalDateTime for the string of format 'yyy-MM-dd',
-  given a datomic id function (e.g. d/tempid) and a partition."
+  given a datomic id function and partition (e.g. datomic.api/tempid
+  part :db.part/user)."
   [date-str dbid-fn part]
   (date->db-tx (f/parse-local (f/formatters :date) date-str) dbid-fn part))
 
 (defn tags->db-tx
   "Returns datomic entities representing tags, given a vector of tag names,
-  given a datomic id function (e.g. d/tempid) and a partition."
+  given a datomic id function and partition (e.g. datomic.api/tempid
+  part :db.part/user)."
   [tags dbid-fn part]
   (map (fn [n] {:db/id          (dbid-fn part)
                  :tag/name       n
@@ -68,9 +70,9 @@
 
 (defn cur-rates->db-txs
   "Returns a vector with datomic entites representing a currency conversions
-  for the given date, given a datomic id function (e.g. d/tempid) and a partition.
-  m map with timestamp and rates of the form
-  {:date \"2015-01-01\" :rates {:SEK 8.333 ...}}"
+  for the given date, given a datomic id function and partition (e.g. dbid-fn
+  datomic.api/tempid part :db.part/user). m should be a  map with timestamp and
+  rates of the form {:date \"yyyy-MM-dd\" :rates {:code rate ...}}"
   [data dbid-fn part]
   (let [map-fn (fn [[code rate]]
                  {:db/id                (dbid-fn part)
@@ -79,7 +81,11 @@
                   :conversion/rate      (bigdec rate)})]
     (map map-fn (:rates data))))
 
-(defn curs->db-txs [currencies dbid-fn part]
+(defn curs->db-txs
+  "Returns a sequence of currency datomic entries for the given map representing
+  currencies of the form {:code \"name\" ...}. Pass the dbid-fn to generate a datomic
+  tempid in partition part. (e.g. dbid-fn datomic.api/tempid part :db.part/user)"
+  [currencies dbid-fn part]
   (let [map-fn (fn [[c n]] {:db/id         (dbid-fn part)
                             :currency/code (name c)
                             :currency/name n})]
