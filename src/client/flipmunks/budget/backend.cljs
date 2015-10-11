@@ -3,70 +3,73 @@
             [cljs.reader :as r]
             [cljs.core.async :as async]))
 
-(def testdata {2015 {1 {1 {:purchases [{:name "coffee" :cost {:currency "LEK"
-                                                              :price 400}}
-                                       {:name "dinner" :cost {:currency "LEK"
-                                                              :price 1000}}]
-                           :rates {"LEK" 0.0081}}
-                        2 {:purchases [{:name "lunch" :cost {:currency "LEK"
-                                                             :price 600}}]
-                           :rates {"LEK" 0.0081}}}}})
+(def testdata
+  {:schema
+   [{:db/valueType :db.type/ref,
+     :db/cardinality :db.cardinality/one,
+     :db/doc "Date of the transaction.",
+     :db/ident :transaction/date}
+    {:db/unique :db.unique/identity,
+     :db/valueType :db.type/string,
+     :db/cardinality :db.cardinality/one,
+     :db/doc "Three letter currency code, e.g. 'USD'.",
+     :db/ident :currency/code}
+    {:db/valueType :db.type/ref,
+     :db/cardinality :db.cardinality/one,
+     :db/doc "Currency of the transaction.",
+     :db/ident :transaction/currency}
+    {:db/unique :db.unique/identity,
+     :db/valueType :db.type/string,
+     :db/cardinality :db.cardinality/one,
+     :db/doc "String representation of the date of the form 'yy-MM-dd'.",
+     :db/ident :date/ymd}
+    {:db/unique :db.unique/identity,
+     :db/valueType :db.type/uuid,
+     :db/cardinality :db.cardinality/one,
+     :db/doc "Unique identifier for a transaction.",
+     :db/ident :transaction/uuid}
+    {:db/unique :db.unique/identity,
+     :db/valueType :db.type/keyword,
+     :db/cardinality :db.cardinality/one,
+     :db/doc "Attribute used to uniquely name an entity.",
+     :db/ident :db/ident}],
+   :entities
+   [{:transaction/date {:db/id 17592186045421},
+     :transaction/currency {:db/id 17592186045418},
+     :transaction/name "dinner",
+     :db/id 17592186045425,
+     :transaction/uuid #uuid "de1ddbd1-883e-4d46-ab89-44da0efd6989",
+     :transaction/amount 350}
+    {:transaction/date {:db/id 17592186045421},
+     :transaction/currency {:db/id 17592186045418},
+     :transaction/name "lunch",
+     :db/id 17592186045420,
+     :transaction/uuid #uuid "bd679ca2-ba83-4366-b8ba-ee7519da2acf",
+     :transaction/amount 180}
+    {:transaction/date {:db/id 17592186045421},
+     :transaction/currency {:db/id 17592186045418},
+     :transaction/name "coffee",
+     :db/id 17592186045423,
+     :transaction/uuid #uuid "75ebb9de-5396-455c-8f4a-0e55d3f65609",
+     :transaction/amount 140}
+    {:date/timestamp 1444435200000,
+     :date/ymd "2015-10-10",
+     :date/day 10,
+     :db/id 17592186045421,
+     :date/month 10,
+     :date/year 2015}
+    {:currency/name "Thai Baht",
+     :currency/code "THB",
+     :db/id 17592186045418,
+     :db/ident :currency/THB}]})
 
-(def testdata-2
-  {:schema [
-            ;; Date
-            {:db/ident :date/ymd
-             :db/unique :db.unique/identity}
-            ;; Tag
-            {:db/ident :tag/name
-             :db/unique :db.unique/identity} 
-            ;; Currency
-            {:db/ident :currency/name
-             :db/unique :db.unique/identity}
-            ;; Transactions
-            {:db/ident :transaction/date
-             :db/valueType :db.type/ref}
-            {:db/ident :transaction/tags
-             :db/valueType :db.type/ref
-             :db/cardinality :db.cardinality/many}
-            {:db/ident :transaction/currency
-             :db/valueType :db.type/ref}]
-
-   ;; send entity maps like this?
-   ;; the value of a db.type/ref is an id, a number
-   :entities [{:date/ymd "2015-01-01" :date/year 2015
-               :date/month 01 :date/day 01 :db/id 4711}
-              {:date/ymd "2015-01-02" :date/year 2015 
-               :date/month 01 :date/day 02  :db/id 4712}
-              {:tag/name "lunch" :db/id 1}
-              {:tag/name "thailand" :db/id 2}
-              {:tag/name "coffee" :db/id 3}
-              {:currency/name "TBH" :db/id 300}
-              {:transaction/name "lunch"
-               :transaction/uuid #uuid "56177857-002d-41b5-99d2-ac527e56fc5c"
-               :transaction/date 4711
-               :transaction/tags [1 2]
-               :transaction/amount 180
-               :transaction/currency 300}
-              {:transaction/name "coffee"
-               :transaction/uuid #uuid "5618a1ce-e3db-4a3e-9953-cb4eb67b42c8"
-               :transaction/date 4711
-               :transaction/tags [3 2]
-               :transaction/amount 140
-               :transaction/currency 300}
-              {:transaction/name "lunch"
-               :transaction/uuid #uuid "5618a1cc-f22f-45d3-954b-2e3b16d10086"
-               :transaction/date 4712
-               :transaction/tags [1 2]
-               :transaction/amount 317
-               :transaction/currency 300}]})
 
 ;; TODO: implement for reals
 (defn data-provider []
   (fn [c]
     (http/GET (str "/entries/?y=2015&m=10&d=10")
-              {:handler (fn [res] 
-                          (let [data (r/read-string res)]
-                            (async/put! c {:data data})))
-               :error-handler #(prn "Error: " %)})))
+              {:handler       #(do 
+                                 (prn (r/read-string %)) 
+                                 (async/put! c {:data (r/read-string %)}))
+               :error-handler #(async/put! c {:data testdata})})))
 
