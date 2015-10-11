@@ -40,14 +40,14 @@
 (def app
   (do 
     ;; set the core/conn var
-    (alter-var-root #'budget.d/conn
+    (alter-var-root #'core/conn
                     (fn [old-val] 
                       (let [uri "datomic:mem://test-db"]
                         (if (d/create-database uri)
                           (d/connect uri)
                           (throw (Exception. "Could not create datomic db with uri: " uri))))))
     (let [schema (->> schema-file slurp (edn/read-string {:readers *data-readers*}))
-          conn budget.d/conn]
+          conn core/conn]
       (d/transact conn schema)
       (d/transact conn currencies)
       (core/post-user-txs transactions))

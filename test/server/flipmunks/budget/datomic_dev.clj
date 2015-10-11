@@ -4,7 +4,7 @@
             [datomic.api :as d]))
 
 (defn connect []
-  (alter-var-root #'budget.d/conn
+  (alter-var-root #'core/conn
                   (fn [old-val] (d/connect "datomic:dev://localhost:4334/test-budget"))))
 
 (def app

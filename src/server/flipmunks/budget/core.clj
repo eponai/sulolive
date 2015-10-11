@@ -7,7 +7,11 @@
             [ring.middleware.resource :as middleware.res]
             [flipmunks.budget.datomic.core :as dt]
             [flipmunks.budget.datomic.format :as f]
-            [flipmunks.budget.openexchangerates :as exch]))
+            [flipmunks.budget.openexchangerates :as exch]
+            [datomic.api :only [q db] :as d]))
+
+(def conn
+  (d/connect "datomic:dev://localhost:4334/test-budget"))
 
 (def config
   (read-string (slurp "budget-private/config.edn")))
@@ -15,8 +19,9 @@
 (defn respond-data
   "Create request response based on params."
   [params]
-  (let [db-data (dt/pull-data params)
-        db-schema (dt/pull-schema db-data)]
+  (let [db (d/db conn)
+        db-data (dt/pull-user-txs params db)
+        db-schema (dt/pull-schema db-data db)]
     {:schema   (vec (filter dt/schema-required? db-schema))
      :entities db-data}))
 
@@ -30,18 +35,18 @@
   #{:uuid :name :date :amount :currency}."
   [user-txs]
   (if (every? #(valid-user-tx? %) user-txs)
-    (dt/transact-data f/user-txs->db-txs user-txs)          ;TODO: check if conversions exist for this date, and fetch if not.
+    (dt/transact-data conn (f/user-txs->db-txs user-txs))          ;TODO: check if conversions exist for this date, and fetch if not.
     {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
 
 (defn post-currencies
   " Fetch currencies (codes and names) from open exchange rates and put into datomic."
   []
   (let [app-id (:open-exhange-app-id config)]
-    (dt/transact-data f/curs->db-txs (exch/currencies app-id))))
+    (dt/transact-data conn (f/curs->db-txs (exch/currencies app-id)))))
 
 (defn post-currency-rates [date-str]
   (let [app-id (:open-exhange-app-id config)]
-    (dt/transact-data f/cur-rates->db-txs (assoc (exch/currency-rates app-id date-str) :date date-str))))
+    (dt/transact-data conn (f/cur-rates->db-txs (assoc (exch/currency-rates app-id date-str) :date date-str)))))
 
 ; App stuff
 (defroutes app-routes
