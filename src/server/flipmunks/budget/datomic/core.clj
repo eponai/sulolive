@@ -9,14 +9,12 @@
   If f is provided, it will be applied on the list of entities matching the k keyword.
   E.g. if k points to a list of values, #(apply concat %) can be provided to fetch
   the distinct values in all of the lists."
-  ([k entities]
-   (distinct-ids nil k entities))
-  ([f k entities]
-   (mapv :db/id (distinct (flatten (mapv k entities))))))
+  ([entities attr]
+   (mapv :db/id (distinct (flatten (mapv attr entities))))))
 
 (defn db-entities
   "Get vector of entity maps for given entity ids."
-  [ids db]
+  [db ids]
   (mapv #(into {:db/id %} (d/entity db %)) ids))
 
 (defn tx-query
@@ -29,18 +27,19 @@
                  :d :date/day}]
     (apply conj query (map (fn [[k v]] ['?d (k key-map) (Long/parseLong v)]) params))))
 
-(defn pull-user-txs [params db]
+(defn pull-user-txs [db params]
   (d/q (tx-query params) db))
 
-(defn pull-entites [attr user-txs db]
-  (db-entities (distinct-ids attr user-txs) db))
+(defn pull-nested-entities [db attr user-txs]
+  (db-entities db (distinct-ids attr user-txs)))
 
-(defn pull-data [params db]
-  (let [user-txs (pull-user-txs params db)]
+(defn pull-all-data [db params]
+  (let [user-txs (pull-user-txs db params)
+        entities (partial pull-nested-entities db user-txs)]
     (vec (concat user-txs
-                 (pull-entites :transaction/date user-txs db)
-                 (pull-entites :transaction/currency user-txs db)
-                 (pull-entites :transaction/tags user-txs db)))))
+                 (entities :transaction/date)
+                 (entities :transaction/currency)
+                 (entities :transaction/tags)))))
 
 (defn pull-schema
   "Pulls schema for the datomic attributes represented as keys in the given data map,

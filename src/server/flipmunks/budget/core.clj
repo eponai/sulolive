@@ -20,7 +20,7 @@
   "Create request response based on params."
   [params]
   (let [db (d/db conn)
-        db-data (dt/pull-user-txs params db)
+        db-data (dt/pull-all-data db params)
         db-schema (dt/pull-schema db-data db)]
     {:schema   (vec (filter dt/schema-required? db-schema))
      :entities db-data}))
@@ -40,13 +40,11 @@
 
 (defn post-currencies
   " Fetch currencies (codes and names) from open exchange rates and put into datomic."
-  []
-  (let [app-id (:open-exhange-app-id config)]
-    (dt/transact-data conn (f/curs->db-txs (exch/currencies app-id)))))
+  [curs]
+  (dt/transact-data conn (f/curs->db-txs curs)))
 
-(defn post-currency-rates [date-str]
-  (let [app-id (:open-exhange-app-id config)]
-    (dt/transact-data conn (f/cur-rates->db-txs (assoc (exch/currency-rates app-id date-str) :date date-str)))))
+(defn post-currency-rates [date-str rates]
+  (dt/transact-data conn (f/cur-rates->db-txs (assoc rates :date date-str))))
 
 ; App stuff
 (defroutes app-routes

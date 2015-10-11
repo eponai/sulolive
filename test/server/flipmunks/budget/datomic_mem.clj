@@ -7,10 +7,9 @@
             [datomic.api :as d]))
 
 (def schema-file (io/file (io/resource "private/datomic-schema.edn")))
-(def currencies [{:db/id #db/id [:db.part/user -1],
-                  :db/ident :currency/THB,
-                  :currency/name "Thai Baht",
-                  :currency/code "THB"}])
+(def currencies [{:THB "Thai Baht"
+                  :SEK "Swedish Krona"
+                  :USD "US Dollar"}])
 (def transactions [{:uuid (str (java.util.UUID/randomUUID))
                      :name "lunch"
                      :date "2015-10-10"
@@ -49,7 +48,7 @@
     (let [schema (->> schema-file slurp (edn/read-string {:readers *data-readers*}))
           conn core/conn]
       (d/transact conn schema)
-      (d/transact conn currencies)
+      (core/post-currencies currencies)
       (core/post-user-txs transactions))
     ;; reutrn the core/app ring handler
     core/app))
