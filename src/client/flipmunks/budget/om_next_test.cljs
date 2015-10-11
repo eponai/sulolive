@@ -6,9 +6,75 @@
             [om.dom :as dom]
             [datascript.core :as d]
             [cljs.core.async :as async]
+            [clojure.walk :as w]
             [flipmunks.budget.datascript :as budgetd]))
 
-(defn read [{:keys [state] :as env} attr {:keys [filters] :as params}]
+(defn lookup-vals [conn entity attr]
+  (d/q '[:find [?v ...] 
+         :in $ ?e ?a 
+         :where [?e ?a ?v]]
+       (d/db conn)
+       entity
+       attr))
+
+(defn pull-entities [conn entity attr]
+  (d/pull @conn [attr] entity))
+
+(defn find-value [conn lookup-ref]
+  (d/pull @conn '[*] lookup-ref))
+
+(defn query [conn q-map sym sym-val]
+  (let [gen-sym (gensym "?x")
+        {:keys [find where]} (w/postwalk #(if (= sym %) gen-sym %)
+                                         q-map)
+        a (vec (concat [:find]
+                       find
+                       [:in '$ gen-sym]
+                       [:where]
+                       where))]
+    (d/q a 
+         @conn
+         sym-val)))
+
+(defn make-seq [x]
+  (if (or (seq? x) (vector? x))
+    x
+    [x]))
+
+(defn read [{:keys [parser state selector entity] :as env} attr params]
+  (let [ret (cond 
+              (keyword? attr) 
+              (if selector
+                (let [es (-> (pull-entities state entity attr)
+                             (get attr)
+                             make-seq
+                             (->> (map :db/id)))
+                      query (or (:each selector)) ;; introduce :once?
+                      parse (fn [e] 
+                              (->> query 
+                                   (parser (assoc env :entity e :selector nil))
+                                   (reduce (fn [m [k v]]
+                                             ;; a parsed query can return maps with keys
+                                             ;; of the results? (wat).
+                                             ;; do the right thing!
+                                             (if (contains? v k)
+                                               (merge m v)
+                                               (assoc m k v)))
+                                           {})))]
+                  (if (:each selector)
+                    (map parse es)
+                    (throw "selector needs the :each keyword. was: " selector)))
+                (d/pull @state [attr] entity))
+
+              (symbol? attr)
+              (let [sym-val (:db/id (find-value state (:id params)))
+                    res     (-> (query state (:q selector) attr sym-val)
+                                (make-seq))]
+                (map #(parser (assoc env :entity % :selector nil) (:each selector)) 
+                     res)))]
+    {:value ret}))
+
+(comment (defn read [{:keys [state] :as env} attr {:keys [filters] :as params}]
   (let [selector (or (:selector env) (:selector params))
         q '[:find [(pull ?e ?selector) ...]
             :in $ ?attr ?selector
@@ -16,7 +82,7 @@
     {:value (d/q (vec (concat q filters))
                  (d/db state) 
                  attr
-                 selector)}))
+                 selector)})))
 
 (defmulti mutate om/dispatch)
 (comment "om-next datascript tutorial example"
@@ -32,8 +98,8 @@
           :transaction/uuid
           :transaction/name
           :transaction/amount
-          {:transaction/date     [:date/ymd]}
-          {:transaction/currency [:currency/name]}])
+          {:transaction/date     {:each [:date/ymd]}}
+          {:transaction/currency {:each [:currency/name]}}])
   Object
   (render [this]
           (let [{:keys [db/id
@@ -76,6 +142,40 @@
              (map #(transaction (assoc % :react-key (str (:transaction/uuid %)))) 
                   (:transaction/uuid props))]))))
 
+(defui Month
+  static om/IQueryParams
+  (params [this]
+          {:trans (om/get-query Transaction)})
+  static om/IQuery
+  (query [this]
+         '[:date/year
+           :date/month
+           {:transaction/_date {:each ?trans}}])
+  Object
+  (render [this]
+          (html [:div "Foo"])))
+
+(defui Year
+  static om/IQueryParams
+  (params [this]
+          {:month-query (om/get-query Month)})
+  static om/IQuery
+  (query [this]
+         '[{[?app [:app :state]]
+            {:q {:find   [?date .]
+                 :where [[?app :app/year ?year]
+                         [?app :app/month ?month]
+                         [?date :date/year ?year]
+                         [?date :date/month ?month]]}
+             :each ?month-query}}])
+  Object
+  (render [this]
+          (let [props (om/props this)
+                app (get-in props [['?app [:app :state]]])]
+            (prn (first app)))
+          (html [:div "Foo"])))
+
+
 (defn find-refs 
   "finds attributes where :db/valueType is ref"
   [datomic-schema]
@@ -90,12 +190,14 @@
   (go
     (let [{:keys [schema entities]} (:data (async/<! c))
           ref-types  (find-refs schema)
-          ds-schema  (budgetd/schema-datomic->datascript schema)
+          ds-schema  (-> (budgetd/schema-datomic->datascript schema)
+                         (assoc :app {:db/unique :db.unique/identity}))
           conn       (d/create-conn ds-schema)
           parser     (om/parser {:read read :mutate mutate})
           reconciler (om/reconciler {:state conn :parser parser})]
+      (d/transact conn [{:app :state :app/year 2015 :app/month 10}])
       (d/transact conn (budgetd/db-id->temp-id ref-types entities))
-      (om/add-root! reconciler TransactionList (gdom/getElement "my-app")))))
+      (om/add-root! reconciler Year (gdom/getElement "my-app")))))
 
 (defn run 
   "call data-provider with dates? -> returns {:schema [] :entities []}"
