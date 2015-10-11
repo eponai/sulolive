@@ -62,7 +62,6 @@
   datomic entities."
   [format-fn data]
   (let [transactions (format-fn data d/tempid :db.part/user)]
-    (println transactions)
-    (d/transact conn (vec transactions))))
+    (d/transact conn transactions)))
 
 

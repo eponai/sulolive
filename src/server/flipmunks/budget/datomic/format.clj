@@ -45,7 +45,7 @@
   "Returns datomic entities representing tags, given a vector of tag names,
   given a datomic id function (e.g. d/tempid) and a partition."
   [tags dbid-fn part]
-  (mapv (fn [n] {:db/id          (dbid-fn part)
+  (map (fn [n] {:db/id          (dbid-fn part)
                  :tag/name       n
                  :tag/persistent false}) tags))
 
@@ -64,7 +64,7 @@
      (assoc (trans user-tx #(key-prefix % "transaction/") conv-fn-map) :db/id (dbid-fn part))))
 
 (defn user-txs->db-txs [user-txs dbid-fn part]
-  (mapv #(user-tx->db-tx % dbid-fn part) user-txs))
+  (map #(user-tx->db-tx % dbid-fn part) user-txs))
 
 (defn cur-rates->db-txs
   "Returns a vector with datomic entites representing a currency conversions
@@ -77,10 +77,10 @@
                   :conversion/date      (date-str->db-tx (:date data) dbid-fn part)
                   :conversion/currency  [:currency/code (name code)]
                   :conversion/rate      (bigdec rate)})]
-    (mapv map-fn (:rates data))))
+    (map map-fn (:rates data))))
 
 (defn curs->db-txs [currencies dbid-fn part]
   (let [map-fn (fn [[c n]] {:db/id         (dbid-fn part)
                             :currency/code (name c)
                             :currency/name n})]
-    (mapv map-fn currencies)))
+    (map map-fn currencies)))
