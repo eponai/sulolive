@@ -30,8 +30,8 @@
 (defn pull-user-txs [db params]
   (d/q (tx-query params) db))
 
-(defn pull-nested-entities [db attr user-txs]
-  (db-entities db (distinct-ids attr user-txs)))
+(defn pull-nested-entities [db user-txs attr]
+  (db-entities db (distinct-ids user-txs attr)))
 
 (defn pull-all-data [db params]
   (let [user-txs (pull-user-txs db params)

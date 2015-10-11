@@ -10,7 +10,7 @@
             [flipmunks.budget.openexchangerates :as exch]
             [datomic.api :only [q db] :as d]))
 
-(def conn ^:dynamic)
+(def ^:dynamic conn)
 
 (def config
   (read-string (slurp "budget-private/config.edn")))
