@@ -10,21 +10,14 @@
             [clojure.walk :as w]
             [flipmunks.budget.datascript :as budgetd]))
 
-(defn find-value [conn lookup-ref]
-  (d/pull @conn '[*] lookup-ref))
-
-(defn query [conn q-map sym sym-val]
-  (let [gen-sym (gensym "?x")
-        {:keys [find where]} (w/postwalk #(if (= sym %) gen-sym %)
-                                         q-map)
-        a (vec (concat [:find]
-                       find
-                       [:in '$ gen-sym]
-                       [:where]
-                       where))]
-    (d/q a 
-         @conn
-         sym-val)))
+(defn query [conn {:keys [find where]} sym entry]
+  (d/q (concat [:find]
+               find
+               [:in '$ sym]
+               [:where]
+               where)
+       (d/db conn)
+       entry))
 
 (defn make-seq [x]
   (if (or (seq? x) (vector? x))
@@ -54,9 +47,9 @@
                     (first result))))
 
               (symbol? attr)
-              (let [sym-val (:db/id (find-value state (:id params)))
-                    res     (-> (query state (:q selector) attr sym-val)
-                                (make-seq))]
+              (let [entry (:db/id (d/entity (d/db state) (:id params)))
+                    res   (-> (query state (:q selector) attr entry)
+                              (make-seq))]
                 (map #(parser (assoc env :entity % :selector nil) (:each selector)) 
                      res)))]
     {:value ret}))
