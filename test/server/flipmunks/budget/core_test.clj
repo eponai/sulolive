@@ -30,10 +30,6 @@
          (d/transact conn txs))
        conn))))
 
-(defn speculate [conn txs]
-  (:db-after
-    (d/with (d/db conn) txs)))
-
  (defn key-set [m]
    (set (keys m)))
 
@@ -46,20 +42,23 @@
 
 (deftest test-post-currencies
   (testing "Posting currencies, and verifying pull."
-    (let [db (b/post-currencies speculate (new-db) test-curs)
-          db-result (dc/pull-currencies db)]
+    (let [db (b/post-currencies (new-db) test-curs)
+          db-result (dc/pull-currencies (:db-after db))]
       (test-input-db-data (f/curs->db-txs test-curs) db-result))))
+
+ (deftest test-post-invalid-curs
+   (testing "Posting invalid currency data."
+     (let [db (b/post-currencies (new-db) (assoc test-curs :invalid 2))]
+       (is (:db/error db)))))
 
 (deftest test-post-transactions
   (testing "Posting user transactions, verify pull."
-    (let [cur-db (new-db (f/curs->db-txs test-curs))
-          db (b/post-user-txs speculate cur-db test-data)
-          db-result (dc/pull-user-txs db {})]
+    (let [db (b/post-user-txs (new-db (f/curs->db-txs test-curs)) test-data)
+          db-result (dc/pull-user-txs (:db-after db) {})]
       (test-input-db-data (f/user-txs->db-txs test-data) db-result))))
 
-(deftest test-post-invalid-data
+(deftest test-post-invalid-user-txs
   (testing "Posting invalid user-txs"
-    (let [cur-db (new-db (f/curs->db-txs test-curs))
-          invalid-data (map #(assoc % :invalid/attr "value") test-data)
-          db (b/post-user-txs speculate cur-db invalid-data)]
-      (is (= (:db/error db) :db.error/not-an-entity)))))
+    (let [invalid-data (map #(assoc % :invalid-attr "value") test-data)
+          db (b/post-user-txs (new-db (f/curs->db-txs test-curs)) invalid-data)]
+      (is (:db/error db)))))
