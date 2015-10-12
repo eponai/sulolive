@@ -59,7 +59,3 @@
           (set (map :db/ident db-schema)))
       (is (every? #(contains? (dc/distinct-attrs db-result) %) (dc/distinct-attrs db-txs)))
       (is (= 5 (count db-result))))))
-
-(deftest txs-added-invalid-attribute
-  (testing "Adding transactions with invalid attribute."
-    (let [invalid-txs [(assoc (first test-txs) :invalid/attr "value")]])))

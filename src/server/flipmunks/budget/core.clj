@@ -17,12 +17,14 @@
 
 (defn respond-data
   "Create request response based on params."
-  [params]
-  (let [db (d/db conn)
-        db-data (dt/pull-all-data db params)
+  [db params]
+  (let [db-data (dt/pull-all-data db params)
         db-schema (dt/pull-schema db db-data)]
     {:schema   (vec (filter dt/schema-required? db-schema))
      :entities db-data}))
+
+(defn transact-data [conn txs]
+  (dt/transact-data conn txs))
 
 (defn valid-user-tx? [user-tx]
   (every? #(contains? user-tx %) #{:uuid :name :date :amount :currency :created-at}))
@@ -32,24 +34,24 @@
   "Put the user transaction maps into datomic. Will fail if one or
   more of the following required fields are not included in the map:
   #{:uuid :name :date :amount :currency}."
-  [user-txs]
+  [f conn user-txs]
   (if (every? #(valid-user-tx? %) user-txs)
-    (dt/transact-data conn (f/user-txs->db-txs user-txs))          ;TODO: check if conversions exist for this date, and fetch if not.
+    (f conn (f/user-txs->db-txs user-txs))          ;TODO: check if conversions exist for this date, and fetch if not.
     {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
 
 (defn post-currencies
   " Fetch currencies (codes and names) from open exchange rates and put into datomic."
-  [curs]
-  (dt/transact-data conn (f/curs->db-txs curs)))
+  [f conn curs]
+  (f conn (f/curs->db-txs curs)))
 
-(defn post-currency-rates [date-str rates]
-  (dt/transact-data conn (f/cur-rates->db-txs (assoc rates :date date-str))))
+(defn post-currency-rates [f conn date-str rates]
+  (f conn (f/cur-rates->db-txs (assoc rates :date date-str))))
 
 ; App stuff
 (defroutes app-routes
            (context "/entries" [] (defroutes entries-routes
-                                             (GET "/" {params :params} (str (respond-data params)))
-                                             (POST "/" {body :body} (str (post-user-txs body)))))
+                                             (GET "/" {params :params} (str (respond-data (d/db conn) params)))
+                                             (POST "/" {body :body} (str (post-user-txs transact-data conn body)))))
            (route/not-found "Not Found"))
 
 (def app

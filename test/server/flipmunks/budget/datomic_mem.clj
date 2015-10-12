@@ -48,8 +48,8 @@
     (let [schema (->> schema-file slurp (edn/read-string {:readers *data-readers*}))
           conn core/conn]
       (d/transact conn schema)
-      (core/post-currencies currencies)
-      (core/post-user-txs transactions))
+      (core/post-currencies core/transact-data conn currencies)
+      (core/post-user-txs core/transact-data conn transactions))
     ;; reutrn the core/app ring handler
     core/app))
 
