@@ -56,3 +56,10 @@
           db (b/post-user-txs speculate cur-db test-data)
           db-result (dc/pull-user-txs db {})]
       (test-input-db-data (f/user-txs->db-txs test-data) db-result))))
+
+(deftest test-post-invalid-data
+  (testing "Posting invalid user-txs"
+    (let [cur-db (new-db (f/curs->db-txs test-curs))
+          invalid-data (map #(assoc % :invalid/attr "value") test-data)
+          db (b/post-user-txs speculate cur-db invalid-data)]
+      (is (= (:db/error db) :db.error/not-an-entity)))))

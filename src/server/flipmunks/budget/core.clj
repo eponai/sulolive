@@ -36,7 +36,10 @@
   #{:uuid :name :date :amount :currency}."
   [f conn user-txs]
   (if (every? #(valid-user-tx? %) user-txs)
-    (f conn (f/user-txs->db-txs user-txs))          ;TODO: check if conversions exist for this date, and fetch if not.
+    (try
+      (f conn (f/user-txs->db-txs user-txs))          ;TODO: check if conversions exist for this date, and fetch if not.
+      (catch Exception e
+         (ex-data e)))
     {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
 
 (defn post-currencies
