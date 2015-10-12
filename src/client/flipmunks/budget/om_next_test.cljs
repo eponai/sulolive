@@ -153,7 +153,13 @@
            {:transaction/_date {:each ?trans}}])
   Object
   (render [this]
-          (html [:div "Foo"])))
+          (let [{:keys [:date/year :date/month :transaction/_date]}
+                (om/props this)]
+            (html [:div
+                   [:h2 (str (:date/year year) "-" (:date/month month))]
+                   (map transaction _date)]))))
+
+(def month (om/factory Month))
 
 (defui Year
   static om/IQueryParams
@@ -172,8 +178,8 @@
   (render [this]
           (let [props (om/props this)
                 app (get-in props [['?app [:app :state]]])]
-            (prn (first app)))
-          (html [:div "Foo"])))
+            (prn (first app))
+            (month (first app)))))
 
 
 (defn find-refs 
@@ -200,7 +206,7 @@
       (om/add-root! reconciler Year (gdom/getElement "my-app")))))
 
 (defn run 
-  "call data-provider with dates? -> returns {:schema [] :entities []}"
+  "give data-provider a channel -> returns {:schema [] :entities []}"
   [data-provider]
   (let [c (async/chan)]
     (initialize-app c)
