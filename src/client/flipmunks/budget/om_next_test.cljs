@@ -16,59 +16,73 @@
   static om/IQuery
   (query [this]
          [:db/id
-          :transaction/uuid :transaction/name :transaction/amount
+          :transaction/uuid 
+          :transaction/name 
+          :transaction/amount
           {:transaction/date [:date/ymd]}
           {:transaction/currency [:currency/name]}])
   Object
   (render [this]
-          (let [{:keys [db/id 
-                        transaction/date 
-                        transaction/uuid 
+          (let [{:keys [db/id
+                        transaction/date
+                        transaction/uuid
                         transaction/name
-                        transaction/amount 
-                        transaction/currency]} (om/props this)]
-            (html 
-              [:div 
-               [:h3 name]
-               [:p (str "Id: " id  " uuid: " uuid)]
-               [:p (str "Amount: " amount " " (:currency/name currency))]
-               [:p (str "Date: " (:date/ymd date))]]))))
+                        transaction/amount
+                        transaction/currency]} (om/props this)
+                {:keys [expanded]} (om/get-state this)]
+            (prn {:expanded expanded})
+            (html
+              [:div
+               [:p {:on-click #(om/update-state! 
+                                 this 
+                                 (fn [s] (prn s) (update s :expanded not)))} 
+                name]
+               (when expanded
+                 [:p (str "Id: " id  " uuid: " uuid)] 
+                 [:p (str "Amount: " amount " " (:currency/name currency))] 
+                 [:p])]))))
 
 (def transaction (om/factory Transaction))
 
-(defui Month
+(defui Days
   static om/IQuery
   (query [this]
-         [:date/year :date/month
+         [:date/year
+          :date/month
+          :date/day
           {:transaction/_date (om/get-query Transaction)}])
   Object
   (render [this]
-          (let [{:keys [:date/year :date/month :transaction/_date]}
+          (let [{:keys [:date/year :date/month :date/day :transaction/_date]}
                 (om/props this)]
             (html [:div
-                   [:h2 (str year "-" month)]
+                   [:h2 (str year "-" month "-" day)]
                    ;; making us not entierly decoupled with the Transaction component
                    (map #(transaction (assoc % :react-key (:transaction/uuid %))) 
                         _date)]))))
 
-(def month (om/factory Month))
+(def days-view (om/factory Days))
 
 (defui Year
   static om/IQuery
   (query [this]
          [{['?app [:app :state]]
-           {:q '{:find   [?date .]
+           {:q '{:find   [[?date ...]]
                  :where [[?app :app/year ?year]
                          [?app :app/month ?month]
                          [?date :date/year ?year]
                          [?date :date/month ?month]]}
-            :each (om/get-query Month)}}])
+            :each (om/get-query Days)}}])
   Object
   (render [this]
-          (let [props (om/props this)
-                app (get-in props [['?app [:app :state]]])]
-            (prn app)
-            (month (first app)))))
+          (let [props  (om/props this)
+                days   (get-in props [['?app [:app :state]]])
+                days   (sort-by :date/day days)]
+            (prn days)
+            (html 
+              [:div 
+               (map #(days-view (assoc % :react-key (str "day-" (:date/day %))))
+                    days)]))))
 
 
 (defn find-refs 
