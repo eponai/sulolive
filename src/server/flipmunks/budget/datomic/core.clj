@@ -10,7 +10,13 @@
   E.g. if k points to a list of values, #(apply concat %) can be provided to fetch
   the distinct values in all of the lists."
   ([entities attr]
-   (mapv :db/id (distinct (flatten (mapv attr entities))))))
+   (mapv :db/id (set (flatten (map attr entities))))))
+
+(defn distinct-attrs [ents]
+  (->> ents
+       (map keys)
+       flatten
+       set))
 
 (defn db-entities
   "Get vector of entity maps for given entity ids."
@@ -44,9 +50,8 @@
 (defn pull-schema
   "Pulls schema for the datomic attributes represented as keys in the given data map,
   (excludes the :db/id attribute)."
-  [data db]
-  (let [idents (set (apply concat (mapv keys data)))]
-    (mapv #(into {} (d/entity db %)) (disj idents :db/id))))
+  [db data]
+  (mapv #(into {} (d/entity db %)) (distinct-attrs data)))
 
 (defn pull-currencies [db]
   (d/q '[:find [(pull ?e [*]) ...]

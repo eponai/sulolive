@@ -20,7 +20,7 @@
   [params]
   (let [db (d/db conn)
         db-data (dt/pull-all-data db params)
-        db-schema (dt/pull-schema db-data db)]
+        db-schema (dt/pull-schema db db-data)]
     {:schema   (vec (filter dt/schema-required? db-schema))
      :entities db-data}))
 

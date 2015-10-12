@@ -21,6 +21,9 @@
   (:db-after
     (d/with db txs)))
 
+(defn db-with-curs []
+  (speculate (empty-db) (f/curs->db-txs {:SEK "Swedish Krona"})))
+
 (deftest curs-added-and-pulled
   (testing "Adding currencies and pulling, asserting getting same number of txs back."
     (let [test-currencies {:SEK "Swedish Krona"
@@ -34,26 +37,29 @@
                  dc/pull-currencies
                  count))))))
 
+(def test-txs [{:name       "coffee"
+                :uuid       (str (d/squuid))
+                :created-at (c/to-long (t/today))
+                :date       "2015-10-10"
+                :amount     100
+                :currency   "SEK"
+                :tags       ["fika" "thailand"]}])
+
+(deftest schema-pulled
+  (testing "Pulling schema for given attributes.")
+  (let [schema dc/pull-schema]))
+
 (deftest txs-added-and-pulled
   (testing "Adding transactions and pulling, asserting getting same number of txs back."
-    (let [test-txs [{:name       "coffee"
-                     :uuid       (str (d/squuid))
-                     :created-at (c/to-long (t/today))
-                     :date       "2015-10-10"
-                     :amount     100
-                     :currency   "SEK"
-                     :tags       ["fika" "thailand"]}]
-          db-cur (speculate (empty-db) (f/curs->db-txs {:SEK "Swedish Krona"}))
-          db (speculate db-cur (f/user-txs->db-txs test-txs))
-          db-result (dc/pull-user-txs db {:y "2015"})
-          entites (partial dc/pull-nested-entities db db-result)]
-      (is (= (count test-txs)
-             (count db-result)))
-      (is (= 1
-             (count (entites :transaction/date ))))
-      (is (= (count (distinct (flatten (map :tags test-txs))))
-             (count (entites :transaction/tags))))
-      (is (= 1
-             (count (entites :transaction/currency))))
-      (is (= 5
-            (count (dc/pull-all-data db {:y "2015"})))))))
+    (let [db-txs (f/user-txs->db-txs test-txs)
+          db (speculate (db-with-curs) db-txs)
+          db-result (dc/pull-all-data db {:y "2015"})
+          db-schema (dc/pull-schema db db-result)]
+      (is (= (dc/distinct-attrs db-result))
+          (set (map :db/ident db-schema)))
+      (is (every? #(contains? (dc/distinct-attrs db-result) %) (dc/distinct-attrs db-txs)))
+      (is (= 5 (count db-result))))))
+
+(deftest txs-added-invalid-attribute
+  (testing "Adding transactions with invalid attribute."
+    (let [invalid-txs [(assoc (first test-txs) :invalid/attr "value")]])))
