@@ -88,14 +88,10 @@
 (def transaction (om/factory Transaction))
 
 (defui Month
-  static om/IQueryParams
-  (params [this]
-          {:trans (om/get-query Transaction)})
   static om/IQuery
   (query [this]
-         '[:date/year
-           :date/month
-           {:transaction/_date {:each ?trans}}])
+         [:date/year :date/month
+          {:transaction/_date {:each (om/get-query Transaction)}}])
   Object
   (render [this]
           (let [{:keys [:date/year :date/month :transaction/_date]}
@@ -109,23 +105,20 @@
 (def month (om/factory Month))
 
 (defui Year
-  static om/IQueryParams
-  (params [this]
-          {:month-query (om/get-query Month)})
   static om/IQuery
   (query [this]
-         '[{[?app [:app :state]]
-            {:q {:find   [?date .]
+         [{['?app [:app :state]]
+           {:q '{:find   [?date .]
                  :where [[?app :app/year ?year]
                          [?app :app/month ?month]
                          [?date :date/year ?year]
                          [?date :date/month ?month]]}
-             :each ?month-query}}])
+            :each (om/get-query Month)}}])
   Object
   (render [this]
           (let [props (om/props this)
                 app (get-in props [['?app [:app :state]]])]
-            (prn (first app))
+            (prn app)
             (month (first app)))))
 
 
