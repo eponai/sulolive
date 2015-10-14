@@ -3,17 +3,29 @@
   (:require [compojure.core :refer :all]
             [compojure.handler :as handler]
             [compojure.route :as route]
-            [ring.middleware.json :as middleware]
+            [ring.middleware.session :refer [wrap-session]]
+            [ring.middleware.params :refer [wrap-params]]
+            [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.middleware.resource :as middleware.res]
             [flipmunks.budget.datomic.core :as dt]
             [flipmunks.budget.datomic.format :as f]
             [flipmunks.budget.openexchangerates :as exch]
-            [datomic.api :only [q db] :as d]))
+            [datomic.api :only [q db] :as d]
+            [cemerick.friend :as friend]
+            [cemerick.friend.credentials :as creds]
+            [cemerick.friend.workflows :as workflows]))
 
 (def ^:dynamic conn)
 
+(def users {"root" {:username "root"
+                    :password (creds/hash-bcrypt "admin_password")
+                    :roles    #{::admin}}
+            "jane" {:username "jane"
+                    :password (creds/hash-bcrypt "user_password")
+                    :roles    #{::user}}})
+
 (def config
-  (read-string (slurp "budget-private/config.edn")))
+  (read-string (slurp "budget-private/config.edn")))        ;TODO use edn/read
 
 (defn respond-data
   "Create request response based on params."
@@ -39,7 +51,7 @@
   #{:uuid :name :date :amount :currency}."
   [conn user-txs]
   (if (every? #(valid-user-tx? %) user-txs)
-    (transact-data conn (f/user-txs->db-txs user-txs))          ;TODO: check if conversions exist for this date, and fetch if not.
+    (transact-data conn (f/user-txs->db-txs user-txs))      ;TODO: check if conversions exist for this date, and fetch if not.
     {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
 
 (defn post-currencies
@@ -52,16 +64,20 @@
 
 ; App stuff
 (defroutes app-routes
-           (context "/entries" [] (defroutes entries-routes
-                                             (GET "/" {params :params} (str (respond-data (d/db conn) params)))
-                                             (POST "/" {body :body} (str (post-user-txs conn body)))))
+           (GET "/" [] "Hello World")
+           (GET "/entries" {params :params}
+             (friend/authorize #{::user} (str (dt/pull-all-data (d/db conn) params))))
+           (GET "/login" [] "<h2>Login</h2>\n\n<form action=\"/login\" method=\"POST\">\n    Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n    Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n    <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />")
            (route/not-found "Not Found"))
 
 (def app
   (-> (handler/api app-routes)
       (middleware.res/wrap-resource "public")
-      (middleware/wrap-json-body {:keywords? true})
-      (middleware/wrap-json-response)))
+      (friend/authenticate {:credential-fn (partial creds/bcrypt-credential-fn users)
+                            :workflows     [(workflows/interactive-form)]})
+      (wrap-keyword-params)
+      (wrap-params)
+      (wrap-session)))
 
 (defn -main [& args]
   )

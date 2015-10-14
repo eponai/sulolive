@@ -24,7 +24,8 @@
                  [clj-http "2.0.0"]
                  [com.datomic/datomic-pro "0.9.5302"
                   :exclusions [joda-time]]
-                 [clj-time "0.11.0"]]
+                 [clj-time "0.11.0"]
+                 [com.cemerick/friend "0.2.1"]]
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]
             [lein-cljsbuild "1.1.0"]
@@ -35,7 +36,7 @@
   ;; clj:
   ;;;;;;;;;;;;;
   :target-path "target/%s"
-  :source-paths ["src/server" "mains/server"]
+  :source-paths ["src/server" "mains/server" "test/server"]
   :ring {:handler flipmunks.budget.datomic_dev/app}
   :profiles {:uberjar {:aot :all}}
 
