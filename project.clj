@@ -29,7 +29,7 @@
   :plugins [[lein-npm "0.6.1"]
             [lein-cljsbuild "1.1.0"]
             [lein-figwheel "0.4.1"]
-            [lein-ring "0.7.3"]]
+            [lein-ring "0.9.7"]]
 
   ;;;;;;;;;;;;;
   ;; clj:

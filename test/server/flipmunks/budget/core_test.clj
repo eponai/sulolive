@@ -23,6 +23,7 @@
    (new-db nil))
   ([txs]
    (let [uri "datomic:mem://test-db"]
+     (d/delete-database uri)
      (d/create-database uri)
      (let [conn (d/connect uri)]
        (d/transact conn schema)
