@@ -4,6 +4,7 @@
             [compojure.handler :as handler]
             [compojure.route :as route]
             [ring.middleware.session :refer [wrap-session]]
+            [ring.middleware.session.cookie :as cookie]
             [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.middleware.resource :as middleware.res]
@@ -65,11 +66,18 @@
        :roles #{::user}})))
 
 ; App stuff
+(defroutes user-routes
+           (GET "/txs" {params :params} (str (respond-data (d/db conn) params)))
+           (POST "/txs" {body :body} (str (post-user-txs conn body))))
+
 (defroutes app-routes
-           (GET "/" [] "Hello World")
-           (GET "/entries" {params :params}
-             (friend/authorize #{::user} (str (respond-data (d/db conn) params))))
+           ; Anonymous
            (GET "/login" [] "<h2>Login</h2>\n\n<form action=\"/login\" method=\"POST\">\n    Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n    Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n    <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />")
+
+           ; Requires user login
+           (context "/user" [] (friend/wrap-authorize user-routes #{::user}))
+
+           ; Not found
            (route/not-found "Not Found"))
 
 (def app
@@ -79,7 +87,7 @@
                             :workflows     [(workflows/interactive-form)]})
       (wrap-keyword-params)
       (wrap-params)
-      (wrap-session)))
+      (wrap-session {:store (cookie/cookie-store)})))
 
 (defn -main [& args]
   )
