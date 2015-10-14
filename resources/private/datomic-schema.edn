@@ -15,6 +15,13 @@
  :db/doc "A user's transactions. Both expenses and income"
  :db.install/_attribute :db.part/db}
 
+{:db/id #db/id[:db.part/db]
+ :db/ident :user/enc-password
+ :db/valueType :db.type/string
+ :db/cardinality :db.cardinality/one
+ :db/doc "A user's encrypted password."
+ :db.install/_attribute :db.part/db}
+
 ;; transactions
 {:db/id #db/id[:db.part/db]
  :db.install/_attribute :db.part/db

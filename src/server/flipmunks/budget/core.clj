@@ -17,13 +17,6 @@
 
 (def ^:dynamic conn)
 
-(def users {"root" {:username "root"
-                    :password (creds/hash-bcrypt "admin_password")
-                    :roles    #{::admin}}
-            "jane" {:username "jane"
-                    :password (creds/hash-bcrypt "user_password")
-                    :roles    #{::user}}})
-
 (def config
   (read-string (slurp "budget-private/config.edn")))        ;TODO use edn/read
 
@@ -62,18 +55,27 @@
 (defn post-currency-rates [conn date-str rates]
   (transact-data conn (f/cur-rates->db-txs (assoc rates :date date-str))))
 
+; Auth stuff
+
+(defn user-creds [email]
+  (let [db-user (dt/pull-user (d/db conn) email)]
+    (when db-user
+      {:username (:user/email db-user)
+       :password (:user/enc-password db-user)
+       :roles #{::user}})))
+
 ; App stuff
 (defroutes app-routes
            (GET "/" [] "Hello World")
            (GET "/entries" {params :params}
-             (friend/authorize #{::user} (str (dt/pull-all-data (d/db conn) params))))
+             (friend/authorize #{::user} (str (respond-data (d/db conn) params))))
            (GET "/login" [] "<h2>Login</h2>\n\n<form action=\"/login\" method=\"POST\">\n    Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n    Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n    <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />")
            (route/not-found "Not Found"))
 
 (def app
   (-> (handler/api app-routes)
       (middleware.res/wrap-resource "public")
-      (friend/authenticate {:credential-fn (partial creds/bcrypt-credential-fn users)
+      (friend/authenticate {:credential-fn (partial creds/bcrypt-credential-fn user-creds)
                             :workflows     [(workflows/interactive-form)]})
       (wrap-keyword-params)
       (wrap-params)

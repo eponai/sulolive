@@ -57,6 +57,11 @@
   (d/q '[:find [(pull ?e [*]) ...]
          :where [?e :currency/code]] db))
 
+(defn pull-user [db email]
+  (d/q '[:find (pull ?e [*]).
+         :in $ ?m
+         :where [?e :user/email ?m]] db email))
+
 (defn schema-required?
   "Return true if the entity is required to be passed with schema.
   Is true if the entity has a type ref, or cardinality many."
