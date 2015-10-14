@@ -35,7 +35,7 @@
   ;; clj:
   ;;;;;;;;;;;;;
   :target-path "target/%s"
-  :source-paths ["src/server" "test/server"]
+  :source-paths ["src/server" "mains/server"]
   :ring {:handler flipmunks.budget.datomic_dev/app}
   :profiles {:uberjar {:aot :all}}
 
