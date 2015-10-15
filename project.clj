@@ -21,6 +21,8 @@
                  [ring/ring-core "1.4.0"]
                  [ring/ring-jetty-adapter "1.4.0"]
                  [ring/ring-json "0.4.0"]
+                 [ring/ring-defaults "0.1.5"]
+                 [ring/ring-anti-forgery "1.0.0"]
                  [clj-http "2.0.0"]
                  [com.datomic/datomic-pro "0.9.5302"
                   :exclusions [joda-time]]

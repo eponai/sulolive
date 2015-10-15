@@ -1,12 +1,11 @@
 (ns flipmunks.budget.core
   (:gen-class)
   (:require [compojure.core :refer :all]
-            [compojure.handler :as handler]
             [compojure.route :as route]
+            [ring.util.anti-forgery :as af]
+            [ring.middleware.defaults :refer :all]
             [ring.middleware.session :refer [wrap-session]]
             [ring.middleware.session.cookie :as cookie]
-            [ring.middleware.params :refer [wrap-params]]
-            [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.middleware.resource :as middleware.res]
             [flipmunks.budget.datomic.core :as dt]
             [flipmunks.budget.datomic.format :as f]
@@ -61,7 +60,8 @@
 (defn user-creds [email]
   (let [db-user (dt/pull-user (d/db conn) email)]
     (when db-user
-      {:username (:user/email db-user)
+      {:identity (:db/id db-user)
+       :username (:user/email db-user)
        :password (:user/enc-password db-user)
        :roles #{::user}})))
 
@@ -72,7 +72,11 @@
 
 (defroutes app-routes
            ; Anonymous
-           (GET "/login" [] "<h2>Login</h2>\n\n<form action=\"/login\" method=\"POST\">\n    Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n    Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n    <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />")
+           (GET "/login" [] (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n  "
+                                 (af/anti-forgery-field)
+                                 "  Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
+                                 Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n
+                                 <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />"))
 
            ; Requires user login
            (context "/user" [] (friend/wrap-authorize user-routes #{::user}))
@@ -81,13 +85,11 @@
            (route/not-found "Not Found"))
 
 (def app
-  (-> (handler/api app-routes)
-      (middleware.res/wrap-resource "public")
+  (-> app-routes
+      ;(middleware.res/wrap-resource "public")
       (friend/authenticate {:credential-fn (partial creds/bcrypt-credential-fn user-creds)
                             :workflows     [(workflows/interactive-form)]})
-      (wrap-keyword-params)
-      (wrap-params)
-      (wrap-session {:store (cookie/cookie-store)})))
+      (wrap-defaults site-defaults)))
 
 (defn -main [& args]
   )
