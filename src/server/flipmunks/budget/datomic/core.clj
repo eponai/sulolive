@@ -26,15 +26,16 @@
 (defn tx-query
   "Create the query for pulling transactions given some date parameters."
   [params]
-  (let [query '[:find [(pull ?e [*]) ...]
-                :where [?e :transaction/date ?d]]
+  (let [query '[:find [(pull ?t [*]) ...]
+                :in $ ?uid
+                :where [?uid :user/transactions ?t] [?t :transaction/date ?d]]
         key-map {:y :date/year
                  :m :date/month
                  :d :date/day}]
-    (apply conj query (map (fn [[k v]] ['?d (k key-map) (Long/parseLong v)]) params))))
+    (apply conj query (map (fn [[k v]] ['?d (k key-map) (Long/parseLong v)]) (select-keys params (keys key-map))))))
 
 (defn pull-user-txs [db params]
-  (d/q (tx-query params) db))
+  (d/q (tx-query params) db (params :user-id)))
 
 (defn pull-nested-entities [db user-txs attr]
   (db-entities db (distinct-ids user-txs attr)))

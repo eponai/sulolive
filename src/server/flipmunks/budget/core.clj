@@ -20,10 +20,11 @@
 (def config
   (read-string (slurp "budget-private/config.edn")))        ;TODO use edn/read
 
-(defn respond-data
+(defn current-user-data
   "Create request response based on params."
-  [db params]
-  (let [db-data (dt/pull-all-data db params)
+  [session db params]
+  (let [user-id (get-in session [::friend/identity :current])
+        db-data (dt/pull-all-data db (assoc params :user-id user-id))
         db-schema (dt/pull-schema db db-data)]
     {:schema   (vec (filter dt/schema-required? db-schema))
      :entities db-data}))
@@ -67,16 +68,17 @@
 
 ; App stuff
 (defroutes user-routes
-           (GET "/txs" {params :params} (str (respond-data (d/db conn) params)))
-           (POST "/txs" {body :body} (str (post-user-txs conn body))))
+           (GET "/txs" {params :params
+                        session :session} (str (current-user-data session (d/db conn) params)))
+           (POST "/txs" {body :body} (str (post-user-txs conn body)))
+           (GET "/test" {session :session} (str session)))
 
 (defroutes app-routes
            ; Anonymous
-           (GET "/login" [] (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n  "
-                                 (af/anti-forgery-field)
-                                 "  Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
-                                 Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n
-                                 <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />"))
+           (GET "/login" [] (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n
+            Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
+            Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n
+            <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />"))
 
            ; Requires user login
            (context "/user" [] (friend/wrap-authorize user-routes #{::user}))
@@ -86,10 +88,12 @@
 
 (def app
   (-> app-routes
-      ;(middleware.res/wrap-resource "public")
       (friend/authenticate {:credential-fn (partial creds/bcrypt-credential-fn user-creds)
                             :workflows     [(workflows/interactive-form)]})
-      (wrap-defaults site-defaults)))
+      (wrap-defaults (-> site-defaults
+                         (assoc-in [:security :anti-forgery] false)
+                         (assoc-in [:session :store] (cookie/cookie-store {:key (config :session-cookie-key)}))
+                         (assoc-in [:session :cookie-name] "cookie-name")))))
 
 (defn -main [& args]
   )
