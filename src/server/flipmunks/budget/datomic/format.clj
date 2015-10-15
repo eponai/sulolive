@@ -63,8 +63,12 @@
                      :uuid     (fn [uuid] (java.util.UUID/fromString uuid))}]
      (assoc (trans user-tx #(key-prefix % "transaction/") conv-fn-map) :db/id (d/tempid :db.part/user))))
 
-(defn user-txs->db-txs [user-txs]
+(defn user-txs->db-txs [ user-txs]
   (map user-tx->db-tx user-txs))
+
+(defn user-owned-txs->dbtxs [user-email user-txs]
+  [{:db/id             [:user/email user-email]
+    :user/transactions (user-txs->db-txs user-txs)}])
 
 (defn cur-rates->db-txs
   "Returns a vector with datomic entites representing a currency conversions

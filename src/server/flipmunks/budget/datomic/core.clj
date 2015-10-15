@@ -28,8 +28,8 @@
   "Create the query for pulling transactions given some date parameters."
   [params]
   (let [query '[:find [(pull ?t [*]) ...]
-                :in $ ?uid
-                :where [?uid :user/transactions ?t] [?t :transaction/date ?d]]
+                :in $ ?email
+                :where [?u :user/email ?email] [?u :user/transactions ?t] [?t :transaction/date ?d]]
         key-map {:y :date/year
                  :m :date/month
                  :d :date/day}
@@ -37,10 +37,10 @@
     (apply conj query (map map-fn (select-keys params (keys key-map))))))
 
 (defn user-txs [db params]
-  (let [user-id (params :user-id)]
+  (let [user-id (params :username)]
     (if user-id
-      (d/q (tx-query params) db (params :user-id))
-      (throw (MissingParameterException. "Missing required param :user-id.")))))
+      (d/q (tx-query params) db user-id)
+      (throw (MissingParameterException. "Need required param user-id to pull transactions.")))))
 
 (defn nested-entities [db user-txs attr]
   (db-entities db (distinct-ids user-txs attr)))

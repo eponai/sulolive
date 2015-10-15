@@ -19,13 +19,19 @@
 (def config
   (read-string (slurp "budget-private/config.edn")))        ;TODO use edn/read
 
-(defn pull [pull-fn & args]
+(defn pull
+  "Wraps the given pull-fn to catch and catches potential exceptions thrown from datomic,
+  returning a map {:db/error error-msg}. Pass any args that are expected in pull-fn."
+  [pull-fn & args]
   (try
     (apply pull-fn args)
     (catch MissingParameterException e
       {:db/error (.getMessage e)})))
 
-(defn transact [conn txs]
+(defn transact
+  "Transacts entities on the given connection conn and catches potential exceptions,
+  returning a map {:db/error error-msg}."
+  [conn txs]
   (try
     (dt/transact conn txs)
     (catch Exception e
@@ -34,14 +40,20 @@
 (defn valid-user-tx? [user-tx]
   (every? #(contains? user-tx %) #{:uuid :name :date :amount :currency :created-at}))
 
+(defn current-user [session]
+  (let [user-id (get-in session [::friend/identity :current])]
+    (get-in session [::friend/identity :authentications user-id])))
+
 ; Transact data to datomic
 (defn post-user-txs
   "Put the user transaction maps into datomic. Will fail if one or
   more of the following required fields are not included in the map:
   #{:uuid :name :date :amount :currency}."
-  [conn user-txs]
+  [conn session user-txs]
   (if (every? #(valid-user-tx? %) user-txs)
-    (transact conn (f/user-txs->db-txs user-txs))      ;TODO: check if conversions exist for this date, and fetch if not.
+    (let [user-email ((current-user session) :username)
+          txs (f/user-owned-txs->dbtxs user-email user-txs)]
+      (transact conn txs))                                  ;TODO: check if conversions exist for this date, and fetch if not.
     {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
 
 (defn post-currencies
@@ -75,7 +87,8 @@
 (defroutes user-routes
            (GET "/txs" {params :params
                         session :session} (str (current-user-data session (d/db conn) params)))
-           (POST "/txs" {body :body} (str (post-user-txs conn body)))
+           (POST "/txs" {body :body
+                         session :session} (str (post-user-txs conn session body)))
            (GET "/test" {session :session} (str session)))
 
 (defroutes app-routes
