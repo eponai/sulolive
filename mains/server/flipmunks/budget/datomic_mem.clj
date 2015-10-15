@@ -3,7 +3,6 @@
             [flipmunks.budget.datomic.core :as budget.d]
             [clojure.tools.reader.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.test :refer [deftest is]]
             [datomic.api :as d]))
 
 (def schema-file (io/file (io/resource "private/datomic-schema.edn")))
@@ -36,22 +35,15 @@
                      :amount 125
                      :currency "THB"}])
 
-(def app
-  (do 
-    ;; set the core/conn var
-    (alter-var-root #'core/conn
-                    (fn [old-val] 
-                      (let [uri "datomic:mem://test-db"]
-                        (if (d/create-database uri)
-                          (d/connect uri)
-                          (throw (Exception. "Could not create datomic db with uri: " uri))))))
-    (let [schema (->> schema-file slurp (edn/read-string {:readers *data-readers*}))
-          conn core/conn]
-      (d/transact conn schema)
-      (core/post-currencies conn currencies)
-      (core/post-user-txs conn transactions))
-    ;; reutrn the core/app ring handler
-    core/app))
+(defn create-new-inmemory-db []
+  (let [uri "datomic:mem://test-db"]
+    (if (d/create-database uri)
+      (d/connect uri)
+      (throw (Exception. (str "Could not create datomic db with uri: " uri))))))
 
-(deftest compiles?
-  (is (= app app)))
+(defn add-data-to-connection [conn]
+  (let [schema (->> schema-file slurp (edn/read-string {:readers *data-readers*}))]
+    (d/transact conn schema)
+    (core/post-currencies conn currencies)
+    (core/post-user-txs conn transactions)))
+
