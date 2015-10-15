@@ -2,7 +2,7 @@
    (:require [clojure.test :refer :all]
              [datomic.api :only [q db] :as d]
              [flipmunks.budget.core :as b]
-             [flipmunks.budget.datomic.core :as dc]
+             [flipmunks.budget.datomic.core :as dt]
              [flipmunks.budget.datomic.format :as f]))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
@@ -48,7 +48,7 @@
   (testing "Posting currencies, and verifying pull."
     (let [db (b/post-currencies (new-db)
                                 test-curs)
-          db-result (dc/currencies (:db-after db))]
+          db-result (b/pull dt/currencies (:db-after db))]
       (test-input-db-data (f/curs->db-txs test-curs) db-result))))
 
  (deftest test-post-invalid-curs
@@ -61,10 +61,9 @@
   (testing "Posting user transactions, verify pull."
     (let [db (b/post-user-txs (new-db (f/curs->db-txs test-curs))
                               test-data)
-          pull-fn  #(dc/user-txs (:db-after db) %)]
+          pull-fn  #(dt/user-txs (:db-after db) %)]
       (is (:db/error (b/pull pull-fn {})))                  ; Missing parameter :user-id
-      (test-input-db-data [] (b/pull pull-fn {:user-id 123})) ; User 123 does not exist
-      )))
+      (test-input-db-data [] (b/pull pull-fn {:user-id 123}))))) ; User 123 does not exist
 
 (deftest test-post-invalid-user-txs
   (testing "Posting invalid user-txs"
