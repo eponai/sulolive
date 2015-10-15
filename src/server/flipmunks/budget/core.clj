@@ -2,36 +2,32 @@
   (:gen-class)
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
-            [ring.util.anti-forgery :as af]
             [ring.middleware.defaults :refer :all]
             [ring.middleware.session :refer [wrap-session]]
             [ring.middleware.session.cookie :as cookie]
-            [ring.middleware.resource :as middleware.res]
             [flipmunks.budget.datomic.core :as dt]
             [flipmunks.budget.datomic.format :as f]
             [flipmunks.budget.openexchangerates :as exch]
             [datomic.api :only [q db] :as d]
             [cemerick.friend :as friend]
             [cemerick.friend.credentials :as creds]
-            [cemerick.friend.workflows :as workflows]))
+            [cemerick.friend.workflows :as workflows])
+  (:import (com.amazonaws.services.importexport.model MissingParameterException)))
 
 (def ^:dynamic conn)
 
 (def config
   (read-string (slurp "budget-private/config.edn")))        ;TODO use edn/read
 
-(defn current-user-data
-  "Create request response based on params."
-  [session db params]
-  (let [user-id (get-in session [::friend/identity :current])
-        db-data (dt/pull-all-data db (assoc params :user-id user-id))
-        db-schema (dt/pull-schema db db-data)]
-    {:schema   (vec (filter dt/schema-required? db-schema))
-     :entities db-data}))
-
-(defn transact-data [conn txs]
+(defn pull [pull-fn & args]
   (try
-    @(dt/transact-data conn txs)
+    (apply pull-fn args)
+    (catch MissingParameterException e
+      {:db/error (.getMessage e)})))
+
+(defn transact [conn txs]
+  (try
+    (dt/transact conn txs)
     (catch Exception e
       {:db/error (.getMessage e)})))
 
@@ -45,21 +41,30 @@
   #{:uuid :name :date :amount :currency}."
   [conn user-txs]
   (if (every? #(valid-user-tx? %) user-txs)
-    (transact-data conn (f/user-txs->db-txs user-txs))      ;TODO: check if conversions exist for this date, and fetch if not.
+    (transact conn (f/user-txs->db-txs user-txs))      ;TODO: check if conversions exist for this date, and fetch if not.
     {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
 
 (defn post-currencies
   " Fetch currencies (codes and names) from open exchange rates and put into datomic."
   [conn curs]
-  (transact-data conn (f/curs->db-txs curs)))
+  (transact conn (f/curs->db-txs curs)))
 
 (defn post-currency-rates [conn date-str rates]
-  (transact-data conn (f/cur-rates->db-txs (assoc rates :date date-str))))
+  (transact conn (f/cur-rates->db-txs (assoc rates :date date-str))))
+
+(defn current-user-data
+  "Create request response based on params."
+  [session db params]
+  (let [user-id (get-in session [::friend/identity :current])
+        db-data (pull dt/all-data db (assoc params :user-id user-id))
+        db-schema (pull dt/schema db db-data)]
+    {:schema   (vec (filter dt/schema-required? db-schema))
+     :entities db-data}))
 
 ; Auth stuff
 
 (defn user-creds [email]
-  (let [db-user (dt/pull-user (d/db conn) email)]
+  (let [db-user (pull dt/user (d/db conn) email)]
     (when db-user
       {:identity (:db/id db-user)
        :username (:user/email db-user)

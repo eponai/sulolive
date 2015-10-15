@@ -1,6 +1,7 @@
 (ns flipmunks.budget.datomic.core
   (:require [flipmunks.budget.datomic.format :as f]
-            [datomic.api :as d]))
+            [datomic.api :as d])
+  (:import (com.amazonaws.services.importexport.model MissingParameterException)))
 
 ; Pull and format datomic entries
 
@@ -31,34 +32,38 @@
                 :where [?uid :user/transactions ?t] [?t :transaction/date ?d]]
         key-map {:y :date/year
                  :m :date/month
-                 :d :date/day}]
-    (apply conj query (map (fn [[k v]] ['?d (k key-map) (Long/parseLong v)]) (select-keys params (keys key-map))))))
+                 :d :date/day}
+        map-fn (fn [[k v]] ['?d (k key-map) (Long/parseLong v)])]
+    (apply conj query (map map-fn (select-keys params (keys key-map))))))
 
-(defn pull-user-txs [db params]
-  (d/q (tx-query params) db (params :user-id)))
+(defn user-txs [db params]
+  (let [user-id (params :user-id)]
+    (if user-id
+      (d/q (tx-query params) db (params :user-id))
+      (throw (MissingParameterException. "Missing required param :user-id.")))))
 
-(defn pull-nested-entities [db user-txs attr]
+(defn nested-entities [db user-txs attr]
   (db-entities db (distinct-ids user-txs attr)))
 
-(defn pull-all-data [db params]
-  (let [user-txs (pull-user-txs db params)
-        entities (partial pull-nested-entities db user-txs)]
+(defn all-data [db params]
+  (let [user-txs (user-txs db params)
+        entities (partial nested-entities db user-txs)]
     (vec (concat user-txs
                  (entities :transaction/date)
                  (entities :transaction/currency)
                  (entities :transaction/tags)))))
 
-(defn pull-schema
+(defn schema
   "Pulls schema for the datomic attributes represented as keys in the given data map,
   (excludes the :db/id attribute)."
   [db data]
   (mapv #(into {} (d/entity db %)) (distinct-attrs data)))
 
-(defn pull-currencies [db]
+(defn currencies [db]
   (d/q '[:find [(pull ?e [*]) ...]
          :where [?e :currency/code]] db))
 
-(defn pull-user [db email]
+(defn user [db email]
   (d/q '[:find (pull ?e [*]).
          :in $ ?m
          :where [?e :user/email ?m]] db email))
@@ -71,9 +76,9 @@
       (= (get db-entity :db/cardinality) :db.cardinality/many)
       (get db-entity :db/unique)))
 
-(defn transact-data
+(defn transact
   "Transact a collecion of entites into datomic."
   [conn txs]
-  (d/transact conn txs))
+  @(d/transact conn txs))
 
 

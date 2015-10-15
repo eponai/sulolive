@@ -48,7 +48,7 @@
   (testing "Posting currencies, and verifying pull."
     (let [db (b/post-currencies (new-db)
                                 test-curs)
-          db-result (dc/pull-currencies (:db-after db))]
+          db-result (dc/currencies (:db-after db))]
       (test-input-db-data (f/curs->db-txs test-curs) db-result))))
 
  (deftest test-post-invalid-curs
@@ -61,9 +61,10 @@
   (testing "Posting user transactions, verify pull."
     (let [db (b/post-user-txs (new-db (f/curs->db-txs test-curs))
                               test-data)
-          db-result (dc/pull-user-txs (:db-after db)
-                                      {})]
-      (test-input-db-data (f/user-txs->db-txs test-data) db-result))))
+          pull-fn  #(dc/user-txs (:db-after db) %)]
+      (is (:db/error (b/pull pull-fn {})))                  ; Missing parameter :user-id
+      (test-input-db-data [] (b/pull pull-fn {:user-id 123})) ; User 123 does not exist
+      )))
 
 (deftest test-post-invalid-user-txs
   (testing "Posting invalid user-txs"
