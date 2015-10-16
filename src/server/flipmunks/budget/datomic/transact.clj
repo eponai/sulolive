@@ -12,7 +12,8 @@
     (catch Exception e
       (throw (ex-info (.getMessage e) {:cause ::transaction-error
                                        :data {:conn conn
-                                              :txs txs}})))))
+                                              :txs txs}
+                                       :exception e})))))
 
 (defn user-txs
   "Put the user transaction maps into datomic. Will fail if one or

@@ -8,13 +8,13 @@
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
 
-(def test-data [{:name       "coffee"
-                 :uuid       (str (d/squuid))
-                 :created-at 12345
-                 :date       "2015-10-10"
-                 :amount     100
-                 :currency   "SEK"
-                 :tags       ["fika" "thailand"]}])
+(def test-data [{:transaction/name       "coffee"
+                 :transaction/uuid       (str (d/squuid))
+                 :transaction/created-at 12345
+                 :transaction/date       "2015-10-10"
+                 :transaction/amount     100
+                 :transaction/currency   "SEK"
+                 :transaction/tags       ["fika" "thailand"]}])
 
 (def test-curs {:SEK "Swedish Krona"})
 

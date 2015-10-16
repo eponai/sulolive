@@ -4,22 +4,6 @@
             [clj-time.coerce :as c]
             [datomic.api :only [db a] :as d]))
 
-(defn key-prefix
-  "Returns a new keyword with k prefixed with p.
-  E.g. (key-prefix :k 'p/') will return :p/k."
-  [k p]
-  (keyword (str p (name k))))
-
-(defn trans
-  "Transform data by applying key-fn to all the keys in the map,
-  and using a map for applying different functions to the values for the
-  given keys in value-fn-map. If no function is specified for a certain key,
-  that value will be unchanged."
-  [data key-fn value-fn-map]
-  (let [map-fn (fn [[k v]]
-                 [(key-fn k) ((or (k value-fn-map) identity) v)])]
-    (into {} (map map-fn data))))
-
 (defn date->ymd-string
   "Takes a date and returns a string for that date of the form yyy-MM-dd."
   [d]
@@ -56,12 +40,15 @@
   keys #{:currency :date :tags :amount :uuid} as appropriate for the database.
   All keys will be prefixed with 'transaction/' (e.g. :name -> :transaction/name)"
   [user-tx]
-  (let [conv-fn-map {:currency (fn [c] [:currency/code c])
-                     :date     (fn [d] (date-str->db-tx d))
-                     :tags     (fn [tags] (tags->db-tx tags))
-                     :amount   (fn [a] (bigint a))
-                     :uuid     (fn [uuid] (java.util.UUID/fromString uuid))}]
-     (assoc (trans user-tx #(key-prefix % "transaction/") conv-fn-map) :db/id (d/tempid :db.part/user))))
+  (let [conv-fn-map {:transaction/currency (fn [c] [:currency/code c])
+                     :transaction/date     (fn [d] (date-str->db-tx d))
+                     :transaction/tags     (fn [tags] (tags->db-tx tags))
+                     :transaction/amount   (fn [a] (bigint a))
+                     :transaction/uuid     (fn [uuid] (java.util.UUID/fromString uuid))}
+        update-fn (fn [m k] (update m k (conv-fn-map k)))]
+    (assoc (reduce update-fn user-tx (keys conv-fn-map))
+      :db/id
+      (d/tempid :db.part/user))))
 
 (defn user-txs->db-txs [ user-txs]
   (map user-tx->db-tx user-txs))

@@ -3,11 +3,10 @@
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
             [ring.middleware.defaults :refer :all]
-            [ring.middleware.session :refer [wrap-session]]
             [ring.middleware.session.cookie :as cookie]
+            [flipmunks.budget.datomic.pull :as p]
             [flipmunks.budget.datomic.transact :as t]
             [datomic.api :only [q db] :as d]
-            [flipmunks.budget.datomic.pull :as p]
             [cemerick.friend :as friend]
             [cemerick.friend.credentials :as creds]
             [cemerick.friend.workflows :as workflows])
@@ -92,5 +91,4 @@
                          (assoc-in [:session :store] (cookie/cookie-store {:key (config :session-cookie-key)}))
                          (assoc-in [:session :cookie-name] "cookie-name")))))
 
-(defn -main [& args]
-  )
+(defn -main [& args])

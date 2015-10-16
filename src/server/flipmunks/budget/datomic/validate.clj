@@ -8,7 +8,12 @@
                                                 :params args}}))))
 
 (defn- valid-user-tx? [user-tx]
-  (let [required-fields #{:uuid :name :date :amount :currency :created-at}]
+  (let [required-fields #{:transaction/uuid
+                          :transaction/name
+                          :transaction/date
+                          :transaction/amount
+                          :transaction/currency
+                          :transaction/created-at}]
     (validate every? #(contains? user-tx %) required-fields)))
 
 

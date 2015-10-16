@@ -7,7 +7,8 @@
     (catch Exception e
       (throw (ex-info (.getMessage e) {:cause ::query-error
                                        :data {:query query
-                                              :inputs inputs}})))))
+                                              :inputs inputs}
+                                       :exception e})))))
 
 ; Pull and format datomic entries
 (defn- distinct-ids
