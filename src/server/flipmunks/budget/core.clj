@@ -5,27 +5,26 @@
             [ring.middleware.defaults :refer :all]
             [ring.middleware.session :refer [wrap-session]]
             [ring.middleware.session.cookie :as cookie]
-            [flipmunks.budget.datomic.core :as dt]
+            [flipmunks.budget.datomic.transact :as t]
             [flipmunks.budget.datomic.format :as f]
-            [flipmunks.budget.openexchangerates :as exch]
             [datomic.api :only [q db] :as d]
+            [flipmunks.budget.datomic.pull :as p]
             [cemerick.friend :as friend]
             [cemerick.friend.credentials :as creds]
-            [cemerick.friend.workflows :as workflows])
-  (:import (com.amazonaws.services.importexport.model MissingParameterException)))
+            [cemerick.friend.workflows :as workflows]))
 
 (def ^:dynamic conn)
 
 (def config
   (read-string (slurp "budget-private/config.edn")))        ;TODO use edn/read
 
-(defn pull
+(defn safe-pull
   "Wraps the given pull-fn to catch and catches potential exceptions thrown from datomic,
   returning a map {:db/error error-msg}. Pass any args that are expected in pull-fn."
   [pull-fn & args]
   (try
     (apply pull-fn args)
-    (catch MissingParameterException e
+    (catch Exception e
       {:db/error (.getMessage e)})))
 
 (defn transact
@@ -33,7 +32,7 @@
   returning a map {:db/error error-msg}."
   [conn txs]
   (try
-    (dt/transact conn txs)
+    (t/transact conn txs)
     (catch Exception e
       {:db/error (.getMessage e)})))
 
@@ -68,15 +67,15 @@
   "Create request response based on params."
   [session db params]
   (let [user-id (get-in session [::friend/identity :current])
-        db-data (pull dt/all-data db (assoc params :user-id user-id))
-        db-schema (pull dt/schema db db-data)]
-    {:schema   (vec (filter dt/schema-required? db-schema))
+        db-data (safe-pull p/all-data db (assoc params :user-id user-id))
+        db-schema (safe-pull p/schema db p/schema-required? db-data)]
+    {:schema   (vec db-schema)
      :entities db-data}))
 
 ; Auth stuff
 
 (defn user-creds [email]
-  (let [db-user (pull dt/user (d/db conn) email)]
+  (let [db-user (safe-pull p/user (d/db conn) email)]
     (when db-user
       {:identity (:db/id db-user)
        :username (:user/email db-user)

@@ -1,6 +1,6 @@
 (ns flipmunks.budget.datomic_dev
   (:require [flipmunks.budget.core :as core]
-            [flipmunks.budget.datomic.core :as budget.d]
+            [flipmunks.budget.datomic.pull :as budget.d]
             [flipmunks.budget.datomic_mem :as mem]
             [datomic.api :as d]))
 

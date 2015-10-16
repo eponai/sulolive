@@ -1,10 +1,15 @@
-(ns flipmunks.budget.datomic.core
-  (:require [flipmunks.budget.datomic.format :as f]
-            [datomic.api :as d])
-  (:import (com.amazonaws.services.importexport.model MissingParameterException)))
+(ns flipmunks.budget.datomic.pull
+  (:require [datomic.api :as d]))
+
+(defn q [query & inputs]
+  (try
+    (apply (partial d/q query) inputs)
+    (catch Exception e
+      (throw (ex-info (.getMessage e) {:cause ::query-error
+                                       :data {:query query
+                                              :inputs inputs}})))))
 
 ; Pull and format datomic entries
-
 (defn distinct-ids
   "Get distinct db ids from the nested entity with the given keyword k in a list of entities.
   If f is provided, it will be applied on the list of entities matching the k keyword.
@@ -38,9 +43,8 @@
 
 (defn user-txs [db params]
   (let [user-id (params :username)]
-    (if user-id
-      (d/q (tx-query params) db user-id)
-      (throw (MissingParameterException. "Need required param user-id to pull transactions.")))))
+    (when user-id
+      (q (tx-query params) db user-id))))
 
 (defn nested-entities [db user-txs attr]
   (db-entities db (distinct-ids user-txs attr)))
@@ -56,15 +60,17 @@
 (defn schema
   "Pulls schema for the datomic attributes represented as keys in the given data map,
   (excludes the :db/id attribute)."
-  [db data]
-  (mapv #(into {} (d/entity db %)) (distinct-attrs data)))
+  ([db data]
+   (schema db identity data))
+  ([db f data]
+   (mapv #(into {} (d/entity db %)) (filter f (distinct-attrs data)))))
 
 (defn currencies [db]
-  (d/q '[:find [(pull ?e [*]) ...]
+  (q '[:find [(pull ?e [*]) ...]
          :where [?e :currency/code]] db))
 
 (defn user [db email]
-  (d/q '[:find (pull ?e [*]).
+  (q '[:find (pull ?e [*]).
          :in $ ?m
          :where [?e :user/email ?m]] db email))
 
@@ -76,9 +82,5 @@
       (= (get db-entity :db/cardinality) :db.cardinality/many)
       (get db-entity :db/unique)))
 
-(defn transact
-  "Transact a collecion of entites into datomic."
-  [conn txs]
-  @(d/transact conn txs))
 
 
