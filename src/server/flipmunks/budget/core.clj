@@ -6,76 +6,56 @@
             [ring.middleware.session :refer [wrap-session]]
             [ring.middleware.session.cookie :as cookie]
             [flipmunks.budget.datomic.transact :as t]
-            [flipmunks.budget.datomic.format :as f]
             [datomic.api :only [q db] :as d]
             [flipmunks.budget.datomic.pull :as p]
             [cemerick.friend :as friend]
             [cemerick.friend.credentials :as creds]
-            [cemerick.friend.workflows :as workflows]))
+            [cemerick.friend.workflows :as workflows])
+  (:import (clojure.lang ExceptionInfo)))
 
 (def ^:dynamic conn)
 
 (def config
   (read-string (slurp "budget-private/config.edn")))        ;TODO use edn/read
 
-(defn safe-pull
-  "Wraps the given pull-fn to catch and catches potential exceptions thrown from datomic,
-  returning a map {:db/error error-msg}. Pass any args that are expected in pull-fn."
-  [pull-fn & args]
+(defn safe [fn & args]
   (try
-    (apply pull-fn args)
-    (catch Exception e
-      {:db/error (.getMessage e)})))
-
-(defn transact
-  "Transacts entities on the given connection conn and catches potential exceptions,
-  returning a map {:db/error error-msg}."
-  [conn txs]
-  (try
-    (t/transact conn txs)
-    (catch Exception e
-      {:db/error (.getMessage e)})))
-
-(defn valid-user-tx? [user-tx]
-  (every? #(contains? user-tx %) #{:uuid :name :date :amount :currency :created-at}))
+    (apply fn args)
+    (catch ExceptionInfo e
+      e)))
 
 (defn current-user [session]
   (let [user-id (get-in session [::friend/identity :current])]
     (get-in session [::friend/identity :authentications user-id])))
 
+(defn cur-usr-email [session]
+  (:username (current-user session)))
+
 ; Transact data to datomic
-(defn post-user-txs
-  "Put the user transaction maps into datomic. Will fail if one or
-  more of the following required fields are not included in the map:
-  #{:uuid :name :date :amount :currency}."
-  [conn session user-txs]
-  (if (every? #(valid-user-tx? %) user-txs)
-    (let [user-email ((current-user session) :username)
-          txs (f/user-owned-txs->dbtxs user-email user-txs)]
-      (transact conn txs))                                  ;TODO: check if conversions exist for this date, and fetch if not.
-    {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
 
 (defn post-currencies
   " Fetch currencies (codes and names) from open exchange rates and put into datomic."
   [conn curs]
-  (transact conn (f/curs->db-txs curs)))
+  (safe t/currencies conn curs))
 
 (defn post-currency-rates [conn date-str rates]
-  (transact conn (f/cur-rates->db-txs (assoc rates :date date-str))))
+  (safe t/currency-rates conn date-str rates))
+
+(defn post-user-txs [conn user-email user-txs]
+  (safe t/user-txs conn user-email user-txs))
 
 (defn current-user-data
   "Create request response based on params."
-  [session db params]
-  (let [user-id (get-in session [::friend/identity :current])
-        db-data (safe-pull p/all-data db (assoc params :user-id user-id))
-        db-schema (safe-pull p/schema db p/schema-required? db-data)]
+  [user-email db params]
+  (let [db-data (safe p/all-data db (assoc params :user-id user-email))
+        db-schema (safe p/schema db p/schema-required? db-data)]
     {:schema   (vec db-schema)
      :entities db-data}))
 
 ; Auth stuff
 
 (defn user-creds [email]
-  (let [db-user (safe-pull p/user (d/db conn) email)]
+  (let [db-user (safe p/user (d/db conn) email)]
     (when db-user
       {:identity (:db/id db-user)
        :username (:user/email db-user)
@@ -85,9 +65,9 @@
 ; App stuff
 (defroutes user-routes
            (GET "/txs" {params :params
-                        session :session} (str (current-user-data session (d/db conn) params)))
+                        session :session} (str (current-user-data (cur-usr-email session) (d/db conn) params)))
            (POST "/txs" {body :body
-                         session :session} (str (post-user-txs conn session body)))
+                         session :session} (str (safe t/user-txs conn (cur-usr-email session) body)))
            (GET "/test" {session :session} (str session)))
 
 (defroutes app-routes

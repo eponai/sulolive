@@ -1,7 +1,7 @@
 (ns flipmunks.budget.datomic.pull
   (:require [datomic.api :as d]))
 
-(defn q [query & inputs]
+(defn- q [query & inputs]
   (try
     (apply (partial d/q query) inputs)
     (catch Exception e
@@ -10,7 +10,7 @@
                                               :inputs inputs}})))))
 
 ; Pull and format datomic entries
-(defn distinct-ids
+(defn- distinct-ids
   "Get distinct db ids from the nested entity with the given keyword k in a list of entities.
   If f is provided, it will be applied on the list of entities matching the k keyword.
   E.g. if k points to a list of values, #(apply concat %) can be provided to fetch
@@ -18,18 +18,18 @@
   ([entities attr]
    (mapv :db/id (set (flatten (map attr entities))))))
 
-(defn distinct-attrs [ents]
+(defn- distinct-attrs [ents]
   (->> ents
        (map keys)
        flatten
        set))
 
-(defn db-entities
+(defn- db-entities
   "Get vector of entity maps for given entity ids."
   [db ids]
   (mapv #(into {:db/id %} (d/entity db %)) ids))
 
-(defn tx-query
+(defn- tx-query
   "Create the query for pulling transactions given some date parameters."
   [params]
   (let [query '[:find [(pull ?t [*]) ...]
@@ -46,7 +46,7 @@
     (when user-id
       (q (tx-query params) db user-id))))
 
-(defn nested-entities [db user-txs attr]
+(defn- nested-entities [db user-txs attr]
   (db-entities db (distinct-ids user-txs attr)))
 
 (defn all-data [db params]

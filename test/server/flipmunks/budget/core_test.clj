@@ -3,9 +3,8 @@
             [datomic.api :only [q db] :as d]
             [flipmunks.budget.core :as b]
             [flipmunks.budget.datomic.pull :as p]
-            [flipmunks.budget.datomic.format :as f])
-  (:import (clojure.lang ArityException ExceptionInfo)
-           (com.amazonaws.services.importexport.model MissingParameterException)))
+            [flipmunks.budget.datomic.format :as f]
+            [flipmunks.budget.datomic.transact :as t]))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
 
@@ -70,41 +69,41 @@
   (testing "Posting currencies, and verifying pull."
     (let [db (b/post-currencies (new-db)
                                 test-curs)
-          db-result (b/safe-pull p/currencies (:db-after db))]
+          db-result (b/safe p/currencies (:db-after db))]
       (test-input-db-data (f/curs->db-txs test-curs) db-result))))
 
 (deftest test-post-invalid-curs
   (testing "Posting invalid currency data."
     (let [db (b/post-currencies (new-db)
                                 (assoc test-curs :invalid 2))]
-      (is (:db/error db)))))
+      (is (ex-data db)))))
 
 (deftest test-post-transactions
   (testing "Posting user transactions, verify pull."
-    (let [db (b/post-user-txs (db-with-curs)
-                              session
+    (let [db (b/safe t/user-txs (db-with-curs)
+                              (b/cur-usr-email session)
                               test-data)
           pull-fn #(p/user-txs (:db-after db) %)]
-      (test-input-db-data [] (b/safe-pull pull-fn {}))                  ; Missing parameter :user-id
+      (test-input-db-data [] (b/safe pull-fn {}))                  ; Missing parameter :user-id
       (test-input-db-data (f/user-txs->db-txs test-data)
-                          (b/safe-pull pull-fn (b/current-user session))) ; valid pull
+                          (b/safe pull-fn (b/current-user session))) ; valid pull
       (test-input-db-data []
-                          (b/safe-pull pull-fn {:username 123}))))) ; User 123 does not exist
+                          (b/safe pull-fn {:username 123}))))) ; User 123 does not exist
 
 (deftest test-post-invalid-user-txs
   (testing "Posting invalid user-txs"
     (let [invalid-data (map #(assoc % :invalid-attr "value")
                             test-data)
-          db (b/post-user-txs (db-with-curs)
-                              session
+          db (b/safe t/user-txs (db-with-curs)
+                              (b/cur-usr-email session)
                               invalid-data)]
-      (is (:db/error db)))))
+      (is (ex-data db)))))
 
 (deftest test-post-txs-to-invalid-user
   (testing "Posting transactions to non existent user."
     (let [invalid-user (assoc user :username "invalid-email")
           invalid-session (assoc-in session [:cemerick.friend/identity :authentications 1] invalid-user)
-          db (b/post-user-txs (db-with-curs)
-                              invalid-session
+          db (b/safe t/user-txs (db-with-curs)
+                              (b/cur-usr-email invalid-session)
                               test-data)]
-      (is (:db/error db)))))
+      (is (ex-data db)))))
