@@ -10,10 +10,12 @@
                  ]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+                 ;; core.memoize is needed to work around lein+core.async dependency issue.
+                 [org.clojure/core.memoize "0.5.6"]
                  [com.cognitect/transit-cljs "0.8.225"]
                  [sablono "0.3.6"]
                  [org.omcljs/om "1.0.0-alpha1"]
-                 [devcards "0.2.0-1"]
+                 [devcards "0.2.0-3"]
                  [cljs-ajax "0.5.0"]
                  [datascript "0.13.1"]
                  [org.clojure/test.check "0.8.1"]
@@ -27,6 +29,8 @@
                  [com.datomic/datomic-pro "0.9.5302"
                   :exclusions [joda-time]]
                  [clj-time "0.11.0"]
+                 [com.andrewmcveigh/cljs-time "0.3.14"]
+                 [garden "1.3.0-SNAPSHOT"]
                  [com.cemerick/friend "0.2.1"]]
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]
