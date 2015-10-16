@@ -18,7 +18,9 @@
 (def config
   (read-string (slurp "budget-private/config.edn")))        ;TODO use edn/read
 
-(defn safe [fn & args]
+(defn safe
+  "Tries to call fn with the given args, and catches and returns any ExceptionInfo that might be thrown by fn."
+  [fn & args]
   (try
     (apply fn args)
     (catch ExceptionInfo e
@@ -33,9 +35,7 @@
 
 ; Transact data to datomic
 
-(defn post-currencies
-  " Fetch currencies (codes and names) from open exchange rates and put into datomic."
-  [conn curs]
+(defn post-currencies [conn curs]
   (safe t/currencies conn curs))
 
 (defn post-currency-rates [conn date-str rates]
@@ -45,9 +45,9 @@
   (safe t/user-txs conn user-email user-txs))
 
 (defn current-user-data
-  "Create request response based on params."
+  "Fetch data for the user with user-email, and the schema for the found data."
   [user-email db params]
-  (let [db-data (safe p/all-data db (assoc params :user-id user-email))
+  (let [db-data (safe p/all-data db user-email params)
         db-schema (safe p/schema db p/schema-required? db-data)]
     {:schema   (vec db-schema)
      :entities db-data}))
@@ -67,7 +67,7 @@
            (GET "/txs" {params :params
                         session :session} (str (current-user-data (cur-usr-email session) (d/db conn) params)))
            (POST "/txs" {body :body
-                         session :session} (str (safe t/user-txs conn (cur-usr-email session) body)))
+                         session :session} (str (post-user-txs conn (cur-usr-email session) body)))
            (GET "/test" {session :session} (str session)))
 
 (defroutes app-routes

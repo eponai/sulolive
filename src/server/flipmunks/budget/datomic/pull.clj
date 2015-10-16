@@ -41,16 +41,15 @@
         map-fn (fn [[k v]] ['?d (k key-map) (Long/parseLong v)])]
     (apply conj query (map map-fn (select-keys params (keys key-map))))))
 
-(defn user-txs [db params]
-  (let [user-id (params :username)]
-    (when user-id
-      (q (tx-query params) db user-id))))
+(defn user-txs [db user-email params]
+  (when user-email
+    (q (tx-query params) db user-email)))
 
 (defn- nested-entities [db user-txs attr]
   (db-entities db (distinct-ids user-txs attr)))
 
-(defn all-data [db params]
-  (let [user-txs (user-txs db params)
+(defn all-data [db user-email params]
+  (let [user-txs (user-txs db user-email params)
         entities (partial nested-entities db user-txs)]
     (vec (concat user-txs
                  (entities :transaction/date)

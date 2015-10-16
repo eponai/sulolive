@@ -29,7 +29,7 @@
                           :roles    #{:flipmunks.budget.core/user}}},
                :current 1}})
 
-(defn new-db
+(defn- new-db
   "Creates an empty database and returns the connection."
   ([]
    (new-db nil))
@@ -44,26 +44,19 @@
          (d/transact conn txs))
        conn))))
 
-(defn db-with-curs []
+(defn- db-with-curs []
   (new-db (f/curs->db-txs test-curs)))
 
-(defn key-set [m]
-  (set (keys m)))
-
-
-
-
-
-
-(defn test-input-db-data
+(defn- test-input-db-data
   "Test that the input data mathces the db entities db-data. Checking that count is the same,
   and that all keys in the maps match."
   [input db-data]
-  (is (= (count input)
-         (count db-data)))
-  (is (every? true? (map #(= (key-set %1) (key-set %2))
-                         input
-                         db-data))))
+  (let [key-set #(set (keys %))]
+    (is (= (count input)
+           (count db-data)))
+    (is (every? true? (map #(= (key-set %1) (key-set %2))
+                           input
+                           db-data)))))
 
 (deftest test-post-currencies
   (testing "Posting currencies, and verifying pull."
@@ -80,30 +73,29 @@
 
 (deftest test-post-transactions
   (testing "Posting user transactions, verify pull."
-    (let [db (b/safe t/user-txs (db-with-curs)
-                              (b/cur-usr-email session)
+    (let [user-email (:user/email user)
+          db (b/post-user-txs (db-with-curs)
+                              user-email
                               test-data)
-          pull-fn #(p/user-txs (:db-after db) %)]
-      (test-input-db-data [] (b/safe pull-fn {}))                  ; Missing parameter :user-id
+          pull-fn #(p/user-txs (:db-after db) %1 %2)]
+      (test-input-db-data [] (b/safe pull-fn nil {}))                  ; Missing parameter :user-id
       (test-input-db-data (f/user-txs->db-txs test-data)
-                          (b/safe pull-fn (b/current-user session))) ; valid pull
+                          (b/safe pull-fn user-email {})) ; valid pull
       (test-input-db-data []
-                          (b/safe pull-fn {:username 123}))))) ; User 123 does not exist
+                          (b/safe pull-fn "invalid-email" {}))))) ; User 123 does not exist
 
 (deftest test-post-invalid-user-txs
   (testing "Posting invalid user-txs"
     (let [invalid-data (map #(assoc % :invalid-attr "value")
                             test-data)
-          db (b/safe t/user-txs (db-with-curs)
-                              (b/cur-usr-email session)
+          db (b/post-user-txs (db-with-curs)
+                              (:user/email user)
                               invalid-data)]
       (is (ex-data db)))))
 
 (deftest test-post-txs-to-invalid-user
   (testing "Posting transactions to non existent user."
-    (let [invalid-user (assoc user :username "invalid-email")
-          invalid-session (assoc-in session [:cemerick.friend/identity :authentications 1] invalid-user)
-          db (b/safe t/user-txs (db-with-curs)
-                              (b/cur-usr-email invalid-session)
+    (let [db (b/post-user-txs (db-with-curs)
+                              "invalid-email"
                               test-data)]
       (is (ex-data db)))))
