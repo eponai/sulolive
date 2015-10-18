@@ -22,8 +22,22 @@
   {:style (clj->js style-map)})
 
 (defn render-tag [tag-name]
-  (vector :span (style {:padding "0.5em" :border "2px"}) 
-          tag-name))
+  [:div (style {:display "inline-block"})
+   [:style (css [:#ui-transaction-tag {:display "inline-block"
+                                       :padding "0.2em 0.2em" 
+                                       :margin "0.2em"
+                                       :border-width "1px"
+                                       :border-style "solid"
+                                       :border-radius "0.3em"
+                                       :text-transform "capitalize"
+                                       :font-size "1em"
+                                       :border-color "#ddd"
+                                       :cursor "default"}
+                 [:&:hover {:border-color "#aaa"}]
+                 [:&:active {:border-color "#ddd"}]])]
+   [:div {:id "ui-transaction-tag"
+          :on-click #(prn %)}
+    tag-name]])
 
 (defui Transaction
   static om/IQuery
@@ -59,16 +73,17 @@
                   [:div (style {:display "flex"
                                 :flex-direction "row"
                                 :flex-wrap "nowrap"
+                               :align-items "center"
                                 :justify-content "space-between"})
-                   [:p (style {:display "flex"
-                                 :flex-direction "row"
-                                 :fontWeight "bold"})
+                   [:div (style {:display "flex"
+                               :flex-direction "row"
+                               :fontWeight "bold"})
                     (day-of-the-week date)]
                    [:div (style {:display "flex"
                                  :flex-direction "reverse-row"})
                     (str amount " " (:currency/name currency))]]
                   (when details
-                     [:div details])
+                    [:div (style {:margin "0em 1.0em":padding "0.3em"}) details])
                   (when show-tags
                     [:div
                      (->> tags (map :tag/name) (map render-tag))])]]))))
