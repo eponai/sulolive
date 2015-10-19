@@ -1,22 +1,24 @@
 (ns flipmunks.budget.ui.transactions
   (:require [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
-            [devcards.core :as dc]
             [cljs-time.core :as t]
             [cljs-time.format :as t.format]
             [sablono.core :as html :refer-macros [html]]
-            [garden.core :refer [css]])
-  (:require-macros [devcards.core :refer [defcard]]))
+            [garden.core :refer [css]]))
 
-(defn day-of-the-week [{:keys [date/year date/month date/day]}]
+(defn day-of-the-week 
+  "Given date, returns name of the date and it's number with the appropriate suffix.
+  Examples:
+  2015-10-16 => Friday 16th
+  2015-10-21 => Wednesday 21st"
+  [{:keys [date/year date/month date/day]}]
   (str (get t.format/days (t/day-of-week (t/date-time year month day)))
        " "
-       day
-       (condp = (mod day 10)
-         1 "st"
-         2 "nd"
-         3 "rd"
-         "th")))
+       day (condp = (mod day 10)
+             1 "st"
+             2 "nd"
+             3 "rd"
+             "th")))
 
 (defn style [style-map]
   {:style (clj->js style-map)})
@@ -90,36 +92,22 @@
 
 (def transaction (om/factory Transaction))
 
-(defn transaction-props [name [y m d] amount currency tags]
-  {:transaction/name name
-   :transaction/date {:date/ymd (str y "-" m "-" d)
-                      :date/year y :date/month m :date/day d}
-   :transaction/amount amount
-   :transaction/currency {:currency/name currency}
-   :transaction/tags (mapv #(hash-map :tag/name %) tags)})
+;; Transactions grouped by a day
 
-(def standard-transaction 
-  (transaction-props "coffee" [2015 10 16] 140 "THB" 
-                     ["thailand" "2015" "chiang mai"]))
+(defui DayTransactions
+  static om/IQueryParams
+  (params [this] {:transactions (om/get-query Transaction)})
+  static om/IQuery
+  (query [this] 
+         '[:db/id
+           :date/year
+           :date/month
+           :date/day
+           :transaction/_date ?transactions])
+  Object
+  (render [this]
+          (let [{:keys [date/year date/month date/day
+                        transaction/_date]} (om/props this)]
+            (html [:div "render day here"]))))
 
-(defcard transaction-card
-  (transaction standard-transaction))
-
-(defcard transaction-with-details
-  (transaction (assoc standard-transaction
-                      :transaction/details
-                      "Great latte next to the dumpling place. We should come back here next time we're in Chaing Mai, Thailand.")))
-
-(defcard transaction-with-tags
-  (transaction (assoc standard-transaction
-                      :ui.transaction/show-tags
-                      true)))
-
-(defcard transaction-with-details-and-tags
-  (transaction (assoc standard-transaction
-                      :transaction/details
-                      "Very good latte! We should come back."
-                      :ui.transaction/show-tags
-                      true)))
-
-
+(def day-of-transactions (om/factory DayTransactions))

@@ -1,8 +1,8 @@
-(ns flipmunks.budget.devcards_test
+(ns flipmunks.budget.devcards_main
   (:require
     [devcards.core :as dc]
     [sablono.core :as html :refer-macros [html]]
-    [flipmunks.budget.ui.transactions])
+    [flipmunks.budget.ui.transactions_dc])
   (:require-macros
     [devcards.core :refer [defcard]]))
 
