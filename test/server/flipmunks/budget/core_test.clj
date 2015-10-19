@@ -18,6 +18,9 @@
 
 (def test-curs {:SEK "Swedish Krona"})
 
+(def test-convs {:date "2015-10-10"
+                 :rates {:SEK 8.333}})
+
 (def user {:db/id      (d/tempid :db.part/user)
            :user/email "user@email.com"})
 
@@ -57,6 +60,18 @@
     (is (every? true? (map #(= (key-set %1) (key-set %2))
                            input
                            db-data)))))
+
+(deftest test-post-user-data
+  (let [db (b/post-user-data (db-with-curs)
+                             {:session session :body test-data}
+                             b/test-currency-rates)
+        result (b/current-user-data "user@email.com" (:db-after db) {})]
+    (is (= (count (:schema result)) 7))
+    (is (= (count (:entities result))
+           (+ (count test-data)                             ; Number of transaction entities
+              (apply + (map count (map :transaction/tags test-data))) ; Number of tags entities
+              (dec (count (filter #(= (:db/valueType %) :db.type/ref)
+                                  (:schema result))))))))) ; number of other reference attributes (minus one tags included above)
 
 (deftest test-post-currencies
   (testing "Posting currencies, and verifying pull."
