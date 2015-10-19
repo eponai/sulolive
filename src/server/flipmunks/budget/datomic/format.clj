@@ -31,8 +31,8 @@
   "Returns datomic entities representing tags, given a vector of tag names."
   [tags]
   (map (fn [n] {:db/id          (d/tempid :db.part/user)
-                 :tag/name       n
-                 :tag/persistent false}) tags))
+                :tag/name       n
+                :tag/persistent false}) tags))
 
 (defn user-tx->db-tx
   "Takes a user input transaction and converts into a datomic entity.
@@ -42,7 +42,7 @@
   [user-tx]
   (let [conv-fn-map {:transaction/currency (fn [c] [:currency/code c])
                      :transaction/date     (fn [d] (date-str->db-tx d))
-                     :transaction/tags     (fn [tags] (tags->db-tx tags))
+                     :transaction/tags     (fn [t] (tags->db-tx t))
                      :transaction/amount   (fn [a] (bigint a))
                      :transaction/uuid     (fn [uuid] (java.util.UUID/fromString uuid))}
         update-fn (fn [m k] (update m k (conv-fn-map k)))]
