@@ -64,8 +64,8 @@
         unconverted-dates (clojure.set/difference (set dates)
                                                   (p/converted-dates (d/db conn) dates))]
     (when (not-empty unconverted-dates)
-      (post-currency-rates conn (map rates-fn unconverted-dates)))
-    (post-user-txs conn (cur-usr-email (:session request)) user-data)))
+      (safe t/currency-rates conn (map rates-fn unconverted-dates)))
+    (safe t/user-txs conn (cur-usr-email (:session request)) user-data)))
 
 ; Auth stuff
 
@@ -81,9 +81,7 @@
 (defroutes user-routes
            (GET "/txs" {params :params
                         session :session} (str (current-user-data (cur-usr-email session) (d/db conn) params)))
-           (POST "/txs" [request] (str (post-user-data conn request
-                                                       (partial test-currency-rates
-                                                                (config :open-exhange-app-id)))))
+           (POST "/txs" [request] (str (post-user-data conn request test-currency-rates)))
            (GET "/test" {session :session} (str session)))
 
 (defroutes app-routes
