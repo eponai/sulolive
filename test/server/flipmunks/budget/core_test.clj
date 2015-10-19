@@ -3,7 +3,6 @@
             [datomic.api :only [q db] :as d]
             [flipmunks.budget.core :as b]
             [flipmunks.budget.datomic.pull :as p]
-            [flipmunks.budget.datomic.format :as f]
             [flipmunks.budget.datomic.transact :as t]
             [flipmunks.budget.datomic.validate :as v]))
 
@@ -30,7 +29,7 @@
                                   {1
                                    {:identity 1,
                                     :username (user :user/email),
-                                    :roles    #{:flipmunks.budget.core/user}}},
+                                    :roles    #{::b/user}}},
                          :current 1}}
               :body test-data})
 
@@ -57,10 +56,14 @@
         result (b/current-user-data "user@email.com"
                                     (:db-after db)
                                     {})
-        no-result (b/current-user-data "invalid@email.com"
+        inv-result (b/current-user-data "invalid@email.com"
                                        (:db-after db)
-                                       {})]
-    (is (and (empty? (:schema no-result)) (empty? (:entities no-result))))
+                                       {})
+        no-result (b/current-user-data "user@email.com"
+                                       (:db-after db)
+                                       {:d "1"})]
+    (is (every? #(empty? (val %)) inv-result))
+    (is (every? #(empty? (val %)) no-result))
     (is (= (count (:schema result)) 7))
     (is (= (count (:entities result))
            (+ (count test-data)                              ; Number of transaction entities
@@ -85,4 +88,5 @@
   (testing "Posting invalid currency data."
     (let [db (b/post-currencies (new-db)
                                 (assoc test-curs :invalid 2))]
-      (is (= (:cause (ex-data db)) ::t/transaction-error)))))
+      (is (= (:cause (ex-data db))
+             ::t/transaction-error)))))
