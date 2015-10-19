@@ -47,6 +47,13 @@
                                    attr))]
     (map #(into {:db/id %} (d/entity db %)) distinct-ids)))
 
+(defn converted-dates [db dates]
+  (q '[:find [?ymd ...]
+       :in $ [?ymd ...]
+       :where
+       [?c :conversion/date ?d]
+       [?d :date/ymd ?ymd]] db dates))
+
 (defn conversions [db user-tx-ids]
   (q '[:find [(pull ?c [*]) ...]
        :in $ [?t ...]

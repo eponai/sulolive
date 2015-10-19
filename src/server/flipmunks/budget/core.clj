@@ -9,7 +9,8 @@
             [datomic.api :only [q db] :as d]
             [cemerick.friend :as friend]
             [cemerick.friend.credentials :as creds]
-            [cemerick.friend.workflows :as workflows])
+            [cemerick.friend.workflows :as workflows]
+            [flipmunks.budget.openexchangerates :as exch])
   (:import (clojure.lang ExceptionInfo)))
 
 (def ^:dynamic conn)
@@ -32,13 +33,19 @@
 (defn cur-usr-email [session]
   (:username (current-user session)))
 
+;; test currency rates
+(defn test-currency-rates [date-str]
+  {:date date-str
+   :rates {:SEK 8.333
+           :USD 1
+           :THB 35.555}})
 ; Transact data to datomic
 
 (defn post-currencies [conn curs]
   (safe t/currencies conn curs))
 
-(defn post-currency-rates [conn rates]
-  (safe t/currency-rates conn rates))
+(defn post-currency-rates [conn rate-ms]
+  (safe t/currency-rates conn rate-ms))
 
 (defn post-user-txs [conn user-email user-txs]
   (safe t/user-txs conn user-email user-txs))
@@ -50,6 +57,15 @@
         db-schema (safe p/schema db p/schema-required? db-data)]
     {:schema   (vec db-schema)
      :entities db-data}))
+
+(defn post-user-data [conn request rates-fn]
+  (let [user-data (:body request)
+        dates (map :transaction/date user-data)
+        unconverted-dates (clojure.set/difference (set dates)
+                                                  (p/converted-dates (d/db conn) dates))]
+    (when (not-empty unconverted-dates)
+      (post-currency-rates conn (map rates-fn unconverted-dates)))
+    (post-user-txs conn (cur-usr-email (:session request)) user-data)))
 
 ; Auth stuff
 
@@ -65,8 +81,9 @@
 (defroutes user-routes
            (GET "/txs" {params :params
                         session :session} (str (current-user-data (cur-usr-email session) (d/db conn) params)))
-           (POST "/txs" {body :body
-                         session :session} (str (post-user-txs conn (cur-usr-email session) body)))
+           (POST "/txs" [request] (str (post-user-data conn request
+                                                       (partial test-currency-rates
+                                                                (config :open-exhange-app-id)))))
            (GET "/test" {session :session} (str session)))
 
 (defroutes app-routes
