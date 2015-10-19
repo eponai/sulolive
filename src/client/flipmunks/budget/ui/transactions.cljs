@@ -106,6 +106,13 @@
    ;; TODO: Should instead use the primary currency
    :currency (-> transactions first :transaction/currency :currency/name)})
 
+(defn expand-day [this {:keys [db/id ui.day/expand]}]
+  (om/transact! this 
+                `[(datascript/transact
+                    [[:db.fn/cas ~id 
+                      :ui.day/expand 
+                      ~expand
+                      (not ~expand)]])]))
 
 (defui DayTransactions
   static om/IQueryParams
@@ -132,7 +139,8 @@
                                      :borderStyle "solid"
                                      :borderRadius "0.5em"
                                      :padding "0.5em"})
-                             (assoc :id "ui-day"))
+                             (assoc :id "ui-day"
+                                    :on-click #(expand-day this props)))
                    [:div (style {:display "flex"
                                  :flex-direction "row"
                                  :flex-wrap "nowrap"
