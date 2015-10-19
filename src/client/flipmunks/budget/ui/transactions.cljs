@@ -4,10 +4,25 @@
             [cljs-time.core :as t]
             [cljs-time.format :as t.format]
             [sablono.core :as html :refer-macros [html]]
+            [clojure.string :as s]
+            [clojure.walk :as w]
             [garden.core :refer [css]]))
 
+(defn ->camelCase [k]
+  (when (namespace k)
+    (throw (str "cannot camelCase a keyword with a namespace. key=" k)))
+  (let [[a & xs] (s/split (name k) "-")]
+    (s/join (cons a (map s/capitalize xs)))))
+
+;; Using memoize, since the number of possible keys is limited to css keys
+(def ->memCamelCase (memoize ->camelCase))
+
+;; TODO: Make this a macro, so that the transformations are made in compile time
+
 (defn style [style-map]
-  {:style (clj->js style-map)})
+  (let [camelCased (w/postwalk (fn [x] (if (keyword? x) (->memCamelCase x) x))
+                               style-map)]
+    {:style (clj->js camelCased)}))
 
 (defn render-tag [tag-name]
   [:div (style {:display "inline-block"})
@@ -40,46 +55,46 @@
                  :ui.transaction/edit-mode
                  :ui.transaction/show-tags
                  :ui.transaction/expanded])
-    Object
-    (render [this]
-            (let [{;; rename to avoid replacing clojure.core/name
-                   transaction-name :transaction/name 
-                   :keys [transaction/tags
-                          transaction/date
-                          transaction/amount
-                          transaction/currency
-                          transaction/details
-                          ui.transaction/show-tags]} (om/props this)]
-              (prn tags)
-              (html
-                [:div 
-                 [:style (css [:#ui-transaction {:background-color #"fff"}
-                               [:&:hover {:background-color "rgb(250,250,250)"}]
-                               [:&:active {:background-color "#eee"}]])]
-                 [:div (-> (style {:display "flex" :flex-direction "column"
-                                   :borderStyle "solid"
-                                   :borderWidth "0px 1px 1px 1px"
-                                   :borderRadius "0.5em"
-                                   :padding "0.5em"}) 
-                           (assoc :id "ui-transaction"))
-                  [:div (style {:display "flex"
-                                :flex-direction "row"
-                                :flex-wrap "nowrap"
-                               :align-items "center"
-                                :justify-content "space-between"})
-                   [:div (style {:display "flex"
-                                 :flex-direction "row"})
-                    transaction-name]
-                   [:div (style {:display "flex"
-                                 :flex-direction "reverse-row"})
-                    (str amount " " (:currency/name currency))]]
-                  (when details
-                    [:div (style {:margin "0em 1.0em":padding "0.3em"
-                                  :fontStyle "italic"}) 
-                     details])
-                  (when show-tags
-                    [:div
-                     (->> tags (map :tag/name) (map render-tag))])]]))))
+  Object
+  (render [this]
+          (let [{;; rename to avoid replacing clojure.core/name
+                 transaction-name :transaction/name 
+                 :keys [transaction/tags
+                        transaction/date
+                        transaction/amount
+                        transaction/currency
+                        transaction/details
+                        ui.transaction/show-tags]} (om/props this)]
+            (prn tags)
+            (html
+              [:div 
+               [:style (css [:#ui-transaction {:background-color #"fff"}
+                             [:&:hover {:background-color "rgb(250,250,250)"}]
+                             [:&:active {:background-color "#eee"}]])]
+               [:div (-> (style {:display "flex" :flex-direction "column"
+                                 :border-style "solid"
+                                 :border-width "0px 1px 1px 1px"
+                                 :border-radius "0.5em"
+                                 :padding "0.5em"}) 
+                         (assoc :id "ui-transaction"))
+                [:div (style {:display "flex"
+                              :flex-direction "row"
+                              :flex-wrap "nowrap"
+                              :align-items "center"
+                              :justify-content "space-between"})
+                 [:div (style {:display "flex"
+                               :flex-direction "row"})
+                  transaction-name]
+                 [:div (style {:display "flex"
+                               :flex-direction "reverse-row"})
+                  (str amount " " (:currency/name currency))]]
+                (when details
+                  [:div (style {:margin "0em 1.0em":padding "0.3em"
+                                :fontStyle "italic"}) 
+                   details])
+                (when show-tags
+                  [:div
+                   (->> tags (map :tag/name) (map render-tag))])]]))))
 
 (def transaction (om/factory Transaction))
 
@@ -124,7 +139,7 @@
            :date/month
            :date/day
            :transaction/_date ?transactions
-           
+
            :ui.day/expanded])
   Object
   (render [this]
@@ -141,24 +156,24 @@
                                      :padding "0.5em"})
                              (assoc :id "ui-day"
                                     :on-click #(expand-day this props)))
-                   [:div (style {:display "flex"
-                                 :flex-direction "row"
-                                 :flex-wrap "nowrap"
-                                 :align-items "center"
-                                 :justify-content "space-between"})
                     [:div (style {:display "flex"
                                   :flex-direction "row"
-                                  :fontSize "1.3em"
-                                  :fontWeight "bold"})
-                     [:span (day-of-the-week props)]]
-                    [:div (style {:display "flex"
-                                  :flex-direction "reverse-row"
-                                  :fontSize "1.3em"
-                                  :fontWeight "bold"})
-                     (let [{:keys [amount currency]} (sum transactions)]
-                       (str amount " " currency))]]]
+                                  :flex-wrap "nowrap"
+                                  :align-items "center"
+                                  :justify-content "space-between"})
+                     [:div (style {:display "flex"
+                                   :flex-direction "row"
+                                   :fontSize "1.3em"
+                                   :fontWeight "bold"})
+                      [:span (day-of-the-week props)]]
+                     [:div (style {:display "flex"
+                                   :flex-direction "reverse-row"
+                                   :fontSize "1.3em"
+                                   :fontWeight "bold"})
+                      (let [{:keys [amount currency]} (sum transactions)]
+                        (str amount " " currency))]]]
                    (when expanded
-                      [:div 
+                     [:div 
                       (map transaction transactions)])]))))
 
 (def day-of-transactions (om/factory DayTransactions))
