@@ -12,10 +12,7 @@
 
 ; Pull and format datomic entries
 (defn- distinct-ids
-  "Get distinct db ids from the nested entity with the given keyword k in a list of entities.
-  If f is provided, it will be applied on the list of entities matching the k keyword.
-  E.g. if k points to a list of values, #(apply concat %) can be provided to fetch
-  the distinct values in all of the lists."
+  "Get distinct db ids from the nested entity with the given keyword k in a list of entities."
   ([entities attr]
    (mapv :db/id (set (flatten (map attr entities))))))
 
@@ -49,13 +46,24 @@
 (defn- nested-entities [db user-txs attr]
   (db-entities db (distinct-ids user-txs attr)))
 
+(defn conversions [db user-tx-ids]
+  (q '[:find [(pull ?c [*]) ...]
+       :in $ [?t ...]
+       :where
+       [?t :transaction/date ?d]
+       [?c :conversion/date ?d]
+       [?t :transaction/currency ?cur]
+       [?c :conversion/currency ?cur]]
+     db user-tx-ids))
+
 (defn all-data [db user-email params]
   (let [user-txs (user-txs db user-email params)
         entities (partial nested-entities db user-txs)]
     (vec (concat user-txs
                  (entities :transaction/date)
                  (entities :transaction/currency)
-                 (entities :transaction/tags)))))
+                 (entities :transaction/tags)
+                 (conversions db (map :db/id user-txs))))))
 
 (defn schema
   "Pulls schema for the datomic attributes represented as keys in the given data map,
@@ -63,7 +71,7 @@
   ([db data]
    (schema db identity data))
   ([db f data]
-   (mapv #(into {} (d/entity db %)) (filter f (distinct-attrs data)))))
+   (filter f (map #(into {} (d/entity db %)) (distinct-attrs data)))))
 
 (defn currencies [db]
   (q '[:find [(pull ?e [*]) ...]

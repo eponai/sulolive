@@ -37,8 +37,8 @@
 (defn post-currencies [conn curs]
   (safe t/currencies conn curs))
 
-(defn post-currency-rates [conn date-str rates]
-  (safe t/currency-rates conn date-str rates))
+(defn post-currency-rates [conn rates]
+  (safe t/currency-rates conn rates))
 
 (defn post-user-txs [conn user-email user-txs]
   (safe t/user-txs conn user-email user-txs))

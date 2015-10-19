@@ -25,8 +25,8 @@
       (transact conn txs))                                  ;TODO: check if conversions exist for this date, and fetch if not.
     {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
 
-(defn currency-rates [conn date-str rates]
-  (transact conn (f/cur-rates->db-txs (assoc rates :date date-str))))
+(defn currency-rates [conn rates]
+  (transact conn (f/cur-rates->db-txs rates)))
 
 (defn currencies [conn currencies]
   (transact conn (f/curs->db-txs currencies)))
