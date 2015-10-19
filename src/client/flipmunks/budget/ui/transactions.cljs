@@ -53,13 +53,15 @@
               (prn tags)
               (html
                 [:div 
-                 [:style (css [:#day:active {:background-color "rgb(250,250,250)"}])]
-                 [:div (assoc (style {:display "flex" :flex-direction "column"
-                                      :borderStyle "solid"
-                                      :borderWidth "0px 1px 1px 1px"
-                                      :borderRadius "0.5em"
-                                      :padding "0.5em"}) 
-                              :id "day")
+                 [:style (css [:#ui-transaction {:background-color #"fff"}
+                               [:&:hover {:background-color "rgb(250,250,250)"}]
+                               [:&:active {:background-color "#eee"}]])]
+                 [:div (-> (style {:display "flex" :flex-direction "column"
+                                   :borderStyle "solid"
+                                   :borderWidth "0px 1px 1px 1px"
+                                   :borderRadius "0.5em"
+                                   :padding "0.5em"}) 
+                           (assoc :id "ui-transaction"))
                   [:div (style {:display "flex"
                                 :flex-direction "row"
                                 :flex-wrap "nowrap"
@@ -120,13 +122,17 @@
   Object
   (render [this]
           (let [{transactions :transaction/_date
-                 :keys [date/year date/month date/day
+                 :keys [date/year date/month date/day date/ymd
                         ui.day/expanded] :as props} (om/props this)]
             (html [:div 
-                   [:div (style {:borderWidth "1px"
-                                :borderStyle "solid"
-                                :borderRadius "0.5em"
-                                :padding "0.5em"}) 
+                   [:style (css [:#ui-day {:background-color "#fff"}
+                                 [:&:hover {:background-color "rgb(250,250,250)"}]
+                                 [:&:active {:background-color "#eee"}]])]
+                   [:div (-> (style {:borderWidth (if expanded "1px" "1px 1px 3px 1px")
+                                     :borderStyle "solid"
+                                     :borderRadius "0.5em"
+                                     :padding "0.5em"})
+                             (assoc :id "ui-day"))
                    [:div (style {:display "flex"
                                  :flex-direction "row"
                                  :flex-wrap "nowrap"
@@ -136,7 +142,7 @@
                                   :flex-direction "row"
                                   :fontSize "1.3em"
                                   :fontWeight "bold"})
-                     (day-of-the-week props)]
+                     [:span (day-of-the-week props)]]
                     [:div (style {:display "flex"
                                   :flex-direction "reverse-row"
                                   :fontSize "1.3em"
