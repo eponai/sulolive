@@ -56,7 +56,9 @@
                  :ui.transaction/expanded])
     Object
     (render [this]
-            (let [{:keys [transaction/tags
+            (let [{;; rename to avoid replacing clojure.core/name
+                   transaction-name :transaction/name 
+                   :keys [transaction/tags
                           transaction/date
                           transaction/amount
                           transaction/currency
@@ -78,9 +80,9 @@
                                :align-items "center"
                                 :justify-content "space-between"})
                    [:div (style {:display "flex"
-                               :flex-direction "row"
-                               :fontWeight "bold"})
-                    (day-of-the-week date)]
+                                 :flex-direction "row"
+                                 :fontWeight "bold"})
+                    transaction-name]
                    [:div (style {:display "flex"
                                  :flex-direction "reverse-row"})
                     (str amount " " (:currency/name currency))]]
@@ -93,6 +95,14 @@
 (def transaction (om/factory Transaction))
 
 ;; Transactions grouped by a day
+
+(defn sum
+  "Adds transactions amounts together.
+  TODO: Needs to convert the transactions to the 'primary currency' some how."
+  [transactions]
+  {:amount (transduce (map :transaction/amount) + 0 transactions)
+   ;; TODO: Should instead use the primary currency
+   :currency (-> transactions first :transaction/currency :currency/name)})
 
 (defui DayTransactions
   static om/IQueryParams
@@ -107,7 +117,21 @@
   Object
   (render [this]
           (let [{:keys [date/year date/month date/day
-                        transaction/_date]} (om/props this)]
-            (html [:div "render day here"]))))
+                        transaction/_date] :as date} (om/props this)
+                ]
+            (html [:div
+                   [:div (style {:display "flex"
+                                 :flex-direction "row"
+                                 :flex-wrap "nowrap"
+                                 :align-items "center"
+                                 :justify-content "space-between"})
+                    [:div (style {:display "flex"
+                                  :flex-direction "row"
+                                  :fontWeight "bold"})
+                     (day-of-the-week date)]
+                    [:div (style {:display "flex"
+                                  :flex-direction "reverse-row"})
+                     (let [{:keys [amount currency]} (sum _date)]
+                       (str amount " " currency))]]]))))
 
 (def day-of-transactions (om/factory DayTransactions))

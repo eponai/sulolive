@@ -12,7 +12,7 @@
    :transaction/tags (mapv #(hash-map :tag/name %) tags)})
 
 (def test-transaction 
-  (transaction-props "coffee" [2015 10 16] 140 "THB" 
+  (transaction-props "Coffee" [2015 10 16] 140 "THB" 
                      ["thailand" "2015" "chiang mai"]))
 
 (defcard transaction-card
