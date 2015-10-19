@@ -50,17 +50,6 @@
     (b/post-currencies conn test-curs)
     conn))
 
-(defn- test-input-db-data
-  "Test that the input data mathces the db entities db-data. Checking that count is the same,
-  and that all keys in the maps match."
-  [input db-data]
-  (let [key-set #(set (keys %))]
-    (is (= (count input)
-           (count db-data)))
-    (is (every? true? (map #(= (key-set %1) (key-set %2))
-                           input
-                           db-data)))))
-
 (deftest test-post-user-data
   (let [db (b/post-user-data (db-with-curs)
                              request
