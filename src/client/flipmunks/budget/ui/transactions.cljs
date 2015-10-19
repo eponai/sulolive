@@ -6,20 +6,6 @@
             [sablono.core :as html :refer-macros [html]]
             [garden.core :refer [css]]))
 
-(defn day-of-the-week 
-  "Given date, returns name of the date and it's number with the appropriate suffix.
-  Examples:
-  2015-10-16 => Friday 16th
-  2015-10-21 => Wednesday 21st"
-  [{:keys [date/year date/month date/day]}]
-  (str (get t.format/days (t/day-of-week (t/date-time year month day)))
-       " "
-       day (condp = (mod day 10)
-             1 "st"
-             2 "nd"
-             3 "rd"
-             "th")))
-
 (defn style [style-map]
   {:style (clj->js style-map)})
 
@@ -70,7 +56,7 @@
                  [:style (css [:#day:active {:background-color "rgb(250,250,250)"}])]
                  [:div (assoc (style {:display "flex" :flex-direction "column"
                                       :borderStyle "solid"
-                                      :borderWidth "1px"
+                                      :borderWidth "0px 1px 1px 1px"
                                       :borderRadius "0.5em"
                                       :padding "0.5em"}) 
                               :id "day")
@@ -80,14 +66,15 @@
                                :align-items "center"
                                 :justify-content "space-between"})
                    [:div (style {:display "flex"
-                                 :flex-direction "row"
-                                 :fontWeight "bold"})
+                                 :flex-direction "row"})
                     transaction-name]
                    [:div (style {:display "flex"
                                  :flex-direction "reverse-row"})
                     (str amount " " (:currency/name currency))]]
                   (when details
-                    [:div (style {:margin "0em 1.0em":padding "0.3em"}) details])
+                    [:div (style {:margin "0em 1.0em":padding "0.3em"
+                                  :fontStyle "italic"}) 
+                     details])
                   (when show-tags
                     [:div
                      (->> tags (map :tag/name) (map render-tag))])]]))))
@@ -96,6 +83,19 @@
 
 ;; Transactions grouped by a day
 
+(defn day-of-the-week 
+  "Given date, returns name of the date and it's number with the appropriate suffix.
+  Examples:
+  2015-10-16 => Friday 16th
+  2015-10-21 => Wednesday 21st"
+  [{:keys [date/year date/month date/day]}]
+  (str (get t.format/days (t/day-of-week (t/date-time year month day)))
+       " "
+       day (condp = (mod day 10)
+             1 "st"
+             2 "nd"
+             3 "rd"
+             "th")))
 (defn sum
   "Adds transactions amounts together.
   TODO: Needs to convert the transactions to the 'primary currency' some how."
@@ -103,6 +103,7 @@
   {:amount (transduce (map :transaction/amount) + 0 transactions)
    ;; TODO: Should instead use the primary currency
    :currency (-> transactions first :transaction/currency :currency/name)})
+
 
 (defui DayTransactions
   static om/IQueryParams
@@ -113,13 +114,19 @@
            :date/year
            :date/month
            :date/day
-           :transaction/_date ?transactions])
+           :transaction/_date ?transactions
+           
+           :ui.day/expanded])
   Object
   (render [this]
-          (let [{:keys [date/year date/month date/day
-                        transaction/_date] :as date} (om/props this)
-                ]
-            (html [:div
+          (let [{transactions :transaction/_date
+                 :keys [date/year date/month date/day
+                        ui.day/expanded] :as props} (om/props this)]
+            (html [:div 
+                   [:div (style {:borderWidth "1px"
+                                :borderStyle "solid"
+                                :borderRadius "0.5em"
+                                :padding "0.5em"}) 
                    [:div (style {:display "flex"
                                  :flex-direction "row"
                                  :flex-wrap "nowrap"
@@ -127,11 +134,17 @@
                                  :justify-content "space-between"})
                     [:div (style {:display "flex"
                                   :flex-direction "row"
+                                  :fontSize "1.3em"
                                   :fontWeight "bold"})
-                     (day-of-the-week date)]
+                     (day-of-the-week props)]
                     [:div (style {:display "flex"
-                                  :flex-direction "reverse-row"})
-                     (let [{:keys [amount currency]} (sum _date)]
-                       (str amount " " currency))]]]))))
+                                  :flex-direction "reverse-row"
+                                  :fontSize "1.3em"
+                                  :fontWeight "bold"})
+                     (let [{:keys [amount currency]} (sum transactions)]
+                       (str amount " " currency))]]]
+                   (when expanded
+                      [:div 
+                      (map transaction transactions)])]))))
 
 (def day-of-transactions (om/factory DayTransactions))
