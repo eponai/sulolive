@@ -45,5 +45,5 @@
   (let [schema (->> schema-file slurp (edn/read-string {:readers *data-readers*}))]
     (d/transact conn schema)
     (core/post-currencies conn currencies)
-    (core/post-user-txs conn transactions)))
+    (core/post-user-data {:body transactions} conn transactions)))
 

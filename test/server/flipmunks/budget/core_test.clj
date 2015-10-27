@@ -53,13 +53,13 @@
   (let [db (b/post-user-data (db-with-curs)
                              request
                              test-convs)
-        result (b/current-user-data "user@email.com"
+        result (b/user-txs "user@email.com"
                                     (:db-after db)
                                     {})
-        inv-result (b/current-user-data "invalid@email.com"
+        inv-result (b/user-txs "invalid@email.com"
                                        (:db-after db)
                                        {})
-        no-result (b/current-user-data "user@email.com"
+        no-result (b/user-txs "user@email.com"
                                        (:db-after db)
                                        {:d "1"})]
     (is (every? #(empty? (val %)) inv-result))

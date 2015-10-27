@@ -16,7 +16,7 @@
 (def ^:dynamic conn)
 
 (def config
-  (read-string (slurp "budget-private/config.edn")))        ;TODO use edn/read
+  (clojure.edn/read-string (slurp "budget-private/config.edn")))
 
 (defn safe
   "Tries to call fn with the given args, and catches and returns any ExceptionInfo that might be thrown by fn."
@@ -44,19 +44,26 @@
 (defn post-currencies [conn curs]
   (safe t/currencies conn curs))
 
-(defn post-currency-rates [conn rate-ms]
-  (safe t/currency-rates conn rate-ms))
-
-(defn post-user-txs [conn user-email user-txs]
-  (safe t/user-txs conn user-email user-txs))
-
-(defn current-user-data
-  "Fetch data for the user with user-email, and the schema for the found data."
-  [user-email db params]
-  (let [db-data (safe p/all-data db user-email params)
-        db-schema (safe p/schema db p/schema-required? db-data)]
+(defn response
+  "Create response with the given db and data. Fetches the schema for the given data and
+  returns a map of the form {:schema [] :entities []}."
+  [db data]
+  (let [db-schema (safe p/schema db data)]
     {:schema   (vec db-schema)
-     :entities db-data}))
+     :entities data}))
+
+(defn user-txs
+  "Fetch response for user data with user-email."
+  [user-email db params]
+  (let [db-data (safe p/all-data db user-email params)]
+    (response db db-data)))
+
+(defn currencies
+  "Fetch response for requesting currencies."
+  [conn]
+  (let [db (d/db conn)
+        curs (safe p/currencies db)]
+    (response db curs)))
 
 (defn post-user-data [conn request rates-fn]
   (let [user-data (:body request)
@@ -80,9 +87,10 @@
 ; App stuff
 (defroutes user-routes
            (GET "/txs" {params :params
-                        session :session} (str (current-user-data (cur-usr-email session) (d/db conn) params)))
+                        session :session} (str (user-txs (cur-usr-email session) (d/db conn) params)))
            (POST "/txs" [request] (str (post-user-data conn request test-currency-rates)))
-           (GET "/test" {session :session} (str session)))
+           (GET "/test" {session :session} (str session))
+           (GET "/curs" [] (str (currencies conn))))
 
 (defroutes app-routes
            ; Anonymous

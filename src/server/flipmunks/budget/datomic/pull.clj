@@ -73,13 +73,19 @@
                  (entities :transaction/tags)
                  (conversions db (map :db/id user-txs))))))
 
+(defn schema-required?
+  "Return true if the entity is required to be passed with schema.
+  Is true if the entity has a type ref, or cardinality many."
+  [db-entity]
+  (or (= (get db-entity :db/valueType) :db.type/ref)
+      (= (get db-entity :db/cardinality) :db.cardinality/many)
+      (get db-entity :db/unique)))
+
 (defn schema
   "Pulls schema for the datomic attributes represented as keys in the given data map,
   (excludes the :db/id attribute)."
-  ([db data]
-   (schema db identity data))
-  ([db f data]
-   (filter f (map #(into {} (d/entity db %)) (distinct-values data keys)))))
+  [db data]
+  (filter schema-required? (map #(into {} (d/entity db %)) (distinct-values data keys))))
 
 (defn currencies [db]
   (q '[:find [(pull ?e [*]) ...]
@@ -89,14 +95,6 @@
   (q '[:find (pull ?e [*]).
          :in $ ?m
          :where [?e :user/email ?m]] db email))
-
-(defn schema-required?
-  "Return true if the entity is required to be passed with schema.
-  Is true if the entity has a type ref, or cardinality many."
-  [db-entity]
-  (or (= (get db-entity :db/valueType) :db.type/ref)
-      (= (get db-entity :db/cardinality) :db.cardinality/many)
-      (get db-entity :db/unique)))
 
 
 
