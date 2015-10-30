@@ -7,5 +7,3 @@
 (defcard header-has-new-transacion-button
          (h/header {}))
 
-
-
