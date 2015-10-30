@@ -76,12 +76,8 @@
 ; Auth stuff
 
 (defn user-creds [email]
-  (let [db-user (safe p/user (d/db conn) email)]
-    (when db-user
-      {:identity (:db/id db-user)
-       :username (:user/email db-user)
-       :password (:user/enc-password db-user)
-       :roles #{::user}})))
+  (when-let [db-user (safe p/user (d/db conn) email)]
+    (a/user->creds db-user)))
 
 ; App stuff
 (defroutes user-routes
@@ -99,7 +95,7 @@
             <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />"))
 
            ; Requires user login
-           (context "/user" [] (friend/wrap-authorize user-routes #{::user}))
+           (context "/user" [] (friend/wrap-authorize user-routes #{::a/user}))
 
            (friend/logout (ANY "/logout" request (ring.util.response/redirect "/")))
            ; Not found
