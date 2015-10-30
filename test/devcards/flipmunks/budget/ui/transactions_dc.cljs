@@ -50,12 +50,26 @@
                                   :ui.day/expanded
                                   true)))
 
-(let [expanded-trans (-> day-props
-                         (assoc :ui.day/expanded true)
-                         (update :transaction/_date conj t-with-details-and-tags))]
-  (defcard day-of-transactions-expanded--2-transactions
-           (t/day-of-transactions expanded-trans))
-  (defcard two-days-of-transactions
-           (html [:div
-                  (t/day-of-transactions expanded-trans)
-                  (t/day-of-transactions day-props)])))
+(def expanded-trans (-> day-props
+                        (assoc :ui.day/expanded true)
+                        (update :transaction/_date conj t-with-details-and-tags)))
+
+(defcard day-of-transactions-expanded--2-transactions
+         (t/day-of-transactions expanded-trans))
+
+(defcard two-days-of-transactions
+         (html [:div
+                (t/day-of-transactions expanded-trans)
+                (t/day-of-transactions day-props)]))
+
+(defcard month-of-transactions--days-in-reverse-order
+         (t/all-transactions {:query/all-dates [day-props
+                                                (update day-props :date/day inc)]}))
+
+(defcard month-of-transactions--months-in-reverse-order
+         (t/all-transactions {:query/all-dates [day-props
+                                                (update day-props :date/month inc)]}))
+
+(defcard month-of-transactions--year-in-reverse-order
+         (t/all-transactions {:query/all-dates [day-props
+                                                (update day-props :date/year inc)]}))

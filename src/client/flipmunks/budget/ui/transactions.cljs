@@ -72,9 +72,9 @@
                                   [:&:active {:background-color "#eee"}]])]
                     [:div (-> (style {:display        "flex"
                                       :flex-direction "column"
-                                      :border-style "solid"
-                                      :border-width "1px 0px 0px"
-                                      :border-color "#ddd"
+                                      :border-style   "solid"
+                                      :border-width   "1px 0px 0px"
+                                      :border-color   "#ddd"
                                       :padding        "0.5em"})
                               (assoc :id "ui-transaction"))
                      [:div (style {:display         "flex"
@@ -102,7 +102,10 @@
   2015-10-16 => Friday 16th
   2015-10-21 => Wednesday 21st"
   [{:keys [date/year date/month date/day]}]
-  (str (get t.format/days (t/day-of-week (t/date-time year month day)))
+  (str (get t.format/days
+            ;; modding by 7, because t.format/days is zero indexed
+            ;; and day-of-week is one indexed.
+            (mod (t/day-of-week (t/date-time year month day)) 7))
        " "
        day (condp = (mod day 10)
              1 "st"
@@ -167,3 +170,37 @@
                            (map transaction transactions)])]))))
 
 (def day-of-transactions (om/factory DayTransactions))
+
+(defn group-dates-by-year-month [dates]
+  (->> dates
+       (group-by :date/year)
+       (reduce (fn [m [y dates]]
+                 (assoc m y (->> dates
+                                 (group-by :date/month)
+                                 (into (sorted-map)))))
+               (sorted-map))))
+
+(defui AllTransactions
+       static om/IQueryParams
+       (params [this] {:days (conj (om/get-query DayTransactions)
+                                   :date/year
+                                   :date/month
+                                   :date/day)})
+       static om/IQuery
+       (query [this]
+              '[{:query/all-dates ?dates}])
+       Object
+       (render [this]
+               (let [{:keys [query/all-dates]} (om/props this)
+                     by-year-month (group-dates-by-year-month all-dates)]
+                 (html [:div
+                        (map (fn [[year months]]
+                               [:div [:h4 year]
+                                (map (fn [[month dates]]
+                                       [:div [:h2 month]
+                                        (map day-of-transactions
+                                             (rseq (sort-by :date/day dates)))])
+                                     (rseq months))])
+                             (rseq by-year-month))]))))
+
+(def all-transactions (om/factory AllTransactions))
