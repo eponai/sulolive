@@ -26,15 +26,19 @@
     (catch ExceptionInfo e
       e)))
 
-(defn current-user [session]
+(defn current-user
+  "Current session user information."
+  [session]
   (let [user-id (get-in session [::friend/identity :current])]
     (get-in session [::friend/identity :authentications user-id])))
 
-(defn cur-usr-email [session]
+(defn cur-usr-email
+  "The user email of current session."
+  [session]
   (:username (current-user session)))
 
 ;; test currency rates
-(defn test-currency-rates [date-str]
+(defn test-currency-rates [date-str]                        ;TODO remove this test map and use the OER API.
   {:date date-str
    :rates {:SEK 8.333
            :USD 1
@@ -64,7 +68,10 @@
   (let [curs (safe p/currencies db)]
     (response db curs)))
 
-(defn post-user-data [conn request rates-fn]
+(defn post-user-data
+  "Post new transactions for the user in the session. If there's no currency rates
+  for the date of the transactions, they will be fetched from OER."
+  [conn request rates-fn]                ;TODO fix this to not fetch currency rates synchronously
   (let [user-data (:body request)
         dates (map :transaction/date user-data)
         unconverted-dates (clojure.set/difference (set dates)
@@ -73,18 +80,24 @@
       (safe t/currency-rates conn (map rates-fn unconverted-dates)))
     (safe t/user-txs conn (cur-usr-email (:session request)) user-data)))
 
-(defn signup [conn request]
+(defn signup
+  "Create a new user and transact into datomic."
+  [conn request]
   (if-let [new-user (a/signup request)]
      (safe t/new-user conn new-user)))
 
-(defn signup-redirect [conn request]
+(defn signup-redirect
+  "Create a new user and redirect to the login page."
+  [conn request]
   (if (signup conn request)
     (ring.util.response/redirect (util/resolve-absolute-uri "/login" request))
     {:text "invalid user signup"}))
 
 ; Auth stuff
 
-(defn user-creds [db email]
+(defn user-creds
+  "Get user credentials for the specified email in the db."
+  [db email]
   (when-let [db-user (safe p/user db email)]
     (a/user->creds db-user)))
 
