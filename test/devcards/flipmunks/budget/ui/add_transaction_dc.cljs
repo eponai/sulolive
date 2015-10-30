@@ -4,5 +4,5 @@
             [sablono.core :refer-macros [html]])
   (:require-macros [devcards.core :refer [defcard]]))
 
-(defcard generated-card
-  (html [:div "generated. remove me from flipmunks.budget.ui.add_transaction"]))
+(defcard add-transaction
+  (n/add-transaction))
