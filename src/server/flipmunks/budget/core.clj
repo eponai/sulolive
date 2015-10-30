@@ -6,9 +6,9 @@
             [ring.middleware.session.cookie :as cookie]
             [flipmunks.budget.datomic.pull :as p]
             [flipmunks.budget.datomic.transact :as t]
+            [flipmunks.budget.auth :as a]
             [datomic.api :only [q db] :as d]
             [cemerick.friend :as friend]
-            [cemerick.friend.credentials :as creds]
             [cemerick.friend.workflows :as workflows]
             [flipmunks.budget.openexchangerates :as exch])
   (:import (clojure.lang ExceptionInfo)))
@@ -107,7 +107,7 @@
 
 (def app
   (-> app-routes
-      (friend/authenticate {:credential-fn (partial creds/bcrypt-credential-fn user-creds)
+      (friend/authenticate {:credential-fn (partial a/cred-fn user-creds)
                             :workflows     [(workflows/interactive-form)]})
       (wrap-defaults (-> site-defaults
                          (assoc-in [:security :anti-forgery] false)
