@@ -90,3 +90,9 @@
                                 (assoc test-curs :invalid 2))]
       (is (= (:cause (ex-data db))
              ::t/transaction-error)))))
+
+(deftest test-signup
+  (testing "signup new user")
+  (let [valid-params {:username "test" :password "p" :repeat "p"}
+        db-valid (b/signup (new-db) {:request-method :post :params valid-params})]
+    (is (b/user-creds (:db-after db-valid) "test"))))

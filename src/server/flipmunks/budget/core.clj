@@ -74,16 +74,19 @@
       (safe t/currency-rates conn (map rates-fn unconverted-dates)))
     (safe t/user-txs conn (cur-usr-email (:session request)) user-data)))
 
-(defn signup [request]
+(defn signup [conn request]
   (if-let [new-user (a/signup request)]
-    (do (safe t/new-user conn new-user)
-        (ring.util.response/redirect (util/resolve-absolute-uri "/login" request)))
+     (safe t/new-user conn new-user)))
+
+(defn signup-redirect [conn request]
+  (if (signup conn request)
+    (ring.util.response/redirect (util/resolve-absolute-uri "/login" request))
     {:text "invalid user signup"}))
 
 ; Auth stuff
 
-(defn user-creds [email]
-  (when-let [db-user (safe p/user (d/db conn) email)]
+(defn user-creds [db email]
+  (when-let [db-user (safe p/user db email)]
     (a/user->creds db-user)))
 
 ; App stuff
@@ -96,7 +99,7 @@
 
 (defroutes app-routes
 
-           (POST "/signup" request (signup request))
+           (POST "/signup" request (signup-redirect conn request))
 
            ; Anonymous
            (GET "/login" [] (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n
@@ -119,7 +122,7 @@
 
 (def app
   (-> app-routes
-      (friend/authenticate {:credential-fn (partial a/cred-fn user-creds)
+      (friend/authenticate {:credential-fn (partial a/cred-fn #(user-creds (d/db conn) %))
                             :workflows     [(a/form)]})
       (wrap-defaults (-> site-defaults
                          (assoc-in [:security :anti-forgery] false)
