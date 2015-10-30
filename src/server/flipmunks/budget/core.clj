@@ -9,7 +9,6 @@
             [flipmunks.budget.auth :as a]
             [datomic.api :only [q db] :as d]
             [cemerick.friend :as friend]
-            [cemerick.friend.workflows :as workflows]
             [flipmunks.budget.openexchangerates :as exch])
   (:import (clojure.lang ExceptionInfo)))
 
@@ -102,13 +101,14 @@
            ; Requires user login
            (context "/user" [] (friend/wrap-authorize user-routes #{::user}))
 
+           (friend/logout (ANY "/logout" request (ring.util.response/redirect "/")))
            ; Not found
            (route/not-found "Not Found"))
 
 (def app
   (-> app-routes
       (friend/authenticate {:credential-fn (partial a/cred-fn user-creds)
-                            :workflows     [(workflows/interactive-form)]})
+                            :workflows     [(a/form)]})
       (wrap-defaults (-> site-defaults
                          (assoc-in [:security :anti-forgery] false)
                          (assoc-in [:session :store] (cookie/cookie-store {:key (config :session-cookie-key)}))
