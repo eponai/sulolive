@@ -18,6 +18,7 @@ mkdir -p $(dirname "$tst_path")
 # output src path
 echo "(ns $ns
   (:require [om.next :as om :refer-macros [defui]]
+            [flipmunks.budget.ui :refer [style]]
             [sablono.core :as html :refer-macros [html]]
             [garden.core :refer [css]]))" > "$src_path"
 
