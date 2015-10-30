@@ -102,10 +102,8 @@
   2015-10-16 => Friday 16th
   2015-10-21 => Wednesday 21st"
   [{:keys [date/year date/month date/day]}]
-  (str (get t.format/days
-            ;; modding by 7, because t.format/days is zero indexed
-            ;; and day-of-week is one indexed.
-            (mod (t/day-of-week (t/date-time year month day)) 7))
+  (str
+    ((get t.format/date-formatters "EEEE") (t/date-time year month day))
        " "
        day (condp = (mod day 10)
              1 "st"
@@ -195,9 +193,11 @@
                      by-year-month (group-dates-by-year-month all-dates)]
                  (html [:div
                         (map (fn [[year months]]
-                               [:div [:h4 year]
+                               [:div [:span year]
                                 (map (fn [[month dates]]
-                                       [:div [:h2 month]
+                                       [:div
+                                        [:h2 ((get t.format/date-formatters "MMMM")
+                                               (t/date-time year month))]
                                         (map day-of-transactions
                                              (rseq (sort-by :date/day dates)))])
                                      (rseq months))])
