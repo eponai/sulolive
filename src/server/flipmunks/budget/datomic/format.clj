@@ -57,6 +57,9 @@
   [{:db/id             [:user/email user-email]
     :user/transactions (user-txs->db-txs user-txs)}])
 
+(defn user->db-user [new-user]
+  (assoc new-user :db/id (d/tempid :db.part/user)))
+
 (defn cur-rates->db-txs
   "Returns a vector with datomic entites representing a currency conversions
   for the given date. m should be a  map with timestamp and

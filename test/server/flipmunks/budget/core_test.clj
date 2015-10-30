@@ -4,7 +4,7 @@
             [flipmunks.budget.core :as b]
             [flipmunks.budget.datomic.pull :as p]
             [flipmunks.budget.datomic.transact :as t]
-            [flipmunks.budget.datomic.validate :as v]))
+            [flipmunks.budget.validate :as v]))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
 

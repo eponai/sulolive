@@ -9,6 +9,7 @@
             [flipmunks.budget.auth :as a]
             [datomic.api :only [q db] :as d]
             [cemerick.friend :as friend]
+            [cemerick.friend.util :as util]
             [flipmunks.budget.openexchangerates :as exch])
   (:import (clojure.lang ExceptionInfo)))
 
@@ -73,6 +74,12 @@
       (safe t/currency-rates conn (map rates-fn unconverted-dates)))
     (safe t/user-txs conn (cur-usr-email (:session request)) user-data)))
 
+(defn signup [request]
+  (if-let [new-user (a/signup request)]
+    (do (safe t/new-user conn new-user)
+        (ring.util.response/redirect (util/resolve-absolute-uri "/login" request)))
+    {:text "invalid user signup"}))
+
 ; Auth stuff
 
 (defn user-creds [email]
@@ -83,15 +90,24 @@
 (defroutes user-routes
            (GET "/txs" {params :params
                         session :session} (str (user-txs (cur-usr-email session) (d/db conn) params)))
-           (POST "/txs" [request] (str (post-user-data conn request test-currency-rates)))
+           (POST "/txs" request (str (post-user-data conn request test-currency-rates)))
            (GET "/test" {session :session} (str session))
            (GET "/curs" [] (str (currencies conn))))
 
 (defroutes app-routes
+
+           (POST "/signup" request (signup request))
+
            ; Anonymous
            (GET "/login" [] (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n
             Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
             Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n
+            <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />"))
+
+           (GET "/signup" [] (str "<h2>Signup</h2>\n \n<form action=\"/signup\" method=\"POST\">\n
+            Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
+            Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n
+            Repeat: <input type=\"password\" name=\"repeat\" value=\"\" /><br />\n\n
             <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />"))
 
            ; Requires user login

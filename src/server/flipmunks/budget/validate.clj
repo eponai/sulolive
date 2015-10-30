@@ -1,10 +1,11 @@
-(ns flipmunks.budget.datomic.validate)
+(ns flipmunks.budget.validate)
 
-(defn- validate [f & args]
+(defn- validate
+  [f & args]
   (if (apply f args)
     true
     (throw (ex-info "Validation failed" {:cause ::validation-error
-                                         :data {:fn f
+                                         :data {:fn     f
                                                 :params args}}))))
 
 (defn- valid-user-tx? [user-tx]
@@ -19,3 +20,9 @@
 
 (defn valid-user-txs? [user-txs]
   (validate every? #(valid-user-tx? %) user-txs))
+
+(defn valid-signup? [{:keys [request-method params]}]
+  (let [{:keys [password username repeat]} params]
+    (validate = request-method :post)
+    (validate (every-pred not-empty) username password repeat)
+    (validate = password repeat)))

@@ -1,7 +1,7 @@
 (ns flipmunks.budget.datomic.transact
   (:require [datomic.api :as d]
             [flipmunks.budget.datomic.format :as f]
-            [flipmunks.budget.datomic.validate :as v]))
+            [flipmunks.budget.validate :as v]))
 
 
 (defn- transact
@@ -24,6 +24,9 @@
     (let [txs (f/user-owned-txs->dbtxs user-email user-txs)]
       (transact conn txs))
     {:text "Missing required fields"}))                     ;TODO: fix this to pass proper error back to client.
+
+(defn new-user [conn new-user]
+  (transact conn [(f/user->db-user new-user)]))
 
 (defn currency-rates [conn rate-ms]
   (let [db-rates (apply concat (map #(f/cur-rates->db-txs %) rate-ms))]
