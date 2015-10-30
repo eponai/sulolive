@@ -2,6 +2,7 @@
   (:require
     [devcards.core :as dc]
     [sablono.core :as html :refer-macros [html]]
+    [flipmunks.budget.ui.new_transaction_dc]
     [flipmunks.budget.ui.transactions_dc])
   (:require-macros
     [devcards.core :refer [defcard]]))
