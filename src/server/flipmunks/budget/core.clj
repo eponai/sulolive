@@ -60,9 +60,8 @@
 
 (defn currencies
   "Fetch response for requesting currencies."
-  [conn]
-  (let [db (d/db conn)
-        curs (safe p/currencies db)]
+  [db]
+  (let [curs (safe p/currencies db)]
     (response db curs)))
 
 (defn post-user-data [conn request rates-fn]
@@ -95,7 +94,7 @@
                         session :session} (str (user-txs (cur-usr-email session) (d/db conn) params)))
            (POST "/txs" request (str (post-user-data conn request test-currency-rates)))
            (GET "/test" {session :session} (str session))
-           (GET "/curs" [] (str (currencies conn))))
+           (GET "/curs" [] (str (currencies (d/db conn)))))
 
 (defroutes app-routes
 
