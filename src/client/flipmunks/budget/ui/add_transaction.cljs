@@ -4,9 +4,20 @@
             [sablono.core :as html :refer-macros [html]]
             [garden.core :refer [css]]))
 
-(defn input [this k opts]
-  [:input (-> opts
-              (assoc :on-change #(om/update-state! this k (.-value (.-target %)))))])
+(defn node [name on-change opts & children]
+  (apply vector
+         name
+         (merge {:on-change on-change} opts)
+         children))
+
+(defn input [on-change opts]
+  (node :input on-change opts))
+
+(defn select [on-change opts children]
+  (apply node :select on-change opts children))
+
+(defn on-change [this k]
+  #(om/update-state! this assoc k (.-value (.-target %))))
 
 (defui AddTransaction
        om/IQuery
@@ -15,36 +26,35 @@
        (render
          [this]
          (let [{:keys [query/all-currencies]} (om/props this)
-               {:keys [ui.add-transaction/edit-amount
-                       ui.add-transaction/edit-currency
-                       ui.add-transaction/edit-title
-                       ui.add-transaction/edit-date]} (om/get-state this)]
-           (prn "DATE: " edit-date)
+               {:keys [::edit-amount
+                       ::edit-currency
+                       ::edit-title] :as s} (om/get-state this)]
+           (prn s)
            (html
              [:div
               [:h2 "New Transaction"]
               [:div [:span "Amount:"]
-               (input this :ui.add-transaction/edit-amount
+               (input (on-change this ::edit-amount)
                       (apply assoc
                              (style {:text-align "right"})
                              :type "number"
                              :placeholder "enter amount"
                              :value edit-amount))
-               [:select {:on-change #(om/update-state!
-                                      this
-                                      assoc
-                                      :ui.add-transaction/edit-currency
-                                      (.-value (.-target %)))}
-                (map #(vector :option (merge {:value %}
-                                             (when (= % edit-currency)
+               (select (on-change this ::edit-currency)
+                       nil
+                       (map #(let [v (name %)]
+                              (vector :option
+                                      (merge {:value v}
+                                             (when (= v edit-currency)
                                                {:selected "selected"}))
-                              %)
-                     all-currencies)]]
+                                      v))
+                            all-currencies))]
               [:div [:span "Date:"]
                [:input {:type "text" :value "ENTER DATE LOL"}]]
               [:div [:span "Title:"]
-               (input this :ui.add-transaction/edit-title {:type        "text"
-                                                           :placeholder "enter title"
-                                                           :value       edit-title})]]))))
+               (input (on-change this ::edit-title)
+                      {:type        "text"
+                       :placeholder "enter title"
+                       :value       edit-title})]]))))
 
 (def add-transaction (om/factory AddTransaction))
