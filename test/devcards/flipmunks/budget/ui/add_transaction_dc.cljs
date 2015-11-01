@@ -5,4 +5,4 @@
   (:require-macros [devcards.core :refer [defcard]]))
 
 (defcard add-transaction
-  (n/add-transaction))
+  (n/add-transaction {:query/all-currencies [:LEK :TBH :USD :SEK]}))
