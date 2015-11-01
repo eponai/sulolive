@@ -26,20 +26,21 @@
        (render
          [this]
          (let [{:keys [query/all-currencies]} (om/props this)
-               {:keys [::edit-amount
-                       ::edit-currency
-                       ::edit-title] :as s} (om/get-state this)]
-           (prn s)
+               {:keys [::edit-amount ::edit-currency ::edit-title] :as state}
+               ;; merging state with props, so that we can test the states
+               ;; with devcards
+               (merge (om/props this)
+                      (om/get-state this))]
+           (prn state)
            (html
              [:div
               [:h2 "New Transaction"]
               [:div [:span "Amount:"]
                (input (on-change this ::edit-amount)
-                      (apply assoc
-                             (style {:text-align "right"})
-                             :type "number"
-                             :placeholder "enter amount"
-                             :value edit-amount))
+                      (merge (style {:text-align "right"})
+                             {:type        "number"
+                              :placeholder "enter amount"
+                              :value       edit-amount}))
                (select (on-change this ::edit-currency)
                        nil
                        (map #(let [v (name %)]
