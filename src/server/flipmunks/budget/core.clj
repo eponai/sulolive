@@ -48,13 +48,23 @@
 (defn post-currencies [conn curs]
   (safe t/currencies conn curs))
 
+(defn- internal-error [error]
+  (when-let [error-data (ex-data error)]
+    {:status 500
+     :error error}))
+
 (defn response
   "Create response with the given db and data. Fetches the schema for the given data and
-  returns a map of the form {:schema [] :entities []}."
+  returns a map of the form {:schema [] :entities []}. Returns an error map of the form
+  {:status 500 :error error} if failure to handle request."
   [db data]
-  (let [db-schema (safe p/schema db data)]
-    {:schema   (vec db-schema)
-     :entities data}))
+  (if-let [data-error (internal-error data)]
+    data-error
+    (let [db-schema (safe p/schema db data)]
+      (if-let [schema-error (internal-error db-schema)]
+        schema-error
+        {:schema   (vec db-schema)
+         :entities data}))))
 
 (defn user-txs
   "Fetch response for user data with user-email."
