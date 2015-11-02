@@ -46,13 +46,10 @@
                               :placeholder "enter amount"
                               :value       edit-amount}))
                (select (on-change this ::edit-currency)
-                       nil
+                       (when edit-currency
+                         {:default-value edit-currency})
                        (map #(let [v (name %)]
-                              (vector :option
-                                      (merge {:value v}
-                                             (when (= v edit-currency)
-                                               {:selected "selected"}))
-                                      v))
+                              (vector :option {:value v} v))
                             all-currencies))]
               [:div [:span "Date:"]
                (d/datepicker {:value edit-date
