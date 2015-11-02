@@ -6,5 +6,5 @@
 
 (defcard datepicker
          (d/datepicker {:value       (js/Date.)
-                        :on-change   #(prn "changed: " %)
+                        :on-change   #(prn "on-changed called with: " %)
                         :placeholder "enter date"}))

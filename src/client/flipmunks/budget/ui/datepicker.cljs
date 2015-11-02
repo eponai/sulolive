@@ -5,6 +5,9 @@
             [sablono.core :refer-macros [html]]
             [garden.core :refer [css]]))
 
+;; Wrapper inspired by:
+;; https://github.com/thomasboyt/react-pikaday
+
 (def pikaday-ref-name "pikaday")
 
 (defn get-pikaday-dom-node [this]
@@ -15,7 +18,7 @@
         old-time (when old-date (.getTime old-date))]
     (when (not= new-time old-time)
       (if new-date
-        ;; pass true to avoid calling onSelect
+        ;; pass true to avoid calling picker's :onSelect
         (some-> (om/get-state this) ::picker deref (.setDate new-date true))
         ;; workaround for pikaday not clearing value when date set to falsey
         (.value (get-pikaday-dom-node this) "")))))
@@ -23,26 +26,25 @@
 (defui DatePicker
        Object
        (getInitialState [this] {::picker (atom nil)})
+       (componentWillUnmount [this] (some-> this om/get-state ::picker (reset! nil)))
        (componentDidMount
          [this]
          (let [{:keys [on-change value]} (om/props this)
-               {:keys [::picker]} (om/get-state this)
-               p (js/Pikaday.
-                   #js {:field    (get-pikaday-dom-node this)
-                        :format   "D MMM YYYY"
-                        :onSelect on-change})]
-           (reset! picker p)
+               picker (js/Pikaday.
+                        #js {:field    (get-pikaday-dom-node this)
+                             :format   "D MMM YYYY"
+                             :onSelect on-change})]
+           (reset! (-> this om/get-state ::picker) picker)
            (set-date-if-changed this value nil)))
-       (componentWillUnmount [this] (some-> (om/get-state this)
-                                            (::picker)
-                                            (reset! nil)))
-       (componentWillReceiveProps [this next-props]
-                                  (let [{old-value :value} (om/props this)
-                                        {next-value :value} next-props]
-                                    (set-date-if-changed this next-value old-value)))
+       (componentWillReceiveProps
+         [this next-props]
+         (let [{old-value :value} (om/props this)
+               {next-value :value} next-props]
+           (set-date-if-changed this next-value old-value)))
        (render [this]
-               (html [:input {:type "text"
-                              :ref pikaday-ref-name
+               (html [:input {:type        "text"
+                              :ref         pikaday-ref-name
                               :placeholder (-> this om/props :placeholder)}])))
 
+;; props: {:value js/Date :on-change f :placeholder str}
 (def datepicker (om/factory DatePicker))
