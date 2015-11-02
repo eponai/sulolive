@@ -3,6 +3,7 @@
             [flipmunks.budget.ui.add_transaction :as a]
             [om.next :as om]
             [goog.object :as gobj]
+            [cljsjs.moment]
             [sablono.core :refer-macros [html]])
   (:require-macros [devcards.core :refer [defcard]]))
 
@@ -15,3 +16,8 @@
          (a/add-transaction (assoc props ::a/edit-amount 123
                                          ::a/edit-currency "SEK"
                                          ::a/edit-title "Pizza")))
+
+(defcard datepicker
+         (a/datepicker {:value       (js/Date.)
+                        :on-change   #(prn "changed: " %)
+                        :placeholder "enter date"}))
