@@ -1,12 +1,17 @@
-(ns flipmunks.budget.validate)
+(ns flipmunks.budget.validate
+  (:require [flipmunks.budget.error :as e]))
 
 (defn- validate
-  [f & args]
+  [input f & args]
   (if (apply f args)
     true
-    (throw (ex-info "Validation failed" {:cause ::validation-error
-                                         :data {:fn     f
-                                                :params args}}))))
+    (let [message (str "Validation failed for input: " input)]
+      (throw (ex-info message {:cause   ::validation-error
+                               :status  ::e/unprocessable-entity
+                               :data    {:fn     f
+                                         :params args
+                                         :input  input}
+                               :message message})))))
 
 (defn- valid-user-tx? [user-tx]
   (let [required-fields #{:transaction/uuid
@@ -22,13 +27,14 @@
   "Validate the user transactions to be posted. Verifies that the required attributes
   are included en every transaction, and throws an ExceptionInfo if validation fails."
   [user-txs]
-  (validate every? #(valid-user-tx? %) user-txs))
+  (validate "User transactions" every? #(valid-user-tx? %) user-txs))
 
 (defn valid-signup?
   "Validate the signup parameters. Checks that username and password are not empty,
   and that the password matches the repeated password. Throws an ExceptionInfo if validation fails."
   [{:keys [request-method params]}]
-  (let [{:keys [password username repeat]} params]
-    (validate = request-method :post)
-    (validate (every-pred not-empty) username password repeat)
-    (validate = password repeat)))
+  (let [{:keys [password username repeat]} params
+        input "User signup"]
+    (validate input = request-method :post)
+    (validate input (every-pred not-empty) username password repeat)
+    (validate input = password repeat)))

@@ -7,24 +7,16 @@
             [flipmunks.budget.datomic.pull :as p]
             [flipmunks.budget.datomic.transact :as t]
             [flipmunks.budget.auth :as a]
+            [flipmunks.budget.error :as e]
             [datomic.api :only [q db] :as d]
             [cemerick.friend :as friend]
             [cemerick.friend.util :as util]
-            [flipmunks.budget.openexchangerates :as exch])
-  (:import (clojure.lang ExceptionInfo)))
+            [flipmunks.budget.openexchangerates :as exch]))
 
 (def ^:dynamic conn)
 
 (def config
   (clojure.edn/read-string (slurp "budget-private/config.edn")))
-
-(defn safe
-  "Tries to call fn with the given args, and catches and returns any ExceptionInfo that might be thrown by fn."
-  [fn & args]
-  (try
-    (apply fn args)
-    (catch ExceptionInfo e
-      e)))
 
 (defn current-user
   "Current session user information."
@@ -46,36 +38,32 @@
 ; Transact data to datomic
 
 (defn post-currencies [conn curs]
-  (safe t/currencies conn curs))
-
-(defn- internal-error [error]
-  (when-let [error-data (ex-data error)]
-    {:status 500
-     :error error}))
+  (e/safe t/currencies conn curs))
 
 (defn response
   "Create response with the given db and data. Fetches the schema for the given data and
   returns a map of the form {:schema [] :entities []}. Returns an error map of the form
   {:status 500 :error error} if failure to handle request."
   [db data]
-  (if-let [data-error (internal-error data)]
-    data-error
-    (let [db-schema (safe p/schema db data)]
-      (if-let [schema-error (internal-error db-schema)]
-        schema-error
-        {:schema   (vec db-schema)
-         :entities data}))))
+  (if-let [error (e/http-error data)]
+    error
+    (let [schema (e/safe p/schema db data)]
+      (if-let [error (e/http-error schema)]
+        error
+        (ring.util.response/response
+          {:schema   schema
+           :entities data})))))
 
 (defn user-txs
   "Fetch response for user data with user-email."
   [user-email db params]
-  (let [db-data (safe p/all-data db user-email params)]
+  (let [db-data (e/safe p/all-data db user-email params)]
     (response db db-data)))
 
 (defn currencies
   "Fetch response for requesting currencies."
   [db]
-  (let [curs (safe p/currencies db)]
+  (let [curs (e/safe p/currencies db)]
     (response db curs)))
 
 (defn post-user-data
@@ -87,14 +75,14 @@
         unconverted-dates (clojure.set/difference (set dates)
                                                   (p/converted-dates (d/db conn) dates))]
     (when (not-empty unconverted-dates)
-      (safe t/currency-rates conn (map rates-fn unconverted-dates)))
-    (safe t/user-txs conn (cur-usr-email (:session request)) user-data)))
+      (e/safe t/currency-rates conn (map rates-fn unconverted-dates)))
+    (e/safe t/user-txs conn (cur-usr-email (:session request)) user-data)))
 
 (defn signup
   "Create a new user and transact into datomic."
   [conn request]
   (if-let [new-user (a/signup request)]
-     (safe t/new-user conn new-user)))
+     (e/safe t/new-user conn new-user)))
 
 (defn signup-redirect
   "Create a new user and redirect to the login page."
@@ -108,7 +96,7 @@
 (defn user-creds
   "Get user credentials for the specified email in the db."
   [db email]
-  (when-let [db-user (safe p/user db email)]
+  (when-let [db-user (e/safe p/user db email)]
     (a/user->creds db-user)))
 
 ; App stuff
@@ -117,7 +105,7 @@
                         session :session} (str (user-txs (cur-usr-email session) (d/db conn) params)))
            (POST "/txs" request (str (post-user-data conn request test-currency-rates)))
            (GET "/test" {session :session} (str session))
-           (GET "/curs" [] (str (currencies (d/db conn)))))
+           (GET "/curs" [] (currencies (d/db conn))))
 
 (defroutes app-routes
 

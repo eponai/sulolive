@@ -1,7 +1,8 @@
 (ns flipmunks.budget.datomic.transact
   (:require [datomic.api :as d]
             [flipmunks.budget.datomic.format :as f]
-            [flipmunks.budget.validate :as v]))
+            [flipmunks.budget.validate :as v]
+            [flipmunks.budget.error :as e]))
 
 
 (defn- transact
@@ -11,8 +12,10 @@
     @(d/transact conn txs)
     (catch Exception e
       (throw (ex-info (.getMessage e) {:cause ::transaction-error
+                                       :status ::e/internal-error
                                        :data {:conn conn
                                               :txs txs}
+                                       :message (.getMessage e)
                                        :exception e})))))
 
 (defn user-txs

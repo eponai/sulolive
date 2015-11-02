@@ -1,13 +1,21 @@
 (ns flipmunks.budget.datomic.pull
-  (:require [datomic.api :as d]))
+  (:require [datomic.api :as d]
+            [flipmunks.budget.error :as e]))
 
 (defn- q [query & inputs]
   (try
-    (apply (partial d/q query) inputs)
+    (throw (ex-info "HEJ" {:cause ::query-error
+                                     :status ::e/internal-error
+                                     :data {:query query
+                                            :inputs inputs}
+                                     :message "HEJ"
+                                     :exception "JE"}))
     (catch Exception e
       (throw (ex-info (.getMessage e) {:cause ::query-error
+                                       :status ::e/internal-error
                                        :data {:query query
                                               :inputs inputs}
+                                       :message (.getMessage e)
                                        :exception e})))))
 
 ; Pull and format datomic entries
@@ -85,7 +93,7 @@
   "Pulls schema for the datomic attributes represented as keys in the given data map,
   (excludes the :db/id attribute)."
   [db data]
-  (filter schema-required? (map #(into {} (d/entity db %)) (distinct-values data keys))))
+  (vec (filter schema-required? (map #(into {} (d/entity db %)) (distinct-values data keys)))))
 
 (defn currencies [db]
   (q '[:find [(pull ?e [*]) ...]
