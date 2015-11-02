@@ -16,8 +16,3 @@
          (a/add-transaction (assoc props ::a/edit-amount 123
                                          ::a/edit-currency "SEK"
                                          ::a/edit-title "Pizza")))
-
-(defcard datepicker
-         (a/datepicker {:value       (js/Date.)
-                        :on-change   #(prn "changed: " %)
-                        :placeholder "enter date"}))
