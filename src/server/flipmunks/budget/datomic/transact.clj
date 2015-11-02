@@ -12,7 +12,7 @@
     @(d/transact conn txs)
     (catch Exception e
       (throw (ex-info (.getMessage e) {:cause ::transaction-error
-                                       :status ::e/internal-error
+                                       :status ::e/service-unavailable
                                        :data {:conn conn
                                               :txs txs}
                                        :message (.getMessage e)

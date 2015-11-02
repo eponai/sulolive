@@ -27,9 +27,6 @@
 (defn signup
   "Verify new user input and return a user entity if valid."
   [{:keys [params] :as request}]
-  (try
-    (when (v/valid-signup? request)
-      {:user/email        (params :username)
-       :user/enc-password (creds/hash-bcrypt (params :password))})
-    (catch ExceptionInfo e
-      nil)))
+  (when (v/valid-signup? request)
+    {:user/email        (params :username)
+     :user/enc-password (creds/hash-bcrypt (params :password))}))

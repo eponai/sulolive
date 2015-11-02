@@ -4,15 +4,10 @@
 
 (defn- q [query & inputs]
   (try
-    (throw (ex-info "HEJ" {:cause ::query-error
-                                     :status ::e/internal-error
-                                     :data {:query query
-                                            :inputs inputs}
-                                     :message "HEJ"
-                                     :exception "JE"}))
+    (apply (partial d/q query) inputs)
     (catch Exception e
       (throw (ex-info (.getMessage e) {:cause ::query-error
-                                       :status ::e/internal-error
+                                       :status ::e/service-unavailable
                                        :data {:query query
                                               :inputs inputs}
                                        :message (.getMessage e)

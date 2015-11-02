@@ -38,32 +38,27 @@
 ; Transact data to datomic
 
 (defn post-currencies [conn curs]
-  (e/safe t/currencies conn curs))
+  (t/currencies conn curs))
 
 (defn response
   "Create response with the given db and data. Fetches the schema for the given data and
   returns a map of the form {:schema [] :entities []}. Returns an error map of the form
   {:status 500 :error error} if failure to handle request."
   [db data]
-  (if-let [error (e/http-error data)]
-    error
-    (let [schema (e/safe p/schema db data)]
-      (if-let [error (e/http-error schema)]
-        error
-        (ring.util.response/response
-          {:schema   schema
-           :entities data})))))
+  (let [schema (p/schema db data)]
+    (ring.util.response/response {:schema   schema
+                                  :entities data})))
 
 (defn user-txs
   "Fetch response for user data with user-email."
   [user-email db params]
-  (let [db-data (e/safe p/all-data db user-email params)]
+  (let [db-data (p/all-data db user-email params)]
     (response db db-data)))
 
 (defn currencies
   "Fetch response for requesting currencies."
   [db]
-  (let [curs (e/safe p/currencies db)]
+  (let [curs (p/currencies db)]
     (response db curs)))
 
 (defn post-user-data
@@ -75,28 +70,28 @@
         unconverted-dates (clojure.set/difference (set dates)
                                                   (p/converted-dates (d/db conn) dates))]
     (when (not-empty unconverted-dates)
-      (e/safe t/currency-rates conn (map rates-fn unconverted-dates)))
-    (e/safe t/user-txs conn (cur-usr-email (:session request)) user-data)))
+      (t/currency-rates conn (map rates-fn unconverted-dates)))
+    (t/user-txs conn (cur-usr-email (:session request)) user-data)))
 
 (defn signup
   "Create a new user and transact into datomic."
   [conn request]
   (if-let [new-user (a/signup request)]
-     (e/safe t/new-user conn new-user)))
+     (t/new-user conn new-user)))
 
 (defn signup-redirect
   "Create a new user and redirect to the login page."
   [conn request]
-  (if (signup conn request)
-    (ring.util.response/redirect (util/resolve-absolute-uri "/login" request))
-    {:text "invalid user signup"}))
+  (signup conn request)
+  (ring.util.response/redirect (util/resolve-absolute-uri "/login" request)))
+
 
 ; Auth stuff
 
 (defn user-creds
   "Get user credentials for the specified email in the db."
   [db email]
-  (when-let [db-user (e/safe p/user db email)]
+  (when-let [db-user (p/user db email)]
     (a/user->creds db-user)))
 
 ; App stuff
@@ -105,11 +100,11 @@
                         session :session} (str (user-txs (cur-usr-email session) (d/db conn) params)))
            (POST "/txs" request (str (post-user-data conn request test-currency-rates)))
            (GET "/test" {session :session} (str session))
-           (GET "/curs" [] (currencies (d/db conn))))
+           (GET "/curs" [] (str (currencies (d/db conn)))))
 
 (defroutes app-routes
 
-           (POST "/signup" request (signup-redirect conn request))
+           (POST "/signup" request (str (signup-redirect conn request)))
 
            ; Anonymous
            (GET "/login" [] (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n
@@ -137,6 +132,7 @@
       (wrap-defaults (-> site-defaults
                          (assoc-in [:security :anti-forgery] false)
                          (assoc-in [:session :store] (cookie/cookie-store {:key (config :session-cookie-key)}))
-                         (assoc-in [:session :cookie-name] "cookie-name")))))
+                         (assoc-in [:session :cookie-name] "cookie-name")))
+      e/wrap-http-error))
 
 (defn -main [& args])
