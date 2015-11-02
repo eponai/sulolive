@@ -2,8 +2,7 @@
   (:require [cemerick.friend.credentials :as creds]
             [cemerick.friend.workflows :as workflows]
             [clojure.walk :refer [keywordize-keys]]
-            [flipmunks.budget.validate :as v])
-  (:import (clojure.lang ExceptionInfo)))
+            [flipmunks.budget.validate :as v]))
 
 (defn user->creds
   "Get authentication map from a user entity."

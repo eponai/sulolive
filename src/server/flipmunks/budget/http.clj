@@ -1,5 +1,6 @@
-(ns flipmunks.budget.error
-  (:require [ring.util.response :as r])
+(ns flipmunks.budget.http
+  (:require [ring.util.response :as r]
+            [cemerick.friend.util :as util])
   (:import (clojure.lang ExceptionInfo)))
 
 (def error-codes {
@@ -10,7 +11,17 @@
                   ::internal-error 500
                   ::service-unavailable 503})
 
-(defn wrap-http-error [handler]
+(defn redirect [path request]
+  (ring.util.response/redirect (util/resolve-absolute-uri "/login" request)))
+
+(defn response
+  "Create response with the given db and data. Fetches the schema for the given data and
+  schema and returns a map of the form {:schema [] :entities []}."
+  [schema data]
+  (r/response {:schema   schema
+               :entities data}))
+
+(defn wrap-error [handler]
   (fn [request]
     (try
       (handler request)

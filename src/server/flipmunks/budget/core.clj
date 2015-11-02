@@ -7,10 +7,9 @@
             [flipmunks.budget.datomic.pull :as p]
             [flipmunks.budget.datomic.transact :as t]
             [flipmunks.budget.auth :as a]
-            [flipmunks.budget.error :as e]
+            [flipmunks.budget.http :as http]
             [datomic.api :only [q db] :as d]
             [cemerick.friend :as friend]
-            [cemerick.friend.util :as util]
             [flipmunks.budget.openexchangerates :as exch]))
 
 (def ^:dynamic conn)
@@ -40,26 +39,19 @@
 (defn post-currencies [conn curs]
   (t/currencies conn curs))
 
-(defn response
-  "Create response with the given db and data. Fetches the schema for the given data and
-  returns a map of the form {:schema [] :entities []}. Returns an error map of the form
-  {:status 500 :error error} if failure to handle request."
-  [db data]
-  (let [schema (p/schema db data)]
-    (ring.util.response/response {:schema   schema
-                                  :entities data})))
-
 (defn user-txs
   "Fetch response for user data with user-email."
   [user-email db params]
-  (let [db-data (p/all-data db user-email params)]
-    (response db db-data)))
+  (let [data (p/all-data db user-email params)
+        schema (p/schema db data)]
+    (http/response schema data)))
 
 (defn currencies
   "Fetch response for requesting currencies."
   [db]
-  (let [curs (p/currencies db)]
-    (response db curs)))
+  (let [curs (p/currencies db)
+        schema (p/schema db curs)]
+    (http/response schema curs)))
 
 (defn post-user-data
   "Post new transactions for the user in the session. If there's no currency rates
@@ -83,7 +75,7 @@
   "Create a new user and redirect to the login page."
   [conn request]
   (signup conn request)
-  (ring.util.response/redirect (util/resolve-absolute-uri "/login" request)))
+  (http/redirect "/login" request))
 
 
 ; Auth stuff
@@ -133,6 +125,6 @@
                          (assoc-in [:security :anti-forgery] false)
                          (assoc-in [:session :store] (cookie/cookie-store {:key (config :session-cookie-key)}))
                          (assoc-in [:session :cookie-name] "cookie-name")))
-      e/wrap-http-error))
+      http/wrap-error))
 
 (defn -main [& args])

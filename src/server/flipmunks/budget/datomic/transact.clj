@@ -2,7 +2,7 @@
   (:require [datomic.api :as d]
             [flipmunks.budget.datomic.format :as f]
             [flipmunks.budget.validate :as v]
-            [flipmunks.budget.error :as e]))
+            [flipmunks.budget.http :as e]))
 
 
 (defn- transact

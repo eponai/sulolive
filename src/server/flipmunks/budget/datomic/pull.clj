@@ -1,6 +1,6 @@
 (ns flipmunks.budget.datomic.pull
   (:require [datomic.api :as d]
-            [flipmunks.budget.error :as e]))
+            [flipmunks.budget.http :as e]))
 
 (defn- q [query & inputs]
   (try

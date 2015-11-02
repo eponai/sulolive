@@ -1,5 +1,5 @@
 (ns flipmunks.budget.validate
-  (:require [flipmunks.budget.error :as e]))
+  (:require [flipmunks.budget.http :as e]))
 
 (defn- validate
   [input f & args]
