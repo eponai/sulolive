@@ -1,6 +1,7 @@
 (ns flipmunks.budget.ui.add_transaction_dc
   (:require [devcards.core :as dc]
             [flipmunks.budget.ui.add_transaction :as a]
+            [flipmunks.budget.ui.tag_dc :as t.dc]
             [om.next :as om]
             [goog.object :as gobj]
             [cljsjs.moment]
@@ -18,5 +19,6 @@
                                          ::a/input-currency "SEK"
                                          ::a/input-title "Pizza"
                                          ::a/input-description "The pizza place was amazing! We should come back here when we're back in Stockholm."
-                                         ::a/input-tag "new-tag"
-                                         ::a/input-tags [{:tag/name "tag1"}])))
+                                         ::a/input-tag "Lunc"
+                                         ::a/input-tags [(t.dc/tag-props "Stockholm" #(prn %))
+                                                         (t.dc/tag-props "Sweden" #(prn %))])))
