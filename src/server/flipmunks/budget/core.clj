@@ -36,6 +36,10 @@
            :THB 35.555}})
 ; Transact data to datomic
 
+(defn- response [schema data]
+  {:schema   schema
+   :entities data})
+
 (defn post-currencies [conn curs]
   (t/currencies conn curs))
 
@@ -44,14 +48,14 @@
   [user-email db params]
   (let [data (p/all-data db user-email params)
         schema (p/schema db data)]
-    (http/response schema data)))
+    (response schema data)))
 
 (defn currencies
   "Fetch response for requesting currencies."
   [db]
   (let [curs (p/currencies db)
         schema (p/schema db curs)]
-    (http/response schema curs)))
+    (response schema curs)))
 
 (defn post-user-data
   "Post new transactions for the user in the session. If there's no currency rates
@@ -77,7 +81,6 @@
   (signup conn request)
   (http/redirect "/login" request))
 
-
 ; Auth stuff
 
 (defn user-creds
@@ -89,10 +92,10 @@
 ; App stuff
 (defroutes user-routes
            (GET "/txs" {params :params
-                        session :session} (str (user-txs (cur-usr-email session) (d/db conn) params)))
+                        session :session} (str (http/response (user-txs (cur-usr-email session) (d/db conn) params))))
            (POST "/txs" request (str (post-user-data conn request test-currency-rates)))
            (GET "/test" {session :session} (str session))
-           (GET "/curs" [] (str (currencies (d/db conn)))))
+           (GET "/curs" [] (str (http/response (currencies (d/db conn))))))
 
 (defroutes app-routes
 

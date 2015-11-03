@@ -17,9 +17,8 @@
 (defn response
   "Create response with the given db and data. Fetches the schema for the given data and
   schema and returns a map of the form {:schema [] :entities []}."
-  [schema data]
-  (r/response {:schema   schema
-               :entities data}))
+  [body]
+  (r/response body))
 
 (defn wrap-error [handler]
   (fn [request]

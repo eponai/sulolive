@@ -20,7 +20,7 @@
                           :transaction/amount
                           :transaction/currency
                           :transaction/created-at}]
-    (validate every? #(contains? user-tx %) required-fields)))
+    (validate "User transaction" every? #(contains? user-tx %) required-fields)))
 
 
 (defn valid-user-txs?
