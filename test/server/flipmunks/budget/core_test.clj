@@ -4,7 +4,8 @@
             [flipmunks.budget.core :as b]
             [flipmunks.budget.datomic.pull :as p]
             [flipmunks.budget.datomic.transact :as t]
-            [flipmunks.budget.validate :as v]))
+            [flipmunks.budget.validate :as v])
+  (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
 
@@ -79,20 +80,33 @@
         post-fn #(b/post-user-data (db-with-curs)
                                    %
                                    test-convs)]
-    (is (= (:cause (ex-data (post-fn invalid-user-req)))
-           ::t/transaction-error))
-    (is (= (:cause (ex-data (post-fn invalid-data-req)))
-           ::v/validation-error))))
+    (is (thrown? ExceptionInfo (post-fn invalid-user-req)))
+    (is (thrown? ExceptionInfo (post-fn invalid-data-req)))))
 
 (deftest test-post-invalid-currencies 
   (testing "Posting invalid currency data."
-    (let [db (b/post-currencies (new-db)
-                                (assoc test-curs :invalid 2))]
-      (is (= (:cause (ex-data db))
-             ::t/transaction-error)))))
+    (is (thrown? ExceptionInfo (b/post-currencies (new-db)
+                                                  (assoc test-curs :invalid 2))))))
 
 (deftest test-signup
-  (testing "signup new user")
-  (let [valid-params {:username "test" :password "p" :repeat "p"}
-        db-valid (b/signup (new-db) {:request-method :post :params valid-params})]
-    (is (b/user-creds (:db-after db-valid) "test"))))
+  (testing "signup new user"
+    (let [valid-params {:username "test"
+                        :password "p"
+                        :repeat "p"}
+          db-valid (b/signup (new-db)
+                             {:request-method :post
+                              :params         valid-params})]
+      (is (:username (b/user-creds (:db-after db-valid) "test")))
+      (is (thrown? ExceptionInfo (b/signup (new-db)
+                                           {:request-method :post
+                                            :params         {:username ""
+                                                             :password ""
+                                                             :repeat   ""}})))
+      (is (thrown? ExceptionInfo (b/signup (new-db)
+                                           {:request-method :post
+                                            :params         {:username "test"
+                                                             :password "test"
+                                                             :repeat   "nomatch"}})))
+      (is (thrown? ExceptionInfo (b/signup (new-db)
+                                           {:request-method :get
+                                            :params         valid-params}))))))
