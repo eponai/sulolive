@@ -23,6 +23,25 @@
 (defn on-change [this k]
   #(om/update-state! this assoc k (.-value (.-target %))))
 
+(defn new-input-tag [this name]
+  (let [id (random-uuid)]
+    (om/update-state!
+      this
+      (fn [state]
+        (-> state
+            (assoc ::input-tag "")
+            (update ::input-tags conj
+                    (assoc
+                      (t/tag-props
+                        name
+                        #(om/update-state!
+                          this update ::input-tags
+                          (fn [tags]
+                            (into []
+                                  (remove (fn [{:keys [::tag-id]}] (= id tag-id)))
+                                  tags))))
+                      ::tag-id id)))))))
+
 (defui AddTransaction
        om/IQuery
        (query [this] [:query/all-currencies])
@@ -31,12 +50,12 @@
          [this]
          (let [{:keys [query/all-currencies]} (om/props this)
                {:keys [::input-amount ::input-currency ::input-title
-                       ::input-date ::input-description ::input-tag ::input-tags] :as state}
+                       ::input-date ::input-description ::input-tag
+                       ::input-tags] :as state}
                ;; merging state with props, so that we can test the states
                ;; with devcards
                (merge (om/props this)
                       (om/get-state this))]
-           (prn state)
            (html
              [:div
               [:h2 "New Transaction"]
@@ -70,7 +89,11 @@
                 (input (on-change this ::input-tag)
                        {:type        "text"
                         :placeholder "enter tag"
-                        :value       input-tag})]
+                        :value       input-tag
+                        :on-key-down #(when (and (= 13 (.-keyCode %))
+                                                 (seq (.. % -target -value)))
+                                       (.preventDefault %)
+                                       (new-input-tag this input-tag))})]
                (map t/tag input-tags)]]))))
 
 (def add-transaction (om/factory AddTransaction))

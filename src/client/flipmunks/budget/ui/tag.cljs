@@ -32,3 +32,11 @@
                      "x"])]))))
 
 (def tag (om/factory Tag))
+
+(defn tag-props
+  ([name] (tag-props name nil))
+  ([name delete-fn]
+   (merge {:tag/name name}
+          (when delete-fn
+            {::edit-mode true
+             ::delete-fn delete-fn}))))

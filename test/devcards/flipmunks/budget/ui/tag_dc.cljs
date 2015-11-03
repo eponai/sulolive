@@ -6,16 +6,8 @@
             [sablono.core :refer-macros [html]])
   (:require-macros [devcards.core :refer [defcard]]))
 
-(defn tag-props
-  ([name] (tag-props name nil))
-  ([name delete-fn]
-   (merge {:tag/name name}
-          (when delete-fn
-            {::t/edit-mode true
-             ::t/delete-fn delete-fn}))))
-
 (defcard tag-with-name
-         (t/tag (tag-props "Tag name")))
+         (t/tag (t/tag-props "Tag name")))
 
 (defui DeletableTag
        Object
@@ -26,7 +18,7 @@
                     [:div (style {:display       (if tag-hidden "none" "block")
                                   :margin-bottom "1em"})
                      (t/tag
-                       (tag-props "with delete"
+                       (t/tag-props "with delete"
                                   #(om/update-state! this assoc ::tag-hidden true)))]
                     [:button {:on-click #(om/update-state! this assoc ::tag-hidden false)}
                      "make tag visible"]]))))
