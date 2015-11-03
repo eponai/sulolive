@@ -14,5 +14,7 @@
 
 (defcard add-transaction--complete
          (a/add-transaction (assoc props ::a/edit-amount 123
+                                         ::a/edit-date (js/Date.)
                                          ::a/edit-currency "SEK"
-                                         ::a/edit-title "Pizza")))
+                                         ::a/edit-title "Pizza"
+                                         ::a/edit-description "The pizza place was amazing! We should come back here when we're back in Stockholm.")))

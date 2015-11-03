@@ -16,7 +16,7 @@
 (defn input [on-change opts]
   (node :input on-change opts))
 
-(defn select [on-change opts children]
+(defn select [on-change opts & children]
   (apply node :select on-change opts children))
 
 (defn on-change [this k]
@@ -30,7 +30,7 @@
          [this]
          (let [{:keys [query/all-currencies]} (om/props this)
                {:keys [::edit-amount ::edit-currency ::edit-title
-                       ::edit-date] :as state}
+                       ::edit-date ::edit-description] :as state}
                ;; merging state with props, so that we can test the states
                ;; with devcards
                (merge (om/props this)
@@ -45,7 +45,7 @@
                              {:type        "number"
                               :placeholder "enter amount"
                               :value       edit-amount}))
-               (select (on-change this ::edit-currency)
+               (apply select (on-change this ::edit-currency)
                        (when edit-currency
                          {:default-value edit-currency})
                        (map #(let [v (name %)]
@@ -54,15 +54,15 @@
               [:div [:span "Date:"]
                (d/datepicker {:value edit-date
                             :placeholder "enter date"
-                            :on-change #(om/update-state!
-                                         this
-                                         assoc
-                                         ::edit-date
-                                         %)})]
+                            :on-change #(om/update-state! this assoc ::edit-date %)})]
               [:div [:span "Title:"]
                (input (on-change this ::edit-title)
                       {:type        "text"
                        :placeholder "enter title"
-                       :value       edit-title})]]))))
+                       :value       edit-title})]
+              [:div [:span "Description:"]
+               (node :textarea (on-change this ::edit-description)
+                     {:value edit-description
+                      :placeholder "enter description"})]]))))
 
 (def add-transaction (om/factory AddTransaction))
