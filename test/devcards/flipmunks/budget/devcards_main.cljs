@@ -4,6 +4,7 @@
     [sablono.core :as html :refer-macros [html]]
     [flipmunks.budget.ui.header_dc]
     [flipmunks.budget.ui.datepicker_dc]
+    [flipmunks.budget.ui.tag_dc]
     [flipmunks.budget.ui.add_transaction_dc]
     [flipmunks.budget.ui.transactions_dc])
   (:require-macros

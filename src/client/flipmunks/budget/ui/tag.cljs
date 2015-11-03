@@ -10,21 +10,25 @@
        Object
        (render
          [this]
-         (html [:div (style {:display "inline-block"})
-                [:style (css [:#ui-transaction-tag {:display        "inline-block"
-                                                    :padding        "0.2em 0.2em"
-                                                    :margin         "0.2em"
-                                                    :border-width   "1px"
-                                                    :border-style   "solid"
-                                                    :border-radius  "0.3em"
-                                                    :text-transform "capitalize"
-                                                    :font-size      "1em"
-                                                    :border-color   "#ddd"
-                                                    :cursor         "default"}
-                              [:&:hover {:border-color "#aaa"}]
-                              [:&:active {:border-color "#ddd"}]])]
-                [:div {:id       "ui-transaction-tag"
-                       :on-click #(prn %)}
-                 (:tag/name (om/props this))]])))
+         (let [{:keys [::edit-mode ::delete-fn] tag-name :tag/name} (om/props this)]
+           (html [:div (style {:display "inline-block"})
+                 [:style (css [:#tag-body {:display        "inline-block"
+                                           :padding        "0.2em 0.2em"
+                                           :margin         "0.0em"
+                                           :border-width   "1px"
+                                           :border-style   "solid"
+                                           :font-size      "1em"
+                                           :border-color   "#ddd"
+                                           :cursor         "default"}
+                               [:&:hover {:border-color "#aaa"}]
+                               [:&:active {:border-color "#ddd"}]])]
+                  [:div#tag-body
+                   (style {:border-radius  (if edit-mode "0.3em 0.0em 0.0em 0.3em" "0.3em")})
+                   [:span {:on-click #(prn (.. % -target))} tag-name]]
+                  (when edit-mode
+                    [:span#tag-body (merge (style {:border-radius "0.0em 0.3em 0.3em 0.0em"
+                                                   :border-width "1px 1px 1px 0px"})
+                                  {:on-click #(do (delete-fn) nil)})
+                     "x"])]))))
 
 (def tag (om/factory Tag))
