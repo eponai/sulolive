@@ -50,7 +50,7 @@
       :db/id
       (d/tempid :db.part/user))))
 
-(defn user-txs->db-txs [ user-txs]
+(defn user-txs->db-txs [user-txs]
   (map user-tx->db-tx user-txs))
 
 (defn user-owned-txs->dbtxs [user-email user-txs]

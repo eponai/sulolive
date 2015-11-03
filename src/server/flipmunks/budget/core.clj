@@ -2,20 +2,15 @@
   (:gen-class)
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
-            [ring.middleware.defaults :refer :all]
-            [ring.middleware.session.cookie :as cookie]
             [flipmunks.budget.datomic.pull :as p]
             [flipmunks.budget.datomic.transact :as t]
             [flipmunks.budget.auth :as a]
-            [flipmunks.budget.http :as http]
+            [flipmunks.budget.http :as h]
             [datomic.api :only [q db] :as d]
             [cemerick.friend :as friend]
             [flipmunks.budget.openexchangerates :as exch]))
 
 (def ^:dynamic conn)
-
-(def config
-  (clojure.edn/read-string (slurp "budget-private/config.edn")))
 
 (defn current-user
   "Current session user information."
@@ -65,8 +60,8 @@
         dates (map :transaction/date user-data)
         unconverted-dates (clojure.set/difference (set dates)
                                                   (p/converted-dates (d/db conn) dates))]
-    (when (not-empty unconverted-dates)
-      (t/currency-rates conn (map rates-fn unconverted-dates)))
+    (when (some identity unconverted-dates)
+      (t/currency-rates conn (map rates-fn (filter identity unconverted-dates))))
     (t/user-txs conn (cur-usr-email (:session request)) user-data)))
 
 (defn signup
@@ -79,7 +74,7 @@
   "Create a new user and redirect to the login page."
   [conn request]
   (signup conn request)
-  (http/redirect "/login" request))
+  (h/redirect "/login" request))
 
 ; Auth stuff
 
@@ -92,14 +87,14 @@
 ; App stuff
 (defroutes user-routes
            (GET "/txs" {params :params
-                        session :session} (str (http/response (user-txs (cur-usr-email session) (d/db conn) params))))
-           (POST "/txs" request (str (post-user-data conn request test-currency-rates)))
-           (GET "/test" {session :session} (str session))
-           (GET "/curs" [] (str (http/response (currencies (d/db conn))))))
+                        session :session} (h/response (user-txs (cur-usr-email session) (d/db conn) params)))
+           (POST "/txs" request (h/response (post-user-data conn request test-currency-rates)))
+           (GET "/test" {session :session} (h/response session))
+           (GET "/curs" [] (h/response (currencies (d/db conn)))))
 
 (defroutes app-routes
 
-           (POST "/signup" request (str (signup-redirect conn request)))
+           (POST "/signup" request (signup-redirect conn request))
 
            ; Anonymous
            (GET "/login" [] (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n
@@ -124,10 +119,6 @@
   (-> app-routes
       (friend/authenticate {:credential-fn (partial a/cred-fn #(user-creds (d/db conn) %))
                             :workflows     [(a/form)]})
-      (wrap-defaults (-> site-defaults
-                         (assoc-in [:security :anti-forgery] false)
-                         (assoc-in [:session :store] (cookie/cookie-store {:key (config :session-cookie-key)}))
-                         (assoc-in [:session :cookie-name] "cookie-name")))
-      http/wrap-error))
+      h/wrap))
 
 (defn -main [& args])
