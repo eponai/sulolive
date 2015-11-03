@@ -13,8 +13,10 @@
          (a/add-transaction props))
 
 (defcard add-transaction--complete
-         (a/add-transaction (assoc props ::a/edit-amount 123
-                                         ::a/edit-date (js/Date.)
-                                         ::a/edit-currency "SEK"
-                                         ::a/edit-title "Pizza"
-                                         ::a/edit-description "The pizza place was amazing! We should come back here when we're back in Stockholm.")))
+         (a/add-transaction (assoc props ::a/input-amount 123
+                                         ::a/input-date (js/Date.)
+                                         ::a/input-currency "SEK"
+                                         ::a/input-title "Pizza"
+                                         ::a/input-description "The pizza place was amazing! We should come back here when we're back in Stockholm."
+                                         ::a/input-tag "new-tag"
+                                         ::a/input-tags [{:tag/name "tag1"}])))

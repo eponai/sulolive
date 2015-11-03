@@ -1,48 +1,34 @@
 (ns flipmunks.budget.ui.transactions
   (:require [om.next :as om :refer-macros [defui]]
             [flipmunks.budget.ui :refer [style]]
+            [flipmunks.budget.ui.tag :as tag]
             [cljs-time.core :as t]
             [cljs-time.format :as t.format]
             [sablono.core :as html :refer-macros [html]]
             [garden.core :refer [css]]))
 
-(defn render-tag [tag-name]
-  [:div (style {:display "inline-block"})
-   [:style (css [:#ui-transaction-tag {:display        "inline-block"
-                                       :padding        "0.2em 0.2em"
-                                       :margin         "0.2em"
-                                       :border-width   "1px"
-                                       :border-style   "solid"
-                                       :border-radius  "0.3em"
-                                       :text-transform "capitalize"
-                                       :font-size      "1em"
-                                       :border-color   "#ddd"
-                                       :cursor         "default"}
-                 [:&:hover {:border-color "#aaa"}]
-                 [:&:active {:border-color "#ddd"}]])]
-   [:div {:id       "ui-transaction-tag"
-          :on-click #(prn %)}
-    tag-name]])
-
 (defui Transaction
+       static om/IQueryParams
+       (params [this] {:tag (om/query tag/Tag)})
        static om/IQuery
-       (query [this] [:db/id :transaction/uuid
-                      :transaction/name :transaction/amount
-                      :transaction/details
-                      {:transaction/date [:date/ymd :date/day]}
-                      {:transaction/currency [:currency/name]}
-                      {:transaction/tags [:tag/name]}
+       (query [this]
+              '[:db/id
+                :transaction/uuid
+                :transaction/name
+                :transaction/amount
+                :transaction/details
+                {:transaction/currency [:currency/name]}
+                {:transaction/tags ?tag}
 
-                      :ui.transaction/expanded
-                      :ui.transaction/edit-mode
-                      :ui.transaction/show-tags
-                      :ui.transaction/expanded])
+                :ui.transaction/expanded
+                :ui.transaction/edit-mode
+                :ui.transaction/show-tags
+                :ui.transaction/expanded])
        Object
        (render [this]
                (let [{;; rename to avoid replacing clojure.core/name
                       transaction-name :transaction/name
                       :keys            [transaction/tags
-                                        transaction/date
                                         transaction/amount
                                         transaction/currency
                                         transaction/details
@@ -72,7 +58,7 @@
                         details])
                      (when show-tags
                        [:div
-                        (->> tags (map :tag/name) (map render-tag))])]]))))
+                        (map tag/tag tags)])]]))))
 
 (def transaction (om/factory Transaction))
 
@@ -86,12 +72,12 @@
   [{:keys [date/year date/month date/day]}]
   (str
     ((get t.format/date-formatters "EEEE") (t/date-time year month day))
-       " "
-       day (condp = (mod day 10)
-             1 "st"
-             2 "nd"
-             3 "rd"
-             "th")))
+    " "
+    day (condp = (mod day 10)
+          1 "st"
+          2 "nd"
+          3 "rd"
+          "th")))
 (defn sum
   "Adds transactions amounts together.
   TODO: Needs to convert the transactions to the 'primary currency' some how."

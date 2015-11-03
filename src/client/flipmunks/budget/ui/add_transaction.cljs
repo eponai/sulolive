@@ -2,6 +2,7 @@
   (:require [om.next :as om :refer-macros [defui]]
             [flipmunks.budget.ui :refer [style]]
             [flipmunks.budget.ui.datepicker :as d]
+            [flipmunks.budget.ui.tag :as t]
             [sablono.core :as html :refer-macros [html]]
             [cljsjs.pikaday]
             [cljsjs.moment]
@@ -29,8 +30,8 @@
        (render
          [this]
          (let [{:keys [query/all-currencies]} (om/props this)
-               {:keys [::edit-amount ::edit-currency ::edit-title
-                       ::edit-date ::edit-description] :as state}
+               {:keys [::input-amount ::input-currency ::input-title
+                       ::input-date ::input-description ::input-tag ::input-tags] :as state}
                ;; merging state with props, so that we can test the states
                ;; with devcards
                (merge (om/props this)
@@ -40,29 +41,36 @@
              [:div
               [:h2 "New Transaction"]
               [:div [:span "Amount:"]
-               (input (on-change this ::edit-amount)
+               (input (on-change this ::input-amount)
                       (merge (style {:text-align "right"})
                              {:type        "number"
                               :placeholder "enter amount"
-                              :value       edit-amount}))
-               (apply select (on-change this ::edit-currency)
-                       (when edit-currency
-                         {:default-value edit-currency})
-                       (map #(let [v (name %)]
-                              (vector :option {:value v} v))
-                            all-currencies))]
+                              :value       input-amount}))
+               (apply select (on-change this ::input-currency)
+                      (when input-currency
+                        {:default-value input-currency})
+                      (map #(let [v (name %)]
+                             (vector :option {:value v} v))
+                           all-currencies))]
               [:div [:span "Date:"]
-               (d/datepicker {:value edit-date
-                            :placeholder "enter date"
-                            :on-change #(om/update-state! this assoc ::edit-date %)})]
+               (d/datepicker {:value       input-date
+                              :placeholder "enter date"
+                              :on-change   #(om/update-state! this assoc ::input-date %)})]
               [:div [:span "Title:"]
-               (input (on-change this ::edit-title)
+               (input (on-change this ::input-title)
                       {:type        "text"
                        :placeholder "enter title"
-                       :value       edit-title})]
+                       :value       input-title})]
               [:div [:span "Description:"]
-               (node :textarea (on-change this ::edit-description)
-                     {:value edit-description
-                      :placeholder "enter description"})]]))))
+               (node :textarea (on-change this ::input-description)
+                     {:value       input-description
+                      :placeholder "enter description"})]
+              [:div [:span "Tags:"]
+               [:div (style {:display "inline-block"})
+                (input (on-change this ::input-tag)
+                       {:type        "text"
+                        :placeholder "enter tag"
+                        :value       input-tag})]
+               (map t/tag input-tags)]]))))
 
 (def add-transaction (om/factory AddTransaction))
