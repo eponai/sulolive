@@ -12,7 +12,7 @@
                   ::service-unavailable 503})
 
 (defn redirect [path request]
-  (ring.util.response/redirect (util/resolve-absolute-uri "/login" request)))
+  (ring.util.response/redirect (util/resolve-absolute-uri path request)))
 
 (defn response
   "Create response with the given db and data. Fetches the schema for the given data and
