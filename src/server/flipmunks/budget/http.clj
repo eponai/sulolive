@@ -1,5 +1,6 @@
 (ns flipmunks.budget.http
   (:require [cemerick.friend.util :as util]
+            [cemerick.friend :as friend]
             [ring.middleware.session.cookie :as cookie]
             [ring.middleware.transit :refer [wrap-transit-response]]
             [ring.middleware.defaults :refer :all]
@@ -16,6 +17,20 @@
                   ::internal-error 500
                   ::service-unavailable 503})
 
+(defn user
+  "Current session user information."
+  [session]
+  (let [user-id (get-in session [::friend/identity :current])]
+    (get-in session [::friend/identity :authentications user-id])))
+
+(defn email
+  "The session's email from request."
+  [request]
+  (-> request
+      :session
+      user
+      :username))
+
 (defn redirect [path request]
   (r/redirect (util/resolve-absolute-uri path request)))
 
@@ -24,6 +39,10 @@
   schema and returns a map of the form {:schema [] :entities []}."
   [body]
   (r/response body))
+
+(defn body [schema data]
+  {:schema schema
+   :entities data})
 
 (defn- wrap-error [handler]
   (fn [request]

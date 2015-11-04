@@ -54,15 +54,15 @@
   (let [db (b/post-user-data (db-with-curs)
                              request
                              test-convs)
-        result (b/user-txs "user@email.com"
-                                    (:db-after db)
-                                    {})
-        inv-result (b/user-txs "invalid@email.com"
-                                       (:db-after db)
-                                       {})
-        no-result (b/user-txs "user@email.com"
-                                       (:db-after db)
-                                       {:d "1"})]
+        result (b/fetch p/all-data (:db-after db)
+                        "user@email.com"
+                        {})
+        inv-result (b/fetch p/all-data (:db-after db)
+                            "invalid@email.com"
+                            {})
+        no-result (b/fetch p/all-data (:db-after db)
+                           "user@email.com"
+                           {:d "1"})]
     (is (every? #(empty? (val %)) inv-result))
     (is (every? #(empty? (val %)) no-result))
     (is (= (count (:schema result)) 7))

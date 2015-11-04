@@ -1,6 +1,7 @@
 (ns flipmunks.budget.datomic.pull
   (:require [datomic.api :as d]
-            [flipmunks.budget.http :as e]))
+            [flipmunks.budget.http :as e]
+            [flipmunks.budget.validate :as v]))
 
 (defn- q [query & inputs]
   (try
@@ -41,7 +42,7 @@
          (apply conj query))))
 
 (defn user-txs [db user-email params]
-  (when user-email
+  (when (and user-email (v/valid-params? params))
     (q (tx-query params) db user-email)))
 
 (defn- db-entities [db user-txs attr]
@@ -76,7 +77,7 @@
                  (entities :transaction/tags)
                  (conversions db (map :db/id user-txs))))))
 
-(defn schema-required?
+(defn- schema-required?
   "Return true if the entity is required to be passed with schema.
   Is true if the entity has a type ref, or cardinality many."
   [db-entity]
@@ -92,12 +93,12 @@
 
 (defn currencies [db]
   (q '[:find [(pull ?e [*]) ...]
-         :where [?e :currency/code]] db))
+       :where [?e :currency/code]] db))
 
 (defn user [db email]
-  (q '[:find (pull ?e [*]).
-         :in $ ?m
-         :where [?e :user/email ?m]] db email))
+  (q '[:find (pull ?e [*]) .
+       :in $ ?m
+       :where [?e :user/email ?m]] db email))
 
 
 

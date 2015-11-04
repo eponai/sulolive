@@ -12,45 +12,22 @@
 
 (def ^:dynamic conn)
 
-(defn current-user
-  "Current session user information."
-  [session]
-  (let [user-id (get-in session [::friend/identity :current])]
-    (get-in session [::friend/identity :authentications user-id])))
-
-(defn cur-usr-email
-  "The user email of current session."
-  [session]
-  (:username (current-user session)))
-
 ;; test currency rates
 (defn test-currency-rates [date-str]                        ;TODO remove this test map and use the OER API.
   {:date date-str
    :rates {:SEK 8.333
            :USD 1
            :THB 35.555}})
-; Transact data to datomic
+; Pull
 
-(defn- response [schema data]
-  {:schema   schema
-   :entities data})
+(defn fetch [fn db & args]
+  (let [data (apply (partial fn db) args)]
+    (h/body (p/schema db data) data)))
+
+; Transact data to datomic
 
 (defn post-currencies [conn curs]
   (t/currencies conn curs))
-
-(defn user-txs
-  "Fetch response for user data with user-email."
-  [user-email db params]
-  (let [data (p/all-data db user-email params)
-        schema (p/schema db data)]
-    (response schema data)))
-
-(defn currencies
-  "Fetch response for requesting currencies."
-  [db]
-  (let [curs (p/currencies db)
-        schema (p/schema db curs)]
-    (response schema curs)))
 
 (defn post-user-data
   "Post new transactions for the user in the session. If there's no currency rates
@@ -62,7 +39,7 @@
                                                   (p/converted-dates (d/db conn) dates))]
     (when (some identity unconverted-dates)
       (t/currency-rates conn (map rates-fn (filter identity unconverted-dates))))
-    (t/user-txs conn (cur-usr-email (:session request)) user-data)))
+    (t/user-txs conn (h/email request) user-data)))
 
 (defn signup
   "Create a new user and transact into datomic."
@@ -86,11 +63,14 @@
 
 ; App stuff
 (defroutes user-routes
-           (GET "/txs" {params :params
-                        session :session} (h/response (user-txs (cur-usr-email session) (d/db conn) params)))
+           (GET "/txs" request (h/response (fetch p/all-data
+                                                  (d/db conn)
+                                                  (h/email request)
+                                                  (:params request))))
            (POST "/txs" request (h/response (post-user-data conn request test-currency-rates)))
            (GET "/test" {session :session} (h/response session))
-           (GET "/curs" [] (h/response (currencies (d/db conn)))))
+           (GET "/curs" [] (h/response (fetch p/currencies
+                                              (d/db conn)))))
 
 (defroutes app-routes
 
