@@ -150,6 +150,10 @@
   [{:keys [state selector]} _ _]
   {:value (parse/pull-all state selector '[[?e :date/ymd]])})
 
+(defn map-first [f coll]
+  (when (seq coll)
+    (cons (f (first coll)) (rest coll))))
+
 (defui AllTransactions
   static om/IQueryParams
   (params [this] {:dates (conj (om/get-query DayTransactions)
@@ -171,7 +175,7 @@
                                    [:h2 ((get t.format/date-formatters "MMMM")
                                           (t/date-time year month))]
                                    (map ->DayTransactions
-                                        (rseq (sort-by :date/day dates)))])
+                                        (->> dates (sort-by :date/day) (rseq) (map-first #(assoc % :ui.day/expanded true))))])
                                 (rseq months))])
                         (rseq by-year-month))]))))
 
