@@ -2,7 +2,7 @@
   (:require [cemerick.friend.credentials :as creds]
             [cemerick.friend.workflows :as workflows]
             [clojure.walk :refer [keywordize-keys]]
-            [flipmunks.budget.validate :as v]))
+            [flipmunks.budget.http :as h]))
 
 (defn user->creds
   "Get authentication map from a user entity."
@@ -23,9 +23,13 @@
   [& data]
   (apply workflows/interactive-form data))
 
-(defn signup
+(defn new-signup
   "Verify new user input and return a user entity if valid."
-  [{:keys [params] :as request}]
-  (when (v/valid-signup? request)
+  [{:keys [params request-method]}]
+  (if (= request-method :post)
     {:user/email        (params :username)
-     :user/enc-password (creds/hash-bcrypt (params :password))}))
+     :user/enc-password (creds/hash-bcrypt (params :password))}
+    (throw (ex-info "Invalid request method" {:cause   ::request-error
+                                              :status  ::h/unprocessable-entity
+                                              :data    {:request-method request-method}
+                                              :message "Invalid request method"}))))

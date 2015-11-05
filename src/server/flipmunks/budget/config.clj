@@ -1,4 +1,5 @@
-(ns flipmunks.budget.config)
+(ns flipmunks.budget.config
+  (:require [clojure.edn :as edn]))
 
 (def config
-  (clojure.edn/read-string (slurp "budget-private/config.edn")))
+  (edn/read-string (slurp "budget-private/config.edn")))

@@ -1,10 +1,10 @@
-(ns flipmunks.budget.validate
-  (:require [flipmunks.budget.http :as e]))
+(ns flipmunks.budget.datomic.validate
+  (:require [flipmunks.budget.http :as h]))
 
 (defn- error [msg data]
   (let [message (str "Validation failed, " msg)]
     (throw (ex-info message {:cause   ::validation-error
-                             :status  ::e/unprocessable-entity
+                             :status  ::h/unprocessable-entity
                              :data    data
                              :message message}))))
 (defn- validate
@@ -38,13 +38,10 @@
 (defn valid-signup?
   "Validate the signup parameters. Checks that username and password are not empty,
   and that the password matches the repeated password. Throws an ExceptionInfo if validation fails."
-  [{:keys [request-method params]}]
-  (let [{:keys [password username repeat]} params]
-    (validate "request method not POST" = request-method :post)
-    (validate "contains empty fields" (every-pred not-empty) username password repeat)
-    (validate "passwords don't match" = password repeat)))
+  [user]
+  (validate "empty user email" not-empty (:user/email user)))
 
-(defn valid-params?
+(defn valid-date?
   "Validate the get params for user/txs. Validating that d m y params are numbers."
   [params]
   (let [{:keys [d m y]} params]

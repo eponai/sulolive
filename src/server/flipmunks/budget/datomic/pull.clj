@@ -1,7 +1,7 @@
 (ns flipmunks.budget.datomic.pull
   (:require [datomic.api :as d]
             [flipmunks.budget.http :as e]
-            [flipmunks.budget.validate :as v]))
+            [flipmunks.budget.datomic.validate :as v]))
 
 (defn- q [query & inputs]
   (try
@@ -42,7 +42,7 @@
          (apply conj query))))
 
 (defn user-txs [db user-email params]
-  (when (and user-email (v/valid-params? params))
+  (when (and user-email (v/valid-date? params))
     (q (tx-query params) db user-email)))
 
 (defn- db-entities [db user-txs attr]
