@@ -7,7 +7,7 @@
             [cljsjs.react.dom]
             [datascript.core :as d]
             [cljs.core.async :as async]
-            [flipmunks.budget.parse :as parse]
+            [flipmunks.budget.parser :as parser]
             [flipmunks.budget.datascript :as budget.d]
             [flipmunks.budget.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
             [flipmunks.budget.ui.header :refer [Header ->Header]]
@@ -18,9 +18,9 @@
   (let [v (parser env selector nil)]
     {:value v}))
 
-(defmethod parse/read :just/add-transaction [e k p] (just-read e k p))
-(defmethod parse/read :just/header [e k p] (just-read e k p))
-(defmethod parse/read :just/transactions [e k p] (just-read e k p))
+(defmethod parser/read :just/add-transaction [e k p] (just-read e k p))
+(defmethod parser/read :just/header [e k p] (just-read e k p))
+(defmethod parser/read :just/transactions [e k p] (just-read e k p))
 
 (defui App
   static om/IQuery
@@ -52,7 +52,7 @@
           ds-schema  (-> (budget.d/schema-datomic->datascript schema)
                          (assoc :app {:db/unique :db.unique/identity}))
           conn       (d/create-conn ds-schema)
-          parser     (om/parser {:read parse/debug-read :mutate parse/mutate})
+          parser     (om/parser {:read parser/debug-read :mutate parser/mutate})
           reconciler (om/reconciler {:state conn :parser parser})]
       (d/transact conn [{:app :state :app/year 2015 :app/month 10}])
       (d/transact conn (budget.d/db-id->temp-id ref-types entities))

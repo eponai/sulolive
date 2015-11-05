@@ -6,7 +6,7 @@
             [cljs-time.format :as t.format]
             [sablono.core :as html :refer-macros [html]]
             [garden.core :refer [css]]
-            [flipmunks.budget.parse :as parse]))
+            [flipmunks.budget.parser :as parser]))
 
 (defui Transaction
   static om/IQueryParams
@@ -87,14 +87,6 @@
    ;; TODO: Should instead use the primary currency
    :currency (-> transactions first :transaction/currency :currency/name)})
 
-(defn expand-day [this {:keys [db/id ui.day/expanded]}]
-  (om/transact! this
-                `[(datascript/transact
-                    {:txs [[:db.fn/cas ~id
-                            :ui.day/expanded
-                            ~expanded
-                            ~(not expanded)]]})]))
-
 (defui DayTransactions
   static om/IQueryParams
   (params [this] {:transactions (om/get-query Transaction)})
@@ -109,7 +101,10 @@
   Object
   (render [this]
           (let [{transactions :transaction/_date
-                 :keys        [ui.day/expanded] :as props} (om/props this)]
+                 :keys        [ui.day/expanded] :as props} (om/props this)
+                expanded (if (nil? expanded)
+                           (:ui.day/expanded (om/get-computed this))
+                           expanded)]
             (html [:div
                    (style {:borderWidth "0px 0px 1px"
                            :borderStyle "solid"})
@@ -122,7 +117,10 @@
                                      :align-items     "center"
                                      :justify-content "flex-start"})
                              (assoc :id "ui-day"
-                                    :on-click #(expand-day this props)))
+                                    :on-click #(parser/cas! this (:db/id props)
+                                                            :ui.day/expanded
+                                                            (:ui.day/expanded props)
+                                                            (not expanded))))
                     [:div (style {:fontSize   "1.3em"
                                   :fontWeight "bold"})
                      (let [{:keys [amount currency]} (sum transactions)]
@@ -146,9 +144,9 @@
                                  (into (sorted-map)))))
                (sorted-map))))
 
-(defmethod parse/read :query/all-dates
+(defmethod parser/read :query/all-dates
   [{:keys [state selector]} _ _]
-  {:value (parse/pull-all state selector '[[?e :date/ymd]])})
+  {:value (parser/pull-all state selector '[[?e :date/ymd]])})
 
 (defn map-first [f coll]
   (when (seq coll)
@@ -168,15 +166,24 @@
           (let [{:keys [query/all-dates]} (om/props this)
                 by-year-month (group-dates-by-year-month all-dates)]
             (html [:div
-                   (map (fn [[year months]]
-                          [:div [:span year]
-                           (map (fn [[month dates]]
-                                  [:div
-                                   [:h2 ((get t.format/date-formatters "MMMM")
-                                          (t/date-time year month))]
-                                   (map ->DayTransactions
-                                        (->> dates (sort-by :date/day) (rseq) (map-first #(assoc % :ui.day/expanded true))))])
-                                (rseq months))])
-                        (rseq by-year-month))]))))
+                   (->> (rseq by-year-month)
+                        (map (fn [[year months]]
+                               [:div [:span year]
+                                (->> (rseq months)
+                                     (map (fn [[month dates]]
+                                            [:div
+                                             [:h2 ((get t.format/date-formatters "MMMM")
+                                                    (t/date-time year month))]
+                                             (map ->DayTransactions
+                                                  (->> dates
+                                                       (sort-by :date/day)
+                                                       (rseq)
+                                                       ;; expand the first day. Add a computed value to the expansion
+                                                       ;; key, if it's not already set. Using computed, because actually
+                                                       ;; associng the value to the props, messes with om.next
+                                                       (map-first (fn [first-day]
+                                                                    (if-not (contains? first-day :ui.day/expanded)
+                                                                      (om/computed first-day {:ui.day/expanded true})
+                                                                      first-day)))))])))])))]))))
 
 (def ->AllTransactions (om/factory AllTransactions))

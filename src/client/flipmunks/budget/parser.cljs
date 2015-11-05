@@ -1,4 +1,4 @@
-(ns flipmunks.budget.parse
+(ns flipmunks.budget.parser
   (:require [om.next :as om]
             [datascript.core :as d]))
 
@@ -28,3 +28,8 @@
   [{:keys [state]} _ {:keys [txs]}]
   {:value []
    :action #(d/transact! state txs)})
+
+(defn cas! [component id key old-value new-value]
+  (om/transact! component
+                `[(datascript/transact
+                    {:txs [[:db.fn/cas ~id ~key ~old-value ~new-value]]})]))
