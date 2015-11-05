@@ -22,5 +22,7 @@
 (defn currency-rates
   "Get currency rates for the given date string of the form \"yy-MM-dd\" and the api key."
   [app-id date-str]
-  (let [rates (json/read-str (:body (client/get (currency-rates-url app-id date-str))) :key-fn keyword)]
-    (assoc rates :date date-str)))
+  (println "Api request")
+  ;(let [rates (json/read-str (:body (client/get (currency-rates-url app-id date-str))) :key-fn keyword)])
+  (assoc {} :date date-str)
+  )

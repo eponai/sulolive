@@ -40,10 +40,6 @@
   [body]
   (r/response body))
 
-(defn body [schema data]
-  {:schema schema
-   :entities data})
-
 (defn- wrap-error [handler]
   (fn [request]
     (try

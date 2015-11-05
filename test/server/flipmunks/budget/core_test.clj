@@ -52,8 +52,7 @@
 
 (deftest test-post-user-data
   (let [db (b/post-user-data (db-with-curs)
-                             request
-                             test-convs)
+                             request)
         result (b/fetch p/all-data (:db-after db)
                         "user@email.com"
                         {})
@@ -78,8 +77,7 @@
                                    "invalid@user.com")
         invalid-data-req (assoc request :body [{:invalid-data "invalid"}])
         post-fn #(b/post-user-data (db-with-curs)
-                                   %
-                                   test-convs)]
+                                   %)]
     (is (thrown? ExceptionInfo (post-fn invalid-user-req)))
     (is (thrown? ExceptionInfo (post-fn invalid-data-req)))))
 

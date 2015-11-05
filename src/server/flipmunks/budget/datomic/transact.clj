@@ -33,7 +33,11 @@
 
 (defn currency-rates [conn rate-ms]
   (let [db-rates (apply concat (map #(f/cur-rates->db-txs %) rate-ms))]
-    (transact conn db-rates)))
+    (Thread/sleep 1000)
+    (println "posted currency rates: " db-rates)
+    "message"
+    ;(transact conn db-rates)
+    ))
 
 (defn currencies [conn currencies]
   (transact conn (f/curs->db-txs currencies)))

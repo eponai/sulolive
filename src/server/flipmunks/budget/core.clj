@@ -8,37 +8,42 @@
             [flipmunks.budget.http :as h]
             [datomic.api :only [q db] :as d]
             [cemerick.friend :as friend]
-            [flipmunks.budget.openexchangerates :as exch]))
-
+            [flipmunks.budget.openexchangerates :as exch]
+            [clojure.core.async :refer [>! <! >!! <!! go chan buffer close! thread]]))
 (def ^:dynamic conn)
 
-;; test currency rates
-(defn test-currency-rates [date-str]                        ;TODO remove this test map and use the OER API.
-  {:date date-str
-   :rates {:SEK 8.333
-           :USD 1
-           :THB 35.555}})
 ; Pull
 
 (defn fetch [fn db & args]
   (let [data (apply (partial fn db) args)]
-    (h/body (p/schema db data) data)))
+    {:schema (p/schema db data)
+     :entities data}))
+
+(defn currency-rates [date-str opts]
+  (if-let [app-id (opts :app-id)]
+    (exch/currency-rates app-id date-str)
+    (let [rates (clojure.data.json/read-str (slurp "resources/private/test/currency-rates.json") :key-fn keyword)]
+      (assoc rates :date date-str))))
 
 ; Transact data to datomic
+
+(def currency-chan (chan))
 
 (defn post-currencies [conn curs]
   (t/currencies conn curs))
 
+(defn post-currency-rates [dates opts]
+  (let [unconverted (clojure.set/difference (set dates)
+                                            (p/converted-dates (d/db conn) dates))]
+    (when (some identity unconverted)
+      (t/currency-rates conn (map #(currency-rates % opts) (filter identity dates))))))
+
 (defn post-user-data
   "Post new transactions for the user in the session. If there's no currency rates
   for the date of the transactions, they will be fetched from OER."
-  [conn request rates-fn]                ;TODO fix this to not fetch currency rates synchronously
-  (let [user-data (:body request)
-        dates (map :transaction/date user-data)
-        unconverted-dates (clojure.set/difference (set dates)
-                                                  (p/converted-dates (d/db conn) dates))]
-    (when (some identity unconverted-dates)
-      (t/currency-rates conn (map rates-fn (filter identity unconverted-dates))))
+  [conn request]
+  (let [user-data (:body request)]
+    (go (>! currency-chan (map :transaction/date user-data)))
     (t/user-txs conn (h/email request) user-data)))
 
 (defn signup
@@ -67,7 +72,7 @@
                                                   (d/db conn)
                                                   (h/email request)
                                                   (:params request))))
-           (POST "/txs" request (h/response (post-user-data conn request test-currency-rates)))
+           (POST "/txs" request (h/response (post-user-data conn request)))
            (GET "/test" {session :session} (h/response session))
            (GET "/curs" [] (h/response (fetch p/currencies
                                               (d/db conn)))))
@@ -75,7 +80,7 @@
 (defroutes app-routes
 
            (POST "/signup" request (signup-redirect conn request))
-
+           (POST "/txs" request (h/response (post-user-data conn request)))
            ; Anonymous
            (GET "/login" [] (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n
             Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
@@ -101,4 +106,8 @@
                             :workflows     [(a/form)]})
       h/wrap))
 
-(defn -main [& args])
+(def init
+  (go (while true (try
+                    (println "trying")
+                    (post-currency-rates (<! currency-chan) {})
+                    (catch Exception e)))))
