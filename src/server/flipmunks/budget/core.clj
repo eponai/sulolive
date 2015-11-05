@@ -45,12 +45,6 @@
   [conn request]
   (t/new-user conn (a/new-signup request)))
 
-(defn signup-redirect
-  "Create a new user and redirect to the login page."
-  [conn request]
-  (signup conn request)
-  (h/redirect "/login" request))
-
 ; Auth stuff
 
 (defn user-creds
@@ -72,7 +66,8 @@
 
 (defroutes app-routes
 
-           (POST "/signup" request (signup-redirect conn request))
+           (POST "/signup" request (signup conn request)
+                                   (h/redirect "/login" request))
            ; Anonymous
            (GET "/login" [] (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n
             Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
@@ -82,7 +77,6 @@
            (GET "/signup" [] (str "<h2>Signup</h2>\n \n<form action=\"/signup\" method=\"POST\">\n
             Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
             Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n
-            Repeat: <input type=\"password\" name=\"repeat\" value=\"\" /><br />\n\n
             <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />"))
 
            ; Requires user login
