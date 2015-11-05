@@ -2,9 +2,7 @@
   (:require [clojure.test :refer :all]
             [datomic.api :only [q db] :as d]
             [flipmunks.budget.core :as b]
-            [flipmunks.budget.datomic.pull :as p]
-            [flipmunks.budget.datomic.transact :as t]
-            [flipmunks.budget.validate :as v])
+            [flipmunks.budget.datomic.pull :as p])
   (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))

@@ -9,7 +9,7 @@
             [datomic.api :only [q db] :as d]
             [cemerick.friend :as friend]
             [flipmunks.budget.openexchangerates :as exch]
-            [clojure.core.async :refer [>! <! >!! <!! go chan buffer close! thread]]))
+            [clojure.core.async :refer [>! <! go chan]]))
 (def ^:dynamic conn)
 
 ; Pull
@@ -43,8 +43,7 @@
 (defn signup
   "Create a new user and transact into datomic."
   [conn request]
-  (if-let [new-user (a/signup request)]
-     (t/new-user conn new-user)))
+  (t/new-user conn (a/new-signup request)))
 
 (defn signup-redirect
   "Create a new user and redirect to the login page."
@@ -74,7 +73,6 @@
 (defroutes app-routes
 
            (POST "/signup" request (signup-redirect conn request))
-           (POST "/txs" request (h/response (post-user-data conn request)))
            ; Anonymous
            (GET "/login" [] (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n
             Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
@@ -102,6 +100,5 @@
 
 (def init
   (go (while true (try
-                    (println "trying")
                     (post-currency-rates conn exch/local-currency-rates (<! currency-chan))
                     (catch Exception e)))))

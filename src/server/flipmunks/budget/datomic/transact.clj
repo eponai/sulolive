@@ -1,7 +1,7 @@
 (ns flipmunks.budget.datomic.transact
   (:require [datomic.api :as d]
             [flipmunks.budget.datomic.format :as f]
-            [flipmunks.budget.validate :as v]
+            [flipmunks.budget.datomic.validate :as v]
             [flipmunks.budget.http :as e]))
 
 
@@ -35,7 +35,8 @@
 
   Throws ExceptionInfo if transaction failed."
   [conn new-user]
-  (transact conn [(f/user->db-user new-user)]))
+  (when (v/valid-signup? new-user)
+    (transact conn [(f/user->db-user new-user)])))
 
 (defn currency-rates
   "Transact conversions into datomic.

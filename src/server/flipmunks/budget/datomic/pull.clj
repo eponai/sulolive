@@ -1,7 +1,7 @@
 (ns flipmunks.budget.datomic.pull
   (:require [datomic.api :as d]
             [flipmunks.budget.http :as e]
-            [flipmunks.budget.validate :as v]))
+            [flipmunks.budget.datomic.validate :as v]))
 
 (defn- q [query & inputs]
   (try
