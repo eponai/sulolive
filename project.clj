@@ -9,7 +9,7 @@
                 :exclusion [org.clojure/data.json]
                  ]
                  [org.clojure/data.json "0.2.6"]
-                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+                 [org.clojure/core.async "0.2.371"]
                  ;; core.memoize is needed to work around lein+core.async dependency issue.
                  [org.clojure/core.memoize "0.5.6"]
                  [com.cognitect/transit-cljs "0.8.225"]
