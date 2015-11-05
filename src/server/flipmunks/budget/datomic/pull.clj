@@ -42,7 +42,7 @@
          (apply conj query))))
 
 (defn user-txs [db user-email params]
-  (when (and user-email (v/valid-params? params))
+  (when (and user-email (v/valid-date? params))
     (q (tx-query params) db user-email)))
 
 (defn- db-entities [db user-txs attr]

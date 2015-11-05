@@ -19,12 +19,6 @@
     {:schema (p/schema db data)
      :entities data}))
 
-(defn currency-rates [date-str opts]
-  (if-let [app-id (opts :app-id)]
-    (exch/currency-rates app-id date-str)
-    (let [rates (clojure.data.json/read-str (slurp "resources/private/test/currency-rates.json") :key-fn keyword)]
-      (assoc rates :date date-str))))
-
 ; Transact data to datomic
 
 (def currency-chan (chan))
@@ -32,11 +26,11 @@
 (defn post-currencies [conn curs]
   (t/currencies conn curs))
 
-(defn post-currency-rates [dates opts]
+(defn post-currency-rates [conn rates-fn dates]
   (let [unconverted (clojure.set/difference (set dates)
                                             (p/converted-dates (d/db conn) dates))]
     (when (some identity unconverted)
-      (t/currency-rates conn (map #(currency-rates % opts) (filter identity dates))))))
+      (t/currency-rates conn (map rates-fn (filter identity dates))))))
 
 (defn post-user-data
   "Post new transactions for the user in the session. If there's no currency rates
@@ -109,5 +103,5 @@
 (def init
   (go (while true (try
                     (println "trying")
-                    (post-currency-rates (<! currency-chan) {})
+                    (post-currency-rates conn exch/local-currency-rates (<! currency-chan))
                     (catch Exception e)))))

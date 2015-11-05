@@ -39,12 +39,11 @@
   "Validate the signup parameters. Checks that username and password are not empty,
   and that the password matches the repeated password. Throws an ExceptionInfo if validation fails."
   [{:keys [request-method params]}]
-  (let [{:keys [password username repeat]} params]
+  (let [{:keys [password username]} params]
     (validate "request method not POST" = request-method :post)
-    (validate "contains empty fields" (every-pred not-empty) username password repeat)
-    (validate "passwords don't match" = password repeat)))
+    (validate "contains empty fields" (every-pred not-empty) username password)))
 
-(defn valid-params?
+(defn valid-date?
   "Validate the get params for user/txs. Validating that d m y params are numbers."
   [params]
   (let [{:keys [d m y]} params]
