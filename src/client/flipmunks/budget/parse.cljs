@@ -5,6 +5,10 @@
 (defmulti read om/dispatch)
 (defmulti mutate om/dispatch)
 
+(defn debug-read [{:keys [selector] :as env} k params]
+  (prn "Reading: " {:key k :params params :selector selector})
+  (read env k params))
+
 (defmethod read :default
   [_ k _]
   (prn "tried reading key: " k))

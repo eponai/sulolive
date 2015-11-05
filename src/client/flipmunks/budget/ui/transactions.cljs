@@ -87,6 +87,14 @@
    ;; TODO: Should instead use the primary currency
    :currency (-> transactions first :transaction/currency :currency/name)})
 
+(defn expand-day [this {:keys [db/id ui.day/expanded]}]
+  (om/transact! this
+                `[(datascript/transact
+                    {:txs [[:db.fn/cas ~id
+                            :ui.day/expanded
+                            ~expanded
+                            ~(not expanded)]]})]))
+
 (defui DayTransactions
   static om/IQueryParams
   (params [this] {:transactions (om/get-query Transaction)})
@@ -101,8 +109,7 @@
   Object
   (render [this]
           (let [{transactions :transaction/_date
-                 :keys        [ui.day/expanded] :as props} (om/props this)
-                {:keys [expand-fn]} (om/get-computed this)]
+                 :keys        [ui.day/expanded] :as props} (om/props this)]
             (html [:div
                    (style {:borderWidth "0px 0px 1px"
                            :borderStyle "solid"})
@@ -115,7 +122,7 @@
                                      :align-items     "center"
                                      :justify-content "flex-start"})
                              (assoc :id "ui-day"
-                                    :on-click #(expand-fn props)))
+                                    :on-click #(expand-day this props)))
                     [:div (style {:fontSize   "1.3em"
                                   :fontWeight "bold"})
                      (let [{:keys [amount currency]} (sum transactions)]
@@ -153,13 +160,6 @@
   (query [this]
          '[{:query/all-dates ?dates}])
   Object
-  (expand-day [this {:keys [db/id ui.day/expanded]}]
-              (om/transact! this
-                            `[(datascript/transact
-                                {:txs [[:db.fn/cas ~id
-                                        :ui.day/expanded
-                                        ~expanded
-                                        ~(not expanded)]]})]))
   (render [this]
           (let [{:keys [query/all-dates]} (om/props this)
                 by-year-month (group-dates-by-year-month all-dates)]
@@ -170,7 +170,7 @@
                                   [:div
                                    [:h2 ((get t.format/date-formatters "MMMM")
                                           (t/date-time year month))]
-                                   (map #(->DayTransactions (om/computed % {:expand-fn (fn [day] (.expand-day this day))}))
+                                   (map ->DayTransactions
                                         (rseq (sort-by :date/day dates)))])
                                 (rseq months))])
                         (rseq by-year-month))]))))

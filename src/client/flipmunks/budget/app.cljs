@@ -14,10 +14,8 @@
             [flipmunks.budget.ui.transactions :refer [AllTransactions ->AllTransactions]]))
 
 (defn just-read
-  [{:keys [parser selector] :as env} k _]
-  (prn "just reading: " k)
+  [{:keys [parser selector] :as env} _ _]
   (let [v (parser env selector nil)]
-    (prn "read : " v)
     {:value v}))
 
 (defmethod parse/read :just/add-transaction [e k p] (just-read e k p))
@@ -54,7 +52,7 @@
           ds-schema  (-> (budget.d/schema-datomic->datascript schema)
                          (assoc :app {:db/unique :db.unique/identity}))
           conn       (d/create-conn ds-schema)
-          parser     (om/parser {:read parse/read :mutate parse/mutate})
+          parser     (om/parser {:read parse/debug-read :mutate parse/mutate})
           reconciler (om/reconciler {:state conn :parser parser})]
       (d/transact conn [{:app :state :app/year 2015 :app/month 10}])
       (d/transact conn (budget.d/db-id->temp-id ref-types entities))
