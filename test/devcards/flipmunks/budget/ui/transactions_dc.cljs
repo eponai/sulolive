@@ -17,15 +17,15 @@
                       ["thailand" "2015" "chiang mai"]))
 
 (defcard transaction-card
-         (t/transaction transaction-props))
+         (t/->Transaction transaction-props))
 
 (defcard transaction-with-details
-         (t/transaction (assoc transaction-props
+         (t/->Transaction (assoc transaction-props
                           :transaction/details
                           "Great latte next to the dumpling place. We should come back here next time we're in Chaing Mai, Thailand.")))
 
 (defcard transaction-with-tags
-         (t/transaction (assoc transaction-props
+         (t/->Transaction (assoc transaction-props
                           :ui.transaction/show-tags
                           true)))
 
@@ -37,16 +37,16 @@
     true))
 
 (defcard transaction-with-details-and-tags
-         (t/transaction t-with-details-and-tags))
+         (t/->Transaction t-with-details-and-tags))
 
 (def day-props (assoc (:transaction/date transaction-props)
                  :transaction/_date [transaction-props]))
 
 (defcard day-of-transactions
-         (t/day-of-transactions day-props))
+         (t/->DayTransactions day-props))
 
 (defcard day-of-transactions-expanded
-         (t/day-of-transactions (assoc day-props
+         (t/->DayTransactions (assoc day-props
                                   :ui.day/expanded
                                   true)))
 
@@ -55,21 +55,21 @@
                         (update :transaction/_date conj t-with-details-and-tags)))
 
 (defcard day-of-transactions-expanded--2-transactions
-         (t/day-of-transactions expanded-trans))
+         (t/->DayTransactions expanded-trans))
 
 (defcard two-days-of-transactions
          (html [:div
-                (t/day-of-transactions expanded-trans)
-                (t/day-of-transactions day-props)]))
+                (t/->DayTransactions expanded-trans)
+                (t/->DayTransactions day-props)]))
 
 (defcard month-of-transactions--days-in-reverse-order
-         (t/all-transactions {:query/all-dates [day-props
+         (t/->AllTransactions {:query/all-dates [day-props
                                                 (update day-props :date/day inc)]}))
 
 (defcard month-of-transactions--months-in-reverse-order
-         (t/all-transactions {:query/all-dates [day-props
+         (t/->AllTransactions {:query/all-dates [day-props
                                                 (update day-props :date/month inc)]}))
 
 (defcard month-of-transactions--year-in-reverse-order
-         (t/all-transactions {:query/all-dates [day-props
+         (t/->AllTransactions {:query/all-dates [day-props
                                                 (update day-props :date/year inc)]}))

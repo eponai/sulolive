@@ -7,7 +7,7 @@
   (:require-macros [devcards.core :refer [defcard]]))
 
 (defcard tag-with-name
-         (t/tag (t/tag-props "Tag name")))
+         (t/->Tag (t/tag-props "Tag name")))
 
 (defui DeletableTag
        Object
@@ -17,7 +17,7 @@
                    [:div
                     [:div (style {:display       (if tag-hidden "none" "block")
                                   :margin-bottom "1em"})
-                     (t/tag
+                     (t/->Tag
                        (t/tag-props "with delete"
                                   #(om/update-state! this assoc ::tag-hidden true)))]
                     [:button {:on-click #(om/update-state! this assoc ::tag-hidden false)}

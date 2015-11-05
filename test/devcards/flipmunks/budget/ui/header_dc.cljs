@@ -5,5 +5,5 @@
   (:require-macros [devcards.core :refer [defcard]]))
 
 (defcard header-has-new-transacion-button
-         (h/header {}))
+         (h/->Header {}))
 

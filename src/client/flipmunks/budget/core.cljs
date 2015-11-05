@@ -1,13 +1,11 @@
 (ns flipmunks.budget.core
-  (:require [flipmunks.budget.omtest :as om]
-            [flipmunks.budget.om_next_test :as om-next]
+  (:require [flipmunks.budget.app :as app]
             [flipmunks.budget.backend :as backend]))
 
 (enable-console-print!)
 
 (println "Hello console")
 
-(comment (om/run (backend/get-dates)))
-(om-next/run
+(app/run
   (backend/data-provider))
 

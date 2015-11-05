@@ -5,6 +5,6 @@
   (:require-macros [devcards.core :refer [defcard]]))
 
 (defcard datepicker
-         (d/datepicker {:value       (js/Date.)
+         (d/->Datepicker {:value       (js/Date.)
                         :on-change   #(prn "on-changed called with: " %)
                         :placeholder "enter date"}))

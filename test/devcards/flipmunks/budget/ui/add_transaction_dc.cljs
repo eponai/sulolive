@@ -11,10 +11,10 @@
 (def props {:query/all-currencies [:LEK :TBH :USD :SEK]})
 
 (defcard add-transaction-without-data
-         (a/add-transaction props))
+         (a/->AddTransaction props))
 
 (defcard add-transaction--complete
-         (a/add-transaction
+         (a/->AddTransaction
            (assoc props ::a/input-amount 123
                         ::a/input-date (js/Date.)
                         ::a/input-currency "SEK"

@@ -31,7 +31,7 @@
                                   {:on-click #(do (delete-fn) nil)})
                      "x"])]))))
 
-(def tag (om/factory Tag))
+(def ->Tag (om/factory Tag))
 
 (defn tag-props
   ([name] (tag-props name nil))

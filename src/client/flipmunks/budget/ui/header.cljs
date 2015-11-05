@@ -26,4 +26,4 @@
                        [:button "logout"]
                        [:button "settings"]]])))
 
-(def header (om/factory Header))
+(def ->Header (om/factory Header))

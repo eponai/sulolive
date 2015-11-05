@@ -47,4 +47,4 @@
                               :placeholder (-> this om/props :placeholder)}])))
 
 ;; props: {:value js/Date :on-change f :placeholder str}
-(def datepicker (om/factory DatePicker))
+(def ->Datepicker (om/factory DatePicker))

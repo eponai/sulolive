@@ -72,7 +72,7 @@
                              (vector :option {:value v} v))
                            all-currencies))]
               [:div [:span "Date:"]
-               (d/datepicker {:value       input-date
+               (d/->Datepicker {:value       input-date
                               :placeholder "enter date"
                               :on-change   #(om/update-state! this assoc ::input-date %)})]
               [:div [:span "Title:"]
@@ -94,6 +94,6 @@
                                                  (seq (.. % -target -value)))
                                        (.preventDefault %)
                                        (new-input-tag this input-tag))})]
-               (map t/tag input-tags)]]))))
+               (map t/->Tag input-tags)]]))))
 
-(def add-transaction (om/factory AddTransaction))
+(def ->AddTransaction (om/factory AddTransaction))

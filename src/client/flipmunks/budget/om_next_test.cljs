@@ -85,12 +85,12 @@
                     days)]))))
 
 
-(defn find-refs 
+(defn find-refs
   "finds attributes where :db/valueType is ref"
   [datomic-schema]
   (let [conn (d/create-conn)]
     (d/transact conn datomic-schema)
-    (set (d/q '[:find [?v ...] 
+    (set (d/q '[:find [?v ...]
                 :where [?e :db/ident ?v]
                        [?e :db/valueType :db.type/ref]]
               @conn))))
@@ -108,7 +108,7 @@
       (d/transact conn (budgetd/db-id->temp-id ref-types entities))
       (om/add-root! reconciler Year (gdom/getElement "my-app")))))
 
-(defn run 
+(defn run
   "give data-provider a channel -> returns {:schema [] :entities []}"
   [data-provider]
   (let [c (async/chan)]
