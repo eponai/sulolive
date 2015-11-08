@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/clojurescript "1.7.145"
+                 [org.clojure/clojurescript "1.7.170"
               ;;  :classifier "aot"
                 :exclusion [org.clojure/data.json]
                  ]
@@ -37,8 +37,8 @@
                  [com.draines/postal "1.11.3"]]
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]
-            [lein-cljsbuild "1.1.0"]
-            [lein-figwheel "0.4.1"]
+            [lein-cljsbuild "1.1.1"]
+            [lein-figwheel "0.5.0-SNAPSHOT"]
             [lein-ring "0.9.7"]]
 
   ;;;;;;;;;;;;;
