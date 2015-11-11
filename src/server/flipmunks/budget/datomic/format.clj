@@ -60,6 +60,13 @@
 (defn user->db-user [new-user]
   (assoc new-user :db/id (d/tempid :db.part/user)))
 
+(defn db-entity->db-verification [entity attribute]
+  {:db/id (d/tempid :db.part/user)
+   :verification/status :verification.status/pending
+   :verification/created-at (c/to-long (t/now))
+   :verification/uuid (d/squuid)
+   :verification/entity entity})
+
 (defn cur-rates->db-txs
   "Returns a vector with datomic entites representing a currency conversions
   for the given date. m should be a  map with timestamp and

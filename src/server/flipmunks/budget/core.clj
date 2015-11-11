@@ -9,8 +9,12 @@
             [datomic.api :only [q db] :as d]
             [cemerick.friend :as friend]
             [flipmunks.budget.openexchangerates :as exch]
-            [clojure.core.async :refer [>! <! go chan]]))
+            [clojure.core.async :refer [>! <! go chan]]
+            [postal.core :as email]))
+
 (def ^:dynamic conn)
+
+(def currency-chan (chan))
 
 ; Pull
 
@@ -20,8 +24,6 @@
      :entities data}))
 
 ; Transact data to datomic
-
-(def currency-chan (chan))
 
 (defn post-currencies [conn curs]
   (t/currencies conn curs))
@@ -44,6 +46,18 @@
   "Create a new user and transact into datomic."
   [conn request]
   (t/new-user conn (a/new-signup request)))
+
+(defn send-email-verification [uuid]
+  (po/send-message (smtp) {:from "info@gmail.com" :to "dianagren@gmail.com" :body (str "Click this link: ")}))
+
+(defn verify-email [conn email]
+  (if-let [ver (p/verification (d/db conn) :user/email email)]
+    (send-email-verification (ver :verification/uuid))
+    (do
+      (let [user (p/user (d/db conn) email)]
+        (t/new-verification conn user :user/email)
+        (let [ver (p/verification (:db-after) :user/email email)]
+          (send-email-verification (ver :verification/uuid)))))))
 
 ; Auth stuff
 

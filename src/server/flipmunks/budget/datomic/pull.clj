@@ -100,5 +100,11 @@
        :in $ ?m
        :where [?e :user/email ?m]] db email))
 
-
-
+(defn verification [db attribute value]
+  (q '[:find (pull ?e [*]) .
+       :in $ ?attr ?v
+       :where
+       [?e :verification/entity ?ve]
+       [?e :verification/status :verification.status/pending]
+       [?ve ?attr ?v]]
+     db attribute value))

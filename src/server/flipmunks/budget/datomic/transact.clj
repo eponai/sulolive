@@ -30,6 +30,10 @@
     (let [txs (f/user-owned-txs->dbtxs user-email user-txs)]
       (transact conn txs))))
 
+(defn new-verification [conn entity attribute]
+  (let [ver (f/db-entity->db-verification entity attribute)]
+    (transact conn [ver])))
+
 (defn new-user
   "Transact a new user into datomic.
 

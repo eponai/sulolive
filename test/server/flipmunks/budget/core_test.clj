@@ -63,7 +63,8 @@
       (is db)
       (is (nil? unposted))
       (is (= (count converted) (count dates)))
-      (is (thrown? ExceptionInfo (b/post-currency-rates conn test-convs ["invalid-date"]))))))
+      (is (thrown? ExceptionInfo (b/post-currency-rates conn test-convs ["invalid-date"])))
+      (is (thrown? ExceptionInfo (b/post-currency-rates conn (fn [date] {:rates {}}) ["2010-10-11"]))))))
 
 (deftest test-post-user-data
   (let [db (b/post-user-data (db-with-curs)
