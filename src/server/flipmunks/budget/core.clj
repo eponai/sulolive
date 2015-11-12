@@ -15,6 +15,7 @@
 (def ^:dynamic conn)
 
 (def currency-chan (chan))
+(def email-chan (chan))
 
 ; Pull
 
@@ -42,17 +43,21 @@
     (go (>! currency-chan (map :transaction/date user-data)))
     (t/user-txs conn (h/email request) user-data)))
 
-(defn send-email-verification [db email]
+(defn send-email-verification [email-fn [db email]]
   (when-let [verification (first (p/verifications db (p/user db email) :user/email :verification.status/pending))]
-    (a/send-email-verification email (verification :verification/uuid))))
+    (email-fn email (verification :verification/uuid))))
 
 (defn signup
   "Create a new user and transact into datomic."
   [conn {:keys [params] :as request}]
-  (when-not (p/user (d/db conn) (params :username))
+  (if-not (p/user (d/db conn) (params :username))
     (let [tx (t/new-user conn (a/new-signup request))]
-      (send-email-verification (:db-after tx) (params :username))
-      tx)))
+      (go (>! email-chan [(:db-after tx) (params :username)]))
+      tx)
+    (throw (ex-info "User already exists." {:cause ::a/authentication-error
+                                            :status ::h/unathorized
+                                            :data {:username (params :username)}
+                                            :message "User already exists."}))))
 
 (defn verify [uuid]
   (let [verification (p/verification (d/db conn) uuid)]
@@ -115,7 +120,15 @@
                             :workflows     [(a/form)]})
       h/wrap))
 
-(defn init []
-  (go (while true (try
-                    (post-currency-rates conn exch/local-currency-rates (<! currency-chan))
-                    (catch Exception e)))))
+(defn init
+  ([]
+    (init exch/local-currency-rates a/send-email-verification))
+  ([cur-fn email-fn]
+   (println "Initializing server...")
+   (go (while true (try
+                     (post-currency-rates conn cur-fn (<! currency-chan))
+                     (catch Exception e))))
+   (go (while true (try
+                     (send-email-verification email-fn (<! email-chan))
+                     (catch Exception e))))
+   (println "Done.")))

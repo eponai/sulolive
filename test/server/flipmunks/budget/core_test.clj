@@ -4,7 +4,8 @@
             [flipmunks.budget.core :as b]
             [flipmunks.budget.datomic.pull :as p]
             [flipmunks.budget.datomic.transact :as t]
-            [flipmunks.budget.auth :as a])
+            [flipmunks.budget.auth :as a]
+            [flipmunks.budget.openexchangerates :as exch])
   (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
@@ -34,6 +35,11 @@
                                     :roles    #{::b/user}}},
                          :current 1}}
               :body test-data})
+
+(defn test-send-email [email uuid]
+  (println "Email sent to \"" email "\" with link " uuid))
+
+(def init (b/init test-convs test-send-email))
 
 (defn- new-db
   "Creates an empty database and returns the connection."
