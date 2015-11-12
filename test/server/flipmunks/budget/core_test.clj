@@ -2,7 +2,8 @@
   (:require [clojure.test :refer :all]
             [datomic.api :only [q db] :as d]
             [flipmunks.budget.core :as b]
-            [flipmunks.budget.datomic.pull :as p])
+            [flipmunks.budget.datomic.pull :as p]
+            [flipmunks.budget.datomic.transact :as t])
   (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
@@ -105,10 +106,15 @@
   (testing "signup new user"
     (let [valid-params {:username "test"
                         :password "p"}
-          db-valid (b/signup (new-db)
-                             {:request-method :post
-                              :params         valid-params})]
-      (is (thrown? ExceptionInfo (b/user-creds (:db-after db-valid) "test"))) ; TODO add test for verified email...
+          conn (new-db)
+          db-unverified (b/signup conn {:request-method :post
+                                        :params         valid-params})
+          db-verified (t/new-verification conn
+                                          (p/user (:db-after db-unverified) "test")
+                                          :user/email
+                                          :verification.status/activated)]
+      (is (b/user-creds (:db-after db-verified) "test"))
+      (is (thrown? ExceptionInfo (b/user-creds (:db-after db-unverified) "test")))
       (is (thrown? ExceptionInfo (b/signup (new-db)
                                            {:request-method :post
                                             :params         {:username ""

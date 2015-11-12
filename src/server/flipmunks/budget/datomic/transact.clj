@@ -30,8 +30,8 @@
     (let [txs (f/user-owned-txs->dbtxs user-email user-txs)]
       (transact conn txs))))
 
-(defn new-verification [conn entity attribute]
-  (let [ver (f/db-entity->db-verification entity attribute)]
+(defn new-verification [conn entity attribute status]
+  (let [ver (f/db-entity->db-verification entity attribute status)]
     (transact conn [ver])))
 
 (defn new-user

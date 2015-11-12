@@ -60,12 +60,14 @@
 (defn user->db-user [new-user]
   (assoc new-user :db/id (d/tempid :db.part/user)))
 
-(defn db-entity->db-verification [entity attribute]
-  {:db/id (d/tempid :db.part/user)
-   :verification/status :verification.status/pending
+(defn db-entity->db-verification [entity attribute status]
+  {:db/id                   (d/tempid :db.part/user)
+   :verification/status     (or status :verification.status/pending)
    :verification/created-at (c/to-long (t/now))
-   :verification/uuid (d/squuid)
-   :verification/entity entity})
+   :verification/uuid       (d/squuid)
+   :verification/entity     (entity :db/id)
+   :verification/attribute  attribute
+   :verification/value      (entity attribute)})
 
 (defn cur-rates->db-txs
   "Returns a vector with datomic entites representing a currency conversions

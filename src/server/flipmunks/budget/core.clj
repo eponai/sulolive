@@ -56,7 +56,7 @@
       (send-email-verification (ver :verification/uuid))
       (do
         (let [user (p/user (d/db conn) email)]
-          (t/new-verification conn user :user/email)
+          (t/new-verification conn user :user/email :verification.status/pending)
           (let [ver (p/verification (:db-after) :user/email email)]
             (send-email-verification (ver :verification/uuid))))))))
 
