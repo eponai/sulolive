@@ -14,6 +14,17 @@
                                        :message (.getMessage e)
                                        :exception e})))))
 
+(defn- p [db pattern eid]
+  (try
+    (d/pull db pattern eid)
+    (catch Exception e
+      (throw (ex-info (.getMessage e) {:cause ::pull-error
+                                       :status ::e/service-unavailable
+                                       :data {:pattern pattern
+                                              :eid eid}
+                                       :message (.getMessage e)
+                                       :exception e})))))
+
 ; Pull and format datomic entries
 (defn- distinct-values
   "Map function f over the given collection, and return a set of the distinct flattened values."
@@ -115,3 +126,8 @@
        (let [query (conj query ['?ver :verification/status status])]
          (q query db (ent :db/id) attr (ent attr)))
        (q query db (ent :db/id) attr (ent attr))))))
+
+(defn verification
+  "Pull specific verification from the database using the unique uuid field."
+  [db uuid]
+  (p db '[*] [:verification/uuid (java.util.UUID/fromString uuid)]))

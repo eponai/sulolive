@@ -10,7 +10,7 @@
             [cemerick.friend :as friend]
             [flipmunks.budget.openexchangerates :as exch]
             [clojure.core.async :refer [>! <! go chan]]
-            [postal.core :as email]))
+            [flipmunks.budget.config :as c]))
 
 (def ^:dynamic conn)
 
@@ -42,23 +42,26 @@
     (go (>! currency-chan (map :transaction/date user-data)))
     (t/user-txs conn (h/email request) user-data)))
 
+(defn send-email-verification [db email]
+  (when-let [verification (first (p/verifications db (p/user db email) :user/email :verification.status/pending))]
+    (a/send-email-verification email (verification :verification/uuid))))
+
 (defn signup
   "Create a new user and transact into datomic."
-  [conn request]
-  (t/new-user conn (a/new-signup request)))
+  [conn {:keys [params] :as request}]
+  (when-not (p/user (d/db conn) (params :username))
+    (let [tx (t/new-user conn (a/new-signup request))]
+      (send-email-verification (:db-after tx) (params :username))
+      tx)))
 
-(comment
-  (defn send-email-verification [uuid]
-    (po/send-message (smtp) {:from "info@gmail.com" :to "dianagren@gmail.com" :body (str "Click this link: ")}))
-
-  (defn verify-email [conn email]
-    (if-let [ver (p/verification (d/db conn) :user/email email)]
-      (send-email-verification (ver :verification/uuid))
-      (do
-        (let [user (p/user (d/db conn) email)]
-          (t/new-verification conn user :user/email :verification.status/pending)
-          (let [ver (p/verification (:db-after) :user/email email)]
-            (send-email-verification (ver :verification/uuid))))))))
+(defn verify [uuid]
+  (let [verification (p/verification (d/db conn) uuid)]
+    (if (= (:db/id (verification :verification/status)) (d/entid (d/db conn) :verification.status/pending))
+      (t/add conn (:db/id verification) :verification/status :verification.status/activated)
+      (throw (ex-info "Trying to activate invalid verification." {:cause ::a/verification-error
+                                                                  :status ::h/unathorized
+                                                                  :data {:uuid uuid}
+                                                                  :message "The verification link is no longer valid."})))))
 
 ; Auth stuff
 
@@ -99,6 +102,8 @@
 
            ; Requires user login
            (context "/user" [] (friend/wrap-authorize user-routes #{::a/user}))
+           (GET "/verify/:uuid" [uuid] (verify uuid)
+                                        (h/response {:message "Your email is verified, you can now login."}))
 
            (friend/logout (ANY "/logout" request (ring.util.response/redirect "/")))
            ; Not found
