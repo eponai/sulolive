@@ -32,14 +32,19 @@
       user
       :username))
 
-(defn redirect [path request]
-  (r/redirect (util/resolve-absolute-uri path request)))
-
 (defn response
   "Create response with the given db and data. Fetches the schema for the given data and
   schema and returns a map of the form {:schema [] :entities []}."
   [body]
   (r/response body))
+
+(defn user-created [request]
+  (let [{{username :username} :params} request]
+    (r/created (util/resolve-absolute-uri "/login" request) {:username username})))
+
+(defn txs-created [request]
+  (let [{body :body} request]
+    (r/created (util/resolve-absolute-uri "/user/txs" request) body)))
 
 (defn- wrap-error [handler]
   (fn [request]

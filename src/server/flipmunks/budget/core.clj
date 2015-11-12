@@ -85,14 +85,16 @@
                                                   (d/db conn)
                                                   (h/email request)
                                                   (:params request))))
-           (POST "/txs" request (h/response (post-user-data conn request)))
+           (POST "/txs" request (post-user-data conn request)
+                                (h/txs-created request))
            (GET "/test" {session :session} (h/response session))
            (GET "/curs" [] (h/response (fetch p/currencies
                                               (d/db conn)))))
 
 (defroutes app-routes
 
-           (POST "/signup" request (h/response (str (signup conn request))))
+           (POST "/signup" request (signup conn request)
+                                   (h/user-created request))
            ; Anonymous
            (GET "/login" [] (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n
             Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
