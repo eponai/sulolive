@@ -92,8 +92,7 @@
 
 (defroutes app-routes
 
-           (POST "/signup" request (signup conn request)
-                                   (h/redirect "/login" request))
+           (POST "/signup" request (h/response (str (signup conn request))))
            ; Anonymous
            (GET "/login" [] (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n
             Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
@@ -108,7 +107,7 @@
            ; Requires user login
            (context "/user" [] (friend/wrap-authorize user-routes #{::a/user}))
            (GET "/verify/:uuid" [uuid] (verify uuid)
-                                        (h/response {:message "Your email is verified, you can now login."}))
+                                       (h/response {:message "Your email is verified, you can now login."}))
 
            (friend/logout (ANY "/logout" request (ring.util.response/redirect "/")))
            ; Not found
@@ -127,8 +126,10 @@
    (println "Initializing server...")
    (go (while true (try
                      (post-currency-rates conn cur-fn (<! currency-chan))
-                     (catch Exception e))))
+                     (catch Exception e
+                       (println (.getMessage e))))))
    (go (while true (try
                      (send-email-verification email-fn (<! email-chan))
-                     (catch Exception e))))
+                     (catch Exception e
+                       (println (.getMessage e))))))
    (println "Done.")))

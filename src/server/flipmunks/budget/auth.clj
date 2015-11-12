@@ -2,7 +2,8 @@
   (:require [cemerick.friend.credentials :as creds]
             [cemerick.friend.workflows :as workflows]
             [flipmunks.budget.http :as h]
-            [postal.core :as email]))
+            [postal.core :as email]
+            [flipmunks.budget.config :as c]))
 
 (defn not-found [email]
   (ex-info "Could not find user in db." {:cause   ::authentication-error
@@ -48,6 +49,17 @@
                                               :message "Invalid request method"}))))
 
 (defn send-email-verification [email uuid]
-  (let [link (str "localhost:3000/verify/" uuid)]
-    (println "email: " email " with link: " link)))
-  ;(email/send-message (c/config :smtp) {:from "info@gmail.com" :to "dianagren@gmail.com" :body (str "Email: " email "Click this link: " (verification :verification/uuid))}))
+  (let [link (str "http://localhost:3000/verify/" uuid)
+        body {:from "info@gmail.com"
+              :to "dianagren@gmail.com"
+              :subject "Hi there, this is your confirmation email."
+              :body (str "Email: " email ". Click this link: " link)}
+        status (email/send-message (c/config :smtp) body)]
+    (if (= 0 (:code status))
+      true
+      (throw (ex-info (:message status) {:cause ::email-error
+                                         :status ::h/service-unavailable
+                                         :message (:message status)
+                                         :data {:email email
+                                                :uuid uuid
+                                                :error (:error status)}})))))
