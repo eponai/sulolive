@@ -3,24 +3,32 @@
             [cemerick.friend.workflows :as workflows]
             [flipmunks.budget.http :as h]))
 
+(defn not-found [email]
+  (ex-info "Could not find user in db." {:cause   ::authentication-error
+                                         :status  ::h/unathorized
+                                         :data    {:email email}
+                                         :message "Wrong email or password."}))
+
 (defn user->creds
   "Get authentication map from a user entity."
   [user verifications]
-  (if (seq verifications)
-    {:identity (:db/id user)
-     :username (:user/email user)
-     :password (:user/enc-password user)
-     :roles    #{::user}}
-    (throw (ex-info "Email verification pending." {:cause   ::verification-error
-                                                   :status  ::h/unathorized
-                                                   :data    {:email (:user/email user)}
-                                                   :message "Email verification pending"}))))
+  {:identity      (:db/id user)
+   :username      (:user/email user)
+   :password      (:user/enc-password user)
+   :roles         #{::user}
+   :verifications verifications})
 
 (defn cred-fn
   "Credential function, passed in a user-fn to load the user credentials from the
   db to compare credentials to the params submitted to log in."
   [user-fn params]
-  (creds/bcrypt-credential-fn user-fn params))
+  (when-let [auth-map (creds/bcrypt-credential-fn user-fn params)]
+    (if (seq (:verifications auth-map))
+      auth-map
+      (throw (ex-info "Email verification pending." {:cause   ::verification-error
+                                                     :status  ::h/unathorized
+                                                     :data    {:email (:user/email (params :username))}
+                                                     :message "Email verification pending"})))))
 
 (defn form
   "Form workflow"

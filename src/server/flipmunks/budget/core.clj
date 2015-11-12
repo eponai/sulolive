@@ -69,10 +69,7 @@
   [db email]
   (if-let [db-user (p/user db email)]
     (a/user->creds db-user (p/verifications db db-user :user/email :verification.status/activated))
-    (throw (ex-info "Could not find user in db." {:cause ::a/authentication-error
-                                                  :status ::h/unathorized
-                                                  :data {:email email}
-                                                  :message "Wrong email or password."}))))
+    (throw (a/not-found email))))
 
 ; App stuff
 (defroutes user-routes

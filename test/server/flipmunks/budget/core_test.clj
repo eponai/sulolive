@@ -3,7 +3,8 @@
             [datomic.api :only [q db] :as d]
             [flipmunks.budget.core :as b]
             [flipmunks.budget.datomic.pull :as p]
-            [flipmunks.budget.datomic.transact :as t])
+            [flipmunks.budget.datomic.transact :as t]
+            [flipmunks.budget.auth :as a])
   (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
@@ -113,12 +114,17 @@
                                           (p/user (:db-after db-unverified) "test")
                                           :user/email
                                           :verification.status/activated)]
-      (is (b/user-creds (:db-after db-verified) "test"))
-      (is (thrown? ExceptionInfo (b/user-creds (:db-after db-unverified) "test")))
-      (is (thrown? ExceptionInfo (b/signup (new-db)
-                                           {:request-method :post
-                                            :params         {:username ""
-                                                             :password ""}})))
-      (is (thrown? ExceptionInfo (b/signup (new-db)
-                                           {:request-method :get
-                                            :params         valid-params}))))))
+      (is (a/cred-fn #(b/user-creds (:db-after db-verified) %) valid-params))
+      (is (thrown-with-msg? ExceptionInfo
+                            #"Email verification pending."
+                            (a/cred-fn #(b/user-creds (:db-after db-unverified) %) valid-params)))
+      (is (thrown-with-msg? ExceptionInfo
+                            #"Validation failed, "
+                            (b/signup (new-db)
+                                      {:request-method :post
+                                       :params         {:username ""
+                                                        :password ""}})))
+      (is (thrown-with-msg? ExceptionInfo
+                            #"Invalid request method"
+                            (b/signup (new-db) {:request-method :get
+                                                :params         valid-params}))))))
