@@ -63,8 +63,7 @@
       (is db)
       (is (nil? unposted))
       (is (= (count converted) (count dates)))
-      (is (thrown? ExceptionInfo (b/post-currency-rates conn test-convs ["invalid-date"])))
-      (is (thrown? ExceptionInfo (b/post-currency-rates conn (fn [date] {:rates {}}) ["2010-10-11"]))))))
+      (is (thrown? ExceptionInfo (b/post-currency-rates conn test-convs ["invalid-date"]))))))
 
 (deftest test-post-user-data
   (let [db (b/post-user-data (db-with-curs)
@@ -109,7 +108,7 @@
           db-valid (b/signup (new-db)
                              {:request-method :post
                               :params         valid-params})]
-      (is (:username (b/user-creds (:db-after db-valid) "test")))
+      (is (thrown? ExceptionInfo (b/user-creds (:db-after db-valid) "test"))) ; TODO add test for verified email...
       (is (thrown? ExceptionInfo (b/signup (new-db)
                                            {:request-method :post
                                             :params         {:username ""

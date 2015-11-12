@@ -20,7 +20,7 @@
 
 (defn fetch [fn db & args]
   (let [data (apply (partial fn db) args)]
-    {:schema (p/schema db data)
+    {:schema   (p/schema db data)
      :entities data}))
 
 ; Transact data to datomic
@@ -47,25 +47,34 @@
   [conn request]
   (t/new-user conn (a/new-signup request)))
 
-(defn send-email-verification [uuid]
-  (po/send-message (smtp) {:from "info@gmail.com" :to "dianagren@gmail.com" :body (str "Click this link: ")}))
+(comment
+  (defn send-email-verification [uuid]
+    (po/send-message (smtp) {:from "info@gmail.com" :to "dianagren@gmail.com" :body (str "Click this link: ")}))
 
-(defn verify-email [conn email]
-  (if-let [ver (p/verification (d/db conn) :user/email email)]
-    (send-email-verification (ver :verification/uuid))
-    (do
-      (let [user (p/user (d/db conn) email)]
-        (t/new-verification conn user :user/email)
-        (let [ver (p/verification (:db-after) :user/email email)]
-          (send-email-verification (ver :verification/uuid)))))))
+  (defn verify-email [conn email]
+    (if-let [ver (p/verification (d/db conn) :user/email email)]
+      (send-email-verification (ver :verification/uuid))
+      (do
+        (let [user (p/user (d/db conn) email)]
+          (t/new-verification conn user :user/email)
+          (let [ver (p/verification (:db-after) :user/email email)]
+            (send-email-verification (ver :verification/uuid))))))))
 
 ; Auth stuff
 
 (defn user-creds
-  "Get user credentials for the specified email in the db."
+  "Get user credentials for the specified email in the db. Returns nil if user does not exist.
+
+  Throws ExceptionInfo if the user has not verified their email."
   [db email]
   (when-let [db-user (p/user db email)]
-    (a/user->creds db-user)))
+    (let [verifications (p/verifications db db-user :user/email :verification.status/activated)]
+      (if (seq verifications)
+        (a/user->creds db-user)
+        (throw (ex-info "Email verification pending." {:cause ::a/verification-error
+                                                       :status ::h/unprocessable-entity
+                                                       :message "Email verification pending"
+                                                       :data {:email email}}))))))
 
 ; App stuff
 (defroutes user-routes
@@ -106,7 +115,7 @@
                             :workflows     [(a/form)]})
       h/wrap))
 
-(def init
+(defn init []
   (go (while true (try
                     (post-currency-rates conn exch/local-currency-rates (<! currency-chan))
                     (catch Exception e)))))

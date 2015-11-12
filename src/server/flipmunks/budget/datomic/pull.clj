@@ -100,11 +100,18 @@
        :in $ ?m
        :where [?e :user/email ?m]] db email))
 
-(defn verification [db attribute value]
-  (q '[:find (pull ?e [*]) .
-       :in $ ?attr ?v
-       :where
-       [?e :verification/entity ?ve]
-       [?e :verification/status :verification.status/pending]
-       [?ve ?attr ?v]]
-     db attribute value))
+(defn verifications
+  "Pull verifications for the specified entity and attribute. If status is specified,
+  will filter the results on that verification status."
+  ([db ent attr]
+    (verifications db ent attr nil))
+  ([db ent attr status]
+   (let [query '[:find [(pull ?ver [*]) ...]
+                 :in $ ?e ?a ?v
+                 :where
+                 [?ver :verification/entity ?e]
+                 [?e ?a ?v]]]
+     (if status
+       (let [query (conj query ['?ver :verification/status status])]
+         (q query db (ent :db/id) attr (ent attr)))
+       (q query db (ent :db/id) attr (ent attr))))))
