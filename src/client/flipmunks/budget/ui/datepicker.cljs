@@ -2,6 +2,7 @@
   (:require [om.next :as om :refer-macros [defui]]
             [flipmunks.budget.ui :refer [style]]
             [cljsjs.pikaday]
+            [cljsjs.react.dom]
             [sablono.core :refer-macros [html]]
             [garden.core :refer [css]]))
 
@@ -11,7 +12,7 @@
 (def pikaday-ref-name "pikaday")
 
 (defn get-pikaday-dom-node [this]
-  (.getDOMNode (om/react-ref this pikaday-ref-name)))
+  (js/ReactDOM.findDOMNode (om/react-ref this pikaday-ref-name)))
 
 (defn set-date-if-changed [this new-date old-date]
   (let [new-time (when new-date (.getTime new-date))

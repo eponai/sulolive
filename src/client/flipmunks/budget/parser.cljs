@@ -11,7 +11,13 @@
 
 (defmethod read :default
   [_ k _]
-  (prn "tried reading key: " k))
+  (prn "WARN: Returning nil for read key: " k))
+
+;; Proxies a component's query
+;; TODO: Create more proxies if a component wants to proxy more than one? Or figure out how to proxy many.
+(defmethod read :proxy
+  [{:keys [parser selector] :as env} _ _]
+  {:value (parser (dissoc env :selector) selector)})
 
 (defn pull-all
   "takes the database, a pull selector and where-clauses, where the where-clauses

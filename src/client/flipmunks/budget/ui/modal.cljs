@@ -17,7 +17,7 @@
                         :right            0
                         :left             0
                         :position         "fixed"
-                        :z-index          99999
+                        :z-index          1050
                         :opacity          1
                         :background       "rgba(0,0,0,0.6)"
                         :background-color "#123"}

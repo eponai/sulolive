@@ -8,7 +8,7 @@
             [sablono.core :refer-macros [html]])
   (:require-macros [devcards.core :refer [defcard]]))
 
-(def props {:query/all-currencies [:LEK :TBH :USD :SEK]})
+(def props {:query/all-currencies [{:currency/code :LEK} {:currency/code :TBH} {:currency/code :USD} {:currency/code :SEK}]})
 
 (defcard add-transaction-without-data
          (a/->AddTransaction props))

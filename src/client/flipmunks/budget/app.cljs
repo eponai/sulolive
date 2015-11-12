@@ -25,13 +25,12 @@
 (defui App
   static om/IQuery
   (query [this]
-         [{:just/add-transaction (om/get-query AddTransaction)}
-          {:just/header (om/get-query Header)}
+         [{:just/header (om/get-query Header)}
           {:just/transactions (om/get-query AllTransactions)}])
   Object
   (render
     [this]
-    (let [{:keys [just/add-transaction just/header just/transactions]} (om/props this)]
+    (let [{:keys [just/header just/transactions]} (om/props this)]
       (html [:div (->Header header)
              (->AllTransactions transactions)]))))
 
@@ -50,11 +49,13 @@
     (let [{:keys [schema entities]} (:data (async/<! c))
           ref-types  (find-refs schema)
           ds-schema  (-> (budget.d/schema-datomic->datascript schema)
-                         (assoc :app {:db/unique :db.unique/identity}))
+                         (assoc :app {:db/unique :db.unique/identity})
+                         (assoc :ui/singleton {:db/unique :db.unique/identity}))
           conn       (d/create-conn ds-schema)
           parser     (om/parser {:read parser/debug-read :mutate parser/mutate})
           reconciler (om/reconciler {:state conn :parser parser})]
       (d/transact conn [{:app :state :app/year 2015 :app/month 10}])
+      (d/transact conn [{:ui/singleton :budget/header}])
       (d/transact conn (budget.d/db-id->temp-id ref-types entities))
       (om/add-root! reconciler App (gdom/getElement "my-app")))))
 
