@@ -1,16 +1,20 @@
 (ns flipmunks.budget.auth
   (:require [cemerick.friend.credentials :as creds]
             [cemerick.friend.workflows :as workflows]
-            [clojure.walk :refer [keywordize-keys]]
             [flipmunks.budget.http :as h]))
 
 (defn user->creds
   "Get authentication map from a user entity."
-  [user]
-  {:identity (:db/id user)
-   :username (:user/email user)
-   :password (:user/enc-password user)
-   :roles #{::user}})
+  [user verifications]
+  (if (seq verifications)
+    {:identity (:db/id user)
+     :username (:user/email user)
+     :password (:user/enc-password user)
+     :roles    #{::user}}
+    (throw (ex-info "Email verification pending." {:cause   ::verification-error
+                                                   :status  ::h/unathorized
+                                                   :data    {:email (:user/email user)}
+                                                   :message "Email verification pending"}))))
 
 (defn cred-fn
   "Credential function, passed in a user-fn to load the user credentials from the

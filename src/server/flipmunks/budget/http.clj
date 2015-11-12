@@ -11,6 +11,7 @@
 
 (def error-codes {
                   ; Client error codes
+                  ::unathorized 401
                   ::unprocessable-entity 422
 
                   ; Server error codes

@@ -67,14 +67,12 @@
 
   Throws ExceptionInfo if the user has not verified their email."
   [db email]
-  (when-let [db-user (p/user db email)]
-    (let [verifications (p/verifications db db-user :user/email :verification.status/activated)]
-      (if (seq verifications)
-        (a/user->creds db-user)
-        (throw (ex-info "Email verification pending." {:cause ::a/verification-error
-                                                       :status ::h/unprocessable-entity
-                                                       :message "Email verification pending"
-                                                       :data {:email email}}))))))
+  (if-let [db-user (p/user db email)]
+    (a/user->creds db-user (p/verifications db db-user :user/email :verification.status/activated))
+    (throw (ex-info "Could not find user in db." {:cause ::a/authentication-error
+                                                  :status ::h/unathorized
+                                                  :data {:email email}
+                                                  :message "Wrong email or password."}))))
 
 ; App stuff
 (defroutes user-routes
