@@ -75,7 +75,7 @@
 
   Throws ExceptionInfo if the user has not verified their email."
   [db email]
-  (if-let [db-user (p/user db email)]
+  (if-let [db-user (p/user db email {:creds :yes})]
     (a/user->creds db-user (p/verifications db db-user :user/email :verification.status/activated))
     (throw (a/not-found email))))
 
@@ -89,7 +89,9 @@
                                 (h/txs-created request))
            (GET "/test" {session :session} (h/response session))
            (GET "/curs" [] (h/response (fetch p/currencies
-                                              (d/db conn)))))
+                                              (d/db conn))))
+           (GET "/info" request (h/response (p/user (d/db conn)
+                                                    (h/email request)))))
 
 (defroutes app-routes
 

@@ -106,10 +106,16 @@
   (q '[:find [(pull ?e [*]) ...]
        :where [?e :currency/code]] db))
 
-(defn user [db email]
-  (q '[:find (pull ?e [*]) .
-       :in $ ?m
-       :where [?e :user/email ?m]] db email))
+(defn user
+  ([db email]
+    (user db email {}))
+  ([db email opts]
+   (let [user (q '[:find (pull ?e [*]) .
+                   :in $ ?m
+                   :where [?e :user/email ?m]] db email)]
+     (if (opts :creds)
+       user
+       (dissoc user :user/enc-password)))))
 
 (defn verifications
   "Pull verifications for the specified entity and attribute. If status is specified,
