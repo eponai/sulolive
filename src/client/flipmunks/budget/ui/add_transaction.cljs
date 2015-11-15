@@ -2,7 +2,9 @@
   (:require [om.next :as om :refer-macros [defui]]
             [flipmunks.budget.ui :refer [style]]
             [flipmunks.budget.ui.datepicker :refer [->Datepicker]]
+            [flipmunks.budget.ui.transactions :refer [AllTransactions]]
             [flipmunks.budget.ui.tag :as tag]
+            [cljs.reader :as reader]
             [sablono.core :as html :refer-macros [html]]
             [cljs-time.core :as t]
             [cljs-time.format :as t.format]
@@ -69,7 +71,7 @@
   (map #(select-keys % [:tag/name]) tags))
 
 (defn input->transaction [amount title description]
-  {:transaction/amount     amount
+  {:transaction/amount     (reader/read-string amount)
    :transaction/name       title
    :transaction/details    description
    :transaction/uuid       (d/squuid)
@@ -153,7 +155,7 @@
           (map tag/->Tag input-tags)]
          [:div "footer"
           [:button {:on-click #(om/transact! this `[(transaction/create ~(om/get-state this))
-                                                    :query/all-dates])}
+                                                    (om/get-query AllTransactions)])}
            "Save"]]]))))
 
 (def ->AddTransaction (om/factory AddTransaction))

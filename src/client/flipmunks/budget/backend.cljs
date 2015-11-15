@@ -32,7 +32,11 @@
      :db/valueType :db.type/keyword,
      :db/cardinality :db.cardinality/one,
      :db/doc "Attribute used to uniquely name an entity.",
-     :db/ident :db/ident}],
+     :db/ident :db/ident}
+    {:db/valueType :db.type/ref,
+     :db/cardinality :db.cardinality/many,
+     :db/doc "Attribute used to uniquely name an entity.",
+     :db/ident :transaction/tags}],
    :entities
    [{:transaction/date {:db/id 17592186045421},
      :transaction/currency {:db/id 17592186045418},
