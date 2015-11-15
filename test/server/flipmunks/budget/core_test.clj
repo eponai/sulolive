@@ -80,16 +80,17 @@
         result (b/fetch p/all-data (:db-after db)
                         "user@email.com"
                         {})
-        inv-result (b/fetch p/all-data (:db-after db)
-                            "invalid@email.com"
-                            {})
         no-result (b/fetch p/all-data (:db-after db)
                            "user@email.com"
                            {:d "1"})]
-    (is (every? #(empty? (val %)) inv-result))
     (is (every? #(empty? (val %)) no-result))
     (is (= (count (:schema result)) 11))
-    (is (= (count (:entities result)) 7))))
+    (is (= (count (:entities result)) 7))
+    (is (thrown-with-msg? ExceptionInfo
+                          #"Invalid budget id"
+                          (b/fetch p/all-data (:db-after db)
+                                   "invalid@email.com"
+                                   {})))))
 
 (deftest test-post-invalid-user-data
   (let [invalid-user-req (assoc-in request

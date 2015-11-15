@@ -68,7 +68,9 @@
        [?c :conversion/date ?d]
        [?d :date/ymd ?ymd]] db dates))
 
-(defn conversions [db user-tx-ids]
+(defn conversions
+  "Pull conversions for the currencies and dates refered by the specified transaction ids."
+  [db user-tx-ids]
   (q '[:find [(pull ?c [*]) ...]
        :in $ [?t ...]
        :where
@@ -90,7 +92,11 @@
   "Pulls schema for the datomic attributes represented as keys in the given data map,
   (excludes the :db/id attribute)."
   [db data]
-  (vec (filter schema-required? (map #(into {} (d/entity db %)) (distinct-values keys data)))))
+  (let [attributes (distinct-values keys data)
+        attribute-entities (map #(d/entity db %) attributes)]
+    (->> attribute-entities
+        (filter schema-required?)
+        vec)))
 
 (defn currencies [db]
   (q '[:find [(pull ?e [*]) ...]
@@ -139,13 +145,16 @@
 (defn all-data [db user-email params]
   (if-let [budget (budget db user-email)]
     (let [txs (user-txs db (budget :db/id) params)
-          entities (partial db-entities db txs)]
+          entities (partial db-entities db txs)
+          attr-fn (fn [ks m] (vals (select-keys m ks)))]
       (vec (concat
              txs
-             (entities :transaction/date)
-             (entities :transaction/currency)
-             (entities :transaction/tags)
-             (entities :transaction/budget)
+             (entities (partial attr-fn [:transaction/date
+                                         :transaction/currency
+                                         :transaction/tags
+                                         :transaction/budget]))
              (db-entities db (entities :transaction/budget) :budget/created-by)
              (conversions db (map :db/id txs)))))
-    []))
+    (throw (ex-info "Invalid budget id." {:cause ::pull-error
+                                          :status ::e/unprocessable-entity
+                                          :message "Could not find a budget with the provided uuid."}))))
