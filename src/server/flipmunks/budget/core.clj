@@ -39,9 +39,10 @@
   "Post new transactions for the user in the session. If there's no currency rates
   for the date of the transactions, they will be fetched from OER."
   [conn request]
-  (let [user-data (:body request)]
+  (let [budget (p/budget (d/db conn) (h/email request))
+        user-data (map #(assoc % :transaction/budget (:budget/uuid budget)) (:body request))]
     (go (>! currency-chan (map :transaction/date user-data)))
-    (t/user-txs conn (h/email request) user-data)))
+    (t/user-txs conn user-data)))
 
 (defn send-email-verification [email-fn [db email]]
   (when-let [verification (first (p/verifications db (p/user db email) :user/email :verification.status/pending))]
@@ -62,7 +63,7 @@
 (defn verify [uuid]
   (let [verification (p/verification (d/db conn) uuid)]
     (if (= (:db/id (verification :verification/status)) (d/entid (d/db conn) :verification.status/pending))
-      (t/add conn (:db/id verification) :verification/status :verification.status/activated)
+      (t/add conn (:db/id verification) :verification/status :verification.status/verified)
       (throw (ex-info "Trying to activate invalid verification." {:cause ::a/verification-error
                                                                   :status ::h/unathorized
                                                                   :data {:uuid uuid}
@@ -75,8 +76,10 @@
 
   Throws ExceptionInfo if the user has not verified their email."
   [db email]
-  (if-let [db-user (p/user db email {:creds :yes})]
-    (a/user->creds db-user (p/verifications db db-user :user/email :verification.status/activated))
+  (if-let [db-user (p/user db email)]
+    (let [password (p/password db db-user)
+          verifications (p/verifications db db-user :user/email :verification.status/verified)]
+      (a/user->creds db-user password verifications))
     (throw (a/not-found email))))
 
 ; App stuff
@@ -125,7 +128,7 @@
 
 (defn init
   ([]
-    (init exch/local-currency-rates a/send-email-verification))
+   (init exch/local-currency-rates a/send-email-verification))
   ([cur-fn email-fn]
    (println "Initializing server...")
    (go (while true (try

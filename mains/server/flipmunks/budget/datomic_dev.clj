@@ -7,7 +7,7 @@
 (defn connect []
   (alter-var-root #'core/conn
                   (fn [old-val] 
-                    (let [uri "datomic:dev://localhost:4334/test-budget"] 
+                    (let [uri "datomic:dev://localhost:4334/budget-dev"]
                       (try 
                         (d/connect uri)
                         (catch Exception e

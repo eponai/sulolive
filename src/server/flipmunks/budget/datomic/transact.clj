@@ -26,9 +26,9 @@
   :transaction/currency :transaction/created-at}.
 
   Throws ExceptionInfo if the given input is invalid, or if transaction failed."
-  [conn user-email user-txs]
+  [conn user-txs]
   (when (v/valid-user-txs? user-txs)
-    (let [txs (f/user-owned-txs->dbtxs user-email user-txs)]
+    (let [txs (f/user-owned-txs->dbtxs user-txs)]
       (transact conn txs))))
 
 (defn new-verification [conn entity attribute status]
@@ -55,10 +55,13 @@
   Throws ExceptionInfo if transaction failed."
   [conn new-user]
   (when (v/valid-signup? new-user)
-    (let [db-user (f/user->db-user new-user)
-          db-verification (f/db-entity->db-verification db-user :user/email :verification.status/pending)]
+    (let [[db-user db-password] (f/user->db-user-password new-user)
+          db-verification (f/db-entity->db-verification db-user :user/email :verification.status/pending)
+          db-budget (f/db-budget (db-user :db/id))]
       (transact conn [db-user
-                      db-verification]))))
+                      db-password
+                      db-verification
+                      db-budget]))))
 
 (defn currency-rates
   "Transact conversions into datomic.

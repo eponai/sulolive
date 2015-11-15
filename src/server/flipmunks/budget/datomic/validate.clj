@@ -39,7 +39,7 @@
   "Validate the signup parameters. Checks that username and password are not empty,
   and that the password matches the repeated password. Throws an ExceptionInfo if validation fails."
   [user]
-  (validate "empty user email" not-empty (:user/email user)))
+  (validate "empty user email" not-empty (:username user)))
 
 (defn valid-date?
   "Validate the get params for user/txs. Validating that d m y params are numbers."

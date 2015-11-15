@@ -38,9 +38,9 @@
   "Create the query for pulling transactions given some date parameters."
   [params]
   (let [query '[:find [(pull ?t [*]) ...]
-                :in $ ?email
-                :where [?u :user/email ?email]
-                [?u :user/transactions ?t]
+                :in $ ?b
+                :where
+                [?t :transaction/budget ?b]
                 [?t :transaction/date ?d]]
         key-map {:y :date/year
                  :m :date/month
@@ -52,9 +52,9 @@
          (map map-fn)
          (apply conj query))))
 
-(defn user-txs [db user-email params]
-  (when (and user-email (v/valid-date? params))
-    (q (tx-query params) db user-email)))
+(defn- user-txs [db budget-eid params]
+  (when (and budget-eid (v/valid-date? params))
+    (q (tx-query params) db budget-eid)))
 
 (defn- db-entities [db user-txs attr]
   (let [distinct-ids (map :db/id (distinct-values
@@ -79,15 +79,6 @@
        [?c :conversion/currency ?cur]]
      db user-tx-ids))
 
-(defn all-data [db user-email params]
-  (let [user-txs (user-txs db user-email params)
-        entities (partial db-entities db user-txs)]
-    (vec (concat user-txs
-                 (entities :transaction/date)
-                 (entities :transaction/currency)
-                 (entities :transaction/tags)
-                 (conversions db (map :db/id user-txs))))))
-
 (defn- schema-required?
   "Return true if the entity is required to be passed with schema.
   Is true if the entity has a type ref, or cardinality many."
@@ -106,16 +97,23 @@
   (q '[:find [(pull ?e [*]) ...]
        :where [?e :currency/code]] db))
 
+(defn budget [db user-email]
+  (q '[:find (pull ?e [*]) .
+       :in $ ?email
+       :where
+       [?e :budget/created-by ?u]
+       [?u :user/email ?email]] db user-email))
+
 (defn user
-  ([db email]
-    (user db email {}))
-  ([db email opts]
-   (let [user (q '[:find (pull ?e [*]) .
-                   :in $ ?m
-                   :where [?e :user/email ?m]] db email)]
-     (if (opts :creds)
-       user
-       (dissoc user :user/enc-password)))))
+  [db email]
+  (q '[:find (pull ?e [*]) .
+       :in $ ?m
+       :where [?e :user/email ?m]] db email))
+
+(defn password [db entity]
+  (q '[:find (pull ?e [*]) .
+       :in $ ?eid
+       :where [?e :password/credential ?eid]] db (:db/id entity)))
 
 (defn verifications
   "Pull verifications for the specified entity and attribute. If status is specified,
@@ -137,3 +135,18 @@
   "Pull specific verification from the database using the unique uuid field."
   [db uuid]
   (p db '[*] [:verification/uuid (java.util.UUID/fromString uuid)]))
+
+
+(defn all-data [db user-email params]
+  (if-let [budget (budget db user-email)]
+    (let [txs (user-txs db (budget :db/id) params)
+          entities (partial db-entities db txs)]
+      (vec (concat
+             txs
+             (entities :transaction/date)
+             (entities :transaction/currency)
+             (entities :transaction/tags)
+             (entities :transaction/budget)
+             (db-entities db (entities :transaction/budget) :budget/created-by)
+             (conversions db (map :db/id txs)))))
+    []))

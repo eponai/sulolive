@@ -44,21 +44,22 @@
                      :transaction/date     (fn [d] (date-str->db-tx d))
                      :transaction/tags     (fn [t] (tags->db-tx t))
                      :transaction/amount   (fn [a] (bigint a))
-                     :transaction/uuid     (fn [uuid] (java.util.UUID/fromString uuid))}
+                     :transaction/uuid     (fn [uuid] (java.util.UUID/fromString uuid))
+                     :transaction/budget   (fn [b] [:budget/uuid b])}
         update-fn (fn [m k] (update m k (conv-fn-map k)))]
     (assoc (reduce update-fn user-tx (keys conv-fn-map))
-      :db/id
-      (d/tempid :db.part/user))))
+      :db/id (d/tempid :db.part/user))))
 
-(defn user-txs->db-txs [user-txs]
+(defn user-owned-txs->dbtxs [user-txs]
   (map user-tx->db-tx user-txs))
 
-(defn user-owned-txs->dbtxs [user-email user-txs]
-  [{:db/id             [:user/email user-email]
-    :user/transactions (user-txs->db-txs user-txs)}])
-
-(defn user->db-user [new-user]
-  (assoc new-user :db/id (d/tempid :db.part/user)))
+(defn user->db-user-password [new-user]
+  (let [user-id (d/tempid :db.part/user)]
+    [{:db/id user-id
+      :user/email (new-user :username)}
+     {:db/id (d/tempid :db.part/user)
+      :password/credential user-id
+      :password/bcrypt (new-user :bcrypt)}]))
 
 (defn db-entity->db-verification [entity attribute status]
   {:db/id                   (d/tempid :db.part/user)
@@ -68,6 +69,11 @@
    :verification/entity     (entity :db/id)
    :verification/attribute  attribute
    :verification/value      (entity attribute)})
+
+(defn db-budget [user-eid]
+  {:db/id (d/tempid :db.part/user)
+   :budget/uuid (d/squuid)
+   :budget/created-by user-eid})
 
 (defn cur-rates->db-txs
   "Returns a vector with datomic entites representing a currency conversions

@@ -13,10 +13,10 @@
 
 (defn user->creds
   "Get authentication map from a user entity."
-  [user verifications]
+  [user password verifications]
   {:identity      (:db/id user)
    :username      (:user/email user)
-   :password      (:user/enc-password user)
+   :password      (:password/bcrypt password)
    :roles         #{::user}
    :verifications verifications})
 
@@ -41,8 +41,7 @@
   "Verify new user input and return a user entity if valid."
   [{:keys [params request-method]}]
   (if (= request-method :post)
-    {:user/email        (params :username)
-     :user/enc-password (creds/hash-bcrypt (params :password))}
+    (assoc params :bcrypt (creds/hash-bcrypt (params :password)))
     (throw (ex-info "Invalid request method" {:cause   ::request-error
                                               :status  ::h/unprocessable-entity
                                               :data    {:request-method request-method}
@@ -56,7 +55,7 @@
               :body (str "Email: " email ". Click this link: " link)}
         status (email/send-message (c/config :smtp) body)]
     (if (= 0 (:code status))
-      true
+      status
       (throw (ex-info (:message status) {:cause ::email-error
                                          :status ::h/service-unavailable
                                          :message (:message status)

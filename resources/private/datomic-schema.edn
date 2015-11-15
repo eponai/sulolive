@@ -1,84 +1,115 @@
 [
 
 ;; user
- {:db/id #db/id[:db.part/db]
-  :db/ident :user/email
-  :db/valueType :db.type/string
-  :db/cardinality :db.cardinality/one
-  :db/unique :db.unique/identity
-  :db/doc "A user's primary email"
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :user/email
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "A user's primary email."
   :db.install/_attribute :db.part/db}
 
- {:db/id #db/id[:db.part/db]
-  :db/ident :user/transactions
-  :db/valueType :db.type/ref
-  :db/cardinality :db.cardinality/many
-  :db/doc "A user's transactions. Both expenses and income"
+ ;; Credentials
+ ;; Password
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :password/credential
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "Credential this password is used with."
   :db.install/_attribute :db.part/db}
 
- {:db/id #db/id[:db.part/db]
-  :db/ident :user/enc-password
-  :db/valueType :db.type/string
-  :db/cardinality :db.cardinality/one
-  :db/doc "A user's encrypted password."
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :password/bcrypt
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Password encrypted using bcrypt."
   :db.install/_attribute :db.part/db}
 
  ;; verification
- {:db/id #db/id[:db.part/db]
-  :db/ident :verification/uuid
-  :db/valueType :db.type/uuid
-  :db/unique :db.unique/identity
-  :db/cardinality :db.cardinality/one
-  :db/doc "UUID to use for account verification."
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :verification/uuid
+  :db/valueType          :db.type/uuid
+  :db/unique             :db.unique/identity
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "UUID to use for account verification."
   :db.install/_attribute :db.part/db}
 
- {:db/id #db/id[:db.part/db]
-  :db/ident :verification/entity
-  :db/valueType :db.type/ref
-  :db/cardinality :db.cardinality/one
-  :db/doc "Entity this verification is applied to."
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :verification/entity
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Entity this verification is applied to."
   :db.install/_attribute :db.part/db}
 
- {:db/id #db/id[:db.part/db]
-  :db/ident :verification/attribute
-  :db/valueType :db.type/ref
-  :db/cardinality :db.cardinality/one
-  :db/doc "Entity attribute this verification is applied to."
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :verification/attribute
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Entity attribute this verification is applied to."
   :db.install/_attribute :db.part/db}
 
- {:db/id #db/id[:db.part/db]
-  :db/ident :verification/value
-  :db/valueType :db.type/string
-  :db/cardinality :db.cardinality/one
-  :db/doc "Value of the attribute this verification is applied to."
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :verification/value
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Value of the attribute this verification is applied to."
   :db.install/_attribute :db.part/db}
 
- {:db/id #db/id[:db.part/db]
-  :db/ident :verification/status
-  :db/valueType :db.type/ref
-  :db/cardinality :db.cardinality/one
-  :db/doc "Status of verification (e.g. activated or expired)."
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :verification/status
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Status of verification (e.g. activated or expired)."
   :db.install/_attribute :db.part/db}
 
- {:db/id #db/id[:db.part/db]
-  :db/ident :verification/created-at
-  :db/valueType :db.type/long
-  :db/cardinality :db.cardinality/one
-  :db/doc "Timestamp of when the verification was created."
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :verification/created-at
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Timestamp of when the verification was created."
   :db.install/_attribute :db.part/db}
 
  ;;verification status
+
  [:db/add #db/id[:db.part/user] :db/ident :verification.status/pending]
- [:db/add #db/id[:db.part/user] :db/ident :verification.status/activated]
+ [:db/add #db/id[:db.part/user] :db/ident :verification.status/verified]
  [:db/add #db/id[:db.part/user] :db/ident :verification.status/expired]
 
+ ;; Budget
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :budget/uuid
+  :db/valueType          :db.type/uuid
+  :db/unique             :db.unique/identity
+  :db/doc                "Unique identifier for a budget."
+  :db/cardinality        :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :budget/created-by
+  :db/valueType          :db.type/ref
+  :db/doc                "User who created this budget."
+  :db/cardinality        :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
   ;; transactions
+
  {:db/id                 #db/id[:db.part/db]
   :db.install/_attribute :db.part/db
   :db/ident              :transaction/uuid
   :db/valueType          :db.type/uuid
   :db/unique             :db.unique/identity
   :db/doc                "Unique identifier for a transaction."
+  :db/cardinality        :db.cardinality/one}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db.install/_attribute :db.part/db
+  :db/ident              :transaction/budget
+  :db/valueType          :db.type/ref
+  :db/doc                "Budget that this transaction belongs to."
   :db/cardinality        :db.cardinality/one}
 
  {:db/id                 #db/id[:db.part/db]
@@ -206,7 +237,7 @@
   :db/ident              :tag/persistent,
   :db/valueType          :db.type/boolean,
   :db/cardinality        :db.cardinality/one,
-  :db/doc                "Whether the tag is persistent, i.e. will be automatically assigned to new transactions."}
+  :db/doc                "Whether the tag is persistent."}
 
   ;; Currency
 

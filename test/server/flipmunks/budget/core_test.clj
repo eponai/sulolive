@@ -24,14 +24,14 @@
   {:date  date-str
    :rates {:SEK 8.333}})
 
-(def user {:db/id      (d/tempid :db.part/user)
-           :user/email "user@email.com"})
+(def user-params {:username "user@email.com"
+                  :password "password"})
 
 (def request {:session {:cemerick.friend/identity
                         {:authentications
                                   {1
                                    {:identity 1,
-                                    :username (user :user/email),
+                                    :username (user-params :username),
                                     :roles    #{::b/user}}},
                          :current 1}}
               :body test-data})
@@ -49,7 +49,8 @@
     (d/create-database uri)
     (let [conn (d/connect uri)]
       (d/transact conn schema)
-      (d/transact conn [user])
+      (t/new-user conn (a/new-signup (assoc request :request-method :post
+                                                    :params user-params)))
       conn)))
 
 (defn- db-with-curs []
@@ -87,12 +88,8 @@
                            {:d "1"})]
     (is (every? #(empty? (val %)) inv-result))
     (is (every? #(empty? (val %)) no-result))
-    (is (= (count (:schema result)) 7))
-    (is (= (count (:entities result))
-           (+ (count test-data)                              ; Number of transaction entities
-              (apply + (map count (map :transaction/tags test-data))) ; Number of tags entities
-              (dec (count (filter #(= (:db/valueType %) :db.type/ref)
-                                  (:schema result))))))))) ; number of other reference attributes (minus one tags included above)
+    (is (= (count (:schema result)) 11))
+    (is (= (count (:entities result)) 7))))
 
 (deftest test-post-invalid-user-data
   (let [invalid-user-req (assoc-in request
@@ -119,7 +116,7 @@
           db-verified (t/new-verification conn
                                           (p/user (:db-after db-unverified) "test")
                                           :user/email
-                                          :verification.status/activated)]
+                                          :verification.status/verified)]
       (is (a/cred-fn #(b/user-creds (:db-after db-verified) %) valid-params))
       (is (thrown-with-msg? ExceptionInfo
                             #"Email verification pending."
