@@ -30,7 +30,7 @@
 (defn on-change [this k]
   #(om/update-state! this assoc k (.-value (.-target %))))
 
-(defn new-input-tag [this name]
+(defn new-input-tag! [this name]
   (let [id (random-uuid)]
     (om/update-state!
       this
@@ -151,7 +151,7 @@
                    :on-key-down #(when (and (= 13 (.-keyCode %))
                                             (seq (.. % -target -value)))
                                   (.preventDefault %)
-                                  (new-input-tag this input-tag))})]
+                                  (new-input-tag! this input-tag))})]
           (map tag/->Tag input-tags)]
          [:div "footer"
           [:button {:on-click #(om/transact! this `[(transaction/create ~(om/get-state this))
