@@ -148,10 +148,6 @@
   [{:keys [state selector]} _ _]
   {:value (parser/pull-all state selector '[[?e :date/ymd]])})
 
-(defn map-first [f coll]
-  (when (seq coll)
-    (cons (f (first coll)) (rest coll))))
-
 (defui AllTransactions
   static om/IQueryParams
   (params [this] {:dates (conj (om/get-query DayTransactions)
@@ -177,13 +173,6 @@
                                              (map ->DayTransactions
                                                   (->> dates
                                                        (sort-by :date/day)
-                                                       (rseq)
-                                                       ;; expand the first day. Add a computed value to the expansion
-                                                       ;; key, if it's not already set. Using computed, because actually
-                                                       ;; associng the value to the props, messes with om.next
-                                                       (map-first (fn [first-day]
-                                                                    (if-not (contains? first-day :ui.day/expanded)
-                                                                      (om/computed first-day {:ui.day/expanded true})
-                                                                      first-day)))))])))])))]))))
+                                                       (rseq)))])))])))]))))
 
 (def ->AllTransactions (om/factory AllTransactions))
