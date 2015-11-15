@@ -6,8 +6,10 @@
             [ring.middleware.defaults :refer :all]
             [ring.middleware.json :refer [wrap-json-body]]
             [ring.util.response :as r]
-            [flipmunks.budget.config :as c])
-  (:import (clojure.lang ExceptionInfo)))
+            [flipmunks.budget.config :as c]
+            [cognitect.transit :as transit])
+  (:import (clojure.lang ExceptionInfo)
+           (datomic.query EntityMap)))
 
 (def error-codes {
                   ; Client error codes
@@ -55,10 +57,16 @@
               code (error-codes (:status error))]
           {:status code :body error})))))
 
+(def datomic-transit
+  (transit/write-handler
+    (constantly "map")
+    #(into {:db/id (:db/id %)} %)))
+
 (defn wrap [handler]
   (-> handler
       wrap-error
-      wrap-transit-response
+      (wrap-transit-response {:opts {:handlers {EntityMap datomic-transit}}
+                              :encoding :json})
       (wrap-json-body {:keywords? true})
       (wrap-defaults (-> site-defaults
                          (assoc-in [:security :anti-forgery] false)

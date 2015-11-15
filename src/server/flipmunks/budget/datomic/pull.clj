@@ -26,14 +26,6 @@
                                        :exception e})))))
 
 ; Pull and format datomic entries
-(defn- distinct-values
-  "Map function f over the given collection, and return a set of the distinct flattened values."
-  [coll f]
-  (->> coll
-       (map f)
-       flatten
-       set))
-
 (defn- tx-query
   "Create the query for pulling transactions given some date parameters."
   [params]
@@ -56,11 +48,18 @@
   (when (and budget-eid (v/valid-date? params))
     (q (tx-query params) db budget-eid)))
 
+(defn- distinct-values
+  "Map function f over the given collection, and return a set of the distinct flattened values."
+  [f coll]
+  (->> coll
+       (map f)
+       flatten
+       set))
+
 (defn- db-entities [db user-txs attr]
-  (let [distinct-ids (map :db/id (distinct-values
-                                   user-txs
-                                   attr))]
-    (map #(into {:db/id %} (d/entity db %)) distinct-ids)))
+  (let [distinct-entities (distinct-values attr user-txs)
+        distinct-ids (map :db/id distinct-entities)]
+    (map #(d/entity db %) distinct-ids)))
 
 (defn converted-dates [db dates]
   (q '[:find [?ymd ...]
@@ -91,7 +90,7 @@
   "Pulls schema for the datomic attributes represented as keys in the given data map,
   (excludes the :db/id attribute)."
   [db data]
-  (vec (filter schema-required? (map #(into {} (d/entity db %)) (distinct-values data keys)))))
+  (vec (filter schema-required? (map #(into {} (d/entity db %)) (distinct-values keys data)))))
 
 (defn currencies [db]
   (q '[:find [(pull ?e [*]) ...]
