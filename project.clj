@@ -38,7 +38,7 @@
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]
             [lein-cljsbuild "1.1.1"]
-            [lein-figwheel "0.5.0-SNAPSHOT"]
+            [lein-figwheel "0.5.0-1"]
             [lein-ring "0.9.7"]]
 
   ;;;;;;;;;;;;;
