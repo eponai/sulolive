@@ -1,7 +1,8 @@
 (ns flipmunks.budget.datomic.pull
   (:require [datomic.api :as d]
             [flipmunks.budget.http :as e]
-            [flipmunks.budget.datomic.validate :as v]))
+            [flipmunks.budget.datomic.validate :as v]
+            [clojure.walk :refer [walk]]))
 
 (defn- q [query & inputs]
   (try
@@ -141,20 +142,40 @@
   [db uuid]
   (p db '[*] [:verification/uuid (java.util.UUID/fromString uuid)]))
 
+(defn nested-entities [db entity]
+  (let [inner-fn second
+        outer-fn #(flatten (filter coll? %))
+        nested (walk inner-fn outer-fn (seq (into {} entity)))]
+    (when (seq nested)
+      (map #(d/entity db (:db/id %)) nested))))
+
+(defn expand [db data]
+  (loop [entities (set data)
+         to-expand data]
+    (if (seq to-expand)
+      (if-let [nested (nested-entities db (first to-expand))]
+        (recur (clojure.set/union entities (set nested))
+               (concat (drop 1 to-expand) nested))
+        (recur entities (drop 1 to-expand)))
+      (seq entities))))
 
 (defn all-data [db user-email params]
   (if-let [budget (budget db user-email)]
     (let [txs (user-txs db (budget :db/id) params)
           entities (partial db-entities db txs)
           attr-fn (fn [ks m] (vals (select-keys m ks)))]
-      (vec (concat
-             txs
-             (entities (partial attr-fn [:transaction/date
-                                         :transaction/currency
-                                         :transaction/tags
-                                         :transaction/budget]))
-             (db-entities db (entities :transaction/budget) :budget/created-by)
-             (conversions db (map :db/id txs)))))
+      (concat (expand db txs)
+              (conversions db (map :db/id txs))))
     (throw (ex-info "Invalid budget id." {:cause ::pull-error
                                           :status ::e/unprocessable-entity
                                           :message "Could not find a budget with the provided uuid."}))))
+
+(comment
+  (vec (concat
+            txs
+            (entities (partial attr-fn [:transaction/date
+                                        :transaction/currency
+                                        :transaction/tags
+                                        :transaction/budget]))
+            (db-entities db (entities :transaction/budget) :budget/created-by)
+            (conversions db (map :db/id txs)))))
