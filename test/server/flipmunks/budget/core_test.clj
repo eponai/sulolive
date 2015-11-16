@@ -74,6 +74,18 @@
       (is (= (count converted) (count dates)))
       (is (thrown? ExceptionInfo (b/post-currency-rates conn test-convs ["invalid-date"]))))))
 
+(deftest test-all-data-with-conversions
+  (let [conn (db-with-curs)
+        db (b/post-user-data conn request)
+        db-conv (b/post-currency-rates conn
+                                       test-convs
+                                       [(:transaction/date (first test-data))])
+        result (b/fetch p/all-data
+                        (:db-after db-conv)
+                        (user-params :username) {})]
+    (is (= (count (:entities result)) 8))
+    (is (= (count (:schema result)) 13))))
+
 (deftest test-post-user-data
   (let [db (b/post-user-data (db-with-curs)
                              request)

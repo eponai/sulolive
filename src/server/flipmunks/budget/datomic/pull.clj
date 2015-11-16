@@ -49,19 +49,6 @@
   (when (and budget-eid (v/valid-date? params))
     (q (tx-query params) db budget-eid)))
 
-(defn- distinct-values
-  "Map function f over the given collection, and return a set of the distinct flattened values."
-  [f coll]
-  (->> coll
-       (map f)
-       flatten
-       set))
-
-(defn- db-entities [db user-txs attr]
-  (let [distinct-entities (distinct-values attr user-txs)
-        distinct-ids (map :db/id distinct-entities)]
-    (map #(d/entity db %) distinct-ids)))
-
 (defn converted-dates [db dates]
   (q '[:find [?ymd ...]
        :in $ [?ymd ...]
@@ -80,24 +67,6 @@
        [?t :transaction/currency ?cur]
        [?c :conversion/currency ?cur]]
      db user-tx-ids))
-
-(defn- schema-required?
-  "Return true if the entity is required to be passed with schema.
-  Is true if the entity has a type ref, or cardinality many."
-  [db-entity]
-  (or (= (get db-entity :db/valueType) :db.type/ref)
-      (= (get db-entity :db/cardinality) :db.cardinality/many)
-      (get db-entity :db/unique)))
-
-(defn schema
-  "Pulls schema for the datomic attributes represented as keys in the given data map,
-  (excludes the :db/id attribute)."
-  [db data]
-  (let [attributes (distinct-values keys data)
-        attribute-entities (map #(d/entity db %) attributes)]
-    (->> attribute-entities
-        (filter schema-required?)
-        vec)))
 
 (defn currencies [db]
   (q '[:find [(pull ?e [*]) ...]
@@ -142,40 +111,51 @@
   [db uuid]
   (p db '[*] [:verification/uuid (java.util.UUID/fromString uuid)]))
 
-(defn nested-entities [db entity]
+(defn expand-refs
+  "Find any refs within the specified entity and expand them into entities."
+  [db entity]
   (let [inner-fn second
         outer-fn #(flatten (filter coll? %))
         nested (walk inner-fn outer-fn (seq (into {} entity)))]
     (when (seq nested)
       (map #(d/entity db (:db/id %)) nested))))
 
-(defn expand [db data]
-  (loop [entities (set data)
-         to-expand data]
-    (if (seq to-expand)
-      (if-let [nested (nested-entities db (first to-expand))]
-        (recur (clojure.set/union entities (set nested))
-               (concat (drop 1 to-expand) nested))
-        (recur entities (drop 1 to-expand)))
-      (seq entities))))
+(defn all-entities
+  "Recursively expand all datomic refs in the given data into full entities and
+  return a sequence of all expended entities, including the entities in the given data."
+  [db data]
+  (loop [all-entities (set data)
+         expand data]
+    (if (seq expand)
+      (let [nested (expand-refs db (first expand))]         ; TODO handle cyclic entity refs to not run forever
+        (recur (clojure.set/union all-entities (set nested))
+               (concat (drop 1 expand) nested)))
+      (seq all-entities))))
 
-(defn all-data [db user-email params]
+(defn- schema-required?
+  "Return true if the entity is required to be passed with schema.
+  Is true if the entity has a type ref, or cardinality many."
+  [db-entity]
+  (or (= (get db-entity :db/valueType) :db.type/ref)
+      (= (get db-entity :db/cardinality) :db.cardinality/many)
+      (get db-entity :db/unique)))
+
+(defn schema
+  "Pulls schema for the datomic attributes represented as keys in the given data map,
+  (excludes the :db/id attribute)."
+  [db data]
+  (let [attributes (set (flatten (map keys data)))
+        attribute-entities (map #(d/entity db %) attributes)]
+    (vec (filter schema-required? attribute-entities))))
+
+(defn all-data
+  "Pulls all user transactions and currency conversions for the dates and
+  currencies used in those transactions."
+  [db user-email params]
   (if-let [budget (budget db user-email)]
     (let [txs (user-txs db (budget :db/id) params)
-          entities (partial db-entities db txs)
-          attr-fn (fn [ks m] (vals (select-keys m ks)))]
-      (concat (expand db txs)
-              (conversions db (map :db/id txs))))
+          conversions (conversions db (map :db/id txs))]
+      (vec (all-entities db (concat txs conversions))))
     (throw (ex-info "Invalid budget id." {:cause ::pull-error
                                           :status ::e/unprocessable-entity
                                           :message "Could not find a budget with the provided uuid."}))))
-
-(comment
-  (vec (concat
-            txs
-            (entities (partial attr-fn [:transaction/date
-                                        :transaction/currency
-                                        :transaction/tags
-                                        :transaction/budget]))
-            (db-entities db (entities :transaction/budget) :budget/created-by)
-            (conversions db (map :db/id txs)))))
