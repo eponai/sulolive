@@ -46,8 +46,8 @@
   ;;;;;;;;;;;;;
   :target-path "target/%s"
   :source-paths ["src" "mains" "test"]
-  :ring {:handler flipmunks.budget.datomic_dev/app
-         :init flipmunks.budget.core/init}
+  :ring {:handler eponai.server.datomic_dev/app
+         :init eponai.server.core/init}
   :profiles {:uberjar {:aot :all}}
 
   ;;;;;;;;;;;;;
@@ -56,8 +56,8 @@
   :cljsbuild {:builds
               [{:id "dev"
                 :source-paths ["src" "test"]
-                :figwheel {:on-jsload "flipmunks.budget.client_tests/run"}
-                :compiler {:main "flipmunks.budget.core"
+                :figwheel {:on-jsload "eponai.client.client_tests/run"}
+                :compiler {:main "eponai.client.core"
                            :asset-path "js/out"
                            :output-to "resources/public/dev/js/out/budget.js"
                            :output-dir "resources/public/dev/js/out/"
@@ -66,14 +66,14 @@
                {:id "devcards"
                 :source-paths ["src" "test"]
                 :figwheel { :devcards true } ;; <- note this
-                :compiler { :main    "flipmunks.budget.devcards_main"
+                :compiler { :main    "eponai.devcards.devcards_main"
                            :asset-path "js/out"
                            :output-to  "resources/public/devcards/js/out/budget.js"
                            :output-dir "resources/public/devcards/js/out"
                            :source-map-timestamp true }}
                {:id "release"
                 :source-paths ["src"]
-                :compiler {:main "flipmunks.budget.core"
+                :compiler {:main "eponai.client.core"
                            :asset-path "js/out"
                            :output-to "resources/public/release/js/out/budget.js"
                            :output-dir "resources/public/release/js/out/"
