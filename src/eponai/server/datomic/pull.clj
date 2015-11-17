@@ -157,7 +157,7 @@
          [?e :db/ident ?id]
          [:db.part/db :db.install/attribute ?e]
          [(namespace ?id) ?ns]
-         [(.startsWith ?ns "db") ?d]
+         [(.startsWith ^String ?ns "db") ?d]
          [(not ?d)]
          ] db))
   ([db data]
