@@ -130,7 +130,7 @@
   return a sequence of all expended entities, including the entities in the given data."
   [db data]
   (loop [entities (set data)
-         expand (expand-refs db (first data))]
+         expand (flatten (map #(expand-refs db %) entities))]
     (if (seq expand)
       (if (contains-entity? entities (first expand))
         (recur entities
@@ -149,12 +149,21 @@
       (get db-entity :db/unique)))
 
 (defn schema
-  "Pulls schema for the datomic attributes represented as keys in the given data map,
-  (excludes the :db/id attribute)."
-  [db data]
-  (let [attributes (set (flatten (map keys data)))
-        attribute-entities (map #(d/entity db %) attributes)]
-    (vec (filter schema-required? attribute-entities))))
+  "Pulls schema from the db. If data is provided includes only the necessary fields for that data.
+  (type/ref, cardinality/many or unique/identity)."
+  ([db]
+    (q '[:find [(pull ?e [*]) ...]
+         :where
+         [?e :db/ident ?id]
+         [:db.part/db :db.install/attribute ?e]
+         [(namespace ?id) ?ns]
+         [(.startsWith ?ns "db") ?d]
+         [(not ?d)]
+         ] db))
+  ([db data]
+    (let [attributes (set (flatten (map keys data)))
+          attribute-entities (map #(d/entity db %) attributes)]
+      (vec (filter schema-required? attribute-entities)))))
 
 (defn all-data
   "Pulls all user transactions and currency conversions for the dates and
