@@ -45,7 +45,7 @@
   ;; clj:
   ;;;;;;;;;;;;;
   :target-path "target/%s"
-  :source-paths ["src/server" "mains/server" "test/server"]
+  :source-paths ["src" "mains" "test"]
   :ring {:handler flipmunks.budget.datomic_dev/app
          :init flipmunks.budget.core/init}
   :profiles {:uberjar {:aot :all}}
@@ -55,7 +55,7 @@
   ;;;;;;;;;;;;;
   :cljsbuild {:builds
               [{:id "dev"
-                :source-paths ["src/client" "test/client"]
+                :source-paths ["src" "test"]
                 :figwheel {:on-jsload "flipmunks.budget.client_tests/run"}
                 :compiler {:main "flipmunks.budget.core"
                            :asset-path "js/out"
@@ -64,7 +64,7 @@
                            :optimizations :none
                            :source-map true}}
                {:id "devcards"
-                :source-paths ["src/client" "test/devcards"]
+                :source-paths ["src" "test"]
                 :figwheel { :devcards true } ;; <- note this
                 :compiler { :main    "flipmunks.budget.devcards_main"
                            :asset-path "js/out"
@@ -72,7 +72,7 @@
                            :output-dir "resources/public/devcards/js/out"
                            :source-map-timestamp true }}
                {:id "release"
-                :source-paths ["src/client"]
+                :source-paths ["src"]
                 :compiler {:main "flipmunks.budget.core"
                            :asset-path "js/out"
                            :output-to "resources/public/release/js/out/budget.js"
