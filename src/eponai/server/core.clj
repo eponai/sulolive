@@ -128,7 +128,7 @@
 
 (defn init
   ([]
-   (init exch/local-currency-rates a/send-email-verification))
+   (init exch/currency-rates a/send-email-verification))
   ([cur-fn email-fn]
    (println "Initializing server...")
    (go (while true (try

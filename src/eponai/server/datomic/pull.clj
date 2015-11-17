@@ -120,17 +120,25 @@
     (when (seq nested)
       (map #(d/entity db (:db/id %)) nested))))
 
+(defn contains-entity? [coll entity]
+  (let [eid (:db/id entity)
+        eids (map :db/id coll)]
+    (some #{eid} eids)))
+
 (defn all-entities
   "Recursively expand all datomic refs in the given data into full entities and
   return a sequence of all expended entities, including the entities in the given data."
   [db data]
-  (loop [all-entities (set data)
-         expand data]
+  (loop [entities (set data)
+         expand (expand-refs db (first data))]
     (if (seq expand)
-      (let [nested (expand-refs db (first expand))]         ; TODO handle cyclic entity refs to not run forever
-        (recur (clojure.set/union all-entities (set nested))
-               (concat (drop 1 expand) nested)))
-      (seq all-entities))))
+      (if (contains-entity? entities (first expand))
+        (recur entities
+               (rest expand))
+        (let [nested (expand-refs db (first expand))]
+          (recur (conj entities (first expand))
+                 (concat (rest expand) nested))))
+      (seq entities))))
 
 (defn- schema-required?
   "Return true if the entity is required to be passed with schema.

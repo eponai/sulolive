@@ -104,6 +104,23 @@
                                    "invalid@email.com"
                                    {})))))
 
+(deftest test-cyclic-datomic-refs
+  (testing "Setup cyclic ref in the schema and test that entity expansion works."
+    (let [conn (db-with-curs)
+          db (d/db conn)
+          budget (p/budget (d/db conn) "user@email.com")
+          user (p/user (d/db conn) "user@email.com")]
+      (d/transact conn [{:db/id                 (d/tempid :db.part/db)
+                         :db/ident              :user/budget
+                         :db/valueType          :db.type/ref
+                         :db/cardinality        :db.cardinality/one
+                         :db.install/_attribute :db.part/db}])
+      (b/post-user-data conn request)
+      (d/transact conn [[:db/add (:db/id user) :user/budget (:db/id budget)]])
+      (let [result (b/fetch p/all-data (d/db conn) "user@email.com" {})]
+        (is (= (count (:entities result)) 7))
+        (is (= (count (:schema result)) 12))))))
+
 (deftest test-post-invalid-user-data
   (let [invalid-user-req (assoc-in request
                                    [:session :cemerick.friend/identity :authentications 1 :username]
