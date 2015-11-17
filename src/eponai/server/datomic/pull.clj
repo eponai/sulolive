@@ -1,7 +1,7 @@
-(ns flipmunks.budget.datomic.pull
+(ns eponai.server.datomic.pull
   (:require [datomic.api :as d]
-            [flipmunks.budget.http :as e]
-            [flipmunks.budget.datomic.validate :as v]
+            [eponai.server.http :as e]
+            [eponai.server.datomic.validate :as v]
             [clojure.walk :refer [walk]]))
 
 (defn- q [query & inputs]

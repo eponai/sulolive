@@ -1,4 +1,4 @@
-(ns flipmunks.budget.datomic.format
+(ns eponai.server.datomic.format
   (:require [clj-time.core :as t]
             [clj-time.format :as f]
             [clj-time.coerce :as c]

@@ -1,5 +1,5 @@
-(ns ^figwheel-load flipmunks.budget.datascript_test
-  (:require [flipmunks.budget.datascript :as budget.d]
+(ns ^figwheel-load eponai.client.datascript_test
+  (:require [eponai.client.datascript :as budget.d]
             [datascript.core :as d]
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]

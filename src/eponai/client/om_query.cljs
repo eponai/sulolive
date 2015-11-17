@@ -1,4 +1,4 @@
-(ns flipmunks.budget.om_query
+(ns eponai.client.om_query
   (:require [datascript.core :as d]
             [datascript.db   :as d.db]))
 

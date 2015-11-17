@@ -1,4 +1,4 @@
-(ns flipmunks.budget.config
+(ns eponai.server.config
   (:require [clojure.edn :as edn]))
 
 (def config

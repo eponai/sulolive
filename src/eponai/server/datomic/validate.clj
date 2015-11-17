@@ -1,5 +1,5 @@
-(ns flipmunks.budget.datomic.validate
-  (:require [flipmunks.budget.http :as h]))
+(ns eponai.server.datomic.validate
+  (:require [eponai.server.http :as h]))
 
 (defn- error [msg data]
   (let [message (str "Validation failed, " msg)]

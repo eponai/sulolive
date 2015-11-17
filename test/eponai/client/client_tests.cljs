@@ -1,8 +1,8 @@
-(ns ^:figwheel-always flipmunks.budget.client_tests
+(ns ^:figwheel-always eponai.client.client_tests
   (:require [cljs.test :refer-macros [run-tests]]
-            [flipmunks.budget.datascript_test]))
+            [eponai.client.datascript_test]))
 
 (defn ^:export run []
   (run-tests
-    'flipmunks.budget.datascript_test))
+    'eponai.client.datascript_test))
 

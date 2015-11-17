@@ -1,4 +1,4 @@
-(ns flipmunks.budget.omtest
+(ns eponai.client.omtest
   (:require [om.core :as om]
             [sablono.core :as html :refer-macros [html]]
             [cognitect.transit :as t]))

@@ -1,4 +1,4 @@
-(ns flipmunks.budget.backend
+(ns eponai.client.backend
   (:require [ajax.core :as http]
             [cljs.reader :as r]
             [cljs.core.async :as async]))

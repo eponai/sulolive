@@ -1,12 +1,12 @@
-(ns flipmunks.budget.ui.transactions
+(ns eponai.client.ui.transactions
   (:require [om.next :as om :refer-macros [defui]]
-            [flipmunks.budget.ui :refer [style]]
-            [flipmunks.budget.ui.tag :as tag]
+            [eponai.client.ui :refer [style]]
+            [eponai.client.ui.tag :as tag]
             [cljs-time.core :as t]
             [cljs-time.format :as t.format]
             [sablono.core :as html :refer-macros [html]]
             [garden.core :refer [css]]
-            [flipmunks.budget.parser :as parser]))
+            [eponai.client.parser :as parser]))
 
 (defui Transaction
   static om/IQueryParams

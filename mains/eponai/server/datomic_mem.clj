@@ -1,6 +1,6 @@
-(ns flipmunks.budget.datomic_mem
-  (:require [flipmunks.budget.core :as core]
-            [flipmunks.budget.datomic.pull :as budget.d]
+(ns eponai.server.datomic_mem
+  (:require [eponai.server.core :as core]
+            [eponai.server.datomic.pull :as budget.d]
             [clojure.tools.reader.edn :as edn]
             [clojure.java.io :as io]
             [datomic.api :as d]))

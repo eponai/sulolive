@@ -1,7 +1,7 @@
-(ns flipmunks.budget.datomic_dev
-  (:require [flipmunks.budget.core :as core]
-            [flipmunks.budget.datomic.pull :as budget.d]
-            [flipmunks.budget.datomic_mem :as mem]
+(ns eponai.server.datomic_dev
+  (:require [eponai.server.core :as core]
+            [eponai.server.datomic.pull :as budget.d]
+            [eponai.server.datomic_mem :as mem]
             [datomic.api :as d]))
 
 (defn connect []

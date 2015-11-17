@@ -1,4 +1,4 @@
-(ns flipmunks.budget.datascript
+(ns eponai.client.datascript
   (:require [datascript.core :as d]
             [clojure.walk :as w]))
 

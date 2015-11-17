@@ -1,4 +1,4 @@
-(ns flipmunks.budget.ui
+(ns eponai.client.ui
   (:require [clojure.walk :as w]
             [clojure.string :as s]))
 

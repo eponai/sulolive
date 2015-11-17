@@ -1,7 +1,7 @@
-(ns flipmunks.budget.ui.add_transaction_dc
+(ns eponai.devcards.ui.add_transaction_dc
   (:require [devcards.core :as dc]
-            [flipmunks.budget.ui.add_transaction :as a]
-            [flipmunks.budget.ui.tag :as t]
+            [eponai.client.ui.add_transaction :as a]
+            [eponai.client.ui.tag :as t]
             [om.next :as om]
             [goog.object :as gobj]
             [cljsjs.moment]

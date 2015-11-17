@@ -1,7 +1,7 @@
-(ns flipmunks.budget.ui.tag_dc
+(ns eponai.devcards.ui.tag_dc
   (:require [devcards.core :as dc]
-            [flipmunks.budget.ui.tag :as t]
-            [flipmunks.budget.ui :refer [style]]
+            [eponai.client.ui.tag :as t]
+            [eponai.client.ui :refer [style]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]])
   (:require-macros [devcards.core :refer [defcard]]))

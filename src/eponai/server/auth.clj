@@ -1,9 +1,9 @@
-(ns flipmunks.budget.auth
+(ns eponai.server.auth
   (:require [cemerick.friend.credentials :as creds]
             [cemerick.friend.workflows :as workflows]
-            [flipmunks.budget.http :as h]
+            [eponai.server.http :as h]
             [postal.core :as email]
-            [flipmunks.budget.config :as c]))
+            [eponai.server.config :as c]))
 
 (defn not-found [email]
   (ex-info "Could not find user in db." {:cause   ::authentication-error

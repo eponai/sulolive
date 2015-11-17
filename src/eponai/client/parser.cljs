@@ -1,4 +1,4 @@
-(ns flipmunks.budget.parser
+(ns eponai.client.parser
   (:require [om.next :as om]
             [datascript.core :as d]))
 

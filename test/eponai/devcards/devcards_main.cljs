@@ -1,13 +1,13 @@
-(ns flipmunks.budget.devcards_main
+(ns eponai.devcards.devcards_main
   (:require
     [devcards.core :as dc]
     [sablono.core :as html :refer-macros [html]]
-    [flipmunks.budget.ui.header_dc]
-    [flipmunks.budget.ui.datepicker_dc]
-    [flipmunks.budget.ui.modal_dc]
-    [flipmunks.budget.ui.tag_dc]
-    [flipmunks.budget.ui.add_transaction_dc]
-    [flipmunks.budget.ui.transactions_dc])
+    [eponai.devcards.ui.header_dc]
+    [eponai.devcards.ui.datepicker_dc]
+    [eponai.devcards.ui.modal_dc]
+    [eponai.devcards.ui.tag_dc]
+    [eponai.devcards.ui.add_transaction_dc]
+    [eponai.devcards.ui.transactions_dc])
   (:require-macros
     [devcards.core :refer [defcard]]))
 

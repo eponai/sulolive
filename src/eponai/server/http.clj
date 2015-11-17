@@ -1,4 +1,4 @@
-(ns flipmunks.budget.http
+(ns eponai.server.http
   (:require [cemerick.friend.util :as util]
             [cemerick.friend :as friend]
             [ring.middleware.session.cookie :as cookie]
@@ -6,7 +6,7 @@
             [ring.middleware.defaults :refer :all]
             [ring.middleware.json :refer [wrap-json-body]]
             [ring.util.response :as r]
-            [flipmunks.budget.config :as c]
+            [eponai.server.config :as c]
             [cognitect.transit :as transit])
   (:import (clojure.lang ExceptionInfo)
            (datomic.query EntityMap)))

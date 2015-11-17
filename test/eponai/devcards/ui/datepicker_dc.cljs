@@ -1,6 +1,6 @@
-(ns flipmunks.budget.ui.datepicker_dc
+(ns eponai.devcards.ui.datepicker_dc
   (:require [devcards.core :as dc]
-            [flipmunks.budget.ui.datepicker :as d]
+            [eponai.client.ui.datepicker :as d]
             [sablono.core :refer-macros [html]])
   (:require-macros [devcards.core :refer [defcard]]))
 

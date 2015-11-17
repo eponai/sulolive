@@ -1,7 +1,7 @@
-(ns flipmunks.budget.ui.modal_dc
+(ns eponai.devcards.ui.modal_dc
   (:require [devcards.core :as dc]
             [om.next :as om :refer-macros [defui]]
-            [flipmunks.budget.ui.modal :as m]
+            [eponai.client.ui.modal :as m]
             [sablono.core :refer-macros [html]])
   (:require-macros [devcards.core :refer [defcard]]))
 

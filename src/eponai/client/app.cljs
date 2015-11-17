@@ -1,4 +1,4 @@
-(ns flipmunks.budget.app
+(ns eponai.client.app
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
@@ -7,11 +7,11 @@
             [cljsjs.react.dom]
             [datascript.core :as d]
             [cljs.core.async :as async]
-            [flipmunks.budget.parser :as parser]
-            [flipmunks.budget.datascript :as budget.d]
-            [flipmunks.budget.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
-            [flipmunks.budget.ui.header :refer [Header ->Header]]
-            [flipmunks.budget.ui.transactions :refer [AllTransactions ->AllTransactions]]))
+            [eponai.client.parser :as parser]
+            [eponai.client.datascript :as budget.d]
+            [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
+            [eponai.client.ui.header :refer [Header ->Header]]
+            [eponai.client.ui.transactions :refer [AllTransactions ->AllTransactions]]))
 
 (defn just-read
   [{:keys [parser selector] :as env} _ _]

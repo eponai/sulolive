@@ -1,4 +1,4 @@
-(ns flipmunks.budget.om_next_test
+(ns eponai.client.om_next_test
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [goog.dom :as gdom]
             [sablono.core :as html :refer-macros [html]]
@@ -7,8 +7,8 @@
             [datascript.core :as d]
             [cljs.core.async :as async]
             [clojure.walk :as w]
-            [flipmunks.budget.om_query :as omq]
-            [flipmunks.budget.datascript :as budgetd]))
+            [eponai.client.om_query :as omq]
+            [eponai.client.datascript :as budgetd]))
 
 (defmulti mutate om/dispatch)
 

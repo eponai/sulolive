@@ -1,6 +1,6 @@
-(ns flipmunks.budget.ui.datepicker
+(ns eponai.client.ui.datepicker
   (:require [om.next :as om :refer-macros [defui]]
-            [flipmunks.budget.ui :refer [style]]
+            [eponai.client.ui :refer [style]]
             [cljsjs.pikaday]
             [cljsjs.react.dom]
             [sablono.core :refer-macros [html]]

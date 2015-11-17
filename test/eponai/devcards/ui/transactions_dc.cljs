@@ -1,7 +1,7 @@
-(ns flipmunks.budget.ui.transactions_dc
+(ns eponai.devcards.ui.transactions_dc
   (:require [devcards.core :as dc]
             [sablono.core :refer-macros [html]]
-            [flipmunks.budget.ui.transactions :as t])
+            [eponai.client.ui.transactions :as t])
   (:require-macros [devcards.core :refer [defcard]]))
 
 (defn transaction-props* [name [y m d] amount currency tags]

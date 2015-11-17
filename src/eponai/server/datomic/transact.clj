@@ -1,8 +1,8 @@
-(ns flipmunks.budget.datomic.transact
+(ns eponai.server.datomic.transact
   (:require [datomic.api :as d]
-            [flipmunks.budget.datomic.format :as f]
-            [flipmunks.budget.datomic.validate :as v]
-            [flipmunks.budget.http :as e]))
+            [eponai.server.datomic.format :as f]
+            [eponai.server.datomic.validate :as v]
+            [eponai.server.http :as e]))
 
 
 (defn- transact

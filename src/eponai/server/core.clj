@@ -1,16 +1,16 @@
-(ns flipmunks.budget.core
+(ns eponai.server.core
   (:gen-class)
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
-            [flipmunks.budget.datomic.pull :as p]
-            [flipmunks.budget.datomic.transact :as t]
-            [flipmunks.budget.auth :as a]
-            [flipmunks.budget.http :as h]
+            [eponai.server.datomic.pull :as p]
+            [eponai.server.datomic.transact :as t]
+            [eponai.server.auth :as a]
+            [eponai.server.http :as h]
             [datomic.api :only [q db] :as d]
             [cemerick.friend :as friend]
-            [flipmunks.budget.openexchangerates :as exch]
+            [eponai.server.openexchangerates :as exch]
             [clojure.core.async :refer [>! <! go chan]]
-            [flipmunks.budget.config :as c]))
+            [eponai.server.config :as c]))
 
 (def ^:dynamic conn)
 

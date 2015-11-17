@@ -1,9 +1,9 @@
-(ns flipmunks.budget.ui.add_transaction
+(ns eponai.client.ui.add_transaction
   (:require [om.next :as om :refer-macros [defui]]
-            [flipmunks.budget.ui :refer [style]]
-            [flipmunks.budget.ui.datepicker :refer [->Datepicker]]
-            [flipmunks.budget.ui.transactions :refer [AllTransactions]]
-            [flipmunks.budget.ui.tag :as tag]
+            [eponai.client.ui :refer [style]]
+            [eponai.client.ui.datepicker :refer [->Datepicker]]
+            [eponai.client.ui.transactions :refer [AllTransactions]]
+            [eponai.client.ui.tag :as tag]
             [cljs.reader :as reader]
             [sablono.core :as html :refer-macros [html]]
             [cljs-time.core :as t]
@@ -12,7 +12,7 @@
             [cljsjs.moment]
             [goog.date.DateTime]
             [garden.core :refer [css]]
-            [flipmunks.budget.parser :as parser]
+            [eponai.client.parser :as parser]
             [datascript.core :as d]))
 
 (defn node [name on-change opts & children]

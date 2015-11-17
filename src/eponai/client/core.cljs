@@ -1,6 +1,6 @@
-(ns flipmunks.budget.core
-  (:require [flipmunks.budget.app :as app]
-            [flipmunks.budget.backend :as backend]))
+(ns eponai.client.core
+  (:require [eponai.client.app :as app]
+            [eponai.client.backend :as backend]))
 
 (enable-console-print!)
 

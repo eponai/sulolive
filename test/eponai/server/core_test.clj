@@ -1,11 +1,11 @@
-(ns flipmunks.budget.core-test
+(ns eponai.server.core-test
   (:require [clojure.test :refer :all]
             [datomic.api :only [q db] :as d]
-            [flipmunks.budget.core :as b]
-            [flipmunks.budget.datomic.pull :as p]
-            [flipmunks.budget.datomic.transact :as t]
-            [flipmunks.budget.auth :as a]
-            [flipmunks.budget.openexchangerates :as exch])
+            [eponai.server.core :as b]
+            [eponai.server.datomic.pull :as p]
+            [eponai.server.datomic.transact :as t]
+            [eponai.server.auth :as a]
+            [eponai.server.openexchangerates :as exch])
   (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
