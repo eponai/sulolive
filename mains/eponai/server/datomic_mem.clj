@@ -49,13 +49,23 @@
       (throw (Exception. (str "Could not create datomic db with uri: " uri))))))
 
 (defn add-data-to-connection [conn]
-  (let [schema (->> schema-file slurp (edn/read-string {:readers *data-readers*}))]
+  (let [schema (->> schema-file slurp (edn/read-string {:readers *data-readers*}))
+        username "test-user@email.com"]
     (d/transact conn schema)
-    (transact/new-user conn {:username "test-user@email.com"
+    (transact/new-user conn {:username username
                              :bcrypt   (creds/hash-bcrypt "password")})
     (transact/currencies conn currencies)
     (let [{:keys [budget/uuid]} (->> (d/q '[:find ?e :where [?e :budget/uuid]]
                                           (d/db conn))
                                      ffirst
                                      (d/entity (d/db conn)))]
-      (transact/user-txs conn (mapv #(assoc % :transaction/budget uuid) transactions)))))
+      (transact/user-txs conn (mapv #(assoc % :transaction/budget uuid) transactions)))
+    (let [verification (->> (d/q '[:find ?v
+                                   :in $ ?username
+                                   :where
+                                   [?u :user/email ?username]
+                                   [?v :verification/entity ?u]]
+                                 (d/db conn)
+                                 username)
+                            ffirst)]
+      (transact/add conn verification :verification/status :verification.status/verified))))
