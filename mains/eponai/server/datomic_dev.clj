@@ -1,8 +1,7 @@
 (ns eponai.server.datomic_dev
-  (:require [eponai.server.core :as core]
-            [eponai.server.datomic.pull :as budget.d]
-            [eponai.server.datomic_mem :as mem]
-            [datomic.api :as d]))
+    (:require [eponai.server.core :as core]
+      [eponai.server.datomic_mem :as mem]
+      [datomic.api :as d]))
 
 (defn connect []
   (alter-var-root #'core/conn
@@ -13,10 +12,13 @@
                         (catch Exception e
                           (prn (str "Exception:" e " when trying to connect to datomic=" uri))
                           (prn "Will try to set up inmemory db...")
-                          (let [mem-conn (mem/create-new-inmemory-db)]
-                            (mem/add-data-to-connection mem-conn)
-                            (prn "Successfully set up inmemory db!")
-                            mem-conn)))))))
+                          (try
+                            (let [mem-conn (mem/create-new-inmemory-db)]
+                             (mem/add-data-to-connection mem-conn)
+                             (prn "Successfully set up inmemory db!")
+                             mem-conn)
+                            (catch Exception e
+                              (prn "Exception " e " when trying to set up inmemory db")))))))))
 
 (def app
   (do 
