@@ -3,10 +3,9 @@
             [cemerick.friend :as friend]
             [ring.middleware.session.cookie :as cookie]
             [ring.middleware.transit :refer [wrap-transit-response]]
-            [ring.middleware.defaults :refer :all]
+            [ring.middleware.defaults :as d]
             [ring.middleware.json :refer [wrap-json-body]]
             [ring.util.response :as r]
-            [eponai.server.config :as c]
             [cognitect.transit :as transit])
   (:import (clojure.lang ExceptionInfo)
            (datomic.query EntityMap)))
@@ -40,6 +39,9 @@
   [body]
   (r/response body))
 
+(defn redirect [path request]
+  (r/redirect (util/resolve-absolute-uri path request)))
+
 (defn user-created [request]
   (let [{{username :username} :params} request]
     (r/created (util/resolve-absolute-uri "/login" request) {:username username})))
@@ -48,7 +50,7 @@
   (let [{body :body} request]
     (r/created (util/resolve-absolute-uri "/user/txs" request) body)))
 
-(defn- wrap-error [handler]
+(defn wrap-error [handler]
   (fn [request]
     (try
       (handler request)
@@ -62,13 +64,16 @@
     (constantly "map")
     #(into {:db/id (:db/id %)} %)))
 
-(defn wrap [handler]
-  (-> handler
-      wrap-error
-      (wrap-transit-response {:opts {:handlers {EntityMap datomic-transit}}
-                              :encoding :json})
-      (wrap-json-body {:keywords? true})
-      (wrap-defaults (-> site-defaults
-                         (assoc-in [:security :anti-forgery] false)
-                         (assoc-in [:session :store] (cookie/cookie-store {:key (c/config :session-cookie-key)}))
-                         (assoc-in [:session :cookie-name] "cookie-name")))))
+(defn wrap-transit [handler]
+  (wrap-transit-response handler
+                         {:opts {:handlers {EntityMap datomic-transit}}
+                          :encoding :json}))
+
+(defn wrap-json [handler]
+  (wrap-json-body handler {:keywords? true}))
+
+(defn wrap-defaults [handler {:keys [cookie-store-key cookie-name]}]
+  (d/wrap-defaults handler (-> d/site-defaults
+                               (assoc-in [:security :anti-forgery] false)
+                               (assoc-in [:session :store] (cookie/cookie-store {:key cookie-store-key}))
+                               (assoc-in [:session :cookie-name] cookie-name))))

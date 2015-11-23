@@ -2,8 +2,7 @@
   (:require [cemerick.friend.credentials :as creds]
             [cemerick.friend.workflows :as workflows]
             [eponai.server.http :as h]
-            [postal.core :as email]
-            [eponai.server.config :as c]))
+            [postal.core :as email]))
 
 (defn not-found [email]
   (ex-info "Could not find user in db." {:cause   ::authentication-error
@@ -47,13 +46,13 @@
                                               :data    {:request-method request-method}
                                               :message "Invalid request method"}))))
 
-(defn send-email-verification [email uuid]
+(defn send-email-verification [smtp email uuid]
   (let [link (str "http://localhost:3000/verify/" uuid)
         body {:from "info@gmail.com"
               :to "dianagren@gmail.com"
               :subject "Hi there, this is your confirmation email."
               :body (str "Email: " email ". Click this link: " link)}
-        status (email/send-message (c/config :smtp) body)]
+        status (email/send-message smtp body)]
     (if (= 0 (:code status))
       status
       (throw (ex-info (:message status) {:cause ::email-error

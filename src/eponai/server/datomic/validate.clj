@@ -25,7 +25,8 @@
                           :transaction/date
                           :transaction/amount
                           :transaction/currency
-                          :transaction/created-at}]
+                          :transaction/created-at
+                          :transaction/budget}]
     (validate (str "user tx: " user-tx) every? #(contains? user-tx %) required-fields)))
 
 

@@ -10,12 +10,15 @@
             [cemerick.friend :as friend]
             [eponai.server.openexchangerates :as exch]
             [clojure.core.async :refer [>! <! go chan]]
-            [eponai.server.config :as c]))
+            [clojure.edn :as edn]))
 
 (def ^:dynamic conn nil)
 
 (def currency-chan (chan))
 (def email-chan (chan))
+
+(def config
+  (edn/read-string (slurp "budget-private/config.edn")))
 
 ; Pull
 
@@ -100,16 +103,22 @@
 
            (POST "/signup" request (signup conn request)
                                    (h/user-created request))
+           (GET "/schema" [] (h/response (p/schema (d/db conn))))
+           (GET "/session" {session :session} (h/response (str session)))
            ; Anonymous
-           (GET "/login" [] (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n
+           (GET "/login" request (if (get-in request [:session ::friend/identity])
+                                   (h/redirect "user/txs" request)
+                                   (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n
             Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
             Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n
-            <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />"))
+            <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />")))
 
-           (GET "/signup" [] (str "<h2>Signup</h2>\n \n<form action=\"/signup\" method=\"POST\">\n
+           (GET "/signup" request (if (get-in request [:session ::friend/identity])
+                                    (h/redirect "user/txs" request)
+                                    (str "<h2>Signup</h2>\n \n<form action=\"/signup\" method=\"POST\">\n
             Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
             Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n
-            <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />"))
+            <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />")))
 
            ; Requires user login
            (context "/user" [] (friend/wrap-authorize user-routes #{::a/user}))
@@ -124,11 +133,14 @@
   (-> app-routes
       (friend/authenticate {:credential-fn (partial a/cred-fn #(user-creds (d/db conn) %))
                             :workflows     [(a/form)]})
-      h/wrap))
+      h/wrap-error
+      h/wrap-transit
+      h/wrap-json
+      (h/wrap-defaults (config :session))))
 
 (defn init
   ([]
-   (init exch/currency-rates a/send-email-verification))
+   (init exch/currency-rates (partial a/send-email-verification (config :smtp))))
   ([cur-fn email-fn]
    (println "Initializing server...")
    (go (while true (try
