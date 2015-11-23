@@ -80,12 +80,14 @@
      :db/id         17592186045418,
      :db/ident      :currency/THB}]})
 
-(defn GET [endpoint c error-data]
+(defn GET
+  "Put data on the channel. Put the error-data if there's an error (for testing)."
+  [chan endpoint error-data]
   (http/GET endpoint
             {:handler       #(let [res %]
                               (prn {:endpoint endpoint :type (type res) :response res})
-                              (async/put! c res))
-             :error-handler #(async/put! c error-data)}))
+                              (async/put! chan res))
+             :error-handler #(async/put! chan error-data)}))
 
 ;; TODO: implement for reals
 (defn data-provider []
@@ -97,6 +99,6 @@
             (async/>! c {:data {:schema   schema
                                 :entities (:entities txs)}})))
       (let []
-        (GET "/user/txs" txs-chan testdata)
-        (GET "/schema" schema-chan (:schema testdata))))))
+        (GET txs-chan "/user/txs" testdata)
+        (GET schema-chan "/schema" (:schema testdata))))))
 
