@@ -1,27 +1,38 @@
 (ns eponai.server.datomic_dev
-    (:require [eponai.server.core :as core]
-      [eponai.server.datomic_mem :as mem]
-      [datomic.api :as d]))
+  (:require [eponai.server.core :as core]
+            [eponai.server.datomic_mem :as mem]
+            [datomic.api :as d]))
+
+(defonce connection (atom nil))
+
+(defn create-connection [_]
+  (let [uri "datomic:dev://localhost:4334/budget-dev"]
+    (try
+      (d/connect uri)
+      (catch Exception e
+        (prn (str "Exception:" e " when trying to connect to datomic=" uri))
+        (prn "Will try to set up inmemory db...")
+        (try
+          (let [mem-conn (mem/create-new-inmemory-db)]
+            (mem/add-data-to-connection mem-conn)
+            (prn "Successfully set up inmemory db!")
+            mem-conn)
+          (catch Exception e
+            (prn "Exception " e " when trying to set up inmemory db")))))))
 
 (defn connect []
   (alter-var-root #'core/conn
-                  (fn [old-val] 
-                    (let [uri "datomic:dev://localhost:4334/budget-dev"]
-                      (try 
-                        (d/connect uri)
-                        (catch Exception e
-                          (prn (str "Exception:" e " when trying to connect to datomic=" uri))
-                          (prn "Will try to set up inmemory db...")
-                          (try
-                            (let [mem-conn (mem/create-new-inmemory-db)]
-                             (mem/add-data-to-connection mem-conn)
-                             (prn "Successfully set up inmemory db!")
-                             mem-conn)
-                            (catch Exception e
-                              (prn "Exception " e " when trying to set up inmemory db")))))))))
+                  (fn [_]
+                    (prn "Will try to set the database connection...")
+                    ;; Just set the connection once. Using an atom that's only defined once because,
+                    ;; there's a ring middleware which (seems to) redefine all vars, unless using defonce.
+                    (if-let [c @connection]
+                      (do (prn "Already had a connection. Returning the old one: " c)
+                          c)
+                      (swap! connection create-connection)))))
 
 (def app
-  (do 
+  (do
     ;; set the core/conn var
     (connect)
     ;; reutrn the core/app ring handler

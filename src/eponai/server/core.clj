@@ -12,7 +12,7 @@
             [clojure.core.async :refer [>! <! go chan]]
             [eponai.server.config :as c]))
 
-(def ^:dynamic conn)
+(def ^:dynamic conn nil)
 
 (def currency-chan (chan))
 (def email-chan (chan))
