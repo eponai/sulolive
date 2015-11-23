@@ -4,7 +4,9 @@
             [clojure.tools.reader.edn :as edn]
             [clojure.java.io :as io]
             [datomic.api :as d]
-            [cemerick.friend.credentials :as creds])
+            [cemerick.friend.credentials :as creds]
+            [eponai.server.datomic.pull :as p]
+            [environ.core :refer [env]])
   (:import (java.util UUID)))
 
 (def schema-file (io/file (io/resource "private/datomic-schema.edn")))
@@ -43,7 +45,7 @@
                     :transaction/created-at 1}])
 
 (defn create-new-inmemory-db []
-  (let [uri "datomic:mem://test-db"]
+  (let [uri (env :db-mem-url)]
     (if (d/create-database uri)
       (d/connect uri)
       (throw (Exception. (str "Could not create datomic db with uri: " uri))))))
@@ -52,20 +54,18 @@
   (let [schema (->> schema-file slurp (edn/read-string {:readers *data-readers*}))
         username "test-user@email.com"]
     (d/transact conn schema)
+    (println "Schema added.")
     (transact/new-user conn {:username username
                              :bcrypt   (creds/hash-bcrypt "password")})
+    (println "New user created")
     (transact/currencies conn currencies)
-    (let [{:keys [budget/uuid]} (->> (d/q '[:find ?e :where [?e :budget/uuid]]
-                                          (d/db conn))
-                                     ffirst
-                                     (d/entity (d/db conn)))]
+    (println "Currencies added.")
+    (let [{:keys [budget/uuid]} (p/budget (d/db conn) username)]
       (transact/user-txs conn (mapv #(assoc % :transaction/budget uuid) transactions)))
-    (let [verification (->> (d/q '[:find ?v
-                                   :in $ ?username
-                                   :where
-                                   [?u :user/email ?username]
-                                   [?v :verification/entity ?u]]
-                                 (d/db conn)
-                                 username)
-                            ffirst)]
-      (transact/add conn verification :verification/status :verification.status/verified))))
+    (println "User transactions added.")
+    (let [user (p/user (d/db conn) username)
+          verification (->> (p/verifications (d/db conn) user :user/email)
+                            first
+                            :db/id)]
+      (transact/add conn verification :verification/status :verification.status/verified)
+      (println "User verified."))))

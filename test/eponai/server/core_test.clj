@@ -5,7 +5,8 @@
             [eponai.server.datomic.pull :as p]
             [eponai.server.datomic.transact :as t]
             [eponai.server.auth :as a]
-            [eponai.server.openexchangerates :as exch])
+            [eponai.server.openexchangerates :as exch]
+            [environ.core :refer [env]])
   (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
@@ -32,7 +33,7 @@
                                   {1
                                    {:identity 1,
                                     :username (user-params :username),
-                                    :roles    #{::b/user}}},
+                                    :roles    #{::a/user}}},
                          :current 1}}
               :body test-data})
 
@@ -76,7 +77,7 @@
 
 (deftest test-all-data-with-conversions
   (let [conn (db-with-curs)
-        db (b/post-user-data conn request)
+        _ (b/post-user-data conn request)
         db-conv (b/post-currency-rates conn
                                        test-convs
                                        [(:transaction/date (first test-data))])
@@ -107,7 +108,6 @@
 (deftest test-cyclic-datomic-refs
   (testing "Setup cyclic ref in the schema and test that entity expansion works."
     (let [conn (db-with-curs)
-          db (d/db conn)
           budget (p/budget (d/db conn) "user@email.com")
           user (p/user (d/db conn) "user@email.com")]
       (d/transact conn [{:db/id                 (d/tempid :db.part/db)

@@ -17,9 +17,6 @@
 (def currency-chan (chan))
 (def email-chan (chan))
 
-(def config
-  (edn/read-string (slurp "budget-private/config.edn")))
-
 ; Pull
 
 (defn fetch [fn db & args]
@@ -42,7 +39,7 @@
   "Post new transactions for the user in the session. If there's no currency rates
   for the date of the transactions, they will be fetched from OER."
   [conn request]
-  (let [budget (p/budget (d/db conn) (h/email request))
+  (let [budget (p/budget (d/db conn) (:username (friend/current-authentication request)))
         user-data (map #(assoc % :transaction/budget (:budget/uuid budget)) (:body request))]
     (go (>! currency-chan (map :transaction/date user-data)))
     (t/user-txs conn user-data)))
@@ -89,7 +86,7 @@
 (defroutes user-routes
            (GET "/txs" request (h/response (fetch p/all-data
                                                   (d/db conn)
-                                                  (h/email request)
+                                                  (:username (friend/current-authentication request))
                                                   (:params request))))
            (POST "/txs" request (post-user-data conn request)
                                 (h/txs-created request))
@@ -97,7 +94,7 @@
            (GET "/curs" [] (h/response (fetch p/currencies
                                               (d/db conn))))
            (GET "/info" request (h/response (p/user (d/db conn)
-                                                    (h/email request)))))
+                                                    (:username (friend/current-authentication request))))))
 
 (defroutes app-routes
 
@@ -111,14 +108,14 @@
                                                             [:db/cardinality :db/ident]]))))
            (GET "/session" {session :session} (h/response (str session)))
            ; Anonymous
-           (GET "/login" request (if (get-in request [:session ::friend/identity])
+           (GET "/login" request (if (friend/identity request)
                                    (h/redirect "user/txs" request)
                                    (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n
             Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
             Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n
             <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />")))
 
-           (GET "/signup" request (if (get-in request [:session ::friend/identity])
+           (GET "/signup" request (if (friend/identity request)
                                     (h/redirect "user/txs" request)
                                     (str "<h2>Signup</h2>\n \n<form action=\"/signup\" method=\"POST\">\n
             Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
@@ -141,11 +138,11 @@
       h/wrap-error
       h/wrap-transit
       h/wrap-json
-      (h/wrap-defaults (config :session))))
+      h/wrap-defaults))
 
 (defn init
   ([]
-   (init exch/currency-rates (partial a/send-email-verification (config :smtp))))
+   (init exch/currency-rates (partial a/send-email-verification (a/smtp))))
   ([cur-fn email-fn]
    (println "Initializing server...")
    (go (while true (try

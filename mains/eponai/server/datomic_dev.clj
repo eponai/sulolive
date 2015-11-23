@@ -1,12 +1,13 @@
 (ns eponai.server.datomic_dev
   (:require [eponai.server.core :as core]
             [eponai.server.datomic_mem :as mem]
-            [datomic.api :as d]))
+            [datomic.api :as d]
+            [environ.core :refer [env]]))
 
 (defonce connection (atom nil))
 
 (defn create-connection [_]
-  (let [uri "datomic:dev://localhost:4334/budget-dev"]
+  (let [uri (env :db-url)]
     (try
       (d/connect uri)
       (catch Exception e

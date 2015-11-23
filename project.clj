@@ -20,8 +20,8 @@
                  [cljs-ajax "0.5.0"]
                  [datascript "0.13.3"]
                  [cljsjs/pikaday "1.3.2-0"]
-                 [org.clojure/test.check "0.8.1"]
                  [compojure "1.4.0"]
+                 [environ "1.0.1"]
 		 [bidi "1.21.1"]
                  [ring/ring-core "1.4.0"]
                  [ring/ring-jetty-adapter "1.4.0"]
@@ -41,7 +41,9 @@
   :plugins [[lein-npm "0.6.1"]
             [lein-cljsbuild "1.1.1"]
             [lein-figwheel "0.5.0-1"]
-            [lein-ring "0.9.7"]]
+            [lein-ring "0.9.7"]
+            [lein-environ "1.0.1"]]
+  :min-lein-version "2.0.0"
 
   ;;;;;;;;;;;;;
   ;; clj:
@@ -51,6 +53,9 @@
   :ring {:handler eponai.server.datomic_dev/app
          :init eponai.server.core/init}
   :profiles {:uberjar {:aot :all}}
+  :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
+                                   :username ~(System/getenv "DATOMIC_EMAIL")
+                                   :password ~(System/getenv "DATOMIC_KEY")}}
 
   ;;;;;;;;;;;;;
   ;; cljs:

@@ -2,7 +2,15 @@
   (:require [cemerick.friend.credentials :as creds]
             [cemerick.friend.workflows :as workflows]
             [eponai.server.http :as h]
-            [postal.core :as email]))
+            [postal.core :as email]
+            [environ.core :refer [env]]))
+
+(defn smtp []
+  {:host (env :smtp-host)
+   :user (env :smtp-user)
+   :pass (env :smtp-pass)
+   :tls  (env :smtp-tls)
+   :port (env :smtp-port)})
 
 (defn not-found [email]
   (ex-info "Could not find user in db." {:cause   ::authentication-error

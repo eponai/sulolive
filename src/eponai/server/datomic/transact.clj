@@ -22,8 +22,13 @@
 (defn user-txs
   "Put the user transaction maps into datomic. Will fail if one or
   more of the following required fields are not included in the map:
-  #{:transaction/uuid :transaction/name :transcation/date :transction/amount
-  :transaction/currency :transaction/created-at}.
+  #{:transaction/uuid
+  :transaction/name
+  :transcation/date
+  :transction/amount
+  :transaction/currency
+  :transaction/created-at
+  :transaction/budget}.
 
   Throws ExceptionInfo if the given input is invalid, or if transaction failed."
   [conn user-txs]

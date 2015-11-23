@@ -1,6 +1,6 @@
 (ns eponai.server.http
   (:require [cemerick.friend.util :as util]
-            [cemerick.friend :as friend]
+            [environ.core :refer [env]]
             [ring.middleware.session.cookie :as cookie]
             [ring.middleware.transit :refer [wrap-transit-response]]
             [ring.middleware.defaults :as d]
@@ -18,20 +18,6 @@
                   ; Server error codes
                   ::internal-error 500
                   ::service-unavailable 503})
-
-(defn user
-  "Current session user information."
-  [session]
-  (let [user-id (get-in session [::friend/identity :current])]
-    (get-in session [::friend/identity :authentications user-id])))
-
-(defn email
-  "The session's email from request."
-  [request]
-  (-> request
-      :session
-      user
-      :username))
 
 (defn response
   "Create response with the given db and data. Fetches the schema for the given data and
@@ -72,8 +58,10 @@
 (defn wrap-json [handler]
   (wrap-json-body handler {:keywords? true}))
 
-(defn wrap-defaults [handler {:keys [cookie-store-key cookie-name]}]
-  (d/wrap-defaults handler (-> d/site-defaults
-                               (assoc-in [:security :anti-forgery] false)
-                               (assoc-in [:session :store] (cookie/cookie-store {:key cookie-store-key}))
-                               (assoc-in [:session :cookie-name] cookie-name))))
+(defn wrap-defaults [handler]
+  (let [cookie-store-key (env :session-cookie-store-key)
+        cookie-name (env :session-cookie-name)]
+    (d/wrap-defaults handler (-> d/site-defaults
+                                 (assoc-in [:security :anti-forgery] false)
+                                 (assoc-in [:session :store] (cookie/cookie-store {:key cookie-store-key}))
+                                 (assoc-in [:session :cookie-name] cookie-name)))))
