@@ -103,7 +103,12 @@
 
            (POST "/signup" request (signup conn request)
                                    (h/user-created request))
-           (GET "/schema" [] (h/response (p/schema (d/db conn))))
+           (GET "/schema" [] (let [db (d/db conn)]
+                               (h/response (p/inline-value db
+                                                           (p/schema db)
+                                                           [[:db/valueType :db/ident]
+                                                            [:db/unique :db/ident]
+                                                            [:db/cardinality :db/ident]]))))
            (GET "/session" {session :session} (h/response (str session)))
            ; Anonymous
            (GET "/login" request (if (get-in request [:session ::friend/identity])

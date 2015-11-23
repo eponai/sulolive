@@ -148,6 +148,24 @@
       (= (get db-entity :db/cardinality) :db.cardinality/many)
       (get db-entity :db/unique)))
 
+(defn inline-value
+  "Inlines values for ref attributes.
+  Given entities:
+  [{:db/id 1 :db/valueType {:db/id 2}}{:db/id 2 :db/ident :db.type.string}], where :db/valueType is a :db.type/ref
+  and replacement-pairs:
+  [[:db/valueType :db/ident]]
+  will return inlined :db/valueType:
+  [{:db/id 1 :db/valueType :db.type/string}{:db/id 2 :db/ident :db.type.string}]"
+  [db entities replacement-pairs]
+  (let [inline-attr (fn [e [a1 a2]]
+                      (if (contains? e a1)
+                        (assoc e a1 (->> (get-in e [a1 :db/id])
+                                         (d/entity db)
+                                         a2))
+                        e))]
+    (map (fn [e] (reduce inline-attr e replacement-pairs))
+         entities)))
+
 (defn schema
   "Pulls schema from the db. If data is provided includes only the necessary fields for that data.
   (type/ref, cardinality/many or unique/identity)."

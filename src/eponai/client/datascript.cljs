@@ -18,7 +18,7 @@
       ;; keyword->eid lookup.
       (assoc :enum {:db/unique :db.unique/identity})))
 
-(defn id-generator 
+(defn id-generator
   "Returns a function which takes a number and returns a new, negative id.
    It'll always return the same id, given a number.
    The returned function is not thread safe."
@@ -28,14 +28,14 @@
       (let [{:keys [next-id ids]} @id-state]
         (if (contains? ids i)
           (get ids i)
-          (do 
+          (do
             ;; change this to be a compare-and-swap! to make it thread-safe.
             (swap! id-state #(-> %
                                  (update :ids assoc i next-id)
                                  (update :next-id dec)))
             next-id))))))
 
-(defn db-id->temp-id 
+(defn db-id->temp-id
   "given a set of keys which have values of type db.type/ref, and any datastructure,
   return the same datastructure with {:db/id <id>} entries and {<ref-key> <id>} assigned
   to datascript temporary id's (negative integers)."
@@ -45,7 +45,7 @@
         ref?   #(and (kv? %) (contains? ref-keys (first %)))
         id-gen (id-generator)]
     (w/postwalk (fn [x]
-                  (cond 
+                  (cond
                     (db-id? x) (update x 1 id-gen)
                     (ref? x)   (let [[k v] x]
                                  (cond (number? v) [k (id-gen v)]
