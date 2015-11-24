@@ -54,6 +54,7 @@
          :init eponai.server.core/init}
   :main eponai.server.core
   :profiles {:uberjar {:aot :all}}
+  :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
   :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
                                    :username ~(System/getenv "DATOMIC_EMAIL")
                                    :password ~(System/getenv "DATOMIC_KEY")}}
