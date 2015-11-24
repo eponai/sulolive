@@ -1,6 +1,5 @@
 (ns eponai.server.datomic_dev
-  (:require [eponai.server.core :as core]
-            [eponai.server.datomic_mem :as mem]
+  (:require [eponai.server.datomic_mem :as mem]
             [datomic.api :as d]
             [environ.core :refer [env]]))
 
@@ -21,8 +20,8 @@
           (catch Exception e
             (prn "Exception " e " when trying to set up inmemory db")))))))
 
-(defn connect []
-  (alter-var-root #'core/conn
+(defn connect [conn]
+  (alter-var-root conn
                   (fn [_]
                     (prn "Will try to set the database connection...")
                     ;; Just set the connection once. Using an atom that's only defined once because,
@@ -31,11 +30,3 @@
                       (do (prn "Already had a connection. Returning the old one: " c)
                           c)
                       (swap! connection create-connection)))))
-
-(def app
-  (do
-    ;; set the core/conn var
-    (connect)
-    ;; reutrn the core/app ring handler
-    core/app))
-

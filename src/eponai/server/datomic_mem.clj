@@ -1,6 +1,5 @@
 (ns eponai.server.datomic_mem
-  (:require [eponai.server.core :as core]
-            [eponai.server.datomic.transact :as transact]
+  (:require [eponai.server.datomic.transact :as transact]
             [clojure.tools.reader.edn :as edn]
             [clojure.java.io :as io]
             [datomic.api :as d]
@@ -9,10 +8,13 @@
             [environ.core :refer [env]])
   (:import (java.util UUID)))
 
-(def schema-file (io/file (io/resource "private/datomic-schema.edn")))
+(defn schema-file []
+  (io/resource "private/datomic-schema.edn"))
+
 (def currencies {:THB "Thai Baht"
                  :SEK "Swedish Krona"
                  :USD "US Dollar"})
+
 (def transactions [{:transaction/uuid       (str (UUID/randomUUID))
                     :transaction/name       "lunch"
                     :transaction/date       "2015-10-10"
@@ -45,13 +47,13 @@
                     :transaction/created-at 1}])
 
 (defn create-new-inmemory-db []
-  (let [uri (env :db-mem-url)]
+  (let [uri "datomic:mem://test-db"]
     (if (d/create-database uri)
       (d/connect uri)
       (throw (Exception. (str "Could not create datomic db with uri: " uri))))))
 
 (defn add-data-to-connection [conn]
-  (let [schema (->> schema-file slurp (edn/read-string {:readers *data-readers*}))
+  (let [schema (->> (schema-file) slurp (edn/read-string {:readers *data-readers*}))
         username "test-user@email.com"]
     (d/transact conn schema)
     (println "Schema added.")

@@ -10,7 +10,9 @@
             [cemerick.friend :as friend]
             [eponai.server.openexchangerates :as exch]
             [clojure.core.async :refer [>! <! go chan]]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+            [ring.adapter.jetty :as jetty]
+            [eponai.server.datomic_dev :refer [connect]]))
 
 (def ^:dynamic conn nil)
 
@@ -145,6 +147,7 @@
    (init exch/currency-rates (partial a/send-email-verification (a/smtp))))
   ([cur-fn email-fn]
    (println "Initializing server...")
+   (connect #'conn)
    (go (while true (try
                      (post-currency-rates conn cur-fn (<! currency-chan))
                      (catch Exception e
@@ -154,3 +157,7 @@
                      (catch Exception e
                        (println (.getMessage e))))))
    (println "Done.")))
+
+(defn -main [& args]
+  (init)
+  (jetty/run-jetty app {:port (or (Long/parseLong (first args)) 3000)}))

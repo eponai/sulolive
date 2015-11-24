@@ -49,9 +49,10 @@
   ;; clj:
   ;;;;;;;;;;;;;
   :target-path "target/%s"
-  :source-paths ["src" "mains" "test"]
-  :ring {:handler eponai.server.datomic_dev/app
+  :source-paths ["src" "mains"]                             ;; "test"
+  :ring {:handler eponai.server.core/app
          :init eponai.server.core/init}
+  :main eponai.server.core
   :profiles {:uberjar {:aot :all}}
   :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
                                    :username ~(System/getenv "DATOMIC_EMAIL")
