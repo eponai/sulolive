@@ -84,10 +84,14 @@
   "Put data on the channel. Put the error-data if there's an error (for testing)."
   [chan endpoint error-data]
   (http/GET endpoint
-            {:handler       #(let [res %]
-                              (prn {:endpoint endpoint :type (type res) :response res})
-                              (async/put! chan res))
-             :error-handler #(async/put! chan error-data)}))
+            {:handler         #(let [res %]
+                                (prn {:endpoint endpoint :type (type res) :response res})
+                                (async/put! chan res))
+             :response-format :transit
+             ;; Transit handler to read big-int
+             :handlers {"n" cljs.reader/read-string}
+
+             :error-handler   #(async/put! chan error-data)}))
 
 ;; TODO: implement for reals
 (defn data-provider []
