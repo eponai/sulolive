@@ -7,6 +7,7 @@
             [cljsjs.react.dom]
             [datascript.core :as d]
             [cljs.core.async :as async]
+            [eponai.client.backend :as backend]
             [eponai.client.parser :as parser]
             [eponai.client.datascript :as budget.d]
             [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
@@ -53,7 +54,7 @@
                                 :ui/singleton {:db/unique :db.unique/identity}))
           conn       (d/create-conn ds-schema)
           parser     (om/parser {:read parser/debug-read :mutate parser/mutate})
-          reconciler (om/reconciler {:state conn :parser parser})]
+          reconciler (om/reconciler {:state conn :parser parser})] ;;:remotes [:remote] :send backend/act-test
       (d/transact conn [{:app :state :app/year 2015 :app/month 10}])
       (d/transact conn [{:ui/singleton :budget/header}])
       (d/transact conn (budget.d/db-id->temp-id ref-types entities))

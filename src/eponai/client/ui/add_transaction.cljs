@@ -80,24 +80,27 @@
 (defmethod parser/mutate 'transaction/create
   [{:keys [state]} _ {:keys [::input-amount ::input-currency ::input-title
                              ::input-date ::input-description ::input-tags]}]
-  (prn "LETS DO THIS")
-  {:action
-   (fn []
-     (try
-       (let [date (assoc (input->date input-date) :db/id -1)
-             curr (assoc (input->currency input-currency) :db/id -2)
-             tags (map #(assoc %2 :db/id %1)
-                       (range (- (- (count input-tags)) 2) -2)
-                       (input->tags input-tags))
-             transaction (-> (input->transaction input-amount input-title input-description)
-                             (assoc :transaction/date -1)
-                             (assoc :transaction/currency -2)
-                             (assoc :transaction/tags (mapv :db/id tags)))
-             entities (concat [date curr transaction] tags)]
-         (prn {:entities entities})
-         (d/transact! state entities))
-       (catch :default e
-         (prn e))))})
+  (try
+    (let [date (assoc (input->date input-date) :db/id -1)
+          curr (assoc (input->currency input-currency) :db/id -2)
+          tags (map #(assoc %2 :db/id %1)
+                    (range (- (- (count input-tags)) 2) -2)
+                    (input->tags input-tags))
+          transaction (-> (input->transaction input-amount input-title input-description)
+                          (assoc :transaction/date -1)
+                          (assoc :transaction/currency -2)
+                          (assoc :transaction/tags (mapv :db/id tags)))
+          entities (concat [date curr transaction] tags)]
+      (comment
+        "include this when om works"
+        :remote {:action ::create-transaction
+                        :params {:transaction transaction :tags tags :curr curr :date date}
+                        :state  state})
+      {:action (fn []
+                 (prn {:entities entities})
+                 (d/transact! state entities))})
+    (catch :default e
+      (prn e))))
 
 (defui AddTransaction
   static om/IQuery
@@ -155,7 +158,7 @@
           (map tag/->Tag input-tags)]
          [:div "footer"
           [:button {:on-click #(om/transact! this `[(transaction/create ~(om/get-state this))
-                                                    (om/get-query AllTransactions)])}
+                                                    ~(om/get-query AllTransactions)])}
            "Save"]]]))))
 
 (def ->AddTransaction (om/factory AddTransaction))

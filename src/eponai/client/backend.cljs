@@ -2,7 +2,8 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [ajax.core :as http]
             [cognitect.transit :as t]
-            [cljs.core.async :as async]))
+            [cljs.core.async :as async]
+            [eponai.client.ui.add_transaction :as add_transaction]))
 
 (def testdata
   {:schema
@@ -108,7 +109,19 @@
             (async/>! c {:schema   schema
                          :entities (concat (:entities txs)
                                            (:entities currencies))})))
-      (let []
-        (GET txs-chan "/user/txs" testdata)
-        (GET schema-chan "/schema" (:schema testdata))
-        (GET curr-chan "/user/curs" test-currencies)))))
+      ;; Do the actions
+      (GET txs-chan "/user/txs" testdata)
+      (GET schema-chan "/schema" (:schema testdata))
+      (GET curr-chan "/user/curs" test-currencies))))
+
+(defn act-test [& args] (apply prn "act test with args: " args))
+(defmulti act (fn [{:keys [action]} _] action))
+(defmethod act ::add_transaction/create-transaction [{:keys [state params]} callback]
+  (let [{:keys [transaction tags curs date]} params]
+    (prn "FOOOOOOOOOO WE DID IT!1")
+    (prn "FOOOOOOOOOO WE DID IT!2")
+    (prn "FOOOOOOOOOO WE DID IT!3")
+    (prn "FOOOOOOOOOO WE DID IT!4")
+    (prn "FOOOOOOOOOO WE DID IT!5")
+    (prn "FOOOOOOOOOO WE DID IT!6")
+    (prn "FOOOOOOOOOO WE DID IT!7")))
