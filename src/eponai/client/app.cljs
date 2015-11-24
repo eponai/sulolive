@@ -46,11 +46,11 @@
 
 (defn initialize-app [c]
   (go
-    (let [{:keys [schema entities]} (:data (async/<! c))
+    (let [{:keys [schema entities]} (async/<! c)
           ref-types  (find-refs schema)
           ds-schema  (-> (budget.d/schema-datomic->datascript schema)
-                         (assoc :app {:db/unique :db.unique/identity})
-                         (assoc :ui/singleton {:db/unique :db.unique/identity}))
+                         (assoc :app {:db/unique :db.unique/identity}
+                                :ui/singleton {:db/unique :db.unique/identity}))
           conn       (d/create-conn ds-schema)
           parser     (om/parser {:read parser/debug-read :mutate parser/mutate})
           reconciler (om/reconciler {:state conn :parser parser})]

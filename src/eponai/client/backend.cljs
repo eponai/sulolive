@@ -74,11 +74,14 @@
      :date/day       11,
      :db/id          1011,
      :date/month     10,
-     :date/year      2015}
-    {:currency/name "Thai Baht",
-     :currency/code "THB",
-     :db/id         17592186045418,
-     :db/ident      :currency/THB}]})
+     :date/year      2015}]})
+
+(def test-currencies {:entities [{:currency/name "Thai Baht",
+                                  :currency/code "THB",
+                                  :db/id         17592186045418}
+                                 {:currency/name "Swedish Crown",
+                                  :currency/code "SEK",
+                                  :db/id         17592186045418}]})
 
 (defn GET
   "Put data on the channel. Put the error-data if there's an error (for testing)."
@@ -89,7 +92,7 @@
                                 (async/put! chan res))
              :response-format :transit
              ;; Transit handler to read big-int
-             :handlers {"n" cljs.reader/read-string}
+             :handlers        {"n" cljs.reader/read-string}
 
              :error-handler   #(async/put! chan error-data)}))
 
@@ -97,12 +100,15 @@
 (defn data-provider []
   (fn [c]
     (let [schema-chan (async/chan)
-          txs-chan    (async/chan)]
+          txs-chan (async/chan)
+          curr-chan (async/chan)]
       (go (let [schema (async/<! schema-chan)
-                txs    (async/<! txs-chan)]
-            (async/>! c {:data {:schema   schema
-                                :entities (:entities txs)}})))
+                txs (async/<! txs-chan)
+                currencies (async/<! curr-chan)]
+            (async/>! c {:schema   schema
+                         :entities (concat (:entities txs)
+                                           (:entities currencies))})))
       (let []
         (GET txs-chan "/user/txs" testdata)
-        (GET schema-chan "/schema" (:schema testdata))))))
-
+        (GET schema-chan "/schema" (:schema testdata))
+        (GET curr-chan "/user/curs" test-currencies)))))
