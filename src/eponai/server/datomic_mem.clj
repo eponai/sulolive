@@ -4,8 +4,7 @@
             [clojure.java.io :as io]
             [datomic.api :as d]
             [cemerick.friend.credentials :as creds]
-            [eponai.server.datomic.pull :as p]
-            [environ.core :refer [env]])
+            [eponai.server.datomic.pull :as p])
   (:import (java.util UUID)))
 
 (defn schema-file []

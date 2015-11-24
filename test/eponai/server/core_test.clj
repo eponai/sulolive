@@ -5,8 +5,7 @@
             [eponai.server.datomic.pull :as p]
             [eponai.server.datomic.transact :as t]
             [eponai.server.auth :as a]
-            [eponai.server.openexchangerates :as exch]
-            [environ.core :refer [env]])
+            [eponai.server.openexchangerates :as exch])
   (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
@@ -36,11 +35,6 @@
                                     :roles    #{::a/user}}},
                          :current 1}}
               :body test-data})
-
-(defn test-send-email [email uuid]
-  (println "Email sent to \"" email "\" with link " uuid))
-
-(def init (b/init test-convs test-send-email))
 
 (defn- new-db
   "Creates an empty database and returns the connection."
