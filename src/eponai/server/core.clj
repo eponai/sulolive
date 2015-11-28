@@ -104,7 +104,6 @@
                                                   (:username (friend/current-authentication request))
                                                   (:params request))))
            (POST "/txs" request (do
-                                  (prn {:body (:body request)})
                                   (post-user-data conn request)
                                   (h/txs-created request)))
            (GET "/test" {session :session} (h/response session))
