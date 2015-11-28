@@ -54,7 +54,7 @@
 
 (defn input->date [js-date]
   (let [date (doto (goog.date.DateTime.) (.setTime (.getTime js-date)))
-        ymd (t.format/unparse (t.format/formatter "yyyy-mm-dd") date)
+        ymd (t.format/unparse (t.format/formatter "yyyy-MM-dd") date)
         ret {:date/ymd   ymd
              :date/day   (t/day date)
              :date/month (t/month date)
@@ -90,12 +90,12 @@
                           (assoc :transaction/currency -2)
                           (assoc :transaction/tags (mapv :db/id tags)))
           entities (concat [date curr transaction] tags)]
-      (comment
-        "include this when om works"
-        :remote {:action ::create-transaction
-                        :params {:transaction transaction :tags tags :curr curr :date date}
-                        :state  state})
-      {:action (fn []
+      (comment {::action ::create-transaction
+                :params  {:transaction transaction :tags tags :curr curr :date date}
+                ::state  state})
+
+      {:remote true
+       :action (fn []
                  (prn {:entities entities})
                  (d/transact! state entities))})
     (catch :default e
@@ -109,12 +109,15 @@
     [this]
     (let [{:keys [query/all-currencies]} (om/props this)
           {:keys [::input-amount ::input-currency ::input-title
-                  ::input-date ::input-description ::input-tag
-                  ::input-tags] :as state}
+                  ::input-date ::input-description ::input-tags
+                  ::input-tag]}
           ;; merging state with props, so that we can test the states
           ;; with devcards
           (merge (om/props this)
-                 (om/get-state this))]
+                 (om/get-state this))
+          input-currency (if input-currency input-currency (-> all-currencies
+                                                               first
+                                                               :currency/code))]
       (html
         [:div
          [:h2 "New Transaction"]
@@ -125,8 +128,7 @@
                          :placeholder "enter amount"
                          :value       input-amount}))
           (apply select (on-change this ::input-currency)
-                 (when input-currency
-                   {:default-value input-currency})
+                 {:default-value input-currency}
                  (->> all-currencies
                       (map :currency/code)
                       (map #(let [v (name %)]
@@ -156,7 +158,14 @@
                                   (new-input-tag! this input-tag))})]
           (map tag/->Tag input-tags)]
          [:div "footer"
-          [:button {:on-click #(om/transact! this `[(transaction/create ~(om/get-state this))
+          [:button {:on-click #(om/transact! this `[(transaction/create ~(-> (om/get-state this)
+                                                                             (assoc ::input-currency input-currency)
+                                                                             (dissoc ::input-tag)
+                                                                             (update ::input-tags
+                                                                                     (fn [tags]
+                                                                                       (map (fn [t]
+                                                                                              (dissoc t ::tag/delete-fn))
+                                                                                            tags)))))
                                                     :query/all-dates])}
            "Save"]]]))))
 

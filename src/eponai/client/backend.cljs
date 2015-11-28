@@ -3,7 +3,7 @@
   (:require [ajax.core :as http]
             [cognitect.transit :as t]
             [cljs.core.async :as async]
-            [eponai.client.ui.add_transaction :as add_transaction]))
+            [eponai.client.ui.add_transaction :as add_t]))
 
 (def testdata
   {:schema
@@ -114,14 +114,30 @@
       (GET schema-chan "/schema" (:schema testdata))
       (GET curr-chan "/user/curs" test-currencies))))
 
-(defn act-test [& args] (apply prn "act test with args: " args))
-(defmulti act (fn [{:keys [action]} _] action))
-(defmethod act ::add_transaction/create-transaction [{:keys [state params]} callback]
-  (let [{:keys [transaction tags curs date]} params]
-    (prn "FOOOOOOOOOO WE DID IT!1")
-    (prn "FOOOOOOOOOO WE DID IT!2")
-    (prn "FOOOOOOOOOO WE DID IT!3")
-    (prn "FOOOOOOOOOO WE DID IT!4")
-    (prn "FOOOOOOOOOO WE DID IT!5")
-    (prn "FOOOOOOOOOO WE DID IT!6")
-    (prn "FOOOOOOOOOO WE DID IT!7")))
+(defn format-date [d] d)
+
+(defn act-test [data cb]
+  (doseq [tx (:remote data)]
+    (cond
+      (= 'transaction/create (first tx))
+      (let [{:keys [::add_t/input-title ::add_t/input-amount ::add_t/input-currency
+                    ::add_t/input-date ::add_t/input-tags ::add_t/input-description]
+             :as   params} (second tx)
+            tx-to-send {:transaction/name     input-title
+                        :transaction/currency input-currency
+                        :transaction/amount   input-amount
+                        :transaction/date     (:date/ymd (add_t/input->date input-date))
+                        :transaction/tags     (mapv :tag/name input-tags)
+
+                        ;; not handled on the backend?
+                        :transaction/details  input-description}]
+        (http/POST "/user/txs"
+                   {:body            [tx-to-send]
+                    :handler         #(prn "RESPONSE FROM POSTING TRANSACTION: " %)
+                    :response-format :transit
+                    ;; Transit handler to read big-int
+                    :handlers        {"n" cljs.reader/read-string}
+                    :error-handler   #(prn "ERROR WHEN POSTING TRANSACTION: " tx-to-send)})
+        (prn {:tx (first tx) :params (second tx)}))
+
+      :else (throw (str "unknown send action: " tx)))))
