@@ -82,7 +82,7 @@
                                   :db/id         17592186045418}
                                  {:currency/name "Swedish Crown",
                                   :currency/code "SEK",
-                                  :db/id         17592186045418}]})
+                                  :db/id         9432000111}]})
 
 (defn GET
   "Put data on the channel. Put the error-data if there's an error (for testing)."

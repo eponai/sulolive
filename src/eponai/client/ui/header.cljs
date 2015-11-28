@@ -8,8 +8,8 @@
             [garden.core :refer [css]]))
 
 (defmethod parser/read :query/header
-  [{:keys [state selector]} _ _]
-  {:value (parser/pull-all state selector '[[?e :ui/singleton :budget/header]])})
+  [{:keys [state query]} _ _]
+  {:value (parser/pull-all state query '[[?e :ui/singleton :budget/header]])})
 
 (defui Header
   static om/IQueryParams

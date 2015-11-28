@@ -145,8 +145,8 @@
                (sorted-map))))
 
 (defmethod parser/read :query/all-dates
-  [{:keys [state selector]} _ _]
-  {:value (parser/pull-all state selector '[[?e :date/ymd]])})
+  [{:keys [state query]} _ _]
+  {:value (parser/pull-all state query '[[?e :date/ymd]])})
 
 (defui AllTransactions
   static om/IQueryParams

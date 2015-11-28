@@ -2,7 +2,6 @@
   (:require [om.next :as om :refer-macros [defui]]
             [eponai.client.ui :refer [style]]
             [eponai.client.ui.datepicker :refer [->Datepicker]]
-            [eponai.client.ui.transactions :refer [AllTransactions]]
             [eponai.client.ui.tag :as tag]
             [cljs.reader :as reader]
             [sablono.core :as html :refer-macros [html]]
@@ -50,8 +49,8 @@
                       ::tag-id id)))))))
 
 (defmethod parser/read :query/all-currencies
-  [{:keys [state selector]} _ _]
-  {:value (parser/pull-all state selector '[[?e :currency/code]])})
+  [{:keys [state query]} _ _]
+  {:value (parser/pull-all state query '[[?e :currency/code]])})
 
 (defn input->date [js-date]
   (let [date (doto (goog.date.DateTime.) (.setTime (.getTime js-date)))
@@ -158,7 +157,7 @@
           (map tag/->Tag input-tags)]
          [:div "footer"
           [:button {:on-click #(om/transact! this `[(transaction/create ~(om/get-state this))
-                                                    ~(om/get-query AllTransactions)])}
+                                                    :query/all-dates])}
            "Save"]]]))))
 
 (def ->AddTransaction (om/factory AddTransaction))

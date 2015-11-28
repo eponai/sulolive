@@ -5,8 +5,8 @@
 (defmulti read om/dispatch)
 (defmulti mutate om/dispatch)
 
-(defn debug-read [{:keys [selector] :as env} k params]
-  (prn "Reading: " {:key k :params params :selector selector})
+(defn debug-read [{:keys [query] :as env} k params]
+  (prn "Reading: " {:key k :params params :query query})
   (read env k params))
 
 (defmethod read :default
@@ -16,19 +16,19 @@
 ;; Proxies a component's query
 ;; TODO: Create more proxies if a component wants to proxy more than one? Or figure out how to proxy many.
 (defmethod read :proxy
-  [{:keys [parser selector] :as env} _ _]
-  {:value (parser (dissoc env :selector) selector)})
+  [{:keys [parser query] :as env} _ _]
+  {:value (parser (dissoc env :query) query)})
 
 (defn pull-all
-  "takes the database, a pull selector and where-clauses, where the where-clauses
+  "takes the database, a pull query and where-clauses, where the where-clauses
   return some entity ?e."
-  [state selector where-clauses]
-  (d/q (vec (concat '[:find [(pull ?e ?selector) ...]
-                         :in $ ?selector
+  [state query where-clauses]
+  (d/q (vec (concat '[:find [(pull ?e ?query) ...]
+                         :in $ ?query
                          :where]
                        where-clauses))
           (d/db state)
-          selector))
+       query))
 
 (defmethod mutate 'datascript/transact
   [{:keys [state]} _ {:keys [txs]}]

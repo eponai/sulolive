@@ -16,19 +16,19 @@
     x
     [x]))
 
-(defn read [{:keys [parser state selector entity] :as env} attr params]
+(defn read [{:keys [parser state query entity] :as env} attr params]
   (let [ret (cond 
               (keyword? attr) 
-              (if (nil? selector)
+              (if (nil? query)
                 (-> (d/entity (d/db state) entity)
                     (get attr))
                 (let [entities (-> (d/pull (d/db state) [attr] entity)
                                    (get attr)
                                    make-seq
                                    (->> (map :db/id)))
-                      query  (if (vector? selector)
-                               selector
-                               (:each selector))
+                      query  (if (vector? query)
+                               query
+                               (:each query))
                       result (map #(parser (assoc env :entity % :selector nil) query)
                                  entities)
                       schema (d.db/-schema (d/db state))]
@@ -40,9 +40,9 @@
 
               (symbol? attr)
               (let [entry (:db/id (d/entity (d/db state) (:id params)))
-                    res   (-> (query state (:q selector) attr entry)
+                    res   (-> (query state (:q query) attr entry)
                               (make-seq))]
-                (map #(parser (assoc env :entity % :selector nil) (:each selector)) 
+                (map #(parser (assoc env :entity % :selector nil) (:each query))
                      res)))]
     {:value ret}))
 

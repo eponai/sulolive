@@ -15,8 +15,8 @@
             [eponai.client.ui.transactions :refer [AllTransactions ->AllTransactions]]))
 
 (defn just-read
-  [{:keys [parser selector] :as env} _ _]
-  (let [v (parser env selector nil)]
+  [{:keys [parser query] :as env} _ _]
+  (let [v (parser env query nil)]
     {:value v}))
 
 (defmethod parser/read :just/add-transaction [e k p] (just-read e k p))

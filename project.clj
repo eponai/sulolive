@@ -15,7 +15,7 @@
                  [com.cognitect/transit-cljs "0.8.225"]
                  [sablono "0.4.0"]
 		 [hiccup "1.0.5"]
-                 [org.omcljs/om "1.0.0-alpha14"]
+                 [org.omcljs/om "1.0.0-alpha23"]
                  [devcards "0.2.0-8"]
                  [cljs-ajax "0.5.0"]
                  [datascript "0.13.3"]
