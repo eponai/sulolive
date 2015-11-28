@@ -18,6 +18,7 @@
            :transaction/name
            :transaction/amount
            :transaction/details
+           :transaction/status
            {:transaction/currency [:currency/name]}
            {:transaction/tags ?tag}
 
@@ -33,6 +34,7 @@
                                    transaction/amount
                                    transaction/currency
                                    transaction/details
+                                   transaction/status
                                    ui.transaction/show-tags]} (om/props this)]
             (html
               [:div
@@ -51,7 +53,15 @@
                               :justify-content "flex-start"
                               })
                  [:div (str amount " " (:currency/name currency))]
-                 [:div (style {:margin-left "0.5em"}) transaction-name]]
+                 [:div (style {:margin-left "0.5em"
+                               :font-weight "bold"
+                               :color       (if status
+                                              (condp = status
+                                               :transaction.status/synced "green"
+                                               :transaction.status/pending "orange"
+                                               :transaction.status/failed "red")
+                                              "blue")})
+                  transaction-name]]
                 (when details
                   [:div (style {:margin    "0em 1.0em"
                                 :padding   "0.3em"

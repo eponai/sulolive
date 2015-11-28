@@ -54,10 +54,13 @@
                                :ui/singleton {:db/unique :db.unique/identity}))
           conn (d/create-conn ds-schema)
           parser (om/parser {:read parser/debug-read :mutate parser/mutate})
-          reconciler (om/reconciler {:state conn :parser parser :remotes [:remote] :send backend/act-test})]
-      (d/transact conn [{:app :state :app/year 2015 :app/month 10}])
-      (d/transact conn [{:ui/singleton :budget/header}])
-      (d/transact conn (budget.d/db-id->temp-id ref-types entities))
+          reconciler (om/reconciler {:state conn :parser parser :remotes [:remote]
+                                     :send  (backend/send conn)
+                                     :merge (fn [reconciler state f]
+                                              (f reconciler state))})]
+      (d/transact! conn [{:app :state :app/year 2015 :app/month 10}])
+      (d/transact! conn [{:ui/singleton :budget/header}])
+      (d/transact! conn (budget.d/db-id->temp-id ref-types entities))
       (om/add-root! reconciler App (gdom/getElement "my-app")))))
 
 (defn run

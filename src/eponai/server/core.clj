@@ -42,7 +42,20 @@
   for the date of the transactions, they will be fetched from OER."
   [conn request]
   (let [budget (p/budget (d/db conn) (:username (friend/current-authentication request)))
-        user-data (map #(assoc % :transaction/budget (:budget/uuid budget)) (:body request))]
+        ;; HACK: Should be removed once we have transit requests or by fixing namespaced keywords with JSON requests.
+        ;; This is currently needed because JSON seems to trunkate namespaced keywords to only their names.
+        ;; i.e. :transaction/name -> :name (when sent from client to server in JSON).
+        ;; FYI: I'm not 100% sure JSON is the problem, I just suspect it.
+        body (map (fn [m]
+                    (reduce (fn [m [k v]]
+                              (if (namespace k)
+                                (assoc m k v)
+                                (assoc m (keyword (str "transaction/" (name k))) v)))
+                            {}
+                            m))
+                  (:body request))
+        user-data (map #(assoc % :transaction/budget (:budget/uuid budget))
+                       body)]
     (go (>! currency-chan (map :transaction/date user-data)))
     (t/user-txs conn user-data)))
 
@@ -90,8 +103,10 @@
                                                   (d/db conn)
                                                   (:username (friend/current-authentication request))
                                                   (:params request))))
-           (POST "/txs" request (post-user-data conn request)
-                                (h/txs-created request))
+           (POST "/txs" request (do
+                                  (prn {:body (:body request)})
+                                  (post-user-data conn request)
+                                  (h/txs-created request)))
            (GET "/test" {session :session} (h/response session))
            (GET "/curs" [] (h/response (fetch p/currencies
                                               (d/db conn))))

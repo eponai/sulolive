@@ -69,31 +69,33 @@
 (defn input->tags [tags]
   (map #(select-keys % [:tag/name]) tags))
 
-(defn input->transaction [amount title description]
+(defn input->transaction [amount title description uuid created-at]
   {:transaction/amount     (reader/read-string amount)
    :transaction/name       title
    :transaction/details    description
-   :transaction/uuid       (d/squuid)
-   :transaction/created-at (.getTime (js/Date.))})
+   :transaction/uuid       uuid
+   :transaction/created-at created-at})
 
 (defmethod parser/mutate 'transaction/create
   [{:keys [state]} _ {:keys [::input-amount ::input-currency ::input-title
-                             ::input-date ::input-description ::input-tags]}]
+                             ::input-date ::input-description ::input-tags
+                             ::input-uuid ::input-created-at]}]
   (try
     (let [date (assoc (input->date input-date) :db/id -1)
           curr (assoc (input->currency input-currency) :db/id -2)
           tags (map #(assoc %2 :db/id %1)
                     (range (- (- (count input-tags)) 2) -2)
                     (input->tags input-tags))
-          transaction (-> (input->transaction input-amount input-title input-description)
+          transaction (-> (input->transaction input-amount
+                                              input-title
+                                              input-description
+                                              input-uuid
+                                              input-created-at)
                           (assoc :transaction/date -1)
+                          (assoc :transaction/status :transaction.status/pending)
                           (assoc :transaction/currency -2)
                           (assoc :transaction/tags (mapv :db/id tags)))
           entities (concat [date curr transaction] tags)]
-      (comment {::action ::create-transaction
-                :params  {:transaction transaction :tags tags :curr curr :date date}
-                ::state  state})
-
       {:remote true
        :action (fn []
                  (prn {:entities entities})
@@ -159,6 +161,8 @@
           (map tag/->Tag input-tags)]
          [:div "footer"
           [:button {:on-click #(om/transact! this `[(transaction/create ~(-> (om/get-state this)
+                                                                             (assoc ::input-uuid (d/squuid))
+                                                                             (assoc ::input-created-at (.getTime (js/Date.)))
                                                                              (assoc ::input-currency input-currency)
                                                                              (dissoc ::input-tag)
                                                                              (update ::input-tags

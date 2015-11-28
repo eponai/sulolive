@@ -3,7 +3,8 @@
   (:require [ajax.core :as http]
             [cognitect.transit :as t]
             [cljs.core.async :as async]
-            [eponai.client.ui.add_transaction :as add_t]))
+            [eponai.client.ui.add_transaction :as add_t]
+            [datascript.core :as d]))
 
 (def testdata
   {:schema
@@ -110,34 +111,63 @@
                          :entities (concat (:entities txs)
                                            (:entities currencies))})))
       ;; Do the actions
-      (GET txs-chan "/user/txs" testdata)
+      (GET txs-chan "/user/txs" (update testdata :entities
+                                        (fn [entities] (map #(assoc %1 :transaction/status %2)
+                                                     entities
+                                                     (cycle [:transaction.status/synced
+                                                             :transaction.status/pending
+                                                             :transaction.status/failed])))))
       (GET schema-chan "/schema" (:schema testdata))
       (GET curr-chan "/user/curs" test-currencies))))
 
-(defn format-date [d] d)
+(defn send
+  "Send transaction data to the server"
+  [conn]
+  (fn [data cb]
+    (prn {:cb cb})
+    (doseq [tx (:remote data)]
+      (cond
+        (= 'transaction/create (first tx))
+        (let [{:keys [::add_t/input-title ::add_t/input-amount ::add_t/input-currency
+                      ::add_t/input-date ::add_t/input-tags ::add_t/input-description
+                      ::add_t/input-uuid ::add_t/input-created-at]
+               :as   params} (second tx)
+              tx-to-send {:transaction/name       input-title
+                          :transaction/currency   input-currency
+                          :transaction/amount     (cljs.reader/read-string input-amount)
+                          :transaction/date       (:date/ymd (add_t/input->date input-date))
+                          :transaction/tags       (mapv :tag/name input-tags)
+                          :transaction/uuid       (str input-uuid)
+                          :transaction/created-at input-created-at
 
-(defn act-test [data cb]
-  (doseq [tx (:remote data)]
-    (cond
-      (= 'transaction/create (first tx))
-      (let [{:keys [::add_t/input-title ::add_t/input-amount ::add_t/input-currency
-                    ::add_t/input-date ::add_t/input-tags ::add_t/input-description]
-             :as   params} (second tx)
-            tx-to-send {:transaction/name     input-title
-                        :transaction/currency input-currency
-                        :transaction/amount   input-amount
-                        :transaction/date     (:date/ymd (add_t/input->date input-date))
-                        :transaction/tags     (mapv :tag/name input-tags)
+                          ;; not handled on the backend?
+                          :transaction/details    input-description}]
+          (http/POST "/user/txs"
+                     {:params        [tx-to-send]
+                      :handler       #(let [res %]
+                                       (prn "RESPONSE FROM POSTING TRANSACTION: " res)
+                                       (cb (fn [& _]
+                                             {:keys [:query/all-dates]
+                                              :next (:db-after
+                                                      @(d/transact
+                                                         conn
+                                                         (map (fn [tx]
+                                                                (when-not (:uuid tx)
+                                                                  (throw "No :uuid in tx: " tx
+                                                                         " We've changed something."))
+                                                                {:transaction/uuid   (-> (:uuid tx) str uuid)
+                                                                 :transaction/status :transaction.status/synced})
+                                                              res)))})))
+                      :format        (http/json-request-format)
+                      :error-handler #(do
+                                       (prn "ERROR WHEN POSTING TRANSACTION: " tx-to-send)
+                                       (cb (fn [& _]
+                                             {:keys [:query/all-dates]
+                                              :next (:db-after
+                                                      @(d/transact
+                                                         conn
+                                                         [{:transaction/uuid   (-> (:transaction/uuid tx-to-send) str uuid)
+                                                           :transaction/status :transaction.status/failed}]))})))})
+          (prn {:tx (first tx) :params (second tx)}))
 
-                        ;; not handled on the backend?
-                        :transaction/details  input-description}]
-        (http/POST "/user/txs"
-                   {:body            [tx-to-send]
-                    :handler         #(prn "RESPONSE FROM POSTING TRANSACTION: " %)
-                    :response-format :transit
-                    ;; Transit handler to read big-int
-                    :handlers        {"n" cljs.reader/read-string}
-                    :error-handler   #(prn "ERROR WHEN POSTING TRANSACTION: " tx-to-send)})
-        (prn {:tx (first tx) :params (second tx)}))
-
-      :else (throw (str "unknown send action: " tx)))))
+        :else (throw (str "unknown send action: " tx))))))
