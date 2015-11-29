@@ -158,7 +158,8 @@
 
 (defn init
   ([]
-   (init exch/currency-rates (partial a/send-email-verification (a/smtp))))
+   (init (partial exch/currency-rates nil)
+         (partial a/send-email-verification (a/smtp))))
   ([cur-fn email-fn]
    (println "Initializing server...")
    (connect #'conn)
