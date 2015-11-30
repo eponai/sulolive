@@ -45,7 +45,6 @@
             [lein-ring "0.9.7"]
             [lein-environ "1.0.1"]]
   :min-lein-version "2.0.0"
-  :hooks [leiningen.cljsbuild] 
 
   ;;;;;;;;;;;;;
   ;; clj:
