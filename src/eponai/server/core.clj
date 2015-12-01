@@ -12,9 +12,7 @@
             [clojure.core.async :refer [>! <! go chan]]
             [clojure.edn :as edn]
             [ring.adapter.jetty :as jetty]
-            [eponai.server.datomic_dev :refer [connect]]))
-
-(def ^:dynamic conn nil)
+            [eponai.server.datomic_dev :refer [connect!]]))
 
 (def currency-chan (chan))
 (def email-chan (chan))
@@ -70,18 +68,18 @@
     (let [tx (t/new-user conn (a/new-signup request))]
       (go (>! email-chan [(:db-after tx) (params :username)]))
       tx)
-    (throw (ex-info "User already exists." {:cause ::a/authentication-error
-                                            :status ::h/unathorized
-                                            :data {:username (params :username)}
+    (throw (ex-info "User already exists." {:cause   ::a/authentication-error
+                                            :status  ::h/unathorized
+                                            :data    {:username (params :username)}
                                             :message "User already exists."}))))
 
-(defn verify [uuid]
+(defn verify [conn uuid]
   (let [verification (p/verification (d/db conn) uuid)]
     (if (= (:db/id (verification :verification/status)) (d/entid (d/db conn) :verification.status/pending))
       (t/add conn (:db/id verification) :verification/status :verification.status/verified)
-      (throw (ex-info "Trying to activate invalid verification." {:cause ::a/verification-error
-                                                                  :status ::h/unathorized
-                                                                  :data {:uuid uuid}
+      (throw (ex-info "Trying to activate invalid verification." {:cause   ::a/verification-error
+                                                                  :status  ::h/unathorized
+                                                                  :data    {:uuid uuid}
                                                                   :message "The verification link is no longer valid."})))))
 
 ; Auth stuff
@@ -100,28 +98,30 @@
 ; App stuff
 (defroutes user-routes
            (GET "/txs" request (h/response (fetch p/all-data
-                                                  (d/db conn)
+                                                  (d/db (::conn request))
                                                   (:username (friend/current-authentication request))
                                                   (:params request))))
            (POST "/txs" request (do
-                                  (post-user-data conn request)
+                                  (post-user-data (::conn request) request)
                                   (h/txs-created request)))
            (GET "/test" {session :session} (h/response session))
-           (GET "/curs" [] (h/response (fetch p/currencies
-                                              (d/db conn))))
-           (GET "/info" request (h/response (p/user (d/db conn)
+           (GET "/curs" request (h/response (fetch p/currencies
+                                                   (d/db (::conn request)))))
+           (GET "/info" request (h/response (p/user (d/db (::conn request))
                                                     (:username (friend/current-authentication request))))))
 
 (defroutes app-routes
 
-           (POST "/signup" request (signup conn request)
-                                   (h/user-created request))
-           (GET "/schema" [] (let [db (d/db conn)]
-                               (h/response (p/inline-value db
-                                                           (p/schema db)
-                                                           [[:db/valueType :db/ident]
-                                                            [:db/unique :db/ident]
-                                                            [:db/cardinality :db/ident]]))))
+           (POST "/signup" request (do
+                                     (signup (::conn request) request)
+                                     (h/user-created request)))
+           (GET "/schema" request
+             (let [db (d/db (::conn request))]
+               (h/response (p/inline-value db
+                                           (p/schema db)
+                                           [[:db/valueType :db/ident]
+                                            [:db/unique :db/ident]
+                                            [:db/cardinality :db/ident]]))))
            (GET "/session" {session :session} (h/response (str session)))
            ; Anonymous
            (GET "/login" request (if (friend/identity request)
@@ -140,21 +140,29 @@
 
            ; Requires user login
            (context "/user" [] (friend/wrap-authorize user-routes #{::a/user}))
-           (GET "/verify/:uuid" [uuid] (verify uuid)
-                                       (h/response {:message "Your email is verified, you can now login."}))
+           (GET "/verify/:uuid" [uuid :as request]
+             (do
+               (verify (::conn request) uuid)
+               (h/response {:message "Your email is verified, you can now login."})))
 
-           (friend/logout (ANY "/logout" request (ring.util.response/redirect "/")))
+           (friend/logout (ANY "/logout" [] (ring.util.response/redirect "/")))
            ; Not found
            (route/not-found "Not Found"))
 
+(defn wrap-db [handler conn]
+  (fn [request]
+    (handler (assoc request ::conn conn))))
+
 (def app
-  (-> app-routes
-      (friend/authenticate {:credential-fn (partial a/cred-fn #(user-creds (d/db conn) %))
-                            :workflows     [(a/form)]})
-      h/wrap-error
-      h/wrap-transit
-      h/wrap-json
-      h/wrap-defaults))
+  (let [conn (connect!)]
+    (-> app-routes
+        (friend/authenticate {:credential-fn (partial a/cred-fn #(user-creds (d/db conn) %))
+                              :workflows     [(a/form)]})
+        h/wrap-error
+        h/wrap-transit
+        h/wrap-json
+        h/wrap-defaults
+        (wrap-db conn))))
 
 (defn init
   ([]
@@ -162,11 +170,11 @@
          (partial a/send-email-verification (a/smtp))))
   ([cur-fn email-fn]
    (println "Initializing server...")
-   (connect #'conn)
-   (go (while true (try
-                     (post-currency-rates conn cur-fn (<! currency-chan))
-                     (catch Exception e
-                       (println (.getMessage e))))))
+   (let [conn (connect!)]
+     (go (while true (try
+                       (post-currency-rates conn cur-fn (<! currency-chan))
+                       (catch Exception e
+                         (println (.getMessage e)))))))
    (go (while true (try
                      (send-email-verification email-fn (<! email-chan))
                      (catch Exception e

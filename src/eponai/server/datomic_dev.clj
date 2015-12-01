@@ -20,13 +20,13 @@
           (catch Exception e
             (prn "Exception " e " when trying to set up inmemory db")))))))
 
-(defn connect [conn]
-  (alter-var-root conn
-                  (fn [_]
-                    (prn "Will try to set the database connection...")
-                    ;; Just set the connection once. Using an atom that's only defined once because,
-                    ;; there's a ring middleware which (seems to) redefine all vars, unless using defonce.
-                    (if-let [c @connection]
-                      (do (prn "Already had a connection. Returning the old one: " c)
-                          c)
-                      (swap! connection create-connection)))))
+(defn connect!
+  "Returns a connection. Caches the connection when it has successfully connected."
+  []
+  (prn "Will try to set the database connection...")
+  ;; Just set the connection once. Using an atom that's only defined once because,
+  ;; there's a ring middleware which (seems to) redefine all vars, unless using defonce.
+  (if-let [c @connection]
+    (do (prn "Already had a connection. Returning the old one: " c)
+        c)
+    (swap! connection create-connection)))
