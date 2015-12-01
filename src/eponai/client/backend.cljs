@@ -85,20 +85,36 @@
                                   :currency/code "SEK",
                                   :db/id         9432000111}]})
 
-(defn GET
+(defn http-request!
+  ([method endpoint] (http-request! method endpoint {}))
+  ([method endpoint opts]
+   (let [default-opts {:handler         (fn [res]
+                                          (prn {:endpoint       endpoint
+                                                :success?       true
+                                                :30-first-bytes (apply str (take 30 (str res)))})
+                                          (if-let [on-success (:on-success opts)]
+                                            (on-success res)
+                                            (prn "WARN: No on-success handler for endpoint: " endpoint)))
+                       :error-handler   (fn [{:keys [status response] :as res}]
+                                          (prn {:endpoint endpoint
+                                                :success? false
+                                                :status   status
+                                                :body     response})
+                                          (if-let [on-error (:on-error opts)]
+                                            (on-error res)
+                                            (prn "WARN: No on-error handler for endpoint: " endpoint)))
+                       :response-format :transit
+                       ;; Transit handler to read big-int
+                       :handlers        {"n" cljs.reader/read-string}}]
+     (method endpoint (merge default-opts )))))
+
+(defn !>GET
   "Put data on the channel. Put the error-data if there's an error (for testing)."
   [chan endpoint error-data]
-  (http/GET endpoint
-            {:handler         #(let [res %]
-                                (prn {:endpoint endpoint :type (type res) :response res})
-                                (async/put! chan res))
-             :response-format :transit
-             ;; Transit handler to read big-int
-             :handlers        {"n" cljs.reader/read-string}
-
-             :error-handler   #(do
-                                (prn "ERROR from endpoint: " endpoint)
-                                (async/put! chan error-data))}))
+  (http-request! http/GET
+                 endpoint
+                 {:on-success    (fn [res] (async/put! chan res))
+                  :error-handler (fn [& args] (async/put! chan error-data))}))
 
 ;; TODO: implement for reals
 (defn data-provider []
@@ -113,14 +129,56 @@
                          :entities (concat (:entities txs)
                                            (:entities currencies))})))
       ;; Do the actions
-      (GET txs-chan "/user/txs" (update testdata :entities
-                                        (fn [entities] (map #(assoc %1 :transaction/status %2)
-                                                     entities
-                                                     (cycle [:transaction.status/synced
-                                                             :transaction.status/pending
-                                                             :transaction.status/failed])))))
-      (GET schema-chan "/schema" (:schema testdata))
-      (GET curr-chan "/user/curs" test-currencies))))
+      (!>GET schema-chan "/schema" (:schema testdata))
+      (!>GET curr-chan "/user/curs" test-currencies)
+      (!>GET txs-chan "/user/txs"
+             (update testdata :entities
+                     (fn [entities] (map #(assoc %1 :transaction/status %2)
+                                         entities
+                                         (cycle [:transaction.status/synced
+                                                 :transaction.status/pending
+                                                 :transaction.status/failed]))))))))
+
+(defn create-transaction [conn cb {:keys [::add_t/input-title ::add_t/input-amount ::add_t/input-currency
+                                          ::add_t/input-date ::add_t/input-tags ::add_t/input-description
+                                          ::add_t/input-uuid ::add_t/input-created-at]}]
+  (let [tx-to-send {:transaction/name       input-title
+                    :transaction/currency   input-currency
+                    :transaction/amount     (cljs.reader/read-string input-amount)
+                    :transaction/date       (:date/ymd (add_t/input->date input-date))
+                    :transaction/tags       (mapv :tag/name input-tags)
+                    :transaction/uuid       (str input-uuid)
+                    :transaction/created-at input-created-at
+
+                    ;; not handled on the backend?
+                    :transaction/details    input-description}]
+    (http-request! http/POST "/user/txs"
+                   {:params     [tx-to-send]
+                    :format     (http/json-request-format)
+                    :on-success (fn [res]
+                                  (let [changes (->> res
+                                                     (map (fn [tx]
+                                                            (when-not (:uuid tx)
+                                                              (throw "No :uuid in tx: " tx
+                                                                     " We've changed something."))
+                                                            {:transaction/uuid   (-> (:uuid tx) str uuid)
+                                                             :transaction/status :transaction.status/synced})))]
+                                    ;; use callback to merge changes into app-state
+                                    (cb (fn [& _]
+                                          ;; return keys to be re-read by om.next
+                                          {:keys [:query/all-dates]
+                                           ;; return the value of the next app-state.
+                                           :next (:db-after @(d/transact conn changes))}))))
+                    :on-error   (fn [_]
+                                  ;; as far as we know, we've failed to sync the transaction.
+                                  ;; set the transaction/status to failed.
+                                  (cb (fn [& _]
+                                        {:keys [:query/all-dates]
+                                         :next (:db-after
+                                                 @(d/transact
+                                                    conn
+                                                    [{:transaction/uuid   (-> (:transaction/uuid tx-to-send) str uuid)
+                                                      :transaction/status :transaction.status/failed}]))})))})))
 
 (defn send
   "Send transaction data to the server"
@@ -129,47 +187,5 @@
     (prn {:cb cb})
     (doseq [tx (:remote data)]
       (cond
-        (= 'transaction/create (first tx))
-        (let [{:keys [::add_t/input-title ::add_t/input-amount ::add_t/input-currency
-                      ::add_t/input-date ::add_t/input-tags ::add_t/input-description
-                      ::add_t/input-uuid ::add_t/input-created-at]
-               :as   params} (second tx)
-              tx-to-send {:transaction/name       input-title
-                          :transaction/currency   input-currency
-                          :transaction/amount     (cljs.reader/read-string input-amount)
-                          :transaction/date       (:date/ymd (add_t/input->date input-date))
-                          :transaction/tags       (mapv :tag/name input-tags)
-                          :transaction/uuid       (str input-uuid)
-                          :transaction/created-at input-created-at
-
-                          ;; not handled on the backend?
-                          :transaction/details    input-description}]
-          (http/POST "/user/txs"
-                     {:params        [tx-to-send]
-                      :handler       #(let [res %]
-                                       (prn "RESPONSE FROM POSTING TRANSACTION: " res)
-                                       (cb (fn [& _]
-                                             {:keys [:query/all-dates]
-                                              :next (:db-after
-                                                      @(d/transact
-                                                         conn
-                                                         (map (fn [tx]
-                                                                (when-not (:uuid tx)
-                                                                  (throw "No :uuid in tx: " tx
-                                                                         " We've changed something."))
-                                                                {:transaction/uuid   (-> (:uuid tx) str uuid)
-                                                                 :transaction/status :transaction.status/synced})
-                                                              res)))})))
-                      :format        (http/json-request-format)
-                      :error-handler #(do
-                                       (prn "ERROR WHEN POSTING TRANSACTION: " tx-to-send)
-                                       (cb (fn [& _]
-                                             {:keys [:query/all-dates]
-                                              :next (:db-after
-                                                      @(d/transact
-                                                         conn
-                                                         [{:transaction/uuid   (-> (:transaction/uuid tx-to-send) str uuid)
-                                                           :transaction/status :transaction.status/failed}]))})))})
-          (prn {:tx (first tx) :params (second tx)}))
-
+        (= 'transaction/create (first tx)) (create-transaction conn cb (second tx))
         :else (throw (str "unknown send action: " tx))))))

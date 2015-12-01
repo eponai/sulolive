@@ -34,7 +34,7 @@
   "Validate the user transactions to be posted. Verifies that the required attributes
   are included en every transaction, and throws an ExceptionInfo if validation fails."
   [user-txs]
-  (validate "" every? #(valid-user-tx? %) user-txs))
+  (validate "all user-txs" every? #(valid-user-tx? %) user-txs))
 
 (defn valid-signup?
   "Validate the signup parameters. Checks that username and password are not empty,
