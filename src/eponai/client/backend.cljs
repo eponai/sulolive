@@ -96,7 +96,9 @@
              ;; Transit handler to read big-int
              :handlers        {"n" cljs.reader/read-string}
 
-             :error-handler   #(async/put! chan error-data)}))
+             :error-handler   #(do
+                                (prn "ERROR from endpoint: " endpoint)
+                                (async/put! chan error-data))}))
 
 ;; TODO: implement for reals
 (defn data-provider []

@@ -33,7 +33,7 @@
   [user-fn params]
   (when-let [auth-map (creds/bcrypt-credential-fn user-fn params)]
     (if (seq (:verifications auth-map))
-      auth-map
+      (dissoc auth-map :verifications)
       (throw (ex-info "Email verification pending." {:cause   ::verification-error
                                                      :status  ::h/unathorized
                                                      :data    {:email (:user/email (params :username))}

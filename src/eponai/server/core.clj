@@ -162,7 +162,8 @@
         h/wrap-transit
         h/wrap-json
         h/wrap-defaults
-        (wrap-db conn))))
+        (wrap-db conn)
+        h/wrap-log)))
 
 (defn init
   ([]

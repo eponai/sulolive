@@ -55,6 +55,13 @@
                          {:opts {:handlers {EntityMap datomic-transit}}
                           :encoding :json}))
 
+(defn wrap-log [handler]
+  (fn [request]
+    (println "Request: " request)
+    (let [response (handler request)]
+      (println "Response: " response)
+      response)))
+
 (defn wrap-json [handler]
   (wrap-json-body handler {:keywords? true}))
 
