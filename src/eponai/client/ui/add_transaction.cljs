@@ -111,8 +111,7 @@
     [this]
     (let [{:keys [query/all-currencies]} (om/props this)
           {:keys [::input-amount ::input-currency ::input-title
-                  ::input-date ::input-description ::input-tags
-                  ::input-tag]}
+                  ::input-description ::input-tags ::input-tag]}
           ;; merging state with props, so that we can test the states
           ;; with devcards
           (merge (om/props this)
@@ -136,7 +135,7 @@
                       (map #(let [v (name %)]
                              (vector :option {:value v} v)))))]
          [:div [:span "Date:"]
-          (->Datepicker {:value       input-date
+          (->Datepicker {:value       (js/Date.)
                          :placeholder "enter date"
                          :on-change   #(om/update-state! this assoc ::input-date %)})]
          [:div [:span "Title:"]
