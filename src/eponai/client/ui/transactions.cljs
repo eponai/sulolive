@@ -21,11 +21,7 @@
            :transaction/status
            {:transaction/currency [:currency/name]}
            {:transaction/tags ?tag}
-
-           :ui.transaction/expanded
-           :ui.transaction/edit-mode
-           :ui.transaction/show-tags
-           :ui.transaction/expanded])
+           ::transaction-show-tags?])
   Object
   (render [this]
           (let [{;; rename to avoid replacing clojure.core/name
@@ -35,7 +31,7 @@
                                    transaction/currency
                                    transaction/details
                                    transaction/status
-                                   ui.transaction/show-tags]} (om/props this)]
+                                   ::transaction-show-tags?]} (om/props this)]
             (html
               [:div
                [:style (css [:#ui-transaction {:background-color #"fff"}
@@ -67,7 +63,7 @@
                                 :padding   "0.3em"
                                 :fontStyle "italic"})
                    details])
-                (when show-tags
+                (when transaction-show-tags?
                   [:div
                    (map tag/->Tag tags)])]]))))
 
@@ -107,14 +103,14 @@
            :date/month
            :date/day
            {:transaction/_date ?transactions}
-           :ui.day/expanded])
+           ::day-expanded?])
   Object
   (render [this]
           (let [{transactions :transaction/_date
-                 :keys        [ui.day/expanded] :as props} (om/props this)
-                expanded (if (nil? expanded)
-                           (:ui.day/expanded (om/get-computed this))
-                           expanded)]
+                 :keys        [::day-expanded?] :as props} (om/props this)
+                expanded (if (nil? day-expanded?)
+                           (::day-expanded? (om/get-computed this))
+                           day-expanded?)]
             (html [:div
                    (style {:borderWidth "0px 0px 1px"
                            :borderStyle "solid"})
@@ -128,8 +124,8 @@
                                      :justify-content "flex-start"})
                              (assoc :id "ui-day"
                                     :on-click #(parser/cas! this (:db/id props)
-                                                            :ui.day/expanded
-                                                            (:ui.day/expanded props)
+                                                            ::day-expanded?
+                                                            (::day-expanded? props)
                                                             (not expanded))))
                     [:div (style {:fontSize   "1.3em"
                                   :fontWeight "bold"})
