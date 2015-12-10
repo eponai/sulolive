@@ -167,4 +167,19 @@
 
 (defn -main [& args]
   (init)
-  (jetty/run-jetty app {:port (or (Long/parseLong (first args)) 3000)}))
+  (let [default-port 3000
+        port (try
+               (Long/parseLong (first args))
+               (catch Exception e
+                 default-port))]
+    ;; by passing (var app) to run-jetty, it'll be forced to
+    ;; evaluate app as code changes.
+    (jetty/run-jetty (var app) {:port port})))
+
+(defn main-debug
+  "For repl-debug use.
+  Returns a future with the jetty-server.
+  The jetty-server will block the current thread, so
+  we just wrap it in something dereffable."
+  []
+  (future (-main)))
