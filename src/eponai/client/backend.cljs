@@ -106,7 +106,7 @@
                        :response-format :transit
                        ;; Transit handler to read big-int
                        :handlers        {"n" cljs.reader/read-string}}]
-     (method endpoint (merge default-opts )))))
+     (method endpoint (merge default-opts opts)))))
 
 (defn !>GET
   "Put data on the channel. Put the error-data if there's an error (for testing)."
@@ -154,14 +154,14 @@
                     :transaction/details    input-description}]
     (http-request! http/POST "/user/txs"
                    {:params     [tx-to-send]
-                    :format     (http/json-request-format)
+                    :format     (http/transit-request-format)
                     :on-success (fn [res]
                                   (let [changes (->> res
                                                      (map (fn [tx]
-                                                            (when-not (:uuid tx)
+                                                            (when-not (:transaction/uuid tx)
                                                               (throw "No :uuid in tx: " tx
                                                                      " We've changed something."))
-                                                            {:transaction/uuid   (-> (:uuid tx) str uuid)
+                                                            {:transaction/uuid   (-> (:transaction/uuid tx) str uuid)
                                                              :transaction/status :transaction.status/synced})))]
                                     ;; use callback to merge changes into app-state
                                     (cb (fn [& _]

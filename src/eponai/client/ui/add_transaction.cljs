@@ -107,10 +107,11 @@
   static om/IQuery
   (query [this] [{:query/all-currencies [:currency/code]}])
   Object
-  (render
+       (initLocalState [this] {::input-date (js/Date.)})
+       (render
     [this]
     (let [{:keys [query/all-currencies]} (om/props this)
-          {:keys [::input-amount ::input-currency ::input-title
+          {:keys [::input-amount ::input-currency ::input-title ::input-date
                   ::input-description ::input-tags ::input-tag]}
           ;; merging state with props, so that we can test the states
           ;; with devcards
@@ -135,7 +136,7 @@
                       (map #(let [v (name %)]
                              (vector :option {:value v} v)))))]
          [:div [:span "Date:"]
-          (->Datepicker {:value       (js/Date.)
+          (->Datepicker {:value       input-date
                          :placeholder "enter date"
                          :on-change   #(om/update-state! this assoc ::input-date %)})]
          [:div [:span "Title:"]

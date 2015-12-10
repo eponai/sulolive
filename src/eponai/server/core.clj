@@ -40,20 +40,8 @@
   for the date of the transactions, they will be fetched from OER."
   [conn request]
   (let [budget (p/budget (d/db conn) (:username (friend/current-authentication request)))
-        ;; HACK: Should be removed once we have transit requests or by fixing namespaced keywords with JSON requests.
-        ;; This is currently needed because JSON seems to trunkate namespaced keywords to only their names.
-        ;; i.e. :transaction/name -> :name (when sent from client to server in JSON).
-        ;; FYI: I'm not 100% sure JSON is the problem, I just suspect it.
-        body (map (fn [m]
-                    (reduce (fn [m [k v]]
-                              (if (namespace k)
-                                (assoc m k v)
-                                (assoc m (keyword (str "transaction/" (name k))) v)))
-                            {}
-                            m))
-                  (:body request))
         user-data (map #(assoc % :transaction/budget (:budget/uuid budget))
-                       body)]
+                       (:body request))]
     (go (>! currency-chan (map :transaction/date user-data)))
     (t/user-txs conn user-data)))
 
@@ -98,25 +86,25 @@
 ; App stuff
 (defroutes user-routes
            (GET "/txs" request (h/response (fetch p/all-data
-                                                  (d/db (::conn request))
+                                                  (d/db (::h/conn request))
                                                   (:username (friend/current-authentication request))
                                                   (:params request))))
            (POST "/txs" request (do
-                                  (post-user-data (::conn request) request)
+                                  (post-user-data (::h/conn request) request)
                                   (h/txs-created request)))
            (GET "/test" {session :session} (h/response session))
            (GET "/curs" request (h/response (fetch p/currencies
-                                                   (d/db (::conn request)))))
-           (GET "/info" request (h/response (p/user (d/db (::conn request))
+                                                   (d/db (::h/conn request)))))
+           (GET "/info" request (h/response (p/user (d/db (::h/conn request))
                                                     (:username (friend/current-authentication request))))))
 
 (defroutes app-routes
 
            (POST "/signup" request (do
-                                     (signup (::conn request) request)
+                                     (signup (::h/conn request) request)
                                      (h/user-created request)))
            (GET "/schema" request
-             (let [db (d/db (::conn request))]
+             (let [db (d/db (::h/conn request))]
                (h/response (p/inline-value db
                                            (p/schema db)
                                            [[:db/valueType :db/ident]
@@ -142,16 +130,12 @@
            (context "/user" [] (friend/wrap-authorize user-routes #{::a/user}))
            (GET "/verify/:uuid" [uuid :as request]
              (do
-               (verify (::conn request) uuid)
+               (verify (::h/conn request) uuid)
                (h/response {:message "Your email is verified, you can now login."})))
 
            (friend/logout (ANY "/logout" [] (ring.util.response/redirect "/")))
            ; Not found
            (route/not-found "Not Found"))
-
-(defn wrap-db [handler conn]
-  (fn [request]
-    (handler (assoc request ::conn conn))))
 
 (def app
   (let [conn (connect!)]
@@ -160,9 +144,8 @@
                               :workflows     [(a/form)]})
         h/wrap-error
         h/wrap-transit
-        h/wrap-json
         h/wrap-defaults
-        (wrap-db conn)
+        (h/wrap-db conn)
         h/wrap-log)))
 
 (defn init

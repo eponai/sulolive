@@ -2,7 +2,7 @@
   (:require [cemerick.friend.util :as util]
             [environ.core :refer [env]]
             [ring.middleware.session.cookie :as cookie]
-            [ring.middleware.transit :refer [wrap-transit-response]]
+            [ring.middleware.transit :refer [wrap-transit-response wrap-transit-body]]
             [ring.middleware.defaults :as d]
             [ring.middleware.json :refer [wrap-json-body]]
             [ring.util.response :as r]
@@ -51,19 +51,22 @@
     #(into {:db/id (:db/id %)} %)))
 
 (defn wrap-transit [handler]
-  (wrap-transit-response handler
-                         {:opts {:handlers {EntityMap datomic-transit}}
-                          :encoding :json}))
+  (-> handler
+      wrap-transit-body
+      (wrap-transit-response {:opts     {:handlers {EntityMap datomic-transit}}
+                              :encoding :json})))
 
 (defn wrap-log [handler]
   (fn [request]
-    (println "Request: " request)
+    (println "Request " request)
     (let [response (handler request)]
-      (println "Response: " response)
+      (println "\nResponse: " response)
       response)))
 
-(defn wrap-json [handler]
-  (wrap-json-body handler {:keywords? true}))
+(defn wrap-db [handler conn]
+  (fn [request]
+    (let [response (handler (assoc request ::conn conn))]
+      response)))
 
 (defn wrap-defaults [handler]
   (let [cookie-store-key (env :session-cookie-store-key)
