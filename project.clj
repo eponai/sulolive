@@ -24,6 +24,7 @@
                  [environ "1.0.1"]
 		 [bidi "1.21.1"]
                  [ring/ring-core "1.4.0"]
+		 [org.clojure/tools.namespace "0.2.11"]
                  [ring/ring-jetty-adapter "1.4.0"]
                  [ring/ring-json "0.4.0"]
                  [ring/ring-defaults "0.1.5"]

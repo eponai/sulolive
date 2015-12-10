@@ -47,9 +47,9 @@
 
 (defn create-new-inmemory-db []
   (let [uri "datomic:mem://test-db"]
-    (if (d/create-database uri)
-      (d/connect uri)
-      (throw (Exception. (str "Could not create datomic db with uri: " uri))))))
+    (d/delete-database uri)
+    (d/create-database uri)
+    (d/connect uri)))
 
 (defn add-data-to-connection [conn]
   (let [schema (->> (schema-file) slurp (edn/read-string {:readers *data-readers*}))
