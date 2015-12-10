@@ -45,16 +45,16 @@
             [lein-ring "0.9.7"]
             [lein-environ "1.0.1"]]
   :min-lein-version "2.0.0"
-  :repl-options {:init-ns user}
 
   ;;;;;;;;;;;;;
   ;; clj:
   ;;;;;;;;;;;;;
   :target-path "target/%s"
-  :source-paths ["src" "mains"]                             ;; "test"
+  :source-paths ["src" "mains" "env/clj"]                             ;; "test"
   :ring {:handler eponai.server.core/app
          :init eponai.server.core/init}
   :main eponai.server.core
+  :repl-options {:init-ns eponai.repl}
   :profiles {:uberjar {:aot :all}}
   :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
   :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
