@@ -107,8 +107,8 @@
   static om/IQuery
   (query [this] [{:query/all-currencies [:currency/code]}])
   Object
-       (initLocalState [this] {::input-date (js/Date.)})
-       (render
+  (initLocalState [this] {::input-date (js/Date.)})
+  (render
     [this]
     (let [{:keys [query/all-currencies]} (om/props this)
           {:keys [::input-amount ::input-currency ::input-title ::input-date
@@ -134,7 +134,10 @@
                  (->> all-currencies
                       (map :currency/code)
                       (map #(let [v (name %)]
-                             (vector :option {:value v} v)))))]
+                             (vector :option
+                                     {:value v
+                                      :key   (str "add-transaction-select-currency-value=" v)}
+                                     v)))))]
          [:div [:span "Date:"]
           (->Datepicker {:value       input-date
                          :placeholder "enter date"
@@ -158,7 +161,8 @@
                                             (seq (.. % -target -value)))
                                   (.preventDefault %)
                                   (new-input-tag! this input-tag))})]
-          (map tag/->Tag input-tags)]
+          (map (fn [props] (tag/->Tag (assoc props :key (::tag-id props))))
+               input-tags)]
          [:div "footer"
           [:button {:on-click #(om/transact! this `[(transaction/create ~(-> (om/get-state this)
                                                                              (assoc ::input-uuid (d/squuid))
@@ -169,8 +173,7 @@
                                                                                      (fn [tags]
                                                                                        (map (fn [t]
                                                                                               (dissoc t ::tag/delete-fn))
-                                                                                            tags)))))
-                                                    :query/all-dates])}
+                                                                                            tags))))) :query/all-dates])}
            "Save"]]]))))
 
 (def ->AddTransaction (om/factory AddTransaction))

@@ -13,9 +13,11 @@
                  ;; core.memoize is needed to work around lein+core.async dependency issue.
                  [org.clojure/core.memoize "0.5.6"]
                  [com.cognitect/transit-cljs "0.8.225"]
-                 [sablono "0.4.0"]
+                 [sablono "0.5.1"]
 		 [hiccup "1.0.5"]
-                 [org.omcljs/om "1.0.0-alpha23"]
+                 [org.omcljs/om "1.0.0-alpha26"]
+                 ;; Sablono needs the react-dom-server to compile.
+                 [cljsjs/react-dom-server "0.14.3-0"]
                  [devcards "0.2.0-8"]
                  [cljs-ajax "0.5.0"]
                  [datascript "0.13.3"]

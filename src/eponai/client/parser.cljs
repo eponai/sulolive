@@ -32,8 +32,7 @@
 
 (defmethod mutate 'datascript/transact
   [{:keys [state]} _ {:keys [txs]}]
-  {:value []
-   :action #(d/transact! state txs)})
+  {:action #(d/transact! state txs)})
 
 (defn cas! [component id key old-value new-value]
   (om/transact! component

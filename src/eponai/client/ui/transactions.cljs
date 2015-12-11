@@ -102,6 +102,7 @@
            :date/year
            :date/month
            :date/day
+           :date/ymd
            {:transaction/_date ?transactions}
            ::day-expanded?])
   Object
@@ -139,7 +140,8 @@
                      [:div
                       (map ->Transaction transactions)])]))))
 
-(def ->DayTransactions (om/factory DayTransactions))
+(def ->DayTransactions (om/factory DayTransactions {:keyfn :date/ymd
+                                                    :validator :date/ymd}))
 
 (defn group-dates-by-year-month [dates]
   (->> dates
@@ -167,14 +169,16 @@
   (render [this]
           (let [{:keys [query/all-dates]} (om/props this)
                 by-year-month (group-dates-by-year-month all-dates)]
-            (html [:div
+            (html [:div {:key "transactions"}
                    (->> (rseq by-year-month)
                         (map (fn [[year months]]
-                               [:div [:span year]
+                               [:div {:key (str "transactions-by-year=" year)}
+                                [:span {:key (str "transaction-span-year=" year)} year]
                                 (->> (rseq months)
                                      (map (fn [[month dates]]
-                                            [:div
-                                             [:h2 ((get t.format/date-formatters "MMMM")
+                                            [:div {:key (str "transactions-by-year=" year "-month=" month)}
+                                             [:h2 {:key (str "transactions-h2-year=" year "-month=" month)}
+                                              ((get t.format/date-formatters "MMMM")
                                                     (t/date-time year month))]
                                              (map ->DayTransactions
                                                   (->> dates
