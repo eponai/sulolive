@@ -51,22 +51,28 @@
     (d/create-database uri)
     (d/connect uri)))
 
+(def test-user "test-user@email.com")
+
+(defn add-verified-user [conn username]
+  (transact/new-user conn {:username username
+                           :bcrypt   (creds/hash-bcrypt "password")})
+  (println "New user created")
+  (let [user (p/user (d/db conn) username)
+        verification (->> (p/verifications (d/db conn) user :user/email)
+                          first
+                          :db/id)]
+    (transact/add conn verification :verification/status :verification.status/verified)
+    (println "User verified.")))
+
 (defn add-data-to-connection [conn]
   (let [schema (->> (schema-file) slurp (edn/read-string {:readers *data-readers*}))
-        username "test-user@email.com"]
+        username test-user]
     (d/transact conn schema)
     (println "Schema added.")
-    (transact/new-user conn {:username username
-                             :bcrypt   (creds/hash-bcrypt "password")})
-    (println "New user created")
+    (add-verified-user conn username)
     (transact/currencies conn currencies)
     (println "Currencies added.")
     (let [{:keys [budget/uuid]} (p/budget (d/db conn) username)]
       (transact/user-txs conn (mapv #(assoc % :transaction/budget uuid) transactions)))
-    (println "User transactions added.")
-    (let [user (p/user (d/db conn) username)
-          verification (->> (p/verifications (d/db conn) user :user/email)
-                            first
-                            :db/id)]
-      (transact/add conn verification :verification/status :verification.status/verified)
-      (println "User verified."))))
+    (println "User transactions added.")))
+
