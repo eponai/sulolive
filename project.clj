@@ -58,7 +58,8 @@
          :init eponai.server.core/init}
   :main eponai.server.core
   :repl-options {:init-ns eponai.repl}
-  :profiles {:uberjar {:aot :all}}
+  :profiles {:uberjar {:aot :all
+                       :hooks [leiningen.cljsbuild]}}
   :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
   :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
                                    :username ~(System/getenv "DATOMIC_EMAIL")
@@ -92,7 +93,7 @@
                            :output-to "resources/public/release/js/out/budget.js"
                            :output-dir "resources/public/release/js/out/"
                            :optimizations :advanced
-                        ;; :pseudo-names true
-                        ;; :pretty-print true
+                     ;;    :pseudo-names true
+                     ;;    :pretty-print true
                            }}]}
   :npm {:dependencies [[source-map-support "0.3.2"]]})
