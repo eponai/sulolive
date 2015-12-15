@@ -12,12 +12,13 @@
   (try
     @(d/transact conn txs)
     (catch Exception e
-      (throw (ex-info (.getMessage e) {:cause ::transaction-error
-                                       :status ::e/service-unavailable
-                                       :data {:conn conn
-                                              :txs txs}
-                                       :message (.getMessage e)
-                                       :exception e})))))
+      (throw (ex-info (.getMessage e)
+                      {:cause ::transaction-error
+                       :status ::e/service-unavailable
+                       :data {:conn conn
+                              :txs txs}
+                       :message (.getMessage e)
+                       :exception e})))))
 
 (defn user-txs
   "Put the user transaction maps into datomic. Will fail if one or

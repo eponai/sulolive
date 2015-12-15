@@ -56,19 +56,23 @@
     (let [tx (t/new-user conn (a/new-signup request))]
       (go (>! email-chan [(:db-after tx) (params :username)]))
       tx)
-    (throw (ex-info "User already exists." {:cause   ::a/authentication-error
-                                            :status  ::h/unathorized
-                                            :data    {:username (params :username)}
-                                            :message "User already exists."}))))
+    (throw (ex-info "User already exists."
+                    {:cause   ::a/authentication-error
+                     :status  ::h/unathorized
+                     :data    {:username (params :username)}
+                     :message "User already exists."}))))
 
 (defn verify [conn uuid]
-  (let [verification (p/verification (d/db conn) uuid)]
-    (if (= (:db/id (verification :verification/status)) (d/entid (d/db conn) :verification.status/pending))
+  (let [db (d/db conn)
+        verification (p/verification db uuid)]
+    (if (= (:db/id (verification :verification/status))
+           (d/entid db :verification.status/pending))
       (t/add conn (:db/id verification) :verification/status :verification.status/verified)
-      (throw (ex-info "Trying to activate invalid verification." {:cause   ::a/verification-error
-                                                                  :status  ::h/unathorized
-                                                                  :data    {:uuid uuid}
-                                                                  :message "The verification link is no longer valid."})))))
+      (throw (ex-info "Trying to activate invalid verification."
+                      {:cause   ::a/verification-error
+                       :status  ::h/unathorized
+                       :data    {:uuid uuid}
+                       :message "The verification link is no longer valid."})))))
 
 ; Auth stuff
 

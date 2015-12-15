@@ -13,10 +13,11 @@
    :port (env :smtp-port)})
 
 (defn not-found [email]
-  (ex-info "Could not find user in db." {:cause   ::authentication-error
-                                         :status  ::h/unathorized
-                                         :data    {:email email}
-                                         :message "Wrong email or password."}))
+  (ex-info "Could not find user in db."
+           {:cause   ::authentication-error
+            :status  ::h/unathorized
+            :data    {:email email}
+            :message "Wrong email or password."}))
 
 (defn user->creds
   "Get authentication map from a user entity."
@@ -34,10 +35,11 @@
   (when-let [auth-map (creds/bcrypt-credential-fn user-fn params)]
     (if (seq (:verifications auth-map))
       (dissoc auth-map :verifications)
-      (throw (ex-info "Email verification pending." {:cause   ::verification-error
-                                                     :status  ::h/unathorized
-                                                     :data    {:email (:user/email (params :username))}
-                                                     :message "Email verification pending"})))))
+      (throw (ex-info "Email verification pending."
+                      {:cause   ::verification-error
+                       :status  ::h/unathorized
+                       :data    {:email (:user/email (params :username))}
+                       :message "Email verification pending"})))))
 
 (defn form
   "Form workflow"
@@ -49,10 +51,11 @@
   [{:keys [params request-method]}]
   (if (= request-method :post)
     (assoc params :bcrypt (creds/hash-bcrypt (params :password)))
-    (throw (ex-info "Invalid request method" {:cause   ::request-error
-                                              :status  ::h/unprocessable-entity
-                                              :data    {:request-method request-method}
-                                              :message "Invalid request method"}))))
+    (throw (ex-info "Invalid request method"
+                    {:cause   ::request-error
+                     :status  ::h/unprocessable-entity
+                     :data    {:request-method request-method}
+                     :message "Invalid request method"}))))
 
 (defn send-email-verification [smtp email uuid]
   (let [link (str "http://localhost:3000/verify/" uuid)

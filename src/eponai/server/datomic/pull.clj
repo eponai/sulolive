@@ -8,23 +8,25 @@
   (try
     (apply (partial d/q query) inputs)
     (catch Exception e
-      (throw (ex-info (.getMessage e) {:cause ::query-error
-                                       :status ::e/service-unavailable
-                                       :data {:query query
-                                              :inputs inputs}
-                                       :message (.getMessage e)
-                                       :exception e})))))
+      (throw (ex-info (.getMessage e)
+                      {:cause ::query-error
+                       :status ::e/service-unavailable
+                       :data {:query query
+                              :inputs inputs}
+                       :message (.getMessage e)
+                       :exception e})))))
 
 (defn- p [db pattern eid]
   (try
     (d/pull db pattern eid)
     (catch Exception e
-      (throw (ex-info (.getMessage e) {:cause ::pull-error
-                                       :status ::e/service-unavailable
-                                       :data {:pattern pattern
-                                              :eid eid}
-                                       :message (.getMessage e)
-                                       :exception e})))))
+      (throw (ex-info (.getMessage e)
+                      {:cause ::pull-error
+                       :status ::e/service-unavailable
+                       :data {:pattern pattern
+                              :eid eid}
+                       :message (.getMessage e)
+                       :exception e})))))
 
 ; Pull and format datomic entries
 (defn- tx-query
