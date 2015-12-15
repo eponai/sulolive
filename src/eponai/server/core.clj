@@ -137,17 +137,6 @@
            ; Not found
            (route/not-found "Not Found"))
 
-(def app
-  (let [conn (connect!)]
-    (-> app-routes
-        (friend/authenticate {:credential-fn (partial a/cred-fn #(user-creds (d/db conn) %))
-                              :workflows     [(a/form)]})
-        h/wrap-error
-        h/wrap-transit
-        h/wrap-defaults
-        (h/wrap-db conn)
-        h/wrap-log)))
-
 (defn init
   ([]
    (init (partial exch/currency-rates nil)
@@ -155,6 +144,16 @@
   ([cur-fn email-fn]
    (println "Initializing server...")
    (let [conn (connect!)]
+     ;; Defines the 'app var when init is run.
+     (def app
+       (-> app-routes
+           (friend/authenticate {:credential-fn (partial a/cred-fn #(user-creds (d/db conn) %))
+                                 :workflows     [(a/form)]})
+           h/wrap-error
+           h/wrap-transit
+           h/wrap-defaults
+           (h/wrap-db conn)
+           h/wrap-log))
      (go (while true (try
                        (post-currency-rates conn cur-fn (<! currency-chan))
                        (catch Exception e
