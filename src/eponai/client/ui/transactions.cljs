@@ -10,7 +10,7 @@
 
 (defui Transaction
   static om/IQueryParams
-  (params [this] {:tag (om/query tag/Tag)})
+  (params [this] {:tag (om/get-query tag/Tag)})
   static om/IQuery
   (query [this]
          '[:db/id

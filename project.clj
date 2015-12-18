@@ -15,7 +15,7 @@
                  [com.cognitect/transit-cljs "0.8.225"]
                  [sablono "0.5.1"]
 		 [hiccup "1.0.5"]
-                 [org.omcljs/om "1.0.0-alpha26"]
+                 [org.omcljs/om "1.0.0-alpha28"]
                  ;; Sablono needs the react-dom-server to compile.
                  [cljsjs/react-dom-server "0.14.3-0"]
                  [devcards "0.2.0-8"]
@@ -38,7 +38,7 @@
                   :exclusions [joda-time]]
                  [clj-time "0.11.0"]
                  [com.andrewmcveigh/cljs-time "0.3.14"]
-                 [garden "1.3.0-SNAPSHOT"]
+                 [garden "1.3.0"]
                  [com.cemerick/friend "0.2.1"]
                  [com.draines/postal "1.11.3"]]
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
@@ -93,7 +93,7 @@
                            :output-to "resources/public/release/js/out/budget.js"
                            :output-dir "resources/public/release/js/out/"
                            :optimizations :advanced
-                     ;;    :pseudo-names true
-                     ;;    :pretty-print true
+                      ;;   :pseudo-names true
+                      ;;   :pretty-print true
                            }}]}
   :npm {:dependencies [[source-map-support "0.3.2"]]})
