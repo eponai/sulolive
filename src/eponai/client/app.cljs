@@ -53,7 +53,7 @@
                         (assoc :app {:db/unique :db.unique/identity}
                                :ui/singleton {:db/unique :db.unique/identity}))
           conn (d/create-conn ds-schema)
-          parser (om/parser {:read parser/debug-read :mutate parser/mutate})
+          parser (om/parser {:read parser/read :mutate parser/mutate})
           reconciler (om/reconciler {:state conn :parser parser :remotes [:remote]
                                      :send  (backend/send conn)
                                      :merge (fn [reconciler state f]
