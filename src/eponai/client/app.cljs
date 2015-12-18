@@ -26,8 +26,8 @@
 (defui App
   static om/IQuery
   (query [this]
-         [{:just/header (om/get-query Header)}
-          {:just/transactions (om/get-query AllTransactions)}])
+    [{:just/header (om/get-query Header)}
+     {:just/transactions (om/get-query AllTransactions)}])
   Object
   (render
     [this]
@@ -45,6 +45,18 @@
                 [?e :db/valueType :db.type/ref]]
               @conn))))
 
+(defonce conn-atom (atom nil))
+
+(defn init-conn
+  "Sets up the datascript state. Caches the state so we can keep our app state between
+  figwheel reloads."
+  [schema txs]
+  (if @conn-atom
+    @conn-atom
+    (let [conn (d/create-conn schema)]
+      (d/transact! conn txs)
+      (reset! conn-atom conn))))
+
 (defn initialize-app [c]
   (go
     (let [{:keys [schema entities]} (async/<! c)
@@ -52,15 +64,15 @@
           ds-schema (-> (budget.d/schema-datomic->datascript schema)
                         (assoc :app {:db/unique :db.unique/identity}
                                :ui/singleton {:db/unique :db.unique/identity}))
-          conn (d/create-conn ds-schema)
+          default-txs (concat [{:app :state :app/year 2015 :app/month 10}]
+                              [{:ui/singleton :budget/header}]
+                              (budget.d/db-id->temp-id ref-types entities))
+          conn (init-conn ds-schema default-txs)
           parser (om/parser {:read parser/read :mutate parser/mutate})
           reconciler (om/reconciler {:state conn :parser parser :remotes [:remote]
                                      :send  (backend/send conn)
                                      :merge (fn [reconciler state f]
                                               (f reconciler state))})]
-      (d/transact! conn [{:app :state :app/year 2015 :app/month 10}])
-      (d/transact! conn [{:ui/singleton :budget/header}])
-      (d/transact! conn (budget.d/db-id->temp-id ref-types entities))
       (om/add-root! reconciler App (gdom/getElement "my-app")))))
 
 (defn run
