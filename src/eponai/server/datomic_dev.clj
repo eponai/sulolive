@@ -8,9 +8,7 @@
 (defn create-connection [_]
   (let [uri (env :db-url)]
     (try
-      (let [conn (d/connect uri)]
-        (mem/add-verified-user conn mem/test-user)
-        conn)
+      (d/connect uri)
       (catch Exception e
         (prn (str "Exception:" e " when trying to connect to datomic=" uri))
         (prn "Will try to set up inmemory db...")
