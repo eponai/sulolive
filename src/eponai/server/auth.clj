@@ -64,6 +64,7 @@
               :subject "Hi there, this is your confirmation email."
               :body (str "Email: " email ". Click this link: " link)}
         status (email/send-message smtp body)]
+    (println "Sent verification email with status: " status)
     (if (= 0 (:code status))
       status
       (throw (ex-info (:message status) {:cause ::email-error
