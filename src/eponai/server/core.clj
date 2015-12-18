@@ -144,6 +144,7 @@
 
 (defn init
   ([]
+   (println "Using remote resources.")
    (init (partial exch/currency-rates nil)
          (partial a/send-email-verification (a/smtp))))
   ([cur-fn email-fn]
