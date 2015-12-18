@@ -12,6 +12,7 @@
             [clojure.core.async :refer [>! <! go chan]]
             [clojure.edn :as edn]
             [ring.adapter.jetty :as jetty]
+            [ring.middleware.gzip :as ring.gzip]
             [eponai.server.datomic_dev :refer [connect!]]))
 
 (def currency-chan (chan))
@@ -157,7 +158,8 @@
            h/wrap-transit
            h/wrap-defaults
            (h/wrap-db conn)
-           h/wrap-log))
+           h/wrap-log
+           ring.gzip/wrap-gzip))
      (go (while true (try
                        (post-currency-rates conn cur-fn (<! currency-chan))
                        (catch Exception e
