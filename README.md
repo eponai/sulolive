@@ -1,5 +1,6 @@
 # budget
 
+<img src="https://circleci.com/gh/:owner/:repo.svg?style=shield&circle-token=:circle-token" />
 FIXME: description
 
 ## Installation
