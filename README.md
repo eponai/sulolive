@@ -1,6 +1,6 @@
 # budget
 
-<img src="https://circleci.com/gh/:owner/:repo.svg?style=shield&circle-token=:circle-token" />
+<img src="https://circleci.com/gh/eponai/budget.svg?style=shield&circle-token=2a5932170afcb7e4664b0bae51176e11937b9e35" />
 FIXME: description
 
 ## Installation
