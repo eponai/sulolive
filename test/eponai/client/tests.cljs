@@ -1,4 +1,4 @@
-(ns ^:figwheel-always eponai.client.client_tests
+(ns ^:figwheel-always eponai.client.tests
   (:require [cljs.test :refer-macros [run-tests]]
             [eponai.client.datascript_test]))
 

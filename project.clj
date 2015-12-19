@@ -72,7 +72,7 @@
   :cljsbuild {:builds
               [{:id "dev"
                 :source-paths ["src" "test"]
-                :figwheel {:on-jsload "eponai.client.client_tests/run"}
+                :figwheel {:on-jsload "eponai.client.tests/run"}
                 :compiler {:main "eponai.client.core"
                            :asset-path "js/out"
                            :output-to "resources/public/dev/js/out/budget.js"
