@@ -2,10 +2,10 @@
   (:require [eponai.client.app :as app]
             [eponai.client.backend :as backend]))
 
-(enable-console-print!)
+(defn ^:export run []
+  (enable-console-print!)
 
-(println "Hello console")
+  (println "Hello console")
 
-(app/run
-  (backend/data-provider))
-
+  (app/run
+    (backend/data-provider)))
