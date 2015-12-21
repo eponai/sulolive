@@ -54,7 +54,7 @@
   ;; clj:
   ;;;;;;;;;;;;;
   :target-path "target/%s"
-  :source-paths ["src" "mains" "env/clj"]                   ;; "test"
+  :source-paths ["src" "env/clj"]                   ;; "test"
   :ring {:handler eponai.server.core/app
          :init    eponai.server.core/init}
   :main eponai.server.core
