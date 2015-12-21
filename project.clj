@@ -112,11 +112,10 @@
                    ["node_modules/karma/bin/karma" "start" "karma.conf.js" "--single-run"]}}
   :npm {:dependencies [[source-map-support "0.3.2"]
                        [karma "0.13.9"]
-                       [karma-junit-reporter "0.3.4"]
+                       [karma-junit-reporter "0.3.8"]
                        ;; We can test against other launchers later if we want.
                        ;; I.e. phantomjs, firefox and more?
                        [karma-chrome-launcher "0.1.8"]
-                       [karma-junit-reporter "0.3.4"]
                        ;; Using CircleCI's branch of karma-cljs.test to get
                        ;; re-use their circle.karma.cljs namespace as an
                        ;; entrypoint.

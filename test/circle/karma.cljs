@@ -20,6 +20,7 @@
 
 (defn ^:export run-tests-for-karma []
   (enable-console-print!)
+  (.info js/__karma__ (clj->js {:total 1}))
   (run-tests (assoc (test/empty-env) :reporter ::reporter))
   (prn "running tests for karma")
   (.complete js/__karma__ (clj->js {})))
