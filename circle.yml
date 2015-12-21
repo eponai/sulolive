@@ -1,6 +1,7 @@
 machine:
   environment:
-    - CLJ_TEST_REPORT_FILE: $CIRCLE_TEST_REPORTS/lein-test/budget-clj-tests.xml
+    CLJ_TEST_REPORT_FILE: $CIRCLE_TEST_REPORTS/lein-test/budget-clj-tests.xml
+
 deployment:
   staging:
     branch: master
