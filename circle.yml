@@ -1,3 +1,6 @@
+machine:
+  environment:
+    - CLJ_TEST_REPORT_FILE: $CIRCLE_TEST_REPORTS/lein-test/budget-clj-tests.xml
 deployment:
   staging:
     branch: master
@@ -9,7 +12,6 @@ test:
     - lein trampoline cljsbuild once test
   override:
     - node_modules/karma/bin/karma start karma.conf.js --single-run
-    - export CLJ_TEST_REPORT_FILE="$CIRCLE_TEST_REPORTS/lein-test/budget-clj-tests.xml"
     - mkdir -p "$CLJ_TEST_REPORT_FILE"
     - rmdir "$CLJ_TEST_REPORT_FILE"
     - lein trampoline test-out junit "$CLJ_TEST_REPORT_FILE"
