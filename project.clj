@@ -113,6 +113,10 @@
                        ;; We can test against other launchers later if we want.
                        ;; I.e. phantomjs, firefox and more?
                        [karma-chrome-launcher "0.1.8"]
+                       []
+                       ;; Using CircleCI's branch of karma-cljs.test to get
+                       ;; re-use their circle.karma.cljs namespace as an
+                       ;; entrypoint.
                        [karma-cljs.test "git://github.com/circleci/karma-cljs.test#077e0ac53af3506f4d11d8bd157bf9de89761a9e"]
                        [karma-closure "0.1.1"]]})
 
