@@ -146,25 +146,25 @@
   ([]
    (println "Using remote resources.")
    (init (partial exch/currency-rates nil)
-         (partial a/send-email-verification (a/smtp))))
-  ([cur-fn email-fn]
+         (partial a/send-email-verification (a/smtp))
+         (connect!)))
+  ([cur-fn email-fn conn]
    (println "Initializing server...")
-   (let [conn (connect!)]
-     ;; Defines the 'app var when init is run.
-     (def app
-       (-> app-routes
-           (friend/authenticate {:credential-fn (partial a/cred-fn #(user-creds (d/db conn) %))
-                                 :workflows     [(a/form)]})
-           h/wrap-error
-           h/wrap-transit
-           h/wrap-defaults
-           (h/wrap-db conn)
-           h/wrap-log
-           ring.gzip/wrap-gzip))
-     (go (while true (try
-                       (post-currency-rates conn cur-fn (<! currency-chan))
-                       (catch Exception e
-                         (println (.getMessage e)))))))
+    ;; Defines the 'app var when init is run.
+   (def app
+     (-> app-routes
+         (friend/authenticate {:credential-fn (partial a/cred-fn #(user-creds (d/db conn) %))
+                               :workflows     [(a/form)]})
+         h/wrap-error
+         h/wrap-transit
+         h/wrap-defaults
+         (h/wrap-db conn)
+         h/wrap-log
+         ring.gzip/wrap-gzip))
+   (go (while true (try
+                     (post-currency-rates conn cur-fn (<! currency-chan))
+                     (catch Exception e
+                       (println (.getMessage e))))))
    (go (while true (try
                      (send-email-verification email-fn (<! email-chan))
                      (catch Exception e
