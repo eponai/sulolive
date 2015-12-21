@@ -89,12 +89,15 @@
                                    :source-map-timestamp true}}
                    {:id           "test"
                     :source-paths ["src" "test"]
-                    :compiler     {:asset-path    "js/out"
-                                   :output-to     "resources/public/test/js/out/budget.js"
+                    :compiler     {:output-to     "resources/public/test/js/out/budget.js"
                                    :output-dir    "resources/public/test/js/out"
-                                   :optimizations :advanced
-                                   :pretty-print  true
-                                   :psuedo-names  true}}
+                                   ;; asset-path set like this to use with karma
+                                   :asset-path    "base/resources/public/test/js/out"
+                                   :main          "circle.karma"
+                                   :optimizations :none
+                             ;;    :pretty-print  true
+                               ;;  :psuedo-names  true
+                                  }}
                    {:id           "release"
                     :source-paths ["src"]
                     :compiler     {:main          "eponai.client.core"
@@ -113,7 +116,7 @@
                        ;; We can test against other launchers later if we want.
                        ;; I.e. phantomjs, firefox and more?
                        [karma-chrome-launcher "0.1.8"]
-                       []
+                       [karma-junit-reporter "0.3.4"]
                        ;; Using CircleCI's branch of karma-cljs.test to get
                        ;; re-use their circle.karma.cljs namespace as an
                        ;; entrypoint.

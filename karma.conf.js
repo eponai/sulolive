@@ -12,7 +12,11 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       'resources/private/test-js/test-render-context.js',
-      'resources/public/test/js/out/budget.js'
+      'resources/public/test/js/out/budget.js',
+      // Using included false for all javascript because budget
+      // will include them in it's <script> tag.
+      // Enables us to use :optimizations :none for tests.
+      {pattern: 'resources/public/test/js/out/**/*.js', included: false}
     ],
 
 
