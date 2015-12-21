@@ -105,8 +105,6 @@
                                    :asset-path    "js/out"
                                    :output-to     "resources/public/release/js/out/budget.js"
                                    :output-dir    "resources/public/release/js/out/"
-                                   ;; do this build when making an uberjar
-                                   :jar true
                                    :optimizations :advanced
                                    ;;   :pseudo-names true
                                    ;;   :pretty-print true
