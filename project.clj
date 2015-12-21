@@ -110,6 +110,8 @@
   :npm {:dependencies [[source-map-support "0.3.2"]
                        [karma "0.13.9"]
                        [karma-junit-reporter "0.3.4"]
+                       ;; We can test against other launchers later if we want.
+                       ;; I.e. phantomjs, firefox and more?
                        [karma-chrome-launcher "0.1.8"]
                        [karma-cljs.test "git://github.com/circleci/karma-cljs.test#077e0ac53af3506f4d11d8bd157bf9de89761a9e"]
                        [karma-closure "0.1.1"]]})
