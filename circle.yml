@@ -3,3 +3,7 @@ deployment:
     branch: master
     heroku:
       appname: jourbudget
+
+test:
+  post:
+    - node_modules/karma/bin/karma start karma.conf.js --single-run
