@@ -47,6 +47,7 @@
             [lein-cljsbuild "1.1.1"]
             [lein-figwheel "0.5.0-1"]
             [lein-ring "0.9.7"]
+            [lein-test-out "0.3.1"]
             [lein-environ "1.0.1"]]
   :min-lein-version "2.0.0"
 
