@@ -5,6 +5,8 @@ deployment:
       appname: jourbudget
 
 test:
+  pre:
+    - lein trampoline cljsbuild once test
   override:
     - node_modules/karma/bin/karma start karma.conf.js --single-run
     - cljtestfile="$CIRCLE_TEST_REPORTS/lein-test/budget-clj-tests.xml"
