@@ -61,7 +61,7 @@
   :main eponai.server.core
   :repl-options {:init-ns eponai.repl}
   :profiles {:uberjar {:aot   :all
-                       :hooks [leiningen.cljsbuild]}}
+                       :prep-tasks ["compile" ["cljsbuild" "once" "release"]]}}
   :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
   :repositories {"my.datomic.com" {:url      "https://my.datomic.com/repo"
                                    :username ~(System/getenv "DATOMIC_EMAIL")
