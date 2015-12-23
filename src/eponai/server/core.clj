@@ -13,7 +13,8 @@
             [clojure.edn :as edn]
             [ring.adapter.jetty :as jetty]
             [ring.middleware.gzip :as ring.gzip]
-            [eponai.server.datomic_dev :refer [connect!]]))
+            [eponai.server.datomic_dev :refer [connect!]]
+            [eponai.server.parser :as parser]))
 
 (def currency-chan (chan))
 (def email-chan (chan))
@@ -88,20 +89,18 @@
       (a/user->creds db-user password verifications))
     (throw (a/not-found email))))
 
+(def parser (parser/parser {:read parser/read :mutate parser/mutate}))
+
 ; App stuff
 (defroutes user-routes
-           (GET "/txs" request (h/response (fetch p/all-data
-                                                  (d/db (::h/conn request))
-                                                  (:username (friend/current-authentication request))
-                                                  (:params request))))
-           (POST "/txs" request (do
-                                  (post-user-data (::h/conn request) request)
-                                  (h/txs-created request)))
-           (GET "/test" {session :session} (h/response session))
-           (GET "/curs" request (h/response (fetch p/currencies
-                                                   (d/db (::h/conn request)))))
-           (GET "/info" request (h/response (p/user (d/db (::h/conn request))
-                                                    (:username (friend/current-authentication request))))))
+           (POST "/" {:keys [body ::h/conn] :as req}
+             (println "Body: " body)
+             (h/response
+               (parser
+                 {:state conn
+                  :auth (friend/current-authentication req)
+                  :currency-chan currency-chan}
+                 body))))
 
 (defroutes app-routes
 
@@ -115,7 +114,6 @@
                                            [[:db/valueType :db/ident]
                                             [:db/unique :db/ident]
                                             [:db/cardinality :db/ident]]))))
-           (GET "/session" {session :session} (h/response (str session)))
            ; Anonymous
            (GET "/login" request (if (friend/identity request)
                                    (h/redirect "user/txs" request)

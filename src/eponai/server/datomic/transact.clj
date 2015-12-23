@@ -34,7 +34,7 @@
   Throws ExceptionInfo if the given input is invalid, or if transaction failed."
   [conn user-txs]
   (when (v/valid-user-txs? user-txs)
-    (let [txs (f/user-owned-txs->dbtxs user-txs)]
+    (let [txs (f/user-txs->db-txs user-txs)]
       (transact conn txs))))
 
 (defn new-verification [conn entity attribute status]

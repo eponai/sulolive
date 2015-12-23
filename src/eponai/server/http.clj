@@ -60,7 +60,7 @@
   (fn [request]
     (println "Request " request)
     (let [response (handler request)]
-      (println "\nResponse: " response)
+      ;(println "\nResponse: " response)
       response)))
 
 (defn wrap-db [handler conn]

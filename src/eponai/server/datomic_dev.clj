@@ -15,31 +15,31 @@
                  :SEK "Swedish Krona"
                  :USD "US Dollar"})
 
-(def transactions [{:transaction/uuid       (str (UUID/randomUUID))
+(def transactions [{:transaction/uuid       (UUID/randomUUID)
                     :transaction/name       "lunch"
                     :transaction/date       "2015-10-10"
                     :transaction/amount     180
                     :transaction/currency   "THB"
                     :transaction/created-at 1}
-                   {:transaction/uuid       (str (UUID/randomUUID))
+                   {:transaction/uuid       (UUID/randomUUID)
                     :transaction/name       "coffee"
                     :transaction/date       "2015-10-10"
                     :transaction/amount     140
                     :transaction/currency   "THB"
                     :transaction/created-at 1}
-                   {:transaction/uuid       (str (UUID/randomUUID))
+                   {:transaction/uuid       (UUID/randomUUID)
                     :transaction/name       "dinner"
                     :transaction/date       "2015-10-10"
                     :transaction/amount     350
                     :transaction/currency   "THB"
                     :transaction/created-at 1}
-                   {:transaction/uuid       (str (UUID/randomUUID))
+                   {:transaction/uuid       (UUID/randomUUID)
                     :transaction/name       "market"
                     :transaction/date       "2015-10-11"
                     :transaction/amount     789
                     :transaction/currency   "THB"
                     :transaction/created-at 1}
-                   {:transaction/uuid       (str (UUID/randomUUID))
+                   {:transaction/uuid       (UUID/randomUUID)
                     :transaction/name       "lunch"
                     :transaction/date       "2015-10-11"
                     :transaction/amount     125

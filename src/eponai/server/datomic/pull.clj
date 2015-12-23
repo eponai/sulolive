@@ -8,6 +8,7 @@
   (try
     (apply (partial d/q query) inputs)
     (catch Exception e
+      (println e)
       (throw (ex-info (.getMessage e)
                       {:cause ::query-error
                        :status ::e/service-unavailable
@@ -21,10 +22,22 @@
     (d/pull db pattern eid)
     (catch Exception e
       (throw (ex-info (.getMessage e)
-                      {:cause ::pull-error
+                      {:cause ::pull-many-error
                        :status ::e/service-unavailable
                        :data {:pattern pattern
                               :eid eid}
+                       :message (.getMessage e)
+                       :exception e})))))
+
+(defn- p-many [db pattern eids]
+  (try
+    (d/pull-many db pattern eids)
+    (catch Exception e
+      (throw (ex-info (.getMessage e)
+                      {:cause ::pull-error
+                       :status ::e/service-unavailable
+                       :data {:pattern pattern
+                              :eids eids}
                        :message (.getMessage e)
                        :exception e})))))
 
@@ -184,6 +197,18 @@
     (let [attributes (set (flatten (map keys data)))
           attribute-entities (map #(d/entity db %) attributes)]
       (vec (filter schema-required? attribute-entities)))))
+
+(defn all
+  "takes the database, a pull query and where-clauses, where the where-clauses
+  return some entity ?e."
+  [conn query where-clauses]
+  (let [db (d/db conn)
+        ents (q (vec (concat '[:find [?e ...]
+                               :in $
+                               :where]
+                             where-clauses))
+                db)]
+    (p-many db query ents)))
 
 (defn all-data
   "Pulls all user transactions and currency conversions for the dates and

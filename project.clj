@@ -35,6 +35,7 @@
                  [amalloy/ring-gzip-middleware "0.1.3"]
                  [org.clojure/test.check "0.8.1"]
                  [clj-http "2.0.0"]
+                 [cljs-http "0.1.39"]
                  [com.datomic/datomic-pro "0.9.5302"
                   :exclusions [joda-time]]
                  [clj-time "0.11.0"]

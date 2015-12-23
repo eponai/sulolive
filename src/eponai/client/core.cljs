@@ -7,5 +7,4 @@
 
   (println "Hello console")
 
-  (app/run
-    (backend/data-provider)))
+  (app/run))

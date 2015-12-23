@@ -5,20 +5,31 @@
             [eponai.server.datomic.pull :as p]
             [eponai.server.datomic.transact :as t]
             [eponai.server.auth :as a]
-            [eponai.server.openexchangerates :as exch])
+            [eponai.server.openexchangerates :as exch]
+            [eponai.server.parser :as parser])
   (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
 
 (def test-data [{:transaction/name       "coffee"
-                 :transaction/uuid       (str (d/squuid))
+                 :transaction/uuid       (d/squuid)
                  :transaction/created-at 12345
                  :transaction/date       "2015-10-10"
                  :transaction/amount     100
                  :transaction/currency   "SEK"
                  :transaction/tags       ["fika" "thailand"]}])
 
+
+(def test-input [{:input-title "coffee"
+                 :input-uuid       (d/squuid)
+                 :input-created-at 12345
+                 :input-date       "2015-10-10"
+                 :input-amount     100
+                 :input-currency   "SEK"
+                 :input-tags       ["fika" "thailand"]}])
 (def test-curs {:SEK "Swedish Krona"})
+
+(def test-parser (parser/parser {:read parser/read :mutate parser/mutate}))
 
 (defn test-convs [date-str]
   {:date  date-str

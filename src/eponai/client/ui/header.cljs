@@ -7,21 +7,17 @@
             [sablono.core :as html :refer-macros [html]]
             [garden.core :refer [css]]))
 
-(defmethod parser/read :query/header
-  [{:keys [state query]} _ _]
-  {:value (parser/pull-all state query '[[?e :ui/singleton :budget/header]])})
-
 (defui Header
   static om/IQueryParams
   (params [this] {:add-transaction (om/get-query add.t/AddTransaction)})
   static om/IQuery
   (query [this]
          '[{:query/header [:db/id ::show-transaction-modal]}
-           {:proxy ?add-transaction}])                      ;; what to transact?
+           {:proxy/add-transaction ?add-transaction}])                      ;; what to transact?
   Object
   (render
     [this]
-    (let [{:keys [query/header proxy]} (om/props this)
+    (let [{:keys [query/header proxy/add-transaction]} (om/props this)
           {:keys [db/id ::show-transaction-modal]} (first header)
           modal-trigger #(parser/cas! this id ::show-transaction-modal
                               show-transaction-modal
@@ -41,7 +37,7 @@
               [:button "logout"]
               [:button "settings"]]
              (when show-transaction-modal
-               (->Modal {:dialog-content #(->AddTransaction proxy)
+               (->Modal {:dialog-content #(->AddTransaction add-transaction)
                          :on-close       modal-trigger}))]))))
 
 (def ->Header (om/factory Header))

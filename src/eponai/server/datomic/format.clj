@@ -34,7 +34,7 @@
                 :tag/name       n
                 :tag/persistent false}) tags))
 
-(defn user-tx->db-tx
+(defn- user-tx->db-tx
   "Takes a user input transaction and converts into a datomic entity.
   A conversion function will be applied on the values for the following
   keys #{:currency :date :tags :amount :uuid} as appropriate for the database.
@@ -44,13 +44,12 @@
                      :transaction/date     (fn [d] (date-str->db-tx d))
                      :transaction/tags     (fn [t] (tags->db-tx t))
                      :transaction/amount   (fn [a] (bigint a))
-                     :transaction/uuid     (fn [uuid] (java.util.UUID/fromString uuid))
                      :transaction/budget   (fn [b] [:budget/uuid b])}
         update-fn (fn [m k] (update m k (conv-fn-map k)))]
     (assoc (reduce update-fn user-tx (keys conv-fn-map))
       :db/id (d/tempid :db.part/user))))
 
-(defn user-owned-txs->dbtxs [user-txs]
+(defn user-txs->db-txs [user-txs]
   (map user-tx->db-tx user-txs))
 
 (defn user->db-user-password [new-user]

@@ -152,16 +152,9 @@
                                  (into (sorted-map)))))
                (sorted-map))))
 
-(defmethod parser/read :query/all-dates
-  [{:keys [state query]} _ _]
-  {:value (parser/pull-all state query '[[?e :date/ymd]])})
-
 (defui AllTransactions
   static om/IQueryParams
-  (params [this] {:dates (conj (om/get-query DayTransactions)
-                               :date/year
-                               :date/month
-                               :date/day)})
+  (params [this] {:dates (om/get-query DayTransactions)})
   static om/IQuery
   (query [this]
          '[{:query/all-dates ?dates}])

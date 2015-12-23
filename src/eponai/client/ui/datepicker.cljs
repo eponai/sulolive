@@ -26,7 +26,7 @@
 
 (defui DatePicker
        Object
-       (initLocalState [this] {::picker (atom nil)})
+       (initLocalState [_] {::picker (atom nil)})
        (componentWillUnmount [this] (some-> this om/get-state ::picker (reset! nil)))
        (componentDidMount
          [this]
