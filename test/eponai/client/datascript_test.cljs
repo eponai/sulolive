@@ -1,4 +1,4 @@
-(ns ^figwheel-load eponai.client.datascript_test
+(ns eponai.client.datascript_test
   (:require [eponai.client.datascript :as budget.d]
             [datascript.core :as d]
             [clojure.test.check :as tc]

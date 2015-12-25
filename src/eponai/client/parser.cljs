@@ -82,11 +82,14 @@
                           (assoc :transaction/status :transaction.status/pending)
                           (assoc :transaction/currency -2)
                           (assoc :transaction/tags (mapv :db/id tags)))
-          entities (concat [date curr transaction] tags)]
+          entities (concat tags [date curr transaction])]
       {:remote true
-       :value {:tempids [-1 -2]}
+       :value  {:tempids [-1 -2]}
        :action (fn []
-                 (prn {:entities entities})
-                 (d/transact! state entities))})
+                 (try
+                   (d/transact! state entities)
+                   (catch :default e
+                     (prn "error mutating transaction/create: " e))))})
     (catch :default e
       (prn e))))
+

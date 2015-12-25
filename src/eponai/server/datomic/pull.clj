@@ -198,6 +198,13 @@
           attribute-entities (map #(d/entity db %) attributes)]
       (vec (filter schema-required? attribute-entities)))))
 
+(defn schema-with-inline-values [db]
+  (inline-value db
+                (schema db)
+                [[:db/valueType :db/ident]
+                 [:db/unique :db/ident]
+                 [:db/cardinality :db/ident]]))
+
 (defn all
   "takes the database, a pull query and where-clauses, where the where-clauses
   return some entity ?e."

@@ -8,9 +8,6 @@
             [clojure.java.io :as io])
   (:import (java.util UUID)))
 
-(defn schema-file []
-  (io/resource "private/datomic-schema.edn"))
-
 (def currencies {:THB "Thai Baht"
                  :SEK "Swedish Krona"
                  :USD "US Dollar"})
@@ -48,11 +45,13 @@
 
 (def test-user "test-user@email.com")
 
-(defn create-new-inmemory-db []
-  (let [uri "datomic:mem://test-db"]
-    (d/delete-database uri)
-    (d/create-database uri)
-    (d/connect uri)))
+(defn create-new-inmemory-db
+  ([] (create-new-inmemory-db "test-db"))
+  ([db-name]
+   (let [uri (str "datomic:mem://" db-name)]
+     (d/delete-database uri)
+     (d/create-database uri)
+     (d/connect uri))))
 
 (defn add-verified-user [conn username]
   (transact/new-user conn {:username username
@@ -65,8 +64,14 @@
     (transact/add conn verification :verification/status :verification.status/verified)
     (println "User verified.")))
 
+(defn read-schema-file []
+  (->> "private/datomic-schema.edn"
+       io/resource
+       slurp
+       (edn/read-string {:readers *data-readers*})))
+
 (defn add-data-to-connection [conn]
-  (let [schema (->> (schema-file) slurp (edn/read-string {:readers *data-readers*}))
+  (let [schema (read-schema-file)
         username test-user]
     (d/transact conn schema)
     (println "Schema added.")

@@ -17,8 +17,6 @@
 (def currency-chan (chan))
 (def email-chan (chan))
 
-(def parser (parser/parser {:read parser/read :mutate parser/mutate}))
-
 (defn init
   ([]
    (println "Using remote resources.")
@@ -32,7 +30,7 @@
            m/wrap-error
            m/wrap-transit
            (m/wrap-state {::m/conn          conn
-                          ::m/parser        parser
+                          ::m/parser        (parser/parser {:read parser/read :mutate parser/mutate})
                           ::m/currency-chan currency-chan
                           ::m/email-chan    email-chan})
            m/wrap-defaults
