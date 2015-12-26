@@ -89,11 +89,9 @@
       (a/user->creds db-user password verifications))
     (throw (a/not-found email))))
 
-(def parser (parser/parser {:read parser/read :mutate parser/mutate}))
-
 ; App stuff
 (defroutes user-routes
-           (POST "/" {:keys [body ::h/conn] :as req}
+           (POST "/" {:keys [body ::h/conn ::h/parser] :as req}
              (println "Body: " body)
              (h/response
                (parser
@@ -156,6 +154,7 @@
          h/wrap-error
          h/wrap-transit
          h/wrap-defaults
+         (h/wrap-parser (parser/parser {:read parser/read :mutate parser/mutate}))
          (h/wrap-db conn)
          h/wrap-log
          ring.gzip/wrap-gzip))

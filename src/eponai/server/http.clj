@@ -75,3 +75,8 @@
                                  (assoc-in [:security :anti-forgery] false)
                                  (assoc-in [:session :store] (cookie/cookie-store {:key cookie-store-key}))
                                  (assoc-in [:session :cookie-name] cookie-name)))))
+
+(defn wrap-parser [handler parser]
+  (fn [request]
+    (let [response (handler (assoc request ::parser parser))]
+      response)))
