@@ -1,4 +1,5 @@
 (ns eponai.server.parser
+  (:refer-clojure :exclude [read])
   (:require [om.next.server :as om]
             [clojure.set :refer [rename-keys]]
             [clojure.core.async :refer [go >!]]
