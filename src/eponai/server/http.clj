@@ -56,6 +56,19 @@
       (wrap-transit-response {:opts     {:handlers {EntityMap datomic-transit}}
                               :encoding :json})))
 
+(defn- wrap-item
+  "puts an item in the request so it can be retrieved by
+  endpoint handlers by key."
+  [handler item k]
+  (fn [request]
+    (handler (assoc request k item))))
+
+(defn wrap-db [handler conn]
+  (wrap-item handler conn ::conn))
+
+(defn wrap-parser [handler parser]
+  (wrap-item handler parser ::parser))
+
 (defn wrap-log [handler]
   (fn [request]
     (println "Request " request)
@@ -63,10 +76,6 @@
       ;(println "\nResponse: " response)
       response)))
 
-(defn wrap-db [handler conn]
-  (fn [request]
-    (let [response (handler (assoc request ::conn conn))]
-      response)))
 
 (defn wrap-defaults [handler]
   (let [cookie-store-key (env :session-cookie-store-key)
@@ -76,7 +85,3 @@
                                  (assoc-in [:session :store] (cookie/cookie-store {:key cookie-store-key}))
                                  (assoc-in [:session :cookie-name] cookie-name)))))
 
-(defn wrap-parser [handler parser]
-  (fn [request]
-    (let [response (handler (assoc request ::parser parser))]
-      response)))
