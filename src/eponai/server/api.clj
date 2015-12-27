@@ -2,15 +2,12 @@
   (:require [cemerick.friend :as friend]
             [clojure.core.async :refer [go >!]]
             [compojure.core :refer :all]
-            [compojure.route :as route]
             [datomic.api :as d]
             [eponai.server.auth :as a]
             [eponai.server.datomic.transact :as t]
             [eponai.server.datomic.pull :as p]
-            [eponai.server.http :as h]
             [eponai.server.middleware.api :as m]
-            [ring.middleware.defaults :as r]
-            [ring.middleware.gzip :as gzip]))
+            [ring.util.response :as r]))
 
 ; Auth stuff
 
@@ -56,11 +53,9 @@
 ;----------Routes
 
 (defroutes user-routes
-           (POST "/" {:keys [body
-                             ::m/conn
-                             currency-chan
-                             ::m/parser] :as req}
-             (h/response
+           (POST "/" {:keys [body ::m/conn currency-chan ::m/parser]
+                      :as req}
+             (r/response
                (parser
                  {:state conn
                   :auth (friend/current-authentication req)
@@ -70,34 +65,19 @@
 (defroutes
   api-routes
   (context "/api" []
-    (POST "/signup" request (do
-                              (h/response (signup (::m/conn request) request))))
+    (POST "/signup" request
+      (r/response (signup (::m/conn request) request)))
     (GET "/schema" request
       (let [db (d/db (::m/conn request))]
-        (h/response (p/inline-value db
+        (r/response (p/inline-value db
                                     (p/schema db)
                                     [[:db/valueType :db/ident]
                                      [:db/unique :db/ident]
                                      [:db/cardinality :db/ident]]))))
-    ; Anonymous
-    (GET "/login" request (if (friend/identity request)
-                            (h/redirect "user/txs")
-                            (str "<h2>Login</h2>\n \n<form action=\"/login\" method=\"POST\">\n
-            Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
-            Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n
-            <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />")))
-
-    (GET "/signup" request (if (friend/identity request)
-                             (h/redirect "user/txs")
-                             (str "<h2>Signup</h2>\n \n<form action=\"/signup\" method=\"POST\">\n
-            Username: <input type=\"text\" name=\"username\" value=\"\" /><br />\n
-            Password: <input type=\"password\" name=\"password\" value=\"\" /><br />\n
-            <input type=\"submit\" name=\"submit\" value=\"submit\" /><br />")))
-
     ; Requires user login
     (context "/user" [] (friend/wrap-authorize user-routes #{::a/user}))
     (GET "/verify/:uuid" [uuid :as request]
       (do
         (verify (::m/conn request) uuid)
-        (h/response {:message "Your email is verified, you can now login."})))
-    (friend/logout (ANY "/logout" [] (h/redirect "/")))))
+        (r/response {:message "Your email is verified, you can now login."})))
+    (friend/logout (ANY "/logout" [] (r/redirect "/")))))

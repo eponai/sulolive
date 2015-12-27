@@ -1,14 +1,12 @@
 (ns eponai.server.site
-  (:require [compojure.core :refer :all]
-            [compojure.handler :as handler]
+  (:require [cemerick.friend :as friend]
+            [compojure.core :refer :all]
             [compojure.route :as route]
-            [ring.middleware.defaults :as r]
-            [ring.util.response :refer [resource-response]]
-            [ring.middleware.gzip :as gzip]
-            [eponai.server.http :as h]))
+            [ring.util.response :refer [resource-response]]))
 
 (defroutes
   site-routes
-  (GET "/" [] (resource-response "/b/index.html"))
-  (route/resources "/b")
-  (route/not-found "/b/index.html"))
+  (GET "/" [] (if (friend/current-authentication)
+                (ring.util.response/redirect "/dev/budget.html")
+                (ring.util.response/redirect "/b/index.html")))
+  (route/not-found "Not found"))

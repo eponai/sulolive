@@ -1,11 +1,9 @@
 (ns eponai.server.core
   (:gen-class)
   (:require [compojure.core :refer :all]
-            [compojure.route :as route]
             [eponai.server.datomic.pull :as p]
             [eponai.server.datomic.transact :as t]
             [eponai.server.auth :as a]
-            [eponai.server.http :as h]
             [datomic.api :only [q db] :as d]
             [cemerick.friend :as friend]
             [eponai.server.openexchangerates :as exch]
@@ -154,7 +152,8 @@
    (def app
      (-> (routes api-routes site-routes)
          (friend/authenticate {:credential-fn (partial a/cred-fn #(api/user-creds (d/db conn) %))
-                               :workflows     [(a/form)]})
+                               :workflows     [(a/form)]
+                               :default-landing-uri "/dev/budget.html"})
          m/wrap-error
          m/wrap-transit
          (m/wrap-parser parser)
