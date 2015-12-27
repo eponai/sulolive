@@ -1,20 +1,18 @@
 (ns eponai.server.core
   (:gen-class)
   (:require [compojure.core :refer :all]
-            [eponai.server.datomic.pull :as p]
-            [eponai.server.datomic.transact :as t]
             [eponai.server.auth :as a]
             [datomic.api :only [q db] :as d]
             [cemerick.friend :as friend]
             [eponai.server.openexchangerates :as exch]
-            [clojure.core.async :refer [>! <! go chan]]
+            [clojure.core.async :refer [<! go chan]]
             [clojure.edn :as edn]
             [ring.adapter.jetty :as jetty]
             [eponai.server.datomic_dev :refer [connect!]]
             [eponai.server.parser :as parser]
             [eponai.server.api :as api :refer [api-routes]]
             [eponai.server.site :refer [site-routes]]
-            [eponai.server.middleware.api :as m]))
+            [eponai.server.middleware :as m]))
 
 (def currency-chan (chan))
 (def email-chan (chan))
@@ -47,14 +45,16 @@
   ([conn cur-fn email-fn]
    (println "Initializing server...")
 
-   (go (while true (try
-                     (api/post-currency-rates conn cur-fn (<! currency-chan))
-                     (catch Exception e
-                       (println (.getMessage e))))))
-   (go (while true (try
-                     (api/send-email-verification email-fn (<! email-chan))
-                     (catch Exception e
-                       (println (.getMessage e))))))
+   (go (while true
+         (try
+           (api/post-currency-rates conn cur-fn (<! currency-chan))
+           (catch Exception e
+             (println (.getMessage e))))))
+   (go (while true
+         (try
+           (api/send-email-verification email-fn (<! email-chan))
+           (catch Exception e
+             (println (.getMessage e))))))
    (println "Done.")))
 
 (defn -main [& args]

@@ -1,4 +1,4 @@
-(ns eponai.server.middleware.api
+(ns eponai.server.middleware
   (:require [cognitect.transit :as transit]
             [environ.core :refer [env]]
             [eponai.server.http :as h]

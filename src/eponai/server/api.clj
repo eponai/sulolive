@@ -7,7 +7,7 @@
             [eponai.server.datomic.transact :as t]
             [eponai.server.datomic.pull :as p]
             [eponai.server.http :as h]
-            [eponai.server.middleware.api :as m]
+            [eponai.server.middleware :as m]
             [ring.util.response :as r]))
 
 ; Auth stuff
@@ -18,9 +18,9 @@
   Throws ExceptionInfo if the user has not verified their email."
   [db email]
   (if-let [db-user (p/user db email)]
-    (let [password (p/password db db-user)
-          verifications (p/verifications db db-user :user/email :verification.status/verified)]
-      (a/user->creds db-user password verifications))
+    (a/user->creds db-user
+                   (p/password db db-user)
+                   (p/verifications db db-user :user/email :verification.status/verified))
     (throw (a/not-found email))))
 
 ; Actions

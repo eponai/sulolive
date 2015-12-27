@@ -8,7 +8,7 @@
             [eponai.server.auth :as a]
             [eponai.server.openexchangerates :as exch]
             [eponai.server.parser :as parser]
-            [eponai.server.middleware.api :as m])
+            [eponai.server.middleware :as m])
   (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
@@ -60,8 +60,6 @@
       (t/new-user conn (a/new-signup (assoc request :request-method :post
                                                     :params user-params)))
       conn)))
-
-(c/init (new-db) test-curs #(println "Sent email"))
 
 (defn- db-with-curs []
   (let [conn (new-db)]
