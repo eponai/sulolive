@@ -6,6 +6,7 @@
             [eponai.server.auth :as a]
             [eponai.server.datomic.transact :as t]
             [eponai.server.datomic.pull :as p]
+            [eponai.server.http :as h]
             [eponai.server.middleware.api :as m]
             [ring.util.response :as r]))
 
@@ -26,10 +27,12 @@
 
 (defn signup
   "Create a new user and transact into datomic."
-  [conn {:keys [params email-chan] :as request}]
-  (if-not (p/user conn (params :username))
+  [{:keys [params ::m/email-chan ::m/conn]
+    :as request}]
+  (if-not (p/user (d/db conn) (params :username))
     (let [tx (t/new-user conn (a/new-signup request))]
-      (go (>! email-chan [(:db-after tx) (params :username)]))
+      (when email-chan
+        (go (>! email-chan [(:db-after tx) (params :username)])))
       tx)
     (throw (ex-info "User already exists."
                     {:cause   ::a/authentication-error
@@ -50,10 +53,33 @@
                        :data    {:uuid uuid}
                        :message "The verification link is no longer valid."})))))
 
+(defn post-currencies [conn curs]
+  (t/currencies conn curs))
+
+(defn post-currency-rates [conn rates-fn dates]
+  (let [unconverted (clojure.set/difference (set dates)
+                                            (p/converted-dates (d/db conn) dates))]
+    (when (some identity unconverted)
+      (t/currency-rates conn (map rates-fn (filter identity dates))))))
+
+(defn post-user-data
+  "Post new transactions for the user in the session. If there's no currency rates
+  for the date of the transactions, they will be fetched from OER."
+  [conn request]
+  (let [budget (p/budget (d/db conn) (:username (friend/current-authentication request)))
+        user-data (map #(assoc % :transaction/budget (:budget/uuid budget))
+                       (:body request))]
+    ;(go (>! currency-chan (map :transaction/date user-data)))
+    (t/user-txs conn user-data)))
+
+(defn send-email-verification [email-fn [db email]]
+  (when-let [verification (first (p/verifications db (p/user db email) :user/email :verification.status/pending))]
+    (email-fn email (verification :verification/uuid))))
+
 ;----------Routes
 
 (defroutes user-routes
-           (POST "/" {:keys [body ::m/conn currency-chan ::m/parser]
+           (POST "/" {:keys [body ::m/conn ::m/currency-chan ::m/parser]
                       :as req}
              (r/response
                (parser
@@ -66,7 +92,7 @@
   api-routes
   (context "/api" []
     (POST "/signup" request
-      (r/response (signup (::m/conn request) request)))
+      (r/response (signup request)))
     (GET "/schema" request
       (let [db (d/db (::m/conn request))]
         (r/response (p/inline-value db

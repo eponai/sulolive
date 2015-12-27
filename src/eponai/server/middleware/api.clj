@@ -37,9 +37,9 @@
       (println "\nResponse: " response)
       response)))
 
-(defn wrap-db [handler conn]
+(defn wrap-state [handler opts]
   (fn [request]
-    (handler (assoc request ::conn conn))))
+    (handler (merge request opts))))
 
 (defn wrap-parser [handler parser]
   (fn [request]

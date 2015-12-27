@@ -1,12 +1,14 @@
 (ns eponai.server.core-test
   (:require [clojure.test :refer :all]
             [datomic.api :only [q db] :as d]
-            [eponai.server.core :as b]
+            [eponai.server.api :as api]
+            [eponai.server.core :as c]
             [eponai.server.datomic.pull :as p]
             [eponai.server.datomic.transact :as t]
             [eponai.server.auth :as a]
             [eponai.server.openexchangerates :as exch]
-            [eponai.server.parser :as parser])
+            [eponai.server.parser :as parser]
+            [eponai.server.middleware.api :as m])
   (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
@@ -59,56 +61,56 @@
                                                     :params user-params)))
       conn)))
 
+(c/init (new-db) test-curs #(println "Sent email"))
+
 (defn- db-with-curs []
   (let [conn (new-db)]
-    (b/post-currencies conn test-curs)
+    (api/post-currencies conn test-curs)
     conn))
 
 (deftest test-post-currency-rates
   (testing "posting currency rates to database."
     (let [conn (db-with-curs)
           dates ["2010-10-10"]
-          db (b/post-currency-rates conn
+          db (api/post-currency-rates conn
                                     test-convs
                                     dates)
-          unposted (b/post-currency-rates conn
+          unposted (api/post-currency-rates conn
                                           test-convs
                                           dates)
           converted (p/converted-dates (:db-after db) dates)]
       (is db)
       (is (nil? unposted))
       (is (= (count converted) (count dates)))
-      (is (thrown? ExceptionInfo (b/post-currency-rates conn test-convs ["invalid-date"]))))))
+      (is (thrown? ExceptionInfo (api/post-currency-rates conn test-convs ["invalid-date"]))))))
 
 (deftest test-all-data-with-conversions
   (let [conn (db-with-curs)
-        _ (b/post-user-data conn request)
-        db-conv (b/post-currency-rates conn
+        _ (api/post-user-data conn request)
+        db-conv (api/post-currency-rates conn
                                        test-convs
                                        [(:transaction/date (first test-data))])
-        result (b/fetch p/all-data
-                        (:db-after db-conv)
-                        (user-params :username) {})]
-    (is (= (count (:entities result)) 8))
-    (is (= (count (:schema result)) 13))))
+        result (p/all-data
+                 (:db-after db-conv)
+                 (user-params :username) {})]
+    (is (= (count result) 8))))
 
 (deftest test-post-user-data
-  (let [db (b/post-user-data (db-with-curs)
+  (let [db (api/post-user-data (db-with-curs)
                              request)
-        result (b/fetch p/all-data (:db-after db)
-                        "user@email.com"
-                        {})
-        no-result (b/fetch p/all-data (:db-after db)
+        result (p/all-data (:db-after db)
                            "user@email.com"
-                           {:d "1"})]
-    (is (every? #(empty? (val %)) no-result))
-    (is (= (count (:schema result)) 11))
-    (is (= (count (:entities result)) 7))
+                           {})
+        no-result (p/all-data (:db-after db)
+                              "user@email.com"
+                              {:d "1"})]
+    (is (empty? no-result))
+    (is (= (count result) 7))
     (is (thrown-with-msg? ExceptionInfo
                           #"Invalid budget id"
-                          (b/fetch p/all-data (:db-after db)
-                                   "invalid@email.com"
-                                   {})))))
+                          (p/all-data (:db-after db)
+                                      "invalid@email.com"
+                                      {})))))
 
 (deftest test-cyclic-datomic-refs
   (testing "Setup cyclic ref in the schema and test that entity expansion works."
@@ -120,25 +122,24 @@
                          :db/valueType          :db.type/ref
                          :db/cardinality        :db.cardinality/one
                          :db.install/_attribute :db.part/db}])
-      (b/post-user-data conn request)
+      (api/post-user-data conn request)
       (d/transact conn [[:db/add (:db/id user) :user/budget (:db/id budget)]])
-      (let [result (b/fetch p/all-data (d/db conn) "user@email.com" {})]
-        (is (= (count (:entities result)) 7))
-        (is (= (count (:schema result)) 12))))))
+      (let [result (p/all-data (d/db conn) "user@email.com" {})]
+        (is (= (count result) 7))))))
 
 (deftest test-post-invalid-user-data
   (let [invalid-user-req (assoc-in request
                                    [:session :cemerick.friend/identity :authentications 1 :username]
                                    "invalid@user.com")
         invalid-data-req (assoc request :body [{:invalid-data "invalid"}])
-        post-fn #(b/post-user-data (db-with-curs)
+        post-fn #(api/post-user-data (db-with-curs)
                                    %)]
     (is (thrown? ExceptionInfo (post-fn invalid-user-req)))
     (is (thrown? ExceptionInfo (post-fn invalid-data-req)))))
 
 (deftest test-post-invalid-currencies 
   (testing "Posting invalid currency data."
-    (is (thrown? ExceptionInfo (b/post-currencies (new-db)
+    (is (thrown? ExceptionInfo (api/post-currencies (new-db)
                                                   (assoc test-curs :invalid 2))))))
 
 (deftest test-signup
@@ -146,23 +147,25 @@
     (let [valid-params {:username "test"
                         :password "p"}
           conn (new-db)
-          db-unverified (b/signup conn {:request-method :post
-                                        :params         valid-params})
+          db-unverified (api/signup {:request-method :post
+                                     :params         valid-params
+                                     ::m/conn conn})
           db-verified (t/new-verification conn
                                           (p/user (:db-after db-unverified) "test")
                                           :user/email
                                           :verification.status/verified)]
-      (is (a/cred-fn #(b/user-creds (:db-after db-verified) %) valid-params))
+      (is (a/cred-fn #(api/user-creds (:db-after db-verified) %) valid-params))
       (is (thrown-with-msg? ExceptionInfo
                             #"Email verification pending."
-                            (a/cred-fn #(b/user-creds (:db-after db-unverified) %) valid-params)))
+                            (a/cred-fn #(api/user-creds (:db-after db-unverified) %) valid-params)))
       (is (thrown-with-msg? ExceptionInfo
                             #"Validation failed, "
-                            (b/signup (new-db)
-                                      {:request-method :post
-                                       :params         {:username ""
-                                                        :password ""}})))
+                            (api/signup {:request-method :post
+                                         :params         {:username ""
+                                                          :password ""}
+                                         ::m/conn (new-db)})))
       (is (thrown-with-msg? ExceptionInfo
                             #"Invalid request method"
-                            (b/signup (new-db) {:request-method :get
-                                                :params         valid-params}))))))
+                            (api/signup {:request-method :get
+                                         :params         valid-params
+                                         ::m/conn (new-db)}))))))
