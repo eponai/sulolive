@@ -12,9 +12,11 @@
             [clojure.core.async :refer [>! <! go chan]]
             [clojure.edn :as edn]
             [ring.adapter.jetty :as jetty]
-            [ring.middleware.gzip :as ring.gzip]
             [eponai.server.datomic_dev :refer [connect!]]
-            [eponai.server.parser :as parser]))
+            [eponai.server.parser :as parser]
+            [eponai.server.api :as api :refer [api-routes]]
+            [eponai.server.site :refer [site-routes]]
+            [eponai.server.middleware.api :as m]))
 
 (def currency-chan (chan))
 (def email-chan (chan))
@@ -51,6 +53,7 @@
   (when-let [verification (first (p/verifications db (p/user db email) :user/email :verification.status/pending))]
     (email-fn email (verification :verification/uuid))))
 
+<<<<<<< HEAD
 (defn signup
   "Create a new user and transact into datomic."
   [conn {:keys [params] :as request}]
@@ -137,6 +140,7 @@
            (friend/logout (ANY "/logout" [] (ring.util.response/redirect "/")))
            ; Not found
            (route/not-found "Not Found"))
+(def parser (parser/parser {:read parser/read :mutate parser/mutate}))
 
 (defn init
   ([]
@@ -148,16 +152,16 @@
    (println "Initializing server...")
     ;; Defines the 'app var when init is run.
    (def app
-     (-> app-routes
-         (friend/authenticate {:credential-fn (partial a/cred-fn #(user-creds (d/db conn) %))
+     (-> (routes api-routes site-routes)
+         (friend/authenticate {:credential-fn (partial a/cred-fn #(api/user-creds (d/db conn) %))
                                :workflows     [(a/form)]})
-         h/wrap-error
-         h/wrap-transit
-         h/wrap-defaults
-         (h/wrap-parser (parser/parser {:read parser/read :mutate parser/mutate}))
-         (h/wrap-db conn)
-         h/wrap-log
-         ring.gzip/wrap-gzip))
+         m/wrap-error
+         m/wrap-transit
+         (m/wrap-parser parser)
+         (m/wrap-db conn)
+         m/wrap-defaults
+         m/wrap-log
+         m/wrap-gzip))
    (go (while true (try
                      (post-currency-rates conn cur-fn (<! currency-chan))
                      (catch Exception e

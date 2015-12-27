@@ -21,7 +21,6 @@
 (defn send!
   []
   (fn [{:keys [remote]} cb]
-
     (let [remote (->> remote
                       (reduce (fn [query x]
                                 (if (vector? x)
@@ -30,9 +29,9 @@
                               []))]
       (prn "send to remote: " remote)
       (go
-        (let [{:keys [body]} (<! (post "/user/"
+        (let [{:keys [body]} (<! (post "/api/user/"
                                        {:transit-params remote}))]
           (cb body))))))
 
 (defn db-schema []
-  (http/get "/schema"))
+  (http/get "/api/schema"))
