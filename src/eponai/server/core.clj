@@ -14,6 +14,35 @@
             [eponai.server.site :refer [site-routes]]
             [eponai.server.middleware :as m]))
 
+(defn app* [conn currency-chan email-chan]
+  (-> (routes api-routes site-routes)
+      (friend/authenticate {:credential-fn       (partial a/cred-fn #(api/user-creds (d/db conn) %))
+                            :workflows           [(a/form)]
+                            :default-landing-uri "/dev/budget.html"})
+      m/wrap-error
+      m/wrap-transit
+      (m/wrap-state {::m/conn          conn
+                     ::m/parser        (parser/parser {:read parser/read :mutate parser/mutate})
+                     ::m/currency-chan currency-chan
+                     ::m/email-chan    email-chan})
+      m/wrap-defaults
+      m/wrap-log
+      m/wrap-gzip))
+
+;; Do a little re-def dance. Store the arguments to app* in a var, right before
+;; it is redefined.
+;; app*args and app will be defined by init the first time, then they'll be
+;; redefined by ring.middleware.reload when it is redefining the namespace.
+(declare app*args call-app*)
+
+(def prev-app*args (when (bound? #'app*args) app*args))
+(def ^:dynamic app*args (when prev-app*args prev-app*args))
+(def ^:dynamic app (when app*args (call-app*)))
+
+(defn call-app* [& _]
+  (apply app* app*args))
+;; <--- END Re-def hack.
+
 (def currency-chan (chan))
 (def email-chan (chan))
 
@@ -21,22 +50,9 @@
   ([]
    (println "Using remote resources.")
    (let [conn (connect!)]
-     ;; Defines the 'app var when init is run.
-     (def app
-       (-> (routes api-routes site-routes)
-           (friend/authenticate {:credential-fn       (partial a/cred-fn #(api/user-creds (d/db conn) %))
-                                 :workflows           [(a/form)]
-                                 :default-landing-uri "/dev/budget.html"})
-           m/wrap-error
-           m/wrap-transit
-           (m/wrap-state {::m/conn          conn
-                          ::m/parser        (parser/parser {:read parser/read :mutate parser/mutate})
-                          ::m/currency-chan currency-chan
-                          ::m/email-chan    email-chan})
-           m/wrap-defaults
-           m/wrap-log
-           m/wrap-gzip))
-
+     ;; See comments about this where app*args and app is defined.
+     (alter-var-root (var app*args) (fn [_] [conn currency-chan email-chan]))
+     (alter-var-root (var app) call-app*)
      (init conn
            (partial exch/currency-rates nil)
            (partial a/send-email-verification (a/smtp)))))
