@@ -22,15 +22,24 @@
         {:value ret}))
     :else (prn "WARN: Returning nil for read key: " k)))
 
+(defmethod read :datascript/schema
+  [{:keys [state]} _ _]
+  (let [db (d/db state)
+        app (d/entity db [:ui/singleton :ui.singleton/app])]
+    ;; TODO: Do we really want this caching? Is it only for development?
+    ;; What could possibly go wrong? ;)
+    (when-not (:app/inited? app)
+      {:remote true})))
+
 (defn pull-all
   "takes the database, a pull query and where-clauses, where the where-clauses
   return some entity ?e."
   [state query where-clauses]
   (d/q (vec (concat '[:find [(pull ?e ?query) ...]
-                         :in $ ?query
-                         :where]
-                       where-clauses))
-          (d/db state)
+                      :in $ ?query
+                      :where]
+                    where-clauses))
+       (d/db state)
        query))
 
 (defmethod mutate 'datascript/transact

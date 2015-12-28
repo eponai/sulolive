@@ -1,6 +1,6 @@
 (ns eponai.client.testdata
   (:require-macros [eponai.client.testdata :refer [inline-datomic-schema]])
-  (:require [eponai.client.datascript :as eponai.datascript]))
+  (:require [eponai.common.datascript :as eponai.datascript]))
 
 (def datomic-schema (inline-datomic-schema))
 

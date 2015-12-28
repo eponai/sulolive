@@ -8,7 +8,7 @@
             [cljs.core.async :as async]
             [clojure.walk :as w]
             [eponai.client.om_query :as omq]
-            [eponai.client.datascript :as budgetd]))
+            [eponai.common.datascript :as budgetd]))
 
 (defmulti mutate om/dispatch)
 

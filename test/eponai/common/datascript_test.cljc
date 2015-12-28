@@ -1,10 +1,11 @@
-(ns eponai.client.datascript_test
-  (:require [eponai.client.datascript :as budget.d]
+(ns eponai.common.datascript_test
+  (:require [eponai.common.datascript :as budget.d]
             [datascript.core :as d]
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
-            [clojure.test.check.clojure-test :refer-macros [defspec]]))
+            [clojure.test.check.clojure-test #?(:clj  :refer
+                                                :cljs :refer-macros) [defspec]]))
 
 (defn gen-datomic-keyword 
   "generates a keywords which contains alphanumeric characters.

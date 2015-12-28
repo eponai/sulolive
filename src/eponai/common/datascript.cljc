@@ -1,6 +1,5 @@
-(ns eponai.client.datascript
-  (:require [datascript.core :as d]
-            [clojure.walk :as w]))
+(ns eponai.common.datascript
+  (:require [clojure.walk :as w]))
 
 (defn schema-datomic->datascript [datomic-schema]
   (-> (reduce (fn [datascript-s {:keys [db/ident db/valueType] :as datomic-s}]
@@ -51,7 +50,9 @@
                                  (cond (number? v) [k (id-gen v)]
                                        (vector? v) [k (mapv id-gen v)]
                                        (map? v) x
-                                       :else (throw (str "unsupported reference value: " x))))
+                                       :else (throw (ex-info (str "unsupported reference value: " x)
+                                                             {:when "postwalking reference in db-id->temp-id"
+                                                              :error-value x}))))
                     :else x))
                 forms)))
 

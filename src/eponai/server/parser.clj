@@ -6,6 +6,7 @@
             [eponai.server.datomic.pull :as p]
             [eponai.server.datomic.transact :as t]
             [eponai.server.datomic.format :as f]
+            [eponai.common.datascript :as eponai.datascript]
             [datomic.api :only [db q] :as d]))
 
 (defn dispatch [_ k _]
@@ -13,6 +14,12 @@
 
 (defmulti read dispatch)
 (defmulti mutate dispatch)
+
+(defmethod read :datascript/schema
+  [{:keys [state]} _ _]
+  {:value (-> (d/db state)
+              p/schema-with-inline-values
+              eponai.datascript/schema-datomic->datascript)})
 
 (defmethod read :query/all-dates
   [{:keys [state query]} _ _]
