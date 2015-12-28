@@ -82,11 +82,18 @@
            (POST "/" {:keys [body ::m/conn ::m/currency-chan ::m/parser]
                       :as req}
              (r/response
-               (parser
-                 {:state conn
-                  :auth (friend/current-authentication req)
-                  :currency-chan currency-chan}
-                 body))))
+               (let [ret (parser
+                           {:state         conn
+                            :auth          (friend/current-authentication req)
+                            :currency-chan currency-chan}
+                           body)]
+                 (reduce-kv (fn [old k {:keys [om.next/error] :as v}]
+                              (if error
+                                (do (prn "Om next exception for key: " k)
+                                    (.printStackTrace error)
+                                    (assoc-in old [k :om.next/error] (str "got error, lol")))
+                                old))
+                            ret ret)))))
 
 (defroutes
   api-routes

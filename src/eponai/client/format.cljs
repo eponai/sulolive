@@ -21,7 +21,7 @@
   {:currency/code currency})
 
 (defn input->tags [tags]
-  (map #(select-keys % [:tag/name]) tags))
+  (map #(hash-map :tag/name %) tags))
 
 (defn input->transaction [amount title description uuid created-at]
   {:transaction/amount     (reader/read-string amount)

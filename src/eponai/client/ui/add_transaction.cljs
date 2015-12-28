@@ -116,9 +116,7 @@
                                                              (dissoc :input-tag)
                                                              (update :input-tags
                                                                      (fn [tags]
-                                                                       (map (fn [t]
-                                                                              (dissoc t ::tag/delete-fn))
-                                                                            tags))))))
+                                                                       (map :tag/name tags))))))
                                                     :query/all-dates])}
            "Save"]]]))))
 

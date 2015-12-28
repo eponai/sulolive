@@ -28,7 +28,7 @@
               (gen/choose 10 28))))
 
 (defn gen-tags []
-  (gen/hash-map :tag/name gen/string-alphanumeric))
+  (gen/vector gen/string-alphanumeric))
 
 (defn gen-transaction []
   (gen/hash-map :input-amount (gen-amount)
@@ -36,7 +36,7 @@
                 :input-title (gen-title)
                 :input-date (gen-date)
                 :input-description gen/string-alphanumeric
-                :input-tags (gen/vector (gen-tags))
+                :input-tags (gen-tags)
                 :input-created-at gen/pos-int))
 
 (defspec
@@ -50,9 +50,16 @@
           conn (d/create-conn (testdata/datascript-schema))]
       (parser {:state conn} create-mutations)
       (let [ui (parser {:state conn} (om/get-query transactions/AllTransactions))
-            txs (set (map :input-uuid transactions))
+            uuids (set (map :input-uuid transactions))
+            txs-by-uuid (group-by :input-uuid transactions)
             rendered-txs (->> (:query/all-dates ui)
                               (mapcat :transaction/_date))]
-        (and (= (count txs) (count rendered-txs))
-             (every? #(contains? txs (:transaction/uuid %))
+        (and (= (count uuids) (count rendered-txs))
+             (every? #(and (contains? uuids (:transaction/uuid %))
+                           (= (count (:transaction/tags %))
+                              (count (-> (:transaction/uuid %)
+                                         txs-by-uuid
+                                         first
+                                         :input-tags))))
                      rendered-txs))))))
+

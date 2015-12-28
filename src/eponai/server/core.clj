@@ -16,10 +16,10 @@
 
 (defn app* [conn currency-chan email-chan]
   (-> (routes api-routes site-routes)
+      m/wrap-error
       (friend/authenticate {:credential-fn       (partial a/cred-fn #(api/user-creds (d/db conn) %))
                             :workflows           [(a/form)]
                             :default-landing-uri "/dev/budget.html"})
-      m/wrap-error
       m/wrap-transit
       (m/wrap-state {::m/conn          conn
                      ::m/parser        (parser/parser {:read parser/read :mutate parser/mutate})
