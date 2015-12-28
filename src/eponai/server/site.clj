@@ -8,5 +8,5 @@
   site-routes
   (GET "/" [] (if (friend/current-authentication)
                 (ring.util.response/redirect "/dev/budget.html")
-                (ring.util.response/redirect "/b/index.html")))
+                (ring.util.response/redirect "/index.html")))
   (route/not-found "Not found"))

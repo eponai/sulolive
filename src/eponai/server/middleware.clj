@@ -41,10 +41,6 @@
   (fn [request]
     (handler (merge request opts))))
 
-(defn wrap-parser [handler parser]
-  (fn [request]
-    (handler (assoc request ::parser parser))))
-
 (defn wrap-gzip [handler]
   (gzip/wrap-gzip handler))
 
