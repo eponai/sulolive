@@ -93,13 +93,6 @@
   (context "/api" []
     (POST "/signup" request
       (r/response (signup request)))
-    (GET "/schema" request
-      (let [db (d/db (::m/conn request))]
-        (r/response (p/inline-value db
-                                    (p/schema db)
-                                    [[:db/valueType :db/ident]
-                                     [:db/unique :db/ident]
-                                     [:db/cardinality :db/ident]]))))
     ; Requires user login
     (context "/user" [] (friend/wrap-authorize user-routes #{::a/user}))
     (GET "/verify/:uuid" [uuid :as request]
