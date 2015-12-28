@@ -42,9 +42,5 @@
                               []))]
       (prn "send to remote: " remote)
       (go
-        (let [{:keys [body]} (<! (post "/api/user/"
-                                       {:transit-params remote}))]
+        (let [{:keys [body]} (<! (post "/api/user/" {:transit-params remote}))]
           (cb body))))))
-
-(defn db-schema []
-  (http/get "/api/schema"))
