@@ -22,8 +22,11 @@
   (render
     [this]
     (let [{:keys [proxy/header proxy/transactions]} (om/props this)]
-      (html [:div (->Header header)
-             (->AllTransactions transactions)]))))
+      (html [:div
+             [:div (->Header header)]
+             [:div {:class "content-section-b"}
+              [:div {:class "content-section-b"}
+               (->AllTransactions transactions)]]]))))
 
 (defonce conn-atom (atom nil))
 

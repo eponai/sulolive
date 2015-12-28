@@ -19,7 +19,7 @@
            :transaction/amount
            :transaction/details
            :transaction/status
-           {:transaction/currency [:currency/name]}
+           {:transaction/currency [:currency/code]}
            {:transaction/tags ?tag}
            ::transaction-show-tags?])
   Object
@@ -48,7 +48,7 @@
                               :flex-direction  "row"
                               :justify-content "flex-start"
                               })
-                 [:div (str amount " " (:currency/name currency))]
+                 [:div (str amount " " (:currency/code currency))]
                  [:div (style {:margin-left "0.5em"
                                :font-weight "bold"
                                :color       (if status
@@ -78,7 +78,7 @@
   2015-10-21 => Wednesday 21st"
   [{:keys [date/year date/month date/day]}]
   (str
-    ((get t.format/date-formatters "EEEE") (t/date-time year month day))
+    ((get t.format/date-formatters "EEE") (t/date-time year month day))
     " "
     day (condp = (mod day 10)
           1 "st"
@@ -91,7 +91,7 @@
   [transactions]
   {:amount   (transduce (map :transaction/amount) + 0 transactions)
    ;; TODO: Should instead use the primary currency
-   :currency (-> transactions first :transaction/currency :currency/name)})
+   :currency (-> transactions first :transaction/currency :currency/code)})
 
 (defui DayTransactions
   static om/IQueryParams
@@ -112,33 +112,39 @@
                 expanded (if (nil? day-expanded?)
                            (::day-expanded? (om/get-computed this))
                            day-expanded?)]
-            (html [:div
-                   (style {:borderWidth "0px 0px 1px"
-                           :borderStyle "solid"})
-                   [:style (css [:#ui-day {:background-color "#fff"}
-                                 [:&:hover {:background-color "rgb(250,250,250)"}]
-                                 [:&:active {:background-color "#eee"}]])]
-                   [:div (-> (style {:display         "flex"
-                                     :flex-direction  "row"
-                                     :flex-wrap       "nowrap"
-                                     :align-items     "center"
-                                     :justify-content "flex-start"})
-                             (assoc :id "ui-day"
-                                    :on-click #(parser/cas! this (:db/id props)
-                                                            ::day-expanded?
-                                                            (::day-expanded? props)
-                                                            (not expanded))))
-                    [:div (style {:fontSize   "1.3em"
-                                  :fontWeight "bold"})
+            (html [:div {:class "panel panel-default"}
+                   [:div {:class    "panel-heading"
+                          :id       "ui-day"
+                          :on-click #(parser/cas! this
+                                                  (:db/id props)
+                                                  ::day-expanded?
+                                                  (::day-expanded? props)
+                                                  (not expanded))}
+                    [:span#weekday {:class "lead col-md-4"} (day-of-the-week props)]
+                    [:span#daily-amount {:class "lead"}
                      (let [{:keys [amount currency]} (sum transactions)]
-                       (str amount " " currency))]
-                    [:div (style {:fontSize    "1.3em"
-                                  :fontWeight  "bold"
-                                  :margin-left "0.5em"})
-                     [:span (day-of-the-week props)]]]
+                       (str amount " " currency))]]
                    (when expanded
-                     [:div
-                      (map ->Transaction transactions)])]))))
+                     [:div#day-transactions {:class "panel-body"}
+                      (map ->Transaction transactions)])]
+                  ;[:div (-> (style {:display         "flex"
+                  ;                  :flex-direction  "row"
+                  ;                  :flex-wrap       "nowrap"
+                  ;                  :align-items     "center"
+                  ;                  :justify-content "flex-start"})
+                  ;          (assoc :id "ui-day"
+                  ;                 :on-click #(parser/cas! this (:db/id props)
+                  ;                                         ::day-expanded?
+                  ;                                         (::day-expanded? props)
+                  ;                                         (not expanded))))
+                  ; [:div (style {:fontSize   "1.3em"
+                  ;               :fontWeight "bold"})
+                  ;  [:span#weekday {:class "lead"} (day-of-the-week props)]]
+                  ; [:div#daily-amount (style {:fontSize   "1.0em"
+                  ;                            :fontWeight "bold"})
+                  ;  (let [{:keys [amount currency]} (sum transactions)]
+                  ;    (str amount " " currency))]]
+                  ))))
 
 (def ->DayTransactions (om/factory DayTransactions {:keyfn :date/ymd
                                                     :validator :date/ymd}))
@@ -165,17 +171,28 @@
             (html [:div {:key "transactions"}
                    (->> (rseq by-year-month)
                         (map (fn [[year months]]
-                               [:div {:key (str "transactions-by-year=" year)}
-                                [:span {:key (str "transaction-span-year=" year)} year]
-                                (->> (rseq months)
-                                     (map (fn [[month dates]]
-                                            [:div {:key (str "transactions-by-year=" year "-month=" month)}
-                                             [:h2 {:key (str "transactions-h2-year=" year "-month=" month)}
-                                              ((get t.format/date-formatters "MMMM")
-                                                    (t/date-time year month))]
-                                             (map ->DayTransactions
-                                                  (->> dates
-                                                       (sort-by :date/day)
-                                                       (rseq)))])))])))]))))
+                               [:div {:key   (str "transactions-by-year=" year)
+                                      :class "row"}
+                                [:span {:key   (str "transaction-span-year=" year)
+                                        :class "col-sm-1 network-text"} year]
+                                [:div {:key (str "transactions-col-year=" year)
+                                       :class "col-sm-11"}
+                                 (->> (rseq months)
+                                      (map (fn [[month dates]]
+                                             [:div {:key   (str "transactions-by-year=" year "-month=" month)
+                                                    :class "row"}
+                                              [:span {:key (str "transactions-h2-year=" year "-month=" month)
+                                                      :class "col-sm-1 network-text"}
+                                               ((get t.format/date-formatters "MMM")
+                                                 (t/date-time year month))]
+                                               [:div {:key (str "transactions-" year "-" month "-col")
+                                                      :class "panel-group col-sm-11"}
+                                                [:style (css [:#ui-day {:background-color "#fff"}
+                                                              [:&:hover {:background-color "rgb(250,250,250)"}]
+                                                              [:&:active {:background-color "#eee"}]])]
+                                               (map ->DayTransactions
+                                                    (->> dates
+                                                         (sort-by :date/day)
+                                                         (rseq)))]])))]])))]))))
 
 (def ->AllTransactions (om/factory AllTransactions))
