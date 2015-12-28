@@ -47,6 +47,7 @@
 (defn wrap-defaults [handler]
   (let [config {:session  {:store       (cookie/cookie-store {:key (env :session-cookie-store-key)})
                            :cookie-name (env :session-cookie-name)}
-                :security {:anti-forgery false}}]
+                :security {:anti-forgery false}
+                :static   {:resources false}}]
     (r/wrap-defaults handler (merge r/site-defaults
                                     config))))
