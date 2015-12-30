@@ -1,7 +1,7 @@
 (ns eponai.devcards.ui.transactions_dc
   (:require [devcards.core :as dc]
             [sablono.core :refer-macros [html]]
-            [eponai.client.ui.transactions :as t])
+            [eponai.client.ui.all_transactions :as t])
   (:require-macros [devcards.core :refer [defcard]]))
 
 (defn transaction-props* [name [y m d] amount currency tags]

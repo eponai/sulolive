@@ -5,7 +5,6 @@
 
 (defn ^:export run []
   (run-tests
-    'eponai.client.datascript_test
     'eponai.client.ui.add_transaction_test)
   (app/run))
 

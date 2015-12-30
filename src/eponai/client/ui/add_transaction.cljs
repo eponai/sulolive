@@ -3,7 +3,7 @@
             [eponai.client.ui :refer-macros [style]]
             [eponai.client.ui.datepicker :refer [->Datepicker]]
             [eponai.client.ui.tag :as tag]
-            [eponai.client.format :as format]
+            [eponai.client.format.format :as format]
             [sablono.core :as html :refer-macros [html]]
             [cljsjs.pikaday]
             [cljsjs.moment]

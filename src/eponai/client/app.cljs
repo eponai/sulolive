@@ -10,7 +10,7 @@
             [eponai.client.parser :as parser]
             [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
             [eponai.client.ui.header :refer [Header ->Header]]
-            [eponai.client.ui.transactions :refer [AllTransactions ->AllTransactions]]))
+            [eponai.client.ui.all_transactions :refer [AllTransactions ->AllTransactions]]))
 
 (defui App
   static om/IQuery
