@@ -7,7 +7,8 @@
     [eponai.devcards.ui.modal_dc]
     [eponai.devcards.ui.tag_dc]
     [eponai.devcards.ui.add_transaction_dc]
-    [eponai.devcards.ui.transactions_dc])
+    [eponai.devcards.ui.transaction_dc]
+    [eponai.devcards.ui.all_transactions_dc])
   (:require-macros
     [devcards.core :refer [defcard]]))
 

@@ -21,5 +21,9 @@
       (html "dev/budget.html")
       (html (str path ".html"))))
 
+  (GET "/devcards" []
+    (println "Hej")
+    (html "devcards/budget.html"))
+
   (route/resources "/")
   (route/not-found "Not found"))

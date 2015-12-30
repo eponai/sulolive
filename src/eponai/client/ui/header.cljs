@@ -1,6 +1,6 @@
 (ns eponai.client.ui.header
   (:require [om.next :as om :refer-macros [defui]]
-            [eponai.client.ui :refer-macros [style]]
+            [eponai.client.ui :refer-macros [opts]]
             [eponai.client.parser :as parser]
             [eponai.client.ui.modal :refer [->Modal]]
             [eponai.client.ui.add_transaction :as add.t :refer [->AddTransaction]]
@@ -22,30 +22,42 @@
           modal-trigger #(parser/cas! this id ::show-transaction-modal
                                       show-transaction-modal
                                       (not show-transaction-modal))]
-      (html [:nav (merge (style {:display         "flex"
-                                 :flex-wrap       "no-wrap"
-                                 :justify-content "space-between"})
-                         {:class "navbar navbar-default navbar-fixed-top topnav"
-                          :role "navigation"})
-             [:div (merge (style {:display "flex"
-                                  :width   "33%"})
-                          {:class "container topnav"})
-              [:panel {:class "panel-body"}
-               [:span {:class "network-name"} "JourMoney"]]]
-             [:button (merge (style {:width "33%"})
-                             {:on-click modal-trigger
-                              :class "btn btn-primary btn-md"})
+      (html [:nav
+             (opts {:style {:display         "flex"
+                            :flex-wrap       "no-wrap"
+                            :justify-content "space-between"}
+                    :class "navbar navbar-default navbar-fixed-top topnav"
+                    :role  "navigation"})
+
+             [:div
+              (opts {:class "navbar-brand topnav"
+                     :style {:display "flex"
+                             :flex-direction "row"
+                             :margin-right "5.0em"}})
+              "JourMoney"]
+
+             [:button
+              (opts {:style {}
+                     :on-click modal-trigger
+                     :class "btn btn-primary btn-md"})
               "New Transaction"]
-             [:div (style {:display        "flex"
-                           :flex-direction "row-reverse"
-                           :width          "33%"})
-              [:form {:action "/api/logout"
-                      :id "logout-form"
-                      :method "get"}]
-              [:button {:class "btn btn-default btn-md"
-                        :type "submit"
-                        :form "logout-form"} "logout"]
-              [:button  {:class "btn btn-default btn-md"} "settings"]]
+             [:div
+              (opts {:style {:display        "flex"
+                             :flex-direction "row-reverse"}})
+              [:form
+               {:action "/api/logout"
+                :id "logout-form"
+                :method "get"}]
+
+              [:button
+               {:class "btn btn-default btn-md"
+                :type "submit"
+                :form "logout-form"} "logout"]
+
+              [:button
+               {:class "btn btn-default btn-md"}
+               "settings"]]
+
              (when show-transaction-modal
                (->Modal {:dialog-content #(->AddTransaction add-transaction)
                          :on-close       modal-trigger}))]))))

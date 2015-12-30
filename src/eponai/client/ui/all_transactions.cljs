@@ -2,7 +2,7 @@
   (:require [eponai.client.ui.format :as f]
             [eponai.client.parser :as parser]
             [eponai.client.ui.transaction :as trans]
-            [eponai.client.ui :refer [style]]
+            [eponai.client.ui :refer-macros [style opts]]
             [garden.core :refer [css]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]))
@@ -24,72 +24,74 @@
       ['*
        {:transaction/_date (om/get-query trans/Transaction)}
        ::day-expanded?]}])
+
   Object
   (render [this]
     (let [{:keys [query/all-dates]} (om/props this)
           by-year-month (f/dates-by-year-month all-dates)]
       (html
         [:div
-         {:key "transactions"}
-         (->>
-           (rseq by-year-month)
-           (map
-             (fn [[year months]]
-               [:div
-                {:key   (str "transactions-by-year=" year)
-                 :class "row"}
-                [:span
-                 {:key   (str "transaction-span-year=" year)
-                  :class "col-sm-1 network-text"} year]
-                [:div
-                 {:key (str "transactions-col-year=" year)
-                  :class "col-sm-11"}
-                 (->>
-                   (rseq months)
-                   (map
-                     (fn [[month dates]]
-                       [:div
-                        {:key   (str "transactions-by-year=" year "-month=" month)
-                         :class "row"}
-                        [:span
-                         {:key   (str "transactions-h2-year=" year "-month=" month)
-                          :class "col-sm-1 network-text"}
-                         (f/month-name month)]
-                        [:div
-                         {:key   (str "transactions-" year "-" month "-col")
-                          :class "panel-group col-sm-11"}
-                         [:style
-                          (css [:#ui-day {:background-color "#fff"}
-                                [:&:hover {:background-color "rgb(250,250,250)"}]
-                                [:&:active {:background-color "#eee"}]])]
-                         (map
-                           (fn [date]
-                             (let [{transactions :transaction/_date
-                                    :keys        [::day-expanded?]} date]
-                               [:div
-                                {:class "panel panel-default"}
-                                [:div
-                                 {:class    "panel-heading"
-                                  :id       "ui-day"
-                                  :on-click #(parser/cas! this
-                                                          (:db/id date)
-                                                          ::day-expanded?
-                                                          (::day-expanded? date)
-                                                          (not day-expanded?))}
-                                 [:span#weekday
-                                  {:class "lead col-md-4"}
-                                  (str (f/day-name date) "  " (:date/day date))]
+         {:class "container"}
+         [:div
+          {:class "panel-group"}
+          (map
+            (fn [[year months]]
+              [:div#year-panel
+               {:class "row"}
 
-                                 [:span#daily-amount
-                                  {:class "lead"}
-                                  (let [{:keys [amount currency]} (sum transactions)]
-                                    (str amount " " currency))]]
+               [:span#year
+                {:class "col-xs-1 network-name"}
+                year]
 
-                                (when day-expanded?
-                                  [:div#day-transactions {:class "panel-body"}
-                                   (map trans/->Transaction transactions)])]))
-                           (->> dates
-                                (sort-by :date/day)
-                                (rseq)))]])))]])))]))))
+               [:div#months
+                {:class "col-xs-11"}
+                (map
+                  (fn [[month days]]
+                    [:div#month
 
+                     [:span#month-name
+                      {:class "col-xs-3 col-sm-1 network-name"}
+                      (f/month-name month)]
+
+                     [:div#days {:class "col-xs-9 col-sm-11 network-text"}
+                      (map
+                        (fn [date]
+                          [:div
+                           [:div#day
+                            (opts {:class "row panel panel-default"})
+
+                            [:div#weekday
+                             {:class    "col-xs-4 col-sm-2"
+                              :on-click #(parser/cas!
+                                          this
+                                          (:db/id date)
+                                          ::day-expanded?
+                                          (::day-expanded? date)
+                                          (not (::day-expanded? date)))}
+                             [:span#dayname
+                              (opts {:style {:margin-right "0.3em"}})
+                              (f/day-name date)]
+
+                             [:span#date
+                              (opts {:style {:margin-right "1.0em"}})
+                              (:date/day date)]
+
+                             [:p#daysum
+                              {:class "text-success"}
+                              (let [{:keys [currency
+                                            amount]} (sum (:transaction/_date date))]
+                                (str currency " " amount))]]
+
+                            [:style
+                             (css [:#weekday {:background-color "#fff"}
+                                   [:&:hover {:background-color "rgb(250,250,250)"}]
+                                   [:&:active {:background-color "#eee"}]])]
+
+                            [:div#transactions
+                             {:class "col-xs-8 col-sm-10"}
+                             (map trans/->Transaction
+                                  (:transaction/_date date))]]])
+                        days)]])
+                  (rseq months))]])
+            (rseq by-year-month))]]))))
 (def ->AllTransactions (om/factory AllTransactions))
