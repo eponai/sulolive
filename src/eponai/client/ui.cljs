@@ -4,4 +4,6 @@
 (defn unique-str [uuid v]
   (if (vector? v)
     (s/join "-" (concat ["uniq" uuid] v))
-    v))
+    (do
+      (prn "WARN: The value of :key was not a vector. Value: " v)
+      v)))
