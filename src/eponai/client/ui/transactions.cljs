@@ -1,6 +1,6 @@
 (ns eponai.client.ui.transactions
   (:require [om.next :as om :refer-macros [defui]]
-            [eponai.client.ui :refer [style]]
+            [eponai.client.ui :refer-macros [style]]
             [eponai.client.ui.tag :as tag]
             [cljs-time.core :as t]
             [cljs-time.format :as t.format]

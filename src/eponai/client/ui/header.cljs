@@ -1,6 +1,6 @@
 (ns eponai.client.ui.header
   (:require [om.next :as om :refer-macros [defui]]
-            [eponai.client.ui :refer [style]]
+            [eponai.client.ui :refer-macros [style]]
             [eponai.client.parser :as parser]
             [eponai.client.ui.modal :refer [->Modal]]
             [eponai.client.ui.add_transaction :as add.t :refer [->AddTransaction]]

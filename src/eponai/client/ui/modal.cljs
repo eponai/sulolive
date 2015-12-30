@@ -1,6 +1,6 @@
 (ns eponai.client.ui.modal
   (:require [om.next :as om :refer-macros [defui]]
-            [eponai.client.ui :refer [style]]
+            [eponai.client.ui :refer-macros [style]]
             [sablono.core :as html :refer-macros [html]]
             [garden.core :refer [css]]))
 

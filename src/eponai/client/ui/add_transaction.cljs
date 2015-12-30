@@ -1,6 +1,6 @@
 (ns eponai.client.ui.add_transaction
   (:require [om.next :as om :refer-macros [defui]]
-            [eponai.client.ui :refer [style]]
+            [eponai.client.ui :refer-macros [style]]
             [eponai.client.ui.datepicker :refer [->Datepicker]]
             [eponai.client.ui.tag :as tag]
             [eponai.client.format :as format]
