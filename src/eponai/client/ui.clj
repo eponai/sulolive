@@ -1,6 +1,5 @@
 (ns eponai.client.ui
-  (:require [clojure.walk :as w]
-            [clojure.string :as s])
+  (:require [clojure.string :as s])
   (:import [java.util UUID]))
 
 (defn ->camelCase [k]
@@ -19,26 +18,20 @@
                     (transient {}))
          persistent!)))
 
-(defn unique-value [v]
-  (if (vector? v)
-    (s/join "--" (concat ["unique-key" (UUID/randomUUID)]
-                         v))
-    v))
-
 (defmacro assoc-if [bool m k v]
   `(if ~bool
      (assoc ~m ~k ~v)
      ~m))
 
 (defmacro opts [{:keys [style key] :as m}]
-  (let [m# (assoc-if style m :style (style* style))
-        m2# (assoc-if key m# :key (unique-value key))]
-    (if style
-      `(update ~m2# :style ~'cljs.core/clj->js)
-      `~m2#)))
+  (let [uuid (str (UUID/randomUUID))]
+    `(let [m# ~(assoc-if style m :style (style* style))
+           m2# (assoc-if ~key m# :key (unique-str ~uuid ~key))]
+       (if ~style
+         (update m2# :style ~'cljs.core/clj->js)
+         m2#))))
 
 (defmacro style [m & ms]
   (let [ret# (style* m)]
     `(apply merge {:style (~'cljs.core/clj->js ~ret#)}
             ~ms)))
-
