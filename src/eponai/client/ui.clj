@@ -18,26 +18,23 @@
                     (transient {}))
          persistent!)))
 
-(defmacro assoc-if [bool m k v]
-  `(if ~bool
-     (assoc ~m ~k ~v)
-     ~m))
-
 (defn should-inline-style? [m]
   (and (map? m)
        (every? keyword? (keys m))))
 
-(defmacro opts [{:keys [style key] :as m}]
-  (let [uuid (str (UUID/randomUUID))]
-    `(let [style# style
-           key# key
-           ret# (assoc-if style# ~m :style ~(if (should-inline-style? style)
-                                              (style* style) ;; inline call if it's safe to do so.
-                                              `(style* style#)))
-           ret2# (assoc-if key# ret# :key (unique-str ~uuid key#))]
-       (if style#
-         (update ret2# :style ~'cljs.core/clj->js)
-         ret2#))))
+(defmacro opts [m]
+  `(let [m# ~m
+         style# (:style m#)
+         key# (:key m#)
+         ret# (assoc-if style# m# :style ~(if (and (map? m)
+                                                   (contains? m :style)
+                                                   (should-inline-style? (:style m)))
+                                             (style* (:style m))
+                                            `(style* style#)))
+         ret2# (assoc-if key# ret# :key (fn [] (unique-str ~(str (UUID/randomUUID)) key#)))]
+     (if style#
+       (update ret2# :style ~'cljs.core/clj->js)
+       ret2#)))
 
 (defmacro style [m & ms]
  `(let [ret# ~(if (should-inline-style? m)
