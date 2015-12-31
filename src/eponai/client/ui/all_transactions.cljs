@@ -36,41 +36,49 @@
           (map
             (fn [[year months]]
               [:div#year-panel
-               (opts {:style {:display         "flex"
+               (opts {:key [year]
+                      :style {:display         "flex"
                               :flex-direction  "row"
                               :justify-content "flex-start"
                               :align-items     "flex-start"
                               :width "100%"}})
 
                [:span#year
-                (opts {:class "network-name"
+                (opts {:key [year]
+                       :class "network-name"
                        :style {:margin-right "0.5em"}})
                 year]
 
                [:div#months
-                (opts {:style {:width "100%"}})
+                (opts {:key [year]
+                       :style {:width "100%"}})
                 (map
                   (fn [[month days]]
                     [:div#month
-                     (opts {:style {:display "flex"
+                     (opts {:key [year month]
+                            :style {:display "flex"
                                     :flex-direction  "row"
                                     :align-items     "flex-start"
                                     :width "100%"}})
 
                      [:p#month-name
-                      {:class "network-name"}
+                      (opts {:key [year month]
+                             :class "network-name"})
                       (f/month-name month)]
 
                      [:div#days
-                      (opts {:class "panel-group"
+                      (opts {:key [year month]
+                             :class "panel-group"
                              :style {:width "100%"}})
                       (map
                         (fn [date]
                           [:div#day
-                           (opts {:class "panel panel-info"})
+                           (opts {:key [year month date]
+                                  :class "panel panel-info"})
 
                            [:div#weekday
-                            (opts {:class "panel-heading list-group-item"
+                            (opts {:key [year month date]
+                                   :class "panel-heading list-group-item"
                                    :style {:display "flex"
                                            :flex-direction "row"
                                            :justify-content "space-between"}
@@ -81,17 +89,19 @@
                                                (::day-expanded? date)
                                                (not (::day-expanded? date)))})
                             [:span#dayname
-                             (opts {:style {:margin-right "0.3em"}})
+                             (opts {:key [year month date]
+                                    :style {:margin-right "0.3em"}})
                              (str (f/day-name date) " " (:date/day date))]
 
                             [:span#daysum
-                             (let [{:keys [currency
-                                           amount]} (sum (:transaction/_date date))]
+                             (opts {:key [year month date]})
+                             (let [{:keys [currency amount]} (sum (:transaction/_date date))]
                                (str amount " " currency))]]
 
                            (when (::day-expanded? date)
                              [:div#transactions
-                              (opts {:class "panel-body"})
+                              (opts {:key [year month date]
+                                     :class "panel-body"})
                               (map trans/->Transaction
                                    (:transaction/_date date))])])
                         (rseq days))]])
