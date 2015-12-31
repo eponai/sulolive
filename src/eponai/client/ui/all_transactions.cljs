@@ -33,64 +33,80 @@
         [:div
          {:class "container"}
          [:div
-          {:class "panel-group"}
           (map
             (fn [[year months]]
               [:div#year-panel
-               {:class "row"}
+               (opts {:style {:display         "flex"
+                              :flex-direction  "row"
+                              :justify-content "flex-start"
+                              :align-items     "flex-start"
+                              :width "100%"}})
 
                [:span#year
-                {:class "col-xs-1 network-name"}
+                (opts {:class "network-name"
+                       :style {:margin-right "0.5em"}})
                 year]
 
                [:div#months
-                {:class "col-xs-11"}
+                (opts {:style {:width "100%"}})
                 (map
                   (fn [[month days]]
                     [:div#month
+                     (opts {:style {:display "flex"
+                                    :flex-direction  "row"
+                                    :align-items     "flex-start"
+                                    :width "100%"}})
 
                      [:span#month-name
-                      {:class "col-xs-3 col-sm-1 network-name"}
+                      {:class "network-name"}
                       (f/month-name month)]
 
-                     [:div#days {:class "col-xs-9 col-sm-11 network-text"}
+                     [:div#days
+                      (opts {:class "network-text"
+                             :style {:width "100%"}})
                       (map
                         (fn [date]
-                          [:div
-                           [:div#day
-                            (opts {:class "row panel panel-default"})
+                          [:div#day
+                           (opts {:style
+                                  {:display         "flex"
+                                   :flex-direction  "row"
+                                   :width           "100%"
+                                   :justify-content "space-around"
+                                   :border-style    "solid"
+                                   :border-width    "0px 0px 1px 0px"
+                                   :border-color    "#ddd"}})
 
-                            [:div#weekday
-                             {:class    "col-xs-4 col-sm-2"
-                              :on-click #(parser/cas!
-                                          this
-                                          (:db/id date)
-                                          ::day-expanded?
-                                          (::day-expanded? date)
-                                          (not (::day-expanded? date)))}
-                             [:span#dayname
-                              (opts {:style {:margin-right "0.3em"}})
-                              (f/day-name date)]
+                           [:div#weekday
+                            (opts {:style    {:margin-left "0.5em"}
+                                   :on-click #(parser/cas!
+                                               this
+                                               (:db/id date)
+                                               ::day-expanded?
+                                               (::day-expanded? date)
+                                               (not (::day-expanded? date)))})
+                            [:span#dayname
+                             (opts {:style {:margin-right "0.3em"}})
+                             (f/day-name date)]
 
-                             [:span#date
-                              (opts {:style {:margin-right "1.0em"}})
-                              (:date/day date)]
+                            [:span#date
+                             (:date/day date)]
 
-                             [:p#daysum
-                              {:class "text-success"}
-                              (let [{:keys [currency
-                                            amount]} (sum (:transaction/_date date))]
-                                (str currency " " amount))]]
+                            [:p#daysum
+                             {:class "text-success"}
+                             (let [{:keys [currency
+                                           amount]} (sum (:transaction/_date date))]
+                               (str currency " " amount))]]
 
-                            [:style
-                             (css [:#weekday {:background-color "#fff"}
-                                   [:&:hover {:background-color "rgb(250,250,250)"}]
-                                   [:&:active {:background-color "#eee"}]])]
+                           [:style
+                            (css [:#weekday {:background-color "#fff"}
+                                  [:&:hover {:background-color "rgb(250,250,250)"}]
+                                  [:&:active {:background-color "#eee"}]])]
 
-                            [:div#transactions
-                             {:class "col-xs-8 col-sm-10"}
-                             (map trans/->Transaction
-                                  (:transaction/_date date))]]])
+                           [:div#transactions
+                            (opts {:style {:width        "60%"
+                                           :margin-left "0.5em"}})
+                            (map trans/->Transaction
+                                 (:transaction/_date date))]])
                         days)]])
                   (rseq months))]])
             (rseq by-year-month))]]))))

@@ -25,28 +25,42 @@
                              transaction/tags
                              ::transaction-show-tags?]} (om/props this)]
       (html
-        [:div
-         [:div
+        [:div#transaction
+         (opts {:style {:display "flex"
+                        :flex-direction "column"
+                        :align-items "flex-start"
+                        :width "100%"
+                        :margin-left "0.5em"}
+                :class "list-group-item-text"})
+         [:style
+          (css [:#transaction
+                {:background-color #"fff"}
+                [:&:hover {:background-color "rgb(250,250,250)"}]
+                [:&:active {:background-color "#eee"}]])]
+         [:div#info
           (opts {:style
                  {:display        "flex"
                   :flex-direction "row"
-                  :margin-top "0.3em"}})
+                  :justify-content "space-between"
+                  :width "100%"}})
           [:p#name
            (opts {:class "text-primar"
                   :style {:margin-right "0.5em"}})
            transaction-name]
+
           [:p#amount
            (opts {:class "text-success"
                   :style {:margin-right "0.5em"}})
            (str (:currency/code currency) " " amount)]]
 
-         [:div#tags
-          (map
-            (fn [tag]
-              [:button
-               {:class "btn btn-default btn-xs"}
-               (:tag/name tag)])
-            tags)]]))))
+         (if (seq tags)
+           (map
+             (fn [tag]
+               [:button
+                {:class "btn btn-default btn-xs"}
+                (:tag/name tag)])
+             tags)
+           )]))))
 ;Object
        ;(render [this]
        ;        (let [{;; rename to avoid replacing clojure.core/name
