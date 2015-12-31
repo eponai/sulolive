@@ -255,4 +255,25 @@
   :db/valueType          :db.type/string,
   :db/cardinality        :db.cardinality/one,
   :db/doc                "Name of the currency."}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :currency/symbol
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "International symbol for the currency"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :currency/symbol-native
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Native symbol for the currency"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :currency/decimal-digits
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "How many decimal digits is used with the currency"
+  :db.install/_attribute :db.part/db}
  ]

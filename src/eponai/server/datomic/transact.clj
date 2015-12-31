@@ -2,7 +2,8 @@
   (:require [datomic.api :as d]
             [eponai.server.datomic.format :as f]
             [eponai.server.datomic.validate :as v]
-            [eponai.server.http :as e]))
+            [eponai.server.http :as e]
+            [eponai.server.datomic.pull :as p]))
 
 
 (defn- transact
@@ -83,3 +84,13 @@
   Throws ExceptionInto if transaction failed."
   [conn currencies]
   (transact conn (f/curs->db-txs currencies)))
+
+(defn currency-infos
+  [conn cur-infos]
+  (let [db-cur-codes (->> (p/currencies (d/db conn))
+                         (map #(keyword (:currency/code %)))
+                         set)
+        cur-infos (->> cur-infos
+                       (filter #(contains? db-cur-codes (key %))))]
+    (transact conn (f/cur-infos->db-txs (vals cur-infos)))
+    ))

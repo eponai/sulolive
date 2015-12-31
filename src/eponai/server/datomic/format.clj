@@ -2,7 +2,8 @@
   (:require [clj-time.core :as t]
             [clj-time.format :as f]
             [clj-time.coerce :as c]
-            [datomic.api :only [db a] :as d]))
+            [datomic.api :only [db a] :as d]
+            [eponai.server.datomic.pull :as p]))
 
 (defn date->ymd-string
   "Takes a date and returns a string for that date of the form yyy-MM-dd."
@@ -94,3 +95,13 @@
                             :currency/code (name c)
                             :currency/name n})]
     (map map-fn currencies)))
+
+(defn cur-infos->db-txs
+  [cur-infos]
+  (map (fn [info]
+         {:db/id                   (d/tempid :db.part/user)
+          :currency/code           (:code info)
+          :currency/symbol         (:symbol info)
+          :currency/symbol-native  (:symbol_native info)
+          :currency/decimal-digits (:decimal_digits info)})
+       cur-infos))

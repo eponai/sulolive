@@ -1,6 +1,6 @@
 (ns eponai.server.api
   (:require [cemerick.friend :as friend]
-            [clojure.core.async :refer [go >!]]
+            ;[clojure.core.async :refer [go >!]]
             [compojure.core :refer :all]
             [datomic.api :as d]
             [eponai.server.auth :as a]
@@ -32,13 +32,14 @@
   (if-not (p/user (d/db conn) (params :username))
     (let [tx (t/new-user conn (a/new-signup request))]
       (when email-chan
-        (go (>! email-chan [(:db-after tx) (params :username)])))
-      tx)
+        ;(go (>! email-chan [(:db-after tx) (params :username)]))
+        )
+      tx))
     (throw (ex-info "User already exists."
                     {:cause   ::a/authentication-error
                      :status  ::h/unathorized
                      :data    {:username (params :username)}
-                     :message "User already exists."}))))
+                     :message "User already exists."})))
 
 
 (defn verify [conn uuid]
@@ -55,6 +56,9 @@
 
 (defn post-currencies [conn curs]
   (t/currencies conn curs))
+
+(defn post-currency-info [conn cur-infos]
+  (t/currency-infos conn cur-infos))
 
 (defn post-currency-rates [conn rates-fn dates]
   (let [unconverted (clojure.set/difference (set dates)
@@ -78,22 +82,23 @@
 
 ;----------Routes
 
-(defroutes user-routes
-           (POST "/" {:keys [body ::m/conn ::m/currency-chan ::m/parser]
-                      :as req}
-             (r/response
-               (let [ret (parser
-                           {:state         conn
-                            :auth          (friend/current-authentication req)
-                            :currency-chan currency-chan}
-                           body)]
-                 (reduce-kv (fn [old k {:keys [om.next/error] :as v}]
-                              (if error
-                                (do (prn "Om next exception for key: " k)
-                                    (.printStackTrace error)
-                                    (assoc-in old [k :om.next/error] (str "got error, lol")))
-                                old))
-                            ret ret)))))
+(defroutes
+  user-routes
+  (POST "/" {:keys [body ::m/conn ::m/currency-chan ::m/parser]
+             :as req}
+    (r/response
+      (let [ret (parser
+                  {:state         conn
+                   :auth          (friend/current-authentication req)
+                   :currency-chan currency-chan}
+                  body)]
+        (reduce-kv (fn [old k {:keys [om.next/error] :as v}]
+                     (if error
+                       (do (prn "Om next exception for key: " k)
+                           (.printStackTrace error)
+                           (assoc-in old [k :om.next/error] (str "got error, lol")))
+                       old))
+                   ret ret)))))
 
 (defroutes
   api-routes
