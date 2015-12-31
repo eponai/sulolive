@@ -1,7 +1,7 @@
 (ns eponai.client.parser
   (:require [om.next :as om]
             [datascript.core :as d]
-            [eponai.client.format.format :as f]))
+            [eponai.client.format :as f]))
 
 (defmulti read om/dispatch)
 (defmulti mutate om/dispatch)

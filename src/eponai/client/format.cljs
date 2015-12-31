@@ -1,4 +1,4 @@
-(ns eponai.client.format.format
+(ns eponai.client.format
   (:require [cljs-time.core :as t]
             [cljs-time.format :as t.format]
             [cljs.reader :as reader]

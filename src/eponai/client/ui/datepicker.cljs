@@ -25,27 +25,29 @@
         (.value (get-pikaday-dom-node this) "")))))
 
 (defui DatePicker
-       Object
-       (initLocalState [_] {::picker (atom nil)})
-       (componentWillUnmount [this] (some-> this om/get-state ::picker (reset! nil)))
-       (componentDidMount
-         [this]
-         (let [{:keys [on-change value]} (om/props this)
-               picker (js/Pikaday.
-                        #js {:field    (get-pikaday-dom-node this)
-                             :format   "D MMM YYYY"
-                             :onSelect on-change})]
-           (reset! (-> this om/get-state ::picker) picker)
-           (set-date-if-changed this value nil)))
-       (componentWillReceiveProps
-         [this next-props]
-         (let [{old-value :value} (om/props this)
-               {next-value :value} next-props]
-           (set-date-if-changed this next-value old-value)))
-       (render [this]
-               (html [:input {:type        "text"
-                              :ref         pikaday-ref-name
-                              :placeholder (-> this om/props :placeholder)}])))
+  Object
+  (initLocalState [_] {::picker (atom nil)})
+  (componentWillUnmount [this] (some-> this om/get-state ::picker (reset! nil)))
+  (componentDidMount
+    [this]
+    (let [{:keys [on-change value]} (om/props this)
+          picker (js/Pikaday.
+                   #js {:field    (get-pikaday-dom-node this)
+                        :format   "D MMM YYYY"
+                        :onSelect on-change})]
+      (reset! (-> this om/get-state ::picker) picker)
+      (set-date-if-changed this value nil)))
+  (componentWillReceiveProps
+    [this next-props]
+    (let [{old-value :value} (om/props this)
+          {next-value :value} next-props]
+      (set-date-if-changed this next-value old-value)))
+  (render [this]
+    (html
+      [:input.form-control
+       {:type        "text"
+        :ref         pikaday-ref-name
+        :placeholder (-> this om/props :placeholder)}])))
 
 ;; props: {:value js/Date :on-change f :placeholder str}
 (def ->Datepicker (om/factory DatePicker))
