@@ -25,7 +25,10 @@
 
 (defmacro opts [{:keys [style key] :as m}]
   (let [uuid (str (UUID/randomUUID))]
-    `(let [m# ~(assoc-if style m :style (style* style))
+    `(let [m# (assoc-if ~style ~m :style ~(if (and (map? style)
+                                                   (every? keyword? (keys style)))
+                                            (style* style)  ;; inline call if it's safe to do so.
+                                            `(style* ~style)))
            m2# (assoc-if ~key m# :key (unique-str ~uuid ~key))]
        (if ~style
          (update m2# :style ~'cljs.core/clj->js)
