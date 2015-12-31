@@ -1,7 +1,19 @@
 (ns eponai.repl
-  ;; require and use more namespaces to have them
-  ;; available when the repl starts.
-  (:require [eponai.server.core :as core :refer [main-debug]]
-            [clojure.tools.namespace.repl :refer [refresh]]))
+  (:require [eponai.server.core :as core]
+            [clojure.tools.namespace.repl :as ns.repl]
+            [clojure.repl :refer :all]))
 
+(defn init []
+  ;; Do not reload our namespace so we can keep our repl defs.
+  (ns.repl/disable-reload!)
+  (prn "****************************************************")
+  (prn "Done initializing our eponai repl!")
+  (prn "Use (refresh) to reload all namespaces while keeping")
+  (prn "the vars defined in your repl.")
+  (prn "****************************************************"))
+
+
+(defn refresh []
+  "refresh all namespaces and re-require our namespaces"
+  (ns.repl/refresh))
 

@@ -60,7 +60,8 @@
   :ring {:handler eponai.server.core/app
          :init    eponai.server.core/init}
   :main eponai.server.core
-  :repl-options {:init-ns eponai.repl}
+  :repl-options {:init-ns eponai.repl
+                 :init (eponai.repl/init)}
   :profiles {:uberjar {:aot   :all
                        :prep-tasks ["compile" ["cljsbuild" "once" "release"]]}}
   :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
