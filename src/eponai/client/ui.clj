@@ -23,22 +23,24 @@
        (every? keyword? (keys m))))
 
 (defmacro opts [m]
-  `(let [m# ~m
-         style# (:style m#)
-         key# (:key m#)
-         ret# (assoc-if style# m# :style ~(if (and (map? m)
-                                                   (contains? m :style)
-                                                   (should-inline-style? (:style m)))
-                                             (style* (:style m))
-                                            `(style* style#)))
-         ret2# (assoc-if key# ret# :key (fn [] (unique-str ~(str (UUID/randomUUID)) key#)))]
-     (if style#
-       (update ret2# :style ~'cljs.core/clj->js)
-       ret2#)))
+  (let [inline-style (and (map? m)
+                          (contains? m :style)
+                          (should-inline-style? (:style m))
+                          (style* (:style m)))]
+    `(let [m# ~m
+           inline-style# ~inline-style]
+       (cond-> m#
+               (:key m#) (assoc :key (unique-str ~(str (UUID/randomUUID)) (:key m#)))
+               (:style m#) (assoc :style (cljs.core/clj->js (if inline-style#
+                                                              inline-style#
+                                                              (style* (:style m#)))))))))
 
 (defmacro style [m & ms]
- `(let [ret# ~(if (should-inline-style? m)
-                 (style* m)
-                 `(style* ~m))]
-    (apply merge {:style (~'cljs.core/clj->js ret#)}
-            ~ms)))
+  (let [inline-style (and (should-inline-style? m)
+                          (style* m))]
+    `(let [inline-style# ~inline-style
+           ret# (if inline-style#
+                  inline-style#
+                  (style* ~m))]
+      (apply merge {:style (cljs.core/clj->js ret#)}
+             ~ms))))
