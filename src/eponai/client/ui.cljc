@@ -1,6 +1,6 @@
 (ns eponai.client.ui
   (:require [clojure.string :as s])
-  (:import [java.util UUID]))
+  #?(:clj (:import [java.util UUID])))
 
 (defn ->camelCase [k]
   (when (namespace k)
@@ -22,6 +22,13 @@
   (and (map? m)
        (every? keyword? (keys m))))
 
+(defn unique-str [uuid v]
+  (if (vector? v)
+    (s/join "-" (concat ["uniq" uuid] v))
+    (do
+      (prn "WARN: The value of :key was not a vector. Value: " v)
+      v)))
+
 (defmacro opts [m]
   (let [inline-style (and (map? m)
                           (contains? m :style)
@@ -30,7 +37,8 @@
     `(let [m# ~m
            inline-style# ~inline-style]
        (cond-> m#
-               (:key m#) (assoc :key (unique-str ~(str (UUID/randomUUID)) (:key m#)))
+               (:key m#) (assoc :key (unique-str ~(str #?(:clj (UUID/randomUUID)
+                                                          :cljs (random-uuid))) (:key m#)))
                (:style m#) (assoc :style (cljs.core/clj->js (if inline-style#
                                                               inline-style#
                                                               (style* (:style m#)))))))))
@@ -44,3 +52,4 @@
                   (style* ~m))]
       (apply merge {:style (cljs.core/clj->js ret#)}
              ~ms))))
+
