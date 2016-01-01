@@ -14,7 +14,7 @@
      :transaction/amount
      :transaction/details
      :transaction/status
-     {:transaction/currency [:currency/code]}
+     {:transaction/currency '[*]}
      {:transaction/tags (om/get-query tag/Tag)}
      ::transaction-show-tags?])
   Object
@@ -23,7 +23,8 @@
            :keys            [transaction/amount
                              transaction/currency
                              transaction/tags
-                             transaction/details]} (om/props this)]
+                             transaction/details]} (om/props this)
+          {:keys [currency/code currency/symbol-native]} currency]
       (html
         [:div#transaction.list-group-item
          [:div#info
@@ -42,7 +43,7 @@
           [:span#amount
            (opts {:class "text-success"
                   :style {:margin-right "0.5em"}})
-           (str (:currency/code currency) " " amount)]]
+           (str amount " " (or symbol-native code))]]
 
          [:div#tags
           (opts {:style {:display "flex"

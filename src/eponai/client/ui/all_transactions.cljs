@@ -15,7 +15,7 @@
   [transactions]
   {:amount   (transduce (map :transaction/amount) + 0 transactions)
    ;; TODO: Should instead use the primary currency
-   :currency (-> transactions first :transaction/currency :currency/code)})
+   :currency (-> transactions first :transaction/currency)})
 
 (defui AllTransactions
   static om/IQuery
@@ -94,7 +94,8 @@
                            [:span#daysum
                             (opts {:key [year month date]})
                             (let [{:keys [currency amount]} (sum (:transaction/_date date))]
-                              (str amount " " currency))]]
+                              (str amount " " (or (:currency/symbol-native currency)
+                                                  (:currency/code currency))))]]
 
                           (when (::day-expanded? date)
                             [:div#transactions
