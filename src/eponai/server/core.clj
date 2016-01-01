@@ -5,6 +5,7 @@
             [clojure.edn :as edn]
             [compojure.core :refer :all]
             [datomic.api :only [q db] :as d]
+            [environ.core :refer [env]]
             [eponai.server.auth :as a]
             [eponai.server.openexchangerates :as exch]
             [eponai.server.datomic_dev :refer [connect!]]
@@ -19,13 +20,14 @@
   (-> (routes api-routes site-routes)
       m/wrap-error
       (friend/authenticate {:credential-fn       (partial a/cred-fn #(api/user-creds (d/db conn) %))
-                            :workflows           [(a/form)]
-                            :default-landing-uri "/dev/budget.html"})
+                            :workflows           [(a/form)]})
       m/wrap-transit
-      (m/wrap-state {::m/conn          conn
-                     ::m/parser        (parser/parser {:read parser/read :mutate parser/mutate})
-                     ::m/currency-chan currency-chan
-                     ::m/email-chan    email-chan})
+      (m/wrap-state {::m/conn           conn
+                     ::m/parser         (parser/parser {:read parser/read :mutate parser/mutate})
+                     ::m/currency-chan  currency-chan
+                     ::m/email-chan     email-chan
+                     ;; either "dev" or "release"
+                     ::m/cljs-build-id (or (env :cljs-build-id) "dev")})
       m/wrap-defaults
       m/wrap-log
       m/wrap-gzip))

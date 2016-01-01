@@ -2,6 +2,7 @@
   (:require [cemerick.friend :as friend]
             [compojure.core :refer :all]
             [compojure.route :as route]
+            [eponai.server.middleware :as m]
             [ring.util.response :as r]))
 
 (defn html [path]
@@ -11,14 +12,14 @@
 
 (defroutes
   site-routes
-  (GET "/" []
+  (GET "/" [:as request]
     (if (friend/current-authentication)
-      (html "dev/budget.html")
+      (html (str (::m/cljs-build-id request) "/budget.html"))
       (html "index.html")))
 
-  (GET "/:path" [path]
+  (GET "/:path" [path :as request]
     (if (friend/current-authentication)
-      (html "dev/budget.html")
+      (html (str (::m/cljs-build-id request) "/budget.html"))
       (html (str path ".html"))))
 
   (GET "/devcards" []
