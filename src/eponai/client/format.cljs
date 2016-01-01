@@ -10,22 +10,36 @@
   (let [date (doto (goog.date.DateTime.) (.setTime (.getTime js-date)))]
     (t.format/unparse ymd-formatter date)))
 
-(defn input->date [ymd-str]
+(defn input->date [ymd-str db-id]
   (let [date (t.format/parse ymd-formatter ymd-str)]
-    {:date/ymd   ymd-str
+    {:db/id      db-id
+     :date/ymd   ymd-str
      :date/day   (t/day date)
      :date/month (t/month date)
      :date/year  (t/year date)}))
 
-(defn input->currency [currency]
-  {:currency/code currency})
+(defn input->currency [currency db-id]
+  {:db/id         db-id
+   :currency/code currency})
 
-(defn input->tags [tags]
-  (map #(hash-map :tag/name %) tags))
+(defn input->tags [tags start-db-id]
+  (let [*tag-entity (fn [db-id tag-name]
+                      (hash-map :db/id db-id
+                                :tag/name tag-name))
+        ; Create negative ids counting down from start-db-id
+        temp-ids (range start-db-id
+                        (- start-db-id
+                           (count tags))
+                        -1)]
+    (map *tag-entity temp-ids tags)))
 
-(defn input->transaction [amount title description uuid created-at]
+(defn input->transaction [amount title description uuid created-at date curr tags]
   {:transaction/amount     (reader/read-string amount)
    :transaction/name       title
    :transaction/details    description
    :transaction/uuid       uuid
-   :transaction/created-at created-at})
+   :transaction/created-at created-at
+   :transaction/date       (:db/id date)
+   :transaction/status     :transaction.status/pending
+   :transaction/currency   (:db/id curr)
+   :transaction/tags       (mapv :db/id tags)})

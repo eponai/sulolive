@@ -75,22 +75,20 @@
 (defmethod mutate 'transaction/create
   [{:keys [state]} _ {:keys [input-amount input-currency input-title
                              input-date input-description input-tags
-                             input-uuid input-created-at]}]
-  (try                                                      ;TODO use some function or whatever to generate tempids.
-    (let [date (assoc (f/input->date input-date) :db/id -1)
-          curr (assoc (f/input->currency input-currency) :db/id -2)
-          tags (map #(assoc %2 :db/id %1)
-                    (range (- (- (count input-tags)) 2) -2)
-                    (f/input->tags input-tags))
-          transaction (-> (f/input->transaction input-amount
-                                              input-title
-                                              input-description
-                                              input-uuid
-                                              input-created-at)
-                          (assoc :transaction/date -1)
-                          (assoc :transaction/status :transaction.status/pending)
-                          (assoc :transaction/currency -2)
-                          (assoc :transaction/tags (mapv :db/id tags)))
+                             input-uuid input-created-at] :as params}]
+  (try
+    ;TODO use some function or whatever to generate tempids.
+    (let [date (f/input->date input-date -1)
+          curr (f/input->currency input-currency -2)
+          tags (f/input->tags input-tags -3)
+          transaction (f/input->transaction input-amount
+                                            input-title
+                                            input-description
+                                            input-uuid
+                                            input-created-at
+                                            date
+                                            curr
+                                            tags)
           entities (concat tags [date curr transaction])]
       {:remote true
        :value  {:tempids [-1 -2]}

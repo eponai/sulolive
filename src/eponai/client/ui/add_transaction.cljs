@@ -44,13 +44,6 @@
                                   tags))))
                       ::tag-id id)))))))
 
-(defn on-add-tag-key-down [this input-tag]
-  (fn [key]
-    (when (and (= 13 (.-keyCode key))
-                (seq (.. key -target -value)))
-      (.preventDefault key)
-      (new-input-tag! this input-tag))))
-
 (defui AddTransaction
   static om/IQuery
   (query [this] [{:query/all-currencies [:currency/code]}])
@@ -60,7 +53,7 @@
     [this]
     (let [{:keys [query/all-currencies]} (om/props this)
           {:keys [input-amount input-currency input-title input-date
-                  input-description input-tags input-tag]}
+                  input-tags input-tag]}
           ;; merging state with props, so that we can test the states
           ;; with devcards
           (merge (om/props this)
@@ -74,7 +67,7 @@
          [:div.panel-heading
           "Add transaction"]
          [:div
-          {:class "form-group container"}
+          {:class "form-group panel-body"}
 
 
           [:label
@@ -83,17 +76,22 @@
           ;; Input amount with currency
           [:div
            (opts {:style {:display        "flex"
-                          :flex-direction "row"}})
+                          :flex-direction "row"
+                          :justify-content "stretch"
+                          :max-width "100%"}})
            [:input#amount-input
             (opts {:type        "number"
                    :placeholder "0.00"
+                   :min         "0"
                    :value       input-amount
                    :class       "form-control"
-                   :style       {:width "80%"}})]
+                   :style       {:width        "80%"
+                                 :margin-right "0.5em"}
+                   :on-change   (on-change this :input-amount)})]
 
            [:select
             (opts {:class         "form-control"
-                   :on-change     #(on-change this :input-currency)
+                   :on-change     (on-change this :input-currency)
                    :default-value input-currency
                    :style         {:width "20%"}})
             (->>
@@ -103,6 +101,15 @@
                   [:option
                    {:value (name code)}
                    (name code)])))]]
+
+          [:label
+           {:for "title-input"}
+           "Title:"]
+
+          [:input.form-control#title-input
+           {:on-change (on-change this :input-title)
+            :type      "text"
+            :value     input-title}]
 
           [:label
            {:for "date-input"}
@@ -117,38 +124,38 @@
                                  this
                                  assoc
                                  :input-date
-                                 %)
-                    :style {:width "100%"}}))]
-
-          [:label
-           {:for "title-input"}
-           "Title:"]
-
-          [:input.form-control#title-input
-           {:on-change #(on-change this :input-title)
-            :type      "text"
-            :value     input-title}]
+                                 %)}))]
 
           [:label
            {:for "tags-input"}
            "Tags:"]
 
-          [:input.form-control#tags-input
-           {:on-change #(on-change this :input-tag)
-            :type "text"
-            :value input-tag
-            :on-key-down (on-add-tag-key-down this input-tag)}]
-
           [:div
-           (map
-             (fn [props]
-               (tag/->Tag
-                 (assoc props :key (::tag-id props))))
-             input-tags)]
+           (opts {:style {:display "flex"
+                          :flex-direction "row"
+                          :justify-content "flex-start"}})
+           [:input.form-control#tags-input
+            (opts {:style {:width "50%"
+                           :max-width "200px"}
+                   :on-change   (on-change this :input-tag)
+                   :type        "text"
+                   :value       input-tag
+                   :on-key-down #(when (and (= 13 (.-keyCode %))
+                                            (seq (.. % -target -value)))
+                                  (.preventDefault %)
+                                  (new-input-tag! this input-tag))})]
+
+           (println "input-tags: " input-tags)
+           [:div
+            (map
+              (fn [props]
+                (tag/->Tag
+                  (assoc props :key (::tag-id props))))
+              input-tags)]]
 
           [:button
            (opts {:style    {:align-self "center"}
-                  :class    "btn btn-info btn-lg"
+                  :class    "btn btn-default btn-lg"
                   :type     "submit"
                   :on-click #(om/transact!
                               this

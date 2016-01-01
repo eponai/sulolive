@@ -49,11 +49,7 @@
                          :flex-direction "row"
                          :flex-wrap "wrap"}})
           (if (seq tags)
-            (map
-              (fn [tag]
-                [:button
-                 {:class "btn btn-info btn-xs"}
-                 (:tag/name tag)])
+            (map tag/->Tag
               tags
               (range 10))
             )]]))))

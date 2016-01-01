@@ -6,30 +6,27 @@
 
 (defui Tag
   static om/IQuery
-  (query [this] [:tag/name])
+  (query [_]
+    [:tag/name])
   Object
   (render
     [this]
-    (let [{:keys [::edit-mode ::delete-fn] tag-name :tag/name} (om/props this)]
-      (html [:div (style {:display "inline-block"})
-             [:style (css [:#tag-body {:display      "inline-block"
-                                       :padding      "0.2em 0.2em"
-                                       :margin       "0.0em"
-                                       :border-width "1px"
-                                       :border-style "solid"
-                                       :font-size    "1em"
-                                       :border-color "#ddd"
-                                       :cursor       "default"}
-                           [:&:hover {:border-color "#aaa"}]
-                           [:&:active {:border-color "#ddd"}]])]
-             [:div#tag-body
-              (style {:border-radius (if edit-mode "0.3em 0.0em 0.0em 0.3em" "0.3em")})
-              [:span {:on-click #(prn (.. % -target))} tag-name]]
-             (when edit-mode
-               [:span#tag-body (merge (style {:border-radius "0.0em 0.3em 0.3em 0.0em"
-                                              :border-width  "1px 1px 1px 0px"})
-                                      {:on-click #(do (delete-fn) nil)})
-                "x"])]))))
+    (let [{tag-name :tag/name
+           :keys [::edit-mode ::delete-fn]} (om/props this)]
+      (html
+        [:div
+         {:class "btn-group btn-group-xs"}
+
+         [:button
+          {:class    "btn btn-info"
+           :on-click #(prn (.. % -target))}
+          tag-name]
+
+         (when edit-mode
+           [:button
+            {:class    "btn btn-info"
+             :on-click #(do (delete-fn) nil)}
+            "x"])]))))
 
 (def ->Tag (om/factory Tag {:keyfn :tag/name}))
 

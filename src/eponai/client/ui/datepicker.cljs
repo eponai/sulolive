@@ -1,6 +1,6 @@
 (ns eponai.client.ui.datepicker
   (:require [om.next :as om :refer-macros [defui]]
-            [eponai.client.ui :refer-macros [style]]
+            [eponai.client.ui :refer-macros [style opts]]
             [cljsjs.pikaday]
             [cljsjs.react.dom]
             [sablono.core :refer-macros [html]]
@@ -45,9 +45,11 @@
   (render [this]
     (html
       [:input.form-control
-       {:type        "text"
-        :ref         pikaday-ref-name
-        :placeholder (-> this om/props :placeholder)}])))
+       (opts {:type        "text"
+              :ref         pikaday-ref-name
+              :placeholder (-> this om/props :placeholder)
+              :style {:width "100%"
+                      :max-width "200px"}})])))
 
 ;; props: {:value js/Date :on-change f :placeholder str}
 (def ->Datepicker (om/factory DatePicker))
