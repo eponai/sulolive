@@ -47,9 +47,7 @@
       [:input.form-control
        (opts {:type        "text"
               :ref         pikaday-ref-name
-              :placeholder (-> this om/props :placeholder)
-              :style {:width "100%"
-                      :max-width "200px"}})])))
+              :placeholder (-> this om/props :placeholder)})])))
 
 ;; props: {:value js/Date :on-change f :placeholder str}
 (def ->Datepicker (om/factory DatePicker))

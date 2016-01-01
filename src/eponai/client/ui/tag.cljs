@@ -1,6 +1,6 @@
 (ns eponai.client.ui.tag
   (:require [om.next :as om :refer-macros [defui]]
-            [eponai.client.ui :refer-macros [style]]
+            [eponai.client.ui :refer-macros [opts]]
             [garden.core :refer [css]]
             [sablono.core :refer-macros [html]]))
 
@@ -15,7 +15,8 @@
            :keys [::edit-mode ::delete-fn]} (om/props this)]
       (html
         [:div
-         {:class "btn-group btn-group-xs"}
+         (opts {:class "btn-group btn-group-xs"
+                :style {:padding "0.1em"}})
 
          [:button
           {:class    "btn btn-info"

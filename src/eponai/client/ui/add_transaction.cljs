@@ -30,25 +30,38 @@
     (om/update-state!
       this
       (fn [state]
-        (-> state
-            (assoc :input-tag "")
-            (update :input-tags conj
-                    (assoc
-                      (tag/tag-props
-                        name
-                        #(om/update-state!
-                          this update :input-tags
-                          (fn [tags]
-                            (into []
-                                  (remove (fn [{:keys [::tag-id]}] (= id tag-id)))
-                                  tags))))
-                      ::tag-id id)))))))
+        (cond-> state
+                true (assoc :input-tag "")
+
+                (not (some #(= (:tag/name %) name)
+                           (:input-tags state)))
+                (update :input-tags conj
+                        (assoc
+                          (tag/tag-props
+                            name
+                            #(om/update-state!
+                              this update :input-tags
+                              (fn [tags]
+                                (into []
+                                      (remove (fn [{:keys [::tag-id]}] (= id tag-id)))
+                                      tags))))
+                          ::tag-id id)))))))
+
+(defn on-add-tag-key-down [this input-tag]
+  (fn [key]
+    (when (and (= 13 (.-keyCode key))
+               (seq (.. key -target -value)))
+      (.preventDefault key)
+      (new-input-tag! this input-tag))))
 
 (defui AddTransaction
   static om/IQuery
-  (query [this] [{:query/all-currencies [:currency/code]}])
+  (query [_]
+    [{:query/all-currencies [:currency/code]}])
   Object
-  (initLocalState [this] {:input-date (js/Date.)})
+  (initLocalState [_]
+    {:input-date (js/Date.)
+     :input-tags []})
   (render
     [this]
     (let [{:keys [query/all-currencies]} (om/props this)
@@ -70,7 +83,7 @@
           {:class "form-group panel-body"}
 
 
-          [:label
+          [:label.form-control-static
            {:for "amount-input"}
            "Amount:"]
           ;; Input amount with currency
@@ -102,7 +115,7 @@
                    {:value (name code)}
                    (name code)])))]]
 
-          [:label
+          [:label.form-control-static
            {:for "title-input"}
            "Title:"]
 
@@ -111,7 +124,7 @@
             :type      "text"
             :value     input-title}]
 
-          [:label
+          [:label.form-control-static
            {:for "date-input"}
            "Date:"]
 
@@ -126,27 +139,21 @@
                                  :input-date
                                  %)}))]
 
-          [:label
+          [:label.form-control-static
            {:for "tags-input"}
            "Tags:"]
 
           [:div
            (opts {:style {:display "flex"
-                          :flex-direction "row"
+                          :flex-direction "column"
                           :justify-content "flex-start"}})
            [:input.form-control#tags-input
-            (opts {:style {:width "50%"
-                           :max-width "200px"}
-                   :on-change   (on-change this :input-tag)
+            (opts {:on-change   (on-change this :input-tag)
                    :type        "text"
                    :value       input-tag
-                   :on-key-down #(when (and (= 13 (.-keyCode %))
-                                            (seq (.. % -target -value)))
-                                  (.preventDefault %)
-                                  (new-input-tag! this input-tag))})]
+                   :on-key-down (on-add-tag-key-down this input-tag)})]
 
-           (println "input-tags: " input-tags)
-           [:div
+           [:div.form-control-static
             (map
               (fn [props]
                 (tag/->Tag
