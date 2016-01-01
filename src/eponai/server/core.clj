@@ -1,18 +1,19 @@
 (ns eponai.server.core
   (:gen-class)
-  (:require [compojure.core :refer :all]
-            [eponai.server.auth :as a]
-            [datomic.api :only [q db] :as d]
-            [cemerick.friend :as friend]
-            [eponai.server.openexchangerates :as exch]
+  (:require [cemerick.friend :as friend]
             [clojure.core.async :refer [<! go chan]]
             [clojure.edn :as edn]
-            [ring.adapter.jetty :as jetty]
+            [compojure.core :refer :all]
+            [datomic.api :only [q db] :as d]
+            [eponai.server.auth :as a]
+            [eponai.server.openexchangerates :as exch]
             [eponai.server.datomic_dev :refer [connect!]]
             [eponai.server.parser :as parser]
             [eponai.server.api :as api :refer [api-routes]]
             [eponai.server.site :refer [site-routes]]
-            [eponai.server.middleware :as m]))
+            [eponai.server.middleware :as m]
+            [ring.adapter.jetty :as jetty]
+))
 
 (defn app* [conn currency-chan email-chan]
   (-> (routes api-routes site-routes)
