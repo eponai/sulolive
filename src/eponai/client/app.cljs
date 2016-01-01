@@ -16,6 +16,7 @@
   static om/IQuery
   (query [_]
     [:datascript/schema
+     {:proxy/header (om/get-query Header)}
      {:proxy/transactions (om/get-query AllTransactions)}])
   Object
   (render
@@ -50,8 +51,7 @@
                                    :remotes [:remote]
                                    :send    (backend/send!)
                                    :merge   (backend/merge! conn)})]
-    (om/add-root! reconciler App (gdom/getElement "my-app"))
-    (om/add-root! reconciler Header (gdom/getElement "my-header"))))
+    (om/add-root! reconciler App (gdom/getElement "my-app"))))
 
 (defn run []
   (initialize-app (init-conn)))
