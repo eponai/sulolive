@@ -74,7 +74,10 @@
   ;;;;;;;;;;;;;
   :cljsbuild
   {:builds        [{:id           "dev"
-                    :source-paths ["src" "test"]
+                    :source-paths ["src/eponai/client"
+                                   "src/eponai/common"
+                                   "test/eponai/client"
+                                   "test/eponai/common"]
                     :figwheel     {:on-jsload "eponai.client.tests/run"}
                     :compiler     {:main          "eponai.client.core"
                                    :asset-path    "js/out"
@@ -83,7 +86,11 @@
                                    :optimizations :none
                                    :source-map    true}}
                    {:id           "devcards"
-                    :source-paths ["src" "test"]
+                    :source-paths ["src/eponai/client"
+                                   "src/eponai/common"
+                                   "test/eponai/client"
+                                   "test/eponai/common"
+                                   "test/eponai/devcards"]
                     :figwheel     {:devcards true}          ;; <- note this
                     :compiler     {:main                 "eponai.devcards.devcards_main"
                                    :asset-path           "js/out"
@@ -91,7 +98,11 @@
                                    :output-dir           "resources/public/devcards/js/out"
                                    :source-map-timestamp true}}
                    {:id           "test"
-                    :source-paths ["src" "test"]
+                    :source-paths ["src/eponai/client"
+                                   "src/eponai/common"
+                                   "test/eponai/client"
+                                   "test/eponai/common"
+                                   "test/circle"]
                     :compiler     {:output-to     "resources/public/test/js/out/budget.js"
                                    :output-dir    "resources/public/test/js/out"
                                    ;; asset-path set like this to use with karma
@@ -102,7 +113,8 @@
                                ;;  :psuedo-names  true
                                   }}
                    {:id           "release"
-                    :source-paths ["src"]
+                    :source-paths ["src/eponai/client"
+                                   "src/eponai/common"]
                     :compiler     {:main          "eponai.client.core"
                                    :asset-path    "js/out"
                                    :output-to     "resources/public/release/js/out/budget.js"
