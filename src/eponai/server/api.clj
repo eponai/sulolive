@@ -34,12 +34,12 @@
       (when email-chan
         ;(go (>! email-chan [(:db-after tx) (params :username)]))
         )
-      tx))
+      tx)
     (throw (ex-info "User already exists."
                     {:cause   ::a/authentication-error
                      :status  ::h/unathorized
                      :data    {:username (params :username)}
-                     :message "User already exists."})))
+                     :message "User already exists."}))))
 
 
 (defn verify [conn uuid]
