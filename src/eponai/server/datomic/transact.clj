@@ -1,42 +1,9 @@
 (ns eponai.server.datomic.transact
   (:require [datomic.api :as d]
+            [eponai.common.transact :refer [transact]]
             [eponai.server.datomic.format :as f]
             [eponai.server.datomic.validate :as v]
-            [eponai.server.http :as e]
             [eponai.server.datomic.pull :as p]))
-
-
-(defn- transact
-  "Transact a collecion of entites into datomic.
-  Throws ExceptionInfo if transaction failed."
-  [conn txs]
-  (try
-    @(d/transact conn txs)
-    (catch Exception e
-      (throw (ex-info (.getMessage e)
-                      {:cause ::transaction-error
-                       :status ::e/service-unavailable
-                       :data {:conn conn
-                              :txs txs}
-                       :message (.getMessage e)
-                       :exception e})))))
-
-(defn user-txs
-  "Put the user transaction maps into datomic. Will fail if one or
-  more of the following required fields are not included in the map:
-  #{:transaction/uuid
-  :transaction/name
-  :transcation/date
-  :transction/amount
-  :transaction/currency
-  :transaction/created-at
-  :transaction/budget}.
-
-  Throws ExceptionInfo if the given input is invalid, or if transaction failed."
-  [conn user-txs]
-  (when (v/valid-user-txs? user-txs)
-    (let [txs (f/user-txs->db-txs user-txs)]
-      (transact conn txs))))
 
 (defn new-verification [conn entity attribute status]
   (let [ver (f/db-entity->db-verification entity attribute status)]

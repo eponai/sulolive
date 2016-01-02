@@ -55,39 +55,27 @@
     (when (some identity unconverted)
       (t/currency-rates conn (map rates-fn (filter identity dates))))))
 
-(defn post-user-data
-  "Post new transactions for the user in the session. If there's no currency rates
-  for the date of the transactions, they will be fetched from OER."
-  [conn request]
-  (let [budget (p/budget (d/db conn) (:username (friend/current-authentication request)))
-        user-data (map #(assoc % :transaction/budget (:budget/uuid budget))
-                       (:body request))]
-    ;(go (>! currency-chan (map :transaction/date user-data)))
-    (t/user-txs conn user-data)))
-
 (defn send-email-verification [email-fn [db email]]
   (when-let [verification (first (p/verifications db (p/user db email) :user/email :verification.status/pending))]
     (email-fn email (verification :verification/uuid))))
+
+
+(defn handle-parser-request [conn {:keys [::m/parser ::m/currency-chan]
+                                   :as request}]
+  (let [ret (parser
+              {:state         conn
+               :auth          (friend/current-authentication request)
+               :currency-chan currency-chan}
+              (:body request))]
+    ret))
 
 ;----------Routes
 
 (defroutes
   user-routes
-  (POST "/" {:keys [body ::m/conn ::m/currency-chan ::m/parser]
-             :as req}
+  (POST "/" {:keys [::m/conn] :as req}
     (r/response
-      (let [ret (parser
-                  {:state         conn
-                   :auth          (friend/current-authentication req)
-                   :currency-chan currency-chan}
-                  body)]
-        (reduce-kv (fn [old k {:keys [om.next/error] :as v}]
-                     (if error
-                       (do (prn "Om next exception for key: " k)
-                           (.printStackTrace error)
-                           (assoc-in old [k :om.next/error] (str "got error, lol")))
-                       old))
-                   ret ret)))))
+      (handle-parser-request conn req))))
 
 (defroutes
   api-routes

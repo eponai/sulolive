@@ -2,7 +2,7 @@
   (:require [eponai.client.ui.add_transaction :as a]
             [eponai.client.ui.all_transactions :as transactions]
             [datascript.core :as d]
-            [eponai.client.parser :as parser]
+            [eponai.common.parser :as parser]
             [eponai.client.testdata :as testdata]
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
@@ -41,7 +41,7 @@
                 :input-created-at gen/pos-int))
 
 (defn init-state []
-  {:parser (om/parser {:read parser/read :mutate parser/mutate})
+  {:parser (parser/parser)
    :conn (d/create-conn (testdata/datascript-schema))})
 
 (defspec
@@ -52,6 +52,8 @@
     (let [transactions (map #(assoc % :input-uuid (d/squuid)) transactions)
           create-mutations (map list (repeatedly (fn [] 'transaction/create)) transactions)
           {:keys [parser conn]} (init-state)]
+      (doseq [tx transactions]
+        (d/transact conn [{:currency/code (:input-currency tx)}]))
       (parser {:state conn} create-mutations)
       (let [ui (parser {:state conn} (om/get-query transactions/AllTransactions))
             uuids (set (map :input-uuid transactions))
@@ -70,7 +72,7 @@
 (deftest transaction-create-with-tags-of-the-same-name-throws-exception
   (let [{:keys [parser conn]} (init-state)]
     (is (thrown-with-msg? cljs.core.ExceptionInfo
-                          #".*tags.*not.*unique"
+                          #".*Illegal.*argument.*input-tags.*"
                           (parser {:state conn}
                                   '[(transaction/create
                                      {:input-uuid (d/squuid)

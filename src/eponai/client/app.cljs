@@ -5,9 +5,8 @@
     ;; To initialize ReactDOM:
             [cljsjs.react.dom]
             [datascript.core :as d]
-            [cljs.core.async :as async]
             [eponai.client.backend :as backend]
-            [eponai.client.parser :as parser]
+            [eponai.common.parser :as parser]
             [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
             [eponai.client.ui.header :refer [Header ->Header]]
             [eponai.client.ui.all_transactions :refer [AllTransactions ->AllTransactions]]))
@@ -44,8 +43,7 @@
       (reset! conn-atom conn))))
 
 (defn initialize-app [conn]
-  (let [parser (om/parser {:read parser/read
-                           :mutate parser/mutate})
+  (let [parser (parser/parser)
         reconciler (om/reconciler {:state   conn
                                    :parser  parser
                                    :remotes [:remote]

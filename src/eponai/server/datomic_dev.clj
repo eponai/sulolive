@@ -1,11 +1,14 @@
 (ns eponai.server.datomic_dev
   (:require [datomic.api :as d]
             [environ.core :refer [env]]
-            [eponai.server.datomic.transact :as transact]
+            [eponai.server.datomic.transact :as server.transact]
+            [eponai.common.transact :as common.transact]
+            [eponai.common.format :as format]
             [clojure.tools.reader.edn :as edn]
             [eponai.server.datomic.pull :as p]
             [cemerick.friend.credentials :as creds]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [eponai.common.transact :as transact])
   (:import (java.util UUID)))
 
 (def currencies {:THB "Thai Baht"
@@ -54,14 +57,14 @@
      (d/connect uri))))
 
 (defn add-verified-user [conn username]
-  (transact/new-user conn {:username username
+  (server.transact/new-user conn {:username username
                            :bcrypt   (creds/hash-bcrypt "password")})
   (println "New user created")
   (let [user (p/user (d/db conn) username)
         verification (->> (p/verifications (d/db conn) user :user/email)
                           first
                           :db/id)]
-    (transact/add conn verification :verification/status :verification.status/verified)
+    (server.transact/add conn verification :verification/status :verification.status/verified)
     (println "User verified.")))
 
 (defn read-schema-file []
@@ -76,10 +79,13 @@
     (d/transact conn schema)
     (println "Schema added.")
     (add-verified-user conn username)
-    (transact/currencies conn currencies)
+    (server.transact/currencies conn currencies)
     (println "Currencies added.")
     (let [{:keys [budget/uuid]} (p/budget (d/db conn) username)]
-      (transact/user-txs conn (mapv #(assoc % :transaction/budget uuid) transactions)))
+      (->> transactions
+           (map #(assoc % :transaction/budget uuid))
+           (map format/user-transaction->db-entity)
+           (transact/transact conn)))
     (println "User transactions added.")))
 
 (defonce connection (atom nil))

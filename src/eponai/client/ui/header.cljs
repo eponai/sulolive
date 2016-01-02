@@ -1,7 +1,7 @@
 (ns eponai.client.ui.header
   (:require [om.next :as om :refer-macros [defui]]
             [eponai.client.ui :refer-macros [opts]]
-            [eponai.client.parser :as parser]
+            [eponai.common.parser.mutate :as mutate]
             [eponai.client.ui.modal :refer [->Modal]]
             [eponai.client.ui.add_transaction :as add.t :refer [->AddTransaction]]
             [sablono.core :as html :refer-macros [html]]
@@ -19,7 +19,7 @@
     [this]
     (let [{:keys [query/header proxy/add-transaction]} (om/props this)
           {:keys [db/id ::show-transaction-modal]} (first header)
-          modal-trigger #(parser/cas! this id ::show-transaction-modal
+          modal-trigger #(mutate/cas! this id ::show-transaction-modal
                                       show-transaction-modal
                                       (not show-transaction-modal))]
       (html [:nav

@@ -1,5 +1,6 @@
 (ns eponai.server.core-test
   (:require [clojure.test :refer :all]
+            [clojure.core.async :as async]
             [datomic.api :only [q db] :as d]
             [eponai.server.api :as api]
             [eponai.server.core :as c]
@@ -7,7 +8,7 @@
             [eponai.server.datomic.transact :as t]
             [eponai.server.auth.credentials :as a]
             [eponai.server.openexchangerates :as exch]
-            [eponai.server.parser :as parser]
+            [eponai.common.parser :as parser]
             [eponai.server.middleware :as m])
   (:import (clojure.lang ExceptionInfo)))
 
@@ -21,7 +22,6 @@
                  :transaction/currency   "SEK"
                  :transaction/tags       ["fika" "thailand"]}])
 
-
 (def test-input [{:input-title "coffee"
                  :input-uuid       (d/squuid)
                  :input-created-at 12345
@@ -31,7 +31,7 @@
                  :input-tags       ["fika" "thailand"]}])
 (def test-curs {:SEK "Swedish Krona"})
 
-(def test-parser (parser/parser {:read parser/read :mutate parser/mutate}))
+(def test-parser (parser/parser))
 
 (defn test-convs [date-str]
   {:date  date-str
@@ -47,7 +47,11 @@
                                     :username (user-params :username),
                                     :roles    #{::a/user}}},
                          :current 1}}
-              :body test-data})
+              :body test-data
+              ::m/parser (parser/parser)
+              ::m/currency-chan (async/chan (async/sliding-buffer 1))})
+
+(def mutation-request (assoc request :body `[(transaction/create ~(first test-data))]))
 
 (defn- new-db
   "Creates an empty database and returns the connection."
@@ -85,29 +89,33 @@
 
 (deftest test-all-data-with-conversions
   (let [conn (db-with-curs)
-        _ (api/post-user-data conn request)
+        currency-chan (async/chan 1)
+        _ (api/handle-parser-request conn
+                                     (assoc mutation-request ::m/currency-chan currency-chan))
         db-conv (api/post-currency-rates conn
                                        test-convs
                                        [(:transaction/date (first test-data))])
         result (p/all-data
                  (:db-after db-conv)
                  (user-params :username) {})]
-    (is (= (count result) 8))))
+    (is (= (count result) 8))
+    (is (some? (async/poll! currency-chan)))))
 
-(deftest test-post-user-data
-  (let [db (api/post-user-data (db-with-curs)
-                             request)
-        result (p/all-data (:db-after db)
+(deftest test-handle-parser-request
+  (let [conn (db-with-curs)
+        _ (api/handle-parser-request conn mutation-request)
+        db-after (d/db conn)
+        result (p/all-data db-after
                            "user@email.com"
                            {})
-        no-result (p/all-data (:db-after db)
+        no-result (p/all-data db-after
                               "user@email.com"
                               {:d "1"})]
     (is (empty? no-result))
     (is (= (count result) 7))
     (is (thrown-with-msg? ExceptionInfo
                           #"Invalid budget id"
-                          (p/all-data (:db-after db)
+                          (p/all-data db-after
                                       "invalid@email.com"
                                       {})))))
 
@@ -121,20 +129,25 @@
                          :db/valueType          :db.type/ref
                          :db/cardinality        :db.cardinality/one
                          :db.install/_attribute :db.part/db}])
-      (api/post-user-data conn request)
+      (api/handle-parser-request conn mutation-request)
       (d/transact conn [[:db/add (:db/id user) :user/budget (:db/id budget)]])
       (let [result (p/all-data (d/db conn) "user@email.com" {})]
         (is (= (count result) 7))))))
 
+(defn throw-om-next-error [ret]
+  (let [error (get-in ret ['transaction/create :om.next/error])]
+    (is (some? error))
+    (throw error)))
+
 (deftest test-post-invalid-user-data
-  (let [invalid-user-req (assoc-in request
+  (let [invalid-user-req (assoc-in mutation-request
                                    [:session :cemerick.friend/identity :authentications 1 :username]
                                    "invalid@user.com")
         invalid-data-req (assoc request :body [{:invalid-data "invalid"}])
-        post-fn #(api/post-user-data (db-with-curs)
-                                   %)]
-    (is (thrown? ExceptionInfo (post-fn invalid-user-req)))
-    (is (thrown? ExceptionInfo (post-fn invalid-data-req)))))
+        post-fn #(api/handle-parser-request (db-with-curs) %)]
+    (is (thrown-with-msg? ExceptionInfo #"Validation failed"
+                          (throw-om-next-error (post-fn invalid-user-req))))
+    (is (thrown? ExceptionInfo (throw-om-next-error (post-fn invalid-data-req))))))
 
 (deftest test-post-invalid-currencies 
   (testing "Posting invalid currency data."

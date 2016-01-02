@@ -3,7 +3,7 @@
             [eponai.client.ui :refer-macros [style opts]]
             [eponai.client.ui.datepicker :refer [->Datepicker]]
             [eponai.client.ui.tag :as tag]
-            [eponai.client.format :as format]
+            [eponai.common.format :as format]
             [sablono.core :refer-macros [html]]
             [cljsjs.pikaday]
             [cljsjs.moment]
@@ -169,7 +169,7 @@
                               `[(transaction/create
                                   ~(let [state (om/get-state this)]
                                      (-> state
-                                         (assoc :input-date (format/date->ymd-str (:input-date state)))
+                                         (assoc :input-date (format/date->ymd-string (:input-date state)))
                                          (assoc :input-uuid (d/squuid))
                                          (assoc :input-created-at (.getTime (js/Date.)))
                                          (assoc :input-currency input-currency)

@@ -2,16 +2,15 @@
   (:gen-class)
   (:require [cemerick.friend :as friend]
             [clojure.core.async :refer [<! go chan]]
-            [clojure.edn :as edn]
             [compojure.core :refer :all]
             [datomic.api :only [q db] :as d]
             [environ.core :refer [env]]
+            [eponai.common.parser :as parser]
             [eponai.server.auth.credentials :as ac]
             [eponai.server.auth.workflows :as aw]
+            [eponai.server.email :as e]
             [eponai.server.openexchangerates :as exch]
             [eponai.server.datomic_dev :refer [connect!]]
-            [eponai.server.email :as e]
-            [eponai.server.parser :as parser]
             [eponai.server.api :as api :refer [api-routes]]
             [eponai.server.site :refer [site-routes]]
             [eponai.server.middleware :as m]
@@ -24,7 +23,7 @@
       (m/wrap-authenticate conn)
       m/wrap-transit
       (m/wrap-state {::m/conn           conn
-                     ::m/parser         (parser/parser {:read parser/read :mutate parser/mutate})
+                     ::m/parser         (parser/parser)
                      ::m/currency-chan  currency-chan
                      ::m/email-chan     email-chan
                      ;; either "dev" or "release"
