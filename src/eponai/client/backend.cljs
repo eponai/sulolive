@@ -42,5 +42,9 @@
                               []))]
       (prn "send to remote: " remote)
       (go
-        (let [{:keys [body]} (<! (post "/api/user/" {:transit-params remote}))]
-          (cb body))))))
+        (try
+          (let [{:keys [body trace-redirects]} (<! (post "/api/user/" {:transit-params remote}))]
+            (prn "redirectS: " trace-redirects)
+            (cb body))
+          (catch :default e
+            (prn e)))))))

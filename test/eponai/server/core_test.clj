@@ -5,7 +5,7 @@
             [eponai.server.core :as c]
             [eponai.server.datomic.pull :as p]
             [eponai.server.datomic.transact :as t]
-            [eponai.server.auth :as a]
+            [eponai.server.auth.credentials :as a]
             [eponai.server.openexchangerates :as exch]
             [eponai.server.parser :as parser]
             [eponai.server.middleware :as m])
@@ -57,8 +57,9 @@
     (d/create-database uri)
     (let [conn (d/connect uri)]
       (d/transact conn schema)
-      (t/new-user conn (a/new-signup (assoc request :request-method :post
-                                                    :params user-params)))
+      (api/signup (assoc request :request-method :post
+                                 :params user-params
+                                 ::m/conn conn))
       conn)))
 
 (defn- db-with-curs []
@@ -152,10 +153,10 @@
                                           (p/user (:db-after db-unverified) "test")
                                           :user/email
                                           :verification.status/verified)]
-      (is (a/cred-fn #(api/user-creds (:db-after db-verified) %) valid-params))
+      (is (a/password-credential-fn (:db-after db-verified) valid-params))
       (is (thrown-with-msg? ExceptionInfo
                             #"Email verification pending."
-                            (a/cred-fn #(api/user-creds (:db-after db-unverified) %) valid-params)))
+                            (a/password-credential-fn (:db-after db-unverified) valid-params)))
       (is (thrown-with-msg? ExceptionInfo
                             #"Validation failed, "
                             (api/signup {:request-method :post
@@ -163,7 +164,7 @@
                                                           :password ""}
                                          ::m/conn (new-db)})))
       (is (thrown-with-msg? ExceptionInfo
-                            #"Invalid request method"
+                            #"Cannot create new signup."
                             (api/signup {:request-method :get
                                          :params         valid-params
                                          ::m/conn (new-db)}))))))

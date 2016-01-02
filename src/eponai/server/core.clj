@@ -6,9 +6,11 @@
             [compojure.core :refer :all]
             [datomic.api :only [q db] :as d]
             [environ.core :refer [env]]
-            [eponai.server.auth :as a]
+            [eponai.server.auth.credentials :as ac]
+            [eponai.server.auth.workflows :as aw]
             [eponai.server.openexchangerates :as exch]
             [eponai.server.datomic_dev :refer [connect!]]
+            [eponai.server.email :as e]
             [eponai.server.parser :as parser]
             [eponai.server.api :as api :refer [api-routes]]
             [eponai.server.site :refer [site-routes]]
@@ -19,8 +21,7 @@
 (defn app* [conn currency-chan email-chan]
   (-> (routes api-routes site-routes)
       m/wrap-error
-      (friend/authenticate {:credential-fn       (partial a/cred-fn #(api/user-creds (d/db conn) %))
-                            :workflows           [(a/form)]})
+      (m/wrap-authenticate conn)
       m/wrap-transit
       (m/wrap-state {::m/conn           conn
                      ::m/parser         (parser/parser {:read parser/read :mutate parser/mutate})
@@ -29,7 +30,7 @@
                      ;; either "dev" or "release"
                      ::m/cljs-build-id (or (env :cljs-build-id) "dev")})
       m/wrap-defaults
-      m/wrap-log
+      ;m/wrap-log
       m/wrap-gzip))
 
 ;; Do a little re-def dance. Store the arguments to app* in a var, right before
@@ -58,7 +59,7 @@
      (alter-var-root (var app) call-app*)
      (init conn
            (partial exch/currency-rates nil)
-           (partial a/send-email-verification (a/smtp)))))
+           (partial e/send-email-verification (e/smtp)))))
   ([conn cur-fn email-fn]
    (println "Initializing server...")
 

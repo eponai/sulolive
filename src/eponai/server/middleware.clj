@@ -6,7 +6,12 @@
             [ring.middleware.gzip :as gzip]
             [ring.middleware.session.cookie :as cookie]
             [ring.middleware.transit :refer [wrap-transit-response
-                                             wrap-transit-body]])
+                                             wrap-transit-body]]
+            [cemerick.friend :as friend]
+            [eponai.server.auth.credentials :as ac]
+            [eponai.server.auth.workflows :as aw]
+            [datomic.api :as d])
+
   (:import (clojure.lang ExceptionInfo)
            (datomic.query EntityMap)))
 
@@ -44,10 +49,18 @@
 (defn wrap-gzip [handler]
   (gzip/wrap-gzip handler))
 
+(defn wrap-authenticate [handler conn]
+  (friend/authenticate
+    handler {:credential-fn       (partial ac/password-credential-fn (d/db conn))
+             :workflows           [aw/default-flow]
+             :default-landing-uri "/budget"}))
+
+(defn config []
+  (-> r/site-defaults
+      (assoc-in [:session :store] (cookie/cookie-store {:key (env :session-cookie-store-key)}))
+      (assoc-in [:session :cookie-name] (env :session-cookie-name))
+      (assoc-in [:security :anti-forgery] false)
+      (assoc-in [:static :resources] false)))
+
 (defn wrap-defaults [handler]
-  (let [config {:session  {:store       (cookie/cookie-store {:key (env :session-cookie-store-key)})
-                           :cookie-name (env :session-cookie-name)}
-                :security {:anti-forgery false}
-                :static   {:resources false}}]
-    (r/wrap-defaults handler (merge r/site-defaults
-                                    config))))
+  (r/wrap-defaults handler (config)))

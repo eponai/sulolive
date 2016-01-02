@@ -16,11 +16,11 @@
     (if (friend/current-authentication)
       (html (str (::m/cljs-build-id request) "/budget.html"))
       (html "index.html")))
+  (GET "/budget" request
+       (r/redirect (str (::m/cljs-build-id request) "/budget.html")))
 
-  (GET "/:path" [path :as request]
-    (if (friend/current-authentication)
-      (html (str (::m/cljs-build-id request) "/budget.html"))
-      (html (str path ".html"))))
+  (GET "/login" _
+    (html "login.html"))
 
   (GET "/devcards" []
     (println "Hej")
