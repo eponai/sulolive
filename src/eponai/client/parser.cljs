@@ -73,9 +73,14 @@
 ;------- Mutations
 
 (defmethod mutate 'transaction/create
-  [{:keys [state]} _ {:keys [input-amount input-currency input-title
+  [{:keys [state]} k {:keys [input-amount input-currency input-title
                              input-date input-description input-tags
                              input-uuid input-created-at] :as params}]
+  (when (not= (set input-tags) input-tags)
+    (throw (ex-info "Illegal arguments: The tags were not unique"
+                    {:action :mutate
+                     :key k
+                     :params params})))
   (try
     ;TODO use some function or whatever to generate tempids.
     (let [date (f/input->date input-date -1)
