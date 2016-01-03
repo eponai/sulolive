@@ -19,8 +19,8 @@
 
 (defn app* [conn currency-chan email-chan]
   (-> (routes api-routes site-routes)
-      m/wrap-error
       (m/wrap-authenticate conn)
+      m/wrap-error
       m/wrap-transit
       (m/wrap-state {::m/conn           conn
                      ::m/parser         (parser/parser)

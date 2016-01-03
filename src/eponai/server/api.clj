@@ -1,6 +1,6 @@
 (ns eponai.server.api
   (:require [cemerick.friend :as friend]
-    ;[clojure.core.async :refer [go >!]]
+            [clojure.core.async :refer [go >!]]
             [compojure.core :refer :all]
             [datomic.api :as d]
             [eponai.server.auth.credentials :as a]
@@ -14,21 +14,24 @@
 
 (defn signup
   "Create a new user and transact into datomic."
-  [{:keys [request-method params ::m/email-chan ::m/conn]
-    :as request}]
-  (if (and (= request-method :post)
-           (not (p/user (d/db conn) (params :username))))
-    (let [tx (t/new-user conn (a/add-bcrypt params :password))]
-      (when email-chan
-        ;(go (>! email-chan [(:db-after tx) (params :username)]))
-        )
-      tx)
+  [{:keys [request-method params ::m/email-chan ::m/conn]}]
+  (if (= request-method :post)
+    (if-not (p/user (d/db conn) (params :username))
+      (let [tx (t/new-user conn (a/add-bcrypt params :password))]
+        (when email-chan
+          (go (>! email-chan [(:db-after tx) (params :username)]))
+          )
+        tx)
+      (throw (ex-info "User already exists."
+                      {:cause   ::signup-error
+                       :status  ::h/unathorized
+                       :data    {:username       (params :username)}
+                       :message "User already exists."})))
     (throw (ex-info "Cannot create new signup."
                     {:cause   ::signup-error
                      :status  ::h/unathorized
-                     :data    {:username       (params :username)
-                               :request-method request-method}
-                     :message "Cannot sign up."}))))
+                     :data    {:request-method request-method}
+                     :message "Request method wrong."}))))
 
 
 (defn verify [conn uuid]
@@ -81,7 +84,8 @@
   api-routes
   (context "/api" []
     (POST "/signup" request
-      (r/response (signup request)))
+      (signup request)
+      (r/redirect "/login.html"))
     ; Requires user login
     (context "/user" _
       (friend/wrap-authorize user-routes #{::a/user}))
