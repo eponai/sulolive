@@ -153,10 +153,10 @@
                                           (p/user (:db-after db-unverified) "test")
                                           :user/email
                                           :verification.status/verified)]
-      (is (a/credential-fn (:db-after db-verified) valid-params))
+      (is ((a/credential-fn (:db-after db-verified)) valid-params))
       (is (thrown-with-msg? ExceptionInfo
                             #"Email verification pending."
-                            (a/credential-fn (:db-after db-unverified) valid-params)))
+                            ((a/credential-fn (:db-after db-unverified)) valid-params)))
       (is (thrown-with-msg? ExceptionInfo
                             #"Validation failed, "
                             (api/signup {:request-method :post
