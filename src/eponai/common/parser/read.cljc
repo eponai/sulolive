@@ -80,7 +80,9 @@
 
 (defmethod read :query/verification
   [{:keys [state query]} _ {:keys [uuid]}]
-  {:value (server.pull/verification (d/db state) query uuid)})
+  #?(:cljs {:value (pull-all state query '[[?e :verification/uuid ?uuid]])
+            :remote true}
+     :clj {:value (server.pull/verification (d/db state) query uuid)}))
 
 ;; -------- Debug stuff
 

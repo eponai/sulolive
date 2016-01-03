@@ -3,9 +3,10 @@
            [eponai.common.format :as format]
            [eponai.common.validate :as validate]
            [eponai.common.transact :as transact]
-   [eponai.server.api :as api]
+   #?(:clj
+           [eponai.server.api :as api])
 
-  #?(:clj [clojure.core.async :refer [go >!]])
+   #?(:clj [clojure.core.async :refer [go >!]])
   #?(:clj [eponai.server.datomic.pull :as server.pull])
   #?(:clj  [datomic.api :as d]
      :cljs [datascript.core :as d])
@@ -60,7 +61,7 @@
 (defmethod mutate 'email/verify
   [{:keys [state]} _ {:keys [uuid]}]
   (println "Verification verify: " uuid)
-
-  {:action (fn []
-             (api/verify state uuid)
-             uuid)})
+#?(:cljs {:remote true}
+   :clj {:action (fn []
+                    (api/verify state uuid)
+                    uuid)}))

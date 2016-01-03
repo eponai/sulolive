@@ -8,21 +8,9 @@
     ;; To initialize ReactDOM:
             [cljsjs.react.dom]
             [eponai.client.backend :as backend]
-            [eponai.client.parser :as parser]))
+            [eponai.common.parser :as parser]))
 
 (enable-console-print!)
-
-;(def state (atom {:verified}))
-
-(defmethod parser/read :query/verification
-  [{:keys [state query]} _ _]
-  {:value (parser/pull-all state query '[[?e :verification/uuid ?uuid]])
-   :remote true})
-
-(defmethod parser/mutate 'email/verify
-  [_ _ params]
-  (println "Verification verify: " params)
-  {:remote true})
 
 (defui Verify
   static om/IQueryParams
@@ -75,8 +63,7 @@
 
 (defn run []
   (let [conn (init-conn)
-        parser (om/parser {:read   parser/read
-                           :mutate parser/mutate})
+        parser (parser/parser)
         reconciler (om/reconciler {:state conn
                                    :parser  parser
                                    :remotes [:remote]
