@@ -16,6 +16,7 @@
     (if (friend/current-authentication)
       (html (str (::m/cljs-build-id request) "/budget.html"))
       (html "index.html")))
+
   (GET "/budget" request
        (r/redirect (str (::m/cljs-build-id request) "/budget.html")))
 

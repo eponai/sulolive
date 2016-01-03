@@ -3,46 +3,52 @@
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/clojurescript "1.7.170"
-                  ;;  :classifier "aot"
-                  :exclusion [org.clojure/data.json]
-                  ]
-                 [org.clojure/data.json "0.2.6"]
-                 [org.clojure/core.async "0.2.371"]
-                 ;; core.memoize is needed to work around lein+core.async dependency issue.
-                 [org.clojure/core.memoize "0.5.6"]
-                 [com.cognitect/transit-cljs "0.8.225"]
-                 [sablono "0.5.3"]
-                 [hiccup "1.0.5"]
-                 [org.omcljs/om "1.0.0-alpha28"]
-                 ;; Sablono needs the react-dom-server to compile.
-                 [cljsjs/react-dom-server "0.14.3-0"]
-                 [devcards "0.2.0-8"]
-                 [cljs-ajax "0.5.0"]
-                 [datascript "0.13.3"]
-                 [cljsjs/pikaday "1.3.2-0"]
-                 [compojure "1.4.0"]
-                 [environ "1.0.1"]
+  :dependencies [
                  [bidi "1.21.1"]
-                 [ring/ring-core "1.4.0"]
+                 [clj-http "2.0.0"]
+                 [clj-time "0.11.0"]
+                 [compojure "1.4.0"]
+                 [com.cemerick/friend "0.2.1"
+                  :exclusions [org.clojure/core.cache]]
+                 [com.datomic/datomic-pro "0.9.5302"
+                  :exclusions [joda-time]]
+                 [com.draines/postal "1.11.3"]
+                 [environ "1.0.1"]
+                 [hiccup "1.0.5"]
+                 [org.clojure/clojure "1.7.0"]
+                 [org.clojure/core.async "0.2.371"]
+                 [org.clojure/core.memoize "0.5.8"]         ; needed to work around lein+core.async dependency issue.
+                 [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.namespace "0.2.11"]
+                 ; ring helpers
+                 [amalloy/ring-gzip-middleware "0.1.3"]
+                 [ring/ring-core "1.4.0"]
                  [ring/ring-jetty-adapter "1.4.0"]
                  [ring/ring-json "0.4.0"]
                  [ring/ring-defaults "0.1.5"]
                  [ring/ring-anti-forgery "1.0.0"]
                  [ring-transit "0.1.4"]
-                 [amalloy/ring-gzip-middleware "0.1.3"]
-                 [org.clojure/test.check "0.8.1"]
-                 [clj-http "2.0.0"]
-                 [cljs-http "0.1.39"]
-                 [com.datomic/datomic-pro "0.9.5302"
-                  :exclusions [joda-time]]
-                 [clj-time "0.11.0"]
+
+                 ;CLJS
+                 [com.cognitect/transit-cljs "0.8.225"]
+                 [org.clojure/clojurescript "1.7.170"
+                  ;;  :classifier "aot"
+                  :exclusion [org.clojure/data.json]
+                  ]
                  [com.andrewmcveigh/cljs-time "0.3.14"]
+                 [cljs-http "0.1.39"]
                  [garden "1.3.0"]
-                 [com.cemerick/friend "0.2.1"]
-                 [com.draines/postal "1.11.3"]]
+                 [org.omcljs/om "1.0.0-alpha28"]
+                 [datascript "0.13.3"]
+                 [sablono "0.5.3"]
+                 [cljsjs/react-dom-server "0.14.3-0"]       ; Sablono needs the react-dom-server to compile.
+                 [cljs-ajax "0.5.0"]
+                 [cljsjs/pikaday "1.3.2-0"]
+
+                 ; Testing
+                 [devcards "0.2.0-8"]
+                 [org.clojure/test.check "0.8.1"]]
+
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]
             [lein-cljsbuild "1.1.1"]
