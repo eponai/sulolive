@@ -47,7 +47,7 @@
         reconciler (om/reconciler {:state   conn
                                    :parser  parser
                                    :remotes [:remote]
-                                   :send    (backend/send!)
+                                   :send    (backend/send! "/user/")
                                    :merge   (backend/merge! conn)})]
     (om/add-root! reconciler App (gdom/getElement "my-app"))))
 

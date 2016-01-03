@@ -3,6 +3,8 @@
            [eponai.common.format :as format]
            [eponai.common.validate :as validate]
            [eponai.common.transact :as transact]
+   [eponai.server.api :as api]
+
   #?(:clj [clojure.core.async :refer [go >!]])
   #?(:clj [eponai.server.datomic.pull :as server.pull])
   #?(:clj  [datomic.api :as d]
@@ -54,3 +56,11 @@
                 #?(:clj (go (>! currency-chan (:transaction/date user-tx))))
                 ;; TODO: Figure out what to return from these mutations.
                 nil)})))
+
+(defmethod mutate 'email/verify
+  [{:keys [state]} _ {:keys [uuid]}]
+  (println "Verification verify: " uuid)
+
+  {:action (fn []
+             (api/verify state uuid)
+             uuid)})

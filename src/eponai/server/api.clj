@@ -19,8 +19,7 @@
     (if-not (p/user (d/db conn) (params :username))
       (let [tx (t/new-user conn (a/add-bcrypt params :password))]
         (when email-chan
-          (go (>! email-chan [(:db-after tx) (params :username)]))
-          )
+          (go (>! email-chan [(:db-after tx) (params :username)])))
         tx)
       (throw (ex-info "User already exists."
                       {:cause   ::signup-error
@@ -39,7 +38,10 @@
         verification (p/verification db uuid)]
     (if (= (:db/id (verification :verification/status))
            (d/entid db :verification.status/pending))
-      (t/add conn (:db/id verification) :verification/status :verification.status/verified)
+      (do
+        (println "Successful verify")
+        (t/add conn (:db/id verification) :verification/status :verification.status/verified))
+
       (throw (ex-info "Trying to activate invalid verification."
                       {:cause   ::verification-error
                        :status  ::h/unathorized
@@ -86,11 +88,13 @@
     (POST "/signup" request
       (signup request)
       (r/redirect "/login.html"))
+
     ; Requires user login
     (context "/user" _
       (friend/wrap-authorize user-routes #{::a/user}))
-    (GET "/verify/:uuid" [uuid :as request]
-      (do
-        (verify (::m/conn request) uuid)
-        (r/response {:message "Your email is verified, you can now login."})))
+
+    (POST "/verify" {:keys [::m/conn] :as req}
+      (r/response
+        (handle-parser-request conn req)))
+
     (friend/logout (ANY "/logout" [] (r/redirect "/")))))

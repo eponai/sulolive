@@ -32,7 +32,7 @@
        :next (:db-after @(d/transact conn temp-id-novelty))})))
 
 (defn send!
-  []
+  [path]
   (fn [{:keys [remote]} cb]
     (let [remote (->> remote
                       (reduce (fn [query x]
@@ -43,8 +43,7 @@
       (prn "send to remote: " remote)
       (go
         (try
-          (let [{:keys [body trace-redirects]} (<! (post "/api/user/" {:transit-params remote}))]
-            (prn "redirectS: " trace-redirects)
+          (let [{:keys [body]} (<! (post (str "/api" path) {:transit-params remote}))]
             (cb body))
           (catch :default e
             (prn e)))))))

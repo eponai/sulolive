@@ -78,6 +78,10 @@
   {:value (pull-all state query '[[?e :currency/code]])
    :remote true})
 
+(defmethod read :query/verification
+  [{:keys [state query]} _ {:keys [uuid]}]
+  {:value (server.pull/verification (d/db state) query uuid)})
+
 ;; -------- Debug stuff
 
 (defn debug-read [{:keys [target] :as env} k params]

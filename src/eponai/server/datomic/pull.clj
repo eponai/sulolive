@@ -123,8 +123,10 @@
 
 (defn verification
   "Pull specific verification from the database using the unique uuid field."
-  [db uuid]
-  (p db '[*] [:verification/uuid (java.util.UUID/fromString uuid)]))
+  ([db uuid]
+   (verification db '[*] uuid))
+  ([db query uuid]
+   (p db query [:verification/uuid (java.util.UUID/fromString uuid)])))
 
 (defn expand-refs
   "Find any refs within the specified entity and expand them into entities."

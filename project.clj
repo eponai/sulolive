@@ -10,6 +10,7 @@
                  [compojure "1.4.0"]
                  [com.cemerick/friend "0.2.1"
                   :exclusions [org.clojure/core.cache]]
+                 [com.cemerick/url "0.1.1"]
                  [com.datomic/datomic-pro "0.9.5302"
                   :exclusions [joda-time]]
                  [com.draines/postal "1.11.3"]
