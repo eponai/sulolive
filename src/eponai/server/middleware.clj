@@ -51,8 +51,8 @@
 
 (defn wrap-authenticate [handler conn]
   (friend/authenticate
-    handler {:credential-fn       (partial ac/password-credential-fn (d/db conn))
-             :workflows           [aw/default-flow]
+    handler {:credential-fn       (ac/credential-fn (d/db conn))
+             :workflows           [(aw/default-flow)]
              :default-landing-uri "/budget"}))
 
 (defn config []

@@ -148,23 +148,23 @@
           conn (new-db)
           db-unverified (api/signup {:request-method :post
                                      :params         valid-params
-                                     ::m/conn conn})
+                                     ::m/conn        conn})
           db-verified (t/new-verification conn
                                           (p/user (:db-after db-unverified) "test")
                                           :user/email
                                           :verification.status/verified)]
-      (is (a/password-credential-fn (:db-after db-verified) valid-params))
+      (is (a/credential-fn (:db-after db-verified) valid-params))
       (is (thrown-with-msg? ExceptionInfo
                             #"Email verification pending."
-                            (a/password-credential-fn (:db-after db-unverified) valid-params)))
+                            (a/credential-fn (:db-after db-unverified) valid-params)))
       (is (thrown-with-msg? ExceptionInfo
                             #"Validation failed, "
                             (api/signup {:request-method :post
                                          :params         {:username ""
                                                           :password ""}
-                                         ::m/conn (new-db)})))
+                                         ::m/conn        (new-db)})))
       (is (thrown-with-msg? ExceptionInfo
                             #"Cannot create new signup."
                             (api/signup {:request-method :get
                                          :params         valid-params
-                                         ::m/conn (new-db)}))))))
+                                         ::m/conn        (new-db)}))))))

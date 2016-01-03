@@ -1,6 +1,7 @@
 (ns eponai.server.auth.credentials
   (:require [eponai.server.datomic.pull :as p]
             [eponai.server.http :as h]
+            [cemerick.friend :as friend]
             [cemerick.friend.credentials :as creds]))
 
 (defn- user-not-found [email]
@@ -25,21 +26,31 @@
        :verifications verifications})))
 
 (defn add-bcrypt
-  "Add :bcrypt key to the specified map hashingn the key k in that same map."
+  "Assoc :bcrypt key with hashed value of k in m."
   [m k]
   (assoc m :bcrypt (creds/hash-bcrypt (k m))))
 
-(defn password-credential-fn
-  "Credential function, passed in a user-fn to load the user credentials from the
-  db to compare credentials to the params submitted to log in."
-  [db params]
+(defmulti auth-map
+          (fn [_ input] (::friend/workflow (meta input))))
+
+(defmethod auth-map :default
+  [db input]
   (when-let [auth-map (creds/bcrypt-credential-fn
                         #(user-creds db %)
-                        params)]
+                        input)]
     (if (seq (:verifications auth-map))
       (dissoc auth-map :verifications)
       (throw (ex-info "Email verification pending."
                       {:cause   ::verification-error
                        :status  ::h/unathorized
-                       :data    {:email (:user/email (params :username))}
+                       :data    {:email (:user/email (input :username))}
                        :message "Email verification pending"})))))
+
+(defn credential-fn
+  "Create a credential fn with a db to pull user credentials.
+
+  Returned function will dispatc on the ::friend/workflow and return the
+  appropriate authentication map for the workflow."
+  [db]
+  (fn [input]
+    (auth-map db input)))
