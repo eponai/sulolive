@@ -1,6 +1,6 @@
 (ns eponai.server.api
   (:require [cemerick.friend :as friend]
-            [clojure.core.async :refer [go >!]]
+            [clojure.core.async :refer [go >! <! chan put!]]
             [compojure.core :refer :all]
             [datomic.api :as d]
             [eponai.server.auth.credentials :as a]
@@ -13,25 +13,22 @@
 ; Actions
 
 (defn signup
-  "Create a new user and transact into datomic."
-  [{:keys [request-method params ::m/email-chan ::m/conn]}]
-  (if (= request-method :post)
-    (if-not (p/user (d/db conn) (params :username))
-      (let [tx (t/new-user conn (a/add-bcrypt params :password))]
-        (when email-chan
-          (go (>! email-chan [(:db-after tx) (params :username)])))
-        tx)
-      (throw (ex-info "User already exists."
-                      {:cause   ::signup-error
-                       :status  ::h/unathorized
-                       :data    {:username       (params :username)}
-                       :message "User already exists."})))
-    (throw (ex-info "Cannot create new signup."
+  "Create a new user and transact into datomic.
+
+  Returns channel with username and db-after user is added to use for email verification."
+  [conn {:keys [username] :as user-params}]
+  (if-not (p/user (d/db conn) username)
+    (let [tx (t/new-user conn (a/add-bcrypt user-params :password))
+          email-chan (chan)]
+      (println "Will put email on chan: " email-chan " with data: " [(:db-after tx) username])
+
+      (put! email-chan username)
+      email-chan)
+    (throw (ex-info "User already exists."
                     {:cause   ::signup-error
                      :status  ::h/unathorized
-                     :data    {:request-method request-method}
-                     :message "Request method wrong."}))))
-
+                     :data    {:username username}
+                     :message "User already exists."}))))
 
 (defn verify [conn uuid]
   (let [db (d/db conn)
@@ -60,11 +57,6 @@
     (when (some identity unconverted)
       (t/currency-rates conn (map rates-fn (filter identity dates))))))
 
-(defn send-email-verification [email-fn [db email]]
-  (when-let [verification (first (p/verifications db (p/user db email) :user/email :verification.status/pending))]
-    (email-fn email (verification :verification/uuid))))
-
-
 (defn handle-parser-request [conn {:keys [::m/parser ::m/currency-chan]
                                    :as request}]
   (let [ret (parser
@@ -85,8 +77,10 @@
 (defroutes
   api-routes
   (context "/api" []
-    (POST "/signup" request
-      (signup request)
+    (POST "/signup" {:keys [::m/send-email-fn
+                            params
+                            ::m/conn]}
+      (go (send-email-fn (<! (signup conn params))))
       (r/redirect "/login.html"))
 
     ; Requires user login

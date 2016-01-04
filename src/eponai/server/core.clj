@@ -17,15 +17,15 @@
             [ring.adapter.jetty :as jetty]
 ))
 
-(defn app* [conn currency-chan email-chan]
+(defn app* [conn currency-chan]
   (-> (routes api-routes site-routes)
-      (m/wrap-authenticate conn)
+      (m/wrap-authenticate (d/db conn))
       m/wrap-error
       m/wrap-transit
       (m/wrap-state {::m/conn           conn
                      ::m/parser         (parser/parser)
                      ::m/currency-chan  currency-chan
-                     ::m/email-chan     email-chan
+                     ::m/send-email-fn (e/send-email-fn conn)
                      ;; either "dev" or "release"
                      ::m/cljs-build-id (or (env :cljs-build-id) "dev")})
       m/wrap-defaults
@@ -47,29 +47,22 @@
 ;; <--- END Re-def hack.
 
 (def currency-chan (chan))
-(def email-chan (chan))
 
 (defn init
   ([]
    (println "Using remote resources.")
    (let [conn (connect!)]
      ;; See comments about this where app*args and app is defined.
-     (alter-var-root (var app*args) (fn [_] [conn currency-chan email-chan]))
+     (alter-var-root (var app*args) (fn [_] [conn currency-chan]))
      (alter-var-root (var app) call-app*)
      (init conn
-           (partial exch/currency-rates nil)
-           (partial e/send-email-verification (e/smtp)))))
-  ([conn cur-fn email-fn]
+           (partial exch/currency-rates nil))))
+  ([conn cur-fn]
    (println "Initializing server...")
 
    (go (while true
          (try
            (api/post-currency-rates conn cur-fn (<! currency-chan))
-           (catch Exception e
-             (println (.getMessage e))))))
-   (go (while true
-         (try
-           (api/send-email-verification email-fn (<! email-chan))
            (catch Exception e
              (println (.getMessage e))))))
    (println "Done.")))

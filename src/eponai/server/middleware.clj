@@ -49,9 +49,9 @@
 (defn wrap-gzip [handler]
   (gzip/wrap-gzip handler))
 
-(defn wrap-authenticate [handler conn]
+(defn wrap-authenticate [handler db]
   (friend/authenticate
-    handler {:credential-fn       (ac/credential-fn (d/db conn))
+    handler {:credential-fn       (ac/credential-fn db)
              :workflows           [(aw/default-flow)]
              :default-landing-uri "/budget"}))
 

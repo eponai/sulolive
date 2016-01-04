@@ -61,9 +61,7 @@
     (d/create-database uri)
     (let [conn (d/connect uri)]
       (d/transact conn schema)
-      (api/signup (assoc request :request-method :post
-                                 :params user-params
-                                 ::m/conn conn))
+      (api/signup conn user-params)
       conn)))
 
 (defn- db-with-curs []
@@ -159,9 +157,7 @@
     (let [valid-params {:username "test"
                         :password "p"}
           conn (new-db)
-          db-unverified (api/signup {:request-method :post
-                                     :params         valid-params
-                                     ::m/conn        conn})
+          db-unverified (api/signup conn valid-params)
           db-verified (t/new-verification conn
                                           (p/user (:db-after db-unverified) "test")
                                           :user/email
@@ -172,12 +168,5 @@
                             ((a/credential-fn (:db-after db-unverified)) valid-params)))
       (is (thrown-with-msg? ExceptionInfo
                             #"Validation failed, "
-                            (api/signup {:request-method :post
-                                         :params         {:username ""
-                                                          :password ""}
-                                         ::m/conn        (new-db)})))
-      (is (thrown-with-msg? ExceptionInfo
-                            #"Cannot create new signup."
-                            (api/signup {:request-method :get
-                                         :params         valid-params
-                                         ::m/conn        (new-db)}))))))
+                            (api/signup (new-db) {:username ""
+                                                  :password ""}))))))
