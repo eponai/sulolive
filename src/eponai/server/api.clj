@@ -82,12 +82,12 @@
 
   Will look for :currency-chan and if found post the currency rates for the transactions asynchronousnly."
   [conn get-rates-fn response]
-  (let [value (get response 'transaction/create)
+  (let [value (get-in response ['transaction/create :return])
         chan (:currency-chan value)]
     (if chan
       (do (go
             (post-currency-rates conn get-rates-fn (<! chan)))
-          (assoc response 'transaction/create (dissoc value :currency-chan)))
+          (assoc-in response ['transaction/create :return] (dissoc value :currency-chan)))
       response)))
 
 ;----------Routes

@@ -48,7 +48,7 @@
                                     :roles    #{::a/user}}},
                          :current 1}}
               :body test-data
-              ::m/parser (parser/parser)
+              ::m/parser test-parser
               ::m/currency-chan (async/chan (async/sliding-buffer 1))})
 
 (def mutation-request (assoc request :body `[(transaction/create ~(first test-data))]))
@@ -130,20 +130,20 @@
       (let [result (p/all-data (d/db conn) "user@email.com" {})]
         (is (= (count result) 7))))))
 
-(defn throw-om-next-error [ret]
-  (let [error (get-in ret ['transaction/create :om.next/error])]
-    (is (some? error))
-    (throw error)))
+(defn om-next-error-msg [ret]
+  (get-in ret ['transaction/create :om.next/error ::parser/ex-message]))
 
 (deftest test-post-invalid-user-data
   (let [invalid-user-req (assoc-in mutation-request
                                    [:session :cemerick.friend/identity :authentications 1 :username]
                                    "invalid@user.com")
-        invalid-data-req (assoc request :body [{:invalid-data "invalid"}])
+        invalid-data-req (assoc-in mutation-request
+                                   [:body]
+                                   `[(transaction/create {:invalid-data "invalid"})])
         post-fn #(api/handle-parser-request (assoc % ::m/conn (db-with-curs)))]
-    (is (thrown-with-msg? ExceptionInfo #"Validation failed"
-                          (throw-om-next-error (post-fn invalid-user-req))))
-    (is (thrown? ExceptionInfo (throw-om-next-error (post-fn invalid-data-req))))))
+    ;; TODO: Fail faster for invalid user request? #76
+    (is (some? (re-find #"Validation failed" (om-next-error-msg (post-fn invalid-user-req)))))
+    (is (some? (re-find #"Validation failed" (om-next-error-msg (post-fn invalid-data-req)))))))
 
 (deftest test-post-invalid-currencies 
   (testing "Posting invalid currency data."

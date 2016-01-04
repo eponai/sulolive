@@ -29,41 +29,43 @@
 
 ;; -------- Remote mutations
 
+(defn- transaction-create [{:keys [state auth currency-chan]} k {:keys [input-tags] :as params}]
+  (fn []
+    (when-not (= (frequencies (set input-tags))
+                 (frequencies input-tags))
+      (throw (ex-info "Illegal argument :input-tags. Each tag must be unique."
+                      {:input-tags input-tags
+                       :mutate     k
+                       :params     params})))
+    (let [renames {:input-title       :transaction/name
+                   :input-amount      :transaction/amount
+                   :input-description :transaction/details
+                   :input-date        :transaction/date
+                   :input-tags        :transaction/tags
+                   :input-currency    :transaction/currency
+                   :input-created-at  :transaction/created-at
+                   :input-uuid        :transaction/uuid}
+          user-tx (rename-keys params renames)
+          #?@(:clj [user-tx (assoc user-tx :transaction/budget
+                                           (:budget/uuid (server.pull/budget (d/db state)
+                                                                             (:username auth))))
+                    currency-chan (chan)])
+          _ (validate/valid-user-transaction? user-tx)
+          db-tx (format/user-transaction->db-entity user-tx)]
+      (transact/transact state [db-tx])
+      #?(:clj (go (>! currency-chan (:transaction/date user-tx))))
+      #?(:clj {:currency-chan currency-chan}
+         :cljs nil))))
+
 (defmethod mutate 'transaction/create
- [{:keys [state auth]} k {:keys [input-tags] :as params}]
- (when-not (= (frequencies (set input-tags))
-              (frequencies input-tags))
-  (throw (ex-info "Illegal argument :input-tags. Each tag must be unique."
-                  {:input-tags input-tags
-                   :mutate k
-                   :params params})))
- (let [renames {:input-title       :transaction/name
-                :input-amount      :transaction/amount
-                :input-description :transaction/details
-                :input-date        :transaction/date
-                :input-tags        :transaction/tags
-                :input-currency    :transaction/currency
-                :input-created-at  :transaction/created-at
-                :input-uuid        :transaction/uuid}
-       user-tx (rename-keys params renames)
-       #?@(:clj [user-tx (assoc user-tx :transaction/budget
-                                        (:budget/uuid (server.pull/budget (d/db state)
-                                                                          (:username auth))))
-                 currency-chan (chan)])]
-   (validate/valid-user-transaction? user-tx)
-   (let [db-tx (format/user-transaction->db-entity user-tx)]
-     {#?@(:cljs [:remote true])
-      :action (fn []
-                (transact/transact state [db-tx])
-                #?(:clj (go (>! currency-chan (:transaction/date user-tx))))
-                ;; TODO: Figure out what to return from these mutations.
-                nil)
-      #?@(:clj [:value {:currency-chan currency-chan}])})))
+  [env k params]
+  #?(:clj {:action (transaction-create env k params)}
+     :cljs [:remote true]))
 
 (defmethod mutate 'email/verify
   [{:keys [state]} _ {:keys [uuid]}]
   (println "Verification verify: " uuid)
-#?(:cljs {:remote true}
-   :clj {:action (fn []
-                    (api/verify state uuid)
-                    uuid)}))
+  #?(:cljs {:remote true}
+     :clj  {:action (fn []
+                      (api/verify state uuid)
+                      uuid)}))
