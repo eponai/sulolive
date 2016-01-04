@@ -29,7 +29,7 @@
 
 ;; -------- Remote mutations
 
-(defn- transaction-create [{:keys [state auth currency-chan]} k {:keys [input-tags] :as params}]
+(defn- transaction-create [{:keys [state auth]} k {:keys [input-tags] :as params}]
   (fn []
     (when-not (= (frequencies (set input-tags))
                  (frequencies input-tags))
@@ -59,8 +59,8 @@
 
 (defmethod mutate 'transaction/create
   [env k params]
-  #?(:clj {:action (transaction-create env k params)}
-     :cljs [:remote true]))
+  {:action (transaction-create env k params)
+   #?@(:cljs [:remote true])})
 
 (defmethod mutate 'email/verify
   [{:keys [state]} _ {:keys [uuid]}]
