@@ -72,27 +72,25 @@
 (deftest test-post-currency-rates
   (testing "posting currency rates to database."
     (let [conn (db-with-curs)
-          dates ["2010-10-10"]
+          date "2010-10-10"
           db (api/post-currency-rates conn
                                     test-convs
-                                    dates)
+                                    date)
           unposted (api/post-currency-rates conn
                                           test-convs
-                                          dates)
-          converted (p/converted-dates (:db-after db) dates)]
+                                          date)
+          converted (p/converted-dates (:db-after db) [date])]
       (is db)
       (is (nil? unposted))
-      (is (= (count converted) (count dates)))
-      (is (thrown? ExceptionInfo (api/post-currency-rates conn test-convs ["invalid-date"]))))))
+      (is (= (count converted) 1))
+      (is (thrown? ExceptionInfo (api/post-currency-rates conn test-convs "invalid-date"))))))
 
 (deftest test-all-data-with-conversions
   (let [conn (db-with-curs)
-        currency-chan (async/chan 1)
-        _ (api/handle-parser-request conn
-                                     (assoc mutation-request ::m/currency-chan currency-chan))
+        {{currency-chan :currency-chan} 'transaction/create} (api/handle-parser-request (assoc mutation-request ::m/conn conn))
         db-conv (api/post-currency-rates conn
                                        test-convs
-                                       [(:transaction/date (first test-data))])
+                                         (:transaction/date (first test-data)))
         result (p/all-data
                  (:db-after db-conv)
                  (user-params :username) {})]
@@ -101,7 +99,7 @@
 
 (deftest test-handle-parser-request
   (let [conn (db-with-curs)
-        _ (api/handle-parser-request conn mutation-request)
+        _ (api/handle-parser-request (assoc mutation-request ::m/conn conn))
         db-after (d/db conn)
         result (p/all-data db-after
                            "user@email.com"
@@ -127,7 +125,7 @@
                          :db/valueType          :db.type/ref
                          :db/cardinality        :db.cardinality/one
                          :db.install/_attribute :db.part/db}])
-      (api/handle-parser-request conn mutation-request)
+      (api/handle-parser-request (assoc mutation-request ::m/conn conn))
       (d/transact conn [[:db/add (:db/id user) :user/budget (:db/id budget)]])
       (let [result (p/all-data (d/db conn) "user@email.com" {})]
         (is (= (count result) 7))))))
@@ -142,7 +140,7 @@
                                    [:session :cemerick.friend/identity :authentications 1 :username]
                                    "invalid@user.com")
         invalid-data-req (assoc request :body [{:invalid-data "invalid"}])
-        post-fn #(api/handle-parser-request (db-with-curs) %)]
+        post-fn #(api/handle-parser-request (assoc % ::m/conn (db-with-curs)))]
     (is (thrown-with-msg? ExceptionInfo #"Validation failed"
                           (throw-om-next-error (post-fn invalid-user-req))))
     (is (thrown? ExceptionInfo (throw-om-next-error (post-fn invalid-data-req))))))
@@ -152,20 +150,28 @@
     (is (thrown? ExceptionInfo (api/post-currencies (new-db)
                                                   (assoc test-curs :invalid 2))))))
 
+(deftest test-signup-unverified
+  (testing "user signed up bot not verified"
+    (let [valid-params {:username "test"
+                        :password "p"}
+          conn (new-db)
+          email-chan (api/signup conn valid-params)]
+      (is (thrown-with-msg? ExceptionInfo
+                            #"Email verification pending."
+                            ((a/credential-fn conn) valid-params)))
+      (is (some? (async/poll! email-chan))))))
+
 (deftest test-signup
   (testing "signup new user"
     (let [valid-params {:username "test"
                         :password "p"}
-          conn (new-db)
-          db-unverified (api/signup conn valid-params)
-          db-verified (t/new-verification conn
-                                          (p/user (:db-after db-unverified) "test")
-                                          :user/email
-                                          :verification.status/verified)]
-      (is ((a/credential-fn (:db-after db-verified)) valid-params))
-      (is (thrown-with-msg? ExceptionInfo
-                            #"Email verification pending."
-                            ((a/credential-fn (:db-after db-unverified)) valid-params)))
+          conn (new-db)]
+      (api/signup conn valid-params)
+      (t/new-verification conn
+                          (p/user (d/db conn) "test")
+                          :user/email
+                          :verification.status/verified)
+      (is ((a/credential-fn conn) valid-params))
       (is (thrown-with-msg? ExceptionInfo
                             #"Validation failed, "
                             (api/signup (new-db) {:username ""

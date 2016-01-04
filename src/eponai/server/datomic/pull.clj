@@ -71,6 +71,10 @@
        [?c :conversion/date ?d]
        [?d :date/ymd ?ymd]] db dates))
 
+(defn date-conversions [db date]
+  (let [conversions (p db '[:conversion/_date] [:date/ymd date])]
+    conversions))
+
 (defn conversions
   "Pull conversions for the currencies and dates refered by the specified transaction ids."
   [db user-tx-ids]

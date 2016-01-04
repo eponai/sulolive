@@ -19,9 +19,11 @@
   [app-id date-str]
   (str "https://openexchangerates.org/api/historical/" date-str ".json?app_id=" app-id))
 
-(defn currency-rates
+(defn currency-rates-fn
   "Get currency rates for the given date string of the form \"yy-MM-dd\" and the api key."
-  [app-id date-str]
-  (when (and app-id date-str)
-    (let [rates (json/read-str (:body (client/get (currency-rates-url app-id date-str))) :key-fn keyword)]
-      (assoc rates :date date-str))))
+  [app-id]
+  (fn [date-str]
+    (println "Posting currency-rates..." date-str)
+    (when (and app-id date-str)
+      (let [rates (json/read-str (:body (client/get (currency-rates-url app-id date-str))) :key-fn keyword)]
+        (assoc rates :date date-str)))))

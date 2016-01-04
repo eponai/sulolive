@@ -4,27 +4,25 @@
             [compojure.core :refer :all]
             [environ.core :refer [env]]
             [eponai.common.parser :as parser]
-            [eponai.server.auth.credentials :as ac]
-            [eponai.server.auth.workflows :as aw]
             [eponai.server.email :as e]
             [eponai.server.openexchangerates :as exch]
             [eponai.server.datomic_dev :refer [connect!]]
-            [eponai.server.api :as api :refer [api-routes]]
+            [eponai.server.api :refer [api-routes]]
             [eponai.server.site :refer [site-routes]]
             [eponai.server.middleware :as m]
             [ring.adapter.jetty :as jetty]))
 
-(defn app* [conn currency-chan]
+(defn app* [conn]
   (-> (routes api-routes site-routes)
       (m/wrap-authenticate conn)
       m/wrap-error
       m/wrap-transit
-      (m/wrap-state {::m/conn           conn
-                     ::m/parser         (parser/parser)
-                     ::m/currency-chan  currency-chan
-                     ::m/send-email-fn (e/send-email-fn conn)
+      (m/wrap-state {::m/conn              conn
+                     ::m/parser            (parser/parser)
+                     ::m/currency-rates-fn (exch/currency-rates-fn nil)
+                     ::m/send-email-fn     (e/send-email-fn conn)
                      ;; either "dev" or "release"
-                     ::m/cljs-build-id (or (env :cljs-build-id) "dev")})
+                     ::m/cljs-build-id     (or (env :cljs-build-id) "dev")})
       m/wrap-defaults
       ;m/wrap-log
       m/wrap-gzip))
@@ -43,26 +41,14 @@
   (apply app* app*args))
 ;; <--- END Re-def hack.
 
-(def currency-chan (chan))
-
 (defn init
-  ([]
-   (println "Using remote resources.")
-   (let [conn (connect!)]
-     ;; See comments about this where app*args and app is defined.
-     (alter-var-root (var app*args) (fn [_] [conn currency-chan]))
-     (alter-var-root (var app) call-app*)
-     (init conn
-           (partial exch/currency-rates nil))))
-  ([conn cur-fn]
-   (println "Initializing server...")
-
-   (go (while true
-         (try
-           (api/post-currency-rates conn cur-fn (<! currency-chan))
-           (catch Exception e
-             (println (.getMessage e))))))
-   (println "Done.")))
+  []
+  (println "Initializing server...")
+  (let [conn (connect!)]
+    ;; See comments about this where app*args and app is defined.
+    (alter-var-root (var app*args) (fn [_] [conn]))
+    (alter-var-root (var app) call-app*))
+  (println "Done."))
 
 (defn -main [& args]
   (init)

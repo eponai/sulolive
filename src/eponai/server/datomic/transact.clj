@@ -41,8 +41,8 @@
   "Transact conversions into datomic.
 
   Throws ExceptionInfo if transaction failed."
-  [conn rate-ms]
-  (let [db-rates (apply concat (map #(f/cur-rates->db-txs %) rate-ms))]
+  [conn rates]
+  (let [db-rates (f/cur-rates->db-txs rates)]
     (transact conn db-rates)))
 
 (defn currencies

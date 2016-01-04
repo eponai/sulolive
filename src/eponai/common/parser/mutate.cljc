@@ -6,7 +6,7 @@
    #?(:clj
            [eponai.server.api :as api])
 
-   #?(:clj [clojure.core.async :refer [go >!]])
+   #?(:clj [clojure.core.async :refer [go >! chan]])
   #?(:clj [eponai.server.datomic.pull :as server.pull])
   #?(:clj  [datomic.api :as d]
      :cljs [datascript.core :as d])
@@ -30,7 +30,7 @@
 ;; -------- Remote mutations
 
 (defmethod mutate 'transaction/create
- [{:keys [state auth currency-chan]} k {:keys [input-tags] :as params}]
+ [{:keys [state auth]} k {:keys [input-tags] :as params}]
  (when-not (= (frequencies (set input-tags))
               (frequencies input-tags))
   (throw (ex-info "Illegal argument :input-tags. Each tag must be unique."
@@ -48,7 +48,8 @@
        user-tx (rename-keys params renames)
        #?@(:clj [user-tx (assoc user-tx :transaction/budget
                                         (:budget/uuid (server.pull/budget (d/db state)
-                                                                          (:username auth))))])]
+                                                                          (:username auth))))
+                 currency-chan (chan)])]
    (validate/valid-user-transaction? user-tx)
    (let [db-tx (format/user-transaction->db-entity user-tx)]
      {#?@(:cljs [:remote true])
@@ -56,7 +57,8 @@
                 (transact/transact state [db-tx])
                 #?(:clj (go (>! currency-chan (:transaction/date user-tx))))
                 ;; TODO: Figure out what to return from these mutations.
-                nil)})))
+                nil)
+      #?@(:clj [:value {:currency-chan currency-chan}])})))
 
 (defmethod mutate 'email/verify
   [{:keys [state]} _ {:keys [uuid]}]
