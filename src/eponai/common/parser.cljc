@@ -6,8 +6,6 @@
     #?(:clj  [om.next.server :as om]
        :cljs [om.next :as om])))
 
-(defmulti merge (fn [_ k _] k))
-
 (defn wrap-om-next-error-handler
   "For each :om.next/error, replace the value with only the error's
   ex-data.
