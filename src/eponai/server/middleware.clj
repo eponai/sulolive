@@ -9,8 +9,7 @@
                                              wrap-transit-body]]
             [cemerick.friend :as friend]
             [eponai.server.auth.credentials :as ac]
-            [eponai.server.auth.workflows :as aw]
-            [datomic.api :as d])
+            [eponai.server.auth.workflows :as aw])
 
   (:import (clojure.lang ExceptionInfo)
            (datomic.query EntityMap)))
@@ -49,9 +48,9 @@
 (defn wrap-gzip [handler]
   (gzip/wrap-gzip handler))
 
-(defn wrap-authenticate [handler db]
+(defn wrap-authenticate [handler conn]
   (friend/authenticate
-    handler {:credential-fn       (ac/credential-fn db)
+    handler {:credential-fn       (ac/credential-fn conn)
              :workflows           [(aw/default-flow)]
              :default-landing-uri "/budget"}))
 

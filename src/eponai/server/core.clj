@@ -1,9 +1,7 @@
 (ns eponai.server.core
   (:gen-class)
-  (:require [cemerick.friend :as friend]
-            [clojure.core.async :refer [<! go chan]]
+  (:require [clojure.core.async :refer [<! go chan]]
             [compojure.core :refer :all]
-            [datomic.api :only [q db] :as d]
             [environ.core :refer [env]]
             [eponai.common.parser :as parser]
             [eponai.server.auth.credentials :as ac]
@@ -14,12 +12,11 @@
             [eponai.server.api :as api :refer [api-routes]]
             [eponai.server.site :refer [site-routes]]
             [eponai.server.middleware :as m]
-            [ring.adapter.jetty :as jetty]
-))
+            [ring.adapter.jetty :as jetty]))
 
 (defn app* [conn currency-chan]
   (-> (routes api-routes site-routes)
-      (m/wrap-authenticate (d/db conn))
+      (m/wrap-authenticate conn)
       m/wrap-error
       m/wrap-transit
       (m/wrap-state {::m/conn           conn

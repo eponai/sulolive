@@ -1,8 +1,9 @@
 (ns eponai.server.auth.credentials
-  (:require [eponai.server.datomic.pull :as p]
-            [eponai.server.http :as h]
-            [cemerick.friend :as friend]
-            [cemerick.friend.credentials :as creds]))
+  (:require [cemerick.friend :as friend]
+            [cemerick.friend.credentials :as creds]
+            [datomic.api :refer [db]]
+            [eponai.server.datomic.pull :as p]
+            [eponai.server.http :as h]))
 
 (defn- user-not-found [email]
   (ex-info "Could not find user in db."
@@ -15,15 +16,16 @@
   "Get user credentials for the specified email in the db. Returns nil if user does not exist.
 
   Throws ExceptionInfo if the user has not verified their email."
-  [db email]
-  (when-let [db-user (p/user db email)]
-    (let [password (p/password db db-user)
-          verifications (p/verifications db db-user :user/email :verification.status/verified)]
-      {:identity      (:db/id db-user)
-       :username      (:user/email db-user)
-       :password      (:password/bcrypt password)
-       :roles         #{::user}
-       :verifications verifications})))
+  [conn email]
+  (let [db (db conn)]
+    (when-let [db-user (p/user db email)]
+      (let [password (p/password db db-user)
+            verifications (p/verifications db db-user :user/email :verification.status/verified)]
+        {:identity      (:db/id db-user)
+         :username      (:user/email db-user)
+         :password      (:password/bcrypt password)
+         :roles         #{::user}
+         :verifications verifications}))))
 
 (defn add-bcrypt
   "Assoc :bcrypt key with hashed value of k in m."
@@ -34,9 +36,9 @@
           (fn [_ input] (::friend/workflow (meta input))))
 
 (defmethod auth-map :default
-  [db input]
+  [conn input]
   (when-let [auth-map (creds/bcrypt-credential-fn
-                        #(user-creds db %)
+                        #(user-creds conn %)
                         input)]
     (if (seq (:verifications auth-map))
       (dissoc auth-map :verifications)
@@ -51,6 +53,6 @@
 
   Returned function will dispatc on the ::friend/workflow and return the
   appropriate authentication map for the workflow."
-  [db]
+  [conn]
   (fn [input]
-    (auth-map db input)))
+    (auth-map conn input)))
