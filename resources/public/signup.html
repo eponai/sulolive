@@ -13,6 +13,7 @@
 
     <!-- Bootstrap Core CSS -->
     <link href="/b/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/b/css/bootstrap-social.css" rel="stylesheet">
 
     <!-- Custom CSS -->
     <link href="/b/css/landing-page.css" rel="stylesheet">
@@ -73,35 +74,34 @@
         <div class="row">
             <div class="col-lg-12">
                 <div class="intro-message">
-                    <h1>Follow your cash</h1>
-                    <h3>and learn about your spending</h3>
-                    <hr class="intro-divider">
+                    <form action="/api/signup" method="POST">
+                        <label for="usr">Email:</label>
+                        <input type="text" class="form-control" name="username" id="usr"/><br />
 
-                    <div class="form-group">
-                        <form action="/api/signup" method="POST">
-                            <label for="usr">Email:</label>
-                            <input type="text" class="form-control" name="username" id="usr"/><br />
+                        <label for="pwd">Password:</label>
+                        <input type="password" class="form-control" name="password" id="pwd" /><br />
 
-                            <label for="pwd">Password:</label>
-                            <input type="password" class="form-control" name="password" id="pwd" /><br />
+                        <label for="repeat-pwd">Repeat password:</label>
+                        <input type="password" class="form-control" id="repeat-pwd" /><br>
 
-                            <label for="repeat-pwd">Repeat password:</label>
-                            <input type="password" class="form-control" id="repeat-pwd" /><br>
 
-                            <div class="checkbox">
-                                <label>
-                                    <input type="checkbox" /> I agree to
-                                    <a href="#" class="btn btn-link btn-xs">Privacy Policy
-                                    </a>
-                                    and
-                                    <a href="#" class="btn btn-link btn-xs">Terms & Conditions
-                                    </a>.
-                                </label>
-                            </div>
 
-                            <input type="submit" name="submit" class="btn btn-info btn-lg" value="Sign up" /><br />
-                        </form>
+                        <input type="submit" name="submit" class="btn btn-info btn-lg" value="Sign up" /><br />
+                    </form>
+                    <div>
+                        By signing up you agree to our
+                        <a href="#" class="btn btn-link btn-xs">Terms & Conditions
+                        </a>.
                     </div>
+
+                    <h3>or</h3>
+                    <hr class="intro-divider">
+                    <form action="/login/fb" method="POST">
+                        <button type="submit" class="btn btn-facebook btn-lg">
+                            <i class="fa fa-facebook fa-fw"></i>
+                            <span class="network-text">Sign in with Facebook</span>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

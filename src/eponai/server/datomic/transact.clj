@@ -37,6 +37,12 @@
                       db-verification
                       db-budget]))))
 
+(defn new-fb-user
+  [conn user-id access-token email]
+  (let [fb-user (f/fb-user-db-user user-id access-token email)]
+    (println "Transacted fb user: " fb-user)
+    (transact conn [fb-user])))
+
 (defn currency-rates
   "Transact conversions into datomic.
 

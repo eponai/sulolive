@@ -41,6 +41,15 @@
     :key-fn
     keyword))
 
+(defn user-info [user-id access-token]
+  (json/read-str
+    (:body (client/get (-> (url/url "https://graph.facebook.com/v2.5/" user-id)
+                           (assoc :query {:access_token access-token
+                                          :fields "id,name,email"})
+                           str)))
+    :key-fn
+    keyword))
+
 (defn validated-token
   "Validate and inspect the code returned from Facebook, and return the data matching the code.
   Will match the app id for the token's app id, and return a user id that can be matched with our db."

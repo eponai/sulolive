@@ -100,9 +100,18 @@
 
 (defn user
   [db email]
+  (when email
+    (q '[:find (pull ?e [*]) .
+         :in $ ?m
+         :where [?e :user/email ?m]] db email)))
+
+(defn fb-user
+  [db user-id]
   (q '[:find (pull ?e [*]) .
-       :in $ ?m
-       :where [?e :user/email ?m]] db email))
+       :in $ ?id
+       :where [?e :fb-user/id ?id]]
+     db
+     user-id))
 
 (defn password [db entity]
   (q '[:find (pull ?e [*]) .

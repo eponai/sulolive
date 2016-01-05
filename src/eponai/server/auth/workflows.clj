@@ -52,8 +52,9 @@
               ; Redirect back to the login page on invalid token, something went wrong.
               (redirect-login-failed :error (:error validated-token))
               ; Successful login, make authentication
-              (let [user-record (credential-fn (with-meta validated-token
-                                                          {::friend/workflow :facebook}))]
+              (let [user-record (credential-fn
+                                  (with-meta validated-token
+                                             {::friend/workflow :facebook}))]
                 (workflows/make-auth user-record {::friend/workflow          :facebook
                                                   ::friend/redirect-on-auth? true}))))
 

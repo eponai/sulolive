@@ -10,6 +10,14 @@
   :db/doc                "A user's primary email."
   :db.install/_attribute :db.part/db}
 
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :user/uuid
+  :db/valueType          :db.type/uuid
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "A user's unique identifier."
+  :db.install/_attribute :db.part/db}
+
  ;; Credentials
  ;; Password
  {:db/id                 #db/id[:db.part/db]
@@ -25,6 +33,31 @@
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
   :db/doc                "Password encrypted using bcrypt."
+  :db.install/_attribute :db.part/db}
+
+ ;; Facebook user
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :fb-user/id
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "User id of a Facebook user"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :fb-user/token
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "Access token of a Facebook user"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :fb-user/user
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "User entity pointed to for this Facebook user."
   :db.install/_attribute :db.part/db}
 
  ;; verification

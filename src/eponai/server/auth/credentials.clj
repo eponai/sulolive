@@ -3,7 +3,9 @@
             [cemerick.friend.credentials :as creds]
             [datomic.api :refer [db]]
             [eponai.server.datomic.pull :as p]
-            [eponai.server.http :as h]))
+            [eponai.server.http :as h]
+            [eponai.server.datomic.transact :as t]
+            [eponai.server.auth.facebook :as fb]))
 
 (defn- user-not-found [email]
   (ex-info "Could not find user in db."
@@ -35,7 +37,7 @@
 (defmulti auth-map
           (fn [_ input] (::friend/workflow (meta input))))
 
-(defmethod auth-map :form
+(defmethod auth-map :default
   [conn input]
   (when-let [auth-map (creds/bcrypt-credential-fn
                         #(user-creds conn %)
@@ -43,16 +45,34 @@
     (if (seq (:verifications auth-map))
       (dissoc auth-map :verifications)
       (throw (ex-info "Email verification pending."
-                      {:cause   ::verification-error
+                      {:cause   ::authentication-error
                        :status  ::h/unathorized
                        :data    {:email (:user/email (input :username))}
                        :message "Email verification pending"})))))
 
 (defmethod auth-map :facebook
-  [_ {:keys [access-token data]}]
-  {:identity (:access_token access-token)
-   :username (:user_id data)
-   :roles    #{::user}})
+  [conn {:keys [access_token user_id]}]
+  (let [auth   {:identity access_token
+                :username user_id
+                :roles    #{::user}}
+        db (db conn)
+        db-fb-user (p/fb-user db  (Long/parseLong user_id))]
+    ; If we already have a facebook user, no need to add a new one to the database.
+    (if db-fb-user
+      auth
+      (let [{:keys [email] :as resp} (fb/user-info user_id access_token)
+            db-user (p/user db email)]
+        (println "User-info response: " resp)
+        ; If we already have a user with the email for the fb account, we don't add a new user but throw exception.
+        (if-not db-user
+          (do
+            (t/new-fb-user conn (Long/parseLong user_id) access_token email)
+            auth)
+          (throw (ex-info "User with email already exists."
+                          {:cause   ::authentication-error
+                           :status  ::h/unathorized
+                           :data    {:email email}
+                           :message "Email connected to the Facebook account is already in use."})))))))
 
 (defn credential-fn
   "Create a credential fn with a db to pull user credentials.

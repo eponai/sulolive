@@ -13,6 +13,18 @@
       :password/credential user-id
       :password/bcrypt (new-user :bcrypt)}]))
 
+(defn fb-user-db-user
+  [user-id access-token email]
+  (let [db-user {:db/id         (d/tempid :db.part/user)
+                 :fb-user/id    (long user-id)
+                 :fb-user/token access-token
+                 :fb-user/user  {:db/id     (d/tempid :db.part/user)
+                                 :user/uuid (d/squuid)
+                                 :user/email email}}]
+    (if email
+      (assoc-in db-user [:fb-user/user :user/email] email)
+      db-user)))
+
 (defn db-entity->db-verification [entity attribute status]
   {:db/id                   (d/tempid :db.part/user)
    :verification/status     (or status :verification.status/pending)
