@@ -68,7 +68,9 @@
      :auth (friend/current-authentication request)}
     body))
 
-(def handle-parser-response (parser.util/post-process-parse parser.resp/response-handler []))
+(def handle-parser-response
+  "Will call response-handler for each key value in the parsed result."
+  (parser.util/post-process-parse parser.resp/response-handler []))
 
 ;----------Routes
 
