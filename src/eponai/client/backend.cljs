@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :refer [<! >! chan]]
             [datascript.core :as d]
+            [eponai.common.parser.util :as parser.util]
             [eponai.client.parser.merge :as merge]
             [cljs-http.client :as http]
             [eponai.common.datascript :as e.datascript]))
@@ -12,25 +13,10 @@
                        {:handlers {"n" cljs.reader/read-string}}}}]
     (http/post url (merge opts transit-opts))))
 
-(defn merge-novelty-by-key
+(def merge-novelty-by-key
   "Calls merge-novelty for each [k v] in novelty with an environment including {:state conn}.
-  Implementation detail: Some merge-novelty methods need to be called in order. Doing this with
-  a vector of keys to be called first."
-  ([env novelty] (merge-novelty-by-key env novelty [:datascript/schema]))
-  ([env novelty keys-to-merge-first]
-   (let [merge-novelty-subset (fn [novelty novelty-subset]
-                                (reduce-kv (fn [m k v]
-                                             (let [merged (merge/merge-novelty env k v)]
-                                               (cond
-                                                 (or (nil? merged) (identical? merged v)) m
-                                                 (keyword-identical? merged ::merge/dissoc) (dissoc m k)
-                                                 :else (assoc m k merged))))
-                                           novelty
-                                           novelty-subset))]
-     (reduce merge-novelty-subset
-             novelty
-             [(select-keys novelty keys-to-merge-first)
-              (apply dissoc novelty keys-to-merge-first)]))))
+  Passes an array with keys to process first."
+  (parser.util/post-process-parse merge/merge-novelty [:datascript/schema]))
 
 (defn merge!
   [conn]

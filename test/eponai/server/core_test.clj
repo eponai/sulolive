@@ -2,13 +2,14 @@
   (:require [clojure.test :refer :all]
             [clojure.core.async :as async]
             [datomic.api :only [q db] :as d]
+            [eponai.common.parser :as parser]
+            [eponai.server.parser.response :as parser.resp]
             [eponai.server.api :as api]
             [eponai.server.core :as c]
             [eponai.server.datomic.pull :as p]
             [eponai.server.datomic.transact :as t]
             [eponai.server.auth.credentials :as a]
             [eponai.server.openexchangerates :as exch]
-            [eponai.common.parser :as parser]
             [eponai.server.middleware :as m])
   (:import (clojure.lang ExceptionInfo)))
 
@@ -73,29 +74,29 @@
   (testing "posting currency rates to database."
     (let [conn (db-with-curs)
           date "2010-10-10"
-          db (api/post-currency-rates conn
+          db (parser.resp/post-currency-rates conn
                                     test-convs
                                     date)
-          unposted (api/post-currency-rates conn
+          unposted (parser.resp/post-currency-rates conn
                                           test-convs
                                           date)
           converted (p/converted-dates (:db-after db) [date])]
       (is db)
       (is (nil? unposted))
       (is (= (count converted) 1))
-      (is (thrown? ExceptionInfo (api/post-currency-rates conn test-convs "invalid-date"))))))
+      (is (thrown? ExceptionInfo (parser.resp/post-currency-rates conn test-convs "invalid-date"))))))
 
 (deftest test-all-data-with-conversions
   (let [conn (db-with-curs)
-        {{currency-chan :currency-chan} 'transaction/create} (api/handle-parser-request (assoc mutation-request ::m/conn conn))
-        db-conv (api/post-currency-rates conn
-                                       test-convs
-                                         (:transaction/date (first test-data)))
+        parsed (api/handle-parser-request (assoc mutation-request ::m/conn conn))
+        db-conv (parser.resp/post-currency-rates conn
+                                                 test-convs
+                                                 (:transaction/date (first test-data)))
         result (p/all-data
                  (:db-after db-conv)
                  (user-params :username) {})]
     (is (= (count result) 8))
-    (is (some? (async/poll! currency-chan)))))
+    (is (some? (async/poll! (get-in parsed ['transaction/create :result :currency-chan]))))))
 
 (deftest test-handle-parser-request
   (let [conn (db-with-curs)

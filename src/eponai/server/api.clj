@@ -3,6 +3,8 @@
             [clojure.core.async :refer [go >! <! chan put!]]
             [compojure.core :refer :all]
             [datomic.api :as d]
+            [eponai.common.parser.util :as parser.util]
+            [eponai.server.parser.response :as parser.resp]
             [eponai.server.auth.credentials :as a]
             [eponai.server.datomic.transact :as t]
             [eponai.server.datomic.pull :as p]
@@ -59,17 +61,6 @@
   [conn cur-infos]
   (t/currency-infos conn cur-infos))
 
-(defn post-currency-rates
-  "Post currency rates for a specific date. Give a get-rates-fn that is used to retrieve the currency rates.
-
-  get-rates-fn should return a map of the form:
-  {:date \"2015-10-10\"
-   :rates {:SEK 8.333
-           :USD 1.0}})."
-  [conn get-rates-fn date]
-  (when-not (p/date-conversions (d/db conn) date)
-    (t/currency-rates conn (get-rates-fn date))))
-
 (defn handle-parser-request
   [{:keys [::m/conn ::m/parser body] :as request}]
   (parser
@@ -77,27 +68,16 @@
      :auth (friend/current-authentication request)}
     body))
 
-(defn transaction-created
-  "Handles response from the 'transaction/create mutation. Does nothing otherwise.
-
-  Will look for :currency-chan and if found post the currency rates for the transactions asynchronousnly."
-  [conn get-rates-fn response]
-  (let [value (get-in response ['transaction/create :result])
-        chan (:currency-chan value)]
-    (if chan
-      (do (go
-            (post-currency-rates conn get-rates-fn (<! chan)))
-          (update-in response ['transaction/create :result] dissoc :currency-chan))
-      response)))
+(def handle-parser-response (parser.util/post-process-parse parser.resp/response-handler []))
 
 ;----------Routes
 
 (defroutes
   user-routes
-  (POST "/" {:keys [::m/conn ::m/currency-rates-fn] :as request}
+  (POST "/" {:keys [::m/conn] :as request}
     (r/response
       (->> (handle-parser-request request)
-           (transaction-created conn currency-rates-fn)))))
+           (handle-parser-response (assoc request :state conn))))))
 
 (defroutes
   api-routes

@@ -16,4 +16,4 @@
     ;; it's used to not include the :datascript/schema key for remote reads.
     (d/transact new-conn current-entities)
     (reset! state @new-conn))
-    ::dissoc)
+    :dissoc)
