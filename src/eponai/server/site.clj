@@ -22,9 +22,6 @@
     (friend/authorize #{::a/user}
                       (r/redirect (str "/" (::m/cljs-build-id request) "/budget.html"))))
 
-  (GET "/login" _
-    (html "login.html"))
-
   (GET "/verify/:uuid" [uuid :as request]
     (r/redirect (str "/" (::m/cljs-build-id request) "/verify.html?uuid=" uuid)))
 

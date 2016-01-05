@@ -48,6 +48,11 @@
                        :data    {:email (:user/email (input :username))}
                        :message "Email verification pending"})))))
 
+(defmethod auth-map :facebook-flow
+  [_ input]
+  {:identity (:code input)
+   :roles #{::user}})
+
 (defn credential-fn
   "Create a credential fn with a db to pull user credentials.
 

@@ -51,8 +51,10 @@
 (defn wrap-authenticate [handler conn]
   (friend/authenticate
     handler {:credential-fn       (ac/credential-fn conn)
-             :workflows           [(aw/default-flow)]
-             :default-landing-uri "/budget"}))
+             :workflows           [(aw/default-flow)
+                                   (aw/facebook-flow)]
+             :default-landing-uri "/budget"
+             :fb-login-uri        "/login/fb"}))
 
 (defn config []
   (-> r/site-defaults

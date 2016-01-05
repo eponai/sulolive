@@ -59,5 +59,4 @@
                          set)
         cur-infos (->> cur-infos
                        (filter #(contains? db-cur-codes (key %))))]
-    (transact conn (f/cur-infos->db-txs (vals cur-infos)))
-    ))
+    (transact conn (f/cur-infos->db-txs (vals cur-infos)))))
