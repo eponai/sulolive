@@ -35,7 +35,7 @@
 (defmulti auth-map
           (fn [_ input] (::friend/workflow (meta input))))
 
-(defmethod auth-map :default
+(defmethod auth-map :form
   [conn input]
   (when-let [auth-map (creds/bcrypt-credential-fn
                         #(user-creds conn %)
@@ -48,10 +48,11 @@
                        :data    {:email (:user/email (input :username))}
                        :message "Email verification pending"})))))
 
-(defmethod auth-map :facebook-flow
-  [_ input]
-  {:identity (:code input)
-   :roles #{::user}})
+(defmethod auth-map :facebook
+  [_ {:keys [access-token data]}]
+  {:identity (:access_token access-token)
+   :username (:user_id data)
+   :roles    #{::user}})
 
 (defn credential-fn
   "Create a credential fn with a db to pull user credentials.
