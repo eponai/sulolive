@@ -46,7 +46,7 @@
                  [cljs-ajax "0.5.0"]
                  [cljsjs/pikaday "1.3.2-0"]
 
-                 ; Testing
+                 ;; Testing
                  [devcards "0.2.0-8"]
                  [org.clojure/test.check "0.8.1"]]
 
@@ -58,20 +58,29 @@
             [lein-test-out "0.3.1"]
             [lein-environ "1.0.1"]]
   :min-lein-version "2.0.0"
+  
+
+  ;;;;;;;;;;;;;
+  ;; AWS+Docker deploy:
+  ;;;;;;;;;;;;;
+  :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
+  :zip ["target/uberjar/budget-0.1.0-SNAPSHOT-standalone.jar" 
+        "Dockerfile"
+        "Dockerrun.aws.json"]
+  :profiles {:uberjar {:aot                :all
+                       :prep-tasks         ["compile" ["cljsbuild" "once" "release"]]}}
 
   ;;;;;;;;;;;;;
   ;; clj:
   ;;;;;;;;;;;;;
   :target-path "target/%s"
-  :source-paths ["src" "env/clj" "test"]
+  :source-paths ["src" "env/clj"]
+  :test-paths ["test"]
   :ring {:handler eponai.server.core/app
          :init    eponai.server.core/init}
   :main eponai.server.core
   :repl-options {:init-ns eponai.repl
                  :init (eponai.repl/init)}
-  :profiles {:uberjar {:aot   :all
-                       :prep-tasks ["compile" ["cljsbuild" "once" "release"]]}}
-  :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
   :repositories {"my.datomic.com" {:url      "https://my.datomic.com/repo"
                                    :username ~(System/getenv "DATOMIC_EMAIL")
                                    :password ~(System/getenv "DATOMIC_KEY")}}

@@ -54,11 +54,12 @@
   (init)
   (let [default-port 3000
         port (try
-               (Long/parseLong (first args))
+               (Long/parseLong (env :port))
                (catch Exception e
                  default-port))]
     ;; by passing (var app) to run-jetty, it'll be forced to
     ;; evaluate app as code changes.
+    (prn "Using port: " port)
     (jetty/run-jetty (var app) {:port port})))
 
 (defn main-debug

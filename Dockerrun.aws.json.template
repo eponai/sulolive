@@ -1,0 +1,7 @@
+{"AWSEBDockerrunVersion": "1",
+ "Ports": [{"ContainerPort": "8080"}],
+ "Authentication": { "Bucket": "petterik-jourmoney",
+                     "Key": ".dockercfg"},
+ "Image": { "Name": "petterik/jourmoney:<TAG>",
+            "Update": "true"}}
+
