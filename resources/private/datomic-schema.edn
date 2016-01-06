@@ -181,7 +181,6 @@
   :db.install/_attribute :db.part/db,
   :db/ident              :conversion/date,
   :db/valueType          :db.type/ref,
-  :db/unique             :db.unique/identity
   :db/cardinality        :db.cardinality/one,
   :db/doc                "Date of the conversion."}
 
