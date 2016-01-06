@@ -3,7 +3,7 @@
   (:require [eponai.common.datascript :as eponai.datascript]
 
     #?(:clj [eponai.server.datomic.pull :as server.pull])
-    #?(:clj  [datomic.api :as d]
+    #?(:clj  [datomic.api :only [q pull-many] :as d]
        :cljs [datascript.core :as d])
     #?(:cljs [om.next :as om])))
 
@@ -61,9 +61,8 @@
 ;; -------- Remote readers
 
 (defmethod read :datascript/schema
-  [{:keys [unsafe-conn]} _ _]
-  ;; reading unfiltered.
-  #?(:clj  {:value (-> (d/db unsafe-conn)
+  [{:keys [db]} _ _]
+  #?(:clj  {:value (-> db
                        server.pull/schema-with-inline-values
                        eponai.datascript/schema-datomic->datascript)}
      :cljs {:remote true}))

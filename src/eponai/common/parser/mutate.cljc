@@ -17,8 +17,8 @@
 
 #?(:cljs
    (defmethod mutate 'datascript/transact
-    [{:keys [unsafe-conn]} _ {:keys [txs]}]
-    {:action #(d/transact! unsafe-conn txs)}))
+    [{:keys [state]} _ {:keys [txs]}]
+    {:action #(d/transact! state txs)}))
 
 #?(:cljs
    (defn cas! [component id key old-value new-value]
@@ -28,7 +28,7 @@
 
 ;; -------- Remote mutations
 
-(defn- transaction-create [{:keys [unsafe-conn db auth]} k {:keys [input-tags] :as params}]
+(defn- transaction-create [{:keys [state db auth]} k {:keys [input-tags] :as params}]
   (fn []
     (when-not (= (frequencies (set input-tags))
                  (frequencies input-tags))
@@ -50,7 +50,7 @@
                     currency-chan (chan 1)])
           _ (validate/valid-user-transaction? user-tx)
           db-tx (format/user-transaction->db-entity user-tx)]
-      (transact/transact unsafe-conn [db-tx])
+      (transact/transact state [db-tx])
       #?(:clj (go (>! currency-chan (:transaction/date user-tx))))
       #?(:clj {:currency-chan currency-chan}
          :cljs nil))))
@@ -61,9 +61,9 @@
    #?@(:cljs [:remote true])})
 
 (defmethod mutate 'email/verify
-  [{:keys [unsafe-conn]} _ {:keys [uuid]}]
+  [{:keys [state]} _ {:keys [uuid]}]
   (println "Verification verify: " uuid)
   #?(:cljs {:remote true}
      :clj  {:action (fn []
-                      (api/verify unsafe-conn uuid)
+                      (api/verify state uuid)
                       uuid)}))

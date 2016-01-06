@@ -38,8 +38,8 @@
    (defn wrap-user-context-only [parser]
      (fn [env & args]
        (let [user-id (get-in env [:auth :username])
-             env (assoc env :db (filter/user-db (d/db (:state env))
-                                                user-id))]
+             db (d/db (:state env))
+             env (assoc env :db (filter/user-db db user-id))]
          (if user-id
            (apply parser env args)
            (throw (ex-info "Unable to get user-id from env"
@@ -51,22 +51,25 @@
               args))))
 
 
-(defn wrap-state-rename
+(defn read-without-state
   "Removes the state key containing the connection to the database.
   Doing this because reads should not affect the database...?
-  Use the key :db instead to get a db to do reads from.."
-  [read-or-mutate]
-  (fn
-    [env & args]
-    (apply read-or-mutate (-> env
-                 (assoc :unsafe-conn (:state env))
-                 (dissoc :state))
-           args)))
+  Use the key :db instead to get a db to do reads from..
+
+  If we decide to add the connection back to the env, we should
+  put it under some obscure key, so developers know that they
+  might be doing something wrong. Obscure key name suggestion:
+  :are-you-sure-you-want-the-connection?
+  :unsafe-connection
+  :this-is-an-antipattern/conn"
+  [env & args]
+  (apply read/read
+         (dissoc env :state)
+         args))
 
 (defn parser
   ([]
-   (let [parser (om/parser {:read   (wrap-state-rename read/read)
-                            :mutate (wrap-state-rename mutate/mutate)})]
+   (let [parser (om/parser {:read read-without-state :mutate mutate/mutate})]
      #?(:cljs (-> parser
                   wrap-db)
         :clj (-> parser
