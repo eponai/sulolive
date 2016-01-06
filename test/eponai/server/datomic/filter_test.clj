@@ -8,6 +8,16 @@
 (def user "filter-test@e.com")
 
 (defn make-query
+  "Takes queries that binds ?e.
+  Can take a query as a single vector or multiple vectors.
+  If ?e is not the first vectors first argument, it's added
+  into the vector. Examples that work:
+
+  [:attr]
+  [?e :attr]
+  [[?e :attr]]
+  [[:attr][:attr2]]
+  [[?e :attr ?y][?y ?attr :value]]"
   [query]
   (let [query (if (vector? (first query))
                 query
