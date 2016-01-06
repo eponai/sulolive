@@ -3,8 +3,11 @@
   (:require [eponai.common.parser.read :as read]
             [eponai.common.parser.mutate :as mutate]
 
-    #?(:clj  [om.next.server :as om]
-       :cljs [om.next :as om])))
+    #?(:clj [om.next.server :as om]
+       :cljs [om.next :as om])
+    #?(:clj  [datomic.api :as d]
+       :cljs [datascript.core :as d])
+    #?(:clj [eponai.server.datomic.filter :as filter])))
 
 (defn wrap-om-next-error-handler
   "For each :om.next/error, replace the value with only the error's
@@ -31,8 +34,41 @@
                  ret
                  ret))))
 
+#?(:clj
+   (defn wrap-user-context-only [parser]
+     (fn [env & args]
+       (let [user-id (get-in env [:auth :username])
+             env (assoc env :db (filter/user-db (d/db (:state env))
+                                                user-id))]
+         (if user-id
+           (apply parser env args)
+           (throw (ex-info "Unable to get user-id from env"
+                           {:env env}))))))
+   :cljs
+   (defn wrap-db [parser]
+     (fn [env & args]
+       (apply parser (assoc env :db (d/db (:state env)))
+              args))))
+
+
+(defn wrap-state-rename
+  "Removes the state key containing the connection to the database.
+  Doing this because reads should not affect the database...?
+  Use the key :db instead to get a db to do reads from.."
+  [read-or-mutate]
+  (fn
+    [env & args]
+    (apply read-or-mutate (-> env
+                 (assoc :unsafe-conn (:state env))
+                 (dissoc :state))
+           args)))
+
 (defn parser
   ([]
-   (-> (om/parser {:read read/read :mutate mutate/mutate})
-       #?(:clj wrap-om-next-error-handler
-          :cljs identity))))
+   (let [parser (om/parser {:read   (wrap-state-rename read/read)
+                            :mutate (wrap-state-rename mutate/mutate)})]
+     #?(:cljs (-> parser
+                  wrap-db)
+        :clj (-> parser
+                 wrap-om-next-error-handler
+                 wrap-user-context-only)))))

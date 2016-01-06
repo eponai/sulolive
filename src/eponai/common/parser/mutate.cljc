@@ -8,8 +8,7 @@
 
    #?(:clj [clojure.core.async :refer [go >! chan]])
   #?(:clj [eponai.server.datomic.pull :as server.pull])
-  #?(:clj  [datomic.api :as d]
-     :cljs [datascript.core :as d])
+  #?(:cljs [datascript.core :as d])
   #?(:cljs [om.next :as om])))
 
 (defmulti mutate (fn [_ k _] k))
@@ -18,8 +17,8 @@
 
 #?(:cljs
    (defmethod mutate 'datascript/transact
-    [{:keys [state]} _ {:keys [txs]}]
-    {:action #(d/transact! state txs)}))
+    [{:keys [unsafe-conn]} _ {:keys [txs]}]
+    {:action #(d/transact! unsafe-conn txs)}))
 
 #?(:cljs
    (defn cas! [component id key old-value new-value]
@@ -29,7 +28,7 @@
 
 ;; -------- Remote mutations
 
-(defn- transaction-create [{:keys [state auth]} k {:keys [input-tags] :as params}]
+(defn- transaction-create [{:keys [unsafe-conn db auth]} k {:keys [input-tags] :as params}]
   (fn []
     (when-not (= (frequencies (set input-tags))
                  (frequencies input-tags))
@@ -47,12 +46,11 @@
                    :input-uuid        :transaction/uuid}
           user-tx (rename-keys params renames)
           #?@(:clj [user-tx (assoc user-tx :transaction/budget
-                                           (:budget/uuid (server.pull/budget (d/db state)
-                                                                             (:username auth))))
+                                           (:budget/uuid (server.pull/budget db (:username auth))))
                     currency-chan (chan 1)])
           _ (validate/valid-user-transaction? user-tx)
           db-tx (format/user-transaction->db-entity user-tx)]
-      (transact/transact state [db-tx])
+      (transact/transact unsafe-conn [db-tx])
       #?(:clj (go (>! currency-chan (:transaction/date user-tx))))
       #?(:clj {:currency-chan currency-chan}
          :cljs nil))))
@@ -63,9 +61,9 @@
    #?@(:cljs [:remote true])})
 
 (defmethod mutate 'email/verify
-  [{:keys [state]} _ {:keys [uuid]}]
+  [{:keys [unsafe-conn]} _ {:keys [uuid]}]
   (println "Verification verify: " uuid)
   #?(:cljs {:remote true}
      :clj  {:action (fn []
-                      (api/verify state uuid)
+                      (api/verify unsafe-conn uuid)
                       uuid)}))

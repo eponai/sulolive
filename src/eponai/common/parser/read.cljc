@@ -3,7 +3,7 @@
   (:require [eponai.common.datascript :as eponai.datascript]
 
     #?(:clj [eponai.server.datomic.pull :as server.pull])
-    #?(:clj  [datomic.api :only [db q pull-many] :as d]
+    #?(:clj  [datomic.api :as d]
        :cljs [datascript.core :as d])
     #?(:cljs [om.next :as om])))
 
@@ -26,9 +26,8 @@
 (defn pull-all
   "takes the database, a pull query and where-clauses, where the where-clauses
   return some entity ?e."
-  [conn query where-clauses]
-  (let [db (d/db conn)
-        ents (d/q (vec (concat '[:find [?e ...]
+  [db query where-clauses]
+  (let [ents (d/q (vec (concat '[:find [?e ...]
                                  :in $
                                  :where]
                                where-clauses))
@@ -56,33 +55,34 @@
 
 #?(:cljs
    (defmethod read :query/header
-     [{:keys [state query]} _ _]
-     {:value (pull-all state query '[[?e :ui/singleton :budget/header]])}))
+     [{:keys [db query]} _ _]
+     {:value (pull-all db query '[[?e :ui/singleton :budget/header]])}))
 
 ;; -------- Remote readers
 
 (defmethod read :datascript/schema
-  [{:keys [state]} _ _]
-  #?(:clj  {:value (-> (d/db state)
+  [{:keys [unsafe-conn]} _ _]
+  ;; reading unfiltered.
+  #?(:clj  {:value (-> (d/db unsafe-conn)
                        server.pull/schema-with-inline-values
                        eponai.datascript/schema-datomic->datascript)}
      :cljs {:remote true}))
 
 (defmethod read :query/all-dates
-  [{:keys [state query]} _ _]
-  {:value (pull-all state query '[[?e :date/ymd]])
+  [{:keys [db query]} _ _]
+  {:value (pull-all db query '[[?e :date/ymd]])
    :remote true})
 
 (defmethod read :query/all-currencies
-  [{:keys [state query]} _ _]
-  {:value (pull-all state query '[[?e :currency/code]])
+  [{:keys [db query]} _ _]
+  {:value (pull-all db query '[[?e :currency/code]])
    :remote true})
 
 (defmethod read :query/verification
-  [{:keys [state query]} _ {:keys [uuid]}]
-  #?(:cljs {:value (pull-all state query '[[?e :verification/uuid ?uuid]])
+  [{:keys [db query]} _ {:keys [uuid]}]
+  #?(:cljs {:value (pull-all db query '[[?e :verification/uuid ?uuid]])
             :remote true}
-     :clj {:value (server.pull/verification (d/db state) query uuid)}))
+     :clj {:value (server.pull/verification db query uuid)}))
 
 ;; -------- Debug stuff
 
