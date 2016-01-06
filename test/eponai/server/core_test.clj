@@ -10,10 +10,9 @@
             [eponai.server.datomic.transact :as t]
             [eponai.server.auth.credentials :as a]
             [eponai.server.openexchangerates :as exch]
+            [eponai.server.test-util :as util]
             [eponai.server.middleware :as m])
   (:import (clojure.lang ExceptionInfo)))
-
-(def schema (read-string (slurp "resources/private/datomic-schema.edn")))
 
 (def test-data [{:transaction/name       "coffee"
                  :transaction/uuid       (d/squuid)
@@ -30,13 +29,10 @@
                  :input-amount     100
                  :input-currency   "SEK"
                  :input-tags       ["fika" "thailand"]}])
-(def test-curs {:SEK "Swedish Krona"})
+(def test-curs {:SEK "Swedish Krona"
+                :THB "Thai Baht"})
 
 (def test-parser (parser/parser))
-
-(defn test-convs [date-str]
-  {:date  date-str
-   :rates {:SEK 8.333}})
 
 (def user-params {:username "user@email.com"
                   :password "password"})
@@ -54,16 +50,10 @@
 
 (def mutation-request (assoc request :body `[(transaction/create ~(first test-data))]))
 
-(defn- new-db
-  "Creates an empty database and returns the connection."
-  []
-  (let [uri "datomic:mem://test-db"]
-    (d/delete-database uri)
-    (d/create-database uri)
-    (let [conn (d/connect uri)]
-      (d/transact conn schema)
-      (api/signup conn user-params)
-      conn)))
+(defn- new-db []
+  (let [conn (util/new-db)]
+    (api/signup conn user-params)
+    conn))
 
 (defn- db-with-curs []
   (let [conn (new-db)]
@@ -75,22 +65,22 @@
     (let [conn (db-with-curs)
           date "2010-10-10"
           db (parser.resp/post-currency-rates conn
-                                    test-convs
+                                    util/test-convs
                                     date)
           unposted (parser.resp/post-currency-rates conn
-                                          test-convs
+                                          util/test-convs
                                           date)
           converted (p/converted-dates (:db-after db) [date])]
       (is db)
       (is (nil? unposted))
       (is (= (count converted) 1))
-      (is (thrown? ExceptionInfo (parser.resp/post-currency-rates conn test-convs "invalid-date"))))))
+      (is (thrown? ExceptionInfo (parser.resp/post-currency-rates conn util/test-convs "invalid-date"))))))
 
 (deftest test-all-data-with-conversions
   (let [conn (db-with-curs)
         parsed (api/handle-parser-request (assoc mutation-request ::m/conn conn))
         db-conv (parser.resp/post-currency-rates conn
-                                                 test-convs
+                                                 util/test-convs
                                                  (:transaction/date (first test-data)))
         result (p/all-data
                  (:db-after db-conv)

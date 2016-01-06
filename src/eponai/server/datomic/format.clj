@@ -33,10 +33,10 @@
   rates of the form {:date \"yyyy-MM-dd\" :rates {:code rate ...}}"
   [data]
   (let [map-fn (fn [[code rate]]
-                 {:db/id                (d/tempid :db.part/user)
-                  :conversion/date      (common.format/date-str->db-tx (:date data))
-                  :conversion/currency  [:currency/code (name code)]
-                  :conversion/rate      (bigdec rate)})]
+                 {:db/id               (d/tempid :db.part/user)
+                  :conversion/date     (common.format/date-str->db-tx (:date data))
+                  :conversion/currency [:currency/code (name code)]
+                  :conversion/rate     (bigdec rate)})]
     (map map-fn (:rates data))))
 
 (defn curs->db-txs

@@ -10,14 +10,18 @@
 (defn gen-datomic-keyword 
   "generates a keywords which contains alphanumeric characters.
    Used to avoid keywords starting with underscore, like: :_ref or :foo/_bar"
-  [] (gen/bind
-       (gen/not-empty gen/string-alphanumeric)
-       (fn [s]
-         (gen/bind gen/keyword-ns
-                   (fn [k]
+  ([] (gen-datomic-keyword "not-a-key" nil))
+  ([forbidden-key replacement-key]
+   (gen/bind
+     (gen/not-empty gen/string-alphanumeric)
+     (fn [s]
+       (gen/bind gen/keyword-ns
+                 (fn [k]
+                   (if (= k forbidden-key)
+                     (gen/return replacement-key)
                      (gen/return (if-let [n (namespace k)]
                                    (keyword (str n "/" s))
-                                   (keyword s))))))))
+                                   (keyword s))))))))))
 
 (defn gen-datomic-schema []
   (gen/hash-map :db/id (gen/return "#db.id[:db.part/db]")
@@ -63,7 +67,7 @@
                    (gen/not-empty (gen/vector gen/nat))
                    (fn [ids] 
                      (gen/bind
-                       (gen/not-empty (gen/vector (gen-datomic-keyword)))
+                       (gen/not-empty (gen/vector (gen-datomic-keyword :k :kk)))
                        (fn [ks]
                          (let [ids (set ids)
                                [refs others] (map set (split-at (/ (count ks) 2) ks))

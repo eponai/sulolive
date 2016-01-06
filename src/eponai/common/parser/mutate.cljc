@@ -49,7 +49,7 @@
           #?@(:clj [user-tx (assoc user-tx :transaction/budget
                                            (:budget/uuid (server.pull/budget (d/db state)
                                                                              (:username auth))))
-                    currency-chan (chan)])
+                    currency-chan (chan 1)])
           _ (validate/valid-user-transaction? user-tx)
           db-tx (format/user-transaction->db-entity user-tx)]
       (transact/transact state [db-tx])
