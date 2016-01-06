@@ -36,7 +36,6 @@
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
-                 [cursive/datomic-stubs "0.9.5153" :scope "provided"]
                  [com.andrewmcveigh/cljs-time "0.3.14"]
                  [cljs-http "0.1.39"]
                  [garden "1.3.0"]
