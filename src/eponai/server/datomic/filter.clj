@@ -39,7 +39,20 @@
               (fn [db [eid]]
                 (not (some private-attrs (keys (d/entity db eid))))))))
 
+(defn- no-auth-filter [db]
+  (let [user-attrs #{:transaction/uuid :budget/uuid}]
+    (d/filter db
+             (fn [db [eid attr]]
+                  (not (some user-attrs (keys (d/entity db eid))))))))
+
 (defn user-db [db user-id]
   (-> db
       (private-attr-filter)
       (user-or-public-entity-filter user-id)))
+
+(defn authenticated-db [db user-id]
+  (user-db db user-id))
+
+(defn not-authenticated-db [db]
+  (-> db
+      (no-auth-filter)))

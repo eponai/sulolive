@@ -39,7 +39,10 @@
      (fn [env & args]
        (let [user-id (get-in env [:auth :username])
              db (d/db (:state env))
-             env (assoc env :db (filter/user-db db user-id))]
+             db (if user-id
+                  (filter/authenticated-db db user-id)
+                  (filter/not-authenticated-db db))
+             env (assoc env :db db)]
          (if user-id
            (apply parser env args)
            (throw (ex-info "Unable to get user-id from env"
