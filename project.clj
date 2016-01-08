@@ -64,9 +64,6 @@
   ;; AWS+Docker deploy:
   ;;;;;;;;;;;;;
   :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
-  :zip ["target/uberjar/budget-0.1.0-SNAPSHOT-standalone.jar" 
-        "Dockerfile"
-        "Dockerrun.aws.json"]
   :profiles {:uberjar {:aot                :all
                        :prep-tasks         ["compile" ["cljsbuild" "once" "release"]]}}
 
