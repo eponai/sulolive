@@ -2,6 +2,6 @@
  "Ports": [{"ContainerPort": "8080"}],
  "Authentication": { "Bucket": "petterik-jourmoney",
                      "Key": ".dockercfg"},
- "Image": { "Name": "petterik/jourmoney:<TAG>",
+ "Image": { "Name": "<DOCKER_IMAGE>",
             "Update": "true"}}
 
