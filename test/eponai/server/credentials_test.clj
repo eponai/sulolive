@@ -4,7 +4,8 @@
             [datomic.api :as d]
             [eponai.server.datomic.format :as f]
             [eponai.server.auth.credentials :as a]
-            [eponai.server.datomic.pull :as p])
+            [eponai.server.datomic.pull :as p]
+            [eponai.server.api :as api])
   (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
@@ -16,6 +17,8 @@
    {:name  "Facebook name"
     :email "email@email.com"
     :id    id}))
+
+(def email "email@email.com")
 
 (defn creds-input
   ([user-id]
@@ -112,4 +115,42 @@
                    (credential-fn (creds-input id fb-info-fn)))))))
 
 
-;; ------ User-email credential function tests.
+;; ------ User verify email credential function tests.
+
+(deftest user-and-activated
+  (testing "User verifies their email and is already activated, return auth map"
+    (let [user (assoc (f/user->db-user email) :user/status :user.status/activated)
+          verification (f/->db-email-verification user :verification.status/pending)
+          conn (new-db [user
+                        verification])
+          credential-fn (a/credential-fn conn)]
+
+      (is (= (credential-fn
+               (with-meta {:uuid (str (:verification/uuid verification))}
+                          {::friend/workflow :form}))
+             (a/auth-map-for-db-user (p/user (d/db conn) email)))))))
+
+; Failure cases
+(deftest user-verifies-account-not-activated
+  (testing "User is verified but not activated, should throw exception new user."
+    (let [user (f/user->db-user email)
+          verification (f/->db-email-verification user :verification.status/verified)
+          conn (new-db [user
+                        verification])
+          credential-fn (a/credential-fn conn)]
+
+      (is (thrown? ExceptionInfo
+                   #"New user"
+                   (credential-fn
+                     (with-meta {:uuid (str (:verification/uuid verification))}
+                                {::friend/workflow :form})))))))
+
+(deftest user-verifies-nil-uuid
+  (testing "User tries to verify a nil UUID. Throw exception"
+    (let [conn (new-db nil)
+          credential-fn (a/credential-fn conn)]
+      (is (thrown? ExceptionInfo
+                   #"Cannot log in"
+                   (credential-fn
+                     (with-meta {:invalid :data}
+                                {::friend/workflow :form})))))))

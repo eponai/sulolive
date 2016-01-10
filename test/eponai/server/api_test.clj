@@ -10,7 +10,7 @@
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
 
-(def user "user@email.com")
+(def email "user@email.com")
 
 (defn- new-db
   "Creates an empty database and returns the connection."
@@ -24,12 +24,12 @@
         (d/transact conn txs))
       conn)))
 
-;;;; ------ api/verify tests ---------
+;;;; ------ api/verify-email tests ---------
 
 ; Success case
 (deftest verification-pending-and-not-expired
   (testing "Verification is pending, and was created less than 15 minutes ago. Should set status to :verification.status/verified"
-    (let [db-user (f/user->db-user user)
+    (let [db-user (f/user->db-user email)
           db-verification (f/->db-email-verification db-user :verification.status/pending)
           uuid (str (:verification/uuid db-verification))
           conn (new-db [db-user
@@ -48,7 +48,7 @@
 
 (deftest verify-uuid-already-verified
   (testing "Verification is already verified. Should throw exception for invalid UUID."
-    (let [db-user (f/user->db-user user)
+    (let [db-user (f/user->db-user email)
           db-verification (f/->db-email-verification db-user :verification.status/verified)
           uuid (str (:verification/uuid db-verification))
           conn (new-db [db-user
@@ -59,7 +59,7 @@
 
 (deftest verify-uuid-expired
   (testing "Verification is already verified. Should throw exception for invalid UUID."
-    (let [db-user (f/user->db-user user)
+    (let [db-user (f/user->db-user email)
           db-verification (f/->db-email-verification db-user :verification.status/expired)
           uuid (str (:verification/uuid db-verification))
           conn (new-db [db-user
@@ -70,7 +70,7 @@
 
 (deftest verify-more-than-15-minutes-ago-created-uuid
   (testing "Verification was created more than 15 minutes ago. Should be set to expired and throw exception."
-    (let [db-user (f/user->db-user user)
+    (let [db-user (f/user->db-user email)
           db-verification (f/->db-email-verification db-user :verification.status/pending)
           expired-verification (assoc db-verification :verification/created-at (c/to-long (t/ago (t/minutes 30))))
           uuid (str (:verification/uuid db-verification))
@@ -82,3 +82,12 @@
       ; Make sure that status of the verification is set to expired.
       (is (= (:db/id (:verification/status (p/verification (d/db conn) '[*] uuid)))
              (d/entid (d/db conn) :verification.status/expired))))))
+
+;;;; ------ api/create-account tests ---------
+
+(deftest verify-email-verified-and-account-created
+  (testing "Email is verified for the user, account should be activated."
+    (let [db-user (f/user->db-user email)
+          db-verification (f/->db-email-verification db-user :verification.status/verified)
+          conn (new-db [db-user
+                        db-verification])])))

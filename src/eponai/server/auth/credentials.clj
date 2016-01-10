@@ -32,11 +32,9 @@
   (cond
     uuid
     (try
-      (let [user (api/verify-email conn uuid)
-            user (pull/pull (d/db conn) '[* {:user/status [:db/ident]}] (:db/id user))]
-        (prn "User: " user)
-        (if (= (:db/id (:user/status user))
-               (d/entid (d/db conn) :user.status/activated))
+      (let [user (d/entity (d/db conn) (:db/id (api/verify-email conn uuid)))]
+        (if (= (:user/status user)
+               :user.status/activated)
           (auth-map-for-db-user user)
           (throw (ex-info "New user." {:cause ::authentication-error
                                        :new-user user}))))
