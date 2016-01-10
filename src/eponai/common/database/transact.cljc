@@ -9,7 +9,6 @@
   [conn txs]
   (try
     (let [ret @(d/transact conn txs)]
-      (println "Transacted to database: " txs)
       ret)
     (catch #?(:clj Exception :cljs :default) e
       (let [#?@(:clj  [msg (.getMessage e)]

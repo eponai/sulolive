@@ -30,7 +30,6 @@
 (defn pull [db pattern eid]
   (try
     (let [ret (d/pull db pattern eid)]
-      (println "Result: " ret)
       ret)
     (catch #?(:clj Exception :cljs :default) e
       (throw-error e ::pull-error {:pattern pattern
@@ -39,15 +38,7 @@
 (defn verification
   "Pull specific verification from the database using the unique uuid field."
   [db query ver-uuid]
-  (prn "verification pull")
   (let [id (f/str->uuid ver-uuid)]
-    (prn "UUID: " id)
-    (prn "Query: " query)
-    (prn "Pulling verification: " (q '[:find ?e
-                                           :in $ ?id
-                                           :where [?e :verification/uuid ?id]]
-                                         db
-                                         id))
     (pull db query [:verification/uuid id])))
 
 (defn user

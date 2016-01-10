@@ -17,7 +17,6 @@
 
   Returns channel with username and db-after user is added to use for email verification."
   [conn email]
-  (println "Signin: " (p/user (d/db conn) email))
   (if email
     (let [user (p/user (d/db conn) email)
           email-chan (chan 1)]
@@ -27,12 +26,12 @@
           (put! email-chan verification)
           email-chan)
         (let [verification (t/new-user conn email)]
-          (println "Craeting new user with email... " email)
+          (println "Craeting new user with email... " email " verification: " (:verification/uuid verification))
           (put! email-chan verification)
           (println "Done!")
-          email-chan))))
+          email-chan)))
     (throw (ex-info "Trying to signup with nil email."
-                    {:cause ::signup-error})))
+                    {:cause ::signup-error}))))
 
 (defn verify-email
   "Try and set the verification status if the verification with the specified uuid to :verification.status/verified.
@@ -51,17 +50,16 @@
     (if-let [{:keys [verification/status] :as verification} (pull/verification (d/db conn) '[*] uuid)]
       (let [verification-time (c/from-long (:verification/created-at verification))
             time-interval (time/in-minutes (time/interval verification-time (time/now)))]
-        (println "Verification: " verification)
         ; If the verification was not used within 15 minutes, it's expired.
         (if (>= 15 time-interval)
            ;If verification status is not pending, we've already verified this or it's expired.
-           ;(if (= (:db/id status)
-           ;       (d/entid db :verification.status/pending)))
-           (do
-             (println "Successful verify")
-             (t/add conn (:db/id verification) :verification/status :verification.status/verified)
-             (:verification/entity verification))
-           ;(throw (ex "Invalid verification UUID"))
+           (if (= (:db/id status)
+                  (d/entid (d/db conn) :verification.status/pending))
+             (do
+               (println "Successful verify")
+               (t/add conn (:db/id verification) :verification/status :verification.status/verified)
+               (:verification/entity verification))
+             (throw (ex "Invalid verification UUID")))
            (do
             (t/add conn (:db/id verification) :verification/status :verification.status/expired)
             (throw (ex "Expired verification UUID")))))
