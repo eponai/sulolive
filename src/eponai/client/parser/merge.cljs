@@ -4,7 +4,7 @@
 
 (defmulti merge-novelty (fn [_ k _] k))
 (defmethod merge-novelty :default
-  [_ _ _]
+  [_ k _]
   (trace "No merge-novelty for key: " k)
   nil)
 

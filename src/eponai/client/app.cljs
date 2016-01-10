@@ -10,7 +10,7 @@
             [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
             [eponai.client.ui.header :refer [Header ->Header]]
             [eponai.client.ui.all_transactions :refer [AllTransactions ->AllTransactions]]
-            [taoensso.timbre :refer-macros [info debug error trace]]))
+            [taoensso.timbre :as timbre :refer-macros [info debug error trace]]))
 
 (defui App
   static om/IQuery
@@ -56,5 +56,6 @@
     (om/add-root! reconciler App (gdom/getElement "my-app"))))
 
 (defn run []
-  (info "Run called in " *ns*)
+  (info "Run called in: " (namespace ::foo))
+  (timbre/set-level! :debug)
   (initialize-app (init-conn)))

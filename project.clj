@@ -39,6 +39,7 @@
                   ]
                  [com.andrewmcveigh/cljs-time "0.3.14"]
                  [cljs-http "0.1.39"]
+                 [org.clojure/tools.reader "1.0.0-alpha2"]
                  [garden "1.3.0"]
                  [org.omcljs/om "1.0.0-alpha28"]
                  [datascript "0.13.3"]

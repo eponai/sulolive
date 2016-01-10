@@ -30,6 +30,7 @@
           temp-id-novelty (e.datascript/db-id->temp-id #{} (flatten (vals novelty)))
           ks (keys novelty)]
       (debug "Merge! returning keys:" ks)
+      (trace "Merge! transacting novelty:" temp-id-novelty)
       {:keys ks
        :next (:db-after @(d/transact conn temp-id-novelty))})))
 
@@ -47,8 +48,17 @@
         (try
           (let [url (str "/api" path)
                 {:keys [body status]} (<! (post url {:transit-params remote}))]
-            (debug "Recieved response from remote:" :remote "respone:" body "status:" status)
-            (cb body))
+            (if (<= 200 status 299)
+              (do
+                (debug "Recieved response from remote:" :remote "respone(keys only):" (keys body) "status:" status)
+                (trace "Whole response:" body)
+                (cb body))
+              (throw (ex-info "Not 2xx response remote."
+                              {:remote :remote
+                               :status status
+                               :url    url
+                               :body   body
+                               :TODO   "Handle HTTP errors better."}))))
           (catch :default e
             (error "Error when posting query to remote:" :remote "error:" e)
             (throw e)))))))
