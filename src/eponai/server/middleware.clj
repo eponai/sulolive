@@ -10,7 +10,8 @@
             [cemerick.friend :as friend]
             [eponai.server.auth.credentials :as ac]
             [eponai.server.auth.workflows :as workflows]
-            [eponai.server.email :as e])
+            [eponai.server.email :as e]
+            [taoensso.timbre :refer [debug error trace]])
 
   (:import (clojure.lang ExceptionInfo)
            (datomic.query EntityMap)))
@@ -35,11 +36,16 @@
       (wrap-transit-response {:opts     {:handlers {EntityMap datomic-transit}}
                               :encoding :json})))
 
-(defn wrap-log [handler]
+(defn wrap-post-middlewares [handler]
   (fn [request]
-    (println "Request " request)
+    (trace "Request after middlewares:" request)
+    (handler request)))
+
+(defn wrap-trace-request [handler]
+  (fn [request]
+    (trace "Request:" request)
     (let [response (handler request)]
-      (println "\nResponse: " response)
+      (trace "Response: " response)
       response)))
 
 (defn wrap-state [handler opts]

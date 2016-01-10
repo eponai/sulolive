@@ -9,10 +9,12 @@
             [eponai.server.datomic_dev :refer [connect!]]
             [eponai.server.site :refer [site-routes api-routes]]
             [eponai.server.middleware :as m]
-            [ring.adapter.jetty :as jetty]))
+            [ring.adapter.jetty :as jetty]
+            [taoensso.timbre :refer [debug error info]]))
 
 (defn app* [conn]
   (-> (routes api-routes site-routes)
+      m/wrap-post-middlewares
       (m/wrap-authenticate conn)
       m/wrap-error
       m/wrap-transit
@@ -23,7 +25,7 @@
                      ;; either "dev" or "release"
                      ::m/cljs-build-id     (or (env :cljs-build-id) "dev")})
       m/wrap-defaults
-      ;m/wrap-log
+      m/wrap-trace-request
       m/wrap-gzip))
 
 ;; Do a little re-def dance. Store the arguments to app* in a var, right before
@@ -42,12 +44,12 @@
 
 (defn init
   []
-  (println "Initializing server...")
+  (info "Initializing server...")
   (let [conn (connect!)]
     ;; See comments about this where app*args and app is defined.
     (alter-var-root (var app*args) (fn [_] [conn]))
     (alter-var-root (var app) call-app*))
-  (println "Done."))
+  (info "Done initializing server."))
 
 (defn -main [& args]
   (init)
@@ -58,7 +60,7 @@
                  default-port))]
     ;; by passing (var app) to run-jetty, it'll be forced to
     ;; evaluate app as code changes.
-    (prn "Using port: " port)
+    (info "Using port: " port)
     (jetty/run-jetty (var app) {:port port})))
 
 (defn main-debug
