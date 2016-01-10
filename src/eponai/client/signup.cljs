@@ -127,7 +127,7 @@
       {(:query/fb-user {:fb ?fb}) [:fb-user/id
                                    :fb-user/name
                                    :fb-user/email
-                                   :fb-user/user [:user/uuid]]}
+                                   {:fb-user/user [:user/uuid]}]}
       {(:query/user {:uuid ?uuid}) [:user/uuid
                                     :user/email]}])
 

@@ -105,8 +105,9 @@
   #?(:cljs {:value  (when (and (not (= fb '?fb))
                                (-> db :schema :fb-user/id))
                       (try
-                        (pull db query [:fb-user/id fb])
+                        (p/pull db query [:fb-user/id fb])
                         (catch :default e
+                          (println "Error: " e)
                           {:error {:cause :invalid-fb-user}})))
             :remote (not (= fb '?fb))}
      :clj  {:value (if-let [{:keys [fb-user/id fb-user/token] :as db-user} (server.pull/fb-user db fb)]
