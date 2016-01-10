@@ -48,7 +48,11 @@
                 :tag/name       n
                 :tag/persistent false}) tags))
 
-(defn user-transaction->db-entity
+(defn str->uuid [str-uuid]
+  #?(:clj  (java.util.UUID/fromString str-uuid)
+     :cljs (uuid str-uuid)))
+
+  (defn user-transaction->db-entity
   "Takes a user input transaction and converts into a datomic entity.
   A conversion function will be applied on the values for the following
   keys #{:currency :date :tags :amount :uuid} as appropriate for the database.

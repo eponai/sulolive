@@ -2,7 +2,7 @@
  (:require [clojure.set :refer [rename-keys]]
            [eponai.common.format :as format]
            [eponai.common.validate :as validate]
-           [eponai.common.transact :as transact]
+           [eponai.common.database.transact :as transact]
    #?(:clj
            [eponai.server.api :as api])
 
@@ -65,5 +65,12 @@
   (println "Verification verify: " uuid)
   #?(:cljs {:remote true}
      :clj  {:action (fn []
-                      (api/verify state uuid)
+                      (api/verify-email state uuid)
                       uuid)}))
+
+(defmethod mutate 'signup/email
+  [{:keys [state]} _ params]
+  (println "Transact signup: " params)
+  #?(:cljs {:remote true}
+     :clj  {:action (fn []
+                      {:email-chan (api/signin state (:input-email params))})}))

@@ -40,13 +40,12 @@
        (let [user-id (get-in env [:auth :username])
              db (d/db (:state env))
              db (if user-id
-                  (filter/authenticated-db db user-id)
-                  (filter/not-authenticated-db db))
+                  (do (prn "Using auth db")
+                      (filter/authenticated-db db user-id))
+                  (do (prn "using non auth db")
+                      (filter/not-authenticated-db db)))
              env (assoc env :db db)]
-         (if user-id
-           (apply parser env args)
-           (throw (ex-info "Unable to get user-id from env"
-                           {:env env}))))))
+         (apply parser env args))))
    :cljs
    (defn wrap-db [parser]
      (fn [env & args]
@@ -72,7 +71,8 @@
 
 (defn parser
   ([]
-   (let [parser (om/parser {:read read-without-state :mutate mutate/mutate})]
+   (let [parser (om/parser {:read read-without-state
+                            :mutate mutate/mutate})]
      #?(:cljs (-> parser
                   wrap-db)
         :clj (-> parser

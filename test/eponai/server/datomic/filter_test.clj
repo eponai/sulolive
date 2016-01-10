@@ -41,7 +41,7 @@
                     (seq db-res)))]
     (are [compare query] (compare (d/q (make-query query) user-db)
                                       (d/q (make-query query) db))
-                             none [:password/credential]
+                             ;none [:password/credential] TODO: remove password entity.
                              = [:currency/name]
                              = [:date/year]
                              = [:tag/name]

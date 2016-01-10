@@ -5,34 +5,34 @@
             [eponai.common.format :as common.format]
             [eponai.server.datomic.pull :as p]))
 
-(defn user->db-user-password [new-user]
-  (let [user-id (d/tempid :db.part/user)]
-    [{:db/id user-id
-      :user/email (new-user :username)}
-     {:db/id (d/tempid :db.part/user)
-      :password/credential user-id
-      :password/bcrypt (new-user :bcrypt)}]))
+(defn user->db-user [email]
+  {:db/id       (d/tempid :db.part/user)
+   :user/uuid   (d/squuid)
+   :user/email  email
+   :user/status :user.status/new})
+
+(defn password->db-password [user-entid bcrypt]
+  {:db/id (d/tempid :db.part/user)
+   :password/credential user-entid
+   :password/bcrypt bcrypt})
 
 (defn fb-user-db-user
-  [user-id access-token email]
-  (let [db-user {:db/id         (d/tempid :db.part/user)
-                 :fb-user/id    (long user-id)
-                 :fb-user/token access-token
-                 :fb-user/user  {:db/id     (d/tempid :db.part/user)
-                                 :user/uuid (d/squuid)
-                                 :user/email email}}]
-    (if email
-      (assoc-in db-user [:fb-user/user :user/email] email)
-      db-user)))
+  [user-id access-token db-user]
+  (let [fb-user {:db/id         (d/tempid :db.part/user)
+                 :fb-user/id    user-id
+                 :fb-user/token access-token}]
+    (if db-user
+      (assoc fb-user :fb-user/user (:db/id db-user))
+      fb-user)))
 
-(defn db-entity->db-verification [entity attribute status]
+(defn ->db-email-verification [entity status]
   {:db/id                   (d/tempid :db.part/user)
-   :verification/status     (or status :verification.status/pending)
+   :verification/status     status
    :verification/created-at (c/to-long (t/now))
    :verification/uuid       (d/squuid)
-   :verification/entity     (entity :db/id)
-   :verification/attribute  attribute
-   :verification/value      (entity attribute)})
+   :verification/entity     (:db/id entity)
+   :verification/attribute  :user/email
+   :verification/value      (:user/email entity)})
 
 (defn db-budget [user-eid]
   {:db/id (d/tempid :db.part/user)

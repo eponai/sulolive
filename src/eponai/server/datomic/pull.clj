@@ -99,11 +99,13 @@
        [?u :user/email ?email]] db user-email))
 
 (defn user
-  [db email]
-  (when email
-    (q '[:find (pull ?e [*]) .
-         :in $ ?m
-         :where [?e :user/email ?m]] db email)))
+  ([db email]
+    (user db :user/email email))
+  ([db attr value]
+   (when value
+     (q '[:find (pull ?e [*]) .
+          :in $ ?a ?v
+          :where [?e ?a ?v]] db attr value))))
 
 (defn fb-user
   [db user-id]
@@ -133,13 +135,6 @@
        (let [query (conj query ['?ver :verification/status status])]
          (q query db (ent :db/id) attr (ent attr)))
        (q query db (ent :db/id) attr (ent attr))))))
-
-(defn verification
-  "Pull specific verification from the database using the unique uuid field."
-  ([db uuid]
-   (verification db '[*] uuid))
-  ([db query uuid]
-   (p db query [:verification/uuid (java.util.UUID/fromString uuid)])))
 
 (defn expand-refs
   "Find any refs within the specified entity and expand them into entities."

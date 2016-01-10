@@ -9,7 +9,8 @@
                                              wrap-transit-body]]
             [cemerick.friend :as friend]
             [eponai.server.auth.credentials :as ac]
-            [eponai.server.auth.workflows :as workflows])
+            [eponai.server.auth.workflows :as workflows]
+            [eponai.server.email :as e])
 
   (:import (clojure.lang ExceptionInfo)
            (datomic.query EntityMap)))
@@ -50,12 +51,15 @@
 
 (defn wrap-authenticate [handler conn]
   (friend/authenticate
-    handler {:credential-fn       (ac/credential-fn conn)
-             :workflows           [(workflows/form)
-                                   (workflows/facebook (env :facebook-app-id)
-                                                       (env :facebook-app-secret))]
-             :default-landing-uri "/budget"
-             :fb-login-uri        "/login/fb"}))
+    handler {:credential-fn            (ac/credential-fn conn)
+             :workflows                [(workflows/form)
+                                        (workflows/create-account (e/send-email-fn conn))
+                                        (workflows/facebook (env :facebook-app-id)
+                                                            (env :facebook-app-secret))]
+             :default-landing-uri      "/budget"
+             :fb-login-uri             "/api/login/fb"
+             :email-login-uri          "/api/login/email"
+             :create-account-login-uri "/api/login/create"}))
 
 (defn config []
   (-> r/site-defaults

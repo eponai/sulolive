@@ -4,8 +4,8 @@
 (defn valid-signup?
   "Validate the signup parameters. Checks that username and password are not empty,
   and that the password matches the repeated password. Throws an ExceptionInfo if validation fails."
-  [user]
-  (v/validate "empty user email" not-empty (:username user)))
+  [email]
+  (v/validate "empty user email" not-empty email))
 
 (defn valid-date?
   "Validate the get params for user/txs. Validating that d m y params are numbers."

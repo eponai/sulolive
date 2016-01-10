@@ -71,5 +71,6 @@
           (if (and (= (:app_id data)
                         app-id)
                      (:is_valid data))
-            (assoc data :access_token (:access_token access-token))
-            {:error "Invalid access token."}))))))
+            (assoc data :access_token (:access_token access-token)
+                        :fb-info-fn user-info)
+            {:error {:message "Invalid access token."}}))))))

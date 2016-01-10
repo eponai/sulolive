@@ -8,7 +8,7 @@
             [eponai.server.datomic.pull :as p]
             [cemerick.friend.credentials :as creds]
             [clojure.java.io :as io]
-            [eponai.common.transact :as transact])
+            [eponai.common.database.transact :as transact])
   (:import (java.util UUID)))
 
 (def currencies {:THB "Thai Baht"
@@ -64,8 +64,8 @@
        (edn/read-string {:readers *data-readers*})))
 
 (defn add-verified-user [conn username]
-  (server.transact/new-user conn {:username username
-                                  :bcrypt   (creds/hash-bcrypt "password")})
+  (server.transact/new-user conn username)
+  (println "New user created")
   (let [user (p/user (d/db conn) username)
         verification (->> (p/verifications (d/db conn) user :user/email)
                           first

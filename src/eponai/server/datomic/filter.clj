@@ -42,7 +42,7 @@
 (defn- no-auth-filter [db]
   (let [user-attrs #{:transaction/uuid :budget/uuid}]
     (d/filter db
-             (fn [db [eid attr]]
+             (fn [db [eid]]
                   (not (some user-attrs (keys (d/entity db eid))))))))
 
 (defn user-db [db user-id]

@@ -73,35 +73,33 @@
 
         <div class="row">
             <div class="col-lg-12">
-                <div class="intro-message">
-                    <form action="/api/signup" method="POST">
-                        <label for="usr">Email:</label>
-                        <input type="text" class="form-control" name="username" id="usr"/><br />
+                <div class="intro-message" id="my-signup">
+                    <!--<form action="/api/signup" method="POST">-->
+                        <!--<label for="usr">Email:</label>-->
+                        <!--<input type="text" class="form-control" name="username" id="usr"/><br />-->
 
-                        <label for="pwd">Password:</label>
-                        <input type="password" class="form-control" name="password" id="pwd" /><br />
+                        <!--<label for="pwd">Password:</label>-->
+                        <!--<input type="password" class="form-control" name="password" id="pwd" /><br />-->
 
-                        <label for="repeat-pwd">Repeat password:</label>
-                        <input type="password" class="form-control" id="repeat-pwd" /><br>
+                        <!--<label for="repeat-pwd">Repeat password:</label>-->
+                        <!--<input type="password" class="form-control" id="repeat-pwd" /><br>-->
 
+                        <!--<input type="submit" name="submit" class="btn btn-info btn-lg" value="Sign up" /><br />-->
+                    <!--</form>-->
+                    <!--<div>-->
+                        <!--By creating an account, I accept to JourMoney's-->
+                        <!--<a href="#" class="btn btn-link btn-xs">Terms of Service-->
+                        <!--</a> and <a href="#" class="btn btn-link btn-xs">Privacy Policy</a>.-->
+                    <!--</div>-->
 
-
-                        <input type="submit" name="submit" class="btn btn-info btn-lg" value="Sign up" /><br />
-                    </form>
-                    <div>
-                        By signing up you agree to our
-                        <a href="#" class="btn btn-link btn-xs">Terms & Conditions
-                        </a>.
-                    </div>
-
-                    <h3>or</h3>
-                    <hr class="intro-divider">
-                    <form action="/login/fb" method="POST">
-                        <button type="submit" class="btn btn-facebook btn-lg">
-                            <i class="fa fa-facebook fa-fw"></i>
-                            <span class="network-text">Sign in with Facebook</span>
-                        </button>
-                    </form>
+                    <!--<h3>or</h3>-->
+                    <!--<hr class="intro-divider">-->
+                    <!--<form action="/api/login/fb" method="POST">-->
+                        <!--<button type="submit" class="btn btn-facebook btn-lg">-->
+                            <!--<i class="fa fa-facebook fa-fw"></i>-->
+                            <!--<span class="network-text">Sign in with Facebook</span>-->
+                        <!--</button>-->
+                    <!--</form>-->
                 </div>
             </div>
         </div>
@@ -256,11 +254,8 @@
     </div>
 </footer>
 
-<!-- jQuery -->
-<script src="/b/js/jquery.js"></script>
-
-<!-- Bootstrap Core JavaScript -->
-<script src="/b/js/bootstrap.min.js"></script>
+<script src="/dev/js/out/budget.js" type="text/javascript"></script>
+<script type="text/javascript">eponai.client.core.runsignup();</script>
 
 </body>
 

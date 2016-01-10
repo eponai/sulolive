@@ -1,13 +1,9 @@
 (ns eponai.server.datomic.transact
   (:require [datomic.api :as d]
-            [eponai.common.transact :refer [transact]]
+            [eponai.common.database.transact :refer [transact]]
             [eponai.server.datomic.format :as f]
             [eponai.server.datomic.validate :as v]
             [eponai.server.datomic.pull :as p]))
-
-(defn new-verification [conn entity attribute status]
-  (let [ver (f/db-entity->db-verification entity attribute status)]
-    (transact conn [ver])))
 
 (defn add
   "Make a datomic transaction usind :db/add. Can be used to update attribute values.
@@ -23,25 +19,35 @@
   [conn entid attr val]
   (transact conn [[:db/retract entid attr val]]))
 
+(defn email-verification [conn entity status]
+  (let [ver (f/->db-email-verification entity status)]
+    (transact conn [ver])
+    ver))
+
 (defn new-user
-  "Transact a new user into datomic.
+  "Transact a new user into datomic. Creates a budget associated with the account,
+  and a verification to be used for the email.
 
   Throws ExceptionInfo if transaction failed."
-  [conn new-user]
-  (when (v/valid-signup? new-user)
-    (let [[db-user db-password] (f/user->db-user-password new-user)
-          db-verification (f/db-entity->db-verification db-user :user/email :verification.status/pending)
+  [conn email]
+  (when (v/valid-signup? email)
+    (let [db-user (f/user->db-user email)
+          db-verification (f/->db-email-verification db-user :verification.status/pending)
           db-budget (f/db-budget (db-user :db/id))]
       (transact conn [db-user
-                      db-password
                       db-verification
-                      db-budget]))))
+                      db-budget])
+      db-verification)))
 
 (defn new-fb-user
-  [conn user-id access-token email]
-  (let [fb-user (f/fb-user-db-user user-id access-token email)]
-    (println "Transacted fb user: " fb-user)
-    (transact conn [fb-user])))
+  "Transact a new Facebook user into datomic, using a facebook user-id and an access-token recieved from Facebook.
+
+  If db-user is provided, the Facebook account will be linked to that user."
+  ([conn user-id access-token]
+    (new-fb-user conn user-id access-token nil))
+  ([conn user-id access-token db-user]
+   (let [fb-user (f/fb-user-db-user user-id access-token db-user)]
+     (transact conn [fb-user]))))
 
 (defn currency-rates
   "Transact conversions into datomic.

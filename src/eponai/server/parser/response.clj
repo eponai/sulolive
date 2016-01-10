@@ -27,4 +27,11 @@
   (when-let [chan (get-in response [:result :currency-chan])]
     (go
       (post-currency-rates state currency-rates-fn (<! chan))))
-  :dissoc)
+  (update response :result dissoc :currency-chan))
+
+(defmethod response-handler 'signup/email
+  [{:keys [::m/send-email-fn]} _ response]
+  (when-let [chan (get-in response [:result :email-chan])]
+    (go
+      (send-email-fn (<! chan))))
+  (update response :result dissoc :email-chan))

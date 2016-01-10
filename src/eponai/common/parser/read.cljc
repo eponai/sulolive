@@ -1,17 +1,22 @@
 (ns eponai.common.parser.read
   (:refer-clojure :exclude [read])
   (:require [eponai.common.datascript :as eponai.datascript]
-
-    #?(:clj [eponai.server.datomic.pull :as server.pull])
-    #?(:clj  [datomic.api :only [q pull-many] :as d]
+            [eponai.common.database.pull :as p]
+    #?(:clj
+            [eponai.server.datomic.pull :as server.pull])
+    #?(:clj
+            [eponai.server.auth.facebook :as fb])
+    #?(:clj
+            [datomic.api :only [q pull-many] :as d]
        :cljs [datascript.core :as d])
-    #?(:cljs [om.next :as om])))
+    #?(:cljs [om.next :as om])
+            [eponai.common.format :as f]))
 
 (defmulti read (fn [_ k _] k))
 
-(defn- do-pull-all [db pattern eids]
+(defn- do-pull [f db pattern eids]
   (try
-    (d/pull-many db pattern eids)
+    (f db pattern eids)
     (catch #?(:clj Exception :cljs :default) e
       (let [#?@(:clj  [msg (.getMessage e)]
                 :cljs [msg (.-message e)])]
@@ -32,7 +37,11 @@
                                  :where]
                                where-clauses))
                   db)]
-    (do-pull-all db query ents)))
+    (do-pull d/pull-many db query ents)))
+
+(defn pull
+  [db query entid]
+  (do-pull d/pull db query entid))
 
 ;; -------- No matching dispatch
 
@@ -77,11 +86,50 @@
   {:value (pull-all db query '[[?e :currency/code]])
    :remote true})
 
-(defmethod read :query/verification
+;(defmethod read :query/verification
+;  [{:keys [db query]} _ {:keys [uuid]}]
+;  #?(:cljs {:value  (when (and (not (= uuid '?uuid))
+;                               (-> db :schema :verification/uuid))
+;                      (try
+;                        (prn "reading fucking shit")
+;                        (p/verification db query uuid)
+;                        (catch :default e
+;                          (prn "Error: " e)
+;                          {:error {:cause :invalid-verification}})))
+;            :remote (not (= uuid '?uuid))}
+;     :clj  {:value (when (not (= uuid '?uuid))
+;                     (p/verification db query uuid))}))
+
+(defmethod read :query/fb-user
+  [{:keys [db query]} _ {:keys [fb]}]
+  #?(:cljs {:value  (when (and (not (= fb '?fb))
+                               (-> db :schema :fb-user/id))
+                      (try
+                        (pull db query [:fb-user/id fb])
+                        (catch :default e
+                          {:error {:cause :invalid-fb-user}})))
+            :remote (not (= fb '?fb))}
+     :clj  {:value (if-let [{:keys [fb-user/id fb-user/token] :as db-user} (server.pull/fb-user db fb)]
+                     (let [fb-user (fb/user-info id token)]
+                       ; Request Facebook account inforatiom and associate with the user.
+                       (-> db-user
+                           (dissoc :fb-user/token)
+                           (assoc :fb-user/name (:name fb-user))
+                           (assoc :fb-user/email (:email fb-user))))
+                     {:error {:cause :invalid-fb-user}})}))
+
+(defmethod read :query/user
   [{:keys [db query]} _ {:keys [uuid]}]
-  #?(:cljs {:value (pull-all db query '[[?e :verification/uuid ?uuid]])
-            :remote true}
-     :clj {:value (server.pull/verification db query uuid)}))
+  #?(:cljs {:value  (when (and (not (= uuid '?uuid))
+                               (-> db :schema :verification/uuid))
+                      (try
+                        (p/pull db query [:user/uuid (f/str->uuid uuid)])
+                        (catch :default e
+                          (prn "Error: " e)
+                          {:error {:cause :invalid-verification}})))
+            :remote (not (= uuid '?uuid))}
+     :clj  {:value (when (not (= uuid '?uuid))
+                     (p/pull db query [:user/uuid (f/str->uuid uuid)]))}))
 
 ;; -------- Debug stuff
 

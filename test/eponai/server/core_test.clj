@@ -11,7 +11,8 @@
             [eponai.server.auth.credentials :as a]
             [eponai.server.openexchangerates :as exch]
             [eponai.server.test-util :as util]
-            [eponai.server.middleware :as m])
+            [eponai.server.middleware :as m]
+            [eponai.server.site :as site])
   (:import (clojure.lang ExceptionInfo)))
 
 (def test-data [{:transaction/name       "coffee"
@@ -34,14 +35,17 @@
 
 (def test-parser (parser/parser))
 
-(def user-params {:username "user@email.com"
-                  :password "password"})
+(defn test-convs [date-str]
+  {:date  date-str
+   :rates {:SEK 8.333}})
+
+(def user-email "user@email.com")
 
 (def request {:session {:cemerick.friend/identity
                         {:authentications
                                   {1
                                    {:identity 1,
-                                    :username (user-params :username),
+                                    :username user-email,
                                     :roles    #{::a/user}}},
                          :current 1}}
               :body test-data
@@ -52,7 +56,7 @@
 
 (defn- new-db []
   (let [conn (util/new-db)]
-    (api/signup conn user-params)
+    (api/signin conn user-email)
     conn))
 
 (defn- db-with-curs []
@@ -78,19 +82,19 @@
 
 (deftest test-all-data-with-conversions
   (let [conn (db-with-curs)
-        parsed (api/handle-parser-request (assoc mutation-request ::m/conn conn))
+        parsed (site/handle-parser-request (assoc mutation-request ::m/conn conn))
         db-conv (parser.resp/post-currency-rates conn
                                                  util/test-convs
                                                  (:transaction/date (first test-data)))
         result (p/all-data
                  (:db-after db-conv)
-                 (user-params :username) {})]
+                 user-email {})]
     (is (= (count result) 8))
     (is (some? (async/poll! (get-in parsed ['transaction/create :result :currency-chan]))))))
 
 (deftest test-handle-parser-request
   (let [conn (db-with-curs)
-        _ (api/handle-parser-request (assoc mutation-request ::m/conn conn))
+        _ (site/handle-parser-request (assoc mutation-request ::m/conn conn))
         db-after (d/db conn)
         result (p/all-data db-after
                            "user@email.com"
@@ -116,7 +120,7 @@
                          :db/valueType          :db.type/ref
                          :db/cardinality        :db.cardinality/one
                          :db.install/_attribute :db.part/db}])
-      (api/handle-parser-request (assoc mutation-request ::m/conn conn))
+      (site/handle-parser-request (assoc mutation-request ::m/conn conn))
       (d/transact conn [[:db/add (:db/id user) :user/budget (:db/id budget)]])
       (let [result (p/all-data (d/db conn) "user@email.com" {})]
         (is (= (count result) 7))))))
@@ -131,7 +135,7 @@
         invalid-data-req (assoc-in mutation-request
                                    [:body]
                                    `[(transaction/create {:invalid-data "invalid"})])
-        post-fn #(api/handle-parser-request (assoc % ::m/conn (db-with-curs)))]
+        post-fn #(site/handle-parser-request (assoc % ::m/conn (db-with-curs)))]
     ;; TODO: Fail faster for invalid user request? #76
     (is (some? (re-find #"Validation failed" (om-next-error-msg (post-fn invalid-user-req)))))
     (is (some? (re-find #"Validation failed" (om-next-error-msg (post-fn invalid-data-req)))))))
@@ -141,29 +145,3 @@
     (is (thrown? ExceptionInfo (api/post-currencies (new-db)
                                                   (assoc test-curs :invalid 2))))))
 
-(deftest test-signup-unverified
-  (testing "user signed up bot not verified"
-    (let [valid-params {:username "test"
-                        :password "p"}
-          conn (new-db)
-          email-chan (api/signup conn valid-params)]
-      (is (thrown-with-msg? ExceptionInfo
-                            #"Email verification pending."
-                            ((a/credential-fn conn) valid-params)))
-      (is (some? (async/poll! email-chan))))))
-
-(deftest test-signup
-  (testing "signup new user"
-    (let [valid-params {:username "test"
-                        :password "p"}
-          conn (new-db)]
-      (api/signup conn valid-params)
-      (t/new-verification conn
-                          (p/user (d/db conn) "test")
-                          :user/email
-                          :verification.status/verified)
-      (is ((a/credential-fn conn) valid-params))
-      (is (thrown-with-msg? ExceptionInfo
-                            #"Validation failed, "
-                            (api/signup (new-db) {:username ""
-                                                  :password ""}))))))

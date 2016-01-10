@@ -3,7 +3,7 @@
             [postal.core :as email]
             [datomic.api :as d]
             [environ.core :refer [env]]
-            [eponai.server.datomic.pull :as p]))
+            [eponai.common.database.pull :as p]))
 
 (defn- smtp []
   {:host (env :smtp-host)
@@ -39,14 +39,11 @@
 
   Conn is the connection to the database."
   [conn]
-  (fn [email]
+  (fn [verification]
     (let [db (d/db conn)
-          user (p/user db email)
-          pending-verifications (p/verifications db user :user/email :verification.status/pending)]
+          uuid (:verification/uuid verification)]
 
-      (cond (first pending-verifications)
+      (cond (p/verification db '[:verification/value] (str uuid))
             (send-email (smtp)
-                        email
-                        (->> pending-verifications
-                             first
-                             :verification/uuid))))))
+                        (:verification/value verification)
+                        uuid)))))

@@ -23,6 +23,7 @@
   (fn [_ _ novelty]
     (let [novelty (merge-novelty-by-key {:state conn} novelty)
           temp-id-novelty (e.datascript/db-id->temp-id #{} (flatten (vals novelty)))]
+      (println "Merging " novelty)
       {:keys (keys novelty)
        :next (:db-after @(d/transact conn temp-id-novelty))})))
 

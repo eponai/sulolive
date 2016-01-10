@@ -7,8 +7,7 @@
             [eponai.server.email :as e]
             [eponai.server.openexchangerates :as exch]
             [eponai.server.datomic_dev :refer [connect!]]
-            [eponai.server.api :refer [api-routes]]
-            [eponai.server.site :refer [site-routes]]
+            [eponai.server.site :refer [site-routes api-routes]]
             [eponai.server.middleware :as m]
             [ring.adapter.jetty :as jetty]))
 

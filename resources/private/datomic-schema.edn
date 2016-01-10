@@ -18,6 +18,18 @@
   :db/doc                "A user's unique identifier."
   :db.install/_attribute :db.part/db}
 
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :user/status
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "A user's unique identifier."
+  :db.install/_attribute :db.part/db}
+
+ ;; User status
+ [:db/add #db/id[:db.part/user] :db/ident :user.status/new]
+ [:db/add #db/id[:db.part/user] :db/ident :user.status/activated]
+
  ;; Credentials
  ;; Password
  {:db/id                 #db/id[:db.part/db]
@@ -38,7 +50,7 @@
  ;; Facebook user
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :fb-user/id
-  :db/valueType          :db.type/long
+  :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
   :db/unique             :db.unique/identity
   :db/doc                "User id of a Facebook user"

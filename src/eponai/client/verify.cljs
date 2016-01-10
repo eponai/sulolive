@@ -48,24 +48,10 @@
 
 (defonce conn-atom (atom nil))
 
-(defn init-conn
-  "Sets up the datascript state. Caches the state so we can keep our app state between
-  figwheel reloads."
-  []
-  (if @conn-atom
-    @conn-atom
-    (let [ui-schema {:ui/singleton {:db/unique :db.unique/identity}}
-          ui-state [{:ui/singleton :budget/header}
-                    {:ui/singleton :ui.singleton/app}]
-          conn (d/create-conn ui-schema)]
-      (d/transact! conn ui-state)
-      (reset! conn-atom conn))))
-
 (defn run []
-  (let [conn (init-conn)
-        parser (parser/parser)
+  (let [conn (or @conn-atom (reset! conn-atom (d/create-conn)))
         reconciler (om/reconciler {:state conn
-                                   :parser  parser
+                                   :parser  (parser/parser)
                                    :remotes [:remote]
                                    :send    (backend/send! "/verify")
                                    :merge   (backend/merge! conn)})]
