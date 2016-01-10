@@ -30,20 +30,29 @@
 (defn pull [db pattern eid]
   (try
     (let [ret (d/pull db pattern eid)]
-      ret)
+      (if-not (= {:db/id nil}
+                 ret)
+        ;; Datomic returns {:db/id nil} if there's noting found for a lookup ref for example... so just return nil in that case.
+        ret
+        nil))
     (catch #?(:clj Exception :cljs :default) e
       (throw-error e ::pull-error {:pattern pattern
                                    :eid     eid}))))
 
 (defn verification
-  "Pull specific verification from the database using the unique uuid field."
-  [db query ver-uuid]
-  (let [id (f/str->uuid ver-uuid)]
-    (pull db query [:verification/uuid id])))
+  "Pull specific verification from the database using the unique uuid field.
+  Returns an entity if onlu uuid is provided, or an entire tree matching the passed in query."
+  ([db ver-uuid]
+   (let [verification (verification db '[:db/id] ver-uuid)]
+     (d/entity db (:db/id verification))))
+  ([db query ver-uuid]
+   (let [id (f/str->uuid ver-uuid)]
+     (pull db query [:verification/uuid id]))))
 
 (defn user
   ([db email]
-    (user db '[*] email))
+   (let [db-user (:db/id (user db '[*] email))]
+     (d/entity db db-user)))
   ([db query email]
     (pull db query [:user/email email])))
 

@@ -28,7 +28,6 @@
 
 (defmethod auth-map :default
   [conn {:keys [uuid] :as params}]
-  (println "Credential fn for email.")
   (cond
     uuid
     (try
@@ -98,7 +97,7 @@
   [conn {:keys [user-uuid user-email] :as params}]
   (println "ParamsL " params)
   (try
-    (let [user (api/create-account conn user-uuid user-email)]
+    (let [user (api/activate-account conn user-uuid user-email)]
       (auth-map-for-db-user user))
     (catch ExceptionInfo e
       (println "Exception thrown when creating user: " (.getMessage e))

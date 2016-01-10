@@ -8,7 +8,8 @@
             [eponai.server.http :as h]
             [clj-time.core :as time]
             [clj-time.coerce :as c]
-            [eponai.common.format :as f]))
+            [eponai.common.format :as f])
+  (:import (datomic.peer LocalConnection)))
 
 ; Actions
 
@@ -40,21 +41,23 @@
   :verification.status/expired and throws exception.
 
   If the verification does not have status :verification.status/pending,
-  it means that it's already verified or expired, throws exception."
+  it means that it's already verified or expired, throws exception.
+
+  On success returns {:db/id some-id} for the user this verification belongs to."
   [conn uuid]
   (let [ex (fn [msg] (ex-info msg
                               {:cause   ::verification-error
                                :status  ::h/unathorized
                                :data    {:uuid uuid}
                                :message "The verification link is invalid."}))]
-    (if-let [{:keys [verification/status] :as verification} (pull/verification (d/db conn) '[*] uuid)]
+    (if-let [verification (pull/verification (d/db conn) uuid)]
       (let [verification-time (c/from-long (:verification/created-at verification))
             time-interval (time/in-minutes (time/interval verification-time (time/now)))]
         ; If the verification was not used within 15 minutes, it's expired.
         (if (>= 15 time-interval)
            ;If verification status is not pending, we've already verified this or it's expired.
-           (if (= (:db/id status)
-                  (d/entid (d/db conn) :verification.status/pending))
+           (if (= (:verification/status verification)
+                  :verification.status/pending)
              (do
                (println "Successful verify")
                (t/add conn (:db/id verification) :verification/status :verification.status/verified)
@@ -66,29 +69,52 @@
       ; If verification does not exist, throw invalid error
       (throw (ex "Verification UUID does not exist")))))
 
-(defn create-account [conn user-uuid email]
-  {:pre [(string? user-uuid)
+(defn activate-account
+  "Try and activate account for the user with UUId user-uuid, and user email passed in.
+
+  Default would be the email from the user's FB account or the one they signed up with. However,
+  they might change, and we need to check that it's verified. If it's verified, go ahead and activate the account.
+
+  The user is updated with the email provided when activating the account.
+
+  Throws exception if the email provided is not already verified, email is already in use,
+  or the user UUID is not found."
+  [conn user-uuid email]
+  {:pre [(instance? LocalConnection conn)
+         (string? user-uuid)
          (string? email)]}
-  (if-let [{user-db-id :db/id} (pull/pull (d/db conn) '[:db/id] [:user/uuid (f/str->uuid user-uuid)])]
-    (let [new-db (:db-after (t/add conn user-db-id :user/email email))
-          verifications (pull/verifications new-db user-db-id :verification.status/verified)]
+  (if-let [new-user (p/user (d/db conn) :user/uuid (f/str->uuid user-uuid))]
 
-      ; There's no verification verified for this email on the user,
-      ; the user is probably creating an account with a new email.
-      ; Create a new verification and throw exception
-      (when-not (seq verifications)
-        (println "User not verified for email: " email "... creating new verification.")
-        (let [verification (t/email-verification conn user-db-id :verification.status/pending)]
-          (throw (ex-info "Email not verified."
-                          {:cause        ::authentication-error
-                           :data         {:email email}
-                           :message      "Email not verified"
-                           :verification verification}))))
+    (do
+      (when-let [existing-user (p/user (d/db conn) email)]
+        (if-not (= (:db/id new-user)
+                   (:db/id existing-user))
+          (throw (ex-info "Email already in use."
+                          {:cause ::authentication-error
+                           :data  {:email email}}))))
 
-      ; Activate this account and return the user entity
-      (let [activated-db (:db-after (t/add conn user-db-id :user/status :user.status/activated))]
-        (println "Activated account! Returning user: " (pull/pull activated-db '[:user/email {:user/status [:db/ident]}] [:user/email email]))
-        (pull/user activated-db email )))
+      (let [user-db-id (:db/id new-user)
+            new-db (:db-after (t/add conn user-db-id :user/email email))
+            verifications (pull/verifications new-db user-db-id :verification.status/verified)]
+
+        ; There's no verification verified for this email on the user,
+        ; the user is probably creating an account with a new email.
+        ; Create a new verification and throw exception
+        (when-not (seq verifications)
+          (println "User not verified for email: " email "... creating new verification.")
+          (let [verification (t/email-verification conn user-db-id :verification.status/pending)]
+            (throw (ex-info "Email not verified."
+                            {:cause        ::authentication-error
+                             :data         {:email email}
+                             :message      "Email not verified"
+                             :verification verification}))))
+
+        ; Activate this account and return the user entity
+        (let [activated-db (:db-after (t/add conn user-db-id :user/status :user.status/activated))]
+          (println "Activated account!")
+          (pull/user activated-db email))))
+
+
     ; The user uuid was not found in the database.
     (throw (ex-info "Invalid User id." {:cause   ::authentication-error
                                         :data    {:uuid  user-uuid

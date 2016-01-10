@@ -64,10 +64,10 @@
           conn (new-db [fb-user])
           credential-fn (a/credential-fn conn)]
 
-      (is (thrown? ExceptionInfo
-                   #"No user account found, create one"
-                   (credential-fn
-                     (creds-input id)))))))
+      (is (thrown-with-msg? ExceptionInfo
+                            #"No user account found, create a new one."
+                            (credential-fn
+                              (creds-input id)))))))
 
 (deftest fb-user-not-exists-but-user-account-with-email-does
   (testing "The FB account does not exist, but a user account with the same email does.
@@ -97,9 +97,9 @@
           credential-fn (a/credential-fn conn)]
 
       ;TODO we might want to automatically create an ccount here and let the user login immediately?
-      (is (thrown? ExceptionInfo
-                   #"No user found, create one"
-                   (credential-fn (creds-input id)))))))
+      (is (thrown-with-msg? ExceptionInfo
+                            #"No user account found, create a new one."
+                            (credential-fn (creds-input id)))))))
 
 (deftest fb-user-without-email-does-not-exist
   (testing "Fb user does not have an email and is trying to sign up.
@@ -110,9 +110,9 @@
           conn (new-db nil)
           credential-fn (a/credential-fn conn)]
 
-      (is (thrown? ExceptionInfo
-                   #"No user found, create one"
-                   (credential-fn (creds-input id fb-info-fn)))))))
+      (is (thrown-with-msg? ExceptionInfo
+                            #"No user account found, create a new one."
+                            (credential-fn (creds-input id fb-info-fn)))))))
 
 
 ;; ------ User verify email credential function tests.
@@ -134,23 +134,23 @@
 (deftest user-verifies-account-not-activated
   (testing "User is verified but not activated, should throw exception new user."
     (let [user (f/user->db-user email)
-          verification (f/->db-email-verification user :verification.status/verified)
+          verification (f/->db-email-verification user :verification.status/pending)
           conn (new-db [user
                         verification])
           credential-fn (a/credential-fn conn)]
 
-      (is (thrown? ExceptionInfo
-                   #"New user"
-                   (credential-fn
-                     (with-meta {:uuid (str (:verification/uuid verification))}
-                                {::friend/workflow :form})))))))
+      (is (thrown-with-msg? ExceptionInfo
+                            #"New user"
+                            (credential-fn
+                              (with-meta {:uuid (str (:verification/uuid verification))}
+                                         {::friend/workflow :form})))))))
 
 (deftest user-verifies-nil-uuid
   (testing "User tries to verify a nil UUID. Throw exception"
     (let [conn (new-db nil)
           credential-fn (a/credential-fn conn)]
-      (is (thrown? ExceptionInfo
-                   #"Cannot log in"
-                   (credential-fn
-                     (with-meta {:invalid :data}
-                                {::friend/workflow :form})))))))
+      (is (thrown-with-msg? ExceptionInfo
+                            #"Cannot log in"
+                            (credential-fn
+                              (with-meta {:invalid :data}
+                                         {::friend/workflow :form})))))))
