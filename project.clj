@@ -14,6 +14,7 @@
                  [com.datomic/datomic-pro "0.9.5302"
                   :exclusions [joda-time]]
                  [com.draines/postal "1.11.3"]
+                 [com.taoensso/timbre "4.2.0"]
                  [environ "1.0.1"]
                  [hiccup "1.0.5"]
                  [org.clojure/clojure "1.7.0"]
