@@ -1,9 +1,11 @@
 (ns eponai.client.parser.merge
-  (:require [datascript.core :as d]))
+  (:require [datascript.core :as d]
+            [taoensso.timbre :refer-macros [debug error trace]]))
 
 (defmulti merge-novelty (fn [_ k _] k))
 (defmethod merge-novelty :default
   [_ _ _]
+  (trace "No merge-novelty for key: " k)
   nil)
 
 (defmethod merge-novelty :datascript/schema

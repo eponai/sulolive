@@ -9,7 +9,8 @@
             [eponai.common.parser :as parser]
             [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
             [eponai.client.ui.header :refer [Header ->Header]]
-            [eponai.client.ui.all_transactions :refer [AllTransactions ->AllTransactions]]))
+            [eponai.client.ui.all_transactions :refer [AllTransactions ->AllTransactions]]
+            [taoensso.timbre :refer-macros [info debug error trace]]))
 
 (defui App
   static om/IQuery
@@ -34,7 +35,9 @@
   figwheel reloads."
   []
   (if @conn-atom
-    @conn-atom
+    (do
+      (debug "Reusing old conn. It currently has schema for attributes:" (-> @conn-atom deref :schema keys))
+      @conn-atom)
     (let [ui-schema {:ui/singleton {:db/unique :db.unique/identity}}
           ui-state [{:ui/singleton :budget/header}
                     {:ui/singleton :ui.singleton/app}]
@@ -43,6 +46,7 @@
       (reset! conn-atom conn))))
 
 (defn initialize-app [conn]
+  (debug "Initializing App")
   (let [parser (parser/parser)
         reconciler (om/reconciler {:state   conn
                                    :parser  parser
@@ -52,4 +56,5 @@
     (om/add-root! reconciler App (gdom/getElement "my-app"))))
 
 (defn run []
+  (info "Run called in " *ns*)
   (initialize-app (init-conn)))
