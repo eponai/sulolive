@@ -1,6 +1,5 @@
 (ns eponai.client.ui.add_transaction_test
-  (:require [eponai.client.ui.add_transaction :as a]
-            [eponai.client.ui.all_transactions :as transactions]
+  (:require [eponai.client.ui.all_transactions :as transactions]
             [datascript.core :as d]
             [eponai.common.parser :as parser]
             [eponai.client.testdata :as testdata]
