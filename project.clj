@@ -96,7 +96,7 @@
                                    "test/"]
                     :figwheel     {:on-jsload "eponai.client.figwheel/run"}
                     :compiler     {:main          "eponai.client.core"
-                                   :asset-path    "js/out"
+                                   :asset-path    "/dev/js/out"
                                    :output-to     "resources/public/dev/js/out/budget.js"
                                    :output-dir    "resources/public/dev/js/out/"
                                    :optimizations :none
@@ -106,7 +106,7 @@
                                    "test/"]
                     :figwheel     {:devcards true}          ;; <- note this
                     :compiler     {:main                 "eponai.devcards.devcards_main"
-                                   :asset-path           "js/out"
+                                   :asset-path           "/devcards/js/out"
                                    :output-to            "resources/public/devcards/js/out/budget.js"
                                    :output-dir           "resources/public/devcards/js/out"
                                    :source-map-timestamp true}}
@@ -122,7 +122,7 @@
                    {:id           "release"
                     :source-paths ["src/"]
                     :compiler     {:main          "eponai.client.core"
-                                   :asset-path    "js/out"
+                                   :asset-path    "/release/js/out"
                                    :output-to     "resources/public/release/js/out/budget.js"
                                    :output-dir    "resources/public/release/js/out/"
                                    :optimizations :advanced
