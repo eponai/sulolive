@@ -72,13 +72,15 @@
   (let [{:keys [parser conn]} (init-state)]
     (is (thrown-with-msg? cljs.core.ExceptionInfo
                           #".*Illegal.*argument.*input-tags.*"
-                          (parser {:state conn}
-                                  '[(transaction/create
-                                     {:input-uuid (d/squuid)
-                                      :input-amount      "0"
-                                      :input-currency    ""
-                                      :input-title       ""
-                                      :input-date        "1000-10-10"
-                                      :input-description ""
-                                      :input-tags        ["" ""]
-                                      :input-created-at  0})])))))
+                          (-> (parser {:state conn}
+                                   '[(transaction/create
+                                       {:input-uuid        (d/squuid)
+                                        :input-amount      "0"
+                                        :input-currency    ""
+                                        :input-title       ""
+                                        :input-date        "1000-10-10"
+                                        :input-description ""
+                                        :input-tags        ["" ""]
+                                        :input-created-at  0})])
+                              (get-in ['transaction/create :om.next/error])
+                              (throw))))))
