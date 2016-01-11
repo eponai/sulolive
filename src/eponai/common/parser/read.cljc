@@ -100,24 +100,24 @@
 ;     :clj  {:value (when (not (= uuid '?uuid))
 ;                     (p/verification db query uuid))}))
 
-(defmethod read :query/fb-user
-  [{:keys [db query]} _ {:keys [fb]}]
-  #?(:cljs {:value  (when (and (not (= fb '?fb))
-                               (-> db :schema :fb-user/id))
-                      (try
-                        (p/pull db query [:fb-user/id fb])
-                        (catch :default e
-                          (println "Error: " e)
-                          {:error {:cause :invalid-fb-user}})))
-            :remote (not (= fb '?fb))}
-     :clj  {:value (if-let [{:keys [fb-user/id fb-user/token] :as db-user} (server.pull/fb-user db fb)]
-                     (let [fb-user (fb/user-info id token)]
-                       ; Request Facebook account inforatiom and associate with the user.
-                       (-> db-user
-                           (dissoc :fb-user/token)
-                           (assoc :fb-user/name (:name fb-user))
-                           (assoc :fb-user/email (:email fb-user))))
-                     {:error {:cause :invalid-fb-user}})}))
+;(defmethod read :query/fb-user
+;  [{:keys [db query]} _ {:keys [fb]}]
+;  #?(:cljs {:value  (when (and (not (= fb '?fb))
+;                               (-> db :schema :fb-user/id))
+;                      (try
+;                        (p/pull db query [:fb-user/id fb])
+;                        (catch :default e
+;                          (println "Error: " e)
+;                          {:error {:cause :invalid-fb-user}})))
+;            :remote (not (= fb '?fb))}
+;     :clj  {:value (if-let [{:keys [fb-user/id fb-user/token] :as db-user} (server.pull/fb-user db fb)]
+;                     (let [fb-user (fb/user-info id token)]
+;                       ; Request Facebook account inforatiom and associate with the user.
+;                       (-> db-user
+;                           (dissoc :fb-user/token)
+;                           (assoc :fb-user/name (:name fb-user))
+;                           (assoc :fb-user/email (:email fb-user))))
+;                     {:error {:cause :invalid-fb-user}})}))
 
 (defmethod read :query/user
   [{:keys [db query]} _ {:keys [uuid]}]

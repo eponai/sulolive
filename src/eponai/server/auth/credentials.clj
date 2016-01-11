@@ -1,7 +1,7 @@
 (ns eponai.server.auth.credentials
   (:require [cemerick.friend :as friend]
             [cemerick.friend.credentials :as creds]
-            [datomic.api :as d :refer [db]]
+            [datomic.api :as d]
             [eponai.server.datomic.pull :as p]
             [eponai.common.database.pull :as pull]
             [eponai.server.http :as h]
@@ -34,25 +34,22 @@
 
 (defmethod auth-map :default
   [conn {:keys [uuid] :as params}]
-  (cond
-    uuid
+  (if uuid
     (let [user (d/entity (d/db conn) (:db/id (api/verify-email conn uuid)))]
       (if (= (:user/status user)
              :user.status/activated)
         (auth-map-for-db-user user)
         (throw (ex-user-not-activated user))))
-    true
     (throw (ex-invalid-input params))))
 
 (defmethod auth-map :facebook
-  [conn {:keys [access_token user_id fb-info-fn]}]
-  (let [db (db conn)
-        fb-user (p/fb-user db user_id)]
-    (cond
-      fb-user
-      (let [db-user (d/entity db (-> fb-user
-                                     :fb-user/user
-                                     :db/id))]
+  [conn {:keys [access_token user_id fb-info-fn] :as params}]
+  (if (and user_id access_token fb-info-fn)
+    (if-let [fb-user (p/fb-user (d/db conn) user_id)]
+      (let [db-user (d/entity (d/db conn) (-> fb-user
+                                              :fb-user/user
+                                              :db/id))]
+
         ;; Check that the user is activated, if not throw exception.
         (if (= (:user/status db-user)
                :user.status/activated)
@@ -60,7 +57,6 @@
           (throw (ex-user-not-activated db-user))))
 
       ; If we don't have a facebook user in the DB, check if there's an accout with a matching email.
-      (not fb-user)
       (let [{:keys [email]} (fb-info-fn user_id access_token)]
         (println "Creating new fb-user: " user_id)
         ;; Linking the FB user to u user account. If a user accunt with the same email exists,
@@ -74,12 +70,15 @@
           (if (= (:user/status user)
                  :user.status/activated)
             (auth-map-for-db-user user)
-            (throw (ex-user-not-activated user))))))))
+            (throw (ex-user-not-activated user))))))
+    (throw (ex-invalid-input params))))
 
 (defmethod auth-map :create-account
   [conn {:keys [user-uuid user-email] :as params}]
-  (let [user (api/activate-account conn user-uuid user-email)]
-    (auth-map-for-db-user user)))
+  (if (and user-uuid user-email)
+    (let [user (api/activate-account conn user-uuid user-email)]
+      (auth-map-for-db-user user))
+    (throw ex-invalid-input)))
 
 (defn credential-fn
   "Create a credential fn with a db to pull user credentials.

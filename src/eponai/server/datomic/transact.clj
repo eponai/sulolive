@@ -40,13 +40,21 @@
       db-verification)))
 
 (defn link-fb-user [conn user-id access-token email]
+  ;; There's already a user account for the email provided by the FB account,
+  ;; so just link the FB user to the existing account.
   (if-let [user (p/user (d/db conn) email)]
     (let [fb-user (f/fb-user-db-user user-id access-token (:db/id user))]
       (transact conn [fb-user]))
 
+    ;; If we don't have a user account already, create a new one. If the FB account has an email,
+    ;; the same will be used on the new user account.
     (let [user (f/user->db-user email)
-          fb-user (f/fb-user-db-user user-id access-token (:db/id user))]
-      (transact conn [user fb-user (f/db-budget (:db/id user))]))))
+          fb-user (f/fb-user-db-user user-id access-token (:db/id user))
+          budget (f/db-budget (:db/id user))]
+      ; If we are creating an account and received an email from the FB account, no need to verify the email.
+      (if email
+        (transact conn [user fb-user budget (f/->db-email-verification user :verification.status/verified)])
+        (transact conn [user fb-user budget])))))
 
 (defn currency-rates
   "Transact conversions into datomic.

@@ -9,9 +9,9 @@
   (:import (clojure.lang ExceptionInfo)))
 
 (defn- redirect-login-failed [& kvs]
-  (r/redirect (str "/signup?fail=Y&" (url/map->query (apply hash-map kvs)))))
+  (r/redirect (str "/signup?fail=Y" (when kvs "&") (url/map->query (apply hash-map kvs)))))
 
-(defn- redirect-create-account [account-info]
+(defn- redirect-activate-account [account-info]
   (r/redirect (str "/signup?new=Y&"
                    (url/map->query account-info))))
 
@@ -24,10 +24,9 @@
     (let [credential-fn (get auth-config :credential-fn)
             login-uri (get auth-config :email-login-uri)]
 
-      ; Verify that we're doing a post request to /api/login/email otherwise skip this flow
+      ; Verify that we're doing a request to /api/login/email otherwise skip this flow
       (when (and (= (path-info request)
                     login-uri))
-        (println "Default workflow.")
         (cond
           ; The user is coming from their email trying to verify the login, so try to login.
           (:uuid params)
@@ -40,10 +39,10 @@
               (workflows/make-auth user-record {::friend/workflow          :form
                                                 ::friend/redirect-on-auth? true}))
             (catch ExceptionInfo e
-              (let [{:keys [new-user]} (ex-data e)]
-                (println "Login failed, new user: " new-user)
-                (if new-user
-                  (redirect-create-account {:uuid (:user/uuid new-user)})
+              (let [{:keys [activate-user]} (ex-data e)]
+                (println "Login failed. " (if activate-user "User not activated." "Invalid UUID."))
+                (if activate-user
+                  (redirect-activate-account {:uuid (:user/uuid activate-user)})
                   (redirect-login-failed :uuid (:uuid params))))))
 
           true
@@ -70,7 +69,7 @@
             (println "Recieved validated token...")
             (if (:error validated-token)
               ; Redirect back to the login page on invalid token, something went wrong.
-              (redirect-login-failed :error (:error validated-token))
+              (redirect-login-failed)
 
               ; Try to get credentials for the facebook user. If there's no user account an exception
               ; is thrown and we need to prompt the user to create a new account
@@ -83,11 +82,10 @@
                   (workflows/make-auth user-record {::friend/workflow          :facebook
                                                     ::friend/redirect-on-auth? true}))
                 (catch ExceptionInfo e
-                  ; The credential-fn did not find a user account for this Facebook user,
-                  ; so catch the exception and redirect to create a new account
-                  (let [{:keys [new-user]} (ex-data e)]
-                    (println "No existing user account for: " new-user "... Redirecting...")
-                    (redirect-create-account new-user))))))
+                  ; The user is not activated. Redirect to activate account
+                  (let [{:keys [activate-user]} (ex-data e)]
+                    (println "No activated user account for: " activate-user "... Redirecting...")
+                    (redirect-activate-account activate-user))))))
 
           ; User cancelled or denied login, redirect back to the login page.
           (:error params)
