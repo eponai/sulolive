@@ -66,7 +66,7 @@
           credential-fn (a/credential-fn conn)]
 
       (is (thrown-with-msg? ExceptionInfo
-                            #"User not activated."
+                            (re-pattern (.getMessage (a/ex-user-not-activated nil)))
                             (credential-fn
                               (creds-input id)))))))
 
@@ -78,7 +78,7 @@
           conn (new-db [activated-user])
           credential-fn (a/credential-fn conn)
           user-record (credential-fn (creds-input id))
-          ; Entities addeed to the DB
+          ; Entities added to the DB
           db-user (p/user (d/db conn) email)
           fb-user (p/fb-user (d/db conn) id)]
 
@@ -100,7 +100,7 @@
 
       ;TODO we might want to automatically create an ccount here and let the user login immediately?
       (is (thrown-with-msg? ExceptionInfo
-                            #"User not activated."
+                            (re-pattern (.getMessage (a/ex-user-not-activated nil)))
                             (credential-fn (creds-input id))))
       ; New user account with the Facebook user's email should be created
       (let [{:keys [fb-user/user]} (p/fb-user (d/db conn) id)]
@@ -117,7 +117,7 @@
           credential-fn (a/credential-fn conn)]
 
       (is (thrown-with-msg? ExceptionInfo
-                            #"User not activated."
+                            (re-pattern (.getMessage (a/ex-user-not-activated nil)))
                             (credential-fn (creds-input id fb-info-fn))))
       ;; A new fb user should be created and link to a new user account
       (let [fb-user (p/fb-user (d/db conn) id)]
@@ -150,7 +150,7 @@
           credential-fn (a/credential-fn conn)]
 
       (is (thrown-with-msg? ExceptionInfo
-                            #"New user"
+                            (re-pattern (.getMessage (a/ex-user-not-activated nil)))
                             (credential-fn
                               (with-meta {:uuid (str (:verification/uuid verification))}
                                          {::friend/workflow :form})))))))
@@ -160,7 +160,7 @@
     (let [conn (new-db nil)
           credential-fn (a/credential-fn conn)]
       (is (thrown-with-msg? ExceptionInfo
-                            #"Cannot log in"
+                            (re-pattern (.getMessage (a/ex-invalid-input nil)))
                             (credential-fn
                               (with-meta {:invalid :data}
                                          {::friend/workflow :form})))))))
