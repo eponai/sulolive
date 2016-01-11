@@ -43,37 +43,39 @@
 
 ;; -------- FB Credential function tests
 
-(deftest fb-user-and-user-account-both-exist
-  (testing "Fb user exists and is connected to an existing user account, should log in."
+(deftest fb-user-and-activated-user-account-with-email-exist
+  (testing "Fb user exists and is connected to an existing activated user account, should log in."
     (let [{:keys [email id]} (test-fb-info)
-          db-user (f/user->db-user email)
-          fb-user (f/fb-user-db-user id "access-token" db-user)
-          conn (new-db [db-user fb-user])
+          activated-user (assoc (f/user->db-user email) :user/status :user.status/activated)
+          fb-user (f/fb-user-db-user id "access-token" activated-user)
+          conn (new-db [activated-user fb-user])
           credential-fn (a/credential-fn conn)
           user-record (credential-fn (creds-input id))]
 
       ; We're authenticated.
       (is (= user-record
-             (a/auth-map-for-db-user (p/user (d/db conn) (:user/email db-user))))))))
+             (a/auth-map-for-db-user (p/user (d/db conn) (:user/email activated-user))))))))
 
 (deftest fb-user-exists-but-no-user-account-with-matching-email
   (testing "FB account exists, but a matching user account does not. Should prompt user to create an account
   (can happen if the FB account does not have an email)."
     (let [{:keys [_ id]} (test-fb-info)
-          fb-user (f/fb-user-db-user id "access-token" nil)
+          db-user (f/user->db-user)
+          fb-user (f/fb-user-db-user id "access-token" db-user)
           conn (new-db [fb-user])
           credential-fn (a/credential-fn conn)]
 
       (is (thrown-with-msg? ExceptionInfo
-                            #"No user account found, create a new one."
+                            #"User not activated."
                             (credential-fn
                               (creds-input id)))))))
 
-(deftest fb-user-not-exists-but-user-account-with-email-does
+(deftest fb-user-not-exist-but-activated-user-account-with-email-does
   (testing "The FB account does not exist, but a user account with the same email does.
   Should create a new fb-user and link to the existing account."
     (let [{:keys [email id]} (test-fb-info)
-          conn (new-db [(f/user->db-user email)])
+          activated-user (assoc (f/user->db-user email) :user/status :user.status/activated)
+          conn (new-db [activated-user])
           credential-fn (a/credential-fn conn)
           user-record (credential-fn (creds-input id))
           ; Entities addeed to the DB
@@ -89,21 +91,25 @@
       (is (= (:db/id (:fb-user/user fb-user))
              (:db/id db-user))))))
 
-(deftest fb-user-with-email-and-user-account-does-not-exist
+(deftest new-fb-user-has-email-email-and-user-account-does-not-exist
   (testing "Neither FB user (with email) or user account with the mathing email exists,
   create a new FB user and link to a new account."
-    (let [{:keys [_ id]} (test-fb-info)
+    (let [{:keys [email id]} (test-fb-info)
           conn (new-db nil)
           credential-fn (a/credential-fn conn)]
 
       ;TODO we might want to automatically create an ccount here and let the user login immediately?
       (is (thrown-with-msg? ExceptionInfo
-                            #"No user account found, create a new one."
-                            (credential-fn (creds-input id)))))))
+                            #"User not activated."
+                            (credential-fn (creds-input id))))
+      ; New user account with the Facebook user's email should be created
+      (let [{:keys [fb-user/user]} (p/fb-user (d/db conn) id)]
+        (is (= (:user/email (d/entity (d/db conn) (:db/id user)))
+               email))))))
 
 (deftest fb-user-without-email-does-not-exist
-  (testing "Fb user does not have an email and is trying to sign up.
-  Should be prompted th create an account with an email."
+  (testing "Fb user does not have an email and is trying to sign up. New fb user linked to a new user should be created.
+  Should be prompted to activate account."
     (let [fb-info-fn (fn [_ _]
                        (dissoc (test-fb-info) :email))
           {:keys [id]} (fb-info-fn nil nil)
@@ -111,8 +117,12 @@
           credential-fn (a/credential-fn conn)]
 
       (is (thrown-with-msg? ExceptionInfo
-                            #"No user account found, create a new one."
-                            (credential-fn (creds-input id fb-info-fn)))))))
+                            #"User not activated."
+                            (credential-fn (creds-input id fb-info-fn))))
+      ;; A new fb user should be created and link to a new user account
+      (let [fb-user (p/fb-user (d/db conn) id)]
+        (is fb-user)
+        (is (:fb-user/user fb-user))))))
 
 
 ;; ------ User verify email credential function tests.

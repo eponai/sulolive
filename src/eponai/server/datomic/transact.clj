@@ -39,15 +39,14 @@
                       db-budget])
       db-verification)))
 
-(defn new-fb-user
-  "Transact a new Facebook user into datomic, using a facebook user-id and an access-token recieved from Facebook.
+(defn link-fb-user [conn user-id access-token email]
+  (if-let [user (p/user (d/db conn) email)]
+    (let [fb-user (f/fb-user-db-user user-id access-token (:db/id user))]
+      (transact conn [fb-user]))
 
-  If db-user is provided, the Facebook account will be linked to that user."
-  ([conn user-id access-token]
-    (new-fb-user conn user-id access-token nil))
-  ([conn user-id access-token db-user]
-   (let [fb-user (f/fb-user-db-user user-id access-token db-user)]
-     (transact conn [fb-user]))))
+    (let [user (f/user->db-user email)
+          fb-user (f/fb-user-db-user user-id access-token (:db/id user))]
+      (transact conn [user fb-user (f/db-budget (:db/id user))]))))
 
 (defn currency-rates
   "Transact conversions into datomic.

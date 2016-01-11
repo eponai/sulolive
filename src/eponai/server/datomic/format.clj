@@ -5,11 +5,16 @@
             [eponai.common.format :as common.format]
             [eponai.server.datomic.pull :as p]))
 
-(defn user->db-user [email]
-  {:db/id       (d/tempid :db.part/user)
-   :user/uuid   (d/squuid)
-   :user/email  email
-   :user/status :user.status/new})
+(defn user->db-user
+  ([]
+    (user->db-user nil))
+  ([email]
+   (cond->
+     {:db/id       (d/tempid :db.part/user)
+      :user/uuid   (d/squuid)
+      :user/status :user.status/new}
+     email
+     (assoc :user/email email))))
 
 (defn password->db-password [user-entid bcrypt]
   {:db/id (d/tempid :db.part/user)
@@ -17,13 +22,11 @@
    :password/bcrypt bcrypt})
 
 (defn fb-user-db-user
-  [user-id access-token db-user]
-  (let [fb-user {:db/id         (d/tempid :db.part/user)
-                 :fb-user/id    user-id
-                 :fb-user/token access-token}]
-    (if db-user
-      (assoc fb-user :fb-user/user (:db/id db-user))
-      fb-user)))
+  [user-id access-token user-eid]
+  {:db/id         (d/tempid :db.part/user)
+   :fb-user/id    user-id
+   :fb-user/token access-token
+   :fb-user/user  user-eid})
 
 (defn ->db-email-verification [entity status]
   {:db/id                   (d/tempid :db.part/user)

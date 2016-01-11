@@ -54,44 +54,33 @@
         fb-user (p/fb-user db user_id)]
     (cond
       fb-user
-      ; If we already have a fb-user in the db, check if it's connected to a user account already
       (let [db-user (d/entity db (-> fb-user
                                      :fb-user/user
                                      :db/id))]
-        (println "FB user exits: " (:fb-user/id fb-user))
-        (cond
-          db-user
-          ; If the fb account is already connected to a user account, create an auth map and login.
+        (if (= (:user/status db-user)
+               :user.status/activated)
           (auth-map-for-db-user db-user)
-
-          ; If we do not have a connected account to the FB account, we check for an account that's using the same email.
-          (not db-user)
-          (let [{:keys [email]} (fb-info-fn user_id access_token)
-                db-user (p/user db email)]
-            (if db-user
-              ; If there's a user account with the same email, connect the FB account to that user, and then login.
-              (do
-                (println "User account found, connecting fb account..." db-user)
-                (t/add conn (:db/id fb-user) :fb-user/user (:db/id db-user))
-                (auth-map-for-db-user db-user))
-              ; If we don't have a matching user account, we need to prompt the person logging in to create an account.
-              (throw (ex-info "No user account found, create a new one."
-                              (new-user-for-fb-account user_id)))))))
-
+          (throw (ex-info "User not activated."
+                          {:new-user db-user}))))
       ; If we don't have a facebook user in the DB, check if there's an accout with a matching email.
       (not fb-user)
-      (let [{:keys [email]} (fb-info-fn user_id access_token)
-            db-user (p/user db email)]
+      (let [{:keys [email]} (fb-info-fn user_id access_token)]
         ; Create a new fb-user in the DB with the Facebook account trying to log in,
         ; connect the new fb-user to a user account with the same email in the database (if there is one).
         (println "Creating new fb-user: " user_id)
-        (t/new-fb-user conn user_id access_token db-user)
-        (if db-user
-          ; If there's already a user account using the same email, it's now connected and we can login
-          (auth-map-for-db-user db-user)
-          ; If there's no user account with this email, we need to prompt the user to create a new account.
-          (throw (ex-info "No user account found, create a new one."
-                          (new-user-for-fb-account user_id))))))))
+
+        (let [db-after-link (:db-after (t/link-fb-user conn user_id access_token email))
+              fb-user (p/fb-user db-after-link user_id)
+              user (d/entity db-after-link (-> fb-user
+                                               :fb-user/user
+                                               :db/id))]
+          (if (= (:user/status user)
+                 :user.status/activated)
+            ; If there's already a user account using the same email, it's now connected and we can login
+            (auth-map-for-db-user user)
+            ; If there's no user account with this email, we need to prompt the user to create a new account.
+            (throw (ex-info "User not activated."
+                            {:new-user user}))))))))
 
 (defmethod auth-map :create-account
   [conn {:keys [user-uuid user-email] :as params}]
