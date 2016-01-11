@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [merge])
   (:require [eponai.common.parser.read :as read]
             [eponai.common.parser.mutate :as mutate]
-
+            [taoensso.timbre :refer [debug error info]]
     #?(:clj [om.next.server :as om]
        :cljs [om.next :as om])
     #?(:clj  [datomic.api :as d]
@@ -40,9 +40,9 @@
        (let [user-id (get-in env [:auth :username])
              db (d/db (:state env))
              db (if user-id
-                  (do (prn "Using auth db")
+                  (do (debug "Using auth db for user:" user-id)
                       (filter/authenticated-db db user-id))
-                  (do (prn "using non auth db")
+                  (do (prn "Using non auth db")
                       (filter/not-authenticated-db db)))
              env (assoc env :db db)]
          (apply parser env args))))

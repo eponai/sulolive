@@ -1,5 +1,5 @@
 (ns eponai.common.format
-  (:require
+  (:require [taoensso.timbre :refer [debug error info warn]]
     #?@(:clj  [[clj-time.core :as t]
                [clj-time.format :as f]
                [clj-time.coerce :as c]]
@@ -20,7 +20,7 @@
                               (instance? js/Date date) (doto (goog.date.DateTime.)
                                                          (.setTime (.getTime date)))
                               :else (do
-                                      (prn "Warning: Using unknown date instance: " date)
+                                      (warn "Using unknown date instance: " date)
                                       date)))))
 
 (defn date->db-tx

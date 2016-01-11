@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [read])
   (:require [eponai.common.datascript :as eponai.datascript]
             [eponai.common.database.pull :as p]
+            [taoensso.timbre :refer [debug error info warn]]
     #?(:clj
             [eponai.server.datomic.pull :as server.pull])
     #?(:clj
@@ -58,7 +59,7 @@
      (cond
        (= "proxy" (namespace k))
        (proxy e k p)
-       :else (prn "WARN: Returning nil for read key: " k))))
+       :else (warn "Returning nil for parser read key: " k))))
 
 ;; -------- Readers for UI components
 
@@ -120,13 +121,13 @@
 ;                     {:error {:cause :invalid-fb-user}})}))
 
 (defmethod read :query/user
-  [{:keys [db query]} _ {:keys [uuid]}]
+  [{:keys [db query]} k {:keys [uuid]}]
   #?(:cljs {:value  (when (and (not (= uuid '?uuid))
                                (-> db :schema :verification/uuid))
                       (try
                         (p/pull db query [:user/uuid (f/str->uuid uuid)])
                         (catch :default e
-                          (prn "Error: " e)
+                          (error "Error for parser's read key:" k "error:" e)
                           {:error {:cause :invalid-verification}})))
             :remote (not (= uuid '?uuid))}
      :clj  {:value (when (not (= uuid '?uuid))
@@ -134,8 +135,8 @@
 
 ;; -------- Debug stuff
 
-(defn debug-read [{:keys [target] :as env} k params]
-  (prn "Reading: " {:key k :target target})
+(defn debug-read [env k params]
+  (debug "reading key:" k)
   (let [ret (read env k params)]
-    (prn {:read k :ret ret})
+    (debug "read key:" k "returned:" ret)
     ret))

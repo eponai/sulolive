@@ -3,6 +3,7 @@
            [eponai.common.format :as format]
            [eponai.common.validate :as validate]
            [eponai.common.database.transact :as transact]
+           [taoensso.timbre :refer [debug error info warn]]
    #?(:clj
            [eponai.server.api :as api])
 
@@ -62,7 +63,7 @@
 
 (defmethod mutate 'email/verify
   [{:keys [state]} _ {:keys [uuid]}]
-  (println "Verification verify: " uuid)
+  (debug "email/verify for uuid:" uuid)
   #?(:cljs {:remote true}
      :clj  {:action (fn []
                       (api/verify-email state uuid)
@@ -70,7 +71,7 @@
 
 (defmethod mutate 'signup/email
   [{:keys [state]} _ params]
-  (println "Transact signup: " params)
+  (debug "signup/email with params:" params)
   #?(:cljs {:remote true}
      :clj  {:action (fn []
                       {:email-chan (api/signin state (:input-email params))})}))
