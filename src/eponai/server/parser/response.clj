@@ -9,7 +9,7 @@
 ;; function to use with eponai.common.parser/post-process-parse
 (defmulti response-handler (fn [_ k _] k))
 (defmethod response-handler :default
-  [_ _ _]
+  [_ k _]
   (trace "no response-handler for key:" k)
   nil)
 

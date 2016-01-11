@@ -45,13 +45,10 @@
              (fn [db [eid]]
                   (not (some user-attrs (keys (d/entity db eid))))))))
 
-(defn user-db [db user-id]
+(defn authenticated-db [db user-id]
   (-> db
       (private-attr-filter)
       (user-or-public-entity-filter user-id)))
-
-(defn authenticated-db [db user-id]
-  (user-db db user-id))
 
 (defn not-authenticated-db [db]
   (-> db

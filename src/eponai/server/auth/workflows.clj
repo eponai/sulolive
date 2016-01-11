@@ -5,7 +5,8 @@
             [clojure.core.async :refer [go]]
             [eponai.server.auth.facebook :as fb]
             [ring.util.response :as r]
-            [ring.util.request :refer [path-info request-url]])
+            [ring.util.request :refer [path-info request-url]]
+            [taoensso.timbre :refer [debug error info]])
   (:import (clojure.lang ExceptionInfo)))
 
 (defn- redirect-login-failed [& kvs]
@@ -35,12 +36,12 @@
                                 (with-meta params
                                            {::friend/workflow :form}))]
               ; Successful login!
-              (println "Login successful: " (:username user-record))
+              (debug "Login successful: " (:username user-record))
               (workflows/make-auth user-record {::friend/workflow          :form
                                                 ::friend/redirect-on-auth? true}))
             (catch ExceptionInfo e
               (let [{:keys [activate-user]} (ex-data e)]
-                (println "Login failed. " (if activate-user "User not activated." "Invalid UUID."))
+                (debug "Login failed. " (if activate-user "User not activated." "Invalid UUID."))
                 (if activate-user
                   (redirect-activate-account {:uuid (:user/uuid activate-user)})
                   (redirect-login-failed :uuid (:uuid params))))))
@@ -60,13 +61,13 @@
       ; Check if we're in /login/fb otherwise skip this flow
       (when (= (path-info request)
                fb-login-uri)
-        (println "Facebook workflow.")
+        (debug "Facebook workflow.")
         (cond
           ; Facebook login succeeded, Facebook will redirect to /login/fb?code=somecode.
           ; Use the returned code and get/validate access token before authenticating.
           (:code params)
           (let [validated-token (fb/validated-token app-id app-secret (:code params) (request-url request))]
-            (println "Recieved validated token...")
+            (debug "Recieved validated token:" validated-token)
             (if (:error validated-token)
               ; Redirect back to the login page on invalid token, something went wrong.
               (redirect-login-failed)
@@ -78,13 +79,13 @@
                                     (with-meta validated-token
                                                {::friend/workflow :facebook}))]
                   ; Successful login!
-                  (println "Login successful: " (:username user-record))
+                  (debug "Login successful for user:" (:username user-record))
                   (workflows/make-auth user-record {::friend/workflow          :facebook
                                                     ::friend/redirect-on-auth? true}))
                 (catch ExceptionInfo e
                   ; The user is not activated. Redirect to activate account
                   (let [{:keys [activate-user]} (ex-data e)]
-                    (println "No activated user account for: " activate-user "... Redirecting...")
+                    (debug "No activated user account for user:" activate-user "redirecting user to activate account.")
                     (redirect-activate-account activate-user))))))
 
           ; User cancelled or denied login, redirect back to the login page.
@@ -94,7 +95,7 @@
           ; Redirect to Facebook login dialog
           true
           (do
-            (println "Redirecting to Facebook...")
+            (debug "Redirecting to Facebook")
             (fb/login-dialog app-id (request-url request))))))))
 
 (defn create-account

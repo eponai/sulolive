@@ -3,7 +3,8 @@
             [postal.core :as email]
             [datomic.api :as d]
             [environ.core :refer [env]]
-            [eponai.common.database.pull :as p]))
+            [eponai.common.database.pull :as p]
+            [taoensso.timbre :refer [debug error info]]))
 
 (defn- smtp []
   {:host (env :smtp-host)

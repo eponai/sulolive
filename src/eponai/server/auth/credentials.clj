@@ -8,7 +8,8 @@
             [eponai.server.datomic.transact :as t]
             [clj-time.coerce :as c]
             [clj-time.core :as time]
-            [eponai.server.api :as api])
+            [eponai.server.api :as api]
+            [taoensso.timbre :refer [debug error info]])
   (:import (clojure.lang ExceptionInfo)))
 
 ; ---- exceptions
@@ -58,7 +59,7 @@
 
       ; If we don't have a facebook user in the DB, check if there's an accout with a matching email.
       (let [{:keys [email]} (fb-info-fn user_id access_token)]
-        (println "Creating new fb-user: " user_id)
+        (debug "Creating new fb-user: " user_id)
         ;; Linking the FB user to u user account. If a user accunt with the same email exists,
         ;; it will be linked. Otherwise, a new user is created.
         (let [db-after-link (:db-after (t/link-fb-user conn user_id access_token email))
