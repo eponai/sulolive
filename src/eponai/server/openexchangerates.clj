@@ -1,6 +1,7 @@
 (ns eponai.server.openexchangerates
   (:require [clj-http.client :as client]
-            [clojure.data.json :as json]))
+            [clojure.data.json :as json]
+            [taoensso.timbre :refer [info error trace]]))
 
 (defn currencies-url
   "Get the open exchange rates api URL for fetching currencies
@@ -23,7 +24,7 @@
   "Get currency rates for the given date string of the form \"yy-MM-dd\" and the api key."
   [app-id]
   (fn [date-str]
-    (println "Posting currency-rates..." date-str)
+    (info "Posting currency-rates for date:" date-str)
     (when (and app-id date-str)
       (let [rates (json/read-str (:body (client/get (currency-rates-url app-id date-str))) :key-fn keyword)]
         (assoc rates :date date-str)))))

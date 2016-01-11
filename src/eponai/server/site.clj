@@ -6,7 +6,8 @@
             [eponai.server.middleware :as m]
             [ring.util.response :as r]
             [eponai.common.parser.util :as parser.util]
-            [eponai.server.parser.response :as parser.resp]))
+            [eponai.server.parser.response :as parser.resp]
+            [taoensso.timbre :refer [debug error trace]]))
 
 (defn html [& path]
   (-> (apply str path)
@@ -43,14 +44,22 @@
 
 (defn handle-parser-request
   [{:keys [::m/conn ::m/parser body] :as request}]
+  (debug "Handling parser request with body:" body)
   (parser
-    {:state conn
-     :auth (friend/current-authentication request)}
-    body))
+       {:state conn
+        :auth  (friend/current-authentication request)}
+       body))
+
+(defn trace-parser-response-handlers
+  "Wrapper with logging for parser.response/response-handler."
+  [env key params]
+  (debug "handling parser response for key:" key "value(keys only):" (keys params))
+  (trace "full parser response for key:" key "value:" params)
+  (parser.resp/response-handler env key params))
 
 (def handle-parser-response
   "Will call response-handler for each key value in the parsed result."
-  (parser.util/post-process-parse parser.resp/response-handler []))
+  (parser.util/post-process-parse trace-parser-response-handlers []))
 
 (defroutes
   user-routes

@@ -23,8 +23,7 @@
               :body    (str "Email: " address ". Click this link: " link)}
         status (email/send-message smtp body)]
 
-    (println "Sent verification email to uuid: " uuid)
-    (println "Email sent status: " status)
+    (debug "Sent verification email to uuid: " uuid "with status:" status)
     (if (= 0 (:code status))
       status
       (throw (ex-info (:message status) {:cause   ::email-error

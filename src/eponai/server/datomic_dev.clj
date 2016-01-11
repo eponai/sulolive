@@ -8,7 +8,8 @@
             [eponai.server.datomic.pull :as p]
             [cemerick.friend.credentials :as creds]
             [clojure.java.io :as io]
-            [eponai.common.database.transact :as transact])
+            [eponai.common.database.transact :as transact]
+            [taoensso.timbre :refer [debug error info]])
   (:import (java.util UUID)))
 
 (def currencies {:THB "Thai Baht"
@@ -47,7 +48,7 @@
                     :transaction/currency   "THB"
                     :transaction/created-at 1}])
 
-(def test-user "test-user@email.com")
+(def test-user-email "test-user@email.com")
 
 (defn create-new-inmemory-db
   ([] (create-new-inmemory-db "test-db"))
@@ -63,17 +64,17 @@
        slurp
        (edn/read-string {:readers *data-readers*})))
 
-(defn add-verified-user [conn username]
-  (server.transact/new-user conn username)
-  (println "New user created")
-  (let [user (p/user (d/db conn) username)
+(defn add-verified-user [conn email]
+  (server.transact/new-user conn email)
+  (debug "New user created with email:" email)
+  (let [user (p/user (d/db conn) email)
         verification (->> (p/verifications (d/db conn) user :user/email)
                           first
                           :db/id)]
     (server.transact/add conn verification :verification/status :verification.status/verified)))
 
-(defn add-transactions [conn username]
-  (let [{:keys [budget/uuid]} (p/budget (d/db conn) username)]
+(defn add-transactions [conn email]
+  (let [{:keys [budget/uuid]} (p/budget (d/db conn) email)]
     (->> transactions
          (map #(assoc % :transaction/budget uuid))
          (map format/user-transaction->db-entity)
@@ -92,17 +93,17 @@
 
 (defn add-data-to-connection [conn]
   (let [schema (read-schema-file)
-        username test-user]
+        email test-user-email]
     (d/transact conn schema)
-    (println "Schema added.")
-    (add-verified-user conn username)
-    (println "New user created and verified.")
+    (debug "Schema added.")
+    (add-verified-user conn email)
+    (debug "New user created and verified.")
     (add-currencies conn)
-    (println "Currencies added.")
-    (add-transactions conn username)
-    (println "User transactions added.")
+    (debug "Currencies added.")
+    (add-transactions conn email)
+    (debug "User transactions added.")
     (add-conversion-rates conn)
-    (println "Conversion rates added")))
+    (debug "Conversion rates added")))
 
 (defonce connection (atom nil))
 
@@ -111,23 +112,23 @@
     (try
       (d/connect uri)
       (catch Exception e
-        (prn (str "Exception:" e " when trying to connect to datomic=" uri))
-        (prn "Will try to set up inmemory db...")
+        (debug (str "Exception:" e " when trying to connect to datomic=" uri))
+        (debug "Will try to set up inmemory db...")
         (try
           (let [mem-conn (create-new-inmemory-db)]
             (add-data-to-connection mem-conn)
-            (prn "Successfully set up inmemory db!")
+            (debug "Successfully set up inmemory db!")
             mem-conn)
           (catch Exception e
-            (prn "Exception " e " when trying to set up inmemory db")))))))
+            (debug "Exception " e " when trying to set up inmemory db")))))))
 
 (defn connect!
   "Returns a connection. Caches the connection when it has successfully connected."
   []
-  (prn "Will try to set the database connection...")
+  (debug "Will try to set the database connection...")
   ;; Just set the connection once. Using an atom that's only defined once because,
   ;; there's a ring middleware which (seems to) redefine all vars, unless using defonce.
   (if-let [c @connection]
-    (do (prn "Already had a connection. Returning the old one: " c)
+    (do (debug "Already had a connection. Returning the old one: " c)
         c)
     (swap! connection create-connection)))

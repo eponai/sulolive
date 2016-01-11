@@ -3,12 +3,14 @@
             [datomic.api :as d]
             [eponai.server.datomic.transact :as t]
             [eponai.server.datomic.pull :as p]
-            [eponai.server.middleware :as m]))
+            [eponai.server.middleware :as m]
+            [taoensso.timbre :refer [debug error trace]]))
 
 ;; function to use with eponai.common.parser/post-process-parse
 (defmulti response-handler (fn [_ k _] k))
 (defmethod response-handler :default
   [_ _ _]
+  (trace "no response-handler for key:" k)
   nil)
 
 (defn post-currency-rates

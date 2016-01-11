@@ -8,7 +8,8 @@
             [eponai.server.http :as h]
             [clj-time.core :as time]
             [clj-time.coerce :as c]
-            [eponai.common.format :as f])
+            [eponai.common.format :as f]
+            [taoensso.timbre :refer [debug error info]])
   (:import (datomic.peer LocalConnection)))
 
 ; Actions
@@ -23,13 +24,13 @@
           email-chan (chan 1)]
       (if user
         (let [verification (t/email-verification conn user :verification.status/pending)]
-          (println "New verification " (:verification/uuid verification) "for user... " email)
+          (debug "New verification " (:verification/uuid verification) "for user:" email)
           (put! email-chan verification)
           email-chan)
         (let [verification (t/new-user conn email)]
-          (println "Craeting new user with email... " email " verification: " (:verification/uuid verification))
+          (debug "Creating new user with email:" email "verification:" (:verification/uuid verification))
           (put! email-chan verification)
-          (println "Done!")
+          (debug "Done creating new user with email:" email)
           email-chan)))
     (throw (ex-info "Trying to signup with nil email."
                     {:cause ::signup-error}))))
@@ -59,7 +60,7 @@
            (if (= (:verification/status verification)
                   :verification.status/pending)
              (do
-               (println "Successful verify")
+               (debug "Successful verify for uuid: " (:verification/uuid verification))
                (t/add conn (:db/id verification) :verification/status :verification.status/verified)
                (:verification/entity verification))
              (throw (ex "Invalid verification UUID")))
@@ -101,7 +102,7 @@
         ; the user is probably creating an account with a new email.
         ; Create a new verification and throw exception
         (when-not (seq verifications)
-          (println "User not verified for email: " email "... creating new verification.")
+          (debug "User not verified for email:" email "will create new verification.")
           (let [verification (t/email-verification conn user-db-id :verification.status/pending)]
             (throw (ex-info "Email not verified."
                             {:cause        ::authentication-error
@@ -111,7 +112,7 @@
 
         ; Activate this account and return the user entity
         (let [activated-db (:db-after (t/add conn user-db-id :user/status :user.status/activated))]
-          (println "Activated account!")
+          (debug "Activated account for user-uuid:" user-uuid)
           (pull/user activated-db email))))
 
 
