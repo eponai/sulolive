@@ -7,7 +7,8 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.clojure-test :refer-macros [defspec]]
             [cljs.test :refer-macros [deftest is]]
-            [om.next :as om]))
+            [om.next :as om]
+            [clojure.test.check.properties :as prop]))
 
 (defn init-state []
   {:parser (parser/parser)
