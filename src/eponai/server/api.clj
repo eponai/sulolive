@@ -19,6 +19,8 @@
 
   Returns channel with username and db-after user is added to use for email verification."
   [conn email]
+  {:pre [(instance? LocalConnection conn)
+         (string? email)]}
   (if email
     (let [user (p/user (d/db conn) email)
           email-chan (chan 1)]
@@ -46,6 +48,8 @@
 
   On success returns {:db/id some-id} for the user this verification belongs to."
   [conn uuid]
+  {:pre [(instance? LocalConnection conn)
+         (string? uuid)]}
   (let [ex (fn [msg] (ex-info msg
                               {:cause   ::verification-error
                                :status  ::h/unathorized
@@ -99,7 +103,7 @@
             verifications (pull/verifications new-db user-db-id :verification.status/verified)]
 
         ; There's no verification verified for this email on the user,
-        ; the user is probably creating an account with a new email.
+        ; the user is probably activating their account with a new email.
         ; Create a new verification and throw exception
         (when-not (seq verifications)
           (debug "User not verified for email:" email "will create new verification.")
@@ -121,16 +125,3 @@
                                         :data    {:uuid  user-uuid
                                                   :email email}
                                         :message "No user exists for UUID"}))))
-
-(defn post-currencies
-  "Post currencies into the database of the following form:
-  {:SEK \"Swedish Krona\"
-   :USD \"US Dollar\"}. "
-  [conn curs]
-  (t/currencies conn curs))
-
-(defn post-currency-info
-  "Post information about currencies with a map of the form:
-   {:SGD {:symbol \"SGD\", :symbol_native \"$\", :decimal_digits 2, :rounding 0.0, :code \"SGD\"}},"
-  [conn cur-infos]
-  (t/currency-infos conn cur-infos))

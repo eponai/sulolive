@@ -1,12 +1,10 @@
 (ns eponai.server.datomic_dev
   (:require [datomic.api :as d]
             [environ.core :refer [env]]
-            [eponai.server.parser.response :as parser.resp]
             [eponai.server.datomic.transact :as server.transact]
             [eponai.common.format :as format]
             [clojure.tools.reader.edn :as edn]
             [eponai.server.datomic.pull :as p]
-            [cemerick.friend.credentials :as creds]
             [clojure.java.io :as io]
             [eponai.common.database.transact :as transact]
             [taoensso.timbre :refer [debug error info]])
@@ -84,12 +82,10 @@
   (server.transact/currencies conn currencies))
 
 (defn add-conversion-rates [conn]
-  (parser.resp/post-currency-rates conn
-                                   (fn [date]
-                                     {:date date
-                                      :rates {:THB 36
-                                              :SEK 8.4}})
-                                   "2015-10-10"))
+  (server.transact/currency-rates conn
+                                  {:date "2015-10-10"
+                                   :rates {:THB 36
+                                           :SEK 8.4}}))
 
 (defn add-data-to-connection [conn]
   (let [schema (read-schema-file)

@@ -57,7 +57,9 @@
         (transact conn [user fb-user budget])))))
 
 (defn currency-rates
-  "Transact conversions into datomic.
+  "Transact conversions into datomic on the following form:
+  {:date \"2015-10-10\"
+  :rates {:SEK 8.333 :USD 1.0}}
 
   Throws ExceptionInfo if transaction failed."
   [conn rates]
@@ -65,13 +67,17 @@
     (transact conn db-rates)))
 
 (defn currencies
-  "Transact currencies into datomic.
+  "Transact currencies into datomic on the following form:
+    {:SEK \"Swedish Krona\"
+    :USD \"US Dollar\"}.
 
   Throws ExceptionInto if transaction failed."
   [conn currencies]
   (transact conn (f/curs->db-txs currencies)))
 
 (defn currency-infos
+  "Post information about currencies with a map of the form:
+ {:SGD {:symbol \"SGD\", :symbol_native \"$\", :decimal_digits 2, :rounding 0.0, :code \"SGD\"}},"
   [conn cur-infos]
   (let [db-cur-codes (->> (p/currencies (d/db conn))
                          (map #(keyword (:currency/code %)))
