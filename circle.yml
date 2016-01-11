@@ -6,6 +6,7 @@ machine:
     CLJS_BUILD_ID: release
     AWS_DEFAULT_REGION: us-east-1
     DOCKER_IMAGE: petterik/jourmoney:$CIRCLE_SHA1
+    TIMBRE_LEVEL: :error
 
 dependencies:
   pre:
