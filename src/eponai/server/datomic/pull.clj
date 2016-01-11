@@ -150,20 +150,20 @@
         eids (map :db/id coll)]
     (some #{eid} eids)))
 
-(defn all-entities
-  "Recursively expand all datomic refs in the given data into full entities and
-  return a sequence of all expended entities, including the entities in the given data."
-  [db data]
-  (loop [entities (set data)
-         expand (flatten (map #(expand-refs db %) entities))]
-    (if (seq expand)
-      (if (contains-entity? entities (first expand))
-        (recur entities
-               (rest expand))
-        (let [nested (expand-refs db (first expand))]
-          (recur (conj entities (first expand))
-                 (concat (rest expand) nested))))
-      (seq entities))))
+;(defn all-entities
+;  "Recursively expand all datomic refs in the given data into full entities and
+;  return a sequence of all expended entities, including the entities in the given data."
+;  [db data]
+;  (loop [entities (set data)
+;         expand (flatten (map #(expand-refs db %) entities))]
+;    (if (seq expand)
+;      (if (contains-entity? entities (first expand))
+;        (recur entities
+;               (rest expand))
+;        (let [nested (expand-refs db (first expand))]
+;          (recur (conj entities (first expand))
+;                 (concat (rest expand) nested))))
+;      (seq entities))))
 
 (defn- schema-required?
   "Return true if the entity is required to be passed with schema.
@@ -228,13 +228,18 @@
     (p-many db query ents)))
 
 (defn all-data
-  "Pulls all user transactions and currency conversions for the dates and
-  currencies used in those transactions."
-  [db user-email params]
-  (if-let [budget (budget db user-email)]
-    (let [txs (user-txs db (budget :db/id) params)
-          conversions (conversions db (map :db/id txs))]
-      (vec (all-entities db (concat txs conversions))))
-    (throw (ex-info "Invalid budget id." {:cause ::pull-error
-                                          :status ::e/unprocessable-entity
-                                          :message "Could not find a budget with the provided uuid."}))))
+  [db]
+  (q '[:find ?e
+       :where [? :db/id]]
+     db))
+;(defn all-data
+;  "Pulls all user transactions and currency conversions for the dates and
+;  currencies used in those transactions."
+;  [db user-email params]
+;  (if-let [budget (budget db user-email)]
+;    (let [txs (user-txs db (budget :db/id) params)
+;          conversions (conversions db (map :db/id txs))]
+;      (vec (all-entities db (concat txs conversions))))
+;    (throw (ex-info "Invalid budget id." {:cause ::pull-error
+;                                          :status ::e/unprocessable-entity
+;                                          :message "Could not find a budget with the provided uuid."}))))

@@ -51,7 +51,8 @@
 
                  ;; Testing
                  [devcards "0.2.0-8"]
-                 [org.clojure/test.check "0.8.1"]]
+                 [org.clojure/test.check "0.9.0"]]
+  :exclusions [[org.clojure/test.check]]
 
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]

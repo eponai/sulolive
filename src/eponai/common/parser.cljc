@@ -42,7 +42,7 @@
              db (if user-id
                   (do (debug "Using auth db for user:" user-id)
                       (filter/authenticated-db db user-id))
-                  (do (prn "Using non auth db")
+                  (do (debug "Using non auth db")
                       (filter/not-authenticated-db db)))
              env (assoc env :db db)]
          (apply parser env args))))

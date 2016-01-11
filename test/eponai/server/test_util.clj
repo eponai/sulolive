@@ -16,8 +16,3 @@
        (when txs
          (d/transact conn txs))
        conn))))
-
-(defn test-convs [date-str]
-  {:date  date-str
-   :rates {:SEK 8.333
-           :THB 231}})
