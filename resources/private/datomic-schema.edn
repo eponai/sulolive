@@ -1,5 +1,4 @@
 [
-
 ;; user
 
  {:db/id                 #db/id[:db.part/db]
@@ -22,29 +21,12 @@
   :db/ident              :user/status
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
-  :db/doc                "A user's unique identifier."
+  :db/doc                "A user's account status."
   :db.install/_attribute :db.part/db}
 
  ;; User status
  [:db/add #db/id[:db.part/user] :db/ident :user.status/new]
  [:db/add #db/id[:db.part/user] :db/ident :user.status/activated]
-
- ;; Credentials
- ;; Password
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :password/credential
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/one
-  :db/unique             :db.unique/identity
-  :db/doc                "Credential this password is used with."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :password/bcrypt
-  :db/valueType          :db.type/string
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Password encrypted using bcrypt."
-  :db.install/_attribute :db.part/db}
 
  ;; Facebook user
  {:db/id                 #db/id[:db.part/db]

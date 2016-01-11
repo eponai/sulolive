@@ -6,19 +6,17 @@
             [eponai.common.database.pull :as p]
             [eponai.server.api :as api]
             [eponai.server.datomic.format :as f]
-            [eponai.server.test-util :refer [new-db]])
+            [eponai.server.test-util :refer [new-db user-email]])
   (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
-
-(def email "user@email.com")
 
 ;;;; ------ api/verify-email tests ---------
 
 ; Success case
 (deftest verification-pending-and-not-expired
   (testing "Verification is pending, and was created less than 15 minutes ago. Should set status to :verification.status/verified"
-    (let [db-user (f/user->db-user email)
+    (let [db-user (f/user->db-user user-email)
           db-verification (f/->db-email-verification db-user :verification.status/pending)
           uuid (str (:verification/uuid db-verification))
           conn (new-db [db-user
@@ -37,7 +35,7 @@
 
 (deftest verify-uuid-already-verified
   (testing "Verification is already verified. Should throw exception for invalid UUID."
-    (let [db-user (f/user->db-user email)
+    (let [db-user (f/user->db-user user-email)
           db-verification (f/->db-email-verification db-user :verification.status/verified)
           uuid (str (:verification/uuid db-verification))
           conn (new-db [db-user
@@ -48,7 +46,7 @@
 
 (deftest verify-uuid-expired
   (testing "Verification is already verified. Should throw exception for invalid UUID."
-    (let [db-user (f/user->db-user email)
+    (let [db-user (f/user->db-user user-email)
           db-verification (f/->db-email-verification db-user :verification.status/expired)
           uuid (str (:verification/uuid db-verification))
           conn (new-db [db-user
@@ -59,7 +57,7 @@
 
 (deftest verify-more-than-15-minutes-ago-created-uuid
   (testing "Verification was created more than 15 minutes ago. Should be set to expired and throw exception."
-    (let [db-user (f/user->db-user email)
+    (let [db-user (f/user->db-user user-email)
           db-verification (f/->db-email-verification db-user :verification.status/pending)
           expired-verification (assoc db-verification :verification/created-at (c/to-long (t/ago (t/minutes 30))))
           uuid (str (:verification/uuid db-verification))
@@ -72,21 +70,21 @@
       (is (= (:verification/status (p/verification (d/db conn) uuid))
              :verification.status/expired)))))
 
-;;;; ------ api/create-account tests ---------
+;;;; ------ api/activate-account tests ---------
 
-(deftest verify-email-verified-and-account-activated
+(deftest activate-account-with-verified-email
   (testing "Email is verified for the user, account should be activated."
-    (let [db-user (f/user->db-user email)
+    (let [db-user (f/user->db-user user-email)
           db-verification (f/->db-email-verification db-user :verification.status/verified)
           conn (new-db [db-user
                         db-verification])
-          _ (api/activate-account conn (str (:user/uuid db-user)) email)]
-      (is (= (:user/status (p/user (d/db conn) email))
+          _ (api/activate-account conn (str (:user/uuid db-user)) user-email)]
+      (is (= (:user/status (p/user (d/db conn) user-email))
              :user.status/activated)))))
 
-(deftest verify-email-is-already-in-use
+(deftest activate-account-email-already-in-use
   (testing "Email is already in use, should throw exception"
-    (let [other-user (f/user->db-user email)
+    (let [other-user (f/user->db-user user-email)
           new-user (f/user->db-user "new@email.com")
           verification (f/->db-email-verification new-user :verification.status/verified)
           conn (new-db [other-user
@@ -95,4 +93,4 @@
 
       (is (thrown-with-msg? ExceptionInfo
                             #"Email already in use"
-                            (api/activate-account conn (str (:user/uuid new-user)) email))))))
+                            (api/activate-account conn (str (:user/uuid new-user)) user-email))))))

@@ -9,14 +9,14 @@
             [taoensso.timbre :refer [debug error info]])
   (:import (clojure.lang ExceptionInfo)))
 
-(defn- redirect-login-failed [& kvs]
+(defn redirect-login-failed [& kvs]
   (r/redirect (str "/signup?fail=Y" (when kvs "&") (url/map->query (apply hash-map kvs)))))
 
-(defn- redirect-activate-account [account-info]
+(defn redirect-activate-account [account-info]
   (r/redirect (str "/signup?new=Y&"
                    (url/map->query account-info))))
 
-(defn- redirect-verify-email []
+(defn redirect-verify-email []
   (r/redirect (str "/signup?verify=Y")))
 
 (defn form
@@ -102,13 +102,13 @@
   [send-email-fn]
   (fn [{:keys [params ::friend/auth-config] :as request}]
     (let [credential-fn (get auth-config :credential-fn)
-          login-uri (get auth-config :create-account-login-uri)]
+          login-uri (get auth-config :activate-account-uri)]
       (when (= (path-info request)
                login-uri)
         (try
           (let [user-record (credential-fn (with-meta params
-                                                      {::friend/workflow :create-account}))]
-            (workflows/make-auth user-record {::friend/workflow :create-account
+                                                      {::friend/workflow :activate-account}))]
+            (workflows/make-auth user-record {::friend/workflow :activate-account
                                               ::friend/redirect-on-auth? true}))
           (catch ExceptionInfo e
             (let [{:keys [verification]} (ex-data e)]

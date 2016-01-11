@@ -114,8 +114,10 @@
 
 
 ;; ------ User verify email credential function tests.
+;; Covering everything relevat for :form credential-fn.
+;; More detailed cases are covered for api/verify-email in api-test.clj
 
-(deftest user-and-activated
+(deftest user-verifies-and-is-activated
   (testing "User verifies their email and is already activated, return auth map"
     (let [user (assoc (f/user->db-user email) :user/status :user.status/activated)
           verification (f/->db-email-verification user :verification.status/pending)
@@ -152,3 +154,29 @@
                             (credential-fn
                               (with-meta {:invalid :data}
                                          {::friend/workflow :form})))))))
+
+;; ------ User activate account credential function tests.
+;; Covering everything relevat for :form credential-fn.
+;; More detailed cases are covered for api/activate-account in api-test.clj
+
+(deftest user-activates-account-with-verified-email
+  (testing "User activates account with their email verified."
+    (let [user (f/user->db-user email)
+          verification (f/->db-email-verification user :verification.status/verified)
+          conn (new-db [user
+                        verification])
+          credential-fn (a/credential-fn conn)]
+      (is (= (credential-fn (with-meta {:user-uuid  (str (:user/uuid user))
+                                        :user-email (:user/email user)}
+                                       {::friend/workflow :activate-account}))
+             (a/auth-map-for-db-user (p/user (d/db conn) email)))))))
+
+(deftest user-activates-account-with-invalid-input
+  (testing "Invalid input is coming in to the credential fn, should throw exception."
+    (let [conn (new-db)
+          credential-fn (a/credential-fn conn)]
+      (is (thrown-with-msg? ExceptionInfo
+                            (re-pattern (.getMessage (a/ex-invalid-input nil)))
+                            (credential-fn
+                              (with-meta {:invalid :data}
+                                         {::friend/workflow :activate-account})))))))

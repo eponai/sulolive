@@ -74,12 +74,12 @@
             (throw (ex-user-not-activated user))))))
     (throw (ex-invalid-input params))))
 
-(defmethod auth-map :create-account
+(defmethod auth-map :activate-account
   [conn {:keys [user-uuid user-email] :as params}]
   (if (and user-uuid user-email)
     (let [user (api/activate-account conn user-uuid user-email)]
       (auth-map-for-db-user user))
-    (throw ex-invalid-input)))
+    (throw (ex-invalid-input params))))
 
 (defn credential-fn
   "Create a credential fn with a db to pull user credentials.
