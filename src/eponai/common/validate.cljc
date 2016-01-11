@@ -1,4 +1,5 @@
 (ns eponai.common.validate
+  (:require [clojure.string :as s])
   #?(:clj
       (:import [clojure.lang ExceptionInfo])))
 
@@ -14,7 +15,7 @@
   "Validate with the given message and function on the input args.
   Throws an ex-info if validation failed."
   [msg f & args]
-  (let [data {:fn f :params args}]
+  (let [data {:fn (str f) :params (s/join " " args)}]
     (try
       (if (apply f args)
         true
@@ -33,5 +34,5 @@
                           :transaction/currency
                           :transaction/created-at
                           #?(:clj :transaction/budget)}]
-    (validate (str "user tx: " user-tx)
+    (validate (str "user tx: " user-tx " had nil keys for " (filterv #(nil? (get user-tx %)) required-fields))
               every? #(some? (get user-tx %)) required-fields)))

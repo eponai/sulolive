@@ -1,6 +1,6 @@
 (ns eponai.client.parser.merge
   (:require [datascript.core :as d]
-            [taoensso.timbre :refer-macros [debug error trace]]))
+            [taoensso.timbre :refer-macros [info debug error trace]]))
 
 (defmulti merge-novelty (fn [_ k _] k))
 (defmethod merge-novelty :default
@@ -19,3 +19,10 @@
     (d/transact new-conn current-entities)
     (reset! state @new-conn))
     :dissoc)
+
+(defmethod merge-novelty 'transaction/create
+  [_ _ novelty]
+  (when-let [err (:om.next/error novelty)]
+    (error "error from transaction/create:" err)
+    (info "TODO: Do something about transaction/create errors!")
+    :dissoc))

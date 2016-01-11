@@ -44,7 +44,7 @@
 
 (defn handle-parser-request
   [{:keys [::m/conn ::m/parser body] :as request}]
-  (debug "Handling parser request with body:" body)
+  (debug "Handling parser request with body:" (into [] body))
   (parser
        {:state conn
         :auth  (friend/current-authentication request)}
@@ -53,7 +53,7 @@
 (defn trace-parser-response-handlers
   "Wrapper with logging for parser.response/response-handler."
   [env key params]
-  (debug "handling parser response for key:" key "value(keys only):" (keys params))
+  (debug "handling parser response for key:" key "use logging level :trace to see the value for this key.")
   (trace "full parser response for key:" key "value:" params)
   (parser.resp/response-handler env key params))
 
