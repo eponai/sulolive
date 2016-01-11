@@ -1,5 +1,5 @@
 (ns eponai.common.format
-  (:require [taoensso.timbre :refer [debug error info warn]]
+  (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
     #?@(:clj  [[clj-time.core :as t]
                [clj-time.format :as f]
                [clj-time.coerce :as c]]

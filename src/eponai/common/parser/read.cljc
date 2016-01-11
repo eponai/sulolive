@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [read])
   (:require [eponai.common.datascript :as eponai.datascript]
             [eponai.common.database.pull :as p]
-            [taoensso.timbre :refer [debug error info warn]]
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
     #?(:clj
             [eponai.server.datomic.pull :as server.pull])
     #?(:clj

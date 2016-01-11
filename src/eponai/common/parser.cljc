@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [merge])
   (:require [eponai.common.parser.read :as read]
             [eponai.common.parser.mutate :as mutate]
-            [taoensso.timbre :refer [debug error info]]
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info]]
     #?(:clj [om.next.server :as om]
        :cljs [om.next :as om])
     #?(:clj  [datomic.api :as d]
