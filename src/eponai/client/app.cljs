@@ -57,5 +57,4 @@
 
 (defn run []
   (info "Run called in: " (namespace ::foo))
-  (timbre/set-level! :debug)
   (initialize-app (init-conn)))
