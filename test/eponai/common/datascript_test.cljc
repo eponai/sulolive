@@ -62,8 +62,7 @@
 
 (defspec entities-can-be-assigned-temp-ids
   10
-  (prop/for-all [[refs entities] 
-                 (gen/bind  
+  (prop/for-all [a (gen/bind
                    (gen/not-empty (gen/vector gen/nat))
                    (fn [ids] 
                      (gen/bind
@@ -76,7 +75,8 @@
                                                 {}
                                                 (map vector refs ids))]
                            (gen/return [refs (conj ref-entities referrer)]))))))]
-                (let [schema (reduce (fn [m k] (assoc m k {:db/valueType :db.type/ref}))
+                (let [[refs entities] a
+                      schema (reduce (fn [m k] (assoc m k {:db/valueType :db.type/ref}))
                                      {} refs)
                       conn (d/create-conn schema)
                       temp-entities (budget.d/db-id->temp-id (set refs) entities)]
