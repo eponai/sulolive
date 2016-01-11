@@ -1,11 +1,11 @@
-(ns eponai.server.credentials-test
+(ns eponai.server.auth.credentials-test
   (:require [cemerick.friend :as friend]
             [clojure.test :refer :all]
             [datomic.api :as d]
             [eponai.server.datomic.format :as f]
             [eponai.server.auth.credentials :as a]
             [eponai.server.datomic.pull :as p]
-            [eponai.server.api :as api])
+            [eponai.server.test-util :refer [new-db]])
   (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
@@ -28,18 +28,6 @@
                :access_token "access-token"
                :fb-info-fn   fb-info-fn}
               {::friend/workflow :facebook})))
-
-(defn- new-db
-  "Creates an empty database and returns the connection."
-  [txs]
-  (let [uri "datomic:mem://test-db"]
-    (d/delete-database uri)
-    (d/create-database uri)
-    (let [conn (d/connect uri)]
-      (d/transact conn schema)
-      (when txs
-        (d/transact conn txs))
-      conn)))
 
 ;; -------- FB Credential function tests
 
@@ -95,7 +83,7 @@
   (testing "Neither FB user (with email) or user account with the mathing email exists,
   create a new FB user and link to a new account."
     (let [{:keys [email id]} (test-fb-info)
-          conn (new-db nil)
+          conn (new-db)
           credential-fn (a/credential-fn conn)]
 
       ;TODO we might want to automatically create an ccount here and let the user login immediately?
@@ -113,7 +101,7 @@
     (let [fb-info-fn (fn [_ _]
                        (dissoc (test-fb-info) :email))
           {:keys [id]} (fb-info-fn nil nil)
-          conn (new-db nil)
+          conn (new-db)
           credential-fn (a/credential-fn conn)]
 
       (is (thrown-with-msg? ExceptionInfo
@@ -157,7 +145,7 @@
 
 (deftest user-verifies-nil-uuid
   (testing "User tries to verify a nil UUID. Throw exception"
-    (let [conn (new-db nil)
+    (let [conn (new-db)
           credential-fn (a/credential-fn conn)]
       (is (thrown-with-msg? ExceptionInfo
                             (re-pattern (.getMessage (a/ex-invalid-input nil)))

@@ -1,28 +1,17 @@
 (ns eponai.server.api-test
-  (:require [clojure.test :refer :all]
+  (:require [clj-time.core :as t]
+            [clj-time.coerce :as c]
+            [clojure.test :refer :all]
             [datomic.api :as d]
+            [eponai.common.database.pull :as p]
             [eponai.server.api :as api]
             [eponai.server.datomic.format :as f]
-            [clj-time.core :as t]
-            [eponai.common.database.pull :as p]
-            [clj-time.coerce :as c])
+            [eponai.server.test-util :refer [new-db]])
   (:import (clojure.lang ExceptionInfo)))
 
 (def schema (read-string (slurp "resources/private/datomic-schema.edn")))
 
 (def email "user@email.com")
-
-(defn- new-db
-  "Creates an empty database and returns the connection."
-  [txs]
-  (let [uri "datomic:mem://test-db"]
-    (d/delete-database uri)
-    (d/create-database uri)
-    (let [conn (d/connect uri)]
-      (d/transact conn schema)
-      (when txs
-        @(d/transact conn txs))
-      conn)))
 
 ;;;; ------ api/verify-email tests ---------
 
@@ -41,7 +30,7 @@
 ; Failure cases
 (deftest verify-uuid-does-not-exist
   (testing "Verification UUID does not exist. Should throw exception for invalid UUID."
-    (let [conn (new-db nil)]
+    (let [conn (new-db)]
       (is (thrown-with-msg? ExceptionInfo
                             #"Verification UUID does not exist"
                             (api/verify-email conn (str (d/squuid))))))))
