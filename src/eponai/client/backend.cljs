@@ -35,6 +35,13 @@
       {:keys ks
        :next (:db-after @(d/transact conn temp-id-novelty))})))
 
+(defn- popup-window-with-body [body]
+  (let [error-window (.open js/window "" "_blank" "status=0,scrollbars=1, location=0")]
+    (try
+      (.. error-window -document (write body))
+      (finally
+        (.. error-window -document close)))))
+
 (defn send!
   [path]
   (fn [{:keys [remote]} cb]
@@ -49,22 +56,25 @@
         (try
           (let [url (str "/api" path)
                 {:keys [body status headers]} (<! (post url {:transit-params remote}))]
-            (if (<= 200 status 299)
+            (cond
+              ;; Pop up window with the text/html
+              ;; Should only really happen in development...?
+              (s/starts-with? (get headers "content-type") "text/html")
+              (popup-window-with-body body)
+
+              (<= 200 status 299)
               (do
                 (debug "Recieved response from remote:" :remote "respone(keys only):" (keys body) "status:" status)
                 (trace "Whole response:" body)
                 (cb body))
-              (do
-                (if (s/starts-with? (get headers "content-type") "text/html")
-                  (do (let [error-window (.open js/window "" "_blank" "status=0,scrollbars=1, location=0")]
-                        (.write (.-document error-window) body)
-                        (.close (.-document error-window))))
-                  (throw (ex-info "Not 2xx response remote."
-                                  {:remote :remote
-                                   :status status
-                                   :url    url
-                                   :body   body
-                                   :TODO   "Handle HTTP errors better."}))))))
+
+              :else
+              (throw (ex-info "Not 2xx response remote."
+                              {:remote :remote
+                               :status status
+                               :url    url
+                               :body   body
+                               :TODO   "Handle HTTP errors better."}))))
           (catch :default e
             (trace "Error when posting query to remote:" :remote "error:" e)
             (throw e)))))))
