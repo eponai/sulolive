@@ -29,4 +29,5 @@
                 :input-description gen/string-alphanumeric
                 :input-tags (gen-tags)
                 :input-created-at gen/pos-int
-                :input-uuid gen/uuid))
+                :input-uuid gen/uuid
+                :input-budget gen/uuid))

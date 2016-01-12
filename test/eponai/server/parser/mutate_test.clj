@@ -16,14 +16,16 @@
     conn))
 
 (defspec
-  transaction-created-invalid-data-not-submitted
+  transaction-created-submitted-to-datomic
   10
   (prop/for-all
     [transaction (gen-transaction)]
 
     ;; Create new conn with currency transacted.
     (let [conn (new-db [{:db/id         (d/tempid :db.part/user)
-                         :currency/code (:input-currency transaction)}])
+                         :currency/code (:input-currency transaction)}
+                        {:db/id       (d/tempid :db.part/user)
+                         :budget/uuid (:input-budget transaction)}])
           parsed (site/handle-parser-request
                    (session-request conn `[(transaction/create ~transaction)]))
           result (get-in parsed ['transaction/create :result])

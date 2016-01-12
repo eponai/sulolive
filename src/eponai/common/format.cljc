@@ -61,9 +61,9 @@
   (let [conv-fn-map {:transaction/currency (fn [c] [:currency/code c])
                      :transaction/date     (fn [d] (date-str->db-tx d))
                      :transaction/tags     (fn [t] (tags->db-tx t))
-                     :transaction/amount   (fn [a] #?(:clj (bigint a)
+                     :transaction/amount   (fn [a] #?(:clj  (bigint a)
                                                       :cljs (cljs.reader/read-string a)))
-                     #?@(:clj [:transaction/budget (fn [b] [:budget/uuid b])])}
+                     :transaction/budget (fn [b] [:budget/uuid b])}
         update-fn (fn [m k] (update m k (conv-fn-map k)))]
     (assoc (reduce update-fn user-tx (keys conv-fn-map))
       :db/id (d/tempid :db.part/user))))

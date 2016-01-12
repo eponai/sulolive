@@ -17,8 +17,7 @@
   (query [_]
     [:datascript/schema
      {:proxy/header (om/get-query Header)}
-     {:proxy/budgets (om/get-query AllBudgets)}
-     ])
+     {:proxy/budgets (om/get-query AllBudgets)}])
   Object
   (render
     [this]

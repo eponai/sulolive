@@ -44,11 +44,10 @@
                    :input-tags        :transaction/tags
                    :input-currency    :transaction/currency
                    :input-created-at  :transaction/created-at
-                   :input-uuid        :transaction/uuid}
+                   :input-uuid        :transaction/uuid
+                   :input-budget      :transaction/budget}
           user-tx (rename-keys params renames)
-          #?@(:clj [user-tx (assoc user-tx :transaction/budget
-                                           (:budget/uuid (server.pull/budget db (:username auth))))
-                    currency-chan (chan 1)])
+          #?@(:clj [currency-chan (chan 1)])
           _ (validate/valid-user-transaction? user-tx)
           db-tx (format/user-transaction->db-entity user-tx)]
       (transact/transact state [db-tx])

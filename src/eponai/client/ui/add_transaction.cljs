@@ -57,23 +57,31 @@
 (defui AddTransaction
   static om/IQuery
   (query [_]
-    [{:query/all-currencies [:currency/code]}])
+    [{:query/all-currencies [:currency/code]}
+     {:query/all-budgets [:budget/uuid]}])
   Object
-  (initLocalState [_]
-    {:input-date (js/Date.)
-     :input-tags []})
+  (initLocalState [this]
+    (let [{:keys [query/all-currencies
+                  query/all-budgets]} (om/props this)]
+      {:input-date (js/Date.)
+       :input-tags []
+       :input-currency (-> all-currencies
+                           first
+                           :currency/code)
+       :input-budget (-> all-budgets
+                         first
+                         :budget/uuid)}))
   (render
     [this]
-    (let [{:keys [query/all-currencies]} (om/props this)
+    (let [{:keys [query/all-currencies
+                  query/all-budgets]} (om/props this)
           {:keys [input-amount input-currency input-title input-date
-                  input-tags input-tag]}
+                  input-tags input-tag input-budget]}
           ;; merging state with props, so that we can test the states
           ;; with devcards
           (merge (om/props this)
-                 (om/get-state this))
-          input-currency (if input-currency input-currency (-> all-currencies
-                                                               first
-                                                               :currency/code))]
+                 (om/get-state this))]
+      (println "budgets: " all-budgets)
       (html
         [:div#add-transaction-modal
          {:class "panel panel-default"}
@@ -81,7 +89,20 @@
           "Add transaction"]
          [:div
           {:class "form-group panel-body"}
+          [:label.form-control-static
+           {:for "budget-input"}
+           "Sheet:"]
 
+          [:select.form-control#budget-input
+           {:on-change (on-change this :input-budget)
+            :type      "text"
+            :default-value     input-budget}
+           (->> all-budgets
+                (map
+                  (fn [budget]
+                    [:option
+                     {:value (:budget/uuid budget)}
+                     (str (:budget/uuid budget))])))]
 
           [:label.form-control-static
            {:for "amount-input"}
@@ -173,11 +194,12 @@
                                          (assoc :input-uuid (d/squuid))
                                          (assoc :input-created-at (.getTime (js/Date.)))
                                          (assoc :input-currency input-currency)
+                                         (assoc :input-budget input-budget)
                                          (dissoc :input-tag)
                                          (update :input-tags
                                                  (fn [tags]
                                                    (map :tag/name tags))))))
-                                :query/all-dates])})
+                                :query/all-budgets])})
            "Save"]]
          ]))))
 
