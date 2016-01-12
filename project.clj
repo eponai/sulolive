@@ -25,6 +25,7 @@
                  ; ring helpers
                  [amalloy/ring-gzip-middleware "0.1.3"]
                  [ring/ring-core "1.4.0"]
+                 [ring/ring-devel "1.4.0"]
                  [ring/ring-jetty-adapter "1.4.0"]
                  [ring/ring-json "0.4.0"]
                  [ring/ring-defaults "0.1.5"]

@@ -9,6 +9,7 @@
             [eponai.server.datomic_dev :refer [connect!]]
             [eponai.server.site :refer [site-routes api-routes]]
             [eponai.server.middleware :as m]
+            [ring.middleware.reload :as reload]
             [ring.adapter.jetty :as jetty]
             [taoensso.timbre :refer [debug error info]]))
 
@@ -51,17 +52,23 @@
     (alter-var-root (var app) call-app*))
   (info "Done initializing server."))
 
-(defn -main [& args]
-  (init)
-  (let [default-port 3000
-        port (try
-               (Long/parseLong (env :port))
-               (catch Exception e
-                 default-port))]
-    ;; by passing (var app) to run-jetty, it'll be forced to
-    ;; evaluate app as code changes.
-    (info "Using port: " port)
-    (jetty/run-jetty (var app) {:port port})))
+(defn start-server
+  ([] (var app) {})
+  ([handler opts]
+   (init)
+   (let [default-port 3000
+         port (try
+                (Long/parseLong (env :port))
+                (catch Exception e
+                  default-port))]
+     ;; by passing (var app) to run-jetty, it'll be forced to
+     ;; evaluate app as code changes.
+     (info "Using port: " port)
+     (jetty/run-jetty handler (merge {:port port}
+                                     opts)))))
+
+(defn -main [& _]
+  (start-server))
 
 (defn main-debug
   "For repl-debug use.
@@ -69,4 +76,5 @@
   The jetty-server will block the current thread, so
   we just wrap it in something dereffable."
   []
-  (future (-main)))
+  (start-server (reload/wrap-reload (var app))
+                {:join? false}))
