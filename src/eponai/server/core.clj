@@ -78,11 +78,8 @@
   The jetty-server will block the current thread, so
   we just wrap it in something dereffable."
   []
-  (letfn [(wrap-skip-error [handler]
-            (fn [request]
-              (handler (assoc request ::m/skip-wrap-error true))))]
-    (start-server (-> (var app)
-                      wrap-skip-error
-                      (prone/wrap-exceptions {:app-namespaces ["eponai"]})
-                      reload/wrap-reload)
-                 {:join? false})))
+  (start-server (-> (var app)
+                    (m/wrap-state {::m/skip-wrap-error true})
+                    (prone/wrap-exceptions {:app-namespaces ["eponai"]})
+                    reload/wrap-reload)
+                {:join? false}))

@@ -9,11 +9,10 @@
   (ns.repl/disable-reload!)
   (prn "****************************************************")
   (prn "                REPL TIPS AND TRICKS:")
-  (prn "* (refresh) to reload all namespaces")
-  (prn "* (start-server) to start the server")
-  (prn "* (set-level level) to set logger level")
-  (prn "  where level can be :debug :error :trace etc..")
-  (prn "* eponai.server.core is aliased :as core")
+  (prn " (refresh) to reload all namespaces")
+  (prn " (start-server) to start the server")
+  (prn " (set-level level) to set logger level")
+  (prn " eponai.server.core is aliased :as core")
   (prn "****************************************************"))
 
 (defn stop [server]
@@ -22,12 +21,7 @@
 (def server-atom (atom nil))
 
 (defn start-server []
-  (reset! server-atom (core/main-debug))
-  (prn "****************************************************")
-  (prn "Started server!")
-  (prn "Run (stop-server) to stop the server")
-  (prn "****************************************************")
-  @server-atom)
+  (reset! server-atom (core/main-debug)))
 
 (defn stop-server []
   (stop @server-atom))
@@ -44,3 +38,7 @@
     (start-server)))
 
 (start-server)
+(prn "****************************************************")
+(prn " Started server!")
+(prn " Run (stop-server) to stop the server")
+
