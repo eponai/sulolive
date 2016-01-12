@@ -58,7 +58,8 @@
   static om/IQuery
   (query [_]
     [{:query/all-currencies [:currency/code]}
-     {:query/all-budgets [:budget/uuid]}])
+     {:query/all-budgets [:budget/uuid
+                          :budget/name]}])
   Object
   (initLocalState [this]
     (let [{:keys [query/all-currencies
@@ -102,7 +103,7 @@
                   (fn [budget]
                     [:option
                      {:value (:budget/uuid budget)}
-                     (str (:budget/uuid budget))])))]
+                     (or (:budget/name budget) "Untitled")])))]
 
           [:label.form-control-static
            {:for "amount-input"}

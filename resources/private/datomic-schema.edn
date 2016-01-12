@@ -128,6 +128,13 @@
   :db/cardinality        :db.cardinality/one
   :db.install/_attribute :db.part/db}
 
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :budget/created-at
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Timestamp of when the budget was created."
+  :db.install/_attribute :db.part/db}
+
   ;; transactions
 
  {:db/id                 #db/id[:db.part/db]

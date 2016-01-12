@@ -34,6 +34,13 @@
    :date/day       (t/day date)
    :date/timestamp (c/to-long date)})
 
+(defn budget->db-tx [user-eid input-uuid input-name]
+  {:db/id             (d/tempid :db.part/user)
+   :budget/name       input-name
+   :budget/uuid       input-uuid
+   :budget/created-by user-eid
+   :budget/created-at (c/to-long (t/now))})
+
 (defn date-str->db-tx
   "Returns a LocalDateTime for the string of format 'yyy-MM-dd',
   given a datomic id function and partition (e.g. datomic.api/tempid
@@ -63,7 +70,7 @@
                      :transaction/tags     (fn [t] (tags->db-tx t))
                      :transaction/amount   (fn [a] #?(:clj  (bigint a)
                                                       :cljs (cljs.reader/read-string a)))
-                     :transaction/budget (fn [b] [:budget/uuid b])}
+                     :transaction/budget   (fn [b] [:budget/uuid (str->uuid (str b))])}
         update-fn (fn [m k] (update m k (conv-fn-map k)))]
     (assoc (reduce update-fn user-tx (keys conv-fn-map))
       :db/id (d/tempid :db.part/user))))

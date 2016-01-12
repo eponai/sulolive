@@ -1,16 +1,19 @@
 (ns eponai.common.parser.mutate
- (:require [clojure.set :refer [rename-keys]]
-           [eponai.common.format :as format]
-           [eponai.common.validate :as validate]
-           [eponai.common.database.transact :as transact]
-           [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
-   #?(:clj
-           [eponai.server.api :as api])
+  (:require [clojure.set :refer [rename-keys]]
+            [eponai.common.format :as format]
+            [eponai.common.validate :as validate]
+            [eponai.common.database.transact :as transact]
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
+    #?(:clj
+            [eponai.server.api :as api])
 
-   #?(:clj [clojure.core.async :refer [go >! chan]])
-  #?(:clj [eponai.server.datomic.pull :as server.pull])
-  #?(:cljs [datascript.core :as d])
-  #?(:cljs [om.next :as om])))
+    #?(:clj
+            [clojure.core.async :refer [go >! chan]])
+    #?(:clj
+            [eponai.server.datomic.pull :as server.pull])
+    #?(:cljs [datascript.core :as d])
+    #?(:cljs [om.next :as om])
+            [eponai.common.format :as f]))
 
 (defmulti mutate (fn [_ k _] k))
 
@@ -60,13 +63,15 @@
   {:action (transaction-create env k params)
    #?@(:cljs [:remote true])})
 
-(defmethod mutate 'email/verify
-  [{:keys [state]} _ {:keys [uuid]}]
-  (debug "email/verify for uuid:" uuid)
+(defmethod mutate 'budget/create
+  [{:keys [state auth]} _ {:keys [input-uuid input-budget-name]}]
+  (debug "budget/create for uuid:" input-uuid)
   #?(:cljs {:remote true}
      :clj  {:action (fn []
-                      (api/verify-email state uuid)
-                      uuid)}))
+                      (transact/transact state [(f/budget->db-tx [:user/uuid (:username auth)]
+                                                                 input-uuid
+                                                                 input-budget-name)])
+                      true)}))
 
 (defmethod mutate 'signup/email
   [{:keys [state]} _ params]

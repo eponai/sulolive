@@ -63,7 +63,7 @@
   (let [#?@(:clj  [eids (p/budgets db (:username auth))]
             ;; We don't have the auth UUID in the client,
             ;; so fetch all budgets since they only belong to the current user anyway.
-            :cljs [eids (p/all db '[[?e :budget/created-by]])])]
+            :cljs [eids (p/all db '[[?e :budget/uuid]])])]
     {:value (p/pull-many db query eids)
      :remote true}))
 

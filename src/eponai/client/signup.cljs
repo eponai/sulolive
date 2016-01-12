@@ -13,9 +13,6 @@
 
 (enable-console-print!)
 
-(defn on-click-create-account []
-  (fn []))
-
 (defn on-input-change [this k]
   #(om/update-state! this assoc k (.-value (.-target %))))
 
@@ -28,7 +25,6 @@
       {:input-email email}))
   (render [this]
     (let [{:keys [input-email]:as st} (om/get-state this)]
-      (println "State " st)
       (html
         [:div
          [:label
@@ -65,14 +61,12 @@
 (defui CreateAccount
   Object
   (initLocalState [this]
-    (let [{:keys [full-name email] :as props} (om/props this)]
-      (println "Initing state: " props)
+    (let [{:keys [full-name email]} (om/props this)]
       {:input-email email
        :input-name full-name}))
   (render [this]
     (let [{:keys [::fixed-email user-uuid]} (om/props this)
           {:keys [input-name input-email]} (om/get-state this)]
-      (println "User id: " user-uuid)
       (html
         [:form#sign-in-form
          {:action "/api/login/create"
