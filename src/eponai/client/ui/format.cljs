@@ -13,6 +13,20 @@
          (group-by :date/year)
          (reduce (*group-by :date/month) (sorted-map)))))
 
+(defn transactions-by-year-month-day [transactions]
+  (let [by-date (group-by :transaction/date transactions)]
+
+    (letfn [(*group-date  [ks coll]
+              (reduce
+                (fn [m [date transactions]]
+                  (assoc-in m
+                            (mapv #(get date %) ks)
+                            {:date date
+                             :transactions transactions}))
+                (sorted-map)
+                coll))]
+      (*group-date [:date/year :date/month :date/day] by-date))))
+
 (defn day-name
   "Given date, returns name of the date and it's number with the appropriate suffix.
   Examples:

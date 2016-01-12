@@ -20,15 +20,17 @@
 (defui AllTransactions
   static om/IQuery
   (query [_]
-    [{:query/all-dates
-      ['*
-       {:transaction/_date (om/get-query trans/Transaction)}
-       ::day-expanded?]}])
+    (vec (concat [{:transaction/date [:date/ymd
+                                      :date/day
+                                      :date/month
+                                      :date/year
+                                      ::day-expanded?]}]
+                 (om/get-query trans/Transaction))))
 
   Object
   (render [this]
-    (let [{:keys [query/all-dates]} (om/props this)
-          by-year-month (f/dates-by-year-month all-dates)]
+    (let [transactions (om/props this)
+          by-year-month-day (f/transactions-by-year-month-day transactions)]
       (html
         [:div
          (map
@@ -69,13 +71,13 @@
                             :class "panel-group"
                             :style {:width "100%"}})
                      (map
-                       (fn [date]
+                       (fn [[day {:keys [date transactions]}]]
                          [:div#day
-                          (opts {:key   [year month date]
+                          (opts {:key   [year month day]
                                  :class "panel panel-info"})
 
                           [:div#weekday
-                           (opts {:key      [year month date]
+                           (opts {:key      [year month day]
                                   :class    "panel-heading list-group-item"
                                   :style    {:display         "flex"
                                              :flex-direction  "row"
@@ -87,24 +89,25 @@
                                               (::day-expanded? date)
                                               (not (::day-expanded? date)))})
                            [:span#dayname
-                            (opts {:key   [year month date]
+                            (opts {:key   [year month day]
                                    :style {:margin-right "0.3em"}})
-                            (str (f/day-name date) " " (:date/day date))]
+                            (str (f/day-name date) " " day)]
 
                            [:span#daysum
-                            (opts {:key [year month date]})
-                            (let [{:keys [currency amount]} (sum (:transaction/_date date))]
+                            (opts {:key [year month day]})
+                            (let [{:keys [currency amount]} (sum transactions)]
                               (str amount " " (or (:currency/symbol-native currency)
                                                   (:currency/code currency))))]]
 
                           (when (::day-expanded? date)
                             [:div#transactions
-                             (opts {:key   [year month date]
+                             (opts {:key   [year month day]
                                     :class "panel-body"})
+
                              (map trans/->Transaction
-                                  (:transaction/_date date))])])
-                       (rseq days))]])
-                 (rseq months))]])
-           (rseq by-year-month))]))))
+                                  transactions)])])
+                       (rseq (into (sorted-map) days)))]])
+                 (rseq (into (sorted-map) months)))]])
+           (rseq by-year-month-day))]))))
 
 (def ->AllTransactions (om/factory AllTransactions))
