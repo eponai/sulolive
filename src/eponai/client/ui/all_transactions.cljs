@@ -20,7 +20,8 @@
 (defui AllTransactions
   static om/IQuery
   (query [_]
-    (vec (concat [{:transaction/date [:date/ymd
+    (vec (concat [{:transaction/date [:db/id
+                                      :date/ymd
                                       :date/day
                                       :date/month
                                       :date/year
