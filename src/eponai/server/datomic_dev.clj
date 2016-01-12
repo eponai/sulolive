@@ -5,6 +5,7 @@
             [eponai.common.format :as format]
             [clojure.tools.reader.edn :as edn]
             [eponai.server.datomic.pull :as p]
+            [eponai.common.database.pull :as common.pull]
             [clojure.java.io :as io]
             [eponai.common.database.transact :as transact]
             [taoensso.timbre :refer [debug error info]])
@@ -65,10 +66,9 @@
 (defn add-verified-user [conn email]
   (server.transact/new-user conn email)
   (debug "New user created with email:" email)
-  (let [user (p/user (d/db conn) email)
-        verification (->> (p/verifications (d/db conn) user :user/email)
-                          first
-                          :db/id)]
+  (let [user (common.pull/user (d/db conn) email)
+        verification (->> (common.pull/verifications (d/db conn) (:db/id user) :verification.status/pending)
+                          first)]
     (server.transact/add conn verification :verification/status :verification.status/verified)))
 
 (defn add-transactions [conn email]

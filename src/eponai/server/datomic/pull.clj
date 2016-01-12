@@ -120,51 +120,6 @@
        :in $ ?eid
        :where [?e :password/credential ?eid]] db (:db/id entity)))
 
-(defn verifications
-  "Pull verifications for the specified entity and attribute. If status is specified,
-  will filter the results on that verification status."
-  ([db ent attr]
-    (verifications db ent attr nil))
-  ([db ent attr status]
-   (let [query '[:find [(pull ?ver [*]) ...]
-                 :in $ ?e ?a ?v
-                 :where
-                 [?ver :verification/entity ?e]
-                 [?e ?a ?v]]]
-     (if status
-       (let [query (conj query ['?ver :verification/status status])]
-         (q query db (ent :db/id) attr (ent attr)))
-       (q query db (ent :db/id) attr (ent attr))))))
-
-(defn expand-refs
-  "Find any refs within the specified entity and expand them into entities."
-  [db entity]
-  (let [inner-fn second
-        outer-fn #(flatten (filter coll? %))
-        nested (walk inner-fn outer-fn (seq (into {} entity)))]
-    (when (seq nested)
-      (map #(d/entity db (:db/id %)) nested))))
-
-(defn contains-entity? [coll entity]
-  (let [eid (:db/id entity)
-        eids (map :db/id coll)]
-    (some #{eid} eids)))
-
-;(defn all-entities
-;  "Recursively expand all datomic refs in the given data into full entities and
-;  return a sequence of all expended entities, including the entities in the given data."
-;  [db data]
-;  (loop [entities (set data)
-;         expand (flatten (map #(expand-refs db %) entities))]
-;    (if (seq expand)
-;      (if (contains-entity? entities (first expand))
-;        (recur entities
-;               (rest expand))
-;        (let [nested (expand-refs db (first expand))]
-;          (recur (conj entities (first expand))
-;                 (concat (rest expand) nested))))
-;      (seq entities))))
-
 (defn- schema-required?
   "Return true if the entity is required to be passed with schema.
   Is true if the entity has a type ref, or cardinality many."
@@ -226,20 +181,3 @@
                              where-clauses))
                 db)]
     (p-many db query ents)))
-
-(defn all-data
-  [db]
-  (q '[:find ?e
-       :where [? :db/id]]
-     db))
-;(defn all-data
-;  "Pulls all user transactions and currency conversions for the dates and
-;  currencies used in those transactions."
-;  [db user-email params]
-;  (if-let [budget (budget db user-email)]
-;    (let [txs (user-txs db (budget :db/id) params)
-;          conversions (conversions db (map :db/id txs))]
-;      (vec (all-entities db (concat txs conversions))))
-;    (throw (ex-info "Invalid budget id." {:cause ::pull-error
-;                                          :status ::e/unprocessable-entity
-;                                          :message "Could not find a budget with the provided uuid."}))))
