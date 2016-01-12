@@ -6,7 +6,8 @@
             [eponai.client.parser.merge :as merge]
             [cljs-http.client :as http]
             [eponai.common.datascript :as e.datascript]
-            [taoensso.timbre :refer-macros [debug error trace]]))
+            [taoensso.timbre :refer-macros [debug error trace]]
+            [clojure.string :as s]))
 
 (defn- post [url opts]
   (let [transit-opts {:transit-opts
@@ -47,18 +48,23 @@
       (go
         (try
           (let [url (str "/api" path)
-                {:keys [body status]} (<! (post url {:transit-params remote}))]
+                {:keys [body status headers]} (<! (post url {:transit-params remote}))]
             (if (<= 200 status 299)
               (do
                 (debug "Recieved response from remote:" :remote "respone(keys only):" (keys body) "status:" status)
                 (trace "Whole response:" body)
                 (cb body))
-              (throw (ex-info "Not 2xx response remote."
-                              {:remote :remote
-                               :status status
-                               :url    url
-                               :body   body
-                               :TODO   "Handle HTTP errors better."}))))
+              (do
+                (if (s/starts-with? (get headers "content-type") "text/html")
+                  (do (let [error-window (.open js/window "" "_blank" "status=0,scrollbars=1, location=0")]
+                        (.write (.-document error-window) body)
+                        (.close (.-document error-window))))
+                  (throw (ex-info "Not 2xx response remote."
+                                  {:remote :remote
+                                   :status status
+                                   :url    url
+                                   :body   body
+                                   :TODO   "Handle HTTP errors better."}))))))
           (catch :default e
-            (error "Error when posting query to remote:" :remote "error:" e)
+            (trace "Error when posting query to remote:" :remote "error:" e)
             (throw e)))))))

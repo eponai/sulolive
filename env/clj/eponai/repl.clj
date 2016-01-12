@@ -16,21 +16,31 @@
   (prn "* eponai.server.core is aliased :as core")
   (prn "****************************************************"))
 
-(defn refresh []
-  "refresh all namespaces and re-require our namespaces"
-  (ns.repl/refresh))
-
-(defn start-server []
-  (let [s (def server (core/main-debug))]
-    (prn "****************************************************")
-    (prn "Ran (def server (core/main-debug))")
-    (prn "You can run (stop server) to stop the server")
-    (prn "****************************************************")
-    s))
-
 (defn stop [server]
   (.stop server))
+
+(def server-atom (atom nil))
+
+(defn start-server []
+  (reset! server-atom (core/main-debug))
+  (prn "****************************************************")
+  (prn "Started server!")
+  (prn "Run (stop-server) to stop the server")
+  (prn "****************************************************")
+  @server-atom)
+
+(defn stop-server []
+  (stop @server-atom))
 
 (defn set-level [level]
   (timbre/set-level! level))
 
+(defn refresh []
+  "refresh all namespaces and re-require our namespaces"
+  (when @server-atom
+    (stop @server-atom))
+  (ns.repl/refresh)
+  (when @server-atom
+    (start-server)))
+
+(start-server)

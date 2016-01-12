@@ -18,12 +18,16 @@
 
 (defn wrap-error [handler]
   (fn [request]
-    (try
+    ;; skipping this wrap error in development
+    (if (::skip-wrap-error request)
       (handler request)
-      (catch ExceptionInfo e
-        (let [error (select-keys (ex-data e) [:status :cause :message])
-              code (h/error-codes (:status error))]
-          {:status code :body error})))))
+      (try
+        (handler request)
+        (catch ExceptionInfo e
+          (error "Request:" request "gave exception:" e)
+          (let [error (ex-data e)
+                code (h/error-codes (or (:status error) ::h/internal-error))]
+            {:status code :body error}))))))
 
 (def datomic-transit
   (transit/write-handler

@@ -9,9 +9,11 @@
             [eponai.server.datomic_dev :refer [connect!]]
             [eponai.server.site :refer [site-routes api-routes]]
             [eponai.server.middleware :as m]
-            [ring.middleware.reload :as reload]
             [ring.adapter.jetty :as jetty]
-            [taoensso.timbre :refer [debug error info]]))
+            [taoensso.timbre :refer [debug error info]]
+    ;; Debug/dev requires
+            [ring.middleware.reload :as reload]
+            [prone.middleware :as prone]))
 
 (defn app* [conn]
   (-> (routes api-routes site-routes)
@@ -76,5 +78,11 @@
   The jetty-server will block the current thread, so
   we just wrap it in something dereffable."
   []
-  (start-server (reload/wrap-reload (var app))
-                {:join? false}))
+  (letfn [(wrap-skip-error [handler]
+            (fn [request]
+              (handler (assoc request ::m/skip-wrap-error true))))]
+    (start-server (-> (var app)
+                      wrap-skip-error
+                      (prone/wrap-exceptions {:app-namespaces ["eponai"]})
+                      reload/wrap-reload)
+                 {:join? false})))

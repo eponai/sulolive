@@ -31,6 +31,7 @@
                  [ring/ring-defaults "0.1.5"]
                  [ring/ring-anti-forgery "1.0.0"]
                  [ring-transit "0.1.4"]
+                 [prone "1.0.0"]
 
                  ;CLJS
                  [com.cognitect/transit-cljs "0.8.225"]
@@ -130,6 +131,7 @@
                                    :output-to     "resources/public/release/js/out/budget.js"
                                    :output-dir    "resources/public/release/js/out/"
                                    :optimizations :advanced
+                                   ;;   :parallel-build true
                                    ;;   :pseudo-names true
                                    ;;   :pretty-print true
                                    }}]
