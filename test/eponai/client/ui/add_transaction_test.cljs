@@ -14,29 +14,29 @@
   {:parser (parser/parser)
    :conn (d/create-conn (testdata/datascript-schema))})
 
-(defspec
-  created-transactions-are-rendered
-  10
-  (prop/for-all
-    [transactions (gen/vector (gen-transaction))]
-    (let [create-mutations (map list (repeatedly (fn [] 'transaction/create)) transactions)
-          {:keys [parser conn]} (init-state)]
-      (doseq [tx transactions]
-        (d/transact conn [{:currency/code (:input-currency tx)}]))
-      (parser {:state conn} create-mutations)
-      (let [ui (parser {:state conn} (om/get-query transactions/AllTransactions))
-            uuids (set (map :input-uuid transactions))
-            txs-by-uuid (group-by :input-uuid transactions)
-            rendered-txs (->> (:query/all-dates ui)
-                              (mapcat :transaction/_date))]
-        (and (= (count uuids) (count rendered-txs))
-             (every? #(and (contains? uuids (:transaction/uuid %))
-                           (= (count (:transaction/tags %))
-                              (count (-> (:transaction/uuid %)
-                                         txs-by-uuid
-                                         first
-                                         :input-tags))))
-                     rendered-txs))))))
+;(defspec
+;  created-transactions-are-rendered
+;  10
+;  (prop/for-all
+;    [transactions (gen/vector (gen-transaction))]
+;    (let [create-mutations (map list (repeatedly (fn [] 'transaction/create)) transactions)
+;          {:keys [parser conn]} (init-state)]
+;      (doseq [tx transactions]
+;        (d/transact conn [{:currency/code (:input-currency tx)}]))
+;      (parser {:state conn} create-mutations)
+;      (let [ui (parser {:state conn} (om/get-query transactions/AllTransactions))
+;            uuids (set (map :input-uuid transactions))
+;            txs-by-uuid (group-by :input-uuid transactions)
+;            rendered-txs (->> (:query/all-dates ui)
+;                              (mapcat :transaction/_date))]
+;        (and (= (count uuids) (count rendered-txs))
+;             (every? #(and (contains? uuids (:transaction/uuid %))
+;                           (= (count (:transaction/tags %))
+;                              (count (-> (:transaction/uuid %)
+;                                         txs-by-uuid
+;                                         first
+;                                         :input-tags))))
+;                     rendered-txs))))))
 
 (deftest transaction-create-with-tags-of-the-same-name-throws-exception
   (let [{:keys [parser conn]} (init-state)]

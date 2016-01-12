@@ -55,7 +55,7 @@
                                :status  ::h/unathorized
                                :data    {:uuid uuid}
                                :message "The verification link is invalid."}))]
-    (if-let [verification (pull/verification (d/db conn) uuid)]
+    (if-let [verification (p/verification (d/db conn) uuid)]
       (let [verification-time (c/from-long (:verification/created-at verification))
             time-interval (time/in-minutes (time/interval verification-time (time/now)))]
         ; If the verification was not used within 15 minutes, it's expired.
@@ -117,7 +117,7 @@
         ; Activate this account and return the user entity
         (let [activated-db (:db-after (t/add conn user-db-id :user/status :user.status/activated))]
           (debug "Activated account for user-uuid:" user-uuid)
-          (pull/user activated-db email))))
+          (p/user activated-db email))))
 
 
     ; The user uuid was not found in the database.

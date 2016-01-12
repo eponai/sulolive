@@ -15,35 +15,6 @@
 
 (defmulti read (fn [_ k _] k))
 
-(defn- do-pull [f db pattern eids]
-  (try
-    (f db pattern eids)
-    (catch #?(:clj Exception :cljs :default) e
-      (let [#?@(:clj  [msg (.getMessage e)]
-                :cljs [msg (.-message e)])]
-        (throw (ex-info msg
-                        {:cause     ::pull-error
-                         :data      {:pattern pattern
-                                     :eids    eids}
-                         :message   msg
-                         :exception e
-                         #?@(:clj [:status :eponai.server.http/service-unavailable])}))))))
-
-(defn pull-all
-  "takes the database, a pull query and where-clauses, where the where-clauses
-  return some entity ?e."
-  [db query where-clauses]
-  (let [ents (d/q (vec (concat '[:find [?e ...]
-                                 :in $
-                                 :where]
-                               where-clauses))
-                  db)]
-    (do-pull d/pull-many db query ents)))
-
-(defn pull
-  [db query entid]
-  (do-pull d/pull db query entid))
-
 ;; -------- No matching dispatch
 
 #?(:cljs
@@ -66,7 +37,7 @@
 #?(:cljs
    (defmethod read :query/header
      [{:keys [db query]} _ _]
-     {:value (pull-all db query '[[?e :ui/singleton :budget/header]])}))
+     {:value (p/pull-many db query (p/all db '[[?e :ui/singleton :budget/header]]))}))
 
 ;; -------- Remote readers
 
@@ -79,13 +50,22 @@
 
 (defmethod read :query/all-dates
   [{:keys [db query]} _ _]
-  {:value (pull-all db query '[[?e :date/ymd]])
+  {:value  (p/pull-many db query (p/all db '[[?e :date/ymd]]))
    :remote true})
 
 (defmethod read :query/all-currencies
   [{:keys [db query]} _ _]
-  {:value (pull-all db query '[[?e :currency/code]])
+  {:value  (p/pull-many db query (p/all db '[[?e :currency/code]]))
    :remote true})
+
+(defmethod read :query/all-budgets
+  [{:keys [db query auth]} _ _]
+  (let [#?@(:clj  [eids (p/budgets db (:username auth))]
+            ;; We don't have the auth UUID in the client,
+            ;; so fetch all budgets since they only belong to the current user anyway.
+            :cljs [eids (p/all db '[[?e :budget/created-by]])])]
+    {:value (p/pull-many db query eids)
+     :remote true}))
 
 (defmethod read :query/user
   [{:keys [db query]} k {:keys [uuid]}]

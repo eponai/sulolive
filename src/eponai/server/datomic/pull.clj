@@ -2,44 +2,9 @@
   (:require [datomic.api :as d]
             [eponai.server.http :as e]
             [eponai.server.datomic.validate :as v]
-            [clojure.walk :refer [walk]]))
-
-(defn- q [query & inputs]
-  (try
-    (apply (partial d/q query) inputs)
-    (catch Exception e
-      (println e)
-      (throw (ex-info (.getMessage e)
-                      {:cause ::query-error
-                       :status ::e/service-unavailable
-                       :data {:query query
-                              :inputs inputs}
-                       :message (.getMessage e)
-                       :exception e})))))
-
-(defn- p [db pattern eid]
-  (try
-    (d/pull db pattern eid)
-    (catch Exception e
-      (throw (ex-info (.getMessage e)
-                      {:cause ::pull-many-error
-                       :status ::e/service-unavailable
-                       :data {:pattern pattern
-                              :eid eid}
-                       :message (.getMessage e)
-                       :exception e})))))
-
-(defn- p-many [db pattern eids]
-  (try
-    (d/pull-many db pattern eids)
-    (catch Exception e
-      (throw (ex-info (.getMessage e)
-                      {:cause ::pull-error
-                       :status ::e/service-unavailable
-                       :data {:pattern pattern
-                              :eids eids}
-                       :message (.getMessage e)
-                       :exception e})))))
+            [eponai.common.database.pull :as p]
+            [clojure.walk :refer [walk]]
+            [eponai.common.format :as f]))
 
 ; Pull and format datomic entries
 (defn- tx-query
@@ -62,23 +27,23 @@
 
 (defn- user-txs [db budget-eid params]
   (when (and budget-eid (v/valid-date? params))
-    (q (tx-query params) db budget-eid)))
+    (p/q (tx-query params) db budget-eid)))
 
 (defn converted-dates [db dates]
-  (q '[:find [?ymd ...]
+  (p/q '[:find [?ymd ...]
        :in $ [?ymd ...]
        :where
        [?c :conversion/date ?d]
        [?d :date/ymd ?ymd]] db dates))
 
 (defn date-conversions [db date]
-  (let [conversions (p db '[:conversion/_date] [:date/ymd date])]
+  (let [conversions (p/pull db '[:conversion/_date] [:date/ymd date])]
     conversions))
 
 (defn conversions
   "Pull conversions for the currencies and dates refered by the specified transaction ids."
   [db user-tx-ids]
-  (q '[:find [(pull ?c [*]) ...]
+  (p/q '[:find [(pull ?c [*]) ...]
        :in $ [?t ...]
        :where
        [?t :transaction/date ?d]
@@ -88,11 +53,11 @@
      db user-tx-ids))
 
 (defn currencies [db]
-  (q '[:find [(pull ?e [*]) ...]
+  (p/q '[:find [(pull ?e [*]) ...]
        :where [?e :currency/code]] db))
 
 (defn budget [db user-email]
-  (q '[:find (pull ?e [*]) .
+  (p/q '[:find (pull ?e [*]) .
        :in $ ?email
        :where
        [?e :budget/created-by ?u]
@@ -103,22 +68,27 @@
     (user db :user/email email))
   ([db attr value]
    (when value
-     (q '[:find (pull ?e [*]) .
+     (p/q '[:find (pull ?e [*]) .
           :in $ ?a ?v
           :where [?e ?a ?v]] db attr value))))
 
 (defn fb-user
   [db user-id]
-  (q '[:find (pull ?e [*]) .
+  (p/q '[:find (pull ?e [*]) .
        :in $ ?id
        :where [?e :fb-user/id ?id]]
      db
      user-id))
 
-(defn password [db entity]
-  (q '[:find (pull ?e [*]) .
-       :in $ ?eid
-       :where [?e :password/credential ?eid]] db (:db/id entity)))
+(defn verification
+  "Pull specific verification from the database using the unique uuid field.
+  Returns an entity if onlu uuid is provided, or an entire tree matching the passed in query."
+  ([db ver-uuid]
+   (let [verification (verification db '[:db/id] ver-uuid)]
+     (d/entity db (:db/id verification))))
+  ([db query ver-uuid]
+   (let [id (f/str->uuid ver-uuid)]
+     (p/pull db query [:verification/uuid id]))))
 
 (defn- schema-required?
   "Return true if the entity is required to be passed with schema.
@@ -150,7 +120,7 @@
   "Pulls schema from the db. If data is provided includes only the necessary fields for that data.
   (type/ref, cardinality/many or unique/identity)."
   ([db]
-    (q '[:find [(pull ?e [*]) ...]
+    (p/q '[:find [(pull ?e [*]) ...]
          :where
          [?e :db/ident ?id]
          [:db.part/db :db.install/attribute ?e]
@@ -169,15 +139,3 @@
                 [[:db/valueType :db/ident]
                  [:db/unique :db/ident]
                  [:db/cardinality :db/ident]]))
-
-(defn all
-  "takes the database, a pull query and where-clauses, where the where-clauses
-  return some entity ?e."
-  [conn query where-clauses]
-  (let [db (d/db conn)
-        ents (q (vec (concat '[:find [?e ...]
-                               :in $
-                               :where]
-                             where-clauses))
-                db)]
-    (p-many db query ents)))

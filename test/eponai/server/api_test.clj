@@ -3,7 +3,7 @@
             [clj-time.coerce :as c]
             [clojure.test :refer :all]
             [datomic.api :as d]
-            [eponai.common.database.pull :as p]
+            [eponai.server.datomic.pull :as p]
             [eponai.server.api :as api]
             [eponai.server.datomic.format :as f]
             [eponai.server.test-util :refer [new-db user-email]])
@@ -78,8 +78,9 @@
           db-verification (f/->db-email-verification db-user :verification.status/verified)
           conn (new-db [db-user
                         db-verification])
-          _ (api/activate-account conn (str (:user/uuid db-user)) user-email)]
-      (is (= (:user/status (p/user (d/db conn) user-email))
+          _ (api/activate-account conn (str (:user/uuid db-user)) user-email)
+          user (p/user (d/db conn) user-email)]
+      (is (= (:user/status (d/entity (d/db conn) (:db/id user)))
              :user.status/activated)))))
 
 (deftest activate-account-email-already-in-use

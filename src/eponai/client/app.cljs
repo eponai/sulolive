@@ -9,7 +9,7 @@
             [eponai.common.parser :as parser]
             [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
             [eponai.client.ui.header :refer [Header ->Header]]
-            [eponai.client.ui.all_transactions :refer [AllTransactions ->AllTransactions]]
+            [eponai.client.ui.all-budgets :refer [AllBudgets ->AllBudgets]]
             [taoensso.timbre :as timbre :refer-macros [info debug error trace]]))
 
 (defui App
@@ -17,16 +17,17 @@
   (query [_]
     [:datascript/schema
      {:proxy/header (om/get-query Header)}
-     {:proxy/transactions (om/get-query AllTransactions)}])
+     {:proxy/budgets (om/get-query AllBudgets)}
+     ])
   Object
   (render
     [this]
-    (let [{:keys [proxy/header proxy/transactions]} (om/props this)]
+    (let [{:keys [proxy/header proxy/budgets]} (om/props this)]
       (html [:div
              [:div (->Header header)]
              [:div {:class "content-section-b"}
               [:div {:class "content-section-b"}
-               (->AllTransactions transactions)]]]))))
+               (->AllBudgets budgets)]]]))))
 
 (defonce conn-atom (atom nil))
 
