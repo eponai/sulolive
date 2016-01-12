@@ -68,7 +68,9 @@
   :clean-targets ^{:protect false} ["resources/public/dev/js/out"
                                     "resources/public/devcards/js/out"
                                     "resources/public/release/js/out"
-                                    "resources/public/test/js/out"]
+                                    "resources/public/test/js/out"
+                                    "target/uberjar"
+                                    "target/uberjar+uberjar"]
 
   ;;;;;;;;;;;;;
   ;; AWS+Docker deploy:
@@ -81,8 +83,8 @@
   ;; clj:
   ;;;;;;;;;;;;;
   :target-path "target/%s"
-  :source-paths ["src" "env/clj"]
-  :test-paths ["test"]
+  :source-paths ["src"]
+  :test-paths ["test" "env/clj"]
   :ring {:handler eponai.server.core/app
          :init    eponai.server.core/init}
   :main eponai.server.core
