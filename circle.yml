@@ -11,7 +11,9 @@ machine:
 dependencies:
   pre:
     - pip install awscli
+  override:
     - lein deps
+  post:
     - lein uberjar
     - docker build -t $DOCKER_IMAGE .
 
