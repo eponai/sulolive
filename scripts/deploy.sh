@@ -16,7 +16,9 @@ EB_ENV_NAME=petterik-jourmoney-env
 
 # Create new Elastic Beanstalk version
 DOCKERRUN_FILE=$SHA1-Dockerrun.aws.json
-sed "s/<DOCKER_IMAGE>/$DOCKER_IMAGE/" < Dockerrun.aws.json.template > $DOCKERRUN_FILE
+
+# Using comma (,) instead of slash (/) in sed because DOCKER_IMAGE contains slashes
+sed "s,<DOCKER_IMAGE>,$DOCKER_IMAGE," < Dockerrun.aws.json.template > $DOCKERRUN_FILE
 aws s3 cp $DOCKERRUN_FILE s3://$EB_BUCKET/$DOCKERRUN_FILE
 aws elasticbeanstalk create-application-version --application-name $EB_APP_NAME \
   --version-label $SHA1 --source-bundle S3Bucket=$EB_BUCKET,S3Key=$DOCKERRUN_FILE
