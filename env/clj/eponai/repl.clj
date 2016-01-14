@@ -37,7 +37,6 @@
   (when @server-atom
     (start-server)))
 
-(start-server)
 (prn "****************************************************")
 (prn " Started server!")
 (prn " Run (stop-server) to stop the server")
