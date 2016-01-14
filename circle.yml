@@ -5,7 +5,7 @@ machine:
     CLJ_TEST_REPORT_FILE: $CIRCLE_TEST_REPORTS/lein-test/budget-clj-tests.xml
     CLJS_BUILD_ID: release
     AWS_DEFAULT_REGION: us-east-1
-    DOCKER_IMAGE: petterik/jourmoney:$CIRCLE_SHA1
+    DOCKER_IMAGE: eponai/jourmoney:$CIRCLE_SHA1
     TIMBRE_LEVEL: :error
 
 dependencies:

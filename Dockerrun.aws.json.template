@@ -1,7 +1,7 @@
 {"AWSEBDockerrunVersion": "1",
  "Ports": [{"ContainerPort": "8080"}],
- "Authentication": { "Bucket": "petterik-jourmoney",
-                     "Key": ".dockercfg"},
+ "Authentication": { "Bucket": "eponai",
+                     "Key": "docker/.dockercfg"},
  "Image": { "Name": "<DOCKER_IMAGE>",
             "Update": "true"}}
 
