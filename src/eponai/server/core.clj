@@ -55,7 +55,7 @@
   (info "Done initializing server."))
 
 (defn start-server
-  ([] (var app) {})
+  ([] (start-server (var app) {}))
   ([handler opts]
    (init)
    (let [default-port 3000
