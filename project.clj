@@ -17,7 +17,7 @@
                  [com.taoensso/timbre "4.2.0"]
                  [environ "1.0.1"]
                  [hiccup "1.0.5"]
-                 [org.clojure/clojure "1.7.0"]
+                 [org.clojure/clojure "1.8.0-RC5"]
                  [org.clojure/core.async "0.2.371"]
                  [org.clojure/core.memoize "0.5.8"]         ; needed to work around lein+core.async dependency issue.
                  [org.clojure/data.json "0.2.6"]
