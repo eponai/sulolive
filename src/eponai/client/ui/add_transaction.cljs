@@ -102,7 +102,8 @@
                 (map
                   (fn [budget]
                     [:option
-                     {:value (:budget/uuid budget)}
+                     (opts {:value (:budget/uuid budget)
+                            :key   [(:budget/uuid budget)]})
                      (or (:budget/name budget) "Untitled")])))]
 
           [:label.form-control-static
@@ -134,7 +135,8 @@
               (map
                 (fn [{:keys [currency/code] :as cur}]
                   [:option
-                   {:value (name code)}
+                   (opts {:value (name code)
+                          :key [code]})
                    (name code)])))]]
 
           [:label.form-control-static
