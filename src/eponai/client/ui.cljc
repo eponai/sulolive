@@ -1,5 +1,6 @@
 (ns eponai.client.ui
-  (:require [clojure.string :as s])
+  (:require [clojure.string :as s]
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [warn]])
   #?(:clj (:import [java.util UUID])))
 
 (defn ->camelCase [k]
@@ -26,10 +27,22 @@
   (if (vector? v)
     (s/join "-" (concat ["uniq" uuid] v))
     (do
-      (prn "WARN: The value of :key was not a vector. Value: " v)
+      (warn "The value of :key was not a vector. Value: " v)
       v)))
 
-(defmacro opts [m]
+(defmacro opts
+  "Takes a map and makes it easier to use its :key and :style keys.
+  This is macro is used for sablono element's second argument maps.
+
+  What it does for the options:
+  :key, React needs html elements to be unique for some reason.
+        And you'd normally pass a unique string to the :key attribute.
+        With this macro, you can just pass a vector of unique values
+        and we'll generate a unique string.
+  :style, The keys to the :style map should be camelCased to work with
+          react. We want to work with kebab-cased keywords, because
+          that's what we use everywhere else."
+  [m]
   (let [inline-style (and (map? m)
                           (contains? m :style)
                           (should-inline-style? (:style m))
@@ -50,6 +63,7 @@
            ret# (if inline-style#
                   inline-style#
                   (style* ~m))]
+       (warn "Using deprecated (style {}) macro. Use the opts macro with a :style key instead.")
       (apply merge {:style (cljs.core/clj->js ret#)}
              ~ms))))
 
