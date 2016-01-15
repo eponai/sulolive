@@ -35,6 +35,7 @@
     (let [{:keys [query/all-budgets]} (om/props this)
 
           {new-budget ::creating-new-budget
+           ;; TODO: Move active-tab to datascript/app-state?
            active-tab ::active-tab
            :keys [input-budget-name] :as state} (om/get-state this)
           active-tab (or active-tab (first all-budgets))]
@@ -51,16 +52,15 @@
               :on-click #(om/update-state! this assoc ::active-tab budget)}
              [:a
               (or (:budget/name (first all-budgets)) "Untitled")]])
-          (map
-            (fn [budget]
-              [:li
-               {:class (if (= (:budget/uuid active-tab)
-                              (:budget/uuid budget)) "active" "")
-                :on-click #(om/update-state! this assoc ::active-tab budget)}
-               [:a
-                [:label
-                 (or (:budget/name budget) "Untitled")]]])
-            (rest all-budgets))
+          (for [budget (rest all-budgets)]
+            [:li
+             (opts {:key [(:budget/uuid budget)]
+                    :class    (if (= (:budget/uuid active-tab)
+                                     (:budget/uuid budget)) "active" "")
+                    :on-click #(om/update-state! this assoc ::active-tab budget)})
+             [:a
+              [:label
+               (or (:budget/name budget) "Untitled")]]])
 
           (if (false? new-budget)
             [:li
