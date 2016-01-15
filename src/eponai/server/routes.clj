@@ -8,7 +8,8 @@
             [ring.util.response :as r]
             [eponai.common.parser.util :as parser.util]
             [eponai.server.parser.response :as parser.resp]
-            [taoensso.timbre :refer [debug error trace]]))
+            [taoensso.timbre :refer [debug error trace]]
+            [eponai.server.api :as api]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -76,6 +77,10 @@
       ;(go (send-email-fn (<! (signup conn params))))
       ;(r/redirect "/sdlogin.html")
       )
+
+    (POST "/charge" {params :params}
+      (api/stripe-charge params)
+      (r/redirect "/index.html"))
 
     ; Requires user login
     (context "/user" _

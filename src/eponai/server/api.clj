@@ -6,10 +6,13 @@
             [eponai.server.datomic.transact :as t]
             [eponai.server.datomic.pull :as p]
             [eponai.server.http :as h]
+            [eponai.server.stripe :as stripe]
             [clj-time.core :as time]
             [clj-time.coerce :as c]
             [eponai.common.format :as f]
-            [taoensso.timbre :refer [debug error info]])
+            [taoensso.timbre :refer [debug error info]]
+            [ring.util.response :as r]
+            [environ.core :refer [env]])
   (:import (datomic.peer LocalConnection)))
 
 ; Actions
@@ -125,3 +128,12 @@
                                         :data    {:uuid  user-uuid
                                                   :email email}
                                         :message "No user exists for UUID"}))))
+
+(defn stripe-charge [params]
+  (try
+    (stripe/create-customer (env :stripe-secret-key-test) params)
+    (catch Exception e
+      (throw (ex-info (.getMessage e)
+                      {:status ::h/unprocessable-entity
+                       :data params}))))
+  )

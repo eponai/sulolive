@@ -1,7 +1,7 @@
 (ns eponai.devcards.ui.stripe-dc
   (:require [devcards.core :as dc]
             [sablono.core :refer-macros [html]]
-            [eponai.client.stripe :as stripe])
+            [eponai.client.ui.stripe :as stripe])
   (:require-macros [devcards.core :refer [defcard]]))
 
 (defcard

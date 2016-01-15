@@ -14,6 +14,7 @@
                  [com.datomic/datomic-pro "0.9.5302"
                   :exclusions [joda-time]]
                  [com.draines/postal "1.11.3"]
+                 [com.stripe/stripe-java "1.41.0"]
                  [com.taoensso/timbre "4.2.0"]
                  [environ "1.0.1"]
                  [hiccup "1.0.5"]
@@ -51,7 +52,6 @@
                  [cljsjs/react-dom-server "0.14.3-0"]
                  [cljs-ajax "0.5.0"]
                  [cljsjs/pikaday "1.3.2-0"]
-                 [cljsjs/stripe "2.0-0"]
 
                  ;; Testing
                  [lein-doo "0.1.6"]
