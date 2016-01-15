@@ -1,6 +1,7 @@
 (ns ^:figwheel-always eponai.client.tests
   (:require [cljs.test :refer-macros [run-tests]]
             [cljsjs.react]
+            [eponai.common.datascript_test]
             [eponai.client.ui.add_transaction_test]))
 
 (def test-result (atom {}))
@@ -12,7 +13,8 @@
 
 (defn ^:export run []
   (run-tests
-    'eponai.client.ui.add_transaction_test))
+    'eponai.client.ui.add_transaction_test
+    'eponai.common.datascript_test))
 
 (defn ^:export node-run-tests []
   (run)

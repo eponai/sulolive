@@ -3,7 +3,7 @@
             [datascript.core :as d]
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
-            [clojure.test.check.properties :as prop]
+            [clojure.test.check.properties :as prop #?@(:cljs [:include-macros true])]
             [clojure.test.check.clojure-test #?(:clj  :refer
                                                 :cljs :refer-macros) [defspec]]))
 
@@ -60,21 +60,24 @@
                             res (d/transact conn datascript-txs)]
                           (not= before-tx @conn)))))))
 
+(defn gen-refs-and-entities []
+  (gen/bind
+    (gen/not-empty (gen/vector gen/nat))
+    (fn [ids]
+      (gen/bind
+        (gen/not-empty (gen/vector (gen-datomic-keyword :k :kk)))
+        (fn [ks]
+          (let [ids (set ids)
+                [refs others] (map set (split-at (/ (count ks) 2) ks))
+                ref-entities (mapv #(hash-map :db/id % :k :v) ids)
+                referrer (reduce (partial apply assoc)
+                                 {}
+                                 (map vector refs ids))]
+            (gen/return [refs (conj ref-entities referrer)])))))))
+
 (defspec entities-can-be-assigned-temp-ids
   10
-  (prop/for-all [a (gen/bind
-                   (gen/not-empty (gen/vector gen/nat))
-                   (fn [ids] 
-                     (gen/bind
-                       (gen/not-empty (gen/vector (gen-datomic-keyword :k :kk)))
-                       (fn [ks]
-                         (let [ids (set ids)
-                               [refs others] (map set (split-at (/ (count ks) 2) ks))
-                               ref-entities  (mapv #(hash-map :db/id % :k :v) ids)
-                               referrer (reduce (partial apply assoc)
-                                                {}
-                                                (map vector refs ids))]
-                           (gen/return [refs (conj ref-entities referrer)]))))))]
+  (prop/for-all [a (gen-refs-and-entities)]
                 (let [[refs entities] a
                       schema (reduce (fn [m k] (assoc m k {:db/valueType :db.type/ref}))
                                      {} refs)
