@@ -3,7 +3,7 @@
             [cemerick.friend.workflows :as workflows]
             [cemerick.url :as url]
             [clojure.core.async :refer [go]]
-            [eponai.server.auth.facebook :as fb]
+            [eponai.server.external.facebook :as fb]
             [ring.util.response :as r]
             [ring.util.request :refer [path-info request-url]]
             [taoensso.timbre :refer [debug error info]])

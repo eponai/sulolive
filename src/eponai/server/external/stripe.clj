@@ -1,4 +1,4 @@
-(ns eponai.server.stripe
+(ns eponai.server.external.stripe
   (:require [taoensso.timbre :refer [debug error info]])
   (:import (com.stripe.model Customer)
            (com.stripe Stripe)))

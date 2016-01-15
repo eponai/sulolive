@@ -1,4 +1,4 @@
-(ns eponai.server.openexchangerates
+(ns eponai.server.external.openexchangerates
   (:require [clj-http.client :as client]
             [clojure.data.json :as json]
             [taoensso.timbre :refer [info error trace]]))

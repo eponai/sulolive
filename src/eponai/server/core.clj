@@ -5,7 +5,7 @@
             [environ.core :refer [env]]
             [eponai.common.parser :as parser]
             [eponai.server.email :as e]
-            [eponai.server.openexchangerates :as exch]
+            [eponai.server.external.openexchangerates :as exch]
             [eponai.server.datomic_dev :refer [connect!]]
             [eponai.server.routes :refer [site-routes api-routes]]
             [eponai.server.middleware :as m]

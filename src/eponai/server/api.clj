@@ -6,7 +6,7 @@
             [eponai.server.datomic.transact :as t]
             [eponai.server.datomic.pull :as p]
             [eponai.server.http :as h]
-            [eponai.server.stripe :as stripe]
+            [eponai.server.external.stripe :as stripe]
             [clj-time.core :as time]
             [clj-time.coerce :as c]
             [eponai.common.format :as f]
