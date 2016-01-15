@@ -98,13 +98,11 @@
            {:on-change (on-change this :input-budget)
             :type      "text"
             :default-value     input-budget}
-           (->> all-budgets
-                (map
-                  (fn [budget]
-                    [:option
-                     (opts {:value (:budget/uuid budget)
-                            :key   [(:budget/uuid budget)]})
-                     (or (:budget/name budget) "Untitled")])))]
+           (for [budget all-budgets]
+             [:option
+              (opts {:value (:budget/uuid budget)
+                     :key   [(:budget/uuid budget)]})
+              (or (:budget/name budget) "Untitled")])]
 
           [:label.form-control-static
            {:for "amount-input"}
@@ -130,14 +128,11 @@
                    :on-change     (on-change this :input-currency)
                    :default-value input-currency
                    :style         {:width "20%"}})
-            (->>
-              all-currencies
-              (map
-                (fn [{:keys [currency/code] :as cur}]
-                  [:option
-                   (opts {:value (name code)
-                          :key [code]})
-                   (name code)])))]]
+            (for [{:keys [currency/code]} all-currencies]
+              [:option
+               (opts {:value (name code)
+                      :key   [code]})
+               (name code)])]]
 
           [:label.form-control-static
            {:for "title-input"}
@@ -178,11 +173,9 @@
                    :on-key-down (on-add-tag-key-down this input-tag)})]
 
            [:div.form-control-static
-            (map
-              (fn [props]
-                (tag/->Tag
-                  (assoc props :key (::tag-id props))))
-              input-tags)]]
+            (for [tag input-tags]
+              (tag/->Tag
+                (assoc tag :key (::tag-id tag))))]]
 
           [:button
            (opts {:style    {:align-self "center"}
@@ -203,7 +196,6 @@
                                                  (fn [tags]
                                                    (map :tag/name tags))))))
                                 :query/all-budgets])})
-           "Save"]]
-         ]))))
+           "Save"]]]))))
 
 (def ->AddTransaction (om/factory AddTransaction))
