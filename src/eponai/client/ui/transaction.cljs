@@ -51,7 +51,9 @@
                          :flex-wrap "wrap"}})
           (if (seq tags)
             (map tag/->Tag
-              tags
-              (range 10))
-            )]]))))
+                 tags
+                 (range 10)))]]))))
+;; TODO: Why is this (range 10) here? Is it to limit the number of
+;;       tags rendered? If so, use (take 10 (map ...))
+
 (def ->Transaction (om/factory Transaction))
