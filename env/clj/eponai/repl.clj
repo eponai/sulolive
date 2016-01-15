@@ -21,7 +21,12 @@
 (def server-atom (atom nil))
 
 (defn start-server []
-  (reset! server-atom (core/main-debug)))
+  (prn "****************************************************")
+  (prn " Started server!")
+  (prn " Run (stop-server) to stop the server")
+  (reset! server-atom (core/main-debug))
+  (prn "****************************************************")
+  @server-atom)
 
 (defn stop-server []
   (stop @server-atom))
@@ -37,7 +42,4 @@
   (when @server-atom
     (start-server)))
 
-(prn "****************************************************")
-(prn " Started server!")
-(prn " Run (stop-server) to stop the server")
 
