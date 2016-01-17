@@ -23,6 +23,6 @@
 (defmethod merge-novelty 'transaction/create
   [_ _ novelty]
   (when-let [err (:om.next/error novelty)]
-    (error "error from transaction/create:" err)
+    (error "error from transaction/create. Keys:" (keys err))
     (info "TODO: Do something about transaction/create errors!")
     :dissoc))

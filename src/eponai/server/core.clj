@@ -79,7 +79,9 @@
   we just wrap it in something dereffable."
   []
   (start-server (-> (var app)
-                    (m/wrap-state {::m/skip-wrap-error true})
+                    (m/wrap-state {::m/skip-wrap-error      true
+                                   ::m/make-parser-error-fn (fn [req]
+                                                              (fn [e] (prone/exceptions-response req e ["eponai"])))})
                     (prone/wrap-exceptions {:app-namespaces ["eponai"]})
                     reload/wrap-reload)
                 {:join? false}))

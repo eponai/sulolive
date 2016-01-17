@@ -43,11 +43,13 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [::m/conn ::m/parser body] :as request}]
+  [{:keys [::m/conn ::m/parser ::m/make-parser-error-fn body] :as request}]
   (debug "Handling parser request with body:" (into [] body))
   (parser
-       {:state conn
-        :auth  (friend/current-authentication request)}
+    {:state           conn
+     :auth            (friend/current-authentication request)
+     :parser-error-fn (when make-parser-error-fn
+                        (make-parser-error-fn request))}
        body))
 
 (defn trace-parser-response-handlers
