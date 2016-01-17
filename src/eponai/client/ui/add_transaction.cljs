@@ -1,6 +1,6 @@
 (ns eponai.client.ui.add_transaction
   (:require [om.next :as om :refer-macros [defui]]
-            [eponai.client.ui :refer-macros [style opts]]
+            [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
             [eponai.client.ui.datepicker :refer [->Datepicker]]
             [eponai.client.ui.tag :as tag]
             [eponai.common.format :as format]
@@ -98,11 +98,12 @@
            {:on-change (on-change this :input-budget)
             :type      "text"
             :default-value     input-budget}
-           (for [budget all-budgets]
-             [:option
-              (opts {:value (:budget/uuid budget)
-                     :key   [(:budget/uuid budget)]})
-              (or (:budget/name budget) "Untitled")])]
+           (map-all all-budgets
+             (fn [budget]
+               [:option
+                (opts {:value (:budget/uuid budget)
+                       :key   [(:budget/uuid budget)]})
+                (or (:budget/name budget) "Untitled")]))]
 
           [:label.form-control-static
            {:for "amount-input"}
@@ -128,11 +129,12 @@
                    :on-change     (on-change this :input-currency)
                    :default-value input-currency
                    :style         {:width "20%"}})
-            (for [{:keys [currency/code]} all-currencies]
-              [:option
-               (opts {:value (name code)
-                      :key   [code]})
-               (name code)])]]
+            (map-all all-currencies
+              (fn [{:keys [currency/code]}]
+                [:option
+                 (opts {:value (name code)
+                        :key   [code]})
+                 (name code)]))]]
 
           [:label.form-control-static
            {:for "title-input"}
@@ -173,9 +175,10 @@
                    :on-key-down (on-add-tag-key-down this input-tag)})]
 
            [:div.form-control-static
-            (for [tag input-tags]
-              (tag/->Tag
-                (assoc tag :key (::tag-id tag))))]]
+            (map-all input-tags
+              (fn [tag]
+                (tag/->Tag
+                  (assoc tag :key (::tag-id tag)))))]]
 
           [:button
            (opts {:style    {:align-self "center"}

@@ -3,6 +3,11 @@
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [warn]])
   #?(:clj (:import [java.util UUID])))
 
+(defn map-all
+  "same map but with switched parameter order"
+  [coll f]
+  (map f coll))
+
 (defn ->camelCase [k]
   (when (namespace k)
     (throw (str "cannot camelCase a keyword with a namespace. key=" k)))
@@ -66,4 +71,3 @@
        (warn "Using deprecated (style {}) macro. Use the opts macro with a :style key instead.")
       (apply merge {:style (cljs.core/clj->js ret#)}
              ~ms))))
-
