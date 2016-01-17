@@ -9,30 +9,33 @@
        :cljs [datascript.core :as d])
     #?(:clj [eponai.server.datomic.filter :as filter])))
 
-(defn wrap-om-next-error-handler
-  "For each :om.next/error, replace the value with only the error's
-  ex-data.
-  Throws an exception if the error did not have any data."
-  [parser]
-  (fn [& args]
-    (let [ret (apply parser args)
-          extract-ex-data-from-errors
-          (fn [m k v]
-            (if-not (:om.next/error v)
-              m
-              (update-in m [k :om.next/error]
-                         (fn [err]
-                           (if-let [data (ex-data err)]
-                             (assoc data ::ex-message #?(:clj  (.getMessage err)
-                                                         :cljs (.-message err)))
-                             (throw (ex-info "Unable to get ex-data from error"
-                                             {:error err
-                                              :where ::wrap-om-next-error-handler
-                                              :parsed-key   k
-                                              :parsed-value v})))))))]
-      (reduce-kv extract-ex-data-from-errors
-                 ret
-                 ret))))
+
+#?(:clj
+   (defn default-error-fn [err]
+         (if-let [data (ex-data err)]
+           (assoc data ::ex-message (.getMessage ^Throwable err))
+           (throw (ex-info "Unable to get ex-data from error"
+                           {:error err
+                            :where ::wrap-om-next-error-handler})))))
+
+#?(:clj
+   (defn wrap-om-next-error-handler
+     "Calls the env's parser-error-fn for every value to :om.next/error.
+
+     If parser throws an exception we'll return:
+     {:om.next/error (parser-error-fn e)}"
+     [parser]
+     (fn [env body]
+       (let [parser-error-fn (or (:parser-error-fn env) default-error-fn)
+             map-parser-errors (fn [m k v]
+                                 (if-not (:om.next/error v)
+                                   m
+                                   (update-in m [k :om.next/error] parser-error-fn)))]
+         (try
+           (let [ret (parser env body)]
+             (reduce-kv map-parser-errors ret ret))
+           (catch Exception e
+             {:om.next/error (parser-error-fn e)}))))))
 
 #?(:clj
    (defn wrap-user-context-only [parser]
