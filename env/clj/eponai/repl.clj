@@ -9,9 +9,11 @@
   (ns.repl/disable-reload!)
   (prn "****************************************************")
   (prn "                REPL TIPS AND TRICKS:")
-  (prn " (refresh) to reload all namespaces")
-  (prn " (start-server) to start the server")
-  (prn " (set-level level) to set logger level")
+  (prn " (refresh) - reload all namespaces")
+  (prn " (start-server) - start the server")
+  (prn " (set-debug) - set logger level to debug")
+  (prn " (set-trace) - set logger level to trace")
+  (prn " (set-level level) - set logger level to level")
   (prn " eponai.server.core is aliased :as core")
   (prn "****************************************************"))
 
@@ -33,6 +35,12 @@
 
 (defn set-level [level]
   (timbre/set-level! level))
+
+(defn set-trace []
+  (set-level :trace))
+
+(defn set-debug []
+  (set-level :debug))
 
 (defn refresh []
   "refresh all namespaces and re-require our namespaces"
