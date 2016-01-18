@@ -1,5 +1,5 @@
 (ns eponai.common.parser.read
-  (:refer-clojure :exclude [read])
+  (:refer-clojure :exclude [read proxy])
   (:require [eponai.common.datascript :as eponai.datascript]
             [eponai.common.database.pull :as p]
             [eponai.common.parser.util :as parser.util]
