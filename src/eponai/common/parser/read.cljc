@@ -21,7 +21,7 @@
    (defn proxy [{:keys [parser query target] :as env} _ _]
      (let [ret (parser env query target)]
        (if (and target (seq ret))
-         {target true}
+         {target (om/query->ast ret)}
          {:value ret}))))
 
 #?(:cljs

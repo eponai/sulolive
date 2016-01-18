@@ -20,7 +20,8 @@
 
 #?(:clj
    (defn wrap-om-next-error-handler
-     "Calls the env's parser-error-fn for every value to :om.next/error.
+     "Wraps the parser and calls every value for :om.next/error in the
+     result of a parse with the :parser-error-fn passed in env.
 
      If parser throws an exception we'll return:
      {:om.next/error (parser-error-fn e)}"
