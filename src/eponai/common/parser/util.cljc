@@ -32,7 +32,11 @@
                 [(select-keys parsed-result keys-to-process-first)
                  (apply dissoc parsed-result keys-to-process-first)]))))))
 
-(defn flatten-query [query]
+(defn unwrap-proxies
+  "Takes a query that's been wrapped with proxies. Unwraps them here.
+
+  This HOPEFULLY doesn't screw us over in the future."
+  [query]
   (reduce (fn [q x] (if (vector? x)
                       (into q x)
                       (conj q x)))

@@ -61,8 +61,7 @@
 (defn send!
   [path]
   (fn [{:keys [remote]} cb]
-    (debug "Send pre-reduce: " remote)
-    (let [remote (parser.util/flatten-query remote)]
+    (let [remote (parser.util/unwrap-proxies remote)]
       (debug "Sending to remote: " :remote " query: " remote)
       (go
         (try

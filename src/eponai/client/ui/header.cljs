@@ -13,10 +13,7 @@
   static om/IQuery
   (query [this]
     '[{:query/header [:db/id ::show-transaction-modal]}
-      {:proxy/add-transaction ?add-transaction}                      ;; what to transact?
-      {:proxy/foo [{:query/all-currencies [:currency/code
-                                           :currency/name]}]}
-      ])
+      {:proxy/add-transaction ?add-transaction}])
   Object
   (render
     [this]

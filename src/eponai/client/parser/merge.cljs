@@ -4,8 +4,8 @@
 
 (defmulti merge-novelty (fn [_ k _] k))
 (defmethod merge-novelty :default
-  [_ k v]
-  (debug "No merge-novelty for key: " k)
+  [_ k _]
+  (trace "No merge-novelty for key: " k)
   (cond
     ;; When we've got a proxy merge the value with the novelty
     (= "proxy" (namespace k)) :merge

@@ -19,23 +19,17 @@
 ;; -------- No matching dispatch
 
 (defn proxy [{:keys [parser query target] :as env} k _]
-  #?(:clj (debug "proxy target: " target))
   (let [ret (parser env query target)]
     #?(:clj  {:value ret}
        :cljs (if (and target (seq ret))
-               (do
-                 (debug "k: " k)
-                 (debug "ret: " ret)
-                 (let [ret1 (parser.util/flatten-query ret)
-                       _ (debug "reduced: " ret1)
-                       ast (om/query->ast [{k ret1}])]
-                  (debug "q->ast: " ast)
-                  {target ast}))
+               ;; Trial and error led to this solution.
+               ;; For some reason "proxy" keys get nested in one too many vectors
+               ;; and we need to unwrap them here.
+               {target (om/query->ast [{k (parser.util/unwrap-proxies ret)}])}
                {:value ret}))))
 
 (defmethod read :default
   [e k p]
-  (debug ":default k: " k)
   (cond
     (= "proxy" (namespace k))
     (proxy e k p)
