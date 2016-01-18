@@ -54,6 +54,7 @@
           temp-id-novelty (e.datascript/db-id->temp-id #{} (flatten (vals novelty)))
           ks (keys novelty)]
       (debug "Merge! returning keys:" ks)
+      (debug "Merge! novelty:" temp-id-novelty)
       (trace "Merge! transacting novelty:" temp-id-novelty)
       {:keys ks
        :next (:db-after @(d/transact conn temp-id-novelty))})))
@@ -61,12 +62,9 @@
 (defn send!
   [path]
   (fn [{:keys [remote]} cb]
-    (let [remote (->> remote
-                      (reduce (fn [query x]
-                                (if (vector? x)
-                                  (concat query (flatten x))
-                                  (conj query x)))
-                              []))]
+    (let [remote (into [] (reduce (fn [q x] (if (vector? x)
+                                      (concat q x)
+                                      (conj q x))) [] remote))]
       (debug "Sending to remote: " :remote " query: " remote)
       (go
         (try

@@ -4,9 +4,14 @@
 
 (defmulti merge-novelty (fn [_ k _] k))
 (defmethod merge-novelty :default
-  [_ k _]
-  (trace "No merge-novelty for key: " k)
-  nil)
+  [_ k v]
+  (debug "No merge-novelty for key: " k)
+  (cond
+    (= "proxy" (namespace k))  (do
+                                 (debug "proxy k:" k "val:" v)
+                                 :inline)
+    :else
+    nil))
 
 (defmethod merge-novelty :datascript/schema
   [{:keys [state]} _ datascript-schema]

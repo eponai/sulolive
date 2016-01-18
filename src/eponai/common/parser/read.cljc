@@ -17,20 +17,29 @@
 
 ;; -------- No matching dispatch
 
-#?(:cljs
-   (defn proxy [{:keys [parser query target] :as env} _ _]
-     (let [ret (parser env query target)]
-       (if (and target (seq ret))
-         {target (om/query->ast ret)}
-         {:value ret}))))
+(defn proxy [{:keys [parser query target] :as env} k _]
+  #?(:clj (debug "proxy target: " target))
+  (let [ret (parser env query target)]
+    #?(:clj  {:value ret}
+       :cljs (if (and target (seq ret))
+               (let [ret (if (and (vector? ret)
+                                  (= 1 (count ret))
+                                  (vector? (first ret)))
+                           (first ret)
+                           ret)
+                     ast (om/query->ast [{k ret}])]
+                 (debug "ret: " ret)
+                 (debug "q->ast: " ast)
+                 {target ast})
+               {:value ret}))))
 
-#?(:cljs
-   (defmethod read :default
-     [e k p]
-     (cond
-       (= "proxy" (namespace k))
-       (proxy e k p)
-       :else (warn "Returning nil for parser read key: " k))))
+(defmethod read :default
+  [e k p]
+  (debug ":default k: " k)
+  (cond
+    (= "proxy" (namespace k))
+    (proxy e k p)
+    :else (warn "Returning nil for parser read key: " k)))
 
 ;; -------- Readers for UI components
 
