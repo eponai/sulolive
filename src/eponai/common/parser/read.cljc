@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [read])
   (:require [eponai.common.datascript :as eponai.datascript]
             [eponai.common.database.pull :as p]
+            [eponai.common.parser.util :as parser.util]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
     #?(:clj
             [eponai.server.datomic.pull :as server.pull])
@@ -22,15 +23,14 @@
   (let [ret (parser env query target)]
     #?(:clj  {:value ret}
        :cljs (if (and target (seq ret))
-               (let [ret (if (and (vector? ret)
-                                  (= 1 (count ret))
-                                  (vector? (first ret)))
-                           (first ret)
-                           ret)
-                     ast (om/query->ast [{k ret}])]
+               (do
+                 (debug "k: " k)
                  (debug "ret: " ret)
-                 (debug "q->ast: " ast)
-                 {target ast})
+                 (let [ret1 (parser.util/flatten-query ret)
+                       _ (debug "reduced: " ret1)
+                       ast (om/query->ast [{k ret1}])]
+                  (debug "q->ast: " ast)
+                  {target ast}))
                {:value ret}))))
 
 (defmethod read :default

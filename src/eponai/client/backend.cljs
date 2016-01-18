@@ -61,11 +61,8 @@
 (defn send!
   [path]
   (fn [{:keys [remote]} cb]
-    (let [remote (into [] (reduce (fn [q x] (if (vector? x)
-                                      (concat q x)
-                                      (conj q x)))
-                                  []
-                                  remote))]
+    (debug "Send pre-reduce: " remote)
+    (let [remote (parser.util/flatten-query remote)]
       (debug "Sending to remote: " :remote " query: " remote)
       (go
         (try
