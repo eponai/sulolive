@@ -66,6 +66,7 @@
                                     (workflows/create-account (e/send-email-fn conn))
                                     (workflows/facebook (env :facebook-app-id)
                                                         (env :facebook-app-secret))]
+             :login-uri            "/signup"
              :default-landing-uri  "/budget"
              :fb-login-uri         "/api/login/fb"
              :email-login-uri      "/api/login/email"
