@@ -14,11 +14,14 @@
                 (reduce-kv (fn [m k v]
                              (let [ret (post-parse-fn env k v)]
                                (cond
-                                 (or (nil? ret) (identical? ret v)) m
+                                 (or (nil? ret)  (identical? ret v)) m
                                  (= ret :dissoc) (dissoc m k)
-                                 (= ret :inline) (merge-with merge
+                                 ;; For proxies: Merge the returned value into the resulting map
+                                 (= ret :merge)  (merge-with merge
                                                              (dissoc m k)
                                                              (reduce post-parse-subset v [v]))
+                                 ;; For proxies: Call post-parse-fn for the values returned.
+                                 (= ret :call)   (assoc m k (reduce post-parse-subset v [v]))
                                  :else (assoc m k ret))))
                            result
                            subset))]

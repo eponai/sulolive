@@ -7,9 +7,8 @@
   [_ k v]
   (debug "No merge-novelty for key: " k)
   (cond
-    (= "proxy" (namespace k))  (do
-                                 (debug "proxy k:" k "val:" v)
-                                 :inline)
+    ;; When we've got a proxy merge the value with the novelty
+    (= "proxy" (namespace k)) :merge
     :else
     nil))
 

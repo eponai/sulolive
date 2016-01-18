@@ -11,7 +11,11 @@
 (defmethod response-handler :default
   [_ k _]
   (trace "no response-handler for key:" k)
-  nil)
+  (cond
+    (= "proxy" (namespace k)) :call
+
+    :else
+    nil))
 
 (defmethod response-handler 'transaction/create
   [{:keys [state ::m/currency-rates-fn]} _ response]
