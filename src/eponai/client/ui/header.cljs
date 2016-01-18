@@ -55,14 +55,13 @@
 
               [:button
                (opts {:style {:display "block"
-                              :margin "5px 5px"
-                              :height "100%"}
+                              :margin "0.5em 0.2em"}
                       :on-click modal-trigger
                       :class    "btn btn-default btn-md"})
                "New"]
 
               [:img.img-profile
-               (opts {:style {:margin "5px 10px"}
+               (opts {:style {:margin "0.1em 1em"}
                       :src   "http://thesocialmediamonthly.com/wp-content/uploads/2015/08/photo.png"})]
               ]
              (when show-transaction-modal
