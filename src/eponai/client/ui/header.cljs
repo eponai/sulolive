@@ -30,7 +30,7 @@
                     :role  "navigation"})
 
              [:div
-              (opts {:class "navbar-brand topnav"
+              (opts {:class "navbar-brand"
                      :style {:display "flex"
                              :flex-direction "row"
                              :margin-right "5.0em"}})
