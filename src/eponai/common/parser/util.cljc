@@ -17,6 +17,8 @@
                                  (or (nil? ret)  (identical? ret v)) m
                                  (= ret :dissoc) (dissoc m k)
                                  ;; For proxies: Merge the returned value into the resulting map
+                                 ;;              Using merge-with merge incase keys are matching
+                                 ;;              in the end result.
                                  (= ret :merge)  (merge-with merge
                                                              (dissoc m k)
                                                              (reduce post-parse-subset v [v]))
