@@ -23,41 +23,48 @@
                                       show-transaction-modal
                                       (not show-transaction-modal))]
       (html [:nav
-             (opts {:style {:display         "flex"
-                            :flex-wrap       "no-wrap"
-                            :justify-content "space-between"}
+             (opts {:style {}
                     :class "navbar navbar-default navbar-fixed-top topnav"
                     :role  "navigation"})
 
-             [:div
-              (opts {:class "navbar-brand"
-                     :style {:display "flex"
-                             :flex-direction "row"
-                             :margin-right "5.0em"}})
+             [:div.navbar-brand
               "JourMoney"]
 
-             [:button
-              (opts {:style {}
-                     :on-click modal-trigger
-                     :class "btn btn-primary btn-md"})
-              "New Transaction"]
+             ;[:div
+             ; (opts {:style {:display        "flex"
+             ;                :flex-direction "row-reverse"}})]
+             [:form
+              {:action "/api/logout"
+               :id     "logout-form"
+               :method "get"}]
+
+             ;[:button
+             ; {:class "btn btn-default btn-md"
+             ;  :type  "submit"
+             ;  :form  "logout-form"} "logout"]
+
+             ;[:button
+             ; {:class "btn btn-default btn-md"}
+             ; "settings"]
              [:div
-              (opts {:style {:display        "flex"
-                             :flex-direction "row-reverse"}})
-              [:form
-               {:action "/api/logout"
-                :id "logout-form"
-                :method "get"}]
+              (opts {:style {:display "flex"
+                             :flex "row-reverse"
+                             :align-items "flex-end"
+                             :justify-content "flex-end"}})
+
 
               [:button
-               {:class "btn btn-default btn-md"
-                :type "submit"
-                :form "logout-form"} "logout"]
+               (opts {:style {:display "block"
+                              :margin "5px 5px"
+                              :height "100%"}
+                      :on-click modal-trigger
+                      :class    "btn btn-default btn-md"})
+               "New"]
 
-              [:button
-               {:class "btn btn-default btn-md"}
-               "settings"]]
-
+              [:img.img-profile
+               (opts {:style {:margin "5px 10px"}
+                      :src   "http://thesocialmediamonthly.com/wp-content/uploads/2015/08/photo.png"})]
+              ]
              (when show-transaction-modal
                (->Modal {:dialog-content #(->AddTransaction add-transaction)
                          :on-close       modal-trigger}))]))))
