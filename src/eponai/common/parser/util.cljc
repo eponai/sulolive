@@ -21,9 +21,9 @@
                                  ;;              in the end result.
                                  (= ret :merge)  (merge-with merge
                                                              (dissoc m k)
-                                                             (reduce post-parse-subset v [v]))
+                                                             (post-parse-subset v v))
                                  ;; For proxies: Call post-parse-fn for the values returned.
-                                 (= ret :call)   (assoc m k (reduce post-parse-subset v [v]))
+                                 (= ret :call)   (assoc m k (post-parse-subset v v))
                                  :else (assoc m k ret))))
                            result
                            subset))]
