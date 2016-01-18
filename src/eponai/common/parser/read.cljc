@@ -61,6 +61,13 @@
   {:value  (p/pull-many db query (p/all db '[[?e :currency/code]]))
    :remote true})
 
+(defmethod read :query/all-transactions
+  [{:keys [db query auth]} _ _]
+  (let [#?@(:clj  [eids (p/transactions db (:username auth))]
+            :cljs [eids (p/all db '[[?e :transaction/uuid]])])]
+    {:value (p/pull-many db query eids)
+     :remote true}))
+
 (defmethod read :query/all-budgets
   [{:keys [db query auth]} _ _]
   (let [#?@(:clj  [eids (p/budgets db (:username auth))]

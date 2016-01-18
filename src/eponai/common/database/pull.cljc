@@ -54,6 +54,16 @@
          user-db-id
          status))
 
+(defn transactions
+  [db user-uuid]
+  (q '[:find [?t ...]
+       :in $ ?uuid
+       :where
+       [?t :transaction/budget ?b]
+       [?b :budget/created-by ?u]
+       [?u :user/uuid ?uuid]]
+     db user-uuid))
+
 (defn budgets
   [db user-uuid]
   (q '[:find [?b ...]

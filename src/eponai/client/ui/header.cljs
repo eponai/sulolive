@@ -60,8 +60,11 @@
                       :class    "btn btn-default btn-md"})
                "New"]
 
-              [:img.img-profile
-               (opts {:style {:margin "0.1em 1em"}
+              [:img
+               (opts {:class "img-circle"
+                      :style {:margin "0.1em 1em"
+                              :width "40"
+                              :height "40"}
                       :src   "http://thesocialmediamonthly.com/wp-content/uploads/2015/08/photo.png"})]
               ]
              (when show-transaction-modal
