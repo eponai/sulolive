@@ -7,8 +7,6 @@
     #?(:clj
             [eponai.server.datomic.pull :as server.pull])
     #?(:clj
-            [eponai.server.auth.facebook :as fb])
-    #?(:clj
             [datomic.api :only [q pull-many] :as d]
        :cljs [datascript.core :as d])
     #?(:cljs [om.next :as om])
@@ -40,7 +38,7 @@
 #?(:cljs
    (defmethod read :query/header
      [{:keys [db query]} _ _]
-     {:value (p/pull-many db query (p/all db '[[?e :ui/singleton :budget/header]]))}))
+     {:value (p/pull-many db query (p/all-where db '[[?e :ui/singleton :budget/header]]))}))
 
 ;; -------- Remote readers
 
@@ -53,18 +51,18 @@
 
 (defmethod read :query/all-dates
   [{:keys [db query]} _ _]
-  {:value  (p/pull-many db query (p/all db '[[?e :date/ymd]]))
+  {:value  (p/pull-many db query (p/all-where db '[[?e :date/ymd]]))
    :remote true})
 
 (defmethod read :query/all-currencies
   [{:keys [db query]} _ _]
-  {:value  (p/pull-many db query (p/all db '[[?e :currency/code]]))
+  {:value  (p/pull-many db query (p/all-where db '[[?e :currency/code]]))
    :remote true})
 
 (defmethod read :query/all-transactions
-  [{:keys [db query auth]} _ {:keys [where] :as params}]
+  [{:keys [db query auth]} _ {:keys [find-query values]}]
   (let [#?@(:clj  [eids (p/transactions db (:username auth))]
-            :cljs [eids (p/all db where)])]
+            :cljs [eids (p/all db find-query values)])]
     {:value (p/pull-many db query eids)
      :remote true}))
 
@@ -73,7 +71,7 @@
   (let [#?@(:clj  [eids (p/budgets db (:username auth))]
             ;; We don't have the auth UUID in the client,
             ;; so fetch all budgets since they only belong to the current user anyway.
-            :cljs [eids (p/all db '[[?e :budget/uuid]])])]
+            :cljs [eids (p/all-where db '[[?e :budget/uuid]])])]
     {:value (p/pull-many db query eids)
      :remote true}))
 

@@ -19,13 +19,29 @@
    ;; TODO: Should instead use the primary currency
    :currency (-> transactions first :transaction/currency)})
 
+(defn update-query [component]
+  (let [{:keys [filter-tags]} (om/get-state component)]
+    (if (empty? filter-tags)
+      (om/set-query! component
+                     {:params {:values     []
+                               :find-query '[:find [?e ...]
+                                             :where [?e :transaction/uuid]]}})
+      (om/set-query! component
+                     {:params {:find-query '[:find [?e ...]
+                                             :in $ [?tagname ...]
+                                             :where
+                                             [?e :transaction/tags ?tag]
+                                             [?tag :tag/name ?tagname]]
+                               :values     [filter-tags]}}))))
+
 (defn delete-tag-fn [component name k]
   (fn []
     (om/update-state! component update k
                       (fn [tags]
                         (into #{}
                               (remove #(= name %))
-                              tags)))))
+                              tags)))
+    (update-query component)))
 
 (defn on-add-tag-key-down [this input-tag]
   (fn [key]
@@ -35,63 +51,57 @@
       (om/update-state! this
                         #(-> %
                              (assoc :input-tag "")
-                             (update :filter-tags conj input-tag))))))
+                             (update :filter-tags conj input-tag)))
+      (println "Updating query")
+      (update-query this))))
 
 (defn on-change [this k]
   #(om/update-state! this assoc k (.-value (.-target %))))
 
-(defui Filters
-  Object
-  (initLocalState [_]
-    {:filter-tags #{}
-     :input-tag ""
-     :input-date (js/Date.)})
-  (render [this]
-    (let [{:keys [input-tag
-                  filter-tags
-                  input-date]} (om/get-state this)]
-      (html
-        [:div
-         (opts {:style {:display        "flex"
-                        :flex-direction "column"}})
+(defn filters [component]
+  (let [{:keys [input-tag
+                filter-tags
+                input-date]} (om/get-state component)]
+    (html
+      [:div
+       (opts {:style {:display        "flex"
+                      :flex-direction "column"}})
 
-         ;[:br]
-         [:div.has-feedback
-          [:input.form-control
-           {:type        "text"
-            :value       input-tag
-            :on-change   (on-change this :input-tag)
-            :on-key-down (on-add-tag-key-down this input-tag)
-            :placeholder "Filter tags..."}]
-          [:span
-           {:class "glyphicon glyphicon-tag form-control-feedback"}]]
+       [:div.has-feedback
+        [:input.form-control
+         {:type        "text"
+          :value       input-tag
+          :on-change   (on-change component :input-tag)
+          :on-key-down (on-add-tag-key-down component input-tag)
+          :placeholder "Filter tags..."}]
+        [:span
+         {:class "glyphicon glyphicon-tag form-control-feedback"}]]
 
-         [:div#date-input
-          (->Datepicker
-            (opts {:value     input-date
-                   :on-change #(om/update-state! this assoc :input-date %)}))]
+       [:div#date-input
+        (->Datepicker
+          (opts {:value     input-date
+                 :on-change #(om/update-state! component assoc :input-date %)}))]
 
-         [:div
-          (opts {:style {:display         "flex"
-                         :flex-direction  "row"
-                         :width           "100%"}})
-          (map-all
-            filter-tags
-            (fn [tagname]
-              (tag/->Tag (tag/tag-props tagname
-                                        (delete-tag-fn this tagname :filter-tags)))))]
-
-         ]))))
-
-(def ->Filters (om/factory Filters))
+       [:div
+        (opts {:style {:display        "flex"
+                       :flex-direction "row"
+                       :width          "100%"}})
+        (map-all
+          filter-tags
+          (fn [tagname]
+            (tag/->Tag (tag/tag-props tagname
+                                      (delete-tag-fn component tagname :filter-tags)))))]])))
 
 (defui AllTransactions
   static om/IQueryParams
   (params [_]
-    {:where '[[?e :transaction/uuid]]})
+    {:values     []
+     :find-query '[:find [?e ...]
+                   :where [?e :transaction/uuid]]})
   static om/IQuery
   (query [_]
-    [{'(:query/all-transactions {:where ?where})
+    [{'(:query/all-transactions {:find-query ?find-query
+                                 :values ?values})
       [:db/id
        :transaction/uuid
        :transaction/name
@@ -113,7 +123,10 @@
 
   Object
   (initLocalState [_]
-    {:active-tab :filter})
+    {:filter-tags #{}
+     :input-tag ""
+     :input-date (js/Date.)
+     :active-tab :filter})
   (render [this]
     (let [{transactions :query/all-transactions} (om/props this)
           {:keys [active-tab]} (om/get-state this)]
@@ -142,7 +155,7 @@
          [:br]
          [:div.tab-content
           (if (= active-tab :filter)
-            (->Filters))]
+            (filters this))]
 
          [:table
           {:class "table table-striped table-hover"}

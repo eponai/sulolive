@@ -52,8 +52,7 @@
   "Returns datomic entities representing tags, given a vector of tag names."
   [tags]
   (map (fn [n] {:db/id          (d/tempid :db.part/user)
-                :tag/name       n
-                :tag/persistent false}) tags))
+                :tag/name       n}) tags))
 
 (defn str->uuid [str-uuid]
   #?(:clj  (java.util.UUID/fromString str-uuid)

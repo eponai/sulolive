@@ -73,7 +73,7 @@
        [?u :user/uuid ?uuid]]
      db user-uuid))
 
-(defn all
+(defn all-where
   "takes the database, a pull query and where-clauses, where the where-clauses
   return some entity ?e."
   [db where-clauses]
@@ -82,3 +82,9 @@
                     :where]
                   where-clauses))
      db))
+
+(defn all
+  [db query values]
+  (if (empty? values)
+    (q query db)
+    (apply (partial q query db) values)))
