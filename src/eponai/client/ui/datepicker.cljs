@@ -44,10 +44,13 @@
       (set-date-if-changed this next-value old-value)))
   (render [this]
     (html
-      [:input.form-control
-       (opts {:type        "text"
-              :ref         pikaday-ref-name
-              :placeholder (-> this om/props :placeholder)})])))
+      [:div.has-feedback
+       [:input.form-control
+        (opts {:type        "text"
+               :ref         pikaday-ref-name
+               :placeholder (-> this om/props :placeholder)})]
+       [:span
+        {:class "glyphicon glyphicon-calendar form-control-feedback"}]])))
 
 ;; props: {:value js/Date :on-change f :placeholder str}
 (def ->Datepicker (om/factory DatePicker))

@@ -25,8 +25,7 @@
       (html [:div
              [:div (->Header header)]
              [:div {:class "content-section-b"}
-              [:div {:class "content-section-b"}
-               (->AllTransactions transactions)]]]))))
+              (->AllTransactions transactions)]]))))
 
 (defonce conn-atom (atom nil))
 

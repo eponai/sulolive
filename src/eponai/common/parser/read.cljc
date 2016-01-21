@@ -62,9 +62,9 @@
    :remote true})
 
 (defmethod read :query/all-transactions
-  [{:keys [db query auth]} _ _]
+  [{:keys [db query auth]} _ {:keys [where] :as params}]
   (let [#?@(:clj  [eids (p/transactions db (:username auth))]
-            :cljs [eids (p/all db '[[?e :transaction/uuid]])])]
+            :cljs [eids (p/all db where)])]
     {:value (p/pull-many db query eids)
      :remote true}))
 
