@@ -40,6 +40,12 @@
      [{:keys [db query]} _ _]
      {:value (p/pull-many db query (p/all-where db '[[?e :ui/singleton :budget/header]]))}))
 
+#?(:cljs
+   (defmethod read :query/modal
+     [{:keys [db query]} _ _]
+     {:value (first (p/pull-many db query (p/all-where db '[[?e :ui/singleton :ui.singleton/modal]])))}))
+
+
 ;; -------- Remote readers
 
 (defmethod read :datascript/schema

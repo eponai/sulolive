@@ -38,8 +38,9 @@
       (debug "Reusing old conn. It currently has schema for attributes:" (-> @conn-atom deref :schema keys))
       @conn-atom)
     (let [ui-schema {:ui/singleton {:db/unique :db.unique/identity}}
-          ui-state [{:ui/singleton :budget/header}
-                    {:ui/singleton :ui.singleton/app}]
+          ui-state [{:ui/singleton :ui.singleton/app}
+                    {:ui/singleton :ui.singleton/modal
+                     :ui.singleton.modal/visible false}]
           conn (d/create-conn ui-schema)]
       (d/transact! conn ui-state)
       (reset! conn-atom conn))))

@@ -1,27 +1,21 @@
 (ns eponai.client.ui.header
   (:require [om.next :as om :refer-macros [defui]]
             [eponai.client.ui :refer-macros [opts]]
-            [eponai.common.parser.mutate :as mutate]
-            [eponai.client.ui.modal :refer [->Modal]]
+            [eponai.client.ui.modal :refer [->Modal Modal]]
             [eponai.client.ui.add_transaction :as add.t :refer [->AddTransaction]]
             [sablono.core :as html :refer-macros [html]]
             [garden.core :refer [css]]))
 
 (defui Header
-  static om/IQueryParams
-  (params [this] {:add-transaction (om/get-query add.t/AddTransaction)})
   static om/IQuery
-  (query [this]
-    '[{:query/header [:db/id ::show-transaction-modal]}
-      {:proxy/add-transaction ?add-transaction}])
+  (query [_]
+    [{:query/modal [:ui.singleton.modal/visible]}
+     {:proxy/add-transaction (om/get-query add.t/AddTransaction)}])
   Object
   (render
     [this]
-    (let [{:keys [query/header proxy/add-transaction]} (om/props this)
-          {:keys [db/id ::show-transaction-modal]} (first header)
-          modal-trigger #(mutate/cas! this id ::show-transaction-modal
-                                      show-transaction-modal
-                                      (not show-transaction-modal))]
+    (let [{:keys [query/modal proxy/add-transaction]} (om/props this)
+          {:keys [ui.singleton.modal/visible]} modal]
       (html [:nav
              (opts {:style {}
                     :class "navbar navbar-default navbar-fixed-top topnav"
@@ -30,9 +24,6 @@
              [:div.navbar-brand
               "JourMoney"]
 
-             ;[:div
-             ; (opts {:style {:display        "flex"
-             ;                :flex-direction "row-reverse"}})]
              [:form
               {:action "/api/logout"
                :id     "logout-form"
@@ -43,9 +34,6 @@
              ;  :type  "submit"
              ;  :form  "logout-form"} "logout"]
 
-             ;[:button
-             ; {:class "btn btn-default btn-md"}
-             ; "settings"]
              [:div
               (opts {:style {:display "flex"
                              :flex "row-reverse"
@@ -56,7 +44,7 @@
               [:button
                (opts {:style {:display "block"
                               :margin "0.5em 0.2em"}
-                      :on-click modal-trigger
+                      :on-click #(om/transact! this `[(ui.modal/show) :query/modal])
                       :class    "btn btn-default btn-md"})
                "New"]
 
@@ -67,42 +55,10 @@
                               :height "40"}
                       :src   "http://thesocialmediamonthly.com/wp-content/uploads/2015/08/photo.png"})]
               ]
-             (when show-transaction-modal
-               (->Modal {:dialog-content #(->AddTransaction add-transaction)
-                         :on-close       modal-trigger}))]))))
-;(defui Header
-;  static om/IQueryParams
-;  (params [this] {:add-transaction (om/get-query add.t/AddTransaction)})
-;  static om/IQuery
-;  (query [this]
-;         '[{:query/header [:db/id ::show-transaction-modal]}
-;           {:proxy/add-transaction ?add-transaction}])                      ;; what to transact?
-;  Object
-;  (render
-;    [this]
-;    (let [{:keys [query/header proxy/add-transaction]} (om/props this)
-;          {:keys [db/id ::show-transaction-modal]} (first header)
-;          modal-trigger #(parser/cas! this id ::show-transaction-modal
-;                              show-transaction-modal
-;                              (not show-transaction-modal))]
-;      (html [:div (style {:display         "flex"
-;                          :flex-wrap       "no-wrap"
-;                          :justify-content "space-between"})
-;             [:div (style {:display "flex"
-;                           :width   "33%"})
-;              [:panel {:class "panel-heading"}
-;               [:span {:class "network-name"} "JourMoney"]]]
-;             [:button (merge (style {:width "33%"})
-;                             {:on-click modal-trigger
-;                              :class "btn btn-primary btn-md"})
-;              "New Transaction"]
-;             [:div (style {:display        "flex"
-;                           :flex-direction "row-reverse"
-;                           :width          "33%"})
-;              [:button {:class "btn btn-default btn-md"} "logout"]
-;              [:button  {:class "btn btn-default btn-md"} "settings"]]
-;             (when show-transaction-modal
-;               (->Modal {:dialog-content #(->AddTransaction add-transaction)
-;                         :on-close       modal-trigger}))]))))
+
+             (when visible
+               (->Modal (merge modal
+                               {:dialog-content #(->AddTransaction add-transaction)
+                                :on-close       #(om/transact! this `[(ui.modal/hide) :query/modal])})))]))))
 
 (def ->Header (om/factory Header))

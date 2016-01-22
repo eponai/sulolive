@@ -30,6 +30,18 @@
                   `[(datascript/transact
                      {:txs [[:db.fn/cas ~id ~key ~old-value ~new-value]]})])))
 
+#?(:cljs
+   (defmethod mutate 'ui.modal/show
+     [{:keys [state]} _ _]
+     {:action #(d/transact! state [{:ui/singleton :ui.singleton/modal
+                                    :ui.singleton.modal/visible true}])}))
+
+#?(:cljs
+   (defmethod mutate 'ui.modal/hide
+     [{:keys [state]} _ _]
+     {:action #(d/transact! state [{:ui/singleton :ui.singleton/modal
+                                    :ui.singleton.modal/visible false}])}))
+
 ;; -------- Remote mutations
 
 (defn- transaction-create [{:keys [state db auth]} k {:keys [input-tags] :as params}]

@@ -6,9 +6,9 @@
 
 (defui Modal
   Object
-  (render
-    [this]
+  (render [this]
     (let [{:keys [dialog-content on-close]} (om/props this)]
+      (println "Modal props: " (om/props this))
       (html
         [:div
          [:style (css [:#modal
