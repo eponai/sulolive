@@ -9,38 +9,11 @@
 
     #?(:clj
             [clojure.core.async :refer [go >! chan]])
-    #?(:clj
-            [eponai.server.datomic.pull :as server.pull])
     #?(:cljs [datascript.core :as d])
     #?(:cljs [om.next :as om])
             [eponai.common.format :as f]))
 
 (defmulti mutate (fn [_ k _] k))
-
-;; -------- Badly scoped mutations. TODO:(FIX THIS)
-
-#?(:cljs
-   (defmethod mutate 'datascript/transact
-    [{:keys [state]} _ {:keys [txs]}]
-    {:action #(d/transact! state txs)}))
-
-#?(:cljs
-   (defn cas! [component id key old-value new-value]
-    (om/transact! component
-                  `[(datascript/transact
-                     {:txs [[:db.fn/cas ~id ~key ~old-value ~new-value]]})])))
-
-#?(:cljs
-   (defmethod mutate 'ui.modal/show
-     [{:keys [state]} _ _]
-     {:action #(d/transact! state [{:ui/singleton :ui.singleton/modal
-                                    :ui.singleton.modal/visible true}])}))
-
-#?(:cljs
-   (defmethod mutate 'ui.modal/hide
-     [{:keys [state]} _ _]
-     {:action #(d/transact! state [{:ui/singleton :ui.singleton/modal
-                                    :ui.singleton.modal/visible false}])}))
 
 ;; -------- Remote mutations
 

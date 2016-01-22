@@ -3,7 +3,7 @@
             [eponai.client.ui :refer-macros [opts]]
             [eponai.client.ui.modal :refer [->Modal Modal]]
             [eponai.client.ui.add_transaction :as add.t :refer [->AddTransaction]]
-            [sablono.core :as html :refer-macros [html]]
+            [sablono.core :refer-macros [html]]
             [garden.core :refer [css]]))
 
 (defui Header

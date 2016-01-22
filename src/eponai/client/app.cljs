@@ -7,6 +7,7 @@
             [datascript.core :as d]
             [eponai.client.backend :as backend]
             [eponai.common.parser :as parser]
+            [eponai.client.parser.mutate]
             [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
             [eponai.client.ui.all_transactions :refer [AllTransactions ->AllTransactions]]
             [eponai.client.ui.header :refer [Header ->Header]]
@@ -39,8 +40,12 @@
       @conn-atom)
     (let [ui-schema {:ui/singleton {:db/unique :db.unique/identity}}
           ui-state [{:ui/singleton :ui.singleton/app}
+
                     {:ui/singleton :ui.singleton/modal
-                     :ui.singleton.modal/visible false}]
+                     :ui.singleton.modal/visible false}
+
+                    {:ui.singleton :ui.singleton/menu
+                     :ui.singleton.menu/visible false}]
           conn (d/create-conn ui-schema)]
       (d/transact! conn ui-state)
       (reset! conn-atom conn))))
