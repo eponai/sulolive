@@ -9,13 +9,13 @@
 (defui Header
   static om/IQuery
   (query [_]
-    [{:query/modal [:ui.singleton.modal/visible]}
+    [{'(:query/ui-singleton {:singleton :ui.singleton/modal}) [:ui.singleton.modal/visible]}
      {:proxy/add-transaction (om/get-query add.t/AddTransaction)}])
   Object
   (render
     [this]
-    (let [{:keys [query/modal proxy/add-transaction]} (om/props this)
-          {:keys [ui.singleton.modal/visible]} modal]
+    (let [{:keys [query/ui-singleton proxy/add-transaction]} (om/props this)
+          {:keys [ui.singleton.modal/visible] :as modal} ui-singleton]
       (html [:nav
              (opts {:style {}
                     :class "navbar navbar-default navbar-fixed-top topnav"

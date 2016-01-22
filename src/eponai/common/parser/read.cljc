@@ -33,19 +33,6 @@
     (proxy e k p)
     :else (warn "Returning nil for parser read key: " k)))
 
-;; -------- Readers for UI components
-
-#?(:cljs
-   (defmethod read :query/header
-     [{:keys [db query]} _ _]
-     {:value (p/pull-many db query (p/all-where db '[[?e :ui/singleton :budget/header]]))}))
-
-#?(:cljs
-   (defmethod read :query/modal
-     [{:keys [db query]} _ _]
-     {:value (first (p/pull-many db query (p/all-where db '[[?e :ui/singleton :ui.singleton/modal]])))}))
-
-
 ;; -------- Remote readers
 
 (defmethod read :datascript/schema

@@ -8,6 +8,7 @@
             [eponai.client.backend :as backend]
             [eponai.common.parser :as parser]
             [eponai.client.parser.mutate]
+            [eponai.client.parser.read]
             [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
             [eponai.client.ui.all_transactions :refer [AllTransactions ->AllTransactions]]
             [eponai.client.ui.header :refer [Header ->Header]]
