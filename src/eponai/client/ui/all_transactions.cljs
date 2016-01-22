@@ -1,7 +1,5 @@
 (ns eponai.client.ui.all_transactions
   (:require [eponai.client.ui.format :as f]
-            [eponai.common.parser.mutate :as mutate]
-            [eponai.client.ui.transaction :as trans]
             [eponai.client.ui.datepicker :refer [->Datepicker]]
             [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
             [garden.core :refer [css]]
@@ -20,19 +18,43 @@
    :currency (-> transactions first :transaction/currency)})
 
 (defn update-query [component]
-  (let [{:keys [filter-tags]} (om/get-state component)]
-    (if (empty? filter-tags)
-      (om/set-query! component
-                     {:params {:values     []
-                               :find-query '[:find [?e ...]
-                                             :where [?e :transaction/uuid]]}})
-      (om/set-query! component
-                     {:params {:find-query '[:find [?e ...]
-                                             :in $ [?tagname ...]
-                                             :where
-                                             [?e :transaction/tags ?tag]
-                                             [?tag :tag/name ?tagname]]
-                               :values     [filter-tags]}}))))
+  (let [{:keys [filter-tags
+                search-query]} (om/get-state component)
+        query-params (cond-> {:find-query '{:find  [[?e ...]]
+                                            :in    [$]
+                                            :where []}
+                              :values     []}
+                             (not-empty filter-tags)
+                             (->
+                                 (update-in [:find-query :where] conj '[?e :transaction/tags ?tag] '[?tag :tag/name ?tagname])
+                                 (update-in [:find-query :in] conj '[?tagname ...])
+                                 (update :values conj filter-tags))
+
+                             (not-empty search-query)
+                             (->
+                                 (update-in [:find-query :where] conj '[(fulltext $ :transaction/name ?search) [?e _ _ _]])
+                                 (update-in [:find-query :in] conj '?search)
+                                 (update :values conj search-query))
+
+                             (and (empty? search-query) (empty? filter-tags))
+                             (->
+                                 (assoc-in [:find-query :where] '[[?e :transaction/uuid]])))]
+    (om/set-query! component
+                   {:params query-params})
+
+    ;(if (empty? filter-tags)
+    ;  (om/set-query! component
+    ;                 {:params {:values     []
+    ;                           :find-query '[:find [?e ...]
+    ;                                         :where [?e :transaction/uuid]]}})
+    ;  (om/set-query! component
+    ;                 {:params {:find-query '[:find [?e ...]
+    ;                                         :in $ [?tagname ...]
+    ;                                         :where
+    ;                                         [?e :transaction/tags ?tag]
+    ;                                         [?tag :tag/name ?tagname]]
+    ;                           :values     [filter-tags]}}))
+    ))
 
 (defn delete-tag-fn [component name k]
   (fn []
@@ -52,11 +74,12 @@
                         #(-> %
                              (assoc :input-tag "")
                              (update :filter-tags conj input-tag)))
-      (println "Updating query")
       (update-query this))))
 
 (defn on-change [this k]
-  #(om/update-state! this assoc k (.-value (.-target %))))
+  (fn [e]
+    (om/update-state! this assoc k (.-value (.-target e)))
+    (update-query this)))
 
 (defn filters [component]
   (let [{:keys [input-tag
@@ -129,7 +152,8 @@
      :active-tab :filter})
   (render [this]
     (let [{transactions :query/all-transactions} (om/props this)
-          {:keys [active-tab]} (om/get-state this)]
+          {:keys [active-tab
+                  search-query]} (om/get-state this)]
       (html
         [:div
          (opts {:style {:display "flex"
@@ -147,8 +171,10 @@
           ;[:a]
           [:div.has-feedback
            [:input.form-control
-            {:type        "text"
-             :placeholder "Search..."}]
+            {:value search-query
+             :type        "text"
+             :placeholder "Search..."
+             :on-change (on-change this :search-query)}]
            [:span {:class "glyphicon glyphicon-search form-control-feedback"}]]
           ]
 
@@ -171,24 +197,25 @@
              (reverse transactions)
              (fn [{:keys [transaction/date
                           transaction/currency
-                          transaction/amount]
+                          transaction/amount
+                          transaction/uuid]
                    :as   transaction}]
                [:tr
-                (opts {:key [(:transaction/uuid transaction)]})
+                (opts {:key [uuid]})
 
                 [:td
-                 (opts {:key [(:date/ymd date)]})
+                 (opts {:key [uuid]})
                  (str (f/month-name (:date/month date)) " " (:date/day date))]
 
                 [:td
-                 (opts {:key [(:transaction/name transaction)]})
+                 (opts {:key [uuid]})
                  (:transaction/name transaction)]
 
                 [:td
-                 (opts {:key [(:transaction/tags transaction)]})
+                 (opts {:key [uuid]})
                  (map tag/->Tag (:transaction/tags transaction))]
                 [:td.text-right
-                 (opts {:key [amount]})
+                 (opts {:key [uuid]})
                  (str amount " " (or (:currency/symbol-native currency)
                                      (:currency/code currency)))]]))]]]))))
 
