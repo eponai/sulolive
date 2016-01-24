@@ -32,7 +32,7 @@
 
                              (not-empty search-query)
                              (->
-                                 (update-in [:find-query :where] conj '[(fulltext $ :transaction/name ?search) [?e _ _ _]])
+                                 (update-in [:find-query :where] conj '[(fulltext $ :transaction/title ?search) [?e _ _ _]])
                                  (update-in [:find-query :in] conj '?search)
                                  (update :values conj search-query))
 
@@ -113,7 +113,7 @@
                                  :values ?values})
       [:db/id
        :transaction/uuid
-       :transaction/name
+       :transaction/title
        :transaction/amount
        :transaction/details
        :transaction/status
@@ -196,7 +196,7 @@
 
                 [:td
                  (opts {:key [uuid]})
-                 (:transaction/name transaction)]
+                 (:transaction/title transaction)]
 
                 [:td
                  (opts {:key [uuid]})

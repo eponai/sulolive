@@ -1,5 +1,6 @@
 (ns eponai.common.format
   (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
+            [clojure.set :refer [rename-keys]]
     #?@(:clj  [[clj-time.core :as t]
                [clj-time.format :as f]
                [clj-time.coerce :as c]]
@@ -58,7 +59,7 @@
   #?(:clj  (java.util.UUID/fromString str-uuid)
      :cljs (uuid str-uuid)))
 
-  (defn user-transaction->db-entity
+(defn user-transaction->db-entity
   "Takes a user input transaction and converts into a datomic entity.
   A conversion function will be applied on the values for the following
   keys #{:currency :date :tags :amount :uuid} as appropriate for the database.
@@ -71,5 +72,26 @@
                                                       :cljs (cljs.reader/read-string a)))
                      :transaction/budget   (fn [b] [:budget/uuid (str->uuid (str b))])}
         update-fn (fn [m k] (update m k (conv-fn-map k)))]
+    (assoc (reduce update-fn user-tx (keys conv-fn-map))
+      :db/id (d/tempid :db.part/user))))
+
+(defn input-transaction->db-entity
+  "Takes a user input transaction with namespace :input and converts into a datomic entity.
+  (e.g. :input/title -> :transaction/title etc)
+  Will change the namespace to :transaction and update values for the following keys:
+   #{:input/currency :input/date :input/tags :input/amount :input/budget} as appropriate for the database."
+  [input-transaction]
+  (let [user-tx (reduce (fn [m [k v]]
+                         (assoc m (keyword "transaction" (name k)) v))
+                       {}
+                       input-transaction)
+        conv-fn-map {:transaction/currency (fn [c] [:currency/code c])
+                     :transaction/date     (fn [d] (date-str->db-tx d))
+                     :transaction/tags     (fn [t] (tags->db-tx t))
+                     :transaction/amount   (fn [a] #?(:clj  (bigint a)
+                                                      :cljs (cljs.reader/read-string a)))
+                     :transaction/budget   (fn [b] [:budget/uuid (str->uuid (str b))])}
+        update-fn (fn [m k] (update m k (conv-fn-map k)))]
+    (println "User tx: " user-tx)
     (assoc (reduce update-fn user-tx (keys conv-fn-map))
       :db/id (d/tempid :db.part/user))))

@@ -28,7 +28,7 @@
 
 (defn valid-user-transaction? [user-tx]
   (let [required-fields #{:transaction/uuid
-                          :transaction/name
+                          :transaction/title
                           :transaction/date
                           :transaction/amount
                           :transaction/currency

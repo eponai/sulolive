@@ -16,32 +16,32 @@
                  :USD "US Dollar"})
 
 (def transactions [{:transaction/uuid       (UUID/randomUUID)
-                    :transaction/name       "lunch"
+                    :transaction/title       "lunch"
                     :transaction/date       "2015-10-10"
                     :transaction/amount     180
                     :transaction/currency   "THB"
                     :transaction/created-at 1
                     :transaction/tags       ["thailand"]}
                    {:transaction/uuid       (UUID/randomUUID)
-                    :transaction/name       "coffee"
+                    :transaction/title       "coffee"
                     :transaction/date       "2015-10-10"
                     :transaction/amount     140
                     :transaction/currency   "THB"
                     :transaction/created-at 1}
                    {:transaction/uuid       (UUID/randomUUID)
-                    :transaction/name       "dinner"
+                    :transaction/title       "dinner"
                     :transaction/date       "2015-10-10"
                     :transaction/amount     350
                     :transaction/currency   "THB"
                     :transaction/created-at 1}
                    {:transaction/uuid       (UUID/randomUUID)
-                    :transaction/name       "market"
+                    :transaction/title       "market"
                     :transaction/date       "2015-10-11"
                     :transaction/amount     789
                     :transaction/currency   "THB"
                     :transaction/created-at 1}
                    {:transaction/uuid       (UUID/randomUUID)
-                    :transaction/name       "lunch"
+                    :transaction/title       "lunch"
                     :transaction/date       "2015-10-11"
                     :transaction/amount     125
                     :transaction/currency   "THB"

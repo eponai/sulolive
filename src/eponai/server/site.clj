@@ -17,7 +17,7 @@
 (defroutes
   site-routes
   (GET "/" [:as request]
-    (if (friend/current-authentication)
+    (if (friend/current-authentication request)
       (html (str "/" (::m/cljs-build-id request) "/budget.html"))
       (html "index.html")))
 

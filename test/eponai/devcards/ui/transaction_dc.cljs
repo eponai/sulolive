@@ -5,14 +5,14 @@
   (:require-macros [devcards.core :refer [defcard]]))
 
 (defn transaction-props* [name [y m d] amount currency tags]
-  {:transaction/name     name
+  {:transaction/title    name
    :transaction/amount   amount
    :transaction/currency {:currency/code currency}
    :transaction/tags     (mapv #(hash-map :tag/name %) tags)
-   :transaction/date     {:date/ymd  (str y "-" m "-" d)
-                          :date/year y
+   :transaction/date     {:date/ymd   (str y "-" m "-" d)
+                          :date/year  y
                           :date/month m
-                          :date/day d}})
+                          :date/day   d}})
 
 (def transaction-props
   (transaction-props* "Coffee" [2015 10 16] 140 "THB"

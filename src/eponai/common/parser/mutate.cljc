@@ -25,21 +25,24 @@
                       {:input-tags input-tags
                        :mutate     k
                        :params     params})))
-    (let [renames {:input-title       :transaction/name
-                   :input-amount      :transaction/amount
-                   :input-description :transaction/details
-                   :input-date        :transaction/date
-                   :input-tags        :transaction/tags
-                   :input-currency    :transaction/currency
-                   :input-created-at  :transaction/created-at
-                   :input-uuid        :transaction/uuid
-                   :input-budget      :transaction/budget}
-          user-tx (rename-keys params renames)
+    (let [
+          ;renames {:input/title       :transaction/name
+          ;         :input/amount      :transaction/amount
+          ;         :input/description :transaction/details
+          ;         :input/date        :transaction/date
+          ;         :input/tags        :transaction/tags
+          ;         :input/currency    :transaction/currency
+          ;         :input/created-at  :transaction/created-at
+          ;         :input/uuid        :transaction/uuid
+          ;         :input/budget      :transaction/budget}
+          ;user-tx (rename-keys params renames)
+          ;user-tx (-> params
+          ;            (assoc :input/created-at ()))
           #?@(:clj [currency-chan (chan 1)])
-          _ (validate/valid-user-transaction? user-tx)
-          db-tx (format/user-transaction->db-entity user-tx)]
+          db-tx (format/input-transaction->db-entity params)
+          _ (validate/valid-user-transaction? db-tx)]
       (transact/transact state [db-tx])
-      #?(:clj (go (>! currency-chan (:transaction/date user-tx))))
+      #?(:clj (go (>! currency-chan (:transaction/date db-tx))))
       #?(:clj {:currency-chan currency-chan}
          :cljs nil))))
 

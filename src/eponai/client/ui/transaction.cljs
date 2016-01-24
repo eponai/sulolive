@@ -10,7 +10,7 @@
   (query [_]
     [:db/id
      :transaction/uuid
-     :transaction/name
+     :transaction/title
      :transaction/amount
      :transaction/details
      :transaction/status
@@ -19,12 +19,13 @@
      ::transaction-show-tags?])
   Object
   (render [this]
-    (let [{transaction-name :transaction/name
+    (let [{transaction-name :transaction/title
            :keys            [transaction/amount
                              transaction/currency
                              transaction/tags
                              transaction/details]} (om/props this)
-          {:keys [currency/code currency/symbol-native]} currency]
+          {:keys [currency/code
+                  currency/symbol-native]} currency]
       (html
         [:div#transaction.list-group-item
          [:div#info
