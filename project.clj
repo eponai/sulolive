@@ -53,12 +53,14 @@
                  [cljsjs/pikaday "1.3.2-0"]
 
                  ;; Testing
+                 [lein-doo "0.1.6"]
                  [devcards "0.2.0-8"]
                  [org.clojure/test.check "0.9.0"]]
   :exclusions [[org.clojure/test.check]]
 
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]
+            [lein-doo "0.1.6"]
             [lein-cljsbuild "1.1.1"]
             [lein-figwheel "0.5.0-3"]
             [lein-ring "0.9.7"]
@@ -98,6 +100,7 @@
   ;;;;;;;;;;;;;
   ;; cljs:
   ;;;;;;;;;;;;;
+  :doo {:paths {:phantom "./node_modules/phantomjs/bin/phantomjs"}}
   :cljsbuild
   {:builds        [{:id           "dev"
                     :source-paths ["src/"
@@ -125,7 +128,6 @@
                                    :output-dir    "resources/public/test/js/out"
                                    :main          "eponai.client.tests"
                                    :optimizations :none
-                                   :target         :nodejs
                                   }}
                    {:id           "release"
                     :source-paths ["src/"]
@@ -140,12 +142,12 @@
                                    }}]
    :test-commands {"frontend-unit-tests"
                    ["node_modules/karma/bin/karma" "start" "karma.conf.js" "--single-run"]}}
-  :offline true
   :npm {:dependencies [[source-map-support "0.3.2"]
                        [react "0.14.3"]
                        [pikaday "1.3.2"]
                        [karma "0.13.9"]
                        [karma-junit-reporter "0.3.8"]
+                       [phantomjs "1.9.19"]
                        ;; We can test against other launchers later if we want.
                        ;; I.e. phantomjs, firefox and more?
                        [karma-chrome-launcher "0.1.8"]
