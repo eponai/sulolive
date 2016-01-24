@@ -6,16 +6,47 @@
             [sablono.core :refer-macros [html]]
             [garden.core :refer [css]]))
 
+(defui Menu
+  Object
+  (render [this]
+    (let [{:keys [on-close]} (om/props this)]
+      (println "Render menu")
+      (html
+        [:div
+         {:class "dropdown open"}
+         [:div#click-outside-target
+          (opts {:style    {:top      0
+                            :bottom   0
+                            :right    0
+                            :left     0
+                            :position "fixed"}
+                 :on-click on-close})]
+         [:ul.dropdown-menu
+          (opts {:style {:right 0
+                         :left "auto"}})
+          [:li.dropdown [:a "All Transactions"]]
+          [:li.dropdown
+           [:a
+            {:href "/api/logout"}
+            "Sign Out"]]]]))))
+
+(def ->Menu (om/factory Menu))
+
 (defui Header
   static om/IQuery
   (query [_]
-    [{'(:query/ui-singleton {:singleton :ui.singleton/modal}) [:ui.singleton.modal/visible]}
+    [{:query/modal [:ui.singleton.modal/visible]}
+     {:query/menu [:ui.singleton.menu/visible]}
      {:proxy/add-transaction (om/get-query add.t/AddTransaction)}])
   Object
   (render
     [this]
-    (let [{:keys [query/ui-singleton proxy/add-transaction]} (om/props this)
-          {:keys [ui.singleton.modal/visible] :as modal} ui-singleton]
+    (let [{:keys [query/modal
+                  query/menu
+                  proxy/add-transaction]} (om/props this)
+          {modal-visible :ui.singleton.modal/visible} modal
+          {menu-visible :ui.singleton.menu/visible} menu]
+      (println "Menu props: " menu)
       (html
         [:div
          [:nav
@@ -50,14 +81,18 @@
             "New"]
 
            [:img
-            (opts {:class "img-circle"
-                   :style {:margin "0.1em 1em"
-                           :width  "40"
-                           :height "40"}
-                   :src   "http://thesocialmediamonthly.com/wp-content/uploads/2015/08/photo.png"})]
-           ]]
+            (opts {:class    "img-circle"
+                   :style    {:margin "0.1em 1em"
+                              :width  "40"
+                              :height "40"}
+                   :src      "http://thesocialmediamonthly.com/wp-content/uploads/2015/08/photo.png"
+                   :on-click #(om/transact! this `[(ui.menu/show) :query/menu])})]]
 
-         (when visible
+          (when menu-visible
+            (->Menu (merge menu
+                           {:on-close #(om/transact! this `[(ui.menu/hide) :query/menu])})))]
+
+         (when modal-visible
            (->Modal (merge modal
                            {:header   #(str "Add Transaction")
                             :body     #(->AddTransaction add-transaction)
