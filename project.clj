@@ -29,6 +29,7 @@
                  [ring/ring-jetty-adapter "1.4.0"]
                  [ring/ring-json "0.4.0"]
                  [ring/ring-defaults "0.1.5"]
+                 [ring/ring-ssl "0.2.1"]
                  [ring/ring-anti-forgery "1.0.0"]
                  [ring-transit "0.1.4"]
                  [prone "1.0.0"]

@@ -7,6 +7,7 @@
             [ring.middleware.session.cookie :as cookie]
             [ring.middleware.transit :refer [wrap-transit-response
                                              wrap-transit-body]]
+            [ring.middleware.ssl :as ssl]
             [cemerick.friend :as friend]
             [eponai.server.auth.credentials :as ac]
             [eponai.server.auth.workflows :as workflows]
@@ -16,18 +17,18 @@
   (:import (clojure.lang ExceptionInfo)
            (datomic.query EntityMap)))
 
+(defn wrap-https-redirect [handler]
+  (ssl/wrap-ssl-redirect handler))
+
 (defn wrap-error [handler]
   (fn [request]
-    ;; skipping this wrap error in development
-    (if (::skip-wrap-error request)
+    (try
       (handler request)
-      (try
-        (handler request)
-        (catch ExceptionInfo e
-          (error "Request:" request "gave exception:" e)
-          (let [error (ex-data e)
-                code (h/error-codes (or (:status error) ::h/internal-error))]
-            {:status code :body error}))))))
+      (catch ExceptionInfo e
+        (error "Request:" request "gave exception:" e)
+        (let [error (ex-data e)
+              code (h/error-codes (or (:status error) ::h/internal-error))]
+          {:status code :body error})))))
 
 (def datomic-transit
   (transit/write-handler

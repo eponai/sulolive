@@ -15,11 +15,13 @@
             [ring.middleware.reload :as reload]
             [prone.middleware :as prone]))
 
+(defonce in-production? (atom true))
+
 (defn app* [conn]
   (-> (routes api-routes site-routes)
       m/wrap-post-middlewares
       (m/wrap-authenticate conn)
-      m/wrap-error
+      (cond-> @in-production? m/wrap-error)
       m/wrap-transit
       (m/wrap-state {::m/conn              conn
                      ::m/parser            (parser/parser)
@@ -29,6 +31,7 @@
                      ::m/cljs-build-id     (or (env :cljs-build-id) "dev")})
       m/wrap-defaults
       m/wrap-trace-request
+      (cond-> @in-production? m/wrap-https-redirect)
       m/wrap-gzip))
 
 ;; Do a little re-def dance. Store the arguments to app* in a var, right before
@@ -78,9 +81,9 @@
   The jetty-server will block the current thread, so
   we just wrap it in something dereffable."
   []
+  (reset! in-production? false)
   (start-server (-> (var app)
-                    (m/wrap-state {::m/skip-wrap-error      true
-                                   ::m/make-parser-error-fn (fn [req]
+                    (m/wrap-state {::m/make-parser-error-fn (fn [req]
                                                               (fn [e] (prone/exceptions-response req e ["eponai"])))})
                     (prone/wrap-exceptions {:app-namespaces ["eponai"]})
                     reload/wrap-reload)
