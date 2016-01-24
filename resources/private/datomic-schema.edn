@@ -203,6 +203,16 @@
   :db/cardinality        :db.cardinality/one,
   :db/doc                "Currency of the transaction."}
 
+ {:db/id                 #db/id[:db.part/db],
+  :db.install/_attribute :db.part/db,
+  :db/ident              :transaction/type,
+  :db/valueType          :db.type/ref,
+  :db/cardinality        :db.cardinality/one,
+  :db/doc                "Type of the transaction, such as income/expense."}
+
+ [:db/add #db/id[:db.part/user] :db/ident :transaction.type/income]
+ [:db/add #db/id[:db.part/user] :db/ident :transaction.type/expense]
+
   ;; Conversion
 
  {:db/id                 #db/id[:db.part/db],
