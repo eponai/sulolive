@@ -16,49 +16,51 @@
     [this]
     (let [{:keys [query/ui-singleton proxy/add-transaction]} (om/props this)
           {:keys [ui.singleton.modal/visible] :as modal} ui-singleton]
-      (html [:nav
-             (opts {:style {}
-                    :class "navbar navbar-default navbar-fixed-top topnav"
-                    :role  "navigation"})
+      (html
+        [:div
+         [:nav
+          (opts {:class "navbar navbar-default navbar-fixed-top topnav"
+                 :role  "navigation"})
 
-             [:div.navbar-brand
-              "JourMoney"]
+          [:div.navbar-brand
+           "JourMoney"]
 
-             [:form
-              {:action "/api/logout"
-               :id     "logout-form"
-               :method "get"}]
+          [:form
+           {:action "/api/logout"
+            :id     "logout-form"
+            :method "get"}]
 
-             ;[:button
-             ; {:class "btn btn-default btn-md"
-             ;  :type  "submit"
-             ;  :form  "logout-form"} "logout"]
+          ;[:button
+          ; {:class "btn btn-default btn-md"
+          ;  :type  "submit"
+          ;  :form  "logout-form"} "logout"]
 
-             [:div
-              (opts {:style {:display "flex"
-                             :flex "row-reverse"
-                             :align-items "flex-end"
-                             :justify-content "flex-end"}})
+          [:div
+           (opts {:style {:display         "flex"
+                          :flex            "row-reverse"
+                          :align-items     "flex-end"
+                          :justify-content "flex-end"}})
 
 
-              [:button
-               (opts {:style {:display "block"
-                              :margin "0.5em 0.2em"}
-                      :on-click #(om/transact! this `[(ui.modal/show) :query/modal])
-                      :class    "btn btn-default btn-md"})
-               "New"]
+           [:button
+            (opts {:style    {:display "block"
+                              :margin  "0.5em 0.2em"}
+                   :on-click #(om/transact! this `[(ui.modal/show) :query/modal])
+                   :class    "btn btn-default btn-md"})
+            "New"]
 
-              [:img
-               (opts {:class "img-circle"
-                      :style {:margin "0.1em 1em"
-                              :width "40"
-                              :height "40"}
-                      :src   "http://thesocialmediamonthly.com/wp-content/uploads/2015/08/photo.png"})]
-              ]
+           [:img
+            (opts {:class "img-circle"
+                   :style {:margin "0.1em 1em"
+                           :width  "40"
+                           :height "40"}
+                   :src   "http://thesocialmediamonthly.com/wp-content/uploads/2015/08/photo.png"})]
+           ]]
 
-             (when visible
-               (->Modal (merge modal
-                               {:dialog-content #(->AddTransaction add-transaction)
-                                :on-close       #(om/transact! this `[(ui.modal/hide) :query/modal])})))]))))
+         (when visible
+           (->Modal (merge modal
+                           {:header   #(str "Add Transaction")
+                            :body     #(->AddTransaction add-transaction)
+                            :on-close #(om/transact! this `[(ui.modal/hide) :query/modal])})))]))))
 
 (def ->Header (om/factory Header))

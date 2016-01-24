@@ -71,7 +71,8 @@
                            :currency/code)
        :input-budget (-> all-budgets
                          first
-                         :budget/uuid)}))
+                         :budget/uuid)
+       :title "Add Transaction"}))
   (render
     [this]
     (let [{:keys [query/all-currencies
@@ -85,120 +86,106 @@
       (println "budgets: " all-budgets)
       (html
         [:div#add-transaction-modal
-         {:class "panel panel-default"}
-         [:div.panel-heading
-          "Add transaction"]
+         [:label.form-control-static
+          "Sheet:"]
+         [:select.form-control
+          {:on-change     (on-change this :input-budget)
+           :type          "text"
+           :default-value input-budget}
+          (map-all all-budgets
+                   (fn [budget]
+                     [:option
+                      (opts {:value (:budget/uuid budget)
+                             :key   [(:budget/uuid budget)]})
+                      (or (:budget/name budget) "Untitled")]))]
+
+         [:label.form-control-static
+          "Amount:"]
+         ;; Input amount with currency
          [:div
-          {:class "form-group panel-body"}
-          [:label.form-control-static
-           {:for "budget-input"}
-           "Sheet:"]
+          (opts {:style {:display         "flex"
+                         :flex-direction  "row"
+                         :justify-content "stretch"
+                         :max-width       "100%"}})
+          [:input.form-control
+           (opts {:type        "number"
+                  :placeholder "0.00"
+                  :min         "0"
+                  :value       input-amount
+                  :style       {:width        "80%"
+                                :margin-right "0.5em"}
+                  :on-change   (on-change this :input-amount)})]
 
-          [:select.form-control#budget-input
-           {:on-change (on-change this :input-budget)
-            :type      "text"
-            :default-value     input-budget}
-           (map-all all-budgets
-             (fn [budget]
-               [:option
-                (opts {:value (:budget/uuid budget)
-                       :key   [(:budget/uuid budget)]})
-                (or (:budget/name budget) "Untitled")]))]
+          [:select.form-control
+           (opts {:on-change     (on-change this :input-currency)
+                  :default-value input-currency
+                  :style         {:width "20%"}})
+           (map-all all-currencies
+                    (fn [{:keys [currency/code]}]
+                      [:option
+                       (opts {:value (name code)
+                              :key   [code]})
+                       (name code)]))]]
 
-          [:label.form-control-static
-           {:for "amount-input"}
-           "Amount:"]
-          ;; Input amount with currency
-          [:div
-           (opts {:style {:display        "flex"
-                          :flex-direction "row"
-                          :justify-content "stretch"
-                          :max-width "100%"}})
-           [:input#amount-input
-            (opts {:type        "number"
-                   :placeholder "0.00"
-                   :min         "0"
-                   :value       input-amount
-                   :class       "form-control"
-                   :style       {:width        "80%"
-                                 :margin-right "0.5em"}
-                   :on-change   (on-change this :input-amount)})]
+         [:label.form-control-static
+          "Title:"]
 
-           [:select
-            (opts {:class         "form-control"
-                   :on-change     (on-change this :input-currency)
-                   :default-value input-currency
-                   :style         {:width "20%"}})
-            (map-all all-currencies
-              (fn [{:keys [currency/code]}]
-                [:option
-                 (opts {:value (name code)
-                        :key   [code]})
-                 (name code)]))]]
+         [:input.form-control
+          {:on-change (on-change this :input-title)
+           :type      "text"
+           :value     input-title}]
 
-          [:label.form-control-static
-           {:for "title-input"}
-           "Title:"]
+         [:label.form-control-static
+          "Date:"]
 
-          [:input.form-control#title-input
-           {:on-change (on-change this :input-title)
-            :type      "text"
-            :value     input-title}]
+         ; Input date with datepicker
 
-          [:label.form-control-static
-           {:for "date-input"}
-           "Date:"]
+         [:div
+          (->Datepicker
+            (opts {:value     input-date
+                   :on-change #(om/update-state!
+                                this
+                                assoc
+                                :input-date
+                                %)}))]
 
-          ; Input date with datepicker
+         [:label.form-control-static
+          "Tags:"]
 
-          [:div#date-input
-           (->Datepicker
-             (opts {:value     input-date
-                    :on-change #(om/update-state!
-                                 this
-                                 assoc
-                                 :input-date
-                                 %)}))]
+         [:div
+          (opts {:style {:display         "flex"
+                         :flex-direction  "column"
+                         :justify-content "flex-start"}})
+          [:input.form-control
+           (opts {:on-change   (on-change this :input-tag)
+                  :type        "text"
+                  :value       input-tag
+                  :on-key-down (on-add-tag-key-down this input-tag)})]
 
-          [:label.form-control-static
-           {:for "tags-input"}
-           "Tags:"]
+          [:div.form-control-static
+           (map-all input-tags
+                    (fn [tag]
+                      (tag/->Tag
+                        (assoc tag :key (::tag-id tag)))))]]
 
-          [:div
-           (opts {:style {:display "flex"
-                          :flex-direction "column"
-                          :justify-content "flex-start"}})
-           [:input.form-control#tags-input
-            (opts {:on-change   (on-change this :input-tag)
-                   :type        "text"
-                   :value       input-tag
-                   :on-key-down (on-add-tag-key-down this input-tag)})]
-
-           [:div.form-control-static
-            (map-all input-tags
-              (fn [tag]
-                (tag/->Tag
-                  (assoc tag :key (::tag-id tag)))))]]
-
-          [:button
-           (opts {:style    {:align-self "center"}
-                  :class    "btn btn-default btn-lg"
-                  :type     "submit"
-                  :on-click #(om/transact!
-                              this
-                              `[(transaction/create
-                                  ~(let [state (om/get-state this)]
-                                     (-> state
-                                         (assoc :input-date (format/date->ymd-string (:input-date state)))
-                                         (assoc :input-uuid (d/squuid))
-                                         (assoc :input-created-at (.getTime (js/Date.)))
-                                         (assoc :input-currency input-currency)
-                                         (assoc :input-budget input-budget)
-                                         (dissoc :input-tag)
-                                         (update :input-tags
-                                                 (fn [tags]
-                                                   (map :tag/name tags))))))
-                                :query/all-budgets])})
-           "Save"]]]))))
+         [:button
+          (opts {:style    {:align-self "center"}
+                 :class    "btn btn-default btn-lg"
+                 :on-click #(om/transact!
+                             this
+                             `[(transaction/create
+                                 ~(let [state (om/get-state this)]
+                                    (-> state
+                                        (assoc :input-date (format/date->ymd-string (:input-date state)))
+                                        (assoc :input-uuid (d/squuid))
+                                        (assoc :input-created-at (.getTime (js/Date.)))
+                                        (assoc :input-currency input-currency)
+                                        (assoc :input-budget input-budget)
+                                        (dissoc :input-tag)
+                                        (update :input-tags
+                                                (fn [tags]
+                                                  (map :tag/name tags))))))
+                               :query/all-budgets])})
+          "Save"]]))))
 
 (def ->AddTransaction (om/factory AddTransaction))

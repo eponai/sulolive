@@ -117,6 +117,7 @@
        :transaction/amount
        :transaction/details
        :transaction/status
+       :transaction/created-at
        {:transaction/currency [:currency/code
                                :currency/symbol-native]}
        {:transaction/tags (om/get-query tag/Tag)}
@@ -180,7 +181,7 @@
              "Amount"]]]
           [:tbody
            (map-all
-             (sort-by :transaction/date #(> (:date/ymd %1) (:date/ymd %2)) transactions)
+             (sort-by :transaction/created-at #(> %1 %2) transactions)
              (fn [{:keys [transaction/date
                           transaction/currency
                           transaction/amount
