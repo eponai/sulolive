@@ -12,7 +12,8 @@
   (render
     [this]
     (let [{tag-name :tag/name
-           :keys [::edit-mode ::delete-fn]} (om/props this)]
+           :keys [::edit-mode ::delete-fn
+                  on-click]} (om/props this)]
       (html
         [:div
          (opts {:class "btn-group btn-group-xs"
@@ -20,7 +21,7 @@
 
          [:button
           {:class    "btn btn-info"
-           :on-click #(prn (.. % -target))}
+           :on-click (or on-click #(prn (.. % -target)))}
           tag-name]
 
          (when edit-mode

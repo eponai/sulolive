@@ -51,16 +51,19 @@
                               tags)))
     (update-query component)))
 
+(defn add-tag [component tag]
+  (om/update-state! component
+                    #(-> %
+                         (assoc :input-tag "")
+                         (update :filter-tags conj tag)))
+  (update-query component))
+
 (defn on-add-tag-key-down [this input-tag]
   (fn [key]
     (when (and (= 13 (.-keyCode key))
                (seq (.. key -target -value)))
       (.preventDefault key)
-      (om/update-state! this
-                        #(-> %
-                             (assoc :input-tag "")
-                             (update :filter-tags conj input-tag)))
-      (update-query this))))
+      (add-tag this input-tag))))
 
 (defn on-change [this k]
   (fn [e]
@@ -200,7 +203,9 @@
 
                 [:td
                  (opts {:key [uuid]})
-                 (map tag/->Tag (:transaction/tags transaction))]
+                 (map (fn [tag]
+                        (tag/->Tag (merge tag
+                                          {:on-click #(add-tag this (:tag/name tag))}))) (:transaction/tags transaction))]
                 [:td.text-right
                  (opts {:key [uuid]})
                  (str amount " " (or (:currency/symbol-native currency)
