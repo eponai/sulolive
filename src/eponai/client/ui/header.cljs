@@ -1,16 +1,20 @@
 (ns eponai.client.ui.header
   (:require [om.next :as om :refer-macros [defui]]
-            [eponai.client.ui :refer-macros [opts]]
+            [eponai.client.ui :refer-macros [opts map-all]]
             [eponai.client.ui.modal :refer [->Modal Modal]]
             [eponai.client.ui.add_transaction :as add.t :refer [->AddTransaction]]
             [sablono.core :refer-macros [html]]
             [garden.core :refer [css]]))
 
 (defui Menu
+  static om/IQuery
+  (query [_]
+    [{:query/all-budgets [:budget/uuid
+                          :budget/name]}])
   Object
   (render [this]
-    (let [{:keys [on-close]} (om/props this)]
-      (println "Render menu")
+    (let [{:keys [query/all-budgets
+                  on-close]} (om/props this)]
       (html
         [:div
          {:class "dropdown open"}
@@ -21,11 +25,31 @@
                             :left     0
                             :position "fixed"}
                  :on-click on-close})]
-         [:ul.dropdown-menu
-          (opts {:style {:right 0
-                         :left "auto"}})
-          [:li.dropdown [:a "All Transactions"]]
-          [:li.dropdown
+         [:ul
+          {:class "dropdown-menu dropdown-menu-right"}
+          (when (not-empty all-budgets)
+            [:li.dropdown-header
+             "Budgets"])
+          (map
+            (fn [budget]
+              [:li
+               (opts {:key [(:budget/uuid budget)]})
+               [:a (or (:budget/name budget) "Untitled")]])
+            all-budgets)
+
+          [:li.divider]
+          [:li
+           [:a
+            "All Transactions"]]
+          [:li.divider]
+          [:li
+           [:a
+            "Profile"]]
+          [:li
+           [:a
+            "Settings"]]
+          [:li.divider]
+          [:li
            [:a
             {:href "/api/logout"}
             "Sign Out"]]]]))))
@@ -37,16 +61,17 @@
   (query [_]
     [{:query/modal [:ui.singleton.modal/visible]}
      {:query/menu [:ui.singleton.menu/visible]}
+     {:proxy/profile-menu (om/get-query Menu)}
      {:proxy/add-transaction (om/get-query add.t/AddTransaction)}])
   Object
   (render
     [this]
     (let [{:keys [query/modal
                   query/menu
+                  proxy/profile-menu
                   proxy/add-transaction]} (om/props this)
           {modal-visible :ui.singleton.modal/visible} modal
           {menu-visible :ui.singleton.menu/visible} menu]
-      (println "Menu props: " menu)
       (html
         [:div
          [:nav
@@ -55,16 +80,6 @@
 
           [:div.navbar-brand
            "JourMoney"]
-
-          [:form
-           {:action "/api/logout"
-            :id     "logout-form"
-            :method "get"}]
-
-          ;[:button
-          ; {:class "btn btn-default btn-md"
-          ;  :type  "submit"
-          ;  :form  "logout-form"} "logout"]
 
           [:div
            (opts {:style {:display         "flex"
@@ -89,7 +104,7 @@
                    :on-click #(om/transact! this `[(ui.menu/show) :query/menu])})]]
 
           (when menu-visible
-            (->Menu (merge menu
+            (->Menu (merge profile-menu
                            {:on-close #(om/transact! this `[(ui.menu/hide) :query/menu])})))]
 
          (when modal-visible
