@@ -68,6 +68,15 @@
     {:value (p/pull-many db query eids)
      :remote true}))
 
+(defmethod read :query/current-user
+  [{:keys [db query auth]} _ _]
+  (let [#?@(:clj  [eids (p/all-where db [['?e :user/uuid (:username auth)]])]
+            ;; We don't have the auth UUID in the client, so all users should be the current user.
+            :cljs [eids (p/all-where db '[[?e :user/uuid]])])]
+    (println "Pulled user: " eids)
+    {:value  (first (p/pull-many db query eids))
+     :remote true}))
+
 (defmethod read :query/user
   [{:keys [db query]} k {:keys [uuid]}]
   #?(:cljs {:value  (when (and (not (= uuid '?uuid))
