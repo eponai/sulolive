@@ -10,49 +10,27 @@
             [garden.core :refer [css]]
             [datascript.core :as d]))
 
-(defn node [name on-change opts & children]
-  (apply vector
-         name
-         (merge {:on-change on-change} opts)
-         children))
+(defn input-on-change [input-component k]
+  (fn [e]
+    (om/update-state! input-component assoc k (.-value (.-target e)))))
 
-(defn input [on-change opts]
-  (node :input on-change opts))
+(defn delete-tag-fn [component name]
+  (fn []
+    (om/update-state! component update :input-tags
+                      (fn [tags]
+                        (into (sorted-set)
+                              (remove #(= name %))
+                              tags)))))
 
-(defn select [on-change opts & children]
-  (apply node :select on-change opts children))
-
-(defn on-change [this k]
-  #(om/update-state! this assoc k (.-value (.-target %))))
-
-(defn new-input-tag! [this name]
-  (let [id (random-uuid)]
-    (om/update-state!
-      this
-      (fn [state]
-        (cond-> state
-                true (assoc :input-tag "")
-
-                (not (some #(= (:tag/name %) name)
-                           (:input-tags state)))
-                (update :input-tags conj
-                        (assoc
-                          (tag/tag-props
-                            name
-                            #(om/update-state!
-                              this update :input-tags
-                              (fn [tags]
-                                (into []
-                                      (remove (fn [{:keys [::tag-id]}] (= id tag-id)))
-                                      tags))))
-                          ::tag-id id)))))))
-
-(defn on-add-tag-key-down [this input-tag]
-  (fn [key]
-    (when (and (= 13 (.-keyCode key))
-               (seq (.. key -target -value)))
-      (.preventDefault key)
-      (new-input-tag! this input-tag))))
+(defn on-add-tag-key-down [component input-tag]
+  (fn [e]
+    (when (and (= 13 (.-keyCode e))
+               (seq (.. e -target -value)))
+      (.preventDefault e)
+      (om/update-state! component
+                        #(-> %
+                             (assoc :input-tag "")
+                             (update :input-tags conj input-tag))))))
 
 (defui AddTransaction
   static om/IQuery
@@ -65,7 +43,7 @@
     (let [{:keys [query/all-currencies
                   query/all-budgets]} (om/props this)]
       {:input-date (js/Date.)
-       :input-tags []
+       :input-tags (sorted-set)
        :input-currency (-> all-currencies
                            first
                            :currency/code)
@@ -85,11 +63,11 @@
                  (om/get-state this))]
       (println "budgets: " all-budgets)
       (html
-        [:div#add-transaction-modal
+        [:div
          [:label.form-control-static
           "Sheet:"]
          [:select.form-control
-          {:on-change     (on-change this :input-budget)
+          {:on-change     (input-on-change this :input-budget)
            :type          "text"
            :default-value input-budget}
           (map-all all-budgets
@@ -114,10 +92,10 @@
                   :value       input-amount
                   :style       {:width        "80%"
                                 :margin-right "0.5em"}
-                  :on-change   (on-change this :input-amount)})]
+                  :on-change   (input-on-change this :input-amount)})]
 
           [:select.form-control
-           (opts {:on-change     (on-change this :input-currency)
+           (opts {:on-change     (input-on-change this :input-currency)
                   :default-value input-currency
                   :style         {:width "20%"}})
            (map-all all-currencies
@@ -131,7 +109,7 @@
           "Title:"]
 
          [:input.form-control
-          {:on-change (on-change this :input-title)
+          {:on-change (input-on-change this :input-title)
            :type      "text"
            :value     input-title}]
 
@@ -157,20 +135,19 @@
                          :flex-direction  "column"
                          :justify-content "flex-start"}})
           [:input.form-control
-           (opts {:on-change   (on-change this :input-tag)
+           (opts {:on-change   (input-on-change this :input-tag)
                   :type        "text"
                   :value       input-tag
                   :on-key-down (on-add-tag-key-down this input-tag)})]
 
           [:div.form-control-static
            (map-all input-tags
-                    (fn [tag]
-                      (tag/->Tag
-                        (assoc tag :key (::tag-id tag)))))]]
+                    (fn [tagname]
+                      (tag/->Tag (tag/tag-props tagname
+                                                (delete-tag-fn this tagname)))))]]
 
          [:button
-          (opts {:style    {:align-self "center"}
-                 :class    "btn btn-default btn-lg"
+          (opts {:class    "btn btn-default btn-lg"
                  :on-click #(om/transact!
                              this
                              `[(transaction/create
