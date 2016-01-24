@@ -17,9 +17,14 @@
   (:import (clojure.lang ExceptionInfo)
            (datomic.query EntityMap)))
 
-(defn wrap-https-redirect [handler]
+(defn wrap-ssl [handler]
   (-> handler
+      ;; This ensures the browser will only use HTTPS for future requests to the domain.
+      ssl/wrap-hsts
+      ;; Redirects to ssl request is not https
       ssl/wrap-ssl-redirect
+      ;; Sets request to be https if http header says so.
+      ;; The http header will say so when we're behind an amazon load balancer (production).
       ssl/wrap-forwarded-scheme))
 
 (defn wrap-error [handler]

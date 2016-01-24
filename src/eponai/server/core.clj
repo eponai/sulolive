@@ -31,7 +31,7 @@
                      ::m/cljs-build-id     (or (env :cljs-build-id) "dev")})
       m/wrap-defaults
       m/wrap-trace-request
-      (cond-> @in-production? m/wrap-https-redirect)
+      (cond-> @in-production? m/wrap-ssl)
       m/wrap-gzip))
 
 ;; Do a little re-def dance. Store the arguments to app* in a var, right before
