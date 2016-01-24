@@ -18,7 +18,9 @@
            (datomic.query EntityMap)))
 
 (defn wrap-https-redirect [handler]
-  (ssl/wrap-ssl-redirect handler))
+  (-> handler
+      ssl/wrap-ssl-redirect
+      ssl/wrap-forwarded-scheme))
 
 (defn wrap-error [handler]
   (fn [request]
