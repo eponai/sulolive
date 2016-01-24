@@ -40,21 +40,7 @@
                              (->
                                  (assoc-in [:find-query :where] '[[?e :transaction/uuid]])))]
     (om/set-query! component
-                   {:params query-params})
-
-    ;(if (empty? filter-tags)
-    ;  (om/set-query! component
-    ;                 {:params {:values     []
-    ;                           :find-query '[:find [?e ...]
-    ;                                         :where [?e :transaction/uuid]]}})
-    ;  (om/set-query! component
-    ;                 {:params {:find-query '[:find [?e ...]
-    ;                                         :in $ [?tagname ...]
-    ;                                         :where
-    ;                                         [?e :transaction/tags ?tag]
-    ;                                         [?tag :tag/name ?tagname]]
-    ;                           :values     [filter-tags]}}))
-    ))
+                   {:params query-params})))
 
 (defn delete-tag-fn [component name k]
   (fn []
@@ -94,7 +80,7 @@
         [:input.form-control
          {:type        "text"
           :value       input-tag
-          :on-change   (on-change component :input-tag)
+          :on-change   #(om/update-state! component assoc :input-tag (.-value (.-target %)))
           :on-key-down (on-add-tag-key-down component input-tag)
           :placeholder "Filter tags..."}]
         [:span
@@ -194,7 +180,7 @@
              "Amount"]]]
           [:tbody
            (map-all
-             (reverse transactions)
+             (sort-by :transaction/date #(> (:date/ymd %1) (:date/ymd %2)) transactions)
              (fn [{:keys [transaction/date
                           transaction/currency
                           transaction/amount
