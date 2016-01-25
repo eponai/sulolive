@@ -107,7 +107,8 @@
   {:builds        [{:id           "dev"
                     :source-paths ["src/"
                                    "test/"]
-                    :figwheel     {:on-jsload "eponai.client.figwheel/run"}
+                    :figwheel     {:on-jsload "eponai.client.figwheel/run"
+                                   :css-dirs ["resources/public/style/css"]}
                     :compiler     {:main          "eponai.client.core"
                                    :asset-path    "/dev/js/out"
                                    :output-to     "resources/public/dev/js/out/budget.js"

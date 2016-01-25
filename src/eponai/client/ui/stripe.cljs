@@ -40,7 +40,7 @@
            [:p "$9.90/"
             [:span "mo"]]]
           [:li.button
-           [:a "Buy"]]]]
+           [:a {:href "#"} "Buy"]]]]
 
         [:li.plan
          [:ul.plan-container
@@ -50,7 +50,7 @@
            [:p "$7.50/"
             [:span "mo"]]]
           [:li.button
-           [:a "Buy"]]]]]
+           [:a {:href "#"} "Buy"]]]]]
        ])))
 
 (def ->Payment (om/factory Payment))

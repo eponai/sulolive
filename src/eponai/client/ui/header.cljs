@@ -27,15 +27,6 @@
                  :on-click on-close})]
          [:ul
           {:class "dropdown-menu dropdown-menu-right"}
-
-          [:li
-           [:a
-            [:button
-             (opts {:class "btn btn-primary btn-sm"
-                    :style {:width "100%"}
-                    :on-click #(om/transact! this `[(ui.modal/show) :query/modal])})
-             "Buy Now"]]]
-          [:li.divider]
           (when (not-empty all-budgets)
             [:li.dropdown-header
              "Budgets"])
@@ -43,19 +34,20 @@
             (fn [budget]
               [:li
                (opts {:key [(:budget/uuid budget)]})
-               [:a (or (:budget/name budget) "Untitled")]])
+               [:a {:href "#"}
+                (or (:budget/name budget) "Untitled")]])
             all-budgets)
 
           [:li.divider]
           [:li
-           [:a
+           [:a {:href "#"}
             "All Transactions"]]
           [:li.divider]
           [:li
-           [:a
+           [:a {:href "#"}
             "Profile"]]
           [:li
-           [:a
+           [:a {:href "#"}
             "Settings"]]
           [:li.divider]
           [:li
@@ -87,8 +79,10 @@
           (opts {:class "navbar navbar-default navbar-fixed-top topnav"
                  :role  "navigation"})
 
-          [:div.navbar-brand
-           "JourMoney"]
+          [:div
+           [:a.navbar-brand
+            {:href "#"}
+            "JourMoney"]]
 
           [:div
            (opts {:style {:display         "flex"
@@ -96,6 +90,12 @@
                           :align-items     "flex-end"
                           :justify-content "flex-end"}})
 
+
+           [:button
+            (opts {:style    {:display "block"
+                              :margin  "0.5em 0.2em"}
+                   :class    "btn btn-primary btn-md"})
+            "Subscribe"]
 
            [:button
             (opts {:style    {:display "block"
@@ -109,7 +109,7 @@
                    :style    {:margin "0.1em 1em"
                               :width  "40"
                               :height "40"}
-                   :src      "http://thesocialmediamonthly.com/wp-content/uploads/2015/08/photo.png"
+                   :src      "/style/img/profile.png"
                    :on-click #(om/transact! this `[(ui.menu/show) :query/menu])})]]
 
           (when menu-visible

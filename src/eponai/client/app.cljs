@@ -33,9 +33,7 @@
              [:div (->Modal modal)]
              [:div (->Header header)]
              [:div {:class "content-section-b"}
-              (->Payment)
-              ;(->AllTransactions transactions)
-              ]]))))
+              (->AllTransactions transactions)]]))))
 
 (defonce conn-atom (atom nil))
 

@@ -3,6 +3,7 @@
             [eponai.client.ui :refer-macros [opts]]
             [sablono.core :as html :refer-macros [html]]
             [eponai.client.ui.add_transaction :as add.t :refer [->AddTransaction AddTransaction]]
+            [eponai.client.ui.stripe :refer [->Payment]]
             [garden.core :refer [css]]))
 
 (defn content [modal props]
