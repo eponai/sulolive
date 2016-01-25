@@ -19,11 +19,8 @@
   site-routes
   (GET "/" [:as request]
     (if (friend/current-authentication request)
-      (r/redirect "/budget")
+      (html (::m/cljs-build-id request) "budget.html")
       (html "index.html")))
-
-  (GET "/budget" request
-    (friend/authorize #{::a/user} (html (::m/cljs-build-id request) "budget.html")))
 
   (GET "/verify/:uuid" [uuid]
     (r/redirect (str "/api/login/email?uuid=" uuid)))
