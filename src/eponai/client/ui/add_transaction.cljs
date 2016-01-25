@@ -32,6 +32,9 @@
                              (assoc :input/tag "")
                              (update :input/tags conj input-tag))))))
 
+(defn header []
+  "New Transaction")
+
 (defui AddTransaction
   static om/IQuery
   (query [_]

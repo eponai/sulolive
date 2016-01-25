@@ -68,10 +68,10 @@
 (defui Header
   static om/IQuery
   (query [_]
-    [{:query/modal [:ui.singleton.modal/visible]}
-     {:query/menu [:ui.singleton.menu/visible]}
+    [{:query/menu [:ui.singleton.menu/visible]}
      {:proxy/profile-menu (om/get-query Menu)}
-     {:proxy/add-transaction (om/get-query add.t/AddTransaction)}])
+     ;{:proxy/add-transaction (om/get-query add.t/AddTransaction)}
+     ])
   Object
   (render
     [this]
@@ -100,7 +100,7 @@
            [:button
             (opts {:style    {:display "block"
                               :margin  "0.5em 0.2em"}
-                   :on-click #(om/transact! this `[(ui.modal/show) :query/modal])
+                   :on-click #(om/transact! this `[(ui.modal/show ~{:content :ui.singleton.modal.content/add-transaction}) :query/modal])
                    :class    "btn btn-default btn-md"})
             "New"]
 
@@ -116,10 +116,6 @@
             (->Menu (merge profile-menu
                            {:on-close #(om/transact! this `[(ui.menu/hide) :query/menu])})))]
 
-         (when modal-visible
-           (->Modal (merge modal
-                           {:header   #(str "Add Transaction")
-                            :body     #(->AddTransaction add-transaction)
-                            :on-close #(om/transact! this `[(ui.modal/hide) :query/modal])})))]))))
+         ]))))
 
 (def ->Header (om/factory Header))

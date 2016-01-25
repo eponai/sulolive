@@ -11,6 +11,7 @@
             [eponai.client.parser.read]
             [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
             [eponai.client.ui.all_transactions :refer [AllTransactions ->AllTransactions]]
+            [eponai.client.ui.modal :refer [Modal ->Modal]]
             [eponai.client.ui.stripe :refer [->Payment Payment]]
             [eponai.client.ui.header :refer [Header ->Header]]
             [taoensso.timbre :as timbre :refer-macros [info debug error trace]]))
@@ -20,12 +21,16 @@
   (query [_]
     [:datascript/schema
      {:proxy/header (om/get-query Header)}
-     {:proxy/transactions (om/get-query AllTransactions)}])
+     {:proxy/transactions (om/get-query AllTransactions)}
+     {:proxy/modal (om/get-query Modal)}])
   Object
   (render
     [this]
-    (let [{:keys [proxy/header proxy/transactions]} (om/props this)]
+    (let [{:keys [proxy/header
+                  proxy/transactions
+                  proxy/modal]} (om/props this)]
       (html [:div
+             [:div (->Modal modal)]
              [:div (->Header header)]
              [:div {:class "content-section-b"}
               (->AllTransactions transactions)]]))))
