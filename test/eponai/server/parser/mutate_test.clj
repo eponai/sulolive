@@ -6,7 +6,7 @@
             [datomic.api :as d]
             [eponai.common.generators :refer [gen-transaction]]
             [eponai.server.api :as api]
-            [eponai.server.site :as site]
+            [eponai.server.routes :as routes]
             [eponai.server.test-util :as util :refer [session-request]]
             [eponai.common.database.pull :refer [pull]]))
 
@@ -26,7 +26,7 @@
                          :currency/code (:input/currency transaction)}
                         {:db/id       (d/tempid :db.part/user)
                          :budget/uuid (:input/budget transaction)}])
-          parsed (site/handle-parser-request
+          parsed (routes/handle-parser-request
                    (session-request conn `[(transaction/create ~transaction)]))
           result (get-in parsed ['transaction/create :result])
           db (d/db conn)]

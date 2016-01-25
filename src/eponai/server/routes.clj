@@ -1,4 +1,4 @@
-(ns eponai.server.site
+(ns eponai.server.routes
   (:require [cemerick.friend :as friend]
             [clojure.string :as clj.string]
             [compojure.core :refer :all]
