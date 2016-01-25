@@ -42,10 +42,16 @@
          [:li.plan
           [:ul.plan-container
            [:li.title
-            [:h2 "Montly"]]
+            [:h2 "Monthly"]]
            [:li.price
-            [:p "$9.90/"
-             [:span "mo"]]]
+            [:p "$9.90"]]
+           [:li
+            [:ul.options
+             [:li
+              [:div
+               (opts {:style {:display "inline-block"}})
+               "$9.90"]
+              [:span " /month"]]]]
            [:li.button
             [:a {:href "#"} "Buy"]]]]
 
@@ -54,8 +60,14 @@
            [:li.title
             [:h2 "Yearly"]]
            [:li.price
-            [:p "$7.50/"
-             [:span "mo"]]]
+            [:p "$90.00"]]
+           [:li
+            [:ul.options
+             [:li
+              [:div
+               (opts {:style {:display "inline-block"}})
+               "$7.50"]
+              [:span " /month"]]]]
            [:li.button
             [:a {:href "#"} "Buy"]]]]]
         ]])))
