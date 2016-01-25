@@ -30,27 +30,34 @@
   Object
   (render [this]
     (html
-      [:div#pricePlans
-       [:ul#plans
-        [:li.plan
-         [:ul.plan-container
-          [:li.title
-           [:h2 "Montly"]]
-          [:li.price
-           [:p "$9.90/"
-            [:span "mo"]]]
-          [:li.button
-           [:a {:href "#"} "Buy"]]]]
+      [:div
+       [:h3
+        (opts {:style {:text-align "center"}})
+        "Select your plan"]
+       [:hr.intro-divider]
 
-        [:li.plan
-         [:ul.plan-container
-          [:li.title
-           [:h2 "Yearly"]]
-          [:li.price
-           [:p "$7.50/"
-            [:span "mo"]]]
-          [:li.button
-           [:a {:href "#"} "Buy"]]]]]
-       ])))
+       [:div#pricePlans
+
+        [:ul#plans
+         [:li.plan
+          [:ul.plan-container
+           [:li.title
+            [:h2 "Montly"]]
+           [:li.price
+            [:p "$9.90/"
+             [:span "mo"]]]
+           [:li.button
+            [:a {:href "#"} "Buy"]]]]
+
+         [:li.plan
+          [:ul.plan-container
+           [:li.title
+            [:h2 "Yearly"]]
+           [:li.price
+            [:p "$7.50/"
+             [:span "mo"]]]
+           [:li.button
+            [:a {:href "#"} "Buy"]]]]]
+        ]])))
 
 (def ->Payment (om/factory Payment))
