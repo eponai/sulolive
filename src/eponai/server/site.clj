@@ -1,5 +1,6 @@
 (ns eponai.server.site
   (:require [cemerick.friend :as friend]
+            [clojure.string :as clj.string]
             [compojure.core :refer :all]
             [compojure.route :as route]
             [eponai.server.auth.credentials :as a]
@@ -10,7 +11,7 @@
             [taoensso.timbre :refer [debug error trace]]))
 
 (defn html [& path]
-  (-> (apply str path)
+  (-> (clj.string/join "/" path)
       (r/resource-response {:root "public"})
       (r/content-type "text/html")))
 
@@ -22,17 +23,16 @@
       (html "index.html")))
 
   (GET "/budget" request
-    (friend/authorize #{::a/user}
-                      (html (::m/cljs-build-id request) "/budget.html")))
+    (friend/authorize #{::a/user} (html (::m/cljs-build-id request) "budget.html")))
 
   (GET "/verify/:uuid" [uuid]
     (r/redirect (str "/api/login/email?uuid=" uuid)))
 
   (GET "/signup" request
-    (html (str (::m/cljs-build-id request) "/signup.html")))
+    (html (::m/cljs-build-id request) "signup.html"))
 
   (GET "/devcards" []
-    (html "devcards/budget.html"))
+    (html "devcards" "budget.html"))
 
   (route/resources "/")
   (route/not-found "Not found"))
