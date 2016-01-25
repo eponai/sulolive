@@ -1,5 +1,6 @@
 (ns eponai.client.ui.stripe
   (:require [om.next :as om :refer-macros [defui]]
+            [eponai.client.ui :refer-macros [opts]]
             [sablono.core :refer-macros [html]]))
 
 (defui Checkout
@@ -29,36 +30,27 @@
   Object
   (render [this]
     (html
-      [:div.plans
-       [:div.plan
-        [:h2.plan-title
-         "Monthly"]
-        [:p.plan-price
-         "$9"
-         [:span "/mo"]]
-        [:button
-         {:class "btn btn-default btn-lg"}
-         "Buy now"]]
-       [:div
-        {:class "plan plan-tall"}
-        [:h2.plan-title
-         "Yearly"]
-        [:p.plan-price
-         "$7.50"
-         [:span "/mo"]]
-        [:button
-         {:class "btn btn-default btn-lg"}
-         "Buy now"]]
-       [:div.plan
-        [:h2.plan-title
-         "Monthly"]
-        [:p.plan-price
-         "$9"
-         [:span "/mo"]]
+      [:div#pricePlans
+       [:ul#plans
+        [:li.plan
+         [:ul.plan-container
+          [:li.title
+           [:h2 "Montly"]]
+          [:li.price
+           [:p "$9.90/"
+            [:span "mo"]]]
+          [:li.button
+           [:a "Buy"]]]]
 
-        [:button
-         {:class "btn btn-default btn-lg"}
-         "Buy now"]]
+        [:li.plan
+         [:ul.plan-container
+          [:li.title
+           [:h2 "Yearly"]]
+          [:li.price
+           [:p "$7.50/"
+            [:span "mo"]]]
+          [:li.button
+           [:a "Buy"]]]]]
        ])))
 
 (def ->Payment (om/factory Payment))
