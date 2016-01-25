@@ -1,17 +1,21 @@
 (ns eponai.client.parser.read
   (:require [eponai.common.database.pull :as p]
-            [eponai.common.parser.read :refer [read]]))
+            [eponai.common.parser.read :as r :refer [read]]))
 
 ;; -------- Readers for UI components
 
 (defmethod read :query/modal
   [{:keys [db query]} _ _]
-  {:value (first (p/pull-many db query (p/all-where db [['?e :ui/singleton :ui.singleton/modal]])))})
+  {:value (first (p/pull-many db query (p/all-with db {:where [['?e :ui/singleton :ui.singleton/modal]]})))})
 
 (defmethod read :query/menu
   [{:keys [db query]} _ _]
-  {:value (first (p/pull-many db query (p/all-where db [['?e :ui/singleton :ui.singleton/menu]])))})
+  {:value (first (p/pull-many db query (p/all-with db {:where [['?e :ui/singleton :ui.singleton/menu]]})))})
 
 (defmethod read :query/loader
   [{:keys [db query]} _ _]
-  {:value (first (p/pull-many db query (p/all-where db [['?e :ui/singleton :ui.singleton/loader]])))})
+  {:value (first (p/pull-many db query (p/all-with db {:where [['?e :ui/singleton :ui.singleton/loader]]})))})
+
+(defmethod read :query/budget
+  [{:keys [db query]} _ _]
+  {:value (p/pull db query [:ui/singleton :ui.singleton/budget])})

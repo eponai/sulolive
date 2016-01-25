@@ -20,7 +20,7 @@
                                  ;;              Using merge-with merge incase keys are matching
                                  ;;              in the end result.
                                  (= ret :merge)  (merge-with merge
-                                                             (dissoc m k)
+                                                             (assoc m k {})
                                                              (post-parse-subset v v))
                                  ;; For proxies: Call post-parse-fn for the values returned.
                                  (= ret :call)   (assoc m k (post-parse-subset v v))

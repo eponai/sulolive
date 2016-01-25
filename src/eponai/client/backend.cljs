@@ -50,13 +50,14 @@
 (defn merge!
   [conn]
   (fn [_ _ novelty]
-    (let [novelty (merge-novelty-by-key {:state conn} novelty)
-          temp-id-novelty (e.datascript/db-id->temp-id #{} (flatten (vals novelty)))
+    (let [merged-by-key (merge-novelty-by-key {:state conn} novelty)
+          temp-id-post-merge (e.datascript/db-id->temp-id #{}
+                                                          (flatten (vals merged-by-key)))
           ks (keys novelty)]
       (debug "Merge! returning keys:" ks)
-      (trace "Merge! transacting novelty:" temp-id-novelty)
+      (trace "Merge! transacting novelty:" temp-id-post-merge)
       {:keys ks
-       :next (:db-after @(d/transact conn temp-id-novelty))})))
+       :next (:db-after @(d/transact conn temp-id-post-merge))})))
 
 (defn send!
   [path]

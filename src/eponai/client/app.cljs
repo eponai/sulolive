@@ -7,6 +7,7 @@
             [datascript.core :as d]
             [eponai.client.backend :as backend]
             [eponai.common.parser :as parser]
+            [eponai.client.history :as history]
             [eponai.client.parser.mutate]
             [eponai.client.parser.read]
             [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
@@ -18,23 +19,22 @@
             [eponai.client.ui :refer-macros [opts]]
             ))
 
-(defui App
+(defui ^:once App
+  static om/IQueryParams
+  (params [_]
+    (history/url-query-params (history/url-handler-form-token)))
   static om/IQuery
   (query [_]
     [:datascript/schema
      {:proxy/header (om/get-query Header)}
-     {:proxy/transactions (om/get-query AllTransactions)}
-     {:proxy/modal (om/get-query Modal)}
-     {:query/loader [:ui.singleton.loader/visible]}])
+     {:query/loader [:ui.singleton.loader/visible]}
+     '{:proxy/app-content ?url/component}
+     '(:return/content-factory ?url/factory)])
   Object
   (render
     [this]
-    (let [{:keys [proxy/header
-                  proxy/transactions
-                  proxy/modal
-                  query/loader]} (om/props this)]
+    (let [{:keys [proxy/header proxy/app-content return/content-factory query/loader]} (om/props this)]
       (html [:div
-             [:div (->Modal modal)]
              [:div (->Header header)]
              (when (:ui.singleton.loader/visible loader)
                (prn "Render loader")
@@ -46,9 +46,8 @@
                                :position         "fixed"
                                :z-index          1050}})])
              [:div {:class "content-section-b"}
-              (->Payment)
-              ;(->AllTransactions transactions)
-              ]]))))
+              (when content-factory
+                (content-factory app-content))]]))))
 
 (defonce conn-atom (atom nil))
 
@@ -60,7 +59,8 @@
     (do
       (debug "Reusing old conn. It currently has schema for attributes:" (-> @conn-atom deref :schema keys))
       @conn-atom)
-    (let [ui-schema {:ui/singleton {:db/unique :db.unique/identity}}
+    (let [ui-schema {:ui/singleton {:db/unique :db.unique/identity}
+                     :ui/component {:db/unique :db.unique/identity}}
           ui-state [{:ui/singleton :ui.singleton/app}
 
                     {:ui/singleton :ui.singleton/modal
@@ -70,7 +70,9 @@
                      :ui.singleton.menu/visible false}
 
                     {:ui/singleton :ui.singleton/loader
-                     :ui.singleton.loader/visible false}]
+                     :ui.singleton.loader/visible false}
+
+                    {:ui/component :ui.component/dashboard}]
           conn (d/create-conn ui-schema)]
       (d/transact! conn ui-state)
       (reset! conn-atom conn))))
@@ -82,8 +84,10 @@
                                    :parser  parser
                                    :remotes [:remote]
                                    :send    (backend/send! "/user/")
-                                   :merge   (backend/merge! conn)})]
-    (om/add-root! reconciler App (gdom/getElement "my-app"))))
+                                   :merge   (backend/merge! conn)})
+        history (history/init-history reconciler)]
+    (om/add-root! reconciler App (gdom/getElement "my-app"))
+    (history/start! history)))
 
 (defn run []
   (info "Run called in: " (namespace ::foo))

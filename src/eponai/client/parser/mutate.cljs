@@ -1,6 +1,7 @@
 (ns eponai.client.parser.mutate
   (:require [datascript.core :as d]
-            [eponai.common.parser.mutate :refer [mutate]]))
+            [eponai.common.parser.mutate :refer [mutate]]
+            [taoensso.timbre :refer-macros [info debug error trace]]))
 
 ;;---------------- Modal show/hide
 (defmethod mutate 'ui.modal/show
@@ -34,3 +35,8 @@
   [{:keys [state]} _ _]
   {:action #(d/transact! state [{:ui/singleton                :ui.singleton/loader
                                  :ui.singleton.loader/visible false}])})
+
+(defmethod mutate 'dashboard/set-active-budget
+  [{:keys [state]} _ {:keys [budget-uuid]}]
+  {:action #(d/transact! state [{:ui/component                      :ui.component/dashboard
+                                 :ui.component.dashboard/active-budget budget-uuid}])})

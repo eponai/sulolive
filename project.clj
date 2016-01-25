@@ -4,7 +4,6 @@
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [
-                 [bidi "1.21.1"]
                  [clj-http "2.0.0"]
                  [clj-time "0.11.0"]
                  [compojure "1.4.0"]
@@ -53,6 +52,8 @@
                  [cljs-ajax "0.5.0"]
                  [cljsjs/pikaday "1.3.2-0"]
                  [cljsjs/stripe "2.0-0"]
+                 [bidi "1.21.1"]
+                 [kibu/pushy "0.3.6"]
 
                  ;; Testing
                  [lein-doo "0.1.6"]

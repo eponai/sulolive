@@ -34,20 +34,20 @@
             (fn [budget]
               [:li
                (opts {:key [(:budget/uuid budget)]})
-               [:a {:href "#"}
+               [:a {:href (str "/dashboard/" (:budget/uuid budget))}
                 (or (:budget/name budget) "Untitled")]])
             all-budgets)
 
           [:li.divider]
           [:li
-           [:a {:href "#"}
+           [:a {:href "/transactions"}
             "All Transactions"]]
           [:li.divider]
           [:li
            [:a {:href "#"}
             "Profile"]]
           [:li
-           [:a {:href "#"}
+           [:a {:href "/settings"}
             "Settings"]]
           [:li.divider]
           [:li
@@ -81,7 +81,7 @@
 
           [:div
            [:a.navbar-brand
-            {:href "#"}
+            {:href "/"}
             "JourMoney"]]
 
           [:div

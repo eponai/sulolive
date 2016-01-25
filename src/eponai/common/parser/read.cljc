@@ -26,11 +26,26 @@
                {target (om/query->ast [{k (parser.util/unwrap-proxies ret)}])}
                {:value ret}))))
 
+(defn return
+  "Special read key (special like :proxy) that just returns
+  whatever it is bound to.
+
+  Example:
+  om/IQuery
+  (query [this] ['(:return/foo {:value 1 :remote true})])
+  Will always return 1 and be remote true."
+  [_ _ p]
+  p)
+
 (defmethod read :default
   [e k p]
   (cond
     (= "proxy" (namespace k))
     (proxy e k p)
+
+    (= "return" (namespace k))
+    (return e k p)
+
     :else (warn "Returning nil for parser read key: " k)))
 
 ;; -------- Remote readers
@@ -42,14 +57,9 @@
                        eponai.datascript/schema-datomic->datascript)}
      :cljs {:remote true}))
 
-(defmethod read :query/all-dates
-  [{:keys [db query]} _ _]
-  {:value  (p/pull-many db query (p/all-where db '[[?e :date/ymd]]))
-   :remote true})
-
 (defmethod read :query/all-currencies
   [{:keys [db query]} _ _]
-  {:value  (p/pull-many db query (p/all-where db '[[?e :currency/code]]))
+  {:value  (p/pull-many db query (p/all-with db {:where '[[?e :currency/code]]}))
    :remote true})
 
 (defmethod read :query/all-transactions
@@ -59,20 +69,37 @@
     {:value (p/pull-many db query eids)
      :remote true}))
 
+(defmethod read :query/one-budget
+  [{:keys [ast db query auth target]} _ params]
+  (let [#?@(:clj  [budget-uuid (:budget-uuid params)]
+            :cljs [budget-uuid (let [{:keys [e a]} (:budget-uuid params)]
+                                 (get (d/entity db e) a))])]
+    (if target
+      ;; Puts the budget-uuid in params for the remote.
+      {target (assoc-in ast [:params :budget-uuid] budget-uuid)}
+      (let [eid (if budget-uuid
+                  (p/one-with db #?(:clj  (p/merge-query (p/budget-with-filter budget-uuid)
+                                                         (p/budget-with-auth (:username auth)))
+                                    :cljs (p/budget-with-filter budget-uuid)))
+                  ;; No budget-uuid, grabbing the one with the smallest created-at
+                  (->> #?(:clj  (p/budget-with-auth (:username auth))
+                          :cljs (p/budget))
+                       (p/all-with db)
+                       (map #(d/entity db %))
+                       (apply min-key :budget/created-at)
+                       :db/id))]
+        {:value (when eid (p/pull db query eid))}))))
+
 (defmethod read :query/all-budgets
   [{:keys [db query auth]} _ _]
-  (let [#?@(:clj  [eids (p/budgets db (:username auth))]
-            ;; We don't have the auth UUID in the client,
-            ;; so fetch all budgets since they only belong to the current user anyway.
-            :cljs [eids (p/all-where db '[[?e :budget/uuid]])])]
-    {:value (p/pull-many db query eids)
-     :remote true}))
+  {:value  (p/pull-many db query (p/all-with db #?(:clj (p/budget-with-auth (:username auth))
+                                                   :cljs (p/budget))))
+   :remote true})
 
 (defmethod read :query/current-user
   [{:keys [db query auth]} _ _]
-  (let [#?@(:clj  [eids (p/all-where db [['?e :user/uuid (:username auth)]])]
-            ;; We don't have the auth UUID in the client, so all users should be the current user.
-            :cljs [eids (p/all-where db '[[?e :user/uuid]])])]
+  (let [eids (p/all-with db {:where #?(:clj  [['?e :user/uuid (:username auth)]]
+                                       :cljs '[[?e :user/uuid]])})]
     (println "Pulled user: " eids)
     {:value  (first (p/pull-many db query eids))
      :remote true}))
