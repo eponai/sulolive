@@ -21,13 +21,44 @@
         :data-description "Testing this out"
         :data-currency    "sek"
         :data-amount      "200"
-        :data-locale      "auto"}]]
-      )))
+        :data-locale      "auto"}]])))
 
 (def ->Checkout (om/factory Checkout))
 
 (defui Payment
   Object
-  (render [this]))
+  (render [this]
+    (html
+      [:div.plans
+       [:div.plan
+        [:h2.plan-title
+         "Monthly"]
+        [:p.plan-price
+         "$9"
+         [:span "/mo"]]
+        [:button
+         {:class "btn btn-default btn-lg"}
+         "Buy now"]]
+       [:div
+        {:class "plan plan-tall"}
+        [:h2.plan-title
+         "Yearly"]
+        [:p.plan-price
+         "$7.50"
+         [:span "/mo"]]
+        [:button
+         {:class "btn btn-default btn-lg"}
+         "Buy now"]]
+       [:div.plan
+        [:h2.plan-title
+         "Monthly"]
+        [:p.plan-price
+         "$9"
+         [:span "/mo"]]
+
+        [:button
+         {:class "btn btn-default btn-lg"}
+         "Buy now"]]
+       ])))
 
 (def ->Payment (om/factory Payment))
