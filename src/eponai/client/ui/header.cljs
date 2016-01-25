@@ -27,6 +27,15 @@
                  :on-click on-close})]
          [:ul
           {:class "dropdown-menu dropdown-menu-right"}
+
+          [:li
+           [:a
+            [:button
+             (opts {:class "btn btn-primary btn-sm"
+                    :style {:width "100%"}
+                    :on-click #(om/transact! this `[(ui.modal/show) :query/modal])})
+             "Buy Now"]]]
+          [:li.divider]
           (when (not-empty all-budgets)
             [:li.dropdown-header
              "Budgets"])

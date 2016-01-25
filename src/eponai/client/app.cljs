@@ -11,6 +11,7 @@
             [eponai.client.parser.read]
             [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
             [eponai.client.ui.all_transactions :refer [AllTransactions ->AllTransactions]]
+            [eponai.client.ui.stripe :refer [->Payment Payment]]
             [eponai.client.ui.header :refer [Header ->Header]]
             [taoensso.timbre :as timbre :refer-macros [info debug error trace]]))
 

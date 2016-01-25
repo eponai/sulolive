@@ -52,6 +52,7 @@
                  [cljsjs/react-dom-server "0.14.3-0"]
                  [cljs-ajax "0.5.0"]
                  [cljsjs/pikaday "1.3.2-0"]
+                 [cljsjs/stripe "2.0-0"]
 
                  ;; Testing
                  [lein-doo "0.1.6"]

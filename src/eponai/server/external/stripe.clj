@@ -8,7 +8,7 @@
                    stripeEmail]}]
   (set! (. Stripe apiKey) api-key)  ;TODO: change this to live key
   (let [subscription-params {"source" stripeToken
-                             "plan"   "jourmoney-basic-plan"
+                             "plan"   "basic-monthly"
                              "email"  stripeEmail}
         customer (Customer/create subscription-params)]
     (debug "Created new customer: " customer)))
