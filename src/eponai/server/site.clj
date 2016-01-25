@@ -18,21 +18,18 @@
   site-routes
   (GET "/" [:as request]
     (if (friend/current-authentication request)
-      (html (str "/" (::m/cljs-build-id request) "/budget.html"))
+      (r/redirect "/budget")
       (html "index.html")))
 
   (GET "/budget" request
     (friend/authorize #{::a/user}
-                      (r/redirect (str "/" (::m/cljs-build-id request) "/budget.html"))))
+                      (html (::m/cljs-build-id request) "/budget.html")))
 
   (GET "/verify/:uuid" [uuid]
     (r/redirect (str "/api/login/email?uuid=" uuid)))
 
-  (GET "/signup" {:keys [query-string] :as request}
-    (r/redirect
-      (cond-> (str "/" (::m/cljs-build-id request) "/signup.html")
-              query-string
-              (str "?" query-string))))
+  (GET "/signup" request
+    (html (str (::m/cljs-build-id request) "/signup.html")))
 
   (GET "/devcards" []
     (html "devcards/budget.html"))
