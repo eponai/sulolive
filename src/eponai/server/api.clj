@@ -129,11 +129,11 @@
                                                   :email email}
                                         :message "No user exists for UUID"}))))
 
-(defn stripe-charge [params]
+(defn stripe-charge [token]
   (try
-    (stripe/create-customer (env :stripe-secret-key-test) params)
+    (stripe/create-customer (env :stripe-secret-key-test) token)
     (catch Exception e
       (throw (ex-info (.getMessage e)
                       {:status ::h/unprocessable-entity
-                       :data params}))))
+                       :data token}))))
   )

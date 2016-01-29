@@ -1,79 +1,72 @@
 (ns eponai.client.ui.stripe
   (:require [cljs.core.async :refer [chan <! put!]]
+            [clojure.walk :refer [keywordize-keys]]
             [eponai.client.ui :refer-macros [opts]]
+            [goog.string :as gstring]
+            [goog.string.format]
             [om.next :as om :refer-macros [defui]]
-            [sablono.core :refer-macros [html]])
+            [sablono.core :refer-macros [html]]
+            [taoensso.timbre :refer-macros [info debug error trace]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
-
-;(defui Checkout
-;  static om/IQuery
-;  (query [_]
-;    [])
-;  Object
-;  (render [_]
-;    (html
-;      [:form.stripe-button-container
-;       {:action "/api/charge"
-;        :method "POST"}
-      ;[:script
-
-;       <script>
-;       var handler = StripeCheckout.configure({
-;                                               key: 'pk_test_KHyU4tNjwX7R0lkxDmPxvbT9',
-;                                               image: '/img/documentation/checkout/marketplace.png',
-;locale: 'auto',
-;token: function(token) {
-;                        // Use the token to create the charge with a server-side script.
-;                         // You can access the token ID with `token.id`
-;                             }
-;                        });
-;
-;$('#customButton').on('click', function(e) {
-;                                            // Open Checkout with further options
-;                                             handler.open({
-;                                                           name: 'JourMoney',
-;                                                           description: '2 widgets',
-;                                                           currency: "sek",
-;                                                           amount: 2000
-;                                                           });
-;                                             e.preventDefault();
-;                                            });
-;
-;   // Close Checkout on page navigation
-;   $(window).on('popstate', function() {
-;                                        handler.close();
-;                                        });
-;   </script>
-;       {:src              "https://checkout.stripe.com/checkout.js"
-;        :class            "stripe-button"
-;        :data-key         "pk_test_KHyU4tNjwX7R0lkxDmPxvbT9"
-;        :data-name        "Test Checkout"
-;        :data-description "Testing this out"
-;        :data-currency    "sek"
-;        :data-amount      "200"
-;        :data-locale      "auto"}]
-;       ])))
-;
-;(def ->Checkout (om/factory Checkout))
 
 (defn load-checkout [channel]
   (-> (goog.net.jsloader.load "https://checkout.stripe.com/v2/checkout.js")
       (.addCallback #(put! channel [:stripe-checkout-loaded :success]))))
 
 (defn checkout-loaded? []
-  (aget js/window "StripeCheckout"))
+  (boolean (aget js/window "StripeCheckout")))
 
-(defn open-checkout [args]
+(defn stripe-token-recieved-cb [component]
+  (fn [token]
+    (let [clj-token (keywordize-keys (js->clj token))]
+      (debug "Recieved token from Stripe.")
+      (trace "Recieved token from Stripe: " clj-token)
+      (om/transact! component `[(stripe/charge ~{:token clj-token})]))))
+
+(defn open-checkout [component args]
   (let [checkout (.configure js/StripeCheckout
                              (clj->js {:key    "pk_test_KHyU4tNjwX7R0lkxDmPxvbT9"
                                        :locale "auto"
-                                       :token  #(prn "Token recieved: " %)}))]
+                                       :token  (stripe-token-recieved-cb component)}))]
     (.open checkout (clj->js args))))
 
+;; ---------- UI components ----------------
+
+(defn price->str [price]
+  (gstring/format "$%.2f" price))
+
+(defn plan-item [component props]
+  (let [{:keys [plan-name
+                plan-price
+                plan-monthly]} props]
+    (html
+      [:li.plan
+       [:ul.plan-container
+        [:li.title
+         [:h2 plan-name]]
+        [:li.price
+         [:p (price->str plan-price)]]
+        [:li
+         [:ul.options
+          [:li
+           [:div
+            (opts {:style {:display "inline-block"}})
+            (price->str plan-monthly)]
+           [:span " /month"]]]]
+        [:li.button
+         [:a
+          {:on-click #(open-checkout component {:name        "JourMoney"
+                                                :description "Somethign"
+                                                :currency    "usd"
+                                                :amount      (* 100 plan-price)})}
+          "Buy"]]]])))
 
 (defui Payment
+  static om/IQuery
+  (query [_]
+    [])
   Object
-  (initLocalState [this]
+  (initLocalState [_]
     {:checkout-loaded? (checkout-loaded?)
      :load-checkout-chan (chan)})
   (componentWillMount [this]
@@ -81,65 +74,29 @@
                   checkout-loaded?]} (om/get-state this)]
       (when-not checkout-loaded?
         (go (<! load-checkout-chan)
+            (prn "Setting state...")
             (om/set-state! this {:checkout-loaded? true}))
         (load-checkout load-checkout-chan))))
   (render [this]
     (let [{:keys [checkout-loaded?]} (om/get-state this)]
-      (println "Rendering loaded: " checkout-loaded?)
+      (debug "StripeCheckout loaded: " checkout-loaded?)
       (html
-        (if checkout-loaded?
-          [:div
-           [:h3
-            (opts {:style {:text-align "center"}})
-            "Select your plan"]
-           [:hr.intro-divider]
+        [:div
+         [:h3
+          (opts {:style {:text-align "center"}})
+          "Select your plan"]
+         [:hr.intro-divider]
 
+         (if checkout-loaded?
            [:div#pricePlans
-
             [:ul#plans
-             [:li.plan
-              [:ul.plan-container
-               [:li.title
-                [:h2 "Monthly"]]
-               [:li.price
-                [:p "$9.90"]]
-               [:li
-                [:ul.options
-                 [:li
-                  [:div
-                   (opts {:style {:display "inline-block"}})
-                   "$9.90"]
-                  [:span " /month"]]]]
-               [:li.button
-                [:a
-                 {:on-click #(open-checkout {:name        "JourMoney"
-                                             :description "Somethign"
-                                             :currency    "usd"
-                                             :amount      990})}
-                 "Buy"]]]]
+             (plan-item this {:plan-name    "Monthly"
+                         :plan-price   9.90
+                         :plan-monthly 9.90})
 
-             [:li.plan
-              [:ul.plan-container
-               [:li.title
-                [:h2 "Yearly"]]
-               [:li.price
-                [:p "$90.00"]]
-               [:li
-                [:ul.options
-                 [:li
-                  [:div
-                   (opts {:style {:display "inline-block"}})
-                   "$7.50"]
-                  [:span " /month"]]]]
-               [:li.button
-                [:a
-                 {:on-click #(open-checkout {:name        "JourMoney"
-                                             :description "Somethign"
-                                             :currency    "usd"
-                                             :amount      9000})}
-                 "Buy"]]]]]
-            ]]
-          [:div.loader
-           "Loading..."])))))
+             (plan-item this {:plan-name    "Yearly"
+                         :plan-price   90
+                         :plan-monthly 7.50})]]
+           [:div.loader])]))))
 
 (def ->Payment (om/factory Payment))

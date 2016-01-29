@@ -25,20 +25,7 @@
                       {:input-tags input-tags
                        :mutate     k
                        :params     params})))
-    (let [
-          ;renames {:input/title       :transaction/name
-          ;         :input/amount      :transaction/amount
-          ;         :input/description :transaction/details
-          ;         :input/date        :transaction/date
-          ;         :input/tags        :transaction/tags
-          ;         :input/currency    :transaction/currency
-          ;         :input/created-at  :transaction/created-at
-          ;         :input/uuid        :transaction/uuid
-          ;         :input/budget      :transaction/budget}
-          ;user-tx (rename-keys params renames)
-          ;user-tx (-> params
-          ;            (assoc :input/created-at ()))
-          #?@(:clj [currency-chan (chan 1)])
+    (let [#?@(:clj [currency-chan (chan 1)])
           db-tx (format/input-transaction->db-entity params)
           _ (validate/valid-user-transaction? db-tx)]
       (transact/transact state [db-tx])
@@ -67,3 +54,9 @@
   #?(:cljs {:remote true}
      :clj  {:action (fn []
                       {:email-chan (api/signin state (:input-email params))})}))
+
+(defmethod mutate 'stripe/charge
+  [{:keys [state]} _ {:keys [token]}]
+  #?(:cljs {:remote true}
+     :clj  {:action (fn []
+                      (api/stripe-charge token))}))

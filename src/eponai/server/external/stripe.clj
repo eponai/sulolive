@@ -4,11 +4,11 @@
            (com.stripe Stripe)))
 
 (defn create-customer
-  [api-key {:keys [stripeToken
-                   stripeEmail]}]
+  [api-key token]
   (set! (. Stripe apiKey) api-key)  ;TODO: change this to live key
-  (let [subscription-params {"source" stripeToken
+  (let [{:keys [id email]} token
+        subscription-params {"source" id
                              "plan"   "basic-monthly"
-                             "email"  stripeEmail}
+                             "email"  email}
         customer (Customer/create subscription-params)]
     (debug "Created new customer: " customer)))
