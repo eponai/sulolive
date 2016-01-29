@@ -53,8 +53,8 @@
             (opts {:style {:display "inline-block"}})
             (price->str plan-monthly)]
            [:span " /month"]]]]
-        [:li.button
-         [:a
+        [:li
+         [:button
           {:on-click #(open-checkout component {:name        "JourMoney"
                                                 :description "Somethign"
                                                 :currency    "usd"
