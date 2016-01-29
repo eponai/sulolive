@@ -24,3 +24,13 @@
   [{:keys [state]} _ _]
   {:action #(d/transact! state [{:ui/singleton               :ui.singleton/menu
                                  :ui.singleton.menu/visible false}])})
+
+(defmethod mutate 'ui.loader/show
+  [{:keys [state]} _ _]
+  {:action #(d/transact! state [{:ui/singleton                :ui.singleton/loader
+                                 :ui.singleton.loader/visible true}])})
+
+(defmethod mutate 'ui.loader/hide
+  [{:keys [state]} _ _]
+  {:action #(d/transact! state [{:ui/singleton                :ui.singleton/loader
+                                 :ui.singleton.loader/visible false}])})

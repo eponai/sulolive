@@ -55,10 +55,14 @@
            [:span " /month"]]]]
         [:li
          [:button
-          {:on-click #(open-checkout component {:name        "JourMoney"
-                                                :description "Somethign"
-                                                :currency    "usd"
-                                                :amount      (* 100 plan-price)})}
+          {:on-click #(do
+                       (om/transact! component `[(ui.loader/show) :query/loader])
+                       ;(open-checkout component
+                       ;               {:name        "JourMoney"
+                       ;                :description "Somethign"
+                       ;                :currency    "usd"
+                       ;                :amount      (* 100 plan-price)})
+                       )}
           "Buy"]]]])))
 
 (defui Payment
@@ -90,11 +94,13 @@
          (if checkout-loaded?
            [:div#pricePlans
             [:ul#plans
-             (plan-item this {:plan-name    "Monthly"
+             (plan-item this
+                        {:plan-name    "Monthly"
                          :plan-price   9.90
                          :plan-monthly 9.90})
 
-             (plan-item this {:plan-name    "Yearly"
+             (plan-item this
+                        {:plan-name    "Yearly"
                          :plan-price   90
                          :plan-monthly 7.50})]]
            [:div.loader])]))))

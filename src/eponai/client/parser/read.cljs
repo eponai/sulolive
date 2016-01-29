@@ -11,3 +11,7 @@
 (defmethod read :query/menu
   [{:keys [db query]} _ _]
   {:value (first (p/pull-many db query (p/all-where db [['?e :ui/singleton :ui.singleton/menu]])))})
+
+(defmethod read :query/loader
+  [{:keys [db query]} _ _]
+  {:value (first (p/pull-many db query (p/all-where db [['?e :ui/singleton :ui.singleton/loader]])))})

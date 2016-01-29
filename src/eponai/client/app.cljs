@@ -14,7 +14,9 @@
             [eponai.client.ui.modal :refer [Modal ->Modal]]
             [eponai.client.ui.stripe :refer [->Payment Payment]]
             [eponai.client.ui.header :refer [Header ->Header]]
-            [taoensso.timbre :as timbre :refer-macros [info debug error trace]]))
+            [taoensso.timbre :as timbre :refer-macros [info debug error trace]]
+            [eponai.client.ui :refer-macros [opts]]
+            ))
 
 (defui App
   static om/IQuery
@@ -22,18 +24,31 @@
     [:datascript/schema
      {:proxy/header (om/get-query Header)}
      {:proxy/transactions (om/get-query AllTransactions)}
-     {:proxy/modal (om/get-query Modal)}])
+     {:proxy/modal (om/get-query Modal)}
+     {:query/loader [:ui.singleton.loader/visible]}])
   Object
   (render
     [this]
     (let [{:keys [proxy/header
                   proxy/transactions
-                  proxy/modal]} (om/props this)]
+                  proxy/modal
+                  query/loader]} (om/props this)]
       (html [:div
              [:div (->Modal modal)]
              [:div (->Header header)]
+             (when (:ui.singleton.loader/visible loader)
+               (prn "Render loader")
+               [:div.loader
+                (opts {:style {:top              0
+                               :bottom           0
+                               :right            0
+                               :left             0
+                               :position         "fixed"
+                               :z-index          1050}})])
              [:div {:class "content-section-b"}
-              (->AllTransactions transactions)]]))))
+              (->Payment)
+              ;(->AllTransactions transactions)
+              ]]))))
 
 (defonce conn-atom (atom nil))
 
@@ -52,7 +67,10 @@
                      :ui.singleton.modal/visible false}
 
                     {:ui.singleton :ui.singleton/menu
-                     :ui.singleton.menu/visible false}]
+                     :ui.singleton.menu/visible false}
+
+                    {:ui/singleton :ui.singleton/loader
+                     :ui.singleton.loader/visible false}]
           conn (d/create-conn ui-schema)]
       (d/transact! conn ui-state)
       (reset! conn-atom conn))))
