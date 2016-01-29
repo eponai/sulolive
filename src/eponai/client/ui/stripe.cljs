@@ -30,6 +30,11 @@
                                        :token  (stripe-token-recieved-cb component)}))]
     (.open checkout (clj->js args))))
 
+(defn show-loading [component show?]
+  (if show?
+    (om/transact! component `[(ui.loader/show) :query/loader])
+    (om/transact! component `[(ui.loader/hide) :query/loader])))
+
 ;; ---------- UI components ----------------
 
 (defn price->str [price]
@@ -38,7 +43,8 @@
 (defn plan-item [component props]
   (let [{:keys [plan-name
                 plan-price
-                plan-monthly]} props]
+                plan-monthly
+                user-email]} props]
     (html
       [:li.plan
        [:ul.plan-container
@@ -55,20 +61,25 @@
            [:span " /month"]]]]
         [:li
          [:button
-          {:on-click #(do
-                       (om/transact! component `[(ui.loader/show) :query/loader])
-                       ;(open-checkout component
-                       ;               {:name        "JourMoney"
-                       ;                :description "Somethign"
-                       ;                :currency    "usd"
-                       ;                :amount      (* 100 plan-price)})
-                       )}
+          {:on-click (fn []
+                       (show-loading component true)
+                       (open-checkout component
+                                      {:name        "JourMoney"
+                                       :description plan-name
+                                       :currency    "usd"
+                                       :email       user-email
+                                       :amount      (* 100 plan-price)
+                                       :locale      "auto"
+                                       :allowRememberMe false
+                                       :opened      #(show-loading component false)
+                                       :closed      #(debug "StripeCheckout did close.")}))}
           "Buy"]]]])))
 
 (defui Payment
   static om/IQuery
   (query [_]
-    [])
+    [{:query/current-user [:user/uuid
+                           :user/email]}])
   Object
   (initLocalState [_]
     {:checkout-loaded? (checkout-loaded?)
@@ -82,7 +93,8 @@
             (om/set-state! this {:checkout-loaded? true}))
         (load-checkout load-checkout-chan))))
   (render [this]
-    (let [{:keys [checkout-loaded?]} (om/get-state this)]
+    (let [{:keys [checkout-loaded?]} (om/get-state this)
+          {:keys [query/current-user]} (om/props this)]
       (debug "StripeCheckout loaded: " checkout-loaded?)
       (html
         [:div
@@ -97,12 +109,14 @@
              (plan-item this
                         {:plan-name    "Monthly"
                          :plan-price   9.90
-                         :plan-monthly 9.90})
+                         :plan-monthly 9.90
+                         :user-email (:user/email current-user)})
 
              (plan-item this
                         {:plan-name    "Yearly"
                          :plan-price   90
-                         :plan-monthly 7.50})]]
+                         :plan-monthly 7.50
+                         :user-email (:user/email current-user)})]]
            [:div.loader])]))))
 
 (def ->Payment (om/factory Payment))
