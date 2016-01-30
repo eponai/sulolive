@@ -53,7 +53,7 @@
   (debug "signup/email with params:" params)
   #?(:cljs {:remote true}
      :clj  {:action (fn []
-                      {:email-chan (api/signin state (:input-email params))})}))
+                      (api/signin state (:input-email params)))}))
 
 (defmethod mutate 'stripe/charge
   [{:keys [state]} _ {:keys [token]}]

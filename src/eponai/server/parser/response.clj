@@ -30,5 +30,7 @@
   [{:keys [::m/send-email-fn]} _ response]
   (when-let [chan (get-in response [:result :email-chan])]
     (go
-      (send-email-fn (<! chan))))
-  (update response :result dissoc :email-chan))
+      (send-email-fn (<! chan) (get-in response [:result :status]))))
+  (-> response
+      (update :result dissoc :email-chan)
+      (update :result dissoc :status)))

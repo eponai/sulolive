@@ -20,16 +20,18 @@
 (defn- send-email
   "Send a verification email to the provided address with the given uuid.
   Will send a link with the path /verify/:uuid that will verify when the user opens the link."
-  [smtp address uuid]
+  [smtp address uuid user-status]
   (let [link (str "http://localhost:3000/verify/" uuid)
         body {:from    "info@gmail.com"
               :to      "dianagren@gmail.com"
-              :subject "Create your account on JourMoney."
+              :subject (if (= user-status :user.status/new)
+                         "Create your account on JourMoney"
+                         "Sign in to JourMoney")
               :body    [:alternative
-                        {:type "text/plain"
-                         :content (text-content link)}
-                        {:type "text/html"
-                         :content (html-content link)}
+                        {:type    "text/plain"
+                         :content (text-content link user-status)}
+                        {:type    "text/html"
+                         :content (html-content link user-status)}
                         ]}
         status (email/send-message smtp body)]
 
@@ -48,19 +50,22 @@
 
   Conn is the connection to the database."
   [conn]
-  (fn [verification]
+  (fn [verification user-status]
     (let [db (d/db conn)
           uuid (:verification/uuid verification)]
 
       (cond (p/verification db '[:verification/value] (str uuid))
             (send-email (smtp)
                         (:verification/value verification)
-                        uuid)))))
+                        uuid
+                        user-status)))))
 
-(defn text-content [link]
-  (str "Click and confirm that you want to create an account on JourMoney. This link will expire in 15 minutes and can only be used once.\n" link))
+(defn text-content [link user-status]
+  (if (= user-status :user.status/new)
+    (str "Click and confirm that you want to create an account on JourMoney. This link will expire in 15 minutes and can only be used once.\n" link)
+    (str "Sign in to JourMoney. This link will expire in 15 minutes and can only be used once" link)))
 
-(defn html-content [link]
+(defn html-content [link user-status]
   (xhtml
     [:head
      [:meta
@@ -91,7 +96,9 @@
         {:align "center",
          :style
                 "font-size: 18px; padding-top: 2em;border-top:1px solid #e5e5e5;"}
-        "Click and confirm that you want to create an account on JourMoney."
+        (if (= user-status :user.status/new)
+          "Click and confirm that you want to create an account on JourMoney."
+          "Sign in to JourMoney.")
         [:br]]]
       [:tr
        [:td
@@ -104,11 +111,15 @@
          {:href link
           :style
                 "text-decoration:none;display:inline-block; border-radius:10px; padding:16px 20px;font-size:16px;border:1px solid transparent;background:#2EC4B6;color:#fff;font-weight:bold;"}
-         "Create account"]]]
+         (if (= user-status :user.status/new)
+           "Create account"
+           "Sign in")]]]
       [:tr
        [:td
         {:align "center", :style "padding-bottom:4em;"}
-        "Or create an account using this link:\n            "
+        (if (= user-status :user.status/new)
+          "Or create an account using this link:"
+          "Or sign in using this link:")
         [:br]
         [:a {:href link} link]]]
       [:tr

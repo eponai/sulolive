@@ -25,18 +25,20 @@
   {:pre [(instance? LocalConnection conn)
          (string? email)]}
   (if email
-    (let [user (p/user (d/db conn) email)
+    (let [user (d/entity (d/db conn) (:db/id (p/user (d/db conn) email)))
           email-chan (chan 1)]
       (if user
         (let [verification (t/email-verification conn user :verification.status/pending)]
           (debug "New verification " (:verification/uuid verification) "for user:" email)
           (put! email-chan verification)
-          email-chan)
+          {:email-chan email-chan
+           :status (:user/status user)})
         (let [verification (t/new-user conn email)]
           (debug "Creating new user with email:" email "verification:" (:verification/uuid verification))
           (put! email-chan verification)
           (debug "Done creating new user with email:" email)
-          email-chan)))
+          {:email-chan email-chan
+           :status :user.status/new})))
     (throw (ex-info "Trying to signup with nil email."
                     {:cause ::signup-error}))))
 
