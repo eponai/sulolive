@@ -23,7 +23,7 @@
   [smtp address uuid]
   (let [link (str "http://localhost:3000/verify/" uuid)
         body {:from    "info@gmail.com"
-              :to      "info@jourmoney.com"
+              :to      "dianagren@gmail.com"
               :subject "Create your account on JourMoney."
               :body    [:alternative
                         {:type "text/plain"
@@ -69,10 +69,10 @@
       {:content "width=device-width, initial-scale=1.0",
        :name    "viewport"}]]
     [:body
-     {:style "margin: 0; padding: 0;"}
+     {:style "margin: 0; padding: 0;"
+      :bgcolor "#FDFFFC"}
      [:table
       {:align   "center",
-       :bgcolor "#FDFFFC",
        :style   "padding: 40px 30px 40px 30px;color:#01213d;"}
       [:tr
        [:td
@@ -95,7 +95,7 @@
         [:br]]]
       [:tr
        [:td
-        {:align "center", :style "font-size:16px;color:gray"}
+        {:align "center", :style "font-size:16px;color:gray;padding-top:0.5em;"}
         "This link will expire in 15 minutes and can only be used once."]]
       [:tr
        [:td
