@@ -100,9 +100,10 @@
       [:tr
        [:td
         {:align "center", :style "padding: 2em;"}
-        [:button
-         {:style
-          "display:inline-block; border-radius:10px; padding:16px 20px;font-size:16px;border:1px solid transparent;background:#2EC4B6;color:#fff;font-weight:bold;"}
+        [:a
+         {:href link
+          :style
+                "text-decoration:none;display:inline-block; border-radius:10px; padding:16px 20px;font-size:16px;border:1px solid transparent;background:#2EC4B6;color:#fff;font-weight:bold;"}
          "Create account"]]]
       [:tr
        [:td
