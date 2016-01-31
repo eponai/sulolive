@@ -7,6 +7,12 @@
             [sablono.core :refer-macros [html]]
             [garden.core :refer [css]]))
 
+(defn menu-item [component name opts]
+  [:a
+   (merge {:on-click #(om/transact! component '[(ui.menu/hide) :query/menu])}
+          opts)
+   name])
+
 (defui Menu
   static om/IQuery
   (query [_]
@@ -28,33 +34,48 @@
                  :on-click on-close})]
          [:ul
           {:class "dropdown-menu dropdown-menu-right"}
+          [:li.dropdown-header
+           "Trial: 13 days left"]
+          [:li
+           (menu-item this "Buy" (opts {:style {:display "block"
+                                                :margin  "0.5em 0.2em"}
+                                        :class "btn btn-primary btn-md"
+                                        :href  (routes/inside "/subscribe/")}))]
+          [:li.divider]
+
           (when (not-empty all-budgets)
             [:li.dropdown-header
-             "Budgets"])
+             "Sheets"])
           (map
             (fn [budget]
               [:li
                (opts {:key [(:budget/uuid budget)]})
-               [:a {:href (routes/inside "/dashboard/" (:budget/uuid budget))}
-                (or (:budget/name budget) "Untitled")]])
+               (menu-item this
+                          (or (:budget/name budget) "Untitled")
+                          {:href (routes/inside "/dashboard/" (:budget/uuid budget))})
+]
+              )
             all-budgets)
 
           [:li.divider]
           [:li
-           [:a {:href (routes/inside "/transactions")}
-            "All Transactions"]]
+           (menu-item this
+                      "All Transactions"
+                      {:href (routes/inside "/transactions")})]
           [:li.divider]
           [:li
-           [:a {:href "#"}
-            "Profile"]]
+           (menu-item this
+                      "Profile"
+                      {:href "#"})]
           [:li
-           [:a {:href (routes/inside "/settings")}
-            "Settings"]]
+           (menu-item this
+                      "Settings"
+                      {:href (routes/inside "/settings")})]
           [:li.divider]
           [:li
-           [:a
-            {:href (routes/outside "/api/logout")}
-            "Sign Out"]]]]))))
+           (menu-item this
+                      "Sign Out"
+                      {:href (routes/outside "/api/logout")})]]]))))
 
 (def ->Menu (om/factory Menu))
 
@@ -90,14 +111,6 @@
                           :flex            "row-reverse"
                           :align-items     "flex-end"
                           :justify-content "flex-end"}})
-
-
-           [:a
-            (opts {:style {:display "block"
-                           :margin  "0.5em 0.2em"}
-                   :class "btn btn-primary btn-md"
-                   :href  (routes/inside "/subscribe/")})
-            "Subscribe"]
 
            [:button
             (opts {:style    {:display "block"
