@@ -82,12 +82,13 @@
                                                          (p/budget-with-auth (:username auth)))
                                     :cljs (p/budget-with-filter budget-uuid)))
                   ;; No budget-uuid, grabbing the one with the smallest created-at
-                  (->> #?(:clj  (p/budget-with-auth (:username auth))
-                          :cljs (p/budget))
-                       (p/all-with db)
-                       (map #(d/entity db %))
-                       (apply min-key :budget/created-at)
-                       :db/id))]
+                  (some->> #?(:clj  (p/budget-with-auth (:username auth))
+                              :cljs (p/budget))
+                           (p/all-with db)
+                           (map #(d/entity db %))
+                           seq
+                           (apply min-key :budget/created-at)
+                           :db/id))]
         {:value (when eid (p/pull db query eid))}))))
 
 (defmethod read :query/all-budgets
