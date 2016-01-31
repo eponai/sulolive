@@ -31,19 +31,18 @@
                       (s/ends-with? s "/") (->> butlast (apply str)))))]
     (s/join "/" (cons root (map trim-separators paths)))))
 
-;; TODO: BUDGET INSTEAD OF TRANSACTIONS
+(def dashboard-handler
+  (map->UiComponentMatch {:component      Dashboard
+                          :factory        ->Dashboard
+                          :route-param-fn (fn [{:keys [budget-uuid]} reconciler]
+                                            (om/transact! reconciler `[(dashboard/set-active-budget
+                                                                         {:budget-uuid ~(uuid budget-uuid)})]))}))
+
 (def routes
-  (let [param-fn (fn [{:keys [budget-uuid]} reconciler]
-                   (om/transact! reconciler `[(dashboard/set-active-budget {:budget-uuid ~(uuid budget-uuid)})]))
-        dashboard (map->UiComponentMatch {:component      Dashboard
-                                          :factory        ->Dashboard
-                                          :route-param-fn param-fn})]
-    [root
-     {""              dashboard
-      "/"             dashboard
-      "/dashboard/"   {""                dashboard
-                       [:budget-uuid ""] dashboard}
-      "/transactions" (map->UiComponentMatch {:component AllTransactions
-                                              :factory   ->AllTransactions})
-      "/settings"     (map->UiComponentMatch {:component Settings
-                                              :factory   ->Settings})}]))
+  [root
+   {(bidi/alts "" "/") dashboard-handler
+    "/dashboard"       {(bidi/alts "" "/" ["/" :budget-uuid]) dashboard-handler}
+    "/transactions"    (map->UiComponentMatch {:component AllTransactions
+                                               :factory   ->AllTransactions})
+    "/settings"        (map->UiComponentMatch {:component Settings
+                                               :factory   ->Settings})}])
