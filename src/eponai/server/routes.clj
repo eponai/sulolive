@@ -17,11 +17,18 @@
       (r/content-type "text/html")))
 
 (defroutes
+  app-routes
+  (GET "/*" request (html (::m/cljs-build-id request) "budget.html")))
+
+(defroutes
   site-routes
   (GET "/" [:as request]
     (if (friend/current-authentication request)
-      (html (::m/cljs-build-id request) "budget.html")
+      (r/redirect "/app")
       (html "index.html")))
+
+  (context "/app" _
+    (friend/wrap-authorize app-routes #{::a/user}))
 
   (GET "/verify/:uuid" [uuid]
     (r/redirect (str "/api/login/email?uuid=" uuid)))

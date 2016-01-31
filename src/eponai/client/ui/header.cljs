@@ -3,6 +3,7 @@
             [eponai.client.ui :refer-macros [opts map-all]]
             [eponai.client.ui.modal :refer [->Modal Modal]]
             [eponai.client.ui.add_transaction :as add.t :refer [->AddTransaction]]
+            [eponai.client.routes :as routes]
             [sablono.core :refer-macros [html]]
             [garden.core :refer [css]]))
 
@@ -34,25 +35,25 @@
             (fn [budget]
               [:li
                (opts {:key [(:budget/uuid budget)]})
-               [:a {:href (str "/dashboard/" (:budget/uuid budget))}
+               [:a {:href (routes/href "/dashboard/" (:budget/uuid budget))}
                 (or (:budget/name budget) "Untitled")]])
             all-budgets)
 
           [:li.divider]
           [:li
-           [:a {:href "/transactions"}
+           [:a {:href (routes/href "/transactions")}
             "All Transactions"]]
           [:li.divider]
           [:li
            [:a {:href "#"}
             "Profile"]]
           [:li
-           [:a {:href "/settings"}
+           [:a {:href (routes/href "/settings")}
             "Settings"]]
           [:li.divider]
           [:li
            [:a
-            {:href "/api/logout"}
+            {:href (routes/href "/api/logout")}
             "Sign Out"]]]]))))
 
 (def ->Menu (om/factory Menu))
@@ -81,7 +82,7 @@
 
           [:div
            [:a.navbar-brand
-            {:href "/"}
+            {:href (routes/href "/")}
             "JourMoney"]]
 
           [:div
