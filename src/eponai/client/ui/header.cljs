@@ -35,25 +35,25 @@
             (fn [budget]
               [:li
                (opts {:key [(:budget/uuid budget)]})
-               [:a {:href (routes/href "/dashboard/" (:budget/uuid budget))}
+               [:a {:href (routes/inside "/dashboard/" (:budget/uuid budget))}
                 (or (:budget/name budget) "Untitled")]])
             all-budgets)
 
           [:li.divider]
           [:li
-           [:a {:href (routes/href "/transactions")}
+           [:a {:href (routes/inside "/transactions")}
             "All Transactions"]]
           [:li.divider]
           [:li
            [:a {:href "#"}
             "Profile"]]
           [:li
-           [:a {:href (routes/href "/settings")}
+           [:a {:href (routes/inside "/settings")}
             "Settings"]]
           [:li.divider]
           [:li
            [:a
-            {:href (routes/href "/api/logout")}
+            {:href (routes/outside "/api/logout")}
             "Sign Out"]]]]))))
 
 (def ->Menu (om/factory Menu))
@@ -82,7 +82,7 @@
 
           [:div
            [:a.navbar-brand
-            {:href (routes/href "/")}
+            {:href (routes/inside "/")}
             "JourMoney"]]
 
           [:div

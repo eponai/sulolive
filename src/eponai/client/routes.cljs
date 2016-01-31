@@ -18,18 +18,25 @@
     (bidi/succeed this m))
   (unresolve-handler [this m] (when (= this (:handler m)) "")))
 
-(def root "/app")
+(def app-root "/app")
 
-(defn href
-  "Takes any number of strings and joins them with separators.
-  "
-  [& paths]
+(defn- create-route [root paths]
   (letfn [(trim-separators [s]
             (let [s (str s)]
               (cond-> s
                       (s/starts-with? s "/") (->> rest (apply str))
                       (s/ends-with? s "/") (->> butlast (apply str)))))]
     (s/join "/" (cons root (map trim-separators paths)))))
+
+(defn outside
+  "Takes any number of paths and creates a path outside our app."
+  [& paths]
+  (create-route "" paths))
+
+(defn inside
+  "Takes any number of paths and creates a path inside our app."
+  [& paths]
+  (create-route app-root paths))
 
 (def dashboard-handler
   (map->UiComponentMatch {:component      Dashboard
@@ -43,7 +50,7 @@
    "/dashboard"       {(bidi/alts "" "/" ["/" :budget-uuid]) dashboard-handler}})
 
 (def routes
-  [root
+  [app-root
    (merge
      dashboard-routes
      {"/transactions" (map->UiComponentMatch {:component AllTransactions

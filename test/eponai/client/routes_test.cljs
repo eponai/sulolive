@@ -4,7 +4,7 @@
             [eponai.client.routes :as routes]))
 
 (deftest dashboard-routes
-  (are [route] (= (:handler (bidi/match-route routes/routes (routes/href route)))
+  (are [route] (= (:handler (bidi/match-route routes/routes (routes/inside route)))
                   routes/dashboard-handler)
                ""
                "/"
