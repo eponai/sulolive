@@ -92,6 +92,5 @@
                                                       :cljs (cljs.reader/read-string a)))
                      :transaction/budget   (fn [b] [:budget/uuid (str->uuid (str b))])}
         update-fn (fn [m k] (update m k (conv-fn-map k)))]
-    (println "User tx: " user-tx)
     (assoc (reduce update-fn user-tx (keys conv-fn-map))
       :db/id (d/tempid :db.part/user))))

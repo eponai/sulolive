@@ -5,8 +5,8 @@
   (gen/fmap str gen/int))
 
 (defn gen-currency []
-  (gen/fmap (fn [s] (apply str (take 3 s)))
-            (gen/vector gen/char-alpha)))
+  (gen/fmap (fn [s] (apply str (take 3 (cycle s))))
+            (gen/not-empty (gen/vector gen/char-alpha))))
 
 (defn gen-title []
   gen/string-alphanumeric)
