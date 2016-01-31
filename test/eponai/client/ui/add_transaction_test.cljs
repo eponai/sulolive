@@ -4,6 +4,7 @@
             [eponai.common.parser :as parser]
             [eponai.common.generators :refer [gen-transaction]]
             [eponai.client.testdata :as testdata]
+            [clojure.test.check]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.clojure-test :refer-macros [defspec]]
             [cljs.test :refer-macros [deftest is]]
