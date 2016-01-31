@@ -5,10 +5,17 @@
             [environ.core :refer [env]]
             [taoensso.timbre :refer [debug error info]]
             [eponai.server.datomic.pull :as p]
-            [hiccup.page :refer [xhtml]]))
+            [hiccup.page :refer [xhtml]]
+            [garden.core :refer [css]]
+            [garden.stylesheet :as g]))
 
 (declare html-content)
 (declare text-content)
+
+(defn subject [user-status]
+  (if (= user-status :user.status/new)
+    "Create your account on JourMoney"
+    "Sign in to JourMoney"))
 
 (defn- smtp []
   {:host (env :smtp-host)
@@ -24,9 +31,7 @@
   (let [link (str "http://localhost:3000/verify/" uuid)
         body {:from    "info@gmail.com"
               :to      "dianagren@gmail.com"
-              :subject (if (= user-status :user.status/new)
-                         "Create your account on JourMoney"
-                         "Sign in to JourMoney")
+              :subject (subject user-status)
               :body    [:alternative
                         {:type    "text/plain"
                          :content (text-content link user-status)}
@@ -72,63 +77,67 @@
       {:content "text/html; charset=UTF-8", :http-equiv "Content-Type"}]
      [:meta
       {:content "width=device-width, initial-scale=1.0",
-       :name    "viewport"}]]
+       :name    "viewport"}]
+     [:title
+      (subject user-status)]]
     [:body
      {:style "margin: 0; padding: 0;"
       :bgcolor "#FDFFFC"}
      [:table
       {:align   "center",
-       :style   "padding: 40px 30px 40px 30px;color:#01213d;"}
+       :style   "color:01213d;"}
       [:tr
-       [:td
-        {:align "center", :style "padding:1em;color:#fff"}
-        [:p
-         {:style
-          "background:#01213d;border-radius:50%;height:30px;width:30px;display:inline-block;margin:1em;"}]
-        [:p
-         {:style
-          "background:#01213d;border-radius:50%;height:30px;width:30px;display:inline-block;margin:1em;"}]
-        [:p
-         {:style
-          "background:#01213d;border-radius:50%;height:30px;width:30px;display:inline-block;margin:1em;"}]]]
-      [:tr
-       [:td
-        {:align "center",
-         :style
-                "font-size: 18px; padding-top: 2em;border-top:1px solid #e5e5e5;"}
-        (if (= user-status :user.status/new)
-          "Click and confirm that you want to create an account on JourMoney."
-          "Sign in to JourMoney.")
-        [:br]]]
-      [:tr
-       [:td
-        {:align "center", :style "font-size:16px;color:gray;padding-top:0.5em;"}
-        "This link will expire in 15 minutes and can only be used once."]]
-      [:tr
-       [:td
-        {:align "center", :style "padding: 2em;"}
-        [:a
-         {:href link
-          :style
-                "text-decoration:none;display:inline-block; border-radius:10px; padding:16px 20px;font-size:16px;border:1px solid transparent;background:#2EC4B6;color:#fff;font-weight:bold;"}
-         (if (= user-status :user.status/new)
-           "Create account"
-           "Sign in")]]]
-      [:tr
-       [:td
-        {:align "center", :style "padding-bottom:4em;"}
-        (if (= user-status :user.status/new)
-          "Or create an account using this link:"
-          "Or sign in using this link:")
-        [:br]
-        [:a {:href link} link]]]
-      [:tr
-       [:td
-        {:align "center",
-         :style
-                "color:gray;padding-top:2em;border-top:1px solid #e5e5e5;"}
-        "This email was sent by JourMoney."
-        [:br]
-        "eponai hb"
-        [:br]
-        "Stockholm, Sweden"]]]]))
+       [:td {:align "center"}
+        [:table
+         [:tr
+          [:td {:align "center"}
+           [:p
+            {:style
+             "background-color:#01213d;border-radius:50%;height:30px;width:30px;display:inline-block;"}]
+           [:p
+            {:style
+             "background-color:#01213d;border-radius:50%;height:30px;width:30px;display:inline-block;"}]
+           [:p
+            {:style
+             "background-color:#01213d;border-radius:50%;height:30px;width:30px;display:inline-block;"}]]]
+         [:tr
+          [:td
+           {:align "center"}
+           [:p {:style "font-size:18px;border-top:1px solid #e5e5e5;padding-top:1em;"}
+            (if (= user-status :user.status/new)
+              "Click and confirm that you want to create an account on JourMoney."
+              "Sign in to JourMoney.")]]
+          [:tr
+           [:td
+            {:align "center"}
+            [:p {:style "font-size:16px;color:#b3b3b1;"}
+             "This link will expire in 15 minutes and can only be used once."]]]]
+         [:tr
+          [:td
+           {:align "center"}
+           [:p
+            [:a
+                {:href link
+                 :style
+                       "text-decoration:none;display:inline-block; border-radius:10px; padding:16px 20px;font-size:16px;border:1px solid transparent;background-color:#2EC4B6;color:#fff;font-weight:bold;"}
+                (if (= user-status :user.status/new)
+                  "Create account"
+                  "Sign in")]]]]
+         [:tr
+          [:td
+           {:align "center"}
+           [:p
+            (if (= user-status :user.status/new)
+              "Or create an account using this link:"
+              "Or sign in using this link:")
+            [:br]
+            [:a {:href link} link]]]]
+         [:tr
+          [:td
+           {:align  "center"}
+           [:p {:style "color:#b3b3b1;border-top:1px solid #e5e5e5;padding:1em;"}
+            "This email was sent by JourMoney."
+            [:br]
+            "eponai hb"
+            [:br]
+            "Stockholm, Sweden"]]]]]]]]))
