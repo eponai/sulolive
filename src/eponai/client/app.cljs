@@ -30,12 +30,15 @@
      {:query/loader [:ui.singleton.loader/visible]}
      {:proxy/modal (om/get-query Modal)}
      '{:proxy/app-content ?url/component}
-     '(:return/content-factory ?url/factory)
-     {:proxy/payment (om/get-query Payment)}])
+     '(:return/content-factory ?url/factory)])
   Object
   (render
     [this]
-    (let [{:keys [proxy/header proxy/payment proxy/app-content proxy/modal return/content-factory query/loader]} (om/props this)]
+    (let [{:keys [proxy/header
+                  proxy/app-content
+                  proxy/modal
+                  return/content-factory
+                  query/loader]} (om/props this)]
       (html [:div
              [:div (->Header header)]
              [:div (->Modal modal)]
@@ -49,7 +52,6 @@
                                :position         "fixed"
                                :z-index          1050}})])
              [:div {:class "content-section-b"}
-              ;(->Payment payment)
               (when content-factory
                 (content-factory app-content))]]))))
 

@@ -92,10 +92,11 @@
                           :justify-content "flex-end"}})
 
 
-           [:button
-            (opts {:style    {:display "block"
-                              :margin  "0.5em 0.2em"}
-                   :class    "btn btn-primary btn-md"})
+           [:a
+            (opts {:style {:display "block"
+                           :margin  "0.5em 0.2em"}
+                   :class "btn btn-primary btn-md"
+                   :href  (routes/inside "/subscribe/")})
             "Subscribe"]
 
            [:button
