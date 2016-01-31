@@ -1,5 +1,6 @@
 (ns eponai.repl
   (:require [eponai.server.core :as core]
+            [eponai.server.datomic_dev :as datomic_dev]
             [clojure.tools.namespace.repl :as ns.repl]
             [taoensso.timbre :as timbre]
             [clojure.repl :refer :all]))
@@ -11,6 +12,8 @@
   (prn "                REPL TIPS AND TRICKS:")
   (prn " (refresh) - reload all namespaces")
   (prn " (start-server) - start the server")
+  (prn " (stop-server) - stop the server")
+  (prn " (reset-db) - reset db so next server gets fresh db")
   (prn " (set-debug) - set logger level to debug")
   (prn " (set-trace) - set logger level to trace")
   (prn " (set-level level) - set logger level to level")
@@ -50,4 +53,6 @@
   (when @server-atom
     (start-server)))
 
+(defn reset-db []
+  (reset! datomic_dev/connection nil))
 
