@@ -24,6 +24,13 @@
   :db/doc                "A user's account status."
   :db.install/_attribute :db.part/db}
 
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :user/activated-at
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Timestamp for when the user activated their account."
+  :db.install/_attribute :db.part/db}
+
  ;; User status
  [:db/add #db/id[:db.part/user] :db/ident :user.status/new]
  [:db/add #db/id[:db.part/user] :db/ident :user.status/active]

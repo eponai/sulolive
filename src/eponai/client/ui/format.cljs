@@ -1,7 +1,11 @@
 (ns eponai.client.ui.format
   (:require
     [cljs-time.core :as t]
-    [cljs-time.format :as t.format]))
+    [cljs-time.format :as t.format]
+    [cljs-time.coerce :as c]))
+
+(defn days-since [timestamp]
+  (t/in-days (t/interval (c/from-long timestamp) (t/now))))
 
 (defn dates-by-year-month [dates]
   (letfn [(*group-by [key]

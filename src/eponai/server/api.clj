@@ -4,6 +4,7 @@
             [datomic.api :as d]
             [eponai.common.database.pull :as pull]
             [eponai.server.datomic.transact :as t]
+            [eponai.common.database.transact :refer [transact]]
             [eponai.server.datomic.pull :as p]
             [eponai.server.http :as h]
             [eponai.server.external.stripe :as stripe]
@@ -12,7 +13,8 @@
             [eponai.common.format :as f]
             [taoensso.timbre :refer [debug error info]]
             [ring.util.response :as r]
-            [environ.core :refer [env]])
+            [environ.core :refer [env]]
+            [clj-time.core :as time])
   (:import (datomic.peer LocalConnection)))
 
 ; Actions
@@ -120,7 +122,8 @@
                              :verification verification}))))
 
         ; Activate this account and return the user entity
-        (let [activated-db (:db-after (t/add conn user-db-id :user/status :user.status/active))]
+        (let [activated-db (:db-after (transact conn [[:db/add user-db-id :user/status :user.status/active]
+                                                      [:db/add user-db-id :user/activated-at (c/to-long (time/now))]]))]
           (debug "Activated account for user-uuid:" user-uuid)
           (p/user activated-db email))))
 

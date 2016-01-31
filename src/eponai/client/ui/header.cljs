@@ -1,6 +1,7 @@
 (ns eponai.client.ui.header
   (:require [om.next :as om :refer-macros [defui]]
             [eponai.client.ui :refer-macros [opts map-all]]
+            [eponai.client.ui.format :as f]
             [eponai.client.ui.modal :refer [->Modal Modal]]
             [eponai.client.ui.add_transaction :as add.t :refer [->AddTransaction]]
             [eponai.client.routes :as routes]
@@ -17,10 +18,13 @@
   static om/IQuery
   (query [_]
     [{:query/all-budgets [:budget/uuid
-                          :budget/name]}])
+                          :budget/name]}
+     {:query/current-user [:user/uuid
+                           :user/activated-at]}])
   Object
   (render [this]
     (let [{:keys [query/all-budgets
+                  query/current-user
                   on-close]} (om/props this)]
       (html
         [:div
@@ -35,7 +39,7 @@
          [:ul
           {:class "dropdown-menu dropdown-menu-right"}
           [:li.dropdown-header
-           "Trial: 13 days left"]
+           (str "Trial: " (max 0 (- 14 (f/days-since (:user/activated-at current-user)))) " days left")]
           [:li
            (menu-item this "Buy" (opts {:style {:display "block"
                                                 :margin  "0.5em 0.2em"}
