@@ -38,11 +38,15 @@
                                             (om/transact! reconciler `[(dashboard/set-active-budget
                                                                          {:budget-uuid ~(uuid budget-uuid)})]))}))
 
+(def dashboard-routes
+  {(bidi/alts "" "/") dashboard-handler
+   "/dashboard"       {(bidi/alts "" "/" ["/" :budget-uuid]) dashboard-handler}})
+
 (def routes
   [root
-   {(bidi/alts "" "/") dashboard-handler
-    "/dashboard"       {(bidi/alts "" "/" ["/" :budget-uuid]) dashboard-handler}
-    "/transactions"    (map->UiComponentMatch {:component AllTransactions
-                                               :factory   ->AllTransactions})
-    "/settings"        (map->UiComponentMatch {:component Settings
-                                               :factory   ->Settings})}])
+   (merge
+     dashboard-routes
+     {"/transactions" (map->UiComponentMatch {:component AllTransactions
+                                              :factory   ->AllTransactions})
+      "/settings"     (map->UiComponentMatch {:component Settings
+                                              :factory   ->Settings})})])

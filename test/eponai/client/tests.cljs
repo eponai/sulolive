@@ -3,7 +3,9 @@
             [cljsjs.react]
             [eponai.common.datascript_test]
             [eponai.client.ui.add_transaction_test]
-            [doo.runner :refer-macros [doo-tests]]))
+            [eponai.client.routes-test]
+            [doo.runner :refer-macros [doo-tests]]
+            [taoensso.timbre :refer-macros [info error]]))
 
 (defn ^:export run []
   (if-let [test-fn *main-cli-fn*]
@@ -11,11 +13,15 @@
       ;; Override doo.runner's cljs.test/report, as it will call exit
       ;; when we run tests.
       (defmethod cljs.test/report [:cljs.test/default :end-run-tests] [m]
-        (prn "Tests successful: " (cljs.test/successful? m)))
+        (if (cljs.test/successful? m)
+          (info "Tests: PASS")
+          (error "Tests: FAILED")))
+
       (test-fn))
     (prn "WARNING: No test function set!")))
 
 (enable-console-print!)
 ;; doo-tests sets *main-cli-fn* to a function that runs tests.
 (doo-tests 'eponai.common.datascript_test
-           'eponai.client.ui.add_transaction_test)
+           'eponai.client.ui.add_transaction_test
+           'eponai.client.routes-test)

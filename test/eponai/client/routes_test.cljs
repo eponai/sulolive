@@ -1,0 +1,13 @@
+(ns eponai.client.routes-test
+  (:require [bidi.bidi :as bidi]
+            [cljs.test :refer-macros [deftest is are]]
+            [eponai.client.routes :as routes]))
+
+(deftest dashboard-routes
+  (are [route] (= (:handler (bidi/match-route routes/routes (routes/href route)))
+                  routes/dashboard-handler)
+               ""
+               "/"
+               "/dashboard"
+               "/dashboard/"
+               "/dashboard/foo-bar"))
