@@ -59,4 +59,10 @@
   [{:keys [state]} _ {:keys [token]}]
   #?(:cljs {:remote true}
      :clj  {:action (fn []
-                      (api/stripe-charge token))}))
+                      (api/stripe-charge state token))}))
+
+(defmethod mutate 'stripe/cancel
+  [{:keys [state auth]} _ _]
+  #?(:cljs {:remote true}
+     :clj  {:action (fn []
+                      (api/stripe-cancel state (:username auth)))}))

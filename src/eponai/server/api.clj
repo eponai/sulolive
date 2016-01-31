@@ -120,7 +120,7 @@
                              :verification verification}))))
 
         ; Activate this account and return the user entity
-        (let [activated-db (:db-after (t/add conn user-db-id :user/status :user.status/activated))]
+        (let [activated-db (:db-after (t/add conn user-db-id :user/status :user.status/active))]
           (debug "Activated account for user-uuid:" user-uuid)
           (p/user activated-db email))))
 
@@ -131,11 +131,27 @@
                                                   :email email}
                                         :message "No user exists for UUID"}))))
 
-(defn stripe-charge [token]
+(defn stripe-charge
+  "Subscribe user to a plan in Stripe. Basically create a Stripe customer for this user and subscribe to a plan."
+  [conn token]
   (try
-    (stripe/create-customer (env :stripe-secret-key-test) token)
+    (stripe/create-customer conn (env :stripe-secret-key-test) token)
     (catch Exception e
       (throw (ex-info (.getMessage e)
                       {:status ::h/unprocessable-entity
-                       :data token}))))
-  )
+                       :data token})))))
+
+(defn stripe-cancel
+  "Cancel the subscription in Stripe for user with uuid."
+  [conn user-uuid]
+  (try
+    ; Find the stripe account for the user.
+    (let [stripe-account (pull/pull (d/db conn) [{:stripe/_user [:stripe/customer]}] [:user/uuid user-uuid])]
+      (debug "Cancel subscription for user-id: " user-uuid)
+      (stripe/cancel-subscription conn
+                                  (env :stripe-secret-key-test)
+                                  (first (:stripe/_user stripe-account))))
+    (catch Exception e
+      (throw (ex-info (.getMessage e)
+                      {:status ::h/unprocessable-entity
+                       :data user-uuid})))))

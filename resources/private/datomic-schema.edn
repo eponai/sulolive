@@ -26,7 +26,7 @@
 
  ;; User status
  [:db/add #db/id[:db.part/user] :db/ident :user.status/new]
- [:db/add #db/id[:db.part/user] :db/ident :user.status/activated]
+ [:db/add #db/id[:db.part/user] :db/ident :user.status/active]
 
  ;; Facebook user
  {:db/id                 #db/id[:db.part/db]
@@ -51,6 +51,32 @@
   :db/cardinality        :db.cardinality/one
   :db/unique             :db.unique/identity
   :db/doc                "User entity pointed to for this Facebook user."
+  :db.install/_attribute :db.part/db}
+
+ ;; Stripe user
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :stripe/user
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "User entity pointed to for this Stripe account."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :stripe/customer
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "Customer id for this Stripe account."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :stripe/subscription
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "Subscription id for this Stripe account."
   :db.install/_attribute :db.part/db}
 
  ;; verification

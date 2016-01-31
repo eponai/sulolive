@@ -28,14 +28,17 @@
     [:datascript/schema
      {:proxy/header (om/get-query Header)}
      {:query/loader [:ui.singleton.loader/visible]}
+     {:proxy/modal (om/get-query Modal)}
      '{:proxy/app-content ?url/component}
-     '(:return/content-factory ?url/factory)])
+     '(:return/content-factory ?url/factory)
+     {:proxy/payment (om/get-query Payment)}])
   Object
   (render
     [this]
-    (let [{:keys [proxy/header proxy/app-content return/content-factory query/loader]} (om/props this)]
+    (let [{:keys [proxy/header proxy/payment proxy/app-content proxy/modal return/content-factory query/loader]} (om/props this)]
       (html [:div
              [:div (->Header header)]
+             [:div (->Modal modal)]
              (when (:ui.singleton.loader/visible loader)
                (prn "Render loader")
                [:div.loader
@@ -46,6 +49,7 @@
                                :position         "fixed"
                                :z-index          1050}})])
              [:div {:class "content-section-b"}
+              ;(->Payment payment)
               (when content-factory
                 (content-factory app-content))]]))))
 

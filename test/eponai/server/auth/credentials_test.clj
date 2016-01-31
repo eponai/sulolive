@@ -34,7 +34,7 @@
 (deftest fb-user-and-activated-user-account-with-email-exist
   (testing "Fb user exists and is connected to an existing activated user account, should log in."
     (let [{:keys [email id]} (test-fb-info)
-          activated-user (assoc (f/user->db-user email) :user/status :user.status/activated)
+          activated-user (assoc (f/user->db-user email) :user/status :user.status/active)
           fb-user (f/fb-user-db-user id "access-token" activated-user)
           conn (new-db [activated-user fb-user])
           credential-fn (a/credential-fn conn)
@@ -62,7 +62,7 @@
   (testing "The FB account does not exist, but a user account with the same email does.
   Should create a new fb-user and link to the existing account."
     (let [{:keys [email id]} (test-fb-info)
-          activated-user (assoc (f/user->db-user email) :user/status :user.status/activated)
+          activated-user (assoc (f/user->db-user email) :user/status :user.status/active)
           conn (new-db [activated-user])
           credential-fn (a/credential-fn conn)
           user-record (credential-fn (creds-input id))
@@ -119,7 +119,7 @@
 
 (deftest user-verifies-and-is-activated
   (testing "User verifies their email and is already activated, return auth map"
-    (let [user (assoc (f/user->db-user email) :user/status :user.status/activated)
+    (let [user (assoc (f/user->db-user email) :user/status :user.status/active)
           verification (f/->db-email-verification user :verification.status/pending)
           conn (new-db [user
                         verification])

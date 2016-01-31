@@ -38,7 +38,7 @@
   (if uuid
     (let [user (d/entity (d/db conn) (:db/id (api/verify-email conn uuid)))]
       (if (= (:user/status user)
-             :user.status/activated)
+             :user.status/active)
         (auth-map-for-db-user user)
         (throw (ex-user-not-activated user))))
     (throw (ex-invalid-input params))))
@@ -53,7 +53,7 @@
 
         ;; Check that the user is activated, if not throw exception.
         (if (= (:user/status db-user)
-               :user.status/activated)
+               :user.status/active)
           (auth-map-for-db-user db-user)
           (throw (ex-user-not-activated db-user))))
 
@@ -69,7 +69,7 @@
                                                :db/id))]
           ;; Again, check that the linked user is activated, and if not we throw an excaption to do so.
           (if (= (:user/status user)
-                 :user.status/activated)
+                 :user.status/active)
             (auth-map-for-db-user user)
             (throw (ex-user-not-activated user))))))
     (throw (ex-invalid-input params))))

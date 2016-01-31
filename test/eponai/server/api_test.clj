@@ -81,7 +81,7 @@
           _ (api/activate-account conn (str (:user/uuid db-user)) user-email)
           user (p/user (d/db conn) user-email)]
       (is (= (:user/status (d/entity (d/db conn) (:db/id user)))
-             :user.status/activated)))))
+             :user.status/active)))))
 
 (deftest activate-account-email-already-in-use
   (testing "Email is already in use, should throw exception"

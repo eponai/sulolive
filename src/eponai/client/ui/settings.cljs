@@ -24,6 +24,13 @@
           [:h3
            "General"]
           [:label.form-control-static
+           "Plan:"]
+          [:div
+           [:button
+            {:class    "btn btn-default btn-lg"
+             :on-click #(om/transact! this `[(stripe/cancel)])}
+            "Cancel plan"]]
+          [:label.form-control-static
            "Email:"]
           [:input.form-control
            {:value    (:user/email current-user)
