@@ -17,10 +17,12 @@
   static om/IQuery
   (query [_]
     ['{:query/one-budget [:budget/uuid
-                          {:transaction/_budget [:transaction/uuid
-                                                 {:transaction/date [:date/ymd
-                                                                     :date/timestamp]}
-                                                 :transaction/amount]}]}])
+                          {:transaction/_budget
+                           [:transaction/uuid
+                            {:transaction/date
+                             [:date/ymd
+                              :date/timestamp]}
+                            :transaction/amount]}]}])
   Object
   (render [this]
     (let [{:keys [query/one-budget]} (om/props this)
@@ -30,12 +32,19 @@
          [:p
           [:span "This is the dashboard for budget "]
           [:strong (str (:budget/uuid one-budget))]]
-         (d3/->BarChart {:data   (map #(clojure.set/rename-keys %
+         (d3/->AreaChart {:data   (map #(clojure.set/rename-keys %
                                                                 {:date/ymd :name
-                                                                 :date/sum :value}
-                                                                )
+                                                                 :date/sum :value})
                                       (sort-by :date/timestamp sum-by-day))
                          :width  900
-                         :height 300})]))))
+                         :height 300
+                         :title-axis-y "Amount"})
+         (d3/->BarChart {:data   (map #(clojure.set/rename-keys %
+                                                                 {:date/ymd :name
+                                                                  :date/sum :value})
+                                       (sort-by :date/timestamp sum-by-day))
+                          :width  900
+                          :height 300
+                          :title-axis-y "Amount"})]))))
 
 (def ->Dashboard (om/factory Dashboard))

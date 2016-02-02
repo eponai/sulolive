@@ -56,9 +56,7 @@
                (opts {:key [(:budget/uuid budget)]})
                (menu-item this
                           (or (:budget/name budget) "Untitled")
-                          {:href (routes/inside "/dashboard/" (:budget/uuid budget))})
-]
-              )
+                          {:href (routes/inside "/dashboard/" (:budget/uuid budget))})])
             all-budgets)
 
           [:li.divider]

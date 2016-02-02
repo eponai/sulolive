@@ -9,8 +9,13 @@
 
 (defui BarChart
   Object
+  (initLocalState [_]
+    {:margin {:top    20
+              :right  30
+              :bottom 30
+              :left   40}})
   (componentDidMount [this]
-    (let [{:keys [width height _ _]} (om/props this)
+    (let [{:keys [width height]} (om/props this)
           svg (-> js/d3
                   (.select ".chart")
                   (.append "svg")
@@ -19,15 +24,15 @@
       (om/update-state! this assoc :svg svg)))
 
   (componentDidUpdate [this _ _]
-    (let [{:keys [svg]} (om/get-state this)
-          {:keys [data width height]} (om/props this)
+    (let [{:keys [svg
+                  margin]} (om/get-state this)
+          {:keys [data
+                  width
+                  height
+                  title-axis-y]} (om/props this)
           data (clj->js data)]
-      (let [margin #js {:top 20
-                        :right 30
-                        :bottom 30
-                        :left 40}
-            inner-width  (- width (.-right margin) (.-left margin))
-            inner-height  (- height (.-top margin) (.-bottom margin))
+      (let [inner-width  (- width (:right margin) (:left margin))
+            inner-height  (- height (:top margin) (:bottom margin))
 
             y (-> js/d3
                   .-scale
@@ -58,8 +63,8 @@
                       (.attr "width" width)
                       (.attr "height" height)
                       (.append "g")
-                      (.attr "transform" (str "translate(" (.-left margin) ", "
-                                              (.-top margin) ")")))]
+                      (.attr "transform" (str "translate(" (:left margin) ", "
+                                              (:top margin) ")")))]
 
         (-> chart
             (.append "g")
@@ -92,22 +97,137 @@
             (.attr "y" 6)
             (.attr "dy" ".71em")
             (.style "text-anchor" "end")
-            (.text "Frequency")))))
+            (.text title-axis-y)))))
 
   (render [this]
     (prn "Bar props: " (om/props this))
     (html
       [:div.chart
        [:style (css
-                 [:.bar {:fill "steelblue"}]
+                 [:.bar
+                  {:fill :steelblue}]
                  [:.x.axis
                   [:path
                    {:display :none}]]
                  [:.axis
                   [:text
                    {:font "10px sans-serif"}]
-                  [:path :line {:fill :none
-                          :stroke "#000"
-                          :shape-rendering "crispEdges"}]])]])))
+                  [:path :line
+                   {:fill :none
+                    :stroke "#000"
+                    :shape-rendering "crispEdges"}]])]])))
 
 (def ->BarChart (om/factory BarChart))
+
+(defui AreaChart
+  Object
+  (initLocalState [_]
+    {:margin {:top    20
+              :right  30
+              :bottom 30
+              :left   40}
+     :svg    nil})
+  (componentDidMount [this]
+    (let [{:keys [margin]} (om/get-state this)
+          {:keys [width height]} (om/props this)
+          svg (-> js/d3
+                  (.select ".chart")
+                  (.append "svg")
+                  (.attr "width" width)
+                  (.attr "height" height))]
+      (om/update-state! this assoc :svg svg)))
+  (componentDidUpdate [this _ _]
+    (let [{:keys [svg
+                  margin]} (om/get-state this)
+          {:keys [data
+                  width
+                  height
+                  title-axis-y]} (om/props this)
+          data (clj->js data)]
+
+      (let [inner-width  (- width (:right margin) (:left margin))
+            inner-height  (- height (:top margin) (:bottom margin))
+
+            date-format (-> js/d3
+                           .-time
+                           (.format "%Y-%m-%d"))
+            _ (.forEach data
+                        (fn [d]
+                          (set! (.-name d)
+                                (.parse date-format (.-name d)))))
+            x (-> js/d3
+                  .-time
+                  .scale
+                  (.domain (-> js/d3
+                               (.extent data (fn [d]
+                                               (.-name d)))))
+                  (.range #js [0 inner-width]))
+            y (-> js/d3
+                  .-scale
+                  .linear
+                  (.domain #js [0 (-> js/d3
+                                      (.max data (fn [d]
+                                                   (.-value d))))])
+                  (.range #js [inner-height 0]))
+            x-axis (-> js/d3
+                       .-svg
+                       .axis
+                       (.scale x)
+                       (.orient "bottom")
+                       (.tickFormat (-> js/d3
+                                        .-time
+                                        (.format "%b")))
+                       (.ticks (-> js/d3 .-time .-month) 1))
+            y-axis (-> js/d3
+                       .-svg
+                       .axis
+                       (.scale y)
+                       (.orient "left"))
+            area (-> js/d3
+                     .-svg
+                     .area
+                     (.x (fn [d] (x (.-name d))))
+                     (.y0 inner-height)
+                     (.y1 (fn [d] (y (.-value d)))))
+            chart (-> svg
+                      (.attr "width" width)
+                      (.attr "height" height)
+                      (.append "g")
+                      (.attr "transform" (str "translate(" (:left margin) ", "
+                                              (:top margin) ")")))]
+        (-> chart
+            (.append "path")
+            (.datum data)
+            (.attr "class" "area")
+            (.attr "d" area))
+
+        (-> chart
+            (.append "g")
+            (.attr "class" "x axis")
+            (.attr "transform" (str "translate(0, " inner-height ")"))
+            (.call x-axis))
+
+        (-> chart
+            (.append "g")
+            (.attr "class" "y axis")
+            (.call y-axis)
+            (.append "text")
+            (.attr "transform" "rotate(-90)")
+            (.attr "y" 6)
+            (.attr "dy" ".71em")
+            (.style "text-anchor" "end")
+            (.text title-axis-y)))))
+
+  (render [_]
+    (html
+      [:div.chart
+       [:style (css
+                 [:.area
+                  {:fill :steelblue}]
+                 [:.axis
+                  [:path :line
+                   {:fill            :none
+                    :stroke          "#000"
+                    :shape-rendering "crispEdges"}]])]])))
+
+(def ->AreaChart (om/factory AreaChart))
