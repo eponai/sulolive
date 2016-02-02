@@ -105,7 +105,8 @@
       [:div.chart
        [:style (css
                  [:.bar
-                  {:fill :steelblue}]
+                  {:fill "#2EC4B6"
+                   :stroke "#20968B"}]
                  [:.x.axis
                   [:path
                    {:display :none}]]
@@ -169,6 +170,13 @@
                                       (.max data (fn [d]
                                                    (.-value d))))])
                   (.range #js [inner-height 0]))
+            y-mean (-> js/d3
+                       .-svg
+                       .line
+                       (.x (fn [d] (x (.-name d))))
+                       (.y (y (-> js/d3
+                                  (.mean data
+                                         (fn [d] (.-value d)))))))
             x-axis (-> js/d3
                        .-svg
                        .axis
@@ -202,6 +210,14 @@
             (.attr "d" area))
 
         (-> chart
+            (.append "path")
+            (.datum data)
+            (.attr "class" "line")
+            (.style "stroke-dasharray" "5,3")
+            (.style "stroke-width" "2")
+            (.attr "d" y-mean))
+
+        (-> chart
             (.append "g")
             (.attr "class" "x axis")
             (.attr "transform" (str "translate(0, " inner-height ")"))
@@ -223,7 +239,12 @@
       [:div.chart
        [:style (css
                  [:.area
-                  {:fill :steelblue}]
+                  {:fill :steelblue
+                   }]
+                 [:.line
+                  {:fill            :none
+                   :stroke          "#E71D36"
+                   :shape-rendering "crispEdges"}]
                  [:.axis
                   [:path :line
                    {:fill            :none
