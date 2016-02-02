@@ -31,7 +31,7 @@
           email-chan (chan 1)]
       (if user
         (let [verification (t/email-verification conn user :verification.status/pending)]
-          (debug "New verification " (:verification/uuid verification) "for user:" email)
+          (info "New verification " (:verification/uuid verification) "for user:" email)
           (put! email-chan verification)
           {:email-chan email-chan
            :status (:user/status user)})
