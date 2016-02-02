@@ -72,8 +72,9 @@
 (defmethod read :query/one-budget
   [{:keys [ast db query auth target]} _ params]
   (let [#?@(:clj  [budget-uuid (:budget-uuid params)]
-            :cljs [budget-uuid (let [{:keys [e a]} (:budget-uuid params)]
-                                 (get (d/entity db e) a))])]
+            :cljs [entity [:ui/component :ui.component/dashboard]
+                   attr :ui.component.dashboard/active-budget
+                   budget-uuid (get (d/entity db entity) attr)])]
     (if target
       ;; Puts the budget-uuid in params for the remote.
       {target (assoc-in ast [:params :budget-uuid] budget-uuid)}

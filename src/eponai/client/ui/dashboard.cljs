@@ -7,10 +7,7 @@
 (defui Dashboard
   static om/IQuery
   (query [_]
-    ;; TODO: Hook up a mutate to set the :budget-uuid
-    ['{(:query/one-budget {:budget-uuid {:e [:ui/component :ui.component/dashboard]
-                                         :a :ui.component.dashboard/active-budget}})
-       [:budget/uuid]}])
+    ['{:query/one-budget [:budget/uuid]}])
   Object
   (render [this]
     (let [{:keys [query/one-budget]} (om/props this)]
