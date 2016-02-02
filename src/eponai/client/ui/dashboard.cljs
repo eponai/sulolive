@@ -13,6 +13,20 @@
                  (assoc day :date/sum (reduce #(+ %1 (:transaction/amount %2)) 0 ts)))]
     (map sum-fn grouped)))
 
+(defn sum-by-tag [transactions]
+  (let [sum-fn (fn [m transaction]
+                 (let [tags (:transaction/tags transaction)]
+                   (reduce (fn [m2 tagname]
+                             (update m2 tagname
+                                     #(if %
+                                       (+ % (:transaction/amount transaction))
+                                       (:transaction/amount transaction))))
+                           m
+                           (if (empty? tags)
+                             ["no tags"]
+                             (map :tag/name tags)))))]
+    (reduce sum-fn {} transactions)))
+
 (defui Dashboard
   static om/IQuery
   (query [_]
@@ -22,11 +36,13 @@
                             {:transaction/date
                              [:date/ymd
                               :date/timestamp]}
-                            :transaction/amount]}]}])
+                            :transaction/amount
+                            {:transaction/tags [:tag/name]}]}]}])
   Object
   (render [this]
     (let [{:keys [query/one-budget]} (om/props this)
-          sum-by-day (sum-by-day (:transaction/_budget one-budget))]
+          sum-by-day (sum-by-day (:transaction/_budget one-budget))
+          sum-by-tag (sum-by-tag (:transaction/_budget one-budget))]
       (html
         [:div
          [:p
@@ -38,13 +54,10 @@
                                       (sort-by :date/timestamp sum-by-day))
                          :width  900
                          :height 300
-                         :title-axis-y "Amount"})
-         (d3/->BarChart {:data   (map #(clojure.set/rename-keys %
-                                                                 {:date/ymd :name
-                                                                  :date/sum :value})
-                                       (sort-by :date/timestamp sum-by-day))
-                          :width  900
-                          :height 300
-                          :title-axis-y "Amount"})]))))
+                         :title-axis-y "Amount ($)"})
+         (d3/->BarChart {:data   (reduce #(conj %1 {:name (first %2) :value (second %2)}) [] sum-by-tag)
+                         :width  900
+                         :height 300
+                         :title-axis-y "Amount ($)"})]))))
 
 (def ->Dashboard (om/factory Dashboard))
