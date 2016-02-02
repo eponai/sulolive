@@ -58,8 +58,6 @@
           (do
             (prn (str "Returning cached for:" k))
             last-ret)
-          (let [_ (prn "last-params: " last-params)
-                _ (prn "params: " params)
-                ret (apply f args)]
+          (let [ret (apply f args)]
             (reset! last-call [args ret])
             ret))))))

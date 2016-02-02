@@ -7,9 +7,6 @@
             [sablono.core :refer-macros [html]]
             [eponai.client.ui.tag :as tag]))
 
-(defonce initial-params {:filter-tags #{}
-                         :search-query ""})
-
 (defn sum
   "Adds transactions amounts together.
   TODO: Needs to convert the transactions to the 'primary currency' some how."
@@ -18,37 +15,30 @@
    ;; TODO: Should instead use the primary currency
    :currency (-> transactions first :transaction/currency)})
 
-(defn update-query [component]
-  (om/set-query! component {:params (select-keys
-                                      (merge initial-params
-                                             (om/get-state component))
-                                      (keys initial-params))}))
+(defn- needs-update! [component]
+  (om/update-state! component update :__state-counter inc))
 
-(defn delete-tag-fn [component name k]
+(defn delete-tag-fn [component name]
   (fn []
-    (om/update-state! component update k
-                      (fn [tags]
-                        (into #{}
-                              (remove #(= name %))
-                              tags)))
-    (update-query component)))
+    (needs-update! component)
+    (om/transact! component `[(transactions.filter.tags/remove-tag {:tag/name ~name})
+                               :ui.component.all-transactions/filter-tags])))
 
-(defn add-tag [component tag]
-  (om/update-state! component
-                    #(-> %
-                         (assoc :input-tag "")
-                         (update :filter-tags conj tag)))
-  (update-query component))
+(defn add-tag [component tag-name]
+  (needs-update! component)
+  (om/transact! component `[(transactions.filter.tags/add-tag {:tag/name ~tag-name})
+                            :ui.component.all-transactions/filter-tags]))
 
 (defn on-add-tag-key-down [this input-tag]
   (fn [e]
     (when (and (= 13 (.-keyCode e))
                (seq (.. e -target -value)))
       (.preventDefault e)
+      (om/update-state! this assoc :input-tag "")
       (add-tag this input-tag))))
 
-(defn filters [component]
-  (let [{:keys [input-tag filter-tags input-date]} (om/get-state component)]
+(defn filters [component filter-tags]
+  (let [{:keys [input-tag input-date]} (om/get-state component)]
     (html
       [:div
        (opts {:style {:display        "flex"
@@ -77,15 +67,15 @@
           filter-tags
           (fn [tagname]
             (tag/->Tag (tag/tag-props tagname
-                                      (delete-tag-fn component tagname :filter-tags)))))]])))
+                                      (delete-tag-fn component tagname)))))]])))
 
 (defui AllTransactions
-  static om/IQueryParams
-  (params [_] initial-params)
   static om/IQuery
   (query [_]
-    [{'(:query/all-transactions {:search-query ?search-query
-                                 :filter-tags ?filter-tags})
+    [{[:ui/component :ui.component/all-transactions]
+      [:ui.component.all-transactions/search-query
+       :ui.component.all-transactions/filter-tags]}
+     {:query/all-transactions
       [:db/id
        :transaction/uuid
        :transaction/title
@@ -108,12 +98,17 @@
 
   Object
   (initLocalState [_]
-    {:filter-tags #{}
-     :input-tag ""
-     :input-date (js/Date.)})
+    {:__state-counter 0
+     :input-query nil
+     :input-tag   ""
+     :input-date  (js/Date.)})
   (render [this]
     (let [{transactions :query/all-transactions} (om/props this)
-          {:keys [search-query]} (om/get-state this)]
+          {:keys [ui.component.all-transactions/filter-tags
+                  ui.component.all-transactions/search-query]}
+          (get (om/props this)  [:ui/component :ui.component/all-transactions])
+          {:keys [input-query]} (om/get-state this)
+          query (or input-query search-query)]
       (html
         [:div
          (opts {:style {:display "flex"
@@ -131,16 +126,16 @@
           ;[:a]
           [:div.has-feedback
            [:input.form-control
-            {:value       search-query
+            {:value       query
              :type        "text"
              :placeholder "Search..."
-             :on-change   #(om/update-state! this assoc :search-query (.. % -target -value))}]
+             :on-change   #(om/update-state! this assoc :input-query (.. % -target -value))}]
            [:span {:class "glyphicon glyphicon-search form-control-feedback"}]]
           ]
 
          [:br]
          [:div.tab-content
-          (filters this)]
+          (filters this filter-tags)]
 
          [:table
           {:class "table table-striped table-hover"}

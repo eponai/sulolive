@@ -1,5 +1,6 @@
 (ns eponai.client.parser.read
-  (:require [eponai.common.database.pull :as p]
+  (:require [datascript.core :as d]
+            [eponai.common.database.pull :as p]
             [eponai.common.parser.read :as r :refer [read]]))
 
 ;; -------- Readers for UI components
@@ -19,3 +20,11 @@
 (defmethod read :query/budget
   [{:keys [db query]} _ _]
   {:value (p/pull db query [:ui/singleton :ui.singleton/budget])})
+
+(defmethod read :ui/component
+  [{:keys [db ast]} _ _]
+  {:value (d/entity db (:key ast))})
+
+(defmethod read :ui/singleton
+  [{:keys [db ast]} _ _]
+  {:value (d/entity db (:key ast))})

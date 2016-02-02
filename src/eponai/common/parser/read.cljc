@@ -64,17 +64,23 @@
 
 (def query-all-transactions
   (parser.util/cache-last-read
-    (fn [{:keys [db query auth]} _ {:keys [search-query filter-tags] :as params}]
-     (prn "ALL TRANSACTIONS: " (keys params))
-     (let [existing-tags (p/all-with db {:where   '[[_ :tag/name ?e]]
-                                         :symbols {'[?e ...] filter-tags}})
+    (fn [{:keys [db ast query auth]} _ params]
+     (let [#?@(:clj [{:keys [search-query filter-tags]} params]
+               :cljs [entity [:ui/component :ui.component/all-transactions]
+                      {:keys [ui.component.all-transactions/search-query
+                              ui.component.all-transactions/filter-tags]}
+                      (d/entity db entity)])
 
-           transactions (cond-> {:where '[[?e :transaction/uuid]]}
+           transactions
+           (cond-> {:where '[[?e :transaction/uuid]]}
 
-                                (not-empty filter-tags)
-                                (p/merge-query {:where   '[[?e :transaction/tags ?tag]
-                                                           [?tag :tag/name ?tag-name]]
-                                                :symbols {'[?tag-name ...] existing-tags}}))
+                   (not-empty filter-tags)
+                   (p/merge-query (let [existing-tags
+                                        (p/all-with db {:where   '[[_ :tag/name ?e]]
+                                                        :symbols {'[?e ...] filter-tags}})]
+                                    {:where   '[[?e :transaction/tags ?tag]
+                                                [?tag :tag/name ?tag-name]]
+                                     :symbols {'[?tag-name ...] existing-tags}})))
 
            ;; Include user filter on the server.
            #?@(:clj [transactions (p/merge-query transactions
@@ -83,7 +89,8 @@
                                                              [?u :user/uuid ?uuid]]
                                                   :symbols {'?uuid (:username auth)}})])]
        {:value  (p/pull-many db query (p/all-with db transactions))
-        :remote true}))))
+        :remote (update ast :params merge {:search-query search-query
+                                           :filter-tags filter-tags})}))))
 
 (defmethod read :query/all-transactions
   [& args]

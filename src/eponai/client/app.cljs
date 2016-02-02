@@ -66,7 +66,9 @@
       (debug "Reusing old conn. It currently has schema for attributes:" (-> @conn-atom deref :schema keys))
       @conn-atom)
     (let [ui-schema {:ui/singleton {:db/unique :db.unique/identity}
-                     :ui/component {:db/unique :db.unique/identity}}
+                     :ui/component {:db/unique :db.unique/identity}
+                     :ui.component.all-transactions/filter-tags
+                                   {:db/cardinality :db.cardinality/many}}
           ui-state [{:ui/singleton :ui.singleton/app}
 
                     {:ui/singleton :ui.singleton/modal
@@ -78,7 +80,10 @@
                     {:ui/singleton :ui.singleton/loader
                      :ui.singleton.loader/visible false}
 
-                    {:ui/component :ui.component/dashboard}]
+                    {:ui/component :ui.component/dashboard}
+                    {:ui/component :ui.component/all-transactions
+                     :ui.component.all-transactions/filter-tags #{}
+                     :ui.component.all-transactions/search-query ""}]
           conn (d/create-conn ui-schema)]
       (d/transact! conn ui-state)
       (reset! conn-atom conn))))
