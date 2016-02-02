@@ -50,8 +50,10 @@
                  ; Sablono needs the react packages to compile.
                  [cljsjs/react-dom-server "0.14.3-0"]
                  [cljs-ajax "0.5.0"]
+                 [cljsjs/d3 "3.5.7-1"]
                  [cljsjs/pikaday "1.3.2-0"]
                  [cljsjs/stripe "2.0-0"]
+                 [cljsjs/topojson "1.6.18-0"]
                  [bidi "1.21.1"]
                  [kibu/pushy "0.3.6"]
 

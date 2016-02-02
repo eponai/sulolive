@@ -158,7 +158,8 @@
                                       (assoc :input/uuid (d/squuid))
                                       (assoc :input/created-at (.getTime (js/Date.)))
                                       (dissoc :input/tag)))
-                               :query/all-budgets])})
+                               :query/all-budgets
+                               :query/one-budget])})
           "Save"]]))))
 
 (def ->AddTransaction (om/factory AddTransaction))
