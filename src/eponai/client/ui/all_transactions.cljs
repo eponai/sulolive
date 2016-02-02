@@ -7,7 +7,8 @@
             [sablono.core :refer-macros [html]]
             [eponai.client.ui.tag :as tag]))
 
-;; Transactions grouped by a day
+(defonce initial-params {:filter-tags #{}
+                         :search-query ""})
 
 (defn sum
   "Adds transactions amounts together.
@@ -18,29 +19,8 @@
    :currency (-> transactions first :transaction/currency)})
 
 (defn update-query [component]
-  (let [{:keys [filter-tags
-                search-query]} (om/get-state component)
-        query-params (cond-> {:find-query '{:find  [[?e ...]]
-                                            :in    [$]
-                                            :where []}
-                              :values     []}
-                             (not-empty filter-tags)
-                             (->
-                                 (update-in [:find-query :where] conj '[?e :transaction/tags ?tag] '[?tag :tag/name ?tagname])
-                                 (update-in [:find-query :in] conj '[?tagname ...])
-                                 (update :values conj filter-tags))
-
-                             (not-empty search-query)
-                             (->
-                                 (update-in [:find-query :where] conj '[(fulltext $ :transaction/title ?search) [?e _ _ _]])
-                                 (update-in [:find-query :in] conj '?search)
-                                 (update :values conj search-query))
-
-                             (and (empty? search-query) (empty? filter-tags))
-                             (->
-                                 (assoc-in [:find-query :where] '[[?e :transaction/uuid]])))]
-    (om/set-query! component
-                   {:params query-params})))
+  (om/set-query! component {:params (select-keys (om/get-state component)
+                                                 (keys initial-params))}))
 
 (defn delete-tag-fn [component name k]
   (fn []
@@ -59,21 +39,14 @@
   (update-query component))
 
 (defn on-add-tag-key-down [this input-tag]
-  (fn [key]
-    (when (and (= 13 (.-keyCode key))
-               (seq (.. key -target -value)))
-      (.preventDefault key)
+  (fn [e]
+    (when (and (= 13 (.-keyCode e))
+               (seq (.. e -target -value)))
+      (.preventDefault e)
       (add-tag this input-tag))))
 
-(defn on-change [this k]
-  (fn [e]
-    (om/update-state! this assoc k (.-value (.-target e)))
-    (update-query this)))
-
 (defn filters [component]
-  (let [{:keys [input-tag
-                filter-tags
-                input-date]} (om/get-state component)]
+  (let [{:keys [input-tag filter-tags input-date]} (om/get-state component)]
     (html
       [:div
        (opts {:style {:display        "flex"
@@ -83,7 +56,7 @@
         [:input.form-control
          {:type        "text"
           :value       input-tag
-          :on-change   #(om/update-state! component assoc :input-tag (.-value (.-target %)))
+          :on-change   #(om/update-state! component assoc :input-tag (.. % -target -value))
           :on-key-down (on-add-tag-key-down component input-tag)
           :placeholder "Filter tags..."}]
         [:span
@@ -106,14 +79,11 @@
 
 (defui AllTransactions
   static om/IQueryParams
-  (params [_]
-    {:values     []
-     :find-query '[:find [?e ...]
-                   :where [?e :transaction/uuid]]})
+  (params [_] initial-params)
   static om/IQuery
   (query [_]
-    [{'(:query/all-transactions {:find-query ?find-query
-                                 :values ?values})
+    [{'(:query/all-transactions {:search-string ?search-string
+                                 :filter-tags ?filter-tags})
       [:db/id
        :transaction/uuid
        :transaction/title
@@ -138,12 +108,10 @@
   (initLocalState [_]
     {:filter-tags #{}
      :input-tag ""
-     :input-date (js/Date.)
-     :active-tab :filter})
+     :input-date (js/Date.)})
   (render [this]
     (let [{transactions :query/all-transactions} (om/props this)
-          {:keys [active-tab
-                  search-query]} (om/get-state this)]
+          {:keys [search-query]} (om/get-state this)]
       (html
         [:div
          (opts {:style {:display "flex"
@@ -161,17 +129,16 @@
           ;[:a]
           [:div.has-feedback
            [:input.form-control
-            {:value search-query
+            {:value       search-query
              :type        "text"
              :placeholder "Search..."
-             :on-change (on-change this :search-query)}]
+             :on-change   #(om/update-state! this assoc :search-query (.. % -target -value))}]
            [:span {:class "glyphicon glyphicon-search form-control-feedback"}]]
           ]
 
          [:br]
          [:div.tab-content
-          (if (= active-tab :filter)
-            (filters this))]
+          (filters this)]
 
          [:table
           {:class "table table-striped table-hover"}
@@ -203,9 +170,10 @@
 
                 [:td
                  (opts {:key [uuid]})
-                 (map (fn [tag]
+                 (map-all (:transaction/tags transaction)
+                   (fn [tag]
                         (tag/->Tag (merge tag
-                                          {:on-click #(add-tag this (:tag/name tag))}))) (:transaction/tags transaction))]
+                                          {:on-click #(add-tag this (:tag/name tag))}))))]
                 [:td.text-right
                  (opts {:key [uuid]})
                  (str amount " " (or (:currency/symbol-native currency)
