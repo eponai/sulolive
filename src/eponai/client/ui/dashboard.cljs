@@ -5,7 +5,7 @@
             [sablono.core :refer-macros [html]]))
 
 (defui Dashboard
-  om/IQuery
+  static om/IQuery
   (query [_]
     ;; TODO: Hook up a mutate to set the :budget-uuid
     ['{(:query/one-budget {:budget-uuid {:e [:ui/component :ui.component/dashboard]

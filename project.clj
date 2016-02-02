@@ -44,8 +44,8 @@
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-alpha2"]
                  [garden "1.3.0"]
-                 [org.omcljs/om "1.0.0-alpha28"]
-                 [datascript "0.13.3"]
+                 [org.omcljs/om "1.0.0-alpha30"]
+                 [datascript "0.15.0"]
                  [sablono "0.5.3"]
                  ; Sablono needs the react packages to compile.
                  [cljsjs/react-dom-server "0.14.3-0"]
