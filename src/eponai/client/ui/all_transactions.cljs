@@ -19,8 +19,10 @@
    :currency (-> transactions first :transaction/currency)})
 
 (defn update-query [component]
-  (om/set-query! component {:params (select-keys (om/get-state component)
-                                                 (keys initial-params))}))
+  (om/set-query! component {:params (select-keys
+                                      (merge initial-params
+                                             (om/get-state component))
+                                      (keys initial-params))}))
 
 (defn delete-tag-fn [component name k]
   (fn []
@@ -82,7 +84,7 @@
   (params [_] initial-params)
   static om/IQuery
   (query [_]
-    [{'(:query/all-transactions {:search-string ?search-string
+    [{'(:query/all-transactions {:search-query ?search-query
                                  :filter-tags ?filter-tags})
       [:db/id
        :transaction/uuid

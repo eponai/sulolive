@@ -42,3 +42,24 @@
                       (conj q x)))
           []
           query))
+
+(defn cache-last-read
+  "Takes a read function caches its last call if data
+  arguments are equal. (e.g. params, :db, :target and :query)."
+  [f]
+  (let [last-call (atom nil)]
+    (fn [& args]
+      (let [[env k params] args
+            [[last-env _ last-params] last-ret] @last-call
+            equal-key? (fn [k] (= (get env k)
+                                  (get last-env k)))]
+        (if (and (= params last-params)
+                 (every? equal-key? [:target :query :db]))
+          (do
+            (prn (str "Returning cached for:" k))
+            last-ret)
+          (let [_ (prn "last-params: " last-params)
+                _ (prn "params: " params)
+                ret (apply f args)]
+            (reset! last-call [args ret])
+            ret))))))

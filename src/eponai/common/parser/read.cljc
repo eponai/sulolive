@@ -62,26 +62,32 @@
   {:value  (p/pull-many db query (p/all-with db {:where '[[?e :currency/code]]}))
    :remote true})
 
+(def query-all-transactions
+  (parser.util/cache-last-read
+    (fn [{:keys [db query auth]} _ {:keys [search-query filter-tags] :as params}]
+     (prn "ALL TRANSACTIONS: " (keys params))
+     (let [existing-tags (p/all-with db {:where   '[[_ :tag/name ?e]]
+                                         :symbols {'[?e ...] filter-tags}})
+
+           transactions (cond-> {:where '[[?e :transaction/uuid]]}
+
+                                (not-empty filter-tags)
+                                (p/merge-query {:where   '[[?e :transaction/tags ?tag]
+                                                           [?tag :tag/name ?tag-name]]
+                                                :symbols {'[?tag-name ...] existing-tags}}))
+
+           ;; Include user filter on the server.
+           #?@(:clj [transactions (p/merge-query transactions
+                                                 {:where   '[[?e :transaction/budget ?b]
+                                                             [?b :budget/created-by ?u]
+                                                             [?u :user/uuid ?uuid]]
+                                                  :symbols {'?uuid (:username auth)}})])]
+       {:value  (p/pull-many db query (p/all-with db transactions))
+        :remote true}))))
+
 (defmethod read :query/all-transactions
-  [{:keys [db query auth]} _ {:keys [search-query filter-tags]}]
-  (let [existing-tags (p/all-with db {:where   '[[_ :tag/name ?e]]
-                                      :symbols {'[?e ...] filter-tags}})
-
-        transactions (cond-> {:where '[[?e :transaction/uuid]]}
-
-                             (not-empty filter-tags)
-                             (p/merge-query {:where   '[[?e :transaction/tags ?tag]
-                                                        [?tag :tag/name ?tag-name]]
-                                             :symbols {'[?tag-name ...] existing-tags}}))
-
-        ;; Include user filter on the server.
-        #?@(:clj [transactions (p/merge-query transactions
-                                              {:where   '[[?e :transaction/budget ?b]
-                                                          [?b :budget/created-by ?u]
-                                                          [?u :user/uuid ?uuid]]
-                                               :symbols {'?uuid (:username auth)}})])]
-    {:value  (p/pull-many db query (p/all-with db transactions))
-     :remote true}))
+  [& args]
+  (apply query-all-transactions args))
 
 (defmethod read :query/one-budget
   [{:keys [ast db query auth target]} _ params]
