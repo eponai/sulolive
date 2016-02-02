@@ -18,7 +18,8 @@
   (query [_]
     ['{:query/one-budget [:budget/uuid
                           {:transaction/_budget [:transaction/uuid
-                                                 {:transaction/date [:date/ymd]}
+                                                 {:transaction/date [:date/ymd
+                                                                     :date/timestamp]}
                                                  :transaction/amount]}]}])
   Object
   (render [this]
@@ -29,12 +30,12 @@
          [:p
           [:span "This is the dashboard for budget "]
           [:strong (str (:budget/uuid one-budget))]]
-         (d3/->BarChart {:data (map #(clojure.set/rename-keys %
-                                                              {:date/ymd :name
-                                                               :date/sum :value}
-                                                              )
-                                    sum-by-day)
-                         :width 400
+         (d3/->BarChart {:data   (map #(clojure.set/rename-keys %
+                                                                {:date/ymd :name
+                                                                 :date/sum :value}
+                                                                )
+                                      (sort-by :date/timestamp sum-by-day))
+                         :width  900
                          :height 300})]))))
 
 (def ->Dashboard (om/factory Dashboard))
