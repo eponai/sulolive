@@ -7,6 +7,43 @@
             [sablono.core :refer-macros [html]]
             [cljsjs.d3]))
 
+(defn scale-linear []
+  (-> js/d3
+      .-scale
+      .linear))
+
+(defn scale-ordinal []
+  (-> js/d3
+      .-scale
+      .ordinal))
+
+(defn scale-time []
+  (-> js/d3
+      .-time
+      .scale))
+
+(defn svg-line []
+  (-> js/d3
+      .-svg
+      .line))
+
+(defn svg-area []
+  (-> js/d3
+      .-svg
+      .area))
+
+(defn svg-axis []
+  (-> js/d3
+      .-svg
+      .axis))
+
+(defn build-svg [element width height]
+  (-> js/d3
+      (.select element)
+      (.append "svg")
+      (.attr "width" width)
+      (.attr "height" height)))
+
 (defui BarChart
   Object
   (initLocalState [_]
@@ -16,11 +53,7 @@
               :left   40}})
   (componentDidMount [this]
     (let [{:keys [width height]} (om/props this)
-          svg (-> js/d3
-                  (.select ".chart")
-                  (.append "svg")
-                  (.attr "width" width)
-                  (.attr "height" height))]
+          svg (build-svg ".chart" width height)]
       (om/update-state! this assoc :svg svg)))
 
   (componentDidUpdate [this _ _]
@@ -34,29 +67,21 @@
       (let [inner-width  (- width (:right margin) (:left margin))
             inner-height  (- height (:top margin) (:bottom margin))
 
-            y (-> js/d3
-                  .-scale
-                  .linear
+            y (-> (scale-linear)
                   (.domain #js [0 (-> js/d3
                                       (.max data
                                             (fn [d]
                                               (.-value d))))])
                   (.range #js [inner-height 0]))
-            x (-> js/d3
-                  .-scale
-                  .ordinal
+            x (-> (scale-ordinal)
                   (.domain (.map data (fn [d]
                                         (.-name d))))
                   (.rangeRoundBands #js [0 inner-width]
                                     0.1))
-            x-axis (-> js/d3
-                       .-svg
-                       .axis
+            x-axis (-> (svg-axis)
                        (.scale x)
                        (.orient "bottom"))
-            y-axis (-> js/d3
-                       .-svg
-                       .axis
+            y-axis (-> (svg-axis)
                        (.scale y)
                        (.orient "left"))
             chart (-> svg
@@ -129,13 +154,8 @@
               :left   40}
      :svg    nil})
   (componentDidMount [this]
-    (let [{:keys [margin]} (om/get-state this)
-          {:keys [width height]} (om/props this)
-          svg (-> js/d3
-                  (.select ".chart")
-                  (.append "svg")
-                  (.attr "width" width)
-                  (.attr "height" height))]
+    (let [{:keys [width height]} (om/props this)
+          svg (build-svg ".chart" width height)]
       (om/update-state! this assoc :svg svg)))
   (componentDidUpdate [this _ _]
     (let [{:keys [svg
@@ -156,44 +176,28 @@
                         (fn [d]
                           (set! (.-name d)
                                 (.parse date-format (.-name d)))))
-            x (-> js/d3
-                  .-time
-                  .scale
+            x (-> (scale-time)
                   (.domain (-> js/d3
                                (.extent data (fn [d]
                                                (.-name d)))))
                   (.range #js [0 inner-width]))
-            y (-> js/d3
-                  .-scale
-                  .linear
+            y (-> (scale-linear)
                   (.domain #js [0 (-> js/d3
-                                      (.max data (fn [d]
-                                                   (.-value d))))])
+                                    (.max data (fn [d]
+                                                 (.-value d))))])
                   (.range #js [inner-height 0]))
-            y-mean (-> js/d3
-                       .-svg
-                       .line
+            y-mean (-> (svg-line)
                        (.x (fn [d] (x (.-name d))))
                        (.y (y (-> js/d3
                                   (.mean data
                                          (fn [d] (.-value d)))))))
-            x-axis (-> js/d3
-                       .-svg
-                       .axis
+            x-axis (-> (svg-axis)
                        (.scale x)
-                       (.orient "bottom")
-                       (.tickFormat (-> js/d3
-                                        .-time
-                                        (.format "%b")))
-                       (.ticks (-> js/d3 .-time .-month) 1))
-            y-axis (-> js/d3
-                       .-svg
-                       .axis
+                       (.orient "bottom"))
+            y-axis (-> (svg-axis)
                        (.scale y)
                        (.orient "left"))
-            area (-> js/d3
-                     .-svg
-                     .area
+            area (-> (svg-area)
                      (.x (fn [d] (x (.-name d))))
                      (.y0 inner-height)
                      (.y1 (fn [d] (y (.-value d)))))
