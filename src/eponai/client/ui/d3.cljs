@@ -48,11 +48,12 @@
                                 (format ",.2f"))))
             (.. svg
                 (datum chart-data)
+                transition
+                (duration 500)
                 (call chart))
             (.. js/nv
                 -utils
                 (windowResize (.-update chart))))))))
-
   (render [_]
     (html
       [:div#bar-chart])))
@@ -93,11 +94,12 @@
                                             (format ",.2f"))))
                         (.. svg
                             (datum chart-data)
+                            transition
+                            (duration 500)
                             (call chart))
                         (.. js/nv
                             -utils
                             (windowResize (.-update chart)))))))))
-
   (render [_]
     (html
       [:div#area-chart])))

@@ -81,3 +81,23 @@
        (warn "Using deprecated (style {}) macro. Use the opts macro with a :style key instead.")
       (apply merge {:style (cljs.core/clj->js ret#)}
              ~ms))))
+
+(def app-root "/app")
+
+(defn- create-route [root paths]
+  (letfn [(trim-separators [s]
+            (let [s (str s)]
+              (cond-> s
+                      (s/starts-with? s "/") (->> rest (apply str))
+                      (s/ends-with? s "/") (->> butlast (apply str)))))]
+    (s/join "/" (cons root (map trim-separators paths)))))
+
+(defn outside
+  "Takes any number of paths and creates a path outside our app."
+  [& paths]
+  (create-route "" paths))
+
+(defn inside
+  "Takes any number of paths and creates a path inside our app."
+  [& paths]
+  (create-route app-root paths))

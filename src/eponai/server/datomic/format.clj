@@ -38,9 +38,11 @@
    :verification/value      (:user/email entity)})
 
 (defn db-budget [user-eid]
-  {:db/id (d/tempid :db.part/user)
-   :budget/uuid (d/squuid)
-   :budget/created-by user-eid})
+  {:db/id             (d/tempid :db.part/user)
+   :budget/uuid       (d/squuid)
+   :budget/created-by user-eid
+   :budget/created-at (c/to-long (t/now))
+   :budget/name       "Default"})
 
 (defn cur-rates->db-txs
   "Returns a vector with datomic entites representing a currency conversions

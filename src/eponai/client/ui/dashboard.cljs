@@ -1,6 +1,6 @@
 (ns eponai.client.ui.dashboard
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
+  (:require [eponai.client.ui :as ui :refer [map-all] :refer-macros [style opts]]
             [eponai.client.ui.d3 :as d3]
             [cljs.core.async :as c :refer [chan]]
             [garden.core :refer [css]]
@@ -45,8 +45,15 @@
           sum-by-tag (sum-by-tag (:transaction/_budget one-budget))]
       (html
         [:div
-         [:p
-          [:span "This is the dashboard for budget "]
+         [:a
+          {:class "btn btn-default btn-md"
+           :href  (ui/inside "/widget/new")}
+          "New widget"]
+         [:a
+          {:class "btn btn-default btn-md"
+           :href  (ui/inside "/widget/new")}
+          "Edit"]
+         [:p [:span "This is the dashboard for budget "]
           [:strong (str (:budget/uuid one-budget))]]
          (d3/->AreaChart {:data         [{:key    "All Transactions"
                                           :values (reduce #(conj %1
