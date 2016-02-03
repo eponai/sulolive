@@ -35,10 +35,13 @@
                           (x  #(.-name %))
                           (y #(.-value %))
                           (staggerLabels false)
-                          (tooltips true)
-                          (showValues false)
-                          )]
+                          (showValues true))]
             (.-xAxis chart)
+
+            (.. chart
+                -tooltip
+                -enabled)
+
             (.. chart
                 -yAxis
                 (tickFormat (.. js/d3
@@ -76,10 +79,8 @@
                                       (x #(.-name %))
                                       (y #(.-value %))
                                       (useInteractiveGuideline true)
-                                      ;(rightAlignYAxis true)
-                                      ;(showControls true)
-                                      (clipEdge true)
-                                      )]
+                                      (showControls false)
+                                      (clipEdge true))]
                         (.. chart
                             -xAxis
                             (tickFormat #((.. js/d3
