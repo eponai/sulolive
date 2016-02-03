@@ -52,12 +52,12 @@
                                                                 {:date/ymd :name
                                                                  :date/sum :value})
                                       (sort-by :date/timestamp sum-by-day))
-                         :width  900
-                         :height 300
+                         :width  "100%"
+                         :height 400
                          :title-axis-y "Amount ($)"})
          (d3/->BarChart {:data   (reduce #(conj %1 {:name (first %2) :value (second %2)}) [] sum-by-tag)
-                         :width  900
-                         :height 300
+                         :width  "100%"
+                         :height 400
                          :title-axis-y "Amount ($)"})]))))
 
 (def ->Dashboard (om/factory Dashboard))
