@@ -48,16 +48,22 @@
          [:p
           [:span "This is the dashboard for budget "]
           [:strong (str (:budget/uuid one-budget))]]
-         (d3/->AreaChart {:data   (map #(clojure.set/rename-keys %
-                                                                {:date/ymd :name
-                                                                 :date/sum :value})
-                                      (sort-by :date/timestamp sum-by-day))
-                         :width  "100%"
-                         :height 400
-                         :title-axis-y "Amount ($)"})
-         (d3/->BarChart {:data   (reduce #(conj %1 {:name (first %2) :value (second %2)}) [] sum-by-tag)
-                         :width  "100%"
-                         :height 400
+         (d3/->AreaChart {:data         [{:key    "All Transactions"
+                                          :values (reduce #(conj %1
+                                                                 {:name (:date/timestamp %2) ;date timestamp
+                                                                  :value (:date/sum %2)}) ;sum for date
+                                                          []
+                                                          (sort-by :date/timestamp sum-by-day))}]
+                          :width        "100%"
+                          :height       400
+                          :title-axis-y "Amount ($)"})
+         (d3/->BarChart {:data         [{:key    "All Transactions"
+                                         :values (reduce #(conj %1 {:name  (first %2) ;tag name
+                                                                    :value (second %2)}) ;sum for tag
+                                                         []
+                                                         sum-by-tag)}]
+                         :width        "100%"
+                         :height       400
                          :title-axis-y "Amount ($)"})]))))
 
 (def ->Dashboard (om/factory Dashboard))

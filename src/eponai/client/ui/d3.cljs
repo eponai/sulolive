@@ -25,7 +25,7 @@
   (componentDidUpdate [this _ _]
     (let [{:keys [svg]} (om/get-state this)
           {:keys [data]} (om/props this)
-          chart-data [{:values data}]]
+          chart-data (clj->js data)]
       (.addGraph
         js/nv
         (fn []
@@ -43,11 +43,9 @@
                 -yAxis
                 (tickFormat (.. js/d3
                                 (format ",.2f"))))
-
             (.. svg
-                (datum (clj->js chart-data))
+                (datum chart-data)
                 (call chart))
-
             (.. js/nv
                 -utils
                 (windowResize (.-update chart))))))))
@@ -64,19 +62,11 @@
     (let [{:keys [width height]} (om/props this)
           svg (build-svg "#area-chart" width height)]
       (om/update-state! this assoc :svg svg)))
+
   (componentDidUpdate [this _ _]
     (let [{:keys [svg]} (om/get-state this)
           {:keys [data]} (om/props this)
-          js-data (clj->js data)
-          date-format (.. js/d3
-                          -time
-                          (format "%Y-%m-%d"))
-          _ (.forEach js-data
-                      (fn [d]
-                        (set! (.-name d)
-                              (.parse date-format (.-name d)))))
-          chart-data #js [ #js {:values js-data
-                                :key "All transactions"}]]
+          chart-data (clj->js data)]
       (.. js/nv
           (addGraph (fn []
                       (let [chart (.. js/nv
@@ -95,9 +85,7 @@
                             (tickFormat #((.. js/d3
                                               -time
                                               (format "%x"))
-                                          (js/Date. %)))
-                            )
-
+                                          (js/Date. %))))
                         (.. chart
                             -yAxis
                             (tickFormat (.. js/d3
@@ -105,7 +93,6 @@
                         (.. svg
                             (datum chart-data)
                             (call chart))
-
                         (.. js/nv
                             -utils
                             (windowResize (.-update chart)))))))))
