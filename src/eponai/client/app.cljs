@@ -19,17 +19,29 @@
             [eponai.client.ui :refer-macros [opts]]
             ))
 
+(defonce reconciler-atom (atom nil))
+
 (defui ^:once App
   static om/IQueryParams
   (params [_]
-    (history/url-query-params (history/url-handler-form-token)))
+    (let [{:keys [url/component url/factory]}
+          (history/url-query-params (history/url-handler-form-token))
+          ;; HACK: Gets the component from the reconciler if there is one.
+          ;;       This only works if there's every only going to be a
+          ;;       single instance of the component.
+          query (om/get-query (or (when-let [r @reconciler-atom]
+                                    (om/class->any r component))
+                                  component))]
+      {:url/component component
+       :url/query query
+       :url/factory factory}))
   static om/IQuery
   (query [_]
     [:datascript/schema
      {:proxy/header (om/get-query Header)}
      {:query/loader [:ui.singleton.loader/visible]}
      {:proxy/modal (om/get-query Modal)}
-     '{:proxy/app-content ?url/component}
+     '{:proxy/app-content ?url/query}
      '(:return/content-factory ?url/factory)])
   Object
   (render
@@ -97,6 +109,7 @@
                                    :send    (backend/send! "/user/")
                                    :merge   (backend/merge! conn)})
         history (history/init-history reconciler)]
+    (reset! reconciler-atom reconciler)
     (om/add-root! reconciler App (gdom/getElement "my-app"))
     (history/start! history)))
 

@@ -1,7 +1,7 @@
 (ns eponai.client.ui.all_transactions
   (:require [eponai.client.ui.format :as f]
             [eponai.client.ui.datepicker :refer [->Datepicker]]
-            [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
+            [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
             [garden.core :refer [css]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
@@ -15,19 +15,18 @@
    ;; TODO: Should instead use the primary currency
    :currency (-> transactions first :transaction/currency)})
 
-(defn- needs-update! [component]
-  (om/update-state! component update :__state-counter inc))
+
+(defn update-tags [component action tag-name]
+  (update-query-params! component update :filter-tags
+                        (fn [tags]
+                          (action tags tag-name))))
 
 (defn delete-tag-fn [component name]
   (fn []
-    (needs-update! component)
-    (om/transact! component `[(transactions.filter.tags/remove-tag {:tag/name ~name})
-                               :ui.component.all-transactions/filter-tags])))
+    (update-tags component disj name)))
 
-(defn add-tag [component tag-name]
-  (needs-update! component)
-  (om/transact! component `[(transactions.filter.tags/add-tag {:tag/name ~tag-name})
-                            :ui.component.all-transactions/filter-tags]))
+(defn add-tag [component name]
+  (update-tags component conj name))
 
 (defn on-add-tag-key-down [this input-tag]
   (fn [e]
@@ -69,13 +68,13 @@
             (tag/->Tag (tag/tag-props tagname
                                       (delete-tag-fn component tagname)))))]])))
 
-(defui AllTransactions
+(defui ^:once AllTransactions
+  static om/IQueryParams
+  (params [_] {:filter-tags #{} :search-query ""})
   static om/IQuery
   (query [_]
-    [{[:ui/component :ui.component/all-transactions]
-      [:ui.component.all-transactions/search-query
-       :ui.component.all-transactions/filter-tags]}
-     {:query/all-transactions
+    [{'(:query/all-transactions {:filter-tags  ?filter-tags
+                                 :search-query ?search-query})
       [:db/id
        :transaction/uuid
        :transaction/title
@@ -98,15 +97,12 @@
 
   Object
   (initLocalState [_]
-    {:__state-counter 0
-     :input-query nil
+    {:input-query nil
      :input-tag   ""
      :input-date  (js/Date.)})
   (render [this]
     (let [{transactions :query/all-transactions} (om/props this)
-          {:keys [ui.component.all-transactions/filter-tags
-                  ui.component.all-transactions/search-query]}
-          (get (om/props this)  [:ui/component :ui.component/all-transactions])
+          {:keys [filter-tags search-query]} (om/get-params this)
           {:keys [input-query]} (om/get-state this)
           query (or input-query search-query)]
       (html

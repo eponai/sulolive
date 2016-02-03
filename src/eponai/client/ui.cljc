@@ -1,7 +1,17 @@
 (ns eponai.client.ui
   (:require [clojure.string :as s]
+            #?(:cljs [om.next :as om])
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [warn]])
   #?(:clj (:import [java.util UUID])))
+
+#?(:cljs
+   (defn update-query-params!
+     "Updates query params by applying f to the current params of the component with & args.
+     Also schedules a re-render of the component."
+     ([component f & args]
+      (om/set-query! component
+                     {:params (apply f (om/get-params component) args)}
+                     []))))
 
 (defn map-all
   "same map but with switched parameter order"

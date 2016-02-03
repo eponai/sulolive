@@ -1,6 +1,7 @@
 (ns eponai.client.history
   (:require [bidi.bidi :as bidi]
             [eponai.client.routes :as routes]
+            [eponai.client.ui :refer [update-query-params!]]
             [om.next :as om]
             [pushy.core :as pushy]))
 
@@ -15,16 +16,17 @@
 (defn url-query-params [url-handler]
   {:pre [(instance? routes/UiComponentMatch url-handler)]}
   (let [{:keys [component factory]} url-handler]
-    {:url/component (om/get-query component)
+    {:url/component component
      :url/factory   {:value factory}}))
 
 (defn set-page! [reconciler]
-  (fn [{:keys [handler route-params] :as match}]
+  (fn [{:keys [handler route-params]}]
     (when route-params
       (routes/handle-route-params handler route-params reconciler))
-    (om/set-query! (om/app-root reconciler)
-                   {:params (url-query-params handler)}
-                   [:proxy/app-content])))
+    (update-query-params! (om/app-root reconciler)
+                          update
+                          merge
+                          (url-query-params handler))))
 
 (defn init-history [reconciler]
   (when-let [h @history-atom]

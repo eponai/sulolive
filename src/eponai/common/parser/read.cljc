@@ -64,14 +64,8 @@
 
 (def query-all-transactions
   (parser.util/cache-last-read
-    (fn [{:keys [db ast query auth]} _ params]
-     (let [#?@(:clj [{:keys [search-query filter-tags]} params]
-               :cljs [entity [:ui/component :ui.component/all-transactions]
-                      {:keys [ui.component.all-transactions/search-query
-                              ui.component.all-transactions/filter-tags]}
-                      (d/entity db entity)])
-
-           transactions
+    (fn [{:keys [db query auth]} _ {:keys [search-query filter-tags]}]
+     (let [transactions
            (cond-> {:where '[[?e :transaction/uuid]]}
 
                    (not-empty filter-tags)
@@ -89,8 +83,7 @@
                                                              [?u :user/uuid ?uuid]]
                                                   :symbols {'?uuid (:username auth)}})])]
        {:value  (p/pull-many db query (p/all-with db transactions))
-        :remote (update ast :params merge {:search-query search-query
-                                           :filter-tags filter-tags})}))))
+        :remote true}))))
 
 (defmethod read :query/all-transactions
   [& args]
