@@ -22,7 +22,6 @@
   (map->UiComponentMatch
     {:component      Dashboard
      :factory        ->Dashboard
-     ;;TODO change order of reconciler and route-params. (nicer?)
      :route-param-fn (fn [reconciler {:keys [budget-uuid]}]
                        {:pre [(om/reconciler? reconciler)]}
                        (om/transact! reconciler
