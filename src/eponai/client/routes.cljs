@@ -28,7 +28,7 @@
 
 (def routes [app-root (merge
                         dashboard-routes
-                        {"/transactions"  :route/transactions
-                         "/settings"      :route/settings
-                         "/subscribe"     :route/subscribe
-                         "/widget/new" :route/widget})])
+                        {"/transactions" :route/transactions
+                         "/settings"     :route/settings
+                         "/subscribe"    :route/subscribe
+                         "/widget/new"   :route/widget})])

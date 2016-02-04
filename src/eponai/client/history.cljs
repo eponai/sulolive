@@ -25,7 +25,7 @@
   (fn [{:keys [handler route-params]}]
     (let [ui-handler (get ui-handlers/route-handler->ui-component handler)]
       (when route-params
-        (ui-handlers/handle-route-params ui-handler route-params reconciler))
+        (ui-handlers/handle-route-params ui-handler reconciler route-params))
       (update-query-params! (om/app-root reconciler)
                             update
                             merge

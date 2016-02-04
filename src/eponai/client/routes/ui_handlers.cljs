@@ -11,8 +11,8 @@
 
 (defrecord UiComponentMatch [component factory route-param-fn]
   RouteParamHandler
-  (handle-route-params [_ params reconciler]
-    (route-param-fn params reconciler))
+  (handle-route-params [_ reconciler params]
+    (route-param-fn reconciler params))
   bidi/Matched
   (resolve-handler [this m]
     (bidi/succeed this m))
@@ -23,7 +23,8 @@
     {:component      Dashboard
      :factory        ->Dashboard
      ;;TODO change order of reconciler and route-params. (nicer?)
-     :route-param-fn (fn [{:keys [budget-uuid]} reconciler]
+     :route-param-fn (fn [reconciler {:keys [budget-uuid]}]
+                       {:pre [(om/reconciler? reconciler)]}
                        (om/transact! reconciler
                                      `[(dashboard/set-active-budget
                                          {:budget-uuid ~(uuid budget-uuid)})]))}))
