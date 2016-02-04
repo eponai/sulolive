@@ -1,6 +1,7 @@
 (ns eponai.client.history
   (:require [bidi.bidi :as bidi]
             [eponai.client.routes :as routes]
+            [eponai.client.routes.ui-handlers :as ui-handlers]
             [eponai.client.ui :refer [update-query-params!]]
             [om.next :as om]
             [pushy.core :as pushy]))
@@ -11,22 +12,24 @@
   (->> @history-atom
        pushy/get-token
        (bidi/match-route routes/routes)
-       :handler))
+       :handler
+       (get ui-handlers/route-handler->ui-component)))
 
-(defn url-query-params [url-handler]
-  {:pre [(instance? routes/UiComponentMatch url-handler)]}
-  (let [{:keys [component factory]} url-handler]
+(defn url-query-params [ui-handler]
+  {:pre [(instance? ui-handlers/UiComponentMatch ui-handler)]}
+  (let [{:keys [component factory]} ui-handler]
     {:url/component component
      :url/factory   {:value factory}}))
 
 (defn set-page! [reconciler]
   (fn [{:keys [handler route-params]}]
-    (when route-params
-      (routes/handle-route-params handler route-params reconciler))
-    (update-query-params! (om/app-root reconciler)
-                          update
-                          merge
-                          (url-query-params handler))))
+    (let [ui-handler (get ui-handlers/route-handler->ui-component handler)]
+      (when route-params
+        (ui-handlers/handle-route-params ui-handler route-params reconciler))
+      (update-query-params! (om/app-root reconciler)
+                            update
+                            merge
+                            (url-query-params ui-handler)))))
 
 (defn init-history [reconciler]
   (when-let [h @history-atom]

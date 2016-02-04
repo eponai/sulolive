@@ -1,7 +1,8 @@
 (ns eponai.client.ui.header
   (:require [om.next :as om :refer-macros [defui]]
-            [eponai.client.ui :as ui :refer-macros [opts map-all]]
+            [eponai.client.ui :refer-macros [opts map-all]]
             [eponai.client.ui.format :as f]
+            [eponai.client.routes :as routes]
             [eponai.client.ui.modal :refer [->Modal Modal]]
             [eponai.client.ui.add_transaction :as add.t :refer [->AddTransaction]]
             [sablono.core :refer-macros [html]]
@@ -43,7 +44,7 @@
            (menu-item this "Buy" (opts {:style {:display "block"
                                                 :margin  "0.5em 0.2em"}
                                         :class "btn btn-primary btn-md"
-                                        :href  (ui/inside "/subscribe/")}))]
+                                        :href  (routes/inside "/subscribe/")}))]
           [:li.divider]
 
           (when (not-empty all-budgets)
@@ -55,14 +56,14 @@
                (opts {:key [(:budget/uuid budget)]})
                (menu-item this
                           (or (:budget/name budget) "Untitled")
-                          {:href (ui/inside "/dashboard/" (:budget/uuid budget))})])
+                          {:href (routes/inside "/dashboard/" (:budget/uuid budget))})])
             all-budgets)
 
           [:li.divider]
           [:li
            (menu-item this
                       "All Transactions"
-                      {:href (ui/inside "/transactions")})]
+                      {:href (routes/inside "/transactions")})]
           [:li.divider]
           [:li
            (menu-item this
@@ -71,12 +72,12 @@
           [:li
            (menu-item this
                       "Settings"
-                      {:href (ui/inside "/settings")})]
+                      {:href (routes/inside "/settings")})]
           [:li.divider]
           [:li
            (menu-item this
                       "Sign Out"
-                      {:href (ui/outside "/api/logout")})]]]))))
+                      {:href (routes/outside "/api/logout")})]]]))))
 
 (def ->Menu (om/factory Menu))
 
@@ -104,7 +105,7 @@
 
           [:div
            [:a.navbar-brand
-            {:href (ui/inside "/")}
+            {:href (routes/inside "/")}
             "JourMoney"]]
 
           [:div
