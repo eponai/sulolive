@@ -34,9 +34,9 @@
                         :align-items "center"}})
 
          [:h3 "Sign in with email link"]
-         
+
          (if verification-sent
-           [:label "Check your inbox for a fancy sign in link!"])
+           [:p.small "Check your inbox for a fancy sign in link!"])
          [:input.form-control#email-input
           (opts {:value     input-email
                  :on-change (on-input-change this :input-email)
