@@ -4,7 +4,8 @@
             [eponai.client.routes.ui-handlers :as ui-handlers]
             [eponai.client.ui :refer [update-query-params!]]
             [om.next :as om]
-            [pushy.core :as pushy]))
+            [pushy.core :as pushy]
+            [taoensso.timbre :refer-macros [debug]]))
 
 (defonce history-atom (atom nil))
 
@@ -22,7 +23,7 @@
      :url/factory   {:value factory}}))
 
 (defn set-page! [reconciler]
-  (fn [{:keys [handler route-params]}]
+  (fn [{:keys [handler route-params] :as match}]
     (let [ui-handler (get ui-handlers/route-handler->ui-component handler)]
       (when route-params
         (ui-handlers/handle-route-params ui-handler reconciler route-params))

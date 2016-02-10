@@ -15,7 +15,6 @@
    ;; TODO: Should instead use the primary currency
    :currency (-> transactions first :transaction/currency)})
 
-
 (defn update-tags [component action tag-name]
   (update-query-params! component update :filter-tags
                         (fn [tags]
@@ -28,13 +27,11 @@
 (defn add-tag [component name]
   (update-tags component conj name))
 
-(defn on-add-tag-key-down [this input-tag]
+(defn on-enter-pressed [f]
   (fn [e]
-    (when (and (= 13 (.-keyCode e))
-               (seq (.. e -target -value)))
+    (when (and (= 13 (.-keyCode e)))
       (.preventDefault e)
-      (om/update-state! this assoc :input-tag "")
-      (add-tag this input-tag))))
+      (f e))))
 
 (defn filters [component filter-tags]
   (let [{:keys [input-tag input-date]} (om/get-state component)]
@@ -48,7 +45,10 @@
          {:type        "text"
           :value       input-tag
           :on-change   #(om/update-state! component assoc :input-tag (.. % -target -value))
-          :on-key-down (on-add-tag-key-down component input-tag)
+          :on-key-down (on-enter-pressed (fn [e]
+                                           (when (seq (.. e -target -value))
+                                             (om/update-state! component assoc :input-tag "")
+                                             (add-tag component input-tag))))
           :placeholder "Filter tags..."}]
         [:span
          {:class "glyphicon glyphicon-tag form-control-feedback"}]]
@@ -125,7 +125,9 @@
             {:value       query
              :type        "text"
              :placeholder "Search..."
-             :on-change   #(om/update-state! this assoc :input-query (.. % -target -value))}]
+             :on-change   #(om/update-state! this assoc :input-query (.. % -target -value))
+             :on-key-down (on-enter-pressed
+                            #(update-query-params! this assoc :search-query input-query))}]
            [:span {:class "glyphicon glyphicon-search form-control-feedback"}]]
           ]
 
