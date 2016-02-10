@@ -1,6 +1,6 @@
 (ns eponai.client.signup
  (:require [om.next :as om :refer-macros [defui]]
-           [eponai.client.ui :refer [opts]]
+           [eponai.client.ui :refer-macros [opts]]
            [cemerick.url :as url]
            [clojure.walk :refer [keywordize-keys]]
            [sablono.core :refer-macros [html]]
@@ -22,23 +22,34 @@
   Object
   (initLocalState [this]
     (let [{:keys [email]} (om/props this)]
-      {:input-email email}))
+      {:input-email email
+       :verification-sent false}))
   (render [this]
-    (let [{:keys [input-email]:as st} (om/get-state this)]
+    (let [{:keys [input-email
+                  verification-sent]:as st} (om/get-state this)]
       (html
         [:div
-         [:label
-          {:for "email-input"}
-          "Email:"]
-         [:input.form-control#email-input
-          {:value     input-email
-           :on-change (on-input-change this :input-email)}]
-         [:br]
+         (opts {:style {:display "flex"
+                        :flex-direction "column"
+                        :align-items "center"}})
 
+         [:h3 "Sign in with email link"]
+         
+         (if verification-sent
+           [:label "Check your inbox for a fancy sign in link!"])
+         [:input.form-control#email-input
+          (opts {:value     input-email
+                 :on-change (on-input-change this :input-email)
+                 :style {:max-width 300}
+                 :placeholder "youremail@example.com"})]
+
+         [:br]
          [:div
           [:button
            {:class    "btn btn-info btn-lg"
-            :on-click #(om/transact! this `[(signup/email ~st)])}
+            :on-click #(do
+                        (om/update-state! this assoc :verification-sent true)
+                        (om/transact! this `[(signup/email ~st)]))}
            "Sign In"]]
 
          ;; --------- Social Buttons
