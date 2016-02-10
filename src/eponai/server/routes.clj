@@ -39,6 +39,16 @@
   (GET "/devcards" []
     (html "devcards" "budget.html"))
 
+  (POST
+    "/newsletter/subscribe" {params :params
+                             conn ::m/conn}
+    (try
+      (api/newsletter-subscribe conn (:email params))
+      (r/redirect "/?s=y")
+      (catch Exception e
+        (prn e)
+        (r/redirect "/?s=n"))))
+
   (route/resources "/")
   (route/not-found "Not found"))
 
@@ -85,8 +95,9 @@
       ;(r/redirect "/sdlogin.html")
       )
 
-    (POST "/charge" {params :params}
-      (api/stripe-charge params)
+    (POST "/charge" {params :params
+                     conn ::m/conn}
+      (api/stripe-charge conn params)
       (r/redirect "/index.html"))
 
     ; Requires user login

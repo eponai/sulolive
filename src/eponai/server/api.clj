@@ -8,6 +8,7 @@
             [eponai.server.datomic.pull :as p]
             [eponai.server.http :as h]
             [eponai.server.external.stripe :as stripe]
+            [eponai.server.external.mailchimp :as mailchimp]
             [clj-time.core :as time]
             [clj-time.coerce :as c]
             [eponai.common.format :as f]
@@ -158,3 +159,6 @@
       (throw (ex-info (.getMessage e)
                       {:status ::h/unprocessable-entity
                        :data user-uuid})))))
+
+(defn newsletter-subscribe [conn email]
+  (mailchimp/subscribe (env :mail-chimp-api-key) email false))

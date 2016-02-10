@@ -17,6 +17,8 @@
 
     <!-- Custom CSS -->
     <link href="/style/css/landing-page.css" rel="stylesheet">
+    <!--<link href="/style/css/budget.css" rel="stylesheet">-->
+
 
     <!-- Custom Fonts -->
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
@@ -44,22 +46,25 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand topnav" href="">JourMoney</a>
+                <a class="navbar-brand topnav" href="">
+                    <strong>JourMoney</strong>
+                    <span class="small">by eponai</span>
+                </a>
             </div>
             <!-- Collect the nav links, forms, and other content for toggling -->
-            <!--<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">-->
-                <!--<ul class="nav navbar-nav navbar-right">-->
-                    <!--<li>-->
-                        <!--<a href="#about">About</a>-->
-                    <!--</li>-->
-                    <!--<li>-->
-                        <!--<a href="#features">Features</a>-->
-                    <!--</li>-->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="#about">About</a>
+                    </li>
+                    <li>
+                        <a href="#features">Features</a>
+                    </li>
                     <!--<li>-->
                         <!--<a href="#contact">Contact</a>-->
                     <!--</li>-->
-                <!--</ul>-->
-            <!--</div>-->
+                </ul>
+            </div>
             <!-- /.navbar-collapse -->
         </div>
         <!-- /.container -->
@@ -74,15 +79,36 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="intro-message">
-                        <h1>Follow your cash</h1>
-                        <h3>and learn about your spending</h3>
+                        <!--<div class="col-sm-4">-->
+                        <h2>Follow your money</h2>
+                        <h4>- and learn about your spending habits</h4>
                         <hr class="intro-divider">
-                        <ul class="list-inline intro-social-buttons">
-                            <li>
-                                <a href="/signup" class="btn btn-default btn-lg">
-                                    <span class="network-name">Sign in!</span>
-                                </a>
-                            </li>
+                        <!--<div class="row">-->
+                            <p style="max-width:500px;">
+                                Life is not as predictable as a fixed number of categories.
+                                JourMoney lets you keep track of your expenses and goals within any context that might appear.
+                                With hashtags and multiple currencies, you can represent and visualize your financial data however fits you best.</p>
+                        <!--</div>-->
+                        <br>
+                            <h4>Subscribe to our newsletter and be the first to know when we launch!</h4>
+                        <!--</div>-->
+                        <!--<div class="col-sm-6">-->
+                            <form method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;">
+                                <input type="text" name="email" class="form-control" placeholder="Your E-Mail" style="max-width:300px;">
+                                <br>
+                                <button type="submit" class="btn btn-info btn-md" style="margin-left:10px;">
+                                    <span class="network-text">Subscribe</span>
+                                </button>
+                            </form>
+                        <!--</div>-->
+
+                        <!--<ul class="list-inline intro-social-buttons">-->
+
+                            <!--<li>-->
+                                <!--<a href="/signup" class="btn btn-default btn-lg">-->
+                                    <!--<span class="network-name">Get Started!</span>-->
+                                <!--</a>-->
+                            <!--</li>-->
                             <!--<li>-->
                                 <!--<a href="/signup" class="btn btn-default btn-lg">-->
                                     <!--<i class="fa fa-twitter fa-fw"></i>-->
@@ -100,7 +126,7 @@
                                     <!--<span class="network-name">Linkedin</span>-->
                                 <!--</a>-->
                             <!--</li>-->
-                        </ul>
+                        <!--</ul>-->
                         <!--<a href="lkjnlogin.html" class="btn btn-default btn-lg">-->
                             <!--<span class="network-name">Log in!</span>-->
                         <!--</a>-->
@@ -116,116 +142,191 @@
 
     <!-- Page Content - Uncommment when content is ready-->
 
-	<!--<a  name="features"></a>-->
-    <!--<div class="content-section-a">-->
+	<a  name="features"></a>
+    <div class="content-section-a">
 
-        <!--<div class="container">-->
-            <!--<div class="row">-->
-                <!--<div class="col-lg-5 col-sm-6">-->
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-5 col-sm-6">
                     <!--<hr class="section-heading-spacer">-->
                     <!--<div class="clearfix"></div>-->
-                    <!--<h2 class="section-heading">Sync across devices</h2>-->
-                    <!--<p class="lead">-->
-                        <!--Use the application while offline and sync with all devices when connected.-->
-                    <!--</p>-->
-                <!--</div>-->
-                <!--<div class="col-lg-5 col-lg-offset-2 col-sm-6">-->
-                    <!--<img class="img-responsive" src="img/ipad.png" alt="">-->
-                <!--</div>-->
-            <!--</div>-->
+                    <h2 class="section-heading">Ask Anything</h2>
+                    <p class="lead">
+                        How much are you spending? Where does your money go? How long will it take you to save up for your vacation?
+                    </p>
+                    <p class="lead">
+                        We don't know what questions you have and that should not hold you back.
+                        Add your own metadata to your expenses and use that to create your very own
+                        graphs and reports over the data that you're interested in.</p>
+                </div>
+                <div class="col-lg-5 col-lg-offset-2 col-sm-6">
+                    <img class="img-responsive" src="/style/img/ipad.png" alt="">
+                </div>
+            </div>
 
-        <!--</div>-->
+        </div>
         <!-- /.container -->
 
-    <!--</div>-->
+    </div>
     <!-- /.content-section-a - uncomment when ready-->
 
-    <!--<div class="content-section-b">-->
+    <div class="content-section-b">
 
-        <!--<div class="container">-->
+        <div class="container">
 
-            <!--<div class="row">-->
-                <!--<div class="col-lg-5 col-lg-offset-1 col-sm-push-6  col-sm-6">-->
+            <div class="row">
+                <div class="col-lg-5 col-lg-offset-1 col-sm-push-6  col-sm-6">
                     <!--<hr class="section-heading-spacer">-->
                     <!--<div class="clearfix"></div>-->
-                    <!--<h2 class="section-heading">-->
-                        <!--Sharing-->
-                    <!--</h2>-->
-                    <!--<p class="lead">-->
-                        <!--Share sheets with friends or a partner to track expenses together.-->
-                    <!--</p>-->
-                <!--</div>-->
-                <!--<div class="col-lg-5 col-sm-pull-6  col-sm-6">-->
-                    <!--<img class="img-responsive" src="img/dog.png" alt="">-->
-                <!--</div>-->
-            <!--</div>-->
+                    <h2 class="section-heading">
+                        Share
+                    </h2>
+                    <p class="lead">
+                        Are you traveling with a friend? Do you have a roommate or living with your partner?
+                        Share your dashboards with them and collaborate on tracking expenses and visualize your habits.
+                    </p>
+                </div>
+                <div class="col-lg-5 col-sm-pull-6  col-sm-6">
+                    <img class="img-responsive" src="/style/img/dog.png" alt="">
+                </div>
+            </div>
 
-        <!--</div>-->
+        </div>
         <!-- /.container -->
 
-    <!--</div>-->
+    </div>
     <!-- /.content-section-b - Uncomment when ready-->
 
-    <!--<div class="content-section-a">-->
+    <div class="content-section-a">
 
-        <!--<div class="container">-->
+        <div class="container">
 
-            <!--<div class="row">-->
-                <!--<div class="col-lg-5 col-sm-6">-->
+            <div class="row">
+                <div class="col-lg-5 col-sm-6">
                     <!--<hr class="section-heading-spacer">-->
                     <!--<div class="clearfix"></div>-->
-                    <!--<h2 class="section-heading">Hashtags</h2>-->
-                    <!--<p class="lead">-->
-                        <!--We don't want you to be constrained to what we might think you need,-->
-                        <!--so we've omitted categories. Instead add your own meta data to your expenses with hashtags,-->
-                        <!--and create customized reports!-->
-                    <!--</p>-->
-                <!--</div>-->
-                <!--<div class="col-lg-5 col-lg-offset-2 col-sm-6">-->
-                    <!--<img class="img-responsive" src="img/phones.png" alt="">-->
-                <!--</div>-->
-            <!--</div>-->
+                    <h2 class="section-heading">Sync across devices</h2>
+                </div>
+                <div class="col-lg-5 col-lg-offset-2 col-sm-6">
+                    <img class="img-responsive" src="/style/img/phones.png" alt="">
+                </div>
+            </div>
 
-        <!--</div>-->
+        </div>
         <!--&lt;!&ndash; /.container &ndash;&gt;-->
 
-    <!--</div>-->
+    </div>
     <!-- /.content-section-a -->
 
-	<!--<a  name="contact"></a>-->
-    <!--<div class="banner">-->
+    <div class="content-section-b">
 
-        <!--<div class="container">-->
+        <div class="container">
+
+            <div class="row" align="center">
+                <!--<div class="col-lg-4 col-sm-6 col-lg-offset-4">-->
+                    <!--<hr class="section-heading-spacer">-->
+                    <!--<div class="clearfix"></div>-->
+                <!--<hr class="intro-divider" style="margin-right:0.5em;">-->
+                <h2 class="section-heading">At a glance</h2>
+                <div name="glance-features">
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <h6>Tags</h6>
+                            <p class="small">Use hashtags to add context to your expenses and incomes. And use them to build detailed reports.</p>
+                        </div>
+                        <div class="col-sm-3">
+                            <h6>Currencies</h6>
+                            <p class="small">
+                                Forget about conversion rates. Input your data in the local currency, and let it be converted automatically using the rate of that day.
+                            </p>
+                        </div>
+                        <div class="col-sm-3">
+                            <h6>Use Offline</h6>
+                            <p class="small">
+                                No internet access? No problem, just do what you need to do offline and sync up when you get a connection.
+                            </p>
+                        </div>
+                        <div class="col-sm-3">
+                            <h6>Share</h6>
+                            <p class="small">
+                                Share budgets and dashboards and collaborate with your friends and family on your expense tracking.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <h6>No Passwords</h6>
+                            <p class="small">
+                                No need to worry about forgetting your password, just sign in with an email link or your social media account and you're good to go.
+                            </p>
+                        </div>
+                        <div class="col-sm-3">
+                            <h6>Budgets</h6>
+                            <p class="small">
+                                Do you need to separate your tracking for different use cases? Just create a new budget sheet and do your thing.
+                            </p>
+                        </div>
+                        <div class="col-sm-3">
+                            <h6>Setup goals</h6>
+                            <p class="small">
+                                Create nice visualizations of your saving goals, and easier follow your progress.
+                            </p>
+                        </div>
+                        <div class="col-sm-3">
+                            <h6>Dashboards</h6>
+                            <p class="small">
+                                Create your personal dashboard for your budgets with the information that you are interested in via tags. Or just use the default graphs.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <!--&lt;!&ndash; /.container &ndash;&gt;-->
+
+        </div>
+    </div>
+
+
+    <a  name="contact"></a>
+    <div class="banner">
+
+        <div class="container">
 
             <!--<div class="row">-->
-                <!--<div class="col-lg-6">-->
-                    <!--<h2>Connect to Start Bootstrap:</h2>-->
-                <!--</div>-->
-                <!--<div class="col-lg-6">-->
+                    <h4>Subscribe to our newsletter</h4>
+                    <form method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;">
+                        <input type="text" name="email" class="form-control" placeholder="Your E-Mail" style="max-width:300px;">
+                        <button class="btn btn-info btn-md" type="submit" style="margin-left:10px;">
+                            Subscribe
+                        </button>
+                    </form>
+                <!--</div>                &lt;!&ndash;<div style="max-width:400px;">&ndash;&gt;-->
+
+        <!--<div class="col-lg-6">-->
                     <!--<ul class="list-inline banner-social-buttons">-->
                         <!--<li>-->
-                            <!--<a href="https://twitter.com/SBootstrap" class="btn btn-default btn-lg">-->
+                            <!--<a href="https://twitter.com/jour_money" class="btn btn-default btn-lg">-->
                                 <!--<i class="fa fa-twitter fa-fw"></i>-->
                                 <!--<span class="network-name">Twitter</span></a>-->
                         <!--</li>-->
-                        <!--<li>-->
-                            <!--<a href="https://github.com/IronSummitMedia/startbootstrap" class="btn btn-default btn-lg">-->
-                                <!--<i class="fa fa-github fa-fw"></i>-->
-                                <!--<span class="network-name">Github</span></a>-->
-                        <!--</li>-->
-                        <!--<li>-->
-                            <!--<a href="#" class="btn btn-default btn-lg">-->
-                                <!--<i class="fa fa-linkedin fa-fw"></i>-->
-                                <!--<span class="network-name">Linkedin</span></a>-->
-                        <!--</li>-->
+                        <!--&lt;!&ndash;<li>&ndash;&gt;-->
+                            <!--&lt;!&ndash;<a href="https://github.com/IronSummitMedia/startbootstrap" class="btn btn-default btn-lg">&ndash;&gt;-->
+                                <!--&lt;!&ndash;<i class="fa fa-github fa-fw"></i>&ndash;&gt;-->
+                                <!--&lt;!&ndash;<span class="network-name">Github</span></a>&ndash;&gt;-->
+                        <!--&lt;!&ndash;</li>&ndash;&gt;-->
+                        <!--&lt;!&ndash;<li>&ndash;&gt;-->
+                            <!--&lt;!&ndash;<a href="#" class="btn btn-default btn-lg">&ndash;&gt;-->
+                                <!--&lt;!&ndash;<i class="fa fa-linkedin fa-fw"></i>&ndash;&gt;-->
+                                <!--&lt;!&ndash;<span class="network-name">Linkedin</span></a>&ndash;&gt;-->
+                        <!--&lt;!&ndash;</li>&ndash;&gt;-->
                     <!--</ul>-->
                 <!--</div>-->
             <!--</div>-->
 
-        <!--</div>-->
+        </div>
         <!--&lt;!&ndash; /.container &ndash;&gt;-->
 
-    <!--</div>-->
+    </div>
     <!-- /.banner -->
 
     <!-- Footer -->
@@ -233,23 +334,23 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
-                    <!--<ul class="list-inline">-->
+                    <ul class="list-inline">
+                        <li>
+                            <a href="#" class="text-muted small">Home</a>
+                        </li>
+                        <li class="footer-menu-divider">&sdot;</li>
+                        <li>
+                            <a href="#about" class="text-muted small">About</a>
+                        </li>
+                        <li class="footer-menu-divider">&sdot;</li>
+                        <li>
+                            <a href="#features" class="text-muted small">Features</a>
+                        </li>
+                        <li class="footer-menu-divider">&sdot;</li>
                         <!--<li>-->
-                            <!--<a href="#">Home</a>-->
+                            <!--<a href="#contact" class="text-muted small">Contact</a>-->
                         <!--</li>-->
-                        <!--<li class="footer-menu-divider">&sdot;</li>-->
-                        <!--<li>-->
-                            <!--<a href="#about">About</a>-->
-                        <!--</li>-->
-                        <!--<li class="footer-menu-divider">&sdot;</li>-->
-                        <!--<li>-->
-                            <!--<a href="#features">Features</a>-->
-                        <!--</li>-->
-                        <!--<li class="footer-menu-divider">&sdot;</li>-->
-                        <!--<li>-->
-                            <!--<a href="#contact">Contact</a>-->
-                        <!--</li>-->
-                    <!--</ul>-->
+                    </ul>
                     <p class="copyright text-muted small">
                         Copyright &copy; eponai 2016. All Rights Reserved
                     </p>
