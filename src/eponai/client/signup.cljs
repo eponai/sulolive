@@ -33,7 +33,7 @@
                         :flex-direction "column"
                         :align-items "center"}})
 
-         [:h3 "Sign in with email link"]
+         [:h3 "Sign in with email"]
 
          (if verification-sent
            [:p.small "Check your inbox for a fancy sign in link!"])
