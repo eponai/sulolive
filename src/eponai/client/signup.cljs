@@ -1,6 +1,10 @@
 (ns eponai.client.signup
- (:require [om.next :as om :refer-macros [defui]]
+  (:require-macros [cljs.core.async.macros :refer [go]])
+ (:require [cljs-http.client :as http]
+           [cljs.core.async :as async]
+           [om.next :as om :refer-macros [defui]]
            [eponai.client.ui :refer-macros [opts]]
+           [eponai.client.routes :as routes]
            [cemerick.url :as url]
            [clojure.walk :refer [keywordize-keys]]
            [sablono.core :refer-macros [html]]
@@ -80,47 +84,55 @@
   (initLocalState [this]
     (let [{:keys [full-name email]} (om/props this)]
       {:input-email email
-       :input-name full-name}))
+       :input-name full-name
+       :status nil
+       :message nil}))
   (render [this]
     (let [{:keys [::fixed-email user-uuid]} (om/props this)
-          {:keys [input-name input-email]} (om/get-state this)]
+          {:keys [input-name input-email message status]} (om/get-state this)]
       (html
         [:div
          [:h2 "Welcome!"]
+         [:label
+          "Email:"]
+         [:input.form-control#email-input
+          (opts {:value       input-email
+                 :on-change   (on-input-change this :input-email)
+                 :placeholder "youremail@example.com"
+                 :name        "user-email"
+                 :style       {:max-width 300}})]
 
-         [:form.form-group#sign-in-form
-          {:action "/api/login/create"
-           :method "POST"}
+         [:br]
+         [:label
+          "Name:"]
 
-          [:label
-           "Email:"]
-          [:input.form-control#email-input
-           (opts {:value       input-email
-                  :on-change   (on-input-change this :input-email)
-                  :placeholder "youremail@example.com"
-                  :name        "user-email"
-                  :style       {:max-width 300}})]
+         [:input.form-control#name-input
+          (opts {:value     input-name
+                 :on-change (on-input-change this :input-name)
+                 :name      "user-name"
+                 :style     {:max-width 300}})]
+         [:p
+          (opts {:class (str "small "
+                             (cond (= status :login-failed)
+                                   "text-danger"))
+                        :style {:height "1em"}})
+          message]
 
-          [:br]
-          [:label
-           "Name:"]
 
-          [:input.form-control#name-input
-           (opts {:value     input-name
-                  :on-change (on-input-change this :input-name)
-                  :name      "user-name"
-                  :style     {:max-width 300}})]
-          [:br]
-
-          [:input
-           {:type  "hidden"
-            :value (str user-uuid)
-            :name  "user-uuid"}]
-
-          [:input
-           {:class "btn btn-info btn-lg"
-            :type  "submit"
-            :value "Create account"}]]
+         [:button
+          {:class    "btn btn-info btn-lg"
+           :on-click (fn [e]
+                       (go
+                         (let [response (async/<! (http/post
+                                                    "/api/login/create"
+                                                    {:transit-params {:user-uuid  (str user-uuid)
+                                                                      :user-email input-email}}))
+                               status (get-in response [:body :status])
+                               message (get-in response [:body :message])]
+                           (if-not (= (:status response) 200)
+                             (om/update-state! this assoc :message message :status status)
+                             (set! js/document.location.href (routes/inside "/"))))))}
+          "Create account"]
 
          [:p.small
           "By creating an account, you accept JourMoney's"

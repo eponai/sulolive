@@ -114,8 +114,8 @@
         ; the user is probably activating their account with a new email.
         ; Create a new verification and throw exception
         (when-not (seq verifications)
-          (debug "User not verified for email:" email "will create new verification.")
-          (let [verification (t/email-verification conn user-db-id :verification.status/pending)]
+          (debug "User not verified for email:" email "will create new verification for user: " user-db-id)
+          (let [verification (t/email-verification conn new-user :verification.status/pending)]
             (throw (ex-info "Email not verified."
                             {:cause        ::authentication-error
                              :data         {:email email}

@@ -6,18 +6,21 @@
             [eponai.server.external.facebook :as fb]
             [ring.util.response :as r]
             [ring.util.request :refer [path-info request-url]]
-            [taoensso.timbre :refer [debug error info]])
+            [taoensso.timbre :refer [debug error info]]
+            [eponai.server.api :as api])
   (:import (clojure.lang ExceptionInfo)))
 
-(defn redirect-login-failed [& kvs]
-  (r/redirect (str "/signup?fail=Y" (when kvs "&") (url/map->query (apply hash-map kvs)))))
+(defn redirect-login-failed [message]
+  (r/status (r/response {:status  :login-failed
+                         :message (or message "Oops, something when wrong when creating your account. Try again later.")}) 500))
 
 (defn redirect-activate-account [account-info]
   (r/redirect (str "/signup?new=Y&"
                    (url/map->query account-info))))
 
 (defn redirect-verify-email []
-  (r/redirect (str "/signup?verify=Y")))
+  (r/status (r/response {:status :verification-needed
+                         :message "Check your inbox for a verification email!"}) 500))
 
 (defn form
   []
@@ -44,10 +47,10 @@
                 (debug "Login failed. " (if activate-user "User not activated." "Invalid UUID."))
                 (if activate-user
                   (redirect-activate-account {:uuid (:user/uuid activate-user)})
-                  (redirect-login-failed :uuid (:uuid params))))))
+                  (redirect-login-failed (:uuid params))))))
 
           true
-          (redirect-login-failed))))))
+          (redirect-login-failed "Not found"))))))
 
 (defn facebook
   [app-id app-secret]
@@ -70,7 +73,7 @@
             (debug "Recieved validated token:" validated-token)
             (if (:error validated-token)
               ; Redirect back to the login page on invalid token, something went wrong.
-              (redirect-login-failed)
+              (redirect-login-failed "Facebook error")
 
               ; Try to get credentials for the facebook user. If there's no user account an exception
               ; is thrown and we need to prompt the user to create a new account
@@ -90,7 +93,7 @@
 
           ; User cancelled or denied login, redirect back to the login page.
           (:error params)
-          (redirect-login-failed :error (:error params))
+          (redirect-login-failed "Permission denied")
 
           ; Redirect to Facebook login dialog
           true
@@ -100,21 +103,23 @@
 
 (defn create-account
   [send-email-fn]
-  (fn [{:keys [params ::friend/auth-config] :as request}]
+  (fn [{:keys [body ::friend/auth-config] :as request}]
     (let [credential-fn (get auth-config :credential-fn)
           login-uri (get auth-config :activate-account-uri)]
       (when (= (path-info request)
                login-uri)
         (try
-          (let [user-record (credential-fn (with-meta params
+          (let [user-record (credential-fn (with-meta body
                                                       {::friend/workflow :activate-account}))]
+            (prn "Successful login")
             (workflows/make-auth user-record {::friend/workflow :activate-account
                                               ::friend/redirect-on-auth? true}))
           (catch ExceptionInfo e
+            (prn e)
             (let [{:keys [verification]} (ex-data e)]
               (if verification
                 (do
                   (go
                     (send-email-fn verification))
                   (redirect-verify-email))
-                (redirect-login-failed)))))))))
+                (redirect-login-failed (.getMessage e))))))))))

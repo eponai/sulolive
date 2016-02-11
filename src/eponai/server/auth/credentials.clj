@@ -15,12 +15,13 @@
 ; ---- exceptions
 
 (defn ex-invalid-input [input]
-  (ex-info "Invalid input."
+  (ex-info (str "Invalid input." input)
            {:cause ::authentication-error
             :status ::h/unprocessable-entity
             :data {:input input}}))
 
 (defn ex-user-not-activated [user]
+  (prn "Not activated: " user)
   (ex-info "User not activated."
            {:cause ::authentication-error
             :activate-user user}))
@@ -75,11 +76,11 @@
     (throw (ex-invalid-input params))))
 
 (defmethod auth-map :activate-account
-  [conn {:keys [user-uuid user-email] :as params}]
+  [conn {:keys [user-uuid user-email] :as body}]
   (if (and user-uuid user-email)
     (let [user (api/activate-account conn user-uuid user-email)]
       (auth-map-for-db-user user))
-    (throw (ex-invalid-input params))))
+    (throw (ex-invalid-input body))))
 
 (defn credential-fn
   "Create a credential fn with a db to pull user credentials.
