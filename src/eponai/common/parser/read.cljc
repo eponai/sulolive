@@ -65,7 +65,6 @@
 (def query-all-transactions
   (parser.util/cache-last-read
     (fn [{:keys [db query auth]} _ {:keys [search-query filter-tags]}]
-      (debug "search-query:" search-query)
       (let [existing-tags (when (seq filter-tags)
                             (p/all-with db {:where   '[[_ :tag/name ?e]]
                                             :symbols {'[?e ...] filter-tags}}))
@@ -77,24 +76,13 @@
                                                [?tag :tag/name ?tag-name]]
                                     :symbols {'[?tag-name ...] existing-tags}}))
 
-           #?@(:clj [transactions
-                     (cond-> transactions
-
-                             ;; Include user filter on the server.
-                             true
-                             (p/merge-query {:where   '[[?e :transaction/budget ?b]
-                                                        [?b :budget/created-by ?u]
-                                                        [?u :user/uuid ?uuid]]
-                                             :symbols {'?uuid (:username auth)}})
-
-                             ;; Include fulltext search in the query on the server.
-                             (not-empty search-query)
-                             (p/merge-query {:where   '[[(fulltext $ :transaction/title ?search) [[?e]]]]
-                                             :symbols {'?search search-query}}))])
-            ret (p/pull-many db query (p/all-with db transactions))
-            #?@(:cljs [pattern (re-pattern (str ".*" search-query ".*"))
-                       ret (filterv #(re-find pattern (:transaction/title %)) ret)])]
-       {:value  ret
+           ;; Include user filter on the server.
+           #?@(:clj [transactions (p/merge-query transactions
+                                                 {:where   '[[?e :transaction/budget ?b]
+                                                             [?b :budget/created-by ?u]
+                                                             [?u :user/uuid ?uuid]]
+                                                  :symbols {'?uuid (:username auth)}})])]
+       {:value  (p/pull-many db query (p/all-with db transactions))
         :remote true}))))
 
 (defmethod read :query/all-transactions
