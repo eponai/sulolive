@@ -39,8 +39,6 @@
          text (.-value target)
          [start end] [(aget target "selectionStart") (aget target "selectionEnd")]
          fire-on-change #(let [date (format/random-string->js-date text)]
-                          (when-not date
-                            (aset target "value" ""))
                           (on-change date))]
      (condp = (.-keyCode e)
        goog.events.KeyCodes.ENTER (fire-on-change)
@@ -48,6 +46,9 @@
        ;; When we're clearing the whole text.
        goog.events.KeyCodes.BACKSPACE (when (or (= 1 (count text))
                                                 (and (pos? end) (= text (subs text start end))))
+                                        ;; make sure we clear the text box so that Pikaday
+                                        ;; doesn't convert the input to a date.
+                                        (aset target "value" "")
                                         (fire-on-change))
        ;; else
        nil))))
