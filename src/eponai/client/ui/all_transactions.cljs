@@ -2,6 +2,7 @@
   (:require [eponai.client.ui.format :as f]
             [eponai.client.ui.datepicker :refer [->Datepicker]]
             [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
+            [eponai.common.format :as format]
             [garden.core :refer [css]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
@@ -14,7 +15,6 @@
   {:amount   (transduce (map :transaction/amount) + 0 transactions)
    ;; TODO: Should instead use the primary currency
    :currency (-> transactions first :transaction/currency)})
-
 
 (defn update-tags [component action tag-name]
   (update-query-params! component update :filter-tags
@@ -36,8 +36,8 @@
       (om/update-state! this assoc :input-tag "")
       (add-tag this input-tag))))
 
-(defn filters [component filter-tags]
-  (let [{:keys [input-tag input-date]} (om/get-state component)]
+(defn tag-filter [component filter-tags]
+  (let [{:keys [input-tag]} (om/get-state component)]
     (html
       [:div
        (opts {:style {:display        "flex"
@@ -53,11 +53,6 @@
         [:span
          {:class "glyphicon glyphicon-tag form-control-feedback"}]]
 
-       [:div#date-input
-        (->Datepicker
-          (opts {:value     input-date
-                 :on-change #(om/update-state! component assoc :input-date %)}))]
-
        [:div
         (opts {:style {:display        "flex"
                        :flex-direction "row"
@@ -68,13 +63,25 @@
             (tag/->Tag (tag/tag-props tagname
                                       (delete-tag-fn component tagname)))))]])))
 
+(defn date-picker [component placeholder key]
+  [:div
+   [:div#date-input
+    (->Datepicker
+      (opts {:key         [placeholder key]
+             :placeholder placeholder
+             :value       (get (om/get-params component) key)
+             :on-change   #(update-query-params! component assoc key %)}))]])
+
+(def initial-params {:filter-tags #{} :start-date nil :end-date nil})
+
 (defui ^:once AllTransactions
   static om/IQueryParams
-  (params [_] {:filter-tags #{} :search-query ""})
+  (params [_] initial-params)
   static om/IQuery
   (query [_]
-    [{'(:query/all-transactions {:filter-tags  ?filter-tags
-                                 :search-query ?search-query})
+    [{'(:query/all-transactions {:filter-tags ?filter-tags
+                                 :start-date ?start-date
+                                 :end-date ?end-date})
       [:db/id
        :transaction/uuid
        :transaction/title
@@ -87,51 +94,35 @@
        {:transaction/tags (om/get-query tag/Tag)}
        ::transaction-show-tags?
        {:transaction/date [:db/id
+                           :date/timestamp
                            :date/ymd
                            :date/day
                            :date/month
-                           :date/year
-                           ::day-expanded?]}
+                           :date/year]}
        {:transaction/budget [:budget/uuid
                              :budget/name]}]}])
 
   Object
   (initLocalState [_]
-    {:input-query nil
-     :input-tag   ""
-     :input-date  (js/Date.)})
+    {:input-tag   ""})
   (render [this]
     (let [{transactions :query/all-transactions} (om/props this)
-          {:keys [filter-tags search-query]} (om/get-params this)
-          {:keys [input-query]} (om/get-state this)
-          query (or input-query search-query)]
+          {:keys [filter-tags]} (om/get-params this)]
       (html
         [:div
          (opts {:style {:display "flex"
                         :flex-direction "column"
                         :align-items "flex-start"
                         :width "100%"}})
-         [:div
-          (opts {:style {:display        "flex"
-                         :flex-direction "row"}})
-          [:a
-           [:button
-            {:class "form-control btn btn-default"}
-            [:i {:class "glyphicon glyphicon-filter"}]]]
-          ;[:button {:class "btn btn-default btn-sm"}]
-          ;[:a]
-          [:div.has-feedback
-           [:input.form-control
-            {:value       query
-             :type        "text"
-             :placeholder "Search..."
-             :on-change   #(om/update-state! this assoc :input-query (.. % -target -value))}]
-           [:span {:class "glyphicon glyphicon-search form-control-feedback"}]]
-          ]
 
          [:br]
          [:div.tab-content
-          (filters this filter-tags)]
+          [:div
+           (opts {:style {:display "flex"
+                          :flex-direction "row"}})
+           (date-picker this  "From date..." :start-date)
+           (date-picker this "To date..." :end-date)]
+          (tag-filter this filter-tags)]
 
          [:table
           {:class "table table-striped table-hover"}

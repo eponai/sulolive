@@ -1,6 +1,9 @@
 (ns eponai.common.database.pull
   (:require
-    [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug]]
+    [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug trace]]
+    [eponai.common.format :as f]
+    [clojure.set :as s]
+    [clojure.walk :as walk]
     #?(:clj
             [datomic.api :as d]
        :cljs [datascript.core :as d])))
@@ -78,6 +81,7 @@
         query (where->query where
                             find-pattern
                             (map first symbol-seq))]
+    (trace "query:" query)
     (apply q query
        db
        (map second symbol-seq))))
@@ -118,9 +122,9 @@
     with matches from the renames map."
   [query-map renames]
   {:pre [(map? query-map) (map? renames)]}
-  (update query-map :where (fn [where]
-                             (mapv (fn [v] (mapv #(get renames % %) v))
-                                   where))))
+  (-> query-map
+      (update :symbols s/rename-keys renames)
+      (update :where #(walk/postwalk-replace renames %))))
 
 (defn budget []
   {:where '[[?e :budget/uuid]]})
@@ -135,3 +139,19 @@
   {:where   '[[?e :budget/created-by ?u]
               [?u :user/uuid ?user-uuid]]
    :symbols {'?user-uuid user-uuid}})
+
+(defn transaction-date-filter
+  "Takes a query-map, date and a compare function symbol. Merges the query-map
+  with a filter on a transaction's date.
+
+  Examples for the compare symbol: '= '> '< '>= '>="
+  [query-map date compare]
+  {:pre [(map? query-map) (symbol? compare)]}
+  (let [date-time (f/date->timestamp date)
+        filter-sym (gensym "?time-filter")]
+    (merge-query
+      query-map
+      {:where   ['[?e :transaction/date ?date]
+                 '[?date :date/timestamp ?timestamp]
+                 `[(~compare ~'?timestamp ~filter-sym)]]
+       :symbols {filter-sym date-time}})))

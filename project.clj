@@ -40,7 +40,7 @@
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
-                 [com.andrewmcveigh/cljs-time "0.3.14"]
+                 [com.andrewmcveigh/cljs-time "0.4.0"]
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-alpha2"]
                  [garden "1.3.0"]
@@ -51,7 +51,7 @@
                  [cljsjs/react-dom-server "0.14.3-0"]
                  [cljs-ajax "0.5.0"]
                  [cljsjs/d3 "3.5.7-1"]
-                 [cljsjs/pikaday "1.3.2-0"]
+                 [cljsjs/pikaday "1.4.0-1"]
                  [cljsjs/stripe "2.0-0"]
                  [cljsjs/nvd3 "1.8.1-0"]
                  [bidi "1.21.1"]
@@ -150,7 +150,7 @@
                    ["node_modules/karma/bin/karma" "start" "karma.conf.js" "--single-run"]}}
   :npm {:dependencies [[source-map-support "0.3.2"]
                        [react "0.14.3"]
-                       [pikaday "1.3.2"]
+                       [pikaday "1.4.0"]
                        [karma "0.13.9"]
                        [karma-junit-reporter "0.3.8"]
                        [phantomjs "1.9.19"]

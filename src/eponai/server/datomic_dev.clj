@@ -76,6 +76,7 @@
     (->> transactions
          (map #(assoc % :transaction/budget uuid))
          (map format/user-transaction->db-entity)
+         ((fn [txs] (debug  "transactions:" txs) txs))
          (transact/transact conn))))
 
 (defn add-currencies [conn]

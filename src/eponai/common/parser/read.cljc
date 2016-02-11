@@ -64,7 +64,8 @@
 
 (def query-all-transactions
   (parser.util/cache-last-read
-    (fn [{:keys [db query auth]} _ {:keys [search-query filter-tags]}]
+    (fn [{:keys [db query auth]} _ {:keys [start-date end-date filter-tags]}]
+      (prn "start-date: " start-date)
       (let [existing-tags (when (seq filter-tags)
                             (p/all-with db {:where   '[[_ :tag/name ?e]]
                                             :symbols {'[?e ...] filter-tags}}))
@@ -74,7 +75,13 @@
                     (not-empty existing-tags)
                     (p/merge-query {:where   '[[?e :transaction/tags ?tag]
                                                [?tag :tag/name ?tag-name]]
-                                    :symbols {'[?tag-name ...] existing-tags}}))
+                                    :symbols {'[?tag-name ...] existing-tags}})
+
+                    (some? start-date)
+                    (p/transaction-date-filter start-date '>=)
+
+                    (some? end-date)
+                    (p/transaction-date-filter end-date '<=))
 
            ;; Include user filter on the server.
            #?@(:clj [transactions (p/merge-query transactions

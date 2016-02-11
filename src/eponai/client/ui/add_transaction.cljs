@@ -122,7 +122,8 @@
 
          [:div
           (->Datepicker
-            (opts {:value     date
+            (opts {:key       [::date-picker]
+                   :value     date
                    :on-change #(om/update-state!
                                 this
                                 assoc
