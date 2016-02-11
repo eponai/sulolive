@@ -44,7 +44,7 @@
 
          [:p
           (opts {:class "text-success small"
-                 :style {:line-height "2em"}})
+                 :style {:height "1em"}})
           (if verification-sent
             "Check your inbox for a fancy sign in link!"
             "")]

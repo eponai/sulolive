@@ -44,10 +44,10 @@
                 url: "/newsletter/subscribe",
                 data: dataString,
                 error: function(response) {
-                  document.getElementById('subscribe-intro').innerHTML = JSON.parse(response.responseText).message;
+                  document.getElementById('subscribe-intro').innerHTML = "<p class='text-danger small'>" + JSON.parse(response.responseText).message + "</p>";
                   },
                 success: function(response) {
-                  document.getElementById('subscribe-intro').innerHTML = JSON.parse(response).message;
+                  document.getElementById('subscribe-intro').innerHTML = "<p class='text-success small'>" + JSON.parse(response).message + "</p>";
                   }
                 });
               });
@@ -60,10 +60,10 @@
                 url: "/newsletter/subscribe",
                 data: dataString,
                 error: function(response) {
-                  document.getElementById('subscribe-footer').innerHTML = JSON.parse(response.responseText).message;
+                  document.getElementById('subscribe-footer').innerHTML = "<p class='text-danger small'>" + JSON.parse(response.responseText).message + "</p>";
                   },
                 success: function(response) {
-                  document.getElementById('subscribe-footer').innerHTML = JSON.parse(response).message;
+                  document.getElementById('subscribe-footer').innerHTML = "<p class='text-success small'>" + JSON.parse(response).message + "</p>";
                   }
                 });
               });
