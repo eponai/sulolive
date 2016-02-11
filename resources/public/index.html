@@ -24,40 +24,49 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-    <script src="https://malsup.github.com/jquery.form.js"></script>
 
     <script language="JavaScript">
         function onSubscribe(elementId) {
           document.getElementById(elementId).innerHTML = "<div class='loader-circle' />";
         }
-    </script>
-    <script>
         $(document).ready(function() {
             $('[data-toggle="popover"]').popover();
+            $.ajaxSetup({
+              type: 'POST',
+              headers: { "cache-control": "no-cache" }
+            });
 
-            $('#form_intro').ajaxForm(
-              {error: function(response) {
-                console.log(response);
-                document.getElementById('subscribe_intro').innerHTML = JSON.parse(response.responseText).message;
-                },
-              success: function(response) {
-                console.log(response);
-                document.getElementById('subscribe_intro').innerHTML = JSON.parse(response).message;
-                }
-              }
-            );
+            $('#form-intro').submit(function(e) {
+              e.preventDefault();
+              var dataString = $(this).serialize();
+              $.ajax({
+                type: "POST",
+                url: "/newsletter/subscribe",
+                data: dataString,
+                error: function(response) {
+                  document.getElementById('subscribe-intro').innerHTML = JSON.parse(response.responseText).message;
+                  },
+                success: function(response) {
+                  document.getElementById('subscribe-intro').innerHTML = JSON.parse(response).message;
+                  }
+                });
+              });
 
-            $('#form_footer').ajaxForm(
-              {error: function(response) {
-                console.log(response);
-                document.getElementById('subscribe_footer').innerHTML = JSON.parse(response.responseText).message;
-                },
-              success: function(response) {
-                console.log(response);
-                document.getElementById('subscribe_footer').innerHTML = JSON.parse(response).message;
-                }
-              }
-            );
+            $('#form-footer').submit(function(e) {
+              e.preventDefault();
+              var dataString = $(this).serialize();
+              $.ajax({
+                type: "POST",
+                url: "/newsletter/subscribe",
+                data: dataString,
+                error: function(response) {
+                  document.getElementById('subscribe-footer').innerHTML = JSON.parse(response.responseText).message;
+                  },
+                success: function(response) {
+                  document.getElementById('subscribe-footer').innerHTML = JSON.parse(response).message;
+                  }
+                });
+              });
           });
     </script>
 
@@ -85,7 +94,7 @@
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="#" data-toggle="popover" data-container="body" data-placement="bottom" data-trigger="click" data-content="Sorry, we're not quite ready. Sign up for our newsletter and we'll let you know when we launch!">
+                        <a href="#" data-toggle="popover" data-container="body" data-placement="bottom" data-trigger="click" data-content="Thanks for your interest! We're not quite ready, but sign up for our newsletter and we'll let you know when we launch.">
                             Start Free Trial / Sign In
                         </a>
                     </li>
@@ -119,15 +128,15 @@
                         <br>
                             <h4>Subscribe to our newsletter and be the first to know when we launch!</h4>
                         <!--</div>-->
-                            <form id="form_intro" class="form-group" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;width:100%;">
+                            <form id="form-intro" class="form-group" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;width:100%;">
                                 <input type="text" name="email" class="form-control" placeholder="Your E-Mail" style="max-width:300px;">
                                 <br>
                                 <button type="submit" class="btn btn-info btn-md" style="margin-left:10px;"
-                                        onclick="onSubscribe('subscribe_intro')">
+                                        onclick="onSubscribe('subscribe-intro')">
                                     <span class="network-text">Subscribe</span>
                                 </button>
                             </form>
-                            <div id="subscribe_intro" style="height:1em;"></div>
+                            <div id="subscribe-intro" style="height:1em;"></div>
                     </div>
                     <!-- /.intro-message -->
 
@@ -307,14 +316,14 @@
         <div class="container">
 
             <h4>Subscribe to our newsletter</h4>
-                <form id="form_footer" class="form-group" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;">
+                <form id="form-footer" class="form-group" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;">
                     <input type="text" name="email" class="form-control" placeholder="Your E-Mail" style="max-width:300px;">
                     <button class="btn btn-info btn-md" type="submit" style="margin-left:10px;"
-                            onclick="onSubscribe('subscribe_footer')">
+                            onclick="onSubscribe('subscribe-footer')">
                         Subscribe
                     </button>
                 </form>
-                <div id="subscribe_footer" style="height:1em;"></div>
+                <div id="subscribe-footer" style="height:1em;"></div>
         </div>
         <!-- /.container -->
     </div>
@@ -328,8 +337,6 @@
                     <ul class="list-inline">
                         <li>
                             <a class="text-muted small" href="#">Contact</a>
-                            <!--<p class="small"> Contact us at:-->
-                                <!--<a href="mailto:info@jourmoney.com">info@jourmoney.com</a></p>-->
                         </li>
                         <li class="footer-menu-divider">&sdot;</li>
                         <li>
@@ -348,10 +355,6 @@
                         <li>
                             <a class="text-muted small" href="#">Terms of Service</a>
                         </li>
-                        <!--<li class="footer-menu-divider">&sdot;</li>-->
-                        <!--<li>-->
-                            <!--<a href="#contact" class="text-muted small">Contact</a>-->
-                        <!--</li>-->
                     </ul>
                     <p class="copyright text-muted small">
                         Copyright &copy; eponai 2016. All Rights Reserved
