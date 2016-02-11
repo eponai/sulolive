@@ -31,19 +31,24 @@
         [:div
          (opts {:style {:display "flex"
                         :flex-direction "column"
-                        :align-items "center"}})
+                        :align-items "flex-start"}})
 
-         [:h3 "Sign in with email"]
+         [:h2 "Welcome!"]
+         [:p "Sign in with email"]
 
-         (if verification-sent
-           [:p.small "Check your inbox for a fancy sign in link!"])
          [:input.form-control#email-input
           (opts {:value     input-email
                  :on-change (on-input-change this :input-email)
                  :style {:max-width 300}
                  :placeholder "youremail@example.com"})]
 
-         [:br]
+         [:p
+          (opts {:class "text-success small"
+                 :style {:line-height "2em"}})
+          (if verification-sent
+            "Check your inbox for a fancy sign in link!"
+            "")]
+
          [:div
           [:button
            {:class    "btn btn-info btn-lg"
@@ -52,9 +57,10 @@
                         (om/transact! this `[(signup/email ~st)]))}
            "Sign In"]]
 
+         [:br]
          ;; --------- Social Buttons
-         [:h3 "or"]
-         [:hr.intro-divider]
+         [:h4 "or"]
+         [:hr.intro-divider-landing]
          [:form
           {:action "/api/login/fb"
            :method "POST"}
@@ -79,42 +85,45 @@
     (let [{:keys [::fixed-email user-uuid]} (om/props this)
           {:keys [input-name input-email]} (om/get-state this)]
       (html
-        [:form#sign-in-form
-         {:action "/api/login/create"
-          :method "POST"}
-         [:label
-          {:for "email-input"}
-          "Email:"]
+        [:div
+         [:h2 "Welcome!"]
 
-         [:input.form-control#email-input
-          {:value     input-email
-           :on-change (on-input-change this :input-email)
-           :name      "user-email"}]
+         [:form.form-group#sign-in-form
+          {:action "/api/login/create"
+           :method "POST"}
 
-         [:br]
-         ;[:label
-         ; {:for "name-input"}
-         ; "Name:"]
-         ;
-         ;[:input.form-control#name-input
-         ; {:value input-name
-         ;  :on-change (on-input-change this :input-name)
-         ;  :name "name-input"}]
-         ;[:br]
+          [:label
+           "Email:"]
+          [:input.form-control#email-input
+           (opts {:value       input-email
+                  :on-change   (on-input-change this :input-email)
+                  :placeholder "youremail@example.com"
+                  :name        "user-email"
+                  :style       {:max-width 300}})]
 
-         [:input
-          {:type "hidden"
-           :value (str user-uuid)
-           :name "user-uuid"}]
+          [:br]
+          [:label
+           "Name:"]
 
-         [:input
-          {:class "btn btn-info btn-lg"
-           :type  "submit"
-           :value "Create account"}]
+          [:input.form-control#name-input
+           (opts {:value     input-name
+                  :on-change (on-input-change this :input-name)
+                  :name      "user-name"
+                  :style     {:max-width 300}})]
+          [:br]
 
-         [:br]
-         [:div
-          "By creating an account, I accept JourMoney's"
+          [:input
+           {:type  "hidden"
+            :value (str user-uuid)
+            :name  "user-uuid"}]
+
+          [:input
+           {:class "btn btn-info btn-lg"
+            :type  "submit"
+            :value "Create account"}]]
+
+         [:p.small
+          "By creating an account, you accept JourMoney's"
           [:a {:class "btn btn-link btn-xs"} "Terms of Service"]
           " and "
           [:a {:class "btn btn-link btn-xs"} "Privacy Policy"]]]))))
