@@ -9,7 +9,8 @@
             [eponai.common.parser.util :as parser.util]
             [eponai.server.parser.response :as parser.resp]
             [taoensso.timbre :refer [debug error trace]]
-            [eponai.server.api :as api]))
+            [eponai.server.api :as api]
+            [clojure.data.json :as json]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -42,12 +43,13 @@
   (POST
     "/newsletter/subscribe" {params :params
                              conn ::m/conn}
+
     (try
       (api/newsletter-subscribe conn (:email params))
-      (r/redirect "/?s=y")
+      (r/response (json/write-str {:message "Thank you for subscribing to our newsletter. We will let you know as soon as we go live."}))
       (catch Exception e
         (prn e)
-        (r/redirect "/?s=n"))))
+        (r/status (r/response (json/write-str {:message "Sorry, something went wrong. Please try again in a little while."})) 500))))
 
   (route/resources "/")
   (route/not-found "Not found"))
