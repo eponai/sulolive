@@ -4,7 +4,7 @@
             [datomic.api :as d]
             [eponai.common.database.pull :as pull]
             [eponai.server.datomic.transact :as t]
-            [eponai.common.database.transact :refer [transact]]
+            [eponai.common.database.transact :refer [transact transact-map transact-one]]
             [eponai.server.datomic.pull :as p]
             [eponai.server.http :as h]
             [eponai.server.external.stripe :as stripe]
@@ -15,7 +15,8 @@
             [taoensso.timbre :refer [debug error info]]
             [ring.util.response :as r]
             [environ.core :refer [env]]
-            [clj-time.core :as time])
+            [clj-time.core :as time]
+            [eponai.server.datomic.format :as df])
   (:import (datomic.peer LocalConnection)))
 
 ; Actions
@@ -31,12 +32,14 @@
     (let [user (d/entity (d/db conn) (:db/id (p/user (d/db conn) email)))
           email-chan (chan 1)]
       (if user
-        (let [verification (t/email-verification conn user :verification.status/pending)]
+        (let [verification (df/->db-email-verification user :verification.status/pending)]
+          (transact-one conn verification)
           (info "New verification " (:verification/uuid verification) "for user:" email)
           (put! email-chan verification)
           {:email-chan email-chan
            :status (:user/status user)})
-        (let [verification (t/new-user conn email)]
+        (let [{:keys [verification] :as account} (df/user-account-map email)]
+          (transact-map conn account)
           (debug "Creating new user with email:" email "verification:" (:verification/uuid verification))
           (put! email-chan verification)
           (debug "Done creating new user with email:" email)
@@ -74,11 +77,11 @@
                   :verification.status/pending)
              (do
                (debug "Successful verify for uuid: " (:verification/uuid verification))
-               (t/add conn (:db/id verification) :verification/status :verification.status/verified)
+               (transact conn [[:db/add (:db/id verification) :verification/status :verification.status/verified]])
                (:verification/entity verification))
              (throw (ex "Invalid verification UUID")))
            (do
-            (t/add conn (:db/id verification) :verification/status :verification.status/expired)
+            (transact conn [[:db/add (:db/id verification) :verification/status :verification.status/expired]])
             (throw (ex "Expired verification UUID")))))
       ; If verification does not exist, throw invalid error
       (throw (ex "Verification UUID does not exist")))))
@@ -162,8 +165,19 @@
                        :data user-uuid})))))
 
 (defn newsletter-subscribe [conn email]
-  (let [user (p/user (d/db conn) email)
-        verification (if user
-                       (t/email-verification conn user :verification.status/pending 0)
-                       (t/new-user conn email 0))]
-    (mailchimp/subscribe (env :mail-chimp-api-key) (env :mail-chimp-list-id) email (:verification/uuid verification))))
+  (let [db (d/db conn)
+        user (p/user db email)
+        subscribe-fn (fn [verification]
+                       (mailchimp/subscribe (env :mail-chimp-api-key)
+                                            (env :mail-chimp-list-id)
+                                            email
+                                            (:verification/uuid verification)))]
+    (if user
+      (let [verification (df/->db-email-verification user :verification.status/pending 0)]
+        (subscribe-fn verification)
+        (info "Newsletter subscribe successful for existing user, transacting verification into datomic.")
+        (transact-one conn verification))
+      (let [{:keys [verification] :as account} (df/user-account-map email {:verification-time-limit 0})]
+        (subscribe-fn verification)
+        (info "Newsletter subscribe successful, transacting user into datomic.")
+        (transact-map conn account)))))

@@ -16,11 +16,6 @@
      email
      (assoc :user/email email))))
 
-(defn password->db-password [user-entid bcrypt]
-  {:db/id (d/tempid :db.part/user)
-   :password/credential user-entid
-   :password/bcrypt bcrypt})
-
 (defn fb-user-db-user
   [user-id access-token user-eid]
   {:db/id         (d/tempid :db.part/user)
@@ -78,3 +73,18 @@
           :currency/symbol-native  (:symbol_native info)
           :currency/decimal-digits (:decimal_digits info)})
        cur-infos))
+
+(defn user-account-map
+  "Map representing a full new user account to be transacted into datomic.
+  Provide opts to apply when creating account:
+
+  * :verification-time-limit - Time limite (in minutes) that should be used for the email
+                               verification before it expires (0 for infinite).
+  Returns keys #{:user :verification :budget}."
+  ([email]
+   (user-account-map email {}))
+  ([email opts]
+   (let [user (user->db-user email)]
+     {:user         user
+      :verification (->db-email-verification user :verification.status/pending (:verification-time-limit opts))
+      :budget       (db-budget (:db/id user))})))

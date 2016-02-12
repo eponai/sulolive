@@ -8,7 +8,8 @@
             [eponai.common.database.pull :as common.pull]
             [clojure.java.io :as io]
             [eponai.common.database.transact :as transact]
-            [taoensso.timbre :refer [debug error info]])
+            [taoensso.timbre :refer [debug error info]]
+            [eponai.server.datomic.format :as f])
   (:import (java.util UUID)))
 
 (def currencies {:THB "Thai Baht"
@@ -64,7 +65,7 @@
        (edn/read-string {:readers *data-readers*})))
 
 (defn add-verified-user [conn email]
-  (server.transact/new-user conn email)
+  (transact/transact-map conn (f/user-account-map email))
   (debug "New user created with email:" email)
   (let [user (p/user (d/db conn) email)
         verification (->> (common.pull/verifications (d/db conn) (:db/id user) :verification.status/pending)

@@ -20,3 +20,14 @@
                          :message   msg
                          :exception e
                          #?@(:clj [:status :eponai.server.http/service-unavailable])}))))))
+(defn transact-map
+  "Transact a map into datomic, where the keys names the entities to be transacted for developer convenience.
+
+  Will call transact on (vals m)."
+  [conn m]
+  (transact conn (vals m)))
+
+(defn transact-one
+  "Transact a single entity or transaction into datomic"
+  [conn value]
+  (transact conn [value]))

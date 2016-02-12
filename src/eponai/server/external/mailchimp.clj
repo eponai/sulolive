@@ -10,9 +10,7 @@
               :status        "subscribed"
               :list_id       list-id
               :merge_fields  {"UUID" (str uuid)}}
-        _ (prn "Data: " (json/write-str data))
         req (client/post url {:body       (json/write-str data)
                               :basic-auth ["user" api-key]})]
-    (prn "Api key: " req)
     (let [response (json/read-str (:body req) :key-fn keyword)]
-      (prn "Response: " response))))
+      (info "Subscribed user " email))))
