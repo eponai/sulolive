@@ -69,16 +69,34 @@
   (when date
     (f/unparse (f/formatters :date) (ensure-date date))))
 
-(defn budget->db-tx [user-eid input-uuid input-name]
-  {:db/id             (d/tempid :db.part/user)
-   :budget/name       input-name
-   :budget/uuid       input-uuid
-   :budget/created-by user-eid
-   :budget/created-at (date->timestamp (t/now))})
+(defn str->uuid [str-uuid]
+  #?(:clj  (java.util.UUID/fromString str-uuid)
+     :cljs (uuid str-uuid)))
 
-(defn date-str->db-tx
-  "Returns a map representing a date datomic entity for the specified date in
-  string format yyyy-MM-dd."
+;; -------------------------- Database entities -----------------------------
+
+(defn budget
+  "Create budget db entity belonging to user with :db/id user-eid.
+
+  Provide opts including keys that should be specifically set. Will consider keys:
+  * :budget/name - name of this budget, default value is 'Default'.
+  * :budget/created-at - timestamp if when budget was created, default value is now.
+  * :budget/uuid - UUID to assign to this budget entity, default will call (d/squuid).
+
+  Returns a map representing a budget entity"
+  ([user-dbid]
+   (budget user-dbid {}))
+  ([user-dbid opts]
+   {:db/id             (d/tempid :db.part/user)
+    :budget/uuid       (or (:budget/uuid opts) (d/squuid))
+    :budget/created-by user-dbid
+    :budget/created-at (or (:budget/created-at opts) (c/to-long (t/now)))
+    :budget/name       (or (:budget/name opts) "Default")}))
+
+(defn date
+  "Create a date entity.
+
+  Takes a \"yyyy-MM-dd\" string, returns a map representing a date entity."
   [date-str]
   {:pre [(string? date-str)]}
   (let [date (ymd-string->date date-str)]
@@ -89,48 +107,43 @@
      :date/day       (t/day date)
      :date/timestamp (date->timestamp date)}))
 
-(defn tags->db-tx
-  "Returns datomic entities representing tags, given a vector of tag names."
+(defn tags
+  "Create a collection of tag entities, given a colleciton of strings."
   [tags]
   (map (fn [n] {:db/id          (d/tempid :db.part/user)
                 :tag/name       n}) tags))
 
-(defn str->uuid [str-uuid]
-  #?(:clj  (java.util.UUID/fromString str-uuid)
-     :cljs (uuid str-uuid)))
+(defn transaction
+  "Create a transaction entity for the given input. Will replace the name space of the keys to the :transaction/ namespace
 
-(defn user-transaction->db-entity
-  "Takes a user input transaction and converts into a datomic entity.
-  A conversion function will be applied on the values for the following
-  keys #{:currency :date :tags :amount :uuid} as appropriate for the database.
-  All keys will be prefixed with 'transaction/' (e.g. :name -> :transaction/name)"
-  [user-tx]
-  (let [conv-fn-map {:transaction/currency (fn [c] [:currency/code c])
-                     :transaction/date     (fn [d] (date-str->db-tx d))
-                     :transaction/tags     (fn [t] (tags->db-tx t))
-                     :transaction/amount   (fn [a] #?(:clj  (bigint a)
-                                                      :cljs (cljs.reader/read-string a)))
-                     :transaction/budget   (fn [b] [:budget/uuid (str->uuid (str b))])}
-        update-fn (fn [m k] (update m k (conv-fn-map k)))]
-    (assoc (reduce update-fn user-tx (keys conv-fn-map))
-      :db/id (d/tempid :db.part/user))))
+  Provide opts for special behavior, will consider keys:
+  * :no-rename - set this key to not rename the namespace of the keys.
 
-(defn input-transaction->db-entity
-  "Takes a user input transaction with namespace :input and converts into a datomic entity.
-  (e.g. :input/title -> :transaction/title etc)
-  Will change the namespace to :transaction and update values for the following keys:
-   #{:input/currency :input/date :input/tags :input/amount :input/budget} as appropriate for the database."
-  [input-transaction]
-  (let [user-tx (reduce (fn [m [k v]]
-                         (assoc m (keyword "transaction" (name k)) v))
-                       {}
-                       input-transaction)
-        conv-fn-map {:transaction/currency (fn [c] [:currency/code c])
-                     :transaction/date     (fn [d] (date-str->db-tx d))
-                     :transaction/tags     (fn [t] (tags->db-tx t))
-                     :transaction/amount   (fn [a] #?(:clj  (bigint a)
-                                                      :cljs (cljs.reader/read-string a)))
-                     :transaction/budget   (fn [b] [:budget/uuid (str->uuid (str b))])}
-        update-fn (fn [m k] (update m k (conv-fn-map k)))]
-    (assoc (reduce update-fn user-tx (keys conv-fn-map))
-      :db/id (d/tempid :db.part/user))))
+  Calls special functions on following keys to format according to datomic:
+  * :transaction/currency - takes a currency code string, returns a currency entity.
+  * :transaction/date - takes a \"yyy-MM-dd\" string, returns a date entity.
+  * :transaction/tags - takes a collections of strings, returns a collection of tag entities.
+  * :transaction/amount - takes a number string, returns a number.
+  * :transaction/budget - takes a string UUID, returns a lookup ref.
+
+  Returns a map representing a transaction entity"
+  ([input]
+    (transaction input {}))
+  ([input opts]
+   (let [user-tx (if (:no-rename opts)
+                   input
+                   (reduce (fn [m [k v]]
+                             (assoc m (keyword "transaction" (name k)) v))
+                           {}
+                           input))
+         conv-fn-map {:transaction/currency (fn [c] [:currency/code c])
+                      :transaction/date     (fn [d] (date d))
+                      :transaction/tags     (fn [ts] (tags ts))
+                      :transaction/amount   (fn [a] #?(:clj  (bigint a)
+                                                       :cljs (cljs.reader/read-string a)))
+                      :transaction/budget   (fn [b] [:budget/uuid (str->uuid (str b))])}
+         update-fn (fn [m k] (update m k (conv-fn-map k)))
+         transaction (reduce update-fn user-tx (keys conv-fn-map))]
+
+     (assoc transaction
+       :db/id (d/tempid :db.part/user)))))

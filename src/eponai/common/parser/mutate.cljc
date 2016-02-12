@@ -26,7 +26,7 @@
                        :mutate     k
                        :params     params})))
     (let [#?@(:clj [currency-chan (chan 1)])
-          db-tx (format/input-transaction->db-entity params)
+          db-tx (format/transaction params)
           _ (validate/valid-user-transaction? db-tx)]
       (transact/transact state [db-tx])
       #?(:clj (go (>! currency-chan (:transaction/date db-tx))))
@@ -43,9 +43,9 @@
   (debug "budget/create for uuid:" input-uuid)
   #?(:cljs {:remote true}
      :clj  {:action (fn []
-                      (transact/transact state [(f/budget->db-tx [:user/uuid (:username auth)]
-                                                                 input-uuid
-                                                                 input-budget-name)])
+                      (transact/transact-one state (f/budget [:user/uuid (:username auth)]
+                                                             {:budget/uuid input-uuid
+                                                              :budget/name input-budget-name}))
                       true)}))
 
 (defmethod mutate 'signup/email

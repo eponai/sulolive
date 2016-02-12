@@ -4,7 +4,7 @@
             [datomic.api :as d]
             [environ.core :refer [env]]
             [taoensso.timbre :refer [debug error info]]
-            [eponai.server.datomic.pull :as p]
+            [eponai.common.database.pull :as p]
             [hiccup.page :refer [xhtml]]
             [garden.core :refer [css]]
             [garden.stylesheet :as g]))
@@ -59,7 +59,7 @@
     (let [db (d/db conn)
           uuid (:verification/uuid verification)]
 
-      (cond (p/verification db '[:verification/value] (str uuid))
+      (cond (p/lookup-entity db [:verification/uuid uuid])
             (send-email (smtp)
                         (:verification/value verification)
                         uuid

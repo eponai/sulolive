@@ -12,5 +12,5 @@
   (let [schema# (datomic_dev/read-schema-file)
         conn# (datomic_dev/create-new-inmemory-db "read-datomic-schema")
         _ (d/transact conn# schema#)
-        inlined# (into [] (pull/schema-with-inline-values (d/db conn#)))]
+        inlined# (into [] (pull/schema (d/db conn#)))]
     inlined#))

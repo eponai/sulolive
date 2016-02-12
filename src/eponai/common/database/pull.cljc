@@ -43,21 +43,6 @@
 (defn pull [db pattern eid]
   (do-pull d/pull db pattern eid))
 
-(defn verifications
-  [db user-db-id status]
-  {:pre [(number? user-db-id)
-         (keyword? status)]}
-  (q '[:find [?v ...]
-           :in $ ?u ?s
-           :where
-           [?v :verification/entity ?u]
-           [?u :user/email ?e]
-           [?v :verification/value ?e]
-           [?v :verification/status ?s]]
-         db
-         user-db-id
-         status))
-
 (defn transactions
   [db user-uuid]
   (q '[:find [?t ...]
@@ -85,6 +70,14 @@
     (apply q query
        db
        (map second symbol-seq))))
+
+(defn lookup-entity
+  "Pull full entity with for the specified lookup ref. (Needs to be a unique attribute in lookup ref).
+
+  Returns entity matching the lookupref, (nil if no provided or no entity exists)."
+  [db lookup-ref]
+  (when lookup-ref
+    (d/entity db (:db/id (pull db [:db/id] lookup-ref)))))
 
 (defn one-with
   "Used the same way as all-with. Returns one entity id."
@@ -155,3 +148,18 @@
                  '[?date :date/timestamp ?timestamp]
                  `[(~compare ~'?timestamp ~filter-sym)]]
        :symbols {filter-sym date-time}})))
+
+(defn verifications
+  [db user-db-id status]
+  {:pre [(number? user-db-id)
+         (keyword? status)]}
+  (q '[:find [?v ...]
+       :in $ ?u ?s
+       :where
+       [?v :verification/entity ?u]
+       [?u :user/email ?e]
+       [?v :verification/value ?e]
+       [?v :verification/status ?s]]
+     db
+     user-db-id
+     status))

@@ -53,7 +53,7 @@
 (defmethod read :datascript/schema
   [{:keys [db]} _ _]
   #?(:clj  {:value (-> db
-                       server.pull/schema-with-inline-values
+                       server.pull/schema
                        eponai.datascript/schema-datomic->datascript)}
      :cljs {:remote true}))
 

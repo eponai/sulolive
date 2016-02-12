@@ -30,9 +30,10 @@
 
 (deftest filters
   (let [conn (util/new-db)
-        _ (d_dev/add-verified-user conn user)
+        budget-uuid (d/squuid)
+        _ (d_dev/add-verified-user-account conn user budget-uuid)
         _ (d_dev/add-currencies conn)
-        _ (d_dev/add-transactions conn user)
+        _ (d_dev/add-transactions conn budget-uuid)
         _ (d_dev/add-conversion-rates conn)
         db (d/db conn)
         auth-db (f/authenticated-db db user)

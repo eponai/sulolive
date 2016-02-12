@@ -1,16 +1,12 @@
 (ns eponai.server.auth.credentials
   (:require [cemerick.friend :as friend]
-            [cemerick.friend.credentials :as creds]
             [datomic.api :as d]
-            [eponai.server.datomic.pull :as p]
-            [eponai.common.database.pull :as pull]
+            [eponai.common.database.pull :as p]
             [eponai.server.http :as h]
-            [eponai.server.datomic.transact :as t]
-            [clj-time.coerce :as c]
-            [clj-time.core :as time]
+            [eponai.common.database.transact :refer [transact transact-map]]
+            [eponai.server.datomic.format :as f]
             [eponai.server.api :as api]
-            [taoensso.timbre :refer [debug error info]])
-  (:import (clojure.lang ExceptionInfo)))
+            [taoensso.timbre :refer [debug error info]]))
 
 ; ---- exceptions
 
@@ -21,10 +17,25 @@
             :data {:input input}}))
 
 (defn ex-user-not-activated [user]
-  (prn "Not activated: " user)
   (ex-info "User not activated."
            {:cause ::authentication-error
             :activate-user user}))
+
+(defn link-fb-user-to-account [conn {:keys [user/email] :as opts}]
+  ;; There's already a user account for the email provided by the FB account,
+  ;; so just link the FB user to the existing account.
+  (if-let [user (p/lookup-entity (d/db conn) [:user/email email])]
+    (let [txs [(f/fb-user user opts)]]
+      ; We already have a user account for the FB email.
+      ; If we had a user with that email, loggin in with FB means it's now verified.
+      (transact conn (conj txs (f/verification user {:verification/status :verification.status/verified}))))
+
+    ;; No user exists, create a new user account
+    (if email
+      ; If we are creating an account and received an email from the FB account, create a new user with verified email.
+      (transact-map conn (f/user-account-map email (assoc opts :verification/status :verification.status/verified)))
+      ; Else create a new account without an email, the user will provide one when creating an account.
+      (transact-map conn (f/user-account-map nil opts)))))
 
 (defn auth-map-for-db-user [user]
   {:identity (:db/id user)
@@ -47,7 +58,7 @@
 (defmethod auth-map :facebook
   [conn {:keys [access_token user_id fb-info-fn] :as params}]
   (if (and user_id access_token fb-info-fn)
-    (if-let [fb-user (p/fb-user (d/db conn) user_id)]
+    (if-let [fb-user (p/lookup-entity (d/db conn) [:fb-user/id user_id])]
       (let [db-user (d/entity (d/db conn) (-> fb-user
                                               :fb-user/user
                                               :db/id))]
@@ -63,8 +74,10 @@
         (debug "Creating new fb-user: " user_id)
         ;; Linking the FB user to u user account. If a user accunt with the same email exists,
         ;; it will be linked. Otherwise, a new user is created.
-        (let [db-after-link (:db-after (t/link-fb-user conn user_id access_token email))
-              fb-user (p/fb-user db-after-link user_id)
+        (let [db-after-link (:db-after (link-fb-user-to-account conn {:user/email email
+                                                             :fb-user/id user_id
+                                                             :fb-user/token access_token}))
+              fb-user (p/lookup-entity db-after-link [:fb-user/id user_id])
               user (d/entity db-after-link (-> fb-user
                                                :fb-user/user
                                                :db/id))]

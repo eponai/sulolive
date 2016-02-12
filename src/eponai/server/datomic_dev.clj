@@ -1,7 +1,6 @@
 (ns eponai.server.datomic_dev
   (:require [datomic.api :as d]
             [environ.core :refer [env]]
-            [eponai.server.datomic.transact :as server.transact]
             [eponai.common.format :as format]
             [clojure.tools.reader.edn :as edn]
             [eponai.server.datomic.pull :as p]
@@ -64,41 +63,41 @@
        slurp
        (edn/read-string {:readers *data-readers*})))
 
-(defn add-verified-user [conn email]
-  (transact/transact-map conn (f/user-account-map email))
-  (debug "New user created with email:" email)
-  (let [user (p/user (d/db conn) email)
-        verification (->> (common.pull/verifications (d/db conn) (:db/id user) :verification.status/pending)
-                          first)]
-    (server.transact/add conn verification :verification/status :verification.status/verified)))
+(defn add-verified-user-account [conn email budget-uuid]
+  (let [account (f/user-account-map email {:verification/status :verification.status/verified
+                                           :budget/uuid budget-uuid})
+        ret (transact/transact-map conn account)]
+    (debug "New user created with email:" email)
+    ret))
 
-(defn add-transactions [conn email]
-  (let [{:keys [budget/uuid]} (p/budget (d/db conn) email)]
-    (->> transactions
-         (map #(assoc % :transaction/budget uuid))
-         (map format/user-transaction->db-entity)
-         ((fn [txs] (debug  "transactions:" txs) txs))
-         (transact/transact conn))))
+(defn add-transactions [conn budget-uuid]
+  (->> transactions
+       (map #(assoc % :transaction/budget budget-uuid))
+       (map #(format/transaction % {:no-rename true}))
+       ((fn [txs] (debug "transactions:" txs) txs))
+       (transact/transact conn)))
 
 (defn add-currencies [conn]
-  (server.transact/currencies conn currencies))
+  (transact/transact conn (f/currencies {:currencies currencies})))
 
 (defn add-conversion-rates [conn]
-  (server.transact/currency-rates conn
-                                  {:date "2015-10-10"
-                                   :rates {:THB 36
-                                           :SEK 8.4}}))
+  (transact/transact conn
+                     (f/currency-rates {:date  "2015-10-10"
+                                           :rates {:THB 36
+                                                   :SEK 8.4}})))
 
 (defn add-data-to-connection [conn]
   (let [schema (read-schema-file)
-        email test-user-email]
+        email test-user-email
+        budget-uuid (d/squuid)]
     (d/transact conn schema)
     (debug "Schema added.")
-    (add-verified-user conn email)
-    (debug "New user created and verified.")
     (add-currencies conn)
     (debug "Currencies added.")
-    (add-transactions conn email)
+
+    (add-verified-user-account conn email budget-uuid)
+    (debug "New user created and verified.")
+    (add-transactions conn budget-uuid)
     (debug "User transactions added.")
     (add-conversion-rates conn)
     (debug "Conversion rates added")))

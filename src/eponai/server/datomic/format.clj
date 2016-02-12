@@ -2,89 +2,132 @@
   (:require [clj-time.core :as t]
             [clj-time.coerce :as c]
             [datomic.api :only [db a] :as d]
-            [eponai.common.format :as common.format]
+            [eponai.common.format :as cf]
             [eponai.server.datomic.pull :as p]))
 
-(defn user->db-user
-  ([]
-    (user->db-user nil))
-  ([email]
-   (cond->
-     {:db/id       (d/tempid :db.part/user)
-      :user/uuid   (d/squuid)
-      :user/status :user.status/new}
-     email
-     (assoc :user/email email))))
+;;; -------------------- Format to entities ----------------
 
-(defn fb-user-db-user
-  [user-id access-token user-eid]
-  {:db/id         (d/tempid :db.part/user)
-   :fb-user/id    user-id
-   :fb-user/token access-token
-   :fb-user/user  user-eid})
+(defn currency-rates
+  "Create conversion entities from the given data.
 
-(defn ->db-email-verification
-  ([entity status]
-    (->db-email-verification entity status nil))
-  ([entity status time-limit]
-   {:db/id                   (d/tempid :db.part/user)
-    :verification/status     status
-    :verification/created-at (c/to-long (t/now))
-    :verification/uuid       (d/squuid)
-    :verification/entity     (:db/id entity)
-    :verification/attribute  :user/email
-    :verification/value      (:user/email entity)
-    :verification/time-limit (or time-limit 15)}))
+  Takes a map with data (from OpenExchangeRates) of the form:
+  {:date \"2010-10-10\" :rates {:SEK 8.3, :USD 1, :NOK 8}}
 
-(defn db-budget [user-eid]
-  {:db/id             (d/tempid :db.part/user)
-   :budget/uuid       (d/squuid)
-   :budget/created-by user-eid
-   :budget/created-at (c/to-long (t/now))
-   :budget/name       "Default"})
-
-(defn cur-rates->db-txs
-  "Returns a vector with datomic entites representing a currency conversions
-  for the given date. m should be a  map with timestamp and
-  rates of the form {:date \"yyyy-MM-dd\" :rates {:code rate ...}}"
+  Returns a sequence of conversion entities."
   [data]
   (let [map-fn (fn [[code rate]]
                  {:db/id               (d/tempid :db.part/user)
-                  :conversion/date     (common.format/date-str->db-tx (:date data))
+                  :conversion/date     (cf/date (:date data))
                   :conversion/currency [:currency/code (name code)]
                   :conversion/rate     (bigdec rate)})]
     (map map-fn (:rates data))))
 
-(defn curs->db-txs
-  "Returns a sequence of currency datomic entries for the given map representing
-  currencies of the form {:code \"name\" ...}."
-  [currencies]
-  (let [map-fn (fn [[c n]] {:db/id         (d/tempid :db.part/user)
-                            :currency/code (name c)
-                            :currency/name n})]
-    (map map-fn currencies)))
+(defn currencies
+  "Create currency entities from the given data.
 
-(defn cur-infos->db-txs
-  [cur-infos]
-  (map (fn [info]
-         {:db/id                   (d/tempid :db.part/user)
-          :currency/code           (:code info)
-          :currency/symbol         (:symbol info)
-          :currency/symbol-native  (:symbol_native info)
-          :currency/decimal-digits (:decimal_digits info)})
-       cur-infos))
+  Provide opts including keys for what information is available. Will consider keys
+  * :currencies - Takes a data map of the form:
+  {:SEK \"Swedish Krona\", :USD \"US Dollar\", \":NOK \"Norwegian Krona\"}.
+
+  * :currency-infos - Takes data sequence of the form
+  ({:symbol \"SEK\", :symbol_native \"kr\", :decimal_digits 2, :rounding 0.0, :code \"SEK\"}
+  {:symbol \"$\", :symbol_native \"$\", :decimal_digitls 2, :rounding 0.0, :code \"USD\"})
+
+  Returns a sequence of currency entities."
+  [opts]
+  (let [{:keys [currencies
+                currency-infos]} opts]
+    (cond currencies
+          (let [currency-fn (fn [[c n]] {:db/id         (d/tempid :db.part/user)
+                                         :currency/code (name c)
+                                         :currency/name n})]
+            (map currency-fn currencies))
+
+          currency-infos
+          (let [currency-info-fn (fn [info]
+                                   {:db/id                   (d/tempid :db.part/user)
+                                    :currency/code           (:code info)
+                                    :currency/symbol         (:symbol info)
+                                    :currency/symbol-native  (:symbol_native info)
+                                    :currency/decimal-digits (:decimal_digits info)})]
+            (map currency-info-fn currency-infos)))))
+
+;; ------------------------ Create new entities -----------------
+
+(defn user
+  "Create user db entity.
+
+  Provide opts including keys that should be specifically set. Will consider keys:
+  * :user/status - Activation status of this user, default is :user.status/new.
+
+  Returns a map representing a user entity."
+  [email & [opts]]
+  (cond->
+    {:db/id       (d/tempid :db.part/user)
+     :user/uuid   (d/squuid)
+     :user/status (or (:user/status opts) :user.status/new)}
+    email
+    (assoc :user/email email)))
+
+(defn fb-user
+  "Create fb-user entity.
+
+  Provide opts including keys that should be specifically set. Will consider keys:
+  * :fb-user/id - required, user_id on Facebook.
+  * :fb-user/token - required, access_token from Facebook
+
+  Returns a map representing a fb-user entity, or nil if required keys are missing."
+  [user opts]
+  (let [id (:fb-user/id opts)
+        token (:fb-user/token opts)]
+    (when (and id
+               token)
+      {:db/id         (d/tempid :db.part/user)
+       :fb-user/id    id
+       :fb-user/token token
+       :fb-user/user  (:db/id user)})))
+
+(defn verification
+  "Create verification db entity belonging to the provided entity (user for email verification).
+
+  Provide opts including keys that should be specifically set. Will consider keys:
+  * :verification/status - status of verification, default is :verification.status/pending.
+  * :verification/created-at - timestamp if when verification was created, default value is now.
+  * :verification/attribute - key in this entity with a value that this verification should verify, default is :user/email.
+  * :verification/time-limit - time limit in minutes before this verification should expire, default is 15.
+
+  Returns a map representing a verification entity"
+  [entity & [opts]]
+  (let [attribute (or (:verification/attribute opts) :user/email)]
+    {:db/id                   (d/tempid :db.part/user)
+     :verification/status     (or (:verification/status opts) :verification.status/pending)
+     :verification/created-at (or (:verification/created-at opts) (c/to-long (t/now)))
+     :verification/uuid       (d/squuid)
+     :verification/entity     (:db/id entity)
+     :verification/attribute  attribute
+     :verification/value      (get entity attribute)
+     :verification/time-limit (or (:verification/time-limit opts) 15)}))
 
 (defn user-account-map
-  "Map representing a full new user account to be transacted into datomic.
-  Provide opts to apply when creating account:
+  "Create entities for a user account.
 
-  * :verification-time-limit - Time limite (in minutes) that should be used for the email
-                               verification before it expires (0 for infinite).
-  Returns keys #{:user :verification :budget}."
-  ([email]
-   (user-account-map email {}))
-  ([email opts]
-   (let [user (user->db-user email)]
-     {:user         user
-      :verification (->db-email-verification user :verification.status/pending (:verification-time-limit opts))
-      :budget       (db-budget (:db/id user))})))
+  Refer to followg functions for considered keys:
+  * (user email)
+  * (budget user)
+  * (fb-user user opts) - returns nil if no fb-user opts provided
+  * (verification user opts) - if email is not nil
+
+  Returns a map representing a user account map including keys
+  #{:user :budget :verification(if email not nil) :fb-user(if not nil)}"
+  [email & [opts]]
+  (let [user (user email opts)
+        fb-user (fb-user user opts)]
+    (cond->
+      {:user   user
+       :budget (cf/budget (:db/id user) opts)}
+
+      email
+      (assoc :verification (verification user opts))
+
+      fb-user
+      (assoc :fb-user fb-user))))
