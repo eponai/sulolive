@@ -1,33 +1,30 @@
 (ns eponai.server.api
-  (:require [clojure.core.async :refer [go >! <! chan put!]]
+  (:require [clj-time.core :as time]
+            [clj-time.coerce :as c]
+            [clojure.core.async :refer [go >! <! chan put!]]
             [compojure.core :refer :all]
             [datomic.api :as d]
             [eponai.common.database.pull :as pull]
             [eponai.common.database.transact :refer [transact transact-map transact-one]]
-            [eponai.server.datomic.pull :as p]
-            [eponai.server.http :as h]
+            [eponai.common.format :as common.format]
+            [eponai.server.datomic.format :as datomic.format]
             [eponai.server.external.stripe :as stripe]
             [eponai.server.external.mailchimp :as mailchimp]
-            [clj-time.core :as time]
-            [clj-time.coerce :as c]
-            [eponai.common.format :as f]
+            [eponai.server.http :as http]
             [taoensso.timbre :refer [debug error info]]
-            [ring.util.response :as r]
-            [environ.core :refer [env]]
-            [clj-time.core :as time]
-            [eponai.server.datomic.format :as df])
+            [environ.core :refer [env]])
   (:import (datomic.peer LocalConnection)))
 
-(defn currency-infos
-  "Post information about currencies with a map of the form:
- {:SGD {:symbol \"SGD\", :symbol_native \"$\", :decimal_digits 2, :rounding 0.0, :code \"SGD\"}},"
-  [conn cur-infos]
-  (let [db-cur-codes (->> (p/currencies (d/db conn))
-                          (map #(keyword (:currency/code %)))
-                          set)
-        cur-infos (->> cur-infos
-                       (filter #(contains? db-cur-codes (key %))))]
-    (transact conn (df/currencies {:currency-infos (vals cur-infos)}))))
+;(defn currency-infos
+;  "Post information about currencies with a map of the form:
+; {:SGD {:symbol \"SGD\", :symbol_native \"$\", :decimal_digits 2, :rounding 0.0, :code \"SGD\"}},"
+;  [conn cur-infos]
+;  (let [db-cur-codes (->> (p/currencies (d/db conn))
+;                          (map #(keyword (:currency/code %)))
+;                          set)
+;        cur-infos (->> cur-infos
+;                       (filter #(contains? db-cur-codes (key %))))]
+;    (transact conn (df/currencies {:currency-infos (vals cur-infos)}))))
 
 ; Actions
 
@@ -42,13 +39,13 @@
     (let [user (pull/lookup-entity (d/db conn) [:user/email email])
           email-chan (chan 1)]
       (if user
-        (let [verification (df/verification user)]
+        (let [verification (datomic.format/verification user)]
           (transact-one conn verification)
           (info "New verification " (:verification/uuid verification) "for user:" email)
           (put! email-chan verification)
           {:email-chan email-chan
            :status (:user/status user)})
-        (let [{:keys [verification] :as account} (df/user-account-map email)]
+        (let [{:keys [verification] :as account} (datomic.format/user-account-map email)]
           (transact-map conn account)
           (debug "Creating new user with email:" email "verification:" (:verification/uuid verification))
           (put! email-chan verification)
@@ -73,10 +70,10 @@
          (string? uuid)]}
   (let [ex (fn [msg] (ex-info msg
                               {:cause   ::verification-error
-                               :status  ::h/unathorized
+                               :status  ::http/unathorized
                                :data    {:uuid uuid}
                                :message "The verification link is invalid."}))]
-    (if-let [verification (pull/lookup-entity (d/db conn) [:verification/uuid (f/str->uuid uuid)])]
+    (if-let [verification (pull/lookup-entity (d/db conn) [:verification/uuid (common.format/str->uuid uuid)])]
       (let [verification-time (c/from-long (:verification/created-at verification))
             time-interval (time/in-minutes (time/interval verification-time (time/now)))
             time-limit (:verification/time-limit verification)]
@@ -87,11 +84,11 @@
                   :verification.status/pending)
              (do
                (debug "Successful verify for uuid: " (:verification/uuid verification))
-               (transact conn [[:db/add (:db/id verification) :verification/status :verification.status/verified]])
+               (transact-one conn [:db/add (:db/id verification) :verification/status :verification.status/verified])
                (:verification/entity verification))
              (throw (ex "Invalid verification UUID")))
            (do
-            (transact conn [[:db/add (:db/id verification) :verification/status :verification.status/expired]])
+            (transact-one conn [:db/add (:db/id verification) :verification/status :verification.status/expired])
             (throw (ex "Expired verification UUID")))))
       ; If verification does not exist, throw invalid error
       (throw (ex "Verification UUID does not exist")))))
@@ -110,26 +107,26 @@
   {:pre [(instance? LocalConnection conn)
          (string? user-uuid)
          (string? email)]}
-  (if-let [new-user (pull/lookup-entity (d/db conn) [:user/uuid (f/str->uuid user-uuid)])]
+  (if-let [user (pull/lookup-entity (d/db conn) [:user/uuid (common.format/str->uuid user-uuid)])]
 
     (do
       (when-let [existing-user (pull/lookup-entity (d/db conn) [:user/email email])]
-        (if-not (= (:db/id new-user)
+        (if-not (= (:db/id user)
                    (:db/id existing-user))
           (throw (ex-info "Email already in use."
                           {:cause ::authentication-error
                            :data  {:email email}}))))
 
-      (let [user-db-id (:db/id new-user)
-            new-db (:db-after (transact conn [[:db/add user-db-id :user/email email]]))
-            verifications (pull/verifications new-db user-db-id :verification.status/verified)]
+      (let [user-db-id (:db/id user)
+            email-changed-db (:db-after (transact-one conn [:db/add user-db-id :user/email email]))
+            verifications (pull/verifications email-changed-db user-db-id :verification.status/verified)]
 
         ; There's no verification verified for this email on the user,
         ; the user is probably activating their account with a new email.
         ; Create a new verification and throw exception
         (when-not (seq verifications)
           (debug "User not verified for email:" email "will create new verification for user: " user-db-id)
-          (let [verification (df/verification new-user)]
+          (let [verification (datomic.format/verification user)]
             (transact-one conn verification)
             (throw (ex-info "Email not verified."
                             {:cause        ::authentication-error
@@ -137,11 +134,16 @@
                              :message      "Email not verified"
                              :verification verification}))))
 
-        ; Activate this account and return the user entity
-        (let [activated-db (:db-after (transact conn [[:db/add user-db-id :user/status :user.status/active]
-                                                      [:db/add user-db-id :user/activated-at (c/to-long (time/now))]]))]
-          (debug "Activated account for user-uuid:" user-uuid)
-          (pull/lookup-entity activated-db [:user/email email]))))
+        ; If the user is trying to activate the same account again, just return the user entity.
+        (if (= (:user/status user) :user.status/active)
+          (do
+            (debug "User already activated, returning user.")
+            (pull/lookup-entity (d/db conn) [:user/email email]))
+          ; First time activation, set status to active and return user entity.
+          (let [activated-db (:db-after (transact conn [[:db/add user-db-id :user/status :user.status/active]
+                                                        [:db/add user-db-id :user/activated-at (c/to-long (time/now))]]))]
+            (debug "Activated account for user-uuid:" user-uuid)
+            (pull/lookup-entity activated-db [:user/email email])))))
 
 
     ; The user uuid was not found in the database.
@@ -157,7 +159,7 @@
     (stripe/create-customer conn (env :stripe-secret-key-test) token)
     (catch Exception e
       (throw (ex-info (.getMessage e)
-                      {:status ::h/unprocessable-entity
+                      {:status ::http/unprocessable-entity
                        :data token})))))
 
 (defn stripe-cancel
@@ -172,7 +174,7 @@
                                   (first (:stripe/_user stripe-account))))
     (catch Exception e
       (throw (ex-info (.getMessage e)
-                      {:status ::h/unprocessable-entity
+                      {:status ::http/unprocessable-entity
                        :data user-uuid})))))
 
 (defn newsletter-subscribe [conn email]
@@ -184,11 +186,11 @@
                                             email
                                             (:verification/uuid verification)))]
     (if user
-      (let [verification (df/verification user {:verification/time-limit 0})]
+      (let [verification (datomic.format/verification user {:verification/time-limit 0})]
         (subscribe-fn verification)
         (info "Newsletter subscribe successful for existing user, transacting verification into datomic.")
         (transact-one conn verification))
-      (let [{:keys [verification] :as account} (df/user-account-map email {:verification/time-limit 0})]
+      (let [{:keys [verification] :as account} (datomic.format/user-account-map email {:verification/time-limit 0})]
         (subscribe-fn verification)
         (info "Newsletter subscribe successful, transacting user into datomic.")
         (transact-map conn account)))))

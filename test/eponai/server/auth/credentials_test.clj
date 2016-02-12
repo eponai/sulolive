@@ -172,6 +172,24 @@
                                        {::friend/workflow :activate-account}))
              (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email])))))))
 
+(deftest user-activates-account-already-activated
+  (testing "User activates account which as already activated (could bypass trial period).
+  Should not reset activation time."
+    (let [{:keys [user verification]} (f/user-account-map email
+                                                          {:verification/status :verification.status/verified
+                                                           :user/status :user.status/active
+                                                           :user/activated-at 0})
+          conn (new-db [user
+                        verification])
+          credential-fn (a/credential-fn conn)]
+      (is (= (credential-fn (with-meta {:user-uuid  (str (:user/uuid user))
+                                        :user-email (:user/email user)}
+                                       {::friend/workflow :activate-account}))
+             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]))))
+
+      (is (= (:user/activated-at user)
+             (:user/activated-at (p/lookup-entity (d/db conn) [:user/email email])))))))
+
 (deftest user-activates-account-with-invalid-input
   (testing "Invalid input is coming in to the credential fn, should throw exception."
     (let [conn (new-db)
