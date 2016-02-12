@@ -42,10 +42,8 @@
                           (on-change date))]
      (condp = (.-keyCode e)
        goog.events.KeyCodes.ENTER (fire-on-change)
-       ;; When we're deleting the last char or
        ;; When we're clearing the whole text.
-       goog.events.KeyCodes.BACKSPACE (when (or (= 1 (count text))
-                                                (and (pos? end) (= text (subs text start end))))
+       goog.events.KeyCodes.BACKSPACE (when (and (pos? end) (= text (subs text start end)))
                                         ;; make sure we clear the text box so that Pikaday
                                         ;; doesn't convert the input to a date.
                                         (aset target "value" "")
