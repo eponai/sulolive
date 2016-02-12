@@ -101,6 +101,9 @@
          [:h3
           (opts {:style {:text-align "center"}})
           "Select your plan"]
+         [:p
+          (opts {:style {:text-align "center"}})
+          "Get unlimited access to the app."]
          [:hr.intro-divider]
 
          (if checkout-loaded?

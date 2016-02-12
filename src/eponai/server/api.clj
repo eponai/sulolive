@@ -65,10 +65,11 @@
                                :message "The verification link is invalid."}))]
     (if-let [verification (p/verification (d/db conn) uuid)]
       (let [verification-time (c/from-long (:verification/created-at verification))
-            time-interval (time/in-minutes (time/interval verification-time (time/now)))]
+            time-interval (time/in-minutes (time/interval verification-time (time/now)))
+            time-limit (:verification/time-limit verification)]
         ; If the verification was not used within 15 minutes, it's expired.
-        (if (>= 15 time-interval)
-           ;If verification status is not pending, we've already verified this or it's expired.
+        (if (or (<= time-limit 0) (>= time-limit time-interval))
+          ;If verification status is not pending, we've already verified this or it's expired.
            (if (= (:verification/status verification)
                   :verification.status/pending)
              (do
@@ -161,4 +162,8 @@
                        :data user-uuid})))))
 
 (defn newsletter-subscribe [conn email]
-  (mailchimp/subscribe (env :mail-chimp-api-key) email false))
+  (let [user (p/user (d/db conn) email)
+        verification (if user
+                       (t/email-verification conn user :verification.status/pending 0)
+                       (t/new-user conn email 0))]
+    (mailchimp/subscribe (env :mail-chimp-api-key) (env :mail-chimp-list-id) email (:verification/uuid verification))))

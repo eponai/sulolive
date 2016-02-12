@@ -131,6 +131,13 @@
   :db/doc                "Timestamp of when the verification was created."
   :db.install/_attribute :db.part/db}
 
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :verification/time-limit
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Time limit for when verification will expire."
+  :db.install/_attribute :db.part/db}
+
  ;;verification status
 
  [:db/add #db/id[:db.part/user] :db/ident :verification.status/pending]

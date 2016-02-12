@@ -19,25 +19,30 @@
   [conn entid attr val]
   (transact conn [[:db/retract entid attr val]]))
 
-(defn email-verification [conn entity status]
-  (let [ver (f/->db-email-verification entity status)]
-    (transact conn [ver])
-    ver))
+(defn email-verification
+  ([conn entity status]
+    (email-verification conn entity status nil))
+  ([conn entity status time-limit]
+   (let [ver (f/->db-email-verification entity status time-limit)]
+     (transact conn [ver])
+     ver)))
 
 (defn new-user
   "Transact a new user into datomic. Creates a budget associated with the account,
   and a verification to be used for the email.
 
   Throws ExceptionInfo if transaction failed."
-  [conn email]
-  (when (v/valid-signup? email)
-    (let [db-user (f/user->db-user email)
-          db-verification (f/->db-email-verification db-user :verification.status/pending)
-          db-budget (f/db-budget (db-user :db/id))]
-      (transact conn [db-user
-                      db-verification
-                      db-budget])
-      db-verification)))
+  ([conn email]
+    (new-user conn email nil))
+  ([conn email time-limit]
+   (when (v/valid-signup? email)
+     (let [db-user (f/user->db-user email)
+           db-verification (f/->db-email-verification db-user :verification.status/pending time-limit)
+           db-budget (f/db-budget (db-user :db/id))]
+       (transact conn [db-user
+                       db-verification
+                       db-budget])
+       db-verification))))
 
 (defn link-fb-user [conn user-id access-token email]
   ;; There's already a user account for the email provided by the FB account,

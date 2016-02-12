@@ -106,8 +106,4 @@
     (context "/user" _
       (friend/wrap-authorize user-routes #{::a/user}))
 
-    (POST "/verify" request
-      (r/response
-        (handle-parser-request request)))
-
     (friend/logout (ANY "/logout" [] (r/redirect "/")))))

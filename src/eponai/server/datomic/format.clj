@@ -28,14 +28,18 @@
    :fb-user/token access-token
    :fb-user/user  user-eid})
 
-(defn ->db-email-verification [entity status]
-  {:db/id                   (d/tempid :db.part/user)
-   :verification/status     status
-   :verification/created-at (c/to-long (t/now))
-   :verification/uuid       (d/squuid)
-   :verification/entity     (:db/id entity)
-   :verification/attribute  :user/email
-   :verification/value      (:user/email entity)})
+(defn ->db-email-verification
+  ([entity status]
+    (->db-email-verification entity status nil))
+  ([entity status time-limit]
+   {:db/id                   (d/tempid :db.part/user)
+    :verification/status     status
+    :verification/created-at (c/to-long (t/now))
+    :verification/uuid       (d/squuid)
+    :verification/entity     (:db/id entity)
+    :verification/attribute  :user/email
+    :verification/value      (:user/email entity)
+    :verification/time-limit (or time-limit 15)}))
 
 (defn db-budget [user-eid]
   {:db/id             (d/tempid :db.part/user)
