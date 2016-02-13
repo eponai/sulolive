@@ -30,7 +30,7 @@
   [smtp address uuid user-status]
   (let [link (str "http://localhost:3000/verify/" uuid)
         body {:from    "info@gmail.com"
-              :to      "dianagren@gmail.com"
+              :to      "info@jourmoney.com"
               :subject (subject user-status)
               :body    [:alternative
                         {:type    "text/plain"
