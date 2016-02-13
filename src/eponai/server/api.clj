@@ -178,19 +178,10 @@
                        :data user-uuid})))))
 
 (defn newsletter-subscribe [conn email]
-  (let [db (d/db conn)
-        user (pull/lookup-entity db [:user/email email])
-        subscribe-fn (fn [verification]
-                       (mailchimp/subscribe (env :mail-chimp-api-key)
-                                            (env :mail-chimp-list-id)
-                                            email
-                                            (:verification/uuid verification)))]
-    (if user
-      (let [verification (datomic.format/verification user {:verification/time-limit 0})]
-        (subscribe-fn verification)
-        (info "Newsletter subscribe successful for existing user, transacting verification into datomic.")
-        (transact-one conn verification))
-      (let [{:keys [verification] :as account} (datomic.format/user-account-map email {:verification/time-limit 0})]
-        (subscribe-fn verification)
-        (info "Newsletter subscribe successful, transacting user into datomic.")
-        (transact-map conn account)))))
+  (let [{:keys [verification] :as account} (datomic.format/user-account-map email {:verification/time-limit 0})]
+    (mailchimp/subscribe (env :mail-chimp-api-key)
+                         (env :mail-chimp-list-id)
+                         email
+                         (:verification/uuid verification))
+    (info "Newsletter subscribe successful, transacting user into datomic.")
+    (transact-map conn account)))
