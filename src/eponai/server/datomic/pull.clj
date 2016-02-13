@@ -35,4 +35,4 @@
                       [(.startsWith ^String ?ns "db") ?d]
                       [(not ?d)]
                       ] db)]
-    (map #(d/entity db %) schema)))
+    (map #(into {} (d/entity db (:db/id %))) schema)))
