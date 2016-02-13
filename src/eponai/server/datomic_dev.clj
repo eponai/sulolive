@@ -74,7 +74,6 @@
   (->> transactions
        (map #(assoc % :transaction/budget budget-uuid))
        (map #(format/transaction % {:no-rename true}))
-       ((fn [txs] (debug "transactions:" txs) txs))
        (transact/transact conn)))
 
 (defn add-currencies [conn]
@@ -107,17 +106,18 @@
 (defn create-connection [_]
   (let [uri (env :db-url)]
     (try
-      (d/connect uri)
+      (if (contains? #{nil "" "test"} uri)
+        (let [mem-conn (create-new-inmemory-db)]
+          (info "Setting up inmemory db because uri is set to:" uri)
+          (add-data-to-connection mem-conn)
+          (debug "Successfully set up inmemory db!")
+          mem-conn)
+        (do
+          (info "Setting up remote db.")
+          (d/connect uri)))
       (catch Exception e
-        (debug (str "Exception:" e " when trying to connect to datomic=" uri))
-        (debug "Will try to set up inmemory db...")
-        (try
-          (let [mem-conn (create-new-inmemory-db)]
-            (add-data-to-connection mem-conn)
-            (debug "Successfully set up inmemory db!")
-            mem-conn)
-          (catch Exception e
-            (debug "Exception " e " when trying to set up inmemory db")))))))
+        (error "Exception:" e " when trying to connect to datomic=" uri)
+        (throw e)))))
 
 (defn connect!
   "Returns a connection. Caches the connection when it has successfully connected."
