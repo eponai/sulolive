@@ -5,8 +5,15 @@
     [clojure.set :as s]
     [clojure.walk :as walk]
     #?(:clj
-            [datomic.api :as d]
-       :cljs [datascript.core :as d])))
+    [datomic.api :as d]
+       :cljs [datascript.core :as d]))
+  #?(:clj
+     (:import (clojure.lang ExceptionInfo)
+              (datomic.db Db))))
+
+(defn db-instance? [db]
+  (instance? #?(:clj  Db
+                :cljs datascript.db/DB) db))
 
 (defn- throw-error [e cause data]
   (let [#?@(:clj  [msg (.getMessage e)]
@@ -19,6 +26,9 @@
                      #?@(:clj [:status :eponai.server.http/service-unavailable])}))))
 
 (defn- do-pull [pull-fn db pattern ents]
+  {:pre [(fn? pull-fn)
+         (db-instance? db)
+         (vector? pattern)]}
   (try
     (let [ret (pull-fn db pattern ents)]
       (if-not (= {:db/id nil}
@@ -41,10 +51,14 @@
   (do-pull d/pull-many db pattern eids))
 
 (defn pull [db pattern eid]
+  {:pre [(db-instance? db)
+         (vector? pattern)
+         (or (number? eid) (vector? eid))]}
   (do-pull d/pull db pattern eid))
 
 (defn transactions
   [db user-uuid]
+  {:pre [(db-instance? db)]}
   (q '[:find [?t ...]
        :in $ ?uuid
        :where
@@ -60,7 +74,8 @@
                where-clauses)))
 
 (defn- x-with [db find-pattern {:keys [where symbols]}]
-  {:pre [(or (vector? where) (seq? where))
+  {:pre [(db-instance? db)
+         (or (vector? where) (seq? where))
          (or (nil? symbols) (map? symbols))]}
   (let [symbol-seq (seq symbols)
         query (where->query where
@@ -74,14 +89,23 @@
 (defn lookup-entity
   "Pull full entity with for the specified lookup ref. (Needs to be a unique attribute in lookup ref).
 
-  Returns entity matching the lookupref, (nil if no provided or no entity exists)."
+  Returns entity matching the lookupref, (nil if no lookup ref is provided or no entity exists)."
   [db lookup-ref]
+  {:pre [(db-instance? db)
+         (vector? lookup-ref)]}
   (when lookup-ref
-    (d/entity db (:db/id (pull db [:db/id] lookup-ref)))))
+    (try
+      (d/entity db (:db/id (pull db [:db/id] lookup-ref)))
+      #?(:cljs
+         (catch :default e
+           (prn e)
+           nil)))))
 
 (defn one-with
   "Used the same way as all-with. Returns one entity id."
   [db params]
+  {:pre [(db-instance? db)
+         (map? params)]}
   (x-with db '[?e .] params))
 
 (defn all-with
@@ -94,10 +118,14 @@
 
   Returns all entities matching the symbol ?e."
   [db params]
+  {:pre [(db-instance? db)
+         (map? params)]}
   (x-with db '[[?e ...]] params))
 
 (defn all
   [db query values]
+  {:pre [(db-instance? db)]}
+
   (if (empty? values)
     (q query db)
     (apply (partial q query db) values)))
@@ -139,7 +167,9 @@
 
   Examples for the compare symbol: '= '> '< '>= '>="
   [query-map date compare]
-  {:pre [(map? query-map) (symbol? compare)]}
+  {:pre [(map? query-map)
+         (symbol? compare)]}
+
   (let [date-time (f/date->timestamp date)
         filter-sym (gensym "?time-filter")]
     (merge-query
@@ -151,7 +181,8 @@
 
 (defn verifications
   [db user-db-id status]
-  {:pre [(number? user-db-id)
+  {:pre [(db-instance? db)
+         (number? user-db-id)
          (keyword? status)]}
   (q '[:find [?v ...]
        :in $ ?u ?s
