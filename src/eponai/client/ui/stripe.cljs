@@ -120,6 +120,10 @@
                          :plan-price   90
                          :plan-monthly 7.50
                          :user-email (:user/email current-user)})]]
-           [:div.loader])]))))
+           [:div.loader-circle-black
+            (opts {:style {:top "50%"
+                           :left "50%"
+                           :margin "20em 0"
+                           :position :relative}})])]))))
 
 (def ->Payment (om/factory Payment))

@@ -56,13 +56,11 @@
              [:div (->Modal modal)]
              (when (:ui.singleton.loader/visible loader)
                (prn "Render loader")
-               [:div.loader
-                (opts {:style {:top              0
-                               :bottom           0
-                               :right            0
-                               :left             0
-                               :position         "fixed"
-                               :z-index          1050}})])
+               [:div.loader-circle-black
+                (opts {:style {:top      "50%"
+                               :left     "50%"
+                               :position "fixed"
+                               :z-index  1050}})])
              [:div {:class "content-section-b"}
               (when content-factory
                 (content-factory app-content))]]))))
