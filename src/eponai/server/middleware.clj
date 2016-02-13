@@ -76,7 +76,7 @@
                                     (workflows/facebook (env :facebook-app-id)
                                                         (env :facebook-app-secret))]
              :login-uri            "/signup"
-             :default-landing-uri  "/"
+             :default-landing-uri  "/app"
              :fb-login-uri         "/api/login/fb"
              :email-login-uri      "/api/login/email"
              :activate-account-uri "/api/login/create"}))
