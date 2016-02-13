@@ -155,9 +155,8 @@
 
   Object
   (render [this]
-    (let [{:keys [query/fb-user query/user] :as props} (om/props this)
+    (let [{:keys [query/fb-user query/user]} (om/props this)
           {:keys [fb fail new uuid]} (om/get-params this)]
-      (println "props: " props)
       (cond
         fail
         (html [:div "Could not sign in with email."])
@@ -168,7 +167,7 @@
           (->create-account {:type         :fb
                              :user-uuid    (:user/uuid (:fb-user/user fb-user))
                              :full-name    (:fb-user/name fb-user)
-                             :email        (:fb-user/email fb-user)
+                             :email        (:user/email (:fb-user/user fb-user))
                              ::fixed-email false})
 
           uuid

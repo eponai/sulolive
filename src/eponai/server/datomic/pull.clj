@@ -27,7 +27,7 @@
   "Pulls schema from the db. If data is provided includes only the necessary fields for that data.
   (type/ref, cardinality/many or unique/identity)."
   [db]
-  (let [schema (p/q '[:find [(pull ?e [*]) ...]
+  (let [schema (p/q '[:find [?e ...]
                       :where
                       [?e :db/ident ?id]
                       [:db.part/db :db.install/attribute ?e]
@@ -35,4 +35,4 @@
                       [(.startsWith ^String ?ns "db") ?d]
                       [(not ?d)]
                       ] db)]
-    (map #(into {} (d/entity db (:db/id %))) schema)))
+    (map #(into {} (d/entity db %)) schema)))
