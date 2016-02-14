@@ -9,7 +9,8 @@
             [eponai.common.database.transact :as transact]
             [taoensso.timbre :refer [debug error info]]
             [eponai.server.datomic.format :as f])
-  (:import (java.util UUID)))
+  (:import (java.util UUID)
+           (java.io File)))
 
 (def currencies {:THB "Thai Baht"
                  :SEK "Swedish Krona"
@@ -57,11 +58,19 @@
      (d/create-database uri)
      (d/connect uri))))
 
-(defn read-schema-file []
-  (->> "private/datomic-schema.edn"
-       io/resource
-       slurp
-       (edn/read-string {:readers *data-readers*})))
+(defn schema-files []
+  (let [files (->> "resources/private/datomic/schema/"
+                   io/file
+                   file-seq
+                   (sort-by #(.getName %)))]
+    (remove #(.isDirectory %) files)))
+
+(defn read-schema-files []
+  (let [schemas (map #(->> %
+                           slurp
+                           (edn/read-string {:readers *data-readers*}))
+                     (schema-files))]
+    (reduce concat [] schemas)))
 
 (defn add-verified-user-account [conn email budget-uuid]
   (let [account (f/user-account-map email {:verification/status :verification.status/verified
@@ -86,7 +95,7 @@
                                                    :SEK 8.4}})))
 
 (defn add-data-to-connection [conn]
-  (let [schema (read-schema-file)
+  (let [schema (read-schema-files)
         email test-user-email
         budget-uuid (d/squuid)]
     (d/transact conn schema)

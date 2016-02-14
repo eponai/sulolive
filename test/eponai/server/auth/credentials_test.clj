@@ -8,7 +8,7 @@
             [eponai.server.test-util :refer [new-db]])
   (:import (clojure.lang ExceptionInfo)))
 
-(def schema (read-string (slurp "resources/private/datomic-schema.edn")))
+(def schema (read-string (slurp "resources/private/schema-0.edn")))
 
 (defn test-fb-info
   ([]

@@ -213,17 +213,17 @@
           [:button
            (opts {:class (button-class graph :graph1)
                   :style {:margin 10}
-                  :on-click #(om/update-state! this assoc :graph :graph1)})
+                  :on-click #(om/update-state! this assoc :graph :graph.style/bar)})
            "Bar Chart"]
           [:button
            (opts {:class (button-class graph :graph2)
                   :style {:margin 10}
-                  :on-click #(om/update-state! this assoc :graph :graph2)})
+                  :on-click #(om/update-state! this assoc :graph :graph.style/area)})
            "Area Chart"]
           [:button
            (opts {:class (button-class graph :graph3)
                   :style {:margin 10}
-                  :on-click #(om/update-state! this assoc :graph :graph3)})
+                  :on-click #(om/update-state! this assoc :graph :graph.style/number)})
            "Number"]]
          [:hr]
          (->ChartSettings {:graph graph})

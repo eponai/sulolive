@@ -5,7 +5,7 @@
             [eponai.server.middleware :as m]
             [eponai.common.parser :as parser]))
 
-(def schema (read-string (slurp "resources/private/datomic-schema.edn")))
+(def schema (read-string (slurp "resources/private/schema-0.edn")))
 
 (defn new-db
   "Creates an empty database and returns the connection."
