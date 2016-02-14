@@ -53,7 +53,7 @@
 (defn pull [db pattern eid]
   {:pre [(db-instance? db)
          (vector? pattern)
-         (or (number? eid) (vector? eid))]}
+         (or (number? eid) (vector? eid) (keyword? eid))]}
   (do-pull d/pull db pattern eid))
 
 (defn transactions
@@ -92,7 +92,7 @@
   Returns entity matching the lookupref, (nil if no lookup ref is provided or no entity exists)."
   [db lookup-ref]
   {:pre [(db-instance? db)
-         (vector? lookup-ref)]}
+         (or (vector? lookup-ref) (keyword? lookup-ref))]}
   (when lookup-ref
     (try
       (d/entity db (:db/id (pull db [:db/id] lookup-ref)))
