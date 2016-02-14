@@ -148,10 +148,22 @@
 
 (defn widget-map [input & [opts]]
   (let [function (assoc (:input-function input) :db/id (d/tempid :db.part/user))
+
         report (assoc (:input-report input) :db/id (d/tempid :db.part/user)
-                                            :report/function (:db/id function))
+                                            :report/functions #{(:db/id function)}
+                                            :report/uuid (d/squuid))
+
         graph (assoc (:input-graph input) :db/id (d/tempid :db.part/user)
-                                          :graph/report (:db/id report))]
+                                          :graph/report (:db/id report))
+
+        widget {:db/id        (d/tempid :db.part/user)
+                :widget/uuid  (d/squuid)
+                :widget/graph (:db/id graph)}
+        dashboard-uuid (:dashboard/uuid (:input-dashboard input))]
+    (prn "Dashbiard FORMAT: " (:input-dashboard input))
+    (prn "Dashboard UUID: " dashboard-uuid)
     {:function function
-     :report report
-     :graph graph}))
+     :report   report
+     :graph    graph
+     :widget   widget
+     :add      [:db/add [:dashboard/uuid dashboard-uuid] :dashboard/widgets (:db/id widget)]}))

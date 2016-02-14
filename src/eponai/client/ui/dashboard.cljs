@@ -9,26 +9,6 @@
             [eponai.client.routes :as routes]
             [eponai.client.ui.tag :as tag]))
 
-(defn sum-by-day [transactions]
-  (let [grouped (group-by :transaction/date transactions)
-        sum-fn (fn [[day ts]]
-                 (assoc day :date/sum (reduce #(+ %1 (:transaction/amount %2)) 0 ts)))]
-    (map sum-fn grouped)))
-
-(defn sum-by-tag [transactions]
-  (let [sum-fn (fn [m transaction]
-                 (let [tags (:transaction/tags transaction)]
-                   (reduce (fn [m2 tagname]
-                             (update m2 tagname
-                                     #(if %
-                                       (+ % (:transaction/amount transaction))
-                                       (:transaction/amount transaction))))
-                           m
-                           (if (empty? tags)
-                             ["no tags"]
-                             (map :tag/name tags)))))]
-    (reduce sum-fn {} transactions)))
-
 (defn on-add-tag-key-down [this input-tag]
   (fn [e]
     (when (and (= 13 (.-keyCode e))
@@ -109,9 +89,6 @@
         "Number chart settings"])]))
 
 (defui NewWidget
-  static om/IQuery
-  (query [_]
-    [])
   Object
   (initLocalState [this]
     (let [{:keys [on-close]} (om/props this)]
@@ -120,9 +97,10 @@
        :input-function {:report.function/id :report.function.id/sum}
        :input-report   {:report/group-by :transaction/tags}}))
   (render [this]
-    (let [{:keys [input-graph
-                  on-close] :as state} (om/get-state this)]
-      (prn "state : " state)
+    (let [{:keys [input-graph] :as state} (om/get-state this)
+          {:keys [dashboard
+                  on-close
+                  save-widget] :as props} (om/props this)]
       (html
         [:div.overlay
          (opts {:style {:position         :absolute
@@ -180,38 +158,55 @@
            (opts {:class    "btn btn-info btn-md"
                   :on-click (fn []
                               (prn "on-close: " on-close)
-                              (om/transact! this `[(widget/save ~state)])
+                              (save-widget (-> state
+                                               (dissoc :on-close)
+                                               (assoc :input-dashboard dashboard)))
                               (on-close))
                   :style    {:margin 5}})
-           "Save"]]
-         ]))))
+           "Save"]]]))))
 
-(def ->NewWidget (om/factory NewWidget))
+(def ->NewWidget (om/factory NewWidget {:keyfn #(-> % :dashboard :dashboard/uuid)}))
+
+(defui Widget
+  static om/IQuery
+  (query [_]
+    [:widget/uuid
+     {:widget/graph [:graph/style
+                     {:graph/report [:report/uuid
+                                     :report/group-by
+                                     {:report/functions [:report.function/attribute
+                                                         :report.function/id]}]}]}])
+
+  Object
+  (render [this]
+    (let [{:keys [widget/graph] :as props} (om/props this)]
+      (html
+        [:div (str "Props: " props)]))))
+
+(def ->Widget (om/factory Widget))
 
 (defui Dashboard
   static om/IQuery
   (query [_]
-    ['{:query/one-budget [:budget/uuid
-                          {:transaction/_budget
-                           [:transaction/uuid
-                            {:transaction/date
-                             [:date/ymd
-                              :date/timestamp]}
-                            :transaction/amount
-                            {:transaction/tags [:tag/name]}]}]}])
+    [{:query/dashboard [:db/id
+                        :dashboard/uuid
+                        {:dashboard/widgets (om/get-query Widget)}
+                        {:dashboard/budget [:db/id
+                                            :budget/uuid]}]}])
   Object
   (initLocalState [_]
     {:add-new true})
   (render [this]
-    (let [{:keys [query/one-budget]} (om/props this)
-          {:keys [add-new]} (om/get-state this)
-          sum-by-day (sum-by-day (:transaction/_budget one-budget))
-          sum-by-tag (sum-by-tag (:transaction/_budget one-budget))]
+    (let [{:keys [query/dashboard]} (om/props this)
+          {:keys [add-new]} (om/get-state this)]
       (html
         [:div
          (opts {:style {:position :relative}})
          (when add-new
-           (->NewWidget {:on-close #(om/update-state! this assoc :add-new false)}))
+           (->NewWidget {:on-close  #(om/update-state! this assoc :add-new false)
+                         :dashboard dashboard
+                         :save-widget (fn [input-widget]
+                                        (om/transact! this `[(widget/save ~input-widget)]))}))
          [:button
           {:class "btn btn-default btn-md"
            :on-click #(om/update-state! this assoc :add-new true)}
@@ -220,24 +215,30 @@
           {:class "btn btn-default btn-md"
            :href  (routes/inside "/widget/new")}
           "Edit"]
-         [:p [:span "This is the dashboard for budget "]
-          [:strong (str (:budget/uuid one-budget))]]
-         (d3/->AreaChart {:data         [{:key    "All Transactions"
-                                          :values (reduce #(conj %1
-                                                                 {:name (:date/timestamp %2) ;date timestamp
-                                                                  :value (:date/sum %2)}) ;sum for date
-                                                          []
-                                                          (sort-by :date/timestamp sum-by-day))}]
-                          :width        "100%"
-                          :height       400
-                          :title-axis-y "Amount ($)"})
-         (d3/->BarChart {:data         [{:key    "All Transactions"
-                                         :values (reduce #(conj %1 {:name  (first %2) ;tag name
-                                                                    :value (second %2)}) ;sum for tag
-                                                         []
-                                                         sum-by-tag)}]
-                         :width        "100%"
-                         :height       400
-                         :title-axis-y "Amount ($)"})]))))
+
+         (prn "Widgets: " (:dashboard/widgets dashboard))
+         (map
+           ->Widget
+           (:dashboard/widgets dashboard))
+         ;[:p [:span "This is the dashboard for budget "]
+          ;[:strong (str (:budget/uuid one-budget))]]
+         ;(d3/->AreaChart {:data         [{:key    "All Transactions"
+         ;                                 :values (reduce #(conj %1
+         ;                                                        {:name (:date/timestamp %2) ;date timestamp
+         ;                                                         :value (:date/sum %2)}) ;sum for date
+         ;                                                 []
+         ;                                                 (sort-by :date/timestamp sum-by-day))}]
+         ;                 :width        "100%"
+         ;                 :height       400
+         ;                 :title-axis-y "Amount ($)"})
+         ;(d3/->BarChart {:data         [{:key    "All Transactions"
+         ;                                :values (reduce #(conj %1 {:name  (first %2) ;tag name
+         ;                                                           :value (second %2)}) ;sum for tag
+         ;                                                []
+         ;                                                sum-by-tag)}]
+         ;                :width        "100%"
+         ;                :height       400
+         ;                :title-axis-y "Amount ($)"})
+         ]))))
 
 (def ->Dashboard (om/factory Dashboard))

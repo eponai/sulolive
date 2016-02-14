@@ -71,5 +71,7 @@
 (defmethod mutate 'widget/save
   [{:keys [state]} _ params]
   (let [widget (format/widget-map params)]
-    (transact/transact-map state widget))
-  #?(:cljs {:remote false}))
+    {:action (fn []
+               (transact/transact-map state widget)
+               true)
+     #?@(:cljs [:remote true])}))

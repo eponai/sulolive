@@ -96,15 +96,39 @@
   [& args]
   (apply query-all-transactions args))
 
-(defmethod read :query/one-budget
-  [{:keys [ast db query auth target]} _ params]
-  (let [#?@(:clj  [budget-uuid (:budget-uuid params)]
-            :cljs [entity [:ui/component :ui.component/dashboard]
-                   attr :ui.component.dashboard/active-budget
-                   budget-uuid (get (d/entity db entity) attr)])]
-    (if target
-      ;; Puts the budget-uuid in params for the remote.
-      {target (assoc-in ast [:params :budget-uuid] budget-uuid)}
+;(defmethod read :query/one-budget
+;  [{:keys [ast db query auth target]} _ params]
+;  (let [#?@(:clj  [budget-uuid (:budget-uuid params)]
+;            :cljs [entity [:ui/component :ui.component/dashboard]
+;                   attr :ui.component.dashboard/active-budget
+;                   budget-uuid (get (d/entity db entity) attr)])]
+;    (if target
+;      ;; Puts the budget-uuid in params for the remote.
+;      {target (assoc-in ast [:params :budget-uuid] budget-uuid)}
+;
+;
+;      (let [eid (if budget-uuid
+;                  (p/one-with db #?(:clj  (p/merge-query (p/budget-with-filter budget-uuid)
+;                                                         (p/budget-with-auth (:username auth)))
+;                                    :cljs (p/budget-with-filter budget-uuid)))
+;                  ;; No budget-uuid, grabbing the one with the smallest created-at
+;                  (some->> #?(:clj  (p/budget-with-auth (:username auth))
+;                              :cljs (p/budget))
+;                           (p/all-with db)
+;                           (map #(d/entity db %))
+;                           seq
+;                           (apply min-key :budget/created-at)
+;                           :db/id))]
+;        {:value (when eid (p/pull db query eid))})
+;      )))
+
+(defmethod read :query/dashboard
+  [{:keys [db ast query target auth]} _ {:keys [budget-uuid]}]
+  (let [#?@(:cljs [budget-uuid (-> (d/entity db [:ui/component :ui.component/dashboard])
+                                   :ui.component.dashboard/active-budget)])]
+    (if (= target :remote)
+      {:remote (assoc-in ast [:params :budget-uuid] budget-uuid)}
+
       (let [eid (if budget-uuid
                   (p/one-with db #?(:clj  (p/merge-query (p/budget-with-filter budget-uuid)
                                                          (p/budget-with-auth (:username auth)))
@@ -117,7 +141,8 @@
                            seq
                            (apply min-key :budget/created-at)
                            :db/id))]
-        {:value (when eid (p/pull db query eid))}))))
+        {:value (when eid
+                  (p/pull db query (p/one-with db {:where [['?e :dashboard/budget eid]]})))}))))
 
 (defmethod read :query/all-budgets
   [{:keys [db query auth]} _ _]

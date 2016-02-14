@@ -108,6 +108,11 @@
      :verification/value      (get entity attribute)
      :verification/time-limit (or (:verification/time-limit opts) 15)}))
 
+(defn dashboard [budget-eid]
+  {:db/id            (d/tempid :db.part/user)
+   :dashboard/uuid (d/squuid)
+   :dashboard/budget budget-eid})
+
 (defn user-account-map
   "Create entities for a user account.
 
@@ -121,10 +126,12 @@
   #{:user :budget :verification(if email not nil) :fb-user(if not nil)}"
   [email & [opts]]
   (let [user (user email opts)
+        budget (cf/budget (:db/id user) opts)
         fb-user (fb-user user opts)]
     (cond->
       {:user   user
-       :budget (cf/budget (:db/id user) opts)}
+       :budget budget
+       :dashboard (dashboard (:db/id budget))}
 
       email
       (assoc :verification (verification user opts))

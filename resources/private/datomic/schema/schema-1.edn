@@ -1,18 +1,17 @@
 [
 ;; Dashboard
-; {:db/id                 #db/id[:db.part/db]
-;  :db/ident              :dashboard/uuid
-;  :db/valueType          :db.type/uuid
-;  :db/unique             :db.unique/identity
-;  :db/cardinality        :db.cardinality/one
-;  :db/doc                "Identifier of a dashboard."
-;  :db.install/_attribute :db.part/db}
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :dashboard/uuid
+  :db/valueType          :db.type/uuid
+  :db/unique             :db.unique/identity
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Identifier of a dashboard."
+  :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :dashboard/budget
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
-  :db/unique             :db.unique/identity
   :db/doc                "Budget for this dashboard."
   :db.install/_attribute :db.part/db}
 
@@ -96,13 +95,21 @@
 
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :report/group-by
-  :db/valueType          :db.type/ref
+  :db/valueType          :db.type/keyword
   :db/cardinality        :db.cardinality/one
   :db/doc                "Filter that this report will apply to the data."
   :db.install/_attribute :db.part/db}
 
 
  ;; ------------------- Function
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :report.function/uuid
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "Function identifier."
+  :db.install/_attribute :db.part/db}
+
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :report.function/id
   :db/valueType          :db.type/keyword
