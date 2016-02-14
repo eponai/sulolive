@@ -199,9 +199,9 @@
   :db/doc                "Widgets on this dashboard."
   :db.install/_attribute :db.part/db}
 
- ;; Dashboard.widget
+ ;; Widget
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :dashboard.widget/uuid
+  :db/ident              :widget/uuid
   :db/valueType          :db.type/uuid
   :db/cardinality        :db.cardinality/one
   :db/unique             :db.unique/identity
@@ -209,14 +209,14 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :dashboard.widget/index
+  :db/ident              :widget/index
   :db/valueType          :db.type/long
   :db/cardinality        :db.cardinality/one
   :db/doc                "Index of this widget on its dashboard."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :dashboard.widget/graph
+  :db/ident              :widget/graph
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
   :db/doc                "Graph this widget contains."
@@ -255,11 +255,60 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :report/categories
-  :db/valueType          :db.type/uuid
+  :db/ident              :report/dataset
+  :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
-  :db/unique             :db.unique/identity
-  :db/doc                "Report identifier."
+  :db/doc                "Report dataset."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :report/functions
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/many
+  :db/doc                "Functions that this report will use."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :report/filter
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Filter that this report will apply to the data."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :report/group-by
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Filter that this report will apply to the data."
+  :db.install/_attribute :db.part/db}
+
+ ;; Functions
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :report.function/id
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Function identifier."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :report.function/attribute
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Which transaction attribute to apply the function (e.g. amount, currency)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :report.function/group-by
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "What transaction attribute that should be grouped (e.g. currency, tags)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :report.function/label
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "User specified label for this function."
   :db.install/_attribute :db.part/db}
 
  ;; transactions
