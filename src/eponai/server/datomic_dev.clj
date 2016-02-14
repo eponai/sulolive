@@ -59,11 +59,10 @@
      (d/connect uri))))
 
 (defn list-schema-files []
-  (let [files (->> "resources/private/datomic/schema/"
-                   io/file
-                   file-seq
-                   (sort-by #(.getName %)))]
-    (remove #(.isDirectory %) files)))
+  (for [i (range)
+        :let [schema (io/resource (str "private/datomic/schema/schema-" i ".edn"))]
+        :while schema]
+    schema))
 
 (defn read-schema-files
   ([] (read-schema-files (list-schema-files)))
