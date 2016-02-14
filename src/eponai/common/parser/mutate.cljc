@@ -11,7 +11,8 @@
             [clojure.core.async :refer [go >! chan]])
     #?(:cljs [datascript.core :as d])
     #?(:cljs [om.next :as om])
-            [eponai.common.format :as f]))
+            [eponai.common.format :as f]
+            [datascript.core :as d]))
 
 (defmulti mutate (fn [_ k _] k))
 
@@ -66,3 +67,9 @@
   #?(:cljs {:remote true}
      :clj  {:action (fn []
                       (api/stripe-cancel state (:username auth)))}))
+
+(defmethod mutate 'widget/save
+  [{:keys [state]} _ params]
+  (let [widget (format/widget-map params)]
+    (transact/transact-map state widget))
+  #?(:cljs {:remote false}))

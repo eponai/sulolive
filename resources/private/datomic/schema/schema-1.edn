@@ -71,12 +71,6 @@
   :db/doc                "Report visualized by this graph."
   :db.install/_attribute :db.part/db}
 
- [:db/add #db/id[:db.part/user] :db/ident :graph.style/bar]
- [:db/add #db/id[:db.part/user] :db/ident :graph.style/area]
- [:db/add #db/id[:db.part/user] :db/ident :graph.style/line]
- [:db/add #db/id[:db.part/user] :db/ident :graph.style/number]
-
-
  ;; ------------------------ Report
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :report/uuid

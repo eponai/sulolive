@@ -127,23 +127,31 @@
   * :transaction/budget - takes a string UUID, returns a lookup ref.
 
   Returns a map representing a transaction entity"
-  ([input]
-    (transaction input {}))
-  ([input opts]
-   (let [user-tx (if (:no-rename opts)
-                   input
-                   (reduce (fn [m [k v]]
-                             (assoc m (keyword "transaction" (name k)) v))
-                           {}
-                           input))
-         conv-fn-map {:transaction/currency (fn [c] [:currency/code c])
-                      :transaction/date     (fn [d] (date d))
-                      :transaction/tags     (fn [ts] (tags ts))
-                      :transaction/amount   (fn [a] #?(:clj  (bigint a)
-                                                       :cljs (cljs.reader/read-string a)))
-                      :transaction/budget   (fn [b] [:budget/uuid (str->uuid (str b))])}
-         update-fn (fn [m k] (update m k (conv-fn-map k)))
-         transaction (reduce update-fn user-tx (keys conv-fn-map))]
+  [input & [opts]]
+  (let [user-tx (if (:no-rename opts)
+                  input
+                  (reduce (fn [m [k v]]
+                            (assoc m (keyword "transaction" (name k)) v))
+                          {}
+                          input))
+        conv-fn-map {:transaction/currency (fn [c] [:currency/code c])
+                     :transaction/date     (fn [d] (date d))
+                     :transaction/tags     (fn [ts] (tags ts))
+                     :transaction/amount   (fn [a] #?(:clj  (bigint a)
+                                                      :cljs (cljs.reader/read-string a)))
+                     :transaction/budget   (fn [b] [:budget/uuid (str->uuid (str b))])}
+        update-fn (fn [m k] (update m k (conv-fn-map k)))
+        transaction (reduce update-fn user-tx (keys conv-fn-map))]
 
-     (assoc transaction
-       :db/id (d/tempid :db.part/user)))))
+    (assoc transaction
+      :db/id (d/tempid :db.part/user))))
+
+(defn widget-map [input & [opts]]
+  (let [function (assoc (:input-function input) :db/id (d/tempid :db.part/user))
+        report (assoc (:input-report input) :db/id (d/tempid :db.part/user)
+                                            :report/function (:db/id function))
+        graph (assoc (:input-graph input) :db/id (d/tempid :db.part/user)
+                                          :graph/report (:db/id report))]
+    {:function function
+     :report report
+     :graph graph}))
