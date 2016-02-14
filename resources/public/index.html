@@ -32,43 +32,58 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 
     <script language="JavaScript">
-            shots = $('.shot').fadeTo(0, 0.05);
- $('body').scroll(function(d,h) {
-    shots.each(function(i) {
-        a = $(this).offset().top + $(this).height();
-        b = $('#feature1').scrollTop() + $('.container').height();
-        if (a < b) $(this).fadeTo(500,1);
-    });
-});
+
         function onSubscribe(elementId) {
           document.getElementById(elementId).innerHTML = "<div class='loader-circle' />";
         }
 
+        function fadeIn() {
+          /* Check the location of each desired element */
+          $('.fade-in').each( function(i) {
+
+            var center_of_object = $(this).offset().top + ($(this).outerHeight() / 2 / 3);
+            var bottom_of_window = $(window).scrollTop() + $(window).height();
+
+            /* If the object is completely visible in the window, fade it it */
+            if( bottom_of_window > center_of_object ){
+                $(this).animate({'opacity':'1'}, 500);
+            }
+          });
+        }
+
         $(document).ready(function() {
-            $('[data-toggle="popover"]').popover();
-            $.ajaxSetup({
-              type: 'POST',
-              headers: { "cache-control": "no-cache" }
+          $(window).load( function() {
+            fadeIn();
+          });
+
+          $(window).scroll( function() {
+            fadeIn();
+          });
+
+          $('[data-toggle="popover"]').popover();
+          $.ajaxSetup({
+            type: 'POST',
+            headers: { "cache-control": "no-cache" }
+          });
+
+          $('#form-intro').submit(function(e) {
+            e.preventDefault();
+            var dataString = $(this).serialize();
+            $.ajax({
+              type: "POST",
+              url: "/newsletter/subscribe",
+              data: dataString,
+              error: function(response) {
+                document.getElementById('subscribe-intro').innerHTML = "<p class='text-danger small'>" + JSON.parse(response.responseText).message + "</p>";
+              },
+              success: function(response) {
+                document.getElementById('subscribe-intro').innerHTML = "<p class='text-success small'>" + JSON.parse(response).message + "</p>";
+              }
             });
+          });
 
-            $('#form-intro').submit(function(e) {
-              e.preventDefault();
-              var dataString = $(this).serialize();
-              $.ajax({
-                type: "POST",
-                url: "/newsletter/subscribe",
-                data: dataString,
-                error: function(response) {
-                  document.getElementById('subscribe-intro').innerHTML = "<p class='text-danger small'>" + JSON.parse(response.responseText).message + "</p>";
-                  },
-                success: function(response) {
-                  document.getElementById('subscribe-intro').innerHTML = "<p class='text-success small'>" + JSON.parse(response).message + "</p>";
-                  }
-                });
-              });
-
-            $('#form-footer').submit(function(e) {
-              e.preventDefault();
+          $('#form-footer').submit(function(e) {
+            e.preventDefault();
               var dataString = $(this).serialize();
               $.ajax({
                 type: "POST",
@@ -76,12 +91,12 @@
                 data: dataString,
                 error: function(response) {
                   document.getElementById('subscribe-footer').innerHTML = "<p class='text-danger small'>" + JSON.parse(response.responseText).message + "</p>";
-                  },
+                },
                 success: function(response) {
                   document.getElementById('subscribe-footer').innerHTML = "<p class='text-success small'>" + JSON.parse(response).message + "</p>";
-                  }
-                });
+                }
               });
+            });
           });
     </script>
 
@@ -134,7 +149,7 @@
         <div class="container clearfix">
 
             <div class="row">
-                <div class="col-lg-5 col-sm-6">
+                <div class="col-lg-5 col-sm-6 fade-in">
                     <div class="intro-message box">
                         <!--<div class="col-sm-4">-->
                         <h1 style="padding: 20px 0;">Have fun with your money</h1>
@@ -169,7 +184,7 @@
                     <!-- /.intro-message -->
 
                 </div>
-                <div class="col-sm-6 col-lg-5 col-lg-offset-2">
+                <div class="col-sm-6 col-lg-5 col-lg-offset-2 fade-in">
                     <div class="intro-message" style="height:100%;">
                     <!--<img class="img-responsive" src="/style/img/iMac-empty.png">-->
                     </div>
@@ -188,15 +203,14 @@
     <!-- Page Content -->
 
 	<!--<a  name="features"></a>-->
-    <div id="feature-1" class="content-section-b">
+    <div class="content-section-b">
 
         <div class="container clearfix">
             <div class="row">
-                <div class="col-lg-5 col-sm-6">
+                <div class="col-lg-5 col-sm-6 fade-in">
                     <!--<hr class="section-heading-spacer">-->
                     <!--<div class="clearfix"></div>-->
-                    <h2 class="section-heading shot">Ask Anything</h2>
-                    <div class="shot">
+                    <h2 class="section-heading">Ask Anything</h2>
                         <p class="lead">
                             How much are you spending? Where does your money go? How long will it take you to save up for your vacation?
                         </p>
@@ -205,9 +219,8 @@
                             Add your own metadata to your expenses and use that to create your very own
                             graphs and reports over the data that you're interested in.
                         </p>
-                    </div>
                 </div>
-                <div class="col-lg-5 col-lg-offset-2 col-sm-6">
+                <div class="col-lg-5 col-lg-offset-2 col-sm-6 fade-in">
                     <img class="img-responsive" src="/style/img/ipad.png" alt="">
                 </div>
             </div>
@@ -224,7 +237,7 @@
         <div class="container">
 
             <div class="row">
-                <div class="col-lg-5 col-lg-offset-1 col-sm-push-6  col-sm-6">
+                <div class="col-lg-5 col-lg-offset-1 col-sm-push-6 col-sm-6 fade-in">
                     <h2 class="section-heading">
                         Share
                     </h2>
@@ -233,7 +246,7 @@
                         Share your dashboards with them and collaborate on tracking expenses and visualize your habits.
                     </p>
                 </div>
-                <div class="col-lg-5 col-sm-pull-6  col-sm-6">
+                <div class="col-lg-5 col-sm-pull-6  col-sm-6 fade-in">
                     <img class="img-responsive" src="/style/img/dog.png" alt="">
                 </div>
             </div>
@@ -248,7 +261,7 @@
     <div class="content-section-b">
         <div class="container clearfix">
             <div class="row">
-                <div class="col-lg-5 col-sm-6">
+                <div class="col-lg-5 col-sm-6 fade-in">
                     <h2 class="section-heading">Sync across devices</h2>
                     <p class="lead">
                         Add your expenses with your mobile device when you're out and about
@@ -257,7 +270,7 @@
                         just use the app offline and sync up when you get online.
                     </p>
                 </div>
-                <div class="col-lg-5 col-lg-offset-2 col-sm-6">
+                <div class="col-lg-5 col-lg-offset-2 col-sm-6 fade-in">
                     <img class="img-responsive" src="/style/img/phones.png" alt="">
                 </div>
             </div>
@@ -274,50 +287,52 @@
             <div class="row" align="center">
                 <h2 class="section-heading">At a glance</h2>
                 <div id="glance-features">
-                    <div class="row">
-                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
+                    <div class="row fade-in" style="padding:0 20%;">
+                        <div class="col-sm-4 col-sm-offset-0">
                             <h6>Tags</h6>
                             <p class="small">Use hashtags to add context to your expenses and incomes. And use them to build detailed reports.</p>
                         </div>
-                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
+                        <div class="col-sm-4 col-sm-offset-0">
                             <h6>Currencies</h6>
                             <p class="small">
                                 Forget about conversion rates. Input your data in the local currency, and let it be converted automatically using the rate of that day.
                             </p>
                         </div>
-                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
+                        <div class="col-sm-4 col-sm-offset-0">
                             <h6>Use Offline</h6>
                             <p class="small">
                                 No internet access? No problem, just do what you need to do offline and sync up when you get a connection.
                             </p>
                         </div>
-                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
-                            <h6>Share</h6>
-                            <p class="small">
-                                Share budgets and dashboards and collaborate with your friends and family on your expense tracking.
-                            </p>
-                        </div>
                     </div>
-                    <div class="row">
-                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
+                    <div class="row fade-in" style="padding:0 20%;">
+                        <div class="col-sm-4 col-sm-offset-0">
                             <h6>No Passwords</h6>
                             <p class="small">
                                 No need to worry about forgetting your password, just sign in with an email link or your social media account and you're good to go.
                             </p>
                         </div>
-                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
+                        <div class="col-sm-4 col-sm-offset-0">
                             <h6>Budgets</h6>
                             <p class="small">
                                 Do you need to separate your tracking for different use cases? Just create a new budget sheet and do your thing.
                             </p>
                         </div>
-                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
+                        <div class="col-sm-4 col-sm-offset-0">
                             <h6>Setup goals</h6>
                             <p class="small">
                                 Create nice visualizations of your saving goals, and easier follow your progress.
                             </p>
                         </div>
-                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
+                    </div>
+                    <div class="row fade-in" style="padding:0 20%;">
+                        <div class="col-sm-4 col-sm-offset-0">
+                            <h6>Share</h6>
+                            <p class="small">
+                                Share budgets and dashboards and collaborate with your friends and family on your expense tracking.
+                            </p>
+                        </div>
+                        <div class="col-sm-4 col-sm-offset-0">
                             <h6>Dashboards</h6>
                             <p class="small">
                                 Create your personal dashboard for your budgets with the information that you are interested in via tags. Or just use the default graphs.
@@ -333,25 +348,26 @@
     </div>
     <!-- /.content-section-b -->
 
-
     <a  name="contact"></a>
     <div class="banner">
 
         <div class="container clearfix">
+            <div align="center">
+                <!--<div class="col-sm-4 col-sm-offset-4">-->
 
             <h4>Subscribe to our newsletter</h4>
-                <form id="form-footer" class="form-group" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;">
+                <form id="form-footer" class="form-group" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:center;align-items:center;">
                     <input type="text" name="email" class="form-control" placeholder="Your E-Mail" style="max-width:300px;">
                     <button class="btn btn-info btn-md" type="submit" style="margin-left:10px;"
                             onclick="onSubscribe('subscribe-footer')">
                         Subscribe
                     </button>
                 </form>
+                <!--</div>-->
                 <div id="subscribe-footer" style="height:1em;"></div>
+            </div>
         </div>
         <!-- /.container -->
-    </div>
-    <!-- /.banner -->
 
     <!-- Footer -->
     <footer>
@@ -389,6 +405,8 @@
         </div>
         <!-- /.container -->
     </footer>
+    </div>
+    <!-- /.banner -->
 
 </body>
 
