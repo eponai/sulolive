@@ -12,6 +12,8 @@
                  [com.cemerick/url "0.1.1"]
                  [com.datomic/datomic-pro "0.9.5350"
                   :exclusions [joda-time]]
+                 [com.amazonaws/aws-java-sdk-dynamodb "1.9.39" 
+                  :exclusions [joda-time org.clojure/test.check]]
                  [com.draines/postal "1.11.3"]
                  [com.stripe/stripe-java "1.41.0"]
                  [com.taoensso/timbre "4.2.0"]
