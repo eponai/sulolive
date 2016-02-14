@@ -91,10 +91,7 @@
       (let [ret
             (->> (handle-parser-request request)
                  (handle-parser-response request))]
-        (r/response ret))
-      ;(go (send-email-fn (<! (signup conn params))))
-      ;(r/redirect "/sdlogin.html")
-      )
+        (r/response ret)))
 
     (POST "/charge" {params :params
                      conn ::m/conn}

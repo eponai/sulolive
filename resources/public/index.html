@@ -13,22 +13,37 @@
     <title>JourMoney</title>
 
     <!-- Bootstrap Core CSS -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" >
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" >-->
+    <link href="/style/css/bootstrap.min.css" rel="stylesheet" >
 
     <!-- Custom CSS -->
     <link href="/style/css/landing-page.css" rel="stylesheet">
     <link href="/style/css/loader.css" rel="stylesheet">
 
     <!-- Custom Fonts -->
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <!--<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">-->
+    <link href="/style/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Flexbox grid -->
+    <!--<link rel="stylesheet" href="/style/css/flexboxgrid.min.css" type="text/css">-->
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 
     <script language="JavaScript">
+            shots = $('.shot').fadeTo(0, 0.05);
+ $('body').scroll(function(d,h) {
+    shots.each(function(i) {
+        a = $(this).offset().top + $(this).height();
+        b = $('#feature1').scrollTop() + $('.container').height();
+        if (a < b) $(this).fadeTo(500,1);
+    });
+});
         function onSubscribe(elementId) {
           document.getElementById(elementId).innerHTML = "<div class='loader-circle' />";
         }
+
         $(document).ready(function() {
             $('[data-toggle="popover"]').popover();
             $.ajaxSetup({
@@ -76,7 +91,7 @@
 
     <!-- Navigation -->
     <nav class="navbar navbar-default navbar-fixed-top topnav" role="navigation">
-        <div class="container topnav">
+        <div class="container topnav" style="margin-left:0px;">
             <!-- Brand and toggle get grouped for better mobile display -->
             <div class="navbar-header">
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
@@ -93,9 +108,16 @@
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav navbar-right">
+                    <!--<li>-->
+                        <!--<a id="playground" href="#">-->
+                            <!--Playground-->
+                        <!--</a>-->
+                    <!--</li>-->
                     <li>
                         <a href="#" data-toggle="popover" data-container="body" data-placement="bottom" data-trigger="click" data-content="Thanks for your interest! We're not quite ready, but sign up for our newsletter and we'll let you know when we launch.">
-                            Start Free Trial / Sign In
+                            <p class="btn btn-default btn-sm">
+                                Start Free Trial / Sign In
+                            </p>
                         </a>
                     </li>
                 </ul>
@@ -109,37 +131,48 @@
     <!-- Header -->
     <a name="about"></a>
     <div class="intro-header">
-        <div class="container">
+        <div class="container clearfix">
 
             <div class="row">
-                <div class="col-sm-6">
-                    <div class="intro-message">
+                <div class="col-lg-5 col-sm-6">
+                    <div class="intro-message box">
                         <!--<div class="col-sm-4">-->
-                        <h2>Be in control over your finances</h2>
-                        <h4>- know more, save more and reduce stress</h4>
+                        <h1 style="padding: 20px 0;">Have fun with your money</h1>
                         <hr class="intro-divider-landing">
-                        <!--<div class="row">-->
-                            <p style="max-width:500px;">
-                                Track, save, plan and play around with your finances.
+                        <h4>Track, save, plan and play.</h4>
+
+                        <p style="margin: 20px auto;">
                                 What happens to your goals if you spend 10% more on rent?
-                                Does it matter if you spend 10% less on dining out or should you focus on reducing other expenses?
-                                Ask your own questions, visualize the answers and follow your trends in ways that suit you best.</p>
-                        <!--</div>-->
+                                Will you reach your savings goals much faster if you eat cheaper today?
+                                Ask the things that you want to know, and receive your answers in colorful graphs.</p>
                         <br>
-                            <h4>Subscribe to our newsletter and be the first to know when we launch!</h4>
-                        <!--</div>-->
-                            <form id="form-intro" class="form-group" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;width:100%;">
-                                <input type="text" name="email" class="form-control" placeholder="Your E-Mail" style="max-width:300px;">
-                                <br>
-                                <button type="submit" class="btn btn-info btn-md" style="margin-left:10px;"
-                                        onclick="onSubscribe('subscribe-intro')">
-                                    <span class="network-text">Subscribe</span>
-                                </button>
-                            </form>
-                            <div id="subscribe-intro" style="height:1em;"></div>
+                        <h4>Subscribe to our newsletter and be the first to know when we launch!</h4>
+
+                        <form id="form-intro" class="form-group" method="post" action="/newsletter/subscribe">
+                            <div class="row middle-xs">
+                                <div class="col-sm-6">
+                                    <!--<div class="box">-->
+                                        <input type="text" name="email" class="form-control" placeholder="Your E-Mail">
+                                    <!--</div>-->
+                                </div>
+                                <div class="col-sm-3">
+                                    <!--<div class="box">-->
+                                        <button type="submit" class="btn btn-info btn-md" onclick="onSubscribe('subscribe-intro')">
+                                            <span class="network-text">Subscribe</span>
+                                        </button>
+                                    <!--</div>-->
+                                </div>
+                            </div>
+                        </form>
+                        <div id="subscribe-intro" style="height:1em;"></div>
                     </div>
                     <!-- /.intro-message -->
 
+                </div>
+                <div class="col-sm-6 col-lg-5 col-lg-offset-2">
+                    <div class="intro-message" style="height:100%;">
+                    <!--<img class="img-responsive" src="/style/img/iMac-empty.png">-->
+                    </div>
                 </div>
                 <!-- /.col-sm-6 -->
 
@@ -154,22 +187,25 @@
 
     <!-- Page Content -->
 
-	<a  name="features"></a>
-    <div class="content-section-a">
+	<!--<a  name="features"></a>-->
+    <div id="feature-1" class="content-section-b">
 
-        <div class="container">
+        <div class="container clearfix">
             <div class="row">
                 <div class="col-lg-5 col-sm-6">
                     <!--<hr class="section-heading-spacer">-->
                     <!--<div class="clearfix"></div>-->
-                    <h2 class="section-heading">Ask Anything</h2>
-                    <p class="lead">
-                        How much are you spending? Where does your money go? How long will it take you to save up for your vacation?
-                    </p>
-                    <p class="lead">
-                        We don't know what questions you have and that should not hold you back.
-                        Add your own metadata to your expenses and use that to create your very own
-                        graphs and reports over the data that you're interested in.</p>
+                    <h2 class="section-heading shot">Ask Anything</h2>
+                    <div class="shot">
+                        <p class="lead">
+                            How much are you spending? Where does your money go? How long will it take you to save up for your vacation?
+                        </p>
+                        <p class="lead">
+                            We don't know what questions you have and that should not hold you back.
+                            Add your own metadata to your expenses and use that to create your very own
+                            graphs and reports over the data that you're interested in.
+                        </p>
+                    </div>
                 </div>
                 <div class="col-lg-5 col-lg-offset-2 col-sm-6">
                     <img class="img-responsive" src="/style/img/ipad.png" alt="">
@@ -189,8 +225,6 @@
 
             <div class="row">
                 <div class="col-lg-5 col-lg-offset-1 col-sm-push-6  col-sm-6">
-                    <!--<hr class="section-heading-spacer">-->
-                    <!--<div class="clearfix"></div>-->
                     <h2 class="section-heading">
                         Share
                     </h2>
@@ -211,14 +245,10 @@
     </div>
     <!-- /.content-section-b - Uncomment when ready-->
 
-    <div class="content-section-a">
-
-        <div class="container">
-
+    <div class="content-section-b">
+        <div class="container clearfix">
             <div class="row">
                 <div class="col-lg-5 col-sm-6">
-                    <!--<hr class="section-heading-spacer">-->
-                    <!--<div class="clearfix"></div>-->
                     <h2 class="section-heading">Sync across devices</h2>
                     <p class="lead">
                         Add your expenses with your mobile device when you're out and about
@@ -240,34 +270,28 @@
     <!-- /.content-section-a -->
 
     <div class="content-section-b">
-
-        <div class="container">
-
+        <div class="container clearfix">
             <div class="row" align="center">
-                <!--<div class="col-lg-4 col-sm-6 col-lg-offset-4">-->
-                    <!--<hr class="section-heading-spacer">-->
-                    <!--<div class="clearfix"></div>-->
-                <!--<hr class="intro-divider" style="margin-right:0.5em;">-->
                 <h2 class="section-heading">At a glance</h2>
-                <div name="glance-features">
+                <div id="glance-features">
                     <div class="row">
-                        <div class="col-sm-3">
+                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
                             <h6>Tags</h6>
                             <p class="small">Use hashtags to add context to your expenses and incomes. And use them to build detailed reports.</p>
                         </div>
-                        <div class="col-sm-3">
+                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
                             <h6>Currencies</h6>
                             <p class="small">
                                 Forget about conversion rates. Input your data in the local currency, and let it be converted automatically using the rate of that day.
                             </p>
                         </div>
-                        <div class="col-sm-3">
+                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
                             <h6>Use Offline</h6>
                             <p class="small">
                                 No internet access? No problem, just do what you need to do offline and sync up when you get a connection.
                             </p>
                         </div>
-                        <div class="col-sm-3">
+                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
                             <h6>Share</h6>
                             <p class="small">
                                 Share budgets and dashboards and collaborate with your friends and family on your expense tracking.
@@ -275,25 +299,25 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-sm-3">
+                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
                             <h6>No Passwords</h6>
                             <p class="small">
                                 No need to worry about forgetting your password, just sign in with an email link or your social media account and you're good to go.
                             </p>
                         </div>
-                        <div class="col-sm-3">
+                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
                             <h6>Budgets</h6>
                             <p class="small">
                                 Do you need to separate your tracking for different use cases? Just create a new budget sheet and do your thing.
                             </p>
                         </div>
-                        <div class="col-sm-3">
+                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
                             <h6>Setup goals</h6>
                             <p class="small">
                                 Create nice visualizations of your saving goals, and easier follow your progress.
                             </p>
                         </div>
-                        <div class="col-sm-3">
+                        <div class="col-sm-3 col-sm-offset-0 col-xs-10 col-xs-offset-1">
                             <h6>Dashboards</h6>
                             <p class="small">
                                 Create your personal dashboard for your budgets with the information that you are interested in via tags. Or just use the default graphs.
@@ -313,7 +337,7 @@
     <a  name="contact"></a>
     <div class="banner">
 
-        <div class="container">
+        <div class="container clearfix">
 
             <h4>Subscribe to our newsletter</h4>
                 <form id="form-footer" class="form-group" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;">
