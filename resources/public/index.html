@@ -4,11 +4,12 @@
 <head>
 
     <meta name="google-site-verification" content="eWC2ZsxC6JcZzOWYczeVin6E0cvP4u6PE3insn9p76U" />
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8"/>
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <!--<meta name="description" content="">-->
-    <meta name="author" content="eponai hb">
+    <meta name="author" content="eponai hb"/>
 
     <title>JourMoney</title>
 
@@ -31,7 +32,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 
-    <script language="JavaScript">
+    <script>
 
         function onSubscribe(elementId) {
           document.getElementById(elementId).innerHTML = "<div class='loader-circle' />";
@@ -51,7 +52,21 @@
           });
         }
 
+        function isSignPopUpShowing() {
+            return $("#navbar-sign-in").children().length === 2;
+        }
+
         $(document).ready(function() {
+          $("body").on("click", function() {
+            if (isSignPopUpShowing()) {
+              $("#navbar-sign-in").click();
+            }
+          });
+
+          $("#navbar-sign-in").click(function() {
+            return false;
+          });
+
           $(window).load( function() {
             fadeIn();
           });
@@ -105,7 +120,7 @@
 <body>
 
     <!-- Navigation -->
-    <nav class="navbar navbar-default navbar-fixed-top topnav" role="navigation">
+    <nav class="navbar navbar-default navbar-fixed-top topnav">
         <div class="container topnav">
             <div class="nav-content">
                 <a class="navbar-brand topnav" href="">
@@ -114,13 +129,14 @@
                 </a>
                 <!--<ul class="nav navbar-nav">-->
 
-            <!--<li>-->
-                        <a href="#" data-toggle="popover" data-container="body" data-placement="bottom" data-trigger="click" data-content="Thanks for your interest! We're not quite ready, but sign up for our newsletter and we'll let you know when we launch.">
-                            <p class="btn btn-default btn-sm">
-                                Sign In
-                            </p>
-                        </a>
-                    <!--</li>-->
+                <!--<li>-->
+                <a href="#" id="navbar-sign-in" data-toggle="popover" data-container="#navbar-sign-in" data-placement="bottom" data-trigger="click"
+                   data-content="Thanks for your interest! We're not quite ready, but sign up for our newsletter and we'll let you know when we launch.">
+                    <p class="btn btn-default btn-sm">
+                        Sign In
+                    </p>
+                </a>
+                <!--</li>-->
 
             <!--</ul>-->
             </div>
@@ -133,13 +149,12 @@
 
 
     <!-- Header -->
-    <a name="about"></a>
     <div class="intro-header">
         <div class="container clearfix">
 
             <div class="row">
                 <div class="col-lg-5 col-sm-6 fade-in">
-                    <div class="intro-message box">
+                    <div class="intro-message">
                         <!--<div class="col-sm-4">-->
                         <h1 style="padding: 20px 0;">Have fun with your money</h1>
                         <hr class="intro-divider-landing">
@@ -273,7 +288,7 @@
 
     <div class="content-section-b">
         <div class="container clearfix">
-            <div class="row" align="center">
+            <div class="row text-center">
                 <h2 class="section-heading">At a glance</h2>
                 <div id="glance-features">
                     <div class="row fade-in" style="padding:0 20%;">
@@ -337,20 +352,24 @@
     </div>
     <!-- /.content-section-b -->
 
-    <a  name="contact"></a>
+    <!--<a  name="contact"></a>-->
     <div class="banner">
 
         <div class="container clearfix">
-            <div align="center">
+            <div>
                 <!--<div class="col-sm-4 col-sm-offset-4">-->
 
-            <h4>Subscribe to our newsletter</h4>
-                <form id="form-footer" class="form-group" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:center;align-items:center;">
-                    <input type="text" name="email" class="form-control" placeholder="Your E-Mail" style="max-width:300px;">
-                    <button class="btn btn-info btn-md" type="submit" style="margin-left:10px;"
+            <h4 class="text-center">Subscribe to our newsletter</h4>
+                <form id="form-footer" class="form-group row" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;">
+                    <div class="col-sm-5 col-sm-offset-3">
+                    <input type="text" name="email" class="form-control" placeholder="Your E-Mail">
+                    </div>
+                    <div class="col-sm-4" style="float:left;">
+                    <button class="btn btn-info btn-md" type="submit"
                             onclick="onSubscribe('subscribe-footer')">
                         Subscribe
                     </button>
+                    </div>
                 </form>
                 <!--</div>-->
                 <div id="subscribe-footer" style="height:1em;"></div>
