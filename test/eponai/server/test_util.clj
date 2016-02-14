@@ -3,9 +3,10 @@
             [clojure.core.async :as async]
             [eponai.server.auth.credentials :as a]
             [eponai.server.middleware :as m]
-            [eponai.common.parser :as parser]))
+            [eponai.common.parser :as parser]
+            [eponai.server.datomic_dev :as dev]))
 
-(def schema (read-string (slurp "resources/private/schema-0.edn")))
+(def schema (dev/read-schema-files))
 
 (defn new-db
   "Creates an empty database and returns the connection."

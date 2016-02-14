@@ -6,10 +6,8 @@
             [eponai.common.database.pull :as p]
             [eponai.server.api :as api]
             [eponai.server.datomic.format :as f]
-            [eponai.server.test-util :refer [new-db user-email]])
+            [eponai.server.test-util :refer [new-db user-email schema]])
   (:import (clojure.lang ExceptionInfo)))
-
-(def schema (read-string (slurp "resources/private/schema-0.edn")))
 
 ;;;; ------ api/verify-email tests ---------
 
