@@ -42,12 +42,12 @@
           /* Check the location of each desired element */
           $('.fade-in').each( function(i) {
 
-            var center_of_object = $(this).offset().top + ($(this).outerHeight() / 2 / 3);
+            var center_of_object = $(this).offset().top + ($(this).outerHeight() / 6);
             var bottom_of_window = $(window).scrollTop() + $(window).height();
 
             /* If the object is completely visible in the window, fade it it */
             if( bottom_of_window > center_of_object ){
-                $(this).animate({'opacity':'1'}, 500);
+                $(this).animate({'opacity':'1'}, 400);
             }
           });
         }
@@ -171,7 +171,7 @@
                             <div class="row middle-xs">
                                 <div class="col-sm-6">
                                     <!--<div class="box">-->
-                                        <input type="text" name="email" class="form-control" placeholder="Your E-Mail">
+                                        <input type="email" name="email" class="form-control" placeholder="Your E-Mail">
                                     <!--</div>-->
                                 </div>
                                 <div class="col-sm-3">
