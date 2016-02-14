@@ -58,19 +58,21 @@
      (d/create-database uri)
      (d/connect uri))))
 
-(defn schema-files []
+(defn list-schema-files []
   (let [files (->> "resources/private/datomic/schema/"
                    io/file
                    file-seq
                    (sort-by #(.getName %)))]
     (remove #(.isDirectory %) files)))
 
-(defn read-schema-files []
-  (let [schemas (map #(->> %
-                           slurp
-                           (edn/read-string {:readers *data-readers*}))
-                     (schema-files))]
-    (reduce concat [] schemas)))
+(defn read-schema-files
+  ([] (read-schema-files (list-schema-files)))
+  ([schema-files]
+   (let [schemas (map #(->> %
+                            slurp
+                            (edn/read-string {:readers *data-readers*}))
+                      schema-files)]
+     (reduce concat [] schemas))))
 
 (defn add-verified-user-account [conn email budget-uuid]
   (let [account (f/user-account-map email {:verification/status :verification.status/verified
