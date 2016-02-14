@@ -100,7 +100,10 @@
          [:div
           [:a.navbar-brand
            {:href (routes/inside "/")}
-           "JourMoney"]]
+           [:strong
+            "JourMoney"]
+           [:span.small
+            " by eponai"]]]
 
          [:div
           (opts {:style {:display         "flex"
