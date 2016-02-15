@@ -2,6 +2,16 @@
 
 (defmulti sum (fn [k _] k))
 
+(defmethod sum :default
+  [_ transactions attr]
+  (let [sum-fn (fn [s tx]
+                 (let [add-number (if (number? (get tx attr))
+                                    (get tx attr)
+                                    1)]
+                   (+ s add-number)))]
+    {:key    "All Transactions"
+     :values [0 (reduce sum-fn 0 transactions)]}))
+
 (defmethod sum :transaction/date
   [_ transactions attr]
   (let [grouped (group-by :transaction/date transactions)
@@ -52,7 +62,7 @@
 (defmethod calculation :report.function.id/sum
   [{:keys [report/group-by report/function]} _ transactions]
   (let [attribute (:report.function/attribute function)]
-    (sum (or group-by :transaction/tags) transactions (or attribute :transaction/amount))))
+    (sum group-by transactions (or attribute :transaction/amount))))
 
 (defn create [report transactions]
   (let [k (get-in report [:report/function :report.function/id])]

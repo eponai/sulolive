@@ -14,6 +14,48 @@
       (.append "svg")
       (.style #js {:width width :height height})))
 
+(defui NumberChart
+  Object
+  (componentDidMount [this]
+    (let [{:keys [id width height]} (om/props this)
+          svg (build-svg (str "#number-chart-" id) width height)]
+      (om/update-state! this assoc :svg svg)))
+  (componentDidUpdate [this _ _]
+    (let [{:keys [svg]} (om/get-state this)
+          {:keys [data]} (om/props this)
+          [start-val end-val] (:values data)]
+
+      (.. svg
+          (selectAll ".txt")
+          (data #js [end-val])
+          enter
+          (append "text")
+          (text start-val)
+          (attr "class" "txt")
+          (attr "font-size" "4em")
+          (attr "x" "50%")
+          (attr "y" "50%")
+          (attr "text-anchor" "middle")
+          transition
+          (duration 1500)
+          (tween "text" (fn []
+                          (this-as jthis
+                            (let [i (.. js/d3
+                                        (interpolateRound start-val end-val))]
+                              (fn [t]
+
+                                (set! (.-textContent jthis) (i t))))))))))
+
+  (render [this]
+    (let [{:keys [id]} (om/props this)]
+      (html
+        [:div
+         (opts {:id (str "number-chart-" id)
+                :style {:height "100%"
+                        :width "100%"}})]))))
+
+(def ->NumberChart (om/factory NumberChart))
+
 (defui BarChart
   Object
   (componentDidMount [this]

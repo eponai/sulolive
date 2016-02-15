@@ -94,6 +94,18 @@
      [:h6 "Y-axis"]
      (chart-function component input-function)]]])
 
+(defn number-chart-settings [component {:keys [input-function]}]
+  [:div
+   [:h5 "Configuration"]
+   [:div
+    (opts {:style {:display        "flex"
+                   :flex-direction "row"}})
+    [:div
+     (opts {:style {:width "50%"}})
+     [:div
+      [:h6 "Calculate"]
+      (chart-function component input-function)]]]])
+
 (defn chart-settings [component {:keys [input-graph] :as state}]
   (let [{:keys [graph/style]} input-graph]
     [:div
@@ -105,8 +117,7 @@
        (area-chart-settings component state)
 
        (= style :graph.style/number)
-       [:div
-        "Number chart settings"])]))
+       (number-chart-settings component state))]))
 
 (defui NewWidget
   Object
@@ -165,7 +176,7 @@
                     :on-click (fn [] (om/update-state! this
                                                        #(-> %
                                                             (assoc-in [:input-graph :graph/style] :graph.style/number)
-                                                            (assoc-in [:input-report :report/group-by] nil))))})
+                                                            (assoc-in [:input-report :report/group-by] :default))))})
              "Number"]])
          [:hr]
          (chart-settings this state)
@@ -230,7 +241,7 @@
           (opts {:style {:position :absolute
                          :top      0
                          :height   50
-                         :margin   "1em 1em"
+                         :width "100%"
                          :display :flex
                          :flex-direction :row
                          :justify-content :space-between
@@ -251,7 +262,10 @@
                  (d3/->BarChart settings)
 
                  (= style :graph.style/area)
-                 (d3/->AreaChart settings)))]))))
+                 (d3/->AreaChart settings)
+
+                 (= style :graph.style/number)
+                 (d3/->NumberChart settings)))]))))
 
 (def ->Widget (om/factory Widget))
 
