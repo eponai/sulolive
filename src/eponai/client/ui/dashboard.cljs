@@ -119,65 +119,54 @@
        (= style :graph.style/number)
        (number-chart-settings component state))]))
 
+(defn header []
+  "Add new widget")
+
 (defui NewWidget
   Object
   (initLocalState [_]
-    {:input-graph    {:graph/style nil}
+    {:input-graph    {:graph/style :graph.style/bar}
      :input-function {:report.function/id :report.function.id/sum}})
   (render [this]
     (let [{:keys [input-graph] :as state} (om/get-state this)
-          {:keys [dashboard
-                  on-close
-                  save-widget]} (om/get-computed this)]
+          {:keys [on-close
+                  on-save]} (om/props this)]
       (html
         [:div.overlay
-         (opts {:style {:position         :absolute
-                        :top              0
-                        :left             0
-                        :width            "100%"
-                        :height           "100%"
-                        :z-index          10
-                        :background-color "rgba(255,255,255,0.95)"}})
-         [:div
-          (opts {:style {:display         "flex"
-                         :flex-direction  "row"
-                         :justify-content "space-between"}})
-          [:h3 "Add new widget"]
-          [:button
-           {:class "close"
-            :on-click on-close}
-           "X"]]
-         [:hr]
-         [:h4 "Graph"]
+         (opts {:style {:width            "100%"
+                        :height           "100%"}})
          (let [style (:graph/style input-graph)]
 
            [:div
-            (opts {:style {:display "flex"
-                         :flex-direction "row"}})
-            [:button
-             (opts {:class    (button-class style :graph.style/bar)
-                    :style    {:margin 10}
-                    :on-click (fn [] (om/update-state! this
-                                                       #(-> %
-                                                            (assoc-in [:input-graph :graph/style] :graph.style/bar)
-                                                            (assoc-in [:input-report :report/group-by] :transaction/tags))))})
-             "Bar Chart"]
-            [:button
-             (opts {:class    (button-class style :graph.style/area)
-                    :style    {:margin 10}
-                    :on-click (fn [] (om/update-state! this
-                                                       #(-> %
-                                                            (assoc-in [:input-graph :graph/style] :graph.style/area)
-                                                            (assoc-in [:input-report :report/group-by] :transaction/date))))})
-             "Area Chart"]
-            [:button
-             (opts {:class    (button-class style :graph.style/number)
-                    :style    {:margin 10}
-                    :on-click (fn [] (om/update-state! this
-                                                       #(-> %
-                                                            (assoc-in [:input-graph :graph/style] :graph.style/number)
-                                                            (assoc-in [:input-report :report/group-by] :default))))})
-             "Number"]])
+            (opts {:style {:display        "flex"
+                           :flex-direction "row"
+                           :align-items :center}})
+            [:h4
+             (opts {:style {:margin-right "1em"}})
+             "Graph"]
+
+            [:div.btn-group
+             [:button
+              (opts {:class    (button-class style :graph.style/bar)
+                     :on-click (fn [] (om/update-state! this
+                                                        #(-> %
+                                                             (assoc-in [:input-graph :graph/style] :graph.style/bar)
+                                                             (assoc-in [:input-report :report/group-by] :transaction/tags))))})
+              "Bar Chart"]
+             [:button
+              (opts {:class    (button-class style :graph.style/area)
+                     :on-click (fn [] (om/update-state! this
+                                                        #(-> %
+                                                             (assoc-in [:input-graph :graph/style] :graph.style/area)
+                                                             (assoc-in [:input-report :report/group-by] :transaction/date))))})
+              "Area Chart"]
+             [:button
+              (opts {:class    (button-class style :graph.style/number)
+                     :on-click (fn [] (om/update-state! this
+                                                        #(-> %
+                                                             (assoc-in [:input-graph :graph/style] :graph.style/number)
+                                                             (assoc-in [:input-report :report/group-by] :default))))})
+              "Number"]]])
          [:hr]
          (chart-settings this state)
          [:hr]
@@ -194,14 +183,13 @@
           [:button
            (opts {:class    "btn btn-info btn-md"
                   :on-click (fn []
-                              (save-widget (-> state
-                                               (dissoc :on-close)
-                                               (assoc :input-dashboard dashboard)))
+                              (on-save (-> state
+                                           (dissoc :on-close)))
                               (on-close))
                   :style    {:margin 5}})
            "Save"]]]))))
 
-(def ->NewWidget (om/factory NewWidget {:keyfn #(-> % :dashboard :dashboard/uuid)}))
+(def ->NewWidget (om/factory NewWidget))
 
 (defui Widget
   static om/IQuery
@@ -282,7 +270,7 @@
                                                                                        :date/timestamp]}]}]}]}])
   Object
   (initLocalState [_]
-    {:add-new false})
+    {:add-new true})
   (data-report [this report]
     (let [{:keys [query/dashboard]} (om/props this)
           transactions (-> dashboard
@@ -295,16 +283,20 @@
       (prn "Dashboard; " dashboard)
       (html
         [:div
-         (when add-new
-           (->NewWidget (om/computed {}
-                                     {:on-close    #(om/update-state! this assoc :add-new false)
-                                      :dashboard   dashboard
-                                      :save-widget (fn [input-widget]
-                                                     (om/transact! this `[(widget/save ~input-widget)
-                                                                          :query/dashboard]))})))
+         (opts {:style {:position :relative
+                        :box-sizing :border-box}})
+
          [:button
-          {:class "btn btn-default btn-md"
-           :on-click #(om/update-state! this assoc :add-new true)}
+          {:class    "btn btn-default btn-md"
+           :on-click #(om/transact! this `[(ui.modal/show ~{:content :ui.singleton.modal.content/add-widget
+                                                           :on-save       (fn [input-widget]
+                                                                            (om/transact! this `[(widget/save ~(assoc input-widget
+                                                                                                                 :input-dashboard dashboard))
+                                                                                                 :query/dashboard]))
+                                                           :on-close      (fn []
+                                                                            (om/transact! this `[(ui.modal/hide)
+                                                                                                 :query/modal]))})
+                                           :query/modal])}
           "New widget"]
          [:a
           {:class "btn btn-default btn-md"

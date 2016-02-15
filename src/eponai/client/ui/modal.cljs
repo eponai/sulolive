@@ -3,6 +3,7 @@
             [eponai.client.ui :refer-macros [opts]]
             [sablono.core :as html :refer-macros [html]]
             [eponai.client.ui.add_transaction :as add.t :refer [->AddTransaction AddTransaction]]
+            [eponai.client.ui.dashboard :as new-widget :refer [->NewWidget NewWidget]]
             [eponai.client.ui.stripe :refer [->Payment]]
             [garden.core :refer [css]]))
 
@@ -10,19 +11,28 @@
   (let [modal-content (:ui.singleton.modal/content modal)]
 
     (cond (= modal-content :ui.singleton.modal.content/add-transaction)
-          (->AddTransaction (:proxy/add-transaction props)))))
+          (->AddTransaction (:proxy/add-transaction props))
+
+          (= modal-content :ui.singleton.modal.content/add-widget)
+          (->NewWidget {:on-save (:ui.singleton.modal/on-save modal)
+                        :on-close (:ui.singleton.modal/on-close modal)}))))
 
 (defn header [modal]
   (let [modal-content (:ui.singleton.modal/content modal)]
 
     (cond (= modal-content :ui.singleton.modal.content/add-transaction)
-          (add.t/header))))
+          (add.t/header)
+
+          (= modal-content :ui.singleton.modal.content/add-widget)
+          (new-widget/header))))
 
 (defui Modal
   static om/IQuery
   (query [_]
     [{:query/modal [:ui.singleton.modal/visible
-                    :ui.singleton.modal/content]}
+                    :ui.singleton.modal/content
+                    :ui.singleton.modal/on-save
+                    :ui.singleton.modal/on-close]}
      {:proxy/add-transaction (om/get-query AddTransaction)}])
   Object
   (render [this]
