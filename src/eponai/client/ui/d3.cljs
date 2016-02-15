@@ -12,13 +12,12 @@
   (-> js/d3
       (.select element)
       (.append "svg")
-      (.attr "width" width)
-      (.attr "height" height)))
+      (.style #js {:width width :height height})))
 
 (defui BarChart
   Object
   (componentDidMount [this]
-    (let [{:keys [width height id]} (om/props this)
+    (let [{:keys [id width height]} (om/props this)
           svg (build-svg (str "#bar-chart-" id) width height)]
       (om/update-state! this assoc :svg svg)))
 
@@ -32,6 +31,10 @@
           (let [chart (.. js/nv
                           -models
                           discreteBarChart
+                          (margin #js {:right 50
+                                       :left 50
+                                       :top 50
+                                       :bottom 50})
                           (x  #(.-name %))
                           (y #(.-value %))
                           (staggerLabels false)
@@ -51,6 +54,7 @@
                 transition
                 (duration 500)
                 (call chart))
+
             (.. js/nv
                 -utils
                 (windowResize (.-update chart))))))))
@@ -58,14 +62,16 @@
     (let [{:keys [id]} (om/props this)]
       (html
         [:div
-         {:id (str "bar-chart-" id)}]))))
+         (opts {:id (str "bar-chart-" id)
+                :style {:height "100%"
+                        :width "100%"}})]))))
 
 (def ->BarChart (om/factory BarChart))
 
 (defui AreaChart
   Object
   (componentDidMount [this]
-    (let [{:keys [width height id]} (om/props this)
+    (let [{:keys [id width height]} (om/props this)
           svg (build-svg (str "#area-chart-" id) width height)]
       (om/update-state! this assoc :svg svg)))
 
@@ -78,7 +84,10 @@
                       (let [chart (.. js/nv
                                       -models
                                       stackedAreaChart
-                                      (margin #js {:right 100})
+                                      (margin #js {:right 50
+                                                   :left 50
+                                                   :top 50
+                                                   :bottom 50})
                                       (x #(.-name %))
                                       (y #(.-value %))
                                       (useInteractiveGuideline true)
@@ -99,6 +108,7 @@
                             transition
                             (duration 500)
                             (call chart))
+
                         (.. js/nv
                             -utils
                             (windowResize (.-update chart)))))))))
@@ -106,6 +116,8 @@
     (let [{:keys [id]} (om/props this)]
       (html
         [:div
-         {:id (str "area-chart-" id)}]))))
+         (opts {:id (str "area-chart-" id)
+                :style {:height "100%"
+                        :width "100%"}})]))))
 
 (def ->AreaChart (om/factory AreaChart))

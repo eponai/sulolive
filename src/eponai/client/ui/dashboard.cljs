@@ -197,6 +197,8 @@
   static om/IQuery
   (query [_]
     [:widget/uuid
+     :widget/width
+     :widget/height
      {:widget/graph [:graph/style
                      {:graph/report [:report/uuid
                                      :report/group-by
@@ -217,20 +219,32 @@
     (let [{:keys [widget/graph] :as widget} (om/props this)
           {:keys [report-data]} (om/get-state this)]
       (html
-        [:div
-         (str "Data: " report-data)
+        [:div.widget
+         (opts {:style {:border        "1px solid #e7e7e7"
+                        :border-radius "0.5em"
+                        :padding       "50px 0 0 0"
+                        :width         "100%"
+                        :height        300
+                        :position      :relative
+                        :box-sizing    :border-box}})
+         [:p
+          (opts {:style {:position :absolute
+                         :top 0
+                         :height 50
+                         :width "100%"
+                         :margin 0}})
+          (str "Data: " report-data)]
          (let [{:keys [graph/style]} graph
                settings {:data         report-data
                          :id           (str (:widget/uuid widget))
-                         :width        300
-                         :height       50
+                         :width        "100%"
+                         :height       "100%"
                          :title-axis-y "Amount ($)"}]
            (cond (= style :graph.style/bar)
                  (d3/->BarChart settings)
 
                  (= style :graph.style/area)
-                 (d3/->AreaChart settings)
-                 ))]))))
+                 (d3/->AreaChart settings)))]))))
 
 (def ->Widget (om/factory Widget))
 
@@ -259,7 +273,7 @@
           {:keys [add-new]} (om/get-state this)]
       (html
         [:div
-         (opts {:style {:position :relative}})
+         ;(opts {:style {:position :relative}})
          (when add-new
            (->NewWidget (om/computed {}
                                      {:on-close    #(om/update-state! this assoc :add-new false)
@@ -275,33 +289,11 @@
            :href  (routes/inside "/widget/new")}
           "Edit"]
 
-         (prn "Widgets: " (:dashboard/widgets dashboard))
          (map
-           (fn [props]
+           (fn [widget-props]
              (->Widget
-               (om/computed props
-                            {:data-report #(.data-report this %)})
-               ))
-           (:dashboard/widgets dashboard))
-         ;[:p [:span "This is the dashboard for budget "]
-          ;[:strong (str (:budget/uuid one-budget))]]
-         ;(d3/->AreaChart {:data         [{:key    "All Transactions"
-         ;                                 :values (reduce #(conj %1
-         ;                                                        {:name (:date/timestamp %2) ;date timestamp
-         ;                                                         :value (:date/sum %2)}) ;sum for date
-         ;                                                 []
-         ;                                                 (sort-by :date/timestamp sum-by-day))}]
-         ;                 :width        "100%"
-         ;                 :height       400
-         ;                 :title-axis-y "Amount ($)"})
-         ;(d3/->BarChart {:data         [{:key    "All Transactions"
-         ;                                :values (reduce #(conj %1 {:name  (first %2) ;tag name
-         ;                                                           :value (second %2)}) ;sum for tag
-         ;                                                []
-         ;                                                sum-by-tag)}]
-         ;                :width        "100%"
-         ;                :height       400
-         ;                :title-axis-y "Amount ($)"})
-         ]))))
+               (om/computed widget-props
+                            {:data-report #(.data-report this %)})))
+           (:dashboard/widgets dashboard))]))))
 
 (def ->Dashboard (om/factory Dashboard))
