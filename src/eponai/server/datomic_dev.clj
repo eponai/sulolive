@@ -75,6 +75,7 @@
 
 (defn add-verified-user-account [conn email budget-uuid]
   (let [account (f/user-account-map email {:verification/status :verification.status/verified
+                                           :user/status :user.status/active
                                            :budget/uuid budget-uuid})
         ret (transact/transact-map conn account)]
     (debug "New user created with email:" email)

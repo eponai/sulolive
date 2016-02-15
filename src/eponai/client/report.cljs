@@ -47,18 +47,13 @@
                       sum-by-tag)}]))
 
 
-(defmulti calculation (fn [_ function-id _]
-                        (prn "Recieved key: " function-id)
-                        function-id))
-
+(defmulti calculation (fn [_ function-id _] function-id))
 
 (defmethod calculation :report.function.id/sum
   [{:keys [report/group-by report/function]} _ transactions]
-  (prn "Group/by " group-by)
   (let [attribute (:report.function/attribute function)]
     (sum (or group-by :transaction/tags) transactions (or attribute :transaction/amount))))
 
 (defn create [report transactions]
   (let [k (get-in report [:report/function :report.function/id])]
-    (prn "Calculating key " k)
     (calculation report (or k :report.function.id/sum) transactions)))

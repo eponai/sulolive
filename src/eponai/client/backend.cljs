@@ -56,7 +56,6 @@
           ks (keys novelty)]
       (debug "Merge! returning keys:" ks)
       (trace "Merge! transacting novelty:" temp-id-post-merge)
-      (prn "Merging novelty: " novelty)
       {:keys ks
        :next (:db-after @(d/transact conn temp-id-post-merge))})))
 

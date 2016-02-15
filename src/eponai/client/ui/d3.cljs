@@ -66,7 +66,7 @@
   Object
   (componentDidMount [this]
     (let [{:keys [width height id]} (om/props this)
-          svg (build-svg ("#area-chart-" id) width height)]
+          svg (build-svg (str "#area-chart-" id) width height)]
       (om/update-state! this assoc :svg svg)))
 
   (componentDidUpdate [this _ _]
@@ -106,6 +106,6 @@
     (let [{:keys [id]} (om/props this)]
       (html
         [:div
-         :id (str "area-chart-" id)]))))
+         {:id (str "area-chart-" id)}]))))
 
 (def ->AreaChart (om/factory AreaChart))

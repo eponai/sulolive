@@ -69,7 +69,7 @@
   :unsafe-connection
   :this-is-an-antipattern/conn"
   [env & args]
-  (apply read/debug-read
+  (apply read/read
          (dissoc env :state)
          args))
 
