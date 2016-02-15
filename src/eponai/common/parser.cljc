@@ -75,7 +75,9 @@
 
 (defn parser
   ([]
-   (let [parser (om/parser {:read read-without-state
+   (let [parser (om/parser {:read #?(:clj read-without-state
+                                     :cljs (fn [env & args]
+                                             (apply read/read (assoc env :db (d/db (:state env))) args)))
                             :mutate mutate/mutate})]
      #?(:cljs (-> parser
                   wrap-db)
