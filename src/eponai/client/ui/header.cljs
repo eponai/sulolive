@@ -39,7 +39,10 @@
          [:ul
           {:class "dropdown-menu dropdown-menu-right"}
           [:li.dropdown-header
-           (str "Trial: " (max 0 (- 14 (f/days-since (:user/activated-at current-user)))) " days left")]
+           (let [activated-at (:user/activated-at current-user)]
+             (if activated-at
+               (str "Trial: " (max 0 (- 14 (f/days-since activated-at))) " days left")
+               (str "Trial ended")))]
           [:li
            (menu-item this "Buy" (opts {:style {:display "block"
                                                 :margin  "0.5em 0.2em"}
