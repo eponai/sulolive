@@ -55,7 +55,7 @@
                                                           (flatten (vals merged-by-key)))
           ks (keys novelty)]
       (debug "Merge! returning keys:" ks)
-      (trace "Merge! transacting novelty:" temp-id-post-merge)
+      (debug "Merge! transacting novelty:" temp-id-post-merge)
       {:keys ks
        :next (:db-after @(d/transact conn temp-id-post-merge))})))
 
@@ -63,7 +63,7 @@
   [path]
   (fn [{:keys [remote]} cb]
     (let [remote (parser.util/unwrap-proxies remote)]
-      (debug "Sending to remote: " :remote " query: " remote)
+      (debug "Sending query to remote: " remote)
       (go
         (try
           (let [url (str "/api" path)
@@ -76,8 +76,7 @@
 
               (<= 200 status 299)
               (do
-                (debug "Recieved response from remote:" :remote "respone(keys only):" (keys body) "status:" status)
-                (trace "Whole response:" body)
+                (debug "Recieved response from remote:" body "status:" status)
                 (cb body))
 
               :else

@@ -58,6 +58,7 @@
                  [cljsjs/nvd3 "1.8.1-0"]
                  [bidi "1.21.1"]
                  [kibu/pushy "0.3.6"]
+                 [binaryage/devtools "0.5.2"]
 
                  ;; Testing
                  [lein-doo "0.1.6"]

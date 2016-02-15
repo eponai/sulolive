@@ -52,7 +52,7 @@
                   proxy/modal
                   return/content-factory
                   query/loader]} (om/props this)]
-      (prn ":proxy/app-content: " app-content)
+      (debug ":proxy/app-content: " app-content)
       (html [:div
              [:div (->Header header)]
              [:div (->Modal modal)]
