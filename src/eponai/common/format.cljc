@@ -162,8 +162,7 @@
                 :widget/uuid  (d/squuid)
                 :widget/graph (:db/id graph)}
         dashboard-uuid (:dashboard/uuid (:input-dashboard input))]
-    (prn "Dashbiard FORMAT: " (:input-dashboard input))
-    (prn "Dashboard UUID: " dashboard-uuid)
+
     {:function function
      :report   report
      :graph    graph

@@ -183,7 +183,6 @@
           [:button
            (opts {:class    "btn btn-info btn-md"
                   :on-click (fn []
-                              (prn "on-close: " on-close)
                               (save-widget (-> state
                                                (dissoc :on-close)
                                                (assoc :input-dashboard dashboard)))
@@ -223,17 +222,25 @@
          (opts {:style {:border        "1px solid #e7e7e7"
                         :border-radius "0.5em"
                         :padding       "50px 0 0 0"
-                        :width         "100%"
+                        :width         "50%"
                         :height        300
                         :position      :relative
                         :box-sizing    :border-box}})
-         [:p
+         [:div
           (opts {:style {:position :absolute
-                         :top 0
-                         :height 50
-                         :width "100%"
-                         :margin 0}})
-          (str "Data: " report-data)]
+                         :top      0
+                         :height   50
+                         :margin   "1em 1em"
+                         :display :flex
+                         :flex-direction :row
+                         :justify-content :space-between
+                         :align-items :flex-start}})
+          [:p
+           (str "Data: " report-data)]
+          [:a.close
+           {:on-click #(om/transact! this `[(widget/delete ~(select-keys widget [:widget/uuid]))
+                                            :query/dashboard])}
+           "x"]]
          (let [{:keys [graph/style]} graph
                settings {:data         report-data
                          :id           (str (:widget/uuid widget))
@@ -271,15 +278,16 @@
   (render [this]
     (let [{:keys [query/dashboard]} (om/props this)
           {:keys [add-new]} (om/get-state this)]
+      (prn "Dashboard; " dashboard)
       (html
         [:div
-         ;(opts {:style {:position :relative}})
          (when add-new
            (->NewWidget (om/computed {}
                                      {:on-close    #(om/update-state! this assoc :add-new false)
                                       :dashboard   dashboard
                                       :save-widget (fn [input-widget]
-                                                     (om/transact! this `[(widget/save ~input-widget)]))})))
+                                                     (om/transact! this `[(widget/save ~input-widget)
+                                                                          :query/dashboard]))})))
          [:button
           {:class "btn btn-default btn-md"
            :on-click #(om/update-state! this assoc :add-new true)}

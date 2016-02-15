@@ -70,8 +70,18 @@
 
 (defmethod mutate 'widget/save
   [{:keys [state]} _ params]
+  (debug "widget/save with params: " params)
   (let [widget (format/widget-map params)]
     {:action (fn []
                (transact/transact-map state widget)
+               true)
+     #?@(:cljs [:remote true])}))
+
+(defmethod mutate 'widget/delete
+  [{:keys [state]} _ params]
+  (debug "widget/delete with params: " params)
+  (let [widget-uuid (:widget/uuid params)]
+    {:action (fn []
+               (transact/transact-one state [:db.fn/retractEntity [:widget/uuid widget-uuid]])
                true)
      #?@(:cljs [:remote true])}))
