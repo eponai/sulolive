@@ -14,12 +14,12 @@
                                               0
                                               ts)))
         sum-by-day (map sum-fn grouped)]
-    {:key    "All Transactions"
-     :values (reduce #(conj %1
-                            {:name  (:date/timestamp %2)       ;date timestamp
-                             :value (:date/sum %2)})           ;sum for date
-                     []
-                     (sort-by :date/timestamp sum-by-day))}))
+    [{:key    "All Transactions"
+      :values (reduce #(conj %1
+                             {:name  (:date/timestamp %2)   ;date timestamp
+                              :value (:date/sum %2)})       ;sum for date
+                      []
+                      (sort-by :date/timestamp sum-by-day))}]))
 
 (defmethod sum :transaction/tags
   [_ transactions attr]
@@ -40,20 +40,25 @@
                              (map :tag/name tags)))))
         sum-by-tag (reduce sum-fn {} transactions)]
 
-    {:key    "All Transactions"
-     :values (reduce #(conj %1 {:name  (first %2)              ;tag name
-                                :value (second %2)})           ;sum for tag
-                     []
-                     sum-by-tag)}))
+    [{:key    "All Transactions"
+      :values (reduce #(conj %1 {:name  (first %2)          ;tag name
+                                 :value (second %2)})       ;sum for tag
+                      []
+                      sum-by-tag)}]))
 
 
-(defmulti calculation (fn [_ function _]
-                        (:report.function/id function)))
+(defmulti calculation (fn [_ function-id _]
+                        (prn "Recieved key: " function-id)
+                        function-id))
 
 
 (defmethod calculation :report.function.id/sum
-  [{:keys [report/group-by]} {:keys [report.function/attribute]} transactions]
-  (sum group-by transactions attribute))
+  [{:keys [report/group-by report/function]} _ transactions]
+  (prn "Group/by " group-by)
+  (let [attribute (:report.function/attribute function)]
+    (sum (or group-by :transaction/tags) transactions (or attribute :transaction/amount))))
 
 (defn create [report transactions]
-  (calculation report (:report/function report) transactions))
+  (let [k (get-in report [:report/function :report.function/id])]
+    (prn "Calculating key " k)
+    (calculation report (or k :report.function.id/sum) transactions)))

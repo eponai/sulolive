@@ -18,8 +18,8 @@
 (defui BarChart
   Object
   (componentDidMount [this]
-    (let [{:keys [width height]} (om/props this)
-          svg (build-svg "#bar-chart" width height)]
+    (let [{:keys [width height id]} (om/props this)
+          svg (build-svg (str "#bar-chart-" id) width height)]
       (om/update-state! this assoc :svg svg)))
 
   (componentDidUpdate [this _ _]
@@ -54,17 +54,19 @@
             (.. js/nv
                 -utils
                 (windowResize (.-update chart))))))))
-  (render [_]
-    (html
-      [:div#bar-chart])))
+  (render [this]
+    (let [{:keys [id]} (om/props this)]
+      (html
+        [:div
+         {:id (str "bar-chart-" id)}]))))
 
 (def ->BarChart (om/factory BarChart))
 
 (defui AreaChart
   Object
   (componentDidMount [this]
-    (let [{:keys [width height]} (om/props this)
-          svg (build-svg "#area-chart" width height)]
+    (let [{:keys [width height id]} (om/props this)
+          svg (build-svg ("#area-chart-" id) width height)]
       (om/update-state! this assoc :svg svg)))
 
   (componentDidUpdate [this _ _]
@@ -100,8 +102,10 @@
                         (.. js/nv
                             -utils
                             (windowResize (.-update chart)))))))))
-  (render [_]
-    (html
-      [:div#area-chart])))
+  (render [this]
+    (let [{:keys [id]} (om/props this)]
+      (html
+        [:div
+         :id (str "area-chart-" id)]))))
 
 (def ->AreaChart (om/factory AreaChart))

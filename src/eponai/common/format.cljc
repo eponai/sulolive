@@ -147,14 +147,16 @@
       :db/id (d/tempid :db.part/user))))
 
 (defn widget-map [input & [opts]]
-  (let [function (assoc (:input-function input) :db/id (d/tempid :db.part/user))
+  (let [function (assoc (:input-function input) :db/id (d/tempid :db.part/user)
+                                                :report.function/uuid (d/squuid))
 
         report (assoc (:input-report input) :db/id (d/tempid :db.part/user)
                                             :report/functions #{(:db/id function)}
                                             :report/uuid (d/squuid))
 
         graph (assoc (:input-graph input) :db/id (d/tempid :db.part/user)
-                                          :graph/report (:db/id report))
+                                          :graph/report (:db/id report)
+                                          :graph/uuid (d/squuid))
 
         widget {:db/id        (d/tempid :db.part/user)
                 :widget/uuid  (d/squuid)

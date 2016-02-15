@@ -104,7 +104,7 @@
  ;; ------------------- Function
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :report.function/uuid
-  :db/valueType          :db.type/keyword
+  :db/valueType          :db.type/uuid
   :db/cardinality        :db.cardinality/one
   :db/unique             :db.unique/identity
   :db/doc                "Function identifier."

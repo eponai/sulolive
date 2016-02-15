@@ -10,6 +10,7 @@
             [eponai.client.history :as history]
             [eponai.client.parser.mutate]
             [eponai.client.parser.read]
+            [eponai.client.report]
             [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
             [eponai.client.ui.all_transactions :refer [AllTransactions ->AllTransactions]]
             [eponai.client.ui.modal :refer [Modal ->Modal]]
