@@ -16,37 +16,38 @@
                  :SEK "Swedish Krona"
                  :USD "US Dollar"})
 
-(def transactions [{:transaction/uuid       (UUID/randomUUID)
-                    :transaction/title       "lunch"
-                    :transaction/date       "2015-10-10"
-                    :transaction/amount     180
-                    :transaction/currency   "THB"
-                    :transaction/created-at 1
-                    :transaction/tags       ["thailand"]}
-                   {:transaction/uuid       (UUID/randomUUID)
-                    :transaction/title       "coffee"
-                    :transaction/date       "2015-10-10"
-                    :transaction/amount     140
-                    :transaction/currency   "THB"
-                    :transaction/created-at 1}
-                   {:transaction/uuid       (UUID/randomUUID)
-                    :transaction/title       "dinner"
-                    :transaction/date       "2015-10-10"
-                    :transaction/amount     350
-                    :transaction/currency   "THB"
-                    :transaction/created-at 1}
-                   {:transaction/uuid       (UUID/randomUUID)
-                    :transaction/title       "market"
-                    :transaction/date       "2015-10-11"
-                    :transaction/amount     789
-                    :transaction/currency   "THB"
-                    :transaction/created-at 1}
-                   {:transaction/uuid       (UUID/randomUUID)
-                    :transaction/title       "lunch"
-                    :transaction/date       "2015-10-11"
-                    :transaction/amount     125
-                    :transaction/currency   "THB"
-                    :transaction/created-at 1}])
+(defn transactions []
+  [{:transaction/uuid       (UUID/randomUUID)
+    :transaction/title      "lunch"
+    :transaction/date       "2015-10-10"
+    :transaction/amount     180
+    :transaction/currency   "THB"
+    :transaction/created-at 1
+    :transaction/tags       ["thailand"]}
+   {:transaction/uuid       (UUID/randomUUID)
+    :transaction/title      "coffee"
+    :transaction/date       "2015-10-10"
+    :transaction/amount     140
+    :transaction/currency   "THB"
+    :transaction/created-at 1}
+   {:transaction/uuid       (UUID/randomUUID)
+    :transaction/title      "dinner"
+    :transaction/date       "2015-10-10"
+    :transaction/amount     350
+    :transaction/currency   "THB"
+    :transaction/created-at 1}
+   {:transaction/uuid       (UUID/randomUUID)
+    :transaction/title      "market"
+    :transaction/date       "2015-10-11"
+    :transaction/amount     789
+    :transaction/currency   "THB"
+    :transaction/created-at 1}
+   {:transaction/uuid       (UUID/randomUUID)
+    :transaction/title      "lunch"
+    :transaction/date       "2015-10-11"
+    :transaction/amount     125
+    :transaction/currency   "THB"
+    :transaction/created-at 1}])
 
 (def test-user-email "test-user@email.com")
 
@@ -82,7 +83,7 @@
     ret))
 
 (defn add-transactions [conn budget-uuid]
-  (->> transactions
+  (->> (transactions)
        (map #(assoc % :transaction/budget budget-uuid))
        (map #(format/transaction % {:no-rename true}))
        (transact/transact conn)))
