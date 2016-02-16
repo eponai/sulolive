@@ -35,16 +35,17 @@
         [:div.widget
          (opts {:style {:border        "1px solid #e7e7e7"
                         :border-radius "0.5em"
-                        :padding       "50px 0 0 50px"
-                        :width         "100%"
+                        :padding       "30px 0 0 0"
+                        :width         "50%"
                         :height        300
                         :position      :relative
                         :box-sizing    :border-box}})
          [:div
           (opts {:style {:position        :absolute
-                         :top             0
-                         :height          50
-                         :width           "100%"
+                         :top             10
+                         :left            10
+                         :right           10
+                         :height          30
                          :display         :flex
                          :flex-direction  :row
                          :justify-content :space-between
