@@ -11,14 +11,10 @@
             [eponai.client.parser.mutate]
             [eponai.client.parser.read]
             [eponai.client.report]
-            [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
-            [eponai.client.ui.all_transactions :refer [AllTransactions ->AllTransactions]]
-            [eponai.client.ui.modal :refer [Modal ->Modal]]
-            [eponai.client.ui.stripe :refer [->Payment Payment]]
-            [eponai.client.ui.header :refer [Header ->Header]]
-            [taoensso.timbre :as timbre :refer-macros [info debug error trace]]
+            [eponai.client.ui.navbar :as header]
+            [taoensso.timbre :refer-macros [info debug error trace]]
             [eponai.client.ui :refer-macros [opts]]
-            ))
+            [eponai.client.ui.utils :as utils]))
 
 (defonce reconciler-atom (atom nil))
 
@@ -39,33 +35,26 @@
   static om/IQuery
   (query [_]
     [:datascript/schema
-     {:proxy/header (om/get-query Header)}
      {:query/loader [:ui.singleton.loader/visible]}
-     {:proxy/modal (om/get-query Modal)}
+     {:proxy/nav-bar (header/navbar-query)}
      '{:proxy/app-content ?url/query}
      '(:return/content-factory ?url/factory)])
   Object
   (render
     [this]
-    (let [{:keys [proxy/header
-                  proxy/app-content
-                  proxy/modal
+    (let [{:keys [proxy/app-content
                   return/content-factory
+                  proxy/nav-bar
                   query/loader]} (om/props this)]
-      (debug ":proxy/app-content: " app-content)
-      (html [:div
-             [:div (->Header header)]
-             [:div (->Modal modal)]
-             (when (:ui.singleton.loader/visible loader)
-               (prn "Render loader")
-               [:div.loader-circle-black
-                (opts {:style {:top      "50%"
-                               :left     "50%"
-                               :position "fixed"
-                               :z-index  1050}})])
-             [:div {:class "content-section-b"}
-              (when content-factory
-                (content-factory app-content))]]))))
+      (html
+        [:div
+         (header/navbar-create nav-bar)
+
+         (when (:ui.singleton.loader/visible loader)
+           (utils/loader))
+         [:div {:class "content-section-b"}
+          (when content-factory
+            (content-factory app-content))]]))))
 
 (defonce conn-atom (atom nil))
 
