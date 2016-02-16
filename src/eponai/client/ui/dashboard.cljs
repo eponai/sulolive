@@ -123,6 +123,7 @@
            {:on-click on-close}
            "x"]
           [:h4 "New widget"]]
+
          [:div.modal-body
           [:h4
            (opts {:style {:margin-right "1em"}})
@@ -150,6 +151,7 @@
                "Number"]]])
           (chart-settings this state)
           [:div (str "State: " state)]]
+
          [:div.modal-footer
           (opts {:style {:display        "flex"
                          :flex-direction "row-reverse"}})
@@ -201,21 +203,21 @@
          (opts {:style {:border        "1px solid #e7e7e7"
                         :border-radius "0.5em"
                         :padding       "50px 0 0 0"
-                        :width         "50%"
+                        :width         "100%"
                         :height        300
                         :position      :relative
                         :box-sizing    :border-box}})
          [:div
-          (opts {:style {:position :absolute
-                         :top      0
-                         :height   50
-                         :width "100%"
-                         :display :flex
-                         :flex-direction :row
+          (opts {:style {:position        :absolute
+                         :top             0
+                         :height          50
+                         :width           "100%"
+                         :display         :flex
+                         :flex-direction  :row
                          :justify-content :space-between
-                         :align-items :flex-start}})
+                         :align-items     :flex-start}})
           [:p
-           (str "Data: " report-data)]
+           (str "Data: " (or (:key report-data) (:key (first report-data))))]
           [:a.close
            {:on-click #(on-delete widget)}
            "x"]]
@@ -249,7 +251,7 @@
                                                                                        :date/timestamp]}]}]}]}])
   Object
   (initLocalState [_]
-    {:add-widget true})
+    {:add-widget false})
   (data-report [this report]
     (let [{:keys [query/dashboard]} (om/props this)
           transactions (-> dashboard
