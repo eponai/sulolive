@@ -38,24 +38,30 @@
            (catch Exception e
              {:om.next/error (parser-error-fn e)}))))))
 
-#?(:clj
-   (defn wrap-user-context-only [parser]
-     (fn [env & args]
-       (let [user-id (get-in env [:auth :username])
-             db (d/db (:state env))
-             db (if user-id
-                  (do (debug "Using auth db for user:" user-id)
-                      (filter/authenticated-db db user-id))
-                  (do (debug "Using non auth db")
-                      (filter/not-authenticated-db db)))
-             env (assoc env :db db)]
-         (apply parser env args))))
-   :cljs
-   (defn wrap-db [parser]
-     (fn [env & args]
-       (apply parser (assoc env :db (d/db (:state env)))
-              args))))
+(defn wrap-parse-uuid
+  "Wraps a uuid for each time the parser is called."
+  [parser]
+  (fn [env & args]
+    (apply parser (assoc env ::parse-uuid (d/squuid))
+           args)))
 
+(defn wrap-db
+  "Wraps a db in the env when read or mutate is called the first time.
+  Reads are called after each mutate, which is why this works."
+  [read-or-mutate]
+  (let [db-atom (atom nil)]
+    (fn [{:keys [state ::parse-uuid] :as env} & args]
+      (when (not= parse-uuid (::parse-uuid @db-atom))
+        (let [db (d/db state)
+              #?@(:clj [user-id (get-in env [:auth :username])
+                        db (if user-id
+                             (do (debug "Using auth db for user:" user-id)
+                                 (filter/authenticated-db db user-id))
+                             (do (debug "Using non auth db")
+                                 (filter/not-authenticated-db db)))])]
+          (reset! db-atom {:db db ::parse-uuid parse-uuid})))
+      (apply read-or-mutate (assoc env :db (:db @db-atom))
+             args))))
 
 (defn read-without-state
   "Removes the state key containing the connection to the database.
@@ -68,19 +74,17 @@
   :are-you-sure-you-want-the-connection?
   :unsafe-connection
   :this-is-an-antipattern/conn"
-  [env & args]
-  (apply read/read
-         (dissoc env :state)
-         args))
+  [read]
+  (fn [env & args]
+    (apply read
+           (dissoc env :state)
+          args)))
 
 (defn parser
   ([]
-   (let [parser (om/parser {:read #?(:clj read-without-state
-                                     :cljs (fn [env & args]
-                                             (apply read/read (assoc env :db (d/db (:state env))) args)))
-                            :mutate mutate/mutate})]
-     #?(:cljs (-> parser
-                  wrap-db)
+   (let [parser (om/parser {:read   (-> read/read read-without-state wrap-db)
+                            :mutate (-> mutate/mutate wrap-db)})]
+     #?(:cljs (-> parser wrap-parse-uuid)
         :clj (-> parser
-                 wrap-om-next-error-handler
-                 wrap-user-context-only)))))
+                 wrap-parse-uuid
+                 wrap-om-next-error-handler)))))
