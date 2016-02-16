@@ -62,30 +62,33 @@
             (fn [db [eid]]
               (not (some user-attrs (keys (d/entity db eid))))))})
 
-(defn authenticated-db-filters [user-id]
-  (vector (user-or-public-entity-filter-map user-id)
-          (private-attr-filter-map)))
-
-(defn not-authenticated-db-filters []
-  [(no-auth-filter-map)])
-
 ;; Updating and applying filters
 
-(defn update-filters [db filters]
-  {:pre [(vector? filters)]}
-  (reduce (fn [v {:keys [update-props] :as m}]
-            (conj v (cond-> m
-                            (some? update-props)
-                            (update :props update-props db))))
-             []
-             filters))
+(defn update-filters
+  "Updating filters with db."
+  [db filters]
+  {:pre [(sequential? filters)]}
+  (mapv (fn [{:keys [update-props] :as m}]
+          (cond-> m
+                  (some? update-props)
+                  (update :props update-props db)))
+        filters))
 
-(defn apply-filters [db filters]
-  {:pre [(vector? filters)]}
+(defn apply-filters
+  "Applies filters to a db."
+  [db filters]
+  {:pre [(sequential? filters)]}
   (reduce (fn [db {:keys [f props]}]
             (d/filter db (f props)))
           db
           filters))
+
+(defn authenticated-db-filters [user-id]
+  [(user-or-public-entity-filter-map user-id)
+   (private-attr-filter-map)])
+
+(defn not-authenticated-db-filters []
+  [(no-auth-filter-map)])
 
 ;; Deprecated, using for testing.
 (defn filter-db [db filters]
