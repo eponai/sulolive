@@ -47,13 +47,15 @@
        (fn [{:keys [state] :as env} & args]
          (let [db (d/db state)
                user-id (get-in env [:auth :username])
-               db (if user-id
-                            (do (debug "Using auth db for user:" user-id)
-                                (filter/authenticated-db db user-id))
-                            (do (debug "Using non auth db")
-                                (filter/not-authenticated-db db)))
-               ;;db (filter/apply-filter filter-map db)
-               ]
+               filter-map (if-let [old-filter @filter-atom]
+                            (filter/update-filters db old-filter)
+                            (if user-id
+                                (do (debug "Using auth db for user:" user-id)
+                                    (filter/authenticated-db-map user-id))
+                                (do (debug "Using non auth db")
+                                    (filter/not-authenticated-db-map))))
+               db (filter/apply-filters db filter-map)]
+           (reset! filter-atom filter-map)
            (apply read-or-mutate (assoc env :db db)
                   args))))))
 

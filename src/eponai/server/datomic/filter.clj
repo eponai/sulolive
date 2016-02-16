@@ -54,6 +54,8 @@
                (not (some private-attrs (keys (d/entity db eid))))))}})
 
 (defn- no-auth-filter-map []
+  ;;TODO: Need to just return the map and apply filters with
+  ;;      a vector, because filters need ordering.
   {:no-auth
    {:props {:user-attrs #{:transaction/uuid :budget/uuid}}
     :f     (fn [{:keys [user-attrs]}]
