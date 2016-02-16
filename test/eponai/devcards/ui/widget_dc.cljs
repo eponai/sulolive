@@ -4,7 +4,8 @@
   (:require-macros [devcards.core :refer [defcard]]))
 
 (defn props [{:keys [input-style input-group-by input-function]}]
-  {:widget/graph {:graph/style input-style
+  {:widget/uuid  (str (name input-style) (name input-group-by) (name (:report.function/id input-function)))
+   :widget/graph {:graph/style  input-style
                   :graph/report {:report/group-by input-group-by
                                  :report/function input-function}}})
 (defn data-sum-number []
@@ -30,6 +31,19 @@
              {:name 9074000 :value 765}
              {:name 10074000 :value 234}
              {:name 11074000 :value 543}]}])
+
+(defn test-transactions []
+  [{:transaction/amount 100
+    :transaction/tags   [{:tag/name "thailand"}
+                         {:tag/name "chiangmai"}]}
+   {:transaction/amount 200
+    :transaction/tags   [{:tag/name "malaysia"}
+                         {:tag/name "lunch"}]}])
+
+(defcard
+  new-widget
+  (dashboard/->NewWidget (om/computed {}
+                                      {:transactions (test-transactions)})))
 
 (defcard
   number-chart-widget

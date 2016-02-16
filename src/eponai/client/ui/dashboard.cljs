@@ -11,6 +11,67 @@
             [eponai.client.report :as report]
             [eponai.client.ui.utils :as utils]))
 
+
+(defui Widget
+  static om/IQuery
+  (query [_]
+    [:widget/uuid
+     :widget/width
+     :widget/height
+     {:widget/graph [:graph/style
+                     {:graph/report [:report/uuid
+                                     :report/group-by
+                                     {:report/functions [:report.function/uuid
+                                                         :report.function/attribute
+                                                         :report.function/id]}]}]}])
+
+  Object
+  (render [this]
+    (let [{:keys [widget/graph] :as widget} (om/props this)
+          {:keys [on-delete
+                  data-report]} (om/get-computed this)
+          report-data (data-report (:graph/report graph))]
+      (html
+        [:div.widget
+         (opts {:style {:border        "1px solid #e7e7e7"
+                        :border-radius "0.5em"
+                        :padding       "50px 0 0 50px"
+                        :width         "100%"
+                        :height        300
+                        :position      :relative
+                        :box-sizing    :border-box}})
+         [:div
+          (opts {:style {:position        :absolute
+                         :top             0
+                         :height          50
+                         :width           "100%"
+                         :display         :flex
+                         :flex-direction  :row
+                         :justify-content :space-between
+                         :align-items     :flex-start}})
+          [:p
+           (str "Data: " (or (:key report-data) (:key (first report-data))))]
+          (when on-delete
+            [:a.close
+             {:on-click #(on-delete widget)}
+             "x"])]
+         (let [{:keys [graph/style]} graph
+               settings {:data         report-data
+                         :id           (str (or (:widget/uuid widget) "widget"))
+                         :width        "100%"
+                         :height       "100%"
+                         :title-axis-y "Amount ($)"}]
+           (cond (= style :graph.style/bar)
+                 (d3/->BarChart settings)
+
+                 (= style :graph.style/area)
+                 (d3/->AreaChart settings)
+
+                 (= style :graph.style/number)
+                 (d3/->NumberChart settings)))]))))
+
+(def ->Widget (om/factory Widget))
+
 (defn on-add-tag-key-down [this input-tag]
   (fn [e]
     (when (and (= 13 (.-keyCode e))
@@ -111,11 +172,12 @@
                         #(-> %
                              (assoc-in [:input-graph :graph/style] style)
                              (assoc-in [:input-report :report/group-by] (get default-group-by style))))))
-  (render [this]
-    (let [{:keys [input-graph] :as state} (om/get-state this)
 
+  (render [this]
+    (let [{:keys [input-graph input-report] :as state} (om/get-state this)
           {:keys [on-close
-                  on-save]} (om/get-computed this)]
+                  on-save
+                  transactions]} (om/get-computed this)]
       (html
         [:div
          [:div.modal-header
@@ -128,27 +190,23 @@
           [:h4
            (opts {:style {:margin-right "1em"}})
            "Graph"]
-          
+
           (let [style (:graph/style input-graph)]
-
-            [:div
-             (opts {:style {:display        "flex"
-                            :flex-direction "row"
-                            :align-items    :center}})
-
-             [:div.btn-group
-              [:button
-               (opts {:class    (button-class style :graph.style/bar)
-                      :on-click #(.select-graph-style this :graph.style/bar)})
-               "Bar Chart"]
-              [:button
-               (opts {:class    (button-class style :graph.style/area)
-                      :on-click #(.select-graph-style this :graph.style/area)})
-               "Area Chart"]
-              [:button
-               (opts {:class    (button-class style :graph.style/number)
-                      :on-click #(.select-graph-style this :graph.style/number)})
-               "Number"]]])
+            [:div.btn-group
+             [:div
+              (opts {:class    (button-class style :graph.style/bar)
+                     :on-click #(.select-graph-style this :graph.style/bar)})
+              "Bar Chart"]
+             [:button
+              (opts {:class    (button-class style :graph.style/area)
+                     :on-click #(.select-graph-style this :graph.style/area)})
+              "Area Chart"]
+             [:button
+              (opts {:class    (button-class style :graph.style/number)
+                     :on-click #(.select-graph-style this :graph.style/number)})
+              "Number"]])
+          (->Widget (om/computed {:widget/graph input-graph}
+                                 {:data-report (fn [_] (report/create input-report transactions))}))
           (chart-settings this state)
           [:div (str "State: " state)]]
 
@@ -171,72 +229,6 @@
            "Save"]]]))))
 
 (def ->NewWidget (om/factory NewWidget))
-
-(defui Widget
-  static om/IQuery
-  (query [_]
-    [:widget/uuid
-     :widget/width
-     :widget/height
-     {:widget/graph [:graph/style
-                     {:graph/report [:report/uuid
-                                     :report/group-by
-                                     {:report/functions [:report.function/uuid
-                                                         :report.function/attribute
-                                                         :report.function/id]}]}]}])
-
-  Object
-  (componentWillReceiveProps [this new-props]
-    (let [{:keys [widget/graph]} new-props
-          {:keys [data-report]} (om/get-computed this)]
-      (om/update-state! this assoc :report-data (data-report (:graph/report graph)))))
-  (componentDidMount [this]
-    (let [{:keys [widget/graph]} (om/props this)
-          {:keys [data-report]} (om/get-computed this)]
-      (om/update-state! this assoc :report-data (data-report (:graph/report graph)))))
-  (render [this]
-    (let [{:keys [widget/graph] :as widget} (om/props this)
-          {:keys [report-data]} (om/get-state this)
-          {:keys [on-delete]} (om/get-computed this)]
-      (html
-        [:div.widget
-         (opts {:style {:border        "1px solid #e7e7e7"
-                        :border-radius "0.5em"
-                        :padding       "50px 0 0 0"
-                        :width         "100%"
-                        :height        300
-                        :position      :relative
-                        :box-sizing    :border-box}})
-         [:div
-          (opts {:style {:position        :absolute
-                         :top             0
-                         :height          50
-                         :width           "100%"
-                         :display         :flex
-                         :flex-direction  :row
-                         :justify-content :space-between
-                         :align-items     :flex-start}})
-          [:p
-           (str "Data: " (or (:key report-data) (:key (first report-data))))]
-          [:a.close
-           {:on-click #(on-delete widget)}
-           "x"]]
-         (let [{:keys [graph/style]} graph
-               settings {:data         report-data
-                         :id           (str (:widget/uuid widget))
-                         :width        "100%"
-                         :height       "100%"
-                         :title-axis-y "Amount ($)"}]
-           (cond (= style :graph.style/bar)
-                 (d3/->BarChart settings)
-
-                 (= style :graph.style/area)
-                 (d3/->AreaChart settings)
-
-                 (= style :graph.style/number)
-                 (d3/->NumberChart settings)))]))))
-
-(def ->Widget (om/factory Widget))
 
 (defui Dashboard
   static om/IQuery
@@ -272,7 +264,6 @@
   (render [this]
     (let [{:keys [query/dashboard]} (om/props this)
           {:keys [add-widget]} (om/get-state this)]
-      (prn "Dashboard; " dashboard)
       (html
         [:div
          (opts {:style {:position :relative
@@ -285,7 +276,8 @@
          (when add-widget
            (utils/modal {:content (->NewWidget (om/computed {}
                                                             {:on-save #(.save-widget this (assoc % :input-dashboard dashboard))
-                                                             :on-close #(.show-add-widget this false)}))
+                                                             :on-close #(.show-add-widget this false)
+                                                             :transactions (get-in dashboard [:dashboard/budget :transaction/_budget])}))
                          :on-close #(.show-add-widget this false)}))
          ;[:a
          ; {:class "btn btn-default btn-md"

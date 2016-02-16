@@ -37,7 +37,7 @@
           (attr "y" "50%")
           (attr "text-anchor" "middle")
           transition
-          (duration 1500)
+          (duration 500)
           (tween "text" (fn []
                           (this-as jthis
                             (let [i (.. js/d3
