@@ -28,6 +28,7 @@
 (defn chart-function [component input-function]
   (let [function-id (:report.function/id input-function)]
     [:div
+     (opts {:style {:width "50%"}})
      [:h6 "Calculate"]
      [:button
       {:class    (button-class function-id :report.function.id/sum)
@@ -40,7 +41,31 @@
       [:span
        "Mean"]]]))
 
-(defn chart-group-by [])
+(defn chart-group-by [component {:keys [report/group-by]} groups]
+  [:div
+   (opts {:style {:width "50%"}})
+   [:h6 "Group by"]
+   [:div
+    (map
+      (fn [k]
+        (let [conf {:transaction/tags     {:icon "fa fa-tag"
+                                           :text "All Tags"}
+                    :transaction/currency {:icon "fa fa-usd"
+                                           :text "All Currencies"}
+                    :transaction/date     {:icon "fa fa-calendar"
+                                           :text "All Dates"}}]
+          [:button
+           (opts {:key [k]
+                  :class    (button-class group-by k)
+                  :on-click #(om/update-state! component assoc-in [:input-report :report/group-by] k)})
+           [:i
+            (opts {:key [(get-in conf [k :icon])]
+                   :class (get-in conf [k :icon])
+                   :style {:margin-right 5}})]
+           [:span
+            (opts {:key [(get-in conf [k :text])]})
+            (get-in conf [k :text])]]))
+      groups)]])
 
 
 (defn chart-settings [component {:keys [input-graph input-function input-report] :as state}]
@@ -52,47 +77,15 @@
        [:div
         (opts {:style {:display        "flex"
                        :flex-direction "row"}})
-        [:div
-         (opts {:style {:width "50%"}})
-         (chart-function component input-function)]
-        (let [group-by (:report/group-by input-report)]
-          [:div
-           (opts {:style {:width "50%"}})
-           [:h6 "Group by"]
-           [:div
-            [:button
-             {:class    (button-class group-by :transaction/tags)
-              :on-click #(om/update-state! component assoc-in [:input-report :report/group-by] :transaction/tags)}
-             [:i
-              (opts {:class "fa fa-tag"
-                     :style {:margin-right 5}})]
-             [:span "All Tags"]]
-            [:button
-             {:class    (button-class group-by :transaction/currency)
-              :on-click #(om/update-state! component assoc-in [:input-report :report/group-by] :transaction/currency)}
-             [:i
-              (opts {:class "fa fa-usd"
-                     :style {:margin-right 5}})]
-             [:span "All Currencies"]]]])]
+        (chart-function component input-function)
+        (chart-group-by component input-report [:transaction/tags :transaction/currency])]
 
        (= style :graph.style/area)
        [:div
         (opts {:style {:display        "flex"
                        :flex-direction "row"}})
-        [:div
-         (opts {:style {:width "50%"}})
-         (chart-function component input-function)]
-        [:div
-         (opts {:style {:width "50%"}})
-         [:h6 "Group by"]
-         [:div
-          [:button
-           {:class    (button-class (:report/group-by input-report) :transaction/date)
-            :on-click #(om/update-state! component assoc-in [:input-report :report/group-by] :transaction/date)}
-           [:i
-            (opts {:class "fa fa-calendar"
-                   :style {:margin-right 5}})]
-           [:span "All Dates"]]]]]
+        (chart-function component input-function)
+        (chart-group-by component input-report [:transaction/date])]
 
        (= style :graph.style/number)
        [:div
@@ -107,7 +100,17 @@
   Object
   (initLocalState [_]
     {:input-graph    {:graph/style :graph.style/bar}
-     :input-function {:report.function/id :report.function.id/sum}})
+     :input-function {:report.function/id :report.function.id/sum}
+     :input-report   {:report/group-by :transaction/tags}})
+
+  (select-graph-style [this style]
+    (let [default-group-by {:graph.style/bar    :transaction/tags
+                            :graph.style/area   :transaction/date
+                            :graph.style/number :default}]
+      (om/update-state! this
+                        #(-> %
+                             (assoc-in [:input-graph :graph/style] style)
+                             (assoc-in [:input-report :report/group-by] (get default-group-by style))))))
   (render [this]
     (let [{:keys [input-graph] :as state} (om/get-state this)
 
@@ -115,45 +118,35 @@
                   on-save]} (om/get-computed this)]
       (html
         [:div
-         ;(opts {:style {:width            "100%"
-         ;               :height           "100%"}})
          [:div.modal-header
           [:button.close
            {:on-click on-close}
            "x"]
           [:h4 "New widget"]]
          [:div.modal-body
+          [:h4
+           (opts {:style {:margin-right "1em"}})
+           "Graph"]
+          
           (let [style (:graph/style input-graph)]
 
             [:div
              (opts {:style {:display        "flex"
                             :flex-direction "row"
                             :align-items    :center}})
-             [:h4
-              (opts {:style {:margin-right "1em"}})
-              "Graph"]
 
              [:div.btn-group
               [:button
                (opts {:class    (button-class style :graph.style/bar)
-                      :on-click (fn [] (om/update-state! this
-                                                         #(-> %
-                                                              (assoc-in [:input-graph :graph/style] :graph.style/bar)
-                                                              (assoc-in [:input-report :report/group-by] :transaction/tags))))})
+                      :on-click #(.select-graph-style this :graph.style/bar)})
                "Bar Chart"]
               [:button
                (opts {:class    (button-class style :graph.style/area)
-                      :on-click (fn [] (om/update-state! this
-                                                         #(-> %
-                                                              (assoc-in [:input-graph :graph/style] :graph.style/area)
-                                                              (assoc-in [:input-report :report/group-by] :transaction/date))))})
+                      :on-click #(.select-graph-style this :graph.style/area)})
                "Area Chart"]
               [:button
                (opts {:class    (button-class style :graph.style/number)
-                      :on-click (fn [] (om/update-state! this
-                                                         #(-> %
-                                                              (assoc-in [:input-graph :graph/style] :graph.style/number)
-                                                              (assoc-in [:input-report :report/group-by] :default))))})
+                      :on-click #(.select-graph-style this :graph.style/number)})
                "Number"]]])
           (chart-settings this state)
           [:div (str "State: " state)]]
@@ -191,10 +184,6 @@
                                                          :report.function/id]}]}]}])
 
   Object
-  (delete-widget [this widget]
-    (om/transact! this `[(widget/delete ~(select-keys widget [:widget/uuid]))
-                         :query/dashboard]))
-
   (componentWillReceiveProps [this new-props]
     (let [{:keys [widget/graph]} new-props
           {:keys [data-report]} (om/get-computed this)]
@@ -205,7 +194,8 @@
       (om/update-state! this assoc :report-data (data-report (:graph/report graph)))))
   (render [this]
     (let [{:keys [widget/graph] :as widget} (om/props this)
-          {:keys [report-data]} (om/get-state this)]
+          {:keys [report-data]} (om/get-state this)
+          {:keys [on-delete]} (om/get-computed this)]
       (html
         [:div.widget
          (opts {:style {:border        "1px solid #e7e7e7"
@@ -227,7 +217,7 @@
           [:p
            (str "Data: " report-data)]
           [:a.close
-           {:on-click #(.delete-widget this widget)}
+           {:on-click #(on-delete widget)}
            "x"]]
          (let [{:keys [graph/style]} graph
                settings {:data         report-data
@@ -270,9 +260,13 @@
   (show-add-widget [this visible]
     (om/update-state! this assoc :add-widget visible))
 
-  (save-widget [this input-widget]
-    (om/transact! this `[(widget/save ~input-widget)
+  (save-widget [this widget]
+    (om/transact! this `[(widget/save ~widget)
                          :query/dashboard]))
+  (delete-widget [this widget]
+    (om/transact! this `[(widget/delete ~(select-keys widget [:widget/uuid]))
+                         :query/dashboard]))
+
   (render [this]
     (let [{:keys [query/dashboard]} (om/props this)
           {:keys [add-widget]} (om/get-state this)]
@@ -300,7 +294,8 @@
            (fn [widget-props]
              (->Widget
                (om/computed widget-props
-                            {:data-report #(.data-report this %)})))
+                            {:data-report #(.data-report this %)
+                             :on-delete #(.delete-widget this %)})))
            (:dashboard/widgets dashboard))]))))
 
 (def ->Dashboard (om/factory Dashboard))
