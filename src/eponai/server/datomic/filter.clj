@@ -1,14 +1,6 @@
 (ns eponai.server.datomic.filter
   (:require [datomic.api :as d]))
 
-(defn apply-filter [db filter-map]
-  (reduce-kv (fn [db _ {:keys [f props update-props]}]
-               (d/filter db (f (cond->> props
-                                       (some? update-props)
-                                       (update-props db)))))
-             db
-             filter-map))
-
 ;; TODO: Using :user/email right now. Should use :user/uuid when it's done.
 (def user-owned-rule
   '[[(owner? ?user-id ?e)
@@ -31,6 +23,8 @@
          :where [[?e ?a]]}
        db
        user-es))
+
+;; Filter maps
 
 (defn- user-or-public-entity-filter-map [user-id]
   {:keep-user-or-public-entities
@@ -66,20 +60,38 @@
              (fn [db [eid]]
                (not (some user-attrs (keys (d/entity db eid))))))}})
 
-(defn- user-or-public-entity-filter [db user-id]
-  (apply-filter db (user-or-public-entity-filter-map user-id)))
+(defn authenticated-db-map [user-id]
+  (merge (private-attr-filter-map)
+         (user-or-public-entity-filter-map user-id)))
 
-(defn- private-attr-filter [db]
-  (apply-filter db (private-attr-filter-map)))
+(defn not-authenticated-db-map []
+  (no-auth-filter-map))
 
-(defn- no-auth-filter [db]
-  (apply-filter db (no-auth-filter-map)))
+;; Updating and applying filters
+
+(defn update-filters [db filter-map]
+  (reduce-kv (fn [m k {:keys [props update-props]}]
+               (cond-> m
+                       (some? update-props)
+                       (assoc-in [k :props] (update-props db props))))
+             filter-map
+             filter-map))
+
+(defn apply-filters [db filter-map]
+  (reduce-kv (fn [db _ {:keys [f props]}]
+               (d/filter db (f props)))
+             db
+             filter-map))
+
+
+;; Deprecated, using for testing.
+(defn filter-db [db filter-map]
+  (->> filter-map
+       (update-filters db)
+       (apply-filters db)))
 
 (defn authenticated-db [db user-id]
-  (-> db
-      (private-attr-filter)
-      (user-or-public-entity-filter user-id)))
+  (filter-db db (authenticated-db-map user-id)))
 
 (defn not-authenticated-db [db]
-  (-> db
-      (no-auth-filter)))
+  (filter-db db (not-authenticated-db-map)))
