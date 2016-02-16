@@ -11,10 +11,9 @@
             [eponai.client.parser.mutate]
             [eponai.client.parser.read]
             [eponai.client.report]
-            [eponai.client.ui.navbar :as header]
+            [eponai.client.ui.navbar :as navbar]
             [taoensso.timbre :refer-macros [info debug error trace]]
-            [eponai.client.ui :refer-macros [opts]]
-            [eponai.client.ui.utils :as utils]))
+            [eponai.client.ui :refer-macros [opts]]))
 
 (defonce reconciler-atom (atom nil))
 
@@ -35,8 +34,7 @@
   static om/IQuery
   (query [_]
     [:datascript/schema
-     {:query/loader [:ui.singleton.loader/visible]}
-     {:proxy/nav-bar (header/navbar-query)}
+     {:proxy/nav-bar (navbar/navbar-query)}
      '{:proxy/app-content ?url/query}
      '(:return/content-factory ?url/factory)])
   Object
@@ -44,14 +42,10 @@
     [this]
     (let [{:keys [proxy/app-content
                   return/content-factory
-                  proxy/nav-bar
-                  query/loader]} (om/props this)]
+                  proxy/nav-bar]} (om/props this)]
       (html
         [:div
-         (header/navbar-create nav-bar)
-
-         (when (:ui.singleton.loader/visible loader)
-           (utils/loader))
+         (navbar/navbar-create nav-bar)
          [:div {:class "content-section-b"}
           (when content-factory
             (content-factory app-content))]]))))

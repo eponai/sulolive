@@ -6,7 +6,8 @@
             [goog.string.format]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
-            [taoensso.timbre :refer-macros [info debug error trace]])
+            [taoensso.timbre :refer-macros [info debug error trace]]
+            [eponai.client.ui.utils :as utils])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (defn load-checkout [channel]
@@ -29,11 +30,6 @@
                                        :locale "auto"
                                        :token  (stripe-token-recieved-cb component)}))]
     (.open checkout (clj->js args))))
-
-(defn show-loading [component show?]
-  (if show?
-    (om/transact! component `[(ui.loader/show) :query/loader])
-    (om/transact! component `[(ui.loader/hide) :query/loader])))
 
 ;; ---------- UI components ----------------
 
@@ -62,7 +58,7 @@
         [:li
          [:button
           {:on-click (fn []
-                       (show-loading component true)
+                       (.show-loading component true)
                        (open-checkout component
                                       {:name        "JourMoney"
                                        :description plan-name
@@ -71,7 +67,7 @@
                                        :amount      (* 100 plan-price)
                                        :locale      "auto"
                                        :allowRememberMe false
-                                       :opened      #(show-loading component false)
+                                       :opened      #(.show-loading component false)
                                        :closed      #(debug "StripeCheckout did close.")}))}
           "Buy"]]]])))
 
@@ -82,18 +78,23 @@
                            :user/email]}])
   Object
   (initLocalState [_]
-    {:checkout-loaded? (checkout-loaded?)
-     :load-checkout-chan (chan)})
+    (let [checkout-loaded (checkout-loaded?)]
+      {:checkout-loaded?   checkout-loaded
+       :load-checkout-chan (chan)
+       :is-loading?        (not checkout-loaded)}))
   (componentWillMount [this]
     (let [{:keys [load-checkout-chan
                   checkout-loaded?]} (om/get-state this)]
       (when-not checkout-loaded?
         (go (<! load-checkout-chan)
-            (prn "Setting state...")
-            (om/set-state! this {:checkout-loaded? true}))
+            (om/set-state! this {:checkout-loaded? true
+                                 :is-loading? false}))
         (load-checkout load-checkout-chan))))
+  (show-loading [this loading]
+    (om/update-state! this assoc :is-loading? loading))
   (render [this]
-    (let [{:keys [checkout-loaded?]} (om/get-state this)
+    (let [{:keys [checkout-loaded?
+                  is-loading?]} (om/get-state this)
           {:keys [query/current-user]} (om/props this)]
       (debug "StripeCheckout loaded: " checkout-loaded?)
       (html
@@ -106,7 +107,10 @@
           "Get unlimited access to the app."]
          [:hr.intro-divider]
 
-         (if checkout-loaded?
+         (when is-loading?
+           (utils/loader))
+
+         (when checkout-loaded?
            [:div#pricePlans
             [:ul#plans
              (plan-item this
@@ -119,11 +123,6 @@
                         {:plan-name    "Yearly"
                          :plan-price   90
                          :plan-monthly 7.50
-                         :user-email (:user/email current-user)})]]
-           [:div.loader-circle-black
-            (opts {:style {:top "50%"
-                           :left "50%"
-                           :margin "20em 0"
-                           :position :relative}})])]))))
+                         :user-email (:user/email current-user)})]])]))))
 
 (def ->Payment (om/factory Payment))

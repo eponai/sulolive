@@ -5,7 +5,6 @@
     [sablono.core :as html :refer-macros [html]]
     [eponai.devcards.ui.header_dc]
     [eponai.devcards.ui.datepicker_dc]
-    [eponai.devcards.ui.modal_dc]
     [eponai.devcards.ui.tag_dc]
     [eponai.devcards.ui.add_transaction_dc]
     [eponai.devcards.ui.transaction_dc]
