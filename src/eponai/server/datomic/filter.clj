@@ -26,74 +26,75 @@
 
 ;; Filter maps
 
-(defn- user-or-public-entity-filter-map [user-id]
-  {:keep-user-or-public-entities
-   {:props        {:owned-entities #{}
-                   :user-attrs     #{}
-                   :basis-t        -1}
-    :update-props (fn [db {:keys [basis-t] :as props}]
-                    (if (= basis-t (d/basis-t db))
-                      props
-                      (let [db-since (d/since db basis-t)
-                            new-entities (user-entities db-since user-id)
-                            new-attrs (user-attributes db-since new-entities)]
-                        (-> props
-                            (update :owned-entities into new-entities)
-                            (update :user-attrs into new-attrs)
-                            (assoc :basis-t (d/basis-t db))))))
-    :f            (fn [{:keys [owned-entities user-attrs]}]
-                    (fn [_ [eid attr]]
-                      (or (contains? owned-entities eid)
-                          (not (contains? user-attrs attr)))))}})
+(defn- user-or-public-entity-filter-map
+  "Keeps a specific user's entities and public entities.
+  Can be incrementally updated with the :update-props function."
+  [user-id]
+  {:props        {:owned-entities #{}
+                  :user-attrs     #{}
+                  :basis-t        -1}
+   :update-props (fn [{:keys [basis-t] :as props} db]
+                   (if (= basis-t (d/basis-t db))
+                     props
+                     (let [db-since (d/since db basis-t)
+                           new-entities (user-entities db-since user-id)
+                           new-attrs (user-attributes db-since new-entities)]
+                       (-> props
+                           (update :owned-entities into new-entities)
+                           (update :user-attrs into new-attrs)
+                           (assoc :basis-t (d/basis-t db))))))
+   :f            (fn [{:keys [owned-entities user-attrs]}]
+                   (fn [_ [eid attr]]
+                     (or (contains? owned-entities eid)
+                         (not (contains? user-attrs attr)))))})
 
 (defn- private-attr-filter-map []
-  {:no-private-attrs
-   {:props {:private-attrs #{:password/credential :verification/uuid}}
-    :f     (fn [{:keys [private-attrs]}]
-             (fn [db [eid]]
-               (not (some private-attrs (keys (d/entity db eid))))))}})
+  {:props {:private-attrs #{:password/credential :verification/uuid}}
+   :f     (fn [{:keys [private-attrs]}]
+            (fn [db [eid]]
+              (not (some private-attrs (keys (d/entity db eid))))))})
 
 (defn- no-auth-filter-map []
   ;;TODO: Need to just return the map and apply filters with
   ;;      a vector, because filters need ordering.
-  {:no-auth
-   {:props {:user-attrs #{:transaction/uuid :budget/uuid}}
-    :f     (fn [{:keys [user-attrs]}]
-             (fn [db [eid]]
-               (not (some user-attrs (keys (d/entity db eid))))))}})
+  {:props {:user-attrs #{:transaction/uuid :budget/uuid}}
+   :f     (fn [{:keys [user-attrs]}]
+            (fn [db [eid]]
+              (not (some user-attrs (keys (d/entity db eid))))))})
 
-(defn authenticated-db-map [user-id]
-  (merge (private-attr-filter-map)
-         (user-or-public-entity-filter-map user-id)))
+(defn authenticated-db-filters [user-id]
+  (vector (user-or-public-entity-filter-map user-id)
+          (private-attr-filter-map)))
 
-(defn not-authenticated-db-map []
-  (no-auth-filter-map))
+(defn not-authenticated-db-filters []
+  [(no-auth-filter-map)])
 
 ;; Updating and applying filters
 
-(defn update-filters [db filter-map]
-  (reduce-kv (fn [m k {:keys [props update-props]}]
-               (cond-> m
-                       (some? update-props)
-                       (assoc-in [k :props] (update-props db props))))
-             filter-map
-             filter-map))
+(defn update-filters [db filters]
+  {:pre [(vector? filters)]}
+  (reduce (fn [v {:keys [update-props] :as m}]
+            (conj v (cond-> m
+                            (some? update-props)
+                            (update :props update-props db))))
+             []
+             filters))
 
-(defn apply-filters [db filter-map]
-  (reduce-kv (fn [db _ {:keys [f props]}]
-               (d/filter db (f props)))
-             db
-             filter-map))
-
+(defn apply-filters [db filters]
+  {:pre [(vector? filters)]}
+  (reduce (fn [db {:keys [f props]}]
+            (d/filter db (f props)))
+          db
+          filters))
 
 ;; Deprecated, using for testing.
-(defn filter-db [db filter-map]
-  (->> filter-map
+(defn filter-db [db filters]
+  (->> filters
        (update-filters db)
        (apply-filters db)))
 
 (defn authenticated-db [db user-id]
-  (filter-db db (authenticated-db-map user-id)))
+  (filter-db db (authenticated-db-filters user-id)))
 
 (defn not-authenticated-db [db]
-  (filter-db db (not-authenticated-db-map)))
+  (filter-db db (not-authenticated-db-filters)))

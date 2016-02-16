@@ -43,19 +43,19 @@
      "Wraps a db in the env when read or mutate is called the first time.
      Reads are called after each mutate, which is why this works."
      [read-or-mutate]
-     (let [filter-atom (atom {})]
+     (let [filter-atom (atom [])]
        (fn [{:keys [state] :as env} & args]
          (let [db (d/db state)
                user-id (get-in env [:auth :username])
-               filter-map (if-let [old-filter @filter-atom]
-                            (filter/update-filters db old-filter)
+               filters (if-let [old-filters @filter-atom]
+                            (filter/update-filters db old-filters)
                             (if user-id
                                 (do (debug "Using auth db for user:" user-id)
-                                    (filter/authenticated-db-map user-id))
+                                    (filter/authenticated-db-filters user-id))
                                 (do (debug "Using non auth db")
-                                    (filter/not-authenticated-db-map))))
-               db (filter/apply-filters db filter-map)]
-           (reset! filter-atom filter-map)
+                                    (filter/not-authenticated-db-filters))))
+               db (filter/apply-filters db filters)]
+           (reset! filter-atom filters)
            (apply read-or-mutate (assoc env :db db)
                   args))))))
 
