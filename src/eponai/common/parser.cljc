@@ -40,27 +40,32 @@
 
 #?(:clj
    (defn wrap-db
-     "Wraps a db in the env when read or mutate is called the first time.
-     Reads are called after each mutate, which is why this works."
+     "Wraps the key :db to the environment with the latest filter.
+     Filters are updated incrementally via the ::filter-atom (which
+     is renewed everytime parser is called (see wrap-parser-filter-atom)."
      [read-or-mutate]
-     (let [filter-atom (atom [])]
-       (fn [{:keys [state] :as env} & args]
-         (let [db (d/db state)
-               user-id (get-in env [:auth :username])
-               filters (if-let [old-filters @filter-atom]
-                            (filter/update-filters db old-filters)
-                            (if user-id
-                                (do (debug "Using auth db for user:" user-id)
-                                    (filter/authenticated-db-filters user-id))
-                                (do (debug "Using non auth db")
-                                    (filter/not-authenticated-db-filters))))
-               db (filter/apply-filters db filters)]
-           (reset! filter-atom filters)
-           (apply read-or-mutate (assoc env :db db)
-                  args))))))
+     (fn [{:keys [state ::filter-atom] :as env} & args]
+       (let [db (d/db state)
+             user-id (get-in env [:auth :username])
+             update-filters (fn [old-filters]
+                              (let [filters (or old-filters
+                                                (if user-id
+                                                  (do (debug "Using auth db for user:" user-id)
+                                                      (filter/authenticated-db-filters user-id))
+                                                  (do (debug "Using non auth db")
+                                                      (filter/not-authenticated-db-filters))))]
+                                (filter/update-filters db filters)))
+             filters (swap! filter-atom update-filters)
+             db (filter/apply-filters db filters)]
+         (apply read-or-mutate (assoc env :db db)
+                args)))))
 
 #?(:cljs
-   (defn wrap-db [read-or-mutate]
+   (defn wrap-db
+     "Wraps a :db in the environment for each read.
+     We currently don't have any filters for the client
+     side, so we're not using ::filter-atom."
+     [read-or-mutate]
      (fn [{:keys [state] :as env} & args]
        (apply read-or-mutate (assoc env :db (d/db state))
               args))))
@@ -82,10 +87,18 @@
            env
           args)))
 
+(defn wrap-parser-filter-atom
+  "Returns a parser with a filter-atom assoc'ed in the env."
+  [parser]
+  (fn [env & args]
+    (apply parser (assoc env ::filter-atom (atom nil))
+           args)))
+
 (defn parser
   ([]
    (let [parser (om/parser {:read   (-> read/read read-without-state wrap-db)
                             :mutate (-> mutate/mutate wrap-db)})]
      #?(:cljs parser
-        :clj (-> parser
-                 wrap-om-next-error-handler)))))
+        :clj  (-> parser
+                  wrap-parser-filter-atom
+                  wrap-om-next-error-handler)))))

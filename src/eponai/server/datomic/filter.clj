@@ -1,5 +1,6 @@
 (ns eponai.server.datomic.filter
-  (:require [datomic.api :as d]))
+  (:require [datomic.api :as d]
+            [taoensso.timbre :refer [debug]]))
 
 ;; TODO: Using :user/email right now. Should use :user/uuid when it's done.
 (def user-owned-rule
