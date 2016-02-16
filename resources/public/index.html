@@ -25,96 +25,12 @@
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
     <!--<link href="/style/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">-->
 
-
-    <!-- Flexbox grid -->
-    <!--<link rel="stylesheet" href="/style/css/flexboxgrid.min.css" type="text/css">-->
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-
-    <script>
-
-        function onSubscribe(elementId) {
-          document.getElementById(elementId).innerHTML = "<div class='loader-circle' />";
-        }
-
-        function fadeIn() {
-          /* Check the location of each desired element */
-          $('.fade-in').each( function(i) {
-
-            var center_of_object = $(this).offset().top + ($(this).outerHeight() / 6);
-            var bottom_of_window = $(window).scrollTop() + $(window).height();
-
-            /* If the object is completely visible in the window, fade it it */
-            if( bottom_of_window > center_of_object ){
-                $(this).animate({'opacity':'1'}, 400);
-            }
-          });
-        }
-
-        function isSignPopUpShowing() {
-            return $("#navbar-sign-in").children().length === 2;
-        }
-
-        $(document).ready(function() {
-          $("body").on("click", function() {
-            if (isSignPopUpShowing()) {
-              $("#navbar-sign-in").click();
-            }
-          });
-
-          $("#navbar-sign-in").click(function() {
-            return false;
-          });
-
-          $(window).load( function() {
-            fadeIn();
-          });
-
-          $(window).scroll( function() {
-            fadeIn();
-          });
-
-          $('[data-toggle="popover"]').popover();
-          $.ajaxSetup({
-            type: 'POST',
-            headers: { "cache-control": "no-cache" }
-          });
-
-          $('#form-intro').submit(function(e) {
-            e.preventDefault();
-            var dataString = $(this).serialize();
-            $.ajax({
-              type: "POST",
-              url: "/newsletter/subscribe",
-              data: dataString,
-              error: function(response) {
-                document.getElementById('subscribe-intro').innerHTML = "<p class='text-danger small'>" + JSON.parse(response.responseText).message + "</p>";
-              },
-              success: function(response) {
-                document.getElementById('subscribe-intro').innerHTML = "<p class='text-success small'>" + JSON.parse(response).message + "</p>";
-              }
-            });
-          });
-
-          $('#form-footer').submit(function(e) {
-            e.preventDefault();
-              var dataString = $(this).serialize();
-              $.ajax({
-                type: "POST",
-                url: "/newsletter/subscribe",
-                data: dataString,
-                error: function(response) {
-                  document.getElementById('subscribe-footer').innerHTML = "<p class='text-danger small'>" + JSON.parse(response.responseText).message + "</p>";
-                },
-                success: function(response) {
-                  document.getElementById('subscribe-footer').innerHTML = "<p class='text-success small'>" + JSON.parse(response).message + "</p>";
-                }
-              });
-            });
-          });
+    <!-- start Mixpanel -->
+    <script type="text/javascript">(function(e,b){if(!b.__SV){var a,f,i,g;window.mixpanel=b;b._i=[];b.init=function(a,e,d){function f(b,h){var a=h.split(".");2==a.length&&(b=b[a[0]],h=a[1]);b[h]=function(){b.push([h].concat(Array.prototype.slice.call(arguments,0)))}}var c=b;"undefined"!==typeof d?c=b[d]=[]:d="mixpanel";c.people=c.people||[];c.toString=function(b){var a="mixpanel";"mixpanel"!==d&&(a+="."+d);b||(a+=" (stub)");return a};c.people.toString=function(){return c.toString(1)+".people (stub)"};i="disable time_event track track_pageview track_links track_forms register register_once alias unregister identify name_tag set_config people.set people.set_once people.increment people.append people.union people.track_charge people.clear_charges people.delete_user".split(" ");
+    for(g=0;g<i.length;g++)f(c,i[g]);b._i.push([a,e,d])};b.__SV=1.2;a=e.createElement("script");a.type="text/javascript";a.async=!0;a.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===e.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";f=e.getElementsByTagName("script")[0];f.parentNode.insertBefore(a,f)}})(document,window.mixpanel||[]);
+    mixpanel.init("0980865aa734b3f18be4d92d0b612ee5");
     </script>
-
+    <!-- end Mixpanel -->
 </head>
 
 <body>
@@ -372,7 +288,7 @@
                     </div>
                 </form>
                 <!--</div>-->
-                <div id="subscribe-footer" style="height:1em;"></div>
+                <div id="subscribe-footer" class="text-center" style="height:1em;"></div>
             </div>
         </div>
         <!-- /.container -->
@@ -415,6 +331,93 @@
     </footer>
     </div>
     <!-- /.banner -->
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+
+        function onSubscribe(elementId) {
+          mixpanel.track("Newsletter Subscribe", {"element-id": elementId})
+          document.getElementById(elementId).innerHTML = "<div class='loader-circle' />";
+        }
+
+        function fadeIn() {
+          /* Check the location of each desired element */
+          $('.fade-in').each( function(i) {
+
+            var center_of_object = $(this).offset().top + ($(this).outerHeight() / 6);
+            var bottom_of_window = $(window).scrollTop() + $(window).height();
+
+            /* If the object is completely visible in the window, fade it it */
+            if( bottom_of_window > center_of_object ){
+                $(this).animate({'opacity':'1'}, 400);
+            }
+          });
+        }
+
+        function isSignPopUpShowing() {
+            return $("#navbar-sign-in").children().length === 2;
+        }
+
+        $(document).ready(function() {
+          $("body").on("click", function() {
+            if (isSignPopUpShowing()) {
+              $("#navbar-sign-in").click();
+            }
+          });
+
+          $("#navbar-sign-in").click(function() {
+            return false;
+          });
+
+          $(window).load( function() {
+            fadeIn();
+          });
+
+          $(window).scroll( function() {
+            fadeIn();
+          });
+
+          $('[data-toggle="popover"]').popover();
+          $.ajaxSetup({
+            type: 'POST',
+            headers: { "cache-control": "no-cache" }
+          });
+
+          $('#form-intro').submit(function(e) {
+            e.preventDefault();
+            var dataString = $(this).serialize();
+            $.ajax({
+              type: "POST",
+              url: "/newsletter/subscribe",
+              data: dataString,
+              error: function(response) {
+                document.getElementById('subscribe-intro').innerHTML = "<p class='text-danger small'>" + JSON.parse(response.responseText).message + "</p>";
+              },
+              success: function(response) {
+                document.getElementById('subscribe-intro').innerHTML = "<p class='text-success small'>" + JSON.parse(response).message + "</p>";
+              }
+            });
+          });
+
+          $('#form-footer').submit(function(e) {
+            e.preventDefault();
+              var dataString = $(this).serialize();
+              $.ajax({
+                type: "POST",
+                url: "/newsletter/subscribe",
+                data: dataString,
+                error: function(response) {
+                  document.getElementById('subscribe-footer').innerHTML = "<p class='text-danger small'>" + JSON.parse(response.responseText).message + "</p>";
+                },
+                success: function(response) {
+                  document.getElementById('subscribe-footer').innerHTML = "<p class='text-success small'>" + JSON.parse(response).message + "</p>";
+                }
+              });
+            });
+          });
+    </script>
 
 </body>
 
