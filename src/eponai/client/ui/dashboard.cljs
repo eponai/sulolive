@@ -22,6 +22,7 @@
      :widget/filter
      {:widget/report [:report/uuid
                       :report/group-by
+                      :report/title
                       {:report/functions [:report.function/uuid
                                           :report.function/attribute
                                           :report.function/id]}]}
@@ -32,8 +33,8 @@
     (let [{:keys [widget/report
                   widget/graph] :as widget} (om/props this)
           {:keys [on-delete
-                  data-report]} (om/get-computed this)
-          report-data (data-report report)]
+                  data]} (om/get-computed this)
+          report-data (report/create report data)]
       (html
         [:div.widget
          (opts {:style {:border        "1px solid #e7e7e7"
@@ -45,7 +46,7 @@
                         :box-sizing    :border-box}})
          [:div
           (opts {:style {:position        :absolute
-                         :top             10
+                         :top             0
                          :left            10
                          :right           10
                          :height          30
@@ -53,8 +54,8 @@
                          :flex-direction  :row
                          :justify-content :space-between
                          :align-items     :flex-start}})
-          [:p
-           (str "Data: " (or (:key report-data) (:key (first report-data))))]
+          [:h5
+           (:report/title report)]
           (when on-delete
             [:a.close
              {:on-click #(on-delete widget)}
@@ -75,15 +76,6 @@
                  (d3/->NumberChart settings)))]))))
 
 (def ->Widget (om/factory Widget))
-
-(defn on-add-tag-key-down [this input-tag]
-  (fn [e]
-    (when (and (= 13 (.-keyCode e))
-               (seq (.. e -target -value)))
-      (.preventDefault e)
-      (om/update-state! this #(-> %
-                               (update :input-tags conj input-tag)
-                               (assoc :input-tag ""))))))
 
 (defn button-class [field value]
   (if (= field value)
@@ -133,7 +125,7 @@
       groups)]])
 
 
-(defn chart-settings [component {:keys [input-graph input-function input-report] :as state}]
+(defn chart-settings [component {:keys [input-graph input-function input-report]}]
   (let [{:keys [graph/style]} input-graph]
     [:div
      [:h5 "Configuration"]
@@ -183,6 +175,9 @@
   (select-group-by [this input-group-by]
     (om/update-state! this assoc-in [:input-report :report/group-by] input-group-by))
 
+  (change-report-title [this title]
+    (om/update-state! this assoc-in [:input-report :report/title] title))
+
   (render [this]
     (let [{:keys [input-graph input-report] :as state} (om/get-state this)
           {:keys [on-close
@@ -197,6 +192,10 @@
           [:h4 "New widget"]]
 
          [:div.modal-body
+          [:input.form-control
+           {:value (:report/title input-report)
+            :placeholder "Untitled"
+            :on-change #(.change-report-title this (.-value (.-target %)))}]
           [:h4
            (opts {:style {:margin-right "1em"}})
            "Graph"]
@@ -215,8 +214,9 @@
               (opts {:class    (button-class style :graph.style/number)
                      :on-click #(.select-graph-style this :graph.style/number)})
               "Number"]])
-          (->Widget (om/computed {:widget/graph input-graph}
-                                 {:data-report (fn [_] (report/create input-report transactions))}))
+          (->Widget (om/computed {:widget/graph input-graph
+                                  :widget/report input-report}
+                                 {:data transactions}))
           (chart-settings this state)
           [:div (str "State: " state)]]
 
@@ -258,13 +258,6 @@
   Object
   (initLocalState [_]
     {:add-widget false})
-  (data-report [this report]
-    (let [{:keys [query/dashboard]} (om/props this)
-          transactions (-> dashboard
-                           :dashboard/budget
-                           :transaction/_budget)]
-      (report/create report transactions)))
-
   (show-add-widget [this visible]
     (om/update-state! this assoc :add-widget visible))
 
@@ -302,7 +295,9 @@
            (fn [widget-props]
              (->Widget
                (om/computed widget-props
-                            {:data-report #(.data-report this %)
+                            {:data (-> dashboard
+                                       :dashboard/budget
+                                       :transaction/_budget)
                              :on-delete #(.delete-widget this %)})))
            (:dashboard/widgets dashboard))]))))
 
