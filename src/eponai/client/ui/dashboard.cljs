@@ -273,19 +273,20 @@
           {:keys [add-widget]} (om/get-state this)]
       (html
         [:div
-         (opts {:style {:position :relative
-                        :box-sizing :border-box}})
+         ;(opts {:style {:position :relative
+         ;               :box-sizing :border-box}})
 
          [:button
           {:class    "btn btn-default btn-md"
            :on-click #(.show-add-widget this true)}
           "New widget"]
          (when add-widget
-           (utils/modal {:content (->NewWidget (om/computed {}
-                                                            {:on-save #(.save-widget this (assoc % :input-dashboard dashboard))
-                                                             :on-close #(.show-add-widget this false)
-                                                             :transactions (get-in dashboard [:dashboard/budget :transaction/_budget])}))
-                         :on-close #(.show-add-widget this false)}))
+           (utils/modal {:content  (->NewWidget (om/computed {}
+                                                             {:on-save      #(.save-widget this (assoc % :input-dashboard dashboard))
+                                                              :on-close     #(.show-add-widget this false)
+                                                              :transactions (get-in dashboard [:dashboard/budget :transaction/_budget])}))
+                         :on-close #(.show-add-widget this false)
+                         :class    "modal-lg"}))
          ;[:a
          ; {:class "btn btn-default btn-md"
          ;  :href  (routes/inside "/widget/new")}

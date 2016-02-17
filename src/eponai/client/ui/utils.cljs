@@ -7,7 +7,7 @@
   [:div.loader-circle-black
    (opts {:style {:top      "50%"
                   :left     "50%"
-                  :position "fixed"
+                  :position :fixed
                   :z-index  1050}})])
 
 (defn click-outside-target [on-click]
@@ -16,23 +16,24 @@
                      :bottom   0
                      :right    0
                      :left     0
-                     :position "fixed"}
+                     :position :fixed}
           :on-click on-click})])
 
-(defn modal [{:keys [content on-close]}]
+(defn modal [{:keys [content on-close style class]}]
   [:div
    (opts {:style {:top              0
                   :bottom           0
                   :right            0
                   :left             0
-                  :position         "fixed"
+                  :position         :absolute
                   :z-index          1050
                   :opacity          1
-                  :background       "rgba(0,0,0,0.6)"
-                  :background-color "#123"
+                  ;:background       "rgba(0,0,0,0.6)"
+                  ;:background-color "#123"
                   :display          "block"}})
    (click-outside-target on-close)
 
-   [:div.modal-dialog
+   [:div
+    {:class (str "modal-dialog " (or class "modal-sm"))}
     [:div.modal-content
      content]]])
