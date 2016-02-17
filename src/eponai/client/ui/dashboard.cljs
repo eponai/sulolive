@@ -85,24 +85,24 @@
 (defn chart-function [component input-function]
   (let [function-id (:report.function/id input-function)]
     [:div
-     (opts {:style {:width "50%"}})
      [:h6 "Calculate"]
-     [:button
-      {:class    (button-class function-id :report.function.id/sum)
-       :on-click #(.select-function component :report.function.id/sum)}
+     [:div.btn-group
+      [:button
+       {:class    (button-class function-id :report.function.id/sum)
+        :on-click #(.select-function component :report.function.id/sum)}
 
-      [:span "Sum"]]
-     [:button
-      {:class    (button-class function-id :report.function.id/mean)
-       :on-click #(.select-function component :report.function.id/mean)}
-      [:span
-       "Mean"]]]))
+       [:span "Sum"]]
+      [:button
+       {:class    (button-class function-id :report.function.id/mean)
+        :on-click #(.select-function component :report.function.id/mean)}
+       [:span
+        "Mean"]]]]))
 
 (defn chart-group-by [component {:keys [report/group-by]} groups]
   [:div
-   (opts {:style {:width "50%"}})
+   ;(opts {:style {:width "50%"}})
    [:h6 "Group by"]
-   [:div
+   [:div.btn-group
     (map
       (fn [k]
         (let [conf {:transaction/tags     {:icon "fa fa-tag"
@@ -128,26 +128,20 @@
 (defn chart-settings [component {:keys [input-graph input-function input-report]}]
   (let [{:keys [graph/style]} input-graph]
     [:div
-     [:h5 "Configuration"]
+     ;[:h5 "Configuration"]
      (cond
        (= style :graph.style/bar)
        [:div
-        (opts {:style {:display        "flex"
-                       :flex-direction "row"}})
         (chart-function component input-function)
         (chart-group-by component input-report [:transaction/tags :transaction/currency])]
 
        (= style :graph.style/area)
        [:div
-        (opts {:style {:display        "flex"
-                       :flex-direction "row"}})
         (chart-function component input-function)
         (chart-group-by component input-report [:transaction/date])]
 
        (= style :graph.style/number)
        [:div
-        (opts {:style {:display        "flex"
-                       :flex-direction "row"}})
         (chart-function component input-function)])]))
 
 (defn header []
@@ -189,36 +183,41 @@
           [:button.close
            {:on-click on-close}
            "x"]
-          [:h4 "New widget"]]
+          [:h6 "New widget"]]
 
          [:div.modal-body
-          [:input.form-control
-           {:value (:report/title input-report)
-            :placeholder "Untitled"
-            :on-change #(.change-report-title this (.-value (.-target %)))}]
-          [:h4
-           (opts {:style {:margin-right "1em"}})
-           "Graph"]
+          ;[:h4 "Preview"]
+          [:div.row
 
-          (let [style (:graph/style input-graph)]
-            [:div.btn-group
-             [:div
-              (opts {:class    (button-class style :graph.style/bar)
-                     :on-click #(.select-graph-style this :graph.style/bar)})
-              "Bar Chart"]
-             [:button
-              (opts {:class    (button-class style :graph.style/area)
-                     :on-click #(.select-graph-style this :graph.style/area)})
-              "Area Chart"]
-             [:button
-              (opts {:class    (button-class style :graph.style/number)
-                     :on-click #(.select-graph-style this :graph.style/number)})
-              "Number"]])
-          (->Widget (om/computed {:widget/graph input-graph
-                                  :widget/report input-report}
-                                 {:data transactions}))
-          (chart-settings this state)
-          [:div (str "State: " state)]]
+           [:div
+            {:class "col-sm-6"}
+
+            ;[:h6 "Title"]
+            [:input.form-control
+             {:value       (:report/title input-report)
+              :placeholder "Untitled"
+              :on-change   #(.change-report-title this (.-value (.-target %)))}]
+            (chart-settings this state)]
+           [:div
+            {:class "col-sm-6"}
+            (let [style (:graph/style input-graph)]
+              [:div.btn-group
+               [:div
+                (opts {:class    (button-class style :graph.style/bar)
+                       :on-click #(.select-graph-style this :graph.style/bar)})
+                "Bar Chart"]
+               [:button
+                (opts {:class    (button-class style :graph.style/area)
+                       :on-click #(.select-graph-style this :graph.style/area)})
+                "Area Chart"]
+               [:button
+                (opts {:class    (button-class style :graph.style/number)
+                       :on-click #(.select-graph-style this :graph.style/number)})
+                "Number"]])
+            [:h6 "Preview"]
+            (->Widget (om/computed {:widget/graph  input-graph
+                                    :widget/report input-report}
+                                   {:data transactions}))]]]
 
          [:div.modal-footer
           (opts {:style {:display        "flex"
@@ -240,7 +239,8 @@
                                            (assoc-in [:input-report :report/uuid] (d/squuid))))
                               (on-close))
                   :style    {:margin 5}})
-           "Save"]]]))))
+           "Save"]
+          [:div.text-center (str "State: " state)]]]))))
 
 (def ->NewWidget (om/factory NewWidget))
 
@@ -273,8 +273,6 @@
           {:keys [add-widget]} (om/get-state this)]
       (html
         [:div
-         ;(opts {:style {:position :relative
-         ;               :box-sizing :border-box}})
 
          [:button
           {:class    "btn btn-default btn-md"

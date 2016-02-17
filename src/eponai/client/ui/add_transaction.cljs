@@ -110,14 +110,14 @@
                    :placeholder "0.00"
                    :min         "0"
                    :value       amount
-                   :style       {:width        "80%"
+                   :style       {:width        "60%"
                                  :margin-right "0.5em"}
                    :on-change   (input-on-change this :input/amount)})]
 
            [:select.form-control
             (opts {:on-change     (input-on-change this :input/currency)
                    :default-value currency
-                   :style         {:width "20%"}})
+                   :style         {:width "40%"}})
             (map-all all-currencies
                      (fn [{:keys [currency/code]}]
                        [:option
@@ -168,11 +168,11 @@
                                                  (delete-tag-fn this tagname)))))]]]
          [:div.modal-footer
           [:button
-           (opts {:class    "btn btn-default btn-lg"
+           (opts {:class    "btn btn-default btn-md"
                   :on-click on-close})
            "Cancel"]
           [:button
-           (opts {:class    "btn btn-info btn-lg"
+           (opts {:class    "btn btn-info btn-md"
                   :on-click #(do (.add-transaction this)
                                  (on-close))})
            "Save"]]]))))

@@ -8,7 +8,7 @@
             [sablono.core :refer-macros [html]]
             [garden.core :refer [css]]))
 
-(defui PopupMenu
+(defui ProfileMenu
   static om/IQuery
   (query [_]
     [{:query/all-budgets [:budget/uuid
@@ -67,12 +67,12 @@
                     :on-click on-close}
                 "Sign Out"]]]]))))
 
-(def ->PopupMenu (om/factory PopupMenu))
+(def ->ProfileMenu (om/factory ProfileMenu))
 
 (defui NavbarMenu
   static om/IQuery
   (query [_]
-    [{:proxy/popup-menu (om/get-query PopupMenu)}
+    [{:proxy/popup-menu (om/get-query ProfileMenu)}
      {:proxy/add-transaction (om/get-query AddTransaction)}])
   Object
   (add-transaction [this visible]
@@ -110,7 +110,7 @@
                  :on-click #(.open-menu this true)})]
 
          (when menu-visible
-           (->PopupMenu
+           (->ProfileMenu
              (om/computed popup-menu
                           {:on-close #(.open-menu this false)})))
 
