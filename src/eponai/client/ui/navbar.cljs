@@ -1,12 +1,59 @@
 (ns eponai.client.ui.navbar
-  (:require [om.next :as om :refer-macros [defui]]
-            [eponai.client.ui :refer-macros [opts map-all]]
+  (:require [datascript.core :as d]
+            [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
+            [eponai.client.ui.add_transaction :refer [->AddTransaction AddTransaction]]
+            [eponai.client.ui.add-widget :refer [->NewWidget NewWidget]]
+            [eponai.client.ui.dashboard :refer [->Widget]]
+            [eponai.client.ui.datepicker :refer [->Datepicker]]
+            [eponai.client.ui.tag :as tag]
             [eponai.client.ui.format :as f]
             [eponai.client.ui.utils :as utils]
             [eponai.client.routes :as routes]
-            [eponai.client.ui.add_transaction :refer [AddTransaction ->AddTransaction]]
-            [sablono.core :refer-macros [html]]
-            [garden.core :refer [css]]))
+            [garden.core :refer [css]]
+            [om.next :as om :refer-macros [defui]]
+            [sablono.core :refer-macros [html]]))
+
+;;;;; ###################### Actions ####################
+
+(defn- open-new-menu [component visible]
+  (om/update-state! component assoc :new-menu-visible? visible))
+
+(defn- open-profile-menu [component visible]
+  (om/update-state! component assoc :menu-visible? visible))
+
+(defn- select-add-transaction [component visible]
+  (om/update-state! component assoc :add-transaction? visible))
+
+(defn- select-add-widget [component visible]
+  (om/update-state! component assoc :add-widget? visible))
+
+(defn- select-new [component new-id]
+  (om/update-state! component assoc new-id true
+                    :new-menu-visible? false))
+
+;;;; ##################### UI components ####################
+
+(defn- new-menu [{:keys [on-close on-click]}]
+  [:div
+   {:class "dropdown open"}
+   (utils/click-outside-target on-close)
+   [:ul
+    {:class "dropdown-menu dropdown-menu-right"}
+    [:li [:a {:href "#"
+              :on-click #(on-click :add-transaction?)}
+          [:i
+           (opts {:class "fa fa-usd"
+                  :style {:margin-right "0.5em"}})]
+          [:span "Transaction"]]]
+    [:li.divider]
+    [:li [:a {:href     "#"
+              :on-click #(on-click :add-widget?)}
+          [:i
+           (opts {:class "fa fa-bar-chart"
+                  :style {:margin-right "0.5em"}})]
+          [:span "Widget"]]]]])
+
+;;;; #################### Om Next components #####################
 
 (defui ProfileMenu
   static om/IQuery
@@ -72,34 +119,39 @@
 (defui NavbarMenu
   static om/IQuery
   (query [_]
-    [{:proxy/popup-menu (om/get-query ProfileMenu)}
-     {:proxy/add-transaction (om/get-query AddTransaction)}])
+    [{:proxy/profile-menu (om/get-query ProfileMenu)}
+     {:proxy/add-transaction (om/get-query AddTransaction)}
+     {:proxy/add-widget (om/get-query NewWidget)}])
   Object
-  (add-transaction [this visible]
-    (om/update-state! this assoc :add-transaction-visible visible))
-  (open-menu [this visible]
-    (om/update-state! this assoc :menu-visible visible))
   (initLocalState [_]
-    {:menu-visible false
-     :add-transaction-visible false})
+    {:menu-visible? false
+     :new-menu-visible? false
+     :add-transaction? false
+     :add-widget? false})
   (render [this]
-    (let [{:keys [proxy/popup-menu
-                  proxy/add-transaction]} (om/props this)
-          {:keys [menu-visible
-                  add-transaction-visible]} (om/get-state this)]
+    (let [{:keys [proxy/profile-menu
+                  proxy/add-transaction
+                  proxy/add-widget]} (om/props this)
+          {:keys [menu-visible?
+                  new-menu-visible?
+                  add-transaction?
+                  add-widget?]} (om/get-state this)]
       (html
         [:div#navbar-menu
          (opts {:style {:display         "flex"
                         :flex            "row-reverse"
+                        :padding         "0.1em"
                         :align-items     "flex-end"
                         :justify-content "flex-end"}})
 
          [:button
           (opts {:style    {:display "block"
-                            :margin  "0.5em 0.2em"}
-                 :on-click #(.add-transaction this true)
+                            :margin  "0.5em 0.2em"
+                            :font-size "1em"}
+                 :on-click #(open-new-menu this true)
                  :class    "btn btn-default btn-md"})
-          "New"]
+          [:i
+           {:class "fa fa-plus"}]]
 
          [:img
           (opts {:class    "img-circle"
@@ -107,21 +159,31 @@
                             :width  "40"
                             :height "40"}
                  :src      "/style/img/profile.png"
-                 :on-click #(.open-menu this true)})]
+                 :on-click #(open-profile-menu this true)})]
 
-         (when menu-visible
+         (when add-widget?
+           (utils/modal {:content  (->NewWidget (om/computed add-widget
+                                                             {:on-close     #(select-add-widget this false)}))
+                         :on-close #(select-add-widget this false)
+                         :class    "modal-lg"}))
+         (when menu-visible?
            (->ProfileMenu
-             (om/computed popup-menu
-                          {:on-close #(.open-menu this false)})))
+             (om/computed profile-menu
+                          {:on-close #(open-profile-menu this false)})))
+         (when new-menu-visible?
+           (new-menu {:on-click  #(select-new this %)
+                      :on-close #(open-new-menu this false)}))
 
-         (when add-transaction-visible
-           (let [on-close #(.add-transaction this false)]
+         (when add-transaction?
+           (let [on-close #(select-add-transaction this false)]
              (utils/modal {:content  (->AddTransaction
                                        (om/computed add-transaction
                                                     {:on-close on-close}))
                            :on-close on-close})))]))))
 
 (def ->NavbarMenu (om/factory NavbarMenu))
+
+;;;; ##################### UI components ####################
 
 (defn navbar-query []
   (om/get-query NavbarMenu))

@@ -32,9 +32,6 @@
                              (assoc :input/tag "")
                              (update :input/tags conj input-tag))))))
 
-(defn header []
-  "New Transaction")
-
 (defui AddTransaction
   static om/IQuery
   (query [_]
@@ -72,7 +69,6 @@
           (merge (om/props this)
                  (om/get-state this))
           {:keys [on-close]} (om/get-computed this)]
-      (println "budgets: " all-budgets)
       (html
         [:div
 
@@ -80,7 +76,7 @@
           [:button.close
            {:on-click on-close}
            "x"]
-          [:h4
+          [:h6
            "New transaction"]]
 
          [:div.modal-body
