@@ -45,6 +45,7 @@
                            (update :user-attrs into new-attrs)
                            (assoc :basis-t (d/basis-t db))))))
    :f            (fn [{:keys [owned-entities user-attrs]}]
+                   {:pre [(set? owned-entities) (set? user-attrs)]}
                    (fn [_ [eid attr]]
                      (or (contains? owned-entities eid)
                          (not (contains? user-attrs attr)))))})
@@ -56,8 +57,6 @@
               (not (some private-attrs (keys (d/entity db eid))))))})
 
 (defn- no-auth-filter-map []
-  ;;TODO: Need to just return the map and apply filters with
-  ;;      a vector, because filters need ordering.
   {:props {:user-attrs #{:transaction/uuid :budget/uuid}}
    :f     (fn [{:keys [user-attrs]}]
             (fn [db [eid]]
