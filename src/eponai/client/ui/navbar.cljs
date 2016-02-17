@@ -38,90 +38,65 @@
    {:class "dropdown open"}
    (utils/click-outside-target on-close)
    [:ul
-    {:class "dropdown-menu dropdown-menu-right"}
-    [:li [:a {:href "#"
-              :on-click #(on-click :add-transaction?)}
+    {:class "dropdown-menu dropdown-menu-left"}
+    [:li [:a
+          (opts {:href     "#"
+                 :on-click #(on-click :add-transaction?)
+                 :style    {:padding "0.5em"}})
           [:i
            (opts {:class "fa fa-usd"
-                  :style {:margin-right "0.5em"}})]
+                  :style {:width "20%"}})]
           [:span "Transaction"]]]
-    [:li.divider]
-    [:li [:a {:href     "#"
-              :on-click #(on-click :add-widget?)}
-          [:i
+    [:li
+      [:a
+       (opts {:href     "#"
+              :on-click #(on-click :add-widget?)
+              :style {:padding "0.5em"}})
+       [:i
            (opts {:class "fa fa-bar-chart"
-                  :style {:margin-right "0.5em"}})]
+                  :style {:width "20%"}})]
           [:span "Widget"]]]]])
+
+(defn- profile-menu [{:keys [on-close]}]
+  [:div
+   {:class "dropdown open"}
+   (utils/click-outside-target on-close)
+   [:ul
+    {:class "dropdown-menu dropdown-menu-right"}
+    [:li
+     [:a
+      (opts {:href     "#"
+             :on-click on-close
+             :style    {:padding "0.5em"}})
+      [:i
+       (opts {:class "fa fa-user"
+              :style {:width "15%"}})]
+      [:span "Profile"]]]
+    [:li [:a
+          (opts {:href     (routes/inside "/settings")
+                 :on-click on-close
+                 :style    {:padding "0.5em"}})
+          [:i
+           (opts {:class "fa fa-gear"
+                  :style {:width "15%"}})]
+          [:span "Settings"]]]
+    [:li.divider]
+    [:li [:a
+          (opts {:href     (routes/outside "/api/logout")
+                 :on-click on-close
+                 :style    {:padding "0.5em"}})
+          "Sign Out"]]]])
 
 ;;;; #################### Om Next components #####################
 
-(defui ProfileMenu
-  static om/IQuery
-  (query [_]
-    [{:query/all-budgets [:budget/uuid
-                          :budget/name]}
-     {:query/current-user [:user/uuid
-                           :user/activated-at]}])
-  Object
-  (render [this]
-    (let [{:keys [query/all-budgets
-                  query/current-user]} (om/props this)
-          {:keys [on-close]} (om/get-computed this)]
-      (html
-        [:div
-         {:class "dropdown open"}
-         (utils/click-outside-target on-close)
-         [:ul
-          {:class "dropdown-menu dropdown-menu-right"}
-          [:li.dropdown-header
-           (let [activated-at (:user/activated-at current-user)]
-             (if activated-at
-               (str "Trial: " (max 0 (- 14 (f/days-since activated-at))) " days left")
-               (str "Trial ended")))]
-          [:li [:a (opts {:style {:display "block"
-                                  :margin  "0.5em 0.2em"}
-                          :class "btn btn-primary btn-md"
-                          :href  (routes/inside "/subscribe/")
-                          :on-click on-close})
-                "Buy"]]
-          [:li.divider]
-
-          (when (not-empty all-budgets)
-            [:li.dropdown-header
-             "Sheets"])
-          (map
-            (fn [budget]
-              [:li
-               (opts {:key [(:budget/uuid budget)]})
-               [:a {:href (routes/inside "/dashboard/" (:budget/uuid budget))
-                    :on-click on-close}
-                (or (:budget/name budget) "Untitled")]])
-            all-budgets)
-
-          [:li.divider]
-          [:li [:a {:href (routes/inside "/transactions")
-                    :on-click on-close}
-                "All Transactions"]]
-          [:li.divider]
-          [:li [:a {:href     "#"
-                    :on-click on-close}
-                "Profile"]]
-          [:li [:a {:href (routes/inside "/settings")
-                    :on-click on-close}
-                "Settings"]]
-          [:li.divider]
-          [:li [:a {:href (routes/outside "/api/logout")
-                    :on-click on-close}
-                "Sign Out"]]]]))))
-
-(def ->ProfileMenu (om/factory ProfileMenu))
 
 (defui NavbarMenu
   static om/IQuery
   (query [_]
-    [{:proxy/profile-menu (om/get-query ProfileMenu)}
-     {:proxy/add-transaction (om/get-query AddTransaction)}
-     {:proxy/add-widget (om/get-query NewWidget)}])
+    [{:proxy/add-transaction (om/get-query AddTransaction)}
+     {:proxy/add-widget (om/get-query NewWidget)}
+     {:query/current-user [:user/uuid
+                           :user/activated-at]}])
   Object
   (initLocalState [_]
     {:menu-visible? false
@@ -129,51 +104,67 @@
      :add-transaction? false
      :add-widget? false})
   (render [this]
-    (let [{:keys [proxy/profile-menu
-                  proxy/add-transaction
-                  proxy/add-widget]} (om/props this)
+    (let [{:keys [proxy/add-transaction
+                  proxy/add-widget
+                  query/current-user]} (om/props this)
           {:keys [menu-visible?
                   new-menu-visible?
                   add-transaction?
                   add-widget?]} (om/get-state this)]
       (html
-        [:div#navbar-menu
+        [:div
          (opts {:style {:display         "flex"
-                        :flex            "row-reverse"
+                        :flex            "row"
                         :padding         "0.1em"
                         :align-items     "flex-end"
-                        :justify-content "flex-end"}})
+                        :justify-content :space-between}})
 
-         [:button
-          (opts {:style    {:display "block"
-                            :margin  "0.5em 0.2em"
-                            :font-size "1em"}
-                 :on-click #(open-new-menu this true)
-                 :class    "btn btn-default btn-md"})
-          [:i
-           {:class "fa fa-plus"}]]
+         [:div
+          [:button
+           (opts {:style    {:display   "block"
+                             :margin    "0.5em 0.2em"
+                             :font-size "1em"}
+                  :on-click #(open-new-menu this true)
+                  :class    "btn btn-info btn-md"})
+           [:i
+            {:class "fa fa-plus"}]]
+          (when new-menu-visible?
+            (new-menu {:on-click #(select-new this %)
+                       :on-close #(open-new-menu this false)}))]
 
-         [:img
-          (opts {:class    "img-circle"
-                 :style    {:margin "0.1em 1em"
-                            :width  "40"
-                            :height "40"}
-                 :src      "/style/img/profile.png"
-                 :on-click #(open-profile-menu this true)})]
+         [:div
+          (opts {:style {:display        :flex
+                         :flex-direction :row
+                         :align-items    :flex-end}})
+          (let [activated-at (:user/activated-at current-user)]
+            [:p.small.text-muted
+             (if activated-at
+               (str "Trial: " (max 0 (- 14 (f/days-since activated-at))) " days left")
+               (str "Trial ended"))])
+          [:a (opts {:style {:display "block"
+                             :margin  "0.5em 0.2em"}
+                     :class "btn btn-primary btn-md"
+                     :href  (routes/inside "/subscribe/")})
+           "Upgrade"]
+          [:a
+           {:href     "#"}
+           [:img
+            (opts {:class    "img-circle"
+                   :style    {:margin "0.1em 1em"
+                              :width  "40"
+                              :height "40"
+                              :border "1px solid #e7e7e7"}
+                   :src      "/style/img/profile.png"
+                   :on-click #(open-profile-menu this true)})]]
+
+          (when menu-visible?
+            (profile-menu {:on-close #(open-profile-menu this false)}))]
 
          (when add-widget?
            (utils/modal {:content  (->NewWidget (om/computed add-widget
-                                                             {:on-close     #(select-add-widget this false)}))
+                                                             {:on-close #(select-add-widget this false)}))
                          :on-close #(select-add-widget this false)
                          :class    "modal-lg"}))
-         (when menu-visible?
-           (->ProfileMenu
-             (om/computed profile-menu
-                          {:on-close #(open-profile-menu this false)})))
-         (when new-menu-visible?
-           (new-menu {:on-click  #(select-new this %)
-                      :on-close #(open-new-menu this false)}))
-
          (when add-transaction?
            (let [on-close #(select-add-transaction this false)]
              (utils/modal {:content  (->AddTransaction
@@ -183,20 +174,59 @@
 
 (def ->NavbarMenu (om/factory NavbarMenu))
 
+(defui SideBar
+  static om/IQuery
+  (query [_]
+    [{:query/all-budgets [:budget/uuid
+                          :budget/name]}
+     {:query/current-user [:user/uuid
+                           :user/activated-at]}])
+  Object
+  (render [this]
+    (let [{:keys [query/all-budgets]} (om/props this)]
+      (html
+        [:ul.sidebar-nav
+         [:li.sidebar-brand
+          [:a.navbar-brand
+           {:href (routes/inside "/")}
+           [:strong
+            "JourMoney"]
+           [:span.small
+            " by eponai"]]]
+         [:li [:a {:href (routes/inside "/transactions")
+                   :on-click nil}
+               "All Transactions"]]
+         (map
+           (fn [budget]
+             [:li
+              (opts {:key [(:budget/uuid budget)]})
+              [:a {:href     (routes/inside "/dashboard/" (:budget/uuid budget))}
+               (or (:budget/name budget) "Untitled")]])
+           all-budgets)]))))
+
+(def ->SideBar (om/factory SideBar))
+
 ;;;; ##################### UI components ####################
 
 (defn navbar-query []
   (om/get-query NavbarMenu))
 
+(defn sidebar-query []
+  (om/get-query SideBar))
+
+(defn sidebar-create [props]
+  [:div#sidebar-wrapper
+   [:div#content
+    (->SideBar props)]
+   [:footer.footer
+    [:div.container
+     [:p.copyright.small
+      (opts {:style {:color :white}})
+      "Copyright © eponai 2016. All Rights Reserved"]]]])
+
 (defn navbar-create [props]
-  [:nav
-   (opts {:class "navbar navbar-default navbar-fixed-top topnav"
-          :role  "navigation"})
-   [:div
-    [:a.navbar-brand
-     {:href (routes/inside "/")}
-     [:strong
-      "JourMoney"]
-     [:span.small
-      " by eponai"]]]
-   (->NavbarMenu props)])
+  [:div
+   [:nav
+    (opts {:class "navbar navbar-default navbar-fixed-top topnav"
+           :role  "navigation"})
+    (->NavbarMenu props)]])

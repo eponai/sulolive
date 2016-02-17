@@ -35,6 +35,7 @@
   (query [_]
     [:datascript/schema
      {:proxy/nav-bar (navbar/navbar-query)}
+     {:proxy/side-bar (navbar/sidebar-query)}
      '{:proxy/app-content ?url/query}
      '(:return/content-factory ?url/factory)])
   Object
@@ -42,13 +43,18 @@
     [this]
     (let [{:keys [proxy/app-content
                   return/content-factory
-                  proxy/nav-bar]} (om/props this)]
+                  proxy/nav-bar
+                  proxy/side-bar]} (om/props this)]
       (html
-        [:div
-         (navbar/navbar-create nav-bar)
-         [:div {:class "content-section-b"}
-          (when content-factory
-            (content-factory app-content))]]))))
+        [:div#wrapper
+         (navbar/sidebar-create side-bar)
+
+         [:div#page-content-wrapper
+          (navbar/navbar-create nav-bar)
+
+          [:div {:class "container-fluid content-section-b"}
+           (when content-factory
+             (content-factory app-content))]]]))))
 
 (defonce conn-atom (atom nil))
 
