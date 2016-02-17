@@ -110,7 +110,9 @@
           {:keys [menu-visible?
                   new-menu-visible?
                   add-transaction?
-                  add-widget?]} (om/get-state this)]
+                  add-widget?]} (om/get-state this)
+          {:keys [sidebar-visible?
+                  on-sidebar-show]} (om/get-computed this)]
       (html
         [:div
          (opts {:style {:display         "flex"
@@ -120,6 +122,19 @@
                         :justify-content :space-between}})
 
          [:div
+          (opts {:style {:display :flex
+                         :flex-direction :row}})
+          (when-not sidebar-visible?
+            [:button
+             (opts {:style    {:display   "block"
+                               :margin    "0.5em 0.2em"
+                               :font-size "1em"}
+                    :on-click #(do (prn "Did show sidebar")
+                                   (on-sidebar-show))
+                    :class    "btn btn-default btn-md"})
+             [:i
+              {:class "fa fa-bars"}]])
+
           [:button
            (opts {:style    {:display   "block"
                              :margin    "0.5em 0.2em"
@@ -182,20 +197,33 @@
      {:query/current-user [:user/uuid
                            :user/activated-at]}])
   Object
+
   (render [this]
-    (let [{:keys [query/all-budgets]} (om/props this)]
+    (let [{:keys [query/all-budgets]} (om/props this)
+          {:keys [on-sidebar-close]} (om/get-computed this)]
       (html
         [:ul.sidebar-nav
          [:li.sidebar-brand
+          (opts {:style {:display :flex
+                         :flex-direction :row}})
+
           [:a.navbar-brand
            {:href (routes/inside "/")}
            [:strong
             "JourMoney"]
            [:span.small
-            " by eponai"]]]
-         [:li [:a {:href (routes/inside "/transactions")
-                   :on-click nil}
-               "All Transactions"]]
+            " by eponai"]]
+          [:button.close.navbar-brand
+           (opts {:style    {:margin "0 auto"}
+                  :on-click #(do (prn "Did click close")
+                                 (on-sidebar-close))})
+           "X"]]
+
+         [:li
+          [:a {:href (routes/inside "/transactions")
+               :on-click nil}
+           "All Transactions"]]
+
          (map
            (fn [budget]
              [:li
@@ -214,19 +242,21 @@
 (defn sidebar-query []
   (om/get-query SideBar))
 
-(defn sidebar-create [props]
+(defn sidebar-create [props computed]
   [:div#sidebar-wrapper
    [:div#content
-    (->SideBar props)]
+    (->SideBar (om/computed props
+                            computed))]
    [:footer.footer
     [:div.container
      [:p.copyright.small
       (opts {:style {:color :white}})
       "Copyright © eponai 2016. All Rights Reserved"]]]])
 
-(defn navbar-create [props]
+(defn navbar-create [props computed]
   [:div
    [:nav
     (opts {:class "navbar navbar-default navbar-fixed-top topnav"
            :role  "navigation"})
-    (->NavbarMenu props)]])
+    (->NavbarMenu (om/computed props
+                               computed))]])

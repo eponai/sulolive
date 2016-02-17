@@ -39,18 +39,25 @@
      '{:proxy/app-content ?url/query}
      '(:return/content-factory ?url/factory)])
   Object
+  (initLocalState [_]
+    {:sidebar-visible? true})
   (render
     [this]
     (let [{:keys [proxy/app-content
                   return/content-factory
                   proxy/nav-bar
-                  proxy/side-bar]} (om/props this)]
+                  proxy/side-bar]} (om/props this)
+          {:keys [sidebar-visible?] :as state} (om/get-state this)]
+      (prn "State " state)
       (html
         [:div#wrapper
-         (navbar/sidebar-create side-bar)
+         (when-not sidebar-visible?
+           {:class "toggled"})
+         (navbar/sidebar-create side-bar {:on-sidebar-close #(om/update-state! this assoc :sidebar-visible? false)})
 
          [:div#page-content-wrapper
-          (navbar/navbar-create nav-bar)
+          (navbar/navbar-create nav-bar {:on-sidebar-show #(om/update-state! this assoc :sidebar-visible? true)
+                                         :sidebar-visible? sidebar-visible?})
 
           [:div {:class "container-fluid content-section-b"}
            (when content-factory
