@@ -322,7 +322,7 @@
 
         function onSubscribe(elementId) {
           mixpanel.track("Newsletter Subscribe", {"element-id": elementId})
-          document.getElementById(elementId).innerHTML = "<div class='loader-circle' />";
+          document.getElementById(elementId).innerHTML = "<div style='margin-left:50%;' class='loader-circle' />";
         }
 
         function fadeIn() {
