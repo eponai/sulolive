@@ -87,12 +87,13 @@
                             <div class="row middle-xs">
                                 <div class="col-sm-6">
                                     <!--<div class="box">-->
-                                        <input type="email" name="email" class="form-control" placeholder="Your E-Mail">
+                                        <input type="email" name="email" class="form-control" placeholder="Your E-Mail" tabindex="1">
                                     <!--</div>-->
                                 </div>
                                 <div class="col-sm-3">
                                     <!--<div class="box">-->
-                                        <button type="submit" class="btn btn-info btn-md" onclick="onSubscribe('subscribe-intro')">
+                                        <button type="submit" class="btn btn-info btn-md" onclick="onSubscribe('subscribe-intro')"
+                                                tabindex="2">
                                             <span class="network-text">Subscribe</span>
                                         </button>
                                     <!--</div>-->
@@ -260,11 +261,11 @@
             <h4 class="text-center">Subscribe to our newsletter</h4>
                 <form id="form-footer" class="form-group row" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;">
                     <div class="col-sm-5 col-sm-offset-3">
-                    <input type="text" name="email" class="form-control" placeholder="Your E-Mail">
+                    <input type="text" name="email" class="form-control" placeholder="Your E-Mail" tabindex="3">
                     </div>
                     <div class="col-sm-4" style="float:left;">
                     <button class="btn btn-info btn-md" type="submit"
-                            onclick="onSubscribe('subscribe-footer')">
+                            onclick="onSubscribe('subscribe-footer')" tabindex="4">
                         Subscribe
                     </button>
                     </div>
