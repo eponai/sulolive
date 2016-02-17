@@ -47,6 +47,21 @@
   :db/doc                "Graph this widget contains."
   :db.install/_attribute :db.part/db}
 
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :widget/report
+  :db/isComponent         true
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Report visualized by this widget."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :widget/filter
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Filter that this widget will apply to the data."
+  :db.install/_attribute :db.part/db}
+
 
  ;; ------------------ Graph
  {:db/id                 #db/id[:db.part/db]
@@ -64,14 +79,6 @@
   :db/doc                "Graph style (bar, area, number etc.)."
   :db.install/_attribute :db.part/db}
 
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :graph/report
-  :db/isComponent         true
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Report visualized by this graph."
-  :db.install/_attribute :db.part/db}
-
  ;; ------------------------ Report
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :report/uuid
@@ -87,13 +94,6 @@
   :db/isComponent        true
   :db/cardinality        :db.cardinality/many
   :db/doc                "Functions that this report will use."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :report/filter
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Filter that this report will apply to the data."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]

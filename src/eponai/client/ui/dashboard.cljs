@@ -9,7 +9,8 @@
             [eponai.client.routes :as routes]
             [eponai.client.ui.tag :as tag]
             [eponai.client.report :as report]
-            [eponai.client.ui.utils :as utils]))
+            [eponai.client.ui.utils :as utils]
+            [datascript.core :as d]))
 
 
 (defui Widget
@@ -18,25 +19,27 @@
     [:widget/uuid
      :widget/width
      :widget/height
-     {:widget/graph [:graph/style
-                     {:graph/report [:report/uuid
-                                     :report/group-by
-                                     {:report/functions [:report.function/uuid
-                                                         :report.function/attribute
-                                                         :report.function/id]}]}]}])
+     :widget/filter
+     {:widget/report [:report/uuid
+                      :report/group-by
+                      {:report/functions [:report.function/uuid
+                                          :report.function/attribute
+                                          :report.function/id]}]}
+     {:widget/graph [:graph/style]}])
 
   Object
   (render [this]
-    (let [{:keys [widget/graph] :as widget} (om/props this)
+    (let [{:keys [widget/report
+                  widget/graph] :as widget} (om/props this)
           {:keys [on-delete
                   data-report]} (om/get-computed this)
-          report-data (data-report (:graph/report graph))]
+          report-data (data-report report)]
       (html
         [:div.widget
          (opts {:style {:border        "1px solid #e7e7e7"
                         :border-radius "0.5em"
                         :padding       "30px 0 0 0"
-                        :width         "50%"
+                        :width         "100%"
                         :height        300
                         :position      :relative
                         :box-sizing    :border-box}})
@@ -94,12 +97,12 @@
      [:h6 "Calculate"]
      [:button
       {:class    (button-class function-id :report.function.id/sum)
-       :on-click #(om/update-state! component assoc-in [:input-function :report.function/id] :report.function.id/sum)}
+       :on-click #(.select-function component :report.function.id/sum)}
 
       [:span "Sum"]]
      [:button
       {:class    (button-class function-id :report.function.id/mean)
-       :on-click #(om/update-state! component assoc-in [:input-function :report.function/id] :report.function.id/mean)}
+       :on-click #(.select-function component :report.function.id/mean)}
       [:span
        "Mean"]]]))
 
@@ -119,7 +122,7 @@
           [:button
            (opts {:key [k]
                   :class    (button-class group-by k)
-                  :on-click #(om/update-state! component assoc-in [:input-report :report/group-by] k)})
+                  :on-click #(.select-group-by component k)})
            [:i
             (opts {:key [(get-in conf [k :icon])]
                    :class (get-in conf [k :icon])
@@ -174,6 +177,12 @@
                              (assoc-in [:input-graph :graph/style] style)
                              (assoc-in [:input-report :report/group-by] (get default-group-by style))))))
 
+  (select-function [this function-id]
+    (om/update-state! this assoc-in [:input-function :report.function/id] function-id))
+
+  (select-group-by [this input-group-by]
+    (om/update-state! this assoc-in [:input-report :report/group-by] input-group-by))
+
   (render [this]
     (let [{:keys [input-graph input-report] :as state} (om/get-state this)
           {:keys [on-close
@@ -224,7 +233,11 @@
            (opts {:class    "btn btn-info btn-md"
                   :on-click (fn []
                               (on-save (-> state
-                                           (dissoc :on-close)))
+                                           (dissoc :on-close)
+                                           (assoc-in [:input-widget :widget/uuid] (d/squuid))
+                                           (assoc-in [:input-graph :graph/uuid] (d/squuid))
+                                           (assoc-in [:input-function :report.function/uuid] (d/squuid))
+                                           (assoc-in [:input-report :report/uuid] (d/squuid))))
                               (on-close))
                   :style    {:margin 5}})
            "Save"]]]))))

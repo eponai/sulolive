@@ -64,15 +64,6 @@
                      :ui/component {:db/unique :db.unique/identity}}
           ui-state [{:ui/singleton :ui.singleton/app}
 
-                    {:ui/singleton :ui.singleton/modal
-                     :ui.singleton.modal/visible false}
-
-                    {:ui.singleton :ui.singleton/menu
-                     :ui.singleton.menu/visible false}
-
-                    {:ui/singleton :ui.singleton/loader
-                     :ui.singleton.loader/visible false}
-
                     {:ui/component :ui.component/dashboard}]
           conn (d/create-conn ui-schema)]
       (d/transact! conn ui-state)
