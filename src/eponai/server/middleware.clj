@@ -32,7 +32,7 @@
   (fn [request]
     (try
       (handler request)
-      (catch ExceptionInfo e
+      (catch Throwable e
         (error "Request:" request "gave exception:" e)
         (let [error (ex-data e)
               code (h/error-codes (or (:status error) ::h/internal-error))]
