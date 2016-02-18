@@ -48,6 +48,7 @@
       (api/newsletter-subscribe conn (:email params))
       (r/response (json/write-str {:message "Thank you, we'll let you know the second we launch!"}))
       (catch Exception e
+        (error "Exception when subscribing user:" (:email params) "exception:" e)
         (r/status (r/response (json/write-str {:message "Oops, something went wrong. Please try again in a little while."})) 500))))
 
   (route/resources "/")
