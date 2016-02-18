@@ -90,7 +90,6 @@
   ;;;;;;;;;;;;;
   :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
   :profiles {:uberjar {:jvm-opts ^:replace ["-Dclojure.compiler.direct-linking=true"
-                                            "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1"
                                             "-Xmx1g" "-server"]
                        :aot                :all
                        :prep-tasks         ["compile" ["cljsbuild" "once" "release"]]}}
