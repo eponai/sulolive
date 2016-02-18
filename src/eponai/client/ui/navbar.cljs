@@ -167,8 +167,7 @@
             (opts {:class    "img-circle"
                    :style    {:margin "0.1em 1em"
                               :width  "40"
-                              :height "40"
-                              :border "1px solid #e7e7e7"}
+                              :height "40"}
                    :src      "/style/img/profile.png"
                    :on-click #(open-profile-menu this true)})]]
 
@@ -243,14 +242,13 @@
   (om/get-query SideBar))
 
 (defn sidebar-create [props computed]
-  [:div#sidebar-wrapper
+  [:div#sidebar-wrapper.gradient-down-up
    [:div#content
     (->SideBar (om/computed props
                             computed))]
    [:footer.footer
     [:div.container
-     [:p.copyright.small
-      (opts {:style {:color :white}})
+     [:p.copyright.small.text-light
       "Copyright © eponai 2016. All Rights Reserved"]]]])
 
 (defn navbar-create [props computed]
