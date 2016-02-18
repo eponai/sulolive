@@ -356,10 +356,6 @@
             return false;
           });
 
-          $(window).load( function() {
-            fadeIn();
-          });
-
           $(window).scroll( function() {
             fadeIn();
           });
@@ -402,6 +398,10 @@
               });
             });
           });
+
+          // Call fadeIn once to load visible fade-in elements.
+          fadeIn();
+
     </script>
 
 </body>
