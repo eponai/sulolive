@@ -112,30 +112,32 @@
          db
          user-entity-keys)))
 
-(defn- user-entities-filter-map [user-id]
-  {:props {:owned-entities {:init      #{}
+(defn- user-specific-entities-filter [user-id]
+  {:props {:user-entities {:init      #{}
                             :update-fn (fn [db old-val]
                                          (into old-val (user-entities db user-id)))}}
-   :f     (fn [{:keys [owned-entities]}]
-            {:pre [(set? owned-entities)]}
-            (fn [_ [eid]]
-              (contains? owned-entities eid)))})
+   :f     (fn [{:keys [user-entities]}]
+            {:pre [(set? user-entities)]}
+            ;; Returning a datomic filter function (fn [db datom])
+            (fn [db [eid]]
+              (contains? user-entities eid)))})
 
-(defn- public-entities-filter-map []
+(defn- non-user-entities-filter-map []
   {:props {:user-attrs {:init      #{}
                         :update-fn (fn [db old-val]
                                      (into old-val (user-attributes db)))}}
    :f     (fn [{:keys [user-attrs]}]
             {:pre [(set? user-attrs)]}
-            (fn [_ [_ attr]]
+            ;; Returning a datomic filter function (fn [db datom])
+            (fn [db [eid attr]]
               (not (contains? user-attrs attr))))})
 
 (defn authenticated-db-filters
   "When authenticated, we can access entities specific to one user
-  or public entities."
+  or entities which do not contain user data (e.g. dates)."
   [user-id]
-  [(or-filter (user-entities-filter-map user-id)
-              (public-entities-filter-map))])
+  [(or-filter (user-specific-entities-filter user-id)
+              (non-user-entities-filter-map))])
 
 (defn not-authenticated-db-filters []
-  [(public-entities-filter-map)])
+  [(non-user-entities-filter-map)])
