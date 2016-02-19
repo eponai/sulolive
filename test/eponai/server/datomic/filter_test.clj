@@ -52,7 +52,11 @@
                              = [:tag/name] auth-db
                              = [:conversion/date] auth-db
                              not= '[?e :transaction/uuid] auth-db
-                             none [:verification/uuid] auth-db
+                             not= '[?e :budget/uuid] auth-db
+                             not= '[?e :dashboard/uuid] auth-db
+                             none '[?e :transaction/uuid] no-auth-db
+                             none '[?e :budget/uuid] no-auth-db
+                             none '[?e :dashboard/uuid] no-auth-db
                              = [:db/ident :db/valueType] auth-db
                              = [:db.install/attribute] auth-db
                              = [:db/valueType :db.type/ref] auth-db
@@ -62,5 +66,5 @@
                              = '[[?e :db/ident :conversion/date]
                                  [?e :db/valueType ?id]
                                  [?id :db/ident :db.type/ref]] auth-db
-                             none [:verification/uuid] auth-db
+                             = [:verification/uuid] auth-db
                              = [:verification/uuid] no-auth-db)))
