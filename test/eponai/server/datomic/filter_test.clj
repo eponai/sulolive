@@ -5,6 +5,11 @@
             [eponai.server.datomic_dev :as d_dev]
             [eponai.server.test-util :as util]))
 
+(defn filter-db [db filters]
+  (->> filters
+       (f/update-filters db)
+       (f/apply-filters db)))
+
 (defn make-query
   "Takes queries that binds ?e.
   Can take a query as a single vector or multiple vectors.
@@ -39,8 +44,8 @@
         _ (d_dev/add-transactions conn budget-uuid2)
         _ (d_dev/add-conversion-rates conn)
         db (d/db conn)
-        auth-db (f/authenticated-db db user)
-        no-auth-db (f/not-authenticated-db db)
+        auth-db (filter-db db (f/authenticated-db-filters user))
+        no-auth-db (filter-db db (f/not-authenticated-db-filters))
         none (fn [user-res db-res]
                (and (empty? user-res)
                     (seq db-res)))]

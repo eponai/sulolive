@@ -130,21 +130,12 @@
             (fn [_ [_ attr]]
               (not (contains? user-attrs attr))))})
 
-(defn authenticated-db-filters [user-id]
+(defn authenticated-db-filters
+  "When authenticated, we can access entities specific to one user
+  or public entities."
+  [user-id]
   [(or-filter (user-entities-filter-map user-id)
               (public-entities-filter-map))])
 
 (defn not-authenticated-db-filters []
   [(public-entities-filter-map)])
-
-;; Deprecated, using for testing.
-(defn filter-db [db filters]
-  (->> filters
-       (update-filters db)
-       (apply-filters db)))
-
-(defn authenticated-db [db user-id]
-  (filter-db db (authenticated-db-filters user-id)))
-
-(defn not-authenticated-db [db]
-  (filter-db db (not-authenticated-db-filters)))
