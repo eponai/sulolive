@@ -54,6 +54,7 @@
                  [cljs-ajax "0.5.0"]
                  [cljsjs/d3 "3.5.7-1"]
                  [cljsjs/pikaday "1.4.0-1"]
+                 [cljsjs/react-grid-layout "0.8.5-0"]
                  [cljsjs/stripe "2.0-0"]
                  [cljsjs/nvd3 "1.8.1-0"]
                  [bidi "1.21.1"]

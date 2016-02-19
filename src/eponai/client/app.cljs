@@ -56,6 +56,7 @@
          (navbar/sidebar-create side-bar {:on-sidebar-close #(om/update-state! this assoc :sidebar-visible? false)})
 
          [:div#page-content-wrapper
+          (opts {:style {:height "100%"}})
           (navbar/navbar-create nav-bar {:on-sidebar-show #(om/update-state! this assoc :sidebar-visible? true)
                                          :sidebar-visible? sidebar-visible?})
 
