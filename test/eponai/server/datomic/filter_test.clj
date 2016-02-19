@@ -44,8 +44,13 @@
         _ (d_dev/add-transactions conn budget-uuid2)
         _ (d_dev/add-conversion-rates conn)
         db (d/db conn)
-        auth-db (filter-db db (f/authenticated-db-filters user))
+        user-uuid (d/q '[:find ?uuid . :in $ ?email :where [?u :user/email ?email] [?u :user/uuid ?uuid]] db user)
+        auth-db (filter-db db (f/authenticated-db-filters user-uuid))
         no-auth-db (filter-db db (f/not-authenticated-db-filters))
+        something!= (fn [user-res db-res]
+                    (and (not-empty user-res)
+                         (not-empty db-res)
+                         (not= user-res db-res)))
         none (fn [user-res db-res]
                (and (empty? user-res)
                     (seq db-res)))]
@@ -56,9 +61,9 @@
                              = [:date/year] auth-db
                              = [:tag/name] auth-db
                              = [:conversion/date] auth-db
-                             not= '[?e :transaction/uuid] auth-db
-                             not= '[?e :budget/uuid] auth-db
-                             not= '[?e :dashboard/uuid] auth-db
+                             something!= '[?e :transaction/uuid] auth-db
+                             something!= '[?e :budget/uuid] auth-db
+                             something!= '[?e :dashboard/uuid] auth-db
                              none '[?e :transaction/uuid] no-auth-db
                              none '[?e :budget/uuid] no-auth-db
                              none '[?e :dashboard/uuid] no-auth-db

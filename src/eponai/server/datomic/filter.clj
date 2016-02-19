@@ -20,7 +20,7 @@
   incrementally updatable database filters."
   (:require [clojure.set :as s]
             [datomic.api :as d]
-            [taoensso.timbre :refer [debug]]))
+            [taoensso.timbre :refer [debug trace]]))
 
 ;; Updating and applying filters
 
@@ -34,11 +34,12 @@
   (let [basis-t (or basis-t -1)
         new-basis-t (d/basis-t db)]
     (if (= basis-t new-basis-t)
-      props
+      (do
+        (trace "avoiding update to filter:" basis-t)
+        props)
       (let [db-since (d/since db basis-t)]
+        (trace "Updating filter: " (keys props))
         (let [updated-props (reduce-kv (fn [props key {:keys [init update-fn value]}]
-                                         (when-not update-fn
-                                           (prn "key:" key))
                                          (let [old-val (or value init)]
                                            (assoc-in props [key :value] (update-fn db-since old-val))))
                                        {}
@@ -85,10 +86,9 @@
             (first filter-maps)
             (rest filter-maps))))
 
-;; TODO: Using :user/email right now. Should use :user/uuid when it's done.
 (def user-owned-rule
   '[[(owner? ?user-id ?e)
-     [?e :user/email ?user-id]]
+     [?e :user/uuid ?user-id]]
     [(owner? ?user-id ?e)
      [?e ?ref-attr ?ref]
      (owner? ?user-id ?ref)]])
