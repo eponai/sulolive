@@ -34,7 +34,7 @@
       (html
         [:div.widget
          (opts {:style {:border        "1px solid #e7e7e7"
-                        :border-radius "0.5em"
+                        ;:border-radius "0.5em"
                         :padding       "30px 0 0 0"
                         :width         "100%"
                         :height        "100%"
@@ -125,7 +125,11 @@
          [:div (str "Edit: " edit?)]
          (when edit?
            [:style (css [:.widget
-                         [:&:hover {:cursor :move}]])])
+                         {:-webkit-box-shadow "0 1px 1px rgba(0, 0, 0, .5)" ;
+                          :box-shadow         "0 1px 1px rgba(0, 0, 0, .5)"}
+                         [:&:hover {:cursor             :move
+                                    :-webkit-box-shadow "0 3px 9px rgba(0, 0, 0, .5)"
+                                    :box-shadow         "0 3px 9px rgba(0, 0, 0, .5)"}]])])
          (when layout
            (.createElement React
                            (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))

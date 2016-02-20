@@ -254,6 +254,7 @@
   [:div
    [:nav
     (opts {:class "navbar navbar-default navbar-fixed-top topnav"
-           :role  "navigation"})
+           :role  "navigation"
+           :style {:background :white}})
     (->NavbarMenu (om/computed props
                                computed))]])
