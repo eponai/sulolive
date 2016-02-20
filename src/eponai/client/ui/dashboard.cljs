@@ -2,15 +2,10 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
             [eponai.client.ui.d3 :as d3]
-            [cljs.core.async :as c :refer [chan]]
             [garden.core :refer [css]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
-            [eponai.client.routes :as routes]
-            [eponai.client.ui.tag :as tag]
             [eponai.client.report :as report]
-            [eponai.client.ui.utils :as utils]
-            [datascript.core :as d]
             [cljsjs.react-grid-layout]))
 
 
@@ -34,20 +29,17 @@
     (let [{:keys [widget/report
                   widget/graph] :as widget} (om/props this)
           {:keys [on-delete
-                  data
-                  layout]} (om/get-computed this)
+                  data]} (om/get-computed this)
           report-data (report/create report data)]
       (html
         [:div.widget
-         (opts (merge
-                 layout
-                 {:style {:border        "1px solid #e7e7e7"
-                          :border-radius "0.5em"
-                          :padding       "30px 0 0 0"
-                          :width         "100%"
-                          :height        "100%"
-                          :position      :relative
-                          :box-sizing    :border-box}}))
+         (opts {:style {:border        "1px solid #e7e7e7"
+                        :border-radius "0.5em"
+                        :padding       "30px 0 0 0"
+                        :width         "100%"
+                        :height        "100%"
+                        :position      :relative
+                        :box-sizing    :border-box}})
          [:div
           (opts {:style {:position        :absolute
                          :top             0
@@ -83,8 +75,8 @@
 
 (defn generate-layout [widgets]
   (map (fn [widget i]
-         {:x (mod i 2)
-          :y (int (/ i 2))
+         {:x (mod i 4)
+          :y (int (/ i 4))
           :w 1
           :h 1
           :i (str (:widget/uuid widget))})
@@ -106,9 +98,6 @@
                                                                    {:transaction/date [:date/ymd
                                                                                        :date/timestamp]}]}]}]}])
   Object
-  (initLocalState [_]
-    {:add-widget false
-     :layout nil})
   (componentWillReceiveProps [this new-props]
     (let [widgets (:dashboard/widgets (:query/dashboard new-props))]
       (om/update-state! this assoc :layout (clj->js (generate-layout widgets)))))
@@ -119,18 +108,17 @@
 
   (render [this]
     (let [{:keys [query/dashboard]} (om/props this)
-          {:keys [add-widget
-                  layout]} (om/get-state this)
+          {:keys [layout]} (om/get-state this)
           widgets (:dashboard/widgets dashboard)
           React (.-React js/window)]
       (prn "Layout: " layout)
       (when layout
         (.createElement React
-                        (.-ReactGridLayout js/window)
+                        (.-Responsive (.-ReactGridLayout js/window))
                         #js {:className        "layout",
-                             :layout           layout
+                             :layouts          #js {:lg layout :md layout}
                              :rowHeight        300,
-                             :cols             2
+                             :cols             #js {:lg 3 :md 2 :sm 2 :xs 1 :xxs 1}
                              :useCSSTransforms true}
                         (clj->js
                           (map

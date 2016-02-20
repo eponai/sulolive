@@ -7,7 +7,7 @@
   [:div.loader-circle-black
    (opts {:style {:top      "50%"
                   :left     "50%"
-                  :position :fixed
+                  :position :absolute
                   :z-index  1050}})])
 
 (defn click-outside-target [on-click]

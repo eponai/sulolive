@@ -247,9 +247,8 @@
     (->SideBar (om/computed props
                             computed))]
    [:footer.footer
-    [:div.container
-     [:p.copyright.small.text-light
-      "Copyright © eponai 2016. All Rights Reserved"]]]])
+    [:p.copyright.small.text-light
+     "Copyright © eponai 2016. All Rights Reserved"]]])
 
 (defn navbar-create [props computed]
   [:div
