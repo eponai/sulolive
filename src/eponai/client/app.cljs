@@ -60,7 +60,9 @@
           (navbar/navbar-create nav-bar {:on-sidebar-show #(om/update-state! this assoc :sidebar-visible? true)
                                          :sidebar-visible? sidebar-visible?})
 
-          [:div {:class "container-fluid content-section-b"}
+          [:div
+           (opts {:class "container-fluid content-section-b"
+                  :style {:border "1px solid transparent"}})
            (when content-factory
              (content-factory app-content))]]]))))
 
