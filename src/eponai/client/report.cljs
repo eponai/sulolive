@@ -10,7 +10,7 @@
                                     1)]
                    (+ s add-number)))]
     {:key    "All Transactions"
-     :values [0 (reduce sum-fn 0 transactions)]}))
+     :values [(reduce sum-fn 0 transactions)]}))
 
 (defmethod sum :transaction/date
   [_ transactions attr]

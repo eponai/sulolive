@@ -16,35 +16,44 @@
 
 (defui NumberChart
   Object
+  (initLocalState [_]
+    {:start-val 0})
   (componentDidMount [this]
     (let [{:keys [id width height]} (om/props this)
           svg (build-svg (str "#number-chart-" id) width height)]
       (om/update-state! this assoc :svg svg)))
+  (componentWillReceiveProps [this _]
+    (let [{:keys [data]} (om/props this)
+          [start-val] (:values data)]
+      (om/update-state! this assoc :start-val (or start-val 0))))
   (componentDidUpdate [this _ _]
     (let [{:keys [svg]} (om/get-state this)
           {:keys [data]} (om/props this)
-          [start-val end-val] (:values data)]
+          {:keys [start-val]} (om/get-state this)
+          [end-val] (:values data)]
+      (let [text-element (.. svg
+                             (selectAll ".txt")
+                             (data #js [end-val]))]
+        (.. text-element
+            enter
+            (append "text")
+            (attr "class" "txt")
+            (attr "font-size" "4em")
+            (attr "x" "50%")
+            (attr "y" "50%")
+            (attr "text-anchor" "middle"))
 
-      (.. svg
-          (selectAll ".txt")
-          (data #js [end-val])
-          enter
-          (append "text")
-          (text start-val)
-          (attr "class" "txt")
-          (attr "font-size" "4em")
-          (attr "x" "50%")
-          (attr "y" "50%")
-          (attr "text-anchor" "middle")
-          transition
-          (duration 500)
-          (tween "text" (fn []
-                          (this-as jthis
-                            (let [i (.. js/d3
-                                        (interpolateRound start-val end-val))]
-                              (fn [t]
+        (.. text-element
+            (text start-val)
+            transition
+            (duration 500)
+            (tween "text" (fn []
+                            (this-as jthis
+                              (let [i (.. js/d3
+                                          (interpolateRound start-val end-val))]
+                                (fn [t]
 
-                                (set! (.-textContent jthis) (i t))))))))))
+                                  (set! (.-textContent jthis) (i t)))))))))))
 
   (render [this]
     (let [{:keys [id]} (om/props this)]

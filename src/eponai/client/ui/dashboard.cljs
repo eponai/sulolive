@@ -127,10 +127,11 @@
       (when layout
         (.createElement React
                         (.-ReactGridLayout js/window)
-                        #js {:className      "layout",
-                             :layout         layout
-                             :rowHeight      300,
-                             :cols           2}
+                        #js {:className        "layout",
+                             :layout           layout
+                             :rowHeight        300,
+                             :cols             2
+                             :useCSSTransforms true}
                         (clj->js
                           (map
                             (fn [widget-props i]
