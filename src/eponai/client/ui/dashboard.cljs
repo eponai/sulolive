@@ -1,12 +1,12 @@
 (ns eponai.client.ui.dashboard
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
+  (:require [eponai.client.report :as report]
+            [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
             [eponai.client.ui.d3 :as d3]
             [garden.core :refer [css]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
-            [eponai.client.report :as report]
-            [cljsjs.react-grid-layout]))
+            [taoensso.timbre :refer-macros [error]]))
 
 
 (defui Widget
@@ -39,7 +39,8 @@
                         :width         "100%"
                         :height        "100%"
                         :position      :relative
-                        :box-sizing    :border-box}})
+                        :box-sizing    :border-box
+                        :background :white}})
          [:div
           (opts {:style {:position        :absolute
                          :top             0
@@ -98,6 +99,9 @@
                                                                    {:transaction/date [:date/ymd
                                                                                        :date/timestamp]}]}]}]}])
   Object
+  (initLocalState [_]
+    {:edit? true})
+
   (componentWillReceiveProps [this new-props]
     (let [widgets (:dashboard/widgets (:query/dashboard new-props))]
       (om/update-state! this assoc :layout (clj->js (generate-layout widgets)))))
@@ -108,32 +112,45 @@
 
   (render [this]
     (let [{:keys [query/dashboard]} (om/props this)
-          {:keys [layout]} (om/get-state this)
+          {:keys [layout
+                  edit?]} (om/get-state this)
           widgets (:dashboard/widgets dashboard)
-          React (.-React js/window)]
-      (prn "Layout: " layout)
-      (when layout
-        (.createElement React
-                        (.-Responsive (.-ReactGridLayout js/window))
-                        #js {:className        "layout",
-                             :layouts          #js {:lg layout :md layout}
-                             :rowHeight        300,
-                             :cols             #js {:lg 3 :md 2 :sm 2 :xs 1 :xxs 1}
-                             :useCSSTransforms true}
-                        (clj->js
-                          (map
-                            (fn [widget-props i]
-                              (.createElement React
-                                              "div"
-                                              #js {:key (str (:widget/uuid widget-props))}
-                                              (->Widget
-                                                (om/computed widget-props
-                                                             {:data      (-> dashboard
-                                                                             :dashboard/budget
-                                                                             :transaction/_budget)
-                                                              :on-delete #(.delete-widget this %)}))))
-                            widgets
-                            (range)))))
+          React (.-React js/window)
+          WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))]
+      (html
+        [:div
+         [:button.btn.btn-default.btn-md
+          {:on-click #(om/update-state! this update :edit? not)}
+          [:i.fa.fa-pencil]]
+         [:div (str "Edit: " edit?)]
+         (when edit?
+           [:style (css [:.widget
+                         [:&:hover {:cursor :move}]])])
+         (when layout
+           (.createElement React
+                           (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))
+                           #js {:className        "layout",
+                                :layouts          #js {:lg layout :md layout}
+                                :rowHeight        300,
+                                :cols             #js {:lg 3 :md 2 :sm 2 :xs 1 :xxs 1}
+                                :useCSSTransforms true
+                                :isDraggable      edit?
+                                }
+
+                           (clj->js
+                             (map
+                               (fn [widget-props i]
+                                 (.createElement React
+                                                 "div"
+                                                 #js {:key (str (:widget/uuid widget-props))}
+                                                 (->Widget
+                                                   (om/computed widget-props
+                                                                {:data      (-> dashboard
+                                                                                :dashboard/budget
+                                                                                :transaction/_budget)
+                                                                 :on-delete #(.delete-widget this %)}))))
+                               widgets
+                               (range)))))])
 
       )))
 

@@ -65,6 +65,5 @@
     (sum group-by transactions (or attribute :transaction/amount))))
 
 (defn create [report transactions]
-  (prn "Calculating: " report)
   (let [k (get-in report [:report/function :report.function/id])]
     (calculation report (or k :report.function.id/sum) transactions)))

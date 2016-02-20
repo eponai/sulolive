@@ -65,7 +65,6 @@
 (def query-all-transactions
   (parser.util/cache-last-read
     (fn [{:keys [db query auth]} _ {:keys [start-date end-date filter-tags]}]
-      (prn "start-date: " start-date)
       (let [existing-tags (when (seq filter-tags)
                             (p/all-with db {:where   '[[_ :tag/name ?e]]
                                             :symbols {'[?e ...] filter-tags}}))
@@ -154,7 +153,6 @@
   [{:keys [db query auth]} _ _]
   (let [eids (p/all-with db {:where #?(:clj  [['?e :user/uuid (:username auth)]]
                                        :cljs '[[?e :user/uuid]])})]
-    (println "Pulled user: " eids)
     {:value  (first (p/pull-many db query eids))
      :remote true}))
 
