@@ -38,11 +38,11 @@
         (trace "avoiding update to filter:" basis-t)
         props)
       (let [db-since (d/since db basis-t)]
-        (trace "Updating filter: " (keys props))
+        (trace "Updating filter: " props)
         (let [updated-props (reduce-kv (fn [props key {:keys [init update-fn value]}]
                                          (let [old-val (or value init)]
                                            (assoc-in props [key :value] (update-fn db-since old-val))))
-                                       {}
+                                       props
                                        (dissoc props ::basis-t))]
           (assoc updated-props ::basis-t new-basis-t))))))
 
