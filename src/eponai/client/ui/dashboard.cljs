@@ -103,8 +103,18 @@
     {:edit? true})
 
   (componentWillReceiveProps [this new-props]
-    (let [widgets (:dashboard/widgets (:query/dashboard new-props))]
-      (om/update-state! this assoc :layout (clj->js (generate-layout widgets)))))
+    (let [{:keys [layout]} (om/get-state this)
+          widgets (:dashboard/widgets (:query/dashboard new-props))]
+      (when-not (seq layout)
+        (om/update-state! this assoc :layout (clj->js (generate-layout widgets))))))
+
+  (componentDidMount [this]
+    (let [widgets (:dashboard/widgets (:query/dashboard (om/props this)))
+          WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))]
+      (om/update-state! this
+                        assoc
+                        :layout (clj->js (generate-layout widgets))
+                        :grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window))))))
 
   (delete-widget [this widget]
     (om/transact! this `[(widget/delete ~(select-keys widget [:widget/uuid]))
@@ -113,10 +123,10 @@
   (render [this]
     (let [{:keys [query/dashboard]} (om/props this)
           {:keys [layout
-                  edit?]} (om/get-state this)
+                  edit?
+                  grid-element]} (om/get-state this)
           widgets (:dashboard/widgets dashboard)
-          React (.-React js/window)
-          WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))]
+          React (.-React js/window)]
       (html
         [:div
          [:button.btn.btn-default.btn-md
@@ -132,14 +142,13 @@
                                     :box-shadow         "0 3px 9px rgba(0, 0, 0, .5)"}]])])
          (when layout
            (.createElement React
-                           (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))
+                           grid-element
                            #js {:className        "layout",
                                 :layouts          #js {:lg layout :md layout}
                                 :rowHeight        300,
                                 :cols             #js {:lg 3 :md 2 :sm 2 :xs 1 :xxs 1}
                                 :useCSSTransforms true
-                                :isDraggable      edit?
-                                }
+                                :isDraggable      edit?}
 
                            (clj->js
                              (map

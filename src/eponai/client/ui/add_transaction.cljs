@@ -46,7 +46,8 @@
                            (update :input/date format/date->ymd-string)
                            (assoc :input/uuid (d/squuid))
                            (assoc :input/created-at (.getTime (js/Date.)))
-                           (dissoc :input/tag)))]))
+                           (dissoc :input/tag)))
+                    :query/dashboard]))
   (initLocalState [this]
     (let [{:keys [query/all-currencies
                   query/all-budgets]} (om/props this)]
