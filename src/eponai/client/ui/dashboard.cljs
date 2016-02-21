@@ -148,7 +148,9 @@
                                 :rowHeight        300,
                                 :cols             #js {:lg 3 :md 2 :sm 2 :xs 1 :xxs 1}
                                 :useCSSTransforms true
-                                :isDraggable      edit?}
+                                :isDraggable      edit?
+                                :isResizable      edit?
+                                :onResizeStop     #(.forceUpdate this)}
 
                            (clj->js
                              (map
