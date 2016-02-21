@@ -163,9 +163,11 @@
                        :on-click #(select-graph-style this :graph.style/number)})
                 "Number"]])
             [:h6 "Preview"]
-            (->Widget (om/computed {:widget/graph  input-graph
-                                    :widget/report input-report}
-                                   {:data all-transactions}))]]]
+            [:div
+             (opts {:style {:height 300}})
+             (->Widget (om/computed {:widget/graph  input-graph
+                                     :widget/report input-report}
+                                    {:data all-transactions}))]]]]
 
          [:div.modal-footer
           (opts {:style {:display        "flex"

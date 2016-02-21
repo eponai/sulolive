@@ -140,7 +140,7 @@
           [:i.fa.fa-pencil]]
          [:div (str "Edit: " edit?)]
          (when edit?
-           [:style (css [:.widget
+           [:style (css [:.react-grid-item
                          {:-webkit-box-shadow "0 1px 1px rgba(0, 0, 0, .5)" ;
                           :box-shadow         "0 1px 1px rgba(0, 0, 0, .5)"}
                          [:&:hover {:cursor             :move
