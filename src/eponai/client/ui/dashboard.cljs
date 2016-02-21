@@ -102,6 +102,11 @@
   (initLocalState [_]
     {:edit? true})
 
+  (update-grid-layout [this]
+    (let [WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
+          grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))]
+      (om/update-state! this assoc :grid-element grid-element)))
+
   (componentWillReceiveProps [this new-props]
     (let [{:keys [layout]} (om/get-state this)
           widgets (:dashboard/widgets (:query/dashboard new-props))]
@@ -110,11 +115,12 @@
 
   (componentDidMount [this]
     (let [widgets (:dashboard/widgets (:query/dashboard (om/props this)))
-          WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))]
+          sidebar (.getElementById js/document "sidebar-wrapper")]
+      (.addEventListener sidebar "transitionend" #(.update-grid-layout this))
+      (.update-grid-layout this)
       (om/update-state! this
                         assoc
-                        :layout (clj->js (generate-layout widgets))
-                        :grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window))))))
+                        :layout (clj->js (generate-layout widgets)))))
 
   (delete-widget [this widget]
     (om/transact! this `[(widget/delete ~(select-keys widget [:widget/uuid]))
@@ -140,7 +146,8 @@
                          [:&:hover {:cursor             :move
                                     :-webkit-box-shadow "0 3px 9px rgba(0, 0, 0, .5)"
                                     :box-shadow         "0 3px 9px rgba(0, 0, 0, .5)"}]])])
-         (when layout
+         (when (and layout
+                    grid-element)
            (.createElement React
                            grid-element
                            #js {:className        "layout",
