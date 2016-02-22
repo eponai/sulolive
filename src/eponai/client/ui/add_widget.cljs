@@ -1,7 +1,7 @@
 (ns eponai.client.ui.add-widget
   (:require [datascript.core :as d]
             [eponai.client.ui :refer-macros [opts]]
-            [eponai.client.ui.dashboard :refer [->Widget]]
+            [eponai.client.ui.widget :refer [->Widget]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]))
 

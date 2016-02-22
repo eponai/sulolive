@@ -1,11 +1,9 @@
 (ns eponai.client.ui.navbar
-  (:require [datascript.core :as d]
-            [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
+  (:require [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
             [eponai.client.ui.add_transaction :refer [->AddTransaction AddTransaction]]
             [eponai.client.ui.add-widget :refer [->NewWidget NewWidget]]
-            [eponai.client.ui.dashboard :refer [->Widget]]
+            [eponai.client.ui.widget :refer [->Widget]]
             [eponai.client.ui.datepicker :refer [->Datepicker]]
-            [eponai.client.ui.tag :as tag]
             [eponai.client.ui.format :as f]
             [eponai.client.ui.utils :as utils]
             [eponai.client.routes :as routes]
