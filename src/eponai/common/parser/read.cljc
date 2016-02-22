@@ -143,6 +143,15 @@
         {:value (when eid
                   (p/pull db query (p/one-with db {:where [['?e :dashboard/budget eid]]})))}))))
 
+(defmethod read :query/all-dashboards
+  [{:keys [db query auth]} _ _]
+  {:value  (p/pull-many db query (p/all-with db #?(:clj {:where   '[[?e :dashboard/budget ?b]
+                                                                    [?b :budget/created-by ?u]
+                                                                    [?u :user/uuid ?user-uuid]]
+                                                         :symbols {'?user-uuid (:username auth)}}
+                                                   :cljs {:where '[[?e :dashboard/uuid]]})))
+   :remote true})
+
 (defmethod read :query/all-budgets
   [{:keys [db query auth]} _ _]
   {:value  (p/pull-many db query (p/all-with db #?(:clj (p/budget-with-auth (:username auth))

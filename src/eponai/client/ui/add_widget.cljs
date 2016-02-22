@@ -113,20 +113,27 @@
                                                    :date/timestamp]}
                                :transaction/amount
                                {:transaction/tags [:tag/name]}]}
-     {:query/dashboard [:dashboard/uuid
-                        {:dashboard/budget [:budget/uuid
-                                            :budget/name]}]}])
+     {:query/all-dashboards [:dashboard/uuid]}])
   Object
   (initLocalState [_]
     {:input-graph    {:graph/style :graph.style/bar}
      :input-function {:report.function/id :report.function.id/sum}
      :input-report   {:report/group-by :transaction/tags}})
 
+  (componentWillMount [this]
+    (let [{:keys [widget]} (om/get-computed this)]
+      (when widget
+        (om/update-state! this assoc
+                          :input-graph (:widget/graph widget)
+                          :input-report (:widget/report widget)
+                          :input-function (first (:report/functions (:widget/report widget)))))))
+
   (render [this]
     (let [{:keys [query/all-transactions
-                  query/dashboard]} (om/props this)
+                  query/all-dashboards]} (om/props this)
           {:keys [input-graph input-report] :as state} (om/get-state this)
-          {:keys [on-close]} (om/get-computed this)]
+          {:keys [on-close
+                  widget]} (om/get-computed this)]
       (html
         [:div
          [:div.modal-header
@@ -182,16 +189,26 @@
            (opts {:class    "btn btn-info btn-md"
                   :on-click (fn []
                               (save-widget this
-                                           (-> state
-                                               (dissoc :on-close)
-                                               (assoc :input-dashboard dashboard)
-                                               (assoc-in [:input-widget :widget/uuid] (d/squuid))
-                                               (assoc-in [:input-graph :graph/uuid] (d/squuid))
-                                               (assoc-in [:input-function :report.function/uuid] (d/squuid))
-                                               (assoc-in [:input-report :report/uuid] (d/squuid))))
+                                           (cond-> state
+                                                   true
+                                                   (dissoc :on-close)
+
+                                                   true
+                                                   (assoc :input-dashboard (first all-dashboards))
+
+                                                   true
+                                                   (assoc-in [:input-widget :widget/uuid] (or (:widget/uuid widget) (d/squuid)))
+
+                                                   (not (:graph/uuid (:input-graph state)))
+                                                   (assoc-in [:input-graph :graph/uuid] (d/squuid))
+
+                                                   (not (:report.function/uuid (:input-function state)))
+                                                   (assoc-in [:input-function :report.function/uuid] (d/squuid))
+
+                                                   (not (:report/uuid (:input-report state)))
+                                                   (assoc-in [:input-report :report/uuid] (d/squuid))))
                               (on-close))
                   :style    {:margin 5}})
-           "Save"]
-          [:div.text-center (str "State: " state)]]]))))
+           "Save"]]]))))
 
 (def ->NewWidget (om/factory NewWidget))

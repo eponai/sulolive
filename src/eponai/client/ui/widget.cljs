@@ -25,6 +25,7 @@
     (let [{:keys [widget/report
                   widget/graph] :as widget} (om/props this)
           {:keys [on-delete
+                  on-edit
                   data]} (om/get-computed this)
           report-data (report/create report data)]
       (html
@@ -49,10 +50,20 @@
                          :align-items     :flex-start}})
           [:h5
            (:report/title report)]
-          (when on-delete
-            [:a.close
-             {:on-click #(on-delete widget)}
-             "x"])]
+          [:ul.list-inline
+           (opts {:style {:display        :flex
+                          :flex-direction :row}})
+           (when on-edit
+             [:li
+              [:a
+               {:on-click #(on-edit widget)
+                :href     "#"}
+               [:i.fa.fa-pencil]]])
+           (when on-delete
+             [:li
+              [:a.close
+               {:on-click #(on-delete widget)}
+               "x"]])]]
          (let [{:keys [graph/style]} graph
                settings {:data         report-data
                          :id           (str (or (:widget/uuid widget) "widget"))

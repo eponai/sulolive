@@ -1,11 +1,13 @@
 (ns eponai.client.ui.dashboard
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
+            [eponai.client.ui.add-widget :refer [NewWidget ->NewWidget]]
             [eponai.client.ui.widget :refer [Widget ->Widget]]
             [garden.core :refer [css]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
-            [taoensso.timbre :refer-macros [error]]))
+            [taoensso.timbre :refer-macros [error]]
+            [eponai.client.ui.utils :as utils]))
 
 (defn generate-layout [widgets]
   (map (fn [widget i]
@@ -30,7 +32,8 @@
                                                                    {:transaction/tags [:tag/name]}
                                                                    :transaction/amount
                                                                    {:transaction/date [:date/ymd
-                                                                                       :date/timestamp]}]}]}]}])
+                                                                                       :date/timestamp]}]}]}]}
+     {:proxy/add-widget (om/get-query NewWidget)}])
   Object
   (initLocalState [_]
     {:edit? true})
@@ -60,10 +63,12 @@
                          :query/dashboard]))
 
   (render [this]
-    (let [{:keys [query/dashboard]} (om/props this)
+    (let [{:keys [query/dashboard
+                  proxy/add-widget]} (om/props this)
           {:keys [layout
                   edit?
-                  grid-element]} (om/get-state this)
+                  grid-element
+                  edit-widget]} (om/get-state this)
           widgets (:dashboard/widgets dashboard)
           React (.-React js/window)]
       (html
@@ -79,6 +84,13 @@
                          [:&:hover {:cursor             :move
                                     :-webkit-box-shadow "0 3px 9px rgba(0, 0, 0, .5)"
                                     :box-shadow         "0 3px 9px rgba(0, 0, 0, .5)"}]])])
+
+         (when edit-widget
+           (utils/modal {:content  (->NewWidget (om/computed add-widget
+                                                             {:on-close #(om/update-state! this assoc :edit-widget nil)
+                                                              :widget edit-widget}))
+                         :on-close #(om/update-state! this assoc :edit-widget nil)
+                         :class    "modal-lg"}))
          (when (and layout
                     grid-element)
            (.createElement React
@@ -103,7 +115,8 @@
                                                                 {:data      (-> dashboard
                                                                                 :dashboard/budget
                                                                                 :transaction/_budget)
-                                                                 :on-delete #(.delete-widget this %)}))))
+                                                                 :on-delete (when edit? #(.delete-widget this %))
+                                                                 :on-edit   (when edit? #(om/update-state! this assoc :edit-widget %))}))))
                                widgets
                                (range)))))])
 
