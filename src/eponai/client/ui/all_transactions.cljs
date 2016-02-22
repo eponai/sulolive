@@ -40,8 +40,10 @@
   (let [{:keys [input-tag]} (om/get-state component)]
     (html
       [:div
-       (opts {:style {:display        "flex"
-                      :flex-direction "column"}})
+       (opts {:style {:display        :flex
+                      :flex-direction :column
+                      :min-width "400px"
+                      :max-width "400px"}})
 
        [:div.has-feedback
         [:input.form-control
@@ -54,8 +56,9 @@
          {:class "glyphicon glyphicon-tag form-control-feedback"}]]
 
        [:div
-        (opts {:style {:display        "flex"
-                       :flex-direction "row"
+        (opts {:style {:display        :flex
+                       :flex-direction :row
+                       :flex-wrap      :wrap
                        :width          "100%"}})
         (map-all
           filter-tags
@@ -110,19 +113,19 @@
           {:keys [filter-tags]} (om/get-params this)]
       (html
         [:div
-         (opts {:style {:display "flex"
-                        :flex-direction "column"
-                        :align-items "flex-start"
-                        :width "100%"}})
+         (opts {:style {:display        :flex
+                        :flex-direction :column
+                        :align-items    :flex-start
+                        :width          "100%"}})
 
-         [:br]
-         [:div.tab-content
-          [:div
-           (opts {:style {:display "flex"
-                          :flex-direction "row"}})
-           (date-picker this  "From date..." :start-date)
-           (date-picker this "To date..." :end-date)]
-          (tag-filter this filter-tags)]
+
+         [:div
+          (opts {:style {:display        :flex
+                         :flex-direction :row
+                         :flex-wrap :wrap-reverse}})
+          (tag-filter this filter-tags)
+          (date-picker this "From date..." :start-date)
+          (date-picker this "To date..." :end-date)]
 
          [:table
           {:class "table table-striped table-hover"}
