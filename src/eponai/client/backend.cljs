@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :refer [<! >! chan]]
             [datascript.core :as d]
+            [datascript.db :as db]
             [eponai.common.parser.util :as parser.util]
             [eponai.client.parser.merge :as merge]
             [cljs-http.client :as http]
@@ -31,10 +32,38 @@
     (when (and body (html-content-type? headers))
       (popup-window-with-body body))))
 
-(defn wrap-merge-by-key [env k value]
-  (trace "Merging response for key:" k "value:" (:headers value))
+(defn wrap-merge-by-key [env k {:keys [result] :as value}]
+  (debug "Merging response for key:" k "value:" value)
   (popup-window-when-error k value)
-  (merge/merge-novelty env k value))
+  (when (and (symbol? k) (:mutation-uuid result))
+    (let [db (d/db (:state env))
+          mutation-uuid (:mutation-uuid result)
+          tx-time (d/q '{:find  [?tx .]
+                         :in    [$ ?uuid]
+                         :where [[?e :tx/mutation-uuid ?uuid ?tx]
+                                 [?e :tx/reverted ?reverted]
+                                 [(not ?reverted)]]}
+                       db
+                       mutation-uuid)
+          optimistic-tx-inverse
+          (when tx-time
+               (->> (db/-search (d/db (:state env)) [nil nil nil tx-time])
+                    (map #(update % :added not))
+                    (map (fn [[e a v _ added]] [(if added :db/add :db/retract) e a v]))
+                    (cons {:tx/mutation-uuid mutation-uuid :tx/reverted true})))
+
+          real-tx (->> (:datoms result)
+                       (into [] (comp
+                                  (filter (fn [[_ a]] (not= a :tx/mutation-uuid)))
+                                  (map (fn [[e a v _ added]] [(if added :db/add :db/retract) e a v])))))
+
+          tx (concat optimistic-tx-inverse real-tx)]
+      (debug "Optimistic: " tx)
+      (when tx
+        (d/transact! (:state env) tx))))
+  (merge/merge-novelty env k (if (symbol? k)
+                               (update value :result dissoc :mutation-uuid :datoms)
+                               value)))
 
 (def merge-novelty-by-key
   "Calls merge-novelty for each [k v] in novelty with an environment including {:state conn}.
@@ -50,14 +79,12 @@
 (defn merge!
   [conn]
   (fn [_ _ novelty]
-    (let [merged-by-key (merge-novelty-by-key {:state conn} novelty)
-          temp-id-post-merge (e.datascript/db-id->temp-id #{}
-                                                          (flatten (vals merged-by-key)))
+    (debug "Merge! transacting novelty:" novelty)
+    (let [_ (merge-novelty-by-key {:state conn} novelty)
           ks (keys novelty)]
       (debug "Merge! returning keys:" ks)
-      (debug "Merge! transacting novelty:" temp-id-post-merge)
       {:keys ks
-       :next (:db-after @(d/transact conn temp-id-post-merge))})))
+       :next  (d/db conn)})))
 
 (defn send!
   [path]

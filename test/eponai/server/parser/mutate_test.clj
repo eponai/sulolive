@@ -8,12 +8,14 @@
             [eponai.server.api :as api]
             [eponai.server.routes :as routes]
             [eponai.server.test-util :as util :refer [session-request]]
-            [eponai.common.database.pull :refer [pull]]))
+            [eponai.common.database.pull :refer [pull]]
+            [taoensso.timbre :refer [debug]]))
 
 (defn- new-db [txs]
   (let [conn (util/new-db txs)]
     (api/signin conn util/user-email)
     conn))
+
 
 (defspec
   transaction-created-submitted-to-datomic
@@ -27,7 +29,8 @@
                         {:db/id       (d/tempid :db.part/user)
                          :budget/uuid (:input/budget transaction)}])
           parsed (routes/handle-parser-request
-                   (session-request conn `[(transaction/create ~transaction)]))
+                   (session-request conn `[(transaction/create ~(assoc transaction :mutation-uuid (d/squuid)))]))
+          _ (debug "Parsed: " parsed)
           result (get-in parsed ['transaction/create :result])
           db (d/db conn)]
 

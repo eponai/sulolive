@@ -185,4 +185,14 @@
   :db/cardinality        :db.cardinality/many
   :db/doc                "Filter exclude tags."
   :db.install/_attribute :db.part/db}
+
+ ;; ------------------ Datomic transaction metadata
+ ;; --- Not to be confused with jourmoney transactions.
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :tx/mutation-uuid
+  :db/valueType          :db.type/uuid
+  :db/unique             :db.unique/identity
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Identifier of a mutation."
+  :db.install/_attribute :db.part/db}
  ]

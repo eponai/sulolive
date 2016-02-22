@@ -69,9 +69,19 @@
 (defn trace-parser-response-handlers
   "Wrapper with logging for parser.response/response-handler."
   [env key params]
-  (debug "handling parser response for key:" key "use logging level :trace to see the value for this key.")
-  (trace "full parser response for key:" key "value:" params)
+  (trace "handling parser response for key:" key "value:" params)
   (parser.resp/response-handler env key params))
+
+(defn remove-mutation-tx-reports
+  "Removes :db-after, :db-before and :tx-data from our
+  mutations' return values."
+  [response]
+  (reduce-kv (fn [m k _]
+               (if-not (symbol? k)
+                 m
+                 (update-in m [k :result] dissoc :db-after :db-before :tx-data :tempids)))
+             response
+             response))
 
 (def handle-parser-response
   "Will call response-handler for each key value in the parsed result."
@@ -82,7 +92,8 @@
   (POST "/" {:keys [::m/conn] :as request}
     (r/response
       (->> (handle-parser-request request)
-           (handle-parser-response (assoc request :state conn))))))
+           (handle-parser-response (assoc request :state conn))
+           (remove-mutation-tx-reports)))))
 
 (defroutes
   api-routes

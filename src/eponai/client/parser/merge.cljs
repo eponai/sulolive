@@ -2,15 +2,38 @@
   (:require [datascript.core :as d]
             [taoensso.timbre :refer-macros [info debug error trace]]))
 
+(defn transact [conn tx]
+  (let [tx (if (sequential? tx) tx [tx])]
+    (debug "transacting: " tx)
+    (d/transact! conn tx)))
+
 (defmulti merge-novelty (fn [_ k _] k))
+
 (defmethod merge-novelty :default
-  [_ k _]
-  (trace "No merge-novelty for key: " k)
-  (cond
-    ;; When we've got a proxy merge the value with the novelty
-    (= "proxy" (namespace k)) :merge
-    :else
-    nil))
+  [{:keys [state] :as env} key val]
+  (if-let [err (:om.next/error val)]
+    (error "merge-novelty error on key:" key "error:" err)
+    (cond
+      ;; When we've got a proxy merge the value with the novelty
+      (= "proxy" (namespace key)) (reduce-kv (fn [e k v]
+                                               (do (merge-novelty e k v)
+                                                   e))
+                                             env
+                                             val)
+      ;; Mutation
+      (symbol? key)
+      (when-let [res (:result val)]
+        (when (seq res)
+          (transact state res)))
+
+      :else
+      (transact state val)))
+  :dissoc)
+
+(defmethod merge-novelty :om.next/error
+  [_ key val]
+  (error "merge-novelty error on key:" key "error:" val)
+  :dissoc)
 
 (defmethod merge-novelty :datascript/schema
   [{:keys [state]} _ datascript-schema]
@@ -18,15 +41,6 @@
         current-entities (d/q '[:find [(pull ?e [*]) ...] :where [?e]] (d/db state))
         new-schema (merge-with merge current-schema datascript-schema)
         new-conn (d/create-conn new-schema)]
-    ;; Setting the app/inited to true, so we can make desicions about this later. As of writing this,
-    ;; it's used to not include the :datascript/schema key for remote reads.
     (d/transact new-conn current-entities)
-    (reset! state @new-conn))
-    :dissoc)
-
-(defmethod merge-novelty 'transaction/create
-  [_ _ novelty]
-  (when-let [err (:om.next/error novelty)]
-    (error "error from transaction/create. Keys:" (keys err))
-    (info "TODO: Do something about transaction/create errors!")
-    :dissoc))
+    (d/reset-conn! state @new-conn))
+  :dissoc)

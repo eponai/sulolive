@@ -20,6 +20,7 @@
                          :message   msg
                          :exception e
                          #?@(:clj [:status :eponai.server.http/service-unavailable])}))))))
+
 (defn transact-map
   "Transact a map into datomic, where the keys names the entities to be transacted for developer convenience.
 
@@ -31,3 +32,21 @@
   "Transact a single entity or transaction into datomic"
   [conn value]
   (transact conn [value]))
+
+(defn tx-mutation [mutation-uuid]
+  {:db/id            (d/tempid :db.part/tx)
+   :tx/mutation-uuid mutation-uuid
+   ;; :tx/reverted refers to if the optimistic changes has been reverted or not.
+   #?@(:cljs [:tx/reverted false])})
+
+(defn mutate
+  [conn mutation-uuid txs]
+  (transact conn (conj txs (tx-mutation mutation-uuid))))
+
+(defn mutate-one
+  [conn mutation-uuid value]
+  (transact conn [value (tx-mutation mutation-uuid)]))
+
+(defn mutate-map
+  [conn mutation-uuid m]
+  (transact conn (conj (vals m) (tx-mutation mutation-uuid))))

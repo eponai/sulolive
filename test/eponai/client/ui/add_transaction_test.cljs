@@ -20,7 +20,8 @@
   10
   (prop/for-all
     [transactions (gen/vector (gen-transaction))]
-    (let [create-mutations (map list (repeatedly (fn [] 'transaction/create)) transactions)
+    (let [create-mutations (map list (repeatedly (fn [] 'transaction/create)) (map #(assoc % :mutation-uuid (d/squuid))
+                                                                                   transactions))
           {:keys [parser conn]} (init-state)]
       (doseq [tx transactions]
         (d/transact conn [{:currency/code (:input/currency tx)}

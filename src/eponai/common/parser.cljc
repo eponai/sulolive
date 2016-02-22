@@ -2,12 +2,17 @@
   (:refer-clojure :exclude [merge])
   (:require [eponai.common.parser.read :as read]
             [eponai.common.parser.mutate :as mutate]
+            [clojure.walk :as walk]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info]]
-    #?(:clj [om.next.server :as om]
+    #?(:clj
+            [om.next.server :as om]
        :cljs [om.next :as om])
-    #?(:clj  [datomic.api :as d]
+    #?(:clj
+            [datomic.api :as d]
        :cljs [datascript.core :as d])
-    #?(:clj [eponai.server.datomic.filter :as filter])))
+    #?(:clj
+            [eponai.server.datomic.filter :as filter])
+            [clojure.walk :as w]))
 
 
 #?(:clj
@@ -87,6 +92,32 @@
            env
           args)))
 
+(defn put-db-id-in-query [query]
+  (cond (map? query)
+        (reduce-kv (fn [q k v]
+                     (assoc q k (put-db-id-in-query v)))
+                   {}
+                   query)
+
+        (sequential? query)
+        (->> query
+             (remove #(= :db/id %))
+             (map put-db-id-in-query)
+             (cons :db/id)
+             (into []))
+
+        :else
+        query))
+
+(defn read-with-dbid-in-query [read]
+  (fn [{:keys [query] :as env} k p]
+    (let [env (if-not query
+                env
+                (assoc env :query (if (#{"return" "proxy"} (namespace k))
+                                    query
+                                    (put-db-id-in-query query))))]
+      (read env k p))))
+
 (defn wrap-parser-filter-atom
   "Returns a parser with a filter-atom assoc'ed in the env."
   [parser]
@@ -94,11 +125,89 @@
     (apply parser (assoc env ::filter-atom (atom nil))
            args)))
 
+(defn mutate-with-idempotent-invariants  [mutate]
+  (fn [{:keys [target ast] :as env} k {:keys [mutation-uuid] :as params}]
+    (let [params' (dissoc params :mutation-uuid #?(:clj :remote-sync?))
+          env (assoc env :mutation-uuid mutation-uuid)
+          ret (mutate env k params')
+          remote? (get ret target)
+          ;; Normalize mutation return to ast.
+          #?@(:cljs [;; Remote sync is only needed when there was an optimistic
+                     ;; change on the frontend.
+                     ;; TODO: It's possible that we can have an action that
+                     ;;       do not require remote-sync. What to do?
+                     remote-sync? (and remote? (some? (:action ret)))]
+              :clj  [remote-sync? (:remote-sync? params)])
+          _ (debug "remote? : " remote?)
+          #?@(:cljs [ret (cond-> ret
+                                 remote? (->
+                                           (update target #(if (true? %) ast %))
+                                           (assoc-in [target :params :remote-sync?] remote-sync?)))])]
+      ;; TODO: Turn this into a test instead.
+      (when remote?
+        (assert (map? ret)))
+
+      (when remote-sync?
+        (assert (some? mutation-uuid)
+                (str "No mutation-uuid for remote mutation: " k
+                     ". Remote mutations needs :mutation-uuid in params "
+                     " to synchronize state, params were: " (keys params)))
+        (assert (and (map? ret) (:action ret))
+                (str "Map with :action key was not returned from mutation: " k
+                     " which is remote-symc?: " remote-sync? ". Mutations with"
+                     " remote sync needs to return a map with an :action.")))
+      (if-not remote-sync?
+        ret
+        (-> ret
+          (update :action (fn [action]
+                               (fn []
+                                 (let [action-return (action)]
+                                   (debug "mutation:" k "remote-sync?: " remote-sync?)
+                                   (when remote-sync?
+                                     (assert (map? action-return)
+                                             (str "Return value from a mutation's :action need to be"
+                                                  " a map for remote mutations that requires sync."
+                                                  "Mutation:" k " remote sync?:" remote-sync?
+                                                  " return value: " action-return))
+                                     (assert (contains? action-return :db-after)
+                                             (str ":db-after not in mutation action function's return value."
+                                                  " keys returned: " (keys action-return)
+                                                  ". Need :db-after to validate that mutation-uuid was"
+                                                  " transacted to the database."))
+                                     (assert (= mutation-uuid
+                                                (d/q '{:find  [?uuid .]
+                                                       :in    [$ ?uuid]
+                                                       :where [[_ :tx/mutation-uuid ?uuid]]}
+                                                     (:db-after action-return)
+                                                     mutation-uuid))
+                                             (str ":tx/mutation-uuid was not stored for mutation: " k
+                                                  " mutation-uuid: " mutation-uuid
+                                                  ". Mutation id needs to be stored in datascript/datomic"
+                                                  " to synchronize state.")))
+                                   ;; TODO:
+                                   ;; Instead of returning :tempids -> entities
+                                   ;; return :tx-data (datoms). Think about what this means.
+                                   (let [datoms (d/q '{:find  [?e ?attr ?v ?tx ?added]
+                                                       :in    [$ [[?e ?a ?v ?tx ?added] ...]]
+                                                       :where [[?a :db/ident ?attr]]}
+                                                     (:db-after action-return)
+                                                     (:tx-data action-return))
+                                         _ (debug "mutation:" k " datoms: " datoms)]
+                                     (-> action-return
+                                         (assoc :mutation-uuid mutation-uuid)
+                                         (assoc :datoms datoms))))))))))))
+
 (defn parser
   ([]
-   (let [parser (om/parser {:read   (-> read/read read-without-state wrap-db)
-                            :mutate (-> mutate/mutate wrap-db)})]
-     #?(:cljs parser
+   (let [parser (om/parser {:read   (-> read/read
+                                        read-without-state
+                                        read-with-dbid-in-query
+                                        wrap-db)
+                            :mutate (-> mutate/mutate
+                                        mutate-with-idempotent-invariants
+                                        wrap-db)})]
+     #?(:cljs (fn [env & args]
+                (apply parser env args))
         :clj  (-> parser
                   wrap-parser-filter-atom
                   wrap-om-next-error-handler)))))

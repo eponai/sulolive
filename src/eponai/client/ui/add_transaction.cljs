@@ -43,6 +43,7 @@
     (om/transact! this
                   `[(transaction/create
                       ~(-> (om/get-state this)
+                           (assoc :mutation-uuid (d/squuid))
                            (update :input/date format/date->ymd-string)
                            (assoc :input/uuid (d/squuid))
                            (assoc :input/created-at (.getTime (js/Date.)))
