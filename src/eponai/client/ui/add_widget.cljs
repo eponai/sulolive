@@ -128,12 +128,17 @@
        :input-dashboard dashboard}))
 
   (componentWillMount [this]
-    (let [{:keys [widget]} (om/get-computed this)]
+    (let [{:keys [widget
+                  dashboard]} (om/get-computed this)]
       (when widget
         (om/update-state! this assoc
                           :input-graph (:widget/graph widget)
                           :input-report (:widget/report widget)
-                          :input-function (first (:report/functions (:widget/report widget)))))))
+                          :input-function (first (:report/functions (:widget/report widget)))))
+      (when dashboard
+        (om/update-state! this assoc
+                          :input-dashboard-uuid (str (:dashboard/uuid dashboard))
+                          :input-dashboard dashboard))))
 
   (update-dashboard [this dashboard-uuid-str]
     (let [{:keys [query/all-dashboards]} (om/props this)

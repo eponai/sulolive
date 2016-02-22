@@ -86,7 +86,8 @@
          (when edit-widget
            (utils/modal {:content  (->NewWidget (om/computed add-widget
                                                              {:on-close #(om/update-state! this assoc :edit-widget nil)
-                                                              :widget edit-widget}))
+                                                              :widget edit-widget
+                                                              :dashboard dashboard}))
                          :on-close #(om/update-state! this assoc :edit-widget nil)
                          :class    "modal-lg"}))
          (when (and layout
