@@ -44,10 +44,8 @@
       (om/update-state! this assoc :grid-element grid-element)))
 
   (componentWillReceiveProps [this new-props]
-    (let [{:keys [layout]} (om/get-state this)
-          widgets (:dashboard/widgets (:query/dashboard new-props))]
-      (when-not (seq layout)
-        (om/update-state! this assoc :layout (clj->js (generate-layout widgets))))))
+    (let [widgets (:dashboard/widgets (:query/dashboard new-props))]
+      (om/update-state! this assoc :layout (clj->js (generate-layout widgets)))))
 
   (componentDidMount [this]
     (let [widgets (:dashboard/widgets (:query/dashboard (om/props this)))

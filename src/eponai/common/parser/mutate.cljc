@@ -85,3 +85,16 @@
                (transact/transact-one state [:db.fn/retractEntity [:widget/uuid widget-uuid]])
                true)
      #?@(:cljs [:remote true])}))
+
+(defmethod mutate 'budget/save
+  [{:keys [state auth]} _ params]
+  (debug "budget/save with params: " params)
+  (let [user-ref (when (:username auth)
+                   [:user/uuid (:username auth)])
+        budget (format/budget user-ref params)
+        dashboard (format/dashboard (:db/id budget) params)]
+    {:action (fn []
+               (transact/transact state [budget
+                                         dashboard])
+               true)
+     #?@(:cljs [:remote true])}))

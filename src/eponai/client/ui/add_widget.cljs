@@ -3,7 +3,8 @@
             [eponai.client.ui :refer-macros [opts]]
             [eponai.client.ui.widget :refer [->Widget]]
             [om.next :as om :refer-macros [defui]]
-            [sablono.core :refer-macros [html]]))
+            [sablono.core :refer-macros [html]]
+            [eponai.common.format :as f]))
 
 ;;; ####################### Actions ##########################
 
@@ -108,17 +109,23 @@
     {:budget-uuid nil})
   static om/IQuery
   (query [_]
-    [{:query/all-transactions [:transaction/uuid
-                               {:transaction/date [:date/ymd
-                                                   :date/timestamp]}
-                               :transaction/amount
-                               {:transaction/tags [:tag/name]}]}
-     {:query/all-dashboards [:dashboard/uuid]}])
+    [{:query/all-dashboards [:dashboard/uuid
+                             {:dashboard/budget [:budget/uuid
+                                                 :budget/name
+                                                 {:transaction/_budget [:transaction/uuid
+                                                                        {:transaction/date [:date/ymd
+                                                                                            :date/timestamp]}
+                                                                        :transaction/amount
+                                                                        {:transaction/tags [:tag/name]}]}]}]}])
   Object
-  (initLocalState [_]
-    {:input-graph    {:graph/style :graph.style/bar}
-     :input-function {:report.function/id :report.function.id/sum}
-     :input-report   {:report/group-by :transaction/tags}})
+  (initLocalState [this]
+    (let [{:keys [query/all-dashboards]} (om/props this)
+          dashboard (first all-dashboards)]
+      {:input-graph     {:graph/style :graph.style/bar}
+       :input-function  {:report.function/id :report.function.id/sum}
+       :input-report    {:report/group-by :transaction/tags}
+       :input-dashboard-uuid (str (:dashboard/uuid dashboard))
+       :input-dashboard dashboard}))
 
   (componentWillMount [this]
     (let [{:keys [widget]} (om/get-computed this)]
@@ -128,10 +135,14 @@
                           :input-report (:widget/report widget)
                           :input-function (first (:report/functions (:widget/report widget)))))))
 
+  (update-dashboard [this dashboard-uuid-str]
+    (let [{:keys [query/all-dashboards]} (om/props this)
+          dashboards (group-by :dashboard/uuid all-dashboards)]
+      (om/update-state! this assoc :input-dashboard-uuid dashboard-uuid-str
+                        :input-dashboard (first (get dashboards (f/str->uuid dashboard-uuid-str))))))
   (render [this]
-    (let [{:keys [query/all-transactions
-                  query/all-dashboards]} (om/props this)
-          {:keys [input-graph input-report] :as state} (om/get-state this)
+    (let [{:keys [query/all-dashboards]} (om/props this)
+          {:keys [input-graph input-report input-dashboard-uuid input-dashboard] :as state} (om/get-state this)
           {:keys [on-close
                   widget]} (om/get-computed this)]
       (html
@@ -148,6 +159,17 @@
            [:div
             {:class "col-sm-6"}
 
+            [:select.form-control
+             {:on-change     #(.update-dashboard this (.-value (.-target %)))
+              :type          "text"
+              :default-value input-dashboard-uuid}
+             (map
+               (fn [{:keys [dashboard/budget] :as dashboard}]
+                 [:option
+                  (opts {:value (str (:dashboard/uuid dashboard))
+                         :key   [(:dashboard/uuid dashboard)]})
+                  (:budget/name budget)])
+               all-dashboards)]
             [:input.form-control
              {:value       (:report/title input-report)
               :placeholder "Untitled"
@@ -174,7 +196,7 @@
              (opts {:style {:height 300}})
              (->Widget (om/computed {:widget/graph  input-graph
                                      :widget/report input-report}
-                                    {:data all-transactions}))]]]]
+                                    {:data (:transaction/_budget (:dashboard/budget input-dashboard))}))]]]]
 
          [:div.modal-footer
           (opts {:style {:display        "flex"
@@ -194,9 +216,6 @@
                                                    (dissoc :on-close)
 
                                                    true
-                                                   (assoc :input-dashboard (first all-dashboards))
-
-                                                   true
                                                    (assoc-in [:input-widget :widget/uuid] (or (:widget/uuid widget) (d/squuid)))
 
                                                    (not (:graph/uuid (:input-graph state)))
@@ -209,6 +228,8 @@
                                                    (assoc-in [:input-report :report/uuid] (d/squuid))))
                               (on-close))
                   :style    {:margin 5}})
-           "Save"]]]))))
+           "Save"]
+          ;[:div (str "State " (om/get-state this))]
+          ]]))))
 
 (def ->NewWidget (om/factory NewWidget))

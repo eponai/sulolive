@@ -127,14 +127,13 @@
           (date-picker this "From date..." :start-date)
           (date-picker this "To date..." :end-date)]
 
-         [:table
-          {:class "table table-striped table-hover"}
+         [:table.table.table-striped.table-hover
           [:thead
            [:tr
-            [:td "Date"]
-            [:td "Name"]
-            [:td "Tags"]
-            [:td.text-right
+            [:th "Date"]
+            [:th "Name"]
+            [:th "Tags"]
+            [:th.text-right
              "Amount"]]]
           [:tbody
            (map-all

@@ -9,7 +9,8 @@
             [eponai.client.routes :as routes]
             [garden.core :refer [css]]
             [om.next :as om :refer-macros [defui]]
-            [sablono.core :refer-macros [html]]))
+            [sablono.core :refer-macros [html]]
+            [datascript.core :as d]))
 
 ;;;;; ###################### Actions ####################
 
@@ -28,6 +29,12 @@
 (defn- select-new [component new-id]
   (om/update-state! component assoc new-id true
                     :new-menu-visible? false))
+
+(defn- save-new-budget [component name]
+  (om/transact! component `[(budget/save ~{:budget/uuid (d/squuid)
+                                           :budget/name name
+                                           :dashboard/uuid (d/squuid)})
+                            :query/all-budgets]))
 
 ;;;; ##################### UI components ####################
 
@@ -53,7 +60,16 @@
        [:i
            (opts {:class "fa fa-bar-chart"
                   :style {:width "20%"}})]
-          [:span "Widget"]]]]])
+          [:span "Widget"]]]
+    [:li
+     [:a
+      (opts {:href     "#"
+             :on-click #(on-click :add-budget?)
+             :style {:padding "0.5em"}})
+      [:i
+       (opts {:class "fa fa-file-text-o"
+              :style {:width "20%"}})]
+      [:span "Budget"]]]]])
 
 (defn- profile-menu [{:keys [on-close]}]
   [:div
@@ -85,6 +101,34 @@
                  :style    {:padding "0.5em"}})
           "Sign Out"]]]])
 
+(defui AddBudget
+  Object
+  (render [this]
+    (let [{:keys [on-close
+                  on-save]} (om/get-computed this)
+          {:keys [input-name]} (om/get-state this)]
+      (html
+        [:div
+         [:div.modal-header
+          "Add budget"]
+         [:div.modal-body
+          [:label.form-control-static
+           "Name"]
+          [:input.form-control
+           {:value input-name
+            :on-change #(om/update-state! this assoc :input-name (.-value (.-target %)))}]]
+         [:div.modal-footer
+          [:button.btn.btn-default.btn-md
+           {:on-click on-close}
+           "Cancel"]
+          [:button.btn.btn-info.btn-md
+           {:on-click #(do
+                        (on-save input-name)
+                        (on-close))}
+           "Save"]]]))))
+
+(def ->AddBudget (om/factory AddBudget))
+
 ;;;; #################### Om Next components #####################
 
 
@@ -100,7 +144,8 @@
     {:menu-visible? false
      :new-menu-visible? false
      :add-transaction? false
-     :add-widget? false})
+     :add-widget? false
+     :add-budget? false})
   (render [this]
     (let [{:keys [proxy/add-transaction
                   proxy/add-widget
@@ -108,7 +153,8 @@
           {:keys [menu-visible?
                   new-menu-visible?
                   add-transaction?
-                  add-widget?]} (om/get-state this)
+                  add-widget?
+                  add-budget?]} (om/get-state this)
           {:keys [sidebar-visible?
                   on-sidebar-show]} (om/get-computed this)]
       (html
@@ -182,6 +228,14 @@
              (utils/modal {:content  (->AddTransaction
                                        (om/computed add-transaction
                                                     {:on-close on-close}))
+                           :on-close on-close})))
+
+         (when add-budget?
+           (let [on-close #(om/update-state! this assoc :add-budget? false)]
+             (utils/modal {:content  (->AddBudget (om/computed
+                                                    {}
+                                                    {:on-close on-close
+                                                     :on-save  #(save-new-budget this %)}))
                            :on-close on-close})))]))))
 
 (def ->NavbarMenu (om/factory NavbarMenu))

@@ -84,14 +84,19 @@
   * :budget/uuid - UUID to assign to this budget entity, default will call (d/squuid).
 
   Returns a map representing a budget entity"
-  ([user-dbid]
-   (budget user-dbid {}))
-  ([user-dbid opts]
-   {:db/id             (d/tempid :db.part/user)
-    :budget/uuid       (or (:budget/uuid opts) (d/squuid))
-    :budget/created-by user-dbid
-    :budget/created-at (or (:budget/created-at opts) (c/to-long (t/now)))
-    :budget/name       (or (:budget/name opts) "Default")}))
+  ([user-dbid & [opts]]
+   (cond->
+     {:db/id             (d/tempid :db.part/user)
+      :budget/uuid       (or (:budget/uuid opts) (d/squuid))
+      :budget/created-at (or (:budget/created-at opts) (c/to-long (t/now)))
+      :budget/name       (or (:budget/name opts) "Default")}
+     user-dbid
+     (assoc :budget/created-by user-dbid))))
+
+(defn dashboard [budget-ref & [opts]]
+  {:db/id (d/tempid :db.part/user)
+   :dashboard/uuid (or (:dashboard/uuid opts) (d/squuid))
+   :dashboard/budget budget-ref})
 
 (defn date
   "Create a date entity.
