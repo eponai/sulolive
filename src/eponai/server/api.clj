@@ -12,7 +12,8 @@
             [eponai.server.external.mailchimp :as mailchimp]
             [eponai.server.http :as http]
             [taoensso.timbre :refer [debug error info]]
-            [environ.core :refer [env]])
+            [environ.core :refer [env]]
+            [eponai.common.format :as format])
   (:import (datomic.peer LocalConnection)))
 
 ;(defn currency-infos
@@ -140,8 +141,12 @@
             (debug "User already activated, returning user.")
             (pull/lookup-entity (d/db conn) [:user/email email]))
           ; First time activation, set status to active and return user entity.
-          (let [activated-db (:db-after (transact conn [[:db/add user-db-id :user/status :user.status/active]
-                                                        [:db/add user-db-id :user/activated-at (c/to-long (time/now))]]))]
+          (let [budget (format/budget user-db-id)
+                dashboard (format/dashboard (:db/id budget))
+                activated-db (:db-after (transact conn [[:db/add user-db-id :user/status :user.status/active]
+                                                        [:db/add user-db-id :user/activated-at (c/to-long (time/now))]
+                                                        budget
+                                                        dashboard]))]
             (debug "Activated account for user-uuid:" user-uuid)
             (pull/lookup-entity activated-db [:user/email email])))))
 

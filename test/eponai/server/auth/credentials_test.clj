@@ -160,15 +160,18 @@
 
 (deftest user-activates-account-with-verified-email
   (testing "User activates account with their email verified."
-    (let [{:keys [user verification]} (f/user-account-map email
+    (let [{:keys [user] :as account} (f/user-account-map email
                                                           {:verification/status :verification.status/verified})
-          conn (new-db [user
-                        verification])
+          conn (new-db (vals account))
           credential-fn (a/credential-fn conn)]
       (is (= (credential-fn (with-meta {:user-uuid  (str (:user/uuid user))
                                         :user-email (:user/email user)}
                                        {::friend/workflow :activate-account}))
-             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email])))))))
+             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]))))
+      (let [budget-eid (p/one-with (d/db conn) (p/budget-with-auth (:user/uuid user)))
+            budget (p/pull (d/db conn) '[* :dashboard/_budget] budget-eid)]
+        (is (and budget
+                 (:dashboard/_budget budget)))))))
 
 (deftest user-activates-account-already-activated
   (testing "User activates account which as already activated (could bypass trial period).

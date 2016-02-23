@@ -3,8 +3,6 @@
             [environ.core :refer [env]]
             [eponai.common.format :as format]
             [clojure.tools.reader.edn :as edn]
-            [eponai.server.datomic.pull :as p]
-            [eponai.common.database.pull :as common.pull]
             [clojure.java.io :as io]
             [eponai.common.database.transact :as transact]
             [taoensso.timbre :refer [debug error info]]
@@ -75,10 +73,12 @@
      (reduce concat [] schemas))))
 
 (defn add-verified-user-account [conn email budget-uuid]
-  (let [account (f/user-account-map email {:verification/status :verification.status/verified
-                                           :user/status :user.status/active
-                                           :budget/uuid budget-uuid})
-        ret (transact/transact-map conn account)]
+  (let [{:keys [user] :as account} (f/user-account-map email {:verification/status :verification.status/verified
+                                           :user/status :user.status/active})
+        budget (format/budget (:db/id user) {:budget/uuid budget-uuid})
+        dashboard (format/dashboard (:db/id budget))
+        ret (transact/transact-map conn (assoc account :budget budget
+                                                       :dashboard dashboard))]
     (debug "New user created with email:" email)
     ret))
 

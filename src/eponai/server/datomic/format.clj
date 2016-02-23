@@ -126,12 +126,9 @@
   #{:user :budget :verification(if email not nil) :fb-user(if not nil)}"
   [email & [opts]]
   (let [user (user email opts)
-        budget (cf/budget (:db/id user) opts)
         fb-user (fb-user user opts)]
     (cond->
-      {:user   user
-       :budget budget
-       :dashboard (dashboard (:db/id budget))}
+      {:user   user}
 
       email
       (assoc :verification (verification user opts))
