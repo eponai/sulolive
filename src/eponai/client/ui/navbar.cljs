@@ -23,9 +23,6 @@
 (defn- select-add-transaction [component visible]
   (om/update-state! component assoc :add-transaction? visible))
 
-(defn- select-add-widget [component visible]
-  (om/update-state! component assoc :add-widget? visible))
-
 (defn- select-new [component new-id]
   (om/update-state! component assoc new-id true
                     :new-menu-visible? false))
@@ -52,15 +49,7 @@
            (opts {:class "fa fa-usd"
                   :style {:width "20%"}})]
           [:span "Transaction"]]]
-    [:li
-      [:a
-       (opts {:href     "#"
-              :on-click #(on-click :add-widget?)
-              :style {:padding "0.5em"}})
-       [:i
-           (opts {:class "fa fa-bar-chart"
-                  :style {:width "20%"}})]
-          [:span "Widget"]]]
+
     [:li
      [:a
       (opts {:href     "#"
@@ -136,7 +125,6 @@
   static om/IQuery
   (query [_]
     [{:proxy/add-transaction (om/get-query AddTransaction)}
-     {:proxy/add-widget (om/get-query NewWidget)}
      {:query/current-user [:user/uuid
                            :user/activated-at
                            :user/picture]}])
@@ -149,12 +137,10 @@
      :add-budget? false})
   (render [this]
     (let [{:keys [proxy/add-transaction
-                  proxy/add-widget
                   query/current-user]} (om/props this)
           {:keys [menu-visible?
                   new-menu-visible?
                   add-transaction?
-                  add-widget?
                   add-budget?]} (om/get-state this)
           {:keys [sidebar-visible?
                   on-sidebar-show]} (om/get-computed this)]
@@ -219,11 +205,6 @@
           (when menu-visible?
             (profile-menu {:on-close #(open-profile-menu this false)}))]
 
-         (when add-widget?
-           (utils/modal {:content  (->NewWidget (om/computed add-widget
-                                                             {:on-close #(select-add-widget this false)}))
-                         :on-close #(select-add-widget this false)
-                         :class    "modal-lg"}))
          (when add-transaction?
            (let [on-close #(select-add-transaction this false)]
              (utils/modal {:content  (->AddTransaction

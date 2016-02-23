@@ -8,10 +8,6 @@
 
 ;;; ####################### Actions ##########################
 
-(defn save-widget [component widget]
-  (om/transact! component `[(widget/save ~widget)
-                            :query/dashboard]))
-
 (defn select-graph-style [component style]
   (let [default-group-by {:graph.style/bar    :transaction/tags
                           :graph.style/area   :transaction/date
@@ -104,77 +100,41 @@
 ;;;;;;;; ########################## Om Next components ########################
 
 (defui NewWidget
-  static om/IQueryParams
-  (params [_]
-    {:budget-uuid nil})
-  static om/IQuery
-  (query [_]
-    [{:query/all-dashboards [:dashboard/uuid
-                             {:dashboard/budget [:budget/uuid
-                                                 :budget/name
-                                                 {:transaction/_budget [:transaction/uuid
-                                                                        {:transaction/date [:date/ymd
-                                                                                            :date/timestamp]}
-                                                                        :transaction/amount
-                                                                        {:transaction/tags [:tag/name]}]}]}]}])
   Object
-  (initLocalState [this]
-    (let [{:keys [query/all-dashboards]} (om/props this)
-          dashboard (first all-dashboards)]
-      {:input-graph     {:graph/style :graph.style/bar}
-       :input-function  {:report.function/id :report.function.id/sum}
-       :input-report    {:report/group-by :transaction/tags}
-       :input-dashboard-uuid (str (:dashboard/uuid dashboard))
-       :input-dashboard dashboard}))
+  (initLocalState [_]
+    {:input-graph          {:graph/style :graph.style/bar}
+     :input-function       {:report.function/id :report.function.id/sum}
+     :input-report         {:report/group-by :transaction/tags}})
 
   (componentWillMount [this]
-    (let [{:keys [widget
-                  dashboard]} (om/get-computed this)]
+    (let [{:keys [widget]} (om/get-computed this)]
       (when widget
-        (om/update-state! this assoc
-                          :input-graph (:widget/graph widget)
-                          :input-report (:widget/report widget)
-                          :input-function (first (:report/functions (:widget/report widget)))))
-      (when dashboard
-        (om/update-state! this assoc
-                          :input-dashboard-uuid (str (:dashboard/uuid dashboard))
-                          :input-dashboard dashboard))))
-
-  (update-dashboard [this dashboard-uuid-str]
-    (let [{:keys [query/all-dashboards]} (om/props this)
-          dashboards (group-by :dashboard/uuid all-dashboards)]
-      (om/update-state! this assoc :input-dashboard-uuid dashboard-uuid-str
-                        :input-dashboard (first (get dashboards (f/str->uuid dashboard-uuid-str))))))
+        (om/update-state! this
+                          #(-> %
+                               (assoc :input-graph (:widget/graph widget)
+                                      :input-report (:widget/report widget)
+                                      :input-function (first (:report/functions (:widget/report widget))))
+                               (assoc-in [:input-widget :widget/uuid] (:widget/uuid widget)))))
+      ))
   (render [this]
-    (let [{:keys [query/all-dashboards]} (om/props this)
-          {:keys [input-graph input-report input-dashboard-uuid input-dashboard] :as state} (om/get-state this)
+    (let [dashboard (om/props this)
+          {:keys [input-graph input-report] :as state} (om/get-state this)
           {:keys [on-close
-                  widget]} (om/get-computed this)]
+                  on-save]} (om/get-computed this)]
+
       (html
         [:div
          [:div.modal-header
           [:button.close
            {:on-click on-close}
            "x"]
-          [:h6 "New widget"]]
+          [:h4 (str "New widget - " (:budget/name (:dashboard/budget dashboard)))]]
 
          [:div.modal-body
           [:div.row
 
            [:div
             {:class "col-sm-6"}
-
-            [:select.form-control
-             {:on-change     #(.update-dashboard this (.-value (.-target %)))
-              :type          "text"
-              :default-value input-dashboard-uuid}
-             (map
-               (fn [{:keys [dashboard/budget] :as dashboard}]
-                 [:option
-                  (opts {:value (str (:dashboard/uuid dashboard))
-                         :key   [(:dashboard/uuid dashboard)]})
-                  (:budget/name budget)])
-               all-dashboards)]
             [:input.form-control
              {:value       (:report/title input-report)
               :placeholder "Untitled"
@@ -201,7 +161,7 @@
              (opts {:style {:height 300}})
              (->Widget (om/computed {:widget/graph  input-graph
                                      :widget/report input-report}
-                                    {:data (:transaction/_budget (:dashboard/budget input-dashboard))}))]]]]
+                                    {:data (:transaction/_budget (:dashboard/budget dashboard))}))]]]]
 
          [:div.modal-footer
           (opts {:style {:display        "flex"
@@ -214,24 +174,24 @@
            "Cancel"]
           [:button
            (opts {:class    "btn btn-info btn-md"
-                  :on-click (fn []
-                              (save-widget this
-                                           (cond-> state
-                                                   true
-                                                   (dissoc :on-close)
+                  :on-click #(do
+                              (prn "Saving state: " state)
+                              (on-save (cond-> state
+                                               true
+                                               (assoc :input-dashboard {:dashboard/uuid (:dashboard/uuid dashboard)})
 
-                                                   true
-                                                   (assoc-in [:input-widget :widget/uuid] (or (:widget/uuid widget) (d/squuid)))
+                                               (not (:widget/uuid (:input-widget state)))
+                                               (assoc-in [:input-widget :widget/uuid] (d/squuid))
 
-                                                   (not (:graph/uuid (:input-graph state)))
-                                                   (assoc-in [:input-graph :graph/uuid] (d/squuid))
+                                               (not (:graph/uuid (:input-graph state)))
+                                               (assoc-in [:input-graph :graph/uuid] (d/squuid))
 
-                                                   (not (:report.function/uuid (:input-function state)))
-                                                   (assoc-in [:input-function :report.function/uuid] (d/squuid))
+                                               (not (:report.function/uuid (:input-function state)))
+                                               (assoc-in [:input-function :report.function/uuid] (d/squuid))
 
-                                                   (not (:report/uuid (:input-report state)))
-                                                   (assoc-in [:input-report :report/uuid] (d/squuid))))
-                              (on-close))
+                                               (not (:report/uuid (:input-report state)))
+                                               (assoc-in [:input-report :report/uuid] (d/squuid)))))
+
                   :style    {:margin 5}})
            "Save"]
           ;[:div (str "State " (om/get-state this))]

@@ -9,6 +9,10 @@
             [taoensso.timbre :refer-macros [error]]
             [eponai.client.ui.utils :as utils]))
 
+(defn save-widget [component widget]
+  (om/transact! component `[(widget/save ~widget)
+                            :query/dashboard]))
+
 (defn generate-layout [widgets]
   (map (fn [widget i]
          {:x (mod i 4)
@@ -28,12 +32,14 @@
     [{:query/dashboard [:dashboard/uuid
                         {:dashboard/widgets (om/get-query Widget)}
                         {:dashboard/budget [:budget/uuid
+                                            :budget/name
                                             {:transaction/_budget [:transaction/uuid
                                                                    {:transaction/tags [:tag/name]}
                                                                    :transaction/amount
                                                                    {:transaction/date [:date/ymd
                                                                                        :date/timestamp]}]}]}]}
-     {:proxy/add-widget (om/get-query NewWidget)}])
+     ;{:proxy/new-widget (om/get-query NewWidget)}
+     ])
   Object
   (initLocalState [_]
     {:edit? true})
@@ -61,12 +67,12 @@
                          :query/dashboard]))
 
   (render [this]
-    (let [{:keys [query/dashboard
-                  proxy/add-widget]} (om/props this)
+    (let [{:keys [query/dashboard]} (om/props this)
           {:keys [layout
                   edit?
                   grid-element
-                  edit-widget]} (om/get-state this)
+                  edit-widget
+                  add-widget?]} (om/get-state this)
           widgets (:dashboard/widgets dashboard)
           React (.-React js/window)]
       (html
@@ -74,6 +80,17 @@
          [:button.btn.btn-default.btn-md
           {:on-click #(om/update-state! this update :edit? not)}
           [:i.fa.fa-pencil]]
+         [:button.btn.btn-default.btn-md
+          {:on-click #(om/update-state! this assoc :add-widget? true)}
+          [:i.fa.fa-bar-chart]]
+         (when add-widget?
+           (utils/modal {:content  (->NewWidget (om/computed dashboard
+                                                             {:on-close #(om/update-state! this assoc :add-widget? false)
+                                                              :on-save #(do
+                                                                         (save-widget this %)
+                                                                         (om/update-state! this assoc :add-widget? false))}))
+                         :on-close #(om/update-state! this assoc :add-widget? false)
+                         :class    "modal-lg"}))
          [:div (str "Edit: " edit?)]
          (when edit?
            [:style (css [:.react-grid-item
@@ -84,10 +101,12 @@
                                     :box-shadow         "0 3px 9px rgba(0, 0, 0, .5)"}]])])
 
          (when edit-widget
-           (utils/modal {:content  (->NewWidget (om/computed add-widget
+           (utils/modal {:content  (->NewWidget (om/computed dashboard
                                                              {:on-close #(om/update-state! this assoc :edit-widget nil)
-                                                              :widget edit-widget
-                                                              :dashboard dashboard}))
+                                                              :on-save #(do
+                                                                         (save-widget this %)
+                                                                         (om/update-state! this assoc :edit-widget nil))
+                                                              :widget   edit-widget}))
                          :on-close #(om/update-state! this assoc :edit-widget nil)
                          :class    "modal-lg"}))
          (when (and layout
