@@ -63,10 +63,10 @@
                              = [:conversion/date] auth-db
                              something!= '[?e :transaction/uuid] auth-db
                              something!= '[?e :budget/uuid] auth-db
-                             something!= '[?e :dashboard/uuid] auth-db
+                                  ;; something!= '[?e :dashboard/uuid] auth-db
                              none '[?e :transaction/uuid] no-auth-db
                              none '[?e :budget/uuid] no-auth-db
-                             none '[?e :dashboard/uuid] no-auth-db
+                                  ;; none '[?e :dashboard/uuid] no-auth-db
                              = [:db/ident :db/valueType] auth-db
                              = [:db.install/attribute] auth-db
                              = [:db/valueType :db.type/ref] auth-db
