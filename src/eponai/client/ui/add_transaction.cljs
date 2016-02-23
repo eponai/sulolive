@@ -47,7 +47,8 @@
                            (assoc :input/uuid (d/squuid))
                            (assoc :input/created-at (.getTime (js/Date.)))
                            (dissoc :input/tag)))
-                    :query/dashboard]))
+                    :query/dashboard
+                    :query/all-budgets]))
   (initLocalState [this]
     (let [{:keys [query/all-currencies
                   query/all-budgets]} (om/props this)]

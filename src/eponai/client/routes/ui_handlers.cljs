@@ -4,6 +4,7 @@
             [eponai.client.ui.all_transactions :refer [AllTransactions ->AllTransactions]]
             [eponai.client.ui.settings :refer [Settings ->Settings]]
             [eponai.client.ui.stripe :refer [Payment ->Payment]]
+            [eponai.client.ui.profile :refer [Profile ->Profile]]
             [om.next :as om]))
 
 (defprotocol RouteParamHandler
@@ -36,6 +37,5 @@
                                                :factory   ->AllTransactions})
    :route/subscribe    (map->UiComponentMatch {:component Payment
                                                :factory   ->Payment})
-   :route/widget       (map->UiComponentMatch {:component AllTransactions
-                                               :factory   ->AllTransactions})
-   })
+   :route/profile      (map->UiComponentMatch {:component Profile
+                                               :factory   ->Profile})})

@@ -31,4 +31,4 @@
                         {"/transactions" :route/transactions
                          "/settings"     :route/settings
                          "/subscribe"    :route/subscribe
-                         "/widget/new"   :route/widget})])
+                         "/profile"      :route/profile})])

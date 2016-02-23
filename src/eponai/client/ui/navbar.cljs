@@ -79,7 +79,7 @@
     {:class "dropdown-menu dropdown-menu-right"}
     [:li
      [:a
-      (opts {:href     "#"
+      (opts {:href     (routes/inside "/profile")
              :on-click on-close
              :style    {:padding "0.5em"}})
       [:i
