@@ -20,8 +20,6 @@
 (defn- open-profile-menu [component visible]
   (om/update-state! component assoc :menu-visible? visible))
 
-(defn- select-add-transaction [component visible]
-  (om/update-state! component assoc :add-transaction? visible))
 
 (defn- select-new [component new-id]
   (om/update-state! component assoc new-id true
@@ -66,15 +64,6 @@
    (utils/click-outside-target on-close)
    [:ul
     {:class "dropdown-menu dropdown-menu-right"}
-    [:li
-     [:a
-      (opts {:href     (routes/inside "/profile")
-             :on-click on-close
-             :style    {:padding "0.5em"}})
-      [:i
-       (opts {:class "fa fa-user"
-              :style {:width "15%"}})]
-      [:span "Profile"]]]
     [:li [:a
           (opts {:href     (routes/inside "/settings")
                  :on-click on-close
@@ -140,7 +129,7 @@
                   query/current-user]} (om/props this)
           {:keys [menu-visible?
                   new-menu-visible?
-                  add-transaction?
+                  new-transaction
                   add-budget?]} (om/get-state this)
           {:keys [sidebar-visible?
                   on-sidebar-show]} (om/get-computed this)]
@@ -170,10 +159,23 @@
            (opts {:style    {:display   "block"
                              :margin    "0.5em 0.2em"
                              :font-size "1em"}
-                  :on-click #(open-new-menu this true)
+                  :on-click #(om/update-state! this assoc :add-budget? true)
+                  :class    "btn btn-default btn-md"})
+           [:i.fa.fa-file-text-o]]
+          [:button
+           (opts {:style    {:display   "block"
+                             :margin    "0.5em 0.2em"
+                             :font-size "1em"}
+                  :on-click #(om/update-state! this assoc :new-transaction :transaction.type/income)
                   :class    "btn btn-info btn-md"})
-           [:i
-            {:class "fa fa-plus"}]]
+           [:i.fa.fa-plus]]
+          [:button
+           (opts {:style    {:display   "block"
+                             :margin    "0.5em 0.2em"
+                             :font-size "1em"}
+                  :on-click #(om/update-state! this assoc :new-transaction :transaction.type/expense)
+                  :class    "btn btn-danger btn-md"})
+           [:i.fa.fa-minus]]
           (when new-menu-visible?
             (new-menu {:on-click #(select-new this %)
                        :on-close #(open-new-menu this false)}))]
@@ -205,11 +207,12 @@
           (when menu-visible?
             (profile-menu {:on-close #(open-profile-menu this false)}))]
 
-         (when add-transaction?
-           (let [on-close #(select-add-transaction this false)]
+         (when new-transaction
+           (let [on-close #(om/update-state! this assoc :new-transaction nil)]
              (utils/modal {:content  (->AddTransaction
                                        (om/computed add-transaction
-                                                    {:on-close on-close}))
+                                                    {:on-close on-close
+                                                     :transaction/type new-transaction}))
                            :on-close on-close})))
 
          (when add-budget?
@@ -252,6 +255,14 @@
                                  (on-sidebar-close))})
            "X"]]
 
+         [:li
+          [:a
+           (opts {:href     (routes/inside "/profile")})
+           [:i.fa.fa-user
+            (opts {:style {:display :inline
+                           :padding "0.5em"}})]
+           [:strong "Profile"]]]
+         [:li.divider]
          [:li
           [:a {:href (routes/inside "/transactions")
                :on-click nil}

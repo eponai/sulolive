@@ -83,8 +83,8 @@
   static om/IQuery
   (query [_]
     [{'(:query/all-transactions {:filter-tags ?filter-tags
-                                 :start-date ?start-date
-                                 :end-date ?end-date})
+                                 :start-date  ?start-date
+                                 :end-date    ?end-date})
       [:db/id
        :transaction/uuid
        :transaction/title
@@ -103,7 +103,8 @@
                            :date/month
                            :date/year]}
        {:transaction/budget [:budget/uuid
-                             :budget/name]}]}])
+                             :budget/name]}
+       {:transaction/type [:db/ident]}]}])
 
   Object
   (initLocalState [_]
@@ -141,7 +142,8 @@
              (fn [{:keys [transaction/date
                           transaction/currency
                           transaction/amount
-                          transaction/uuid]
+                          transaction/uuid
+                          transaction/type]
                    :as   transaction}]
                [:tr
                 (opts {:key [uuid]})
@@ -161,7 +163,8 @@
                         (tag/->Tag (merge tag
                                           {:on-click #(add-tag this (:tag/name tag))}))))]
                 [:td.text-right
-                 (opts {:key [uuid]})
+                 (opts {:key [uuid]
+                        :class (if (= (:db/ident type) :transaction.type/expense) "text-danger" "text-success")})
                  (str amount " " (or (:currency/symbol-native currency)
                                      (:currency/code currency)))]]))]]]))))
 

@@ -48,10 +48,12 @@
                            (assoc :input/created-at (.getTime (js/Date.)))
                            (dissoc :input/tag)))
                     :query/dashboard
-                    :query/all-budgets]))
+                    :query/all-budgets
+                    :query/all-transactions]))
   (initLocalState [this]
     (let [{:keys [query/all-currencies
-                  query/all-budgets]} (om/props this)]
+                  query/all-budgets]} (om/props this)
+          {:keys [transaction/type]} (om/get-computed this)]
       {:input/date     (js/Date.)
        :input/tags     (sorted-set)
        :input/currency (-> all-currencies
@@ -59,13 +61,14 @@
                            :currency/code)
        :input/budget   (-> all-budgets
                            first
-                           :budget/uuid)}))
+                           :budget/uuid)
+       :input/type type}))
   (render
     [this]
     (let [{:keys [query/all-currencies
                   query/all-budgets]} (om/props this)
           {:keys [input/date input/tags input/currency input/budget
-                  input/tag input/amount input/title]}
+                  input/tag input/amount input/title input/type]}
           ;; merging state with props, so that we can test the states
           ;; with devcards
           (merge (om/props this)
@@ -75,11 +78,14 @@
         [:div
 
          [:div.modal-header
+          {:class (if (= type :transaction.type/expense) "btn-danger" "btn-info")}
           [:button.close
            {:on-click on-close}
            "x"]
-          [:h6
-           "New transaction"]]
+          [:h4
+           (if (= type :transaction.type/expense)
+             "New expense"
+             "New income")]]
 
          [:div.modal-body
           [:label.form-control-static
@@ -169,8 +175,8 @@
            (opts {:class    "btn btn-default btn-md"
                   :on-click on-close})
            "Cancel"]
-          [:button
-           (opts {:class    "btn btn-info btn-md"
+          [:button.btn.btn-md
+           (opts {:class    (if (= type :transaction.type/expense) "btn-danger" "btn-info")
                   :on-click #(do (.add-transaction this)
                                  (on-close))})
            "Save"]]]))))
