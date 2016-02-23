@@ -138,7 +138,8 @@
     [{:proxy/add-transaction (om/get-query AddTransaction)}
      {:proxy/add-widget (om/get-query NewWidget)}
      {:query/current-user [:user/uuid
-                           :user/activated-at]}])
+                           :user/activated-at
+                           :user/picture]}])
   Object
   (initLocalState [_]
     {:menu-visible? false
@@ -212,7 +213,7 @@
                    :style    {:margin "0.1em 1em"
                               :width  "40"
                               :height "40"}
-                   :src      "/style/img/profile.png"
+                   :src      (or (:user/picture current-user) "/style/img/profile.png")
                    :on-click #(open-profile-menu this true)})]]
 
           (when menu-visible?

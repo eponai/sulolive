@@ -70,13 +70,14 @@
           (throw (ex-user-not-activated db-user))))
 
       ; If we don't have a facebook user in the DB, check if there's an accout with a matching email.
-      (let [{:keys [email]} (fb-info-fn user_id access_token)]
+      (let [{:keys [email picture]} (fb-info-fn user_id access_token)]
         (debug "Creating new fb-user: " user_id)
         ;; Linking the FB user to u user account. If a user accunt with the same email exists,
         ;; it will be linked. Otherwise, a new user is created.
-        (let [db-after-link (:db-after (link-fb-user-to-account conn {:user/email email
-                                                             :fb-user/id user_id
-                                                             :fb-user/token access_token}))
+        (let [db-after-link (:db-after (link-fb-user-to-account conn {:user/email    email
+                                                                      :user/picture  (:url (:data picture))
+                                                                      :fb-user/id    user_id
+                                                                      :fb-user/token access_token}))
               fb-user (p/lookup-entity db-after-link [:fb-user/id user_id])
               user (d/entity db-after-link (-> fb-user
                                                :fb-user/user

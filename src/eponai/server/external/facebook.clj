@@ -45,7 +45,7 @@
   (json/read-str
     (:body (client/get (-> (url/url "https://graph.facebook.com/v2.5/" user-id)
                            (assoc :query {:access_token access-token
-                                          :fields "id,name,email"})
+                                          :fields "id,name,email,picture"})
                            str)))
     :key-fn
     keyword))

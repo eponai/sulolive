@@ -1,5 +1,14 @@
 [
-;; Dashboard
+
+ ;; User
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :user/picture
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "URL of photo."
+  :db.install/_attribute :db.part/db}
+
+ ;; Dashboard
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :dashboard/uuid
   :db/valueType          :db.type/uuid
@@ -49,7 +58,7 @@
 
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :widget/report
-  :db/isComponent         true
+  :db/isComponent        true
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
   :db/doc                "Report visualized by this widget."
