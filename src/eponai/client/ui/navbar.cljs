@@ -287,19 +287,21 @@
   (om/get-query SideBar))
 
 (defn sidebar-create [props computed]
-  [:div#sidebar-wrapper.gradient-down-up
-   [:div#content
-    (->SideBar (om/computed props
-                            computed))]
-   [:footer.footer
-    [:p.copyright.small.text-light
-     "Copyright © eponai 2016. All Rights Reserved"]]])
+  (html
+    [:div#sidebar-wrapper.gradient-down-up
+     [:div#content
+      (->SideBar (om/computed props
+                              computed))]
+     [:footer.footer
+      [:p.copyright.small.text-light
+       "Copyright © eponai 2016. All Rights Reserved"]]]))
 
 (defn navbar-create [props computed]
-  [:div
-   [:nav
-    (opts {:class "navbar navbar-default navbar-fixed-top topnav"
-           :role  "navigation"
-           :style {:background :white}})
-    (->NavbarMenu (om/computed props
-                               computed))]])
+  (html
+    [:div
+     [:nav
+      (opts {:class "navbar navbar-default navbar-fixed-top topnav"
+             :role  "navigation"
+             :style {:background :white}})
+      (->NavbarMenu (om/computed props
+                                 computed))]]))
