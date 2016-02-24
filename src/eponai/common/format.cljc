@@ -160,12 +160,11 @@
         graph (assoc input-graph :db/id (d/tempid :db.part/user))
 
         widget (merge input-widget
-                      {:db/id         (d/tempid :db.part/user)
-                       :widget/graph  (:db/id graph)
-                       :widget/report (:db/id report)})
-        dashboard-uuid (:dashboard/uuid (:input-dashboard input))]
+                      {:db/id            (d/tempid :db.part/user)
+                       :widget/graph     (:db/id graph)
+                       :widget/report    (:db/id report)
+                       :widget/dashboard [:dashboard/uuid (:dashboard/uuid (:input-dashboard input))]})]
     {:function function
      :report   report
      :graph    graph
-     :widget   widget
-     :add      [:db/add [:dashboard/uuid dashboard-uuid] :dashboard/widgets (:db/id widget)]}))
+     :widget   widget}))

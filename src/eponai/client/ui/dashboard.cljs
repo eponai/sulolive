@@ -29,8 +29,9 @@
 (defui Dashboard
   static om/IQuery
   (query [_]
-    [{:query/dashboard [:dashboard/uuid
-                        {:dashboard/widgets (om/get-query Widget)}
+    [
+     {:query/dashboard [:dashboard/uuid
+                        {:widget/_dashboard (om/get-query Widget)}
                         {:dashboard/budget [:budget/uuid
                                             :budget/name
                                             {:transaction/_budget [:transaction/uuid
@@ -48,11 +49,11 @@
       (om/update-state! this assoc :grid-element grid-element)))
 
   (componentWillReceiveProps [this new-props]
-    (let [widgets (:dashboard/widgets (:query/dashboard new-props))]
+    (let [widgets (:widget/_dashboard (:query/dashboard new-props))]
       (om/update-state! this assoc :layout (clj->js (generate-layout widgets)))))
 
   (componentDidMount [this]
-    (let [widgets (:dashboard/widgets (:query/dashboard (om/props this)))
+    (let [widgets (:widget/_dashboard (:query/dashboard (om/props this)))
           sidebar (.getElementById js/document "sidebar-wrapper")]
       (.addEventListener sidebar "transitionend" #(.update-grid-layout this))
       (.update-grid-layout this)
@@ -72,7 +73,7 @@
                   grid-element
                   edit-widget
                   add-widget?]} (om/get-state this)
-          widgets (:dashboard/widgets dashboard)
+          widgets (:widget/_dashboard dashboard)
           React (.-React js/window)]
       (html
         [:div

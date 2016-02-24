@@ -24,14 +24,6 @@
   :db/doc                "Budget for this dashboard."
   :db.install/_attribute :db.part/db}
 
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :dashboard/widgets
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/many
-  :db/doc                "Widgets on this dashboard."
-  :db.install/_attribute :db.part/db}
-
-
  ;; ----------------- Widget
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :widget/uuid
@@ -69,6 +61,13 @@
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
   :db/doc                "Filter that this widget will apply to the data."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :widget/dashboard
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Dashboard that this widget belongs to."
   :db.install/_attribute :db.part/db}
 
 

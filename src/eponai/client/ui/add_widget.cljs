@@ -93,6 +93,7 @@
 (defn- chart-filter [component {:keys [input-tag]}]
   (html
     [:div
+     [:h6 "Filters"]
      (utils/tag-input {:value input-tag
                        :placeholder "Filter tags..."
                        :on-add-tag #()})]))
