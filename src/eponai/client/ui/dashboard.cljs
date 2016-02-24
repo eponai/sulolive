@@ -58,7 +58,8 @@
       (.update-grid-layout this)
       (om/update-state! this
                         assoc
-                        :layout (clj->js (generate-layout widgets)))))
+                        :layout (clj->js (generate-layout widgets))
+                        :content :dashboard)))
 
   (delete-widget [this widget]
     (om/transact! this `[(widget/delete ~(select-keys widget [:widget/uuid]))
@@ -81,12 +82,13 @@
          [:button.btn.btn-default.btn-md
           {:on-click #(om/update-state! this assoc :add-widget? true)}
           [:i.fa.fa-bar-chart]]
+
          (when add-widget?
            (utils/modal {:content  (->NewWidget (om/computed dashboard
                                                              {:on-close #(om/update-state! this assoc :add-widget? false)
-                                                              :on-save #(do
-                                                                         (save-widget this %)
-                                                                         (om/update-state! this assoc :add-widget? false))}))
+                                                              :on-save  #(do
+                                                                          (save-widget this %)
+                                                                          (om/update-state! this assoc :add-widget? false))}))
                          :on-close #(om/update-state! this assoc :add-widget? false)
                          :class    "modal-lg"}))
          [:div (str "Edit: " edit?)]
@@ -101,9 +103,9 @@
          (when edit-widget
            (utils/modal {:content  (->NewWidget (om/computed dashboard
                                                              {:on-close #(om/update-state! this assoc :edit-widget nil)
-                                                              :on-save #(do
-                                                                         (save-widget this %)
-                                                                         (om/update-state! this assoc :edit-widget nil))
+                                                              :on-save  #(do
+                                                                          (save-widget this %)
+                                                                          (om/update-state! this assoc :edit-widget nil))
                                                               :widget   edit-widget}))
                          :on-close #(om/update-state! this assoc :edit-widget nil)
                          :class    "modal-lg"}))
