@@ -3,7 +3,8 @@
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
             [cljsjs.react-grid-layout]
-            [eponai.client.routes :as routes]))
+            [eponai.client.routes :as routes]
+            [garden.core :refer [css]]))
 
 (defn generate-layout [budgets]
   (map (fn [budget i]
@@ -48,10 +49,15 @@
                   query/all-budgets]} (om/props this)
           {:keys [layout grid-element]} (om/get-state this)
           React (.-React js/window)]
-      (prn "Layout " layout)
       (html
         [:div
 
+         [:style (css [:.react-grid-item
+                       {:-webkit-box-shadow "0 1px 1px rgba(0, 0, 0, .5)" ;
+                        :box-shadow         "0 1px 1px rgba(0, 0, 0, .5)"}
+                       [:&:hover {:cursor             :pointer
+                                  :-webkit-box-shadow "0 3px 9px rgba(0, 0, 0, .5)"
+                                  :box-shadow         "0 3px 9px rgba(0, 0, 0, .5)"}]])]
          [:div
           (opts {:style {:display        :flex
                          :flex-direction :row
@@ -66,7 +72,7 @@
                            #js {:className        "layout",
                                 :layouts          #js {:lg layout :md layout}
                                 :rowHeight        300,
-                                :cols             #js {:lg 3 :md 2 :sm 2 :xs 1 :xxs 1}
+                                :cols             #js {:lg 4 :md 4 :sm 2 :xs 1 :xxs 1}
                                 :useCSSTransforms true
                                 :isDraggable      false
                                 :isResizable      false
@@ -76,13 +82,13 @@
                              (map
                                (fn [budget-props]
                                  (html
-                                   [:a {:key  (str (:budget/uuid budget-props))
-                                          ;:on-click #(om/transact! this `[(dashboard/set-active-budget ~{:budget-uuid (:budget/uuid budget-props)})])
-                                        :href (routes/inside "/dashboard/" (:budget/uuid budget-props))}
-                                    [:div
-                                     (opts {:style {:border "1px solid #e7e7e7"
+                                   [:div {:key  (str (:budget/uuid budget-props))}
+                                    [:a.text-center
+                                     (opts {:href  (routes/inside "/dashboard/" (:budget/uuid budget-props))
+                                            :style {:border "1px solid #e7e7e7"
                                                     :height "100%"
-                                                    :width  "100%"}})
+                                                    :width  "100%"
+                                                    :text-decoration :none}})
                                      [:h3 (:budget/name budget-props)]
                                      [:table.table.table-striped.table-hover
                                       [:thead
@@ -97,11 +103,11 @@
                                          (let [transactions (:transaction/_budget budget-props)
                                                tags (reduce #(concat %1 (:transaction/tags %2)) [] transactions)
                                                sorted (sort-by count (group-by :tag/name tags))]
-                                           (prn "Tags: " sorted)
                                            (take 3 (map (fn [tag]
-                                                          [:div (first tag) " #" (count (second tag))])
+                                                          [:div
+                                                           (opts {:key [(first tag)]})
+                                                           (first tag) " #" (count (second tag))])
                                                         sorted)))]]]]]]))
-                               all-budgets))))
-         ]))))
+                               all-budgets))))]))))
 
 (def ->Profile (om/factory Profile))

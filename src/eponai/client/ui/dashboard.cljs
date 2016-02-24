@@ -37,9 +37,7 @@
                                                                    {:transaction/tags [:tag/name]}
                                                                    :transaction/amount
                                                                    {:transaction/date [:date/ymd
-                                                                                       :date/timestamp]}]}]}]}
-     ;{:proxy/new-widget (om/get-query NewWidget)}
-     ])
+                                                                                       :date/timestamp]}]}]}]}])
   Object
   (initLocalState [_]
     {:edit? true})
@@ -124,7 +122,7 @@
 
                            (clj->js
                              (map
-                               (fn [widget-props i]
+                               (fn [widget-props]
                                  (.createElement React
                                                  "div"
                                                  #js {:key (str (:widget/uuid widget-props))}
@@ -135,9 +133,6 @@
                                                                                 :transaction/_budget)
                                                                  :on-delete (when edit? #(.delete-widget this %))
                                                                  :on-edit   (when edit? #(om/update-state! this assoc :edit-widget %))}))))
-                               widgets
-                               (range)))))])
-
-      )))
+                               widgets))))]))))
 
 (def ->Dashboard (om/factory Dashboard))

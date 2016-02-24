@@ -47,8 +47,7 @@
                   return/content-factory
                   proxy/nav-bar
                   proxy/side-bar]} (om/props this)
-          {:keys [sidebar-visible?] :as state} (om/get-state this)]
-      (prn "State " state)
+          {:keys [sidebar-visible?]} (om/get-state this)]
       (html
         [:div#wrapper
          (when-not sidebar-visible?
@@ -57,6 +56,7 @@
 
          [:div#page-content-wrapper
           (opts {:style {:height "100%"}})
+
           (navbar/navbar-create nav-bar {:on-sidebar-show #(om/update-state! this assoc :sidebar-visible? true)
                                          :sidebar-visible? sidebar-visible?})
 
