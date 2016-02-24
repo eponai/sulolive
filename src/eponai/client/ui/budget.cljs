@@ -4,6 +4,9 @@
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]))
 
+(defn update-content [component content]
+  (om/update-state! component assoc :content content))
+
 (defui Budget
   static om/IQuery
   (query [_]
@@ -12,6 +15,9 @@
   Object
   (initLocalState [_]
     {:content :dashboard})
+  (componentWillUnmount [this]
+    (om/transact! this `[(ui.component.budget/clear)
+                         :query/all-transactions]))
   (render [this]
     (let [{:keys [proxy/dashboard
                   proxy/all-transactions]} (om/props this)
@@ -21,10 +27,10 @@
          [:h4]
          [:div.text-center
           [:button.btn.btn-default.btn-md
-           {:on-click #(om/update-state! this assoc :content :dashboard)}
+           {:on-click #(update-content this :dashboard)}
            [:span "Dashboard"]]
           [:button.btn.btn-default.btn-md
-           {:on-click #(om/update-state! this assoc :content :transactions)}
+           {:on-click #(update-content this :transactions)}
            [:span "Transactions"]]]
          (cond (= content :dashboard)
                (->Dashboard dashboard)

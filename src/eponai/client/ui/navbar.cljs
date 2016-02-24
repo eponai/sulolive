@@ -263,10 +263,6 @@
                            :padding "0.5em"}})]
            [:strong "Profile"]]]
          [:li.divider]
-         [:li
-          [:a {:href (routes/inside "/transactions")
-               :on-click nil}
-           "All Transactions"]]
 
          (map
            (fn [budget]

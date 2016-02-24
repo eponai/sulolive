@@ -156,4 +156,34 @@
   :db/cardinality        :db.cardinality/one
   :db/doc                "User specified label for this function."
   :db.install/_attribute :db.part/db}
+
+ ;; Filter
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :filter/start-date
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Filter start date."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :filter/end-date
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Filter end date."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :filter/include-tags
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/many
+  :db/doc                "Filter include tags."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :filter/exclude-tags
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/many
+  :db/doc                "Filter exclude tags."
+  :db.install/_attribute :db.part/db}
  ]

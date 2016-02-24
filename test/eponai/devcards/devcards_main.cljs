@@ -3,12 +3,7 @@
     [cljsjs.react.dom]
     [devcards.core :as dc]
     [sablono.core :as html :refer-macros [html]]
-    [eponai.devcards.ui.header_dc]
-    [eponai.devcards.ui.datepicker_dc]
-    [eponai.devcards.ui.tag_dc]
-    [eponai.devcards.ui.widget-dc]
-    [eponai.devcards.ui.add_transaction_dc]
-    [eponai.devcards.ui.all_transactions_dc])
+    [eponai.devcards.ui.widget-dc])
   (:require-macros
     [devcards.core :refer [defcard]]))
 

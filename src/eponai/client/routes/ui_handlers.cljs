@@ -26,7 +26,7 @@
      :route-param-fn (fn [reconciler {:keys [budget-uuid]}]
                        {:pre [(om/reconciler? reconciler)]}
                        (om/transact! reconciler
-                                     `[(dashboard/set-active-budget
+                                     `[(budget/set-active-uuid
                                          {:budget-uuid ~(uuid budget-uuid)})]))}))
 
 (def route-handler->ui-component

@@ -21,6 +21,7 @@
   [{:keys [db query]} _ _]
   {:value (p/pull db query [:ui/singleton :ui.singleton/budget])})
 
+;TODO figure this shit out
 (defmethod read :ui/component
   [{:keys [db ast]} _ _]
   {:value (d/entity db (:key ast))})

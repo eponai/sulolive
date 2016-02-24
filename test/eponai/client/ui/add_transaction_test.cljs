@@ -26,7 +26,7 @@
         (d/transact conn [{:currency/code (:input/currency tx)}
                           {:budget/uuid (:input/budget tx)}]))
       (parser {:state conn} create-mutations)
-      (let [ui (parser {:state conn} (om/get-query transactions/AllTransactions))
+      (let [ui (parser {:state conn} [{:query/all-transactions (om/get-query transactions/AllTransactions)}])
             rendered-txs (:query/all-transactions ui)]
         (= (count transactions) (count rendered-txs))))))
 

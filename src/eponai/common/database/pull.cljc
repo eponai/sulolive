@@ -56,16 +56,6 @@
          (or (number? eid) (vector? eid) (keyword? eid))]}
   (do-pull d/pull db pattern eid))
 
-(defn transactions
-  [db user-uuid]
-  {:pre [(db-instance? db)]}
-  (q '[:find [?t ...]
-       :in $ ?uuid
-       :where
-       [?t :transaction/budget ?b]
-       [?b :budget/created-by ?u]
-       [?u :user/uuid ?uuid]]
-     db user-uuid))
 
 (defn- where->query [where-clauses find-pattern symbols]
   (vec (concat '[:find] find-pattern
@@ -166,18 +156,32 @@
   with a filter on a transaction's date.
 
   Examples for the compare symbol: '= '> '< '>= '>="
-  [query-map date compare]
-  {:pre [(map? query-map)
-         (symbol? compare)]}
+  [date compare]
+  {:pre [(symbol? compare)]}
 
   (let [date-time (f/date->timestamp date)
         filter-sym (gensym "?time-filter")]
-    (merge-query
-      query-map
-      {:where   ['[?e :transaction/date ?date]
-                 '[?date :date/timestamp ?timestamp]
-                 `[(~compare ~'?timestamp ~filter-sym)]]
-       :symbols {filter-sym date-time}})))
+    {:where   ['[?e :transaction/date ?date]
+               '[?date :date/timestamp ?timestamp]
+               `[(~compare ~'?timestamp ~filter-sym)]]
+     :symbols {filter-sym date-time}}))
+
+(defn transactions
+  [db {:keys [filter/start-date filter/end-date filter/include-tags] :as filter}]
+  {:pre [(db-instance? db)
+         (map? filter)]}
+  (cond->
+    {}
+    (not-empty include-tags)
+    (merge-query {:where   '[[?e :transaction/tags ?tag]
+                             [?tag :tag/name ?tag-name]]
+                  :symbols {'[?tag-name ...] include-tags}})
+
+    (some? start-date)
+    (merge-query (transaction-date-filter start-date '>=))
+
+    (some? end-date)
+    (merge-query (transaction-date-filter end-date '<=))))
 
 (defn verifications
   [db user-db-id status]

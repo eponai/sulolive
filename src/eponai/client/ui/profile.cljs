@@ -66,6 +66,10 @@
            (opts {:src (:user/picture current-user)})]
           [:h1 (:user/email current-user)]]
 
+         [:a.btn.btn-link
+          {:href (routes/inside "/transactions")}
+          "All transactions"]
+
          (when layout
            (.createElement React
                            grid-element

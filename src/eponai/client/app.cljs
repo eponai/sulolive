@@ -78,9 +78,7 @@
       @conn-atom)
     (let [ui-schema {:ui/singleton {:db/unique :db.unique/identity}
                      :ui/component {:db/unique :db.unique/identity}}
-          ui-state [{:ui/singleton :ui.singleton/app}
-
-                    {:ui/component :ui.component/dashboard}]
+          ui-state [{:ui/singleton :ui.singleton/app}]
           conn (d/create-conn ui-schema)]
       (d/transact! conn ui-state)
       (reset! conn-atom conn))))

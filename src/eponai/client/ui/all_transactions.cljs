@@ -2,41 +2,44 @@
   (:require [eponai.client.ui.format :as f]
             [eponai.client.ui.datepicker :refer [->Datepicker]]
             [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
-            [eponai.common.format :as format]
+            [eponai.client.ui.utils :as utils]
             [garden.core :refer [css]]
             [om.next :as om :refer-macros [defui]]
-            [sablono.core :refer-macros [html]]
-            [eponai.client.ui.tag :as tag]))
+            [sablono.core :refer-macros [html]]))
 
-(defn sum
-  "Adds transactions amounts together.
-  TODO: Needs to convert the transactions to the 'primary currency' some how."
-  [transactions]
-  {:amount   (transduce (map :transaction/amount) + 0 transactions)
-   ;; TODO: Should instead use the primary currency
-   :currency (-> transactions first :transaction/currency)})
 
-(defn update-tags [component action tag-name]
-  (update-query-params! component update :filter-tags
-                        (fn [tags]
-                          (action tags tag-name))))
+;; ################ Actions ######################
 
-(defn delete-tag-fn [component name]
-  (fn []
-    (update-tags component disj name)))
+(defn- update-filter [component input-filter]
+  (update-query-params! component assoc :filter input-filter))
 
-(defn add-tag [component name]
-  (update-tags component conj name))
+(defn- select-date [component k date]
+  (let [{:keys [input-filter]} (om/get-state component)
+        new-filters (assoc input-filter k date)]
 
-(defn on-add-tag-key-down [this input-tag]
-  (fn [e]
-    (when (and (= 13 (.-keyCode e))
-               (seq (.. e -target -value)))
-      (.preventDefault e)
-      (om/update-state! this assoc :input-tag "")
-      (add-tag this input-tag))))
+    (om/update-state! component assoc
+                      :input-filter new-filters)
+    (update-filter component new-filters)))
 
-(defn tag-filter [component filter-tags]
+(defn- delete-tag-fn [component tagname]
+  (let [{:keys [input-filter]} (om/get-state component)
+        new-filters (update input-filter :filter/include-tags #(disj % tagname))]
+
+    (om/update-state! component assoc
+                      :input-filter new-filters)
+    (update-filter component new-filters)))
+
+(defn- add-tag [component tagname]
+  (let [{:keys [input-filter]} (om/get-state component)
+        new-filters (update input-filter :filter/include-tags #(conj % tagname))]
+
+    (om/update-state! component assoc
+                      :input-filter new-filters
+                      :input-tag "")
+    (update-filter component new-filters)))
+
+;; ############################# UI components #################
+(defn tag-filter [component include-tags]
   (let [{:keys [input-tag]} (om/get-state component)]
     (html
       [:div
@@ -45,15 +48,10 @@
                       :min-width "400px"
                       :max-width "400px"}})
 
-       [:div.has-feedback
-        [:input.form-control
-         {:type        "text"
-          :value       input-tag
-          :on-change   #(om/update-state! component assoc :input-tag (.. % -target -value))
-          :on-key-down (on-add-tag-key-down component input-tag)
-          :placeholder "Filter tags..."}]
-        [:span
-         {:class "glyphicon glyphicon-tag form-control-feedback"}]]
+       (utils/tag-input {:value       input-tag
+                         :placeholder "Filter tags..."
+                         :on-change   #(om/update-state! component assoc :input-tag (.. % -target -value))
+                         :on-add-tag  #(add-tag component %)})
 
        [:div
         (opts {:style {:display        :flex
@@ -61,10 +59,10 @@
                        :flex-wrap      :wrap
                        :width          "100%"}})
         (map-all
-          filter-tags
+          include-tags
           (fn [tagname]
-            (tag/->Tag (tag/tag-props tagname
-                                      (delete-tag-fn component tagname)))))]])))
+            (utils/tag tagname
+                 {:on-delete #(delete-tag-fn component tagname)})))]])))
 
 (defn date-picker [component placeholder key]
   [:div
@@ -72,19 +70,18 @@
     (->Datepicker
       (opts {:key         [placeholder key]
              :placeholder placeholder
-             :value       (get (om/get-params component) key)
-             :on-change   #(update-query-params! component assoc key %)}))]])
+             :value       (get-in (om/get-state component) [:input-filter key])
+             :on-change   #(select-date component key %)}))]])
 
-(def initial-params {:filter-tags #{} :start-date nil :end-date nil})
+;; ################### Om next components ###################
 
-(defui ^:once AllTransactions
+(defui AllTransactions
   static om/IQueryParams
-  (params [_] initial-params)
+  (params [_]
+    {:filter {:filter/include-tags #{}}})
   static om/IQuery
   (query [_]
-    [{'(:query/all-transactions {:filter-tags ?filter-tags
-                                 :start-date  ?start-date
-                                 :end-date    ?end-date})
+    [{'(:query/all-transactions {:filter ?filter})
       [:db/id
        :transaction/uuid
        :transaction/title
@@ -94,7 +91,7 @@
        :transaction/created-at
        {:transaction/currency [:currency/code
                                :currency/symbol-native]}
-       {:transaction/tags (om/get-query tag/Tag)}
+       {:transaction/tags [:tag/name]}
        ::transaction-show-tags?
        {:transaction/date [:db/id
                            :date/timestamp
@@ -108,10 +105,12 @@
 
   Object
   (initLocalState [_]
-    {:input-tag   ""})
+    {:input-tag    ""
+     :input-filter {:filter/include-tags #{}}})
+
   (render [this]
     (let [{transactions :query/all-transactions} (om/props this)
-          {:keys [filter-tags]} (om/get-params this)]
+          {:keys [input-filter]} (om/get-state this)]
       (html
         [:div
          (opts {:style {:display        :flex
@@ -124,9 +123,9 @@
           (opts {:style {:display        :flex
                          :flex-direction :row
                          :flex-wrap :wrap-reverse}})
-          (tag-filter this filter-tags)
-          (date-picker this "From date..." :start-date)
-          (date-picker this "To date..." :end-date)]
+          (tag-filter this (:filter/include-tags input-filter))
+          (date-picker this "From date..." :filter/start-date)
+          (date-picker this "To date..." :filter/end-date)]
 
          [:table.table.table-striped.table-hover
           [:thead
@@ -160,8 +159,8 @@
                  (opts {:key [uuid]})
                  (map-all (:transaction/tags transaction)
                    (fn [tag]
-                        (tag/->Tag (merge tag
-                                          {:on-click #(add-tag this (:tag/name tag))}))))]
+                     (utils/tag (:tag/name tag)
+                                {:on-click #(add-tag this (:tag/name tag))})))]
                 [:td.text-right
                  (opts {:key [uuid]
                         :class (if (= (:db/ident type) :transaction.type/expense) "text-danger" "text-success")})

@@ -1,14 +1,15 @@
 (ns eponai.client.ui.add-widget
   (:require [datascript.core :as d]
-            [eponai.client.ui :refer-macros [opts]]
+            [eponai.client.ui :refer [update-query-params!] :refer-macros [opts]]
             [eponai.client.ui.widget :refer [->Widget]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
-            [eponai.common.format :as f]))
+            [eponai.common.format :as f]
+            [eponai.client.ui.utils :as utils]))
 
 ;;; ####################### Actions ##########################
 
-(defn select-graph-style [component style]
+(defn- select-graph-style [component style]
   (let [default-group-by {:graph.style/bar    :transaction/tags
                           :graph.style/area   :transaction/date
                           :graph.style/number :default}]
@@ -17,84 +18,107 @@
                            (assoc-in [:input-graph :graph/style] style)
                            (assoc-in [:input-report :report/group-by] (get default-group-by style))))))
 
-(defn change-report-title [component title]
+(defn- change-report-title [component title]
   (om/update-state! component assoc-in [:input-report :report/title] title))
 
-(defn select-function [component function-id]
+(defn- select-function [component function-id]
   (om/update-state! component assoc-in [:input-function :report.function/id] function-id))
 
-(defn select-group-by [component input-group-by]
+(defn- select-group-by [component input-group-by]
   (om/update-state! component assoc-in [:input-report :report/group-by] input-group-by))
 
 
 ;;;;; ################### UI components ######################
 
-(defn button-class [field value]
+(defn- button-class [field value]
   (if (= field value)
     "btn btn-info btn-md"
     "btn btn-default btn-md"))
 
-(defn chart-function [component input-function]
+(defn- chart-function [component input-function]
   (let [function-id (:report.function/id input-function)]
+    (html
+      [:div
+       [:h6 "Calculate"]
+       [:div.btn-group
+        [:button
+         {:class    (button-class function-id :report.function.id/sum)
+          :on-click #(select-function component :report.function.id/sum)}
+
+         [:span "Sum"]]
+        [:button
+         {:class    (button-class function-id :report.function.id/mean)
+          :on-click #(select-function component :report.function.id/mean)}
+         [:span
+          "Mean"]]]])))
+
+(defn- chart-group-by [component {:keys [report/group-by]} groups]
+  (html
     [:div
-     [:h6 "Calculate"]
+     [:h6 "Group by"]
      [:div.btn-group
-      [:button
-       {:class    (button-class function-id :report.function.id/sum)
-        :on-click #(select-function component :report.function.id/sum)}
+      (map
+        (fn [k]
+          (let [conf {:transaction/tags     {:icon "fa fa-tag"
+                                             :text "All Tags"}
+                      :transaction/currency {:icon "fa fa-usd"
+                                             :text "All Currencies"}
+                      :transaction/date     {:icon "fa fa-calendar"
+                                             :text "All Dates"}}]
+            [:button
+             (opts {:key      [k]
+                    :class    (button-class group-by k)
+                    :on-click #(select-group-by component k)})
+             [:i
+              (opts {:key   [(get-in conf [k :icon])]
+                     :class (get-in conf [k :icon])
+                     :style {:margin-right 5}})]
+             [:span
+              (opts {:key [(get-in conf [k :text])]})
+              (get-in conf [k :text])]]))
+        groups)]]))
 
-       [:span "Sum"]]
-      [:button
-       {:class    (button-class function-id :report.function.id/mean)
-        :on-click #(select-function component :report.function.id/mean)}
-       [:span
-        "Mean"]]]]))
+(defn- update-filter [component input-filter]
+  (update-query-params! component assoc :filter input-filter))
 
-(defn chart-group-by [component {:keys [report/group-by]} groups]
-  [:div
-   ;(opts {:style {:width "50%"}})
-   [:h6 "Group by"]
-   [:div.btn-group
-    (map
-      (fn [k]
-        (let [conf {:transaction/tags     {:icon "fa fa-tag"
-                                           :text "All Tags"}
-                    :transaction/currency {:icon "fa fa-usd"
-                                           :text "All Currencies"}
-                    :transaction/date     {:icon "fa fa-calendar"
-                                           :text "All Dates"}}]
-          [:button
-           (opts {:key [k]
-                  :class    (button-class group-by k)
-                  :on-click #(select-group-by component k)})
-           [:i
-            (opts {:key [(get-in conf [k :icon])]
-                   :class (get-in conf [k :icon])
-                   :style {:margin-right 5}})]
-           [:span
-            (opts {:key [(get-in conf [k :text])]})
-            (get-in conf [k :text])]]))
-      groups)]])
+(defn- add-tag [component tagname]
+  (let [{:keys [input-filter]} (om/get-state component)
+        new-filters (update input-filter :filter/include-tags #(conj % tagname))]
 
+    (om/update-state! component assoc
+                      :input-filter new-filters
+                      :input-tag "")
+    (update-filter component new-filters)))
 
-(defn chart-settings [component {:keys [input-graph input-function input-report]}]
-  (let [{:keys [graph/style]} input-graph]
+(defn- chart-filter [component {:keys [input-tag]}]
+  (html
     [:div
-     ;[:h5 "Configuration"]
-     (cond
-       (= style :graph.style/bar)
-       [:div
-        (chart-function component input-function)
-        (chart-group-by component input-report [:transaction/tags :transaction/currency])]
+     (utils/tag-input {:value input-tag
+                       :placeholder "Filter tags..."
+                       :on-add-tag #()})]))
 
-       (= style :graph.style/area)
-       [:div
-        (chart-function component input-function)
-        (chart-group-by component input-report [:transaction/date])]
 
-       (= style :graph.style/number)
-       [:div
-        (chart-function component input-function)])]))
+(defn- chart-settings [component {:keys [input-graph input-function input-report input-filter]}]
+  (let [{:keys [graph/style]} input-graph]
+    (html
+      [:div
+       (cond
+         (= style :graph.style/bar)
+         [:div
+          (chart-function component input-function)
+          (chart-group-by component input-report [:transaction/tags :transaction/currency])
+          (chart-filter component input-filter)]
+
+         (= style :graph.style/area)
+         [:div
+          (chart-function component input-function)
+          (chart-group-by component input-report [:transaction/date])
+          (chart-filter component input-filter)]
+
+         (= style :graph.style/number)
+         [:div
+          (chart-function component input-function)
+          (chart-function component input-filter)])])))
 
 
 ;;;;;;;; ########################## Om Next components ########################
@@ -114,8 +138,7 @@
                                (assoc :input-graph (:widget/graph widget)
                                       :input-report (:widget/report widget)
                                       :input-function (first (:report/functions (:widget/report widget))))
-                               (assoc-in [:input-widget :widget/uuid] (:widget/uuid widget)))))
-      ))
+                               (assoc-in [:input-widget :widget/uuid] (:widget/uuid widget)))))))
   (render [this]
     (let [dashboard (om/props this)
           {:keys [input-graph input-report] :as state} (om/get-state this)
@@ -174,27 +197,23 @@
            "Cancel"]
           [:button
            (opts {:class    "btn btn-info btn-md"
-                  :on-click #(do
-                              (prn "Saving state: " state)
-                              (on-save (cond-> state
-                                               true
-                                               (assoc :input-dashboard {:dashboard/uuid (:dashboard/uuid dashboard)})
+                  :on-click #(on-save (cond-> state
+                                              true
+                                              (assoc :input-dashboard {:dashboard/uuid (:dashboard/uuid dashboard)})
 
-                                               (not (:widget/uuid (:input-widget state)))
-                                               (assoc-in [:input-widget :widget/uuid] (d/squuid))
+                                              (not (:widget/uuid (:input-widget state)))
+                                              (assoc-in [:input-widget :widget/uuid] (d/squuid))
 
-                                               (not (:graph/uuid (:input-graph state)))
-                                               (assoc-in [:input-graph :graph/uuid] (d/squuid))
+                                              (not (:graph/uuid (:input-graph state)))
+                                              (assoc-in [:input-graph :graph/uuid] (d/squuid))
 
-                                               (not (:report.function/uuid (:input-function state)))
-                                               (assoc-in [:input-function :report.function/uuid] (d/squuid))
+                                              (not (:report.function/uuid (:input-function state)))
+                                              (assoc-in [:input-function :report.function/uuid] (d/squuid))
 
-                                               (not (:report/uuid (:input-report state)))
-                                               (assoc-in [:input-report :report/uuid] (d/squuid)))))
+                                              (not (:report/uuid (:input-report state)))
+                                              (assoc-in [:input-report :report/uuid] (d/squuid))))
 
-                  :style    {:margin 5}})
-           "Save"]
-          ;[:div (str "State " (om/get-state this))]
-          ]]))))
+                            :style {:margin 5}})
+           "Save"]]]))))
 
 (def ->NewWidget (om/factory NewWidget))

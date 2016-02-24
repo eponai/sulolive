@@ -2,7 +2,7 @@
   (:require [om.next :as om :refer-macros [defui]]
             [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
             [eponai.client.ui.datepicker :refer [->Datepicker]]
-            [eponai.client.ui.tag :as tag]
+            [eponai.client.ui.utils :as utils]
             [eponai.common.format :as format]
             [sablono.core :refer-macros [html]]
             [cljsjs.pikaday]
@@ -168,8 +168,7 @@
            [:div.form-control-static
             (map-all tags
                      (fn [tagname]
-                       (tag/->Tag (tag/tag-props tagname
-                                                 (delete-tag-fn this tagname)))))]]]
+                       (utils/tag tagname {:on-delete (delete-tag-fn this tagname)})))]]]
          [:div.modal-footer
           [:button
            (opts {:class    "btn btn-default btn-md"
