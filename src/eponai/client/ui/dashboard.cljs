@@ -7,10 +7,11 @@
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
             [taoensso.timbre :refer-macros [error]]
-            [eponai.client.ui.utils :as utils]))
+            [eponai.client.ui.utils :as utils]
+            [datascript.core :as d]))
 
 (defn save-widget [component widget]
-  (om/transact! component `[(widget/save ~widget)
+  (om/transact! component `[(widget/save ~(assoc widget :mutation-uuid (d/squuid)))
                             :query/dashboard]))
 
 (defn generate-layout [widgets]

@@ -9,10 +9,6 @@
 
 ;;; ####################### Actions ##########################
 
-(defn save-widget [component widget]
-  (om/transact! component `[(widget/save ~(assoc widget :mutation-uuid (d/squuid)))
-                            :query/dashboard]))
-
 (defn- select-graph-style [component style]
   (let [default-group-by {:graph.style/bar    :transaction/tags
                           :graph.style/area   :transaction/date
