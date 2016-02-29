@@ -24,7 +24,8 @@
 (defn- post [url opts]
   (let [transit-opts {:transit-opts
                       {:decoding-opts
-                       {:handlers {"n" cljs.reader/read-string}}}}]
+                       {:handlers {"n" cljs.reader/read-string
+                                   "f" cljs.reader/read-string}}}}]
     (http/post url (merge opts transit-opts))))
 
 (defn merge!

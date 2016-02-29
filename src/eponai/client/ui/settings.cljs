@@ -9,15 +9,26 @@
     [{:query/current-user [:user/uuid
                            :user/email
                            :user/name
-                           :user/currency]}])
+                           {:user/currency [:currency/code
+                                            :currency/name]}]}])
   Object
+  (componentWillReceiveProps [this new-props]
+    (let [{:keys [query/current-user]} new-props]
+      (om/update-state! this assoc :input-currency (-> current-user
+                                                       :user/currency
+                                                       :currency/code))))
   (render [this]
-    (let [{:keys [query/current-user]} (om/props this)]
+    (let [{:keys [query/current-user]} (om/props this)
+          {user-name :user/name
+           :keys [user/email]} current-user
+          {:keys [input-currency]} (om/get-state this)]
+      (prn "Currency: " input-currency)
       (html
         [:div
          (opts {:style {:display        "flex"
                         :flex-direction "column"
                         :align-items    "center"}})
+         (prn "Currenct user: " current-user)
 
 
          [:div#general
@@ -33,17 +44,22 @@
           [:label.form-control-static
            "Email:"]
           [:input.form-control
-           {:value    (:user/email current-user)
+           {:value    email
             :disabled true}]
           [:label.form-control-static
            "Name"]
           [:input.form-control
-           {:value (:user/name current-user)}]
+           {:value user-name}]
 
           [:label.form-control-static
            "Main currency"]
           [:input.form-control
-           {:value (:user/currency current-user)}]]]))))
+           {:value     input-currency
+            :on-change #(om/update-state! this assoc :input-currency (.-value (.-target %)))
+            :list      "currency-name"}]
+          [:datalist#currency-name
+           [:option {:value "SEK - Swedish Krona"}]
+           [:option {:value "USD - US Dollar"}]]]]))))
 
 (def ->Settings (om/factory Settings))
 

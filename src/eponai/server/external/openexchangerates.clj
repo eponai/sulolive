@@ -27,4 +27,8 @@
     (info "Posting currency-rates for date:" date-str)
     (when (and app-id date-str)
       (let [rates (json/read-str (:body (client/get (currency-rates-url app-id date-str))) :key-fn keyword)]
-        (assoc rates :date date-str)))))
+        (assoc rates :date date-str)))
+    {:date  date-str
+     :rates {:SEK 8.9
+             :USD 1
+             :THB 35.6}}))

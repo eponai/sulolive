@@ -76,7 +76,7 @@
           (let [pull-params (cond-> {:where '[[?e :transaction/uuid]]}
 
                                     (some? filter)
-                                    (p/merge-query (p/transactions db filter))
+                                    (p/merge-query (p/transactions filter))
 
                                     (some? budget)
                                     (p/merge-query {:where '[[?e :transaction/budget ?b]
@@ -88,8 +88,18 @@
                                                                   [?b :budget/created-by ?u]
                                                                   [?u :user/uuid ?uuid]]
                                                        :symbols {'?uuid (:username auth)}})])
-                transactions (p/all-with db pull-params)]
-            {:value (p/pull-many db query transactions)}))))))
+                eids (p/all-with db pull-params)]
+            {:value #?(:clj  (let [tx-conv-tuples (p/all-with db (p/conversions eids))
+                                   transactions (map (fn [[tx conv]]
+                                                       (let [transaction (p/pull db query tx)
+                                                             conversion (p/pull db '[:conversion/rate] conv)]
+                                                         (assoc
+                                                           transaction
+                                                           :transaction/conversion
+                                                           conversion)))
+                                                     tx-conv-tuples)]
+                               transactions)
+                       :cljs (p/pull-many db query eids))}))))))
 
 (defmethod read :query/all-transactions
   [& args]

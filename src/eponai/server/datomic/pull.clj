@@ -3,22 +3,6 @@
             [eponai.common.database.pull :as p]
             [clojure.walk :refer [walk]]))
 
-(defn date-conversions [db date]
-  (let [conversions (p/pull db '[:conversion/_date] [:date/ymd date])]
-    conversions))
-
-(defn conversions
-  "Pull conversions for the currencies and dates refered by the specified transaction ids."
-  [db user-tx-ids]
-  (p/q '[:find [(pull ?c [*]) ...]
-       :in $ [?t ...]
-       :where
-       [?t :transaction/date ?d]
-       [?c :conversion/date ?d]
-       [?t :transaction/currency ?cur]
-       [?c :conversion/currency ?cur]]
-     db user-tx-ids))
-
 (defn currencies [db]
   (p/q '[:find [(pull ?e [*]) ...]
        :where [?e :currency/code]] db))

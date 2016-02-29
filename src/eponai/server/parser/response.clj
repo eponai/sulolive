@@ -2,10 +2,10 @@
   (:require [clojure.core.async :refer [go <!]]
             [datomic.api :as d]
             [eponai.common.database.transact :as t]
-            [eponai.server.datomic.pull :as p]
             [eponai.server.middleware :as m]
             [taoensso.timbre :refer [debug error trace]]
-            [eponai.server.datomic.format :as f]))
+            [eponai.server.datomic.format :as f]
+            [eponai.common.database.pull :as p]))
 
 ;; function to use with eponai.common.parser/post-process-parse
 (defmulti response-handler (fn [_ k _] k))
@@ -23,8 +23,9 @@
   (when-let [chan (get-in response [:result :currency-chan])]
     (go
       (let [date (<! chan)]
-        (when-not (p/date-conversions (d/db state) date)
-          (t/transact state (f/currency-rates (currency-rates-fn date)))))))
+        (when-not (p/pull (d/db state) '[:conversion/_date] [:date/ymd (:date/ymd date)])
+          (let [rates (f/currency-rates (currency-rates-fn (:date/ymd date)))]
+            (t/transact state rates))))))
   (update response :result dissoc :currency-chan))
 
 (defmethod response-handler 'signup/email

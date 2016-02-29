@@ -58,12 +58,12 @@
 
 
 (defn- where->query [where-clauses find-pattern symbols]
-  (vec (concat '[:find] find-pattern
-               '[:in $] symbols
-               [:where]
-               where-clauses)))
+  {:find find-pattern
+   :in   (vec (concat '[$]
+                      symbols))
+   :where where-clauses})
 
-(defn- x-with [db find-pattern {:keys [where symbols]}]
+(defn- x-with [db {:keys [find-pattern where symbols]}]
   {:pre [(db-instance? db)
          (or (vector? where) (seq? where))
          (or (nil? symbols) (map? symbols))]}
@@ -81,8 +81,7 @@
 
   Returns entity matching the lookupref, (nil if no lookup ref is provided or no entity exists)."
   [db lookup-ref]
-  {:pre [(db-instance? db)
-         (or (vector? lookup-ref) (keyword? lookup-ref))]}
+  {:pre [(db-instance? db)]}
   (when lookup-ref
     (try
       (d/entity db (:db/id (pull db [:db/id] lookup-ref)))
@@ -96,7 +95,9 @@
   [db params]
   {:pre [(db-instance? db)
          (map? params)]}
-  (x-with db '[?e .] params))
+  (if-not (:find-pattern params)
+    (x-with db (merge {:find-pattern '[?e .]} params))
+    (x-with db params)))
 
 (defn all-with
   "takes the database and a map with :where and :symbols keys.
@@ -110,7 +111,9 @@
   [db params]
   {:pre [(db-instance? db)
          (map? params)]}
-  (x-with db '[[?e ...]] params))
+  (if-not (:find-pattern params)
+    (x-with db (merge {:find-pattern '[[?e ...]]} params))
+    (x-with db params)))
 
 (defn all
   [db query values]
@@ -167,9 +170,8 @@
      :symbols {filter-sym date-time}}))
 
 (defn transactions
-  [db {:keys [filter/start-date filter/end-date filter/include-tags] :as filter}]
-  {:pre [(db-instance? db)
-         (map? filter)]}
+  [{:keys [filter/start-date filter/end-date filter/include-tags] :as filter}]
+  {:pre [(map? filter)]}
   (cond->
     {}
     (not-empty include-tags)
@@ -182,6 +184,14 @@
 
     (some? end-date)
     (merge-query (transaction-date-filter end-date '<=))))
+
+(defn conversions [tx-ids]
+  {:find-pattern '[?t ?e]
+   :symbols      {'[?t ...] tx-ids}
+   :where        '[[?t :transaction/date ?d]
+                   [?e :conversion/date ?d]
+                   [?t :transaction/currency ?cur]
+                   [?e :conversion/currency ?cur]]})
 
 (defn verifications
   [db user-db-id status]

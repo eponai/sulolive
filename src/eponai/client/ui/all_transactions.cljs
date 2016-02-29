@@ -4,6 +4,7 @@
             [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
             [eponai.client.ui.utils :as utils]
             [garden.core :refer [css]]
+            [goog.string :as gstring]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]))
 
@@ -101,7 +102,8 @@
                            :date/year]}
        {:transaction/budget [:budget/uuid
                              :budget/name]}
-       {:transaction/type [:db/ident]}]}])
+       {:transaction/type [:db/ident]}
+       :transaction/conversion]}])
 
   Object
   (initLocalState [_]
@@ -134,7 +136,9 @@
             [:th "Name"]
             [:th "Tags"]
             [:th.text-right
-             "Amount"]]]
+             "Amount"]
+            [:th.text-right
+             "Cost"]]]
           [:tbody
            (map-all
              (sort-by :transaction/created-at #(> %1 %2) transactions)
@@ -142,7 +146,8 @@
                           transaction/currency
                           transaction/amount
                           transaction/uuid
-                          transaction/type]
+                          transaction/type
+                          transaction/conversion]
                    :as   transaction}]
                [:tr
                 (opts {:key [uuid]})
@@ -165,6 +170,11 @@
                  (opts {:key [uuid]
                         :class (if (= (:db/ident type) :transaction.type/expense) "text-danger" "text-success")})
                  (str amount " " (or (:currency/symbol-native currency)
-                                     (:currency/code currency)))]]))]]]))))
+                                     (:currency/code currency)))]
+                [:td.text-right
+                 (opts {:key [uuid]
+                        :class (if (= (:db/ident type) :transaction.type/expense) "text-danger" "text-success")})
+                 (str (gstring/format "$%.2f" (/ amount (:conversion/rate conversion))) )]
+                ]))]]]))))
 
 (def ->AllTransactions (om/factory AllTransactions))
