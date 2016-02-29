@@ -185,13 +185,18 @@
     (some? end-date)
     (merge-query (transaction-date-filter end-date '<=))))
 
-(defn conversions [tx-ids]
-  {:find-pattern '[?t ?e]
-   :symbols      {'[?t ...] tx-ids}
+(defn conversions [tx-ids user-uuid]
+  {:find-pattern '[?t ?e ?e2]
+   :symbols      {'[?t ...] tx-ids
+                  '?uuid user-uuid}
    :where        '[[?t :transaction/date ?d]
                    [?e :conversion/date ?d]
                    [?t :transaction/currency ?cur]
-                   [?e :conversion/currency ?cur]]})
+                   [?e :conversion/currency ?cur]
+                   [?u :user/uuid ?uuid]
+                   [?u :user/currency ?u-cur]
+                   [?e2 :conversion/currency ?u-cur]
+                   [?e2 :conversion/date ?d]]})
 
 (defn verifications
   [db user-db-id status]

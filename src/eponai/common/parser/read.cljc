@@ -89,14 +89,21 @@
                                                                   [?u :user/uuid ?uuid]]
                                                        :symbols {'?uuid (:username auth)}})])
                 eids (p/all-with db pull-params)]
-            {:value #?(:clj  (let [tx-conv-tuples (p/all-with db (p/conversions eids))
-                                   transactions (map (fn [[tx conv]]
+            {:value #?(:clj  (let [tx-conv-tuples (p/all-with db (p/conversions eids (:username auth)))
+                                   transactions (map (fn [[tx conv user-conv]]
                                                        (let [transaction (p/pull db query tx)
+                                                             ;; All rates are relative USD so we need to pull what rates the user currency has,
+                                                             ;; so we can convert the rate appropriately for the user's selected currency
+                                                             user-currency-conversion (p/pull db '[:conversion/rate] user-conv)
                                                              conversion (p/pull db '[:conversion/rate] conv)]
                                                          (assoc
                                                            transaction
                                                            :transaction/conversion
-                                                           conversion)))
+                                                           ;; Convert the rate from USD to whatever currency the user has set
+                                                           ;; (e.g. user is using SEK, so the new rate will be
+                                                           ;; conversion-of-transaction-currency / conversion-of-user-currency
+                                                           {:conversion/rate (/ (:conversion/rate conversion)
+                                                                                (:conversion/rate user-currency-conversion))})))
                                                      tx-conv-tuples)]
                                transactions)
                        :cljs (p/pull-many db query eids))}))))))
