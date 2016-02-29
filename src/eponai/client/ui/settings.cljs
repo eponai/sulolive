@@ -58,8 +58,12 @@
             :on-change #(om/update-state! this assoc :input-currency (.-value (.-target %)))
             :list      "currency-name"}]
           [:datalist#currency-name
-           [:option {:value "SEK - Swedish Krona"}]
-           [:option {:value "USD - US Dollar"}]]]]))))
+           [:option {:value "SEK"}]
+           [:option {:value "USD"}]]
+          [:button.btn.btn-info.btn-md
+           {:on-click #(om/transact! this `[(settings/save ~{:currency input-currency
+                                                             :user current-user})])}
+           "Save settings"]]]))))
 
 (def ->Settings (om/factory Settings))
 

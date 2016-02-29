@@ -103,7 +103,9 @@
        {:transaction/budget [:budget/uuid
                              :budget/name]}
        {:transaction/type [:db/ident]}
-       :transaction/conversion]}])
+       :transaction/conversion]}
+     {:query/current-user [:user/uuid
+                           {:user/currency [:currency/code]}]}])
 
   Object
   (initLocalState [_]
@@ -111,7 +113,8 @@
      :input-filter {:filter/include-tags #{}}})
 
   (render [this]
-    (let [{transactions :query/all-transactions} (om/props this)
+    (let [{transactions :query/all-transactions
+           user :query/current-user} (om/props this)
           {:keys [input-filter]} (om/get-state this)]
       (html
         [:div
@@ -174,7 +177,7 @@
                 [:td.text-right
                  (opts {:key [uuid]
                         :class (if (= (:db/ident type) :transaction.type/expense) "text-danger" "text-success")})
-                 (str (gstring/format "$%.2f" (/ amount (:conversion/rate conversion))) )]
+                 (str (gstring/format (str (:currency/code (:user/currency user)) "%.2f") (/ amount (:conversion/rate conversion))) )]
                 ]))]]]))))
 
 (def ->AllTransactions (om/factory AllTransactions))
