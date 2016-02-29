@@ -184,18 +184,15 @@
                                                   " mutation-uuid: " mutation-uuid
                                                   ". Mutation id needs to be stored in datascript/datomic"
                                                   " to synchronize state.")))
-                                   ;; TODO:
-                                   ;; Instead of returning :tempids -> entities
-                                   ;; return :tx-data (datoms). Think about what this means.
-                                   (let [datoms (d/q '{:find  [?e ?attr ?v ?tx ?added]
-                                                       :in    [$ [[?e ?a ?v ?tx ?added] ...]]
-                                                       :where [[?a :db/ident ?attr]]}
-                                                     (:db-after action-return)
-                                                     (:tx-data action-return))
-                                         _ (debug "mutation:" k " datoms: " datoms)]
-                                     (-> action-return
-                                         (assoc :mutation-uuid mutation-uuid)
-                                         (assoc :datoms datoms))))))))))))
+                                   #?(:cljs action-return
+                                      :clj (let [datoms (d/q '{:find  [?e ?attr ?v ?tx ?added]
+                                                        :in    [$ [[?e ?a ?v ?tx ?added] ...]]
+                                                        :where [[?a :db/ident ?attr]]}
+                                                      (:db-after action-return)
+                                                      (:tx-data action-return))
+                                          _ (debug "mutation:" k " datoms: " datoms)]
+                                      (assoc action-return :mutation-uuid mutation-uuid
+                                                           :datoms datoms))))))))))))
 
 (defn parser
   ([]
