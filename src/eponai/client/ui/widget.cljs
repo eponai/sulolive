@@ -1,5 +1,5 @@
 (ns eponai.client.ui.widget
-  (:require [eponai.client.report :as report]
+  (:require [eponai.common.report :as report]
             [eponai.client.ui :refer-macros [opts]]
             [eponai.client.ui.d3 :as d3]
             [om.next :as om :refer-macros [defui]]
@@ -18,16 +18,16 @@
                       {:report/functions [:report.function/uuid
                                           :report.function/attribute
                                           :report.function/id]}]}
+     :widget/data
      {:widget/graph [:graph/style]}])
 
   Object
   (render [this]
     (let [{:keys [widget/report
-                  widget/graph] :as widget} (om/props this)
+                  widget/graph
+                  widget/data] :as widget} (om/props this)
           {:keys [on-delete
-                  on-edit
-                  data]} (om/get-computed this)
-          report-data (report/create report data)]
+                  on-edit]} (om/get-computed this)]
       (html
         [:div.widget
          (opts {:style {:border        "1px solid #e7e7e7"
@@ -65,7 +65,7 @@
                {:on-click #(on-delete widget)}
                "x"]])]]
          (let [{:keys [graph/style]} graph
-               settings {:data         report-data
+               settings {:data         data
                          :id           (str (or (:widget/uuid widget) "widget"))
                          :width        "100%"
                          :height       "100%"

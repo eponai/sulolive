@@ -1,26 +1,29 @@
-(ns eponai.client.report)
+(ns eponai.common.report)
 
-(defmulti sum (fn [k _] k))
+(defn converted-amount [tx]
+  #?(:clj  (with-precision 2 (/ (:transaction/amount tx)
+                                (:conversion/rate (:transaction/conversion tx))))
+     :cljs (/ (:transaction/amount tx)
+              (:conversion/rate (:transaction/conversion tx)))))
+
+(defmulti sum (fn [k _ _] k))
 
 (defmethod sum :default
-  [_ transactions attr]
+  [_ transactions _]
   (let [sum-fn (fn [s tx]
-                 (let [add-number (if (number? (get tx attr))
-                                    (get tx attr)
+                 (let [add-number (if (number? (get tx :transaction/amount))
+                                    (get tx :transaction/amount)
                                     1)]
                    (+ s add-number)))]
     {:key    "All Transactions"
      :values [(reduce sum-fn 0 transactions)]}))
 
 (defmethod sum :transaction/date
-  [_ transactions attr]
+  [_ transactions _]
   (let [grouped (group-by :transaction/date transactions)
         sum-fn (fn [[day ts]]
                  (assoc day :date/sum (reduce (fn [s tx]
-                                                (let [add-number (if (number? (get tx attr))
-                                                                   (get tx attr)
-                                                                   1)]
-                                                  (+ s add-number)))
+                                                (+ s (converted-amount tx)))
                                               0
                                               ts)))
         sum-by-day (map sum-fn grouped)]
@@ -38,12 +41,9 @@
                    (reduce (fn [m2 tagname]
                              (update m2 tagname
                                      (fn [me]
-                                       (let [add-number (if (number? (get transaction attr))
-                                                          (get transaction attr)
-                                                          1)]
-                                         (if me
-                                           (+ me add-number)
-                                           add-number)))))
+                                       (if me
+                                         (+ me (converted-amount transaction))
+                                         (converted-amount transaction)))))
                            m
                            (if (empty? tags)
                              ["no tags"]
@@ -60,10 +60,11 @@
 (defmulti calculation (fn [_ function-id _] function-id))
 
 (defmethod calculation :report.function.id/sum
-  [{:keys [report/group-by report/function]} _ transactions]
-  (let [attribute (:report.function/attribute function)]
-    (sum group-by transactions (or attribute :transaction/amount))))
+  [{:keys [report/group-by report/functions]} _ transactions]
+  (let [attribute (:report.function/attribute (first functions))]
+    (sum group-by transactions :transaction/amount)))
 
 (defn create [report transactions]
-  (let [k (get-in report [:report/function :report.function/id])]
+  (let [functions (:report/functions report)
+        k (:report.function/id (first functions))]
     (calculation report (or k :report.function.id/sum) transactions)))

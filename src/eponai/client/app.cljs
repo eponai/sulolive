@@ -10,7 +10,7 @@
             [eponai.client.history :as history]
             [eponai.client.parser.mutate]
             [eponai.client.parser.read]
-            [eponai.client.report]
+            [eponai.common.report]
             [eponai.client.ui.navbar :as navbar]
             [taoensso.timbre :refer-macros [info debug error trace]]
             [eponai.client.ui :refer-macros [opts]]))

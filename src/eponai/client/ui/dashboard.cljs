@@ -34,12 +34,7 @@
      {:query/dashboard [:dashboard/uuid
                         {:widget/_dashboard (om/get-query Widget)}
                         {:dashboard/budget [:budget/uuid
-                                            :budget/name
-                                            {:transaction/_budget [:transaction/uuid
-                                                                   {:transaction/tags [:tag/name]}
-                                                                   :transaction/amount
-                                                                   {:transaction/date [:date/ymd
-                                                                                       :date/timestamp]}]}]}]}])
+                                            :budget/name]}]}])
   Object
   (initLocalState [_]
     {:edit? true})

@@ -3,6 +3,7 @@
   (:require [eponai.common.datascript :as eponai.datascript]
             [eponai.common.database.pull :as p]
             [eponai.common.parser.util :as parser.util]
+            [eponai.common.report :as report]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
     #?(:clj
             [eponai.server.datomic.pull :as server.pull])
@@ -114,7 +115,7 @@
   (apply query-all-transactions args))
 
 (defmethod read :query/dashboard
-  [{:keys [db ast query target auth]} _ {:keys [budget-uuid]}]
+  [{:keys [db ast query target auth parser] :as env} _ {:keys [budget-uuid]}]
   (let [#?@(:cljs [budget-uuid (-> (d/entity db [:ui/component :ui.component/budget])
                                    :ui.component.budget/uuid)])]
     (if (= target :remote)
@@ -133,7 +134,19 @@
                            (apply min-key :budget/created-at)
                            :db/id))]
         {:value (when eid
-                  (p/pull db query (p/one-with db {:where [['?e :dashboard/budget eid]]})))}))))
+                  (let [dashboard (p/pull db query (p/one-with db {:where [['?e :dashboard/budget eid]]}))]
+                    (update dashboard :widget/_dashboard
+                            (fn [widgets]
+                              (map (fn [widget]
+                                     (let [{:keys [query/all-transactions]}
+                                           (parser env [`({:query/all-transactions [:transaction/amount
+                                                                                    :transaction/conversion
+                                                                                    {:transaction/tags [:tag/name]}
+                                                                                    {:transaction/date [:date/timestamp]}]}
+                                                           {:filter (:widget/filter ~widget)})])
+                                           report-data (report/create (:widget/report widget) all-transactions)]
+                                       (assoc widget :widget/data report-data)))
+                                   widgets)))))}))))
 
 (defmethod read :query/all-dashboards
   [{:keys [db query auth]} _ _]
