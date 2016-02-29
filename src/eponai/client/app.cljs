@@ -52,12 +52,12 @@
         [:div#wrapper
          (when-not sidebar-visible?
            {:class "toggled"})
-         (navbar/sidebar-create side-bar {:on-sidebar-close #(om/update-state! this assoc :sidebar-visible? false)})
+         (navbar/sidebar-create side-bar)
 
          [:div#page-content-wrapper
           (opts {:style {:height "100%"}})
 
-          (navbar/navbar-create nav-bar {:on-sidebar-show #(om/update-state! this assoc :sidebar-visible? true)
+          (navbar/navbar-create nav-bar {:on-sidebar-toggle #(om/update-state! this update :sidebar-visible? not)
                                          :sidebar-visible? sidebar-visible?})
 
           [:div

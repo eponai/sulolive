@@ -63,9 +63,9 @@
   Returns a map representing a user entity."
   [email & [opts]]
   (cond->
-    {:db/id       (d/tempid :db.part/user)
-     :user/uuid   (d/squuid)
-     :user/status (or (:user/status opts) :user.status/new)}
+    {:db/id         (d/tempid :db.part/user)
+     :user/uuid     (d/squuid)
+     :user/status   (or (:user/status opts) :user.status/new)}
 
     (:user/picture opts)
     (assoc :user/picture (:user/picture opts))

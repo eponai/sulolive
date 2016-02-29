@@ -132,7 +132,7 @@
                   new-transaction
                   add-budget?]} (om/get-state this)
           {:keys [sidebar-visible?
-                  on-sidebar-show]} (om/get-computed this)]
+                  on-sidebar-toggle]} (om/get-computed this)]
       (html
         [:div
          (opts {:style {:display         "flex"
@@ -144,16 +144,16 @@
          [:div
           (opts {:style {:display :flex
                          :flex-direction :row}})
-          (when-not sidebar-visible?
-            [:button
-             (opts {:style    {:display   "block"
-                               :margin    "0.5em 0.2em"
-                               :font-size "1em"}
-                    :on-click #(do (prn "Did show sidebar")
-                                   (on-sidebar-show))
-                    :class    "btn btn-default btn-md"})
-             [:i
-              {:class "fa fa-bars"}]])
+          ;(when-not sidebar-visible?)
+          [:button
+           (opts {:style    {:display   "block"
+                             :margin    "0.5em 0.2em"
+                             :font-size "1em"}
+                  :on-click #(do (prn "Did show sidebar")
+                                 (on-sidebar-toggle))
+                  :class    "btn btn-default btn-md"})
+           [:i
+            {:class "fa fa-bars"}]]
 
           [:button
            (opts {:style    {:display   "block"
@@ -235,8 +235,7 @@
   Object
 
   (render [this]
-    (let [{:keys [query/all-budgets]} (om/props this)
-          {:keys [on-sidebar-close]} (om/get-computed this)]
+    (let [{:keys [query/all-budgets]} (om/props this)]
       (html
         [:ul.sidebar-nav
          [:li.sidebar-brand
@@ -248,12 +247,7 @@
            [:strong
             "JourMoney"]
            [:span.small
-            " by eponai"]]
-          [:button.close.navbar-brand
-           (opts {:style    {:margin "0 auto"}
-                  :on-click #(do (prn "Did click close")
-                                 (on-sidebar-close))})
-           "X"]]
+            " by eponai"]]]
 
          [:li
           [:a
@@ -282,12 +276,11 @@
 (defn sidebar-query []
   (om/get-query SideBar))
 
-(defn sidebar-create [props computed]
+(defn sidebar-create [props]
   (html
     [:div#sidebar-wrapper.gradient-down-up
      [:div#content
-      (->SideBar (om/computed props
-                              computed))]
+      (->SideBar props)]
      [:footer.footer
       [:p.copyright.small.text-light
        "Copyright © eponai 2016. All Rights Reserved"]]]))

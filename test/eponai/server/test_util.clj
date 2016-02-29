@@ -18,6 +18,8 @@
      (d/create-database uri)
      (let [conn (d/connect uri)]
        (d/transact conn schema)
+       (d/transact conn [{:db/id         (d/tempid :db.part/user)
+                          :currency/code "USD"}])
        (when txs
          (d/transact conn txs))
        conn))))

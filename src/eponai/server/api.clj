@@ -145,6 +145,7 @@
                 dashboard (format/dashboard (:db/id budget))
                 activated-db (:db-after (transact conn [[:db/add user-db-id :user/status :user.status/active]
                                                         [:db/add user-db-id :user/activated-at (c/to-long (time/now))]
+                                                        [:db/add user-db-id :user/currency [:currency/code "USD"]]
                                                         budget
                                                         dashboard]))]
             (debug "Activated account for user-uuid:" user-uuid)
