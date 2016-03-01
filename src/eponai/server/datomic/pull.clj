@@ -20,3 +20,33 @@
                       [(not ?d)]
                       ] db)]
     (map #(into {} (d/entity db %)) schema)))
+
+(defn txs-with-conversions [db query {:keys [tx-ids user/uuid]}]
+  (let [tx-conv-tuples (p/all-with db {:find-pattern '[?t ?e ?e2]
+                                       :symbols      {'[?t ...] tx-ids
+                                                      '?uuid uuid}
+                                       :where        '[[?t :transaction/date ?d]
+                                                       [?e :conversion/date ?d]
+                                                       [?t :transaction/currency ?cur]
+                                                       [?e :conversion/currency ?cur]
+                                                       [?u :user/uuid ?uuid]
+                                                       [?u :user/currency ?u-cur]
+                                                       [?e2 :conversion/currency ?u-cur]
+                                                       [?e2 :conversion/date ?d]]})
+        transactions (map (fn [[tx tx-conv user-conv]]
+                            (let [transaction (p/pull db query tx)
+                                  ;; All rates are relative USD so we need to pull what rates the user currency has,
+                                  ;; so we can convert the rate appropriately for the user's selected currency
+                                  user-currency-conversion (p/pull db '[:conversion/rate] user-conv)
+                                  transaction-conversion (p/pull db '[:conversion/rate] tx-conv)]
+                              (assoc
+                                transaction
+                                :transaction/conversion
+                                ;; Convert the rate from USD to whatever currency the user has set
+                                ;; (e.g. user is using SEK, so the new rate will be
+                                ;; conversion-of-transaction-currency / conversion-of-user-currency
+                                {:conversion/rate (with-precision 10
+                                                    (/ (:conversion/rate transaction-conversion)
+                                                       (:conversion/rate user-currency-conversion)))})))
+                          tx-conv-tuples)]
+    transactions))

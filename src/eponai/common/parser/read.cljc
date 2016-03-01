@@ -1,7 +1,7 @@
 (ns eponai.common.parser.read
   (:refer-clojure :exclude [read proxy])
   (:require [eponai.common.datascript :as eponai.datascript]
-            [eponai.common.database.pull :as p]
+            [eponai.common.database.pull :as common.pull]
             [eponai.common.parser.util :as parser.util]
             [eponai.common.report :as report]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
@@ -60,7 +60,7 @@
 
 (defmethod read :query/all-currencies
   [{:keys [db query]} _ _]
-  {:value  (p/pull-many db query (p/all-with db {:where '[[?e :currency/code]]}))
+  {:value  (common.pull/pull-many db query (common.pull/all-with db {:where '[[?e :currency/code]]}))
    :remote true})
 
 (def query-all-transactions
@@ -77,38 +77,22 @@
           (let [pull-params (cond-> {:where '[[?e :transaction/uuid]]}
 
                                     (some? filter)
-                                    (p/merge-query (p/transactions filter))
+                                    (common.pull/merge-query (common.pull/transactions filter))
 
                                     (some? budget)
-                                    (p/merge-query {:where '[[?e :transaction/budget ?b]
+                                    (common.pull/merge-query {:where '[[?e :transaction/budget ?b]
                                                              [?b :budget/uuid ?uuid]]
                                                     :symbols {'?uuid budget}}))
                 ;; Include user filter on the server.
-                #?@(:clj [pull-params (p/merge-query pull-params
+                #?@(:clj [pull-params (common.pull/merge-query pull-params
                                                       {:where   '[[?e :transaction/budget ?b]
                                                                   [?b :budget/created-by ?u]
                                                                   [?u :user/uuid ?uuid]]
                                                        :symbols {'?uuid (:username auth)}})])
-                eids (p/all-with db pull-params)]
-            {:value #?(:clj  (let [tx-conv-tuples (p/all-with db (p/conversions eids (:username auth)))
-                                   transactions (map (fn [[tx tx-conv user-conv]]
-                                                       (let [transaction (p/pull db query tx)
-                                                             ;; All rates are relative USD so we need to pull what rates the user currency has,
-                                                             ;; so we can convert the rate appropriately for the user's selected currency
-                                                             user-currency-conversion (p/pull db '[:conversion/rate] user-conv)
-                                                             transaction-conversion (p/pull db '[:conversion/rate] tx-conv)]
-                                                         (assoc
-                                                           transaction
-                                                           :transaction/conversion
-                                                           ;; Convert the rate from USD to whatever currency the user has set
-                                                           ;; (e.g. user is using SEK, so the new rate will be
-                                                           ;; conversion-of-transaction-currency / conversion-of-user-currency
-                                                           {:conversion/rate (with-precision 10
-                                                                               (/ (:conversion/rate transaction-conversion)
-                                                                                  (:conversion/rate user-currency-conversion)))})))
-                                                     tx-conv-tuples)]
-                               transactions)
-                       :cljs (p/pull-many db query eids))}))))))
+                eids (common.pull/all-with db pull-params)]
+            {:value #?(:clj  (server.pull/txs-with-conversions db query {:user/uuid (:username auth)
+                                                                         :tx-ids eids})
+                       :cljs (common.pull/pull-many db query eids))}))))))
 
 (defmethod read :query/all-transactions
   [& args]
@@ -122,24 +106,24 @@
       {:remote (assoc-in ast [:params :budget-uuid] budget-uuid)}
 
       (let [eid (if budget-uuid
-                  (p/one-with db #?(:clj  (p/merge-query (p/budget-with-filter budget-uuid)
-                                                         (p/budget-with-auth (:username auth)))
-                                    :cljs (p/budget-with-filter budget-uuid)))
+                  (common.pull/one-with db #?(:clj  (common.pull/merge-query (common.pull/budget-with-filter budget-uuid)
+                                                         (common.pull/budget-with-auth (:username auth)))
+                                    :cljs (common.pull/budget-with-filter budget-uuid)))
                   ;; No budget-uuid, grabbing the one with the smallest created-at
-                  (some->> #?(:clj  (p/budget-with-auth (:username auth))
-                              :cljs (p/budget))
-                           (p/all-with db)
+                  (some->> #?(:clj  (common.pull/budget-with-auth (:username auth))
+                              :cljs (common.pull/budget))
+                           (common.pull/all-with db)
                            (map #(d/entity db %))
                            seq
                            (apply min-key :budget/created-at)
                            :db/id))]
         {:value (when eid
-                  (let [dashboard (p/pull db query (p/one-with db {:where [['?e :dashboard/budget eid]]}))]
-                    (update dashboard :widget/_dashboard #(report/create env %))))}))))
+                  (let [dashboard (common.pull/pull db query (common.pull/one-with db {:where [['?e :dashboard/budget eid]]}))]
+                    (update dashboard :widget/_dashboard #(common.pull/widgets-with-data env %))))}))))
 
 (defmethod read :query/all-dashboards
   [{:keys [db query auth]} _ _]
-  {:value  (p/pull-many db query (p/all-with db #?(:clj {:where   '[[?e :dashboard/budget ?b]
+  {:value  (common.pull/pull-many db query (common.pull/all-with db #?(:clj {:where   '[[?e :dashboard/budget ?b]
                                                                     [?b :budget/created-by ?u]
                                                                     [?u :user/uuid ?user-uuid]]
                                                          :symbols {'?user-uuid (:username auth)}}
@@ -148,15 +132,15 @@
 
 (defmethod read :query/all-budgets
   [{:keys [db query auth]} _ _]
-  {:value  (p/pull-many db query (p/all-with db #?(:clj (p/budget-with-auth (:username auth))
-                                                   :cljs (p/budget))))
+  {:value  (common.pull/pull-many db query (common.pull/all-with db #?(:clj (common.pull/budget-with-auth (:username auth))
+                                                   :cljs (common.pull/budget))))
    :remote true})
 
 (defmethod read :query/current-user
   [{:keys [db query auth]} _ _]
-  (let [eids (p/all-with db {:where #?(:clj  [['?e :user/uuid (:username auth)]]
+  (let [eids (common.pull/all-with db {:where #?(:clj  [['?e :user/uuid (:username auth)]]
                                        :cljs '[[?e :user/uuid]])})]
-    {:value  (first (p/pull-many db query eids))
+    {:value  (first (common.pull/pull-many db query eids))
      :remote true}))
 
 (defmethod read :query/user
@@ -164,13 +148,13 @@
   #?(:cljs {:value  (when (and (not (= uuid '?uuid))
                                (-> db :schema :verification/uuid))
                       (try
-                        (p/pull db query [:user/uuid (f/str->uuid uuid)])
+                        (common.pull/pull db query [:user/uuid (f/str->uuid uuid)])
                         (catch :default e
                           (error "Error for parser's read key:" k "error:" e)
                           {:error {:cause :invalid-verification}})))
             :remote (not (= uuid '?uuid))}
      :clj  {:value (when (not (= uuid '?uuid))
-                     (p/pull db query [:user/uuid (f/str->uuid uuid)]))}))
+                     (common.pull/pull db query [:user/uuid (f/str->uuid uuid)]))}))
 
 ;; -------- Debug stuff
 

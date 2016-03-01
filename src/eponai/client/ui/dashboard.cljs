@@ -100,12 +100,13 @@
                                     :box-shadow         "0 3px 9px rgba(0, 0, 0, .5)"}]])])
 
          (when edit-widget
-           (utils/modal {:content  (->NewWidget (om/computed dashboard
+           (utils/modal {:content  (->NewWidget (om/computed new-widget
                                                              {:on-close #(om/update-state! this assoc :edit-widget nil)
                                                               :on-save  #(do
                                                                           (save-widget this %)
                                                                           (om/update-state! this assoc :edit-widget nil))
-                                                              :widget   edit-widget}))
+                                                              :dashboard   dashboard
+                                                              :widget edit-widget}))
                          :on-close #(om/update-state! this assoc :edit-widget nil)
                          :class    "modal-lg"}))
          (when (and layout

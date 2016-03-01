@@ -4,6 +4,7 @@
     [eponai.common.format :as f]
     [clojure.set :as s]
     [clojure.walk :as walk]
+    [eponai.common.report :as report]
     #?(:clj
     [datomic.api :as d]
        :cljs [datascript.core :as d]))
@@ -185,19 +186,6 @@
     (some? end-date)
     (merge-query (transaction-date-filter end-date '<=))))
 
-(defn conversions [tx-ids user-uuid]
-  {:find-pattern '[?t ?e ?e2]
-   :symbols      {'[?t ...] tx-ids
-                  '?uuid user-uuid}
-   :where        '[[?t :transaction/date ?d]
-                   [?e :conversion/date ?d]
-                   [?t :transaction/currency ?cur]
-                   [?e :conversion/currency ?cur]
-                   [?u :user/uuid ?uuid]
-                   [?u :user/currency ?u-cur]
-                   [?e2 :conversion/currency ?u-cur]
-                   [?e2 :conversion/date ?d]]})
-
 (defn verifications
   [db user-db-id status]
   {:pre [(db-instance? db)
@@ -213,3 +201,34 @@
      db
      user-db-id
      status))
+
+(defn widget-report-query []
+  [:widget/uuid
+   :widget/width
+   :widget/height
+   :widget/filter
+   {:widget/report [:report/uuid
+                    :report/group-by
+                    :report/title
+                    {:report/functions [:report.function/uuid
+                                        :report.function/attribute
+                                        :report.function/id]}]}
+   :widget/data
+   {:widget/graph [:graph/style]}])
+
+(defn transaction-query []
+  [:transaction/uuid
+   :transaction/amount
+   :transaction/conversion
+   {:transaction/tags [:tag/name]}
+   {:transaction/date [:date/ymd
+                       :date/timestamp]}])
+
+(defn widgets-with-data [{:keys [db parser] :as env} widgets]
+  (map (fn [{:keys [widget/uuid]}]
+         (let [widget (pull db (widget-report-query) [:widget/uuid uuid])
+               {:keys [query/all-transactions]} (parser env [`({:query/all-transactions ~(transaction-query)}
+                                                                {:filter (:widget/filter ~widget)})])
+               report-data (report/generate-data (:widget/report widget) all-transactions)]
+           (assoc widget :widget/data report-data)))
+       widgets))

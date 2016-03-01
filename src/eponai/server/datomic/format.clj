@@ -3,7 +3,8 @@
             [clj-time.coerce :as c]
             [datomic.api :only [db a] :as d]
             [eponai.common.format :as cf]
-            [eponai.server.datomic.pull :as p]))
+            [eponai.server.datomic.pull :as p]
+            [eponai.common.database.pull :as p]))
 
 ;;; -------------------- Format to entities ----------------
 
@@ -138,3 +139,4 @@
 
       fb-user
       (assoc :fb-user fb-user))))
+\
