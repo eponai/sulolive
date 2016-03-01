@@ -41,9 +41,8 @@
   [conn]
   (fn [_ _ novelty]
     (debug "Merge! transacting novelty:" novelty)
-    (let [merged-novelty (merge-novelty-by-key (d/db conn) novelty)
-          ks (keys novelty)]
-      (debug "Merge! returning keys:" ks)
+    (let [merged-novelty (merge-novelty-by-key (d/db conn) novelty)]
+      (debug "Merge! returning keys:" (:keys merged-novelty))
       merged-novelty)))
 
 (defn send!

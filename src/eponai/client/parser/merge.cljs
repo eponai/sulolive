@@ -83,10 +83,11 @@
     (some? (-> val :om.next/error))
     (merge-error db key val)
 
+    (-> val :result seq)
+    (transact db (:result val))
+
     :else
-    (when-let [res (:result val)]
-      (when (seq res)
-        (transact db res)))))
+    db))
 
 ;; TODO: Fix comments in this namespace.
 (defn merge-read [db key val]
