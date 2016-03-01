@@ -1,13 +1,16 @@
 (ns eponai.common.database.transact
   (:require [eponai.common.format :as f]
-    #?(:clj [datomic.api :as d]
-       :cljs [datascript.core :as d])))
+    #?(:clj
+            [datomic.api :as d]
+       :cljs [datascript.core :as d])
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [trace debug]]))
 
 (defn transact
   "Transact a collecion of entites into datomic.
   Throws ExceptionInfo if transaction failed."
   [conn txs]
   (try
+    (trace "Transacting: " txs)
     (let [ret @(d/transact conn txs)]
       ret)
     (catch #?(:clj Exception :cljs :default) e

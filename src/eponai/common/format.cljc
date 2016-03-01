@@ -1,14 +1,16 @@
 (ns eponai.common.format
   (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
             [clojure.set :refer [rename-keys]]
-    #?@(:clj  [[clj-time.core :as t]
-               [clj-time.format :as f]
-               [clj-time.coerce :as c]]
+    #?@(:clj  [
+            [clj-time.core :as t]
+            [clj-time.format :as f]
+            [clj-time.coerce :as c]]
         :cljs [[cljs-time.core :as t]
                [cljs-time.format :as f]
                [cljs-time.coerce :as c]
                [goog.date.DateTime]])
-    #?(:clj  [datomic.api :as d]
+    #?(:clj
+            [datomic.api :as d]
        :cljs [datascript.core :as d])))
 
 ;; Warning: clj(s)-time libraries are sometimes inconsistent.
@@ -144,7 +146,8 @@
                      :transaction/tags     (fn [ts] (tags ts))
                      :transaction/amount   (fn [a] #?(:clj  (bigint a)
                                                       :cljs (cljs.reader/read-string a)))
-                     :transaction/budget   (fn [b] [:budget/uuid (str->uuid (str b))])}
+                     :transaction/budget   (fn [b] [:budget/uuid (str->uuid (str b))])
+                     :transaction/type     (fn [t] {:pre [(keyword? t)]} {:db/ident t})}
         update-fn (fn [m k] (update m k (conv-fn-map k)))
         transaction (reduce update-fn user-tx (keys conv-fn-map))]
 

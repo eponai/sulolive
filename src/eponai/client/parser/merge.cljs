@@ -2,7 +2,7 @@
   (:require [datascript.core :as d]
             [datascript.db :as db]
             [eponai.client.homeless :as homeless]
-            [taoensso.timbre :refer-macros [info debug error trace]]))
+            [taoensso.timbre :refer-macros [info debug error trace warn]]))
 
 (defn transact [conn tx]
   (let [tx (if (sequential? tx) tx [tx])]
@@ -35,10 +35,12 @@
                        db
                        mutation-uuid)
           _ (when-not tx-time
-              (let [tx (d/entity db [:tx/mutation-uuid mutation-uuid])]
-                (assert (true? (:tx/reverted tx)))
-                (debug "Had already reverted optimistic transaction: " (d/touch tx)
-                       " will still transact the real transactions, because why not?")))
+              (let [tx (d/touch (d/entity db [:tx/mutation-uuid mutation-uuid]))]
+                (if (true? (:tx/reverted tx))
+                  (debug "Had already reverted optimistic transaction: " tx
+                         " will still transact the real transactions, because why not?")
+                  (warn "Optimistic transaction:" tx
+                        " had no tx-time..? What is this."))))
 
           optimistic-tx-inverse
           (when tx-time

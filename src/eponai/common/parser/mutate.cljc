@@ -28,7 +28,7 @@
     (let [#?@(:clj [currency-chan (chan 1)])
           db-tx (format/transaction params)
           _ (validate/valid-user-transaction? db-tx)
-          tx-report (transact/mutate state mutation-uuid [db-tx])]
+          tx-report (transact/mutate-one state mutation-uuid db-tx)]
       #?(:clj (go (>! currency-chan (:transaction/date db-tx))))
       #?(:cljs tx-report
          :clj (assoc tx-report :currency-chan currency-chan)))))

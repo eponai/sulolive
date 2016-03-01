@@ -194,6 +194,28 @@
                                       (assoc action-return :mutation-uuid mutation-uuid
                                                            :datoms datoms))))))))))))
 
+(defn mutate-with-error-logging [mutate]
+  (fn [env k p]
+    (letfn [(log-error [e where]
+              (error (str "Error in the " where " of mutation:") k
+                     " thrown: " e
+                     " will re-throw."))]
+      (try
+        (let [ret (mutate env k p)]
+          (assert (contains? ret :action) (str "Mutation " k " had no :action."))
+          (update ret :action (fn [action]
+                                (fn []
+                                  (try
+                                   (action)
+                                   (catch #?@(:clj  [Throwable e]
+                                              :cljs [:default e])
+                                          (log-error e ":action")
+                                     (throw e)))))))
+        (catch #?@(:clj  [Throwable e]
+                   :cljs [:default e])
+               (log-error e "body")
+          (throw e))))))
+
 (defn parser
   ([]
    (let [parser (om/parser {:read   (-> read/read
@@ -202,6 +224,7 @@
                                         wrap-db)
                             :mutate (-> mutate/mutate
                                         mutate-with-idempotent-invariants
+                                        mutate-with-error-logging
                                         wrap-db)})]
      #?(:cljs (fn [env & args]
                 (apply parser env args))

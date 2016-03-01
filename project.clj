@@ -48,9 +48,7 @@
                  [garden "1.3.0"]
                  [org.omcljs/om "1.0.0-alpha30"]
                  [datascript "0.15.0"]
-                 [sablono "0.5.3"]
-                 ; Sablono needs the react packages to compile.
-                 [cljsjs/react-dom-server "0.14.3-0"]
+                 [sablono "0.6.2"]
                  [cljs-ajax "0.5.0"]
                  [cljsjs/d3 "3.5.7-1"]
                  [cljsjs/pikaday "1.4.0-1"]

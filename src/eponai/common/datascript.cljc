@@ -15,7 +15,7 @@
           datomic-schema)
       ;; add support for enums-like things, since datascript doesn't support
       ;; keyword->eid lookup.
-      (assoc :enum {:db/unique :db.unique/identity})))
+      (assoc :db/ident {:db/unique :db.unique/identity})))
 
 (defn id-generator
   "Returns a function which takes a number and returns a new, negative id.
