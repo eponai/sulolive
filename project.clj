@@ -17,7 +17,7 @@
                  [com.draines/postal "1.11.3"]
                  [com.stripe/stripe-java "1.45.0"]
                  [com.taoensso/timbre "4.3.1"]
-                 [environ "1.0.2"]
+                 [environ "1.0.1"]
                  [hiccup "1.0.5"]
                  [org.clojure/clojure "1.8.0"]
                  [org.clojure/core.async "0.2.374"]
