@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [
-                 [clj-http "2.0.0"]
+                 [clj-http "2.1.0"]
                  [clj-time "0.11.0"]
                  [compojure "1.4.0"]
                  [com.cemerick/friend "0.2.1"
@@ -12,15 +12,15 @@
                  [com.cemerick/url "0.1.1"]
                  [com.datomic/datomic-pro "0.9.5350"
                   :exclusions [joda-time]]
-                 [com.amazonaws/aws-java-sdk-dynamodb "1.9.39" 
+                 [com.amazonaws/aws-java-sdk-dynamodb "1.10.56" 
                   :exclusions [joda-time org.clojure/test.check]]
                  [com.draines/postal "1.11.3"]
-                 [com.stripe/stripe-java "1.41.0"]
-                 [com.taoensso/timbre "4.2.0"]
-                 [environ "1.0.1"]
+                 [com.stripe/stripe-java "1.45.0"]
+                 [com.taoensso/timbre "4.3.1"]
+                 [environ "1.0.2"]
                  [hiccup "1.0.5"]
                  [org.clojure/clojure "1.8.0"]
-                 [org.clojure/core.async "0.2.371"]
+                 [org.clojure/core.async "0.2.374"]
                  [org.clojure/core.memoize "0.5.8"]         ; needed to work around lein+core.async dependency issue.
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.namespace "0.2.11"]
@@ -34,10 +34,10 @@
                  [ring/ring-ssl "0.2.1"]
                  [ring/ring-anti-forgery "1.0.0"]
                  [ring-transit "0.1.4"]
-                 [prone "1.0.0"]
+                 [prone "1.0.2"]
 
                  ;CLJS
-                 [com.cognitect/transit-cljs "0.8.225"]
+                 [com.cognitect/transit-cljs "0.8.237"]
                  [org.clojure/clojurescript "1.7.228"
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
@@ -45,23 +45,22 @@
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-alpha2"]
-                 [garden "1.3.0"]
+                 [garden "1.3.2"]
                  [org.omcljs/om "1.0.0-alpha30"]
                  [datascript "0.15.0"]
                  [sablono "0.6.2"]
-                 [cljs-ajax "0.5.0"]
                  [cljsjs/d3 "3.5.7-1"]
                  [cljsjs/pikaday "1.4.0-1"]
                  [cljsjs/react-grid-layout "0.8.5-0"]
                  [cljsjs/stripe "2.0-0"]
                  [cljsjs/nvd3 "1.8.1-0"]
-                 [bidi "1.21.1"]
+                 [bidi "2.0.0"]
                  [kibu/pushy "0.3.6"]
                  [binaryage/devtools "0.5.2"]
 
                  ;; Testing
                  [lein-doo "0.1.6"]
-                 [devcards "0.2.0-8"]
+                 [devcards "0.2.1-6"]
                  [org.clojure/test.check "0.9.0"]]
   :exclusions [[org.clojure/test.check]]
 
