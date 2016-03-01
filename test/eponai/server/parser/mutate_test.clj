@@ -25,9 +25,9 @@
 
     ;; Create new conn with currency transacted.
     (let [conn (new-db [{:db/id         (d/tempid :db.part/user)
-                         :currency/code (:input/currency transaction)}
+                         :currency/code (:transaction/currency transaction)}
                         {:db/id       (d/tempid :db.part/user)
-                         :budget/uuid (:input/budget transaction)}])
+                         :budget/uuid (:transaction/budget transaction)}])
           parsed (routes/handle-parser-request
                    (session-request conn `[(transaction/create ~(assoc transaction :mutation-uuid (d/squuid)))]))
           _ (debug "Parsed: " parsed)
@@ -35,7 +35,7 @@
           db (d/db conn)]
 
       (are [db-attr input-attr] (pull db '[*] [db-attr (get transaction input-attr)])
-                                :transaction/uuid :input/uuid
-                                :date/ymd :input/date)
+                                :transaction/uuid :transaction/uuid
+                                :date/ymd :transaction/date)
       ;(is (= (async/<!! (get result :currency-chan)) (:input/date transaction)))
       )))
