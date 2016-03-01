@@ -138,7 +138,6 @@
                      ;;       do not require remote-sync. What to do?
                      remote-sync? (and remote? (some? (:action ret)))]
               :clj  [remote-sync? (:remote-sync? params)])
-          _ (debug "remote? : " remote?)
           #?@(:cljs [ret (cond-> ret
                                  remote? (->
                                            (update target #(if (true? %) ast %))

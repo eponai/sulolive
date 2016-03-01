@@ -6,10 +6,11 @@
             [cljsjs.react.dom]
             [datascript.core :as d]
             [eponai.client.backend :as backend]
-            [eponai.common.parser :as parser]
             [eponai.client.history :as history]
             [eponai.client.parser.mutate]
             [eponai.client.parser.read]
+            [eponai.common.datascript :as common.datascript]
+            [eponai.common.parser :as parser]
             [eponai.common.report]
             [eponai.client.ui.navbar :as navbar]
             [taoensso.timbre :refer-macros [info debug error trace]]
@@ -76,8 +77,7 @@
     (do
       (debug "Reusing old conn. It currently has schema for attributes:" (-> @conn-atom deref :schema keys))
       @conn-atom)
-    (let [ui-schema {:ui/singleton {:db/unique :db.unique/identity}
-                     :ui/component {:db/unique :db.unique/identity}}
+    (let [ui-schema (common.datascript/ui-schema)
           ui-state [{:ui/singleton :ui.singleton/app}]
           conn (d/create-conn ui-schema)]
       (d/transact! conn ui-state)

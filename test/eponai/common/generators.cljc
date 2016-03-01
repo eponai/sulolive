@@ -22,11 +22,12 @@
   (gen/fmap set (gen/vector gen/string-alphanumeric)))
 
 (defn gen-transaction []
-  (gen/hash-map :input/amount (gen-amount)
-                :input/currency (gen-currency)
-                :input/title (gen-title)
-                :input/date (gen-date)
-                :input/tags (gen-tags)
-                :input/created-at gen/pos-int
-                :input/uuid gen/uuid
-                :input/budget gen/uuid))
+  (gen/hash-map :transaction/amount (gen-amount)
+                :transaction/currency (gen-currency)
+                :transaction/title (gen-title)
+                :transaction/date (gen-date)
+                :transaction/tags (gen-tags)
+                :transaction/created-at gen/pos-int
+                :transaction/uuid gen/uuid
+                :transaction/budget gen/uuid
+                :transaction/type (gen/elements [:transaction.type/expense :transaction.type/income])))

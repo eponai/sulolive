@@ -1,6 +1,12 @@
 (ns eponai.common.datascript
   (:require [clojure.walk :as w]))
 
+(defn ui-schema
+  "Additional schema we may use for our ui components"
+  []
+  {:ui/singleton {:db/unique :db.unique/identity}
+   :ui/component {:db/unique :db.unique/identity}})
+
 (defn schema-datomic->datascript [datomic-schema]
   (-> (reduce (fn [datascript-s {:keys [db/ident db/valueType] :as datomic-s}]
             (assoc datascript-s ident
