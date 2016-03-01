@@ -14,7 +14,7 @@
      {:proxy/all-transactions (om/get-query AllTransactions)}])
   Object
   (initLocalState [_]
-    {:content :dashboard})
+    {:content :transactions})
   (componentWillUnmount [this]
     (om/transact! this `[(ui.component.budget/clear)
                          :query/all-transactions]))

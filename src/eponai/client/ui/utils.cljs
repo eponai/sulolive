@@ -2,6 +2,7 @@
   (:require [eponai.client.ui :refer-macros [opts]]
             [eponai.client.ui.datepicker :refer [->Datepicker]]
             [sablono.core :refer-macros [html]]
+            [om.next :as om]
             [taoensso.timbre :refer-macros [debug]]))
 
 ;;;;;;; UI component helpers
@@ -63,21 +64,21 @@
          :on-click #(on-delete)}
         "x"])]))
 
-(defn- on-key-down [e f]
+(defn- on-enter-down [e f]
   (when (and (= 13 (.-keyCode e))
              (seq (.. e -target -value)))
     (.preventDefault e)
     (f {:tag/name (.. e -target -value)})))
 
-(defn tag-input [{:keys [tag on-change on-add-tag]}]
+(defn tag-input [{:keys [tag on-change on-add-tag placeholder]}]
   (html
     [:div.has-feedback
      [:input.form-control
       {:type        "text"
        :value       (:tag/name tag)
        :on-change   #(on-change {:tag/name (.-value (.-target %))})
-       :on-key-down #(on-key-down % on-add-tag)
-       :placeholder "Filter tags..."}]
+       :on-key-down #(on-enter-down % on-add-tag)
+       :placeholder (or placeholder "Filter tags...")}]
      [:span
       {:class "glyphicon glyphicon-tag form-control-feedback"}]]))
 
@@ -86,5 +87,14 @@
    (->Datepicker
      (opts {:key         [placeholder]
             :placeholder placeholder
-            :value       value                              ;(get-in (om/get-state component) [:input-filter key])
+            :value       value
             :on-change   on-change}))])
+
+(defn on-change-in [c ks]
+  {:pre [(om/component? c) (vector? ks)]}
+  (fn [e]
+    (om/update-state! c assoc-in ks (.-value (.-target e)))))
+
+(defn on-change [c k]
+  {:pre [(keyword? k)]}
+  (on-change-in c [k]))

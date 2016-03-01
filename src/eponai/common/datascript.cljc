@@ -5,7 +5,8 @@
   "Additional schema we may use for our ui components"
   []
   {:ui/singleton {:db/unique :db.unique/identity}
-   :ui/component {:db/unique :db.unique/identity}})
+   :ui/component {:db/unique :db.unique/identity}
+   :ui.component.transactions/selected-transaction {:db/valueType :db.type/ref}})
 
 (defn schema-datomic->datascript [datomic-schema]
   (-> (reduce (fn [datascript-s {:keys [db/ident db/valueType] :as datomic-s}]

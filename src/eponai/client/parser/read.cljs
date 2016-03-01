@@ -1,7 +1,8 @@
 (ns eponai.client.parser.read
   (:require [datascript.core :as d]
             [eponai.common.database.pull :as p]
-            [eponai.common.parser.read :as r :refer [read]]))
+            [eponai.common.parser.read :as r :refer [read]]
+            [taoensso.timbre :refer-macros [debug]]))
 
 ;; -------- Readers for UI components
 
@@ -22,10 +23,26 @@
   {:value (p/pull db query [:ui/singleton :ui.singleton/budget])})
 
 ;TODO figure this shit out
+
+(defn read-entity-by-key
+  "Gets an entity by it's ref id. Returns the full component unless a pull pattern is supplied.
+
+  Examples:
+  om/IQuery
+  (query [{[:ui/component :ui.component/transactions] [:db/id]}])
+  om/IQuery
+  (query [[:ui/singleton :ui.singleton/budget]]"
+  [{:keys [db ast query]} _ _]
+  (let [e (d/entity db (:key ast))]
+    {:value (cond
+              (nil? e) e
+              query (p/pull db query (:db/id e))
+              :else (d/touch e))}))
+
 (defmethod read :ui/component
-  [{:keys [db ast]} _ _]
-  {:value (d/entity db (:key ast))})
+  [& args]
+  (apply read-entity-by-key args))
 
 (defmethod read :ui/singleton
-  [{:keys [db ast]} _ _]
-  {:value (d/entity db (:key ast))})
+  [& args]
+  (apply read-entity-by-key args))

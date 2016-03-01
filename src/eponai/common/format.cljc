@@ -61,6 +61,10 @@
   [date]
   (c/to-long (ensure-date date)))
 
+(defn ymd-string->js-date [ymd]
+  {:pre [(string? ymd)]}
+  (c/to-date (f/parse ymd)))
+
 (defn ymd-string->date [ymd]
   {:pre [(string? ymd)]}
   (f/parse ymd))

@@ -3,7 +3,7 @@
     #?(:clj
             [datomic.api :as d]
        :cljs [datascript.core :as d])
-            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [trace debug]]))
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [trace debug error]]))
 
 (defn transact
   "Transact a collecion of entites into datomic.
@@ -16,6 +16,7 @@
     (catch #?(:clj Exception :cljs :default) e
       (let [#?@(:clj  [msg (.getMessage e)]
                 :cljs [msg (.-message e)])]
+        (error "Transaction error: " e)
         (throw (ex-info msg
                         {:cause     ::transaction-error
                          :data      {:conn conn

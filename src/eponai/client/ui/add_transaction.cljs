@@ -10,10 +10,6 @@
             [garden.core :refer [css]]
             [datascript.core :as d]))
 
-(defn input-on-change [input-component k]
-  (fn [e]
-    (om/update-state! input-component assoc k (.-value (.-target e)))))
-
 (defn delete-tag-fn [component name]
   (fn []
     (om/update-state! component update :input/tags
@@ -92,7 +88,7 @@
           [:label.form-control-static
            "Sheet:"]
           [:select.form-control
-           {:on-change     (input-on-change this :input/budget)
+           {:on-change     (utils/on-change this :input/budget)
             :type          "text"
             :default-value budget}
            (map-all all-budgets
@@ -117,10 +113,10 @@
                    :value       amount
                    :style       {:width        "60%"
                                  :margin-right "0.5em"}
-                   :on-change   (input-on-change this :input/amount)})]
+                   :on-change   (utils/on-change this :input/amount)})]
 
            [:select.form-control
-            (opts {:on-change     (input-on-change this :input/currency)
+            (opts {:on-change     (utils/on-change this :input/currency)
                    :default-value currency
                    :style         {:width "40%"}})
             (map-all all-currencies
@@ -134,7 +130,7 @@
            "Title:"]
 
           [:input.form-control
-           {:on-change (input-on-change this :input/title)
+           {:on-change (utils/on-change this :input/title)
             :type      "text"
             :value     title}]
 
@@ -161,7 +157,7 @@
                           :flex-direction  "column"
                           :justify-content "flex-start"}})
            [:input.form-control
-            (opts {:on-change   (input-on-change this :input/tag)
+            (opts {:on-change   (utils/on-change this :input/tag)
                    :type        "text"
                    :value       tag
                    :on-key-down (on-add-tag-key-down this tag)})]

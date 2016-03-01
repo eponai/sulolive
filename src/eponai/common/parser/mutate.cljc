@@ -38,6 +38,11 @@
   {:action (transaction-create env k params)
    #?@(:cljs [:remote true])})
 
+(defmethod mutate 'transaction/edit
+  [env k p]
+  (debug "EDIT TRASNACTIONSADA :D :D: :D: D:D:D:D:D::D D:D: D:")
+  (throw (ex-info "IMPLEMENT THIZ!!" {:action k :params p})))
+
 (defmethod mutate 'budget/create
   [{:keys [state auth]} _ {:keys [input-uuid input-budget-name]}]
   (debug "budget/create for uuid:" input-uuid)
