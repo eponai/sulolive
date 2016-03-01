@@ -115,7 +115,7 @@
   (apply query-all-transactions args))
 
 (defmethod read :query/dashboard
-  [{:keys [db ast query target auth parser] :as env} _ {:keys [budget-uuid]}]
+  [{:keys [db ast query target auth] :as env} _ {:keys [budget-uuid]}]
   (let [#?@(:cljs [budget-uuid (-> (d/entity db [:ui/component :ui.component/budget])
                                    :ui.component.budget/uuid)])]
     (if (= target :remote)
@@ -135,18 +135,7 @@
                            :db/id))]
         {:value (when eid
                   (let [dashboard (p/pull db query (p/one-with db {:where [['?e :dashboard/budget eid]]}))]
-                    (update dashboard :widget/_dashboard
-                            (fn [widgets]
-                              (map (fn [widget]
-                                     (let [{:keys [query/all-transactions]}
-                                           (parser env [`({:query/all-transactions [:transaction/amount
-                                                                                    :transaction/conversion
-                                                                                    {:transaction/tags [:tag/name]}
-                                                                                    {:transaction/date [:date/timestamp]}]}
-                                                           {:filter (:widget/filter ~widget)})])
-                                           report-data (report/create (:widget/report widget) all-transactions)]
-                                       (assoc widget :widget/data report-data)))
-                                   widgets)))))}))))
+                    (update dashboard :widget/_dashboard #(report/create env %))))}))))
 
 (defmethod read :query/all-dashboards
   [{:keys [db query auth]} _ _]

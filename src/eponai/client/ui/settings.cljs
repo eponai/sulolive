@@ -17,6 +17,11 @@
       (om/update-state! this assoc :input-currency (-> current-user
                                                        :user/currency
                                                        :currency/code))))
+  (componentWillMount [this]
+    (let [{:keys [query/current-user]} (om/props this)]
+      (om/update-state! this assoc :input-currency (-> current-user
+                                                       :user/currency
+                                                       :currency/code))))
   (render [this]
     (let [{:keys [query/current-user]} (om/props this)
           {user-name :user/name
@@ -28,8 +33,6 @@
          (opts {:style {:display        "flex"
                         :flex-direction "column"
                         :align-items    "center"}})
-         (prn "Currenct user: " current-user)
-
 
          [:div#general
           [:h3
@@ -62,7 +65,9 @@
            [:option {:value "USD"}]]
           [:button.btn.btn-info.btn-md
            {:on-click #(om/transact! this `[(settings/save ~{:currency input-currency
-                                                             :user current-user})])}
+                                                             :user current-user})
+                                            :query/dashboard
+                                            :query/all-transactions])}
            "Save settings"]]]))))
 
 (def ->Settings (om/factory Settings))

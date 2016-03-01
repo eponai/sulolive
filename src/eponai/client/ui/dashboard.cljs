@@ -30,11 +30,11 @@
 (defui Dashboard
   static om/IQuery
   (query [_]
-    [
-     {:query/dashboard [:dashboard/uuid
+    [{:query/dashboard [:dashboard/uuid
                         {:widget/_dashboard (om/get-query Widget)}
                         {:dashboard/budget [:budget/uuid
-                                            :budget/name]}]}])
+                                            :budget/name]}]}
+     {:proxy/new-widget (om/get-query NewWidget)}])
   Object
   (initLocalState [_]
     {:edit? true})
@@ -63,7 +63,8 @@
                          :query/dashboard]))
 
   (render [this]
-    (let [{:keys [query/dashboard]} (om/props this)
+    (let [{:keys [query/dashboard
+                  proxy/new-widget]} (om/props this)
           {:keys [layout
                   edit?
                   grid-element
@@ -81,11 +82,12 @@
           [:i.fa.fa-bar-chart]]
 
          (when add-widget?
-           (utils/modal {:content  (->NewWidget (om/computed dashboard
+           (utils/modal {:content  (->NewWidget (om/computed new-widget
                                                              {:on-close #(om/update-state! this assoc :add-widget? false)
                                                               :on-save  #(do
                                                                           (save-widget this %)
-                                                                          (om/update-state! this assoc :add-widget? false))}))
+                                                                          (om/update-state! this assoc :add-widget? false))
+                                                              :dashboard dashboard}))
                          :on-close #(om/update-state! this assoc :add-widget? false)
                          :class    "modal-lg"}))
          [:div (str "Edit: " edit?)]
@@ -127,10 +129,7 @@
                                                  #js {:key (str (:widget/uuid widget-props))}
                                                  (->Widget
                                                    (om/computed widget-props
-                                                                {:data      (-> dashboard
-                                                                                :dashboard/budget
-                                                                                :transaction/_budget)
-                                                                 :on-delete (when edit? #(.delete-widget this %))
+                                                                {:on-delete (when edit? #(.delete-widget this %))
                                                                  :on-edit   (when edit? #(om/update-state! this assoc :edit-widget %))}))))
                                widgets))))]))))
 

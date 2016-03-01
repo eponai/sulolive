@@ -5,7 +5,8 @@
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
             [eponai.common.format :as f]
-            [eponai.client.ui.utils :as utils]))
+            [eponai.client.ui.utils :as utils]
+            [eponai.common.report :as report]))
 
 ;;; ####################### Actions ##########################
 
@@ -119,12 +120,23 @@
          (= style :graph.style/number)
          [:div
           (chart-function component input-function)
-          (chart-function component input-filter)])])))
+          (chart-filter component input-filter)])])))
 
 
 ;;;;;;;; ########################## Om Next components ########################
 
 (defui NewWidget
+  static om/IQueryParams
+  (params [_]
+    {:input-filter nil})
+  static om/IQuery
+  (query [_]
+    ['{(:query/all-transactions {:filter ?input-filter}) [:transaction/uuid
+                                                          :transaction/amount
+                                                          :transaction/conversion
+                                                          {:transaction/tags [:tag/name]}
+                                                          {:transaction/date [:date/ymd
+                                                                              :date/timestamp]}]}])
   Object
   (initLocalState [_]
     {:input-graph          {:graph/style :graph.style/bar}
@@ -141,11 +153,11 @@
                                       :input-function (first (:report/functions (:widget/report widget))))
                                (assoc-in [:input-widget :widget/uuid] (:widget/uuid widget)))))))
   (render [this]
-    (let [dashboard (om/props this)
+    (let [{:keys [query/all-transactions]} (om/props this)
           {:keys [input-graph input-report] :as state} (om/get-state this)
           {:keys [on-close
-                  on-save]} (om/get-computed this)]
-
+                  on-save
+                  dashboard]} (om/get-computed this)]
       (html
         [:div
          [:div.modal-header
@@ -184,8 +196,9 @@
             [:div
              (opts {:style {:height 300}})
              (->Widget (om/computed {:widget/graph  input-graph
-                                     :widget/report input-report}
-                                    {:data (:transaction/_budget (:dashboard/budget dashboard))}))]]]]
+                                     :widget/report input-report
+                                     :widget/data   (report/generate-data input-report all-transactions)}
+                                    {:data all-transactions}))]]]]
 
          [:div.modal-footer
           (opts {:style {:display        "flex"

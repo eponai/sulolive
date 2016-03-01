@@ -3,6 +3,7 @@
   (:require [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
             [cljs.core.async :as c :refer [chan]]
             [garden.core :refer [css]]
+            [goog.string :as gstring]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
             [cljsjs.d3]
@@ -33,7 +34,7 @@
           [end-val] (:values data)]
       (let [text-element (.. svg
                              (selectAll ".txt")
-                             (data #js [end-val]))]
+                             (data #js [(gstring/format "%.2f" end-val)]))]
         (.. text-element
             enter
             (append "text")
@@ -44,17 +45,19 @@
             (attr "text-anchor" "middle"))
 
         (.. text-element
-            (text start-val)
+            (text (gstring/format "%.2f" start-val))
             transition
             (duration 500)
-            (tween "text" (fn []
+            (tween "text" (fn [d]
                             (this-as jthis
                               (let [i (.. js/d3
-                                          (interpolateRound start-val end-val))]
+                                          (interpolate (.-textContent jthis) (cljs.reader/read-string d)))
+                                    prec (.split d ".")
+                                    round (if (> (.-length prec) 1)
+                                            (.pow js/Math 10 (.-length (get prec 1)))
+                                            1)]
                                 (fn [t]
-
-                                  (set! (.-textContent jthis) (i t)))))))))))
-
+                                  (set! (.-textContent jthis) (gstring/format "%.2f" (/ (.round js/Math (* (i t) round)) round))))))))))))
   (render [this]
     (let [{:keys [id]} (om/props this)]
       (html

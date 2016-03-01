@@ -1,4 +1,5 @@
-(ns eponai.common.report)
+(ns eponai.common.report
+  (:require [eponai.common.database.pull :as p]))
 
 (defn converted-amount [tx]
   #?(:clj  (with-precision 2 (/ (:transaction/amount tx)
@@ -11,10 +12,7 @@
 (defmethod sum :default
   [_ transactions _]
   (let [sum-fn (fn [s tx]
-                 (let [add-number (if (number? (get tx :transaction/amount))
-                                    (get tx :transaction/amount)
-                                    1)]
-                   (+ s add-number)))]
+                 (+ s (converted-amount tx)))]
     {:key    "All Transactions"
      :values [(reduce sum-fn 0 transactions)]}))
 
@@ -60,11 +58,26 @@
 (defmulti calculation (fn [_ function-id _] function-id))
 
 (defmethod calculation :report.function.id/sum
-  [{:keys [report/group-by report/functions]} _ transactions]
-  (let [attribute (:report.function/attribute (first functions))]
-    (sum group-by transactions :transaction/amount)))
+  [{:keys [report/group-by]} _ transactions]
+  (sum group-by transactions :transaction/amount))
 
-(defn create [report transactions]
+(defn generate-data [report transactions]
   (let [functions (:report/functions report)
         k (:report.function/id (first functions))]
     (calculation report (or k :report.function.id/sum) transactions)))
+
+(defn transaction-query []
+  [:transaction/uuid
+   :transaction/amount
+   :transaction/conversion
+   {:transaction/tags [:tag/name]}
+   {:transaction/date [:date/ymd
+                       :date/timestamp]}])
+
+(defn create [{:keys [parser] :as env} widgets]
+  (map (fn [widget]
+         (let [{:keys [query/all-transactions]} (parser env [`({:query/all-transactions ~(transaction-query)}
+                                                                {:filter (:widget/filter ~widget)})])
+               report-data (generate-data (:widget/report widget) all-transactions)]
+           (assoc widget :widget/data report-data)))
+       widgets))
