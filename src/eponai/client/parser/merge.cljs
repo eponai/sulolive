@@ -4,10 +4,10 @@
             [eponai.client.homeless :as homeless]
             [taoensso.timbre :refer-macros [info debug error trace warn]]))
 
-(defn transact [conn tx]
+(defn transact [db tx]
   (let [tx (if (sequential? tx) tx [tx])]
     (debug "transacting: " tx)
-    (d/transact! conn tx)))
+    (d/db-with db tx)))
 
 (defn- error-popup-window! [k value]
   ;; when there's an error and it's of text/html content type,
@@ -18,16 +18,15 @@
     (when (and body (homeless/content-type? headers))
       (homeless/popup-window-with-body body))))
 
-(defn merge-error [env key val]
+(defn merge-error [db key val]
   (error-popup-window! key val)
   ;; TODO: Alert the user some how?
   (error "error on key:" key "error:" val ". Doing nothing with it."))
 
 (defn sync-optimistic-tx
-  [env k {:keys [result]}]
+  [db k {:keys [result]}]
   (when-let [mutation-uuid (:mutation-uuid result)]
-    (let [db (d/db (:state env))
-          tx-time (d/q '{:find  [?tx .]
+    (let [tx-time (d/q '{:find  [?tx .]
                          :in    [$ ?uuid]
                          :where [[?e :tx/mutation-uuid ?uuid ?tx]
                                  [?e :tx/reverted ?reverted]
@@ -44,7 +43,7 @@
 
           optimistic-tx-inverse
           (when tx-time
-            (->> (db/-search (d/db (:state env)) [nil nil nil tx-time])
+            (->> (db/-search db [nil nil nil tx-time])
                  (map #(update % :added not))
                  (map (fn [[e a v _ added]] [(if added :db/add :db/retract) e a v]))
                  (cons {:tx/mutation-uuid mutation-uuid :tx/reverted true})))
@@ -59,45 +58,53 @@
                 (:datoms result))
 
           tx (concat optimistic-tx-inverse real-tx)]
-      (when tx
-        (debug "Syncing optimistic transaction: " k " with transactions:" tx)
-        (d/transact! (:state env) tx)))))
+      (debug "Syncing optimistic transaction: " k " with transactions:" tx)
+      (if tx
+        (d/db-with db tx)
+        db))))
 
-(defn merge-schema [{:keys [state]} _ datascript-schema]
-  (let [current-schema (:schema @state)
-        current-entities (d/q '[:find [(pull ?e [*]) ...] :where [?e]] (d/db state))
+(defn merge-schema [db _ datascript-schema]
+  (let [current-schema (:schema db)
+        current-entities (d/q '[:find [(pull ?e [*]) ...] :where [?e]] db)
         new-schema (merge-with merge current-schema datascript-schema)
         new-conn (d/create-conn new-schema)]
     (d/transact new-conn current-entities)
-    (d/reset-conn! state @new-conn)))
+    (d/db new-conn)))
 
 ;;;;;;; API
 
-(defn merge-mutation! [env key val]
+(defn merge-mutation [db key val]
+  {:pre [(db/db? db)]
+   :post [(db/db? %)]}
   (cond
     (some? (-> val :result :mutation-uuid))
-    (sync-optimistic-tx env key val)
+    (sync-optimistic-tx db key val)
 
     (some? (-> val :om.next/error))
-    (merge-error env key val)
+    (merge-error db key val)
 
     :else
     (when-let [res (:result val)]
       (when (seq res)
-        (transact (:state env) res)))))
+        (transact db res)))))
 
-(defn merge-read! [env key val]
+;; TODO: Fix comments in this namespace.
+(defn merge-read [db key val]
+  {:pre [(db/db? db)]
+   :post [(db/db? %)]}
+
   (cond
     (or (= key :om.next/error)
         (some? (:om.next/error val)))
-    (merge-error env key val)
+    (merge-error db key val)
 
     (= "proxy" (namespace key))
-    (doseq [[k v] val]
-      (merge-read! env k v))
+    (reduce-kv (fn [db k v] (merge-read db k v))
+               db
+               val)
 
     (= :datascript/schema key)
-    (merge-schema env key val)
+    (merge-schema db key val)
 
     :else
-    (transact (:state env) val)))
+    (transact db val)))

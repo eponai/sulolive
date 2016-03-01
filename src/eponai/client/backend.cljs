@@ -2,24 +2,33 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :refer [<! >! chan]]
             [datascript.core :as d]
+            [datascript.db :as db]
             [eponai.common.parser.util :as parser.util]
             [eponai.client.homeless :as homeless]
             [eponai.client.parser.merge :as merge]
             [cljs-http.client :as http]
             [taoensso.timbre :refer-macros [debug error trace]]))
 
-(defn merge-novelty-by-key!
-  "Merges server response for each [k v] in novelty with environment {:state conn}."
-  [env novelty]
+(defn merge-novelty-by-key
+  ;; TODO: Add comment when this has stabilized.
+  "Merges server response for each [k v] in novelty. Returns the next db and the keys to re-read."
+  [db novelty]
+  {:pre [(db/db? db)]
+   :post [(:keys %) (db/db? (:next %))]}
   ;; Merge :datascript/schema first if it exists
   (let [keys-to-merge-first [:datascript/schema]
         ordered-novelty (concat (select-keys novelty keys-to-merge-first)
                                 (apply dissoc novelty keys-to-merge-first))]
-    (doseq [[key value] ordered-novelty]
-      (debug "Merging response for key:" key "value:" value)
-      (if (symbol? key)
-        (merge/merge-mutation! env key value)
-        (merge/merge-read! env key value)))))
+    (reduce
+      (fn [{:keys [next] :as m} [key value]]
+        (debug "Merging response for key:" key "value:" value)
+        (if (symbol? key)
+          (assoc m :next (merge/merge-mutation next key value))
+          (-> m
+              (assoc :next (merge/merge-read next key value))
+              (update :keys conj key))))
+      {:keys [] :next db}
+      ordered-novelty)))
 
 (defn- post [url opts]
   (let [transit-opts {:transit-opts
@@ -32,11 +41,10 @@
   [conn]
   (fn [_ _ novelty]
     (debug "Merge! transacting novelty:" novelty)
-    (let [_ (merge-novelty-by-key! {:state conn} novelty)
+    (let [merged-novelty (merge-novelty-by-key (d/db conn) novelty)
           ks (keys novelty)]
       (debug "Merge! returning keys:" ks)
-      {:keys ks
-       :next  (d/db conn)})))
+      merged-novelty)))
 
 (defn send!
   [path]
