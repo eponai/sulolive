@@ -202,15 +202,16 @@
                      " will re-throw."))]
       (try
         (let [ret (mutate env k p)]
-          (assert (contains? ret :action) (str "Mutation " k " had no :action."))
-          (update ret :action (fn [action]
-                                (fn []
-                                  (try
-                                   (action)
-                                   (catch #?@(:clj  [Throwable e]
-                                              :cljs [:default e])
-                                          (log-error e ":action")
-                                     (throw e)))))))
+          (cond-> ret
+                  (fn? (:action ret))
+                  (update ret :action (fn [action]
+                                        (fn []
+                                          (try
+                                            (action)
+                                            (catch #?@(:clj  [Throwable e]
+                                                       :cljs [:default e])
+                                                   (log-error e ":action")
+                                              (throw e))))))))
         (catch #?@(:clj  [Throwable e]
                    :cljs [:default e])
                (log-error e "body")

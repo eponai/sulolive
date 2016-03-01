@@ -1,7 +1,8 @@
 (ns eponai.client.ui.settings
   (:require [eponai.client.ui :refer [map-all] :refer-macros [opts]]
             [om.next :as om :refer-macros [defui]]
-            [sablono.core :refer-macros [html]]))
+            [sablono.core :refer-macros [html]]
+            [datascript.core :as d]))
 
 (defui Settings
   static om/IQuery
@@ -65,7 +66,8 @@
            [:option {:value "USD"}]]
           [:button.btn.btn-info.btn-md
            {:on-click #(om/transact! this `[(settings/save ~{:currency input-currency
-                                                             :user current-user})
+                                                             :user current-user
+                                                             :mutation-uuid (d/squuid)})
                                             :query/dashboard
                                             :query/all-transactions])}
            "Save settings"]]]))))

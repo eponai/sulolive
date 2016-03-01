@@ -21,31 +21,36 @@
     :transaction/amount     180
     :transaction/currency   "THB"
     :transaction/created-at 1
-    :transaction/tags       ["thailand"]}
+    :transaction/tags       ["thailand"]
+    :transaction/type       :transaction.type/expense}
    {:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "coffee"
     :transaction/date       "2015-10-10"
     :transaction/amount     140
     :transaction/currency   "THB"
-    :transaction/created-at 1}
+    :transaction/created-at 1
+    :transaction/type       :transaction.type/expense}
    {:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "dinner"
     :transaction/date       "2015-10-10"
     :transaction/amount     350
     :transaction/currency   "THB"
-    :transaction/created-at 1}
+    :transaction/created-at 1
+    :transaction/type       :transaction.type/expense}
    {:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "market"
     :transaction/date       "2015-10-11"
     :transaction/amount     789
     :transaction/currency   "THB"
-    :transaction/created-at 1}
+    :transaction/created-at 1
+    :transaction/type       :transaction.type/expense}
    {:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "lunch"
     :transaction/date       "2015-10-11"
     :transaction/amount     125
     :transaction/currency   "THB"
-    :transaction/created-at 1}])
+    :transaction/created-at 1
+    :transaction/type       :transaction.type/expense}])
 
 (def test-user-email "test-user@email.com")
 
@@ -77,8 +82,9 @@
                                            :user/status :user.status/active})
         budget (format/budget (:db/id user) {:budget/uuid budget-uuid})
         dashboard (format/dashboard (:db/id budget))
-        ret (transact/transact-map conn (assoc account :budget budget
-                                                       :dashboard dashboard))]
+        ret (transact/transact-map conn (-> account
+                                            (assoc :budget budget :dashboard dashboard)
+                                            (update :user assoc :user/currency [:currency/code "USD"])))]
     (debug "New user created with email:" email)
     ret))
 
@@ -94,8 +100,9 @@
 (defn add-conversion-rates [conn]
   (transact/transact conn
                      (f/currency-rates {:date  "2015-10-10"
-                                           :rates {:THB 36
-                                                   :SEK 8.4}})))
+                                        :rates {:THB 36
+                                                :SEK 8.4
+                                                :USD 1}})))
 
 (defn add-data-to-connection [conn]
   (let [schema (read-schema-files)

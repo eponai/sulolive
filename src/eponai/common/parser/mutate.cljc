@@ -91,9 +91,8 @@
      #?@(:cljs [:remote true])}))
 
 (defmethod mutate 'settings/save
-  [{:keys [state]} _ {:keys [currency user] :as params}]
+  [{:keys [state mutation-uuid]} _ {:keys [currency user] :as params}]
   (debug "settings/save with params: " params)
   {:action (fn []
-             (transact/transact-one state [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]])
-             true)
+             (transact/mutate-one state mutation-uuid [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]]))
    #?@(:cljs [:remote true])})
