@@ -2,9 +2,7 @@
   (:require [clj-time.core :as t]
             [clj-time.coerce :as c]
             [datomic.api :only [db a] :as d]
-            [eponai.common.format :as cf]
-            [eponai.server.datomic.pull :as p]
-            [eponai.common.database.pull :as p]))
+            [eponai.common.format :as cf]))
 
 ;;; -------------------- Format to entities ----------------
 
@@ -139,4 +137,3 @@
 
       fb-user
       (assoc :fb-user fb-user))))
-\
