@@ -53,6 +53,12 @@
               :widget/height new-height}))
          layout)))
 
+(defn calculate-last-index [widgets]
+  (let [{:keys [widget/index
+                widget/height
+                widget/width]} (last (sort-by :widget/index widgets))]
+    (max 0 (+ index (* 3 (dec height)) (.round js/Math (/ (* width 3) 100))))))
+
 (defn recalculate-layout [component widgets & args]
   (let [[layout] args
         new-widgets (re-layout-widgets widgets (js->clj layout))]
@@ -118,8 +124,7 @@
                                                                           (save-widget this %)
                                                                           (om/update-state! this assoc :add-widget? false))
                                                               :dashboard dashboard
-                                                              :index (count (-> dashboard
-                                                                                (:widget/_dashboard)))}))
+                                                              :index (calculate-last-index widgets)}))
                          :on-close #(om/update-state! this assoc :add-widget? false)
                          :class    "modal-lg"}))
          [:div (str "Edit: " edit?)]

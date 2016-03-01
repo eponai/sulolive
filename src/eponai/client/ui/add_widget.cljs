@@ -138,10 +138,14 @@
                                                           {:transaction/date [:date/ymd
                                                                               :date/timestamp]}]}])
   Object
-  (initLocalState [_]
-    {:input-graph          {:graph/style :graph.style/bar}
-     :input-function       {:report.function/id :report.function.id/sum}
-     :input-report         {:report/group-by :transaction/tags}})
+  (initLocalState [this]
+    (let [{:keys [index]} (om/get-computed this)]
+      {:input-graph    {:graph/style :graph.style/bar}
+       :input-function {:report.function/id :report.function.id/sum}
+       :input-report   {:report/group-by :transaction/tags}
+       :input-widget   {:widget/index  index
+                        :widget/width  33
+                        :widget/height 1}}))
 
   (componentWillMount [this]
     (let [{:keys [widget]} (om/get-computed this)]
@@ -157,8 +161,7 @@
           {:keys [input-graph input-report] :as state} (om/get-state this)
           {:keys [on-close
                   on-save
-                  dashboard
-                  index]} (om/get-computed this)]
+                  dashboard]} (om/get-computed this)]
       (html
         [:div
          [:div.modal-header
@@ -215,9 +218,6 @@
                   :on-click #(on-save (cond-> state
                                               true
                                               (assoc :input-dashboard {:dashboard/uuid (:dashboard/uuid dashboard)})
-
-                                              true
-                                              (assoc-in [:input-widget :widget/index] index)
 
                                               (not (:widget/uuid (:input-widget state)))
                                               (assoc-in [:input-widget :widget/uuid] (d/squuid))
