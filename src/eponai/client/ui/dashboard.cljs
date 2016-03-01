@@ -6,7 +6,7 @@
             [garden.core :refer [css]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
-            [taoensso.timbre :refer-macros [error]]
+            [taoensso.timbre :refer-macros [error debug]]
             [eponai.client.ui.utils :as utils]
             [datascript.core :as d]))
 
@@ -14,14 +14,49 @@
   (om/transact! component `[(widget/save ~(assoc widget :mutation-uuid (d/squuid)))
                             :query/dashboard]))
 
+(defn save-dashboard [component widgets]
+  (om/transact! component `[(dashboard/save ~{:widget-layout widgets
+                                              :mutation-uuid (d/squuid)})
+                            :query/dashboard]))
+
+(defn toggle-edit [component]
+  (let [{:keys [edit?
+                widget-layout]} (om/get-state component)]
+    (when edit?
+      (save-dashboard component widget-layout))
+    (om/update-state! component update :edit? not)))
+
 (defn generate-layout [widgets]
-  (map (fn [widget i]
-         {:x (mod i 4)
-          :y (int (/ i 4))
-          :w 1
-          :h 1
+  (map (fn [{:keys [widget/index] :as widget}]
+         {:x (mod index 3)
+          :y (int (/ index 3))
+          :w (.round js/Math (/ (* (:widget/width widget) 3) 100))
+          :h (:widget/height widget)
           :i (str (:widget/uuid widget))})
-       widgets (range)))
+       widgets))
+
+(defn update-grid-layout [component]
+  (let [WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
+        grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))]
+    (om/update-state! component assoc :grid-element grid-element)))
+
+(defn re-layout-widgets [widgets layout]
+  (let [grouped (group-by :widget/uuid widgets)]
+    (map (fn [item]
+           (let [widget (first (get grouped (uuid (get item "i"))))
+                 new-width (int (* 100 (/ (get item "w") 3)))
+                 new-height (get item "h")
+                 new-index (+ (* (get item "y") 3) (get item "x"))]
+             {:widget/uuid (:widget/uuid widget)
+              :widget/index  new-index
+              :widget/width  new-width
+              :widget/height new-height}))
+         layout)))
+
+(defn recalculate-layout [component widgets & args]
+  (let [[layout] args
+        new-widgets (re-layout-widgets widgets (js->clj layout))]
+    (om/update-state! component assoc :widget-layout new-widgets)))
 
 (defn build-react [component props & children]
   (let [React (.-React js/window)]
@@ -39,11 +74,6 @@
   (initLocalState [_]
     {:edit? true})
 
-  (update-grid-layout [this]
-    (let [WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
-          grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))]
-      (om/update-state! this assoc :grid-element grid-element)))
-
   (componentWillReceiveProps [this new-props]
     (let [widgets (:widget/_dashboard (:query/dashboard new-props))]
       (om/update-state! this assoc :layout (clj->js (generate-layout widgets)))))
@@ -51,15 +81,15 @@
   (componentDidMount [this]
     (let [widgets (:widget/_dashboard (:query/dashboard (om/props this)))
           sidebar (.getElementById js/document "sidebar-wrapper")]
-      (.addEventListener sidebar "transitionend" #(.update-grid-layout this))
-      (.update-grid-layout this)
+      (.addEventListener sidebar "transitionend" #(update-grid-layout this))
+      (update-grid-layout this)
       (om/update-state! this
                         assoc
                         :layout (clj->js (generate-layout widgets))
                         :content :dashboard)))
 
   (delete-widget [this widget]
-    (om/transact! this `[(widget/delete ~(select-keys widget [:widget/uuid]))
+    (om/transact! this `[(widget/delete ~(assoc (select-keys widget [:widget/uuid]) :mutation-uuid (d/squuid)))
                          :query/dashboard]))
 
   (render [this]
@@ -75,7 +105,7 @@
       (html
         [:div
          [:button.btn.btn-default.btn-md
-          {:on-click #(om/update-state! this update :edit? not)}
+          {:on-click #(toggle-edit this)}
           [:i.fa.fa-pencil]]
          [:button.btn.btn-default.btn-md
           {:on-click #(om/update-state! this assoc :add-widget? true)}
@@ -87,7 +117,9 @@
                                                               :on-save  #(do
                                                                           (save-widget this %)
                                                                           (om/update-state! this assoc :add-widget? false))
-                                                              :dashboard dashboard}))
+                                                              :dashboard dashboard
+                                                              :index (count (-> dashboard
+                                                                                (:widget/_dashboard)))}))
                          :on-close #(om/update-state! this assoc :add-widget? false)
                          :class    "modal-lg"}))
          [:div (str "Edit: " edit?)]
@@ -120,8 +152,8 @@
                                 :useCSSTransforms true
                                 :isDraggable      edit?
                                 :isResizable      edit?
-                                :onResizeStop     #(.forceUpdate this)}
-
+                                :onDragStop       #(recalculate-layout this widgets %)
+                                :onResizeStop     #(recalculate-layout this widgets %)}
                            (clj->js
                              (map
                                (fn [widget-props]
@@ -132,6 +164,6 @@
                                                    (om/computed widget-props
                                                                 {:on-delete (when edit? #(.delete-widget this %))
                                                                  :on-edit   (when edit? #(om/update-state! this assoc :edit-widget %))}))))
-                               widgets))))]))))
+                               (sort-by :widget/index widgets)))))]))))
 
 (def ->Dashboard (om/factory Dashboard))

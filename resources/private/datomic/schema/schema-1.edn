@@ -25,6 +25,13 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
+  :db/ident              :dashboard/columns
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Number of columns on dashboard."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
   :db/ident              :dashboard/budget
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
@@ -38,6 +45,20 @@
   :db/cardinality        :db.cardinality/one
   :db/unique             :db.unique/identity
   :db/doc                "Index of this widget on its dashboard."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :widget/width
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Relative width of this widget on its dashboard (0 - 100)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :widget/height
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Height of widget in number of rows."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]

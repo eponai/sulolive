@@ -100,6 +100,11 @@
    :dashboard/uuid (or (:dashboard/uuid opts) (d/squuid))
    :dashboard/budget budget-ref})
 
+(defn widget-layout [widgets]
+  (map (fn [widget]
+         (assoc widget :db/id (d/tempid :db.part/user)))
+       widgets))
+
 (defn date
   "Create a date entity.
 

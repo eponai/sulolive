@@ -96,3 +96,10 @@
   {:action (fn []
              (transact/mutate-one state mutation-uuid [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]]))
    #?@(:cljs [:remote true])})
+
+(defmethod mutate 'dashboard/save
+  [{:keys [state mutation-uuid]} _ {:keys [widget-layout] :as params}]
+  (debug "dashboard/save with params: " params)
+  {:action (fn []
+             (transact/mutate state mutation-uuid (format/widget-layout widget-layout)))
+   #?@(:cljs [:remote true])})

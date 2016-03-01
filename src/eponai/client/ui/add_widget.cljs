@@ -157,7 +157,8 @@
           {:keys [input-graph input-report] :as state} (om/get-state this)
           {:keys [on-close
                   on-save
-                  dashboard]} (om/get-computed this)]
+                  dashboard
+                  index]} (om/get-computed this)]
       (html
         [:div
          [:div.modal-header
@@ -214,6 +215,9 @@
                   :on-click #(on-save (cond-> state
                                               true
                                               (assoc :input-dashboard {:dashboard/uuid (:dashboard/uuid dashboard)})
+
+                                              true
+                                              (assoc-in [:input-widget :widget/index] index)
 
                                               (not (:widget/uuid (:input-widget state)))
                                               (assoc-in [:input-widget :widget/uuid] (d/squuid))

@@ -213,6 +213,7 @@
                     {:report/functions [:report.function/uuid
                                         :report.function/attribute
                                         :report.function/id]}]}
+   :widget/index
    :widget/data
    {:widget/graph [:graph/style]}])
 
