@@ -233,6 +233,6 @@
          (let [widget (pull db (widget-report-query) [:widget/uuid uuid])
                {:keys [query/all-transactions]} (parser env [`({:query/all-transactions ~(transaction-query)}
                                                                 {:filter ~(:widget/filter widget)})])
-               report-data (report/generate-data (:widget/report widget) all-transactions)]
+               report-data (report/generate-data (:widget/report widget) (:widget/filter widget) all-transactions)]
            (assoc widget :widget/data report-data)))
        widgets))

@@ -236,7 +236,7 @@
              (opts {:style {:height 300}})
              (->Widget (om/computed {:widget/graph  input-graph
                                      :widget/report input-report
-                                     :widget/data   (report/generate-data input-report all-transactions)}
+                                     :widget/data   (report/generate-data input-report input-filter all-transactions)}
                                     {:data all-transactions}))]]]]
 
          [:div.modal-footer

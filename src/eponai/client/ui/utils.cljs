@@ -69,7 +69,6 @@
     (f {:tag/name (.. e -target -value)})))
 
 (defn tag-input [{:keys [tag on-change on-add-tag]}]
-  (debug "Tag: " tag)
   (html
     [:div.has-feedback
      [:input.form-control

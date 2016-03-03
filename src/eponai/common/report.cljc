@@ -1,4 +1,7 @@
-(ns eponai.common.report)
+(ns eponai.common.report
+  (:require
+    #?(:clj [taoensso.timbre :refer [debug]]
+       :cljs [taoensso.timbre :refer-macros [debug]])))
 
 (defn converted-amount [tx]
   #?(:clj  (with-precision 2 (/ (:transaction/amount tx)
@@ -9,14 +12,14 @@
 (defmulti sum (fn [k _ _] k))
 
 (defmethod sum :default
-  [_ transactions _]
+  [_ data-filter transactions]
   (let [sum-fn (fn [s tx]
                  (+ s (converted-amount tx)))]
     {:key    "All Transactions"
      :values [(reduce sum-fn 0 transactions)]}))
 
 (defmethod sum :transaction/date
-  [_ transactions _]
+  [_ data-filter transactions]
   (let [grouped (group-by :transaction/date transactions)
         sum-fn (fn [[day ts]]
                  (assoc day :date/sum (reduce (fn [s tx]
@@ -32,9 +35,13 @@
                       (sort-by :date/timestamp sum-by-day))}]))
 
 (defmethod sum :transaction/tags
-  [_ transactions attr]
+  [_ data-filter transactions]
   (let [sum-fn (fn [m transaction]
-                 (let [tags (:transaction/tags transaction)]
+                 (let [include-tag-names (map :tag/name (:filter/include-tags data-filter))
+                       tags (:transaction/tags transaction)
+                       filtered-tags (if (seq include-tag-names)
+                                       (filter #(contains? (set include-tag-names) (:tag/name %)) tags)
+                                       tags)]
                    (reduce (fn [m2 tagname]
                              (update m2 tagname
                                      (fn [me]
@@ -42,9 +49,9 @@
                                          (+ me (converted-amount transaction))
                                          (converted-amount transaction)))))
                            m
-                           (if (empty? tags)
+                           (if (empty? filtered-tags)
                              ["no tags"]
-                             (map :tag/name tags)))))
+                             (map :tag/name filtered-tags)))))
         sum-by-tag (reduce sum-fn {} transactions)]
 
     [{:key    "All Transactions"
@@ -54,13 +61,13 @@
                       sum-by-tag)}]))
 
 
-(defmulti calculation (fn [_ function-id _] function-id))
+(defmulti calculation (fn [_ function-id _ _] function-id))
 
 (defmethod calculation :report.function.id/sum
-  [{:keys [report/group-by]} _ transactions]
-  (sum group-by transactions :transaction/amount))
+  [{:keys [report/group-by]} _ data-filter transactions]
+  (sum group-by data-filter transactions))
 
-(defn generate-data [report transactions]
+(defn generate-data [report data-filter transactions]
   (let [functions (:report/functions report)
         k (:report.function/id (first functions))]
-    (calculation report (or k :report.function.id/sum) transactions)))
+    (calculation report (or k :report.function.id/sum) data-filter transactions)))
