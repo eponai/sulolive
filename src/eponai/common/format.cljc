@@ -159,6 +159,31 @@
     (assoc transaction
       :db/id (d/tempid :db.part/user))))
 
+#?(:cljs
+   (defn data-filter
+     [input & opts]
+     (let [filter-value-format (fn [k v]
+                              (cond (or (= k :filter/include-tags)
+                                        (= k :filter/exclude-tags))
+                                    (map #(assoc % :db/id (d/tempid :db.part/user)) v)
+
+                                    (or (= k :filter/start-date)
+                                        (= k :filter/end-date))
+                                    (date (date->ymd-string v))))
+           clean-filters (reduce
+                           (fn [m [k v]]
+                             (let [ent (filter-value-format k v)]
+                               (if (seq ent)
+                                 (assoc m k ent)
+                                 m)))
+                           {}
+                           input)]
+       (debug "Formatted filters: " clean-filters)
+       (debug "Formatted filters seq: " (seq clean-filters))
+       (if (seq clean-filters)
+         (assoc clean-filters :db/id (d/tempid :db.part/user))
+         nil))))
+
 (defn widget-map [{:keys [input-function input-report input-graph input-widget input-filter] :as input}]
   (let [function (assoc input-function :db/id (d/tempid :db.part/user))
 
@@ -167,10 +192,7 @@
 
         graph (assoc input-graph :db/id (d/tempid :db.part/user))
 
-        filter (when  (seq (:filter/include-tags input-filter))
-                 (-> input-filter
-                     (assoc :db/id (d/tempid :db.part/user))
-                     (assoc :filter/include-tags (map #(assoc % :db/id (d/tempid :db.part/user)) (:filter/include-tags input-filter)))))
+        filter (data-filter input-filter)
 
         _ (debug "Filer saving: " filter)
         widget (cond-> (merge input-widget
@@ -180,6 +202,7 @@
                                :widget/dashboard [:dashboard/uuid (:dashboard/uuid (:input-dashboard input))]})
                        filter
                        (assoc :widget/filter (:db/id filter)))]
+    (debug "Saving widget: " widget)
     
     (cond-> {:function function
              :report   report

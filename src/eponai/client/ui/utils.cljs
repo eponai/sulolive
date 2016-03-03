@@ -1,5 +1,6 @@
 (ns eponai.client.ui.utils
   (:require [eponai.client.ui :refer-macros [opts]]
+            [eponai.client.ui.datepicker :refer [->Datepicker]]
             [sablono.core :refer-macros [html]]
             [taoensso.timbre :refer-macros [debug]]))
 
@@ -79,3 +80,11 @@
        :placeholder "Filter tags..."}]
      [:span
       {:class "glyphicon glyphicon-tag form-control-feedback"}]]))
+
+(defn date-picker [{:keys [value placeholder on-change]}]
+  [:div#date-input
+   (->Datepicker
+     (opts {:key         [placeholder]
+            :placeholder placeholder
+            :value       value                              ;(get-in (om/get-state component) [:input-filter key])
+            :on-change   on-change}))])

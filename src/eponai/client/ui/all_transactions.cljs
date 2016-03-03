@@ -1,6 +1,5 @@
 (ns eponai.client.ui.all_transactions
   (:require [eponai.client.ui.format :as f]
-            [eponai.client.ui.datepicker :refer [->Datepicker]]
             [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
             [eponai.client.ui.utils :as utils]
             [garden.core :refer [css]]
@@ -65,15 +64,6 @@
             (utils/tag tag
                  {:on-delete #(delete-tag-fn component tag)})))]])))
 
-(defn date-picker [component placeholder key]
-  [:div
-   [:div#date-input
-    (->Datepicker
-      (opts {:key         [placeholder key]
-             :placeholder placeholder
-             :value       (get-in (om/get-state component) [:input-filter key])
-             :on-change   #(select-date component key %)}))]])
-
 ;; ################### Om next components ###################
 
 (defui AllTransactions
@@ -129,8 +119,12 @@
                          :flex-direction :row
                          :flex-wrap :wrap-reverse}})
           (tag-filter this (:filter/include-tags input-filter))
-          (date-picker this "From date..." :filter/start-date)
-          (date-picker this "To date..." :filter/end-date)]
+          (utils/date-picker {:value (:filter/start-date input-filter)
+                              :on-change #(select-date this :filter/start-date %)
+                              :placeholder "From date..."})
+          (utils/date-picker {:value (:filter/end-date input-filter)
+                              :on-change #(select-date this :filter/end-date %)
+                              :placeholder "To date..."})]
 
          [:table.table.table-striped.table-hover
           [:thead

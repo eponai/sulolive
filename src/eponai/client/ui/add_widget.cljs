@@ -6,7 +6,8 @@
             [sablono.core :refer-macros [html]]
             [eponai.client.ui.utils :as utils]
             [eponai.common.report :as report]
-            [taoensso.timbre :refer-macros [debug]]))
+            [taoensso.timbre :refer-macros [debug]]
+            [cljs-time.format :as f]))
 
 ;;; ####################### Actions ##########################
 
@@ -124,9 +125,31 @@
             (utils/tag tag
                        {:on-delete #(delete-tag-fn component tag)})))]])))
 
-(defn- chart-filters [component {:keys [filter/include-tags]}]
+(defn- select-date [component k date]
+  (let [{:keys [input-filter]} (om/get-state component)
+        _ (debug "Selected date: " (f/unparse-local (f/formatters :date) date))
+        new-filters (assoc input-filter k date)]
+
+    (om/update-state! component assoc
+                      :input-filter new-filters)
+    (update-filter component new-filters)))
+
+(defn- chart-filters [component {:keys [filter/include-tags
+                                        filter/start-date
+                                        filter/end-date]}]
   (html
-    (tag-filter component include-tags)))
+    [:div
+     (opts {:style {:display        :flex
+                    :flex-direction :row
+                    :flex-wrap :wrap-reverse}})
+     (tag-filter component include-tags)
+
+     (utils/date-picker {:value start-date
+                         :on-change #(select-date component :filter/start-date %)
+                         :placeholder "From date..."})
+     (utils/date-picker {:value end-date
+                         :on-change #(select-date component :filter/end-date %)
+                         :placeholder "To date..."})]))
 
 
 (defn- chart-settings [component {:keys [input-graph input-function input-report input-filter]}]
@@ -197,6 +220,7 @@
           {:keys [on-close
                   on-save
                   dashboard]} (om/get-computed this)]
+      (debug "State: " state)
       (html
         [:div
          [:div.modal-header
