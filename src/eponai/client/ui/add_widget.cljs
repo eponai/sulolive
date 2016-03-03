@@ -1,12 +1,12 @@
 (ns eponai.client.ui.add-widget
   (:require [datascript.core :as d]
-            [eponai.client.ui :refer [update-query-params!] :refer-macros [opts]]
+            [eponai.client.ui :refer [update-query-params! map-all] :refer-macros [opts]]
             [eponai.client.ui.widget :refer [->Widget]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
-            [eponai.common.format :as f]
             [eponai.client.ui.utils :as utils]
-            [eponai.common.report :as report]))
+            [eponai.common.report :as report]
+            [taoensso.timbre :refer-macros [debug]]))
 
 ;;; ####################### Actions ##########################
 
@@ -61,11 +61,11 @@
       (map
         (fn [k]
           (let [conf {:transaction/tags     {:icon "fa fa-tag"
-                                             :text "All Tags"}
+                                             :text "Tags"}
                       :transaction/currency {:icon "fa fa-usd"
-                                             :text "All Currencies"}
+                                             :text "Currencies"}
                       :transaction/date     {:icon "fa fa-calendar"
-                                             :text "All Dates"}}]
+                                             :text "Dates"}}]
             [:button
              (opts {:key      [k]
                     :class    (button-class group-by k)
@@ -88,16 +88,45 @@
 
     (om/update-state! component assoc
                       :input-filter new-filters
-                      :input-tag "")
+                      :input-tag nil)
     (update-filter component new-filters)))
 
-(defn- chart-filter [component {:keys [input-tag]}]
+(defn- delete-tag-fn [component tagname]
+  (let [{:keys [input-filter]} (om/get-state component)
+        new-filters (update input-filter :filter/include-tags #(disj % tagname))]
+
+    (om/update-state! component assoc
+                      :input-filter new-filters)
+    (update-filter component new-filters)))
+
+(defn- tag-filter [component include-tags]
+  (let [{:keys [input-tag]} (om/get-state component)]
+    (html
+      [:div
+       (opts {:style {:display        :flex
+                      :flex-direction :column
+                      :min-width "400px"
+                      :max-width "400px"}})
+
+       (utils/tag-input {:tag         input-tag
+                         :placeholder "Filter tags..."
+                         :on-change   #(om/update-state! component assoc :input-tag %)
+                         :on-add-tag  #(add-tag component %)})
+
+       [:div
+        (opts {:style {:display        :flex
+                       :flex-direction :row
+                       :flex-wrap      :wrap
+                       :width          "100%"}})
+        (map-all
+          include-tags
+          (fn [tag]
+            (utils/tag tag
+                       {:on-delete #(delete-tag-fn component tag)})))]])))
+
+(defn- chart-filters [component {:keys [filter/include-tags]}]
   (html
-    [:div
-     [:h6 "Filters"]
-     (utils/tag-input {:value input-tag
-                       :placeholder "Filter tags..."
-                       :on-add-tag #()})]))
+    (tag-filter component include-tags)))
 
 
 (defn- chart-settings [component {:keys [input-graph input-function input-report input-filter]}]
@@ -109,18 +138,18 @@
          [:div
           (chart-function component input-function)
           (chart-group-by component input-report [:transaction/tags :transaction/currency])
-          (chart-filter component input-filter)]
+          (chart-filters component input-filter)]
 
          (= style :graph.style/area)
          [:div
           (chart-function component input-function)
           (chart-group-by component input-report [:transaction/date])
-          (chart-filter component input-filter)]
+          (chart-filters component input-filter)]
 
          (= style :graph.style/number)
          [:div
           (chart-function component input-function)
-          (chart-filter component input-filter)])])))
+          (chart-filters component input-filter)])])))
 
 
 ;;;;;;;; ########################## Om Next components ########################
@@ -128,10 +157,10 @@
 (defui NewWidget
   static om/IQueryParams
   (params [_]
-    {:input-filter nil})
+    {:filter {:filter/include-tags #{}}})
   static om/IQuery
   (query [_]
-    ['{(:query/all-transactions {:filter ?input-filter}) [:transaction/uuid
+    ['{(:query/all-transactions {:filter ?filter}) [:transaction/uuid
                                                           :transaction/amount
                                                           :transaction/conversion
                                                           {:transaction/tags [:tag/name]}
@@ -145,20 +174,26 @@
        :input-report   {:report/group-by :transaction/tags}
        :input-widget   {:widget/index  index
                         :widget/width  33
-                        :widget/height 1}}))
+                        :widget/height 1}
+       :input-filter   {:filter/include-tags #{}}}))
 
   (componentWillMount [this]
-    (let [{:keys [widget]} (om/get-computed this)]
+    (let [{:keys [widget]} (om/get-computed this)
+          {:keys [input-filter]} (om/get-state this)
+          new-filters (update input-filter :filter/include-tags #(set (concat % (:filter/include-tags (:widget/filter widget)))))]
       (when widget
         (om/update-state! this
-                          #(-> %
-                               (assoc :input-graph (:widget/graph widget)
-                                      :input-report (:widget/report widget)
-                                      :input-function (first (:report/functions (:widget/report widget))))
-                               (assoc-in [:input-widget :widget/uuid] (:widget/uuid widget)))))))
+                          (fn [st]
+                            (-> st
+                                (assoc :input-graph (:widget/graph widget)
+                                       :input-report (:widget/report widget)
+                                       :input-function (first (:report/functions (:widget/report widget))))
+                                (assoc-in [:input-widget :widget/uuid] (:widget/uuid widget))
+                                (assoc :input-filter new-filters))))
+        (update-filter this new-filters))))
   (render [this]
     (let [{:keys [query/all-transactions]} (om/props this)
-          {:keys [input-graph input-report] :as state} (om/get-state this)
+          {:keys [input-graph input-report input-filter] :as state} (om/get-state this)
           {:keys [on-close
                   on-save
                   dashboard]} (om/get-computed this)]

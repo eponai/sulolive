@@ -168,8 +168,8 @@
 
            [:div.form-control-static
             (map-all tags
-                     (fn [tagname]
-                       (utils/tag tagname {:on-delete (delete-tag-fn this tagname)})))]]]
+                     (fn [tag]
+                       (utils/tag {:tag/name tag} {:on-delete (delete-tag-fn this tag)})))]]]
          [:div.modal-footer
           [:button
            (opts {:class    "btn btn-default btn-md"

@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [merge])
   (:require [eponai.common.parser.read :as read]
             [eponai.common.parser.mutate :as mutate]
+            [eponai.common.parser.util :as util]
             [clojure.walk :as walk]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info]]
     #?(:clj
@@ -92,30 +93,13 @@
            env
           args)))
 
-(defn put-db-id-in-query [query]
-  (cond (map? query)
-        (reduce-kv (fn [q k v]
-                     (assoc q k (put-db-id-in-query v)))
-                   {}
-                   query)
-
-        (sequential? query)
-        (->> query
-             (remove #(= :db/id %))
-             (map put-db-id-in-query)
-             (cons :db/id)
-             (into []))
-
-        :else
-        query))
-
 (defn read-with-dbid-in-query [read]
   (fn [{:keys [query] :as env} k p]
     (let [env (if-not query
                 env
                 (assoc env :query (if (#{"return" "proxy"} (namespace k))
                                     query
-                                    (put-db-id-in-query query))))]
+                                    (util/put-db-id-in-query query))))]
       (read env k p))))
 
 (defn wrap-parser-filter-atom

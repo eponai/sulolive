@@ -61,3 +61,20 @@
           (let [ret (apply f args)]
             (reset! last-call [args ret])
             ret))))))
+
+(defn put-db-id-in-query [query]
+  (cond (map? query)
+        (reduce-kv (fn [q k v]
+                     (assoc q k (put-db-id-in-query v)))
+                   {}
+                   query)
+
+        (sequential? query)
+        (->> query
+             (remove #(= :db/id %))
+             (map put-db-id-in-query)
+             (cons :db/id)
+             (into []))
+
+        :else
+        query))

@@ -159,7 +159,7 @@
     (assoc transaction
       :db/id (d/tempid :db.part/user))))
 
-(defn widget-map [{:keys [input-function input-report input-graph input-widget] :as input}]
+(defn widget-map [{:keys [input-function input-report input-graph input-widget input-filter] :as input}]
   (let [function (assoc input-function :db/id (d/tempid :db.part/user))
 
         report (assoc input-report :db/id (d/tempid :db.part/user)
@@ -167,12 +167,17 @@
 
         graph (assoc input-graph :db/id (d/tempid :db.part/user))
 
+        filter (assoc input-filter :db/id (d/tempid :db.part/user)
+                                   :filter/include-tags (tags (:filter/include-tags input-filter)))
+
         widget (merge input-widget
                       {:db/id            (d/tempid :db.part/user)
                        :widget/graph     (:db/id graph)
                        :widget/report    (:db/id report)
+                       :widget/filter    (:db/id filter)
                        :widget/dashboard [:dashboard/uuid (:dashboard/uuid (:input-dashboard input))]})]
     {:function function
      :report   report
      :graph    graph
+     :filter   filter
      :widget   widget}))

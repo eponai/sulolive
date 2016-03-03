@@ -4,6 +4,7 @@
     [eponai.common.format :as f]
     [clojure.set :as s]
     [clojure.walk :as walk]
+    [eponai.common.parser.util :as parser]
     [eponai.common.report :as report]
     #?(:clj
     [datomic.api :as d]
@@ -178,7 +179,7 @@
     (not-empty include-tags)
     (merge-query {:where   '[[?e :transaction/tags ?tag]
                              [?tag :tag/name ?tag-name]]
-                  :symbols {'[?tag-name ...] include-tags}})
+                  :symbols {'[?tag-name ...] (mapv :tag/name include-tags)}})
 
     (some? start-date)
     (merge-query (transaction-date-filter start-date '>=))
@@ -203,33 +204,35 @@
      status))
 
 (defn widget-report-query []
-  [:widget/uuid
-   :widget/width
-   :widget/height
-   :widget/filter
-   {:widget/report [:report/uuid
-                    :report/group-by
-                    :report/title
-                    {:report/functions [:report.function/uuid
-                                        :report.function/attribute
-                                        :report.function/id]}]}
-   :widget/index
-   :widget/data
-   {:widget/graph [:graph/style]}])
+  (parser/put-db-id-in-query
+    [:widget/uuid
+     :widget/width
+     :widget/height
+     {:widget/filter [{:filter/include-tags [:tag/name]}]}
+     {:widget/report [:report/uuid
+                      :report/group-by
+                      :report/title
+                      {:report/functions [:report.function/uuid
+                                          :report.function/attribute
+                                          :report.function/id]}]}
+     :widget/index
+     :widget/data
+     {:widget/graph [:graph/style]}]))
 
 (defn transaction-query []
-  [:transaction/uuid
-   :transaction/amount
-   :transaction/conversion
-   {:transaction/tags [:tag/name]}
-   {:transaction/date [:date/ymd
-                       :date/timestamp]}])
+  (parser/put-db-id-in-query
+    [:transaction/uuid
+     :transaction/amount
+     :transaction/conversion
+     {:transaction/tags [:tag/name]}
+     {:transaction/date [:date/ymd
+                         :date/timestamp]}]))
 
 (defn widgets-with-data [{:keys [db parser] :as env} widgets]
   (map (fn [{:keys [widget/uuid]}]
          (let [widget (pull db (widget-report-query) [:widget/uuid uuid])
                {:keys [query/all-transactions]} (parser env [`({:query/all-transactions ~(transaction-query)}
-                                                                {:filter (:widget/filter ~widget)})])
+                                                                {:filter ~(:widget/filter widget)})])
                report-data (report/generate-data (:widget/report widget) all-transactions)]
            (assoc widget :widget/data report-data)))
        widgets))

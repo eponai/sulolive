@@ -1,6 +1,7 @@
 (ns eponai.client.ui.utils
   (:require [eponai.client.ui :refer-macros [opts]]
-            [sablono.core :refer-macros [html]]))
+            [sablono.core :refer-macros [html]]
+            [taoensso.timbre :refer-macros [debug]]))
 
 ;;;;;;; UI component helpers
 
@@ -42,8 +43,8 @@
       [:div.modal-content
        content]]]))
 
-(defn tag [tag-name {:keys [on-delete
-                            on-click]}]
+(defn tag [{tag-name :tag/name} {:keys [on-delete
+                                        on-click]}]
   (html
     [:div
      (opts {:class "btn-group btn-group-xs"
@@ -65,15 +66,16 @@
   (when (and (= 13 (.-keyCode e))
              (seq (.. e -target -value)))
     (.preventDefault e)
-    (f (.. e -target -value))    ))
+    (f {:tag/name (.. e -target -value)})))
 
-(defn tag-input [{:keys [value on-change on-add-tag]}]
+(defn tag-input [{:keys [tag on-change on-add-tag]}]
+  (debug "Tag: " tag)
   (html
     [:div.has-feedback
      [:input.form-control
       {:type        "text"
-       :value       value
-       :on-change   on-change
+       :value       (:tag/name tag)
+       :on-change   #(on-change {:tag/name (.-value (.-target %))})
        :on-key-down #(on-key-down % on-add-tag)
        :placeholder "Filter tags..."}]
      [:span

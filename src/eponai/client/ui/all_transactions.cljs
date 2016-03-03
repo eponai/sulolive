@@ -6,7 +6,8 @@
             [garden.core :refer [css]]
             [goog.string :as gstring]
             [om.next :as om :refer-macros [defui]]
-            [sablono.core :refer-macros [html]]))
+            [sablono.core :refer-macros [html]]
+            [taoensso.timbre :refer-macros [debug]]))
 
 
 ;; ################ Actions ######################
@@ -22,18 +23,17 @@
                       :input-filter new-filters)
     (update-filter component new-filters)))
 
-(defn- delete-tag-fn [component tagname]
+(defn- delete-tag-fn [component tag]
   (let [{:keys [input-filter]} (om/get-state component)
-        new-filters (update input-filter :filter/include-tags #(disj % tagname))]
+        new-filters (update input-filter :filter/include-tags #(disj % tag))]
 
     (om/update-state! component assoc
                       :input-filter new-filters)
     (update-filter component new-filters)))
 
-(defn- add-tag [component tagname]
+(defn- add-tag [component tag]
   (let [{:keys [input-filter]} (om/get-state component)
-        new-filters (update input-filter :filter/include-tags #(conj % tagname))]
-
+        new-filters (update input-filter :filter/include-tags #(conj % tag))]
     (om/update-state! component assoc
                       :input-filter new-filters
                       :input-tag "")
@@ -49,9 +49,9 @@
                       :min-width "400px"
                       :max-width "400px"}})
 
-       (utils/tag-input {:value       input-tag
+       (utils/tag-input {:tag         input-tag
                          :placeholder "Filter tags..."
-                         :on-change   #(om/update-state! component assoc :input-tag (.. % -target -value))
+                         :on-change   #(om/update-state! component assoc :input-tag %)
                          :on-add-tag  #(add-tag component %)})
 
        [:div
@@ -61,9 +61,9 @@
                        :width          "100%"}})
         (map-all
           include-tags
-          (fn [tagname]
-            (utils/tag tagname
-                 {:on-delete #(delete-tag-fn component tagname)})))]])))
+          (fn [tag]
+            (utils/tag tag
+                 {:on-delete #(delete-tag-fn component tag)})))]])))
 
 (defn date-picker [component placeholder key]
   [:div
@@ -167,8 +167,8 @@
                  (opts {:key [uuid]})
                  (map-all (:transaction/tags transaction)
                    (fn [tag]
-                     (utils/tag (:tag/name tag)
-                                {:on-click #(add-tag this (:tag/name tag))})))]
+                     (utils/tag tag
+                                {:on-click #(add-tag this tag)})))]
                 [:td.text-right
                  (opts {:key [uuid]
                         :class (if (= (:db/ident type) :transaction.type/expense) "text-danger" "text-success")})
