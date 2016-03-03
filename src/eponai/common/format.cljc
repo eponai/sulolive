@@ -167,17 +167,23 @@
 
         graph (assoc input-graph :db/id (d/tempid :db.part/user))
 
-        filter (assoc input-filter :db/id (d/tempid :db.part/user)
-                                   :filter/include-tags (tags (:filter/include-tags input-filter)))
+        filter (when  (seq (:filter/include-tags input-filter))
+                 (-> input-filter
+                     (assoc :db/id (d/tempid :db.part/user))
+                     (assoc :filter/include-tags (map #(assoc % :db/id (d/tempid :db.part/user)) (:filter/include-tags input-filter)))))
 
-        widget (merge input-widget
-                      {:db/id            (d/tempid :db.part/user)
-                       :widget/graph     (:db/id graph)
-                       :widget/report    (:db/id report)
-                       :widget/filter    (:db/id filter)
-                       :widget/dashboard [:dashboard/uuid (:dashboard/uuid (:input-dashboard input))]})]
-    {:function function
-     :report   report
-     :graph    graph
-     :filter   filter
-     :widget   widget}))
+        _ (debug "Filer saving: " filter)
+        widget (cond-> (merge input-widget
+                              {:db/id            (d/tempid :db.part/user)
+                               :widget/graph     (:db/id graph)
+                               :widget/report    (:db/id report)
+                               :widget/dashboard [:dashboard/uuid (:dashboard/uuid (:input-dashboard input))]})
+                       filter
+                       (assoc :widget/filter (:db/id filter)))]
+    
+    (cond-> {:function function
+             :report   report
+             :graph    graph
+             :widget   widget}
+            filter
+            (assoc :filter filter))))
