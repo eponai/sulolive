@@ -1,5 +1,6 @@
 (ns eponai.client.ui.all_transactions
-  (:require [eponai.client.ui.format :as f]
+  (:require [clojure.set :as set]
+            [eponai.client.ui.format :as f]
             [eponai.client.ui.datepicker :refer [->Datepicker]]
             [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
             [eponai.client.ui.utils :as utils]
@@ -97,13 +98,44 @@
 (def ->Transaction (om/factory Transaction))
 
 (defn get-selected-transaction [props]
-  (get-in props [[:ui/component :ui.component/transactions]
+  (get-in props [:query/selected-transaction
                  :ui.component.transactions/selected-transaction]))
+
+(defn rename-ns [k ns]
+  (keyword ns (name k)))
+
+(defn delete-tag-fn2 [component tag]
+  (om/update-state! component update-in [:input-state :input/tags] disj tag))
+
+(defn- add-tag2 [component tag]
+  (om/update-state! component
+                    #(-> %
+                         (assoc-in [:input-state :input/tag] "")
+                         (update-in [:input-state :input/tags] conj tag))))
+
+(defn mark-removed-tags
+  "Takes an edited transaction and an original transaction, marks every removed tag
+  with :removed true."
+  [edited original]
+  (let [original-tags-by-name (group-by :tag/name (:transaction/tags original))]
+    (cond-> edited
+            (or (seq (:transaction/tags original))
+                (seq (:transaction/tags edited)))
+            (update :transaction/tags
+              (fn [tags]
+                (let [edited-tags-names (into #{} (map :tag/name) tags)
+                      removed-tags (set/difference (set (keys original-tags-by-name))
+                                                   edited-tags-names)]
+                  (into tags (comp (mapcat
+                                     (fn [tags] (map #(assoc % :removed true) tags)))
+                                   (remove
+                                     #(and (:db/id %) (not (:removed %)))))
+                        (vals (select-keys original-tags-by-name removed-tags)))))))))
 
 (defui SelectedTransaction
   static om/IQuery
   (query [_]
-    [{[:ui/component :ui.component/transactions]
+    [{:query/selected-transaction
       [{:ui.component.transactions/selected-transaction
         [:db/id
          :transaction/uuid
@@ -134,16 +166,33 @@
     (.init-state this (om/props this)))
 
   (componentWillReceiveProps [this next-props]
-    (let [props->uuid (comp :transaction/uuid get-selected-transaction)]
+    (let [props->uuid (comp :init-state #(.init-state this %))]
       (when (not= (props->uuid (om/props this))
                   (props->uuid next-props))
         (om/set-state! this (.init-state this next-props)))))
 
+  (edited-input->edited-transaction [this]
+    (let [{:keys [init-state input-state]} (om/get-state this)
+          changed-values (reduce-kv (fn [m k v]
+                                      (let [init-v (get init-state k)
+                                            equal? (if (= :input/tags k)
+                                                     (= (into #{} v)
+                                                        (into #{} init-v))
+                                                     (= v init-v))]
+                                        (cond-> m
+                                                (not equal?) (assoc k v))))
+                                    {}
+                                    (dissoc input-state :input/tag))]
+      (reduce-kv #(assoc %1 (rename-ns %2 "transaction") %3)
+                 {}
+                 changed-values)))
+  
   (render [this]
     (let [props (om/props this)
           {:keys [query/all-currencies
                   query/all-budgets]} props
-          transaction (get-selected-transaction props)
+          {:keys [transaction/uuid]
+           :as transaction} (get-selected-transaction props)
           {:keys [input-state
                   init-state]} (om/get-state this)
           {:keys [input/title
@@ -151,7 +200,6 @@
                   input/currency
                   input/budget
                   input/type
-                  input/uuid
                   input/date
                   input/tag
                   input/tags]
@@ -166,8 +214,17 @@
              [:tr
               [:td
                [:button.btn.btn-info.btn-md
-                (merge {:on-click #(om/transact! this `[(transaction/edit ~(-> input-transaction
-                                                                               (assoc :mutation-uuid (d/squuid))))])}
+                (merge {:on-click #(om/transact! this `[(transaction/edit ~(-> (.edited-input->edited-transaction this)
+                                                                               (mark-removed-tags transaction)
+                                                                               (assoc :transaction/uuid uuid)
+                                                                               (assoc :db/id (:db/id transaction))
+                                                                               (assoc :mutation-uuid (d/squuid))))
+                                                        ;; TODO: Are all these needed?
+                                                        ;; Copied from AddTransaction.
+                                                        :query/selected-transaction
+                                                        :query/dashboard
+                                                        :query/all-budgets
+                                                        :query/all-transactions])}
                   (when-not edited?
                     {:disabled :disabled}))
                 "Save"]]

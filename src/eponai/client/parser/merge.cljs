@@ -21,7 +21,8 @@
 (defn merge-error [db key val]
   (error-popup-window! key val)
   ;; TODO: Alert the user some how?
-  (error "error on key:" key "error:" val ". Doing nothing with it."))
+  (error "error on key:" key "error:" val ". Doing nothing with it.")
+  db)
 
 (defn sync-optimistic-tx
   [db k {:keys [result]}]

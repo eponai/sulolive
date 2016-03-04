@@ -6,10 +6,10 @@
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
     #?(:clj
             [eponai.server.api :as api])
-
     #?(:clj
             [clojure.core.async :refer [go >! chan]])
-    #?(:cljs [datascript.core :as d])
+    #?(:cljs [datascript.core :as d]
+       :clj  [datomic.api :as d])
     #?(:cljs [om.next :as om])
             [eponai.common.format :as f]))
 
@@ -39,9 +39,34 @@
    #?@(:cljs [:remote true])})
 
 (defmethod mutate 'transaction/edit
-  [env k p]
-  (debug "EDIT TRASNACTIONSADA :D :D: :D: D:D:D:D:D::D D:D: D:")
-  (throw (ex-info "IMPLEMENT THIZ!!" {:action k :params p})))
+  [{:keys [state mutation-uuid]} _ {:keys [transaction/tags transaction/uuid] :as transaction}]
+  {:action (fn []
+             {:pre [(some? uuid)]}
+             (let [tag->txs (fn [{:keys [removed tag/name] :as tag}]
+                              {:pre [(some? name)]}
+                              (if removed
+                                [[:db/retract [:transaction/uuid uuid] :transaction/tags [:tag/name name]]]
+                                (let [tempid (d/tempid :db.part/user)]
+                                  ;; Create new tag and add it to the transaction
+                                  [(-> tag (dissoc :removed) (assoc :db/id tempid))
+                                   [:db/add [:transaction/uuid uuid] :transaction/tags tempid]])))
+                   transaction (-> transaction
+                                   (dissoc :transaction/tags)
+                                   (assoc :db/id (d/tempid :db.part/user))
+                                   (->> (reduce-kv (fn [m k v]
+                                                     (assoc m k (condp = k
+                                                                  :transaction/amount #?(:cljs v :clj (bigint v))
+                                                                  :transaction/currency (assoc v :db/id (d/tempid :db.part/user))
+                                                                  :transaction/type (assoc v :db/id (d/tempid :db.part/user))
+                                                                  :transaction/date (format/date (:date/ymd v))
+                                                                  v)))
+                                                   {})))
+                   txs (cond-> [transaction]
+                               (seq tags)
+                               (into (mapcat tag->txs) tags))]
+               (debug "editing transaction: " uuid " txs: " txs)
+               (transact/mutate state mutation-uuid txs)))
+   :remote true})
 
 (defmethod mutate 'budget/create
   [{:keys [state auth]} _ {:keys [input-uuid input-budget-name]}]
