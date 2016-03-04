@@ -6,7 +6,7 @@
 ;;---------------- Modal show/hide
 (defmethod mutate 'ui.modal/show
   [{:keys [state]} _ _]
-  {:action #(d/transact! state [{:ui/singleton               :ui.singleton/modal
+  {:action #(t/transact state [{:ui/singleton               :ui.singleton/modal
                                  :ui.singleton.modal/visible true}])})
 
 (defmethod mutate 'ui.modal/hide
