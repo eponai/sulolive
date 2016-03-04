@@ -56,13 +56,13 @@
   {:action #(t/transact state
                          [[:db.fn/retractAttribute [:ui/component :ui.component/transactions] :ui.component.transactions/filter]])})
 
-(defmethod mutate 'transactions/deselect-transaction
+(defmethod mutate 'transactions/deselect
   [{:keys [state]} _ ]
   {:action #(t/transact-one state [:db.fn/retractAttribute
                                    [:ui/component :ui.component/transactions]
                                    :ui.component.transactions/selected-transaction])})
 
-(defmethod mutate 'transactions/select-transaction
+(defmethod mutate 'transactions/select
   [{:keys [state]} _ {:keys [transaction]}]
   {:action #(t/transact-one state
                             {:ui/component                                   :ui.component/transactions
