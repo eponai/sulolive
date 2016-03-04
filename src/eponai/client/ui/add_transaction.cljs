@@ -135,11 +135,7 @@
            (->Datepicker
              (opts {:key       [::date-picker]
                     :value     date
-                    :on-change #(om/update-state!
-                                 this
-                                 assoc
-                                 :input/date
-                                 %)}))]
+                    :on-change #(om/update-state! this assoc :input/date %)}))]
 
           [:label.form-control-static
            "Tags:"]

@@ -14,9 +14,8 @@
             [eponai.common.report]
             [eponai.client.ui.navbar :as navbar]
             [taoensso.timbre :refer-macros [info debug error trace]]
-            [eponai.client.ui :refer-macros [opts]]))
-
-(defonce reconciler-atom (atom nil))
+            [eponai.client.ui :refer-macros [opts]]
+            [eponai.client.ui.utils :as utils]))
 
 (defui ^:once App
   static om/IQueryParams
@@ -26,7 +25,7 @@
           ;; HACK: Gets the component from the reconciler if there is one.
           ;;       This only works if there's every only going to be a
           ;;       single instance of the component.
-          query (om/get-query (or (when-let [r @reconciler-atom]
+          query (om/get-query (or (when-let [r @utils/reconciler-atom]
                                     (om/class->any r component))
                                   component))]
       {:url/component component
@@ -92,7 +91,7 @@
                                    :send    (backend/send! "/user/")
                                    :merge   (backend/merge! conn)})
         history (history/init-history reconciler)]
-    (reset! reconciler-atom reconciler)
+    (reset! utils/reconciler-atom reconciler)
     (om/add-root! reconciler App (gdom/getElement "my-app"))
     (history/start! history)))
 

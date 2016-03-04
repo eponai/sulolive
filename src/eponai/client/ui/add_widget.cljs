@@ -1,6 +1,7 @@
 (ns eponai.client.ui.add-widget
   (:require [datascript.core :as d]
             [eponai.client.ui :refer [update-query-params! map-all] :refer-macros [opts]]
+            [eponai.client.ui.datepicker :refer [->Datepicker]]
             [eponai.client.ui.widget :refer [->Widget]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
@@ -80,50 +81,6 @@
               (get-in conf [k :text])]]))
         groups)]]))
 
-(defn- update-filter [component input-filter]
-  (update-query-params! component assoc :filter input-filter))
-
-(defn- add-tag [component tag]
-  (let [{:keys [input-filter]} (om/get-state component)
-        new-filters (update input-filter :filter/include-tags #(conj % tag))]
-
-    (om/update-state! component assoc
-                      :input-filter new-filters
-                      :input-tag nil)
-    (update-filter component new-filters)))
-
-(defn- delete-tag-fn [component tag]
-  (let [{:keys [input-filter]} (om/get-state component)
-        new-filters (update input-filter :filter/include-tags #(disj % tag))]
-
-    (om/update-state! component assoc
-                      :input-filter new-filters)
-    (update-filter component new-filters)))
-
-(defn- tag-filter [component include-tags]
-  (let [{:keys [input-tag]} (om/get-state component)]
-    (html
-      [:div
-       (opts {:style {:display        :flex
-                      :flex-direction :column
-                      :min-width "400px"
-                      :max-width "400px"}})
-
-       (utils/tag-input {:input-tag         input-tag
-                         :selected-tags include-tags
-                         :on-change   #(om/update-state! component assoc :input-tag %)
-                         :on-add-tag  #(add-tag component %)
-                         :on-delete-tag #(delete-tag-fn component %)})])))
-
-(defn- select-date [component k date]
-  (let [{:keys [input-filter]} (om/get-state component)
-        _ (debug "Selected date: " (f/unparse-local (f/formatters :date) date))
-        new-filters (assoc input-filter k date)]
-
-    (om/update-state! component assoc
-                      :input-filter new-filters)
-    (update-filter component new-filters)))
-
 (defn- chart-filters [component {:keys [filter/include-tags
                                         filter/start-date
                                         filter/end-date]}]
@@ -132,14 +89,18 @@
      (opts {:style {:display        :flex
                     :flex-direction :row
                     :flex-wrap :wrap-reverse}})
-     (tag-filter component include-tags)
+     (utils/tag-filter component include-tags)
 
-     (utils/date-picker {:value start-date
-                         :on-change #(select-date component :filter/start-date %)
-                         :placeholder "From date..."})
-     (utils/date-picker {:value end-date
-                         :on-change #(select-date component :filter/end-date %)
-                         :placeholder "To date..."})]))
+     (->Datepicker
+       (opts {:key         ["From date..."]
+              :placeholder "From date..."
+              :value       start-date
+              :on-change   #(utils/select-date-filter component :filter/start-date %)}))
+     (->Datepicker
+       (opts {:key         ["To date..."]
+              :placeholder "To date..."
+              :value       end-date
+              :on-change   #(utils/select-date-filter component :filter/end-date %)}))]))
 
 
 (defn- chart-settings [component {:keys [input-graph input-function input-report input-filter]}]
@@ -203,7 +164,7 @@
                                        :input-function (first (:report/functions (:widget/report widget))))
                                 (assoc-in [:input-widget :widget/uuid] (:widget/uuid widget))
                                 (assoc :input-filter new-filters))))
-        (update-filter this new-filters))))
+        (update-query-params! this assoc :filter input-filter))))
   (render [this]
     (let [{:keys [query/all-transactions]} (om/props this)
           {:keys [input-graph input-report input-filter] :as state} (om/get-state this)

@@ -11,52 +11,19 @@
             [taoensso.timbre :refer-macros [debug]]
             [datascript.core :as d]))
 
+;; ################ Actions #####################
 
-;; ################ Actions ######################
+(defn rename-ns [k ns]
+  (keyword (str ns "/" (name k))))
 
-(defn- update-filter [component input-filter]
-  (update-query-params! component assoc :filter input-filter))
+(defn delete-tag [component tag]
+  (om/update-state! component update-in [:input-state :input/tags] disj tag))
 
-(defn- select-date [component k date]
-  (let [{:keys [input-filter]} (om/get-state component)
-        new-filters (assoc input-filter k date)]
-
-    (om/update-state! component assoc
-                      :input-filter new-filters)
-    (update-filter component new-filters)))
-
-(defn- delete-tag-filter [component tag]
-  (let [{:keys [input-filter]} (om/get-state component)
-        new-filters (update input-filter :filter/include-tags disj tag)]
-
-    (om/update-state! component assoc
-                      :input-filter new-filters)
-    (update-filter component new-filters)))
-
-(defn- add-tag-filter [component tag]
-  (let [{:keys [input-filter]} (om/get-state component)
-        new-filters (update input-filter :filter/include-tags conj tag)]
-    (om/update-state! component assoc
-                      :input-filter new-filters
-                      :input-tag "")
-    (update-filter component new-filters)))
-
-;; ############################# UI components #################
-(defn tag-filter [component include-tags]
-  (let [{:keys [input-tag]} (om/get-state component)]
-    (html
-      [:div
-       (opts {:style {:display        :flex
-                      :flex-direction :column
-                      :min-width "400px"
-                      :max-width "400px"}})
-
-       (utils/tag-input {:input-tag     input-tag
-                         :selected-tags include-tags
-                         :placeholder   "Filter tags..."
-                         :on-change     #(om/update-state! component assoc :input-tag %)
-                         :on-add-tag    #(add-tag-filter component %)
-                         :on-delete-tag #(delete-tag-filter component %)})])))
+(defn- add-tag [component tag]
+  (om/update-state! component
+                    #(-> %
+                         (assoc-in [:input-state :input/tag] "")
+                         (update-in [:input-state :input/tags] conj tag))))
 
 ;; ################### Om next components ###################
 
@@ -91,7 +58,6 @@
                   transaction/conversion]
            :as   transaction} (om/props this)
           {:keys [user on-select on-deselect is-selected on-tag-click]} (om/get-computed this)]
-      (debug "computed: " (om/get-computed this))
       (html
         [:tr
          (opts {:key [uuid]})
@@ -133,18 +99,6 @@
 (defn get-selected-transaction [props]
   (get-in props [[:ui/component :ui.component/transactions]
                  :ui.component.transactions/selected-transaction]))
-
-(defn rename-ns [k ns]
-  (keyword (str ns "/" (name k))))
-
-(defn delete-tag-fn2 [component tag]
-  (om/update-state! component update-in [:input-state :input/tags] disj tag))
-
-(defn- add-tag2 [component tag]
-  (om/update-state! component
-                    #(-> %
-                         (assoc-in [:input-state :input/tag] "")
-                         (update-in [:input-state :input/tags] conj tag))))
 
 (defui SelectedTransaction
   static om/IQuery
@@ -285,10 +239,9 @@
                   :input-tag     tag
                   :selected-tags tags
                   :on-change     #(om/update-state! this assoc-in [:input-state :input/tag] %)
-                  :on-delete-tag #(delete-tag-fn2 this %)
-                  :on-add-tag    #(add-tag2 this %)
-                  })
-               ]]]])]))))
+                  :on-delete-tag #(delete-tag this %)
+                  :on-add-tag    #(add-tag this %)
+                  })]]]])]))))
 
 (def ->SelectedTransaction (om/factory SelectedTransaction))
 
@@ -304,8 +257,7 @@
     {:filter {:filter/include-tags #{}}})
   static om/IQuery
   (query [_]
-    [{'(:query/all-transactions {:filter ?filter})
-      (om/get-query Transaction)}
+    [{'(:query/all-transactions {:filter ?filter}) (om/get-query Transaction)}
      {:query/current-user [:user/uuid
                            {:user/currency [:currency/code]}]}
      {:proxy/selected-transaction (om/get-query SelectedTransaction)}])
@@ -335,17 +287,17 @@
            (opts {:style {:display        :flex
                           :flex-direction :row
                           :flex-wrap      :wrap-reverse}})
-           (tag-filter this (:filter/include-tags input-filter))
+           (utils/tag-filter this (:filter/include-tags input-filter))
            (->Datepicker
              (opts {:key         ["From date..."]
                     :placeholder "From date..."
                     :value       (:filter/start-date input-filter)
-                    :on-change   #(select-date this :filter/start-date %)}))
+                    :on-change   #(utils/select-date-filter this :filter/start-date %)}))
            (->Datepicker
              (opts {:key         ["To date..."]
                     :placeholder "To date..."
                     :value       (:filter/end-date input-filter)
-                    :on-change   #(select-date this :filter/end-date %)}))]
+                    :on-change   #(utils/select-date-filter this :filter/end-date %)}))]
 
           [:table.table.table-striped.table-hover
            [:thead
@@ -361,12 +313,12 @@
             (map (fn [props]
                    (->Transaction
                      (om/computed props
-                                  {:user        user
-                                   :on-select   #(select-transaction this %)
-                                   :on-deselect #(deselect-transaction this)
-                                   :is-selected (= (:db/id selected-transaction)
-                                                   (:db/id props))
-                                   :on-tag-click #(add-tag-filter this %)})))
+                                  {:user         user
+                                   :on-select    #(select-transaction this %)
+                                   :on-deselect  #(deselect-transaction this)
+                                   :is-selected  (= (:db/id selected-transaction)
+                                                    (:db/id props))
+                                   :on-tag-click #(utils/add-tag-filter this %)})))
                  (sort-by :transaction/created-at > transactions))]]]
          [:div
 
