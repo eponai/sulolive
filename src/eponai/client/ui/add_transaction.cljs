@@ -10,23 +10,27 @@
             [garden.core :refer [css]]
             [datascript.core :as d]))
 
-(defn delete-tag-fn [component name]
-  (fn []
-    (om/update-state! component update :input/tags
-                      (fn [tags]
-                        (into (sorted-set)
-                              (remove #(= name %))
-                              tags)))))
+(defn- delete-tag-fn [component tag]
+    (om/update-state! component update :input/tags disj tag))
 
-(defn on-add-tag-key-down [component input-tag]
-  (fn [e]
-    (when (and (= 13 (.-keyCode e))
-               (seq (.. e -target -value)))
-      (.preventDefault e)
-      (om/update-state! component
-                        #(-> %
-                             (assoc :input/tag "")
-                             (update :input/tags conj input-tag))))))
+(defn- add-tag [component tag]
+  (om/update-state! component
+                    #(-> %
+                         (assoc :input/tag "")
+                         (update :input/tags conj tag))))
+
+(defn- add-transaction [component st]
+  (om/transact! component
+                `[(transaction/create
+                    ~(-> st
+                         (assoc :mutation-uuid (d/squuid))
+                         (update :input/date format/date->ymd-string)
+                         (assoc :input/uuid (d/squuid))
+                         (assoc :input/created-at (.getTime (js/Date.)))
+                         (dissoc :input/tag)))
+                  :query/dashboard
+                  :query/all-budgets
+                  :query/all-transactions]))
 
 (defui AddTransaction
   static om/IQuery
@@ -35,24 +39,12 @@
      {:query/all-budgets [:budget/uuid
                           :budget/name]}])
   Object
-  (add-transaction [this]
-    (om/transact! this
-                  `[(transaction/create
-                      ~(-> (om/get-state this)
-                           (assoc :mutation-uuid (d/squuid))
-                           (update :input/date format/date->ymd-string)
-                           (assoc :input/uuid (d/squuid))
-                           (assoc :input/created-at (.getTime (js/Date.)))
-                           (dissoc :input/tag)))
-                    :query/dashboard
-                    :query/all-budgets
-                    :query/all-transactions]))
   (initLocalState [this]
     (let [{:keys [query/all-currencies
                   query/all-budgets]} (om/props this)
           {:keys [transaction/type]} (om/get-computed this)]
       {:input/date     (js/Date.)
-       :input/tags     (sorted-set)
+       :input/tags     #{}
        :input/currency (-> all-currencies
                            first
                            :currency/code)
@@ -156,18 +148,13 @@
            (opts {:style {:display         "flex"
                           :flex-direction  "column"
                           :justify-content "flex-start"}})
-           [:input.form-control
-            ;;TODO: Change this to tag-input
-            (opts {:on-change   (utils/on-change this :input/tag)
-                   :type        "text"
-                   :value       tag
-                   :on-key-down (on-add-tag-key-down this tag)})]
+           (utils/tag-input
+             {:input-tag     tag
+              :selected-tags tags
+              :on-change     #(om/update-state! this assoc :input/tag %)
+              :on-add-tag    #(add-tag this %)
+              :on-delete-tag #(delete-tag-fn this %)})]]
 
-           [:div.form-control-static
-            (map-all tags
-                     (fn [tag]
-                       ;; TODO: Fix this so that it takes tags as maps.
-                       (utils/tag {:tag/name tag} {:on-delete (delete-tag-fn this tag)})))]]]
          [:div.modal-footer
           [:button
            (opts {:class    "btn btn-default btn-md"
@@ -175,7 +162,7 @@
            "Cancel"]
           [:button.btn.btn-md
            (opts {:class    (if (= type :transaction.type/expense) "btn-danger" "btn-info")
-                  :on-click #(do (.add-transaction this)
+                  :on-click #(do (add-transaction this (om/get-state this))
                                  (on-close))})
            "Save"]]]))))
 

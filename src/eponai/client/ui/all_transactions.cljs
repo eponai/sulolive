@@ -51,21 +51,12 @@
                       :min-width "400px"
                       :max-width "400px"}})
 
-       (utils/tag-input {:tag         input-tag
+       (utils/tag-input {:input-tag         input-tag
+                         :selected-tags include-tags
                          :placeholder "Filter tags..."
                          :on-change   #(om/update-state! component assoc :input-tag %)
-                         :on-add-tag  #(add-tag component %)})
-
-       [:div
-        (opts {:style {:display        :flex
-                       :flex-direction :row
-                       :flex-wrap      :wrap
-                       :width          "100%"}})
-        (map-all
-          include-tags
-          (fn [tag]
-            (utils/tag tag
-                 {:on-delete #(delete-tag-fn component tag)})))]])))
+                         :on-add-tag  #(add-tag component %)
+                         :on-delete-tag #(delete-tag-fn component %)})])))
 
 ;; ################### Om next components ###################
 
@@ -361,12 +352,16 @@
                           :flex-direction :row
                           :flex-wrap      :wrap-reverse}})
            (tag-filter this (:filter/include-tags input-filter))
-           (utils/date-picker {:value (:filter/start-date input-filter)
-                               :on-change #(select-date this :filter/start-date %)
-                               :placeholder "From date..."})
-           (utils/date-picker {:value (:filter/end-date input-filter)
-                               :on-change #(select-date this :filter/end-date %)
-                               :placeholder "To date..."})]
+           (->Datepicker
+             (opts {:key         ["From date..."]
+                    :placeholder "From date..."
+                    :value       (:filter/start-date input-filter)
+                    :on-change   #(select-date this :filter/start-date %)}))
+           (->Datepicker
+             (opts {:key         ["To date..."]
+                    :placeholder "To date..."
+                    :value       (:filter/end-date input-filter)
+                    :on-change   #(select-date this :filter/end-date %)}))]
 
           [:table.table.table-striped.table-hover
            [:thead

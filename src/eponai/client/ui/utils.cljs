@@ -1,5 +1,5 @@
 (ns eponai.client.ui.utils
-  (:require [eponai.client.ui :refer-macros [opts]]
+  (:require [eponai.client.ui :refer-macros [opts] :refer [map-all]]
             [eponai.client.ui.datepicker :refer [->Datepicker]]
             [sablono.core :refer-macros [html]]
             [om.next :as om]
@@ -68,19 +68,37 @@
   (when (and (= 13 (.-keyCode e))
              (seq (.. e -target -value)))
     (.preventDefault e)
-    (f {:tag/name (.. e -target -value)})))
+    (f (.. e -target -value))))
 
-(defn tag-input [{:keys [tag on-change on-add-tag placeholder]}]
+(defn tag-input [{:keys [input-tag
+                         selected-tags
+                         on-change
+                         on-add-tag
+                         on-delete-tag
+                         placeholder]}]
   (html
-    [:div.has-feedback
-     [:input.form-control
-      {:type        "text"
-       :value       (:tag/name tag)
-       :on-change   #(on-change {:tag/name (.-value (.-target %))})
-       :on-key-down #(on-enter-down % on-add-tag)
-       :placeholder (or placeholder "Filter tags...")}]
-     [:span
-      {:class "glyphicon glyphicon-tag form-control-feedback"}]]))
+    [:div
+     [:div.has-feedback
+      [:input.form-control
+       {:type        "text"
+        :value       (:tag/name input-tag)
+        :on-change   #(on-change {:tag/name (.-value (.-target %))})
+        :on-key-down (fn [e]
+                       (on-enter-down e #(on-add-tag {:tag/name %})))
+        :placeholder (or placeholder "Filter tags...")}]
+      [:span
+       {:class "glyphicon glyphicon-tag form-control-feedback"}]]
+
+     [:div
+      (opts {:style {:display        :flex
+                     :flex-direction :row
+                     :flex-wrap      :wrap
+                     :width          "100%"}})
+      (map-all
+        selected-tags
+        (fn [t]
+          (tag t
+               {:on-delete #(on-delete-tag t)})))]]))
 
 (defn date-picker [{:keys [value placeholder on-change]}]
   [:div#date-input
