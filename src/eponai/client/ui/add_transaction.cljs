@@ -157,6 +157,7 @@
                           :flex-direction  "column"
                           :justify-content "flex-start"}})
            [:input.form-control
+            ;;TODO: Change this to tag-input
             (opts {:on-change   (utils/on-change this :input/tag)
                    :type        "text"
                    :value       tag
@@ -165,6 +166,7 @@
            [:div.form-control-static
             (map-all tags
                      (fn [tag]
+                       ;; TODO: Fix this so that it takes tags as maps.
                        (utils/tag {:tag/name tag} {:on-delete (delete-tag-fn this tag)})))]]]
          [:div.modal-footer
           [:button

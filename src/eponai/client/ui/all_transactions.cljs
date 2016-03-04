@@ -99,7 +99,7 @@
                   transaction/type
                   transaction/conversion]
            :as   transaction} (om/props this)
-          {:keys [user on-select on-deselect is-selected]} (om/get-computed this)]
+          {:keys [user on-select on-deselect is-selected on-tag-click]} (om/get-computed this)]
       (debug "computed: " (om/get-computed this))
       (html
         [:tr
@@ -117,8 +117,7 @@
           (opts {:key [uuid]})
           (map-all (:transaction/tags transaction)
                    (fn [tag]
-                     (utils/tag (:tag/name tag)
-                                {:on-click #(add-tag this (:tag/name tag))})))]
+                     (utils/tag tag {:on-click #(on-tag-click tag)})))]
          [:td.text-right
           (opts {:key [uuid]
                  :class (if (= (:db/ident type) :transaction.type/expense) "text-danger" "text-success")})
@@ -298,9 +297,9 @@
               [:td
                (utils/tag-input
                  {:placeholder "Add tag..."
-                  :value       tag
-                  :on-change   (utils/on-change this :input/tag)
-                  :on-add-tag  (fn [tag-name]
+                  :tag         tag
+                  :on-change   #(om/update-state! this assoc :input/tag %)
+                  :on-add-tag  (fn [tag]
                                  (om/update-state!
                                    this
                                    (fn [state]
@@ -308,14 +307,13 @@
                                          (assoc :input/tag "")
                                          (update-in [:input/tags] conj
                                                     (or (->> (:transaction/tags transaction)
-                                                             (filter #(= (:tag/name %) tag-name))
+                                                             (filter #(= (:tag/name %) (:tag/name tag)))
                                                              first)
-                                                        {:tag/name tag-name}))))))})
+                                                        tag))))))})
                ;; Copied from ->Transaction
                (map-all tags
                         (fn [tag]
-                          (utils/tag (:tag/name tag)
-                                     {:on-delete (delete-tag-fn2 this tag)})))]]]])]))))
+                          (utils/tag tag {:on-delete (delete-tag-fn2 this tag)})))]]]])]))))
 
 (def ->SelectedTransaction (om/factory SelectedTransaction))
 
@@ -388,7 +386,8 @@
                                    :on-select   #(select-transaction this %)
                                    :on-deselect #(deselect-transaction this)
                                    :is-selected (= (:db/id selected-transaction)
-                                                   (:db/id props))})))
+                                                   (:db/id props))
+                                   :on-tag-click #(add-tag this %)})))
                  (sort-by :transaction/created-at > transactions))]]]
          [:div
 

@@ -163,10 +163,9 @@
     (assoc transaction
       :db/id (d/tempid :db.part/user))))
 
-#?(:cljs
-   (defn data-filter
-     [input & opts]
-     (let [filter-value-format (fn [k v]
+(defn data-filter
+  [input & opts]
+  (let [filter-value-format (fn [k v]
                               (cond (or (= k :filter/include-tags)
                                         (= k :filter/exclude-tags))
                                     (map #(assoc % :db/id (d/tempid :db.part/user)) v)
@@ -174,19 +173,19 @@
                                     (or (= k :filter/start-date)
                                         (= k :filter/end-date))
                                     (date (date->ymd-string v))))
-           clean-filters (reduce
-                           (fn [m [k v]]
-                             (let [ent (filter-value-format k v)]
-                               (if (seq ent)
-                                 (assoc m k ent)
-                                 m)))
-                           {}
-                           input)]
-       (debug "Formatted filters: " clean-filters)
-       (debug "Formatted filters seq: " (seq clean-filters))
-       (if (seq clean-filters)
-         (assoc clean-filters :db/id (d/tempid :db.part/user))
-         nil))))
+        clean-filters (reduce
+                        (fn [m [k v]]
+                          (let [ent (filter-value-format k v)]
+                            (if (seq ent)
+                              (assoc m k ent)
+                              m)))
+                        {}
+                        input)]
+    (debug "Formatted filters: " clean-filters)
+    (debug "Formatted filters seq: " (seq clean-filters))
+    (if (seq clean-filters)
+      (assoc clean-filters :db/id (d/tempid :db.part/user))
+      nil)))
 
 (defn widget-map [{:keys [input-function input-report input-graph input-widget input-filter] :as input}]
   (let [function (assoc input-function :db/id (d/tempid :db.part/user))
