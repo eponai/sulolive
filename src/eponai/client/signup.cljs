@@ -32,50 +32,48 @@
     (let [{:keys [input-email
                   verification-sent]:as st} (om/get-state this)]
       (html
-        [:div
-         (opts {:style {:display "flex"
-                        :flex-direction "column"
-                        :align-items "flex-start"}})
-
-         [:h2 "Welcome!"]
-         [:p "Sign in with email"]
-
-         [:input.form-control#email-input
-          (opts {:value     input-email
-                 :on-change (on-input-change this :input-email)
-                 :style {:max-width 300}
-                 :placeholder "youremail@example.com"})]
-
-         [:p
-          (opts {:class "text-success small"
-                 :style {:height "1em"}})
-          (if verification-sent
-            "Check your inbox for a fancy sign in link!"
-            "")]
-
+        [:div.row
          [:div
-          [:button
-           {:class    "btn btn-info btn-lg"
-            :on-click #(do
-                        (om/update-state! this assoc :verification-sent true)
-                        (om/transact! this `[(signup/email ~st)]))}
-           "Sign In"]]
+          {:class "columns small-12 medium-10 medium-offset-1 large-6 large-offset-3"}
+          [:h2 "Welcome!"]
+          [:p "Sign in with email"]
 
-         [:br]
-         ;; --------- Social Buttons
-         [:h4 "or"]
-         [:hr.intro-divider-landing]
-         [:form
-          {:action "/api/login/fb"
-           :method "POST"}
-          [:button
-           {:class "btn btn-facebook btn-lg"
-            :type "submit"}
-           [:i
-            {:class "fa fa-facebook fa-fw"}]
-           [:span
-            {:class "network-text"}
-            "Sign in with Facebook"]]]]))))
+          [:input
+           (opts {:value       input-email
+                  :on-change   (on-input-change this :input-email)
+                  :type        :email
+                  :placeholder "youremail@example.com"})]
+
+          [:p
+           (opts {:class "text-success small"
+                  :style {:height "1em"}})
+           (if verification-sent
+             "Check your inbox for a fancy sign in link!"
+             "")]
+
+          [:div
+           [:button
+            {:class    "button primary"
+             :on-click #(do
+                         (om/update-state! this assoc :verification-sent true)
+                         (om/transact! this `[(signup/email ~st)]))}
+            "Sign In"]]
+
+          [:br]
+          ;; --------- Social Buttons
+          [:h4 "or"]
+          [:hr.intro-divider-landing]
+          [:form
+           {:action "/api/login/fb"
+            :method "POST"}
+           [:button
+            {:class "button btn-facebook"
+             :type  "submit"}
+            [:i
+             {:class "fa fa-facebook fa-fw"}]
+            [:span
+             {:class "network-text"}
+             "Sign in with Facebook"]]]]]))))
 
 (def ->log-in (om/factory LogIn))
 
@@ -91,54 +89,56 @@
     (let [{:keys [::fixed-email user-uuid]} (om/props this)
           {:keys [input-name input-email message status]} (om/get-state this)]
       (html
-        [:div
-         [:h2 "Welcome!"]
-         [:label
-          "Email:"]
-         [:input.form-control#email-input
-          (opts {:value       input-email
-                 :on-change   (on-input-change this :input-email)
-                 :placeholder "youremail@example.com"
-                 :name        "user-email"
-                 :style       {:max-width 300}})]
+        [:div.row
+         [:div
+          {:class "columns small-12 medium-10 medium-offset-1 large-6 large-offset-3"}
+          [:h2 "Welcome!"]
+          [:label
+           "Email:"]
+          [:input
+           (opts {:value       input-email
+                  :on-change   (on-input-change this :input-email)
+                  :placeholder "youremail@example.com"
+                  :name        "user-email"
+                  :type        :email})]
 
-         [:br]
-         [:label
-          "Name:"]
+          [:br]
+          [:label
+           "Name:"]
 
-         [:input.form-control#name-input
-          (opts {:value     input-name
-                 :on-change (on-input-change this :input-name)
-                 :name      "user-name"
-                 :style     {:max-width 300}})]
-         [:p
-          (opts {:class (str "small "
-                             (cond (= status :login-failed)
-                                   "text-danger"))
-                        :style {:height "1em"}})
-          message]
+          [:input
+           (opts {:value     input-name
+                  :on-change (on-input-change this :input-name)
+                  :name      "user-name"
+                  :type      :text})]
+          [:p
+           (opts {:class (str "small "
+                              (cond (= status :login-failed)
+                                    "text-danger"))
+                  :style {:height "1em"}})
+           message]
 
 
-         [:button
-          {:class    "btn btn-info btn-lg"
-           :on-click (fn [e]
-                       (go
-                         (let [response (async/<! (http/post
-                                                    "/api/login/create"
-                                                    {:transit-params {:user-uuid  (str user-uuid)
-                                                                      :user-email input-email}}))
-                               status (get-in response [:body :status])
-                               message (get-in response [:body :message])]
-                           (if-not (= (:status response) 200)
-                             (om/update-state! this assoc :message message :status status)
-                             (set! js/document.location.href (routes/inside "/"))))))}
-          "Create account"]
+          [:button
+           {:class    "button primary"
+            :on-click (fn [e]
+                        (go
+                          (let [response (async/<! (http/post
+                                                     "/api/login/create"
+                                                     {:transit-params {:user-uuid  (str user-uuid)
+                                                                       :user-email input-email}}))
+                                status (get-in response [:body :status])
+                                message (get-in response [:body :message])]
+                            (if-not (= (:status response) 200)
+                              (om/update-state! this assoc :message message :status status)
+                              (set! js/document.location.href (routes/inside "/"))))))}
+           "Create account"]
 
-         [:p.small
-          "By creating an account, you accept JourMoney's"
-          [:a {:class "btn btn-link btn-xs"} "Terms of Service"]
-          " and "
-          [:a {:class "btn btn-link btn-xs"} "Privacy Policy"]]]))))
+          [:p.small
+           "By creating an account, you accept JourMoney's"
+           [:a {:class "btn btn-link btn-xs"} "Terms of Service"]
+           " and "
+           [:a {:class "btn btn-link btn-xs"} "Privacy Policy"]]]]))))
 
 (def ->create-account (om/factory CreateAccount))
 

@@ -54,15 +54,20 @@
            {:class "toggled"})
          (navbar/sidebar-create side-bar)
 
+         [:div
+          (opts {:style {:position :fixed
+                         :height "100vh"
+                         :width "100%"
+                         :background "transparent url(/style/img/world-black.png) no-repeat center center"
+                         :background-size :cover
+                         :opacity 0.05}})]
          [:div#page-content-wrapper
-          (opts {:style {:height "100%"}})
-
           (navbar/navbar-create nav-bar {:on-sidebar-toggle #(om/update-state! this update :sidebar-visible? not)
                                          :sidebar-visible? sidebar-visible?})
 
           [:div
-           (opts {:class "container-fluid content-section-b"
-                  :style {:border "1px solid transparent"}})
+           (opts {:class      "container-fluid content-section"
+                  :style      {:border "1px solid transparent"}})
            (when content-factory
              (content-factory app-content))]]]))))
 

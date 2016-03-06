@@ -51,20 +51,11 @@
                          :align-items     :flex-start}})
           [:h5
            (:report/title report)]
-          [:ul.list-inline
-           (opts {:style {:display        :flex
-                          :flex-direction :row}})
-           (when on-edit
-             [:li
-              [:a
-               {:on-click #(on-edit widget)
-                :href     "#"}
-               [:i.fa.fa-pencil]]])
-           (when on-delete
-             [:li
-              [:a.close
-               {:on-click #(on-delete widget)}
-               "x"]])]]
+          (when on-edit
+            [:a.button.secondary
+             {:on-click #(on-edit widget)
+              :href     "#"}
+             [:i.fa.fa-pencil]])]
          (let [{:keys [graph/style]} graph
                settings {:data         data
                          :id           (str (or (:widget/uuid widget) "widget"))

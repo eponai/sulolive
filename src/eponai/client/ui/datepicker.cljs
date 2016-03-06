@@ -74,14 +74,14 @@
     (let [{:keys [key on-change]} (om/props this)]
       (assert key "Datepicker needs :key in props")
       (html
-       [:div.has-feedback
-        [:input.form-control
-         (opts {:on-key-down (on-input-field-change on-change)
-                :type        "text"
-                :ref         (pikaday-ref-name this)
-                :placeholder (-> this om/props :placeholder)})]
-        [:span
-         {:class "glyphicon glyphicon-calendar form-control-feedback"}]]))))
+        [:div.input-group
+         [:input.input-group-field
+          (opts {:on-key-down (on-input-field-change on-change)
+                 :type        "text"
+                 :ref         (pikaday-ref-name this)
+                 :placeholder (-> this om/props :placeholder)})]
+         [:span.input-group-label
+          [:i.fa.fa-calendar]]]))))
 
 ;; props: {:value js/Date :on-change f :placeholder str}
 (def ->Datepicker (om/factory DatePicker))

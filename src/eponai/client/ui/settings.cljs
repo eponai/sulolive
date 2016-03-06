@@ -38,33 +38,36 @@
          [:div#general
           [:h3
            "General"]
-          [:label.form-control-static
+          [:label
            "Plan:"]
           [:div
-           [:button
-            {:class    "btn btn-default btn-lg"
+           [:a
+            {:class    "button secondary"
              :on-click #(om/transact! this `[(stripe/cancel)])}
             "Cancel plan"]]
-          [:label.form-control-static
+          [:label
            "Email:"]
-          [:input.form-control
+          [:input
            {:value    email
+            :type "email"
             :disabled true}]
-          [:label.form-control-static
+          [:label
            "Name"]
           [:input.form-control
-           {:value user-name}]
+           {:value user-name
+            :type "text"}]
 
-          [:label.form-control-static
+          [:label
            "Main currency"]
-          [:input.form-control
+          [:input
            {:value     input-currency
+            :type      "text"
             :on-change #(om/update-state! this assoc :input-currency (.-value (.-target %)))
             :list      "currency-name"}]
           [:datalist#currency-name
            [:option {:value "SEK"}]
            [:option {:value "USD"}]]
-          [:button.btn.btn-info.btn-md
+          [:a.button.primary
            {:on-click #(om/transact! this `[(settings/save ~{:currency input-currency
                                                              :user current-user
                                                              :mutation-uuid (d/squuid)})

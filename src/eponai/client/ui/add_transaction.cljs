@@ -62,11 +62,11 @@
   (ui-config [this]
     (let [{:keys [input/type]} (om/get-state this)]
       (cond (= type :transaction.type/expense)
-            {:btn-class "btn btn-danger btn-md"
+            {:btn-class "button alert small"
              :i-class "fa fa-minus"}
 
             (= type :transaction.type/income)
-            {:btn-class "btn btn-info btn-md"
+            {:btn-class "button success small"
              :i-class "fa fa-plus"})))
   (render
     [this]
@@ -83,20 +83,17 @@
       (html
         [:div
 
-         [:div.modal-header
-          {:class (if (= type :transaction.type/expense) "btn-danger" "btn-info")}
-          [:button.close
-           {:on-click on-close}
-           "x"]
-          [:h4
+         [:div
+          {:class (if (= type :transaction.type/expense) "alert" "success")}
+          [:h3
            (if (= type :transaction.type/expense)
              "New expense"
              "New income")]]
 
-         [:div.modal-body
-          [:label.form-control-static
+         [:div
+          [:label
            "Sheet:"]
-          [:select.form-control
+          [:select
            {:on-change     (utils/on-change this :input/budget)
             :type          "text"
             :default-value budget}
@@ -107,36 +104,25 @@
                               :key   [(:budget/uuid budget)]})
                        (or (:budget/name budget) "Untitled")]))]
 
-          [:label.form-control-static
+          [:label
            "Amount:"]
           ;; Input amount with currency
-          [:div
-           (opts {:style {:display         "flex"
-                          :flex-direction  "row"
-                          :justify-content "stretch"
-                          :align-items :center
-                          :max-width       "100%"}})
-           [:button
-            (opts {:style    {:display   "block"
-                              :margin    "0.5em 0.2em"
-                              :font-size "1em"}
-                   :on-click #(.toggle-input-type this)
+          [:div.input-group
+           [:a.input-group-button
+            (opts {:on-click #(.toggle-input-type this)
                    :class    btn-class})
             [:i
              {:class i-class}]]
-           [:input.form-control
+           [:input.input-group-field
             (opts {:type        "number"
                    :placeholder "0.00"
                    :min         "0"
                    :value       amount
-                   :style       {:width        "60%"
-                                 :margin-right "0.5em"}
                    :on-change   (utils/on-change this :input/amount)})]
 
-           [:select.form-control
+           [:select.input-group-field
             (opts {:on-change     (utils/on-change this :input/currency)
-                   :default-value currency
-                   :style         {:width "40%"}})
+                   :default-value currency})
             (map-all all-currencies
                      (fn [{:keys [currency/code]}]
                        [:option
@@ -144,46 +130,43 @@
                                :key   [code]})
                         (name code)]))]]
 
-          [:label.form-control-static
+          [:label.form
            "Title:"]
 
-          [:input.form-control
+          [:input
            {:on-change (utils/on-change this :input/title)
             :type      "text"
             :value     title}]
 
-          [:label.form-control-static
+          [:label
            "Date:"]
 
           ; Input date with datepicker
 
-          [:div
-           (->Datepicker
-             (opts {:key       [::date-picker]
-                    :value     date
-                    :on-change #(om/update-state! this assoc :input/date %)}))]
+          (->Datepicker
+            (opts {:key       [::date-picker]
+                   :value     date
+                   :on-change #(om/update-state! this assoc :input/date %)}))
 
-          [:label.form-control-static
+          [:label
            "Tags:"]
 
-          [:div
-           (opts {:style {:display         "flex"
-                          :flex-direction  "column"
-                          :justify-content "flex-start"}})
-           (utils/tag-input
-             {:input-tag     tag
-              :selected-tags tags
-              :on-change     #(om/update-state! this assoc :input/tag %)
-              :on-add-tag    #(add-tag this %)
-              :on-delete-tag #(delete-tag-fn this %)})]]
+          (utils/tag-input
+            {:input-tag     tag
+             :selected-tags tags
+             :on-change     #(om/update-state! this assoc :input/tag %)
+             :on-add-tag    #(add-tag this %)
+             :on-delete-tag #(delete-tag-fn this %)
+             :placeholder   "Select tags..."})]
 
-         [:div.modal-footer
-          [:button
-           (opts {:class    "btn btn-default btn-md"
+         [:div
+          (opts {:style {:float :right}})
+          [:a
+           (opts {:class    "button secondary"
                   :on-click on-close})
            "Cancel"]
           [:button.btn.btn-md
-           (opts {:class    (if (= type :transaction.type/expense) "btn-danger" "btn-info")
+           (opts {:class    "button"
                   :on-click #(do (add-transaction this (om/get-state this))
                                  (on-close))})
            "Save"]]]))))

@@ -110,10 +110,10 @@
           React (.-React js/window)]
       (html
         [:div
-         [:button.btn.btn-default.btn-md
+         [:a.button.secondary
           {:on-click #(toggle-edit this)}
           [:i.fa.fa-pencil]]
-         [:button.btn.btn-default.btn-md
+         [:a.button.secondary
           {:on-click #(om/update-state! this assoc :add-widget? true)}
           [:i.fa.fa-bar-chart]]
 
@@ -126,7 +126,7 @@
                                                               :dashboard dashboard
                                                               :index (calculate-last-index widgets)}))
                          :on-close #(om/update-state! this assoc :add-widget? false)
-                         :class    "modal-lg"}))
+                         :size "large"}))
          [:div (str "Edit: " edit?)]
          (when edit?
            [:style (css [:.react-grid-item
@@ -142,10 +142,11 @@
                                                               :on-save  #(do
                                                                           (save-widget this %)
                                                                           (om/update-state! this assoc :edit-widget nil))
+                                                              :on-delete (when edit? #(.delete-widget this %))
                                                               :dashboard   dashboard
                                                               :widget edit-widget}))
                          :on-close #(om/update-state! this assoc :edit-widget nil)
-                         :class    "modal-lg"}))
+                         :size "large"}))
          (when (and layout
                     grid-element)
            (.createElement React
@@ -167,8 +168,7 @@
                                                  #js {:key (str (:widget/uuid widget-props))}
                                                  (->Widget
                                                    (om/computed widget-props
-                                                                {:on-delete (when edit? #(.delete-widget this %))
-                                                                 :on-edit   (when edit? #(om/update-state! this assoc :edit-widget %))}))))
+                                                                {:on-edit   (when edit? #(om/update-state! this assoc :edit-widget %))}))))
                                (sort-by :widget/index widgets)))))]))))
 
 (def ->Dashboard (om/factory Dashboard))

@@ -98,13 +98,13 @@
           {:keys [query/current-user]} (om/props this)]
       (debug "StripeCheckout loaded: " checkout-loaded?)
       (html
-        [:div
-         [:h3
+        [:div.intro-message
+         [:h2
           (opts {:style {:text-align "center"}})
           "Select your plan"]
          [:p
           (opts {:style {:text-align "center"}})
-          "Get unlimited access to the app."]
+          "and get unlimited access to the app."]
          [:hr.intro-divider]
 
          (when is-loading?
@@ -114,15 +114,21 @@
            [:div#pricePlans
             [:ul#plans
              (plan-item this
-                        {:plan-name    "Monthly"
-                         :plan-price   9.90
-                         :plan-monthly 9.90
+                        {:plan-name    "3 months"
+                         :plan-price   25.50
+                         :plan-monthly 8.50
                          :user-email (:user/email current-user)})
 
              (plan-item this
-                        {:plan-name    "Yearly"
-                         :plan-price   90
-                         :plan-monthly 7.50
+                        {:plan-name    "6 months"
+                         :plan-price   42
+                         :plan-monthly 7
+                         :user-email (:user/email current-user)})
+
+             (plan-item this
+                        {:plan-name    "12 months"
+                         :plan-price   60
+                         :plan-monthly 5
                          :user-email (:user/email current-user)})]])]))))
 
 (def ->Payment (om/factory Payment))

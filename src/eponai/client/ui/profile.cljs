@@ -66,7 +66,7 @@
            (opts {:src (:user/picture current-user)})]
           [:h1 (:user/email current-user)]]
 
-         [:a.btn.btn-link
+         [:a.button.secondary
           {:href (routes/inside "/transactions")}
           "All transactions"]
 
@@ -87,23 +87,23 @@
                                (fn [budget-props]
                                  (html
                                    [:div {:key  (str (:budget/uuid budget-props))}
-                                    [:a.text-center
+                                    [:a
                                      (opts {:href  (routes/inside "/dashboard/" (:budget/uuid budget-props))
                                             :style {:border "1px solid #e7e7e7"
                                                     :height "100%"
-                                                    :width  "100%"
-                                                    :text-decoration :none}})
-                                     [:h3 (:budget/name budget-props)]
-                                     [:table.table.table-striped.table-hover
-                                      [:thead
+                                                    :width  "100%"}})
+                                     [:h3.text-center (:budget/name budget-props)]
+                                     [:table
+                                      (opts {:style {:width "100%"}})
+                                      [:tbody
                                        [:tr
-                                        [:th "Transactions"]
-                                        [:th (count (:transaction/_budget budget-props))]]
+                                        [:td "Transactions"]
+                                        [:td (count (:transaction/_budget budget-props))]]
                                        [:tr
-                                        [:th
+                                        [:td
                                          (opts {:style {:vertical-align :top}})
                                          "Top tags"]
-                                        [:th
+                                        [:td
                                          (let [transactions (:transaction/_budget budget-props)
                                                tags (reduce #(concat %1 (:transaction/tags %2)) [] transactions)
                                                sorted (sort-by count (group-by :tag/name tags))]

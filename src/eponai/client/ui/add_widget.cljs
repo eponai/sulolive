@@ -35,21 +35,21 @@
 
 (defn- button-class [field value]
   (if (= field value)
-    "btn btn-info btn-md"
-    "btn btn-default btn-md"))
+    "button primary"
+    "button secondary"))
 
 (defn- chart-function [component input-function]
   (let [function-id (:report.function/id input-function)]
     (html
       [:div
        [:h6 "Calculate"]
-       [:div.btn-group
-        [:button
+       [:div.button-group
+        [:a
          {:class    (button-class function-id :report.function.id/sum)
           :on-click #(select-function component :report.function.id/sum)}
 
          [:span "Sum"]]
-        [:button
+        [:a
          {:class    (button-class function-id :report.function.id/mean)
           :on-click #(select-function component :report.function.id/mean)}
          [:span
@@ -59,7 +59,7 @@
   (html
     [:div
      [:h6 "Group by"]
-     [:div.btn-group
+     [:div.button-group
       (map
         (fn [k]
           (let [conf {:transaction/tags     {:icon "fa fa-tag"
@@ -68,7 +68,7 @@
                                              :text "Currencies"}
                       :transaction/date     {:icon "fa fa-calendar"
                                              :text "Dates"}}]
-            [:button
+            [:a
              (opts {:key      [k]
                     :class    (button-class group-by k)
                     :on-click #(select-group-by component k)})
@@ -86,11 +86,7 @@
                                         filter/end-date]}]
   (html
     [:div
-     (opts {:style {:display        :flex
-                    :flex-direction :row
-                    :flex-wrap :wrap-reverse}})
-     (utils/tag-filter component include-tags)
-
+     [:h6 "Filters"]
      (->Datepicker
        (opts {:key         ["From date..."]
               :placeholder "From date..."
@@ -100,7 +96,8 @@
        (opts {:key         ["To date..."]
               :placeholder "To date..."
               :value       end-date
-              :on-change   #(utils/select-date-filter component :filter/end-date %)}))]))
+              :on-change   #(utils/select-date-filter component :filter/end-date %)}))
+     (utils/tag-filter component include-tags)]))
 
 
 (defn- chart-settings [component {:keys [input-graph input-function input-report input-filter]}]
@@ -170,78 +167,79 @@
           {:keys [input-graph input-report input-filter] :as state} (om/get-state this)
           {:keys [on-close
                   on-save
-                  dashboard]} (om/get-computed this)]
-      (debug "State: " state)
+                  on-delete
+                  dashboard
+                  widget]} (om/get-computed this)]
+      (prn "On-delete : " on-delete)
       (html
         [:div
-         [:div.modal-header
-          [:button.close
-           {:on-click on-close}
-           "x"]
-          [:h4 (str "New widget - " (:budget/name (:dashboard/budget dashboard)))]]
+         [:h3 (str "New widget - " (:budget/name (:dashboard/budget dashboard)))]
 
-         [:div.modal-body
-          [:div.row
-
+         [:div.row.small-up-1
+          [:input
+           {:value       (:report/title input-report)
+            :type        "text"
+            :placeholder "Untitled"
+            :on-change   #(change-report-title this (.-value (.-target %)))}]
+          [:div.column
+           (let [style (:graph/style input-graph)]
+             [:div.button-group
+              [:a
+               (opts {:class    (button-class style :graph.style/bar)
+                      :on-click #(select-graph-style this :graph.style/bar)})
+               "Bar Chart"]
+              [:a
+               (opts {:class    (button-class style :graph.style/area)
+                      :on-click #(select-graph-style this :graph.style/area)})
+               "Area Chart"]
+              [:a
+               (opts {:class    (button-class style :graph.style/number)
+                      :on-click #(select-graph-style this :graph.style/number)})
+               "Number"]])
            [:div
-            {:class "col-sm-6"}
-            [:input.form-control
-             {:value       (:report/title input-report)
-              :placeholder "Untitled"
-              :on-change   #(change-report-title this (.-value (.-target %)))}]
-            (chart-settings this state)]
-           [:div
-            {:class "col-sm-6"}
-            (let [style (:graph/style input-graph)]
-              [:div.btn-group
-               [:div
-                (opts {:class    (button-class style :graph.style/bar)
-                       :on-click #(select-graph-style this :graph.style/bar)})
-                "Bar Chart"]
-               [:button
-                (opts {:class    (button-class style :graph.style/area)
-                       :on-click #(select-graph-style this :graph.style/area)})
-                "Area Chart"]
-               [:button
-                (opts {:class    (button-class style :graph.style/number)
-                       :on-click #(select-graph-style this :graph.style/number)})
-                "Number"]])
-            [:h6 "Preview"]
-            [:div
-             (opts {:style {:height 300}})
-             (->Widget (om/computed {:widget/graph  input-graph
-                                     :widget/report input-report
-                                     :widget/data   (report/generate-data input-report input-filter all-transactions)}
-                                    {:data all-transactions}))]]]]
+            (opts {:style {:height 300}})
+            (->Widget (om/computed {:widget/graph  input-graph
+                                    :widget/report input-report
+                                    :widget/data   (report/generate-data input-report input-filter all-transactions)}
+                                   {:data all-transactions}))]]
 
-         [:div.modal-footer
-          (opts {:style {:display        "flex"
-                         :flex-direction "row-reverse"}})
-          [:button
-           (opts
-             {:class    "btn btn-default btn-md"
-              :on-click on-close
-              :style    {:margin 5}})
-           "Cancel"]
-          [:button
-           (opts {:class    "btn btn-info btn-md"
-                  :on-click #(on-save (cond-> state
-                                              true
-                                              (assoc :input-dashboard {:dashboard/uuid (:dashboard/uuid dashboard)})
+          [:div.column
+           (chart-settings this state)]]
 
-                                              (not (:widget/uuid (:input-widget state)))
-                                              (assoc-in [:input-widget :widget/uuid] (d/squuid))
+         [:div
+          (opts {:style {:display         :flex
+                         :flex-direction  :row-reverse
+                         :justify-content :space-between}})
 
-                                              (not (:graph/uuid (:input-graph state)))
-                                              (assoc-in [:input-graph :graph/uuid] (d/squuid))
+          [:div
+           (opts {:style {:display        "flex"
+                          :flex-direction "row-reverse"}})
+           [:a.button.secondary
+            {:on-click on-close}
+            "Cancel"]
+           [:a.button.primary
+            {:on-click #(on-save (cond-> state
+                                                true
+                                                (assoc :input-dashboard {:dashboard/uuid (:dashboard/uuid dashboard)})
 
-                                              (not (:report.function/uuid (:input-function state)))
-                                              (assoc-in [:input-function :report.function/uuid] (d/squuid))
+                                                (not (:widget/uuid (:input-widget state)))
+                                                (assoc-in [:input-widget :widget/uuid] (d/squuid))
 
-                                              (not (:report/uuid (:input-report state)))
-                                              (assoc-in [:input-report :report/uuid] (d/squuid))))
+                                                (not (:graph/uuid (:input-graph state)))
+                                                (assoc-in [:input-graph :graph/uuid] (d/squuid))
 
-                            :style {:margin 5}})
-           "Save"]]]))))
+                                                (not (:report.function/uuid (:input-function state)))
+                                                (assoc-in [:input-function :report.function/uuid] (d/squuid))
+
+                                                (not (:report/uuid (:input-report state)))
+                                                (assoc-in [:input-report :report/uuid] (d/squuid))))}
+
+
+            "Save"]]
+          (when on-delete
+            [:a.button.alert
+             {:on-click #(do (on-delete widget)
+                             (on-close))}
+             "Delete"])]]))))
 
 (def ->NewWidget (om/factory NewWidget))

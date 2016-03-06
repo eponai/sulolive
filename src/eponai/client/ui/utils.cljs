@@ -27,43 +27,44 @@
                        :position :fixed}
             :on-click on-click})]))
 
-(defn modal [{:keys [content on-close class]}]
-  (html
-    [:div
-     (opts {:style {:top      0
-                    :bottom   0
-                    :right    0
-                    :left     0
-                    :position :absolute
-                    :z-index  1050
-                    :opacity  1
-                    ;:background       "rgba(0,0,0,0.6)"
-                    ;:background-color "#123"
-                    :display  "block"}})
-     (click-outside-target on-close)
-
-     [:div
-      {:class (str "modal-dialog " (or class "modal-sm"))}
-      [:div.modal-content
-       content]]]))
+(defn modal [{:keys [content on-close size]}]
+  (let [click-outside-target-id (name :click-outside-target)]
+    (html
+      [:div.reveal-overlay
+       (opts {:id       click-outside-target-id
+              :style    {:z-index  2050
+                         :display  "block"}
+              :on-click #(when (= click-outside-target-id (.-id (.-target %)))
+                          (on-close))})
+       [:div
+        (opts {:class (if size (str size " reveal") "reveal")
+               :style (cond-> {:display  "block"
+                               :position :relative}
+                              (= size "large")
+                              (assoc :margin-top 0))})
+        [:a.close-button
+         {:on-click on-close}
+         "x"]
+        content]])))
 
 (defn tag [{tag-name :tag/name} {:keys [on-delete
                                         on-click]}]
   (html
     [:div
-     (opts {:class "btn-group btn-group-xs"
-            :style {:padding "0.1em"}
+     (opts {:class "button-group small"
             :key [tag-name]})
 
-     [:button
-      {:class    "btn btn-info"
-       :on-click (or on-click #(prn (.. % -target)))}
+     [:a
+      (opts {:class    "button"
+             :on-click (or on-click #(prn (.. % -target)))
+             :style {:padding "0.5em"}})
       tag-name]
 
      (when on-delete
-       [:button
-        {:class    "btn btn-info"
-         :on-click #(on-delete)}
+       [:a
+        (opts {:class    "button"
+               :on-click #(on-delete)
+               :style {:padding "0.5em"}})
         "x"])]))
 
 (defn- on-enter-down [e f]
@@ -80,16 +81,16 @@
                          placeholder]}]
   (html
     [:div
-     [:div.has-feedback
-      [:input.form-control
+     [:div.input-group
+      [:input.input-group-field
        {:type        "text"
         :value       (:tag/name input-tag)
         :on-change   #(on-change {:tag/name (.-value (.-target %))})
         :on-key-down (fn [e]
                        (on-enter-down e #(on-add-tag {:tag/name %})))
         :placeholder (or placeholder "Filter tags...")}]
-      [:span
-       {:class "glyphicon glyphicon-tag form-control-feedback"}]]
+      [:span.input-group-label
+       [:i.fa.fa-tag]]]
 
      [:div
       (opts {:style {:display        :flex
@@ -138,9 +139,7 @@
     (html
       [:div
        (opts {:style {:display        :flex
-                      :flex-direction :column
-                      :min-width      "400px"
-                      :max-width      "400px"}})
+                      :flex-direction :column}})
 
        (tag-input {:input-tag     input-tag
                    :selected-tags include-tags

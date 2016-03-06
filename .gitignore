@@ -24,5 +24,8 @@ profiles.clj
 ## Generated clojurescript->javascript output
 /resources/public/*/js
 
+## Scss generation
+/resources/public/foundation/
+
 # Hiccup-bridge
 /hicv

@@ -13,385 +13,295 @@
 
     <title>JourMoney - Go the distance</title>
 
+    <!-- Compressed CSS -->
+    <!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/foundation/6.2.0/foundation.min.css">-->
     <!-- Bootstrap Core CSS -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" >
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" >-->
     <!--<link href="/style/css/bootstrap.min.css" rel="stylesheet" >-->
 
     <!-- Custom CSS -->
-    <link href="/style/css/landing-page.css" rel="stylesheet">
+    <link href="/style/app/css/app.css" rel="stylesheet">
+
+    <!--<link href="/style/css/landing-page.css" rel="stylesheet">-->
     <link href="/style/css/loader.css" rel="stylesheet">
 
     <!-- Custom Fonts -->
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <!--<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">-->
     <!--<link href="/style/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">-->
 
     <!-- start Mixpanel -->
     <script type="text/javascript">(function(e,b){if(!b.__SV){var a,f,i,g;window.mixpanel=b;b._i=[];b.init=function(a,e,d){function f(b,h){var a=h.split(".");2==a.length&&(b=b[a[0]],h=a[1]);b[h]=function(){b.push([h].concat(Array.prototype.slice.call(arguments,0)))}}var c=b;"undefined"!==typeof d?c=b[d]=[]:d="mixpanel";c.people=c.people||[];c.toString=function(b){var a="mixpanel";"mixpanel"!==d&&(a+="."+d);b||(a+=" (stub)");return a};c.people.toString=function(){return c.toString(1)+".people (stub)"};i="disable time_event track track_pageview track_links track_forms register register_once alias unregister identify name_tag set_config people.set people.set_once people.increment people.append people.union people.track_charge people.clear_charges people.delete_user".split(" ");
-    for(g=0;g<i.length;g++)f(c,i[g]);b._i.push([a,e,d])};b.__SV=1.2;a=e.createElement("script");a.type="text/javascript";a.async=!0;a.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===e.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";f=e.getElementsByTagName("script")[0];f.parentNode.insertBefore(a,f)}})(document,window.mixpanel||[]);
+        for(g=0;g<i.length;g++)f(c,i[g]);b._i.push([a,e,d])};b.__SV=1.2;a=e.createElement("script");a.type="text/javascript";a.async=!0;a.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===e.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";f=e.getElementsByTagName("script")[0];f.parentNode.insertBefore(a,f)}})(document,window.mixpanel||[]);
     mixpanel.init("0980865aa734b3f18be4d92d0b612ee5");
     </script>
     <!-- end Mixpanel -->
+
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="57x57" href="/style/img/favicon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/style/img/favicon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/style/img/favicon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/style/img/favicon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/style/img/favicon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/style/img/favicon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/style/img/favicon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/style/img/favicon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/style/img/favicon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/style/img/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/style/img/favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/style/img/favicon/favicon-16x16.png">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/style/img/favicon/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
 </head>
 
 <body>
-
-    <!-- Navigation -->
-    <nav class="navbar navbar-default navbar-fixed-top topnav">
-        <div class="container topnav" id="navbar-menu">
-            <div class="nav-content">
-                <a class="navbar-brand topnav" href="">
+<!-- Header -->
+<div class="gradient-down-up text-light">
+    <div class="map map-white map-top">
+        <nav class="top-bar" id="landing-page">
+            <div class="top-bar-left">
+                <!--<div class="title-bar-title">-->
+                <a class="navbar-brand" href="">
                     <strong>JourMoney</strong>
                     <span class="small">by eponai</span>
                 </a>
-                <!--<ul class="nav navbar-nav">-->
-
-                <!--<li>-->
-                <a href="#" id="navbar-sign-in" data-toggle="popover" data-container="#navbar-sign-in" data-placement="bottom" data-trigger="click"
-                   data-content="Thanks for your interest! We're not quite ready, but sign up for our newsletter and we'll let you know when we launch.">
-                    <p class="btn btn-default btn-sm">
-                        Sign In
-                    </p>
-                </a>
-                <!--</li>-->
-
-            <!--</ul>-->
-            </div>
-
-            <!--</div>-->
-            <!-- /.navbar-collapse -->
-        </div>
-        <!-- /.container -->
-    </nav>
-
-
-    <!-- Header -->
-    <div class="intro-header gradient-down-up text-light" style="position:relative;">
-        <div class="container clearfix">
-
-            <div class="row">
-                <div class="col-sm-6 col-sm-offset-3">
-                    <div class="intro-message" style="position:relative;text-align:center;margin:3em 0;">
-                        <h1 style="padding: 20px 0;">Travel finance together</h1>
-                        <h4>Track, save, plan and go.</h4>
-                        <hr class="intro-divider">
-
-                        <p>
-                            Track you expenses together - wherever you are - and follow your progress using your own dashboards.
-                            When traveling on a budget, it's hard to account for everything when going to unfamiliar
-                            places. And maybe the route is not even fully planned yet!
-                            So play around with your numbers and find out how you can adjust your budget to fit into any new changes in your travel plans or unexpected expenses and incomes.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <!-- /.row -->
-
-                <!-- /.intro-message -->
-
-                    <!--<h4>Subscribe to our newsletter and be the first to know when we launch!</h4>-->
-
-                    <!--<form id="form-intro" class="form-group" method="post" action="/newsletter/subscribe">-->
-                        <!--<input type="email" name="email" class="form-control" placeholder="Your E-Mail" tabindex="1">-->
-                        <!--<br>-->
-                        <!--<button type="submit" class="btn btn-info btn-md" onclick="onSubscribe('subscribe-intro')"-->
-                                <!--tabindex="2">-->
-                            <!--<span class="network-text">Subscribe</span>-->
-                        <!--</button>-->
-                    <!--</form>-->
-                    <!--<div id="subscribe-intro" style="height:1em;"></div>-->
-                <!--<div class="col-sm-6 col-lg-5 col-lg-offset-2 fade-in">-->
-                    <!--<div class="intro-message" style="height:100%;">-->
-                    <!--&lt;!&ndash;<img class="img-responsive" src="/style/img/iMac-empty.png">&ndash;&gt;-->
-                    <!--</div>-->
                 <!--</div>-->
-                <!-- /.col-sm-6 -->
+            </div>
+            <div class="top-bar-right">
+                <ul class="menu">
+                    <li>
+                        <a href="#subscribe">
+                            <strong>Sign In</strong>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
 
+        <div class="intro-header">
 
-        </div>
-        <!-- /.container -->
+            <div class="container clearfix ">
 
-        <div style="padding:1em 0;width:100%;;background:rgba(236,147,24,0.7);">
-            <!--<div class="container">-->
-                <!--<div class="row">-->
-                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                        <h4>Subscribe to our newsletter and be the first to know when we launch!</h4>
+                <div class="row">
+                    <div class="small-12 medium-10 medium-offset-1 large-6 large-offset-3 columns">
+                        <div class="intro-message">
+                            <h1>Travel finance together</h1>
+                            <h4>Track, save, plan and go.</h4>
+                            <hr class="intro-divider">
 
-                        <form id="form-intro" method="post" action="/newsletter/subscribe">
-                            <div style="display:flex;flex-direction:row;align-items:center;">
-                                <!--<div class="col-sm-6">-->
-                        <!--<div class="box">-->
-                                    <input type="email" name="email" class="form-control" placeholder="Your E-Mail" tabindex="1">
-                        <!--</div>-->
-                                <!--</div>-->
-                                <!--<div class="col-sm-6">-->
-                        <!--<div class="box">-->
-                                    <button type="submit" class="btn btn-primary btn-md" onclick="onSubscribe('subscribe-intro')"
-                                            tabindex="2">
-                                        <span class="network-text">Subscribe</span>
-                                    </button>
-                        <!--</div>-->
-                                <!--</div>-->
-                            </div>
-                        </form>
-                        <div id="subscribe-intro" style="height:1em;"></div>
+                            <p id="subscribe">
+                                Track you expenses together - wherever you are - and follow your progress using your own dashboards.
+                                When traveling on a budget, it's hard to account for everything when going to unfamiliar
+                                places. And maybe the route is not even fully planned yet!
+                                So play around with your numbers and find out how you can adjust your budget to fit into any new changes in your travel plans or unexpected expenses and incomes.
+                            </p>
+                        </div>
                     </div>
                 </div>
-            <!--</div>-->
-        <!--</div>-->
-    </div>
-    <!-- /.intro-header -->
 
-
-    <!-- Page Content -->
-
-	<!--<a  name="features"></a>-->
-    <div class="content-section-b">
-
-        <div class="container clearfix">
-            <div class="row">
-
-                <div class="col-lg-5 col-sm-6 lead">
-                    <h2 class="section-heading">Be where you want to be</h2>
-                    Multiple currencies? Limited Internet access where you hang out?
-                    We feel you. Enter your purchases in the local currency and let the app make the conversions.
-                    Keep doing the same whether you're hiking the mountains,
-                    having a drink at a hip downtown bar or camping in the jungle.
-                    Be wherever you want, and sync up when you get a connection.
-                </div>
-                <div class="col-lg-5 col-lg-offset-2 col-sm-6">
-                    <img class="img-responsive" src="/style/img/ipad.png" alt="">
-                </div>
             </div>
-            <!-- /.row -->
+            <!-- /.container -->
 
-        </div>
-        <!-- /.container -->
-
-    </div>
-    <!-- /.content-section-a -->
-
-    <div class="content-section-b">
-
-        <div class="container">
-
-            <div class="row">
-                <div class="col-lg-5 col-lg-offset-1 col-sm-push-6 col-sm-6 lead">
-                    <h2 class="section-heading">
-                        Share
-                    </h2>
-                    Are you traveling with a friend? Maybe a partner or your family?
-                    Share your dashboards with them and collaborate on tracking expenses
-                    and view your spending habits together.
-                </div>
-                <div class="col-lg-5 col-sm-pull-6 col-sm-6">
-                    <img class="img-responsive" src="/style/img/dog.png" alt="">
-                </div>
-            </div>
-            <!-- /.row -->
-
-        </div>
-        <!-- /.container -->
-
-    </div>
-    <!-- /.content-section-b - Uncomment when ready-->
-
-    <div class="content-section-b">
-        <div class="container clearfix">
-            <div class="row">
-                <div class="col-lg-5 col-sm-6 lead">
-                    <h2 class="section-heading">Personalize</h2>
-                    Life is unpredictable and your needs might change over time.
-                    You deserve a finance tool which is flexible enough for your life.
-                    Add your way of thinking to your finances using tags and create
-                    graphs and reports that solve your problems.
-                </div>
-                <div class="col-lg-5 col-lg-offset-2 col-sm-6">
-                    <img class="img-responsive" src="/style/img/phones.png" alt="">
-                </div>
-            </div>
-            <!-- /.row -->
-
-        </div>
-        <!-- /.container -->
-
-    </div>
-    <!-- /.content-section-a -->
-
-    <div class="content-section-b">
-        <div class="container clearfix">
-            <div class="row text-center">
-                <h2 class="section-heading">At a glance</h2>
-                <div id="glance-features">
-                    <div class="row small" style="padding:0 20%;">
-                        <div class="col-sm-4 col-sm-offset-0">
-                            <h5>Tags</h5>
-                            Use tags to add context to your expenses and incomes. And use them to build detailed reports.
-                        </div>
-                        <div class="col-sm-4 col-sm-offset-0">
-                            <h5>Currencies</h5>
-                            Forget about conversion rates. Input your data in the local currency, and let it be converted automatically using the rate of that day.
-                        </div>
-                        <div class="col-sm-4 col-sm-offset-0">
-                            <h5>Use Offline</h5>
-                            No internet access? No problem, just do what you need to do offline and sync up when you get a connection.
-                        </div>
-                    </div>
-                    <div class="row small" style="padding:0 20%;">
-                        <div class="col-sm-4 col-sm-offset-0">
-                            <h5>No Passwords</h5>
-                            No need to worry about forgetting your password, just sign in with an email link or your social media account and you're good to go.
-                        </div>
-                        <div class="col-sm-4 col-sm-offset-0">
-                            <h5>Budgets</h5>
-                            Do you need to separate your tracking for different use cases? Just create a new budget sheet and do your thing.
-                        </div>
-                        <div class="col-sm-4 col-sm-offset-0">
-                            <h5>Setup goals</h5>
-                            Create nice visualizations of your saving goals, and easier follow your progress.
-                        </div>
-                    </div>
-                    <div class="row small" style="padding:0 20%;">
-                        <div class="col-sm-4 col-sm-offset-0">
-                            <h5>Share</h5>
-                            Share budgets and dashboards with your friends and family and collaborate on your expense tracking.
-                        </div>
-                        <div class="col-sm-4 col-sm-offset-0">
-                            <h5>Dashboards</h5>
-                            Create your personal dashboard for your budgets with the information that you are interested in via tags. Or just use the default graphs.
-                        </div>
-                        <div class="col-sm-4 col-sm-offset-0">
-                            <h5>Flexible time periods</h5>
-                            View your finances in time periods that matches your life.
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        <!-- /.container -->
-
-        </div>
-        <!-- /.container -->
-    </div>
-    <!-- /.content-section-b -->
-
-    <!--<a  name="contact"></a>-->
-    <div class="intro-footer gradient-top-down text-light" style="position:relative;">
-        <!--<img src="/style/img/world.png" style="position:absolute;bottom:0;max-width:100%;opacity:0.3;object-fit: cover;">-->
-
-        <div class="container clearfix">
             <div class="banner">
+                <div class="flex flex-column">
+                    <h4>Subscribe to our newsletter and be the first to know when we launch!</h4>
+
+                    <form id="form-intro">
+                        <div class="row small-up-2 small-collapse">
+                            <div class="column">
+                                <input type="email" name="email" class="form-control right" placeholder="Your E-Mail" tabindex="1">
+                            </div>
+                            <div class="column">
+                                <button type="submit" class="button warning radius" onclick="onSubscribe('subscribe-intro')"
+                                        tabindex="2">
+                                    <span class="network-text">Subscribe</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="subscribe-intro" style="height:1em;"></div>
+                </div>
             </div>
+        </div>
+        <!-- /.intro-header -->
+    </div>
+    <!-- /.map -->
+</div>
+<!-- /.gradient -->
+
+
+
+<!-- Page Content -->
+
+<!--<a  name="features"></a>-->
+<div class="content-section">
+
+    <!--<div class="container">-->
+    <div class="row">
+
+        <div class="lead columns medium-5 medium-offset-1 small-12 columns">
+            <h2>Be where you want to be</h2>
+            Multiple currencies? Limited Internet access where you hang out?
+            We feel you. Enter your purchases in the local currency and let the app make the conversions.
+            Keep doing the same whether you're hiking the mountains,
+            having a drink at a hip downtown bar or camping in the jungle.
+            Be wherever you want, and sync up when you get a connection.
+        </div>
+        <div class="columns small-12 medium-5 medium-offset-1">
+            <img src="/style/img/ipad.png" alt="">
+        </div>
+    </div>
+    <!-- /.row -->
+
+    <!--</div>-->
+    <!-- /.container -->
+
+</div>
+<!-- /.content-section-a -->
+
+<div class="content-section">
+
+    <!--<div class="container">-->
+
+    <div class="row">
+        <div class="medium-5 medium-offset-1 medium-push-6 small-12 columns lead">
+            <h2 class="section-heading">
+                Share
+            </h2>
+            Are you traveling with a friend? Maybe a partner or your family?
+            Share your dashboards with them and collaborate on tracking expenses
+            and view your spending habits together.
+        </div>
+        <div class="medium-5 medium-pull-6 small-12 columns">
+            <img src="/style/img/dog.png" alt="">
+        </div>
+    </div>
+    <!-- /.row -->
+
+    <!--</div>-->
+    <!-- /.container -->
+
+</div>
+<!-- /.content-section -->
+
+<div class="content-section">
+    <div class="container clearfix">
+        <div class="row">
+            <div class="medium-5 medium-offset-1 small-12 columns lead">
+                <h2 class="section-heading">Personalize</h2>
+                Life is unpredictable and your needs might change over time.
+                You deserve a finance tool which is flexible enough for your life.
+                Add your way of thinking to your finances using tags and create
+                graphs and reports that solve your problems.
+            </div>
+            <div class="medium-5 medium-offset-1 small-12 columns">
+                <img class="img-responsive" src="/style/img/phones.png" alt="">
+            </div>
+        </div>
+        <!-- /.row -->
+
+    </div>
+    <!-- /.container -->
+
+</div>
+<!-- /.content-section-a -->
+
+<div class="content-section">
+    <div class="container clearfix text-center">
+        <h2 class="section-heading">At a glance</h2>
+        <div class="row small-up-1 medium-up-3">
+            <div class="column">
+                <h5>Tags</h5>
+                Use tags to add context to your expenses and incomes. And use them to build detailed reports.
+            </div>
+            <div class="column">
+                <h5>Currencies</h5>
+                Forget about conversion rates. Input your data in the local currency, and let it be converted automatically using the rate of that day.
+            </div>
+            <div class="column">
+                <h5>Use Offline</h5>
+                No internet access? No problem, just do what you need to do offline and sync up when you get a connection.
+            </div>
+            <div class="column">
+                <h5>No Passwords</h5>
+                No need to worry about forgetting your password, just sign in with an email link or your social media account and you're good to go.
+            </div>
+            <div class="column">
+                <h5>Budgets</h5>
+                Do you need to separate your tracking for different use cases? Just create a new budget sheet and do your thing.
+            </div>
+            <div class="column">
+                <h5>Setup goals</h5>
+                Create nice visualizations of your saving goals, and easier follow your progress.
+            </div>
+            <div class="column">
+                <h5>Share</h5>
+                Share budgets and dashboards with your friends and family and collaborate on your expense tracking.
+            </div>
+            <div class="column">
+                <h5>Dashboards</h5>
+                Create your personal dashboard for your budgets with the information that you are interested in via tags. Or just use the default graphs.
+            </div>
+            <div class="column">
+                <h5>Flexible time periods</h5>
+                View your finances in time periods that matches your life.
+            </div>
+        </div>
+        <!-- /.row -->
+
+    </div>
+    <!-- /.container -->
+</div>
+<!-- /.content-section -->
+
+<!--<a  name="contact"></a>-->
+<div class="gradient-top-down text-light">
+    <div class="intro-footer map map-white map-bottom">
+        <div class="container clearfix">
             <!--<div>-->
 
-                <!--&lt;!&ndash;<div class="col-sm-4 col-sm-offset-4">&ndash;&gt;-->
+            <!--&lt;!&ndash;<div class="col-sm-4 col-sm-offset-4">&ndash;&gt;-->
 
-                <!--<h4 class="text-center">Subscribe to our newsletter</h4>-->
-                <!--<form id="form-footer" class="form-group row" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;">-->
-                    <!--<div class="col-sm-5 col-sm-offset-3">-->
-                    <!--<input type="text" name="email" class="form-control" placeholder="Your E-Mail" tabindex="3">-->
-                    <!--</div>-->
-                    <!--<div class="col-sm-4" style="float:left;">-->
-                    <!--<button class="btn btn-info btn-md" type="submit"-->
-                            <!--onclick="onSubscribe('subscribe-footer')" tabindex="4">-->
-                        <!--Subscribe-->
-                    <!--</button>-->
-                    <!--</div>-->
-                <!--</form>-->
-                <!--&lt;!&ndash;</div>&ndash;&gt;-->
-                <!--<div id="subscribe-footer" class="text-center" style="height:1em;"></div>-->
+            <!--<h4 class="text-center">Subscribe to our newsletter</h4>-->
+            <!--<form id="form-footer" class="form-group row" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;">-->
+            <!--<div class="col-sm-5 col-sm-offset-3">-->
+            <!--<input type="text" name="email" class="form-control" placeholder="Your E-Mail" tabindex="3">-->
+            <!--</div>-->
+            <!--<div class="col-sm-4" style="float:left;">-->
+            <!--<button class="btn btn-info btn-md" type="submit"-->
+            <!--onclick="onSubscribe('subscribe-footer')" tabindex="4">-->
+            <!--Subscribe-->
+            <!--</button>-->
+            <!--</div>-->
+            <!--</form>-->
+            <!--&lt;!&ndash;</div>&ndash;&gt;-->
+            <!--<div id="subscribe-footer" class="text-center" style="height:1em;"></div>-->
             <!--</div>-->
         </div>
         <!-- /.container -->
 
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-12">
-                    <!--<ul class="list-inline">-->
-                        <!--<li>-->
-                            <!--<a class="text-muted small"  style="color:white;" href="#">Contact</a>-->
-                        <!--</li>-->
-                        <!--<li class="footer-menu-divider">&sdot;</li>-->
-                        <!--<li>-->
-                            <!--<a class="text-muted small"  style="color:white;" href="#">Blog</a>-->
-                        <!--</li>-->
-                        <!--<li class="footer-menu-divider">&sdot;</li>-->
-                        <!--<li>-->
-                            <!--<a class="text-muted small"  style="color:white;" href="#">Pricing</a>-->
-                        <!--</li>-->
-                        <!--<li class="footer-menu-divider">&sdot;</li>-->
-                        <!--<li>-->
-                            <!--<a class="text-muted small"  style="color:white;" href="#">Privacy Policy</a>-->
-                        <!--</li>-->
-                        <!--<li class="footer-menu-divider">&sdot;</li>-->
-
-                        <!--<li>-->
-                            <!--<a class="text-muted small"  style="color:white;" href="#">Terms of Service</a>-->
-                        <!--</li>-->
-                    <!--</ul>-->
-                    <p class="copyright text-light small">
-                        Copyright &copy; eponai 2016. All Rights Reserved
-                    </p>
-                </div>
+        <!-- Footer -->
+        <footer>
+            <div class="container">
+                <p class="copyright text-light small">
+                    Copyright &copy; eponai 2016. All Rights Reserved
+                </p>
             </div>
-            <!-- /.row -->
-        </div>
-        <!-- /.container -->
-    </footer>
+            <!-- /.container -->
+        </footer>
     </div>
-    <!-- /.banner -->
+</div>
+<!-- /.banner -->
 
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-    <script type="text/javascript">
-
-        function onSubscribe(elementId) {
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script type="text/javascript">
+    function onSubscribe(elementId) {
           mixpanel.track("Newsletter Subscribe", {"element-id": elementId})
           document.getElementById(elementId).innerHTML = "<div style='margin-left:50%;' class='loader-circle' />";
-        }
+    }
 
-        <!--function fadeIn() {-->
-          <!--/* Check the location of each desired element */-->
-          <!--$('.fade-in').each( function(i) {-->
-
-            <!--var center_of_object = $(this).offset().top + ($(this).outerHeight() / 6);-->
-            <!--var bottom_of_window = $(window).scrollTop() + $(window).height();-->
-
-            <!--/* If the object is completely visible in the window, fade it it */-->
-            <!--if( bottom_of_window > center_of_object ){-->
-                <!--$(this).animate({'opacity':'1'}, 400);-->
-            <!--}-->
-          <!--});-->
-        <!--}-->
-
-        function isSignPopUpShowing() {
-            return $("#navbar-sign-in").children().length === 2;
-        }
-
-        $(document).ready(function() {
-          $("body").on("click", function() {
-            if (isSignPopUpShowing()) {
-              $("#navbar-sign-in").click();
-            }
-          });
-
-          $("#navbar-sign-in").click(function() {
-            return false;
-          });
-
-          <!--$(window).scroll( function() {-->
-            <!--fadeIn();-->
-          <!--});-->
-
-          $('[data-toggle="popover"]').popover();
-          $.ajaxSetup({
-            type: 'POST',
-            headers: { "cache-control": "no-cache" }
-          });
-
-          $('#form-intro').submit(function(e) {
+    $(document).ready(function() {
+      $('#form-intro').submit(function(e) {
             e.preventDefault();
             var dataString = $(this).serialize();
             $.ajax({
@@ -406,28 +316,8 @@
               }
             });
           });
-
-          <!--$('#form-footer').submit(function(e) {-->
-            <!--e.preventDefault();-->
-              <!--var dataString = $(this).serialize();-->
-              <!--$.ajax({-->
-                <!--type: "POST",-->
-                <!--url: "/newsletter/subscribe",-->
-                <!--data: dataString,-->
-                <!--error: function(response) {-->
-                  <!--document.getElementById('subscribe-footer').innerHTML = "<p class='text-danger small'>" + JSON.parse(response.responseText).message + "</p>";-->
-                <!--},-->
-                <!--success: function(response) {-->
-                  <!--document.getElementById('subscribe-footer').innerHTML = "<p class='text-success small'>" + JSON.parse(response).message + "</p>";-->
-                <!--}-->
-              <!--});-->
-            <!--});-->
-          });
-
-          // Call fadeIn once to load visible fade-in elements.
-          <!--fadeIn();-->
-
-    </script>
+    });
+</script>
 
 </body>
 

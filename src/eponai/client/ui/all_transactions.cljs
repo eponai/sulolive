@@ -76,22 +76,22 @@
           (map-all (:transaction/tags transaction)
                    (fn [tag]
                      (utils/tag tag {:on-click #(on-tag-click tag)})))]
-         [:td.text-right
+         [:td
           (opts {:key [uuid]
                  :class (if (= (:db/ident type) :transaction.type/expense) "text-danger" "text-success")})
           (str amount " " (or (:currency/symbol-native currency)
                               (:currency/code currency)))]
-         [:td.text-right
+         [:td
           (opts {:key [uuid]
                  :class (if (= (:db/ident type) :transaction.type/expense) "text-danger" "text-success")})
           (str (gstring/format (str (:currency/code (:user/currency user)) "%.2f") (/ amount (:conversion/rate conversion))) )]
 
          [:td
           (if is-selected
-            [:button.btn.btn-default.btn-md
+            [:a.button.secondary
              {:on-click #(on-deselect)}
              [:i.fa.fa-plus]]
-            [:button.btn.btn-default.btn-md
+            [:a.button.secondary
              {:on-click #(on-select (dissoc transaction :om.next/computed))}
              [:i.fa.fa-pencil]])]]))))
 
@@ -201,7 +201,7 @@
             [:tbody
              [:tr
               [:td
-               [:button.btn.btn-info.btn-md
+               [:a.button.primary
                 (merge {:on-click #(om/transact! this `[(transaction/edit ~(-> (.edited-input->edited-transaction this)
                                                                                (mark-removed-tags transaction)
                                                                                (assoc :transaction/uuid uuid)
@@ -217,7 +217,7 @@
                     {:disabled :disabled}))
                 "Save"]]
               [:td
-               [:button.btn.btn-danger.btn-md
+               [:a.button.secondary
                 (merge {:on-click #(om/set-state! this (.init-state this props))}
                        (when-not edited?
                          {:disabled :disabled}))
@@ -225,6 +225,7 @@
              [:tr
               [:td "Name:"]
               [:td [:input {:value     title
+                            :type "text"
                             :on-change (utils/on-change-in this [:input-state :input/title])}]]]
              [:tr
               [:td "Amount:"]
@@ -344,16 +345,18 @@
                     :value       (:filter/end-date input-filter)
                     :on-change   #(utils/select-date-filter this :filter/end-date %)}))]
 
-          [:table.table.table-striped.table-hover
+          [:table
+           (opts {:style {:width "100%"}})
            [:thead
             [:tr
              [:th "Date"]
              [:th "Name"]
              [:th "Tags"]
-             [:th.text-right
+             [:th
               "Amount"]
-             [:th.text-right
-              "Cost"]]]
+             [:th
+              "Cost"]
+             [:th]]]
            [:tbody
             (map (fn [props]
                    (->Transaction

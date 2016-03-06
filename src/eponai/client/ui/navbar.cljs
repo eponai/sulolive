@@ -35,7 +35,7 @@
 
 (defn- new-menu [{:keys [on-close on-click]}]
   [:div
-   {:class "dropdown open"}
+   {:class "dropdown-pane is-open"}
    (utils/click-outside-target on-close)
    [:ul
     {:class "dropdown-menu dropdown-menu-left"}
@@ -60,10 +60,9 @@
 
 (defn- profile-menu [{:keys [on-close]}]
   [:div
-   {:class "dropdown open"}
+   ;{:class "dropdown open"}
    (utils/click-outside-target on-close)
-   [:ul
-    {:class "dropdown-menu dropdown-menu-right"}
+   [:ul.dropdown-menu
     [:li [:a
           (opts {:href     (routes/inside "/settings")
                  :on-click on-close
@@ -87,19 +86,22 @@
           {:keys [input-name]} (om/get-state this)]
       (html
         [:div
-         [:div.modal-header
+         [:h3
           "Add budget"]
-         [:div.modal-body
-          [:label.form-control-static
-           "Name"]
-          [:input.form-control
-           {:value input-name
-            :on-change #(om/update-state! this assoc :input-name (.-value (.-target %)))}]]
-         [:div.modal-footer
-          [:button.btn.btn-default.btn-md
+         [:input
+          (opts
+            {:value       input-name
+             :placeholder "Untitled"
+             :type        "text"
+             :on-change   #(om/update-state! this assoc :input-name (.-value (.-target %)))
+             :style {:width "100%"}})]
+         ;[:br]
+         [:div.inline-block
+          (opts {:style {:float :right}})
+          [:a.button.secondary
            {:on-click on-close}
            "Cancel"]
-          [:button.btn.btn-info.btn-md
+          [:a.button
            {:on-click #(do
                         (on-save input-name)
                         (on-close))}
@@ -121,7 +123,7 @@
   (initLocalState [_]
     {:menu-visible? false
      :new-menu-visible? false
-     :add-transaction? false
+     :new-transaction? false
      :add-widget? false
      :add-budget? false})
   (render [this]
@@ -131,75 +133,63 @@
                   new-menu-visible?
                   new-transaction?
                   add-budget?]} (om/get-state this)
-          {:keys [sidebar-visible?
-                  on-sidebar-toggle]} (om/get-computed this)]
+          {:keys [on-sidebar-toggle]} (om/get-computed this)]
       (html
         [:div
-         (opts {:style {:display         "flex"
-                        :flex            "row"
-                        :padding         "0.1em"
-                        :align-items     "flex-end"
-                        :justify-content :space-between}})
+         [:nav#navbar-menu
+          (opts {:class "top-bar"
+                 :style {:position   :fixed
+                         :z-index 1000
+                         :top        0
+                         :right      0
+                         :left       0
+                         :background :white
+                         :border     "1px solid #e7e7e7"}})
+          [:div
+           {:class "top-bar-left"}
+           [:ul.menu
+            [:li
+             [:a
+              {:on-click #(do (prn "Did show sidebar")
+                              (on-sidebar-toggle))
+               :class    "button secondary"}
+              [:i
+               {:class "fa fa-bars"}]]]
 
-         [:div
-          (opts {:style {:display :flex
-                         :flex-direction :row}})
-          ;(when-not sidebar-visible?)
-          [:button
-           (opts {:style    {:display   "block"
-                             :margin    "0.5em 0.2em"
-                             :font-size "1em"}
-                  :on-click #(do (prn "Did show sidebar")
-                                 (on-sidebar-toggle))
-                  :class    "btn btn-default btn-md"})
-           [:i
-            {:class "fa fa-bars"}]]
+            [:li
+             [:a
+              {:on-click #(om/update-state! this assoc :add-budget? true)
+               :class    "button secondary small"}
+              [:i.fa.fa-file-text-o]]]
+            [:li
+             [:a
+              {:on-click #(om/update-state! this assoc :new-transaction? true)
+               :class    "button primary medium"}
+              [:i.fa.fa-money]]]]]
 
-          [:button
-           (opts {:style    {:display   "block"
-                             :margin    "0.5em 0.2em"
-                             :font-size "1em"}
-                  :on-click #(om/update-state! this assoc :add-budget? true)
-                  :class    "btn btn-default btn-md"})
-           [:i.fa.fa-file-text-o]]
-          [:button
-           (opts {:style    {:display   "block"
-                             :margin    "0.5em 0.2em"
-                             :font-size "1em"}
-                  :on-click #(om/update-state! this assoc :new-transaction? true)
-                  :class    "btn btn-info btn-md"})
-           [:i.fa.fa-money]]
+          [:div
+           {:class "top-bar-right"}
+           [:ul.dropdown.menu
+            (let [activated-at (:user/activated-at current-user)]
+              [:li
+               (if activated-at
+                 (str "Trial: " (max 0 (- 14 (f/days-since activated-at))) " days left")
+                 (str "Trial ended"))])
+            [:li
+             [:a {:class "button warning medium"
+                  :href  (routes/inside "/subscribe/")}
+              "Upgrade"]]
+            [:li.has-submenu
+             [:img
+              (opts {:class    "img-circle"
+                     :style    {:width         "40"
+                                :height        "40"
+                                :border-radius "50%"}
+                     :src      (or (:user/picture current-user) "/style/img/profile.png")
+                     :on-click #(open-profile-menu this true)})]
 
-          (when new-menu-visible?
-            (new-menu {:on-click #(select-new this %)
-                       :on-close #(open-new-menu this false)}))]
-
-         [:div
-          (opts {:style {:display        :flex
-                         :flex-direction :row
-                         :align-items    :flex-end}})
-          (let [activated-at (:user/activated-at current-user)]
-            [:p.small.text-muted
-             (if activated-at
-               (str "Trial: " (max 0 (- 14 (f/days-since activated-at))) " days left")
-               (str "Trial ended"))])
-          [:a (opts {:style {:display "block"
-                             :margin  "0.5em 0.2em"}
-                     :class "btn btn-primary btn-md"
-                     :href  (routes/inside "/subscribe/")})
-           "Upgrade"]
-          [:a
-           {:href     "#"}
-           [:img
-            (opts {:class    "img-circle"
-                   :style    {:margin "0.1em 1em"
-                              :width  "40"
-                              :height "40"}
-                   :src      (or (:user/picture current-user) "/style/img/profile.png")
-                   :on-click #(open-profile-menu this true)})]]
-
-          (when menu-visible?
-            (profile-menu {:on-close #(open-profile-menu this false)}))]
+             (when menu-visible?
+               (profile-menu {:on-close #(open-profile-menu this false)}))]]]]
 
          (when new-transaction?
            (let [on-close #(om/update-state! this assoc :new-transaction? false)]
@@ -279,11 +269,5 @@
        "Copyright © eponai 2016. All Rights Reserved"]]]))
 
 (defn navbar-create [props computed]
-  (html
-    [:div
-     [:nav
-      (opts {:class "navbar navbar-default navbar-fixed-top topnav"
-             :role  "navigation"
-             :style {:background :white}})
-      (->NavbarMenu (om/computed props
-                                 computed))]]))
+  (->NavbarMenu (om/computed props
+                             computed)))

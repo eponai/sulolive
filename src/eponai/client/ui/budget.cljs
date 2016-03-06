@@ -33,12 +33,11 @@
           {:keys [content]} (om/get-state this)]
       (html
         [:div
-         [:h4]
          [:div.text-center
-          [:button.btn.btn-default.btn-md
+          [:a.button.secondary
            {:on-click #(update-content this :dashboard)}
            [:span "Dashboard"]]
-          [:button.btn.btn-default.btn-md
+          [:a.button.secondary
            {:on-click #(update-content this :transactions)}
            [:span "Transactions"]]]
          (cond (= content :dashboard)
