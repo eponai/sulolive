@@ -21,7 +21,7 @@
     :transaction/amount     180
     :transaction/currency   "THB"
     :transaction/created-at 1
-    :transaction/tags       ["thailand"]
+    :transaction/tags       [{:tag/name "thailand"}]
     :transaction/type       :transaction.type/expense}
    {:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "coffee"
