@@ -70,15 +70,17 @@
 
             <div class="row">
                 <div class="col-sm-6 col-sm-offset-3">
-                    <div class="intro-message" style="position:relative;text-align:center;">
-                        <h1 style="padding: 20px 0;">Personal finance together</h1>
+                    <div class="intro-message" style="position:relative;text-align:center;margin:3em 0;">
+                        <h1 style="padding: 20px 0;">Travel finance together</h1>
+                        <h4>Track, save, plan and go.</h4>
                         <hr class="intro-divider">
-                        <h4>Track, save, plan and play.</h4>
 
-                        Track you expenses together - wherever you are - and follow your progress using your own dashboards.
-                        When traveling on a budget, it's hard to account for everything when going to unfamiliar
-                        places. And maybe the route is not even fully planned yet!
-                        So play around with your numbers and find out how you can adjust your budget to fit into any new changes in your travel plans or unexpected expenses and incomes.
+                        <p>
+                            Track you expenses together - wherever you are - and follow your progress using your own dashboards.
+                            When traveling on a budget, it's hard to account for everything when going to unfamiliar
+                            places. And maybe the route is not even fully planned yet!
+                            So play around with your numbers and find out how you can adjust your budget to fit into any new changes in your travel plans or unexpected expenses and incomes.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -108,34 +110,34 @@
         </div>
         <!-- /.container -->
 
-        <div style="padding:1em 0;bottom:0;width:100%;position:absolute;bottom:0;background:rgba(0,0,0,0.4);">
-            <div class="container">
-                <div class="row">
-                    <div class="col-sm-6 col-sm-offset-3">
-            <h4>Subscribe to our newsletter and be the first to know when we launch!</h4>
+        <div style="padding:1em 0;width:100%;;background:rgba(236,147,24,0.7);">
+            <!--<div class="container">-->
+                <!--<div class="row">-->
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                        <h4>Subscribe to our newsletter and be the first to know when we launch!</h4>
 
-            <form id="form-intro" class="form-group" method="post" action="/newsletter/subscribe">
-                <div class="row middle-xs">
-                    <div class="col-sm-6">
+                        <form id="form-intro" method="post" action="/newsletter/subscribe">
+                            <div style="display:flex;flex-direction:row;align-items:center;">
+                                <!--<div class="col-sm-6">-->
                         <!--<div class="box">-->
-                        <input type="email" name="email" class="form-control" placeholder="Your E-Mail" tabindex="1">
+                                    <input type="email" name="email" class="form-control" placeholder="Your E-Mail" tabindex="1">
                         <!--</div>-->
-                    </div>
-                    <div class="col-sm-6">
+                                <!--</div>-->
+                                <!--<div class="col-sm-6">-->
                         <!--<div class="box">-->
-                        <button type="submit" class="btn btn-primary btn-md" onclick="onSubscribe('subscribe-intro')"
-                                tabindex="2">
-                            <span class="network-text">Subscribe</span>
-                        </button>
+                                    <button type="submit" class="btn btn-primary btn-md" onclick="onSubscribe('subscribe-intro')"
+                                            tabindex="2">
+                                        <span class="network-text">Subscribe</span>
+                                    </button>
                         <!--</div>-->
+                                <!--</div>-->
+                            </div>
+                        </form>
+                        <div id="subscribe-intro" style="height:1em;"></div>
                     </div>
                 </div>
-            </form>
-            <div id="subscribe-intro" style="height:1em;"></div>
-            </div>
-                    </div>
-                </div>
-        </div>
+            <!--</div>-->
+        <!--</div>-->
     </div>
     <!-- /.intro-header -->
 
@@ -397,10 +399,10 @@
               url: "/newsletter/subscribe",
               data: dataString,
               error: function(response) {
-                document.getElementById('subscribe-intro').innerHTML = "<p class='text-danger small'>" + JSON.parse(response.responseText).message + "</p>";
+                document.getElementById('subscribe-intro').innerHTML = "<p class='small'>" + JSON.parse(response.responseText).message + "</p>";
               },
               success: function(response) {
-                document.getElementById('subscribe-intro').innerHTML = "<p class='text-success small'>" + JSON.parse(response).message + "</p>";
+                document.getElementById('subscribe-intro').innerHTML = "<p class='small'>" + JSON.parse(response).message + "</p>";
               }
             });
           });
