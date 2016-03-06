@@ -15,7 +15,7 @@
 ;; ################ Actions #####################
 
 (defn rename-ns [k ns]
-  (keyword (str ns "/" (name k))))
+  (keyword ns (name k)))
 
 (defn delete-tag [component tag]
   (om/update-state! component update-in [:input-state :input/tags] disj tag))
@@ -100,18 +100,6 @@
 (defn get-selected-transaction [props]
   (get-in props [:query/selected-transaction
                  :ui.component.transactions/selected-transaction]))
-
-(defn rename-ns [k ns]
-  (keyword ns (name k)))
-
-(defn delete-tag-fn2 [component tag]
-  (om/update-state! component update-in [:input-state :input/tags] disj tag))
-
-(defn- add-tag2 [component tag]
-  (om/update-state! component
-                    #(-> %
-                         (assoc-in [:input-state :input/tag] "")
-                         (update-in [:input-state :input/tags] conj tag))))
 
 (defn mark-removed-tags
   "Takes an edited transaction and an original transaction, marks every removed tag
