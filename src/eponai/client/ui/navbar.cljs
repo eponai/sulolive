@@ -129,7 +129,7 @@
                   query/current-user]} (om/props this)
           {:keys [menu-visible?
                   new-menu-visible?
-                  new-transaction
+                  new-transaction?
                   add-budget?]} (om/get-state this)
           {:keys [sidebar-visible?
                   on-sidebar-toggle]} (om/get-computed this)]
@@ -166,16 +166,10 @@
            (opts {:style    {:display   "block"
                              :margin    "0.5em 0.2em"
                              :font-size "1em"}
-                  :on-click #(om/update-state! this assoc :new-transaction :transaction.type/income)
+                  :on-click #(om/update-state! this assoc :new-transaction? true)
                   :class    "btn btn-info btn-md"})
-           [:i.fa.fa-plus]]
-          [:button
-           (opts {:style    {:display   "block"
-                             :margin    "0.5em 0.2em"
-                             :font-size "1em"}
-                  :on-click #(om/update-state! this assoc :new-transaction :transaction.type/expense)
-                  :class    "btn btn-danger btn-md"})
-           [:i.fa.fa-minus]]
+           [:i.fa.fa-money]]
+
           (when new-menu-visible?
             (new-menu {:on-click #(select-new this %)
                        :on-close #(open-new-menu this false)}))]
@@ -207,12 +201,11 @@
           (when menu-visible?
             (profile-menu {:on-close #(open-profile-menu this false)}))]
 
-         (when new-transaction
-           (let [on-close #(om/update-state! this assoc :new-transaction nil)]
+         (when new-transaction?
+           (let [on-close #(om/update-state! this assoc :new-transaction? false)]
              (utils/modal {:content  (->AddTransaction
                                        (om/computed add-transaction
-                                                    {:on-close on-close
-                                                     :transaction/type new-transaction}))
+                                                    {:on-close on-close}))
                            :on-close on-close})))
 
          (when add-budget?

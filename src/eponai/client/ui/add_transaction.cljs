@@ -41,8 +41,7 @@
   Object
   (initLocalState [this]
     (let [{:keys [query/all-currencies
-                  query/all-budgets]} (om/props this)
-          {:keys [transaction/type]} (om/get-computed this)]
+                  query/all-budgets]} (om/props this)]
       {:input/date     (js/Date.)
        :input/tags     #{}
        :input/currency (-> all-currencies
@@ -51,7 +50,24 @@
        :input/budget   (-> all-budgets
                            first
                            :budget/uuid)
-       :input/type type}))
+       :input/type :transaction.type/expense}))
+  (toggle-input-type [this]
+    (let [{:keys [input/type]} (om/get-state this)]
+      (cond (= type :transaction.type/expense)
+            (om/update-state! this assoc :input/type :transaction.type/income)
+
+            (= type :transaction.type/income)
+            (om/update-state! this assoc :input/type :transaction.type/expense))))
+
+  (ui-config [this]
+    (let [{:keys [input/type]} (om/get-state this)]
+      (cond (= type :transaction.type/expense)
+            {:btn-class "btn btn-danger btn-md"
+             :i-class "fa fa-minus"}
+
+            (= type :transaction.type/income)
+            {:btn-class "btn btn-info btn-md"
+             :i-class "fa fa-plus"})))
   (render
     [this]
     (let [{:keys [query/all-currencies
@@ -62,7 +78,8 @@
           ;; with devcards
           (merge (om/props this)
                  (om/get-state this))
-          {:keys [on-close]} (om/get-computed this)]
+          {:keys [on-close]} (om/get-computed this)
+          {:keys [btn-class i-class]} (.ui-config this)]
       (html
         [:div
 
@@ -97,7 +114,16 @@
            (opts {:style {:display         "flex"
                           :flex-direction  "row"
                           :justify-content "stretch"
+                          :align-items :center
                           :max-width       "100%"}})
+           [:button
+            (opts {:style    {:display   "block"
+                              :margin    "0.5em 0.2em"
+                              :font-size "1em"}
+                   :on-click #(.toggle-input-type this)
+                   :class    btn-class})
+            [:i
+             {:class i-class}]]
            [:input.form-control
             (opts {:type        "number"
                    :placeholder "0.00"
