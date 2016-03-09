@@ -28,9 +28,9 @@
                          (assoc :input/uuid (d/squuid))
                          (assoc :input/created-at (.getTime (js/Date.)))
                          (dissoc :input/tag)))
+                  :proxy/all-transactions
                   :query/dashboard
-                  :query/all-budgets
-                  :query/all-transactions]))
+                  :query/all-budgets]))
 
 (defui AddTransaction
   static om/IQuery

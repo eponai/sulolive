@@ -119,7 +119,8 @@
                            :db/id))]
         {:value (when eid
                   (let [dashboard (common.pull/pull db query (common.pull/one-with db {:where [['?e :dashboard/budget eid]]}))]
-                    (update dashboard :widget/_dashboard #(common.pull/widgets-with-data env %))))}))))
+                    #?(:clj (update dashboard :widget/_dashboard #(common.pull/widgets-with-data env %))
+                       :cljs dashboard)))}))))
 
 (defmethod read :query/all-dashboards
   [{:keys [db query auth]} _ _]
