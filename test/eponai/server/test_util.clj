@@ -8,6 +8,27 @@
 
 (def schema (dev/read-schema-files))
 
+(defn user-email->user-uuid [db user-email]
+  (d/q '{:find  [?uuid .]
+         :in    [$ ?email]
+         :where [[?u :user/email ?email]
+                 [?u :user/uuid ?uuid]]}
+       db
+       user-email))
+
+(defn setup-db-with-user!
+  "Given a users [{:user ... :budget-uuid ...} ...], adds:
+  * currencies
+  * conversion-rates
+  * verified user accounts
+  * transactions"
+  [conn users]
+  (dev/add-currencies conn)
+  (dev/add-conversion-rates conn)
+  (doseq [{:keys [user budget-uuid]} users]
+    (dev/add-verified-user-account conn user budget-uuid)
+    (dev/add-transactions conn budget-uuid)))
+
 (defn new-db
   "Creates an empty database and returns the connection."
   ([]

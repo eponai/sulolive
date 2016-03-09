@@ -1,9 +1,10 @@
 (ns eponai.server.datomic.filter-test
   (:require [clojure.test :refer :all]
             [datomic.api :as d]
+            [eponai.common.database.transact :as t]
             [eponai.server.datomic.filter :as f]
-            [eponai.server.datomic_dev :as d_dev]
-            [eponai.server.test-util :as util]))
+            [eponai.server.test-util :as util]
+            [taoensso.timbre :as timbre :refer [debug]]))
 
 (defn filter-db [db filters]
   (->> filters
@@ -37,14 +38,10 @@
         conn (util/new-db)
         budget-uuid (d/squuid)
         budget-uuid2 (d/squuid)
-        _ (d_dev/add-verified-user-account conn user budget-uuid)
-        _ (d_dev/add-verified-user-account conn user2 budget-uuid2)
-        _ (d_dev/add-currencies conn)
-        _ (d_dev/add-transactions conn budget-uuid)
-        _ (d_dev/add-transactions conn budget-uuid2)
-        _ (d_dev/add-conversion-rates conn)
+        _ (util/setup-db-with-user! conn [{:user user :budget-uuid budget-uuid}
+                                          {:user user2 :budget-uuid budget-uuid2}])
         db (d/db conn)
-        user-uuid (d/q '[:find ?uuid . :in $ ?email :where [?u :user/email ?email] [?u :user/uuid ?uuid]] db user)
+        user-uuid (util/user-email->user-uuid db user)
         auth-db (filter-db db (f/authenticated-db-filters user-uuid))
         no-auth-db (filter-db db (f/not-authenticated-db-filters))
         something!= (fn [user-res db-res]
@@ -78,3 +75,23 @@
                                  [?id :db/ident :db.type/ref]] auth-db
                              = [:verification/uuid] auth-db
                              = [:verification/uuid] no-auth-db)))
+
+(deftest filtered-db-contains-newly-created-entity
+  (let [user "filter-test@e.com"
+        conn (util/new-db)
+        budget-uuid (d/squuid)
+        _ (util/setup-db-with-user! conn [{:user user :budget-uuid budget-uuid}])
+        db (d/db conn)
+        user-uuid (util/user-email->user-uuid db user)
+        new-budget-uuid (d/squuid)
+        auth-filters (f/update-filters db (f/authenticated-db-filters user-uuid))
+        {:keys [db-after]} (t/transact conn [{:budget/name       "foo"
+                                              :budget/uuid       new-budget-uuid
+                                              :budget/created-by [:user/uuid user-uuid]
+                                              :db/id             (d/tempid :db.part/user)}])
+        updated-filters (f/update-filters db-after auth-filters)
+        db-after-with-filters (f/apply-filters db-after updated-filters)]
+    (is (= db-after (d/db conn)))
+    (are [db] (some? (d/entity db [:budget/uuid new-budget-uuid]))
+              (d/db conn)
+              db-after-with-filters)))

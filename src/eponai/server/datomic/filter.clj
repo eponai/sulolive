@@ -11,15 +11,16 @@
 
   Each key in props contain:
   {:init initial-value
-  :update-fn (fn [db old-val] return new-val)}
+  :update-fn (fn [db new-eids old-val] return new-val)}
   The purpose of the :props is to describe a filter to be incrementaly
-  updated.
+  updated. The param new-eids is either nil or a seq of entity ids.
 
   It sounds more complicated than it is..?
   Hopefully overtime, we figure out an easier way to describe
   incrementally updatable database filters."
   (:require [clojure.set :as s]
             [datomic.api :as d]
+            [eponai.common.database.pull :as pull]
             [taoensso.timbre :refer [debug trace]]))
 
 ;; Updating and applying filters
@@ -38,12 +39,17 @@
         (trace "avoiding update to filter:" basis-t)
         props)
       (let [db-since (d/since db basis-t)]
-        (trace "Updating filter: " props)
+        (trace "Will updating filter: " props)
         (let [updated-props (reduce-kv (fn [props key {:keys [init update-fn value]}]
-                                         (let [old-val (or value init)]
-                                           (assoc-in props [key :value] (update-fn db-since old-val))))
+                                         (let [old-val (or value init)
+                                               new-eids (when (some? value)
+                                                            (->> (d/datoms db-since :eavt)
+                                                                 (mapv #(.e %))))]
+                                           (assoc-in props [key :value]
+                                                     (update-fn db old-val new-eids))))
                                        props
                                        (dissoc props ::basis-t))]
+          (trace "Did update filter: " updated-props)
           (assoc updated-props ::basis-t new-basis-t))))))
 
 (defn update-filters
@@ -93,29 +99,32 @@
      [?e ?ref-attr ?ref]
      (owner? ?user-id ?ref)]])
 
-(defn user-entities [db user-id]
-  (d/q '{:find  [[?e ...]]
-         :in    [$ ?user-id %]
-         :where [(owner? ?user-id ?e)]}
-       db
-       user-id
-       user-owned-rule))
+(defn user-entities [db new-eids user-id]
+  (let [query (cond-> {:where   '[(owner? ?user-id ?e)]
+                       :symbols {'?user-id user-id
+                                 '%        user-owned-rule}}
+                      (seq new-eids)
+                      (pull/merge-query {:where   '[[(= ?e ?eid)]]
+                                         :symbols {'[?eid ...] new-eids}}))]
+    (pull/all-with db query)))
 
-(defn user-attributes [db]
+(defn user-attributes [db new-eids]
   ;;TODO: Add more user entities? We want to filter out anything that has to do with sensitive
   ;;      user data. Such as what they have bought.
-  (let [user-entity-keys [:budget/uuid :transaction/uuid]]
-    (d/q '{:find  [[?a ...]]
-           :in    [$ [?user-entity-key ...]]
-           :where [[?e ?user-entity-key]
-                   [?e ?a]]}
-         db
-         user-entity-keys)))
+  (let [user-entity-keys [:budget/uuid :transaction/uuid]
+        query (cond-> {:find-pattern '[[?a ...]]
+                       :where        '[[?e ?user-entity-key]
+                                       [?e ?a]]
+                       :symbols      {'[?user-entity-key ...] user-entity-keys}}
+                      (seq new-eids)
+                      (pull/merge-query {:where   '[[?entity ?a]]
+                                         :symbols {'[?entity ...] new-eids}}))]
+    (pull/all-with db query)))
 
 (defn- user-specific-entities-filter [user-id]
   {:props {:user-entities {:init      #{}
-                            :update-fn (fn [db old-val]
-                                         (into old-val (user-entities db user-id)))}}
+                            :update-fn (fn [db old-val new-datoms]
+                                         (into old-val (user-entities db new-datoms user-id)))}}
    :f     (fn [{:keys [user-entities]}]
             {:pre [(set? user-entities)]}
             ;; Returning a datomic filter function (fn [db datom])
@@ -124,8 +133,8 @@
 
 (defn- non-user-entities-filter-map []
   {:props {:user-attrs {:init      #{}
-                        :update-fn (fn [db old-val]
-                                     (into old-val (user-attributes db)))}}
+                        :update-fn (fn [db old-val new-datoms]
+                                     (into old-val (user-attributes db new-datoms)))}}
    :f     (fn [{:keys [user-attrs]}]
             {:pre [(set? user-attrs)]}
             ;; Returning a datomic filter function (fn [db datom])
