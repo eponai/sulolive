@@ -2,7 +2,7 @@
   (:require [clojure.test.check.generators :as gen]))
 
 (defn gen-amount []
-  (gen/fmap str gen/int))
+  (gen/fmap str gen/pos-int))
 
 (defn gen-currency []
   (gen/fmap (fn [s] (apply str (take 3 (cycle s))))
@@ -19,7 +19,7 @@
               (gen/choose 10 28))))
 
 (defn gen-tags []
-  (gen/fmap set (gen/vector gen/string-alphanumeric)))
+  (gen/fmap set (gen/not-empty (gen/vector (gen/hash-map :tag/name gen/string-alphanumeric)))))
 
 (defn gen-transaction []
   (gen/hash-map :transaction/amount (gen-amount)

@@ -3,23 +3,32 @@
     #?(:clj [taoensso.timbre :refer [debug]]
        :cljs [taoensso.timbre :refer-macros [debug]])))
 
-(defn converted-amount [tx]
-  #?(:clj  (with-precision 2 (/ (:transaction/amount tx)
-                                (:conversion/rate (:transaction/conversion tx))))
-     :cljs (/ (:transaction/amount tx)
-              (:conversion/rate (:transaction/conversion tx)))))
+(defn converted-amount [{:keys [transaction/conversion
+                                transaction/amount]}]
+  (let [rate (:conversion/rate conversion)]
+    (if (and conversion
+             (number? rate)
+             (not #?(:clj  (Double/isNaN rate)
+                     :cljs (js/isNaN rate))))
+      #?(:clj  (let [ret (with-precision 10 (bigdec (/ amount
+                                                       rate)))]
+                 ;(prn "Conversion: " ret " amount " amount "rate " rate)
+                 ret)
+         :cljs (/ amount
+                  rate))
+      0)))
 
 (defmulti sum (fn [k _ _] k))
 
 (defmethod sum :default
-  [_ data-filter transactions]
+  [_ _ transactions]
   (let [sum-fn (fn [s tx]
                  (+ s (converted-amount tx)))]
     {:key    "All Transactions"
      :values [(reduce sum-fn 0 transactions)]}))
 
 (defmethod sum :transaction/date
-  [_ data-filter transactions]
+  [_ _ transactions]
   (let [grouped (group-by :transaction/date transactions)
         sum-fn (fn [[day ts]]
                  (assoc day :date/sum (reduce (fn [s tx]
