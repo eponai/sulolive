@@ -1,7 +1,10 @@
 (ns eponai.client.parser.mutate
   (:require [eponai.common.database.transact :as t]
             [eponai.common.parser.mutate :refer [mutate]]
-            [taoensso.timbre :refer-macros [info debug error trace]]))
+            [taoensso.timbre :refer-macros [info debug error trace]]
+            [eponai.common.format :as format]
+            [eponai.common.validate :as validate]
+            [eponai.common.database.transact :as transact]))
 
 ;;---------------- Modal show/hide
 (defmethod mutate 'ui.modal/show
@@ -67,3 +70,12 @@
   {:action #(t/transact-one state
                             {:ui/component                                   :ui.component/transactions
                              :ui.component.transactions/selected-transaction (:db/id transaction)})})
+
+;; ################ Remote mutations ####################
+
+(defmethod mutate 'transaction/create
+  [{:keys [state mutation-uuid]} k params]
+  {:action (fn []
+             (let [transaction (format/transaction-create k params)]
+               (transact/mutate-one state mutation-uuid transaction)))
+   :remote true})

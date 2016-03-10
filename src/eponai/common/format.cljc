@@ -1,6 +1,7 @@
 (ns eponai.common.format
   (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
             [clojure.set :refer [rename-keys]]
+    [eponai.common.validate :as validate]
     #?@(:clj  [
             [clj-time.core :as t]
             [clj-time.format :as f]
@@ -215,3 +216,14 @@
              :widget   widget}
             filter
             (assoc :filter filter))))
+
+(defn transaction-create [k {:keys [input-tags] :as params}]
+  (if-not (= (frequencies (set input-tags))
+             (frequencies input-tags))
+    (throw (ex-info "Illegal argument :input-tags. Each tag must be unique."
+                    {:input-tags input-tags
+                     :mutate     k
+                     :params     params}))
+    (let [tx (transaction params)]
+      (validate/valid-user-transaction? tx)
+      tx)))

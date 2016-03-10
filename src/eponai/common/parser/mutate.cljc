@@ -17,27 +17,6 @@
 
 ;; -------- Remote mutations
 
-(defn- transaction-create [{:keys [state mutation-uuid]} k {:keys [input-tags] :as params}]
-  (fn []
-    (when-not (= (frequencies (set input-tags))
-                 (frequencies input-tags))
-      (throw (ex-info "Illegal argument :input-tags. Each tag must be unique."
-                      {:input-tags input-tags
-                       :mutate     k
-                       :params     params})))
-    (let [#?@(:clj [currency-chan (chan 1)])
-          db-tx (format/transaction params)
-          _ (validate/valid-user-transaction? db-tx)
-          tx-report (transact/mutate-one state mutation-uuid db-tx)]
-      #?(:clj (go (>! currency-chan (:transaction/date db-tx))))
-      #?(:cljs tx-report
-         :clj (assoc tx-report :currency-chan currency-chan)))))
-
-(defmethod mutate 'transaction/create
-  [env k params]
-  {:action (transaction-create env k params)
-   #?@(:cljs [:remote true])})
-
 (defmethod mutate 'transaction/edit
   [{:keys [state mutation-uuid]} _ {:keys [transaction/tags transaction/uuid] :as transaction}]
   {:action (fn []
