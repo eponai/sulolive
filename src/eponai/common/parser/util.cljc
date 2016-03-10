@@ -1,4 +1,5 @@
 (ns eponai.common.parser.util
+  (:refer-clojure :exclude [proxy])
   (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug]]
             [om.next :as om]))
 

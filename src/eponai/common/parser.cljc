@@ -1,5 +1,5 @@
 (ns eponai.common.parser
-  (:refer-clojure :exclude [read proxy])
+  (:refer-clojure :exclude [read])
   (:require [eponai.common.parser.util :as util]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
     #?(:clj
