@@ -33,13 +33,15 @@
           {:keys [content]} (om/get-state this)]
       (html
         [:div
-         [:div.text-center
-          [:a.button.secondary
-           {:on-click #(update-content this :dashboard)}
-           [:span "Dashboard"]]
-          [:a.button.secondary
-           {:on-click #(update-content this :transactions)}
-           [:span "Transactions"]]]
+         [:ul.menu
+          [:li
+           [:a.button.secondary
+            {:on-click #(update-content this :dashboard)}
+            [:span "Dashboard"]]]
+          [:li
+           [:a.button.secondary
+            {:on-click #(update-content this :transactions)}
+            [:span "Transactions"]]]]
          (cond (= content :dashboard)
                (->Dashboard dashboard)
 

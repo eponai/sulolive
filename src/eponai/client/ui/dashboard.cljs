@@ -77,9 +77,6 @@
                                             :budget/name]}]}
      {:proxy/new-widget (om/get-query NewWidget)}])
   Object
-  (initLocalState [_]
-    {:edit? true})
-
   (componentWillReceiveProps [this new-props]
     (let [widgets (:widget/_dashboard (:query/dashboard new-props))]
       (om/update-state! this assoc :layout (clj->js (generate-layout widgets)))))
@@ -110,12 +107,18 @@
           React (.-React js/window)]
       (html
         [:div
-         [:a.button.secondary
-          {:on-click #(toggle-edit this)}
-          [:i.fa.fa-pencil]]
-         [:a.button.secondary
-          {:on-click #(om/update-state! this assoc :add-widget? true)}
-          [:i.fa.fa-bar-chart]]
+         [:div.callout.secondary
+          [:ul.menu.icon-top
+           [:li
+            [:a
+             {:on-click #(om/update-state! this assoc :add-widget? true)}
+             [:i.fa.fa-bar-chart]
+             [:span "New"]]]
+           [:li
+            [:a
+             {:on-click #(toggle-edit this)}
+             [:i.fa.fa-pencil]
+             [:span "Edit"]]]]]
 
          (when add-widget?
            (utils/modal {:content  (->NewWidget (om/computed new-widget
@@ -127,7 +130,6 @@
                                                               :index (calculate-last-index widgets)}))
                          :on-close #(om/update-state! this assoc :add-widget? false)
                          :size "large"}))
-         [:div (str "Edit: " edit?)]
          (when edit?
            [:style (css [:.react-grid-item
                          {:-webkit-box-shadow "0 1px 1px rgba(0, 0, 0, .5)" ;

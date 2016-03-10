@@ -50,21 +50,17 @@
 (defn tag [{tag-name :tag/name} {:keys [on-delete
                                         on-click]}]
   (html
-    [:div
-     (opts {:class "button-group small"
+    [:div.label.secondary.tag
+     (opts {:style {:display :inline-block}
             :key [tag-name]})
 
-     [:a
-      (opts {:class    "button"
-             :on-click (or on-click #(prn (.. % -target)))
-             :style {:padding "0.5em"}})
+     [:a.button
+      (opts {:on-click (or on-click #(prn (.. % -target)))})
       tag-name]
 
      (when on-delete
-       [:a
-        (opts {:class    "button"
-               :on-click #(on-delete)
-               :style {:padding "0.5em"}})
+       [:a.button
+        (opts {:on-click #(on-delete)})
         "x"])]))
 
 (defn- on-enter-down [e f]
@@ -93,10 +89,6 @@
        [:i.fa.fa-tag]]]
 
      [:div
-      (opts {:style {:display        :flex
-                     :flex-direction :row
-                     :flex-wrap      :wrap
-                     :width          "100%"}})
       (map-all
         selected-tags
         (fn [t]

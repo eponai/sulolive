@@ -98,7 +98,7 @@
           {:keys [query/current-user]} (om/props this)]
       (debug "StripeCheckout loaded: " checkout-loaded?)
       (html
-        [:div.intro-message
+        [:div.intro-header
          [:h2
           (opts {:style {:text-align "center"}})
           "Select your plan"]
