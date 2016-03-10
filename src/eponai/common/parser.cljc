@@ -1,10 +1,8 @@
 (ns eponai.common.parser
-  (:refer-clojure :exclude [merge])
-  (:require [eponai.common.parser.read :as read]
-            [eponai.common.parser.mutate :as mutate]
+  (:refer-clojure :exclude [read proxy])
+  (:require [eponai.common.parser.mutate :as mutate]
             [eponai.common.parser.util :as util]
-            [clojure.walk :as walk]
-            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info]]
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
     #?(:clj
             [om.next.server :as om]
        :cljs [om.next :as om])
@@ -15,6 +13,51 @@
             [eponai.server.datomic.filter :as filter])
             [clojure.walk :as w]))
 
+(defmulti read (fn [_ k _] k))
+
+;; -------- No matching dispatch
+
+(defn proxy [{:keys [parser query target] :as env} k _]
+  (let [ret (parser env query target)]
+    #?(:clj  {:value ret}
+       :cljs (if (and target (seq ret))
+               ;; Trial and error led to this solution.
+               ;; For some reason "proxy" keys get nested in one too many vectors
+               ;; and we need to unwrap them here.
+               {target (om/query->ast [{k (util/unwrap-proxies ret)}])}
+               {:value ret}))))
+
+(defn return
+  "Special read key (special like :proxy) that just returns
+  whatever it is bound to.
+
+  Example:
+  om/IQuery
+  (query [this] ['(:return/foo {:value 1 :remote true})])
+  Will always return 1 and be remote true."
+  [_ _ p]
+  p)
+
+(defmethod read :default
+  [e k p]
+  (cond
+    (= "proxy" (namespace k))
+    (proxy e k p)
+
+    (= "return" (namespace k))
+    (return e k p)
+
+    :else (warn "Returning nil for parser read key: " k)))
+
+;; -------- Debug stuff
+
+(defn debug-read [env k params]
+  (debug "reading key:" k)
+  (let [ret (read env k params)]
+    (debug "read key:" k "returned:" ret)
+    ret))
+
+;; ############ middlewares
 
 #?(:clj
    (defn default-error-fn [err]
@@ -202,7 +245,7 @@
 
 (defn parser
   ([]
-   (let [parser (om/parser {:read   (-> read/read
+   (let [parser (om/parser {:read   (-> read
                                         read-without-state
                                         read-with-dbid-in-query
                                         wrap-db)
