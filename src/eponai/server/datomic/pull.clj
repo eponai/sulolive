@@ -1,7 +1,10 @@
 (ns eponai.server.datomic.pull
-  (:require [datomic.api :as d]
-            [eponai.common.database.pull :as p]
-            [clojure.walk :refer [walk]]))
+  (:require
+    [clojure.walk :refer [walk]]
+    [datomic.api :as d]
+    [eponai.common.database.pull :as p]
+    [eponai.common.parser.util :as parser]
+    [eponai.common.report :as report]))
 
 (defn currencies [db]
   (p/q '[:find [(pull ?e [*]) ...]
@@ -50,3 +53,37 @@
                                                        (:conversion/rate user-currency-conversion)))})))
                           tx-conv-tuples)]
     transactions))
+
+(defn widget-report-query []
+  (parser/put-db-id-in-query
+    [:widget/uuid
+     :widget/width
+     :widget/height
+     {:widget/filter [{:filter/include-tags [:tag/name]}]}
+     {:widget/report [:report/uuid
+                      :report/group-by
+                      :report/title
+                      {:report/functions [:report.function/uuid
+                                          :report.function/attribute
+                                          :report.function/id]}]}
+     :widget/index
+     :widget/data
+     {:widget/graph [:graph/style]}]))
+
+(defn transaction-query []
+  (parser/put-db-id-in-query
+    [:transaction/uuid
+     :transaction/amount
+     :transaction/conversion
+     {:transaction/tags [:tag/name]}
+     {:transaction/date [:date/ymd
+                         :date/timestamp]}]))
+
+(defn widgets-with-data [{:keys [db parser] :as env} widgets]
+  (map (fn [{:keys [widget/uuid]}]
+         (let [widget (p/pull db (widget-report-query) [:widget/uuid uuid])
+               {:keys [query/transactions]} (parser env [`({:query/transactions ~(transaction-query)}
+                                                            {:filter ~(:widget/filter widget)})])
+               report-data (report/generate-data (:widget/report widget) (:widget/filter widget) transactions)]
+           (assoc widget :widget/data report-data)))
+       widgets))

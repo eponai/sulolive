@@ -23,7 +23,7 @@
      {:proxy/all-transactions '?transactions}])
   Object
   (initLocalState [_]
-    {:content :transactions})
+    {:content :dashboard})
   (componentWillUnmount [this]
     (om/transact! this `[(ui.component.budget/clear)
                          :query/transactions]))

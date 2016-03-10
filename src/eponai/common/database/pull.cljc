@@ -4,8 +4,6 @@
     [eponai.common.format :as f]
     [clojure.set :as s]
     [clojure.walk :as walk]
-    [eponai.common.parser.util :as parser]
-    [eponai.common.report :as report]
     #?(:clj
     [datomic.api :as d]
        :cljs [datascript.core :as d]))
@@ -133,6 +131,14 @@
       (update :where concat (:where addition))
       (update :symbols merge (:symbols addition))))
 
+(defn min-by [db k params]
+  (some->> params
+           (all-with db)
+           (map #(d/entity db %))
+           seq
+           (apply min-key k)
+           :db/id))
+
 (defn rename-symbols
   "Takes a query map with :where clauses. Renames each where clause's symbols
     with matches from the renames map."
@@ -145,7 +151,7 @@
 (defn budget []
   {:where '[[?e :budget/uuid]]})
 
-(defn budget-with-filter [budget-uuid]
+(defn budget-with-uuid [budget-uuid]
   ;; Harder to check if it's actually a uuid.
   {:pre [(not (string? budget-uuid))]}
   {:where   '[[?e :budget/uuid ?budget-uuid]]
@@ -202,40 +208,6 @@
      db
      user-db-id
      status))
-
-(defn widget-report-query []
-  (parser/put-db-id-in-query
-    [:widget/uuid
-     :widget/width
-     :widget/height
-     {:widget/filter [{:filter/include-tags [:tag/name]}]}
-     {:widget/report [:report/uuid
-                      :report/group-by
-                      :report/title
-                      {:report/functions [:report.function/uuid
-                                          :report.function/attribute
-                                          :report.function/id]}]}
-     :widget/index
-     :widget/data
-     {:widget/graph [:graph/style]}]))
-
-(defn transaction-query []
-  (parser/put-db-id-in-query
-    [:transaction/uuid
-     :transaction/amount
-     :transaction/conversion
-     {:transaction/tags [:tag/name]}
-     {:transaction/date [:date/ymd
-                         :date/timestamp]}]))
-
-(defn widgets-with-data [{:keys [db parser] :as env} widgets]
-  (map (fn [{:keys [widget/uuid]}]
-         (let [widget (pull db (widget-report-query) [:widget/uuid uuid])
-               {:keys [query/transactions]} (parser env [`({:query/transactions ~(transaction-query)}
-                                                                {:filter ~(:widget/filter widget)})])
-               report-data (report/generate-data (:widget/report widget) (:widget/filter widget) transactions)]
-           (assoc widget :widget/data report-data)))
-       widgets))
 
 (defn find-transactions
   [db {:keys [filter budget-uuid query-params]}]

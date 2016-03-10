@@ -62,30 +62,6 @@
   {:value  (common.pull/pull-many db query (common.pull/all-with db {:where '[[?e :currency/code]]}))
    :remote true})
 
-(defmethod read :query/dashboard
-  [{:keys [db ast query target auth] :as env} _ {:keys [budget-uuid]}]
-  (let [#?@(:cljs [budget-uuid (-> (d/entity db [:ui/component :ui.component/budget])
-                                   :ui.component.budget/uuid)])]
-    (if (= target :remote)
-      {:remote (assoc-in ast [:params :budget-uuid] budget-uuid)}
-
-      (let [eid (if budget-uuid
-                  (common.pull/one-with db #?(:clj  (common.pull/merge-query (common.pull/budget-with-filter budget-uuid)
-                                                         (common.pull/budget-with-auth (:username auth)))
-                                              :cljs (common.pull/budget-with-filter budget-uuid)))
-                  ;; No budget-uuid, grabbing the one with the smallest created-at
-                  (some->> #?(:clj  (common.pull/budget-with-auth (:username auth))
-                              :cljs (common.pull/budget))
-                           (common.pull/all-with db)
-                           (map #(d/entity db %))
-                           seq
-                           (apply min-key :budget/created-at)
-                           :db/id))]
-        {:value (when eid
-                  (let [dashboard (common.pull/pull db query (common.pull/one-with db {:where [['?e :dashboard/budget eid]]}))]
-                    #?(:clj (update dashboard :widget/_dashboard #(common.pull/widgets-with-data env %))
-                       :cljs dashboard)))}))))
-
 (defmethod read :query/all-dashboards
   [{:keys [db query auth]} _ _]
   {:value  (common.pull/pull-many db query (common.pull/all-with db #?(:clj {:where   '[[?e :dashboard/budget ?b]

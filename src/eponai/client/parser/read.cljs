@@ -66,6 +66,25 @@
     (if (= target :remote)
       ;; Pass the active budget uuid to remote reader
       {:remote (assoc-in ast [:params :budget-uuid] budget)}
+
       ;; Local read
       (query-local-transactions env k {:filter filter
                                        :budget-uuid budget}))))
+
+(defmethod read :query/dashboard
+  [{:keys [db ast query target]} _ _]
+  (let [budget-uuid (-> (d/entity db [:ui/component :ui.component/budget])
+                        :ui.component.budget/uuid)]
+    (if (= target :remote)
+      ;; Pass the active budget uuid to remote reader
+      {:remote (assoc-in ast [:params :budget-uuid] budget-uuid)}
+
+      ;; Local read
+      (let [eid (if budget-uuid
+                  (p/one-with db (p/budget-with-uuid budget-uuid))
+
+                  ;; No budget-uuid, grabbing the one with the smallest created-at
+                  (p/min-by db :budget/created-at (p/budget)))]
+
+        {:value (when eid
+                  (p/pull db query (p/one-with db {:where [['?e :dashboard/budget eid]]})))}))))
