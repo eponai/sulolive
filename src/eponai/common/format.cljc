@@ -124,12 +124,6 @@
      :date/day       (t/day date)
      :date/timestamp (date->timestamp date)}))
 
-(defn tags
-  "Create a collection of tag entities, given a colleciton of strings."
-  [tags]
-  (map (fn [n] {:db/id          (d/tempid :db.part/user)
-                :tag/name       n}) tags))
-
 (defn transaction
   "Create a transaction entity for the given input. Will replace the name space of the keys to the :transaction/ namespace
 
@@ -190,17 +184,12 @@
       (assoc clean-filters :db/id (d/tempid :db.part/user))
       nil)))
 
-(defn widget-map [{:keys [input-function input-report input-graph input-widget input-filter] :as input}]
+(defn widget-create [{:keys [input-function input-report input-graph input-widget input-filter] :as input}]
   (let [function (assoc input-function :db/id (d/tempid :db.part/user))
-
         report (assoc input-report :db/id (d/tempid :db.part/user)
                                    :report/functions #{(:db/id function)})
-
         graph (assoc input-graph :db/id (d/tempid :db.part/user))
-
         filter (data-filter input-filter)
-
-        _ (debug "Filer saving: " filter)
         widget (cond-> (merge input-widget
                               {:db/id            (d/tempid :db.part/user)
                                :widget/graph     (:db/id graph)
@@ -208,14 +197,13 @@
                                :widget/dashboard [:dashboard/uuid (:dashboard/uuid (:input-dashboard input))]})
                        filter
                        (assoc :widget/filter (:db/id filter)))]
-    (debug "Saving widget: " widget)
-    
     (cond-> {:function function
              :report   report
              :graph    graph
              :widget   widget}
             filter
             (assoc :filter filter))))
+
 
 (defn transaction-create [k {:keys [input-tags] :as params}]
   (if-not (= (frequencies (set input-tags))
@@ -227,3 +215,28 @@
     (let [tx (transaction params)]
       (validate/valid-user-transaction? tx)
       tx)))
+
+(defn transaction-edit [{:keys [transaction/tags
+                                transaction/uuid] :as input-transaction}]
+  (let [tag->txs (fn [{:keys [removed tag/name] :as tag}]
+                   {:pre [(some? name)]}
+                   (if removed
+                     [[:db/retract [:transaction/uuid uuid] :transaction/tags [:tag/name name]]]
+                     (let [tempid (d/tempid :db.part/user)]
+                       ;; Create new tag and add it to the transaction
+                       [(-> tag (dissoc :removed) (assoc :db/id tempid))
+                        [:db/add [:transaction/uuid uuid] :transaction/tags tempid]])))
+        transaction (-> input-transaction
+                        (dissoc :transaction/tags)
+                        (assoc :db/id (d/tempid :db.part/user))
+                        (->> (reduce-kv (fn [m k v]
+                                          (assoc m k (condp = k
+                                                       :transaction/amount #?(:cljs v :clj (bigint v))
+                                                       :transaction/currency (assoc v :db/id (d/tempid :db.part/user))
+                                                       :transaction/type (assoc v :db/id (d/tempid :db.part/user))
+                                                       :transaction/date (date (:date/ymd v))
+                                                       v)))
+                                        {})))]
+    (cond-> [transaction]
+            (seq tags)
+            (into (mapcat tag->txs) tags))))
