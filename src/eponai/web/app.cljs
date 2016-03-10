@@ -1,4 +1,4 @@
-(ns eponai.client.app
+(ns eponai.web.app
   (:require [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
             [goog.dom :as gdom]
@@ -6,16 +6,18 @@
             [cljsjs.react.dom]
             [datascript.core :as d]
             [eponai.client.backend :as backend]
-            [eponai.client.history :as history]
-            [eponai.client.parser.mutate]
-            [eponai.client.parser.read]
+            [eponai.client.parser.merge :as merge]
+            [eponai.web.parser.merge :as web.merge]
+            [eponai.web.history :as history]
+            [eponai.web.parser.mutate]
+            [eponai.web.parser.read]
             [eponai.common.datascript :as common.datascript]
             [eponai.common.parser :as parser]
             [eponai.common.report]
-            [eponai.client.ui.navbar :as navbar]
+            [eponai.web.ui.navbar :as navbar]
             [taoensso.timbre :refer-macros [info debug error trace]]
             [eponai.client.ui :refer-macros [opts]]
-            [eponai.client.ui.utils :as utils]))
+            [eponai.web.ui.utils :as utils]))
 
 (defui ^:once App
   static om/IQueryParams
@@ -94,7 +96,7 @@
                                    :parser  parser
                                    :remotes [:remote]
                                    :send    (backend/send! "/user/")
-                                   :merge   (backend/merge! conn)})
+                                   :merge   (merge/merge! web.merge/web-merge)})
         history (history/init-history reconciler)]
     (reset! utils/reconciler-atom reconciler)
     (om/add-root! reconciler App (gdom/getElement "my-app"))

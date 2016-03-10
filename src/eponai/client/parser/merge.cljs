@@ -1,7 +1,7 @@
 (ns eponai.client.parser.merge
   (:require [datascript.core :as d]
             [datascript.db :as db]
-            [eponai.client.homeless :as homeless]
+            [eponai.web.homeless :as homeless]
             [taoensso.timbre :refer-macros [info debug error trace warn]]))
 
 (defn transact [db tx]
@@ -74,39 +74,81 @@
 
 ;;;;;;; API
 
-(defn merge-mutation [db key val]
-  {:pre [(db/db? db)]
+(defn merge-mutation [merge-fn db key val]
+  {:pre [(methods merge-fn) (db/db? db)]
    :post [(db/db? %)]}
-  (cond
-    (some? (-> val :result :mutation-uuid))
-    (sync-optimistic-tx db key val)
+  ;; Try to pass it to the merge function first
+  ;; Otherwise, just do the default.
+  (if-let [ret (merge-fn db key val)]
+    ret
+    (cond
+     (some? (-> val :result :mutation-uuid))
+     (sync-optimistic-tx db key val)
 
-    (some? (-> val :om.next/error))
-    (merge-error db key val)
+     (some? (-> val :om.next/error))
+     (merge-error db key val)
 
-    (-> val :result seq)
-    (transact db (:result val))
+     (-> val :result seq)
+     (transact db (:result val))
 
-    :else
-    db))
+     :else
+     db)))
 
 ;; TODO: Fix comments in this namespace.
-(defn merge-read [db key val]
-  {:pre [(db/db? db)]
+;; TODO: Clean up merge-read and merge-mutate now that we have a merge-fn.
+(defn merge-read [merge-fn db key val]
+  {:pre [(methods merge-fn) (db/db? db)]
    :post [(db/db? %)]}
 
-  (cond
-    (or (= key :om.next/error)
-        (some? (:om.next/error val)))
-    (merge-error db key val)
-
-    (= "proxy" (namespace key))
-    (reduce-kv (fn [db k v] (merge-read db k v))
+  ;; Dispatch proxy first, so our merge-fn doesn't have to
+  ;; implement that themselves.
+  (if (= "proxy" (namespace key))
+    (reduce-kv (fn [db k v] (merge-read merge-fn db k v))
                db
                val)
+    ;; Then check our merge-fn, otherwise do the default.
+    (if-let [ret (merge-fn db key val)]
+      ret
+      (cond
+        (or (= key :om.next/error)
+            (some? (:om.next/error val)))
+        (merge-error db key val)
 
-    (= :datascript/schema key)
-    (merge-schema db key val)
+        (= :datascript/schema key)
+        (merge-schema db key val)
 
-    :else
-    (transact db val)))
+        :else
+        (transact db val)))))
+
+(defn merge-novelty-by-key
+  ;; TODO: Add comment when this has stabilized.
+  "Merges server response for each [k v] in novelty. Returns the next db and the keys to re-read."
+  [merge-fn db novelty]
+  {:pre [(methods merge-fn) (db/db? db)]
+   :post [(:keys %) (db/db? (:next %))]}
+  ;; Merge :datascript/schema first if it exists
+  (let [keys-to-merge-first [:datascript/schema]
+        ordered-novelty (concat (select-keys novelty keys-to-merge-first)
+                                (apply dissoc novelty keys-to-merge-first))]
+    (reduce
+      (fn [{:keys [next] :as m} [key value]]
+        (debug "Merging response for key:" key "value:" value)
+        (if (symbol? key)
+          (assoc m :next (merge-mutation merge-fn next key value))
+          (-> m
+              (assoc :next (merge-read merge-fn next key value))
+              (update :keys conj key))))
+      {:keys [] :next db}
+      ordered-novelty)))
+
+(defn merge!
+  "Takes a merge-fn which is passed [db key params] and
+  should return db. Hook for specific platforms to do
+  arbitrary actions by key.
+  Returns merge function for om.next's reconciler's :merge"
+  [merge-fn]
+  (fn [reconciler db novelty]
+    (debug "Merge! transacting novelty:" novelty)
+    (let [merged-novelty (merge-novelty-by-key merge-fn db novelty)]
+      (debug "Merge! returning keys:" (:keys merged-novelty))
+      merged-novelty)))

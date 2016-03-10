@@ -1,9 +1,9 @@
-(ns eponai.client.ui.all_transactions
+(ns eponai.web.ui.all_transactions
   (:require [clojure.set :as set]
-            [eponai.client.ui.format :as f]
-            [eponai.client.ui.datepicker :refer [->Datepicker]]
+            [eponai.web.ui.format :as f]
+            [eponai.web.ui.datepicker :refer [->Datepicker]]
             [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
-            [eponai.client.ui.utils :as utils]
+            [eponai.web.ui.utils :as utils]
             [eponai.common.format :as format]
             [garden.core :refer [css]]
             [goog.dom :as dom]

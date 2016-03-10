@@ -1,7 +1,9 @@
-(ns eponai.client.ui.add_transaction_test
-  (:require [eponai.client.ui.all_transactions :as transactions]
+(ns eponai.web.ui.add_transaction_test
+  (:require [eponai.web.ui.all_transactions :as transactions]
             [datascript.core :as d]
             [eponai.common.datascript :as common.datascript]
+            [eponai.web.parser.mutate]
+            [eponai.web.parser.read]
             [eponai.common.parser :as parser]
             [eponai.common.generators :refer [gen-transaction]]
             [eponai.client.testdata :as testdata]

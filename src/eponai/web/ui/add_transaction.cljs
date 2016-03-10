@@ -1,8 +1,8 @@
-(ns eponai.client.ui.add_transaction
+(ns eponai.web.ui.add_transaction
   (:require [om.next :as om :refer-macros [defui]]
             [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
-            [eponai.client.ui.datepicker :refer [->Datepicker]]
-            [eponai.client.ui.utils :as utils]
+            [eponai.web.ui.datepicker :refer [->Datepicker]]
+            [eponai.web.ui.utils :as utils]
             [eponai.common.format :as format]
             [sablono.core :refer-macros [html]]
             [cljsjs.pikaday]

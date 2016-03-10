@@ -1,10 +1,10 @@
-(ns eponai.client.routes.ui-handlers
+(ns eponai.web.routes.ui-handlers
   (:require [bidi.bidi :as bidi]
-            [eponai.client.ui.budget :refer [Budget ->Budget]]
-            [eponai.client.ui.all_transactions :refer [AllTransactions ->AllTransactions]]
-            [eponai.client.ui.settings :refer [Settings ->Settings]]
-            [eponai.client.ui.stripe :refer [Payment ->Payment]]
-            [eponai.client.ui.profile :refer [Profile ->Profile]]
+            [eponai.web.ui.budget :refer [Budget ->Budget]]
+            [eponai.web.ui.all_transactions :refer [AllTransactions ->AllTransactions]]
+            [eponai.web.ui.settings :refer [Settings ->Settings]]
+            [eponai.web.ui.stripe :refer [Payment ->Payment]]
+            [eponai.web.ui.profile :refer [Profile ->Profile]]
             [om.next :as om]))
 
 (defprotocol RouteParamHandler

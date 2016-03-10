@@ -6,6 +6,14 @@
             [taoensso.timbre :refer-macros [debug error]]
             [eponai.common.format :as f]))
 
+;; ################ Remote reads ####################
+;; Remote reads goes here. We share these reads
+;; with all client platforms (web, ios, android).
+;; Local reads should be defined in:
+;;     eponai.<platform>.parser.read
+
+;; ----------
+
 (defn read-entity-by-key
   "Gets an entity by it's ref id. Returns the full component unless a pull pattern is supplied.
 
@@ -20,16 +28,6 @@
               (nil? e) e
               query (p/pull db query (:db/id e))
               :else (d/touch e))}))
-
-;; -------- Readers for UI components
-
-(defmethod read :query/budget
-  [{:keys [db query]} _ _]
-  {:value (p/pull db query [:ui/singleton :ui.singleton/budget])})
-
-(defmethod read :query/selected-transaction
-  [{:keys [db query]} _ _]
-  (read-entity-by-key db query [:ui/component :ui.component/transactions]))
 
 (defmethod read :ui/component
   [{:keys [db ast query]} _ _]

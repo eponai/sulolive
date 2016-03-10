@@ -1,4 +1,4 @@
-(ns eponai.client.ui.settings
+(ns eponai.web.ui.settings
   (:require [eponai.client.ui :refer [map-all] :refer-macros [opts]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]

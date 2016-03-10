@@ -1,7 +1,7 @@
-(ns eponai.client.ui.widget
+(ns eponai.web.ui.widget
   (:require [eponai.common.report :as report]
             [eponai.client.ui :refer-macros [opts]]
-            [eponai.client.ui.d3 :as d3]
+            [eponai.web.ui.d3 :as d3]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]))
 

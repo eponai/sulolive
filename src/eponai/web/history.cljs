@@ -1,12 +1,10 @@
-(ns eponai.client.history
+(ns eponai.web.history
   (:require [bidi.bidi :as bidi]
-            [eponai.client.routes :as routes]
-            [eponai.client.routes.ui-handlers :as ui-handlers]
+            [eponai.web.routes :as routes]
+            [eponai.web.routes.ui-handlers :as ui-handlers]
             [eponai.client.ui :refer [update-query-params!]]
             [om.next :as om]
             [pushy.core :as pushy]))
-
-
 
 (defonce history-atom (atom nil))
 

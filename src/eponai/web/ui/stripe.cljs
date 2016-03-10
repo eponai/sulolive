@@ -1,4 +1,4 @@
-(ns eponai.client.ui.stripe
+(ns eponai.web.ui.stripe
   (:require [cljs.core.async :refer [chan <! put!]]
             [clojure.walk :refer [keywordize-keys]]
             [eponai.client.ui :refer-macros [opts]]
@@ -7,7 +7,7 @@
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
             [taoensso.timbre :refer-macros [info debug error trace]]
-            [eponai.client.ui.utils :as utils])
+            [eponai.web.ui.utils :as utils])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (defn load-checkout [channel]

@@ -1,4 +1,4 @@
-(ns eponai.client.ui.datepicker
+(ns eponai.web.ui.datepicker
   (:require [om.next :as om :refer-macros [defui]]
             [eponai.client.ui :refer-macros [style opts]]
             [eponai.common.format :as format]

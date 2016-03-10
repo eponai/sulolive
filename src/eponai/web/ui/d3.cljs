@@ -1,4 +1,4 @@
-(ns eponai.client.ui.d3
+(ns eponai.web.ui.d3
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
             [cljs.core.async :as c :refer [chan]]

@@ -1,6 +1,6 @@
-(ns eponai.client.ui.utils
+(ns eponai.web.ui.utils
   (:require [eponai.client.ui :refer-macros [opts] :refer [map-all update-query-params!]]
-            [eponai.client.ui.datepicker :refer [->Datepicker]]
+            [eponai.web.ui.datepicker :refer [->Datepicker]]
             [sablono.core :refer-macros [html]]
             [om.next :as om]
             [taoensso.timbre :refer-macros [debug]]))

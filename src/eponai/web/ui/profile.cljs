@@ -1,9 +1,9 @@
-(ns eponai.client.ui.profile
+(ns eponai.web.ui.profile
   (:require [eponai.client.ui :refer-macros [opts]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
             [cljsjs.react-grid-layout]
-            [eponai.client.routes :as routes]
+            [eponai.web.routes :as routes]
             [garden.core :refer [css]]))
 
 (defn generate-layout [budgets]

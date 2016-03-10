@@ -1,11 +1,11 @@
-(ns eponai.client.ui.add-widget
+(ns eponai.web.ui.add-widget
   (:require [datascript.core :as d]
             [eponai.client.ui :refer [update-query-params! map-all] :refer-macros [opts]]
-            [eponai.client.ui.datepicker :refer [->Datepicker]]
-            [eponai.client.ui.widget :refer [->Widget]]
+            [eponai.web.ui.datepicker :refer [->Datepicker]]
+            [eponai.web.ui.widget :refer [->Widget]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
-            [eponai.client.ui.utils :as utils]
+            [eponai.web.ui.utils :as utils]
             [eponai.common.report :as report]
             [taoensso.timbre :refer-macros [debug]]
             [cljs-time.format :as f]))

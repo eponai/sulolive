@@ -1,4 +1,4 @@
-(ns eponai.client.homeless
+(ns eponai.web.homeless
   "Place where functions land when they have no clear way to go.
   Move these to somewhere else when it makes sense."
   (:require [clojure.string :as s]))

@@ -1,7 +1,7 @@
  (ns eponai.client.figwheel
   (:require [bidi.bidi :as bidi]
-            [eponai.client.routes :as routes]
-            [eponai.client.app :as app]
+            [eponai.web.routes :as routes]
+            [eponai.web.app :as app]
             [eponai.client.tests :as tests]
             [taoensso.timbre :refer-macros [warn debug]]))
 

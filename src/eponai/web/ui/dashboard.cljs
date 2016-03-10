@@ -1,13 +1,13 @@
-(ns eponai.client.ui.dashboard
+(ns eponai.web.ui.dashboard
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
-            [eponai.client.ui.add-widget :refer [NewWidget ->NewWidget]]
-            [eponai.client.ui.widget :refer [Widget ->Widget]]
+            [eponai.web.ui.add-widget :refer [NewWidget ->NewWidget]]
+            [eponai.web.ui.widget :refer [Widget ->Widget]]
             [garden.core :refer [css]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
             [taoensso.timbre :refer-macros [error debug]]
-            [eponai.client.ui.utils :as utils]
+            [eponai.web.ui.utils :as utils]
             [datascript.core :as d]))
 
 (defn save-widget [component widget]

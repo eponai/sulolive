@@ -1,4 +1,4 @@
-(ns eponai.client.routes
+(ns eponai.web.routes
   (:require [bidi.bidi :as bidi]
             [clojure.string :as s]))
 

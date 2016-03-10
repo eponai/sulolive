@@ -117,7 +117,7 @@
                                    "test/"]
                     :figwheel     {:on-jsload "eponai.client.figwheel/run"
                                    :css-dirs ["resources/public/style/css"]}
-                    :compiler     {:main          "eponai.client.core"
+                    :compiler     {:main          "eponai.web.core"
                                    :asset-path    "/dev/js/out"
                                    :output-to     "resources/public/dev/js/out/budget.js"
                                    :output-dir    "resources/public/dev/js/out/"
@@ -142,7 +142,7 @@
                                   }}
                    {:id           "release"
                     :source-paths ["src/"]
-                    :compiler     {:main          "eponai.client.core"
+                    :compiler     {:main          "eponai.web.core"
                                    :asset-path    "/release/js/out"
                                    :output-to     "resources/public/release/js/out/budget.js"
                                    :output-dir    "resources/public/release/js/out/"

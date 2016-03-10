@@ -1,19 +1,21 @@
-(ns eponai.client.signup
+(ns eponai.web.signup
   (:require-macros [cljs.core.async.macros :refer [go]])
- (:require [cljs-http.client :as http]
-           [cljs.core.async :as async]
-           [om.next :as om :refer-macros [defui]]
-           [eponai.client.ui :refer-macros [opts]]
-           [eponai.client.routes :as routes]
-           [cemerick.url :as url]
-           [clojure.walk :refer [keywordize-keys]]
-           [sablono.core :refer-macros [html]]
-           [datascript.core :as d]
-           [goog.dom :as gdom]
-  ;; To initialize ReactDOM:
-           [cljsjs.react.dom]
-           [eponai.client.backend :as backend]
-           [eponai.common.parser :as parser]))
+  (:require [cljs-http.client :as http]
+            [cljs.core.async :as async]
+            [om.next :as om :refer-macros [defui]]
+            [eponai.client.ui :refer-macros [opts]]
+            [eponai.web.routes :as routes]
+            [cemerick.url :as url]
+            [clojure.walk :refer [keywordize-keys]]
+            [sablono.core :refer-macros [html]]
+            [datascript.core :as d]
+            [goog.dom :as gdom]
+    ;; To initialize ReactDOM:
+            [cljsjs.react.dom]
+            [eponai.client.backend :as backend]
+            [eponai.client.parser.merge :as merge]
+            [eponai.web.parser.merge :as web.merge]
+            [eponai.common.parser :as parser]))
 
 (enable-console-print!)
 
@@ -182,10 +184,10 @@
 
 (defn run []
  (let [conn (or @conn-atom (reset! conn-atom (d/create-conn)))
-       reconciler (om/reconciler {:state conn
+       reconciler (om/reconciler {:state   conn
                                   :parser  (parser/parser)
                                   :remotes [:remote]
                                   :send    (backend/send! "/")
-                                  :merge   (backend/merge! conn)})]
+                                  :merge   (merge/merge! web.merge/web-merge)})]
 
   (om/add-root! reconciler Signup (gdom/getElement "my-signup"))))

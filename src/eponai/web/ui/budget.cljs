@@ -1,7 +1,7 @@
-(ns eponai.client.ui.budget
-  (:require [eponai.client.ui.all_transactions :refer [->AllTransactions AllTransactions]]
-            [eponai.client.ui.dashboard :refer [->Dashboard Dashboard]]
-            [eponai.client.ui.utils :as utils]
+(ns eponai.web.ui.budget
+  (:require [eponai.web.ui.all_transactions :refer [->AllTransactions AllTransactions]]
+            [eponai.web.ui.dashboard :refer [->Dashboard Dashboard]]
+            [eponai.web.ui.utils :as utils]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]))
 

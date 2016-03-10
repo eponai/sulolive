@@ -1,5 +1,5 @@
 (ns eponai.devcards.ui.widget-dc
-  (:require [eponai.client.ui.dashboard :as dashboard]
+  (:require [eponai.web.ui.dashboard :as dashboard]
             [om.next :as om])
   (:require-macros [devcards.core :refer [defcard]]))
 
