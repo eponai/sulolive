@@ -1,5 +1,6 @@
 (ns eponai.common.parser.util
-  (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug]]))
+  (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug]]
+            [om.next :as om]))
 
 (defn post-process-parse
   "Calls post-parse-fn for each [k v] in the result of a (parser env query-expr).
@@ -78,3 +79,24 @@
 
         :else
         query))
+
+(defn proxy [{:keys [parser query target] :as env} k _]
+  (let [ret (parser env query target)]
+    #?(:clj  {:value ret}
+       :cljs (if (and target (seq ret))
+               ;; Trial and error led to this solution.
+               ;; For some reason "proxy" keys get nested in one too many vectors
+               ;; and we need to unwrap them here.
+               {target (om/query->ast [{k (unwrap-proxies ret)}])}
+               {:value ret}))))
+
+(defn return
+  "Special read key (special like :proxy) that just returns
+  whatever it is bound to.
+
+  Example:
+  om/IQuery
+  (query [this] ['(:return/foo {:value 1 :remote true})])
+  Will always return 1 and be remote true."
+  [_ _ p]
+  p)

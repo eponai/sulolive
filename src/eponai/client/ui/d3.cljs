@@ -7,7 +7,8 @@
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
             [cljsjs.d3]
-            [cljsjs.nvd3]))
+            [cljsjs.nvd3]
+            [taoensso.timbre :refer-macros [debug]]))
 
 (defn build-svg [element width height]
   (-> js/d3
@@ -132,7 +133,7 @@
   (componentDidUpdate [this _ _]
     (let [{:keys [svg]} (om/get-state this)
           {:keys [data]} (om/props this)
-          chart-data (clj->js data)]
+          chart-data (or (clj->js data) #js [])]
       (.. js/nv
           (addGraph (fn []
                       (let [chart (.. js/nv

@@ -28,7 +28,8 @@
 (defn- save-new-budget [component name]
   (om/transact! component `[(budget/save ~{:budget/uuid (d/squuid)
                                            :budget/name name
-                                           :dashboard/uuid (d/squuid)})
+                                           :dashboard/uuid (d/squuid)
+                                           :mutation-uuid (d/squuid)})
                             :query/all-budgets]))
 
 ;;;; ##################### UI components ####################

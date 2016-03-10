@@ -1,7 +1,6 @@
 (ns eponai.common.parser
   (:refer-clojure :exclude [read proxy])
-  (:require [eponai.common.parser.mutate :as mutate]
-            [eponai.common.parser.util :as util]
+  (:require [eponai.common.parser.util :as util]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
     #?(:clj
             [om.next.server :as om]
@@ -14,38 +13,18 @@
             [clojure.walk :as w]))
 
 (defmulti read (fn [_ k _] k))
+(defmulti mutate (fn [_ k _] k))
 
 ;; -------- No matching dispatch
-
-(defn proxy [{:keys [parser query target] :as env} k _]
-  (let [ret (parser env query target)]
-    #?(:clj  {:value ret}
-       :cljs (if (and target (seq ret))
-               ;; Trial and error led to this solution.
-               ;; For some reason "proxy" keys get nested in one too many vectors
-               ;; and we need to unwrap them here.
-               {target (om/query->ast [{k (util/unwrap-proxies ret)}])}
-               {:value ret}))))
-
-(defn return
-  "Special read key (special like :proxy) that just returns
-  whatever it is bound to.
-
-  Example:
-  om/IQuery
-  (query [this] ['(:return/foo {:value 1 :remote true})])
-  Will always return 1 and be remote true."
-  [_ _ p]
-  p)
 
 (defmethod read :default
   [e k p]
   (cond
     (= "proxy" (namespace k))
-    (proxy e k p)
+    (util/proxy e k p)
 
     (= "return" (namespace k))
-    (return e k p)
+    (util/return e k p)
 
     :else (warn "Returning nil for parser read key: " k)))
 
@@ -249,7 +228,7 @@
                                         read-without-state
                                         read-with-dbid-in-query
                                         wrap-db)
-                            :mutate (-> mutate/mutate
+                            :mutate (-> mutate
                                         mutate-with-idempotent-invariants
                                         mutate-with-error-logging
                                         wrap-db)})]

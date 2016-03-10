@@ -92,7 +92,8 @@
                   (p/min-by db :budget/created-at (p/budget)))]
 
         {:value (when eid
-                  (p/pull db query (p/one-with db {:where [['?e :dashboard/budget eid]]})))}))))
+                  (when-let [dashboard-id (p/one-with db {:where [['?e :dashboard/budget eid]]})]
+                    (p/pull db query dashboard-id)))}))))
 
 (defmethod read :query/all-budgets
   [{:keys [db query]} _ _]
