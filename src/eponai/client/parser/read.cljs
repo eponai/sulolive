@@ -23,18 +23,6 @@
 
 ;; -------- Readers for UI components
 
-(defmethod read :query/modal
-  [{:keys [db query]} _ _]
-  {:value (first (p/pull-many db query (p/all-with db {:where [['?e :ui/singleton :ui.singleton/modal]]})))})
-
-(defmethod read :query/menu
-  [{:keys [db query]} _ _]
-  {:value (first (p/pull-many db query (p/all-with db {:where [['?e :ui/singleton :ui.singleton/menu]]})))})
-
-(defmethod read :query/loader
-  [{:keys [db query]} _ _]
-  {:value (first (p/pull-many db query (p/all-with db {:where [['?e :ui/singleton :ui.singleton/loader]]})))})
-
 (defmethod read :query/budget
   [{:keys [db query]} _ _]
   {:value (p/pull db query [:ui/singleton :ui.singleton/budget])})
