@@ -36,22 +36,26 @@
                                                        [?u :user/currency ?u-cur]
                                                        [?e2 :conversion/currency ?u-cur]
                                                        [?e2 :conversion/date ?d]]})
-        transactions (map (fn [[tx tx-conv user-conv]]
+        tx-convs-by-tx-id (group-by first tx-conv-tuples)
+        transactions (map (fn [tx]
                             (let [transaction (p/pull db query tx)
-                                  ;; All rates are relative USD so we need to pull what rates the user currency has,
-                                  ;; so we can convert the rate appropriately for the user's selected currency
-                                  user-currency-conversion (p/pull db '[:conversion/rate] user-conv)
-                                  transaction-conversion (p/pull db '[:conversion/rate] tx-conv)]
-                              (assoc
-                                transaction
-                                :transaction/conversion
-                                ;; Convert the rate from USD to whatever currency the user has set
-                                ;; (e.g. user is using SEK, so the new rate will be
-                                ;; conversion-of-transaction-currency / conversion-of-user-currency
-                                {:conversion/rate (with-precision 10
-                                                    (/ (:conversion/rate transaction-conversion)
-                                                       (:conversion/rate user-currency-conversion)))})))
-                          tx-conv-tuples)]
+                                  [[_ tx-conv user-conv]] (get tx-convs-by-tx-id tx)]
+                              (if tx-conv
+                                (let [;; All rates are relative USD so we need to pull what rates the user currency has,
+                                      ;; so we can convert the rate appropriately for the user's selected currency
+                                      user-currency-conversion (p/pull db '[:conversion/rate] user-conv)
+                                      transaction-conversion (p/pull db '[:conversion/rate] tx-conv)]
+                                  (assoc
+                                    transaction
+                                    :transaction/conversion
+                                    ;; Convert the rate from USD to whatever currency the user has set
+                                    ;; (e.g. user is using SEK, so the new rate will be
+                                    ;; conversion-of-transaction-currency / conversion-of-user-currency
+                                    {:conversion/rate (with-precision 10
+                                                        (bigdec (/ (:conversion/rate transaction-conversion)
+                                                                   (:conversion/rate user-currency-conversion))))}))
+                                transaction)))
+                          tx-ids)]
     transactions))
 
 (defn widget-report-query []

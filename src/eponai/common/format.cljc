@@ -169,21 +169,22 @@
   (let [filter-value-format (fn [k v]
                               (cond (or (= k :filter/include-tags)
                                         (= k :filter/exclude-tags))
+                                    ;; These are tags, assoc db/id
                                     (map #(assoc % :db/id (d/tempid :db.part/user)) v)
 
                                     (or (= k :filter/start-date)
                                         (= k :filter/end-date))
+                                    ;; These are dates, create a date entity
                                     (date (date->ymd-string v))))
         clean-filters (reduce
                         (fn [m [k v]]
                           (let [ent (filter-value-format k v)]
+                            ;; Clear up and remove any empty filters, we don't want to insert nil in datomic.
                             (if (seq ent)
                               (assoc m k ent)
                               m)))
                         {}
                         input)]
-    (debug "Formatted filters: " clean-filters)
-    (debug "Formatted filters seq: " (seq clean-filters))
     (if (seq clean-filters)
       (assoc clean-filters :db/id (d/tempid :db.part/user))
       nil)))
