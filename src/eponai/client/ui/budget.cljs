@@ -26,7 +26,7 @@
     {:content :transactions})
   (componentWillUnmount [this]
     (om/transact! this `[(ui.component.budget/clear)
-                         :query/all-transactions]))
+                         :query/transactions]))
   (render [this]
     (let [{:keys [proxy/dashboard
                   proxy/all-transactions]} (om/props this)

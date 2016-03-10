@@ -165,7 +165,7 @@
              [:a
               {:on-click #(om/update-state! this assoc :new-transaction? true)
                :class    "button primary medium"}
-              [:i.fa.fa-money]]]]]
+              [:i.fa.fa-plus]]]]]
 
           [:div
            {:class "top-bar-right"}

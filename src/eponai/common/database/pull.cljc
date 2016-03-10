@@ -231,8 +231,24 @@
 (defn widgets-with-data [{:keys [db parser] :as env} widgets]
   (map (fn [{:keys [widget/uuid]}]
          (let [widget (pull db (widget-report-query) [:widget/uuid uuid])
-               {:keys [query/all-transactions]} (parser env [`({:query/all-transactions ~(transaction-query)}
+               {:keys [query/transactions]} (parser env [`({:query/transactions ~(transaction-query)}
                                                                 {:filter ~(:widget/filter widget)})])
-               report-data (report/generate-data (:widget/report widget) (:widget/filter widget) all-transactions)]
+               report-data (report/generate-data (:widget/report widget) (:widget/filter widget) transactions)]
            (assoc widget :widget/data report-data)))
        widgets))
+
+(defn find-transactions
+  [db {:keys [filter budget-uuid query-params]}]
+  (let [pull-params (cond-> {:where '[[?e :transaction/uuid]]}
+
+                            (some? query-params)
+                            (merge-query query-params)
+
+                            (some? filter)
+                            (merge-query (transactions filter))
+
+                            (some? budget-uuid)
+                            (merge-query {:where   '[[?e :transaction/budget ?b]
+                                                     [?b :budget/uuid ?uuid]]
+                                          :symbols {'?uuid budget-uuid}}))]
+    (all-with db pull-params)))

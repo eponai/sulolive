@@ -1,7 +1,8 @@
 (ns eponai.client.parser.read
   (:require [datascript.core :as d]
             [eponai.common.database.pull :as p]
-            [eponai.common.parser.read :as r :refer [read]]
+            [eponai.common.parser.read :refer [read]]
+            [eponai.common.parser.util :as parser.util]
             [taoensso.timbre :refer-macros [debug]]))
 
 (defn read-entity-by-key
@@ -48,3 +49,23 @@
 (defmethod read :ui/singleton
   [{:keys [db ast query]} _ _]
   (read-entity-by-key db query (:key ast)))
+
+;; --------------- Remote readers ---------------
+
+(def query-local-transactions
+  (parser.util/cache-last-read
+    (fn
+      [{:keys [db query]} _ p]
+      {:value (let [ret (p/pull-many db query (p/find-transactions db p))]
+                (debug "Found transactions: " (count ret) ": " ret)
+                ret)})))
+
+(defmethod read :query/transactions
+  [{:keys [db target ast] :as env} k {:keys [filter]}]
+  (let [budget (-> (d/entity db [:ui/component :ui.component/budget]) :ui.component.budget/uuid)]
+    (if (= target :remote)
+      ;; Pass the active budget uuid to remote reader
+      {:remote (assoc-in ast [:params :budget-uuid] budget)}
+      ;; Local read
+      (query-local-transactions env k {:filter filter
+                                       :budget-uuid budget}))))

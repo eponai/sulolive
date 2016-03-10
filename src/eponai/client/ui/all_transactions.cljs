@@ -137,7 +137,8 @@
          :transaction/conversion]}]}
      {:query/all-currencies [:currency/code]}
      {:query/all-budgets [:budget/uuid
-                          :budget/name]}])
+                          :budget/name
+                          :transaction/_budget]}])
   Object
   (init-state [_ props]
     (let [transaction (get-selected-transaction props)
@@ -193,6 +194,7 @@
                   input/tags]
            :as input-transaction} input-state
           edited? (not= init-state (dissoc input-state :input/tag))]
+      (debug "Selected transactions found: " (map #(count (:transaction/_budget %)) all-budgets))
       (html
         [:div
          (opts {:style {:width (if transaction "100%" "0%")}})
@@ -212,7 +214,7 @@
                                                         :query/selected-transaction
                                                         :query/dashboard
                                                         :query/all-budgets
-                                                        :query/all-transactions])}
+                                                        :query/transactions])}
                   (when-not edited?
                     {:disabled :disabled}))
                 "Save"]]
@@ -297,13 +299,14 @@
 (defn deselect-transaction [this]
   (om/transact! this `[(transactions/deselect)]))
 
+
 (defui AllTransactions
   static om/IQueryParams
   (params [_]
     {:filter {:filter/include-tags #{}}})
   static om/IQuery
   (query [_]
-    [{'(:query/all-transactions {:filter ?filter}) (om/get-query Transaction)}
+    [{'(:query/transactions {:filter ?filter}) (om/get-query Transaction)}
      {:query/current-user [:user/uuid
                            {:user/currency [:currency/code]}]}
      {:proxy/selected-transaction (om/get-query SelectedTransaction)}])
@@ -314,11 +317,12 @@
      :input-filter {:filter/include-tags #{}}})
 
   (render [this]
-    (let [{transactions :query/all-transactions
-           user :query/current-user
+    (let [{transactions          :query/transactions
+           user                  :query/current-user
            sel-transaction-props :proxy/selected-transaction} (om/props this)
           selected-transaction (get-selected-transaction sel-transaction-props)
           {:keys [input-filter]} (om/get-state this)]
+      (debug "Rendering transactions: " transactions)
       (html
         [:div (opts {:style {:display :flex
                              :flex-direction :row}})

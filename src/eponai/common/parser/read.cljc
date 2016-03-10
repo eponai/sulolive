@@ -3,7 +3,6 @@
   (:require [eponai.common.datascript :as eponai.datascript]
             [eponai.common.database.pull :as common.pull]
             [eponai.common.parser.util :as parser.util]
-            [eponai.common.report :as report]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
     #?(:clj
             [eponai.server.datomic.pull :as server.pull])
@@ -63,41 +62,6 @@
   {:value  (common.pull/pull-many db query (common.pull/all-with db {:where '[[?e :currency/code]]}))
    :remote true})
 
-(def query-all-transactions
-  (parser.util/cache-last-read
-    (fn
-      [{:keys [db query target ast auth]} _ {:keys [filter budget]}]
-      (let [#?@(:cljs [budget (-> (d/entity db [:ui/component :ui.component/budget])
-                                  :ui.component.budget/uuid)])]
-        (if (= target :remote)
-          {:remote (cond-> ast
-                           (some? budget)
-                           (assoc-in [:params :budget] budget))}
-
-          (let [pull-params (cond-> {:where '[[?e :transaction/uuid]]}
-
-                                    (some? filter)
-                                    (common.pull/merge-query (common.pull/transactions filter))
-
-                                    (some? budget)
-                                    (common.pull/merge-query {:where '[[?e :transaction/budget ?b]
-                                                             [?b :budget/uuid ?uuid]]
-                                                    :symbols {'?uuid budget}}))
-                ;; Include user filter on the server.
-                #?@(:clj [pull-params (common.pull/merge-query pull-params
-                                                      {:where   '[[?e :transaction/budget ?b]
-                                                                  [?b :budget/created-by ?u]
-                                                                  [?u :user/uuid ?uuid]]
-                                                       :symbols {'?uuid (:username auth)}})])
-                eids (common.pull/all-with db pull-params)]
-            {:value #?(:clj  (server.pull/txs-with-conversions db query {:user/uuid (:username auth)
-                                                                         :tx-ids eids})
-                       :cljs (common.pull/pull-many db query eids))}))))))
-
-(defmethod read :query/all-transactions
-  [& args]
-  (apply query-all-transactions args))
-
 (defmethod read :query/dashboard
   [{:keys [db ast query target auth] :as env} _ {:keys [budget-uuid]}]
   (let [#?@(:cljs [budget-uuid (-> (d/entity db [:ui/component :ui.component/budget])
@@ -108,7 +72,7 @@
       (let [eid (if budget-uuid
                   (common.pull/one-with db #?(:clj  (common.pull/merge-query (common.pull/budget-with-filter budget-uuid)
                                                          (common.pull/budget-with-auth (:username auth)))
-                                    :cljs (common.pull/budget-with-filter budget-uuid)))
+                                              :cljs (common.pull/budget-with-filter budget-uuid)))
                   ;; No budget-uuid, grabbing the one with the smallest created-at
                   (some->> #?(:clj  (common.pull/budget-with-auth (:username auth))
                               :cljs (common.pull/budget))
@@ -133,8 +97,10 @@
 
 (defmethod read :query/all-budgets
   [{:keys [db query auth]} _ _]
-  {:value  (common.pull/pull-many db query (common.pull/all-with db #?(:clj (common.pull/budget-with-auth (:username auth))
-                                                   :cljs (common.pull/budget))))
+  {:value  (let [ret (common.pull/pull-many db query (common.pull/all-with db #?(:clj  (common.pull/budget-with-auth (:username auth))
+                                                                                 :cljs (common.pull/budget))))]
+             (debug "Found budget transactions : " (mapv #(count (:transaction/_budget %)) ret) " budget: " (mapv :budget/uuid ret))
+             ret)
    :remote true})
 
 (defmethod read :query/current-user

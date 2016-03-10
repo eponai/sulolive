@@ -33,7 +33,7 @@
       (let [parsed (parser {:state conn} create-mutations)
             error? (get-in parsed ['transaction/create :om.next/error])
             ui (parser {:state conn} (om/get-query transactions/AllTransactions))
-            rendered-txs (:query/all-transactions ui)]
+            rendered-txs (:query/transactions ui)]
         (when error?
           (debug "Parsed: " parsed))
         (and

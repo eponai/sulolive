@@ -131,7 +131,7 @@
     {:filter {:filter/include-tags #{}}})
   static om/IQuery
   (query [_]
-    ['{(:query/all-transactions {:filter ?filter}) [:transaction/uuid
+    ['{(:query/transactions {:filter ?filter}) [:transaction/uuid
                                                           :transaction/amount
                                                           :transaction/conversion
                                                           {:transaction/tags [:tag/name]}
@@ -163,7 +163,7 @@
                                 (assoc :input-filter new-filters))))
         (update-query-params! this assoc :filter input-filter))))
   (render [this]
-    (let [{:keys [query/all-transactions]} (om/props this)
+    (let [{:keys [query/transactions]} (om/props this)
           {:keys [input-graph input-report input-filter] :as state} (om/get-state this)
           {:keys [on-close
                   on-save
@@ -200,8 +200,8 @@
             (opts {:style {:height 300}})
             (->Widget (om/computed {:widget/graph  input-graph
                                     :widget/report input-report
-                                    :widget/data   (report/generate-data input-report input-filter all-transactions)}
-                                   {:data all-transactions}))]]
+                                    :widget/data   (report/generate-data input-report input-filter transactions)}
+                                   {:data transactions}))]]
 
           [:div.column
            (chart-settings this state)]]

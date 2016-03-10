@@ -68,11 +68,11 @@
            [:option {:value "SEK"}]
            [:option {:value "USD"}]]
           [:a.button.primary
-           {:on-click #(om/transact! this `[(settings/save ~{:currency input-currency
-                                                             :user current-user
+           {:on-click #(om/transact! this `[(settings/save ~{:currency      input-currency
+                                                             :user          current-user
                                                              :mutation-uuid (d/squuid)})
                                             :query/dashboard
-                                            :query/all-transactions])}
+                                            :query/transactions])}
            "Save settings"]]]))))
 
 (def ->Settings (om/factory Settings))
