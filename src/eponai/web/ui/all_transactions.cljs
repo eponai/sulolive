@@ -19,15 +19,6 @@
 (defn rename-ns [k ns]
   (keyword ns (name k)))
 
-(defn delete-tag [component tag]
-  (om/update-state! component update-in [:input-state :input/tags] disj tag))
-
-(defn- add-tag [component tag]
-  (om/update-state! component
-                    #(-> %
-                         (assoc-in [:input-state :input/tag] "")
-                         (update-in [:input-state :input/tags] conj tag))))
-
 ;; ################### Om next components ###################
 
 (defui Transaction
@@ -86,8 +77,7 @@
                               (:currency/code currency)))]
          [:td
           (opts {:key [uuid]
-                 :class (if (= (:db/ident type) :transaction.type/expense) "text-danger" "text-success")
-                 :style {:position :relative}})
+                 :class (if (= (:db/ident type) :transaction.type/expense) "text-danger" "text-success")})
           (if-let [rate (:conversion/rate conversion)]
             [:span
              (gstring/format (str (:currency/code (:user/currency user)) "%.2f") (/ amount rate))]
@@ -156,14 +146,11 @@
   Object
   (init-state [_ props]
     (let [transaction (get-selected-transaction props)
-          st (reduce-kv (fn [m k v]
-                       (assoc m (rename-ns k "input") v))
-                        {}
-                     transaction)
-          init-state (update st :input/tags (fn [tags]
-                                              (set (map #(select-keys % [:tag/name]) tags))))]
-       {:init-state init-state
-        :input-state init-state}))
+          transaction (update transaction :transaction/tags (fn [tags]
+                                                              (set (map #(select-keys % [:tag/name]) tags))))
+          ]
+       {:init-state transaction
+        :input-state transaction}))
 
   (initLocalState [this]
     (.init-state this (om/props this)))
@@ -178,17 +165,23 @@
     (let [{:keys [init-state input-state]} (om/get-state this)
           changed-values (reduce-kv (fn [m k v]
                                       (let [init-v (get init-state k)
-                                            equal? (if (= :input/tags k)
+                                            equal? (if (= :transaction/tags k)
                                                      (= (into #{} v)
                                                         (into #{} init-v))
                                                      (= v init-v))]
                                         (cond-> m
                                                 (not equal?) (assoc k v))))
                                     {}
-                                    (dissoc input-state :input/tag))]
-      (reduce-kv #(assoc %1 (rename-ns %2 "transaction") %3)
-                 {}
-                 changed-values)))
+                                    input-state)]
+      changed-values))
+  (delete-tag [this tag]
+    (om/update-state! this update-in [:input-state :transaction/tags] disj tag))
+
+  (add-tag [this tag]
+    (om/update-state! this
+                      #(-> %
+                           (assoc :input-tag "")
+                           (update-in [:input-state :transaction/tags] conj tag))))
   
   (render [this]
     (let [props (om/props this)
@@ -197,17 +190,16 @@
           {:keys [transaction/uuid]
            :as transaction} (get-selected-transaction props)
           {:keys [input-state
-                  init-state]} (om/get-state this)
-          {:keys [input/title
-                  input/amount
-                  input/currency
-                  input/budget
-                  input/type
-                  input/date
-                  input/tag
-                  input/tags]
-           :as input-transaction} input-state
-          edited? (not= init-state (dissoc input-state :input/tag))]
+                  init-state
+                  input-tag]} (om/get-state this)
+          {:keys [transaction/title
+                  transaction/amount
+                  transaction/currency
+                  transaction/budget
+                  transaction/type
+                  transaction/date
+                  transaction/tags]} input-state
+          edited? (not= init-state input-state)]
       (debug "Selected transactions found: " (map #(count (:transaction/_budget %)) all-budgets))
       (html
         [:div
@@ -217,14 +209,14 @@
             (opts {:style {:max-width "35rem"}})
             [:input {:value     title
                      :type      "text"
-                     :on-change (utils/on-change-in this [:input-state :input/title])}]
+                     :on-change (utils/on-change-in this [:input-state :transaction/title])}]
             [:input {:value     amount
                      :type      "number"
-                     :on-change #(om/update-state! this assoc-in [:input-state :input/amount]
+                     :on-change #(om/update-state! this assoc-in [:input-state :transaction/amount]
                                                    (cljs.reader/read-string (.. % -target -value)))}]
 
             [:select.form-control
-             (opts {:on-change     (utils/on-change-in this [:input-state :input/currency :currency/code])
+             (opts {:on-change     (utils/on-change-in this [:input-state :transaction/currency :currency/code])
                     ;; What's the difference between default-value and value?
                     :value         (name (:currency/code currency))
                     :default-value (name (:currency/code currency))})
@@ -236,7 +228,7 @@
                          (name code)]))]
 
             [:select.form-control
-             {:on-change     (utils/on-change-in this [:input-state :input/budget :budget/name])
+             {:on-change     (utils/on-change-in this [:input-state :transaction/budget :budget/name])
               :type          "text"
               :default-value (:budget/name budget)}
              (map-all all-budgets
@@ -251,15 +243,15 @@
                      :value     (format/ymd-string->js-date
                                   (:date/ymd date))
                      :on-change #(om/update-state!
-                                  this assoc-in [:input-state :input/date :date/ymd]
+                                  this assoc-in [:input-state :transaction/date :date/ymd]
                                   (format/date->ymd-string %))}))
             (utils/tag-input
               {:placeholder   "Add tag..."
-               :input-tag     tag
+               :input-tag     input-tag
                :selected-tags tags
-               :on-change     #(om/update-state! this assoc-in [:input-state :input/tag] %)
-               :on-delete-tag #(delete-tag this %)
-               :on-add-tag    #(add-tag this %)})
+               :on-change     #(om/update-state! this assoc :input-tag %)
+               :on-delete-tag #(.delete-tag this %)
+               :on-add-tag    #(.add-tag this %)})
             [:div
              (opts {:style {:display        :flex
                             :flex-direction :row-reverse}})
@@ -276,7 +268,7 @@
                                                       :query/all-budgets
                                                       :query/transactions])}
                      (when-not edited?
-                       {:disabled :disabled}))
+                       {:class "disabled"}))
               "Save"]
              [:a.button.secondary
               (merge {:on-click #(om/set-state! this (.init-state this props))}
