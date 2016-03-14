@@ -12,6 +12,7 @@
             [goog.dom :as gdom]
     ;; To initialize ReactDOM:
             [cljsjs.react.dom]
+            [eponai.web.homeless :as homeless]
             [eponai.client.backend :as backend]
             [eponai.client.parser.merge :as merge]
             [eponai.web.parser.merge :as web.merge]
@@ -187,7 +188,7 @@
        reconciler (om/reconciler {:state   conn
                                   :parser  (parser/parser)
                                   :remotes [:remote]
-                                  :send    (backend/send! "/")
+                                  :send    (backend/send! {:remote homeless/om-next-endpoint-public})
                                   :merge   (merge/merge! web.merge/web-merge)})]
 
   (om/add-root! reconciler Signup (gdom/getElement "my-signup"))))

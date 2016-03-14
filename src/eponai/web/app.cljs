@@ -11,6 +11,7 @@
             [eponai.web.history :as history]
             [eponai.web.parser.mutate]
             [eponai.web.parser.read]
+            [eponai.web.homeless :as homeless]
             [eponai.common.datascript :as common.datascript]
             [eponai.common.parser :as parser]
             [eponai.common.report]
@@ -95,7 +96,7 @@
         reconciler (om/reconciler {:state   conn
                                    :parser  parser
                                    :remotes [:remote]
-                                   :send    (backend/send! "/user/")
+                                   :send    (backend/send! {:remote homeless/om-next-endpoint-user-auth})
                                    :merge   (merge/merge! web.merge/web-merge)})
         history (history/init-history reconciler)]
     (reset! utils/reconciler-atom reconciler)

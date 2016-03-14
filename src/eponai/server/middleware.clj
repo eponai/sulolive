@@ -82,6 +82,8 @@
              :activate-account-uri "/api/login/create"}))
 
 (defn config []
+  {:pre [(contains? env :session-cookie-store-key)
+         (contains? env :session-cookie-name)]}
   (-> r/site-defaults
       (assoc-in [:session :store] (cookie/cookie-store {:key (env :session-cookie-store-key)}))
       (assoc-in [:session :cookie-name] (env :session-cookie-name))

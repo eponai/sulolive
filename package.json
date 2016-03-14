@@ -1,0 +1,19 @@
+{
+  "name": "JourMoneyApp",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node_modules/react-native/packager/packager.sh"
+  },
+  "dependencies": {
+    "react-native": "0.21.0",
+    "source-map-support": "0.3.2",
+    "pikaday": "1.4.0",
+    "karma": "0.13.9",
+    "karma-junit-reporter": "0.3.8",
+    "karma-chrome-launcher": "0.1.8",
+    "karma-cljs.test": "git://github.com/circleci/karma-cljs.test#077e0ac53af3506f4d11d8bd157bf9de89761a9e",
+    "karma-closure": "0.1.1",
+    "phantomjs": "1.9.19"
+  }
+}

@@ -15,3 +15,6 @@
       (.. error-window -document (write body))
       (finally
         (.. error-window -document close)))))
+
+(def om-next-endpoint-public "/api")
+(def om-next-endpoint-user-auth "/api/user/")

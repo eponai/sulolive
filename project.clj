@@ -3,7 +3,7 @@
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [
+  :dependencies [[org.omcljs/om "1.0.0-alpha30"]
                  [clj-http "2.1.0"]
                  [clj-time "0.11.0"]
                  [compojure "1.4.0"]
@@ -12,7 +12,7 @@
                  [com.cemerick/url "0.1.1"]
                  [com.datomic/datomic-pro "0.9.5350"
                   :exclusions [joda-time]]
-                 [com.amazonaws/aws-java-sdk-dynamodb "1.10.56" 
+                 [com.amazonaws/aws-java-sdk-dynamodb "1.10.56"
                   :exclusions [joda-time org.clojure/test.check]]
                  [com.draines/postal "1.11.3"]
                  [com.stripe/stripe-java "1.45.0"]
@@ -36,7 +36,7 @@
                  [ring-transit "0.1.4"]
                  [prone "1.0.2"]
 
-                 ;CLJS
+                 ;; CLJS
                  [com.cognitect/transit-cljs "0.8.237"]
                  [org.clojure/clojurescript "1.7.228"
                   ;;  :classifier "aot"
@@ -46,7 +46,6 @@
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-alpha2"]
                  [garden "1.3.2"]
-                 [org.omcljs/om "1.0.0-alpha30"]
                  [datascript "0.15.0"]
                  [sablono "0.6.2"]
                  [cljsjs/d3 "3.5.7-1"]
@@ -57,6 +56,11 @@
                  [bidi "2.0.0"]
                  [kibu/pushy "0.3.6"]
                  [binaryage/devtools "0.5.2"]
+                 [org.clojure/tools.nrepl "0.2.11"
+                  :exclusions [org.clojure/clojure]]
+
+                 ;; React-native
+                 [natal-shell "0.1.6"]
 
                  ;; Testing
                  [lein-doo "0.1.6"]
@@ -67,37 +71,154 @@
   :jvm-opts ^:replace ["-Xmx1g" "-server"
                        "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1"
                       ]
-  :plugins [[lein-npm "0.6.1"]
+  :plugins [
+           ;; [lein-npm "0.6.1"]
+            [lein-shell "0.5.0"]
             [lein-doo "0.1.6"]
             [lein-cljsbuild "1.1.1"]
-            [lein-figwheel "0.5.0-3"]
+            [lein-figwheel "0.5.0-6"]
             [lein-ring "0.9.7"]
             [lein-test-out "0.3.1"]
-            [lein-environ "1.0.1"]] 
+            [lein-environ "1.0.1"]]
   
   :min-lein-version "2.0.0"
   :clean-targets ^{:protect false} ["resources/public/dev/js/out"
                                     "resources/public/devcards/js/out"
                                     "resources/public/release/js/out"
                                     "resources/public/test/js/out"
-                                    "target/uberjar"
-                                    "target/uberjar+uberjar"]
+                                    "target/"
+                                    "index.ios.js"
+                                    "index.android.js"]
+
+  :aliases {"all-deps"          ^{:doc "Fetches both clj, cljs and node dependencies."}
+                                ["do" "deps"
+                                 ["shell" "npm" "install"]]
+            "prod-build-ios"    ^{:doc "Recompile mobile code with production profile."}
+                                ["do"
+                                 ["with-profile" "mob-prod" "cljsbuild" "once" "ios"]]
+            "prod-build-web"    ^{:doc "Recompile web code with release build."}
+                                ["do"
+                                 ["with-profile" "web" "cljsbuild" "once" "release"]]
+            "prod-build-server" ^{:doc "Recompile server code with release build."}
+                                ["do" "uberjar"]
+            "dev-build-ios"     ^{:doc "Compile mobile code in development mode."}
+                                ["do"
+                                 ["with-profile" "mobile" "cljsbuild" "once" "ios"]]
+            "dev-build-web"     ^{:doc "Compile mobile code in development mode."}
+                                ["do"
+                                 ["with-profile" "web" "cljsbuild" "once" "dev"]]
+            "run-tests-web"     ^{:doc "Compile and run web tests"}
+                                ["do"
+                                 ["with-profile" "web" "cljsbuild" "once" "test"]
+                                 ["with-profile" "web" "doo" "phantom" "test" "once"]]
+            "figwheel-ios"      ^{:doc "Start figwheel for ios"}
+                                ["do"
+                                 ["with-profile" "mobile" "figwheel" "ios"]]
+            "figwheel-web"      ^{:doc "Start figwheel for web"}
+                                ["do"
+                                 ;; Exporting an environment variable for figwheel port
+                                 ;; as it's only configurable globally (per project.clj file).
+                                 ;; This port should differ from the one running figwheel-ios,
+                                 ;; because they need to be running lein with different profiles
+                                 ;; and different dependencies.
+                                 ["shell" "bash" "-c"
+                                  "export FIGWHEEL_PORT=3450; lein with-profile web figwheel dev"]]}
+
+  ;; TODO: TEST ALL ALIASES
 
   ;;;;;;;;;;;;;
   ;; AWS+Docker deploy:
   ;;;;;;;;;;;;;
   :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
-  :profiles {:uberjar {:jvm-opts ^:replace ["-Dclojure.compiler.direct-linking=true"
-                                            "-Xmx1g" "-server"]
-                       :aot                :all
-                       :prep-tasks         ["compile" ["cljsbuild" "once" "release"]]}}
+
+  :figwheel {:css-dirs    ["resources/public/style/css"]
+             :server-port ~(read-string (or (System/getenv "FIGWHEEL_PORT") "3449"))}
+
+  :profiles {:uberjar  {:jvm-opts   ^:replace ["-Dclojure.compiler.direct-linking=true"
+                                               "-Xmx1g" "-server"]
+                        :aot        :all
+                        :prep-tasks ["compile" "prod-build-web"]}
+
+             :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha30"
+                                        :exclusions [cljsjs/react cljsjs/react-dom]]
+                                       [figwheel-sidecar "0.5.0-2"]
+                                       [com.cemerick/piggieback "0.2.1"]]
+                        :source-paths ["src" "src-hacks/react-native" "env/dev"]
+                        :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
+                        :cljsbuild    {:builds [{:id           "ios"
+                                                 :source-paths ["src" "src-hacks/react-native" "env/dev"]
+                                                 :figwheel     true
+                                                 :compiler     {:output-to     "target/ios/not-used.js"
+                                                                :main          "env.ios.main"
+                                                                :output-dir    "target/ios"
+                                                                :optimizations :none}}
+                                                {:id           "android"
+                                                 :source-paths ["src" "src-hacks/react-native" "env/dev"]
+                                                 :figwheel     true
+                                                 :compiler     {:output-to     "target/android/not-used.js"
+                                                                :main          "env.android.main"
+                                                                :output-dir    "target/android"
+                                                                :optimizations :none}}]}}
+
+             :mob-prod {:dependencies [[org.omcljs/om "1.0.0-alpha30"
+                                        :exclusions [cljsjs/react cljsjs/react-dom]]]
+                        :cljsbuild    {:builds [{:id           "ios"
+                                                 :source-paths ["src" "src-hacks/react-native" "env/prod"]
+                                                 :compiler     {:output-to     "index.ios.js"
+                                                                :main          "env.ios.main"
+                                                                :output-dir    "target/ios"
+                                                                :optimizations :simple}}
+                                                {:id           "android"
+                                                 :source-paths ["src" "src-hacks/react-native" "env/prod"]
+                                                 :compiler     {:output-to     "index.android.js"
+                                                                :main          "env.android.main"
+                                                                :output-dir    "target/android"
+                                                                :optimizations :simple}}]}}
+
+             :web      {:cljsbuild {:builds [{:id           "dev"
+                                              :source-paths ["src/" "src-hacks/web/" "test/"]
+                                              :figwheel     {:on-jsload "eponai.client.figwheel/run"
+                                                             :server-port 3450}
+                                              :compiler     {:main          "eponai.web.core"
+                                                             :asset-path    "/dev/js/out"
+                                                             :output-to     "resources/public/dev/js/out/budget.js"
+                                                             :output-dir    "resources/public/dev/js/out/"
+                                                             :optimizations :none
+                                                             :source-map    true}}
+                                             {:id           "devcards"
+                                              :source-paths ["src/" "src-hacks/web/" "test/"]
+                                              :figwheel     {:devcards    true  ;; <- note this
+                                                             :server-port 3451}
+                                              :compiler     {:main                 "eponai.devcards.devcards_main"
+                                                             :asset-path           "/devcards/js/out"
+                                                             :output-to            "resources/public/devcards/js/out/budget.js"
+                                                             :output-dir           "resources/public/devcards/js/out"
+                                                             :source-map-timestamp true}}
+                                             {:id           "test"
+                                              :source-paths ["src/" "src-hacks/web/" "test/"]
+                                              :compiler     {:output-to     "resources/public/test/js/out/budget.js"
+                                                             :output-dir    "resources/public/test/js/out"
+                                                             :main          "eponai.client.tests"
+                                                             :optimizations :none
+                                                             }}
+                                             {:id           "release"
+                                              :source-paths ["src/" "src-hacks/web/"]
+                                              :compiler     {:main          "eponai.web.core"
+                                                             :asset-path    "/release/js/out"
+                                                             :output-to     "resources/public/release/js/out/budget.js"
+                                                             :output-dir    "resources/public/release/js/out/"
+                                                             :optimizations :advanced
+                                                             ;;   :parallel-build true
+                                                             ;;   :pseudo-names true
+                                                             ;;   :pretty-print true
+                                                             }}]}}}
 
   ;;;;;;;;;;;;;
   ;; clj:
   ;;;;;;;;;;;;;
   :target-path "target/%s"
   :source-paths ["src"]
-  :test-paths ["test" "env/clj"]
+  :test-paths ["test" "env/dev/clj"]
   :ring {:handler eponai.server.core/app
          :init    eponai.server.core/init}
   :main eponai.server.core
@@ -111,60 +232,6 @@
   ;; cljs:
   ;;;;;;;;;;;;;
   :doo {:paths {:phantom "./node_modules/phantomjs/bin/phantomjs"}}
-  :cljsbuild
-  {:builds        [{:id           "dev"
-                    :source-paths ["src/"
-                                   "test/"]
-                    :figwheel     {:on-jsload "eponai.client.figwheel/run"
-                                   :css-dirs ["resources/public/style/css"]}
-                    :compiler     {:main          "eponai.web.core"
-                                   :asset-path    "/dev/js/out"
-                                   :output-to     "resources/public/dev/js/out/budget.js"
-                                   :output-dir    "resources/public/dev/js/out/"
-                                   :optimizations :none
-                                   :source-map    true}}
-                   {:id           "devcards"
-                    :source-paths ["src/"
-                                   "test/"]
-                    :figwheel     {:devcards true}          ;; <- note this
-                    :compiler     {:main                 "eponai.devcards.devcards_main"
-                                   :asset-path           "/devcards/js/out"
-                                   :output-to            "resources/public/devcards/js/out/budget.js"
-                                   :output-dir           "resources/public/devcards/js/out"
-                                   :source-map-timestamp true}}
-                   {:id           "test"
-                    :source-paths ["src/"
-                                   "test/"]
-                    :compiler     {:output-to     "resources/public/test/js/out/budget.js"
-                                   :output-dir    "resources/public/test/js/out"
-                                   :main          "eponai.client.tests"
-                                   :optimizations :none
-                                  }}
-                   {:id           "release"
-                    :source-paths ["src/"]
-                    :compiler     {:main          "eponai.web.core"
-                                   :asset-path    "/release/js/out"
-                                   :output-to     "resources/public/release/js/out/budget.js"
-                                   :output-dir    "resources/public/release/js/out/"
-                                   :optimizations :advanced
-                                   ;;   :parallel-build true
-                                   ;;   :pseudo-names true
-                                   ;;   :pretty-print true
-                                   }}]
-   :test-commands {"frontend-unit-tests"
-                   ["node_modules/karma/bin/karma" "start" "karma.conf.js" "--single-run"]}}
-  :npm {:dependencies [[source-map-support "0.3.2"]
-                       [react "0.14.3"]
-                       [pikaday "1.4.0"]
-                       [karma "0.13.9"]
-                       [karma-junit-reporter "0.3.8"]
-                       [phantomjs "1.9.19"]
-                       ;; We can test against other launchers later if we want.
-                       ;; I.e. phantomjs, firefox and more?
-                       [karma-chrome-launcher "0.1.8"]
-                       ;; Using CircleCI's branch of karma-cljs.test to get
-                       ;; re-use their circle.karma.cljs namespace as an
-                       ;; entrypoint.
-                       [karma-cljs.test "git://github.com/circleci/karma-cljs.test#077e0ac53af3506f4d11d8bd157bf9de89761a9e"]
-                       [karma-closure "0.1.1"]]})
-
+  :test-commands {"frontend-unit-tests"
+                    ["node_modules/karma/bin/karma" "start" "karma.conf.js" "--single-run"]}
+)

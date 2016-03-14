@@ -1,0 +1,10 @@
+{
+  "name": "JourMoneyApp",
+  "interface": "om-next",
+  "androidHost": "localhost",
+  "iosHost": "localhost",
+  "modules": [],
+  "imageDirs": [
+    "images"
+  ]
+}
