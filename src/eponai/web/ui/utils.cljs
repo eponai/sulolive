@@ -95,10 +95,16 @@
           (tag t
                {:on-delete #(on-delete-tag t)})))]]))
 
-(defn on-change-in [c ks]
-  {:pre [(om/component? c) (vector? ks)]}
-  (fn [e]
-    (om/update-state! c assoc-in ks (.-value (.-target e)))))
+(defn on-change-in
+  "Function that updates state in component c with assoc-in for the specified keys ks.
+  Calls f on the input value and updates state with that, (or identity if not provided).
+  Function f takes one argument that's the value of the input."
+  ([c ks]
+    (on-change-in c ks identity))
+  ([c ks f]
+   {:pre [(om/component? c) (vector? ks)]}
+   (fn [e]
+     (om/update-state! c assoc-in ks (f (.-value (.-target e)))))))
 
 (defn on-change [c k]
   {:pre [(keyword? k)]}

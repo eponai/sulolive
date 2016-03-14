@@ -105,12 +105,18 @@
    :dashboard/uuid (or (:dashboard/uuid opts) (d/squuid))
    :dashboard/budget budget-ref})
 
-(defn widget-layout [widgets]
-  (map (fn [widget]
-         (assoc widget :db/id (d/tempid :db.part/user)))
-       widgets))
+(defn add-tempid
+  "Add tempid to provided entity or collection of entities. If e is a map, assocs :db/id.
+  If it's list, set or vector, maps over that collection and assoc's :db/id in each element."
+  [e]
+  {:pre [(coll? e)]}
+  (cond (map? e)
+        (assoc e :db/id (d/tempid :db.part/user))
 
-(defn date
+        (coll? e)
+        (map #(assoc % :db/id (d/tempid :db.part/user)))))
+
+(defn str->date
   "Create a date entity.
 
   Takes a \"yyyy-MM-dd\" string, returns a map representing a date entity."
@@ -123,6 +129,28 @@
      :date/month     (t/month date)
      :date/day       (t/day date)
      :date/timestamp (date->timestamp date)}))
+
+(defn tag*
+  [input]
+  {:pre [(map? input)]}
+  (add-tempid (select-keys input [:tag/name])))
+
+(defn date*
+  [input]
+  {:pre [(map? input)]}
+  (let [d (select-keys input [:date/ymd])
+        date (ymd-string->date (:date/ymd d))]
+    (merge d
+           {:db/id          (d/tempid :db.part/user)
+            :date/year      (t/year date)
+            :date/month     (t/month date)
+            :date/day       (t/day date)
+            :date/timestamp (date->timestamp date)})))
+
+(defn currency*
+  [input]
+  {:pre [(map? input)]}
+  (add-tempid (select-keys input [:currency/code])))
 
 (defn transaction
   "Create a transaction entity for the given input. Will replace the name space of the keys to the :transaction/ namespace
@@ -138,23 +166,27 @@
   * :transaction/budget - takes a string UUID, returns a lookup ref.
 
   Returns a map representing a transaction entity"
-  [input & [opts]]
-  (let [user-tx (if (:no-rename opts)
-                  input
-                  (reduce (fn [m [k v]]
-                            (assoc m (keyword "transaction" (name k)) v))
-                          {}
-                          input))
-        conv-fn-map {:transaction/currency (fn [c] [:currency/code c])
-                     :transaction/date     (fn [d] (date d))
-                     :transaction/tags     (fn [ts] (map #(assoc (select-keys % [:tag/name]) :db/id (d/tempid :db.part/user))
-                                                         ts))
-                     :transaction/amount   (fn [a] #?(:clj  (bigint a)
-                                                      :cljs (cljs.reader/read-string a)))
-                     :transaction/budget   (fn [b] [:budget/uuid (str->uuid (str b))])
-                     :transaction/type     (fn [t] {:pre [(keyword? t)]} {:db/ident t})}
-        update-fn (fn [m k] (update m k (conv-fn-map k)))
-        transaction (reduce update-fn user-tx (keys conv-fn-map))]
+  [input]
+  (let [input-transaction (validate/transaction-keys input)
+        conv-fn-map {:transaction/currency (fn [c] {:pre [(map? c)]}
+                                             (currency* c))
+                     :transaction/date     (fn [d] {:pre [(map? d)]}
+                                             (date* d))
+                     :transaction/tags     (fn [ts] {:pre [(coll? ts)]}
+                                             (map tag* ts))
+                     :transaction/amount   (fn [a]
+                                             #?(:clj  (bigint a)
+                                                :cljs (cljs.reader/read-string a)))
+                     :transaction/budget   (fn [b] {:pre [(map? b)]}
+                                             (assert (:budget/uuid b))
+                                             [:budget/uuid (:budget/uuid b)])
+                     :transaction/type     (fn [t] {:pre [(keyword? t)]}
+                                             {:db/ident t})}
+        update-fn (fn [m k]
+                    (if (get m k)
+                      (update m k (get conv-fn-map k))
+                      m))
+        transaction (reduce update-fn input-transaction (keys conv-fn-map))]
 
     (assoc transaction
       :db/id (d/tempid :db.part/user))))
@@ -170,7 +202,7 @@
                                     (or (= k :filter/start-date)
                                         (= k :filter/end-date))
                                     ;; These are dates, create a date entity
-                                    (date (date->ymd-string v))))
+                                    (str->date (date->ymd-string v))))
         clean-filters (reduce
                         (fn [m [k v]]
                           (let [ent (filter-value-format k v)]
@@ -185,10 +217,9 @@
       nil)))
 
 (defn widget-create [{:keys [input-function input-report input-graph input-widget input-filter] :as input}]
-  (let [function (assoc input-function :db/id (d/tempid :db.part/user))
-        report (assoc input-report :db/id (d/tempid :db.part/user)
-                                   :report/functions #{(:db/id function)})
-        graph (assoc input-graph :db/id (d/tempid :db.part/user))
+  (let [function (add-tempid input-function)                ;(assoc input-function :db/id (d/tempid :db.part/user))
+        report (assoc (add-tempid input-report) :report/functions #{(:db/id function)})
+        graph (add-tempid input-graph)
         filter (data-filter input-filter)
         widget (cond-> (merge input-widget
                               {:db/id            (d/tempid :db.part/user)
@@ -212,9 +243,7 @@
                     {:input-tags input-tags
                      :mutate     k
                      :params     params}))
-    (let [tx (transaction params)]
-      (validate/valid-user-transaction? tx)
-      tx)))
+    (transaction params)))
 
 (defn transaction-edit [{:keys [transaction/tags
                                 transaction/uuid] :as input-transaction}]
@@ -234,7 +263,7 @@
                                                        :transaction/amount #?(:cljs v :clj (bigint v))
                                                        :transaction/currency (assoc v :db/id (d/tempid :db.part/user))
                                                        :transaction/type (assoc v :db/id (d/tempid :db.part/user))
-                                                       :transaction/date (date (:date/ymd v))
+                                                       :transaction/date (str->date (:date/ymd v))
                                                        v)))
                                         {})))]
     (cond-> [transaction]

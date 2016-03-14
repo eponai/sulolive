@@ -11,7 +11,7 @@
                              #?@(:clj [:status :eponai.server.http/unprocessable-entity])}))))
 
 
-(defn validate
+(defn- validate
   "Validate with the given message and function on the input args.
   Throws an ex-info if validation failed."
   [msg f & args]
@@ -20,19 +20,40 @@
       (if (apply f args)
         true
         (error msg data))
-      (catch #?(:clj ExceptionInfo :cljs cljs.core.ExceptionInfo) e
+      (catch #?(:clj ExceptionInfo
+                :cljs cljs.core.ExceptionInfo) e
         (throw e))
-      (catch #?(:clj Exception :cljs :default) e
+      (catch #?(:clj Exception
+                :cljs :default) e
         (error msg (assoc data :exception e))))))
 
+(defn required-transaction-fields []
+  #{:transaction/uuid
+    :transaction/title
+    :transaction/date
+    :transaction/amount
+    :transaction/currency
+    :transaction/created-at
+    :transaction/budget
+    :transaction/type})
 
-(defn valid-user-transaction? [user-tx]
-  (let [required-fields #{:transaction/uuid
-                          :transaction/title
-                          :transaction/date
-                          :transaction/amount
-                          :transaction/currency
-                          :transaction/created-at
-                          #?(:clj :transaction/budget)}]
-    (validate (str "user tx: " user-tx " had nil keys for " (filterv #(nil? (get user-tx %)) required-fields))
-              every? #(some? (get user-tx %)) required-fields)))
+(defn transaction-keys
+  "Assert that required fields are included in the transaction input.
+  Returns a map with only transaction keys."
+  [input]
+  (let [required-fields (required-transaction-fields)
+        missing-keys (filter #(nil? (get input %)) required-fields)]
+    (assert (empty? missing-keys))
+    (select-keys input (conj required-fields
+                             :transaction/tags))))
+
+;(defn input-transaction
+;  "Given an input returns a transaction with valid keys."
+;  [input]
+;  (let [required-fields (required-transaction-fields)
+;        transaction (select-keys input (conj required-fields
+;                                       :transaction/tags))]
+;    (assert (= (count required-fields) (count (select-keys input required-fields))))
+;    (validate (str "input: " transaction " missing keys: " (filterv #(nil? (get transaction %)) required-fields))
+;              every? #(some? (get transaction %)) required-fields)
+;    transaction))

@@ -17,38 +17,38 @@
 (defn transactions []
   [{:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "lunch"
-    :transaction/date       "2015-10-10"
+    :transaction/date       {:date/ymd "2015-10-10"}
     :transaction/amount     180
-    :transaction/currency   "THB"
+    :transaction/currency   {:currency/code "THB"}
     :transaction/created-at 1
     :transaction/tags       [{:tag/name "thailand"}]
     :transaction/type       :transaction.type/expense}
    {:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "coffee"
-    :transaction/date       "2015-10-10"
+    :transaction/date       {:date/ymd "2015-10-10"}
     :transaction/amount     140
-    :transaction/currency   "THB"
+    :transaction/currency   {:currency/code "THB"}
     :transaction/created-at 1
     :transaction/type       :transaction.type/expense}
    {:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "dinner"
-    :transaction/date       "2015-10-10"
+    :transaction/date       {:date/ymd "2015-10-10"}
     :transaction/amount     350
-    :transaction/currency   "THB"
+    :transaction/currency   {:currency/code "THB"}
     :transaction/created-at 1
     :transaction/type       :transaction.type/expense}
    {:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "market"
-    :transaction/date       "2015-10-11"
+    :transaction/date       {:date/ymd "2015-10-11"}
     :transaction/amount     789
-    :transaction/currency   "THB"
+    :transaction/currency   {:currency/code "THB"}
     :transaction/created-at 1
     :transaction/type       :transaction.type/expense}
    {:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "lunch"
-    :transaction/date       "2015-10-11"
+    :transaction/date       {:date/ymd "2015-10-11"}
     :transaction/amount     125
-    :transaction/currency   "THB"
+    :transaction/currency   {:currency/code "THB"}
     :transaction/created-at 1
     :transaction/type       :transaction.type/expense}])
 
@@ -90,8 +90,8 @@
 
 (defn add-transactions [conn budget-uuid]
   (->> (transactions)
-       (map #(assoc % :transaction/budget budget-uuid))
-       (map #(format/transaction % {:no-rename true}))
+       (map #(assoc % :transaction/budget {:budget/uuid budget-uuid}))
+       (map #(format/transaction %))
        (transact/transact conn)))
 
 (defn add-currencies [conn]

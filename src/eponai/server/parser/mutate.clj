@@ -62,7 +62,7 @@
   [{:keys [state mutation-uuid]} _ {:keys [widget-layout] :as params}]
   (debug "dashboard/save with params: " params)
   {:action (fn []
-             (transact/mutate state mutation-uuid (format/widget-layout widget-layout)))})
+             (transact/mutate state mutation-uuid (format/add-tempid widget-layout)))})
 
 ;; ------------------- User account related ------------------
 

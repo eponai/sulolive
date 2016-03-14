@@ -5,18 +5,18 @@
   (gen/fmap str gen/pos-int))
 
 (defn gen-currency []
-  (gen/fmap (fn [s] (apply str (take 3 (cycle s))))
-            (gen/not-empty (gen/vector gen/char-alpha))))
+  (gen/hash-map :currency/code (gen/fmap (fn [s] (apply str (take 3 (cycle s))))
+                                         (gen/not-empty (gen/vector gen/char-alpha)))))
 
 (defn gen-title []
   gen/string-alphanumeric)
 
 (defn gen-date []
-  (gen/fmap (fn [[y m d]] (str y "-" m "-" d))
-            (gen/tuple
-              (gen/choose 1000 9999)
-              (gen/choose 10 12)
-              (gen/choose 10 28))))
+  (gen/hash-map :date/ymd (gen/fmap (fn [[y m d]] (str y "-" m "-" d))
+                                    (gen/tuple
+                                      (gen/choose 1000 9999)
+                                      (gen/choose 10 12)
+                                      (gen/choose 10 28)))))
 
 (defn gen-tags []
   (gen/fmap set (gen/not-empty (gen/vector (gen/hash-map :tag/name gen/string-alphanumeric)))))
@@ -29,5 +29,5 @@
                 :transaction/tags (gen-tags)
                 :transaction/created-at gen/pos-int
                 :transaction/uuid gen/uuid
-                :transaction/budget gen/uuid
+                :transaction/budget (gen/hash-map :budget/uuid gen/uuid)
                 :transaction/type (gen/elements [:transaction.type/expense :transaction.type/income])))
