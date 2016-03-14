@@ -6,18 +6,11 @@
             [eponai.web.ui.utils :as utils]
             [eponai.common.format :as format]
             [garden.core :refer [css]]
-            [goog.dom :as dom]
             [goog.string :as gstring]
-            [goog.style :as style]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
             [taoensso.timbre :refer-macros [debug]]
             [datascript.core :as d]))
-
-;; ################ Actions #####################
-
-(defn rename-ns [k ns]
-  (keyword ns (name k)))
 
 ;; ################### Om next components ###################
 
@@ -146,9 +139,9 @@
   Object
   (init-state [_ props]
     (let [transaction (get-selected-transaction props)
-          transaction (update transaction :transaction/tags (fn [tags]
-                                                              (set (map #(select-keys % [:tag/name]) tags))))
-          ]
+          transaction (update transaction :transaction/tags
+                              (fn [tags]
+                                (set (map #(select-keys % [:tag/name]) tags))))]
        {:init-state transaction
         :input-state transaction}))
 

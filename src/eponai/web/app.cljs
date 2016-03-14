@@ -14,7 +14,7 @@
             [eponai.common.datascript :as common.datascript]
             [eponai.common.parser :as parser]
             [eponai.common.report]
-            [eponai.web.ui.navbar :as navbar]
+            [eponai.web.ui.navigation :as nav]
             [taoensso.timbre :refer-macros [info debug error trace]]
             [eponai.client.ui :refer-macros [opts]]
             [eponai.web.ui.utils :as utils]))
@@ -36,8 +36,8 @@
   static om/IQuery
   (query [_]
     [:datascript/schema
-     {:proxy/nav-bar (navbar/navbar-query)}
-     {:proxy/side-bar (navbar/sidebar-query)}
+     {:proxy/nav-bar (nav/navbar-query)}
+     {:proxy/side-bar (nav/sidebar-query)}
      '{:proxy/app-content ?url/query}
      '(:return/content-factory ?url/factory)])
   Object
@@ -54,7 +54,7 @@
         [:div#wrapper
          (when-not sidebar-visible?
            {:class "toggled"})
-         (navbar/sidebar-create side-bar)
+         (nav/sidebar-create side-bar)
 
          [:div
           (opts {:style {:position :fixed
@@ -64,7 +64,7 @@
                          :background-size :cover
                          :opacity 0.05}})]
          [:div#page-content-wrapper
-          (navbar/navbar-create nav-bar {:on-sidebar-toggle #(om/update-state! this update :sidebar-visible? not)
+          (nav/navbar-create nav-bar {:on-sidebar-toggle   #(om/update-state! this update :sidebar-visible? not)
                                          :sidebar-visible? sidebar-visible?})
 
           [:div
