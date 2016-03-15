@@ -36,13 +36,13 @@
   static om/IQuery
   (query [_]
     [:datascript/schema
-     {:proxy/nav-bar (nav/navbar-query)}
-     {:proxy/side-bar (nav/sidebar-query)}
+     {:proxy/nav-bar (om/get-query nav/NavbarMenu)}
+     {:proxy/side-bar (om/get-query nav/SideBar)}
      '{:proxy/app-content ?url/query}
      '(:return/content-factory ?url/factory)])
   Object
   (initLocalState [_]
-    {:sidebar-visible? true})
+    {:sidebar-visible? false})
   (render
     [this]
     (let [{:keys [proxy/app-content
@@ -52,9 +52,13 @@
           {:keys [sidebar-visible?]} (om/get-state this)]
       (html
         [:div#wrapper
-         (when-not sidebar-visible?
-           {:class "toggled"})
-         (nav/sidebar-create side-bar)
+         (when sidebar-visible?
+           {:class "sidebar-visible"})
+         (nav/->SideBar (om/computed side-bar
+                                     {:on-close (when sidebar-visible?
+                                                  #(om/update-state! this assoc :sidebar-visible? false))}))
+         (nav/->NavbarMenu (om/computed nav-bar
+                                      {:on-sidebar-toggle #(om/update-state! this assoc :sidebar-visible? true)}))
 
          [:div
           (opts {:style {:position :fixed
@@ -63,15 +67,11 @@
                          :background "transparent url(/style/img/world-black.png) no-repeat center center"
                          :background-size :cover
                          :opacity 0.05}})]
-         [:div#page-content-wrapper
-          (nav/navbar-create nav-bar {:on-sidebar-toggle   #(om/update-state! this update :sidebar-visible? not)
-                                         :sidebar-visible? sidebar-visible?})
-
-          [:div
-           (opts {:class      "container-fluid content-section"
-                  :style      {:border "1px solid transparent"}})
-           (when content-factory
-             (content-factory app-content))]]]))))
+         [:div#page-content
+          (opts {:class "container-fluid content-section"
+                 :style {:border "1px solid transparent"}})
+          (when content-factory
+            (content-factory app-content))]]))))
 
 (defonce conn-atom (atom nil))
 

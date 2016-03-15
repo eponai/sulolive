@@ -150,7 +150,7 @@
            {:class "top-bar-left"}
            [:ul.menu
             [:li
-             [:a
+             [:a#sidebar-toggle
               {:on-click #(do (prn "Did show sidebar")
                               (on-sidebar-toggle))
                :class    "button secondary"}
@@ -219,56 +219,49 @@
   Object
 
   (render [this]
-    (let [{:keys [query/all-budgets]} (om/props this)]
+    (let [{:keys [query/all-budgets]} (om/props this)
+          {:keys [on-close]} (om/get-computed this)]
       (html
-        [:ul.sidebar-nav
-         [:li.sidebar-brand
-          (opts {:style {:display :flex
-                         :flex-direction :row}})
+        [:div
+         [:div
+          (when on-close
+            (opts {:class    "reveal-overlay"
+                   :id       "click-outside-target-id"
+                   :style    {:display (if on-close "block" "none")}
+                   :on-click #(when (= "click-outside-target-id" (.-id (.-target %)))
+                               (on-close))}))]
+         [:div#sidebar.gradient-down-up
+          [:div#content
+           [:ul.sidebar-nav
+            [:li.sidebar-brand
+             (opts {:style {:display        :flex
+                            :flex-direction :row}})
 
-          [:a.navbar-brand
-           {:href (routes/inside "/")}
-           [:strong
-            "JourMoney"]
-           [:span.small
-            " by eponai"]]]
+             [:a.navbar-brand
+              {:href (routes/inside "/")}
+              [:strong
+               "JourMoney"]
+              [:span.small
+               " by eponai"]]]
 
-         [:li
-          [:a
-           (opts {:href     (routes/inside "/profile")})
-           [:i.fa.fa-user
-            (opts {:style {:display :inline
-                           :padding "0.5em"}})]
-           [:strong "Profile"]]]
-         [:li.divider]
+            [:li
+             [:a
+              (opts {:href (routes/inside "/profile")})
+              [:i.fa.fa-user
+               (opts {:style {:display :inline
+                              :padding "0.5em"}})]
+              [:strong "Profile"]]]
+            [:li.divider]
 
-         (map
-           (fn [budget]
-             [:li
-              (opts {:key [(:budget/uuid budget)]})
-              [:a {:href     (routes/inside "/dashboard/" (:budget/uuid budget))}
-               (or (:budget/name budget) "Untitled")]])
-           all-budgets)]))))
+            (map
+              (fn [budget]
+                [:li
+                 (opts {:key [(:budget/uuid budget)]})
+                 [:a {:href (routes/inside "/dashboard/" (:budget/uuid budget))}
+                  (or (:budget/name budget) "Untitled")]])
+              all-budgets)]]
+          [:footer.footer
+           [:p.copyright.small.text-light
+            "Copyright © eponai 2016. All Rights Reserved"]]]]))))
 
 (def ->SideBar (om/factory SideBar))
-
-;;;; ##################### UI components ####################
-
-(defn navbar-query []
-  (om/get-query NavbarMenu))
-
-(defn sidebar-query []
-  (om/get-query SideBar))
-
-(defn sidebar-create [props]
-  (html
-    [:div#sidebar-wrapper.gradient-down-up
-     [:div#content
-      (->SideBar props)]
-     [:footer.footer
-      [:p.copyright.small.text-light
-       "Copyright © eponai 2016. All Rights Reserved"]]]))
-
-(defn navbar-create [props computed]
-  (->NavbarMenu (om/computed props
-                             computed)))

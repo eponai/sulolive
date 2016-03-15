@@ -82,9 +82,7 @@
       (om/update-state! this assoc :layout (clj->js (generate-layout widgets)))))
 
   (componentDidMount [this]
-    (let [widgets (:widget/_dashboard (:query/dashboard (om/props this)))
-          sidebar (.getElementById js/document "sidebar-wrapper")]
-      (.addEventListener sidebar "transitionend" #(update-grid-layout this))
+    (let [widgets (:widget/_dashboard (:query/dashboard (om/props this)))]
       (update-grid-layout this)
       (om/update-state! this
                         assoc

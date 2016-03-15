@@ -36,9 +36,7 @@
       (om/update-state! this assoc :layout (clj->js (generate-layout budgets)))))
 
   (componentDidMount [this]
-    (let [budgets (:query/all-budgets (om/props this))
-          sidebar (.getElementById js/document "sidebar-wrapper")]
-      (.addEventListener sidebar "transitionend" #(.update-grid-layout this))
+    (let [budgets (:query/all-budgets (om/props this))]
       (.update-grid-layout this)
       (om/update-state! this
                         assoc
