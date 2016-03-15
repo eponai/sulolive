@@ -39,21 +39,11 @@
 
 (defn transaction-keys
   "Assert that required fields are included in the transaction input.
-  Returns a map with only transaction keys."
+
+  Returns a map with only valid transaction keys."
   [input]
   (let [required-fields (required-transaction-fields)
         missing-keys (filter #(nil? (get input %)) required-fields)]
-    (assert (empty? missing-keys))
+    (validate (str {:missing-keys (into [] missing-keys) :input input}) empty? missing-keys)
     (select-keys input (conj required-fields
                              :transaction/tags))))
-
-;(defn input-transaction
-;  "Given an input returns a transaction with valid keys."
-;  [input]
-;  (let [required-fields (required-transaction-fields)
-;        transaction (select-keys input (conj required-fields
-;                                       :transaction/tags))]
-;    (assert (= (count required-fields) (count (select-keys input required-fields))))
-;    (validate (str "input: " transaction " missing keys: " (filterv #(nil? (get transaction %)) required-fields))
-;              every? #(some? (get transaction %)) required-fields)
-;    transaction))
