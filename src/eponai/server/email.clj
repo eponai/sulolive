@@ -6,8 +6,7 @@
             [taoensso.timbre :refer [debug error info]]
             [eponai.common.database.pull :as p]
             [hiccup.page :refer [xhtml]]
-            [garden.core :refer [css]]
-            [garden.stylesheet :as g]))
+            [garden.core :refer [css]]))
 
 (declare html-content)
 (declare text-content)
@@ -90,17 +89,6 @@
        [:td {:align "center"}
         [:table
          [:tr
-          [:td {:align "center"}
-           [:p
-            {:style
-             "background-color:#01213d;border-radius:50%;height:30px;width:30px;display:inline-block;"}]
-           [:p
-            {:style
-             "background-color:#01213d;border-radius:50%;height:30px;width:30px;display:inline-block;"}]
-           [:p
-            {:style
-             "background-color:#01213d;border-radius:50%;height:30px;width:30px;display:inline-block;"}]]]
-         [:tr
           [:td
            {:align "center"}
            [:p {:style "font-size:18px;border-top:1px solid #e5e5e5;padding-top:1em;"}
@@ -119,7 +107,7 @@
             [:a
                 {:href link
                  :style
-                       "text-decoration:none;display:inline-block; border-radius:10px; padding:16px 20px;font-size:16px;border:1px solid transparent;background-color:#2EC4B6;color:#fff;font-weight:bold;"}
+                       "text-decoration:none;display:inline-block; border-radius:3px; padding:16px 20px;font-size:16px;border:1px solid transparent;background-color:#044e8a;color:#fff;font-weight:bold;"}
                 (if (= user-status :user.status/new)
                   "Create account"
                   "Sign in")]]]]
