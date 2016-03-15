@@ -30,8 +30,8 @@
                                                                                    transactions))
           {:keys [parser conn]} (init-state)]
       (doseq [tx transactions]
-        (d/transact conn [{:currency/code (:transaction/currency tx)}
-                          {:budget/uuid (:transaction/budget tx)}]))
+        (d/transact conn [(:transaction/currency tx)
+                          (:transaction/budget tx)]))
       (let [parsed (parser {:state conn} create-mutations)
             error? (get-in parsed ['transaction/create :om.next/error])
             ui (parser {:state conn} (om/get-query transactions/AllTransactions))
@@ -43,18 +43,23 @@
           (= (count transactions) (count rendered-txs)))))))
 
 (deftest transaction-create-with-tags-of-the-same-name-throws-exception
-  (let [{:keys [parser conn]} (init-state)]
+  (let [{:keys [parser conn]} (init-state)
+        budget-uuid (d/squuid)]
+    (d/transact conn [{:budget/uuid budget-uuid}])
     (is (thrown-with-msg? cljs.core.ExceptionInfo
                           #".*Illegal.*argument.*input-tags.*"
                           (-> (parser {:state conn}
-                                   '[(transaction/create
-                                       {:input-uuid        (d/squuid)
-                                        :input-amount      "0"
-                                        :input-currency    ""
-                                        :input-title       ""
-                                        :input-date        "1000-10-10"
-                                        :input-description ""
-                                        :input-tags        ["" ""]
-                                        :input-created-at  0})])
+                                   `[(transaction/create
+                                       ~{:transaction/uuid        (d/squuid)
+                                        :transaction/amount      "0"
+                                        :transaction/currency    {:currency/code ""}
+                                        :transaction/title       ""
+                                        :transaction/date        {:date/ymd "1000-10-10"}
+                                        :transaction/description ""
+                                        :transaction/tags        [{:tag/name ""} {:tag/name ""}]
+                                        :transaction/created-at  0
+                                        :transaction/budget      {:budget/uuid budget-uuid}
+                                        :transaction/type        :transaction.type/expense
+                                        :mutation-uuid           (d/squuid)})])
                               (get-in ['transaction/create :om.next/error])
                               (throw))))))

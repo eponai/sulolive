@@ -236,11 +236,11 @@
             (assoc :filter filter))))
 
 
-(defn transaction-create [k {:keys [input-tags] :as params}]
-  (if-not (= (frequencies (set input-tags))
-             (frequencies input-tags))
+(defn transaction-create [k {:keys [transaction/tags] :as params}]
+  (if-not (= (frequencies (set tags))
+             (frequencies tags))
     (throw (ex-info "Illegal argument :input-tags. Each tag must be unique."
-                    {:input-tags input-tags
+                    {:input-tags tags
                      :mutate     k
                      :params     params}))
     (transaction params)))
