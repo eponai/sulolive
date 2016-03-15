@@ -1,7 +1,7 @@
 #!/bin/bash -eu
 
 script_dir=$(dirname $0)
-cd "$script_dir"
+cd "$script_dir/.."
 
 npm install -g re-natal
 

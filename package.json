@@ -7,8 +7,10 @@
   },
   "dependencies": {
     "react-native": "0.21.0",
+    "pikaday": "1.4.0"
+  },
+  "devDependencies": {
     "source-map-support": "0.3.2",
-    "pikaday": "1.4.0",
     "karma": "0.13.9",
     "karma-junit-reporter": "0.3.8",
     "karma-chrome-launcher": "0.1.8",
