@@ -4,7 +4,7 @@
             [eponai.server.auth.credentials :as a]
             [eponai.server.middleware :as m]
             [eponai.common.parser :as parser]
-            [eponai.server.datomic_dev :as dev]))
+            [eponai.server.datomic-dev :as dev]))
 
 (def schema (dev/read-schema-files))
 

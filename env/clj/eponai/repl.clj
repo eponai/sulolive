@@ -1,6 +1,6 @@
 (ns eponai.repl
   (:require [eponai.server.core :as core]
-            [eponai.server.datomic_dev :as datomic_dev]
+            [eponai.server.datomic-dev :as datomic_dev]
             [clojure.tools.namespace.repl :as ns.repl]
             [taoensso.timbre :as timbre]
             [clojure.repl :refer :all]))

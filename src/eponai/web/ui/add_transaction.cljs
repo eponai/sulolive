@@ -1,4 +1,4 @@
-(ns eponai.web.ui.add_transaction
+(ns eponai.web.ui.add-transaction
   (:require [om.next :as om :refer-macros [defui]]
             [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
             [eponai.web.ui.datepicker :refer [->Datepicker]]

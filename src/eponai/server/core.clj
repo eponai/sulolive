@@ -6,7 +6,7 @@
             [eponai.common.parser :as parser]
             [eponai.server.email :as e]
             [eponai.server.external.openexchangerates :as exch]
-            [eponai.server.datomic_dev :refer [connect!]]
+            [eponai.server.datomic-dev :refer [connect!]]
             [eponai.server.parser.read]
             [eponai.server.parser.mutate]
             [eponai.server.routes :refer [site-routes api-routes]]

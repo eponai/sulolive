@@ -1,6 +1,6 @@
 (ns eponai.client.testdata
   (:require [datomic.api :as d]
-            [eponai.server.datomic_dev :as datomic_dev]
+            [eponai.server.datomic-dev :as datomic_dev]
             [eponai.server.datomic.pull :as pull]
             [clojure.java.io :as io]
             [clojure.tools.reader.edn :as edn]))

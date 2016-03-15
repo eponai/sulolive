@@ -2,7 +2,7 @@
   (:require [cljs.test]
             [cljsjs.react]
             [eponai.common.datascript_test]
-            [eponai.web.ui.add_transaction_test]
+            [eponai.web.ui.add-transaction-test]
             [eponai.web.routes-test]
             [doo.runner :refer-macros [doo-tests]]
             [taoensso.timbre :refer-macros [info error]]))
@@ -23,5 +23,5 @@
 (enable-console-print!)
 ;; doo-tests sets *main-cli-fn* to a function that runs tests.
 (doo-tests 'eponai.common.datascript_test
-           'eponai.web.ui.add_transaction_test
+           'eponai.web.ui.add-transaction-test
            'eponai.web.routes-test)

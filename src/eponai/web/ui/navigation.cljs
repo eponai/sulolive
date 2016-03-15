@@ -1,6 +1,6 @@
 (ns eponai.web.ui.navigation
   (:require [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
-            [eponai.web.ui.add_transaction :refer [->AddTransaction AddTransaction]]
+            [eponai.web.ui.add-transaction :refer [->AddTransaction AddTransaction]]
             [eponai.web.ui.add-widget :refer [->NewWidget NewWidget]]
             [eponai.web.ui.widget :refer [->Widget]]
             [eponai.web.ui.datepicker :refer [->Datepicker]]

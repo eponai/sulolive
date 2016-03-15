@@ -1,4 +1,4 @@
-(ns eponai.web.ui.all_transactions
+(ns eponai.web.ui.all-transactions
   (:require [clojure.set :as set]
             [eponai.web.ui.format :as f]
             [eponai.web.ui.datepicker :refer [->Datepicker]]

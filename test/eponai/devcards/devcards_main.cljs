@@ -1,4 +1,4 @@
-(ns eponai.devcards.devcards_main
+(ns eponai.devcards.devcards-main
   (:require
     [cljsjs.react.dom]
     [devcards.core :as dc]

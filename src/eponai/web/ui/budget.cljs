@@ -1,5 +1,5 @@
 (ns eponai.web.ui.budget
-  (:require [eponai.web.ui.all_transactions :refer [->AllTransactions AllTransactions]]
+  (:require [eponai.web.ui.all-transactions :refer [->AllTransactions AllTransactions]]
             [eponai.web.ui.dashboard :refer [->Dashboard Dashboard]]
             [eponai.web.ui.utils :as utils]
             [om.next :as om :refer-macros [defui]]

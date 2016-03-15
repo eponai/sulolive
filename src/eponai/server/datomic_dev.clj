@@ -1,4 +1,4 @@
-(ns eponai.server.datomic_dev
+(ns eponai.server.datomic-dev
   (:require [datomic.api :as d]
             [environ.core :refer [env]]
             [eponai.common.format :as format]

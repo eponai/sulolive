@@ -1,7 +1,7 @@
 (ns eponai.web.routes.ui-handlers
   (:require [bidi.bidi :as bidi]
             [eponai.web.ui.budget :refer [Budget ->Budget]]
-            [eponai.web.ui.all_transactions :refer [AllTransactions ->AllTransactions]]
+            [eponai.web.ui.all-transactions :refer [AllTransactions ->AllTransactions]]
             [eponai.web.ui.settings :refer [Settings ->Settings]]
             [eponai.web.ui.stripe :refer [Payment ->Payment]]
             [eponai.web.ui.profile :refer [Profile ->Profile]]
