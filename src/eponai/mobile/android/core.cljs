@@ -39,7 +39,8 @@
                      {:state        (atom {:app/msg "Hello Clojure in iOS and Android!"})
                       :parser       (om/parser {:read read})
                       :root-render  sup/root-render
-                      :root-unmount sup/root-unmount})]
+                      :root-unmount sup/root-unmount
+                      :migrate nil})]
     (reset! reconciler-atom reconciler)
     (om/add-root! reconciler AppRoot 1))
   (.registerComponent app-registry "JourMoneyApp" (fn [] app-root)))

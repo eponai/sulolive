@@ -3,7 +3,7 @@
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.omcljs/om "1.0.0-alpha30"]
+  :dependencies [[org.omcljs/om "1.0.0-alpha31"]
                  [clj-http "2.1.0"]
                  [clj-time "0.11.0"]
                  [compojure "1.4.0"]
@@ -139,7 +139,7 @@
                         :aot        :all
                         :prep-tasks ["compile" "prod-build-web"]}
 
-             :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha30"
+             :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha31"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
                                        [figwheel-sidecar "0.5.0-2"]
                                        [com.cemerick/piggieback "0.2.1"]]
@@ -160,7 +160,7 @@
                                                                 :output-dir    "target/android"
                                                                 :optimizations :none}}]}}
 
-             :mob-prod {:dependencies [[org.omcljs/om "1.0.0-alpha30"
+             :mob-prod {:dependencies [[org.omcljs/om "1.0.0-alpha31"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]]
                         :cljsbuild    {:builds [{:id           "ios"
                                                  :source-paths ["src" "src-hacks/react-native" "env/prod"]

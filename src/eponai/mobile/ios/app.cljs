@@ -115,6 +115,7 @@
                                    :merge        (merge/merge! mobile.merge/mobile-merge)
                                    :root-render  sup/root-render
                                    :root-unmount sup/root-unmount
+                                   :migrate nil
                                    })]
     (reset! reconciler-atom reconciler)
     (om/add-root! reconciler App root-node-id)

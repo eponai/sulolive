@@ -24,15 +24,9 @@
   static om/IQueryParams
   (params [_]
     (let [{:keys [url/component url/factory]}
-          (history/url-query-params (history/url-handler-form-token))
-          ;; HACK: Gets the component from the reconciler if there is one.
-          ;;       This only works if there's every only going to be a
-          ;;       single instance of the component.
-          query (om/get-query (or (when-let [r @utils/reconciler-atom]
-                                    (om/class->any r component))
-                                  component))]
+          (history/url-query-params (history/url-handler-form-token))]
       {:url/component component
-       :url/query query
+       :url/query (om/get-query component)
        :url/factory factory}))
   static om/IQuery
   (query [_]
@@ -97,7 +91,8 @@
                                    :parser  parser
                                    :remotes [:remote]
                                    :send    (backend/send! {:remote homeless/om-next-endpoint-user-auth})
-                                   :merge   (merge/merge! web.merge/web-merge)})
+                                   :merge   (merge/merge! web.merge/web-merge)
+                                   :migrate nil})
         history (history/init-history reconciler)]
     (reset! utils/reconciler-atom reconciler)
     (om/add-root! reconciler App (gdom/getElement "my-app"))

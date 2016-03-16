@@ -189,6 +189,7 @@
                                   :parser  (parser/parser)
                                   :remotes [:remote]
                                   :send    (backend/send! {:remote homeless/om-next-endpoint-public})
-                                  :merge   (merge/merge! web.merge/web-merge)})]
+                                  :merge   (merge/merge! web.merge/web-merge)
+                                  :migrate nil})]
 
   (om/add-root! reconciler Signup (gdom/getElement "my-signup"))))

@@ -9,18 +9,10 @@
   (om/update-state! component assoc :content content))
 
 (defui Budget
-  static om/IQueryParams
-  (params [_]
-    (let [component AllTransactions
-          ;; TODO: HACK: Remove once we've upgrade to om.next alpha-31+
-          query (om/get-query (or (when-let [r @utils/reconciler-atom]
-                                    (om/class->any r component))
-                                  component))]
-      {:transactions query}))
   static om/IQuery
   (query [_]
     [{:proxy/dashboard (om/get-query Dashboard)}
-     {:proxy/all-transactions '?transactions}])
+     {:proxy/all-transactions (om/get-query AllTransactions)}])
   Object
   (initLocalState [_]
     {:content :dashboard})
