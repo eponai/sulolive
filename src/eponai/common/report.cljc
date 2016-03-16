@@ -29,7 +29,7 @@
 
 (defmethod sum :transaction/date
   [_ _ transactions]
-  (let [grouped (group-by :transaction/date transactions)
+  (let [grouped (group-by #(select-keys (:transaction/date %) [:date/timestamp]) transactions)
         sum-fn (fn [[day ts]]
                  (assoc day :date/sum (reduce (fn [s tx]
                                                 (+ s (converted-amount tx)))

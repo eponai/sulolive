@@ -1,7 +1,10 @@
 (ns eponai.common.generators
-  (:require [clojure.test.check.generators :as gen]
-            [clj-time.coerce :as coerce]
-            [clj-time.core :as time]))
+  (:require
+    [clojure.test.check.generators :as gen]
+    #?(:clj [clj-time.coerce :as coerce]
+       :cljs [cljs-time.coerce :as coerce])
+    #?(:clj [clj-time.core :as time]
+       :cljs [cljs-time.core :as time])))
 
 (defn gen-amount []
   (gen/fmap str gen/pos-int))
