@@ -88,7 +88,8 @@
 
 (defmethod read :query/all-currencies
   [{:keys [db query]} _ _]
-  {:value  (p/pull-many db query (p/all-with db {:where '[[?e :currency/code]]}))})
+  {:value  (p/pull-many db query (p/all-with db {:where '[[?e :currency/code]]}))
+   :remote true})
 
 (defmethod read :query/current-user
   [{:keys [db query]} _ _]

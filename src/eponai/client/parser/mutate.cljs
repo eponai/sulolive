@@ -66,8 +66,9 @@
   [{:keys [state mutation-uuid]} _ {:keys [widget-layout] :as params}]
   (debug "dashboard/save with params: " params)
   {:action (fn []
-             (transact/mutate state mutation-uuid (format/add-tempid widget-layout)))
-   :remote true})
+             (when widget-layout
+               (transact/mutate state mutation-uuid (format/add-tempid widget-layout))))
+   :remote (some? widget-layout)})
 
 ;; ------------------- User account related ------------------
 

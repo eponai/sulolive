@@ -114,7 +114,7 @@
         (assoc e :db/id (d/tempid :db.part/user))
 
         (coll? e)
-        (map #(assoc % :db/id (d/tempid :db.part/user)))))
+        (map #(assoc % :db/id (d/tempid :db.part/user)) e)))
 
 (defn str->date
   "Create a date entity.

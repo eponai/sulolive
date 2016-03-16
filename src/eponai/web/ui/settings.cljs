@@ -2,7 +2,8 @@
   (:require [eponai.client.ui :refer [map-all] :refer-macros [opts]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
-            [datascript.core :as d]))
+            [datascript.core :as d]
+            [taoensso.timbre :refer-macros [debug]]))
 
 (defui Settings
   static om/IQuery
@@ -11,7 +12,9 @@
                            :user/email
                            :user/name
                            {:user/currency [:currency/code
-                                            :currency/name]}]}])
+                                            :currency/name]}]}
+     {:query/all-currencies [:currency/code
+                             :currency/name]}])
   Object
   (componentWillReceiveProps [this new-props]
     (let [{:keys [query/current-user]} new-props]
@@ -24,11 +27,11 @@
                                                        :user/currency
                                                        :currency/code))))
   (render [this]
-    (let [{:keys [query/current-user]} (om/props this)
+    (let [{:keys [query/current-user
+                  query/all-currencies]} (om/props this)
           {user-name :user/name
            :keys [user/email]} current-user
           {:keys [input-currency]} (om/get-state this)]
-      (prn "Currency: " input-currency)
       (html
         [:div
          (opts {:style {:display        "flex"
@@ -65,8 +68,11 @@
             :on-change #(om/update-state! this assoc :input-currency (.-value (.-target %)))
             :list      "currency-name"}]
           [:datalist#currency-name
-           [:option {:value "SEK"}]
-           [:option {:value "USD"}]]
+           (map-all
+             all-currencies
+             (fn [c]
+               [:option {:value (:currency/code c)}
+                (:currency/name c)]))]
           [:a.button.primary
            {:on-click #(om/transact! this `[(settings/save ~{:currency      input-currency
                                                              :user          current-user

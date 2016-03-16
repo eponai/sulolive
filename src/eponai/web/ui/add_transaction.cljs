@@ -9,7 +9,8 @@
             [cljsjs.moment]
             [garden.core :refer [css]]
             [datascript.core :as d]
-            [eponai.common.format :as f]))
+            [eponai.common.format :as f]
+            [taoensso.timbre :refer-macros [debug]]))
 
 (defn- delete-tag-fn [component tag]
     (om/update-state! component update-in [:input-transaction :transaction/tags] disj tag))
@@ -53,7 +54,8 @@
                       :query/all-budgets])))
 
   (toggle-input-type [this]
-    (let [{:keys [input/type]} (om/get-state this)]
+    (let [{:keys [input-transaction]} (om/get-state this)
+          type (:transaction/type input-transaction)]
       (cond (= type :transaction.type/expense)
             (om/update-state! this assoc-in [:input-transaction :transaction/type] :transaction.type/income)
 
@@ -66,7 +68,8 @@
     (om/update-state! this assoc-in [:input-transaction :transaction/budget :budget/uuid] (uuid budget-uuid)))
 
   (ui-config [this]
-    (let [{:keys [input/type]} (om/get-state this)]
+    (let [{:keys [input-transaction]} (om/get-state this)
+          type (:transaction/type input-transaction)]
       (cond (= type :transaction.type/expense)
             {:btn-class "button alert small"
              :i-class "fa fa-minus"}
@@ -85,7 +88,7 @@
                   transaction/type]} input-transaction
           {:keys [on-close]} (om/get-computed this)
           {:keys [btn-class
-                  i-class]} (.ui-config this)]
+                  i-class] :as conf} (.ui-config this)]
       (html
         [:div
 
