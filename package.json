@@ -3,10 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "node_modules/react-native/packager/packager.sh"
+    "start": "node_modules/react-native/packager/packager.sh --nonPersistent"
   },
   "dependencies": {
-    "react-native": "0.21.0",
+    "react-native": "0.22.0",
     "pikaday": "1.4.0"
   },
   "devDependencies": {

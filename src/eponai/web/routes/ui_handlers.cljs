@@ -1,23 +1,12 @@
 (ns eponai.web.routes.ui-handlers
   (:require [bidi.bidi :as bidi]
+            [eponai.client.route-helper :refer [map->UiComponentMatch]]
             [eponai.web.ui.budget :refer [Budget ->Budget]]
             [eponai.web.ui.all-transactions :refer [AllTransactions ->AllTransactions]]
             [eponai.web.ui.settings :refer [Settings ->Settings]]
             [eponai.web.ui.stripe :refer [Payment ->Payment]]
             [eponai.web.ui.profile :refer [Profile ->Profile]]
             [om.next :as om]))
-
-(defprotocol RouteParamHandler
-  (handle-route-params [this params reconciler]))
-
-(defrecord UiComponentMatch [component factory route-param-fn]
-  RouteParamHandler
-  (handle-route-params [_ reconciler params]
-    (route-param-fn reconciler params))
-  bidi/Matched
-  (resolve-handler [this m]
-    (bidi/succeed this m))
-  (unresolve-handler [this m] (when (= this (:handler m)) "")))
 
 (def dashboard-handler
   (map->UiComponentMatch

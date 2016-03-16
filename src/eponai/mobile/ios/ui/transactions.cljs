@@ -11,15 +11,15 @@
 (defui Transactions
   static om/IQuery
   (query [this]
-    [{:query/all-transactions [:transaction/uuid
-                               :transaction/title
-                               :transaction/amount]}])
+    [{:query/transactions [:transaction/uuid
+                           :transaction/title
+                           :transaction/amount]}])
   Object
   (render [this]
-    (let [{transactions :query/all-transactions} (om/props this)
+    (let [{:keys [query/transactions]} (om/props this)
           ds (js/React.ListView.DataSource. #js{:rowHasChanged not=})]
       (debug "Rendering transactions: " transactions)
-      (list-view {:dataSource (.cloneWithRows ds (clj->js transactions))
+      (list-view {:dataSource (.cloneWithRows ds (clj->js (or transactions [])))
                   :renderRow  (fn [t]
                                 (let [{:keys [title amount]} (js->clj t :keywordize-keys true)]
                                   (view (opts {:style {:flex-direction "row"}})

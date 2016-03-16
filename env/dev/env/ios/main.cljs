@@ -7,7 +7,7 @@
 
 (figwheel/watch-and-reload
   :websocket-url "ws://localhost:3449/figwheel-ws"
-  :heads-up-display true
+  :heads-up-display false
   :jsload-callback #(app/reload!))
 
 (core/init)

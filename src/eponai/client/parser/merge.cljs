@@ -79,20 +79,23 @@
    :post [(db/db? %)]}
   ;; Try to pass it to the merge function first
   ;; Otherwise, just do the default.
-  (if-let [ret (merge-fn db key val)]
-    ret
-    (cond
-     (some? (-> val :result :mutation-uuid))
-     (sync-optimistic-tx db key val)
+  (cond
+    (contains? (methods merge-fn) key)
+    (merge-fn db key val)
 
-     (some? (-> val :om.next/error))
-     (merge-error db key val)
+    (some? (-> val :result :mutation-uuid))
+    (sync-optimistic-tx db key val)
 
-     (-> val :result seq)
-     (transact db (:result val))
+    (some? (-> val :om.next/error))
+    (merge-error db key val)
 
-     :else
-     db)))
+    (-> val :result seq)
+    (transact db (:result val))
+
+    :else
+    (do
+      (debug "Nothing to merge for key: " key " value: " val)
+      db)))
 
 ;; TODO: Fix comments in this namespace.
 ;; TODO: Clean up merge-read and merge-mutate now that we have a merge-fn.
@@ -106,19 +109,19 @@
     (reduce-kv (fn [db k v] (merge-read merge-fn db k v))
                db
                val)
-    ;; Then check our merge-fn, otherwise do the default.
-    (if-let [ret (merge-fn db key val)]
-      ret
-      (cond
-        (or (= key :om.next/error)
-            (some? (:om.next/error val)))
-        (merge-error db key val)
+    (cond
+      (contains? (methods merge-fn) key)
+      (merge-fn db key val)
 
-        (= :datascript/schema key)
-        (merge-schema db key val)
+      (or (= key :om.next/error)
+          (some? (:om.next/error val)))
+      (merge-error db key val)
 
-        :else
-        (transact db val)))))
+      (= :datascript/schema key)
+      (merge-schema db key val)
+
+      :else
+      (transact db val))))
 
 (defn merge-novelty-by-key
   ;; TODO: Add comment when this has stabilized.

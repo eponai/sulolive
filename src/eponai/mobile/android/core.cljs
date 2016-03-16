@@ -22,7 +22,8 @@
                                   :style  {:width 80 :height 80 :marginBottom 30}})
                           (touchable-highlight {:style   {:backgroundColor "#999" :padding 10 :borderRadius 5}
                                                 :onPress #(alert "HELLO!")}
-                                               (text {:style {:color "white" :textAlign "center" :fontWeight "bold"}} "press me"))))))
+                                               (text {:style {:color "white" :textAlign "center" :fontWeight "bold"}}
+                                                     "press me"))))))
 
 (defonce RootNode (sup/root-node! 1))
 (defonce app-root (om/factory RootNode))

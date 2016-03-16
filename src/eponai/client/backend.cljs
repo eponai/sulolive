@@ -5,20 +5,25 @@
             [cljs-http.client :as http]
             [taoensso.timbre :refer-macros [debug error trace]]))
 
-(defn- post [url opts]
+(defn- send [send-fn url opts]
   (let [transit-opts {:transit-opts
                       {:decoding-opts
                        {:handlers {"n" cljs.reader/read-string
                                    "f" cljs.reader/read-string}}}}]
-    (http/post url (merge opts transit-opts))))
+    (send-fn url (merge opts transit-opts))))
 
-(defn- send-query! [route->url cb remote-key query]
+(defn- send-query! [remote->send cb remote-key query]
   (let [query (parser.util/unwrap-proxies query)]
-    (debug "Sending to " remote-key " query: " query)
     (go
       (try
-        (let [url (get route->url remote-key)
-              {:keys [body status headers]} (<! (post url {:transit-params query}))]
+        (let [{:keys [method url opts response-fn]} ((get remote->send remote-key) query)
+              _ (debug "Sending to " remote-key " query: " query
+                       "method: " method " url: " url "opts: " opts)
+              {:keys [body status headers]}
+              (response-fn (<! (send (condp = method
+                                       :get http/get
+                                       :post http/post)
+                                     url opts)))]
           (cond
             (<= 200 status 299)
             (do
@@ -37,8 +42,17 @@
           (throw e))))))
 
 (defn send!
-  [route->url]
-  {:pre [(map? route->url)]}
+  [remote->send]
+  {:pre [(map? remote->send)]}
   (fn [queries cb]
-    (run! (fn [[key query]] (send-query! route->url cb key query))
+    (run! (fn [[key query]] (send-query! remote->send cb key query))
           queries)))
+
+;; Remote helpers
+
+(defn post-to-url [url]
+  (fn [query]
+    {:method      :post
+     :url         url
+     :opts        {:transit-params query}
+     :response-fn identity}))

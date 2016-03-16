@@ -188,7 +188,7 @@
        reconciler (om/reconciler {:state   conn
                                   :parser  (parser/parser)
                                   :remotes [:remote]
-                                  :send    (backend/send! {:remote homeless/om-next-endpoint-public})
+                                  :send    (backend/send! {:remote (backend/post-to-url homeless/om-next-endpoint-public)})
                                   :merge   (merge/merge! web.merge/web-merge)
                                   :migrate nil})]
 

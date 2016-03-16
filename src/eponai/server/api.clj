@@ -40,9 +40,10 @@
     (let [user (pull/lookup-entity (d/db conn) [:user/email email])
           email-chan (chan 1)]
       (if user
-        (let [verification (datomic.format/verification user)]
+        (let [{:keys [verification/uuid] :as verification} (datomic.format/verification user)]
           (transact-one conn verification)
-          (info "New verification " (:verification/uuid verification) "for user:" email)
+          (info "New verification " uuid "for user:" email)
+          (debug (str "Helper for mobile dev. verify uri: jourmoney://ios/1/login/verify/" uuid))
           (put! email-chan verification)
           {:email-chan email-chan
            :status (:user/status user)})

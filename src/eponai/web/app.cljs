@@ -40,6 +40,7 @@
     {:sidebar-visible? false})
   (render
     [this]
+    (debug "app this: " this)
     (let [{:keys [proxy/app-content
                   return/content-factory
                   proxy/nav-bar
@@ -92,7 +93,7 @@
         reconciler (om/reconciler {:state   conn
                                    :parser  parser
                                    :remotes [:remote]
-                                   :send    (backend/send! {:remote homeless/om-next-endpoint-user-auth})
+                                   :send    (backend/send! {:remote (backend/post-to-url homeless/om-next-endpoint-user-auth)})
                                    :merge   (merge/merge! web.merge/web-merge)
                                    :migrate nil})
         history (history/init-history reconciler)]
