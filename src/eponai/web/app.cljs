@@ -46,22 +46,23 @@
                   proxy/side-bar]} (om/props this)
           {:keys [sidebar-visible?]} (om/get-state this)]
       (html
-        [:div#wrapper
-         (when sidebar-visible?
-           {:class "sidebar-visible"})
-         (nav/->SideBar (om/computed side-bar
-                                     {:on-close (when sidebar-visible?
-                                                  #(om/update-state! this assoc :sidebar-visible? false))}))
-         (nav/->NavbarMenu (om/computed nav-bar
-                                      {:on-sidebar-toggle #(om/update-state! this assoc :sidebar-visible? true)}))
+        [:div
+         [:div#wrapper
+          (when sidebar-visible?
+            {:class "sidebar-visible"})
+          (nav/->SideBar (om/computed side-bar
+                                      {:on-close (when sidebar-visible?
+                                                   #(om/update-state! this assoc :sidebar-visible? false))}))
+          (nav/->NavbarMenu (om/computed nav-bar
+                                         {:on-sidebar-toggle #(om/update-state! this assoc :sidebar-visible? true)}))
 
-         [:div
-          (opts {:style {:position :fixed
-                         :height "100vh"
-                         :width "100%"
-                         :background "transparent url(/style/img/world-black.png) no-repeat center center"
-                         :background-size :cover
-                         :opacity 0.05}})]
+          [:div
+           (opts {:style {:position        :fixed
+                          :height          "100vh"
+                          :width           "100%"
+                          :background      "transparent url(/style/img/world-black.png) no-repeat center center"
+                          :background-size :cover
+                          :opacity         0.05}})]]
          [:div#page-content
           (opts {:class "container-fluid content-section"
                  :style {:border "1px solid transparent"}})
