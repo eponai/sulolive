@@ -132,11 +132,12 @@
   static om/IQuery
   (query [_]
     ['{(:query/transactions {:filter ?filter}) [:transaction/uuid
-                                                          :transaction/amount
-                                                          :transaction/conversion
-                                                          {:transaction/tags [:tag/name]}
-                                                          {:transaction/date [:date/ymd
-                                                                              :date/timestamp]}]}])
+                                                :transaction/amount
+                                                :transaction/conversion
+                                                {:transaction/currency [:currency/code]}
+                                                {:transaction/tags [:tag/name]}
+                                                {:transaction/date [:date/ymd
+                                                                    :date/timestamp]}]}])
   Object
   (initLocalState [this]
     (let [{:keys [index]} (om/get-computed this)]
@@ -170,7 +171,6 @@
                   on-delete
                   dashboard
                   widget]} (om/get-computed this)]
-      (prn "On-delete : " on-delete)
       (html
         [:div
          [:h3 (str "New widget - " (:budget/name (:dashboard/budget dashboard)))]

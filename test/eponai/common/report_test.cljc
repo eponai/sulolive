@@ -1,5 +1,6 @@
 (ns eponai.common.report-test
   (:require
+    [clojure.test :refer :all]
     [clojure.test.check.clojure-test #?(:clj  :refer
                                         :cljs :refer-macros) [defspec]]
     [clojure.test.check.generators :as gen]
@@ -58,4 +59,21 @@
                                          (let [timestamp (:date/timestamp (:transaction/date tx))]
                                            (update m timestamp - (report/converted-amount tx))))
                                        sum-by-date
+                                       txs)))))
+
+(defspec
+  test-sum-by-currency
+  50
+  (props/for-all
+    [txs-convs (gen/vector (gen/tuple (gen-transaction) (gen/double* {:min 0.01})))]
+    (let [txs (map #(assoc-in (f/transaction (first %))
+                              [:transaction/conversion
+                               :conversion/rate] (second %)) txs-convs)
+          [{tx-sums :values}] (report/sum :transaction/currency nil txs)
+          sum-by-cur (reduce (fn [m [k v]]
+                               (assoc m k (:value (first v)))) {} (group-by :name tx-sums))]
+      (every? #(zero? (val %)) (reduce (fn [m tx]
+                                         (let [cur (:currency/code (:transaction/currency tx))]
+                                           (update m cur - (report/converted-amount tx))))
+                                       sum-by-cur
                                        txs)))))

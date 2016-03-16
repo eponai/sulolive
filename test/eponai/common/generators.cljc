@@ -1,5 +1,7 @@
 (ns eponai.common.generators
-  (:require [clojure.test.check.generators :as gen]))
+  (:require [clojure.test.check.generators :as gen]
+            [clj-time.coerce :as coerce]
+            [clj-time.core :as time]))
 
 (defn gen-amount []
   (gen/fmap str gen/pos-int))
@@ -12,11 +14,12 @@
   gen/string-alphanumeric)
 
 (defn gen-date []
-  (gen/hash-map :date/ymd (gen/fmap (fn [[y m d]] (str y "-" m "-" d))
-                                    (gen/tuple
-                                      (gen/choose 1000 9999)
-                                      (gen/choose 10 12)
-                                      (gen/choose 10 28)))))
+  (gen/fmap (fn [[y m d]] {:date/ymd       (str y "-" m "-" d)
+                           :date/timestamp (coerce/to-long (time/date-time y m d))})
+            (gen/tuple
+              (gen/choose 1000 9999)
+              (gen/choose 10 12)
+              (gen/choose 10 28))))
 
 (defn gen-tags []
   (gen/fmap set (gen/not-empty (gen/vector (gen/hash-map :tag/name gen/string-alphanumeric)))))

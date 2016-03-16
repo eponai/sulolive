@@ -59,7 +59,7 @@
                                          (converted-amount transaction)))))
                            m
                            (if (empty? filtered-tags)
-                             ["no tags"]
+                             ["untagged"]
                              (map :tag/name filtered-tags)))))
         sum-by-tag (reduce sum-fn {} transactions)]
 
@@ -68,6 +68,22 @@
                                  :value (second %2)})       ;sum for tag
                       []
                       sum-by-tag)}]))
+
+(defmethod sum :transaction/currency
+  [_ data-filter transactions]
+  (let [grouped (group-by #(select-keys (:transaction/currency %) [:currency/code]) transactions)
+        sum-fn (fn [[c ts]]
+                 (assoc c :currency/sum (reduce (fn [s tx]
+                                                (+ s (converted-amount tx)))
+                                              0
+                                              ts)))
+        sum-by-currency (map sum-fn grouped)]
+    [{:key    "All Transactions"
+      :values (reduce #(conj %1
+                             {:name  (:currency/code %2)
+                              :value (:currency/sum %2)})
+                      []
+                      (sort-by :currency/code sum-by-currency))}]))
 
 
 (defmulti calculation (fn [_ function-id _ _] function-id))

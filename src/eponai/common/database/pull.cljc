@@ -224,3 +224,23 @@
                                                      [?b :budget/uuid ?uuid]]
                                           :symbols {'?uuid budget-uuid}}))]
     (all-with db pull-params)))
+
+(defn find-latest-conversion [db {:keys [currency/code user/uuid]}]
+  (cond code
+        (second (one-with db {:find-pattern '[(max ?v) .]
+                              :symbols      {'?code code}
+                              :where        '[[?c :currency/code ?code]
+                                              [?co :conversion/currency ?c]
+                                              [?co :conversion/date ?d]
+                                              [?d :date/timestamp ?t]
+                                              [(vector ?t ?co) ?v]]}))
+
+        uuid
+        (second (one-with db {:find-pattern '[(max ?v) .]
+                              :symbols      {'?uuid uuid}
+                              :where        '[[?u :user/uuid ?uuid]
+                                              [?u :user/currency ?c]
+                                              [?co :conversion/currency ?c]
+                                              [?co :conversion/date ?d]
+                                              [?d :date/timestamp ?t]
+                                              [(vector ?t ?co) ?v]]}))))
