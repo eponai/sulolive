@@ -107,15 +107,23 @@
        (cond
          (= style :graph.style/bar)
          [:div
-          (chart-function component input-function)
-          (chart-group-by component input-report [:transaction/tags :transaction/currency])
-          (chart-filters component input-filter)]
+          [:div.row.small-up-2
+           [:div.column
+            (chart-function component input-function)]
+           [:div.column
+            (chart-group-by component input-report [:transaction/tags :transaction/currency])]]
+          [:div.row
+           (chart-filters component input-filter)]]
 
          (= style :graph.style/area)
          [:div
-          (chart-function component input-function)
-          (chart-group-by component input-report [:transaction/date])
-          (chart-filters component input-filter)]
+          [:div.row.small-up-2
+           [:div.column
+            (chart-function component input-function)]
+           [:div.column
+            (chart-group-by component input-report [:transaction/date])]]
+          [:div.row
+           (chart-filters component input-filter)]]
 
          (= style :graph.style/number)
          [:div
@@ -140,29 +148,22 @@
                                                                     :date/timestamp]}]}])
   Object
   (initLocalState [this]
-    (let [{:keys [index]} (om/get-computed this)]
-      {:input-graph    {:graph/style :graph.style/bar}
-       :input-function {:report.function/id :report.function.id/sum}
-       :input-report   {:report/group-by :transaction/tags}
-       :input-widget   {:widget/index  index
-                        :widget/width  33
-                        :widget/height 1}
-       :input-filter   {:filter/include-tags #{}}}))
-
-  (componentWillMount [this]
-    (let [{:keys [widget]} (om/get-computed this)
-          {:keys [input-filter]} (om/get-state this)
-          new-filters (update input-filter :filter/include-tags #(set (concat % (:filter/include-tags (:widget/filter widget)))))]
-      (when widget
-        (om/update-state! this
-                          (fn [st]
-                            (-> st
-                                (assoc :input-graph (:widget/graph widget)
-                                       :input-report (:widget/report widget)
-                                       :input-function (first (:report/functions (:widget/report widget))))
-                                (assoc-in [:input-widget :widget/uuid] (:widget/uuid widget))
-                                (assoc :input-filter new-filters))))
-        (update-query-params! this assoc :filter input-filter))))
+    (let [{:keys [index widget]} (om/get-computed this)]
+      (if widget
+        (let [input-filter (:widget/filter widget)]
+          (update-query-params! this assoc :filter input-filter)
+          {:input-graph    (:widget/graph widget)
+           :input-report   (:widget/report widget)
+           :input-function (first (:report/functions (:widget/report widget)))
+           :input-widget   widget
+           :input-filter   (update input-filter :filter/include-tags set)})
+        {:input-graph    {:graph/style :graph.style/bar}
+         :input-function {:report.function/id :report.function.id/sum}
+         :input-report   {:report/group-by :transaction/tags}
+         :input-widget   {:widget/index  index
+                          :widget/width  33
+                          :widget/height 1}
+         :input-filter   {:filter/include-tags #{}}})))
   (render [this]
     (let [{:keys [query/transactions]} (om/props this)
           {:keys [input-graph input-report input-filter] :as state} (om/get-state this)
@@ -170,12 +171,14 @@
                   on-save
                   on-delete
                   dashboard
-                  widget]} (om/get-computed this)]
+                  widget]} (om/get-computed this)
+          data (report/generate-data input-report input-filter transactions)]
       (html
         [:div
-         [:h3 (str "New widget - " (:budget/name (:dashboard/budget dashboard)))]
+         [:h3 (if widget "Edit widget" "New widget")]
 
          [:div.row.small-up-1
+          (opts {:style {:padding "0.5em 0"}})
           [:input
            {:value       (:report/title input-report)
             :type        "text"
@@ -200,7 +203,7 @@
             (opts {:style {:height 300}})
             (->Widget (om/computed {:widget/graph  input-graph
                                     :widget/report input-report
-                                    :widget/data   (report/generate-data input-report input-filter transactions)}
+                                    :widget/data   data}
                                    {:data transactions}))]]
 
           [:div.column
@@ -219,20 +222,20 @@
             "Cancel"]
            [:a.button.primary
             {:on-click #(on-save (cond-> state
-                                                true
-                                                (assoc :input-dashboard {:dashboard/uuid (:dashboard/uuid dashboard)})
+                                         true
+                                         (assoc :input-dashboard {:dashboard/uuid (:dashboard/uuid dashboard)})
 
-                                                (not (:widget/uuid (:input-widget state)))
-                                                (assoc-in [:input-widget :widget/uuid] (d/squuid))
+                                         (not (:widget/uuid (:input-widget state)))
+                                         (assoc-in [:input-widget :widget/uuid] (d/squuid))
 
-                                                (not (:graph/uuid (:input-graph state)))
-                                                (assoc-in [:input-graph :graph/uuid] (d/squuid))
+                                         (not (:graph/uuid (:input-graph state)))
+                                         (assoc-in [:input-graph :graph/uuid] (d/squuid))
 
-                                                (not (:report.function/uuid (:input-function state)))
-                                                (assoc-in [:input-function :report.function/uuid] (d/squuid))
+                                         (not (:report.function/uuid (:input-function state)))
+                                         (assoc-in [:input-function :report.function/uuid] (d/squuid))
 
-                                                (not (:report/uuid (:input-report state)))
-                                                (assoc-in [:input-report :report/uuid] (d/squuid))))}
+                                         (not (:report/uuid (:input-report state)))
+                                         (assoc-in [:input-report :report/uuid] (d/squuid))))}
 
 
             "Save"]]

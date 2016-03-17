@@ -14,19 +14,7 @@
   (om/transact! component `[(widget/save ~(assoc widget :mutation-uuid (d/squuid)))
                             :query/dashboard]))
 
-(defn save-dashboard [component widgets]
-  (om/transact! component `[(dashboard/save ~{:widget-layout widgets
-                                              :mutation-uuid (d/squuid)})
-                            :query/dashboard]))
-
-(defn toggle-edit [component]
-  (let [{:keys [edit?
-                widget-layout]} (om/get-state component)]
-    (when edit?
-      (save-dashboard component widget-layout))
-    (om/update-state! component update :edit? not)))
-
-(defn generate-layout [widgets]
+(defn widgets->layout [widgets]
   (map (fn [{:keys [widget/index] :as widget}]
          {:x (mod index 3)
           :y (int (/ index 3))
@@ -35,12 +23,7 @@
           :i (str (:widget/uuid widget))})
        widgets))
 
-(defn update-grid-layout [component]
-  (let [WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
-        grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))]
-    (om/update-state! component assoc :grid-element grid-element)))
-
-(defn re-layout-widgets [widgets layout]
+(defn layout->widgets [widgets layout]
   (let [grouped (group-by :widget/uuid widgets)]
     (map (fn [item]
            (let [widget (first (get grouped (uuid (get item "i"))))
@@ -59,14 +42,11 @@
                 widget/width]} (last (sort-by :widget/index widgets))]
     (max 0 (+ index (* 3 (dec height)) (.round js/Math (/ (* width 3) 100))))))
 
-(defn recalculate-layout [component widgets & args]
-  (let [[layout] args
-        new-widgets (re-layout-widgets widgets (js->clj layout))]
-    (om/update-state! component assoc :widget-layout new-widgets)))
-
 (defn build-react [component props & children]
   (let [React (.-React js/window)]
     (.createElement React component (clj->js props) children)))
+
+;;################ Om component #############
 
 (defui Dashboard
   static om/IQuery
@@ -79,15 +59,23 @@
   Object
   (componentWillReceiveProps [this new-props]
     (let [widgets (:widget/_dashboard (:query/dashboard new-props))]
-      (om/update-state! this assoc :layout (clj->js (generate-layout widgets)))))
+      (om/update-state! this assoc :layout (clj->js (widgets->layout widgets)))))
 
   (componentDidMount [this]
-    (let [widgets (:widget/_dashboard (:query/dashboard (om/props this)))]
-      (update-grid-layout this)
+    (let [widgets (:widget/_dashboard (:query/dashboard (om/props this)))
+          WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
+          grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))]
       (om/update-state! this
                         assoc
-                        :layout (clj->js (generate-layout widgets))
-                        :content :dashboard)))
+                        :layout (clj->js (widgets->layout widgets))
+                        :content :dashboard
+                        :grid-element grid-element)))
+
+  (layout-changed [this widgets layout]
+    (let [new-layout (layout->widgets widgets (js->clj layout))]
+      (om/transact! this `[(dashboard/save ~{:widget-layout new-layout
+                                             :mutation-uuid (d/squuid)})
+                           :query/dashboard])))
 
   (delete-widget [this widget]
     (om/transact! this `[(widget/delete ~(assoc (select-keys widget [:widget/uuid]) :mutation-uuid (d/squuid)))
@@ -110,12 +98,32 @@
            [:a
             {:on-click #(om/update-state! this assoc :add-widget? true)}
             [:i.fa.fa-bar-chart]
-            [:span "New"]]]
-          [:li
-           [:a
-            {:on-click #(toggle-edit this)}
-            [:i.fa.fa-pencil]
-            [:span "Edit"]]]]
+            [:span "New"]]]]
+
+         (when (and layout
+                    grid-element)
+           (.createElement React
+                           grid-element
+                           #js {:className        "layout",
+                                :draggableHandle  ".draggable"
+                                :layouts          #js {:lg layout :md layout}
+                                :rowHeight        300,
+                                :cols             #js {:lg 3 :md 2 :sm 2 :xs 1 :xxs 1}
+                                :useCSSTransforms true
+                                :isDraggable      true
+                                :isResizable      true
+                                :onDragStop       #(.layout-changed this widgets %)
+                                :onResizeStop     #(.layout-changed this widgets %)}
+                           (clj->js
+                             (map
+                               (fn [widget-props]
+                                 (.createElement React
+                                                 "div"
+                                                 #js {:key (str (:widget/uuid widget-props))}
+                                                 (->Widget
+                                                   (om/computed widget-props
+                                                                {:on-edit #(om/update-state! this assoc :edit-widget %)}))))
+                               (sort-by :widget/index widgets)))))
 
          (when add-widget?
            (utils/modal {:content  (->NewWidget (om/computed new-widget
@@ -127,47 +135,17 @@
                                                               :index (calculate-last-index widgets)}))
                          :on-close #(om/update-state! this assoc :add-widget? false)
                          :size "large"}))
-         (when edit?
-           [:style (css [:.react-grid-item
-                         {:-webkit-box-shadow "0 1px 1px rgba(0, 0, 0, .5)" ;
-                          :box-shadow         "0 1px 1px rgba(0, 0, 0, .5)"}
-                         [:&:hover {:cursor             :move
-                                    :-webkit-box-shadow "0 3px 9px rgba(0, 0, 0, .5)"
-                                    :box-shadow         "0 3px 9px rgba(0, 0, 0, .5)"}]])])
 
          (when edit-widget
            (utils/modal {:content  (->NewWidget (om/computed new-widget
-                                                             {:on-close #(om/update-state! this assoc :edit-widget nil)
-                                                              :on-save  #(do
-                                                                          (save-widget this %)
-                                                                          (om/update-state! this assoc :edit-widget nil))
-                                                              :on-delete (when edit? #(.delete-widget this %))
-                                                              :dashboard   dashboard
-                                                              :widget edit-widget}))
+                                                             {:on-close  #(om/update-state! this assoc :edit-widget nil)
+                                                              :on-save   #(do
+                                                                           (save-widget this %)
+                                                                           (om/update-state! this assoc :edit-widget nil))
+                                                              :on-delete #(.delete-widget this %)
+                                                              :dashboard dashboard
+                                                              :widget    edit-widget}))
                          :on-close #(om/update-state! this assoc :edit-widget nil)
-                         :size "large"}))
-         (when (and layout
-                    grid-element)
-           (.createElement React
-                           grid-element
-                           #js {:className        "layout",
-                                :layouts          #js {:lg layout :md layout}
-                                :rowHeight        300,
-                                :cols             #js {:lg 3 :md 2 :sm 2 :xs 1 :xxs 1}
-                                :useCSSTransforms true
-                                :isDraggable      edit?
-                                :isResizable      edit?
-                                :onDragStop       #(recalculate-layout this widgets %)
-                                :onResizeStop     #(recalculate-layout this widgets %)}
-                           (clj->js
-                             (map
-                               (fn [widget-props]
-                                 (.createElement React
-                                                 "div"
-                                                 #js {:key (str (:widget/uuid widget-props))}
-                                                 (->Widget
-                                                   (om/computed widget-props
-                                                                {:on-edit   (when edit? #(om/update-state! this assoc :edit-widget %))}))))
-                               (sort-by :widget/index widgets)))))]))))
+                         :size     "large"}))]))))
 
 (def ->Dashboard (om/factory Dashboard))

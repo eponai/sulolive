@@ -51,15 +51,15 @@
                        filtered-tags (if (seq include-tag-names)
                                        (filter #(contains? (set include-tag-names) (:tag/name %)) tags)
                                        tags)]
-                   (reduce (fn [m2 tagname]
-                             (update m2 tagname
-                                     (fn [me]
-                                       (if me
-                                         (+ me (converted-amount transaction))
-                                         (converted-amount transaction)))))
-                           m
-                           (if (empty? filtered-tags)
-                             ["untagged"]
+                   (if (empty? filtered-tags)
+                     m
+                     (reduce (fn [m2 tagname]
+                               (update m2 tagname
+                                       (fn [me]
+                                         (if me
+                                           (+ me (converted-amount transaction))
+                                           (converted-amount transaction)))))
+                             m
                              (map :tag/name filtered-tags)))))
         sum-by-tag (reduce sum-fn {} transactions)]
 
@@ -95,4 +95,5 @@
 (defn generate-data [report data-filter transactions]
   (let [functions (:report/functions report)
         k (:report.function/id (first functions))]
+    (debug "Make calc: " k " with filter: " data-filter)
     (calculation report (or k :report.function.id/sum) data-filter transactions)))

@@ -11,7 +11,9 @@
     [:widget/uuid
      :widget/width
      :widget/height
-     :widget/filter
+     {:widget/filter [{:filter/include-tags [:tag/name]}
+                      {:filter/end-date [:date/timestamp]}
+                      {:filter/start-date [:date/timestamp]}]}
      {:widget/report [:report/uuid
                       :report/group-by
                       :report/title
@@ -27,8 +29,7 @@
     (let [{:keys [widget/report
                   widget/graph
                   widget/data] :as widget} (om/props this)
-          {:keys [on-delete
-                  on-edit]} (om/get-computed this)]
+          {:keys [on-edit]} (om/get-computed this)]
       (html
         [:div.widget
          (opts {:style {:border        "1px solid #e7e7e7"
@@ -43,7 +44,7 @@
           (opts {:style {:position        :absolute
                          :top             0
                          :left            10
-                         :right           10
+                         :right           0
                          :height          30
                          :display         :flex
                          :flex-direction  :row
@@ -51,11 +52,16 @@
                          :align-items     :flex-start}})
           [:h5
            (:report/title report)]
-          (when on-edit
-            [:a.button.secondary
-             {:on-click #(on-edit widget)
-              :href     "#"}
-             [:i.fa.fa-pencil]])]
+          [:div.flex-right
+           [:a
+            (opts {:style    {:padding "0.5em"}
+                   :on-click #(on-edit (dissoc widget ::om/computed :widget/data))
+                   :href     "#"})
+            [:i.fa.fa-pencil]]
+           [:a.draggable
+            (opts {:style {:padding "0.5em"}})
+            [:i.fa.fa-arrows.draggable]]
+           ]]
          (let [{:keys [graph/style]} graph
                settings {:data         data
                          :id           (str (or (:widget/uuid widget) "widget"))
