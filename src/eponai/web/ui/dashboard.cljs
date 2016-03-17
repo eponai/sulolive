@@ -103,13 +103,10 @@
           React (.-React js/window)]
       (html
         [:div
-         [:ul.menu.icon-top
-          (opts {:style {:padding "0.5em"}})
-          [:li
-           [:a.button.secondary
-            {:on-click #(om/update-state! this assoc :add-widget? true)}
-            [:i.fa.fa-bar-chart]
-            [:span "New"]]]]
+         [:a.button.secondary
+          (opts {:on-click #(om/update-state! this assoc :add-widget? true)
+                 :style {:margin "0.5em"}})
+          "Add widget"]
 
          (when (and layout
                     grid-element)
