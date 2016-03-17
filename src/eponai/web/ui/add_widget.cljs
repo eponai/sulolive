@@ -161,8 +161,8 @@
          :input-function {:report.function/id :report.function.id/sum}
          :input-report   {:report/group-by :transaction/tags}
          :input-widget   {:widget/index  index
-                          :widget/width  33
-                          :widget/height 1}
+                          :widget/width  25
+                          :widget/height 2}
          :input-filter   {:filter/include-tags #{}}})))
   (render [this]
     (let [{:keys [query/transactions]} (om/props this)

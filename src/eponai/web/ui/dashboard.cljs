@@ -14,33 +14,57 @@
   (om/transact! component `[(widget/save ~(assoc widget :mutation-uuid (d/squuid)))
                             :query/dashboard]))
 
-(defn widgets->layout [widgets]
-  (map (fn [{:keys [widget/index] :as widget}]
-         {:x (mod index 3)
-          :y (int (/ index 3))
-          :w (.round js/Math (/ (* (:widget/width widget) 3) 100))
-          :h (:widget/height widget)
-          :i (str (:widget/uuid widget))})
-       widgets))
+(defmulti grid-layout (fn [k num-cols _]
+                        (if (< 1 num-cols)
+                          :multi-col
+                          :single-col)))
 
-(defn layout->widgets [widgets layout]
-  (let [grouped (group-by :widget/uuid widgets)]
+(defmethod grid-layout :multi-col
+  [k num-cols widgets]
+  (let [layout-fn (fn [{:keys [widget/index] :as widget}]
+                    {:x (mod index num-cols)
+                     :y (int (/ index num-cols))
+                     :w (max 1 (.floor js/Math (/ (* (:widget/width widget) num-cols) 100)))
+                     :h (:widget/height widget)
+                     :i (str (:widget/uuid widget))})]
+    (map layout-fn widgets)))
+
+(defmethod grid-layout :single-col
+  [k num-cols widgets]
+  (let [layout-fn (fn [{:keys [widget/index] :as widget}]
+                    {:x 0
+                     :y index
+                     :w 1
+                     :h (:widget/height widget)
+                     :i (str (:widget/uuid widget))})]
+    (map layout-fn widgets)))
+
+(defn widgets->layout [cols widgets]
+  (reduce (fn [m [k v]]
+            (assoc m k (grid-layout k v widgets)))
+          {}
+          cols))
+
+(defn layout->widgets [cols widgets layout]
+  (let [num-cols (:lg cols)
+        grouped (group-by :widget/uuid widgets)]
     (map (fn [item]
            (let [widget (first (get grouped (uuid (get item "i"))))
-                 new-width (int (* 100 (/ (get item "w") 3)))
+                 new-width (int (* 100 (/ (get item "w") num-cols)))
                  new-height (get item "h")
-                 new-index (+ (* (get item "y") 3) (get item "x"))]
+                 new-index (+ (* (get item "y") num-cols) (get item "x"))]
              {:widget/uuid (:widget/uuid widget)
               :widget/index  new-index
               :widget/width  new-width
               :widget/height new-height}))
          layout)))
 
-(defn calculate-last-index [widgets]
-  (let [{:keys [widget/index
+(defn calculate-last-index [cols widgets]
+  (let [num-cols (:lg cols)
+        {:keys [widget/index
                 widget/height
                 widget/width]} (last (sort-by :widget/index widgets))]
-    (max 0 (+ index (* 3 (dec height)) (.round js/Math (/ (* width 3) 100))))))
+    (max 0 (+ index (* num-cols (dec height)) (.round js/Math (/ (* width num-cols) 100))))))
 
 (defn build-react [component props & children]
   (let [React (.-React js/window)]
@@ -58,21 +82,33 @@
      {:proxy/new-widget (om/get-query NewWidget)}])
   Object
   (componentWillReceiveProps [this new-props]
-    (let [widgets (:widget/_dashboard (:query/dashboard new-props))]
-      (om/update-state! this assoc :layout (clj->js (widgets->layout widgets)))))
+    (let [{:keys [cols]} (om/get-state this)
+          widgets (:widget/_dashboard (:query/dashboard new-props))]
+      (om/update-state! this assoc :layout (clj->js (widgets->layout cols widgets)))))
 
-  (componentDidMount [this]
-    (let [widgets (:widget/_dashboard (:query/dashboard (om/props this)))
+  (update-layout [this]
+    (let [{:keys [cols]} (om/get-state this)
+          widgets (:widget/_dashboard (:query/dashboard (om/props this)))
           WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
           grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))]
       (om/update-state! this
                         assoc
-                        :layout (clj->js (widgets->layout widgets))
+                        :layout (clj->js (widgets->layout cols widgets))
                         :content :dashboard
                         :grid-element grid-element)))
+  (componentDidMount [this]
+    (let [sidebar (.getElementById js/document "sidebar")]
+      (when sidebar
+        (.addEventListener sidebar "transitionend" #(.update-layout this)))
+      (.update-layout this)))
+  (componentWillUnmount [_]
+    (let [sidebar (.getElementById js/document "sidebar")]
+      (when sidebar
+        (.removeEventListener sidebar "transitionend"))))
 
   (layout-changed [this widgets layout]
-    (let [new-layout (layout->widgets widgets (js->clj layout))]
+    (let [{:keys [cols]} (om/get-state this)
+          new-layout (layout->widgets cols widgets (js->clj layout))]
       (om/transact! this `[(dashboard/save ~{:widget-layout new-layout
                                              :mutation-uuid (d/squuid)})
                            :query/dashboard])))
@@ -84,12 +120,15 @@
   (edit-start [this]
     (om/update-state! this assoc :is-editing? true))
   (edit-stop [this widgets layout]
-    (let [new-layout (layout->widgets widgets (js->clj layout))]
+    (let [{:keys [cols]} (om/get-state this)
+          new-layout (layout->widgets cols widgets (js->clj layout))]
       (om/transact! this `[(dashboard/save ~{:widget-layout new-layout
                                              :mutation-uuid (d/squuid)})
                            :query/dashboard])
       (om/update-state! this assoc :is-editing? false)))
 
+  (initLocalState [_]
+    {:cols {:lg 4 :md 3 :sm 2 :xs 1 :xxs 1}})
   (render [this]
     (let [{:keys [query/dashboard
                   proxy/new-widget]} (om/props this)
@@ -98,7 +137,8 @@
                   grid-element
                   edit-widget
                   add-widget?
-                  is-editing?]} (om/get-state this)
+                  is-editing?
+                  cols]} (om/get-state this)
           widgets (:widget/_dashboard dashboard)
           React (.-React js/window)]
       (html
@@ -114,9 +154,9 @@
                            grid-element
                            #js {:className        (if is-editing? "layout animate" "layout"),
                                 :draggableHandle  ".draggable"
-                                :layouts          #js {:lg layout :md layout}
-                                :rowHeight        300,
-                                :cols             #js {:lg 3 :md 2 :sm 2 :xs 1 :xxs 1}
+                                :layouts          layout
+                                :rowHeight        100,
+                                :cols             (clj->js cols)
                                 :useCSSTransforms true
                                 :isDraggable      true
                                 :isResizable      true
@@ -142,7 +182,7 @@
                                                                           (save-widget this %)
                                                                           (om/update-state! this assoc :add-widget? false))
                                                               :dashboard dashboard
-                                                              :index (calculate-last-index widgets)}))
+                                                              :index (calculate-last-index cols widgets)}))
                          :on-close #(om/update-state! this assoc :add-widget? false)
                          :size "large"}))
 

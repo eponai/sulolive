@@ -120,8 +120,7 @@
           {:keys [top]} (om/get-state this)]
       (html
         [:div#navbar-submenu
-         (opts {:style {:top      top
-                        :background "#fff"
+         (opts {:style {:background "#fff"
                         :border "1px solid #e7e7e7"
                         :width    "100%"
                         :z-index  999
