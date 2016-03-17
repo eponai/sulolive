@@ -83,7 +83,7 @@
 
 (defmethod read :query/all-budgets
   [{:keys [db query]} _ _]
-  {:value  (p/pull-many db query (p/all-with db (p/budget)))
+  {:value  (sort-by :budget/created-at (p/pull-many db query (p/all-with db (p/budget))))
    :remote true})
 
 (defmethod read :query/all-currencies

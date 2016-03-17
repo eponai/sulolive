@@ -25,12 +25,7 @@
   (om/update-state! component assoc new-id true
                     :new-menu-visible? false))
 
-(defn- save-new-budget [component name]
-  (om/transact! component `[(budget/save ~{:budget/uuid (d/squuid)
-                                           :budget/name name
-                                           :dashboard/uuid (d/squuid)
-                                           :mutation-uuid (d/squuid)})
-                            :query/all-budgets]))
+
 
 ;;;; ##################### UI components ####################
 
@@ -123,17 +118,13 @@
   Object
   (initLocalState [_]
     {:menu-visible? false
-     :new-menu-visible? false
      :new-transaction? false
-     :add-widget? false
-     :add-budget? false})
+     :add-widget? false})
   (render [this]
     (let [{:keys [proxy/add-transaction
                   query/current-user]} (om/props this)
           {:keys [menu-visible?
-                  new-menu-visible?
-                  new-transaction?
-                  add-budget?]} (om/get-state this)
+                  new-transaction?]} (om/get-state this)
           {:keys [on-sidebar-toggle]} (om/get-computed this)]
       (html
         [:div
@@ -152,21 +143,15 @@
             [:li
              [:a#sidebar-toggle
               {:on-click #(do (prn "Did show sidebar")
-                              (on-sidebar-toggle))
-               :class    "button secondary"}
+                              (on-sidebar-toggle))}
               [:i
                {:class "fa fa-bars"}]]]
-
-            [:li
-             [:a
-              {:on-click #(om/update-state! this assoc :add-budget? true)
-               :class    "button secondary small"}
-              [:i.fa.fa-file-text-o]]]
             [:li
              [:a
               {:on-click #(om/update-state! this assoc :new-transaction? true)
                :class    "button primary medium"}
-              [:i.fa.fa-plus]]]]]
+              [:i.fa.fa-plus]
+              "New transaction"]]]]
 
           [:div
            {:class "top-bar-right"}
@@ -197,14 +182,6 @@
              (utils/modal {:content  (->AddTransaction
                                        (om/computed add-transaction
                                                     {:on-close on-close}))
-                           :on-close on-close})))
-
-         (when add-budget?
-           (let [on-close #(om/update-state! this assoc :add-budget? false)]
-             (utils/modal {:content  (->AddBudget (om/computed
-                                                    {}
-                                                    {:on-close on-close
-                                                     :on-save  #(save-new-budget this %)}))
                            :on-close on-close})))]))))
 
 (def ->NavbarMenu (om/factory NavbarMenu))
@@ -213,14 +190,23 @@
   static om/IQuery
   (query [_]
     [{:query/all-budgets [:budget/uuid
-                          :budget/name]}
+                          :budget/name
+                          :budget/created-at]}
      {:query/current-user [:user/uuid
                            :user/activated-at]}])
   Object
-
+  (initLocalState [_]
+    {:new-budget? false})
+  (save-new-budget [this name]
+    (om/transact! this `[(budget/save ~{:budget/uuid (d/squuid)
+                                        :budget/name name
+                                        :dashboard/uuid (d/squuid)
+                                        :mutation-uuid (d/squuid)})
+                         :query/all-budgets]))
   (render [this]
     (let [{:keys [query/all-budgets]} (om/props this)
-          {:keys [on-close]} (om/get-computed this)]
+          {:keys [on-close]} (om/get-computed this)
+          {:keys [new-budget?]} (om/get-state this)]
       (html
         [:div
          [:div
@@ -251,7 +237,6 @@
                (opts {:style {:display :inline
                               :padding "0.5em"}})]
               [:strong "Profile"]]]
-            [:li.divider]
 
             (map
               (fn [budget]
@@ -259,9 +244,25 @@
                  (opts {:key [(:budget/uuid budget)]})
                  [:a {:href (routes/inside "/dashboard/" (:budget/uuid budget))}
                   (or (:budget/name budget) "Untitled")]])
-              all-budgets)]]
+              all-budgets)
+
+            [:li
+             [:a.secondary
+              {:on-click #(om/update-state! this assoc :new-budget? true)}
+              [:i.fa.fa-plus
+               (opts {:style {:display :inline
+                              :padding "0.5em"}})]
+              "New..."]]]]
           [:footer.footer
            [:p.copyright.small.text-light
-            "Copyright © eponai 2016. All Rights Reserved"]]]]))))
+            "Copyright © eponai 2016. All Rights Reserved"]]]
+
+         (when new-budget?
+           (let [on-close #(om/update-state! this assoc :new-budget? false)]
+             (utils/modal {:content  (->AddBudget (om/computed
+                                                    {}
+                                                    {:on-close on-close
+                                                     :on-save  #(.save-new-budget this %)}))
+                           :on-close on-close})))]))))
 
 (def ->SideBar (om/factory SideBar))
