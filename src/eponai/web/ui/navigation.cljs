@@ -175,8 +175,7 @@
               [:i.fa.fa-plus]
               "New transaction"]]]]
 
-          [:div
-           {:class "top-bar-right"}
+          [:div.top-bar-right.profile-menu
            [:ul.dropdown.menu
             (let [activated-at (:user/activated-at current-user)]
               [:li
@@ -252,19 +251,28 @@
               [:span.small
                " by eponai"]]]
 
+            [:li.profile-menu
+             [:a.button.warning.medium
+              (opts {:on-click on-close
+                     :href     (routes/inside "/subscribe/")
+                     :style    {:margin "0.5em"}})
+              "Upgrade"]]
             [:li
              [:a
-              (opts {:href (routes/inside "/profile")})
+              (opts {:href (routes/inside "/profile")
+                     :on-click on-close})
               [:i.fa.fa-user
                (opts {:style {:display :inline
                               :padding "0.5em"}})]
               [:strong "Profile"]]]
+            [:li.divider]
 
             (map
               (fn [budget]
                 [:li
                  (opts {:key [(:budget/uuid budget)]})
-                 [:a {:href (routes/inside "/dashboard/" (:budget/uuid budget))}
+                 [:a {:href (routes/inside "/dashboard/" (:budget/uuid budget))
+                      :on-click on-close}
                   (or (:budget/name budget) "Untitled")]])
               all-budgets)
 
@@ -274,7 +282,23 @@
               [:i.fa.fa-plus
                (opts {:style {:display :inline
                               :padding "0.5em"}})]
-              "New..."]]]]
+              [:small "New..."]]]
+
+            [:li.divider]
+            [:li.profile-menu
+             [:a
+              (opts {:href     (routes/inside "/settings")
+                     :on-click on-close})
+              [:i.fa.fa-gear
+               (opts {:style {:display :inline
+                              :padding "0.5em"}})]
+              "Settings"]]
+
+            [:li.profile-menu
+             [:a
+              (opts {:href     (routes/outside "/api/logout")
+                     :on-click on-close})
+              "Sign Out"]]]]
           [:footer.footer
            [:p.copyright.small.text-light
             "Copyright © eponai 2016. All Rights Reserved"]]]
