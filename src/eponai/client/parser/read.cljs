@@ -47,9 +47,7 @@
   (parser.util/cache-last-read
     (fn
       [{:keys [db query]} _ p]
-      {:value (let [ret (p/pull-many db query (p/find-transactions db p))]
-                (debug "Found transactions: " (count ret) ": " ret)
-                ret)})))
+      {:value (p/pull-many db query (p/find-transactions db p))})))
 
 (defmethod read :query/transactions
   [{:keys [db target ast] :as env} k {:keys [filter]}]

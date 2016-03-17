@@ -107,6 +107,28 @@
 
 ;;;; #################### Om Next components #####################
 
+(defui NavbarSubmenu
+  Object
+  (componentDidMount [this]
+    (let [navbar (.getElementById js/document "navbar-menu")
+          top (if navbar
+                (.-offsetHeight navbar)
+                0)]
+      (om/update-state! this assoc :top top)))
+  (render [this]
+    (let [{:keys [content]} (om/get-computed this)
+          {:keys [top]} (om/get-state this)]
+      (html
+        [:div#navbar-submenu
+         (opts {:style {:top      top
+                        :background "#fff"
+                        :border "1px solid #e7e7e7"
+                        :width    "100%"
+                        :z-index  1000
+                        :position :fixed}})
+         content]))))
+
+(def ->NavbarSubmenu (om/factory NavbarSubmenu))
 
 (defui NavbarMenu
   static om/IQuery

@@ -105,18 +105,17 @@
           React (.-React js/window)]
       (html
         [:div
-         [:div.callout.secondary
-          [:ul.menu.icon-top
-           [:li
-            [:a
-             {:on-click #(om/update-state! this assoc :add-widget? true)}
-             [:i.fa.fa-bar-chart]
-             [:span "New"]]]
-           [:li
-            [:a
-             {:on-click #(toggle-edit this)}
-             [:i.fa.fa-pencil]
-             [:span "Edit"]]]]]
+         [:ul.menu.icon-top
+          [:li
+           [:a
+            {:on-click #(om/update-state! this assoc :add-widget? true)}
+            [:i.fa.fa-bar-chart]
+            [:span "New"]]]
+          [:li
+           [:a
+            {:on-click #(toggle-edit this)}
+            [:i.fa.fa-pencil]
+            [:span "Edit"]]]]
 
          (when add-widget?
            (utils/modal {:content  (->NewWidget (om/computed new-widget
