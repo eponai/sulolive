@@ -81,6 +81,15 @@
     (om/transact! this `[(widget/delete ~(assoc (select-keys widget [:widget/uuid]) :mutation-uuid (d/squuid)))
                          :query/dashboard]))
 
+  (edit-start [this]
+    (om/update-state! this assoc :is-editing? true))
+  (edit-stop [this widgets layout]
+    (let [new-layout (layout->widgets widgets (js->clj layout))]
+      (om/transact! this `[(dashboard/save ~{:widget-layout new-layout
+                                             :mutation-uuid (d/squuid)})
+                           :query/dashboard])
+      (om/update-state! this assoc :is-editing? false)))
+
   (render [this]
     (let [{:keys [query/dashboard
                   proxy/new-widget]} (om/props this)
@@ -88,7 +97,8 @@
                   edit?
                   grid-element
                   edit-widget
-                  add-widget?]} (om/get-state this)
+                  add-widget?
+                  is-editing?]} (om/get-state this)
           widgets (:widget/_dashboard dashboard)
           React (.-React js/window)]
       (html
@@ -104,7 +114,7 @@
                     grid-element)
            (.createElement React
                            grid-element
-                           #js {:className        "layout",
+                           #js {:className        (if is-editing? "layout animate" "layout"),
                                 :draggableHandle  ".draggable"
                                 :layouts          #js {:lg layout :md layout}
                                 :rowHeight        300,
@@ -112,17 +122,19 @@
                                 :useCSSTransforms true
                                 :isDraggable      true
                                 :isResizable      true
-                                :onDragStop       #(.layout-changed this widgets %)
-                                :onResizeStop     #(.layout-changed this widgets %)}
+                                :onResizeStart    #(.edit-start this)
+                                :onResizeStop     #(.edit-stop this widgets %)
+                                :onDragStart      #(.edit-start this)
+                                :onDragStop       #(.edit-stop this widgets %)}
                            (clj->js
                              (map
                                (fn [widget-props]
                                  (.createElement React
                                                  "div"
-                                                 #js {:key (str (:widget/uuid widget-props))}
-                                                 (->Widget
-                                                   (om/computed widget-props
-                                                                {:on-edit #(om/update-state! this assoc :edit-widget %)}))))
+                                                 #js {:key   (str (:widget/uuid widget-props))}
+                                                      (->Widget
+                                                        (om/computed widget-props
+                                                                     {:on-edit #(om/update-state! this assoc :edit-widget %)}))))
                                (sort-by :widget/index widgets)))))
 
          (when add-widget?
