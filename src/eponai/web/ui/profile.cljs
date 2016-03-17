@@ -51,11 +51,8 @@
         [:div
 
          [:style (css [:.react-grid-item
-                       {:-webkit-box-shadow "0 1px 1px rgba(0, 0, 0, .5)" ;
-                        :box-shadow         "0 1px 1px rgba(0, 0, 0, .5)"}
-                       [:&:hover {:cursor             :pointer
-                                  :-webkit-box-shadow "0 3px 9px rgba(0, 0, 0, .5)"
-                                  :box-shadow         "0 3px 9px rgba(0, 0, 0, .5)"}]])]
+                       {:border "1px solid #e7e7e7"}
+                       [:&:hover {:cursor             :pointer}]])]
          [:div
           (opts {:style {:display        :flex
                          :flex-direction :row

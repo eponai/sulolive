@@ -124,7 +124,7 @@
                         :background "#fff"
                         :border "1px solid #e7e7e7"
                         :width    "100%"
-                        :z-index  1000
+                        :z-index  999
                         :position :fixed}})
          content]))))
 

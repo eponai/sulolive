@@ -104,8 +104,9 @@
       (html
         [:div
          [:ul.menu.icon-top
+          (opts {:style {:padding "0.5em"}})
           [:li
-           [:a
+           [:a.button.secondary
             {:on-click #(om/update-state! this assoc :add-widget? true)}
             [:i.fa.fa-bar-chart]
             [:span "New"]]]]
