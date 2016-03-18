@@ -53,12 +53,12 @@
           [:h5
            (:report/title report)]
           [:div.flex-right.widget-menu
-           [:a.widget-edit
+           [:a.widget-edit.secondary
             (opts {:style    {:padding "0.5em"}
                    :on-click #(on-edit (dissoc widget ::om/computed :widget/data))
                    :href     "#"})
             [:i.fa.fa-pencil]]
-           [:a.widget-move
+           [:a.widget-move.secondary
             (opts {:style {:padding "0.5em"}})
             [:i.fa.fa-arrows.widget-move]]
            ]]

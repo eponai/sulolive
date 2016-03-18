@@ -42,8 +42,7 @@
         [:div
          (nav/->NavbarSubmenu (om/computed {}
                                            {:content (submenu this)}))
-         [:div
-          (opts {:style {:padding-top "50px"}})
+         [:div#budget-content
           (cond (= content :dashboard)
                 (->Dashboard dashboard)
 

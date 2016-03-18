@@ -48,11 +48,26 @@
           {:keys [tooltip-visible?]} (om/get-state this)]
       (html
         [:tr
-         (opts {:key [uuid]})
+         (opts {:key      [uuid]
+                :class (if is-selected "is-selected" "")})
+         ;[:td
+         ; [:a.secondary.move-transaction
+         ;  [:i.fa.fa-th]]]
 
          [:td
           (opts {:key [uuid]})
-          (str (f/month-name (:date/month date)) " " (:date/day date))]
+          [:small (str (f/month-name (:date/month date)) " " (:date/day date))]]
+
+         [:td
+          (if-let [rate (:conversion/rate conversion)]
+            [:strong
+             (gstring/format (str (or (:currency/code (:user/currency user))
+                                      (:currency/symbol-native (:user/currency user))) " %.2f") (/ amount rate))]
+            [:span.has-tip.right
+             ; {:on-mouse-over #(om/update-state! this assoc :tooltip-visible? true)
+             ;  :on-mouse-out #(om/update-state! this assoc :tooltip-visible? false)}
+             "?"]
+            )]
 
          [:td
           (opts {:key [uuid]})
@@ -64,33 +79,18 @@
                    (fn [tag]
                      (utils/tag tag {:on-click #(on-tag-click tag)})))]
          [:td
-          (opts {:key [uuid]
-                 :class (if (= (:db/ident type) :transaction.type/expense) "text-danger" "text-success")})
-          (str amount " " (or (:currency/symbol-native currency)
-                              (:currency/code currency)))]
-         [:td
-          (opts {:key [uuid]
-                 :class (if (= (:db/ident type) :transaction.type/expense) "text-danger" "text-success")})
-          (if-let [rate (:conversion/rate conversion)]
-            [:span
-             (gstring/format (str (:currency/code (:user/currency user)) "%.2f") (/ amount rate))]
-            [:span.has-tip.right
-             {:on-mouse-over #(om/update-state! this assoc :tooltip-visible? true)
-              :on-mouse-out #(om/update-state! this assoc :tooltip-visible? false)}
-             "?"])
-          ;(when tooltip-visible?
-          ;  [:span.tooltip.right
-          ;   "This is some tooltip"])
-          ]
+          [:small (str (or (:currency/symbol-native currency)
+                           (:currency/code currency)) " " amount)]]
+
 
          [:td
           (if is-selected
-            [:a.button.secondary
+            [:a
              {:on-click #(on-deselect)}
-             [:i.fa.fa-plus]]
-            [:a.button.secondary
+             [:i.fa.fa-chevron-right]]
+            [:a.edit-transaction.secondary
              {:on-click #(on-select (dissoc transaction :om.next/computed))}
-             [:i.fa.fa-pencil]])]]))))
+             [:i.fa.fa-chevron-right]])]]))))
 
 (def ->Transaction (om/factory Transaction))
 
@@ -192,14 +192,21 @@
                   transaction/type
                   transaction/date
                   transaction/tags]} input-state
-          edited? (not= init-state input-state)]
+          edited? (not= init-state input-state)
+          {:keys [on-close]} (om/get-computed this)]
       (debug "Selected transactions found: " (map #(count (:transaction/_budget %)) all-budgets))
       (html
         [:div
-         (opts {:style {:width (if transaction "100%" "0%")}})
+         (opts {:style {:width "100%"
+                        :height "100%"}})
          (when transaction
-           [:div.callout.secondary
-            (opts {:style {:max-width "35rem"}})
+           [:div.callout
+            ;(opts {:style {:max-width "35rem"}})
+            [:a.close-button
+             {:on-click on-close}
+             [:small "x"]]
+
+            [:h3 title]
             [:input {:value     title
                      :type      "text"
                      :on-change (utils/on-change-in this [:input-state :transaction/title])}]
@@ -208,7 +215,7 @@
                      :on-change #(om/update-state! this assoc-in [:input-state :transaction/amount]
                                                    (cljs.reader/read-string (.. % -target -value)))}]
 
-            [:select.form-control
+            [:select
              (opts {:on-change     (utils/on-change-in this [:input-state :transaction/currency :currency/code])
                     ;; What's the difference between default-value and value?
                     :value         (name (:currency/code currency))
@@ -220,7 +227,7 @@
                                 :key   [code]})
                          (name code)]))]
 
-            [:select.form-control
+            [:select
              {:on-change     (utils/on-change-in this [:input-state :transaction/budget :budget/name])
               :type          "text"
               :default-value (:budget/name budget)}
@@ -287,7 +294,8 @@
   (query [_]
     ['({:query/transactions ?transaction} {:filter ?filter})
      {:query/current-user [:user/uuid
-                           {:user/currency [:currency/code]}]}
+                           {:user/currency [:currency/code
+                                            :currency/symbol-native]}]}
      {:proxy/selected-transaction (om/get-query SelectedTransaction)}])
 
   Object
@@ -301,7 +309,6 @@
            sel-transaction-props :proxy/selected-transaction} (om/props this)
           selected-transaction (get-selected-transaction sel-transaction-props)
           {:keys [input-filter]} (om/get-state this)]
-      (debug "Rendering transactions: " transactions)
       (html
         [:div
          [:div.callout.secondary
@@ -320,23 +327,13 @@
                      :placeholder "To date..."
                      :value       (:filter/end-date input-filter)
                      :on-change   #(utils/select-date-filter this :filter/end-date %)}))]]]
-         [:div (opts {:style {:display        :flex
-                              :flex-direction :row}})
-          [:div
-           (opts {:style {:width "100%"}})
-
+         [:div.transactions
+          (opts {:class (if selected-transaction "transaction-selected" "")
+                 :style {:display        :flex
+                         :flex-direction :row}})
+          [:div.transaction-list
            [:table
             (opts {:style {:width "100%"}})
-            [:thead
-             [:tr
-              [:th "Date"]
-              [:th "Name"]
-              [:th "Tags"]
-              [:th
-               "Amount"]
-              [:th
-               "Cost"]
-              [:th]]]
             [:tbody
              (map (fn [props]
                     (->Transaction
@@ -348,8 +345,9 @@
                                                      (:db/id props))
                                     :on-tag-click #(utils/add-tag-filter this %)})))
                   (sort-by :transaction/created-at > transactions))]]]
-          [:div
+          [:div.edit-transaction-form
 
-           (->SelectedTransaction sel-transaction-props)]]]))))
+           (->SelectedTransaction (om/computed sel-transaction-props
+                                               {:on-close #(deselect-transaction this)}))]]]))))
 
 (def ->AllTransactions (om/factory AllTransactions))
