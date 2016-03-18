@@ -153,7 +153,7 @@
            (.createElement React
                            grid-element
                            #js {:className        (if is-editing? "layout animate" "layout"),
-                                :draggableHandle  ".draggable"
+                                :draggableHandle  ".widget-move"
                                 :layouts          layout
                                 :rowHeight        100,
                                 :cols             (clj->js cols)

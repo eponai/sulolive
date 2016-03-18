@@ -52,15 +52,15 @@
                          :align-items     :flex-start}})
           [:h5
            (:report/title report)]
-          [:div.flex-right
-           [:a
+          [:div.flex-right.widget-menu
+           [:a.widget-edit
             (opts {:style    {:padding "0.5em"}
                    :on-click #(on-edit (dissoc widget ::om/computed :widget/data))
                    :href     "#"})
             [:i.fa.fa-pencil]]
-           [:a.draggable
+           [:a.widget-move
             (opts {:style {:padding "0.5em"}})
-            [:i.fa.fa-arrows.draggable]]
+            [:i.fa.fa-arrows.widget-move]]
            ]]
          (let [{:keys [graph/style]} graph
                settings {:data         data
