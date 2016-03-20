@@ -56,18 +56,31 @@
 
          [:td
           (opts {:key [uuid]})
-          [:small (str (f/month-name (:date/month date)) " " (:date/day date))]]
+          [:span (str (f/month-name (:date/month date)) " " (:date/day date))]]
 
          [:td
           (if-let [rate (:conversion/rate conversion)]
-            [:strong
-             (gstring/format (str (or (:currency/code (:user/currency user))
-                                      (:currency/symbol-native (:user/currency user))) " %.2f") (/ amount rate))]
+            [:div
+             [:small
+              (str (or (:currency/code (:user/currency user))
+                       (:currency/symbol-native (:user/currency user))) " ")]
+             (if (= (:db/ident type) :transaction.type/expense)
+               [:strong.label.alert
+                (gstring/format (str "-%.2f") (/ amount rate))]
+               [:strong.label.success
+                (gstring/format (str "%.2f") (/ amount rate))])]
+            ;[:strong
+            ;
+            ; (gstring/format (str (or (:currency/code (:user/currency user))
+            ;                          (:currency/symbol-native (:user/currency user))) " %.2f") (/ amount rate))]
             [:span.has-tip.right
              ; {:on-mouse-over #(om/update-state! this assoc :tooltip-visible? true)
              ;  :on-mouse-out #(om/update-state! this assoc :tooltip-visible? false)}
              "?"]
             )]
+         [:td
+          [:small (str (or (:currency/symbol-native currency)
+                           (:currency/code currency)) " " amount)]]
 
          [:td
           (opts {:key [uuid]})
@@ -78,9 +91,6 @@
           (map-all (:transaction/tags transaction)
                    (fn [tag]
                      (utils/tag tag {:on-click #(on-tag-click tag)})))]
-         [:td
-          [:small (str (or (:currency/symbol-native currency)
-                           (:currency/code currency)) " " amount)]]
 
 
          [:td
@@ -300,18 +310,12 @@
                        {:class "disabled"}))
               "Save"]
              [:a.button.secondary
-              (merge {:on-click #(om/set-state! this (.init-state this props))}
+              (merge {:on-click #(om/update-state! this assoc :input-state init-state)}
                      (when-not edited?
                        {:disabled :disabled}))
               "Reset"]]])]))))
 
 (def ->SelectedTransaction (om/factory SelectedTransaction))
-
-(defn select-transaction [this transaction]
-  (om/transact! this `[(transactions/select ~{:transaction transaction})]))
-
-(defn deselect-transaction [this]
-  (om/transact! this `[(transactions/deselect)]))
 
 
 (defui AllTransactions
@@ -332,6 +336,15 @@
     {:input-tag    ""
      :input-filter {:filter/include-tags #{}}})
 
+  (componentWillUnmount [this]
+    (.deselect-transaction this))
+
+  (select-transaction [this transaction]
+    (om/transact! this `[(transactions/select ~{:transaction transaction})]))
+
+  (deselect-transaction [this]
+    (om/transact! this `[(transactions/deselect)]))
+
   (render [this]
     (let [{transactions          :query/transactions
            user                  :query/current-user
@@ -340,7 +353,7 @@
           {:keys [input-filter]} (om/get-state this)]
       (html
         [:div
-         [:div.callout.secondary
+         [:div.callout.secondary.transaction-filters
           [:div.row.small-up-1.medium-up-2.large-up-3
            [:div.column
             (utils/tag-filter this (:filter/include-tags input-filter))]
@@ -368,8 +381,8 @@
                     (->Transaction
                       (om/computed props
                                    {:user         user
-                                    :on-select    #(select-transaction this %)
-                                    :on-deselect  #(deselect-transaction this)
+                                    :on-select    #(.select-transaction this %)
+                                    :on-deselect  #(.deselect-transaction this)
                                     :is-selected  (= (:db/id selected-transaction)
                                                      (:db/id props))
                                     :on-tag-click #(utils/add-tag-filter this %)})))
@@ -377,6 +390,6 @@
           [:div.edit-transaction-form
 
            (->SelectedTransaction (om/computed sel-transaction-props
-                                               {:on-close #(deselect-transaction this)}))]]]))))
+                                               {:on-close #(.deselect-transaction this)}))]]]))))
 
 (def ->AllTransactions (om/factory AllTransactions))

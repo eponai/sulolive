@@ -29,11 +29,15 @@
     [{:proxy/dashboard (om/get-query Dashboard)}
      {:proxy/all-transactions (om/get-query AllTransactions)}])
   Object
-  (initLocalState [_]
+  (init-state [_]
     {:content :transactions})
+  (initLocalState [this]
+    (.init-state this))
+
   (componentWillUnmount [this]
     (om/transact! this `[(ui.component.budget/clear)
                          :query/transactions]))
+
   (render [this]
     (let [{:keys [proxy/dashboard
                   proxy/all-transactions]} (om/props this)

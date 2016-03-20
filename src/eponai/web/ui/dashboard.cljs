@@ -101,10 +101,10 @@
       (when sidebar
         (.addEventListener sidebar "transitionend" #(.update-layout this)))
       (.update-layout this)))
-  (componentWillUnmount [_]
+  (componentWillUnmount [this]
     (let [sidebar (.getElementById js/document "sidebar")]
       (when sidebar
-        (.removeEventListener sidebar "transitionend"))))
+        (.removeEventListener sidebar "transitionend" #(.update-layout this)))))
 
   (layout-changed [this widgets layout]
     (let [{:keys [cols]} (om/get-state this)
