@@ -11,10 +11,15 @@
 (defn schema-datomic->datascript [datomic-schema]
   (-> (reduce (fn [datascript-s {:keys [db/ident db/valueType] :as datomic-s}]
             (assoc datascript-s ident
-                   (-> (if (not= valueType :db.type/ref)
-                         (dissoc datomic-s :db/valueType)
-                         datomic-s)
+                   (-> (if (= valueType :db.type/ref)
+                         ;; Refs cannot be unique in datascript yet.
+                         ;; See: github.com/tonsky/datascript/issues/147
+                         (dissoc datomic-s :db/unique)
+                         ;; Refs are the only valueTypes we care about
+                         ;; so we dissoc the rest.
+                         (dissoc datomic-s :db/valueType))
                        (select-keys (disj (set (keys datomic-s))
+                                          :db/doc
                                           :db/id
                                           :db.install/_attribute
                                           :db/ident)))))
