@@ -112,10 +112,25 @@
                       removed-tags (set/difference (set (keys original-tags-by-name))
                                                    edited-tags-names)]
                   (into tags (comp (mapcat
-                                     (fn [tags] (map #(assoc % :removed true) tags)))
+                                     (fn [tags] (map #(assoc % :tag/removed true) tags)))
                                    (remove
-                                     #(and (:db/id %) (not (:removed %)))))
+                                     #(and (:db/id %) (not (:tag/removed %)))))
                         (vals (select-keys original-tags-by-name removed-tags)))))))))
+
+(defn filter-changed-fields [edited original]
+  (let [tag-set-fn (fn [tags] (set (map #(select-keys % [:tag/name :tag/removed]) tags)))
+        changed-fields (reduce-kv 
+                         (fn [m k v]
+                           (let [init-v (get original k)
+                                 equal? (if (= :transaction/tags k)
+                                          (= (tag-set-fn v)
+                                             (tag-set-fn init-v))
+                                          (= v init-v))]
+                             (cond-> m
+                                     (not equal?) (assoc k v))))
+                         {}
+                         edited)]
+    changed-fields))
 
 (defui SelectedTransaction
   static om/IQuery
@@ -138,10 +153,8 @@
                           :transaction/_budget]}])
   Object
   (init-state [_ props]
-    (let [transaction (get-selected-transaction props)
-          transaction (update transaction :transaction/tags
-                              (fn [tags]
-                                (set (map #(select-keys % [:tag/name]) tags))))]
+    (let [transaction (-> (get-selected-transaction props)
+                          (update :transaction/tags (fn [tags] (set (map #(select-keys % [:tag/name]) tags)))))]
        {:init-state transaction
         :input-state transaction}))
 
@@ -154,19 +167,26 @@
                   (props->uuid next-props))
         (om/set-state! this (.init-state this next-props)))))
 
-  (edited-input->edited-transaction [this]
-    (let [{:keys [init-state input-state]} (om/get-state this)
-          changed-values (reduce-kv (fn [m k v]
-                                      (let [init-v (get init-state k)
-                                            equal? (if (= :transaction/tags k)
-                                                     (= (into #{} v)
-                                                        (into #{} init-v))
-                                                     (= v init-v))]
-                                        (cond-> m
-                                                (not equal?) (assoc k v))))
-                                    {}
-                                    input-state)]
-      changed-values))
+  (toggle-input-type [this]
+    (let [{:keys [input-state]} (om/get-state this)
+          type (:db/ident (:transaction/type input-state))]
+      (cond (= type :transaction.type/expense)
+            (om/update-state! this assoc-in [:input-state :transaction/type :db/ident] :transaction.type/income)
+
+            (= type :transaction.type/income)
+            (om/update-state! this assoc-in [:input-state :transaction/type :db/ident] :transaction.type/expense))))
+
+  (ui-config [this]
+    (let [{:keys [input-state]} (om/get-state this)
+          type (:db/ident (:transaction/type input-state))]
+      (cond (= type :transaction.type/expense)
+            {:btn-class "button alert small"
+             :i-class "fa fa-minus"}
+
+            (= type :transaction.type/income)
+            {:btn-class "button success small"
+             :i-class "fa fa-plus"})))
+
   (delete-tag [this tag]
     (om/update-state! this update-in [:input-state :transaction/tags] disj tag))
 
@@ -193,7 +213,8 @@
                   transaction/date
                   transaction/tags]} input-state
           edited? (not= init-state input-state)
-          {:keys [on-close]} (om/get-computed this)]
+          {:keys [on-close]} (om/get-computed this)
+          {:keys [i-class btn-class]} (.ui-config this)]
       (debug "Selected transactions found: " (map #(count (:transaction/_budget %)) all-budgets))
       (html
         [:div
@@ -210,31 +231,39 @@
             [:input {:value     title
                      :type      "text"
                      :on-change (utils/on-change-in this [:input-state :transaction/title])}]
-            [:input {:value     amount
-                     :type      "number"
-                     :on-change #(om/update-state! this assoc-in [:input-state :transaction/amount]
-                                                   (cljs.reader/read-string (.. % -target -value)))}]
+
+
+            [:div.input-group
+             [:a.input-group-button
+              (opts {:on-click #(.toggle-input-type this)
+                     :class    btn-class})
+              [:i
+               {:class i-class}]]
+             [:input.input-group-field
+              (opts {:type        "number"
+                     :placeholder "0.00"
+                     :min         "0"
+                     :value       amount
+                     :on-change   (utils/on-change-in this [:input-transaction :transaction/amount])})]
+
+             [:select.input-group-field
+              (opts {:on-change     (utils/on-change-in this [:input-transaction :transaction/currency :currency/code])
+                     :default-value currency})
+              (map-all all-currencies
+                       (fn [{:keys [currency/code]}]
+                         [:option
+                          (opts {:value (name code)
+                                 :key   [code]})
+                          (name code)]))]]
 
             [:select
-             (opts {:on-change     (utils/on-change-in this [:input-state :transaction/currency :currency/code])
-                    ;; What's the difference between default-value and value?
-                    :value         (name (:currency/code currency))
-                    :default-value (name (:currency/code currency))})
-             (map-all all-currencies
-                      (fn [{:keys [currency/code]}]
-                        [:option
-                         (opts {:value (name code)
-                                :key   [code]})
-                         (name code)]))]
-
-            [:select
-             {:on-change     (utils/on-change-in this [:input-state :transaction/budget :budget/name])
+             {:on-change     (utils/on-change-in this [:input-state :transaction/budget :budget/uuid])
               :type          "text"
               :default-value (:budget/name budget)}
              (map-all all-budgets
                       (fn [{:keys [budget/uuid budget/name]}]
                         [:option
-                         (opts {:value name
+                         (opts {:value uuid
                                 :key   [uuid]})
                          name]))]
 
@@ -256,8 +285,8 @@
              (opts {:style {:display        :flex
                             :flex-direction :row-reverse}})
              [:a.button.primary
-              (merge {:on-click #(om/transact! this `[(transaction/edit ~(-> (.edited-input->edited-transaction this)
-                                                                             (mark-removed-tags transaction)
+              (merge {:on-click #(om/transact! this `[(transaction/edit ~(-> (mark-removed-tags input-state init-state)
+                                                                             (filter-changed-fields init-state)
                                                                              (assoc :transaction/uuid uuid)
                                                                              (assoc :db/id (:db/id transaction))
                                                                              (assoc :mutation-uuid (d/squuid))))

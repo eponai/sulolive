@@ -247,23 +247,24 @@
 
 (defn transaction-edit [{:keys [transaction/tags
                                 transaction/uuid] :as input-transaction}]
-  (let [tag->txs (fn [{:keys [removed tag/name] :as tag}]
+  (let [tag->txs (fn [{:keys [tag/removed tag/name] :as tag}]
                    {:pre [(some? name)]}
                    (if removed
                      [[:db/retract [:transaction/uuid uuid] :transaction/tags [:tag/name name]]]
                      (let [tempid (d/tempid :db.part/user)]
                        ;; Create new tag and add it to the transaction
-                       [(-> tag (dissoc :removed) (assoc :db/id tempid))
+                       [(-> tag (dissoc :tag/removed) (assoc :db/id tempid))
                         [:db/add [:transaction/uuid uuid] :transaction/tags tempid]])))
         transaction (-> input-transaction
                         (dissoc :transaction/tags)
                         (assoc :db/id (d/tempid :db.part/user))
                         (->> (reduce-kv (fn [m k v]
                                           (assoc m k (condp = k
-                                                       :transaction/amount #?(:cljs v :clj (bigint v))
+                                                       :transaction/amount #?(:cljs (cljs.reader/read-string v) :clj (bigint v))
                                                        :transaction/currency (assoc v :db/id (d/tempid :db.part/user))
                                                        :transaction/type (assoc v :db/id (d/tempid :db.part/user))
                                                        :transaction/date (str->date (:date/ymd v))
+                                                       :transaction/budget {:budget/uuid (str->uuid (:budget/uuid v))}
                                                        v)))
                                         {})))]
     (cond-> [transaction]
