@@ -179,8 +179,10 @@
             (let [activated-at (:user/activated-at current-user)]
               [:li
                (if activated-at
-                 (str "Trial: " (max 0 (- 14 (f/days-since activated-at))) " days left")
-                 (str "Trial ended"))])
+                 [:small
+                  (str "Trial: " (max 0 (- 14 (f/days-since activated-at))) " days left")]
+                 [:small
+                  (str "Trial: 0 days left")])])
             [:li
              [:a {:class "button warning medium"
                   :href  (routes/inside "/subscribe/")}

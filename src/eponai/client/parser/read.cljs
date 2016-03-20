@@ -108,3 +108,10 @@
                  (error "Error for parser's read key:" k "error:" e)
                  {:error {:cause :invalid-verification}})))
    :remote (not (= uuid '?uuid))})
+
+(defmethod read :query/fb-user
+  [{:keys [db query]} _ _]
+  (let [eid (p/one-with db {:where '[[?e :fb-user/id]]})]
+    {:value  (when eid
+               (p/pull db query eid))
+     :remote true}))

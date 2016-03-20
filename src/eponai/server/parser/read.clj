@@ -6,6 +6,7 @@
     [eponai.common.format :as f]
     [eponai.common.parser :refer [read]]
     [eponai.server.datomic.pull :as p]
+    [eponai.server.external.facebook :as facebook]
     [taoensso.timbre :refer [debug]]))
 
 (defmethod read :datascript/schema
@@ -68,3 +69,16 @@
   [{:keys [db query]} _ {:keys [uuid]}]
   {:value (when (not (= uuid '?uuid))
             (pull db query [:user/uuid (f/str->uuid uuid)]))})
+
+(defmethod read :query/fb-user
+  [{:keys [db query auth]} _ _]
+  (let [eid (one-with db {:where '[[?e :fb-user/user ?u]
+                                   [?u :user/uuid ?uuid]]
+                          :symbols {'?uuid (:username auth)}})]
+    {:value (when eid
+              (let [{:keys [fb-user/token
+                            fb-user/id]} (pull db [:fb-user/token :fb-user/id] eid)
+                    {:keys [name picture]} (facebook/user-info id token)]
+                (merge (pull db query eid)
+                       {:fb-user/name    name
+                        :fb-user/picture (:url (:data picture))})))}))
