@@ -69,6 +69,10 @@
       (query-local-transactions env k {:filter filter
                                        :budget-uuid budget}))))
 
+(defmethod read :query/conversions
+  [_ _ _]
+  {:remote true})
+
 (defmethod read :query/dashboard
   [{:keys [db ast query target]} _ _]
   (let [budget-uuid (-> (d/entity db [:ui/component :ui.component/budget])

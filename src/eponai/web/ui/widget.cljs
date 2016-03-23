@@ -78,6 +78,9 @@
                  (d3/->AreaChart settings)
 
                  (= style :graph.style/number)
-                 (d3/->NumberChart settings)))]))))
+                 (d3/->NumberChart settings)
+
+                 (= style :graph.style/line)
+                 (d3/->LineChart settings)))]))))
 
 (def ->Widget (om/factory Widget))

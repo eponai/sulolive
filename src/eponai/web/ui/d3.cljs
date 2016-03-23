@@ -39,8 +39,7 @@
         (.. text-element
             enter
             (append "text")
-            (attr "class" "txt")
-            (attr "font-size" "4em")
+            (attr "class" "txt stat")
             (attr "x" "50%")
             (attr "y" "50%")
             (attr "text-anchor" "middle"))
@@ -147,6 +146,7 @@
                                       (y #(.-value %))
                                       (useInteractiveGuideline true)
                                       (showControls false)
+                                      (showLegend false)
                                       (clipEdge true))]
                         (.. chart
                             -xAxis
@@ -176,3 +176,86 @@
                         :width "100%"}})]))))
 
 (def ->AreaChart (om/factory AreaChart))
+
+(defui LineChart
+  Object
+  (componentDidMount [this]
+    (let [{:keys [id width height]} (om/props this)
+          svg (build-svg (str "#line-chart-" id) width height)]
+      (om/update-state! this assoc :svg svg)))
+
+  (componentDidUpdate [this _ _]
+    (let [{:keys [svg]} (om/get-state this)
+          {:keys [data]} (om/props this)
+          chart-data (or (clj->js data) #js [])]
+      (.. js/nv
+        (addGraph (fn []
+                    (let [chart (.. js/nv
+                                    -models
+                                    lineChart
+                                    (margin #js {:right 50
+                                                 :left 50
+                                                 :top 50
+                                                 :bottom 50})
+                                    (x #(.-name %))
+                                    (y #(.-value %))
+                                    (useInteractiveGuideline true)
+                                    (showLegend false)
+                                    (showYAxis true)
+                                    (showXAxis true))]
+                      (.. chart
+                          -xAxis
+                          (tickFormat #((.. js/d3
+                                            -time
+                                            (format "%x"))
+                                        (js/Date. %))))
+                      (.. chart
+                          -yAxis
+                          (tickFormat (.. js/d3
+                                          (format ",.2f"))))
+
+                      (.. svg
+                          (datum chart-data)
+                          (call chart))
+                      (.. js/nv
+                          -utils
+                          (windowResize (.-update chart)))))))))
+  (render [this]
+    (let [{:keys [id]} (om/props this)]
+      (html
+        [:div
+         (opts {:id (str "line-chart-" id)
+                :style {:height "100%"
+                        :width "100%"}})]))
+;    nv.addGraph(function() {
+;                            var chart = nv.models.lineChart()
+;                                .margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
+;                                .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
+;                                .transitionDuration(350)  //how fast do you want the lines to transition?
+;                            .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
+;                            .showYAxis(true)        //Show the y-axis
+;                            .showXAxis(true)        //Show the x-axis
+;                            ;
+;
+;                            chart.xAxis     //Chart x-axis settings
+;                            .axisLabel('Time (ms)')
+;                                        .tickFormat(d3.format(',r'));
+;
+;                                        chart.yAxis     //Chart y-axis settings
+;                                        .axisLabel('Voltage (v)')
+;                                                    .tickFormat(d3.format('.02f'));
+;
+;/* Done setting the chart up? Time to render it!*/
+;    var myData = sinAndCos();   //You need data...
+;
+;d3.select('#chart svg')    //Select the <svg> element you want to render the chart in.
+;.datum(myData)         //Populate the <svg> element with chart data...
+;.call(chart);          //Finally, render the chart!
+;
+;//Update the chart when window resizes.
+;nv.utils.windowResize(function() { chart.update() });
+;return chart;
+;});
+    ))
+
+(def ->LineChart (om/factory LineChart))

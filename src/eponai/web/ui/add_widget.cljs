@@ -19,6 +19,7 @@
 (defn- select-graph-style [component style]
   (let [default-group-by {:graph.style/bar    :transaction/tags
                           :graph.style/area   :transaction/date
+                          :graph.style/line :transaction/date
                           :graph.style/number :default}]
     (om/update-state! component
                       #(-> %
@@ -109,7 +110,7 @@
           [:div.row
            (chart-filters component)]]
 
-         (= style :graph.style/area)
+         (or (= style :graph.style/area) (= style :graph.style/line))
          [:div
           [:div.row.small-up-2.collapse
            [:div.column
@@ -247,6 +248,14 @@
                      :checked  (= style :graph.style/area)})]
              [:label {:for "area-chart"}
               "Area Chart"]
+             [:input
+              (opts {:type     "radio"
+                     :on-click #(select-graph-style this :graph.style/line)
+                     :name     "graph"
+                     :id       "line-chart"
+                     :checked  (= style :graph.style/line)})]
+             [:label {:for "line-chart"}
+              "Line Chart"]
              [:input
               (opts {:type     "radio"
                      :on-click #(select-graph-style this :graph.style/number)

@@ -26,22 +26,21 @@
                                                                             [?b :budget/created-by ?u]
                                                                             [?u :user/uuid ?user-uuid]]
                                                                  :symbols {'?user-uuid (:username auth)}}})]
-    {:value (concat (common.pull/txs-with-conversions db query {:tx-ids tx-ids :user/uuid (:username auth)})
-                    (common.pull/conversions db tx-ids (:username auth)))}))
+    {:value (common.pull/txs-with-conversions db query {:tx-ids tx-ids :user/uuid (:username auth)})}))
 
-;(defmethod read :query/transaction-conversions
-;  [{:keys [db query auth]} _ {:keys [budget-uuid filter]}]
-;  (let [tx-ids (common.pull/find-transactions db {:budget-uuid       budget-uuid
-;                                                  :filter       filter
-;                                                  :query-params {:where   '[[?e :transaction/budget ?b]
-;                                                                            [?b :budget/created-by ?u]
-;                                                                            [?u :user/uuid ?uuid]]
-;                                                                 :symbols {'?uuid (:username auth)}}})
-;        tx-conv-uconv (common.pull/find-conversions db tx-ids (:username auth))]
-;    {:value (let [user-convs (map last tx-conv-uconv)
-;                  tx-convs (map second tx-conv-uconv)]
-;              (concat (common.pull/pull-many db query tx-convs)
-;                      (common.pull/pull-many db query user-convs)))}))
+(defmethod read :query/conversions
+  [{:keys [db query auth]} _ {:keys [budget-uuid filter]}]
+  (let [tx-ids (common.pull/find-transactions db {:budget-uuid       budget-uuid
+                                                  :filter       filter
+                                                  :query-params {:where   '[[?e :transaction/budget ?b]
+                                                                            [?b :budget/created-by ?u]
+                                                                            [?u :user/uuid ?uuid]]
+                                                                 :symbols {'?uuid (:username auth)}}})
+        tx-conv-uconv (common.pull/find-conversions db tx-ids (:username auth))]
+    {:value (let [user-convs (map last tx-conv-uconv)
+                  tx-convs (map second tx-conv-uconv)]
+              (concat (common.pull/pull-many db query tx-convs)
+                      (common.pull/pull-many db query user-convs)))}))
 
 (defmethod read :query/dashboard
   [{:keys [db auth query] :as env} _ {:keys [budget-uuid]}]
