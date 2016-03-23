@@ -52,7 +52,6 @@
                  [cljsjs/pikaday "1.4.0-1"]
                  [cljsjs/react-grid-layout "0.8.5-0"]
                  [cljsjs/stripe "2.0-0"]
-                 [cljsjs/nvd3 "1.8.1-0"]
                  [bidi "2.0.0"]
                  [kibu/pushy "0.3.6"]
                  [binaryage/devtools "0.5.2"]

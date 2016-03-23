@@ -35,11 +35,14 @@
                                                 (+ s (converted-amount tx)))
                                               0
                                               ts)))
-        sum-by-day (map sum-fn grouped)]
+        sum-by-day (map sum-fn (filter #(some? (key %)) grouped))]
     [{:key    "All Transactions"
-      :values (reduce #(conj %1
-                             {:name  (:date/timestamp %2)   ;date timestamp
-                              :value (:date/sum %2)})       ;sum for date
+      :values (reduce (fn [l date]
+                        (if (some? (:date/timestamp date))
+                          (conj l
+                                {:name  (:date/timestamp date) ;date timestamp
+                                 :value (:date/sum date)})
+                          l)) ;sum for date
                       []
                       (sort-by :date/timestamp sum-by-day))}]))
 

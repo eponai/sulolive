@@ -1,9 +1,12 @@
 (ns eponai.web.ui.widget
-  (:require [eponai.common.report :as report]
-            [eponai.client.ui :refer-macros [opts]]
-            [eponai.web.ui.d3 :as d3]
-            [om.next :as om :refer-macros [defui]]
-            [sablono.core :refer-macros [html]]))
+  (:require
+    [eponai.client.ui :refer-macros [opts]]
+    [eponai.web.ui.d3.area-chart :refer [->AreaChart]]
+    [eponai.web.ui.d3.bar-chart :refer [->BarChart]]
+    [eponai.web.ui.d3.line-chart :refer [->LineChart]]
+    [eponai.web.ui.d3.number-chart :refer [->NumberChart]]
+    [om.next :as om :refer-macros [defui]]
+    [sablono.core :refer-macros [html]]))
 
 (defui Widget
   static om/IQuery
@@ -60,8 +63,8 @@
             [:i.fa.fa-pencil]]
            [:a.widget-move.secondary
             (opts {:style {:padding "0.5em"}})
-            [:i.fa.fa-arrows.widget-move]]
-           ]]
+            [:i.fa.fa-arrows.widget-move]]]]
+
          (let [{:keys [graph/style]} graph
                settings {:data         data
                          :id           (str (or (:widget/uuid widget) "widget"))
@@ -72,15 +75,15 @@
                          :height       "100%"
                          :title-axis-y "Amount ($)"}]
            (cond (= style :graph.style/bar)
-                 (d3/->BarChart settings)
+                 (->BarChart settings)
 
                  (= style :graph.style/area)
-                 (d3/->AreaChart settings)
+                 (->AreaChart settings)
 
                  (= style :graph.style/number)
-                 (d3/->NumberChart settings)
+                 (->NumberChart settings)
 
                  (= style :graph.style/line)
-                 (d3/->LineChart settings)))]))))
+                 (->LineChart settings)))]))))
 
 (def ->Widget (om/factory Widget))

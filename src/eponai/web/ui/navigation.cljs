@@ -249,7 +249,7 @@
               {:href (routes/inside "/")}
               [:strong
                "JourMoney"]
-              [:span.small
+              [:small
                " by eponai"]]]
 
             [:li.profile-menu

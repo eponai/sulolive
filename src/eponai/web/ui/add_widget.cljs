@@ -19,7 +19,7 @@
 (defn- select-graph-style [component style]
   (let [default-group-by {:graph.style/bar    :transaction/tags
                           :graph.style/area   :transaction/date
-                          :graph.style/line :transaction/date
+                          :graph.style/line   :transaction/date
                           :graph.style/number :default}]
     (om/update-state! component
                       #(-> %
