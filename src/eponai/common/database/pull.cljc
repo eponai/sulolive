@@ -295,7 +295,7 @@
                                                      [?e2 :conversion/currency ?u-cur]
                                                      [?e2 :conversion/date ?d]]})
         tx-convs-by-tx-id (group-by first tx-conv-tuples)]
-    (map
+    (mapv
       (fn [transaction]
         (let [transaction-id (:db/id transaction)
               [[_ tx-conv user-conv]] (get tx-convs-by-tx-id transaction-id)
@@ -327,3 +327,4 @@
          (add-conversions db
                           (or conversion-query [:conversion/rate])
                           user-uuid))))
+

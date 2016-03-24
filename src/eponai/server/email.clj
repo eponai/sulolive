@@ -45,11 +45,20 @@
    :tls  (env :smtp-tls)
    :port (env :smtp-port)})
 
+(defn- verify-link-by-device [device uuid]
+  (debug "Will return verify link by device: " device " uuid: " uuid)
+  (let [verify-link (str (condp = device
+                           :web "http://localhost:3000/verify/"
+                           :ios "jourmoney://ios/1/login/verify/")
+                         uuid)]
+    (debug "Returning verify link: " verify-link)
+    verify-link))
+
 (defn- send-email
   "Send a verification email to the provided address with the given uuid.
   Will send a link with the path /verify/:uuid that will verify when the user opens the link."
-  [smtp address uuid {:keys [subject text-content html-content]}]
-  (let [link (str "http://localhost:3000/verify/" uuid)
+  [smtp address uuid {:keys [subject text-content html-content device]}]
+  (let [link (verify-link-by-device device uuid)
         body {:from    "info@gmail.com"
               :to      "info@jourmoney.com"
               :subject subject

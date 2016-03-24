@@ -27,13 +27,13 @@
 (defn sync-optimistic-tx
   [db k {:keys [result]}]
   (when-let [mutation-uuid (:mutation-uuid result)]
-    (let [tx-time (d/q '{:find  [?tx .]
-                         :in    [$ ?uuid]
-                         :where [[?e :tx/mutation-uuid ?uuid ?tx]
-                                 [?e :tx/reverted ?reverted]
-                                 [(not ?reverted)]]}
-                       db
-                       mutation-uuid)
+    (let [[tx-entity tx-time] (first (d/q '{:find  [?e ?tx]
+                                            :in    [$ ?uuid]
+                                            :where [[?e :tx/mutation-uuid ?uuid ?tx]
+                                                    [?e :tx/reverted ?reverted]
+                                                    [(not ?reverted)]]}
+                                          db
+                                          mutation-uuid))
           _ (when-not tx-time
               (let [tx (d/touch (d/entity db [:tx/mutation-uuid mutation-uuid]))]
                 (if (true? (:tx/reverted tx))
@@ -44,9 +44,11 @@
 
           optimistic-tx-inverse
           (when tx-time
-            (->> (db/-search db [nil nil nil tx-time])
-                 (map #(update % :added not))
-                 (map (fn [[e a v _ added]] [(if added :db/add :db/retract) e a v]))
+            (->> (into []
+                       (comp (filter (fn [[e]] (not= e tx-entity)))
+                             (map #(update % :added not))
+                             (map (fn [[e a v _ added]] [(if added :db/add :db/retract) e a v])))
+                       (db/-search db [nil nil nil tx-time]))
                  (cons {:tx/mutation-uuid mutation-uuid :tx/reverted true})))
 
           real-tx
@@ -139,6 +141,15 @@
       :else
       (transact db val))))
 
+(defn split-mutations [novelty]
+  (letfn [(mutation? [k] (symbol? k))]
+    (reduce-kv (fn [[mutations reads] k v]
+                 (if (mutation? k)
+                   [(assoc mutations k v) reads]
+                   [mutations (assoc reads k v)]))
+               [{} {}]
+               novelty)))
+
 (defn merge-novelty-by-key
   ;; TODO: Add comment when this has stabilized.
   "Merges server response for each [k v] in novelty. Returns the next db and the keys to re-read."
@@ -146,9 +157,11 @@
   {:pre [(methods merge-fn) (db/db? db)]
    :post [(:keys %) (db/db? (:next %))]}
   ;; Merge :datascript/schema first if it exists
-  (let [keys-to-merge-first [:datascript/schema :user/current]
-        ordered-novelty (concat (select-keys novelty keys-to-merge-first)
-                                (apply dissoc novelty keys-to-merge-first))]
+  (let [keys-to-merge-first (select-keys novelty [:datascript/schema :user/current])
+        other-novelty (apply dissoc novelty keys-to-merge-first)
+        [mutations reads] (split-mutations other-novelty)
+        ;; Merge symbols before keywords, but merge some keys first, always..?
+        ordered-novelty (concat keys-to-merge-first mutations reads)]
     (reduce
       (fn [{:keys [next] :as m} [key value]]
         (debug "Merging response for key:" key "value:" value)

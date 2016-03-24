@@ -122,13 +122,12 @@
                                  ;; and different dependencies.
                                  ["shell" "bash" "-c"
                                   "export FIGWHEEL_PORT=3450; lein with-profile web figwheel dev"]]
+            "figwheel-test"     ^{:doc "Start figwheel for web"}
+                                ["do"
+                                 ["shell" "bash" "-c"
+                                  "export FIGWHEEL_PORT=3450; lein with-profile web figwheel test"]]
             "figwheel-web+test" ^{:doc "Start figwheel for web"}
                                 ["do"
-                                 ;; Exporting an environment variable for figwheel port
-                                 ;; as it's only configurable globally (per project.clj file).
-                                 ;; This port should differ from the one running figwheel-ios,
-                                 ;; because they need to be running lein with different profiles
-                                 ;; and different dependencies.
                                  ["shell" "bash" "-c"
                                   "export FIGWHEEL_PORT=3450; lein with-profile web figwheel dev test"]]
 }

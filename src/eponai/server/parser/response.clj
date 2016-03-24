@@ -41,10 +41,10 @@
                                                            (email/button-title user-status)
                                                            (email/link-message user-status))
                         :text-content #(email/text-content % user-status)
-                        :subject      (email/subject user-status)}))))
-  (-> response
-      (update :result dissoc :email-chan)
-      (update :result dissoc :status)))
+                        :subject      (email/subject user-status)
+                        :device (get-in response [:result :device])}))))
+  ;; TODO: What's the plan here? Do we really just want to return nil?
+  (update response :result dissoc :email-chan :status :device))
 
 (defmethod response-handler 'budget/share
   [{:keys [::m/send-email-fn]} _ response]

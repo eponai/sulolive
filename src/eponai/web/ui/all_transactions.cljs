@@ -3,6 +3,7 @@
             [eponai.web.ui.add-transaction :refer [->AddTransaction AddTransaction]]
             [eponai.web.ui.format :as f]
             [eponai.web.ui.datepicker :refer [->Datepicker]]
+            [eponai.client.lib.transactions :as lib.t]
             [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
             [eponai.web.ui.utils :as utils]
             [eponai.common.format :as format]
@@ -118,40 +119,6 @@
 (defn get-selected-transaction [props]
   (get-in props [:query/selected-transaction
                  :ui.component.transactions/selected-transaction]))
-
-(defn mark-removed-tags
-  "Takes an edited transaction and an original transaction, marks every removed tag
-  with :removed true."
-  [edited original]
-  (let [original-tags-by-name (group-by :tag/name (:transaction/tags original))]
-    (cond-> edited
-            (or (seq (:transaction/tags original))
-                (seq (:transaction/tags edited)))
-            (update :transaction/tags
-              (fn [tags]
-                (let [edited-tags-names (into #{} (map :tag/name) tags)
-                      removed-tags (set/difference (set (keys original-tags-by-name))
-                                                   edited-tags-names)]
-                  (into tags (comp (mapcat
-                                     (fn [tags] (map #(assoc % :tag/removed true) tags)))
-                                   (remove
-                                     #(and (:db/id %) (not (:tag/removed %)))))
-                        (vals (select-keys original-tags-by-name removed-tags)))))))))
-
-(defn filter-changed-fields [edited original]
-  (let [tag-set-fn (fn [tags] (set (map #(select-keys % [:tag/name :tag/removed]) tags)))
-        changed-fields (reduce-kv 
-                         (fn [m k v]
-                           (let [init-v (get original k)
-                                 equal? (if (= :transaction/tags k)
-                                          (= (tag-set-fn v)
-                                             (tag-set-fn init-v))
-                                          (= v init-v))]
-                             (cond-> m
-                                     (not equal?) (assoc k v))))
-                         {}
-                         edited)]
-    changed-fields))
 
 (defui SelectedTransaction
   static om/IQuery
@@ -306,8 +273,8 @@
              (opts {:style {:display        :flex
                             :flex-direction :row-reverse}})
              [:a.button.primary
-              (merge {:on-click #(om/transact! this `[(transaction/edit ~(-> (mark-removed-tags input-state init-state)
-                                                                             (filter-changed-fields init-state)
+              (merge {:on-click #(om/transact! this `[(transaction/edit ~(-> input-state
+                                                                             (lib.t/diff-transaction init-state)
                                                                              (assoc :transaction/uuid uuid)
                                                                              (assoc :db/id (:db/id transaction))
                                                                              (assoc :mutation-uuid (d/squuid))))

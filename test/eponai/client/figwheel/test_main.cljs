@@ -6,7 +6,7 @@
 
 (def favicons {:success {:type "image/png"
                          :href "/test/favicon/green.ico"}
-               :failure {:type "image/gif"
+               :failure {:type "image/png"
                          :href "/test/favicon/red.ico"}
                :warning {:type "image/png"
                          :href "/test/favicon/warning.ico"}})

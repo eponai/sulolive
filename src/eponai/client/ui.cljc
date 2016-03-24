@@ -19,6 +19,7 @@
   (map f coll))
 
 (defn ->camelCase [k]
+  {:pre [(keyword? k)]}
   (when (namespace k)
     (throw (str "cannot camelCase a keyword with a namespace. key=" k)))
   (let [[a & xs] (s/split (name k) #"-")]
@@ -28,11 +29,11 @@
 ;; TODO: Make this a macro, so that the transformations are made in compile time
 (let [camel-case (memoize ->camelCase)]
   (defn style* [style-map]
-    (->> style-map
-         (reduce-kv (fn [acc k v]
-                      (assoc! acc (camel-case k) v))
-                    (transient {}))
-         persistent!)))
+     (->> style-map
+          (reduce-kv (fn [acc k v]
+                       (assoc! acc (camel-case k) v))
+                     (transient {}))
+          persistent!)))
 
 (defn should-inline-style? [m]
   (and (map? m)
@@ -78,6 +79,34 @@
            ret# (if inline-style#
                   inline-style#
                   (style* ~m))]
-       (warn "Using deprecated (style {}) macro. Use the opts macro with a :style key instead.")
       (apply merge {:style (cljs.core/clj->js ret#)}
              ~ms))))
+
+;; Deep camelCase map macro -------------
+
+(let [camel-case (memoize ->camelCase)]
+  (defn camel*
+    ([x] (camel* x identity))
+    ([x symbol-fn]
+     {:pre [(fn? symbol-fn)]}
+     (if-not (map? x)
+       x
+       (persistent!
+         (reduce-kv (fn [m k v]
+                      (assoc! m (keyword (camel-case k))
+                              (cond
+                                (map? v) (camel* v symbol-fn)
+                                (symbol? v) (symbol-fn v)
+                                :else v)))
+                    (transient {})
+                    x))))))
+
+(defmacro camel
+  "camelCases every key in the map recursively and in child maps."
+  [m]
+  (let [inline-style (when (map? m)
+                       (camel* m (fn [v] `(camel* ~v))))]
+    `(let [inline# ~inline-style]
+       (if inline#
+         inline#
+         (camel* ~m)))))

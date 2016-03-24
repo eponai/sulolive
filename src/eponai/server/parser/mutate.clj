@@ -79,10 +79,17 @@
              (transact/mutate-one state mutation-uuid [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]]))})
 
 (defmethod mutate 'signup/email
-  [{:keys [state]} _ params]
+  [{:keys [state]} k {:keys [device] :as params}]
   (debug "signup/email with params:" params)
   {:action (fn []
-             (api/signin state (:input-email params)))})
+             ;; TODO: Need a more generic way of specifying required parameters for mutations.
+             (when-not device
+               (throw (ex-info (str "No device specified for " k
+                                    ". Specify :device with either :web, :ios or whatever"
+                                    " send email needs.")
+                               {:mutation k :params params})))
+             (-> (api/signin state (:input-email params))
+                 (assoc :device device)))})
 
 (defmethod mutate 'stripe/charge
   [{:keys [state]} _ {:keys [token] :as p}]

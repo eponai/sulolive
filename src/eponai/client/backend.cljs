@@ -38,7 +38,7 @@
                              :body   body
                              :TODO   "Handle HTTP errors better."}))))
         (catch :default e
-          (trace "Error when posting query to remote:" remote-key "error:" e)
+          (error "Error when posting query to remote:" remote-key "error:" e)
           (throw e))))))
 
 (defn send!

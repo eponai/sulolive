@@ -1,12 +1,13 @@
 (ns eponai.mobile.om-helper
   (:require [om.next :as om]
-            [taoensso.timbre :refer-macros [debug]]))
+            [taoensso.timbre :refer-macros [debug warn]]))
 
 (defn react-ref
   "Wrapper around react-ref to always turn keywords into strings."
   [component ref]
   {:pre [(or (keyword? ref) (string? ref))]}
-  (om/react-ref component (cond-> ref (keyword? ref) str)))
+  (some-> component
+    (om/react-ref (cond-> ref (keyword? ref) str))))
 
 (defn get-ref-in
   "Gets react ref in components. Like get-in, but with a component
@@ -26,8 +27,10 @@
   [x refs subquery-class]
   {:pre [(every? #(or (keyword? %) (string? %)) refs)
          (fn? subquery-class)]}
-  (if (and (om/component? x) (om/mounted? x))
-    (om/get-query (get-ref-in x refs))
+  (if-let [ref-component (and (om/component? x)
+                              (om/mounted? x)
+                              (get-ref-in x refs))]
+    (om/get-query ref-component)
     (and (om/iquery? subquery-class)
          (om/get-query subquery-class))))
 

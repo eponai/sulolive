@@ -2,6 +2,7 @@
   (:require [eponai.client.route-helper :refer [map->UiComponentMatch]]
             [eponai.mobile.ios.ui.landing :refer [Login ->Login]]
             [eponai.mobile.ios.ui.transactions :refer [Transactions ->Transactions]]
+            [eponai.mobile.ios.ui.tabs :refer [Tabs ->Tabs]]
             [om.next :as om]))
 
 (def login-handler
@@ -14,5 +15,5 @@
 
 (def route-handler->ui-component
   {:route/login login-handler
-   :route/transactions (map->UiComponentMatch {:component Transactions
-                                               :factory ->Transactions})})
+   :route/transactions (map->UiComponentMatch {:component Tabs
+                                               :factory ->Tabs})})

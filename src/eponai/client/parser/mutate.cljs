@@ -22,7 +22,7 @@
 
 (defmethod mutate 'transaction/edit
   [{:keys [state mutation-uuid]} _ {:keys [transaction/uuid] :as transaction}]
-  (debug "transaction/edit with params:" transaction)
+  (debug "transaction/edit with params:" transaction "mutation-uuid: " mutation-uuid)
   {:action (fn []
              {:pre [(some? uuid)]}
              (let [txs (format/transaction-edit transaction)]

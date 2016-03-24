@@ -59,7 +59,7 @@
             {:class    "button primary"
              :on-click #(do
                          (om/update-state! this assoc :verification-sent true)
-                         (om/transact! this `[(signup/email ~st)]))}
+                         (om/transact! this `[(signup/email ~(assoc st :device :web))]))}
             "Sign In"]]
 
           [:br]
