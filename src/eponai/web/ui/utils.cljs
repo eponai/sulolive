@@ -74,7 +74,8 @@
                          on-change
                          on-add-tag
                          on-delete-tag
-                         placeholder]}]
+                         placeholder
+                         no-render-tags?]}]
   (html
     [:div
      [:div.input-group
@@ -88,12 +89,13 @@
       [:span.input-group-label
        [:i.fa.fa-tag]]]
 
-     [:div
-      (map-all
-        selected-tags
-        (fn [t]
-          (tag t
-               {:on-delete #(on-delete-tag t)})))]]))
+     (when-not no-render-tags?
+       [:div
+        (map-all
+          selected-tags
+          (fn [t]
+            (tag t
+                 {:on-delete #(on-delete-tag t)})))])]))
 
 (defn on-change-in
   "Function that updates state in component c with assoc-in for the specified keys ks.

@@ -214,6 +214,13 @@
   :db/doc                "Filter exclude tags."
   :db.install/_attribute :db.part/db}
 
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :filter/last-x-days
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Filter time span since X days."
+  :db.install/_attribute :db.part/db}
+
  ;; ------------------ Datomic transaction metadata
  ;; --- Not to be confused with jourmoney transactions.
  {:db/id                 #db/id[:db.part/db]

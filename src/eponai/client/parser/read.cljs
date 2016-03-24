@@ -46,8 +46,17 @@
 (def query-local-transactions
   (parser.util/cache-last-read
     (fn
-      [{:keys [db query]} _ p]
-      {:value (p/pull-many db query (p/find-transactions db p))})))
+      [{:keys [db query parser] :as env} _ p]
+      (let [
+            tx-ids (p/find-transactions db p)
+            {:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])
+            _ (debug "Pulled user: " current-user)
+            transactions (p/txs-with-conversions db
+                                                 query
+                                                 {:user/uuid (:user/uuid current-user)
+                                                  :tx-ids    tx-ids})]
+        (debug "found transactions " transactions)
+        {:value transactions}))))
 
 (defmethod read :query/transactions
   [{:keys [db target ast] :as env} k {:keys [filter]}]

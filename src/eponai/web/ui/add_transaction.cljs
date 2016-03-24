@@ -49,9 +49,8 @@
                              (assoc :transaction/uuid (d/squuid))
                              (assoc :transaction/created-at (.getTime (js/Date.)))
                              (update :transaction/date (fn [d] {:date/ymd (f/date->ymd-string d)}))))
-                      :proxy/all-transactions
-                      :query/dashboard
-                      :query/all-budgets])))
+                      :query/transactions
+                      :query/dashboard])))
 
   (toggle-input-type [this]
     (let [{:keys [input-transaction]} (om/get-state this)
@@ -130,7 +129,7 @@
                    :on-change   (utils/on-change-in this [:input-transaction :transaction/amount])})]
 
            [:select.input-group-field
-            (opts {:on-change     (utils/on-change-in this [:input-transaction :transaction/currency] #([:currency/code %]))
+            (opts {:on-change     (utils/on-change-in this [:input-transaction :transaction/currency :currency/code])
                    :default-value currency})
             (map-all all-currencies
                      (fn [{:keys [currency/code]}]

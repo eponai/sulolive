@@ -128,7 +128,8 @@
       (om/update-state! this assoc :is-editing? false)))
 
   (initLocalState [_]
-    {:cols {:lg 4 :md 3 :sm 2 :xs 1 :xxs 1}})
+    {:cols {:lg 4 :md 3 :sm 2 :xs 1 :xxs 1}
+     :add-widget? false})
   (render [this]
     (let [{:keys [query/dashboard
                   proxy/new-widget]} (om/props this)

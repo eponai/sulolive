@@ -202,7 +202,7 @@
                                     (or (= k :filter/start-date)
                                         (= k :filter/end-date))
                                     ;; These are dates, create a date entity
-                                    (str->date (date->ymd-string v))))
+                                    (str->date v)))
         clean-filters (reduce
                         (fn [m [k v]]
                           (let [ent (filter-value-format k v)]

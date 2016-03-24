@@ -10,7 +10,9 @@
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
             [taoensso.timbre :refer-macros [debug]]
-            [datascript.core :as d]))
+            [datascript.core :as d]
+            [cljs-time.core :as time]
+            [cljs-time.coerce :as coerce]))
 
 ;; ################### Om next components ###################
 
@@ -317,6 +319,48 @@
 
 (def ->SelectedTransaction (om/factory SelectedTransaction))
 
+(defn filter-settings [component]
+  (let [{:keys [input-filter date-filter]} (om/get-state component)]
+    (html
+      [:div.transaction-filters
+       [:div.row.small-up-1.medium-up-3.large-up-4
+        (opts {:style {:padding "1em 0"}})
+        [:div.column
+         (utils/tag-filter component (:filter/include-tags input-filter))]
+
+        [:div.column
+         [:select
+          (opts {:on-change #(.update-date-filter component (.-value (.-target %)))})
+          [:option
+           {:value :all-time}
+           "all time"]
+          [:option
+           {:value :this-month}
+           "this month"]
+          [:option
+           {:value :last-7-days}
+           "last 7 days"]
+          [:option
+           {:value :last-30-days}
+           "last 30 days"]
+          [:option
+           {:value :date-range}
+           "custom..."]]]
+        (when (= :date-range date-filter)
+          [:div.column
+           (->Datepicker
+             (opts {:key         ["From date..."]
+                    :placeholder "From date..."
+                    :value       (:filter/start-date input-filter)
+                    :on-change   #(utils/select-date-filter component :filter/start-date %)}))])
+        (when (= :date-range date-filter)
+          [:div.column
+           (->Datepicker
+             (opts {:key         ["To date..."]
+                    :placeholder "To date..."
+                    :value       (:filter/end-date input-filter)
+                    :on-change   #(utils/select-date-filter component :filter/end-date %)
+                    :min-date    (:filter/start-date input-filter)}))])]])))
 
 (defui AllTransactions
   static om/IQueryParams
@@ -345,51 +389,68 @@
   (deselect-transaction [this]
     (om/transact! this `[(transactions/deselect)]))
 
+  (set-this-month-filter [this]
+    (let [update-filter-fn (fn [filter]
+                             (-> filter
+                                 (dissoc :filter/end-date :filter/last-x-days)
+                                 (assoc :filter/start-date (let [today (time/today)
+                                                                 year (time/year today)
+                                                                 month (time/month today)]
+                                                             (coerce/to-date (time/date-time year month 1))))))]
+      (om/update-state! this update :input-filter update-filter-fn)
+      (utils/update-filter this (:input-filter (om/get-state this)))))
+  
+  (set-last-x-days-filter [this span]
+    (om/update-state! this update :input-filter (fn [filter]
+                                                  (-> filter
+                                                      (dissoc :filter/end-date :filter/start-date)
+                                                      (assoc :filter/last-x-days span))))
+    (utils/update-filter this (:input-filter (om/get-state this))))
+
+  (reset-date-filters [this]
+    (om/update-state! this update :input-filter dissoc :filter/start-date :filter/end-date :filter/last-x-days)
+    (utils/update-filter this (:input-filter (om/get-state this))))
+
+  (update-date-filter [this value]
+    (let [time-type (cljs.reader/read-string value)]
+      (cond
+        (= time-type :all-time) (.reset-date-filters this)
+        (= time-type :last-7-days) (.set-last-x-days-filter this 7)
+        (= time-type :last-30-days) (.set-last-x-days-filter this 30)
+        (= time-type :this-month) (.set-this-month-filter this)
+        true (om/update-state! this update :input-filter dissoc :filter/last-x-days))
+      (om/update-state! this assoc :date-filter time-type)))
+
   (render [this]
     (let [{transactions          :query/transactions
            user                  :query/current-user
            sel-transaction-props :proxy/selected-transaction} (om/props this)
-          selected-transaction (get-selected-transaction sel-transaction-props)
-          {:keys [input-filter]} (om/get-state this)]
+          selected-transaction (get-selected-transaction sel-transaction-props)]
       (html
         [:div
-         [:div.callout.secondary.transaction-filters
-          [:div.row.small-up-1.medium-up-2.large-up-3
-           [:div.column
-            (utils/tag-filter this (:filter/include-tags input-filter))]
-           [:div.column
-            (->Datepicker
-              (opts {:key         ["From date..."]
-                     :placeholder "From date..."
-                     :value       (:filter/start-date input-filter)
-                     :on-change   #(utils/select-date-filter this :filter/start-date %)}))]
-           [:div.column
-            (->Datepicker
-              (opts {:key         ["To date..."]
-                     :placeholder "To date..."
-                     :value       (:filter/end-date input-filter)
-                     :on-change   #(utils/select-date-filter this :filter/end-date %)}))]]]
-         [:div.transactions
-          (opts {:class (if selected-transaction "transaction-selected" "")
-                 :style {:display        :flex
-                         :flex-direction :row}})
-          [:div.transaction-list
-           [:table
-            (opts {:style {:width "100%"}})
-            [:tbody
-             (map (fn [props]
-                    (->Transaction
-                      (om/computed props
-                                   {:user         user
-                                    :on-select    #(.select-transaction this %)
-                                    :on-deselect  #(.deselect-transaction this)
-                                    :is-selected  (= (:db/id selected-transaction)
-                                                     (:db/id props))
-                                    :on-tag-click #(utils/add-tag-filter this %)})))
-                  (sort-by :transaction/created-at > transactions))]]]
-          [:div.edit-transaction-form
+         (filter-settings this)
+         [:div#all-transactions
+          [:div.transactions
+           (opts {:class (if selected-transaction "transaction-selected" "")
+                  :style {:display        :flex
+                          :flex-direction :row}})
+           [:div.transaction-list
+            [:table
+             (opts {:style {:width "100%"}})
+             [:tbody
+              (map (fn [props]
+                     (->Transaction
+                       (om/computed props
+                                    {:user         user
+                                     :on-select    #(.select-transaction this %)
+                                     :on-deselect  #(.deselect-transaction this)
+                                     :is-selected  (= (:db/id selected-transaction)
+                                                      (:db/id props))
+                                     :on-tag-click #(utils/add-tag-filter this %)})))
+                   (sort-by :transaction/created-at > transactions))]]]
+           [:div.edit-transaction-form
 
-           (->SelectedTransaction (om/computed sel-transaction-props
-                                               {:on-close #(.deselect-transaction this)}))]]]))))
+            (->SelectedTransaction (om/computed sel-transaction-props
+                                                {:on-close #(.deselect-transaction this)}))]]]]))))
 
 (def ->AllTransactions (om/factory AllTransactions))

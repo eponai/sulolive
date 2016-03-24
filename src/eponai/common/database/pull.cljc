@@ -6,7 +6,11 @@
     [clojure.walk :as walk]
     #?(:clj
     [datomic.api :as d]
-       :cljs [datascript.core :as d]))
+       :cljs [datascript.core :as d])
+    #?(:clj
+    [clj-time.core :as time]
+       :cljs [cljs-time.core :as time])
+    [eponai.common.parser.util :as parser])
   #?(:clj
      (:import (clojure.lang ExceptionInfo)
               (datomic.db Db))))
@@ -178,7 +182,7 @@
      :symbols {filter-sym date-time}}))
 
 (defn transactions
-  [{:keys [filter/start-date filter/end-date filter/include-tags] :as filter}]
+  [{:keys [filter/start-date filter/end-date filter/include-tags filter/last-x-days] :as filter}]
   {:pre [(map? filter)]}
   (cond->
     {}
@@ -187,11 +191,17 @@
                              [?tag :tag/name ?tag-name]]
                   :symbols {'[?tag-name ...] (mapv :tag/name include-tags)}})
 
-    (some? start-date)
-    (merge-query (transaction-date-filter start-date '>=))
 
-    (some? end-date)
-    (merge-query (transaction-date-filter end-date '<=))))
+    (some? last-x-days)
+    (merge-query (transaction-date-filter (time/minus (time/today) (time/days last-x-days)) '>=))
+
+    (nil? last-x-days)
+    (cond->
+      (some? start-date)
+      (merge-query (transaction-date-filter start-date '>=))
+
+      (some? end-date)
+      (merge-query (transaction-date-filter end-date '<=)))))
 
 (defn verifications
   [db user-db-id status]
@@ -211,6 +221,7 @@
 
 (defn find-transactions
   [db {:keys [filter budget-uuid query-params]}]
+  (debug "Find transactions with filter: " filter " budget " budget-uuid)
   (let [pull-params (cond-> {:where '[[?e :transaction/uuid]]}
 
                             (some? query-params)
@@ -221,8 +232,9 @@
 
                             (some? budget-uuid)
                             (merge-query {:where   '[[?e :transaction/budget ?b]
-                                                     [?b :budget/uuid ?uuid]]
-                                          :symbols {'?uuid budget-uuid}}))]
+                                                     [?b :budget/uuid ?budget-uuid]]
+                                          :symbols {'?budget-uuid budget-uuid}}))]
+    (debug "pull-params: " pull-params)
     (all-with db pull-params)))
 
 (defn find-latest-conversion [db {:keys [currency/code user/uuid]}]
@@ -244,3 +256,59 @@
                                               [?co :conversion/date ?d]
                                               [?d :date/timestamp ?t]
                                               [(vector ?t ?co) ?v]]}))))
+
+(defn find-conversions [db tx-ids user-uuid]
+  (all-with db {:find-pattern '[?t ?e ?e2]
+                :symbols      {'[?t ...] tx-ids
+                               '?uuid user-uuid}
+                :where        '[[?t :transaction/date ?d]
+                                [?e :conversion/date ?d]
+                                [?t :transaction/currency ?cur]
+                                [?e :conversion/currency ?cur]
+                                [?u :user/uuid ?uuid]
+                                [?u :user/currency ?u-cur]
+                                [?e2 :conversion/currency ?u-cur]
+                                [?e2 :conversion/date ?d]]}))
+
+(defn conversion-query []
+  (parser/put-db-id-in-query
+    [{:conversion/date [:date/ymd]}
+     :conversion/rate
+     {:conversion/currency [:currency/code]}]))
+
+(defn conversions [db tx-ids user-uuid]
+  (let [tx-conv-uconv (find-conversions db tx-ids user-uuid)
+        tx-convs (map second tx-conv-uconv)
+        user-convs (map last tx-conv-uconv)]
+    (concat (pull-many db (conversion-query) tx-convs)
+            (pull-many db (conversion-query) user-convs))))
+
+(defn txs-with-conversions [db query {:keys [tx-ids user/uuid]}]
+  (let [tx-conv-tuples (find-conversions db tx-ids uuid)
+        tx-convs-by-tx-id (group-by first tx-conv-tuples)
+        transactions (map (fn [tx]
+                            (let [transaction (pull db query tx)
+                                  [[_ tx-conv user-conv]] (get tx-convs-by-tx-id tx)
+                                  #?@(:clj [tx-conv (or tx-conv (find-latest-conversion db (:transaction/currency transaction)))])
+                                  #?@(:clj [user-conv (or user-conv (find-latest-conversion db {:user/uuid uuid}))])]
+                              (if (and (some? tx-conv) (some? user-conv))
+                                (let [;; All rates are relative USD so we need to pull what rates the user currency has,
+                                      ;; so we can convert the rate appropriately for the user's selected currency
+                                      user-currency-conversion (pull db '[:conversion/rate] user-conv)
+                                      transaction-conversion (pull db '[:conversion/rate] tx-conv)]
+                                  (assoc
+                                    transaction
+                                    :transaction/conversion
+                                    ;; Convert the rate from USD to whatever currency the user has set
+                                    ;; (e.g. user is using SEK, so the new rate will be
+                                    ;; conversion-of-transaction-currency / conversion-of-user-currency
+                                    {:conversion/rate
+                                     #?(:clj
+                                        (with-precision 10
+                                          (bigdec (/ (:conversion/rate transaction-conversion)
+                                                     (:conversion/rate user-currency-conversion))))
+                                        :cljs (/ (:conversion/rate transaction-conversion)
+                                                 (:conversion/rate user-currency-conversion)))}))
+                                transaction)))
+                          tx-ids)]
+    transactions))

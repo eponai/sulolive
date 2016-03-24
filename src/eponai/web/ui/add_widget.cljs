@@ -8,7 +8,11 @@
             [eponai.web.ui.utils :as utils]
             [eponai.common.report :as report]
             [taoensso.timbre :refer-macros [debug]]
-            [cljs-time.format :as f]))
+            [cljs-time.format :as f]
+            [eponai.web.routes :as routes]
+            [cljs-time.core :as time]
+            [cljs-time.coerce :as coerce]
+            [eponai.common.format :as format]))
 
 ;;; ####################### Actions ##########################
 
@@ -81,54 +85,44 @@
               (get-in conf [k :text])]]))
         groups)]]))
 
-(defn- chart-filters [component {:keys [filter/include-tags
-                                        filter/start-date
-                                        filter/end-date]}]
-  (html
-    [:div
-     [:h6 "Filters"]
-     (->Datepicker
-       (opts {:key         ["From date..."]
-              :placeholder "From date..."
-              :value       start-date
-              :on-change   #(utils/select-date-filter component :filter/start-date %)}))
-     (->Datepicker
-       (opts {:key         ["To date..."]
-              :placeholder "To date..."
-              :value       end-date
-              :on-change   #(utils/select-date-filter component :filter/end-date %)}))
-     (utils/tag-filter component include-tags)]))
+(defn- chart-filters [component]
+  (let [{:keys [show-filter?]} (om/get-state component)]
+    (html
+      [:div
+       [:hr]
+       (eponai.web.ui.all-transactions/filter-settings component)])))
 
 
 (defn- chart-settings [component {:keys [input-graph input-function input-report input-filter]}]
   (let [{:keys [graph/style]} input-graph]
     (html
       [:div
+       [:hr]
        (cond
          (= style :graph.style/bar)
          [:div
-          [:div.row.small-up-2
+          [:div.row.small-up-2.collapse
            [:div.column
             (chart-function component input-function)]
            [:div.column
             (chart-group-by component input-report [:transaction/tags :transaction/currency])]]
           [:div.row
-           (chart-filters component input-filter)]]
+           (chart-filters component)]]
 
          (= style :graph.style/area)
          [:div
-          [:div.row.small-up-2
+          [:div.row.small-up-2.collapse
            [:div.column
             (chart-function component input-function)]
            [:div.column
             (chart-group-by component input-report [:transaction/date])]]
           [:div.row
-           (chart-filters component input-filter)]]
+           (chart-filters component)]]
 
          (= style :graph.style/number)
          [:div
           (chart-function component input-function)
-          (chart-filters component input-filter)])])))
+          (chart-filters component)])])))
 
 
 ;;;;;;;; ########################## Om Next components ########################
@@ -164,6 +158,51 @@
                           :widget/width  25
                           :widget/height 2}
          :input-filter   {:filter/include-tags #{}}})))
+  (set-this-month-filter [this]
+    (let [update-filter-fn (fn [filter]
+                             (-> filter
+                                 (dissoc :filter/end-date :filter/last-x-days)
+                                 (assoc :filter/start-date (let [today (time/today)
+                                                                 year (time/year today)
+                                                                 month (time/month today)]
+                                                             (coerce/to-date (time/date-time year month 1))))))]
+      (om/update-state! this update :input-filter update-filter-fn)
+      (utils/update-filter this (:input-filter (om/get-state this)))))
+
+  (set-last-x-days-filter [this span]
+    (om/update-state! this update :input-filter (fn [filter]
+                                                  (-> filter
+                                                      (dissoc :filter/end-date :filter/start-date)
+                                                      (assoc :filter/last-x-days span))))
+    (utils/update-filter this (:input-filter (om/get-state this))))
+
+  (reset-date-filters [this]
+    (om/update-state! this update :input-filter dissoc :filter/start-date :filter/end-date :filter/last-x-days)
+    (utils/update-filter this (:input-filter (om/get-state this))))
+
+  (update-date-filter [this value]
+    (let [time-type (cljs.reader/read-string value)]
+      (cond
+        (= time-type :all-time) (.reset-date-filters this)
+        (= time-type :last-7-days) (.set-last-x-days-filter this 7)
+        (= time-type :last-30-days) (.set-last-x-days-filter this 30)
+        (= time-type :this-month) (.set-this-month-filter this)
+        true (om/update-state! this update :input-filter dissoc :filter/last-x-days))
+      (om/update-state! this assoc :date-filter time-type)))
+
+  (format-filters [this]
+    (let [{:keys [input-filter] :as st} (om/get-state this)
+          formatted-filters (reduce (fn [m [k v]]
+                                      (debug "Reducing: " m " k " k " v " v)
+                                      (if (or (= :filter/start-date k)
+                                              (= :filter/end-date k))
+                                        (assoc m k (format/date->ymd-string v))
+                                        (assoc m k v)))
+                                    {}
+                                    input-filter)]
+      (debug "Formatted filters: " formatted-filters)
+      (assoc st :input-filter formatted-filters)))
+
   (render [this]
     (let [{:keys [query/transactions]} (om/props this)
           {:keys [input-graph input-report input-filter] :as state} (om/get-state this)
@@ -174,71 +213,82 @@
                   widget]} (om/get-computed this)
           data (report/generate-data input-report input-filter transactions)]
       (html
-        [:div
-         [:h3 (if widget "Edit widget" "New widget")]
-
-         [:div.row.small-up-1
-          (opts {:style {:padding "0.5em 0"}})
-          [:input
-           {:value       (:report/title input-report)
-            :type        "text"
-            :placeholder "Untitled"
-            :on-change   #(change-report-title this (.-value (.-target %)))}]
-          [:div.column
-           (let [style (:graph/style input-graph)]
-             [:div.button-group
-              [:a
-               (opts {:class    (button-class style :graph.style/bar)
-                      :on-click #(select-graph-style this :graph.style/bar)})
-               "Bar Chart"]
-              [:a
-               (opts {:class    (button-class style :graph.style/area)
-                      :on-click #(select-graph-style this :graph.style/area)})
-               "Area Chart"]
-              [:a
-               (opts {:class    (button-class style :graph.style/number)
-                      :on-click #(select-graph-style this :graph.style/number)})
-               "Number"]])
-           [:div
-            (opts {:style {:height 300}})
-            (->Widget (om/computed {:widget/graph  input-graph
-                                    :widget/report input-report
-                                    :widget/data   data}
-                                   {:data transactions}))]]
-
-          [:div.column
-           (chart-settings this state)]]
-
+        [:div.clearfix
+         [:ul.breadcrumbs
+          [:li
+           [:a
+            {:href (routes/inside "dashboard/" (:budget/uuid (:dashboard/budget dashboard)))}
+            "Dashboard"]]
+          [:li
+           [:span (if widget "Edit widget" "New widget")]]]
+         [:input
+          {:value       (:report/title input-report)
+           :type        "text"
+           :placeholder "Untitled"
+           :on-change   #(change-report-title this (.-value (.-target %)))}]
+         [:hr]
          [:div
-          (opts {:style {:display         :flex
-                         :flex-direction  :row-reverse
-                         :justify-content :space-between}})
-
+          (let [style (:graph/style input-graph)]
+            ;[:div.row]
+            [:fieldset
+             [:input
+              (opts {:type     "radio"
+                     :on-click #(select-graph-style this :graph.style/bar)
+                     :name     "graph"
+                     :id       "graph-bar"
+                     :checked  (= style :graph.style/bar)})]
+             [:label {:for "graph-bar"}
+              "Bar Chart"]
+             [:input
+              (opts {:type     "radio"
+                     :on-click #(select-graph-style this :graph.style/area)
+                     :name     "graph"
+                     :id       "area-chart"
+                     :checked  (= style :graph.style/area)})]
+             [:label {:for "area-chart"}
+              "Area Chart"]
+             [:input
+              (opts {:type     "radio"
+                     :on-click #(select-graph-style this :graph.style/number)
+                     :name     "graph"
+                     :id       "number-chart"
+                     :checked  (= style :graph.style/number)})]
+             [:label {:for "number-chart"}
+              "Number"]])
           [:div
-           (opts {:style {:display        "flex"
-                          :flex-direction "row-reverse"}})
-           [:a.button.secondary
-            {:on-click on-close}
-            "Cancel"]
-           [:a.button.primary
-            {:on-click #(on-save (cond-> state
-                                         true
-                                         (assoc :input-dashboard {:dashboard/uuid (:dashboard/uuid dashboard)})
+           (opts {:style {:height 300}})
+           (->Widget (om/computed {:widget/graph  input-graph
+                                   :widget/report input-report
+                                   :widget/data   data}
+                                  {:data transactions}))]]
 
-                                         (not (:widget/uuid (:input-widget state)))
-                                         (assoc-in [:input-widget :widget/uuid] (d/squuid))
-
-                                         (not (:graph/uuid (:input-graph state)))
-                                         (assoc-in [:input-graph :graph/uuid] (d/squuid))
-
-                                         (not (:report.function/uuid (:input-function state)))
-                                         (assoc-in [:input-function :report.function/uuid] (d/squuid))
-
-                                         (not (:report/uuid (:input-report state)))
-                                         (assoc-in [:input-report :report/uuid] (d/squuid))))}
+         (chart-settings this state)
 
 
-            "Save"]]
+         [:div.float-right
+          [:a.button.secondary
+           {:on-click on-close}
+           "Cancel"]
+          [:a.button.primary
+           {:on-click #(on-save (cond-> (.format-filters this)
+                                        true
+                                        (assoc :input-dashboard {:dashboard/uuid (:dashboard/uuid dashboard)})
+
+                                        (not (:widget/uuid (:input-widget state)))
+                                        (assoc-in [:input-widget :widget/uuid] (d/squuid))
+
+                                        (not (:graph/uuid (:input-graph state)))
+                                        (assoc-in [:input-graph :graph/uuid] (d/squuid))
+
+                                        (not (:report.function/uuid (:input-function state)))
+                                        (assoc-in [:input-function :report.function/uuid] (d/squuid))
+
+                                        (not (:report/uuid (:input-report state)))
+                                        (assoc-in [:input-report :report/uuid] (d/squuid))))}
+
+
+           "Save"]]
+         [:div.float-left
           (when on-delete
             [:a.button.alert
              {:on-click #(do (on-delete widget)
