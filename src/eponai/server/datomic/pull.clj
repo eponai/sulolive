@@ -39,14 +39,15 @@
                                                        [?e2 :conversion/date ?d]]})
         tx-convs-by-tx-id (group-by first tx-conv-tuples)
         transactions (map (fn [tx]
-                            (let [transaction (p/pull db query tx)
-                                  [[_ tx-conv user-conv]] (get tx-convs-by-tx-id tx)
-                                  tx-conv (or tx-conv (p/find-latest-conversion db (:transaction/currency transaction)))
+                            (let [[[_ tx-conv user-conv]] (get tx-convs-by-tx-id tx)
+                                  tx-conv (or tx-conv
+                                              (p/find-latest-conversion db (:transaction/currency (d/entity db tx))))
                                   user-conv (or user-conv (p/find-latest-conversion db {:user/uuid uuid}))]
                               (let [;; All rates are relative USD so we need to pull what rates the user currency has,
                                     ;; so we can convert the rate appropriately for the user's selected currency
                                     user-currency-conversion (p/pull db '[:conversion/rate] user-conv)
-                                    transaction-conversion (p/pull db '[:conversion/rate] tx-conv)]
+                                    transaction-conversion (p/pull db '[:conversion/rate] tx-conv)
+                                    transaction (p/pull db query tx)]
                                 (assoc
                                   transaction
                                   :transaction/conversion
