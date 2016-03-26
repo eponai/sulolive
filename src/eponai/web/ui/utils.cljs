@@ -3,7 +3,9 @@
             [eponai.web.ui.datepicker :refer [->Datepicker]]
             [sablono.core :refer-macros [html]]
             [om.next :as om]
-            [taoensso.timbre :refer-macros [debug]]))
+            [taoensso.timbre :refer-macros [debug]]
+            [eponai.common.format :as format]
+            [datascript.core :as d]))
 
 (defonce reconciler-atom (atom nil))
 
@@ -154,3 +156,25 @@
     (om/update-state! component assoc
                       :input-filter new-filters)
     (update-filter component new-filters)))
+
+;;############## Drag-drop transactions #############
+
+(defn on-drag-transaction-start [_ tx-uuid event]
+  (.. event -dataTransfer (setData "uuid-str" (str tx-uuid))))
+
+(defn on-drag-transaction-over [component budget-uuid event]
+  (let [{:keys [drag-over]} (om/get-state component)]
+    (.preventDefault event)
+    (when-not (= drag-over budget-uuid)
+      (om/update-state! component assoc :drag-over budget-uuid))))
+
+(defn on-drag-transaction-leave [component _]
+  (om/update-state! component dissoc :drag-over))
+
+(defn on-drop-transaction [component budget-uuid event]
+  (.preventDefault event)
+  (let [t-uuid (.. event -dataTransfer (getData "uuid-str"))]
+    (om/transact! component `[(transaction/edit ~{:transaction/uuid   (format/str->uuid t-uuid)
+                                                  :transaction/budget {:budget/uuid (str budget-uuid)}
+                                                  :mutation-uuid      (d/squuid)})])
+    (om/update-state! component dissoc :drag-over)))

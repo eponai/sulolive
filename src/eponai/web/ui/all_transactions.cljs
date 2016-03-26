@@ -50,10 +50,18 @@
           {:keys [tooltip-visible?]} (om/get-state this)]
       (html
         [:tr
-         (opts {:key      [uuid]
-                :class (if is-selected "is-selected" "")})
+         (opts {:key         [uuid]
+                :id          (str uuid)
+                :class       (if is-selected "is-selected" "")
+                :draggable   true
+                :onDragStart #(utils/on-drag-transaction-start this (str uuid) %)})
+
          ;[:td
          ; [:a.secondary.move-transaction
+         ;  {:draggable   true
+         ;   :onDragStart (fn [e]
+         ;                  (debug "Drag id: " (str uuid))
+         ;                  (.. e -dataTransfer (setData "text" uuid)))}
          ;  [:i.fa.fa-th]]]
 
          [:td

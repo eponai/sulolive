@@ -144,10 +144,10 @@
           React (.-React js/window)]
       (html
         [:div
-         [:a.button.secondary
+         [:a.button.hollow
           (opts {:on-click #(om/update-state! this assoc :add-widget? true)
                  :style {:margin "0.5em"}})
-          "Add widget"]
+          [:span "Add widget"]]
 
          (when (and layout
                     grid-element)

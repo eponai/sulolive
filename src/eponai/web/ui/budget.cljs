@@ -30,7 +30,7 @@
      {:proxy/all-transactions (om/get-query AllTransactions)}])
   Object
   (init-state [_]
-    {:content :dashboard})
+    {:content :transactions})
   (initLocalState [this]
     (.init-state this))
 

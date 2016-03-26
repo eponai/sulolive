@@ -10,7 +10,9 @@
             [garden.core :refer [css]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
-            [datascript.core :as d]))
+            [datascript.core :as d]
+            [taoensso.timbre :refer-macros [debug]]
+            [eponai.common.format :as format]))
 
 ;;;;; ###################### Actions ####################
 
@@ -228,7 +230,7 @@
   (render [this]
     (let [{:keys [query/all-budgets]} (om/props this)
           {:keys [on-close]} (om/get-computed this)
-          {:keys [new-budget?]} (om/get-state this)]
+          {:keys [new-budget? drag-over]} (om/get-state this)]
       (html
         [:div
          [:div
@@ -272,8 +274,12 @@
               (fn [budget]
                 [:li
                  (opts {:key [(:budget/uuid budget)]})
-                 [:a {:href (routes/inside "/dashboard/" (:budget/uuid budget))
-                      :on-click on-close}
+                 [:a {:href          (routes/inside "/dashboard/" (:budget/uuid budget))
+                      :class         (if (= drag-over (:budget/uuid budget)) "drag-over" "")
+                      :on-click      on-close
+                      :on-drag-over  #(utils/on-drag-transaction-over this (:budget/uuid budget) %)
+                      :on-drag-leave #(utils/on-drag-transaction-leave this %)
+                      :on-drop       #(utils/on-drop-transaction this (:budget/uuid budget) %)}
                   (or (:budget/name budget) "Untitled")]])
               all-budgets)
 
