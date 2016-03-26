@@ -189,9 +189,9 @@
              [:a.button.warning.small
               {:href  (routes/inside "/subscribe/")}
               "Upgrade"]]
-            [:li
-             [:a
-              [:i.fa.fa-bell]]]
+            ;[:li
+            ; [:a
+            ;  [:i.fa.fa-bell]]]
             [:li.has-submenu
              [:img
               (opts {:class    "img-circle"
@@ -218,7 +218,9 @@
   (query [_]
     [{:query/all-budgets [:budget/uuid
                           :budget/name
-                          :budget/created-at]}
+                          :budget/created-at
+                          {:budget/created-by [:user/uuid
+                                               :user/email]}]}
      {:query/current-user [:user/uuid
                            :user/activated-at]}
      {:query/active-budget [:ui.component.budget/uuid]}])
@@ -233,7 +235,8 @@
                          :query/all-budgets]))
   (render [this]
     (let [{:keys [query/all-budgets
-                  query/active-budget]} (om/props this)
+                  query/active-budget
+                  query/current-user]} (om/props this)
           {:keys [on-close]} (om/get-computed this)
           {:keys [new-budget? drop-target]} (om/get-state this)]
       (debug "Active budget: " active-budget)
@@ -286,7 +289,9 @@
                       :on-drag-over  #(utils/on-drag-transaction-over this budget-uuid %)
                       :on-drag-leave #(utils/on-drag-transaction-leave this %)
                       :on-drop       #(utils/on-drop-transaction this budget-uuid %)}
-                  (or (:budget/name budget) "Untitled")]])
+                  [:span (or (:budget/name budget) "Untitled")]
+                  (when-not (= (:user/uuid (:budget/created-by budget)) (:user/uuid current-user))
+                    [:small " by " (:user/email (:budget/created-by budget))])]])
               all-budgets)
 
             [:li

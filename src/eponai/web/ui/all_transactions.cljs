@@ -1,5 +1,6 @@
 (ns eponai.web.ui.all-transactions
   (:require [clojure.set :as set]
+            [eponai.web.ui.add-transaction :refer [->AddTransaction AddTransaction]]
             [eponai.web.ui.format :as f]
             [eponai.web.ui.datepicker :refer [->Datepicker]]
             [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
@@ -384,7 +385,8 @@
      {:query/current-user [:user/uuid
                            {:user/currency [:currency/code
                                             :currency/symbol-native]}]}
-     {:proxy/selected-transaction (om/get-query SelectedTransaction)}])
+     {:proxy/selected-transaction (om/get-query SelectedTransaction)}
+     {:proxy/add-transaction (om/get-query AddTransaction)}])
 
   Object
   (initLocalState [_]
@@ -435,33 +437,75 @@
   (render [this]
     (let [{transactions          :query/transactions
            user                  :query/current-user
-           sel-transaction-props :proxy/selected-transaction} (om/props this)
-          selected-transaction (get-selected-transaction sel-transaction-props)]
+           sel-transaction-props :proxy/selected-transaction
+           add-transaction       :proxy/add-transaction} (om/props this)
+          selected-transaction (get-selected-transaction sel-transaction-props)
+          {:keys [input-filter add-transaction?]} (om/get-state this)]
+      (println "Input-filter: " input-filter)
+      (prn "Has filter: " (some? (or (seq (:filter/include-tags input-filter))
+                                     (seq (:filter/exclude-tags input-filter))
+                                     (:filter/start-date input-filter)
+                                     (:filter/end-date input-filter))))
       (html
         [:div
-         (filter-settings this)
-         [:div#all-transactions
-          [:div.transactions
-           (opts {:class (if selected-transaction "transaction-selected" "")
-                  :style {:display        :flex
-                          :flex-direction :row}})
-           [:div.transaction-list
-            [:table
-             (opts {:style {:width "100%"}})
-             [:tbody
-              (map (fn [props]
-                     (->Transaction
-                       (om/computed props
-                                    {:user         user
-                                     :on-select    #(.select-transaction this %)
-                                     :on-deselect  #(.deselect-transaction this)
-                                     :is-selected  (= (:db/id selected-transaction)
-                                                      (:db/id props))
-                                     :on-tag-click #(utils/add-tag-filter this %)})))
-                   (sort-by :transaction/created-at > transactions))]]]
-           [:div.edit-transaction-form
+         (if (or (seq transactions)
+                 (some? (or (seq (:filter/include-tags input-filter))
+                            (seq (:filter/exclude-tags input-filter))
+                            (:filter/start-date input-filter)
+                            (:filter/end-date input-filter))))
+           [:div
+            (filter-settings this)
+            [:div#all-transactions
+             (if (seq transactions)
+               [:div.transactions
+                (opts {:class (if selected-transaction "transaction-selected" "")
+                       :style {:display        :flex
+                               :flex-direction :row}})
+                [:div.transaction-list
+                 [:table
+                  (opts {:style {:width "100%"}})
+                  [:tbody
+                   (map (fn [props]
+                          (->Transaction
+                            (om/computed props
+                                         {:user         user
+                                          :on-select    #(.select-transaction this %)
+                                          :on-deselect  #(.deselect-transaction this)
+                                          :is-selected  (= (:db/id selected-transaction)
+                                                           (:db/id props))
+                                          :on-tag-click #(utils/add-tag-filter this %)})))
+                        (sort-by :transaction/created-at > transactions))]]]
+                [:div.edit-transaction-form
 
-            (->SelectedTransaction (om/computed sel-transaction-props
-                                                {:on-close #(.deselect-transaction this)}))]]]]))))
+                 (->SelectedTransaction (om/computed sel-transaction-props
+                                                     {:on-close #(.deselect-transaction this)}))]]
+               [:div.empty-message
+                [:div.lead
+                 [:i.fa.fa-search.fa-fw]
+                 "No transactions found with filters."]])]]
+           [:div
+            [:a.button
+             (opts {:style {:visibility :hidden}})
+             "Button"]
+            [:div.empty-message.text-center
+             [:i.fa.fa-usd.fa-4x]
+             [:i.fa.fa-eur.fa-4x]
+             [:i.fa.fa-yen.fa-4x]
+             ;[:i.fa.fa-th-list.fa-5x]
+             [:div.lead
+              "Information underload, no transactions are added."
+              [:br]
+              [:br]
+              "Start tracking your money and "
+              [:a.link
+               {:on-click #(om/update-state! this assoc :add-transaction? true)}
+               "add a transaction"]
+              "."]]])
+         (when add-transaction?
+           (let [on-close #(om/update-state! this assoc :add-transaction? false)]
+             (utils/modal {:content  (->AddTransaction
+                                       (om/computed add-transaction
+                                                    {:on-close on-close}))
+                           :on-close on-close})))]))))
 
 (def ->AllTransactions (om/factory AllTransactions))

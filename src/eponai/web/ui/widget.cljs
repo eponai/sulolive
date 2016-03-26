@@ -35,24 +35,7 @@
           {:keys [on-edit]} (om/get-computed this)]
       (html
         [:div.widget
-         (opts {:style {:border        "1px solid #e7e7e7"
-                        ;:border-radius "0.5em"
-                        :padding       "30px 0 0 0"
-                        :width         "100%"
-                        :height        "100%"
-                        :position      :relative
-                        :box-sizing    :border-box
-                        :background :white}})
-         [:div
-          (opts {:style {:position        :absolute
-                         :top             0
-                         :left            10
-                         :right           0
-                         :height          30
-                         :display         :flex
-                         :flex-direction  :row
-                         :justify-content :space-between
-                         :align-items     :flex-start}})
+         [:div.widget-title
           [:h5
            (:report/title report)]
           [:div.flex-right.widget-menu

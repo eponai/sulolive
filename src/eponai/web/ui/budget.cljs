@@ -70,7 +70,7 @@
     (om/transact! this `[(budget/share ~{:budget/uuid budget-uuid
                                          :user/email email})]))
   (init-state [_]
-    {:content :transactions})
+    {:content :dashboard})
   (initLocalState [this]
     (.init-state this))
 

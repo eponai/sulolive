@@ -85,7 +85,8 @@
   (componentWillReceiveProps [this new-props]
     (let [{:keys [cols]} (om/get-state this)
           widgets (:widget/_dashboard (:query/dashboard new-props))]
-      (om/update-state! this assoc :layout (clj->js (widgets->layout cols widgets)))))
+      (om/update-state! this assoc
+                        :layout (clj->js (widgets->layout cols widgets)))))
 
   (update-layout [this]
     (let [{:keys [cols]} (om/get-state this)
@@ -130,7 +131,8 @@
 
   (initLocalState [_]
     {:cols {:lg 4 :md 3 :sm 2 :xs 1 :xxs 1}
-     :add-widget? false})
+     :add-widget? false
+     :is-loading? true})
   (render [this]
     (let [{:keys [query/dashboard
                   proxy/new-widget]} (om/props this)
@@ -140,6 +142,7 @@
                   edit-widget
                   add-widget?
                   is-editing?
+                  is-loading?
                   cols]} (om/get-state this)
           widgets (:widget/_dashboard dashboard)
           React (.-React js/window)]
@@ -150,8 +153,9 @@
                  :style {:margin "0.5em"}})
           [:span "Add widget"]]
 
-         (when (and layout
-                    grid-element)
+         (if (and layout
+                  grid-element
+                  (seq widgets))
            (.createElement React
                            grid-element
                            #js {:className        (if is-editing? "layout animate" "layout"),
@@ -166,16 +170,27 @@
                                 :onResizeStop     #(.edit-stop this widgets %)
                                 :onDragStart      #(.edit-start this)
                                 :onDragStop       #(.edit-stop this widgets %)}
-                           (clj->js
+                           (into-array
                              (map
                                (fn [widget-props]
                                  (.createElement React
                                                  "div"
-                                                 #js {:key   (str (:widget/uuid widget-props))}
-                                                      (->Widget
-                                                        (om/computed widget-props
-                                                                     {:on-edit #(om/update-state! this assoc :edit-widget %)}))))
-                               (sort-by :widget/index widgets)))))
+                                                 #js {:key (str (:widget/uuid widget-props))}
+                                                 (->Widget
+                                                   (om/computed widget-props
+                                                                {:on-edit #(om/update-state! this assoc :edit-widget %)}))))
+                               (sort-by :widget/index widgets))))
+           [:div.empty-message.text-center
+            [:i.fa.fa-tachometer.fa-5x]
+            [:div.lead
+             "It's a slow day here, your dashboard is empty."
+             [:br]
+             [:br]
+             "Get started with the action and "
+             [:a.link
+              {:on-click #(om/update-state! this assoc :add-widget? true)}
+              "add a new widget"]
+             "."]])
 
          (when add-widget?
            (utils/modal {:content  (->NewWidget (om/computed new-widget

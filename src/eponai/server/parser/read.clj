@@ -61,7 +61,7 @@
 
     {:value (when eid
               (let [dashboard (pull db query (one-with db {:where [['?e :dashboard/budget eid]]}))]
-                (update dashboard :widget/_dashboard #(p/widgets-with-data env %))))}))
+                (update dashboard :widget/_dashboard #(p/widgets-with-data env budget-uuid %))))}))
 
 (defmethod read :query/all-budgets
   [{:keys [db query auth]} _ _]

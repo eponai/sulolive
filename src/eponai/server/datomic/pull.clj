@@ -86,11 +86,12 @@
      {:transaction/date [:date/ymd
                          :date/timestamp]}]))
 
-(defn widgets-with-data [{:keys [db parser] :as env} widgets]
+(defn widgets-with-data [{:keys [db parser] :as env} budget-uuid widgets]
   (map (fn [{:keys [widget/uuid]}]
          (let [widget (p/pull db (widget-report-query) [:widget/uuid uuid])
                {:keys [query/transactions]} (parser env [`({:query/transactions ~(transaction-query)}
-                                                            {:filter ~(:widget/filter widget)})])
+                                                            ~{:filter (:widget/filter widget)
+                                                              :budget-uuid budget-uuid})])
                report-data (report/generate-data (:widget/report widget) (:widget/filter widget) transactions)]
            (assoc widget :widget/data report-data)))
        widgets))
