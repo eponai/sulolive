@@ -186,9 +186,12 @@
                  [:small
                   (str "Trial: 0 days left")])])
             [:li
-             [:a {:class "button warning medium"
-                  :href  (routes/inside "/subscribe/")}
+             [:a.button.warning.small
+              {:href  (routes/inside "/subscribe/")}
               "Upgrade"]]
+            [:li
+             [:a
+              [:i.fa.fa-bell]]]
             [:li.has-submenu
              [:img
               (opts {:class    "img-circle"

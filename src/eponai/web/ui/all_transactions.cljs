@@ -235,7 +235,6 @@
           edited? (not= init-state input-state)
           {:keys [on-close]} (om/get-computed this)
           {:keys [i-class btn-class]} (.ui-config this)]
-      (debug "Selected transactions found: " (map #(count (:transaction/_budget %)) all-budgets))
       (html
         [:div
          (opts {:style {:width "100%"
@@ -264,10 +263,11 @@
                      :placeholder "0.00"
                      :min         "0"
                      :value       amount
-                     :on-change   (utils/on-change-in this [:input-transaction :transaction/amount])})]
+                     :on-change   (utils/on-change-in this [:input-state :transaction/amount])})]
 
              [:select.input-group-field
-              (opts {:on-change     (utils/on-change-in this [:input-transaction :transaction/currency :currency/code])
+              (opts {:on-change     (utils/on-change-in this [:input-state :transaction/currency :currency/code])
+                     :value (name (:currency/code currency))
                      :default-value currency})
               (map-all all-currencies
                        (fn [{:keys [currency/code]}]

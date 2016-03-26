@@ -11,13 +11,13 @@
 (defn update-content [component content]
   (om/update-state! component assoc :content content))
 
-(defn- submenu [component users]
+(defn- submenu [component budget]
   (html
     [:ul.menu
      [:li
       [:a.disabled
        [:i.fa.fa-user]
-       [:small (count users)]]]
+       [:small (count (:budget/users budget))]]]
      [:li
       [:a
        {:on-click #(.share component)}
@@ -39,7 +39,7 @@
       (html
         [:div.clearfix
          [:h3 "Share"]
-         [:label "Invite friend to share this budget:"]
+         [:label "Invite a friend to collaborate on this budget:"]
          [:input
           {:type        "email"
            :value       input-email
@@ -89,7 +89,7 @@
       (html
         [:div
          (nav/->NavbarSubmenu (om/computed {}
-                                           {:content (submenu this (:budget/users budget))}))
+                                           {:content (submenu this budget)}))
          [:div#budget-content
           (cond (= content :dashboard)
                 (->Dashboard dashboard)
