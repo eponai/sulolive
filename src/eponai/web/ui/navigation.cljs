@@ -217,7 +217,8 @@
                           :budget/name
                           :budget/created-at]}
      {:query/current-user [:user/uuid
-                           :user/activated-at]}])
+                           :user/activated-at]}
+     {:query/active-budget [:ui.component.budget/uuid]}])
   Object
   (initLocalState [_]
     {:new-budget? false})
@@ -228,9 +229,11 @@
                                         :mutation-uuid (d/squuid)})
                          :query/all-budgets]))
   (render [this]
-    (let [{:keys [query/all-budgets]} (om/props this)
+    (let [{:keys [query/all-budgets
+                  query/active-budget]} (om/props this)
           {:keys [on-close]} (om/get-computed this)
-          {:keys [new-budget? drag-over]} (om/get-state this)]
+          {:keys [new-budget? drop-target]} (om/get-state this)]
+      (debug "Active budget: " active-budget)
       (html
         [:div
          [:div
@@ -271,15 +274,15 @@
             [:li.divider]
 
             (map
-              (fn [budget]
+              (fn [{budget-uuid :budget/uuid :as budget}]
                 [:li
-                 (opts {:key [(:budget/uuid budget)]})
+                 (opts {:key [budget-uuid]})
                  [:a {:href          (routes/inside "/dashboard/" (:budget/uuid budget))
-                      :class         (if (= drag-over (:budget/uuid budget)) "drag-over" "")
+                      :class         (if (or (= (:ui.component.budget/uuid active-budget) budget-uuid) (= drop-target budget-uuid)) "highlighted" "")
                       :on-click      on-close
-                      :on-drag-over  #(utils/on-drag-transaction-over this (:budget/uuid budget) %)
+                      :on-drag-over  #(utils/on-drag-transaction-over this budget-uuid %)
                       :on-drag-leave #(utils/on-drag-transaction-leave this %)
-                      :on-drop       #(utils/on-drop-transaction this (:budget/uuid budget) %)}
+                      :on-drop       #(utils/on-drop-transaction this budget-uuid %)}
                   (or (:budget/name budget) "Untitled")]])
               all-budgets)
 

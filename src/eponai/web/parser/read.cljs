@@ -1,7 +1,8 @@
 (ns eponai.web.parser.read
   (:require [eponai.client.parser.read :as read]
             [eponai.common.parser :refer [read]]
-            [eponai.common.database.pull :as p]))
+            [eponai.common.database.pull :as p]
+            [taoensso.timbre :refer-macros [debug]]))
 
 ;; ################ Local reads ####################
 ;; Local reads goes here. These are specific to the
@@ -11,9 +12,10 @@
 
 ;; -------- Readers for UI components
 
-(defmethod read :query/budget
+(defmethod read :query/active-budget
   [{:keys [db query]} _ _]
-  {:value (p/pull db query [:ui/singleton :ui.singleton/budget])})
+  (debug "Pulling budget query:" query)
+  {:value (p/pull db query [:ui/component :ui.component/budget])})
 
 (defmethod read :query/selected-transaction
   [{:keys [db query]} _ _]

@@ -82,7 +82,8 @@
       (debug "Reusing old conn. It currently has schema for attributes:" (-> @conn-atom deref :schema keys))
       @conn-atom)
     (let [ui-schema (common.datascript/ui-schema)
-          ui-state [{:ui/singleton :ui.singleton/app}]
+          ui-state [{:ui/singleton :ui.singleton/app}
+                    {:ui/component :ui.component/budget}]
           conn (d/create-conn ui-schema)]
       (d/transact! conn ui-state)
       (reset! conn-atom conn))))

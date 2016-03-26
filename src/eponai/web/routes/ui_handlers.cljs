@@ -16,7 +16,9 @@
                        {:pre [(om/reconciler? reconciler)]}
                        (om/transact! reconciler
                                      `[(budget/set-active-uuid
-                                         {:budget-uuid ~(uuid budget-uuid)})]))}))
+                                         {:budget-uuid ~(uuid budget-uuid)})
+                                       :proxy/side-bar
+                                       ]))}))
 
 (def route-handler->ui-component
   {:route/dashboard    dashboard-handler

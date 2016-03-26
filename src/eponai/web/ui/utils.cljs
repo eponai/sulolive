@@ -163,13 +163,13 @@
   (.. event -dataTransfer (setData "uuid-str" (str tx-uuid))))
 
 (defn on-drag-transaction-over [component budget-uuid event]
-  (let [{:keys [drag-over]} (om/get-state component)]
+  (let [{:keys [drop-target]} (om/get-state component)]
     (.preventDefault event)
-    (when-not (= drag-over budget-uuid)
-      (om/update-state! component assoc :drag-over budget-uuid))))
+    (when-not (= drop-target budget-uuid)
+      (om/update-state! component assoc :drop-target budget-uuid))))
 
 (defn on-drag-transaction-leave [component _]
-  (om/update-state! component dissoc :drag-over))
+  (om/update-state! component dissoc :drop-target))
 
 (defn on-drop-transaction [component budget-uuid event]
   (.preventDefault event)
@@ -177,4 +177,4 @@
     (om/transact! component `[(transaction/edit ~{:transaction/uuid   (format/str->uuid t-uuid)
                                                   :transaction/budget {:budget/uuid (str budget-uuid)}
                                                   :mutation-uuid      (d/squuid)})])
-    (om/update-state! component dissoc :drag-over)))
+    (om/update-state! component dissoc :drop-target)))
