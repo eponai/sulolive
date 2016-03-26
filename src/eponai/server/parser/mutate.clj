@@ -39,6 +39,12 @@
     {:action (fn []
                (transact/mutate state mutation-uuid [budget dashboard]))}))
 
+(defmethod mutate 'budget/share
+  [{:keys [state]} _ {:keys [budget/uuid user/email] :as params}]
+  (debug "budget/save with params: " params)
+  {:action (fn []
+             (api/share-budget state uuid email))})
+
 ;; --------------- Widget ----------------
 
 (defmethod mutate 'widget/save

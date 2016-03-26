@@ -15,6 +15,11 @@
               p/schema
               eponai.datascript/schema-datomic->datascript)})
 
+(defmethod read :user/current
+  [{:keys [db auth]} _ _]
+  {:value (when (:username auth)
+            (common.pull/pull db [:db/id :user/uuid] [:user/uuid (:username auth)]))})
+
 ;; ############## App ################
 
 (defmethod read :query/transactions
@@ -23,7 +28,7 @@
   (let [tx-ids (common.pull/find-transactions db {:budget-uuid  budget-uuid
                                                   :filter       filter
                                                   :query-params {:where   '[[?e :transaction/budget ?b]
-                                                                            [?b :budget/created-by ?u]
+                                                                            [?b :budget/users ?u]
                                                                             [?u :user/uuid ?user-uuid]]
                                                                  :symbols {'?user-uuid (:username auth)}}})]
     {:value (common.pull/txs-with-conversions db query {:tx-ids tx-ids :user/uuid (:username auth)})}))
@@ -33,7 +38,7 @@
   (let [tx-ids (common.pull/find-transactions db {:budget-uuid       budget-uuid
                                                   :filter       filter
                                                   :query-params {:where   '[[?e :transaction/budget ?b]
-                                                                            [?b :budget/created-by ?u]
+                                                                            [?b :budget/users ?u]
                                                                             [?u :user/uuid ?uuid]]
                                                                  :symbols {'?uuid (:username auth)}}})
         tx-conv-uconv (common.pull/find-conversions db tx-ids (:username auth))]
@@ -61,7 +66,7 @@
 (defmethod read :query/all-budgets
   [{:keys [db query auth]} _ _]
   {:value  (common.pull/pull-many db query
-                                  (common.pull/all-with db {:where   '[[?e :budget/created-by ?u]
+                                  (common.pull/all-with db {:where   '[[?e :budget/users ?u]
                                                                        [?u :user/uuid ?user-uuid]]
                                                             :symbols {'?user-uuid (:username auth)}}))})
 

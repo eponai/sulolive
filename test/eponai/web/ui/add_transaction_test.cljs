@@ -16,9 +16,13 @@
             [clojure.test.check.properties :as prop :include-macros true]))
 
 (defn init-state []
-  {:parser (parser/parser)
-   :conn   (d/create-conn (merge (testdata/datascript-schema)
-                                 (common.datascript/ui-schema)))})
+  (let [conn (d/create-conn (merge (testdata/datascript-schema)
+                                   (common.datascript/ui-schema)))]
+    (d/transact conn [{:ui/singleton :ui.singleton/app}
+                      {:ui/singleton :ui.singleton/auth}
+                      {:ui/component :ui.component/budget}])
+    {:parser (parser/parser)
+     :conn   conn}))
 
 
 (defspec

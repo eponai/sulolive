@@ -13,7 +13,7 @@
             [eponai.server.http :as http]
             [taoensso.timbre :refer [debug error info]]
             [environ.core :refer [env]]
-            [eponai.common.format :as format])
+            )
   (:import (datomic.peer LocalConnection)))
 
 ;(defn currency-infos
@@ -142,8 +142,8 @@
             (debug "User already activated, returning user.")
             (pull/lookup-entity (d/db conn) [:user/email email]))
           ; First time activation, set status to active and return user entity.
-          (let [budget (format/budget user-db-id)
-                dashboard (format/dashboard (:db/id budget))
+          (let [budget (common.format/budget user-db-id)
+                dashboard (common.format/dashboard (:db/id budget))
                 activated-db (:db-after (transact conn [[:db/add user-db-id :user/status :user.status/active]
                                                         [:db/add user-db-id :user/activated-at (c/to-long (time/now))]
                                                         [:db/add user-db-id :user/currency [:currency/code "USD"]]
@@ -158,6 +158,40 @@
                                         :data    {:uuid  user-uuid
                                                   :email email}
                                         :message "No user exists for UUID"}))))
+
+(defn share-budget [conn budget-uuid user-email]
+  (let [db (d/db conn)
+        user (pull/lookup-entity db [:user/email user-email])
+        email-chan (chan 1)]
+    (if user
+      ;; If user already exists, check that they are not already sharing this budget.
+      (let [user-budgets (pull/pull db [{:budget/_users [:budget/uuid]}] (:db/id user))
+            grouped (group-by :budget/uuid (:budget/_users user-budgets))]
+        ;; If the user is already sharing this budget, throw an exception.
+        (when (get grouped budget-uuid)
+          (throw (ex-info "User already sharing budget." {:cause ::http/internal-error
+                                                          :data  {:user/email  user-email
+                                                                  :budget/uuid budget-uuid}})))
+        ;; Else create a new verification for the user, to login through their email.
+        ;; We let this verification be unlimited time, as the user invited may not see their email within 15 minutes from the invitation
+        (let [verification (datomic.format/verification user {:verification/time-limit 0})]
+          (transact conn [verification
+                          [:db/add [:budget/uuid budget-uuid] :budget/users [:user/email user-email]]])
+          (put! email-chan verification)
+          {:email-chan email-chan
+           :status     (:user/status user)}))
+
+      ;; If no user exists, create a new account, and verification as normal.
+      ;; And add that user to the users for the budget.
+      ;; TODO: We might want to create an 'invitation' entity, so that it can be pending if the user hasn't accepted to share
+      (let [{:keys [verification]
+             new-user :user
+             :as new-account} (datomic.format/user-account-map user-email {:verification/time-limit 0})]
+        (prn "Transact new user: " new-account)
+        (transact-map conn (assoc new-account :add [:db/add [:budget/uuid budget-uuid] :budget/users (:db/id  new-user)]))
+        (put! email-chan verification)
+        {:email-chan email-chan
+         :status (:user/status new-user)}))))
 
 (defn stripe-charge
   "Subscribe user to a plan in Stripe. Basically create a Stripe customer for this user and subscribe to a plan."

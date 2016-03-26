@@ -72,6 +72,10 @@
     (d/transact new-conn current-entities)
     (d/db new-conn)))
 
+(defn merge-current-user [db _ current-user]
+  (d/db-with db [{:ui/singleton :ui.singleton/auth
+                  :ui.singleton.auth/user current-user}]))
+
 ;;;;;;; API
 
 (defn merge-mutation [merge-fn db key val]
@@ -119,6 +123,9 @@
 
       (= :datascript/schema key)
       (merge-schema db key val)
+
+      (= :user/current key)
+      (merge-current-user db key val)
 
       :else
       (transact db val))))

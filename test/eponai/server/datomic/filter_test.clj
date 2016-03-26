@@ -88,6 +88,7 @@
         {:keys [db-after]} (t/transact conn [{:budget/name       "foo"
                                               :budget/uuid       new-budget-uuid
                                               :budget/created-by [:user/uuid user-uuid]
+                                              :budget/users      [[:user/uuid user-uuid]]
                                               :db/id             (d/tempid :db.part/user)}])
         updated-filters (f/update-filters db-after auth-filters)
         db-after-with-filters (f/apply-filters db-after updated-filters)]

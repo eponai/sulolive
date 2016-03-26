@@ -43,6 +43,10 @@
   [_ _ _]
   {:remote true})
 
+(defmethod read :user/current
+  [_ _ _]
+  {:remote true})
+
 (def query-local-transactions
   (parser.util/cache-last-read
     (fn
@@ -104,9 +108,9 @@
 
 (defmethod read :query/current-user
   [{:keys [db query]} _ _]
-  (let [eid (p/one-with db {:where '[[?e :user/uuid]]})]
-    {:value  (when eid
-               (p/pull db query eid))
+  (let [{:keys [ui.singleton.auth/user]} (p/pull db [:ui.singleton.auth/user] [:ui/singleton :ui.singleton/auth])]
+    {:value  (when (:db/id user)
+               (p/pull db query (:db/id user)))
      :remote true}))
 
 ;; ############ Signup page reader ############

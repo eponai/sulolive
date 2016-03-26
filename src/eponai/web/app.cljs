@@ -31,6 +31,7 @@
   static om/IQuery
   (query [_]
     [:datascript/schema
+     :user/current
      {:proxy/nav-bar (om/get-query nav/NavbarMenu)}
      {:proxy/side-bar (om/get-query nav/SideBar)}
      '{:proxy/app-content ?url/query}
@@ -83,6 +84,7 @@
       @conn-atom)
     (let [ui-schema (common.datascript/ui-schema)
           ui-state [{:ui/singleton :ui.singleton/app}
+                    {:ui/singleton :ui.singleton/auth}
                     {:ui/component :ui.component/budget}]
           conn (d/create-conn ui-schema)]
       (d/transact! conn ui-state)

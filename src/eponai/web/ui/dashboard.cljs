@@ -78,7 +78,8 @@
     [{:query/dashboard [:dashboard/uuid
                         {:widget/_dashboard (om/get-query Widget)}
                         {:dashboard/budget [:budget/uuid
-                                            :budget/name]}]}
+                                            :budget/name
+                                            :budget/users]}]}
      {:proxy/new-widget (om/get-query NewWidget)}])
   Object
   (componentWillReceiveProps [this new-props]

@@ -42,6 +42,11 @@
                (transact/mutate state mutation-uuid [budget dashboard]))
      :remote true}))
 
+(defmethod mutate 'budget/share
+  [{:keys [state mutation-uuid]} _ params]
+  (debug "budget/share with params: " params)
+  {:remote true})
+
 ;; -------------- Widget ---------------
 
 (defmethod mutate 'widget/save

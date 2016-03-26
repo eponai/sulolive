@@ -98,7 +98,9 @@
       :budget/created-at (or (:budget/created-at opts) (c/to-long (t/now)))
       :budget/name       (or (:budget/name opts) "Default")}
      user-dbid
-     (assoc :budget/created-by user-dbid))))
+     (->
+       (assoc :budget/created-by user-dbid)
+       (assoc :budget/users [user-dbid])))))
 
 (defn dashboard [budget-ref & [opts]]
   {:db/id (d/tempid :db.part/user)

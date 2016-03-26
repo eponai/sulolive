@@ -5,7 +5,8 @@
             [eponai.server.middleware :as m]
             [taoensso.timbre :refer [debug error trace]]
             [eponai.server.datomic.format :as f]
-            [eponai.common.database.pull :as p]))
+            [eponai.common.database.pull :as p]
+            [eponai.server.email :as email]))
 
 ;; function to use with eponai.common.parser/post-process-parse
 (defmulti response-handler (fn [_ k _] k))
@@ -32,7 +33,33 @@
   [{:keys [::m/send-email-fn]} _ response]
   (when-let [chan (get-in response [:result :email-chan])]
     (go
-      (send-email-fn (<! chan) (get-in response [:result :status]))))
+      (let [user-status (get-in response [:result :status])]
+        (send-email-fn (<! chan)
+                       {:html-content #(email/html-content %
+                                                           (email/subject user-status)
+                                                           (email/message user-status)
+                                                           (email/button-title user-status)
+                                                           (email/link-message user-status))
+                        :text-content #(email/text-content % user-status)
+                        :subject      (email/subject user-status)}))))
+  (-> response
+      (update :result dissoc :email-chan)
+      (update :result dissoc :status)))
+
+(defmethod response-handler 'budget/share
+  [{:keys [::m/send-email-fn]} _ response]
+  (when-let [chan (get-in response [:result :email-chan])]
+    (go
+      (let [user-status (get-in response [:result :status])
+            inviter (get-in response [:result :inviter])]
+        (send-email-fn (<! chan)
+                       {:html-content #(email/html-content %
+                                                           (email/invite-subject inviter user-status)
+                                                           (email/message user-status)
+                                                           (email/button-title user-status)
+                                                           (email/link-message user-status))
+                        :text-content #(email/text-content % user-status)
+                        :subject      "You're invited to share budget."}))))
   (-> response
       (update :result dissoc :email-chan)
       (update :result dissoc :status)))

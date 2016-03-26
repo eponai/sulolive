@@ -162,7 +162,7 @@
    :symbols {'?budget-uuid budget-uuid}})
 
 (defn budget-with-auth [user-uuid]
-  {:where   '[[?e :budget/created-by ?u]
+  {:where   '[[?e :budget/users ?u]
               [?u :user/uuid ?user-uuid]]
    :symbols {'?user-uuid user-uuid}})
 

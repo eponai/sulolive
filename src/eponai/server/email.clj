@@ -11,10 +11,32 @@
 (declare html-content)
 (declare text-content)
 
+(defn invite-subject [inviter user-status]
+  (str inviter
+       " has invited you to share budget. "
+       (if (= user-status :user.status/new)
+         "Create your account on JourMoney"
+         "Sign in to JourMoney")))
+
 (defn subject [user-status]
   (if (= user-status :user.status/new)
     "Create your account on JourMoney"
     "Sign in to JourMoney"))
+
+(defn message [user-status]
+  (if (= user-status :user.status/new)
+    "Click and confirm that you want to create an account on JourMoney."
+    "Sign in to JourMoney."))
+
+(defn link-message [user-status]
+  (if (= user-status :user.status/new)
+    "Or create an account using this link:"
+    "Or sign in using this link:"))
+
+(defn button-title [user-status]
+  (if (= user-status :user.status/new)
+    "Create account"
+    "Sign in"))
 
 (defn- smtp []
   {:host (env :smtp-host)
@@ -26,16 +48,16 @@
 (defn- send-email
   "Send a verification email to the provided address with the given uuid.
   Will send a link with the path /verify/:uuid that will verify when the user opens the link."
-  [smtp address uuid user-status]
+  [smtp address uuid {:keys [subject text-content html-content]}]
   (let [link (str "http://localhost:3000/verify/" uuid)
         body {:from    "info@gmail.com"
               :to      "info@jourmoney.com"
-              :subject (subject user-status)
+              :subject subject
               :body    [:alternative
                         {:type    "text/plain"
-                         :content (text-content link user-status)}
+                         :content (text-content link)}
                         {:type    "text/html"
-                         :content (html-content link user-status)}
+                         :content (html-content link)}
                         ]}
         status (email/send-message smtp body)]
 
@@ -54,22 +76,22 @@
 
   Conn is the connection to the database."
   [conn]
-  (fn [verification user-status]
+  (fn [verification content]
     (let [db (d/db conn)
-          uuid (:verification/uuid verification)]
+          {:keys [verification/uuid]} verification]
 
       (cond (p/lookup-entity db [:verification/uuid uuid])
             (send-email (smtp)
                         (:verification/value verification)
                         uuid
-                        user-status)))))
+                        content)))))
 
 (defn text-content [link user-status]
   (if (= user-status :user.status/new)
     (str "Click and confirm that you want to create an account on JourMoney. This link will expire in 15 minutes and can only be used once.\n" link)
     (str "Sign in to JourMoney. This link will expire in 15 minutes and can only be used once" link)))
 
-(defn html-content [link user-status]
+(defn html-content [link subject message button-title link-message]
   (xhtml
     [:head
      [:meta
@@ -78,7 +100,7 @@
       {:content "width=device-width, initial-scale=1.0",
        :name    "viewport"}]
      [:title
-      (subject user-status)]]
+      subject]]
     [:body
      {:style "margin: 0; padding: 0;"
       :bgcolor "#FDFFFC"}
@@ -92,9 +114,7 @@
           [:td
            {:align "center"}
            [:p {:style "font-size:18px;border-top:1px solid #e5e5e5;padding-top:1em;"}
-            (if (= user-status :user.status/new)
-              "Click and confirm that you want to create an account on JourMoney."
-              "Sign in to JourMoney.")]]
+            message]]
           [:tr
            [:td
             {:align "center"}
@@ -108,16 +128,12 @@
                 {:href link
                  :style
                        "text-decoration:none;display:inline-block; border-radius:3px; padding:16px 20px;font-size:16px;border:1px solid transparent;background-color:#044e8a;color:#fff;font-weight:bold;"}
-                (if (= user-status :user.status/new)
-                  "Create account"
-                  "Sign in")]]]]
+                button-title]]]]
          [:tr
           [:td
            {:align "center"}
            [:p
-            (if (= user-status :user.status/new)
-              "Or create an account using this link:"
-              "Or sign in using this link:")
+            link-message
             [:br]
             [:a {:href link} link]]]]
          [:tr
