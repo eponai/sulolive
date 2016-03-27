@@ -50,32 +50,19 @@
 (def query-local-transactions
   (parser.util/cache-last-read
     (fn
-      [{:keys [db query parser] :as env} _ p]
-      (let [
-            tx-ids (p/find-transactions db p)
-            {:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])
-            _ (debug "Pulled user: " current-user)
-            transactions (p/txs-with-conversions db
-                                                 query
-                                                 {:user/uuid (:user/uuid current-user)
-                                                  :tx-ids    tx-ids})]
-        (debug "found transactions " transactions)
-        {:value transactions}))))
+      [{:keys [parser] :as env} _ p]
+      (let [{:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
+        {:value (p/transactions-with-conversions env (:user/uuid current-user) p)}))))
 
 (defmethod read :query/transactions
-  [{:keys [db target ast] :as env} k {:keys [filter]}]
+  [{:keys [db target ast] :as env} k p]
   (let [budget (-> (d/entity db [:ui/component :ui.component/budget]) :ui.component.budget/uuid)]
     (if (= target :remote)
       ;; Pass the active budget uuid to remote reader
       {:remote (assoc-in ast [:params :budget-uuid] budget)}
 
       ;; Local read
-      (query-local-transactions env k {:filter filter
-                                       :budget-uuid budget}))))
-
-(defmethod read :query/conversions
-  [_ _ _]
-  {:remote true})
+      (query-local-transactions env k (assoc p :budget-uuid budget)))))
 
 (defmethod read :query/dashboard
   [{:keys [db ast query target]} _ _]

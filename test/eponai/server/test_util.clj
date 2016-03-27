@@ -4,7 +4,8 @@
             [eponai.server.auth.credentials :as a]
             [eponai.server.middleware :as m]
             [eponai.common.parser :as parser]
-            [eponai.server.datomic-dev :as dev]))
+            [eponai.server.datomic-dev :as dev]
+            [eponai.common.database.transact :as transact]))
 
 (def schema (dev/read-schema-files))
 
@@ -38,11 +39,11 @@
      (d/delete-database uri)
      (d/create-database uri)
      (let [conn (d/connect uri)]
-       (d/transact conn schema)
-       (d/transact conn [{:db/id         (d/tempid :db.part/user)
+       (transact/transact conn schema)
+       (transact/transact conn [{:db/id         (d/tempid :db.part/user)
                           :currency/code "USD"}])
        (when txs
-         (d/transact conn txs))
+         (transact/transact conn txs))
        conn))))
 
 (def user-email "user@email.com")

@@ -51,7 +51,7 @@
           {:keys [user fb-user]} (f/user-account-map nil
                                                      {:fb-user/id id
                                                       :fb-user/token "access-token"})
-          conn (new-db [fb-user])
+          conn (new-db [user fb-user])
           credential-fn (a/credential-fn conn)]
 
       (is (thrown-with-msg? ExceptionInfo

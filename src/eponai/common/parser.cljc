@@ -40,9 +40,10 @@
 
 #?(:clj
    (defn default-error-fn [err]
+     (.printStackTrace err)
          (if-let [data (ex-data err)]
            (assoc data ::ex-message (.getMessage ^Throwable err))
-           (throw (ex-info "Unable to get ex-data from error"
+           (throw (ex-info (str "Unable to get ex-data from error " )
                            {:error err
                             :where ::wrap-om-next-error-handler})))))
 

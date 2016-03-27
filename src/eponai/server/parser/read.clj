@@ -7,7 +7,8 @@
     [eponai.common.parser :refer [read]]
     [eponai.server.datomic.pull :as p]
     [eponai.server.external.facebook :as facebook]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.database.pull :as pull]))
 
 (defmethod read :datascript/schema
   [{:keys [db]} _ _]
@@ -24,28 +25,15 @@
 
 (defmethod read :query/transactions
   [{:keys [db query auth]} _ {:keys [budget-uuid filter]}]
-
-  (let [tx-ids (common.pull/find-transactions db {:budget-uuid  budget-uuid
+  (let [tx-ids (pull/all-with db {:where '[[?e :transaction/uuid]]})
+        _ (common.pull/find-transactions db {:budget-uuid  budget-uuid
                                                   :filter       filter
                                                   :query-params {:where   '[[?e :transaction/budget ?b]
                                                                             [?b :budget/users ?u]
                                                                             [?u :user/uuid ?user-uuid]]
                                                                  :symbols {'?user-uuid (:username auth)}}})]
-    {:value (common.pull/txs-with-conversions db query {:tx-ids tx-ids :user/uuid (:username auth)})}))
-
-(defmethod read :query/conversions
-  [{:keys [db query auth]} _ {:keys [budget-uuid filter]}]
-  (let [tx-ids (common.pull/find-transactions db {:budget-uuid       budget-uuid
-                                                  :filter       filter
-                                                  :query-params {:where   '[[?e :transaction/budget ?b]
-                                                                            [?b :budget/users ?u]
-                                                                            [?u :user/uuid ?uuid]]
-                                                                 :symbols {'?uuid (:username auth)}}})
-        tx-conv-uconv (common.pull/find-conversions db tx-ids (:username auth))]
-    {:value (let [user-convs (map last tx-conv-uconv)
-                  tx-convs (map second tx-conv-uconv)]
-              (concat (common.pull/pull-many db query tx-convs)
-                      (common.pull/pull-many db query user-convs)))}))
+    {:value {:transactions (pull/pull-many db query tx-ids)
+             :conversions (pull/conversions db tx-ids (:username auth))}}))
 
 (defmethod read :query/dashboard
   [{:keys [db auth query] :as env} _ {:keys [budget-uuid]}]
@@ -61,7 +49,7 @@
 
     {:value (when eid
               (let [dashboard (pull db query (one-with db {:where [['?e :dashboard/budget eid]]}))]
-                (update dashboard :widget/_dashboard #(p/widgets-with-data env budget-uuid %))))}))
+                (update dashboard :widget/_dashboard #(p/widgets-with-data env eid %))))}))
 
 (defmethod read :query/all-budgets
   [{:keys [db query auth]} _ _]

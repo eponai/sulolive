@@ -221,7 +221,6 @@
 
 (defn find-transactions
   [db {:keys [filter budget-uuid query-params]}]
-  (debug "Find transactions with filter: " filter " budget " budget-uuid)
   (let [pull-params (cond-> {:where '[[?e :transaction/uuid]]}
 
                             (some? query-params)
@@ -234,28 +233,26 @@
                             (merge-query {:where   '[[?e :transaction/budget ?b]
                                                      [?b :budget/uuid ?budget-uuid]]
                                           :symbols {'?budget-uuid budget-uuid}}))]
-    (debug "pull-params: " pull-params)
     (all-with db pull-params)))
 
-(defn find-latest-conversion [db {:keys [currency/code user/uuid]}]
-  (cond code
-        (second (one-with db {:find-pattern '[(max ?v) .]
-                              :symbols      {'?code code}
-                              :where        '[[?c :currency/code ?code]
-                                              [?co :conversion/currency ?c]
-                                              [?co :conversion/date ?d]
-                                              [?d :date/timestamp ?t]
-                                              [(vector ?t ?co) ?v]]}))
-
-        uuid
-        (second (one-with db {:find-pattern '[(max ?v) .]
-                              :symbols      {'?uuid uuid}
-                              :where        '[[?u :user/uuid ?uuid]
-                                              [?u :user/currency ?c]
-                                              [?co :conversion/currency ?c]
-                                              [?co :conversion/date ?d]
-                                              [?d :date/timestamp ?t]
-                                              [(vector ?t ?co) ?v]]}))))
+(defn find-latest-conversion [db {:keys [currency user] :as params}]
+  (let [query (cond currency
+                    {:find-pattern '[?t ?co]
+                     :symbols      {'?currency (:db/id currency)}
+                     :where        '[[?co :conversion/currency ?currency]
+                                     [?co :conversion/date ?d]
+                                     [?d :date/timestamp ?t]]}
+                    user
+                    {:find-pattern '[?t ?co]
+                     :symbols      {'?uuid (:user/uuid user)}
+                     :where        '[[?u :user/uuid ?uuid]
+                                     [?u :user/currency ?c]
+                                     [?co :conversion/currency ?c]
+                                     [?co :conversion/date ?d]
+                                     [?d :date/timestamp ?t]]})
+        data (sort (all-with db query))
+        [_ conversion] (last data)]
+    conversion))
 
 (defn find-conversions [db tx-ids user-uuid]
   (all-with db {:find-pattern '[?t ?e ?e2]
@@ -280,35 +277,53 @@
   (let [tx-conv-uconv (find-conversions db tx-ids user-uuid)
         tx-convs (map second tx-conv-uconv)
         user-convs (map last tx-conv-uconv)]
-    (concat (pull-many db (conversion-query) tx-convs)
-            (pull-many db (conversion-query) user-convs))))
+    (distinct
+      (concat (pull-many db (conversion-query) tx-convs)
+              (pull-many db (conversion-query) user-convs)))))
 
-(defn txs-with-conversions [db query {:keys [tx-ids user/uuid]}]
-  (let [tx-conv-tuples (find-conversions db tx-ids uuid)
-        tx-convs-by-tx-id (group-by first tx-conv-tuples)
-        transactions (map (fn [tx]
-                            (let [transaction (pull db query tx)
-                                  [[_ tx-conv user-conv]] (get tx-convs-by-tx-id tx)
-                                  #?@(:clj [tx-conv (or tx-conv (find-latest-conversion db (:transaction/currency transaction)))])
-                                  #?@(:clj [user-conv (or user-conv (find-latest-conversion db {:user/uuid uuid}))])]
-                              (if (and (some? tx-conv) (some? user-conv))
-                                (let [;; All rates are relative USD so we need to pull what rates the user currency has,
-                                      ;; so we can convert the rate appropriately for the user's selected currency
-                                      user-currency-conversion (pull db '[:conversion/rate] user-conv)
-                                      transaction-conversion (pull db '[:conversion/rate] tx-conv)]
-                                  (assoc
-                                    transaction
-                                    :transaction/conversion
-                                    ;; Convert the rate from USD to whatever currency the user has set
-                                    ;; (e.g. user is using SEK, so the new rate will be
-                                    ;; conversion-of-transaction-currency / conversion-of-user-currency
-                                    {:conversion/rate
-                                     #?(:clj
-                                        (with-precision 10
-                                          (bigdec (/ (:conversion/rate transaction-conversion)
-                                                     (:conversion/rate user-currency-conversion))))
-                                        :cljs (/ (:conversion/rate transaction-conversion)
-                                                 (:conversion/rate user-currency-conversion)))}))
-                                transaction)))
-                          tx-ids)]
-    transactions))
+(defn add-conversions [db conversion-query user-uuid transactions]
+  (assert (some #{:conversion/rate} conversion-query))
+  (let [tx-conv-tuples (all-with db {:find-pattern '[?t ?e ?e2]
+                                     :symbols      {'[?t ...] (mapv :db/id transactions)
+                                                    '?uuid    user-uuid}
+                                     :where        '[[?t :transaction/date ?d]
+                                                     [?e :conversion/date ?d]
+                                                     [?t :transaction/currency ?cur]
+                                                     [?e :conversion/currency ?cur]
+                                                     [?u :user/uuid ?uuid]
+                                                     [?u :user/currency ?u-cur]
+                                                     [?e2 :conversion/currency ?u-cur]
+                                                     [?e2 :conversion/date ?d]]})
+        tx-convs-by-tx-id (group-by first tx-conv-tuples)]
+    (map
+      (fn [transaction]
+        (let [transaction-id (:db/id transaction)
+              [[_ tx-conv user-conv]] (get tx-convs-by-tx-id transaction-id)
+              currency (or (:transaction/currency transaction)
+                           (:transaction/currency (pull db [:transaction/currency] transaction-id)))
+              tx-conv (or tx-conv (find-latest-conversion db {:currency currency}))
+              user-conv (or user-conv (find-latest-conversion db {:user {:user/uuid user-uuid}}))]
+          (if (and (some? tx-conv) (some? user-conv))
+            (let [;; All rates are relative USD so we need to pull what rates the user currency has,
+                  ;; so we can convert the rate appropriately for the user's selected currency
+                  user-currency-conversion (pull db conversion-query user-conv)
+                  transaction-conversion (pull db conversion-query tx-conv)]
+              (assoc
+                transaction
+                :transaction/conversion
+                ;; Convert the rate from USD to whatever currency the user has set
+                ;; (e.g. user is using SEK, so the new rate will be
+                ;; conversion-of-transaction-currency / conversion-of-user-currency
+                {:conversion/rate (/ (:conversion/rate transaction-conversion)
+                                     (:conversion/rate user-currency-conversion))
+                 :conversion/date (:conversion/date transaction-conversion)}))
+            transaction)))
+      transactions)))
+
+(defn transactions-with-conversions [{:keys [db query]} user-uuid {:keys [conversion-query] :as params}]
+  (let [tx-ids (find-transactions db params)
+        pulled (pull-many db query tx-ids)]
+    (->> pulled
+         (add-conversions db
+                          (or conversion-query [:conversion/rate])
+                          user-uuid))))

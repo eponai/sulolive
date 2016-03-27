@@ -76,6 +76,12 @@
   (d/db-with db [{:ui/singleton :ui.singleton/auth
                   :ui.singleton.auth/user current-user}]))
 
+(defn merge-transactions [db _ {:keys [transactions conversions]}]
+  (let [txs (concat transactions conversions)]
+    (if (seq txs)
+      (d/db-with db (concat transactions conversions))
+      db)))
+
 ;;;;;;; API
 
 (defn merge-mutation [merge-fn db key val]
@@ -124,6 +130,9 @@
       (= :datascript/schema key)
       (merge-schema db key val)
 
+      (= :query/transactions key)
+      (merge-transactions db key val)
+
       (= :user/current key)
       (merge-current-user db key val)
 
@@ -137,7 +146,7 @@
   {:pre [(methods merge-fn) (db/db? db)]
    :post [(:keys %) (db/db? (:next %))]}
   ;; Merge :datascript/schema first if it exists
-  (let [keys-to-merge-first [:datascript/schema]
+  (let [keys-to-merge-first [:datascript/schema :user/current]
         ordered-novelty (concat (select-keys novelty keys-to-merge-first)
                                 (apply dissoc novelty keys-to-merge-first))]
     (reduce
