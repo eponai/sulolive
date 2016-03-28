@@ -7,7 +7,9 @@
 (def favicons {:success {:type "image/png"
                          :href "/test/favicon/green.ico"}
                :failure {:type "image/gif"
-                         :href "/test/favicon/red.ico"}})
+                         :href "/test/favicon/red.ico"}
+               :warning {:type "image/png"
+                         :href "/test/favicon/warning.ico"}})
 
 (defn set-favicon [k]
   {:pre [(contains? favicons k)]}
@@ -17,10 +19,11 @@
 
 (defn ^:export run []
   (utils/install-app)
-  (let [report (tests/run)]
+  (if-let [report (tests/run)]
     (if (cljs.test/successful? report)
       (set-favicon :success)
-      (set-favicon :failure))))
+      (set-favicon :failure))
+    (set-favicon :warning)))
 
 (defn reload-figwheel! []
   (run))
