@@ -185,8 +185,8 @@
                                                                 :optimizations :simple}}]}}
 
              :web      {:cljsbuild {:builds [{:id           "dev"
-                                              :source-paths ["src/" "src-hacks/web/" "test/"]
-                                              :figwheel     {:on-jsload "eponai.client.figwheel/run"
+                                              :source-paths ["src/" "src-hacks/web/"]
+                                              :figwheel     {:on-jsload "eponai.web.figwheel/reload!"
                                                              :server-port 3450}
                                               :compiler     {:main          "eponai.web.core"
                                                              :asset-path    "/dev/js/out"
@@ -211,6 +211,7 @@
                                                              :asset-path    "/test/js/out"
                                                              :main          "eponai.client.figwheel.test-main"
                                                              :optimizations :none
+                                                             :source-map    true
                                                              }}
                                              {:id           "release"
                                               :source-paths ["src/" "src-hacks/web/"]
