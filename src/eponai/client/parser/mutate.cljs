@@ -89,9 +89,14 @@
   (debug "signup/email with params:" params)
   {:remote true})
 
-(defmethod mutate 'stripe/charge
+(defmethod mutate 'stripe/subscribe
   [_ _ params]
   (debug "stripe/charge with params:" params)
+  {:remote true})
+
+(defmethod mutate 'stripe/trial
+  [_ _ params]
+  (debug "stripe/trial with params:" params)
   {:remote true})
 
 (defmethod mutate 'stripe/cancel

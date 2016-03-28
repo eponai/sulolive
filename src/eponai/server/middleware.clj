@@ -7,6 +7,8 @@
             [ring.middleware.session.cookie :as cookie]
             [ring.middleware.transit :refer [wrap-transit-response
                                              wrap-transit-body]]
+            [ring.middleware.json :refer [wrap-json-body
+                                          wrap-json-response]]
             [ring.middleware.ssl :as ssl]
             [cemerick.friend :as friend]
             [eponai.server.auth.credentials :as ac]
@@ -43,11 +45,29 @@
     (constantly "map")
     #(into {:db/id (:db/id %)} %)))
 
+(defn wrap-json [handler]
+  (-> handler
+      (wrap-json-body {:keywords? true})
+      wrap-json-response))
+
 (defn wrap-transit [handler]
   (-> handler
       wrap-transit-body
       (wrap-transit-response {:opts     {:handlers {EntityMap datomic-transit}}
                               :encoding :json})))
+
+(defn wrap-format [handler]
+  (fn [r]
+    (let [content-type (:content-type r)]
+      ;(debug "Found content type: " content-type)
+      (if (and (some? content-type)
+               (re-find #"application/json" content-type))
+        (do
+          ;(debug "Wrapping JSON request.")
+          ((wrap-json handler) r))
+        (do
+          ;(debug "Wrapping transit request")
+          ((wrap-transit handler) r))))))
 
 (defn wrap-post-middlewares [handler]
   (fn [request]

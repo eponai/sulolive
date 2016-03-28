@@ -15,7 +15,8 @@
             [taoensso.timbre :refer [debug error info]]
     ;; Debug/dev requires
             [ring.middleware.reload :as reload]
-            [prone.middleware :as prone]))
+            [prone.middleware :as prone]
+            [eponai.server.external.stripe :as stripe]))
 
 (defonce in-production? (atom true))
 
@@ -24,11 +25,13 @@
       m/wrap-post-middlewares
       (m/wrap-authenticate conn)
       (cond-> @in-production? m/wrap-error)
-      m/wrap-transit
+      m/wrap-format
       (m/wrap-state {::m/conn              conn
                      ::m/parser            (parser/parser)
                      ::m/currency-rates-fn (exch/currency-rates-fn nil)
                      ::m/send-email-fn     (e/send-email-fn conn)
+                     ::m/stripe-fn         (fn [k p]
+                                             (stripe/stripe (env :stripe-secret-key-test) k p))
                      ;; either "dev" or "release"
                      ::m/cljs-build-id     (or (env :cljs-build-id) "dev")})
       m/wrap-defaults

@@ -54,10 +54,11 @@
     (debug "Returning verify link: " verify-link)
     verify-link))
 
-(defn- send-email
+(defn send-email
   "Send a verification email to the provided address with the given uuid.
   Will send a link with the path /verify/:uuid that will verify when the user opens the link."
-  [smtp address uuid {:keys [subject text-content html-content device]}]
+  [address uuid {:keys [subject text-content html-content device]}]
+  (debug "Sending email... ")
   (let [link (verify-link-by-device device uuid)
         body {:from    "info@gmail.com"
               :to      "info@jourmoney.com"
@@ -66,9 +67,8 @@
                         {:type    "text/plain"
                          :content (text-content link)}
                         {:type    "text/html"
-                         :content (html-content link)}
-                        ]}
-        status (email/send-message smtp body)]
+                         :content (html-content link)}]}
+        status (email/send-message (smtp) body)]
 
     (debug "Sent verification email to uuid: " uuid "with status:" status)
     (if (= 0 (:code status))
@@ -90,8 +90,7 @@
           {:keys [verification/uuid]} verification]
 
       (cond (p/lookup-entity db [:verification/uuid uuid])
-            (send-email (smtp)
-                        (:verification/value verification)
+            (send-email (:verification/value verification)
                         uuid
                         content)))))
 

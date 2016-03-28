@@ -136,8 +136,10 @@
   (query [_]
     [{:proxy/add-transaction (om/get-query AddTransaction)}
      {:query/current-user [:user/uuid
-                           :user/activated-at
-                           :user/picture]}])
+                           :user/picture]}
+     {:query/stripe [:stripe/user
+                     {:stripe/subscription [:stripe.subscription/status
+                                            :stripe.subscription/ends-at]}]}])
   Object
   (initLocalState [_]
     {:menu-visible? false
@@ -145,10 +147,14 @@
      :add-widget? false})
   (render [this]
     (let [{:keys [proxy/add-transaction
-                  query/current-user]} (om/props this)
+                  query/current-user
+                  query/stripe]} (om/props this)
           {:keys [menu-visible?
                   new-transaction?]} (om/get-state this)
-          {:keys [on-sidebar-toggle]} (om/get-computed this)]
+          {:keys [on-sidebar-toggle]} (om/get-computed this)
+          {:keys [stripe/subscription]} stripe
+          {subscription-status :stripe.subscription/status} subscription]
+      (debug "Stripe: " stripe)
       (html
         [:div
          [:nav#navbar-menu
@@ -170,25 +176,20 @@
               [:i
                {:class "fa fa-bars"}]]]
             [:li
-             [:a
-              {:on-click #(om/update-state! this assoc :new-transaction? true)
-               :class    "button primary medium"}
-              [:i.fa.fa-plus]
-              "New transaction"]]]]
+             [:a.button.success.medium
+              {:on-click #(om/update-state! this assoc :new-transaction? true)}
+              [:i.fa.fa-plus]]]]]
 
           [:div.top-bar-right.profile-menu
            [:ul.dropdown.menu
-            (let [activated-at (:user/activated-at current-user)]
+            (when (= subscription-status :trialing)
               [:li
-               (if activated-at
-                 [:small
-                  (str "Trial: " (max 0 (- 14 (f/days-since activated-at))) " days left")]
-                 [:small
-                  (str "Trial: 0 days left")])])
-            [:li
-             [:a.button.warning.small
-              {:href  (routes/inside "/subscribe/")}
-              "Upgrade"]]
+               [:small
+                (str "Trial: " (max 0 (f/days-until (:stripe.subscription/ends-at subscription))) " days left")]])
+            (when-not (= subscription-status :active)
+              [:li
+               (utils/upgrade-button
+                 {:href     (routes/inside "/subscribe/")})])
             ;[:li
             ; [:a
             ;  [:i.fa.fa-bell]]]
@@ -221,8 +222,9 @@
                           :budget/created-at
                           {:budget/created-by [:user/uuid
                                                :user/email]}]}
-     {:query/current-user [:user/uuid
-                           :user/activated-at]}
+     {:query/current-user [:user/uuid]}
+     {:query/stripe [:stripe/user
+                     {:stripe/subscription [:stripe.subscription/status]}]}
      {:query/active-budget [:ui.component.budget/uuid]}])
   Object
   (initLocalState [_]
@@ -236,10 +238,12 @@
   (render [this]
     (let [{:keys [query/all-budgets
                   query/active-budget
-                  query/current-user]} (om/props this)
+                  query/current-user
+                  query/stripe]} (om/props this)
           {:keys [on-close]} (om/get-computed this)
-          {:keys [new-budget? drop-target]} (om/get-state this)]
-      (debug "Active budget: " active-budget)
+          {:keys [new-budget? drop-target]} (om/get-state this)
+          {:keys [stripe/subscription]} stripe
+          {subscription-status :stripe.subscription/status} subscription]
       (html
         [:div
          [:div
@@ -263,12 +267,10 @@
               [:small
                " by eponai"]]]
 
-            [:li.profile-menu
-             [:a.button.warning.medium
-              (opts {:on-click on-close
-                     :href     (routes/inside "/subscribe/")
-                     :style    {:margin "0.5em"}})
-              "Upgrade"]]
+            (when (= subscription-status :trialing)
+              [:li.profile-menu
+               (utils/upgrade-button {:on-click on-close
+                                      :style    {:margin "0.5em"}})])
             [:li
              [:a
               (opts {:href (routes/inside "/profile")
@@ -284,7 +286,11 @@
                 [:li
                  (opts {:key [budget-uuid]})
                  [:a {:href          (routes/inside "/dashboard/" (:budget/uuid budget))
-                      :class         (if (or (= (:ui.component.budget/uuid active-budget) budget-uuid) (= drop-target budget-uuid)) "highlighted" "")
+                      :class         (cond
+                                       (= drop-target budget-uuid)
+                                       "highlighted"
+                                       (= (:ui.component.budget/uuid active-budget) budget-uuid)
+                                       "selected")
                       :on-click      on-close
                       :on-drag-over  #(utils/on-drag-transaction-over this budget-uuid %)
                       :on-drag-leave #(utils/on-drag-transaction-leave this %)

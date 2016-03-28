@@ -95,6 +95,8 @@
       ; If verification does not exist, throw invalid error
       (throw (ex "Verification UUID does not exist")))))
 
+(declare stripe-trial)
+
 (defn activate-account
   "Try and activate account for the user with UUId user-uuid, and user email passed in.
 
@@ -105,7 +107,7 @@
 
   Throws exception if the email provided is not already verified, email is already in use,
   or the user UUID is not found."
-  [conn user-uuid email]
+  [conn user-uuid email & [opts]]
   {:pre [(instance? LocalConnection conn)
          (string? user-uuid)
          (string? email)]}
@@ -145,7 +147,6 @@
           (let [budget (common.format/budget user-db-id)
                 dashboard (common.format/dashboard (:db/id budget))
                 activated-db (:db-after (transact conn [[:db/add user-db-id :user/status :user.status/active]
-                                                        [:db/add user-db-id :user/activated-at (c/to-long (time/now))]
                                                         [:db/add user-db-id :user/currency [:currency/code "USD"]]
                                                         budget
                                                         dashboard]))]
@@ -193,30 +194,79 @@
         {:email-chan email-chan
          :status (:user/status new-user)}))))
 
-(defn stripe-charge
+(defn stripe-subscribe
   "Subscribe user to a plan in Stripe. Basically create a Stripe customer for this user and subscribe to a plan."
-  [conn token]
-  (try
-    (stripe/create-customer conn (env :stripe-secret-key-test) token)
-    (catch Exception e
-      (throw (ex-info (.getMessage e)
-                      {:status ::http/unprocessable-entity
-                       :data token})))))
+  [conn stripe-fn {:keys [stripe/customer
+                          stripe/subscription]} {:keys [token plan] :as p}]
+  {:pre [(instance? LocalConnection conn) (fn? stripe-fn) (map? p)]}
+  (let [{:keys [id email]} token
+        params {"source"    id
+                "plan"      plan
+                "trial_end" "now"}]
+    (if (some? customer)
+      (if-let [subscription-id (:stripe.subscription/id subscription)]
+        ;; We have a subscription saved in datomic, so just update that.
+        (let [updated (stripe-fn :subscription/update
+                                 {:customer-id     customer
+                                  :subscription-id subscription-id
+                                  :params          params})]
+          (transact conn [[:db/add [:stripe.subscription/id subscription-id] :stripe.subscription/status (:stripe.subscription/status updated)]
+                          [:db/add [:stripe.subscription/id subscription-id] :stripe.subscription/ends-at (:stripe.subscription/ends-at updated)]]))
+
+        ;; We don't have a subscription saved for the customer (maybe the user canceled at some point). Create a new one.
+        (let [created (stripe-fn :subscription/create
+                                 {:customer-id customer
+                                  :params      params})
+              db-subscription (assoc created :db/id (d/tempid :db.part/user))]
+          (transact conn [db-subscription
+                          [:db/add [:stripe/customer customer] :stripe/subscription (:db/id db-subscription)]])))
+
+      ;; We don't have a Stripe customer, so we need to create it.
+      (let [{user-id :db/id} (pull/pull (d/db conn) [:db/id] [:user/email email])
+            stripe (stripe-fn :customer/create
+                              {:params (assoc params "email" email)})
+            _ (debug "Will format stripe: " stripe)
+            account (datomic.format/stripe-account user-id stripe)]
+        (debug "did format account stripe " account)
+        (assert (some? user-id))
+        (transact-one conn account)))))
+
+(defn stripe-trial
+  "Subscribe user to trial, without requesting credit carg."
+  [conn stripe-fn {:keys [user/email
+                          stripe/_user]}]
+  {:pre [(instance? LocalConnection conn)
+         (fn? stripe-fn)
+         (string? email)]}
+  (when (seq _user)
+    (throw (ex-info "Trial for user that's already on Stripe. " {:data {:email email}})))
+  (let [{user-id :db/id} (pull/pull (d/db conn) [:db/id] [:user/email email])
+        stripe (stripe-fn :customer/create
+                          {:params {"plan"  "monthly"
+                                    "email" email}})]
+    (assert (some? user-id))
+    (transact-one conn (datomic.format/stripe-account user-id stripe))))
 
 (defn stripe-cancel
   "Cancel the subscription in Stripe for user with uuid."
-  [conn user-uuid]
-  (try
+  [conn stripe-fn stripe-account]
+  {:pre [(instance? LocalConnection conn)
+         (fn? stripe-fn)
+         (map? stripe-account)]}
+  ;; If no customer-id exists, we cannot cancel anything.
+  (when-not (:stripe/customer stripe-account)
+    (throw (ex-info "No customer id provided. " {:cause ::http/unprocessable-entity
+                                                 :data {:stripe-account stripe-account}})))
+  ;; If we have a subscription id in the db, try and cancel that
+  (if-let [subscription-id (get-in stripe-account [:stripe/subscription :stripe.subscription/id])]
     ; Find the stripe account for the user.
-    (let [stripe-account (pull/pull (d/db conn) [{:stripe/_user [:stripe/customer]}] [:user/uuid user-uuid])]
-      (debug "Cancel subscription for user-id: " user-uuid)
-      (stripe/cancel-subscription conn
-                                  (env :stripe-secret-key-test)
-                                  (first (:stripe/_user stripe-account))))
-    (catch Exception e
-      (throw (ex-info (.getMessage e)
-                      {:status ::http/unprocessable-entity
-                       :data user-uuid})))))
+    (let [subscription (stripe-fn :subscription/cancel
+                                     {:customer-id     (:stripe/customer stripe-account)
+                                      :subscription-id subscription-id})]
+      (transact conn [[:db.fn/retractEntity [:stripe.subscription/id (:stripe.subscription/id subscription)]]]))
+    ;; We don't have a subscription ID so we cannot cancel.
+    (throw (ex-info "Subscription id not found in database." {:cause ::http/unprocessable-entity
+                                                              :data {:stripe-account stripe-account}}))))
 
 (defn newsletter-subscribe [conn email]
   (let [{:keys [verification] :as account} (datomic.format/user-account-map email {:verification/time-limit 0})]

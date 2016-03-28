@@ -100,6 +100,16 @@
                (p/pull db query (:db/id user)))
      :remote true}))
 
+(defmethod read :query/stripe
+  [{:keys [db query parser] :as env} _ _]
+  (let [{:keys [query/current-user]} (parser env `[{:query/current-user [:db/id]}])
+        stripe (when (:db/id current-user)
+                 (p/all-with db {:where [['?e :stripe/user (:db/id current-user)]]}))]
+    (debug "Stripe: ids " stripe)
+    {:value  (when stripe
+               (first (p/pull-many db query stripe)))
+     :remote true}))
+
 ;; ############ Signup page reader ############
 
 (defmethod read :query/user

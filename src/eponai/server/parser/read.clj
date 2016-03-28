@@ -67,6 +67,11 @@
   (let [eid (one-with db {:where [['?e :user/uuid (:username auth)]]})]
     {:value (pull db query eid)}))
 
+(defmethod read :query/stripe
+  [{:keys [db query auth]} _ _]
+  (let [stripe-eid (common.pull/all-with db {:where [['?e :stripe/user [:user/uuid (:username auth)]]]})]
+    {:value (common.pull/pull-many db query stripe-eid)}))
+
 ;; ############### Signup page reader #################
 
 (defmethod read :query/user

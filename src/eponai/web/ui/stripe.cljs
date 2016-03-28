@@ -7,7 +7,8 @@
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
             [taoensso.timbre :refer-macros [info debug error trace]]
-            [eponai.web.ui.utils :as utils])
+            [eponai.web.ui.utils :as utils]
+            [eponai.web.ui.format :as f])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (defn load-checkout [channel]
@@ -17,18 +18,19 @@
 (defn checkout-loaded? []
   (boolean (aget js/window "StripeCheckout")))
 
-(defn stripe-token-recieved-cb [component]
+(defn stripe-token-recieved-cb [component plan-id]
   (fn [token]
     (let [clj-token (keywordize-keys (js->clj token))]
       (debug "Recieved token from Stripe.")
       (trace "Recieved token from Stripe: " clj-token)
-      (om/transact! component `[(stripe/charge ~{:token clj-token})]))))
+      (om/transact! component `[(stripe/subscribe ~{:token clj-token
+                                                    :plan plan-id})]))))
 
-(defn open-checkout [component args]
+(defn open-checkout [component plan-id args]
   (let [checkout (.configure js/StripeCheckout
                              (clj->js {:key    "pk_test_KHyU4tNjwX7R0lkxDmPxvbT9"
                                        :locale "auto"
-                                       :token  (stripe-token-recieved-cb component)}))]
+                                       :token  (stripe-token-recieved-cb component plan-id)}))]
     (.open checkout (clj->js args))))
 
 ;; ---------- UI components ----------------
@@ -40,7 +42,8 @@
   (let [{:keys [plan-name
                 plan-price
                 plan-monthly
-                user-email]} props]
+                user-email
+                plan-id]} props]
     (html
       [:li.plan
        [:ul.plan-container
@@ -60,6 +63,7 @@
           {:on-click (fn []
                        (.show-loading component true)
                        (open-checkout component
+                                      plan-id
                                       {:name        "JourMoney"
                                        :description plan-name
                                        :currency    "usd"
@@ -75,7 +79,10 @@
   static om/IQuery
   (query [_]
     [{:query/current-user [:user/uuid
-                           :user/email]}])
+                           :user/email]}
+     {:query/stripe [:stripe/user
+                     {:stripe/subscription [:stripe.subscription/id
+                                            :stripe.subscription/ends-at]}]}])
   Object
   (initLocalState [_]
     (let [checkout-loaded (checkout-loaded?)]
@@ -95,40 +102,46 @@
   (render [this]
     (let [{:keys [checkout-loaded?
                   is-loading?]} (om/get-state this)
-          {:keys [query/current-user]} (om/props this)]
+          {:keys [query/current-user
+                  query/stripe]} (om/props this)]
       (debug "StripeCheckout loaded: " checkout-loaded?)
       (html
-        [:div.intro-header
-         [:h2
-          (opts {:style {:text-align "center"}})
-          "Select your plan"]
-         [:p
-          (opts {:style {:text-align "center"}})
-          "and get unlimited access to the app."]
-         [:hr.intro-divider]
+        (if-let [subscription (:stripe/subscription stripe)]
+          [:div.row.column.small-12.medium-6
+           (opts {:style {:margin "1em auto"}})
+           [:div.callout.clearfix
+            (str "Your account is active until " (f/to-str (:stripe.subscription/ends-at subscription) "yyyyMMdd"))]]
+          [:div
+           [:h2
+            (opts {:style {:text-align "center"}})
+            "Select your plan"]
+           [:p
+            (opts {:style {:text-align "center"}})
+            "and get unlimited access to the app."]
+           [:hr.intro-divider]
 
-         (when is-loading?
-           (utils/loader))
+           (if checkout-loaded?
+             [:div#pricePlans
+              [:ul#plans
+               (plan-item this
+                          {:plan-name    "Monthly"
+                           :plan-price   8
+                           :plan-monthly 8
+                           :user-email   (:user/email current-user)
+                           :plan-id      "monthly"})
 
-         (when checkout-loaded?
-           [:div#pricePlans
-            [:ul#plans
-             (plan-item this
-                        {:plan-name    "3 months"
-                         :plan-price   25.50
-                         :plan-monthly 8.50
-                         :user-email (:user/email current-user)})
+               (plan-item this
+                          {:plan-name    "3 months"
+                           :plan-price   21
+                           :plan-monthly 7
+                           :user-email   (:user/email current-user)})
 
-             (plan-item this
-                        {:plan-name    "6 months"
-                         :plan-price   42
-                         :plan-monthly 7
-                         :user-email (:user/email current-user)})
-
-             (plan-item this
-                        {:plan-name    "12 months"
-                         :plan-price   60
-                         :plan-monthly 5
-                         :user-email (:user/email current-user)})]])]))))
+               (plan-item this
+                          {:plan-name    "6 months"
+                           :plan-price   36
+                           :plan-monthly 6
+                           :user-email   (:user/email current-user)})]]
+             [:div.empty-message.text-center
+              [:i.fa.fa-spinner.fa-pulse.fa-3x]])])))))
 
 (def ->Payment (om/factory Payment))

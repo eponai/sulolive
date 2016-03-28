@@ -5,7 +5,9 @@
     [eponai.common.format :as format]
     [eponai.common.parser :refer [mutate]]
     [taoensso.timbre :refer [debug]]
-    [eponai.server.api :as api]))
+    [eponai.server.api :as api]
+    [eponai.common.database.pull :as p]
+    [datomic.api :as d]))
 
 ;; ------------------- Transaction --------------------
 
@@ -91,14 +93,35 @@
              (-> (api/signin state (:input-email params))
                  (assoc :device device)))})
 
-(defmethod mutate 'stripe/charge
-  [{:keys [state]} _ {:keys [token] :as p}]
-  (debug "stripe/charge with params:" p)
-  {:action (fn []
-             (api/stripe-charge state token))})
+(defmethod mutate 'stripe/subscribe
+  [{:keys [state auth stripe-fn]} _ p]
+  (debug "stripe/subscribe with params:" p)
+  (let [db (d/db state)
+        stripe-eid (p/one-with db {:where '[[?u :user/uuid ?useruuid]
+                                            [?e :stripe/user ?u]]
+                                   :symbols {'?user-uuid (:username auth)}})
+        stripe-account (when stripe-eid
+                         (p/pull db [:stripe/customer
+                                     {:stripe/subscription [:stripe.subscription/id]}]
+                                 stripe-eid))]
+    {:action (fn []
+               (api/stripe-subscribe state stripe-fn stripe-account p))}))
+
+(defmethod mutate 'stripe/trial
+  [{:keys [state auth stripe-fn]} _ _]
+  (let [user (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])]
+    {:action (fn []
+               (api/stripe-trial state stripe-fn user))}))
 
 (defmethod mutate 'stripe/cancel
-  [{:keys [state auth]} _ p]
+  [{:keys [state auth stripe-fn]} _ p]
   (debug "stripe/cancel with params:" p)
-  {:action (fn []
-             (api/stripe-cancel state (:username auth)))})
+  (let [db (d/db state)
+        eid (p/one-with db {:where   '[[?u :user/uuid ?useruuid]
+                                       [?e :stripe/user ?u]]
+                            :symbols {'?user-uuid (:username auth)}})
+        stripe-account (when eid
+                         (p/pull db [:stripe/customer
+                                     {:stripe/subscription [:stripe.subscription/id]}] eid))]
+    {:action (fn []
+               (api/stripe-cancel state stripe-fn stripe-account))}))

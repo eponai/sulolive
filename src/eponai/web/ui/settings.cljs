@@ -3,7 +3,9 @@
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
             [datascript.core :as d]
-            [taoensso.timbre :refer-macros [debug]]))
+            [taoensso.timbre :refer-macros [debug]]
+            [eponai.web.ui.utils :as utils]
+            [eponai.web.ui.format :as f]))
 
 (defui Settings
   static om/IQuery
@@ -15,6 +17,9 @@
                                             :currency/name]}]}
      {:query/all-currencies [:currency/code
                              :currency/name]}
+     {:query/stripe [:stripe/user
+                     {:stripe/subscription [:stripe.subscription/ends-at
+                                            :stripe.subscription/status]}]}
      {:query/fb-user [:fb-user/name
                       :fb-user/id
                       :fb-user/picture]}])
@@ -32,10 +37,13 @@
   (render [this]
     (let [{:keys [query/current-user
                   query/all-currencies
-                  query/fb-user]} (om/props this)
+                  query/fb-user
+                  query/stripe]} (om/props this)
           {user-name :user/name
            :keys [user/email]} current-user
-          {:keys [input-currency]} (om/get-state this)]
+          {:keys [input-currency]} (om/get-state this)
+          {:keys [stripe/subscription]} stripe
+          {subscription-status :stripe.subscription/status} subscription]
       (html
         [:div
          [:div#settings-general.row.column.small-12.medium-6
@@ -46,12 +54,25 @@
             [:div.columns.small-2.text-right
              [:label
               "Plan:"]]
-            [:div.columns.small-10
-             [:a.link
-              (opts {:style {:margin "1em 0"}
-                     :on-click #(om/transact! this `[(stripe/cancel)])})
-              [:small
-               "Cancel plan"]]]]
+            (if (= subscription-status :active)
+              [:div.columns.small-10
+               [:div
+                [:strong "Monthly"]
+                [:a.link
+                 (opts {:style    {:margin "1em 0"}
+                        :on-click #(om/transact! this `[(stripe/cancel)
+                                                        :query/stripe])})
+                 [:small
+                  "Cancel plan"]]]]
+
+              [:div.columns.small-10
+               ;[:p "You have "
+               ; (f/days-until (:stripe.subscription/ends-at subscription)) " days left on your trial."]
+               ;[:div.columns.small-12.medium-6.text-center]
+               (utils/upgrade-button {:style {:margin 0}})
+               ;[:div [:small "You have "
+               ;       (f/days-until (:stripe.subscription/ends-at subscription)) " days left on your trial."]]
+               ])]
            [:hr]
            [:div.row
             [:div.columns.small-2.text-right

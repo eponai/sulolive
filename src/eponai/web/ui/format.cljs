@@ -2,10 +2,26 @@
   (:require
     [cljs-time.core :as t]
     [cljs-time.format :as t.format]
-    [cljs-time.coerce :as c]))
+    [cljs-time.coerce :as c]
+    [taoensso.timbre :refer-macros [debug]]))
 
 (defn days-since [timestamp]
+  {:pre [(number? timestamp)]}
   (t/in-days (t/interval (c/from-long timestamp) (t/now))))
+
+(defn days-until [timestamp]
+  {:pre [(number? timestamp)]}
+  (let [now (c/to-long (t/now))]
+    (if (> timestamp now)
+      (t/in-days (t/interval (c/from-long now) (c/from-long timestamp)))
+      (* -1 (t/in-days (t/interval (c/from-long timestamp) (c/from-long now)))))))
+
+(defn to-str [timestamp & [format]]
+  {:pre [(number? timestamp)]}
+  (if format
+    (let [formatter (t.format/formatter format)]
+      (t.format/unparse formatter (c/from-long timestamp)))
+    (str (c/from-long timestamp))))
 
 ;(defn dates-by-year-month [dates]
 ;  (letfn [(*group-by [key]

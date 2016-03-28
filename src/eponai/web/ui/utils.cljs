@@ -5,7 +5,8 @@
             [om.next :as om]
             [taoensso.timbre :refer-macros [debug]]
             [eponai.common.format :as format]
-            [datascript.core :as d]))
+            [datascript.core :as d]
+            [eponai.web.routes :as routes]))
 
 (defonce reconciler-atom (atom nil))
 
@@ -48,6 +49,13 @@
          {:on-click on-close}
          "x"]
         content]])))
+
+(defn upgrade-button [& [options]]
+  (html
+    [:a.button.warning.medium
+     (opts (merge {:href (routes/inside "/subscribe/")}
+                  options))
+     [:strong "Upgrade"]]))
 
 (defn tag [{tag-name :tag/name} {:keys [on-delete
                                         on-click]}]

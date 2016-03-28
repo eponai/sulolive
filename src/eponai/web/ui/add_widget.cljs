@@ -289,9 +289,6 @@
                                         (not (:graph/uuid (:input-graph state)))
                                         (assoc-in [:input-graph :graph/uuid] (d/squuid))
 
-                                        (not (:report.function/uuid (:input-function state)))
-                                        (assoc-in [:input-function :report.function/uuid] (d/squuid))
-
                                         (not (:report/uuid (:input-report state)))
                                         (assoc-in [:input-report :report/uuid] (d/squuid))))}
 

@@ -10,7 +10,10 @@
             [eponai.server.parser.response :as parser.resp]
             [taoensso.timbre :refer [debug error trace]]
             [eponai.server.api :as api]
-            [clojure.data.json :as json]))
+            [eponai.server.external.stripe :as stripe]
+            [clojure.data.json :as json]
+            [eponai.server.email :as email])
+  (:import (clojure.lang ExceptionInfo)))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -27,6 +30,11 @@
     (if (friend/current-authentication request)
       (r/redirect "/app")
       (html "index.html")))
+  (ANY "/stripe" {:keys [::m/conn body]}
+    (try
+      (r/response (stripe/webhook conn body {:send-email-fn #(email/send-email %1 nil %2)}))
+      (catch Exception e
+        (r/response {}))))
 
   (context "/app" _
     (friend/wrap-authorize app-routes #{::a/user}))
@@ -57,14 +65,15 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [::m/conn ::m/parser ::m/make-parser-error-fn body] :as request}]
+  [{:keys [::m/conn ::m/parser ::m/make-parser-error-fn ::m/stripe-fn body] :as request}]
   (debug "Handling parser request with body:" (into [] body))
   (parser
     {:state           conn
      :auth            (friend/current-authentication request)
      :parser-error-fn (when make-parser-error-fn
-                        (make-parser-error-fn request))}
-       body))
+                        (make-parser-error-fn request))
+     :stripe-fn       stripe-fn}
+    body))
 
 (defn trace-parser-response-handlers
   "Wrapper with logging for parser.response/response-handler."
@@ -104,11 +113,6 @@
             (->> (handle-parser-request request)
                  (handle-parser-response request))]
         (r/response ret)))
-
-    (POST "/charge" {params :params
-                     conn ::m/conn}
-      (api/stripe-charge conn params)
-      (r/redirect "/index.html"))
 
     ; Requires user login
     (context "/user" _

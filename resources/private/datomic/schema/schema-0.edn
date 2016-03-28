@@ -75,7 +75,7 @@
   :db/ident              :stripe/subscription
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
-  :db/unique             :db.unique/identity
+  :db/isComponent        true
   :db/doc                "Subscription for this Stripe account."
   :db.install/_attribute :db.part/db}
 

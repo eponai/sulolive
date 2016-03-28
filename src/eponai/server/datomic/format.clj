@@ -2,7 +2,8 @@
   (:require [clj-time.core :as t]
             [clj-time.coerce :as c]
             [datomic.api :only [db a] :as d]
-            [eponai.common.format :as cf]))
+            [eponai.common.format :as cf]
+            [eponai.common.format :as common.format]))
 
 ;;; -------------------- Format to entities ----------------
 
@@ -114,6 +115,17 @@
   {:db/id            (d/tempid :db.part/user)
    :dashboard/uuid (d/squuid)
    :dashboard/budget budget-eid})
+
+(defn stripe-account
+  "Takes a map with stripe information and formats to be transacted into datomic.
+  Adds tempids and associates the specified user."
+  [user-id stripe-input]
+  (let [customer (-> stripe-input
+                     common.format/add-tempid
+                     (assoc :stripe/user user-id))]
+    (if (:stripe/subscription stripe-input)
+      (update customer :stripe/subscription common.format/add-tempid)
+      customer)))
 
 (defn user-account-map
   "Create entities for a user account.
