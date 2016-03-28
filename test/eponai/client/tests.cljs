@@ -9,15 +9,17 @@
 
 (defn ^:export run []
   (if-let [test-fn *main-cli-fn*]
-    (do
+    (let [test-report (atom nil)]
       ;; Override doo.runner's cljs.test/report, as it will call exit
       ;; when we run tests.
       (defmethod cljs.test/report [:cljs.test/default :end-run-tests] [m]
+        (reset! test-report m)
         (if (cljs.test/successful? m)
           (info "Tests: PASS")
           (error "Tests: FAILED")))
 
-      (test-fn))
+      (test-fn)
+      @test-report)
     (prn "WARNING: No test function set!")))
 
 (enable-console-print!)

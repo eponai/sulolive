@@ -121,7 +121,17 @@
                                  ;; because they need to be running lein with different profiles
                                  ;; and different dependencies.
                                  ["shell" "bash" "-c"
-                                  "export FIGWHEEL_PORT=3450; lein with-profile web figwheel dev"]]}
+                                  "export FIGWHEEL_PORT=3450; lein with-profile web figwheel dev"]]
+            "figwheel-web+test" ^{:doc "Start figwheel for web"}
+                                ["do"
+                                 ;; Exporting an environment variable for figwheel port
+                                 ;; as it's only configurable globally (per project.clj file).
+                                 ;; This port should differ from the one running figwheel-ios,
+                                 ;; because they need to be running lein with different profiles
+                                 ;; and different dependencies.
+                                 ["shell" "bash" "-c"
+                                  "export FIGWHEEL_PORT=3450; lein with-profile web figwheel dev test"]]
+}
 
   ;; TODO: TEST ALL ALIASES
 
@@ -195,9 +205,11 @@
                                                              :source-map-timestamp true}}
                                              {:id           "test"
                                               :source-paths ["src/" "src-hacks/web/" "test/"]
+                                              :figwheel     {:on-jsload     "eponai.client.figwheel.test-main/reload-figwheel!"}
                                               :compiler     {:output-to     "resources/public/test/js/out/budget.js"
                                                              :output-dir    "resources/public/test/js/out"
-                                                             :main          "eponai.client.tests"
+                                                             :asset-path    "/test/js/out"
+                                                             :main          "eponai.client.figwheel.test-main"
                                                              :optimizations :none
                                                              }}
                                              {:id           "release"
