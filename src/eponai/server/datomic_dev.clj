@@ -18,7 +18,7 @@
   [{:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "lunch"
     :transaction/date       {:date/ymd "2015-10-10"}
-    :transaction/amount     180
+    :transaction/amount     "180"
     :transaction/currency   {:currency/code "THB"}
     :transaction/created-at 1
     :transaction/tags       [{:tag/name "thailand"}]
@@ -26,28 +26,28 @@
    {:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "coffee"
     :transaction/date       {:date/ymd "2015-10-10"}
-    :transaction/amount     140
+    :transaction/amount     "140"
     :transaction/currency   {:currency/code "THB"}
     :transaction/created-at 1
     :transaction/type       :transaction.type/expense}
    {:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "dinner"
     :transaction/date       {:date/ymd "2015-10-10"}
-    :transaction/amount     350
+    :transaction/amount     "350"
     :transaction/currency   {:currency/code "THB"}
     :transaction/created-at 1
     :transaction/type       :transaction.type/expense}
    {:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "market"
     :transaction/date       {:date/ymd "2015-10-11"}
-    :transaction/amount     789
+    :transaction/amount     "789"
     :transaction/currency   {:currency/code "THB"}
     :transaction/created-at 1
     :transaction/type       :transaction.type/expense}
    {:transaction/uuid       (UUID/randomUUID)
     :transaction/title      "lunch"
     :transaction/date       {:date/ymd "2015-10-11"}
-    :transaction/amount     125
+    :transaction/amount     "125"
     :transaction/currency   {:currency/code "THB"}
     :transaction/created-at 1
     :transaction/type       :transaction.type/expense}])

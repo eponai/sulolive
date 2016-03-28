@@ -1,5 +1,6 @@
 (ns eponai.common.report-test
   (:require
+    [clojure.test.check]
     [clojure.test.check.clojure-test #?(:clj  :refer
                                         :cljs :refer-macros) [defspec]]
     [clojure.test.check.generators :as gen]

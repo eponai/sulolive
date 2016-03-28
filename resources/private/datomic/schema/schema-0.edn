@@ -24,13 +24,6 @@
   :db/doc                "A user's account status."
   :db.install/_attribute :db.part/db}
 
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :user/activated-at
-  :db/valueType          :db.type/long
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Timestamp for when the user activated their account."
-  :db.install/_attribute :db.part/db}
-
  ;; User status
  [:db/add #db/id[:db.part/user] :db/ident :user.status/new]
  [:db/add #db/id[:db.part/user] :db/ident :user.status/active]
@@ -80,10 +73,33 @@
 
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :stripe/subscription
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "Subscription for this Stripe account."
+  :db.install/_attribute :db.part/db}
+
+ ;;; ;;;;; Stripe subscription
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :stripe.subscription/id
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
   :db/unique             :db.unique/identity
-  :db/doc                "Subscription id for this Stripe account."
+  :db/doc                "Subscription Stripe identifier."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :stripe.subscription/status
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Subscription status (active, canceled, unpaid, trialing, past_due)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :stripe.subscription/ends-at
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Subscription status period end."
   :db.install/_attribute :db.part/db}
 
  ;; verification
@@ -239,7 +255,7 @@
  {:db/id                 #db/id[:db.part/db],
   :db.install/_attribute :db.part/db,
   :db/ident              :transaction/amount,
-  :db/valueType          :db.type/bigint,
+  :db/valueType          :db.type/bigdec,
   :db/cardinality        :db.cardinality/one,
   :db/doc                "Amount of the transaction (cost or income)."}
 

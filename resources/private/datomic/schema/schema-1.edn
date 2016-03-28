@@ -97,8 +97,7 @@
   :db/cardinality        :db.cardinality/one
   :db/doc                "Dashboard that this widget belongs to."
   :db.install/_attribute :db.part/db}
-
-
+ 
  ;; ------------------ Graph
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :graph/uuid
@@ -148,13 +147,6 @@
 
 
  ;; ------------------- Function
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :report.function/uuid
-  :db/valueType          :db.type/uuid
-  :db/cardinality        :db.cardinality/one
-  :db/unique             :db.unique/identity
-  :db/doc                "Function identifier."
-  :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :report.function/id

@@ -177,7 +177,8 @@
                      :transaction/tags     (fn [ts] {:pre [(coll? ts)]}
                                              (map tag* ts))
                      :transaction/amount   (fn [a]
-                                             #?(:clj  (bigint a)
+                                             {:pre [(string? a)]}
+                                             #?(:clj  (bigdec a)
                                                 :cljs (cljs.reader/read-string a)))
                      :transaction/budget   (fn [b] {:pre [(map? b)]}
                                              (assert (:budget/uuid b))
@@ -262,7 +263,7 @@
                         (assoc :db/id (d/tempid :db.part/user))
                         (->> (reduce-kv (fn [m k v]
                                           (assoc m k (condp = k
-                                                       :transaction/amount #?(:cljs (cljs.reader/read-string v) :clj (bigint v))
+                                                       :transaction/amount #?(:cljs (cljs.reader/read-string v) :clj (bigdec v))
                                                        :transaction/currency (assoc v :db/id (d/tempid :db.part/user))
                                                        :transaction/type (assoc v :db/id (d/tempid :db.part/user))
                                                        :transaction/date (str->date (:date/ymd v))
