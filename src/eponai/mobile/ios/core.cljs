@@ -3,6 +3,6 @@
             [eponai.client.utils :as utils]
             [eponai.mobile.ios.app :as app]))
 
-(defn init []
+(defn init [config]
   (utils/install-app)
-  (app/run))
+  (app/run config))

@@ -5,12 +5,14 @@
 
 (enable-console-print!)
 
+(def dev-machine-ip "192.168.0.4")
+
 (figwheel/watch-and-reload
-  :websocket-url "ws://localhost:3449/figwheel-ws"
+  :websocket-url (str "ws://" dev-machine-ip ":3449/figwheel-ws")
   :heads-up-display false
   :jsload-callback #(app/reload!))
 
-(core/init)
+(core/init {:server-address (str "http://" dev-machine-ip ":3000")})
 
 (def root-el (app/app-root))
 

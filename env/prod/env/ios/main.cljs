@@ -1,4 +1,4 @@
 (ns env.ios.main
   (:require [eponai.mobile.ios.core :as core]))
 
-(core/init)
+(core/init {:server-address "https://www.jourmoney.com"})

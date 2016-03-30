@@ -53,14 +53,16 @@
                                              "Warning: Failed propType"
                                              ]))
 
-(defn initialize-app [conn]
+(defn initialize-app [config conn]
+  {:pre [(:server-address config)]}
   (debug "Initializing App")
   (ignore-yellow-box-warnings!)
-  (let [parser (parser/parser)
-        _ (d/transact! conn [{:ui/singleton :ui.singleton/configuration
-                              :ui.singleton.configuration.endpoints/user-api "http://localhost:3000/api/user"
-                              :ui.singleton.configuration.endpoints/api "http://localhost:3000/api"
-                              :ui.singleton.configuration.endpoints/verify "http://localhost:3000/verify"}])
+  (let [server (:server-address config)
+        parser (parser/parser)
+        _ (d/transact! conn [{:ui/singleton                                  :ui.singleton/configuration
+                              :ui.singleton.configuration.endpoints/user-api (str server "/api/user")
+                              :ui.singleton.configuration.endpoints/api      (str server "/api")
+                              :ui.singleton.configuration.endpoints/verify   (str server "/verify")}])
         reconciler (om/reconciler {:state        conn
                                    :parser       parser
                                    :remotes      [:remote :http/call]
@@ -76,9 +78,9 @@
     (.registerComponent app-registry "JourMoneyApp" (fn [] app-root))
     (linking/start! reconciler)))
 
-(defn run []
+(defn run [config]
   (info "Run called in: " (namespace ::foo))
-  (try (initialize-app (init-conn))
+  (try (initialize-app config (init-conn))
        (catch :default e
          (error "Initialization error:" e)
          (throw e))))
