@@ -142,7 +142,7 @@
   Object
   (init-state [_ props]
     (let [transaction (-> (get-selected-transaction props)
-                          (update :transaction/tags (fn [tags] (set (map #(select-keys % [:tag/name]) tags)))))]
+                          (update :transaction/tags (fn [tags] (into [] (map #(select-keys % [:tag/name])) tags))))]
        {:init-state transaction
         :input-state transaction}))
 
@@ -176,13 +176,21 @@
              :i-class "fa fa-plus"})))
 
   (delete-tag [this tag]
-    (om/update-state! this update-in [:input-state :transaction/tags] disj tag))
+    (om/update-state! this update-in [:input-state :transaction/tags]
+                      (fn [tags]
+                        (into [] (remove #(= (:tag/name %) (:tag/name tag))) tags))))
 
   (add-tag [this tag]
     (om/update-state! this
-                      #(-> %
-                           (assoc :input-tag "")
-                           (update-in [:input-state :transaction/tags] conj tag))))
+                      (fn [st] (-> st
+                                   (assoc :input-tag "")
+                                   (update-in [:input-state :transaction/tags]
+                                              (fn [tags]
+                                                (if-not (some #(= (:tag/name %) (:tag/name tag)) tags)
+                                                  (if (empty? tags)
+                                                    [tag]
+                                                    (conj tags tag))
+                                                  tags)))))))
   
   (render [this]
     (let [props (om/props this)

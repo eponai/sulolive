@@ -86,6 +86,7 @@
                          on-delete-tag
                          placeholder
                          no-render-tags?]}]
+  (prn "Render tags: " selected-tags)
   (html
     [:div
      [:div.input-group

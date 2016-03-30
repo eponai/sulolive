@@ -49,7 +49,7 @@
                        :exception e
                        :data      params})))
     (catch Exception e
-      (throw (ex-info (str "Stripe error" {:action k :class (class e) :message (.getMessage e)})
+      (throw (ex-info (str "Stripe error: " {:action k :class (class e) :message (.getMessage e)})
                       {:cause     ::h/internal-error
                        :message   (.getMessage e)
                        :exception e
@@ -98,6 +98,10 @@
     (obj->subscription-map canceled)))
 
 ;; ##################### Webhooooks ####################
+;; References:
+;; https://stripe.com/docs/webhooks
+;; https://stripe.com/docs/api/java#events
+;; https://stripe.com/docs/api#event_types
 
 ; Multi method for Stripe event types passed in via webhooks.
 ; Reference Events: https://stripe.com/docs/api#events
@@ -113,12 +117,16 @@
   (debug "Stripe event: " event))
 
 (defmethod webhook "charge.succeeded"
+  ;; Receiving a Charge object in event.
+  ;; Reference: https://stripe.com/docs/api#charge_object
   [conn event & _]
   (let [charge (get-in event [:data :object])]
     (prn "charge.succeeded: " charge)
     (prn "Customer: " (:customer charge))))
 
 (defmethod webhook "charge.failed"
+  ;; Receiving a Charge object in event.
+  ;; Reference: https://stripe.com/docs/api#charge_object
   [conn event & [opts]]
   (let [{:keys [customer] :as charge} (get-in event [:data :object]) ;; customer id
         {:keys [send-email-fn]} opts]
@@ -154,6 +162,8 @@
                             :subject      "Payment failed"})))))))
 
 (defmethod webhook "customer.deleted"
+  ;; Receiving a Customer object in event.
+  ;; Reference: https://stripe.com/docs/api#customer_object
   [conn event & _]
   (let [{:keys [customer]} (get-in event [:data :object])
         db-entry (p/lookup-entity (d/db conn) [:stripe/customer customer])]
@@ -162,9 +172,10 @@
       (transact/transact-one conn [:db.fn/retractEntity (:db/id db-entry)]))))
 
 (defmethod webhook "customer.subscription.created"
+  ;; Receiving a Subscription object in event.
+  ;; Reference: https://stripe.com/docs/api#subscription_object
   [conn event & _]
-  (let [subscription (get-in event [:data :object])
-        {:keys [customer]} subscription
+  (let [{:keys [customer] :as subscription} (get-in event [:data :object])
         db-customer (p/lookup-entity (d/db conn) [:stripe/customer customer])]
     (if db-customer
       (let [db-sub (f/add-tempid (json->subscription-map subscription))]
@@ -177,18 +188,21 @@
                               :event event}})))))
 
 (defmethod webhook "customer.subscription.deleted"
-  [conn event & _]
+  ;; Receiving a Subscription object in event.
+  ;; Reference: https://stripe.com/docs/api#subscription_object
+  [_ event & _]
   (let [subscription (get-in event [:data :object])]
     (prn "Subscription" subscription)))
 
 (defmethod webhook "invoice.payment_succeeded"
+  ;; Receiving an Invoice object in event
+  ;; reference: https://stripe.com/docs/api#invoice_object
   [conn event & _]
-  (let [invoice (get-in event [:data :object])
-        {:keys [customer]} invoice
+  (let [{:keys [customer period_end] :as invoice} (get-in event [:data :object])
         {:keys [stripe/subscription]} (p/pull (d/db conn) [:stripe/subscription] [:stripe/customer customer])
-        period-end (* 1000 (:period_end invoice))]
+        subscription-ends-at (* 1000 period_end)]
     (if subscription
-      (transact/transact-one conn [:db/add (:db/id subscription) :stripe.subscription/ends-at period-end])
+      (transact/transact-one conn [:db/add (:db/id subscription) :stripe.subscription/ends-at subscription-ends-at])
       (throw (ex-info (str "No subscription found for customer: " customer)
                       {:cause ::h/unprocessable-entity
                        :message (str "No subscription found for customer: " customer)

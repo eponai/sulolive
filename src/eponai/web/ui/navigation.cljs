@@ -178,7 +178,8 @@
             [:li
              [:a.button.success.medium
               {:on-click #(om/update-state! this assoc :new-transaction? true)}
-              [:i.fa.fa-plus]]]]]
+              [:i.fa.fa-plus]
+              [:span "New Transaction"]]]]]
 
           [:div.top-bar-right.profile-menu
            [:ul.dropdown.menu
