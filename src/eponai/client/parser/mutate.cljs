@@ -2,7 +2,8 @@
   (:require [eponai.common.parser :refer [mutate]]
             [taoensso.timbre :refer-macros [info debug error trace]]
             [eponai.common.format :as format]
-            [eponai.common.database.transact :as transact]))
+            [eponai.common.database.transact :as transact]
+            [eponai.common.validate :as validate]))
 
 ;; ################ Remote mutations ####################
 ;; Remote mutations goes here. We share these mutations
@@ -13,12 +14,14 @@
 ;; --------------------- Transaction ------------
 
 (defmethod mutate 'transaction/create
-  [{:keys [state mutation-uuid]} k params]
-  (debug "transaction/create with params:" params)
-  {:action (fn []
-             (let [transaction (format/transaction-create k params)]
-               (transact/mutate-one state mutation-uuid transaction)))
-   :remote true})
+  [{:keys [state mutation-uuid parser] :as e} k input-transaction]
+  (debug "transaction/create with params:" input-transaction)
+  (let [{user-uuid :user/uuid} (parser e '[{:query/current-user [:user/uuid]}])]
+    (validate/validate k {:transaction input-transaction :user-uuid user-uuid})
+    {:action (fn []
+               (let [transaction (format/transaction input-transaction)]
+                 (transact/mutate-one state mutation-uuid transaction)))
+     :remote true}))
 
 (defmethod mutate 'transaction/edit
   [{:keys [state mutation-uuid]} _ {:keys [transaction/uuid] :as transaction}]

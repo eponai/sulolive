@@ -13,7 +13,7 @@
             [eponai.server.http :as http]
             [taoensso.timbre :refer [debug error info]]
             [environ.core :refer [env]]
-            )
+            [eponai.common.database.pull :as p])
   (:import (datomic.peer LocalConnection)))
 
 ;(defn currency-infos
@@ -276,3 +276,27 @@
                          (:verification/uuid verification))
     (info "Newsletter subscribe successful, transacting user into datomic.")
     (transact-map conn account)))
+
+(defn transaction-create [{:keys [state auth]} k {:keys [transaction/tags] :as input-transaction}]
+  (let [{budget-uuid :budget/uuid} (:transaction/budget input-transaction)
+        db-budget (p/one-with (d/db state) {:where   '[[?u :user/uuid ?user-uuid]
+                                                       [?e :budget/users ?u]
+                                                       [?e :budget/uuid ?budget-uuid]]
+                                            :symbols {'?user-uuid   (:username auth)
+                                                      '?budget-uuid budget-uuid}})]
+    (when-not db-budget
+      (throw (ex-info (str "Mutation error: " {:mutate k :params input-transaction})
+                      {:cause  ::http/unathorized
+                       :code   :budget-unaccessible
+                       :message "You don't have access to modify the specified budget."
+                       :mutate k
+                       :params input-transaction})))
+    (when-not (= (frequencies (set tags))
+                 (frequencies tags))
+      (throw (ex-info (str "Mutation error: " {:mutate k :params input-transaction})
+                      {:cause   ::http/unprocessable-entity
+                       :code    :tags-not-unique
+                       :message "Illegal argument :input-tags. Each tag must be unique."
+                       :mutate  k
+                       :params  input-transaction})))
+    ))

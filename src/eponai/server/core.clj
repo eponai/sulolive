@@ -4,6 +4,7 @@
             [compojure.core :refer :all]
             [environ.core :refer [env]]
             [eponai.common.parser :as parser]
+            [eponai.common.validate]
             [eponai.server.email :as e]
             [eponai.server.external.openexchangerates :as exch]
             [eponai.server.datomic-dev :refer [connect!]]

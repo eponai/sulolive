@@ -4,18 +4,22 @@
     [eponai.common.database.transact :as transact]
     [eponai.common.format :as format]
     [eponai.common.parser :refer [mutate]]
+    [eponai.common.validate :as validate]
     [taoensso.timbre :refer [debug]]
     [eponai.server.api :as api]
     [eponai.common.database.pull :as p]
-    [datomic.api :as d]))
+    [datomic.api :as d]
+    [eponai.common.format :as common.format]))
 
 ;; ------------------- Transaction --------------------
 
 (defmethod mutate 'transaction/create
-  [{:keys [state mutation-uuid]} k params]
-  (debug "transaction/create with params:" params)
+  [{:keys [state mutation-uuid auth] :as env} k input-transaction]
+  (debug "transaction/create with params:" input-transaction)
   {:action (fn []
-             (let [transaction (format/transaction-create k params)
+             (validate/validate env k {:transaction input-transaction
+                                       :user-uuid   (:username auth)})
+             (let [transaction (common.format/transaction input-transaction)
                    currency-chan (async/chan 1)
                    tx-report (transact/mutate-one state mutation-uuid transaction)]
                (async/go (async/>! currency-chan (:transaction/date transaction)))
@@ -35,11 +39,11 @@
 (defmethod mutate 'budget/save
   [{:keys [state auth mutation-uuid]} _ params]
   (debug "budget/save with params: " params)
-  (let [user-ref [:user/uuid (:username auth)]
-        budget (format/budget user-ref params)
-        dashboard (format/dashboard (:db/id budget) params)]
-    {:action (fn []
-               (transact/mutate state mutation-uuid [budget dashboard]))}))
+  {:action (fn []
+             (let [user-ref [:user/uuid (:username auth)]
+                   budget (format/budget user-ref params)
+                   dashboard (format/dashboard (:db/id budget) params)]
+               (transact/mutate state mutation-uuid [budget dashboard])))})
 
 (defmethod mutate 'budget/share
   [{:keys [state]} _ {:keys [budget/uuid user/email] :as params}]

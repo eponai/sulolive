@@ -7,15 +7,31 @@
             [eponai.common.generators :refer [gen-transaction]]
             [eponai.server.api :as api]
             [eponai.server.routes :as routes]
-            [eponai.server.test-util :as util :refer [session-request]]
+            [eponai.server.test-util :as util]
+            [eponai.server.middleware :as m]
             [eponai.common.database.pull :refer [pull]]
-            [taoensso.timbre :refer [debug]]))
+            [eponai.server.auth.credentials :as a]
+            [taoensso.timbre :refer [debug]]
+            [eponai.common.parser :as parser]
+            [eponai.server.datomic.format :as f]))
 
 (defn- new-db [txs]
   (let [conn (util/new-db txs)]
     (api/signin conn util/user-email)
     conn))
 
+(defn session-request [conn user body]
+  {:session          {:cemerick.friend/identity
+                      {:authentications
+                                {1
+                                 {:identity 1,
+                                  :username (:user/uuid user),
+                                  :roles    #{::a/user}}},
+                       :current 1}}
+   :body             body
+   ::m/parser        (parser/parser)
+   ::m/currency-chan (async/chan (async/sliding-buffer 1))
+   ::m/conn          conn})
 
 (defspec
   transaction-created-submitted-to-datomic
@@ -24,12 +40,15 @@
     [transaction (gen-transaction)]
 
     ;; Create new conn with currency transacted.
-    (let [conn (new-db [{:db/id         (d/tempid :db.part/user)
+    (let [{:keys [user]} (f/user-account-map "user@email.com")
+          conn (new-db [user
+                        {:db/id         (d/tempid :db.part/user)
                          :currency/code (:currency/code (:transaction/currency transaction))}
                         {:db/id       (d/tempid :db.part/user)
-                         :budget/uuid (:budget/uuid (:transaction/budget transaction))}])
+                         :budget/uuid (:budget/uuid (:transaction/budget transaction))
+                         :budget/users (:db/id user)}])
           parsed (routes/handle-parser-request
-                   (session-request conn `[(transaction/create ~(assoc transaction :mutation-uuid (d/squuid)))]))
+                   (session-request conn user`[(transaction/create ~(assoc transaction :mutation-uuid (d/squuid)))]))
           _ (debug "Parsed: " parsed)
           result (get-in parsed ['transaction/create :result])
           db (d/db conn)]

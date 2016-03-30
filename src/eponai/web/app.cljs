@@ -11,6 +11,7 @@
             [eponai.web.history :as history]
             [eponai.web.parser.mutate]
             [eponai.web.parser.read]
+            [eponai.common.validate]
             [eponai.web.homeless :as homeless]
             [eponai.common.datascript :as common.datascript]
             [eponai.common.parser :as parser]

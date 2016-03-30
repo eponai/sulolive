@@ -49,16 +49,3 @@
 (def user-email "user@email.com")
 
 (def test-parser (parser/parser))
-
-(defn session-request [conn body]
-  {:session          {:cemerick.friend/identity
-                      {:authentications
-                                {1
-                                 {:identity 1,
-                                  :username user-email,
-                                  :roles    #{::a/user}}},
-                       :current 1}}
-   :body             body
-   ::m/parser        test-parser
-   ::m/currency-chan (async/chan (async/sliding-buffer 1))
-   ::m/conn          conn})

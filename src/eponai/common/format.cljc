@@ -1,7 +1,6 @@
 (ns eponai.common.format
   (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
             [clojure.set :refer [rename-keys]]
-    [eponai.common.validate :as validate]
     #?@(:clj  [
             [clj-time.core :as t]
             [clj-time.format :as f]
@@ -169,8 +168,7 @@
 
   Returns a map representing a transaction entity"
   [input]
-  (let [input-transaction (validate/transaction-keys input)
-        conv-fn-map {:transaction/currency (fn [c] {:pre [(map? c)]}
+  (let [conv-fn-map {:transaction/currency (fn [c] {:pre [(map? c)]}
                                              (currency* c))
                      :transaction/date     (fn [d] {:pre [(map? d)]}
                                              (date* d))
@@ -189,7 +187,7 @@
                     (if (get m k)
                       (update m k (get conv-fn-map k))
                       m))
-        transaction (reduce update-fn input-transaction (keys conv-fn-map))]
+        transaction (reduce update-fn input (keys conv-fn-map))]
 
     (assoc transaction
       :db/id (d/tempid :db.part/user))))
@@ -237,16 +235,6 @@
              :widget   widget}
             filter
             (assoc :filter filter))))
-
-
-(defn transaction-create [k {:keys [transaction/tags] :as params}]
-  (if-not (= (frequencies (set tags))
-             (frequencies tags))
-    (throw (ex-info "Illegal argument :input-tags. Each tag must be unique."
-                    {:input-tags tags
-                     :mutate     k
-                     :params     params}))
-    (transaction params)))
 
 (defn transaction-edit [{:keys [transaction/tags
                                 transaction/uuid] :as input-transaction}]
