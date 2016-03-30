@@ -57,6 +57,7 @@
                  [binaryage/devtools "0.5.2"]
                  [org.clojure/tools.nrepl "0.2.11"
                   :exclusions [org.clojure/clojure]]
+                 [figwheel-sidecar "0.5.0-2"]
 
                  ;; React-native
                  [natal-shell "0.1.6"]
@@ -149,7 +150,6 @@
 
              :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha31"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
-                                       [figwheel-sidecar "0.5.0-2"]
                                        [com.cemerick/piggieback "0.2.1"]]
                         :source-paths ["src" "src-hacks/react-native" "env/dev"]
                         :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
@@ -229,7 +229,7 @@
   ;;;;;;;;;;;;;
   :target-path "target/%s"
   :source-paths ["src"]
-  :test-paths ["test" "env/dev/clj"]
+  :test-paths ["test" "env/dev"]
   :ring {:handler eponai.server.core/app
          :init    eponai.server.core/init}
   :main eponai.server.core
