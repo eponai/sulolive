@@ -21,7 +21,7 @@
   om/IQuery
   (query [{[:ui/component :ui.component/transactions] [:db/id]}])
   om/IQuery
-  (query [[:ui/singleton :ui.singleton/budget]]"
+  (query [[:ui/singleton :ui.singleton/project]]"
   [db query key]
   (let [e (d/entity db key)]
     {:value (cond
@@ -56,36 +56,36 @@
 
 (defmethod read :query/transactions
   [{:keys [db target ast] :as env} k p]
-  (let [budget (-> (d/entity db [:ui/component :ui.component/budget]) :ui.component.budget/uuid)]
+  (let [project (-> (d/entity db [:ui/component :ui.component/project]) :ui.component.project/uuid)]
     (if (= target :remote)
-      ;; Pass the active budget uuid to remote reader
-      {:remote (assoc-in ast [:params :budget-uuid] budget)}
+      ;; Pass the active project uuid to remote reader
+      {:remote (assoc-in ast [:params :project-uuid] project)}
 
       ;; Local read
-      (query-local-transactions env k (assoc p :budget-uuid budget)))))
+      (query-local-transactions env k (assoc p :project-uuid project)))))
 
 (defmethod read :query/dashboard
   [{:keys [db ast query target]} _ _]
-  (let [budget-uuid (-> (d/entity db [:ui/component :ui.component/budget])
-                        :ui.component.budget/uuid)]
+  (let [project-uuid (-> (d/entity db [:ui/component :ui.component/project])
+                        :ui.component.project/uuid)]
     (if (= target :remote)
-      ;; Pass the active budget uuid to remote reader
-      {:remote (assoc-in ast [:params :budget-uuid] budget-uuid)}
+      ;; Pass the active project uuid to remote reader
+      {:remote (assoc-in ast [:params :project-uuid] project-uuid)}
 
       ;; Local read
-      (let [eid (if budget-uuid
-                  (p/one-with db (p/budget-with-uuid budget-uuid))
+      (let [eid (if project-uuid
+                  (p/one-with db (p/project-with-uuid project-uuid))
 
-                  ;; No budget-uuid, grabbing the one with the smallest created-at
-                  (p/min-by db :budget/created-at (p/budget)))]
+                  ;; No project-uuid, grabbing the one with the smallest created-at
+                  (p/min-by db :project/created-at (p/project)))]
 
         {:value (when eid
-                  (when-let [dashboard-id (p/one-with db {:where [['?e :dashboard/budget eid]]})]
+                  (when-let [dashboard-id (p/one-with db {:where [['?e :dashboard/project eid]]})]
                     (p/pull db query dashboard-id)))}))))
 
-(defmethod read :query/all-budgets
+(defmethod read :query/all-projects
   [{:keys [db query]} _ _]
-  {:value  (sort-by :budget/created-at (p/pull-many db query (p/all-with db (p/budget))))
+  {:value  (sort-by :project/created-at (p/pull-many db query (p/all-with db (p/project))))
    :remote true})
 
 (defmethod read :query/all-currencies

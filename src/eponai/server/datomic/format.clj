@@ -111,10 +111,10 @@
      :verification/value      (get entity attribute)
      :verification/time-limit (or (:verification/time-limit opts) 15)}))
 
-(defn dashboard [budget-eid]
+(defn dashboard [project-eid]
   {:db/id            (d/tempid :db.part/user)
    :dashboard/uuid (d/squuid)
-   :dashboard/budget budget-eid})
+   :dashboard/project project-eid})
 
 (defn stripe-account
   "Takes a map with stripe information and formats to be transacted into datomic.
@@ -132,12 +132,12 @@
 
   Refer to followg functions for considered keys:
   * (user email)
-  * (budget user)
+  * (project user)
   * (fb-user user opts) - returns nil if no fb-user opts provided
   * (verification user opts) - if email is not nil
 
   Returns a map representing a user account map including keys
-  #{:user :budget :verification(if email not nil) :fb-user(if not nil)}"
+  #{:user :project :verification(if email not nil) :fb-user(if not nil)}"
   [email & [opts]]
   (let [user (user email opts)
         fb-user (fb-user user opts)]

@@ -22,7 +22,7 @@
 
 (defroutes
   app-routes
-  (GET "/*" request (html (::m/cljs-build-id request) "budget.html")))
+  (GET "/*" request (html (::m/cljs-build-id request) "app.html")))
 
 (defroutes
   site-routes
@@ -46,7 +46,7 @@
     (html (::m/cljs-build-id request) "signup.html"))
 
   (GET "/devcards" []
-    (html "devcards" "budget.html"))
+    (html "devcards" "app.html"))
 
   (POST
     "/newsletter/subscribe" {params :params

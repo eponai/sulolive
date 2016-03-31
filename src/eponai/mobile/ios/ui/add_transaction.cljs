@@ -24,11 +24,11 @@
                     (str "Transaction did not have every required key. Transaction: " t)))]
     (when t
       (verify-keys-in [] [:transaction/uuid :transaction/amount :transaction/date
-                          :transaction/type :transaction/currency :transaction/budget
+                          :transaction/type :transaction/currency :transaction/project
                           :db/id])
       (verify-keys-in [:transaction/date] [:date/ymd])
       (verify-keys-in [:transaction/currency] [:currency/code])
-      (verify-keys-in [:transaction/budget] [:budget/uuid])
+      (verify-keys-in [:transaction/project] [:project/uuid])
       (verify-keys-in [:transaction/type] [:db/ident]))))
 
 ;; TODO: Put common code in client or something?
@@ -42,14 +42,14 @@
   (query [this]
     '[({:query/messages [:tx/mutation-uuid :tx/message :tx/status]} {:mutation-uuids ?mutation-uuids})
       {:query/all-currencies [:currency/code :currency/name]}
-      {:query/all-budgets [:budget/uuid :budget/name]}])
+      {:query/all-projects [:project/uuid :project/name]}])
   Object
   (initLocalState [this]
     (let [props (om/props this)
-          {:keys [query/all-currencies query/all-budgets]} props
+          {:keys [query/all-currencies query/all-projects]} props
           {:keys [transaction]} (om/get-computed this)]
       (validate-transaction transaction)
-      {:budgets-by-uuid    (attribute-by-key props :query/all-budgets :budget/uuid)
+      {:projects-by-uuid    (attribute-by-key props :query/all-projects :project/uuid)
        :currencies-by-code (attribute-by-key props :query/all-currencies :currency/code)
        :input-tag          {:tag/name ""}
        :input-transaction  (merge
@@ -59,14 +59,14 @@
                                                                    (f/date->ymd-string))}
                               :transaction/tags     #{}
                               :transaction/currency {:currency/code (-> all-currencies first :currency/code)}
-                              :transaction/budget   {:budget/uuid (-> all-budgets first :budget/uuid)}
+                              :transaction/project   {:project/uuid (-> all-projects first :project/uuid)}
                               :transaction/type     {:db/ident :transaction.type/expense}}
                              transaction)}))
   (componentWillUpdate [this next-props _]
-    (when (not= (:query/all-budgets (om/props this))
-                (:query/all-budgets next-props))
-      (om/update-state! this assoc :budgets-by-uuid
-                        (attribute-by-key next-props :query/all-budgets :budget/uuid))
+    (when (not= (:query/all-projects (om/props this))
+                (:query/all-projects next-props))
+      (om/update-state! this assoc :projects-by-uuid
+                        (attribute-by-key next-props :query/all-projects :project/uuid))
       (om/update-state! this assoc :currencies-by-code
                         (attribute-by-key next-props :query/all-currencies :currency/code))))
 
@@ -119,10 +119,10 @@
                 :proxy/route-data]))))
 
   (render [this]
-    (let [{:keys [query/all-currencies query/all-budgets query/messages]} (om/props this)
-          {:keys [input-tag input-transaction budgets-by-uuid currencies-by-code]} (om/get-state this)
+    (let [{:keys [query/all-currencies query/all-projects query/messages]} (om/props this)
+          {:keys [input-tag input-transaction projects-by-uuid currencies-by-code]} (om/get-state this)
           {:keys [transaction/date transaction/tags transaction/currency
-                  transaction/budget transaction/amount transaction/title
+                  transaction/project transaction/amount transaction/title
                   transaction/type]} input-transaction
           js-date (f/ymd-string->js-date (:date/ymd date))
           {:keys [mode on-saved]} (om/get-computed this)
@@ -158,18 +158,18 @@
                                :transaction.type/expense "expense"}
                               (:db/ident type) (str "Unknown type: " type))))
               (view (styles :row)
-                    (text (styles :row-text) "Sheet:")
+                    (text (styles :row-text) "Project:")
                     (apply picker
                            (camel {:style           {:width 200}
-                                   :selected-value  (str (:budget/uuid budget))
+                                   :selected-value  (str (:project/uuid project))
                                    :item-style      {:width 200 :height 80}
                                    :on-value-change #(.update-transaction! this
-                                                                           :transaction/budget
-                                                                           {:budget/uuid %})})
-                           (map (fn [{:keys [budget/uuid]}]
-                                  (picker-item {:label (get-in budgets-by-uuid [uuid :budget/name])
+                                                                           :transaction/project
+                                                                           {:project/uuid %})})
+                           (map (fn [{:keys [project/uuid]}]
+                                  (picker-item {:label (get-in projects-by-uuid [uuid :project/name])
                                                 :value (str uuid)}))
-                                all-budgets)))
+                                all-projects)))
               (view (styles :row)
                     (text (styles :row-text) "Title: ")
                     (text-input (styles :row-input
@@ -183,7 +183,7 @@
                                          :keyboard-type   "number-pad"
                                          :value           (str amount)
                                          :auto-capitalize "none"})))
-              ;; TODO: Duplicated code Budget (sheet), except keys and symbols eg (:currency/code currency)
+              ;; TODO: Duplicated code project (sheet), except keys and symbols eg (:currency/code currency)
               (view (styles :row)
                     (text (styles :row-text) "Currency:")
                     (apply picker

@@ -18,7 +18,7 @@
        user-email))
 
 (defn setup-db-with-user!
-  "Given a users [{:user ... :budget-uuid ...} ...], adds:
+  "Given a users [{:user ... :project-uuid ...} ...], adds:
   * currencies
   * conversion-rates
   * verified user accounts
@@ -26,9 +26,9 @@
   [conn users]
   (dev/add-currencies conn)
   (dev/add-conversion-rates conn)
-  (doseq [{:keys [user budget-uuid]} users]
-    (dev/add-verified-user-account conn user budget-uuid)
-    (dev/add-transactions conn budget-uuid)))
+  (doseq [{:keys [user project-uuid]} users]
+    (dev/add-verified-user-account conn user project-uuid)
+    (dev/add-transactions conn project-uuid)))
 
 (defn new-db
   "Creates an empty database and returns the connection."

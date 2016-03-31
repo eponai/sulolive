@@ -49,12 +49,12 @@
     [:li
      [:a
       (opts {:href     "#"
-             :on-click #(on-click :add-budget?)
+             :on-click #(on-click :add-project?)
              :style {:padding "0.5em"}})
       [:i
        (opts {:class "fa fa-file-text-o"
               :style {:width "20%"}})]
-      [:span "Budget"]]]]])
+      [:span "project"]]]]])
 
 (defn- profile-menu [{:keys [on-close]}]
   [:div
@@ -76,7 +76,7 @@
                  :style    {:padding "0.5em"}})
           "Sign Out"]]]])
 
-(defui AddBudget
+(defui Addproject
   Object
   (render [this]
     (let [{:keys [on-close
@@ -85,7 +85,7 @@
       (html
         [:div
          [:h3
-          "Add budget"]
+          "Add project"]
          [:input
           (opts
             {:value       input-name
@@ -105,7 +105,7 @@
                         (on-close))}
            "Save"]]]))))
 
-(def ->AddBudget (om/factory AddBudget))
+(def ->Addproject (om/factory Addproject))
 
 ;;;; #################### Om Next components #####################
 
@@ -218,31 +218,31 @@
 (defui SideBar
   static om/IQuery
   (query [_]
-    [{:query/all-budgets [:budget/uuid
-                          :budget/name
-                          :budget/created-at
-                          {:budget/created-by [:user/uuid
+    [{:query/all-projects [:project/uuid
+                          :project/name
+                          :project/created-at
+                          {:project/created-by [:user/uuid
                                                :user/email]}]}
      {:query/current-user [:user/uuid]}
      {:query/stripe [:stripe/user
                      {:stripe/subscription [:stripe.subscription/status]}]}
-     {:query/active-budget [:ui.component.budget/uuid]}])
+     {:query/active-project [:ui.component.project/uuid]}])
   Object
   (initLocalState [_]
-    {:new-budget? false})
-  (save-new-budget [this name]
-    (om/transact! this `[(budget/save ~{:budget/uuid (d/squuid)
-                                        :budget/name name
+    {:new-project? false})
+  (save-new-project [this name]
+    (om/transact! this `[(project/save ~{:project/uuid (d/squuid)
+                                        :project/name name
                                         :dashboard/uuid (d/squuid)
                                         :mutation-uuid (d/squuid)})
-                         :query/all-budgets]))
+                         :query/all-projects]))
   (render [this]
-    (let [{:keys [query/all-budgets
-                  query/active-budget
+    (let [{:keys [query/all-projects
+                  query/active-project
                   query/current-user
                   query/stripe]} (om/props this)
           {:keys [on-close]} (om/get-computed this)
-          {:keys [new-budget? drop-target]} (om/get-state this)
+          {:keys [new-project? drop-target]} (om/get-state this)
           {:keys [stripe/subscription]} stripe
           {subscription-status :stripe.subscription/status} subscription]
       (html
@@ -283,27 +283,27 @@
             [:li.divider]
 
             (map
-              (fn [{budget-uuid :budget/uuid :as budget}]
+              (fn [{project-uuid :project/uuid :as project}]
                 [:li
-                 (opts {:key [budget-uuid]})
-                 [:a {:href          (routes/inside "/dashboard/" (:budget/uuid budget))
+                 (opts {:key [project-uuid]})
+                 [:a {:href          (routes/inside "/dashboard/" (:project/uuid project))
                       :class         (cond
-                                       (= drop-target budget-uuid)
+                                       (= drop-target project-uuid)
                                        "highlighted"
-                                       (= (:ui.component.budget/uuid active-budget) budget-uuid)
+                                       (= (:ui.component.project/uuid active-project) project-uuid)
                                        "selected")
                       :on-click      on-close
-                      :on-drag-over  #(utils/on-drag-transaction-over this budget-uuid %)
+                      :on-drag-over  #(utils/on-drag-transaction-over this project-uuid %)
                       :on-drag-leave #(utils/on-drag-transaction-leave this %)
-                      :on-drop       #(utils/on-drop-transaction this budget-uuid %)}
-                  [:span (or (:budget/name budget) "Untitled")]
-                  (when-not (= (:user/uuid (:budget/created-by budget)) (:user/uuid current-user))
-                    [:small " by " (:user/email (:budget/created-by budget))])]])
-              all-budgets)
+                      :on-drop       #(utils/on-drop-transaction this project-uuid %)}
+                  [:span (or (:project/name project) "Untitled")]
+                  (when-not (= (:user/uuid (:project/created-by project)) (:user/uuid current-user))
+                    [:small " by " (:user/email (:project/created-by project))])]])
+              all-projects)
 
             [:li
              [:a.secondary
-              {:on-click #(om/update-state! this assoc :new-budget? true)}
+              {:on-click #(om/update-state! this assoc :new-project? true)}
               [:i.fa.fa-plus
                (opts {:style {:display :inline
                               :padding "0.5em"}})]
@@ -328,12 +328,12 @@
            [:p.copyright.small.text-light
             "Copyright © eponai 2016. All Rights Reserved"]]]
 
-         (when new-budget?
-           (let [on-close #(om/update-state! this assoc :new-budget? false)]
-             (utils/modal {:content  (->AddBudget (om/computed
+         (when new-project?
+           (let [on-close #(om/update-state! this assoc :new-project? false)]
+             (utils/modal {:content  (->Addproject (om/computed
                                                     {}
                                                     {:on-close on-close
-                                                     :on-save  #(.save-new-budget this %)}))
+                                                     :on-save  #(.save-new-project this %)}))
                            :on-close on-close})))]))))
 
 (def ->SideBar (om/factory SideBar))

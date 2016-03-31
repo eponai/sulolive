@@ -1,4 +1,4 @@
-(ns eponai.web.ui.budget
+(ns eponai.web.ui.project
   (:require [eponai.web.ui.all-transactions :refer [->AllTransactions AllTransactions]]
             [eponai.web.ui.dashboard :refer [->Dashboard Dashboard]]
             [eponai.web.ui.navigation :as nav]
@@ -11,13 +11,13 @@
 (defn update-content [component content]
   (om/update-state! component assoc :content content))
 
-(defn- submenu [component budget]
+(defn- submenu [component project]
   (html
     [:ul.menu
      [:li
       [:a.disabled
        [:i.fa.fa-user]
-       [:small (count (:budget/users budget))]]]
+       [:small (count (:project/users project))]]]
      [:li
       [:a
        {:on-click #(.share component)}
@@ -31,7 +31,7 @@
        {:on-click #(update-content component :transactions)}
        [:span "Transactions"]]]]))
 
-(defui ShareBudget
+(defui Shareproject
   Object
   (render [this]
     (let [{:keys [on-close on-save]} (om/get-computed this)
@@ -39,7 +39,7 @@
       (html
         [:div.clearfix
          [:h3 "Share"]
-         [:label "Invite a friend to collaborate on this budget:"]
+         [:label "Invite a friend to collaborate on this project:"]
          [:input
           {:type        "email"
            :value       input-email
@@ -55,19 +55,19 @@
                            (on-close))}
            "Share"]]]))))
 
-(def ->ShareBudget (om/factory ShareBudget))
+(def ->Shareproject (om/factory Shareproject))
 
-(defui Budget
+(defui project
   static om/IQuery
   (query [_]
     [{:proxy/dashboard (om/get-query Dashboard)}
      {:proxy/all-transactions (om/get-query AllTransactions)}])
   Object
   (share [this]
-    (om/update-state! this assoc :share-budget? true))
+    (om/update-state! this assoc :share-project? true))
 
-  (share-budget [this budget-uuid email]
-    (om/transact! this `[(budget/share ~{:budget/uuid budget-uuid
+  (share-project [this project-uuid email]
+    (om/transact! this `[(project/share ~{:project/uuid project-uuid
                                          :user/email email})]))
   (init-state [_]
     {:content :dashboard})
@@ -75,33 +75,33 @@
     (.init-state this))
 
   (componentWillUnmount [this]
-    (om/transact! this `[(ui.component.budget/clear)
+    (om/transact! this `[(ui.component.project/clear)
                          :query/transactions]))
 
   (render [this]
     (let [{:keys [proxy/dashboard
                   proxy/all-transactions]} (om/props this)
           {:keys [content
-                  share-budget?]} (om/get-state this)
-          budget (-> dashboard
+                  share-project?]} (om/get-state this)
+          project (-> dashboard
                      :query/dashboard
-                     :dashboard/budget)]
+                     :dashboard/project)]
       (html
         [:div
          (nav/->NavbarSubmenu (om/computed {}
-                                           {:content (submenu this budget)}))
-         [:div#budget-content
+                                           {:content (submenu this project)}))
+         [:div#project-content
           (cond (= content :dashboard)
                 (->Dashboard dashboard)
 
                 (= content :transactions)
                 (->AllTransactions all-transactions))]
 
-         (when share-budget?
-           (let [on-close #(om/update-state! this assoc :share-budget? false)]
-             (utils/modal {:content (->ShareBudget (om/computed {}
+         (when share-project?
+           (let [on-close #(om/update-state! this assoc :share-project? false)]
+             (utils/modal {:content (->Shareproject (om/computed {}
                                                                 {:on-close on-close
-                                                                 :on-save #(.share-budget this (:budget/uuid budget) %)}))
+                                                                 :on-save #(.share-project this (:project/uuid project) %)}))
                            :on-close on-close})))]))))
 
-(def ->Budget (om/factory Budget))
+(def ->project (om/factory project))

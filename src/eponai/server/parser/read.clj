@@ -24,37 +24,37 @@
 ;; ############## App ################
 
 (defmethod read :query/transactions
-  [{:keys [db query auth]} _ {:keys [budget-uuid filter]}]
+  [{:keys [db query auth]} _ {:keys [project-uuid filter]}]
   (let [tx-ids (pull/all-with db {:where '[[?e :transaction/uuid]]})
-        _ (common.pull/find-transactions db {:budget-uuid  budget-uuid
+        _ (common.pull/find-transactions db {:project-uuid  project-uuid
                                                   :filter       filter
-                                                  :query-params {:where   '[[?e :transaction/budget ?b]
-                                                                            [?b :budget/users ?u]
+                                                  :query-params {:where   '[[?e :transaction/project ?b]
+                                                                            [?b :project/users ?u]
                                                                             [?u :user/uuid ?user-uuid]]
                                                                  :symbols {'?user-uuid (:username auth)}}})]
     {:value {:transactions (pull/pull-many db query tx-ids)
              :conversions (pull/conversions db tx-ids (:username auth))}}))
 
 (defmethod read :query/dashboard
-  [{:keys [db auth query] :as env} _ {:keys [budget-uuid]}]
+  [{:keys [db auth query] :as env} _ {:keys [project-uuid]}]
 
-  (let [budget-with-auth (common.pull/budget-with-auth (:username auth))
-        eid (if budget-uuid
+  (let [project-with-auth (common.pull/project-with-auth (:username auth))
+        eid (if project-uuid
               (one-with db (merge-query
-                             (common.pull/budget-with-uuid budget-uuid)
-                             budget-with-auth))
+                             (common.pull/project-with-uuid project-uuid)
+                             project-with-auth))
 
-              ;; No budget-uuid, grabbing the one with the smallest created-at
-              (min-by db :budget/created-at budget-with-auth))]
+              ;; No project-uuid, grabbing the one with the smallest created-at
+              (min-by db :project/created-at project-with-auth))]
 
     {:value (when eid
-              (let [dashboard (pull db query (one-with db {:where [['?e :dashboard/budget eid]]}))]
+              (let [dashboard (pull db query (one-with db {:where [['?e :dashboard/project eid]]}))]
                 (update dashboard :widget/_dashboard #(p/widgets-with-data env eid %))))}))
 
-(defmethod read :query/all-budgets
+(defmethod read :query/all-projects
   [{:keys [db query auth]} _ _]
   {:value  (common.pull/pull-many db query
-                                  (common.pull/all-with db {:where   '[[?e :budget/users ?u]
+                                  (common.pull/all-with db {:where   '[[?e :project/users ?u]
                                                                        [?u :user/uuid ?user-uuid]]
                                                             :symbols {'?user-uuid (:username auth)}}))})
 

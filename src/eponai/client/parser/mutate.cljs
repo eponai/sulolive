@@ -34,20 +34,20 @@
    :remote true})
 
 
-;; ---------------- Budget --------------
+;; ---------------- project --------------
 
-(defmethod mutate 'budget/save
+(defmethod mutate 'project/save
   [{:keys [state mutation-uuid]} _ params]
-  (debug "budget/save with params: " params)
-  (let [ budget (format/budget nil params)
-        dashboard (format/dashboard (:db/id budget) params)]
+  (debug "project/save with params: " params)
+  (let [ project (format/project nil params)
+        dashboard (format/dashboard (:db/id project) params)]
     {:action (fn []
-               (transact/mutate state mutation-uuid [budget dashboard]))
+               (transact/mutate state mutation-uuid [project dashboard]))
      :remote true}))
 
-(defmethod mutate 'budget/share
+(defmethod mutate 'project/share
   [{:keys [state mutation-uuid]} _ params]
-  (debug "budget/share with params: " params)
+  (debug "project/share with params: " params)
   {:remote true})
 
 ;; -------------- Widget ---------------

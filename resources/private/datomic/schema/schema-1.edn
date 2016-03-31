@@ -32,10 +32,10 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :dashboard/budget
+  :db/ident              :dashboard/project
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Budget for this dashboard."
+  :db/doc                "project for this dashboard."
   :db.install/_attribute :db.part/db}
 
  ;; ----------------- Widget

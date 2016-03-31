@@ -6,14 +6,14 @@
             [eponai.web.routes :as routes]
             [garden.core :refer [css]]))
 
-(defn generate-layout [budgets]
-  (map (fn [budget i]
+(defn generate-layout [projects]
+  (map (fn [project i]
          {:x (mod i 4)
           :y (int (/ i 4))
           :w 1
           :h 1
-          :i (str (:budget/uuid budget))})
-       budgets (range)))
+          :i (str (:project/uuid project))})
+       projects (range)))
 
 (defui Profile
   static om/IQuery
@@ -21,9 +21,9 @@
     [{:query/current-user [:user/uuid
                            :user/email
                            :user/picture]}
-     {:query/all-budgets [:budget/uuid
-                          :budget/name
-                          {:transaction/_budget [:transaction/uuid
+     {:query/all-projects [:project/uuid
+                          :project/name
+                          {:transaction/_project [:transaction/uuid
                                                  {:transaction/tags [:tag/name]}]}]}])
   Object
   (update-grid-layout [this]
@@ -32,19 +32,19 @@
       (om/update-state! this assoc :grid-element grid-element)))
 
   (componentWillReceiveProps [this new-props]
-    (let [budgets (:query/all-budgets new-props)]
-      (om/update-state! this assoc :layout (clj->js (generate-layout budgets)))))
+    (let [projects (:query/all-projects new-props)]
+      (om/update-state! this assoc :layout (clj->js (generate-layout projects)))))
 
   (componentDidMount [this]
-    (let [budgets (:query/all-budgets (om/props this))]
+    (let [projects (:query/all-projects (om/props this))]
       (.update-grid-layout this)
       (om/update-state! this
                         assoc
-                        :layout (clj->js (generate-layout budgets)))))
+                        :layout (clj->js (generate-layout projects)))))
 
   (render [this]
     (let [{:keys [query/current-user
-                  query/all-budgets]} (om/props this)
+                  query/all-projects]} (om/props this)
           {:keys [layout grid-element]} (om/get-state this)
           React (.-React js/window)]
       (html
@@ -79,27 +79,27 @@
 
                            (clj->js
                              (map
-                               (fn [budget-props]
+                               (fn [project-props]
                                  (html
-                                   [:div {:key  (str (:budget/uuid budget-props))}
+                                   [:div {:key  (str (:project/uuid project-props))}
                                     [:a
-                                     (opts {:href  (routes/inside "/dashboard/" (:budget/uuid budget-props))
+                                     (opts {:href  (routes/inside "/dashboard/" (:project/uuid project-props))
                                             :style {:border "1px solid #e7e7e7"
                                                     :height "100%"
                                                     :width  "100%"}})
-                                     [:h3.text-center (:budget/name budget-props)]
+                                     [:h3.text-center (:project/name project-props)]
                                      [:table
                                       (opts {:style {:width "100%"}})
                                       [:tbody
                                        [:tr
                                         [:td "Transactions"]
-                                        [:td (count (:transaction/_budget budget-props))]]
+                                        [:td (count (:transaction/_project project-props))]]
                                        [:tr
                                         [:td
                                          (opts {:style {:vertical-align :top}})
                                          "Top tags"]
                                         [:td
-                                         (let [transactions (:transaction/_budget budget-props)
+                                         (let [transactions (:transaction/_project project-props)
                                                tags (reduce #(concat %1 (:transaction/tags %2)) [] transactions)
                                                sorted (sort-by count (group-by :tag/name tags))]
                                            (take 3 (map (fn [tag]
@@ -107,6 +107,6 @@
                                                            (opts {:key [(first tag)]})
                                                            (first tag) " #" (count (second tag))])
                                                         sorted)))]]]]]]))
-                               all-budgets))))]))))
+                               all-projects))))]))))
 
 (def ->Profile (om/factory Profile))

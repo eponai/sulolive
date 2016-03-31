@@ -13,7 +13,7 @@
 
 (defn invite-subject [inviter user-status]
   (str inviter
-       " has invited you to share budget. "
+       " has invited you to share project. "
        (if (= user-status :user.status/new)
          "Create your account on JourMoney"
          "Sign in to JourMoney")))

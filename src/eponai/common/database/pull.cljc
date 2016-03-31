@@ -106,7 +106,7 @@
 (defn all-with
   "takes the database and a map with :where and :symbols keys.
 
-  The value of :where is where-clauses. Ex: '[[?e :budget/uuid]]
+  The value of :where is where-clauses. Ex: '[[?e :project/uuid]]
 
   The value of :symbols is a map of symbols in the query and
   their values. Ex: {'?uuid user-uuid}
@@ -152,17 +152,17 @@
       (update :symbols s/rename-keys renames)
       (update :where #(walk/postwalk-replace renames %))))
 
-(defn budget []
-  {:where '[[?e :budget/uuid]]})
+(defn project []
+  {:where '[[?e :project/uuid]]})
 
-(defn budget-with-uuid [budget-uuid]
+(defn project-with-uuid [project-uuid]
   ;; Harder to check if it's actually a uuid.
-  {:pre [(not (string? budget-uuid))]}
-  {:where   '[[?e :budget/uuid ?budget-uuid]]
-   :symbols {'?budget-uuid budget-uuid}})
+  {:pre [(not (string? project-uuid))]}
+  {:where   '[[?e :project/uuid ?project-uuid]]
+   :symbols {'?project-uuid project-uuid}})
 
-(defn budget-with-auth [user-uuid]
-  {:where   '[[?e :budget/users ?u]
+(defn project-with-auth [user-uuid]
+  {:where   '[[?e :project/users ?u]
               [?u :user/uuid ?user-uuid]]
    :symbols {'?user-uuid user-uuid}})
 
@@ -220,7 +220,7 @@
      status))
 
 (defn find-transactions
-  [db {:keys [filter budget-uuid query-params]}]
+  [db {:keys [filter project-uuid query-params]}]
   (let [pull-params (cond-> {:where '[[?e :transaction/uuid]]}
 
                             (some? query-params)
@@ -229,10 +229,10 @@
                             (some? filter)
                             (merge-query (transactions filter))
 
-                            (some? budget-uuid)
-                            (merge-query {:where   '[[?e :transaction/budget ?b]
-                                                     [?b :budget/uuid ?budget-uuid]]
-                                          :symbols {'?budget-uuid budget-uuid}}))]
+                            (some? project-uuid)
+                            (merge-query {:where   '[[?e :transaction/project ?b]
+                                                     [?b :project/uuid ?project-uuid]]
+                                          :symbols {'?project-uuid project-uuid}}))]
     (all-with db pull-params)))
 
 (defn find-latest-conversion [db {:keys [currency user] :as params}]

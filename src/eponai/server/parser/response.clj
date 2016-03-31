@@ -46,7 +46,7 @@
   ;; TODO: What's the plan here? Do we really just want to return nil?
   (update response :result dissoc :email-chan :status :device))
 
-(defmethod response-handler 'budget/share
+(defmethod response-handler 'project/share
   [{:keys [::m/send-email-fn]} _ response]
   (when-let [chan (get-in response [:result :email-chan])]
     (go
@@ -59,7 +59,7 @@
                                                            (email/button-title user-status)
                                                            (email/link-message user-status))
                         :text-content #(email/text-content % user-status)
-                        :subject      "You're invited to share budget."}))))
+                        :subject      "You're invited to share project."}))))
   (-> response
       (update :result dissoc :email-chan)
       (update :result dissoc :status)))

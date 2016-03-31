@@ -20,7 +20,7 @@
                                    (common.datascript/ui-schema)))]
     (d/transact conn [{:ui/singleton :ui.singleton/app}
                       {:ui/singleton :ui.singleton/auth}
-                      {:ui/component :ui.component/budget}])
+                      {:ui/component :ui.component/project}])
     {:parser (parser/parser)
      :conn   conn}))
 
@@ -35,7 +35,7 @@
           {:keys [parser conn]} (init-state)]
       (doseq [tx transactions]
         (d/transact conn [(:transaction/currency tx)
-                          (:transaction/budget tx)]))
+                          (:transaction/project tx)]))
       (let [parsed (parser {:state conn} create-mutations)
             error? (get-in parsed ['transaction/create :om.next/error])
             ui (parser {:state conn} (om/get-query transactions/AllTransactions))
@@ -48,8 +48,8 @@
 
 (deftest transaction-create-with-tags-of-the-same-name-throws-exception
   (let [{:keys [parser conn]} (init-state)
-        budget-uuid (d/squuid)]
-    (d/transact conn [{:budget/uuid budget-uuid}])
+        project-uuid (d/squuid)]
+    (d/transact conn [{:project/uuid project-uuid}])
     (is (thrown-with-msg? cljs.core.ExceptionInfo
                           #".*Illegal.*argument.*input-tags.*"
                           (-> (parser {:state conn}
@@ -62,7 +62,7 @@
                                         :transaction/description ""
                                         :transaction/tags        [{:tag/name ""} {:tag/name ""}]
                                         :transaction/created-at  0
-                                        :transaction/budget      {:budget/uuid budget-uuid}
+                                        :transaction/project      {:project/uuid project-uuid}
                                         :transaction/type        :transaction.type/expense
                                         :mutation-uuid           (d/squuid)})])
                               (get-in ['transaction/create :om.next/error])

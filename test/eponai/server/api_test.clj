@@ -91,46 +91,46 @@
                             #"Email already in use"
                             (api/activate-account conn (str (:user/uuid new-user)) (:user/email existing-user)))))))
 
-;;;; --------- Share budget tests -----------------------
+;;;; --------- Share project tests -----------------------
 
-(deftest share-budget-existing-user-invited
-  (testing "An existing user account is invited to share a budget. Should add the user to the budget and send email"
+(deftest share-project-existing-user-invited
+  (testing "An existing user account is invited to share a project. Should add the user to the project and send email"
     (let [invitee "share@email.com"
           {:keys [user] :as account-inviter} (f/user-account-map user-email)
           account-invitee (f/user-account-map invitee)
-          budget (common.format/budget (:db/id user))
+          project (common.format/project (:db/id user))
           conn (new-db (conj (concat (vals account-inviter)
                                      (vals account-invitee))
-                             budget))
-          result (api/share-budget conn (:budget/uuid budget) invitee)
-          {:keys [budget/_users]} (p/pull (d/db conn) [{:budget/_users [:budget/uuid]}] [:user/email invitee])]
+                             project))
+          result (api/share-project conn (:project/uuid project) invitee)
+          {:keys [project/_users]} (p/pull (d/db conn) [{:project/_users [:project/uuid]}] [:user/email invitee])]
       (is (= (:status result) (:user/status user)))
       (is (= 1 (count _users)))
       (is (= (:verification/status (async/<!! (get result :email-chan))) :verification.status/pending)))))
 
-(deftest share-budget-new-user-email-invited
-  (testing "An new user account is invited to share a budget. Should add the user to the budget and send email"
+(deftest share-project-new-user-email-invited
+  (testing "An new user account is invited to share a project. Should add the user to the project and send email"
     (let [invitee "share@email.com"
           {:keys [user] :as account-inviter} (f/user-account-map user-email)
-          budget (common.format/budget (:db/id user))
+          project (common.format/project (:db/id user))
           conn (new-db (conj (vals account-inviter)
-                             budget))
-          result (api/share-budget conn (:budget/uuid budget) invitee)
-          {:keys [budget/_users]} (p/pull (d/db conn) [{:budget/_users [:budget/uuid]}] [:user/email invitee])]
+                             project))
+          result (api/share-project conn (:project/uuid project) invitee)
+          {:keys [project/_users]} (p/pull (d/db conn) [{:project/_users [:project/uuid]}] [:user/email invitee])]
       (is (= (:status result) (:user/status user)))
       (is (= 1 (count _users)))
       (is (= (:verification/status (async/<!! (get result :email-chan))) :verification.status/pending)))))
 
-(deftest share-budget-user-already-sharing
-  (testing "A user is invited to share a budget, but is already sharing. Throw exception."
+(deftest share-project-user-already-sharing
+  (testing "A user is invited to share a project, but is already sharing. Throw exception."
     (let [{:keys [user] :as account-inviter} (f/user-account-map user-email)
-          budget (common.format/budget (:db/id user))
+          project (common.format/project (:db/id user))
           conn (new-db (conj (vals account-inviter)
-                             budget))]
+                             project))]
       (is (thrown-with-msg? ExceptionInfo
-                           #"User already sharing budget"
-                           (api/share-budget conn (:budget/uuid budget) user-email)))
-      (let [{:keys [budget/_users]} (p/pull (d/db conn) [{:budget/_users [:budget/uuid]}] [:user/email user-email])]
+                           #"User already sharing project"
+                           (api/share-project conn (:project/uuid project) user-email)))
+      (let [{:keys [project/_users]} (p/pull (d/db conn) [{:project/_users [:project/uuid]}] [:user/email user-email])]
         (is (= 1 (count _users)))))))
 
 

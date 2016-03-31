@@ -160,43 +160,43 @@
  [:db/add #db/id[:db.part/user] :db/ident :verification.status/verified]
  [:db/add #db/id[:db.part/user] :db/ident :verification.status/expired]
 
- ;; Budget
+ ;; Project
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :budget/uuid
+  :db/ident              :project/uuid
   :db/valueType          :db.type/uuid
   :db/unique             :db.unique/identity
-  :db/doc                "Unique identifier for a budget."
+  :db/doc                "Unique identifier for a project."
   :db/cardinality        :db.cardinality/one
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :budget/created-by
+  :db/ident              :project/created-by
   :db/valueType          :db.type/ref
-  :db/doc                "User who created this budget."
+  :db/doc                "User who created this project."
   :db/cardinality        :db.cardinality/one
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :budget/users
+  :db/ident              :project/users
   :db/valueType          :db.type/ref
-  :db/doc                "Users who are working with this budget."
+  :db/doc                "Users who are working with this project."
   :db/cardinality        :db.cardinality/many
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :budget/name
+  :db/ident              :project/name
   :db/valueType          :db.type/string
   :db/fulltext           true
-  :db/doc                "Name for this budget."
+  :db/doc                "Name for this project."
   :db/cardinality        :db.cardinality/one
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :budget/created-at
+  :db/ident              :project/created-at
   :db/valueType          :db.type/long
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Timestamp of when the budget was created."
+  :db/doc                "Timestamp of when the project was created."
   :db.install/_attribute :db.part/db}
 
  ;; transactions
@@ -211,9 +211,9 @@
 
  {:db/id                 #db/id[:db.part/db]
   :db.install/_attribute :db.part/db
-  :db/ident              :transaction/budget
+  :db/ident              :transaction/project
   :db/valueType          :db.type/ref
-  :db/doc                "Budget that this transaction belongs to."
+  :db/doc                "project that this transaction belongs to."
   :db/cardinality        :db.cardinality/one}
 
  {:db/id                 #db/id[:db.part/db]

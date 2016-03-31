@@ -77,20 +77,20 @@
                       schema-files)]
      (reduce concat [] schemas))))
 
-(defn add-verified-user-account [conn email budget-uuid]
+(defn add-verified-user-account [conn email project-uuid]
   (let [{:keys [user] :as account} (f/user-account-map email {:verification/status :verification.status/verified
                                            :user/status :user.status/active})
-        budget (format/budget (:db/id user) {:budget/uuid budget-uuid})
-        dashboard (format/dashboard (:db/id budget))
+        project (format/project (:db/id user) {:project/uuid project-uuid})
+        dashboard (format/dashboard (:db/id project))
         ret (transact/transact-map conn (-> account
-                                            (assoc :budget budget :dashboard dashboard)
+                                            (assoc :project project :dashboard dashboard)
                                             (update :user assoc :user/currency [:currency/code "USD"])))]
     (debug "New user created with email:" email)
     ret))
 
-(defn add-transactions [conn budget-uuid]
+(defn add-transactions [conn project-uuid]
   (->> (transactions)
-       (map #(assoc % :transaction/budget {:budget/uuid budget-uuid}))
+       (map #(assoc % :transaction/project {:project/uuid project-uuid}))
        (map #(format/transaction %))
        (transact/transact conn)))
 
@@ -107,15 +107,15 @@
 (defn add-data-to-connection [conn]
   (let [schema (read-schema-files)
         email test-user-email
-        budget-uuid (d/squuid)]
+        project-uuid (d/squuid)]
     (d/transact conn schema)
     (debug "Schema added.")
     (add-currencies conn)
     (debug "Currencies added.")
 
-    (add-verified-user-account conn email budget-uuid)
+    (add-verified-user-account conn email project-uuid)
     (debug "New user created and verified.")
-    (add-transactions conn budget-uuid)
+    (add-transactions conn project-uuid)
     (debug "User transactions added.")
     (add-conversion-rates conn)
     (debug "Conversion rates added")))

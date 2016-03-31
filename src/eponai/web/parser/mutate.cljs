@@ -42,15 +42,15 @@
   {:action #(t/transact state [{:ui/singleton                :ui.singleton/loader
                                  :ui.singleton.loader/visible false}])})
 
-(defmethod mutate 'budget/set-active-uuid
-  [{:keys [state]} _ {:keys [budget-uuid]}]
-  {:action #(t/transact state [{:ui/component             :ui.component/budget
-                                 :ui.component.budget/uuid budget-uuid}])})
+(defmethod mutate 'project/set-active-uuid
+  [{:keys [state]} _ {:keys [project-uuid]}]
+  {:action #(t/transact state [{:ui/component             :ui.component/project
+                                 :ui.component.project/uuid project-uuid}])})
 
-(defmethod mutate 'ui.component.budget/clear
+(defmethod mutate 'ui.component.project/clear
   [{:keys [state]} _ _]
   {:action #(t/transact state
-                         [[:db.fn/retractAttribute [:ui/component :ui.component/budget] :ui.component.budget/uuid]])})
+                         [[:db.fn/retractAttribute [:ui/component :ui.component/project] :ui.component.project/uuid]])})
 
 (defmethod mutate 'transactions.filter/update
   [{:keys [state]} _ {:keys [filter]}]

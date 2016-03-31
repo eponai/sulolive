@@ -12,10 +12,10 @@
 
 ;; -------- Readers for UI components
 
-(defmethod read :query/active-budget
+(defmethod read :query/active-project
   [{:keys [db query]} _ _]
-  (debug "Pulling budget query:" query)
-  {:value (p/pull db query [:ui/component :ui.component/budget])})
+  (debug "Pulling project query:" query)
+  {:value (p/pull db query [:ui/component :ui.component/project])})
 
 (defmethod read :query/selected-transaction
   [{:keys [db query]} _ _]

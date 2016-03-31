@@ -1,5 +1,5 @@
 (ns eponai.common.datascript_test
-  (:require [eponai.common.datascript :as budget.d]
+  (:require [eponai.common.datascript :as project.d]
             [datascript.core :as d]
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
@@ -48,7 +48,7 @@
 (defspec datomic-schemas-can-be-translated-to-datascript
   10
   (prop/for-all [datomic-schema (gen/not-empty (gen/vector (gen-datomic-schema)))]
-                (when-let [datascript-schema (budget.d/schema-datomic->datascript 
+                (when-let [datascript-schema (project.d/schema-datomic->datascript
                                                datomic-schema)] 
                   (let [conn (d/create-conn datascript-schema)] 
                     ;; create an entity to have something to refer to
@@ -82,7 +82,7 @@
                       schema (reduce (fn [m k] (assoc m k {:db/valueType :db.type/ref}))
                                      {} refs)
                       conn (d/create-conn schema)
-                      temp-entities (budget.d/db-id->temp-id (set refs) entities)]
+                      temp-entities (project.d/db-id->temp-id (set refs) entities)]
                   (d/transact conn temp-entities)
                   (every? (fn [ref-key]
                             ;; if key exists
