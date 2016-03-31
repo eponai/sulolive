@@ -10,16 +10,21 @@
 
 ; ---- exceptions
 
-(defn ex-invalid-input [input]
-  (ex-info (str "Invalid input." input)
-           {:cause ::authentication-error
-            :status ::h/unprocessable-entity
-            :data {:input input}}))
+(declare auth-map)
+(defn auth-error [k status ex-data]
+  (ex-info (str "Authentication error code "(:code ex-data) " in auth " k)
+           (merge {:type     ::authentication-error
+                   :status   status
+                   :auth-key k
+                   :function (str auth-map)}
+                  ex-data)))
 
-(defn ex-user-not-activated [user]
-  (ex-info "User not activated."
-           {:cause ::authentication-error
-            :activate-user user}))
+(defn user-not-activated-error [k user]
+  (auth-error k ::h/unathorized
+              {:type          ::authentication-error
+               :code          :user-not-activated
+               :message       "User not activated."
+               :activate-user user}))
 
 (defn link-fb-user-to-account [conn {:keys [user/email] :as opts}]
   ;; There's already a user account for the email provided by the FB account,
@@ -46,14 +51,19 @@
           (fn [_ input] (::friend/workflow (meta input))))
 
 (defmethod auth-map :default
-  [conn {:keys [uuid] :as params}]
+  [conn {:keys [uuid]}]
   (if uuid
     (let [user (d/entity (d/db conn) (:db/id (api/verify-email conn uuid)))]
       (if (= (:user/status user)
              :user.status/active)
         (auth-map-for-db-user user)
-        (throw (ex-user-not-activated user))))
-    (throw (ex-invalid-input params))))
+        (throw (user-not-activated-error :default user))))
+    (throw (auth-error :default
+                       ::h/unprocessable-entity
+                       {:code          :missing-required-fields
+                        :message       "Missing verification UUID for authentication."
+                        :missing-keys  [:uuid]
+                        :function-args {'uuid uuid}}))))
 
 (defmethod auth-map :facebook
   [conn {:keys [access_token user_id fb-info-fn] :as params}]
@@ -67,7 +77,7 @@
         (if (= (:user/status db-user)
                :user.status/active)
           (auth-map-for-db-user db-user)
-          (throw (ex-user-not-activated db-user))))
+          (throw (user-not-activated-error :facebook db-user))))
 
       ; If we don't have a facebook user in the DB, check if there's an accout with a matching email.
       (let [{:keys [email picture]} (fb-info-fn user_id access_token)]
@@ -86,15 +96,24 @@
           (if (= (:user/status user)
                  :user.status/active)
             (auth-map-for-db-user user)
-            (throw (ex-user-not-activated user))))))
-    (throw (ex-invalid-input params))))
+            (throw (user-not-activated-error :facebook user))))))
+    (throw (auth-error :facebook ::h/unprocessable-entity
+                       {:code          :missing-required-fields
+                        :message       "Missing required keys for authentication."
+                        :missing-keys  (into [] (filter #(nil? (get params %))) [:user_id :access_token :fb-info-fn])
+                        :function-args {'access_token access_token 'user_id user_id 'fb-info-fn fb-info-fn}}))))
 
 (defmethod auth-map :activate-account
   [conn {:keys [user-uuid user-email] :as body}]
   (if (and user-uuid user-email)
     (let [user (api/activate-account conn user-uuid user-email)]
       (auth-map-for-db-user user))
-    (throw (ex-invalid-input body))))
+    (throw (auth-error :activate-account ::h/unprocessable-entity
+                       {:code          :missing-required-fields
+                        :message       "Missing required keys for authentication."
+                        :missing-keys  (into [] (filter #(nil? (get body %))) #{:user-uuid :user-email})
+                        :function-args {'user-uuid user-uuid
+                                        'user-email user-email}}))))
 
 (defn credential-fn
   "Create a credential fn with a db to pull user credentials.

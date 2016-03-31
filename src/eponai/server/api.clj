@@ -29,6 +29,12 @@
 
 ; Actions
 
+(defn api-error [status code ex-data]
+  (ex-info (str "API error code " code)
+           (merge {:status status
+                   :code code}
+                  ex-data)))
+
 (defn signin
   "Create a new user and transact into datomic.
 
@@ -54,8 +60,11 @@
           (debug "Done creating new user with email:" email)
           {:email-chan email-chan
            :status :user.status/new})))
-    (throw (ex-info "Trying to signup with nil email."
-                    {:cause ::signup-error}))))
+    (throw (api-error ::http/unathorized :illegal-argument
+                      {:type      :signup-error
+                       :message   "Cannot sign in with a nil email."
+                       :function  (str signin)
+                       :arguments {'email email}}))))
 
 (defn verify-email
   "Try and set the verification status if the verification with the specified uuid to :verification.status/verified.
@@ -67,33 +76,41 @@
   it means that it's already verified or expired, throws exception.
 
   On success returns {:db/id some-id} for the user this verification belongs to."
-  [conn uuid]
+  [conn verification-uuid]
   {:pre [(instance? LocalConnection conn)
-         (string? uuid)]}
-  (let [ex (fn [msg] (ex-info msg
-                              {:cause   ::verification-error
-                               :status  ::http/unathorized
-                               :data    {:uuid uuid}
-                               :message "The verification link is invalid."}))]
-    (if-let [verification (pull/lookup-entity (d/db conn) [:verification/uuid (common.format/str->uuid uuid)])]
-      (let [verification-time (c/from-long (:verification/created-at verification))
-            time-interval (time/in-minutes (time/interval verification-time (time/now)))
-            time-limit (:verification/time-limit verification)]
-        ; If the verification was not used within 15 minutes, it's expired.
-        (if (or (<= time-limit 0) (>= time-limit time-interval))
-          ;If verification status is not pending, we've already verified this or it's expired.
-           (if (= (:verification/status verification)
-                  :verification.status/pending)
-             (do
-               (debug "Successful verify for uuid: " (:verification/uuid verification))
-               (transact-one conn [:db/add (:db/id verification) :verification/status :verification.status/verified])
-               (:verification/entity verification))
-             (throw (ex "Invalid verification UUID")))
-           (do
-            (transact-one conn [:db/add (:db/id verification) :verification/status :verification.status/expired])
-            (throw (ex "Expired verification UUID")))))
-      ; If verification does not exist, throw invalid error
-      (throw (ex "Verification UUID does not exist")))))
+         (string? verification-uuid)]}
+  (if-let [verification (pull/lookup-entity (d/db conn) [:verification/uuid (common.format/str->uuid verification-uuid)])]
+    (let [verification-time (c/from-long (:verification/created-at verification))
+          time-interval (time/in-minutes (time/interval verification-time (time/now)))
+          time-limit (:verification/time-limit verification)]
+      ; If the verification was not used within 15 minutes, it's expired.
+      (if (or (<= time-limit 0) (>= time-limit time-interval))
+        ;If verification status is not pending, we've already verified this or it's expired.
+        (if (= (:verification/status verification)
+               :verification.status/pending)
+          (do
+            (debug "Successful verify for uuid: " (:verification/uuid verification))
+            (transact-one conn [:db/add (:db/id verification) :verification/status :verification.status/verified])
+            (:verification/entity verification))
+          (throw (api-error ::http/unathorized :verification-invalid
+                            {:type          :verification-error
+                             :function      (str verify-email)
+                             :function-args {'verification-uuid verification-uuid}
+                             :message       "The verification link is invalid."})))
+        (do
+          (transact-one conn [:db/add (:db/id verification) :verification/status :verification.status/expired])
+          (throw (api-error ::http/unathorized
+                            :verification-expired
+                            {:type          :verification-error
+                             :function      (str verify-email)
+                             :function-args {'verification-uuid verification-uuid}
+                             :message       "The verification link is expired."})))))
+    ; If verification does not exist, throw invalid error
+    (throw (api-error ::http/unprocessable-entity
+                      :illegal-argument
+                      {:message       (str "Verification not found: " verification-uuid)
+                       :function      (str verify-email)
+                       :function-args {'verification-uuid verification-uuid}}))))
 
 (declare stripe-trial)
 
@@ -117,9 +134,12 @@
       (when-let [existing-user (pull/lookup-entity (d/db conn) [:user/email email])]
         (if-not (= (:db/id user)
                    (:db/id existing-user))
-          (throw (ex-info "Email already in use."
-                          {:cause ::authentication-error
-                           :data  {:email email}}))))
+          (throw (api-error ::http/unathorized
+                            :duplicate-email
+                            {:type          :authentication-error
+                             :function      (str activate-account)
+                             :function-args {'user-uuid user-uuid 'email email}
+                             :message       (str email " is already in use. Maybe you already have an account?")}))))
 
       (let [user-db-id (:db/id user)
             email-changed-db (:db-after (transact-one conn [:db/add user-db-id :user/email email]))
@@ -132,11 +152,12 @@
           (debug "User not verified for email:" email "will create new verification for user: " user-db-id)
           (let [verification (datomic.format/verification user)]
             (transact-one conn verification)
-            (throw (ex-info "Email not verified."
-                            {:cause        ::authentication-error
-                             :data         {:email email}
-                             :message      "Email not verified"
-                             :verification verification}))))
+            (throw (api-error ::http/unathorized :unverified-email
+                              {:type          :authentication-error
+                               :function      (str activate-account)
+                               :function-args {'user-uuid user-uuid 'email email}
+                               :message       (str email " is not verified.")
+                               :data          {:verification verification}}))))
 
         ; If the user is trying to activate the same account again, just return the user entity.
         (if (= (:user/status user) :user.status/active)
@@ -155,10 +176,11 @@
 
 
     ; The user uuid was not found in the database.
-    (throw (ex-info "Invalid User id." {:cause   ::authentication-error
-                                        :data    {:uuid  user-uuid
-                                                  :email email}
-                                        :message "No user exists for UUID"}))))
+    (throw (api-error ::http/unathorized :illegal-argument
+                      {:type          :authentication-error
+                       :message       (str "User with email not found: " email)
+                       :function      (str activate-account)
+                       :function-args {'user-uuid user-uuid 'email email}}))))
 
 (defn share-budget [conn budget-uuid user-email]
   (let [db (d/db conn)
@@ -170,9 +192,12 @@
             grouped (group-by :budget/uuid (:budget/_users user-budgets))]
         ;; If the user is already sharing this budget, throw an exception.
         (when (get grouped budget-uuid)
-          (throw (ex-info "User already sharing budget." {:cause ::http/internal-error
-                                                          :data  {:user/email  user-email
-                                                                  :budget/uuid budget-uuid}})))
+          (throw (api-error ::http/unprocessable-entity :duplicate-project-shares
+                            {:message       (str "Project is already shared with " user-email ".")
+                             :function      (str share-budget)
+                             :function-args {'project budget-uuid 'user-email user-email}
+                             :data          {:project    budget-uuid
+                                             :user-email user-email}})))
         ;; Else create a new verification for the user, to login through their email.
         ;; We let this verification be unlimited time, as the user invited may not see their email within 15 minutes from the invitation
         (let [verification (datomic.format/verification user {:verification/time-limit 0})]
@@ -188,7 +213,7 @@
       (let [{:keys [verification]
              new-user :user
              :as new-account} (datomic.format/user-account-map user-email {:verification/time-limit 0})]
-        (prn "Transact new user: " new-account)
+        (info "New user created: " (:user/uuid new-user))
         (transact-map conn (assoc new-account :add [:db/add [:budget/uuid budget-uuid] :budget/users (:db/id  new-user)]))
         (put! email-chan verification)
         {:email-chan email-chan
@@ -225,21 +250,23 @@
       (let [{user-id :db/id} (pull/pull (d/db conn) [:db/id] [:user/email email])
             stripe (stripe-fn :customer/create
                               {:params (assoc params "email" email)})
-            _ (debug "Will format stripe: " stripe)
             account (datomic.format/stripe-account user-id stripe)]
-        (debug "did format account stripe " account)
         (assert (some? user-id))
         (transact-one conn account)))))
 
 (defn stripe-trial
   "Subscribe user to trial, without requesting credit carg."
   [conn stripe-fn {:keys [user/email
-                          stripe/_user]}]
+                          stripe/_user] :as user}]
   {:pre [(instance? LocalConnection conn)
          (fn? stripe-fn)
          (string? email)]}
   (when (seq _user)
-    (throw (ex-info "Trial for user that's already on Stripe. " {:data {:email email}})))
+    (throw (api-error ::http/unprocessable-entity :illegal-argument
+                      {:message       "Cannot start a trial for user that is already a Stripe customer."
+                       :function      (str stripe-trial)
+                       :function-args {'stripe-fn stripe-fn
+                                       'user      user}})))
   (let [{user-id :db/id} (pull/pull (d/db conn) [:db/id] [:user/email email])
         stripe (stripe-fn :customer/create
                           {:params {"plan"  "monthly"
@@ -255,8 +282,11 @@
          (map? stripe-account)]}
   ;; If no customer-id exists, we cannot cancel anything.
   (when-not (:stripe/customer stripe-account)
-    (throw (ex-info "No customer id provided. " {:cause ::http/unprocessable-entity
-                                                 :data {:stripe-account stripe-account}})))
+    (throw (api-error ::http/unprocessable-entity :missing-required-fields
+                      {:message       "Required fields are missing. Cannot transact entities."
+                       :missing-keys  [:stripe/customer]
+                       :function      (str stripe-cancel)
+                       :function-args {'stripe-fn stripe-fn 'stripe-account stripe-account}})))
   ;; If we have a subscription id in the db, try and cancel that
   (if-let [subscription-id (get-in stripe-account [:stripe/subscription :stripe.subscription/id])]
     ; Find the stripe account for the user.
@@ -265,8 +295,11 @@
                                       :subscription-id subscription-id})]
       (transact conn [[:db.fn/retractEntity [:stripe.subscription/id (:stripe.subscription/id subscription)]]]))
     ;; We don't have a subscription ID so we cannot cancel.
-    (throw (ex-info "Subscription id not found in database." {:cause ::http/unprocessable-entity
-                                                              :data {:stripe-account stripe-account}}))))
+    (throw (api-error ::http/unprocessable-entity :missing-required-fields
+                      {:message       "Required fields are missing. Cannot transact entities."
+                       :missing-keys  [:stripe.subscription/id]
+                       :function      (str stripe-cancel)
+                       :function-args {'stripe-fn stripe-fn 'stripe-account stripe-account}}))))
 
 (defn newsletter-subscribe [conn email]
   (let [{:keys [verification] :as account} (datomic.format/user-account-map email {:verification/time-limit 0})]
@@ -276,27 +309,3 @@
                          (:verification/uuid verification))
     (info "Newsletter subscribe successful, transacting user into datomic.")
     (transact-map conn account)))
-
-(defn transaction-create [{:keys [state auth]} k {:keys [transaction/tags] :as input-transaction}]
-  (let [{budget-uuid :budget/uuid} (:transaction/budget input-transaction)
-        db-budget (p/one-with (d/db state) {:where   '[[?u :user/uuid ?user-uuid]
-                                                       [?e :budget/users ?u]
-                                                       [?e :budget/uuid ?budget-uuid]]
-                                            :symbols {'?user-uuid   (:username auth)
-                                                      '?budget-uuid budget-uuid}})]
-    (when-not db-budget
-      (throw (ex-info (str "Mutation error: " {:mutate k :params input-transaction})
-                      {:cause  ::http/unathorized
-                       :code   :budget-unaccessible
-                       :message "You don't have access to modify the specified budget."
-                       :mutate k
-                       :params input-transaction})))
-    (when-not (= (frequencies (set tags))
-                 (frequencies tags))
-      (throw (ex-info (str "Mutation error: " {:mutate k :params input-transaction})
-                      {:cause   ::http/unprocessable-entity
-                       :code    :tags-not-unique
-                       :message "Illegal argument :input-tags. Each tag must be unique."
-                       :mutate  k
-                       :params  input-transaction})))
-    ))

@@ -55,7 +55,7 @@
           credential-fn (a/credential-fn conn)]
 
       (is (thrown-with-msg? ExceptionInfo
-                            (re-pattern (.getMessage (a/ex-user-not-activated nil)))
+                            (re-pattern (.getMessage (a/user-not-activated-error (::friend/workflow (meta creds-input)) nil)))
                             (credential-fn
                               (creds-input id)))))))
 
@@ -89,7 +89,7 @@
 
       ;TODO we might want to automatically create an ccount here and let the user login immediately?
       (is (thrown-with-msg? ExceptionInfo
-                            (re-pattern (.getMessage (a/ex-user-not-activated nil)))
+                            (re-pattern (.getMessage (a/user-not-activated-error (::friend/workflow (meta creds-input)) nil)))
                             (credential-fn (creds-input id))))
       ; New user account with the Facebook user's email should be created
       (let [{:keys [fb-user/user]} (p/lookup-entity (d/db conn) [:fb-user/id id])]
@@ -106,7 +106,7 @@
           credential-fn (a/credential-fn conn)]
 
       (is (thrown-with-msg? ExceptionInfo
-                            (re-pattern (.getMessage (a/ex-user-not-activated nil)))
+                            (re-pattern (.getMessage (a/user-not-activated-error (::friend/workflow (meta creds-input)) nil)))
                             (credential-fn (creds-input id fb-info-fn))))
       ;; A new fb user should be created and link to a new user account
       (let [fb-user (p/lookup-entity (d/db conn) [:fb-user/id id])]
@@ -139,7 +139,7 @@
           credential-fn (a/credential-fn conn)]
 
       (is (thrown-with-msg? ExceptionInfo
-                            (re-pattern (.getMessage (a/ex-user-not-activated nil)))
+                            (re-pattern (.getMessage (a/user-not-activated-error (::friend/workflow (meta creds-input)) nil)))
                             (credential-fn
                               (with-meta {:uuid (str (:verification/uuid verification))}
                                          {::friend/workflow :form})))))))
@@ -149,7 +149,7 @@
     (let [conn (new-db)
           credential-fn (a/credential-fn conn)]
       (is (thrown-with-msg? ExceptionInfo
-                            (re-pattern (.getMessage (a/ex-invalid-input nil)))
+                            #"missing-required-fields"
                             (credential-fn
                               (with-meta {:invalid :data}
                                          {::friend/workflow :form})))))))
@@ -192,7 +192,7 @@
     (let [conn (new-db)
           credential-fn (a/credential-fn conn)]
       (is (thrown-with-msg? ExceptionInfo
-                            (re-pattern (.getMessage (a/ex-invalid-input nil)))
+                            #"missing-required-fields"
                             (credential-fn
                               (with-meta {:invalid :data}
                                          {::friend/workflow :activate-account})))))))

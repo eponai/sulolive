@@ -40,7 +40,7 @@
 
 #?(:clj
    (defn default-error-fn [err]
-     (.printStackTrace err)
+     (error err)
          (if-let [data (ex-data err)]
            (assoc data ::ex-message (.getMessage ^Throwable err))
            (throw (ex-info (str "Unable to get ex-data from error " )

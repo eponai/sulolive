@@ -30,7 +30,7 @@
   (testing "Verification UUID does not exist. Should throw exception for invalid UUID."
     (let [conn (new-db)]
       (is (thrown-with-msg? ExceptionInfo
-                            #"Verification UUID does not exist"
+                            #":illegal-argument"
                             (api/verify-email conn (str (d/squuid))))))))
 
 (deftest verify-uuid-already-verified
@@ -40,7 +40,7 @@
           uuid (str (:verification/uuid verification))
           conn (new-db (vals account))]
       (is (thrown-with-msg? ExceptionInfo
-                            #"Invalid verification UUID"
+                            #":verification-invalid"
                             (api/verify-email conn uuid))))))
 
 (deftest verify-uuid-expired
@@ -50,7 +50,7 @@
           uuid (str (:verification/uuid verification))
           conn (new-db (vals account))]
       (is (thrown-with-msg? ExceptionInfo
-                   #"Invalid verification UUID"
+                   #":verification-invalid"
                    (api/verify-email conn uuid))))))
 
 (deftest verify-more-than-15-minutes-ago-created-uuid
@@ -61,7 +61,7 @@
           uuid (:verification/uuid verification)
           conn (new-db (vals account))]
       (is (thrown-with-msg? ExceptionInfo
-                            #"Expired verification UUID"
+                            #":verification-expired"
                             (api/verify-email conn (str uuid))))
       ; Make sure that status of the verification is set to expired.
       (is (= (:verification/status (p/lookup-entity (d/db conn) [:verification/uuid uuid]))
@@ -88,7 +88,7 @@
                              new-user))]
 
       (is (thrown-with-msg? ExceptionInfo
-                            #"Email already in use"
+                            #":duplicate-email"
                             (api/activate-account conn (str (:user/uuid new-user)) (:user/email existing-user)))))))
 
 ;;;; --------- Share budget tests -----------------------
@@ -128,7 +128,7 @@
           conn (new-db (conj (vals account-inviter)
                              budget))]
       (is (thrown-with-msg? ExceptionInfo
-                           #"User already sharing budget"
+                           #":duplicate-project-shares"
                            (api/share-budget conn (:budget/uuid budget) user-email)))
       (let [{:keys [budget/_users]} (p/pull (d/db conn) [{:budget/_users [:budget/uuid]}] [:user/email user-email])]
         (is (= 1 (count _users)))))))
@@ -213,7 +213,7 @@
           conn (new-db (conj (vals account)
                              stripe))]
       (is (thrown-with-msg? ExceptionInfo
-                            #"Subscription id not found"
+                            #"missing-required-fields"
                             (api/stripe-cancel conn (test-stripe-read :active) stripe))))))
 
 (deftest user-starts-trial-after-already-having-a-customer-account
@@ -226,7 +226,7 @@
                              stripe))
           db-user (p/pull (d/db conn) [:user/email :stripe/_user] [:user/email user-email])]
       (is (thrown-with-msg? ExceptionInfo
-                            #"Trial for user that's already on Stripe"
+                            #":illegal-argument"
                             (api/stripe-trial conn (test-stripe-read :trialing) db-user))))))
 
 (deftest user-subscribes-without-trial

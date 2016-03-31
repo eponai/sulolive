@@ -91,7 +91,8 @@
   (start-server (-> (var app)
                     (m/wrap-state {::m/make-parser-error-fn (fn [req]
                                                               (fn [e]
-                                                                (error "Will create prone exception: " e)
+                                                                (error e)
+                                                                (error "Will create prone exception.")
                                                                 (prone/exceptions-response req e ["eponai"])))})
                     (prone/wrap-exceptions {:app-namespaces ["eponai"]})
                     reload/wrap-reload)

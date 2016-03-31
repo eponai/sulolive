@@ -33,8 +33,12 @@
   (ANY "/stripe" {:keys [::m/conn body]}
     (try
       (r/response (stripe/webhook conn body {:send-email-fn #(email/send-email %1 nil %2)}))
+      (catch ExceptionInfo e
+        (error e)
+        (r/response {:ERROR   (.getMessage e)
+                     :ex-data (ex-data e)}))
       (catch Exception e
-        (r/response {}))))
+        (error e))))
 
   (context "/app" _
     (friend/wrap-authorize app-routes #{::a/user}))

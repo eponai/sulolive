@@ -42,18 +42,19 @@
     (set! (. Stripe apiKey) api-key)
     (stripe-action k params)
     (catch CardException e
-      (throw (ex-info (str "Stripe error: " {:action k :class (class e) :code (.getCode e)})
-                      {:cause     ::h/unprocessable-entity
-                       :message   (.getMessage e)
-                       :code      (keyword (.getCode e))
-                       :exception e
-                       :data      params})))
+      (throw (ex-info (str (class e) " on Stripe action key: " k)
+                      {:cause   ::h/unprocessable-entity
+                       :type    (class e)
+                       :message (.getMessage e)
+                       :code    (keyword "stripe" (.getCode e))
+                       :data    params})))
     (catch Exception e
-      (throw (ex-info (str "Stripe error: " {:action k :class (class e) :message (.getMessage e)})
-                      {:cause     ::h/internal-error
-                       :message   (.getMessage e)
-                       :exception e
-                       :data      params})))))
+      (throw (ex-info (str (class e) " on Stripe action key: " k)
+                      {:cause   ::h/internal-error
+                       :code    :undefined
+                       :type    (class e)
+                       :message (.getMessage e)
+                       :data    params})))))
 
 
 ;;; ########### Stripe actions ###############
@@ -71,7 +72,7 @@
 
 
 (defmethod stripe-action :subscription/create
-  [k {:keys [customer-id params]}]
+  [_ {:keys [customer-id params]}]
   {:post [(map? %)]}
   (let [customer (Customer/retrieve customer-id)
         created (.createSubscription customer params)]
@@ -102,6 +103,15 @@
 ;; https://stripe.com/docs/webhooks
 ;; https://stripe.com/docs/api/java#events
 ;; https://stripe.com/docs/api#event_types
+
+(defn webhook-ex [event message & [ex-data]]
+  (ex-info (str "Stripe webhook error: " (:type event))
+           (merge ex-data
+                  {:cause   (or (:cause ex-data) ::h/internal-error)
+                   :message message
+                   :key     (:type event)
+                   :event   event
+                   :object  (get-in event [:data :object])})))
 
 ; Multi method for Stripe event types passed in via webhooks.
 ; Reference Events: https://stripe.com/docs/api#events
@@ -135,19 +145,18 @@
       (let [db-customer (p/lookup-entity (d/db conn) [:stripe/customer customer])]
         ;; If the customer is not found in the DB, something is wrong and we're out of sync with Stripe.
         (when-not db-customer
-          (throw (ex-info (str "Stripe: charged.failed customer not found in db " {:stripe/customer customer})
-                          {:cause   ::h/unprocessable-entity
-                           :message (str "Stripe: charged.failed customer not found in db " {:stripe/customer customer})
-                           :data    {:customer customer :event event}})))
+          (throw (webhook-ex event
+                             (str ":stripe/customer not found: " customer)
+                             {:customer customer
+                              :cause ::h/unprocessable-entity})))
 
         ;; Find the user corresponding to the specified stripe customer.
         (let [user (p/lookup-entity (d/db conn) (get-in db-customer [:stripe/user :db/id]))]
           ;; If the customer entity has no user, something is wrong in the db entry, throw exception.
           (when-not user
-            (throw (ex-info (str "Stripe: charged.failed user not found in db for customer " {:stripe/customer customer})
-                            {:cause   ::h/unprocessable-entity
-                             :message (str "Stripe: charged.failed user not found in db for customer " {:stripe/customer customer})
-                             :data    {:customer customer :event event}})))
+            (throw (webhook-ex event
+                               (str "No :stripe/user associated with :stripe/customer: " customer)
+                               {:customer customer})))
 
           (info "Stripe charge.failed for user " (d/touch user))
           (when send-email-fn
@@ -181,11 +190,10 @@
       (let [db-sub (f/add-tempid (json->subscription-map subscription))]
         (transact/transact conn [db-sub
                                  [:db/add (:db/id db-customer) :stripe/subscription (:db/id db-sub)]]))
-      (throw (ex-info (str "No :stripe/customer found with value: " customer)
-                      {:cause ::h/unprocessable-entity
-                       :message (str "No :stripe/customer found with value: " customer)
-                       :data {:customer customer
-                              :event event}})))))
+      (throw (webhook-ex event
+                         (str ":stripe/customer not found: " customer)
+                         {:customer customer
+                          :cause ::h/unprocessable-entity})))))
 
 (defmethod webhook "customer.subscription.deleted"
   ;; Receiving a Subscription object in event.
@@ -203,10 +211,8 @@
         subscription-ends-at (* 1000 period_end)]
     (if subscription
       (transact/transact-one conn [:db/add (:db/id subscription) :stripe.subscription/ends-at subscription-ends-at])
-      (throw (ex-info (str "No subscription found for customer: " customer)
-                      {:cause ::h/unprocessable-entity
-                       :message (str "No subscription found for customer: " customer)
-                       :data {:customer customer
-                              :event event}})))))
+      (throw (webhook-ex event
+                         (str "No :stripe/subscription associated with :stripe/customer: " customer)
+                         {:customer customer})))))
 
 ;(defmethod webhook "invoice.payment_succeeded")

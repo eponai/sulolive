@@ -11,8 +11,9 @@
 (defn- do-validate [k p pred & [ex-data]]
   (if (pred)
     true
-    (throw (ex-info (str "Input validation error: " {:key k :params p})
-                    (merge {:key   k
+    (throw (ex-info (str "Input validation error in mutate: " k)
+                    (merge {:type   ::validation-error
+                            :mutate k
                             :params p}
                            ex-data)))))
 
@@ -57,8 +58,8 @@
       ;; Verify that that the transaction is added is accessible by the user adding the transaction.
       (do-validate k p #(some? db-budget)
                    {:message "You don't have access to modify the specified budget."
-                    :code :budget-unaccessible})
+                    :code    :project-unaccessible})
       ;; Verify that the collection of tags does not include duplicate tag names.
       (do-validate k p #(= (frequencies (set tags)) (frequencies tags))
                    {:message "Illegal argument :transaction/tags. Each tag must be unique."
-                    :code :contains-duplicates}))))
+                    :code    :duplicate-tags}))))
