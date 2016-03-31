@@ -5,7 +5,7 @@
             [eponai.web.parser.read]
             [cljs.test]
             [goog.dom :as gdom]
-            [taoensso.timbre :refer-macros [debug]]))
+            [taoensso.timbre :as timbre :refer-macros [debug]]))
 
 (def favicons {:success {:type "image/png"
                          :href "/test/favicon/green.ico"}
@@ -30,6 +30,7 @@
 
 (defn ^:export run []
   (utils/install-app)
+  (timbre/set-level! :error)
   (reset! inited? true)
   (run-tests))
 
