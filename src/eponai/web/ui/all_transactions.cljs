@@ -354,9 +354,6 @@
   static om/IQuery
   (query [_]
     ['({:query/transactions ?transaction} {:filter ?filter})
-     {:query/conversions [:conversion/currency
-                          :conversion/rate
-                          :conversion/date]}
      {:query/current-user [:user/uuid
                            {:user/currency [:currency/code
                                             :currency/symbol-native]}]}

@@ -24,7 +24,7 @@
 
 (defmethod validate :default
   [_ k _]
-  (info "Validator not implemented: ") {:key k})
+  (info "Validator not implemented: " {:key k}))
 
 (defmethod validate 'transaction/create
 ;; Validate input when creating a new transaction. Checks the following:

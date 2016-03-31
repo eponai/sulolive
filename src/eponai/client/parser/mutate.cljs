@@ -1,6 +1,7 @@
 (ns eponai.client.parser.mutate
   (:require [eponai.common.parser :refer [mutate]]
             [taoensso.timbre :refer-macros [info debug error trace]]
+            [datascript.core :as d]
             [eponai.common.format :as format]
             [eponai.common.database.transact :as transact]
             [eponai.common.validate :as validate]))
@@ -15,9 +16,9 @@
 
 (defmethod mutate 'transaction/create
   [{:keys [state mutation-uuid parser] :as e} k input-transaction]
-  (debug "transaction/create with params:" input-transaction)
-  (let [{user-uuid :user/uuid} (parser e '[{:query/current-user [:user/uuid]}])]
-    (validate/validate k {:transaction input-transaction :user-uuid user-uuid})
+  (let [user-uuid (-> (parser e '[{:query/current-user [:user/uuid]}])
+                      (get-in [:query/current-user :user/uuid]))]
+    (validate/validate e k {:transaction input-transaction :user-uuid user-uuid})
     {:action (fn []
                (let [transaction (format/transaction input-transaction)]
                  (transact/mutate-one state mutation-uuid transaction)))
