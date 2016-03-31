@@ -4,7 +4,8 @@
             [eponai.web.parser.mutate]
             [eponai.web.parser.read]
             [cljs.test]
-            [goog.dom :as gdom]))
+            [goog.dom :as gdom]
+            [taoensso.timbre :refer-macros [debug]]))
 
 (def favicons {:success {:type "image/png"
                          :href "/test/favicon/green.ico"}
@@ -18,14 +19,22 @@
   (gdom/setProperties (gdom/getElement "favicon")
                       (clj->js (get favicons k))))
 
-
-(defn ^:export run []
-  (utils/install-app)
+(defn run-tests []
   (if-let [report (tests/run)]
     (if (cljs.test/successful? report)
       (set-favicon :success)
       (set-favicon :failure))
     (set-favicon :warning)))
 
+(defonce inited? (atom false))
+
+(defn ^:export run []
+  (utils/install-app)
+  (reset! inited? true)
+  (run-tests))
+
 (defn reload-figwheel! []
-  (run))
+  (assert @inited?
+          (str "Did not initiate the test space."
+               " Need to call function " 'eponai.client.figwheel.test_main ".run() from this .html file."))
+  (run-tests))
