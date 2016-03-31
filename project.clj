@@ -3,7 +3,9 @@
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.omcljs/om "1.0.0-alpha31"]
+  :dependencies [[cljsjs/react "15.0.0-rc.2-0"]
+                 [cljsjs/react-dom "15.0.0-rc.2-0"]
+                 [org.omcljs/om "1.0.0-alpha32"]
                  [clj-http "2.1.0"]
                  [clj-time "0.11.0"]
                  [compojure "1.4.0"]
@@ -38,7 +40,7 @@
 
                  ;; CLJS
                  [com.cognitect/transit-cljs "0.8.237"]
-                 [org.clojure/clojurescript "1.7.228"
+                 [org.clojure/clojurescript "1.8.40"
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
@@ -75,7 +77,7 @@
            ;; [lein-npm "0.6.1"]
             [lein-shell "0.5.0"]
             [lein-doo "0.1.6"]
-            [lein-cljsbuild "1.1.1"]
+            [lein-cljsbuild "1.1.3"]
             [lein-figwheel "0.5.0-6"]
             [lein-ring "0.9.7"]
             [lein-test-out "0.3.1"]
@@ -153,7 +155,7 @@
                         :aot        :all
                         :prep-tasks ["compile" "prod-build-web"]}
 
-             :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha31"
+             :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha32"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
                                        [com.cemerick/piggieback "0.2.1"]]
                         :source-paths ["src" "src-hacks/react-native" "env/dev"]
@@ -173,7 +175,7 @@
                                                                 :output-dir    "target/android"
                                                                 :optimizations :none}}]}}
 
-             :mob-prod {:dependencies [[org.omcljs/om "1.0.0-alpha31"
+             :mob-prod {:dependencies [[org.omcljs/om "1.0.0-alpha32"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]]
                         :cljsbuild    {:builds [{:id           "ios-release"
                                                  :source-paths ["src" "src-hacks/react-native" "env/prod"]
@@ -226,15 +228,15 @@
                                                              :source-map    true
                                                              }}
                                              {:id           "release"
-                                              :source-paths ["src/" "src-hacks/web/"]
-                                              :compiler     {:main          "eponai.web.core"
+                                              :source-paths ["src/" "src-hacks/web/" "env/prod"]
+                                              :compiler     {:main          "env.web.main"
                                                              :asset-path    "/release/js/out"
                                                              :output-to     "resources/public/release/js/out/budget.js"
                                                              :output-dir    "resources/public/release/js/out/"
                                                              :optimizations :advanced
                                                              ;;   :parallel-build true
-                                                             ;;   :pseudo-names true
-                                                             ;;   :pretty-print true
+                                                                :pseudo-names true
+                                                                :pretty-print true
                                                              }}]}}}
 
   ;;;;;;;;;;;;;
