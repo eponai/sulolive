@@ -90,48 +90,53 @@
                                     "index.ios.js"
                                     "index.android.js"]
 
-  :aliases {"all-deps"          ^{:doc "Fetches both clj, cljs and node dependencies."}
-                                ["do" "deps"
-                                 ["shell" "npm" "install"]]
-            "prod-build-ios"    ^{:doc "Recompile mobile code with production profile."}
-                                ["do"
-                                 ["with-profile" "mob-prod" "cljsbuild" "once" "ios"]]
-            "prod-build-web"    ^{:doc "Recompile web code with release build."}
-                                ["do"
-                                 ["with-profile" "web" "cljsbuild" "once" "release"]]
-            "prod-build-server" ^{:doc "Recompile server code with release build."}
-                                ["do" "uberjar"]
-            "dev-build-ios"     ^{:doc "Compile mobile code in development mode."}
-                                ["do"
-                                 ["with-profile" "mobile" "cljsbuild" "once" "ios"]]
-            "dev-build-web"     ^{:doc "Compile mobile code in development mode."}
-                                ["do"
-                                 ["with-profile" "web" "cljsbuild" "once" "dev"]]
-            "run-tests-web"     ^{:doc "Compile and run web tests"}
-                                ["do"
-                                 ["with-profile" "web" "cljsbuild" "once" "test"]
-                                 ["with-profile" "web" "doo" "phantom" "test" "once"]]
-            "figwheel-ios"      ^{:doc "Start figwheel for ios"}
-                                ["do"
-                                 ["with-profile" "mobile" "figwheel" "ios"]]
-            "figwheel-web"      ^{:doc "Start figwheel for web"}
-                                ["do"
-                                 ;; Exporting an environment variable for figwheel port
-                                 ;; as it's only configurable globally (per project.clj file).
-                                 ;; This port should differ from the one running figwheel-ios,
-                                 ;; because they need to be running lein with different profiles
-                                 ;; and different dependencies.
-                                 ["shell" "bash" "-c"
-                                  "export FIGWHEEL_PORT=3450; lein with-profile web figwheel dev"]]
-            "figwheel-test"     ^{:doc "Start figwheel for web"}
-                                ["do"
-                                 ["shell" "bash" "-c"
-                                  "export FIGWHEEL_PORT=3450; lein with-profile web figwheel test"]]
-            "figwheel-web+test" ^{:doc "Start figwheel for web"}
-                                ["do"
-                                 ["shell" "bash" "-c"
-                                  "export FIGWHEEL_PORT=3450; lein with-profile web figwheel dev test"]]
-}
+  :aliases {"all-deps"               ^{:doc "Fetches both clj, cljs and node dependencies."}
+                                     ["do" "deps"
+                                      ["shell" "npm" "install"]]
+            "prod-build-ios-local"   ^{:doc "Recompile mobile code with production profile.
+                                           The build runs against a local/laptop server."}
+                                     ["do"
+                                      ["with-profile" "mob-prod" "cljsbuild" "once" "ios-local"]]
+            "prod-build-ios-release" ^{:doc "Recompile mobile code with production profile.
+                                           The build runs against production servers."}
+                                     ["do"
+                                      ["with-profile" "mob-prod" "cljsbuild" "once" "ios-release"]]
+            "prod-build-web"         ^{:doc "Recompile web code with release build."}
+                                     ["do"
+                                      ["with-profile" "web" "cljsbuild" "once" "release"]]
+            "prod-build-server"      ^{:doc "Recompile server code with release build."}
+                                     ["do" "uberjar"]
+            "dev-build-ios"          ^{:doc "Compile mobile code in development mode."}
+                                     ["do"
+                                      ["with-profile" "mobile" "cljsbuild" "once" "ios"]]
+            "dev-build-web"          ^{:doc "Compile mobile code in development mode."}
+                                     ["do"
+                                      ["with-profile" "web" "cljsbuild" "once" "dev"]]
+            "run-tests-web"          ^{:doc "Compile and run web tests"}
+                                     ["do"
+                                      ["with-profile" "web" "cljsbuild" "once" "test"]
+                                      ["with-profile" "web" "doo" "phantom" "test" "once"]]
+            "figwheel-ios"           ^{:doc "Start figwheel for ios"}
+                                     ["do"
+                                      ["with-profile" "mobile" "figwheel" "ios"]]
+            "figwheel-web"           ^{:doc "Start figwheel for web"}
+                                     ["do"
+                                      ;; Exporting an environment variable for figwheel port
+                                      ;; as it's only configurable globally (per project.clj file).
+                                      ;; This port should differ from the one running figwheel-ios,
+                                      ;; because they need to be running lein with different profiles
+                                      ;; and different dependencies.
+                                      ["shell" "bash" "-c"
+                                       "export FIGWHEEL_PORT=3450; lein with-profile web figwheel dev"]]
+            "figwheel-test"          ^{:doc "Start figwheel for web"}
+                                     ["do"
+                                      ["shell" "bash" "-c"
+                                       "export FIGWHEEL_PORT=3450; lein with-profile web figwheel test"]]
+            "figwheel-web+test"      ^{:doc "Start figwheel for web"}
+                                     ["do"
+                                      ["shell" "bash" "-c"
+                                       "export FIGWHEEL_PORT=3450; lein with-profile web figwheel dev test"]]
+            }
 
   ;; TODO: TEST ALL ALIASES
 
@@ -170,11 +175,19 @@
 
              :mob-prod {:dependencies [[org.omcljs/om "1.0.0-alpha31"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]]
-                        :cljsbuild    {:builds [{:id           "ios"
+                        :cljsbuild    {:builds [{:id           "ios-release"
                                                  :source-paths ["src" "src-hacks/react-native" "env/prod"]
                                                  :compiler     {:output-to     "index.ios.js"
                                                                 :main          "env.ios.main"
                                                                 :output-dir    "target/ios"
+                                                                :optimizations :simple}}
+                                                {:id           "ios-local"
+                                                 ;; A production build, run against a local/laptop
+                                                 ;; jourmoney server.
+                                                 :source-paths ["src" "src-hacks/react-native" "env/prod"]
+                                                 :compiler     {:output-to     "index.ios.js"
+                                                                :main          "env.ios.local-main"
+                                                                :output-dir    "target/ios-local"
                                                                 :optimizations :simple}}
                                                 {:id           "android"
                                                  :source-paths ["src" "src-hacks/react-native" "env/prod"]

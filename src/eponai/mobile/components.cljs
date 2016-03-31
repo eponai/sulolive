@@ -2,8 +2,6 @@
   (:require-macros [eponai.mobile.components :refer [create-component-functions]])
   (:require [eponai.mobile.components.listview-datasource :as ds]))
 
-(set! js/React (js/require "react-native"))
-
 (defn force-children [x]
   (cond->> x
            (seq? x) (into [] (map force-children))))
