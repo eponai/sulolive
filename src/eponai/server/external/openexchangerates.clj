@@ -25,10 +25,13 @@
   [app-id]
   (fn [date-str]
     (info "Posting currency-rates for date:" date-str)
-    (when (and app-id date-str)
+    (if (and app-id date-str)
       (let [rates (json/read-str (:body (client/get (currency-rates-url app-id date-str))) :key-fn keyword)]
-        (assoc rates :date date-str)))
-    {:date  date-str
-     :rates {:SEK 8.56
-             :USD 1
-             :THB 35.64}}))
+        (info "Pulled conversions from OpenExchangeRates.")
+        (assoc rates :date date-str))
+
+      ;; Dev mode currency rates.
+      {:date  date-str
+       :rates {:SEK 8.56
+               :USD 1
+               :THB 35.64}})))
