@@ -3,6 +3,8 @@
 echo "Will compile an ios build which runs against your own"
 echo " jourmoney server, i.e. lein repl, (start-server)"
 
+export TIMBRE_LEVEL=":info"
+
 lein clean
 lein prod-build-ios-local
 
