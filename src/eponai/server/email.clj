@@ -39,16 +39,28 @@
     "Sign in"))
 
 (defn- smtp []
+  ;;TODO: Add a warning when this is being used in development.
   {:host (env :smtp-host)
    :user (env :smtp-user)
    :pass (env :smtp-pass)
    :tls  (env :smtp-tls)
    :port (env :smtp-port)})
 
+(defn url []
+  (let [schema (env :jourmoney-server-url-schema)
+        host (env :jourmoney-server-url-host)]
+    (assert (and schema host)
+            (str "Did not have required schema: " schema " or host: " host
+                 ". Please set these keys in your environment:"
+                 :jourmoney-server-url-schema " and "
+                 :jourmoney-server-url-host))
+    {:schema schema :host host}))
+
 (defn- verify-link-by-device [device uuid]
   (debug "Will return verify link by device: " device " uuid: " uuid)
-  (let [verify-link (str (condp = device
-                           :web "http://localhost:3000/verify/"
+  (let [{:keys [schema host]} (url)
+        verify-link (str (condp = device
+                           :web (str schema "://" host "/verify/")
                            :ios "jourmoney://ios/1/login/verify/")
                          uuid)]
     (debug "Returning verify link: " verify-link)
@@ -61,7 +73,7 @@
   (debug "Sending email... ")
   (let [link (verify-link-by-device device uuid)
         body {:from    "info@gmail.com"
-              :to      "info@jourmoney.com"
+              :to      address
               :subject subject
               :body    [:alternative
                         {:type    "text/plain"
