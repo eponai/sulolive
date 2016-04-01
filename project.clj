@@ -59,7 +59,6 @@
                  [binaryage/devtools "0.5.2"]
                  [org.clojure/tools.nrepl "0.2.11"
                   :exclusions [org.clojure/clojure]]
-                 [figwheel-sidecar "0.5.0-2"]
 
                  ;; React-native
                  [natal-shell "0.1.6"]
@@ -157,18 +156,19 @@
 
              :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha32"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
+                                       [figwheel-sidecar "0.5.0-2"]
                                        [com.cemerick/piggieback "0.2.1"]]
-                        :source-paths ["src" "src-hacks/react-native" "env/dev"]
+                        :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
                         :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
                         :cljsbuild    {:builds [{:id           "ios"
-                                                 :source-paths ["src" "src-hacks/react-native" "env/dev"]
+                                                 :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
                                                  :figwheel     true
                                                  :compiler     {:output-to     "target/ios/not-used.js"
                                                                 :main          "env.ios.main"
                                                                 :output-dir    "target/ios"
                                                                 :optimizations :none}}
                                                 {:id           "android"
-                                                 :source-paths ["src" "src-hacks/react-native" "env/dev"]
+                                                 :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
                                                  :figwheel     true
                                                  :compiler     {:output-to     "target/android/not-used.js"
                                                                 :main          "env.android.main"
@@ -178,7 +178,7 @@
              :mob-prod {:dependencies [[org.omcljs/om "1.0.0-alpha32"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]]
                         :cljsbuild    {:builds [{:id           "ios-release"
-                                                 :source-paths ["src" "src-hacks/react-native" "env/prod"]
+                                                 :source-paths ["src" "src-hacks/react-native" "env/client/prod"]
                                                  :compiler     {:output-to     "index.ios.js"
                                                                 :main          "env.ios.main"
                                                                 :output-dir    "target/ios"
@@ -186,13 +186,13 @@
                                                 {:id           "ios-local"
                                                  ;; A production build, run against a local/laptop
                                                  ;; jourmoney server.
-                                                 :source-paths ["src" "src-hacks/react-native" "env/prod"]
+                                                 :source-paths ["src" "src-hacks/react-native" "env/client/prod"]
                                                  :compiler     {:output-to     "index.ios.js"
                                                                 :main          "env.ios.local-main"
                                                                 :output-dir    "target/ios-local"
                                                                 :optimizations :simple}}
                                                 {:id           "android"
-                                                 :source-paths ["src" "src-hacks/react-native" "env/prod"]
+                                                 :source-paths ["src" "src-hacks/react-native" "env/client/prod"]
                                                  :compiler     {:output-to     "index.android.js"
                                                                 :main          "env.android.main"
                                                                 :output-dir    "target/android"
@@ -236,7 +236,7 @@
                                                              :source-map    true
                                                              }}
                                              {:id           "release"
-                                              :source-paths ["src/" "src-hacks/web/" "env/prod"]
+                                              :source-paths ["src/" "src-hacks/web/" "env/client/prod"]
                                               :compiler     {:main          "env.web.main"
                                                              :asset-path    "/release/js/out"
                                                              :output-to     "resources/public/release/js/out/budget.js"
@@ -253,7 +253,7 @@
   ;;;;;;;;;;;;;
   :target-path "target/%s"
   :source-paths ["src"]
-  :test-paths ["test" "env/dev"]
+  :test-paths ["test" "env/server/dev"]
   :ring {:handler eponai.server.core/app
          :init    eponai.server.core/init}
   :main eponai.server.core

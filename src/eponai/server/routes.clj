@@ -12,8 +12,7 @@
             [eponai.server.api :as api]
             [eponai.server.external.stripe :as stripe]
             [clojure.data.json :as json]
-            [eponai.server.email :as email])
-  (:import (clojure.lang ExceptionInfo)))
+            [eponai.server.email :as email]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
