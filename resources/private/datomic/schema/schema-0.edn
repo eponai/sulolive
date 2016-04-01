@@ -18,6 +18,13 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
+  :db/ident              :user/currency
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Main currency for user."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
   :db/ident              :user/status
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
@@ -214,7 +221,7 @@
   :db.install/_attribute :db.part/db
   :db/ident              :transaction/project
   :db/valueType          :db.type/ref
-  :db/doc                "project that this transaction belongs to."
+  :db/doc                "Project that this transaction belongs to."
   :db/cardinality        :db.cardinality/one}
 
  {:db/id                 #db/id[:db.part/db]
@@ -224,13 +231,6 @@
   :db/fulltext           true
   :db/doc                "Title of the transaction. E.g. coffee, lunch or salary"
   :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db.install/_attribute :db.part/db
-  :db/ident              :transaction/details
-  :db/valueType          :db.type/string
-  :db/doc                "Details about a transaction. E.g. 'flight to thailand'"
-  :db/cardinality        :db.cardinality/one}
 
  {:db/id                 #db/id[:db.part/db]
   :db.install/_attribute :db.part/db
@@ -284,14 +284,14 @@
   :db/ident              :conversion/currency,
   :db/valueType          :db.type/ref,
   :db/cardinality        :db.cardinality/one,
-  :db/doc                "Currency conversion."}
+  :db/doc                "Currency thie conversion is associated to."}
 
  {:db/id                 #db/id[:db.part/db],
   :db.install/_attribute :db.part/db,
   :db/ident              :conversion/rate,
   :db/valueType          :db.type/bigdec,
   :db/cardinality        :db.cardinality/one,
-  :db/doc                "Conversion rate."}
+  :db/doc                "Conversion rate to USD."}
 
  {:db/id                 #db/id[:db.part/db],
   :db.install/_attribute :db.part/db,

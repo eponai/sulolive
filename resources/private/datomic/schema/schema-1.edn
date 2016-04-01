@@ -1,20 +1,5 @@
 [
 
- ;; User
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :user/picture
-  :db/valueType          :db.type/string
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "URL of photo."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :user/currency
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Main currency for user."
-  :db.install/_attribute :db.part/db}
-
  ;; Dashboard
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :dashboard/uuid

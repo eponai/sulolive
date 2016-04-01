@@ -136,7 +136,7 @@
   (query [_]
     [{:proxy/add-transaction (om/get-query AddTransaction)}
      {:query/current-user [:user/uuid
-                           :user/picture]}
+                           :user/email]}
      {:query/stripe [:stripe/user
                      {:stripe/subscription [:stripe.subscription/status
                                             :stripe.subscription/period-end]}]}])
@@ -195,13 +195,16 @@
             ; [:a
             ;  [:i.fa.fa-bell]]]
             [:li.has-submenu
-             [:img
-              (opts {:class    "img-circle"
-                     :style    {:width         40
-                                :height        40
-                                :border-radius "50%"}
-                     :src      (or (:user/picture current-user) "/style/img/profile.png")
-                     :on-click #(open-profile-menu this true)})]
+             [:a.button.hollow.secondary
+              {:on-click #(open-profile-menu this true)}
+              [:small (:user/email current-user)]]
+             ;[:img
+             ; (opts {:class    "img-circle"
+             ;        :style    {:width         40
+             ;                   :height        40
+             ;                   :border-radius "50%"}
+             ;        :src      "/style/img/profile.png"
+             ;        :on-click #(open-profile-menu this true)})]
 
              (when menu-visible?
                (profile-menu {:on-close #(open-profile-menu this false)}))]]]]

@@ -68,8 +68,6 @@
      :user/uuid     (d/squuid)
      :user/status   (or (:user/status opts) :user.status/new)}
 
-    (:user/picture opts)
-    (assoc :user/picture (:user/picture opts))
     email
     (assoc :user/email email)))
 

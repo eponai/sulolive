@@ -19,8 +19,7 @@
   static om/IQuery
   (query [_]
     [{:query/current-user [:user/uuid
-                           :user/email
-                           :user/picture]}
+                           :user/email]}
      {:query/all-projects [:project/uuid
                           :project/name
                           {:transaction/_project [:transaction/uuid
@@ -57,8 +56,6 @@
           (opts {:style {:display        :flex
                          :flex-direction :row
                          :align-items    :center}})
-          [:img.img-circle
-           (opts {:src (:user/picture current-user)})]
           [:h1 (:user/email current-user)]]
 
          [:a.button.secondary
