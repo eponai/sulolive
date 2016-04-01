@@ -168,7 +168,7 @@
                                                                            :transaction/project
                                                                            {:project/uuid %})})
                            (map (fn [{:keys [project/uuid]}]
-                                  (picker-item {:label (get-in projects-by-uuid [uuid :project/name])
+                                  (picker-item {:label (get-in projects-by-uuid [uuid :project/name] "")
                                                 :value (str uuid)}))
                                 all-projects)))
               (view (styles :row)
@@ -195,7 +195,7 @@
                                                                            :transaction/currency
                                                                            {:currency/code %})})
                            (map (fn [{:keys [currency/code]}]
-                                  (picker-item {:label (get-in currencies-by-code [code :currency/name])
+                                  (picker-item {:label (get-in currencies-by-code [code :currency/name] "")
                                                 :value (str code)}))
                                 all-currencies)))
               (view (styles :row)
