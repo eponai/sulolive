@@ -15,7 +15,7 @@
             [environ.core :refer [env]]
             [eponai.common.database.pull :as p]
             [clj-time.core :as t])
-  (:import (datomic.peer LocalConnection)))
+  (:import (datomic.peer Connection)))
 
 ;(defn currency-infos
 ;  "Post information about currencies with a map of the form:
@@ -35,7 +35,7 @@
 
   Returns channel with username and db-after user is added to use for email verification."
   [conn email]
-  {:pre [(instance? LocalConnection conn)
+  {:pre [(instance? Connection conn)
          (string? email)]}
   (if email
     (let [user (pull/lookup-entity (d/db conn) [:user/email email])
@@ -69,7 +69,7 @@
 
   On success returns {:db/id some-id} for the user this verification belongs to."
   [conn uuid]
-  {:pre [(instance? LocalConnection conn)
+  {:pre [(instance? Connection conn)
          (string? uuid)]}
   (let [ex (fn [msg] (ex-info msg
                               {:cause   ::verification-error
@@ -107,7 +107,7 @@
   Throws exception if the email provided is not already verified, email is already in use,
   or the user UUID is not found."
   [conn user-uuid email & [opts]]
-  {:pre [(instance? LocalConnection conn)
+  {:pre [(instance? Connection conn)
          (string? user-uuid)
          (string? email)]}
   (if-let [user (pull/lookup-entity (d/db conn) [:user/uuid (common.format/str->uuid user-uuid)])]
@@ -198,7 +198,7 @@
   "Subscribe user to a plan in Stripe. Basically create a Stripe customer for this user and subscribe to a plan."
   [conn stripe-fn {:keys [stripe/customer
                           stripe/subscription]} {:keys [token plan] :as p}]
-  {:pre [(instance? LocalConnection conn) (fn? stripe-fn) (map? p)]}
+  {:pre [(instance? Connection conn) (fn? stripe-fn) (map? p)]}
   (let [{:keys [id email]} token
         params {"source"    id
                 "plan"      plan
@@ -235,7 +235,7 @@
   "Subscribe user to trial, without requesting credit carg."
   [conn stripe-fn {:keys [user/email
                           stripe/_user]}]
-  {:pre [(instance? LocalConnection conn)
+  {:pre [(instance? Connection conn)
          (fn? stripe-fn)
          (string? email)]}
   (when (seq _user)
@@ -250,7 +250,7 @@
 (defn stripe-cancel
   "Cancel the subscription in Stripe for user with uuid."
   [conn stripe-fn stripe-account]
-  {:pre [(instance? LocalConnection conn)
+  {:pre [(instance? Connection conn)
          (fn? stripe-fn)
          (map? stripe-account)]}
   ;; If no customer-id exists, we cannot cancel anything.
