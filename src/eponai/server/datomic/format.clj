@@ -98,19 +98,24 @@
   * :verification/status - status of verification, default is :verification.status/pending.
   * :verification/created-at - timestamp if when verification was created, default value is now.
   * :verification/attribute - key in this entity with a value that this verification should verify, default is :user/email.
-  * :verification/time-limit - time limit in minutes before this verification should expire, default is 15.
+  * :verification/expires-at - timestamp for when verification expires.
 
   Returns a map representing a verification entity"
   [entity & [opts]]
   (let [attribute (or (:verification/attribute opts) :user/email)]
-    {:db/id                   (d/tempid :db.part/user)
-     :verification/status     (or (:verification/status opts) :verification.status/pending)
-     :verification/created-at (or (:verification/created-at opts) (c/to-long (t/now)))
-     :verification/uuid       (d/squuid)
-     :verification/entity     (:db/id entity)
-     :verification/attribute  attribute
-     :verification/value      (get entity attribute)
-     :verification/time-limit (or (:verification/time-limit opts) 15)}))
+    (cond->
+      {:db/id                   (d/tempid :db.part/user)
+       :verification/status     (or (:verification/status opts) :verification.status/pending)
+       :verification/created-at (or (:verification/created-at opts) (c/to-long (t/now)))
+       :verification/uuid       (d/squuid)
+       :verification/entity     (:db/id entity)
+       :verification/attribute  attribute
+       :verification/value      (get entity attribute)})))
+
+(defn email-verification [entity & [opts]]
+  (let [v (verification entity opts)
+        expiry-time (c/to-long (t/plus (c/from-long (:verification/created-at v)) (t/minutes 15)))]
+    (assoc v :verification/expires-at expiry-time)))
 
 (defn dashboard [project-eid]
   {:db/id            (d/tempid :db.part/user)
@@ -146,7 +151,7 @@
       {:user   user}
 
       email
-      (assoc :verification (verification user opts))
+      (assoc :verification (email-verification user opts))
 
       fb-user
       (assoc :fb-user fb-user))))

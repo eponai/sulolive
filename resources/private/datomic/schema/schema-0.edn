@@ -76,6 +76,7 @@
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
   :db/isComponent        true
+  :db/unique             :db.unique/identity
   :db/doc                "Subscription for this Stripe account."
   :db.install/_attribute :db.part/db}
 
@@ -96,7 +97,7 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :stripe.subscription/ends-at
+  :db/ident              :stripe.subscription/period-end
   :db/valueType          :db.type/long
   :db/cardinality        :db.cardinality/one
   :db/doc                "Subscription status period end."
@@ -148,7 +149,7 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :verification/time-limit
+  :db/ident              :verification/expires-at
   :db/valueType          :db.type/long
   :db/cardinality        :db.cardinality/one
   :db/doc                "Time limit for when verification will expire."

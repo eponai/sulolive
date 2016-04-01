@@ -18,7 +18,7 @@
      {:query/all-currencies [:currency/code
                              :currency/name]}
      {:query/stripe [:stripe/user
-                     {:stripe/subscription [:stripe.subscription/ends-at
+                     {:stripe/subscription [:stripe.subscription/period-end
                                             :stripe.subscription/status]}]}
      {:query/fb-user [:fb-user/name
                       :fb-user/id
@@ -67,11 +67,11 @@
 
               [:div.columns.small-10
                ;[:p "You have "
-               ; (f/days-until (:stripe.subscription/ends-at subscription)) " days left on your trial."]
+               ; (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial."]
                ;[:div.columns.small-12.medium-6.text-center]
                (utils/upgrade-button {:style {:margin 0}})
                ;[:div [:small "You have "
-               ;       (f/days-until (:stripe.subscription/ends-at subscription)) " days left on your trial."]]
+               ;       (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial."]]
                ])]
            [:hr]
            [:div.row

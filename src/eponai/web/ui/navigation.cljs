@@ -139,7 +139,7 @@
                            :user/picture]}
      {:query/stripe [:stripe/user
                      {:stripe/subscription [:stripe.subscription/status
-                                            :stripe.subscription/ends-at]}]}])
+                                            :stripe.subscription/period-end]}]}])
   Object
   (initLocalState [_]
     {:menu-visible? false
@@ -186,7 +186,7 @@
             (when (= subscription-status :trialing)
               [:li
                [:small
-                (str "Trial: " (max 0 (f/days-until (:stripe.subscription/ends-at subscription))) " days left")]])
+                (str "Trial: " (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left")]])
             (when-not (= subscription-status :active)
               [:li
                (utils/upgrade-button

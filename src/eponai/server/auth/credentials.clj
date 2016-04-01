@@ -28,7 +28,7 @@
     (let [txs [(f/fb-user user opts)]]
       ; We already have a user account for the FB email.
       ; If we had a user with that email, loggin in with FB means it's now verified.
-      (transact conn (conj txs (f/verification user {:verification/status :verification.status/verified}))))
+      (transact conn (conj txs (f/email-verification user {:verification/status :verification.status/verified}))))
 
     ;; No user exists, create a new user account
     (if email

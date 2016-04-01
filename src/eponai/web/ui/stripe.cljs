@@ -82,7 +82,7 @@
                            :user/email]}
      {:query/stripe [:stripe/user
                      {:stripe/subscription [:stripe.subscription/id
-                                            :stripe.subscription/ends-at]}]}])
+                                            :stripe.subscription/period-end]}]}])
   Object
   (initLocalState [_]
     (let [checkout-loaded (checkout-loaded?)]
@@ -110,7 +110,7 @@
           [:div.row.column.small-12.medium-6
            (opts {:style {:margin "1em auto"}})
            [:div.callout.clearfix
-            (str "Your account is active until " (f/to-str (:stripe.subscription/ends-at subscription) "yyyyMMdd"))]]
+            (str "Your account is active until " (f/to-str (:stripe.subscription/period-end subscription) "yyyyMMdd"))]]
           [:div
            [:h2
             (opts {:style {:text-align "center"}})

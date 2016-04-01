@@ -22,8 +22,8 @@
           uuid (:verification/uuid verification)
           conn (new-db (vals account))
           _ (api/verify-email conn (str uuid))]
-      (is (=  (:verification/status (p/lookup-entity (d/db conn) [:verification/uuid uuid]))
-              :verification.status/verified)))))
+      (is (= (:verification/status (p/lookup-entity (d/db conn) [:verification/uuid uuid]))
+             :verification.status/verified)))))
 
 ; Failure cases
 (deftest verify-uuid-does-not-exist

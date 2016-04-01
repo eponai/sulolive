@@ -13,7 +13,8 @@
             [eponai.server.http :as http]
             [taoensso.timbre :refer [debug error info]]
             [environ.core :refer [env]]
-            [eponai.common.database.pull :as p])
+            [eponai.common.database.pull :as p]
+            [clj-time.core :as t])
   (:import (datomic.peer LocalConnection)))
 
 ;(defn currency-infos
@@ -40,7 +41,7 @@
     (let [user (pull/lookup-entity (d/db conn) [:user/email email])
           email-chan (chan 1)]
       (if user
-        (let [{:keys [verification/uuid] :as verification} (datomic.format/verification user)]
+        (let [{:keys [verification/uuid] :as verification} (datomic.format/email-verification user)]
           (transact-one conn verification)
           (info "New verification " uuid "for user:" email)
           (debug (str "Helper for mobile dev. verify uri: jourmoney://ios/1/login/verify/" uuid))
@@ -76,11 +77,9 @@
                                :data    {:uuid uuid}
                                :message "The verification link is invalid."}))]
     (if-let [verification (pull/lookup-entity (d/db conn) [:verification/uuid (common.format/str->uuid uuid)])]
-      (let [verification-time (c/from-long (:verification/created-at verification))
-            time-interval (time/in-minutes (time/interval verification-time (time/now)))
-            time-limit (:verification/time-limit verification)]
+      (let [expiry-time (:verification/expires-at verification)]
         ; If the verification was not used within 15 minutes, it's expired.
-        (if (or (<= time-limit 0) (>= time-limit time-interval))
+        (if (or (nil? expiry-time) (>= expiry-time (c/to-long (t/now))))
           ;If verification status is not pending, we've already verified this or it's expired.
            (if (= (:verification/status verification)
                   :verification.status/pending)
@@ -130,7 +129,7 @@
         ; Create a new verification and throw exception
         (when-not (seq verifications)
           (debug "User not verified for email:" email "will create new verification for user: " user-db-id)
-          (let [verification (datomic.format/verification user)]
+          (let [verification (datomic.format/email-verification user)]
             (transact-one conn verification)
             (throw (ex-info "Email not verified."
                             {:cause        ::authentication-error
@@ -175,7 +174,7 @@
                                                                   :project/uuid project-uuid}})))
         ;; Else create a new verification for the user, to login through their email.
         ;; We let this verification be unlimited time, as the user invited may not see their email within 15 minutes from the invitation
-        (let [verification (datomic.format/verification user {:verification/time-limit 0})]
+        (let [verification (datomic.format/verification user)]
           (transact conn [verification
                           [:db/add [:project/uuid project-uuid] :project/users [:user/email user-email]]])
           (put! email-chan verification)
@@ -185,11 +184,12 @@
       ;; If no user exists, create a new account, and verification as normal.
       ;; And add that user to the users for the project.
       ;; TODO: We might want to create an 'invitation' entity, so that it can be pending if the user hasn't accepted to share
-      (let [{:keys [verification]
-             new-user :user
-             :as new-account} (datomic.format/user-account-map user-email {:verification/time-limit 0})]
-        (prn "Transact new user: " new-account)
-        (transact-map conn (assoc new-account :add [:db/add [:project/uuid project-uuid] :project/users (:db/id  new-user)]))
+      (let [new-user (datomic.format/user user-email)
+            verification (datomic.format/verification new-user)]
+        (prn "Transact new user: " new-user)
+        (transact conn [new-user
+                        verification
+                        [:db/add [:project/uuid project-uuid] :project/users (:db/id  new-user)]])
         (put! email-chan verification)
         {:email-chan email-chan
          :status (:user/status new-user)}))))
@@ -211,7 +211,7 @@
                                   :subscription-id subscription-id
                                   :params          params})]
           (transact conn [[:db/add [:stripe.subscription/id subscription-id] :stripe.subscription/status (:stripe.subscription/status updated)]
-                          [:db/add [:stripe.subscription/id subscription-id] :stripe.subscription/ends-at (:stripe.subscription/ends-at updated)]]))
+                          [:db/add [:stripe.subscription/id subscription-id] :stripe.subscription/period-end (:stripe.subscription/period-end updated)]]))
 
         ;; We don't have a subscription saved for the customer (maybe the user canceled at some point). Create a new one.
         (let [created (stripe-fn :subscription/create
@@ -269,7 +269,7 @@
                                                               :data {:stripe-account stripe-account}}))))
 
 (defn newsletter-subscribe [conn email]
-  (let [{:keys [verification] :as account} (datomic.format/user-account-map email {:verification/time-limit 0})]
+  (let [{:keys [verification] :as account} (datomic.format/user-account-map email {:verification/expires-at 0})]
     (mailchimp/subscribe (env :mail-chimp-api-key)
                          (env :mail-chimp-list-id)
                          email
