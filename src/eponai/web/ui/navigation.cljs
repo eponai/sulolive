@@ -197,8 +197,8 @@
             [:li.has-submenu
              [:img
               (opts {:class    "img-circle"
-                     :style    {:width         "40"
-                                :height        "40"
+                     :style    {:width         40
+                                :height        40
                                 :border-radius "50%"}
                      :src      (or (:user/picture current-user) "/style/img/profile.png")
                      :on-click #(open-profile-menu this true)})]

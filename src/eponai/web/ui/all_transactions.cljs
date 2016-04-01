@@ -223,7 +223,7 @@
              [:small "x"]]
 
             [:h3 title]
-            [:input {:value     title
+            [:input {:value     (or title "")
                      :type      "text"
                      :on-change (utils/on-change-in this [:input-state :transaction/title])}]
 
@@ -238,13 +238,12 @@
               (opts {:type        "number"
                      :placeholder "0.00"
                      :min         "0"
-                     :value       amount
+                     :value       (or amount "")
                      :on-change   (utils/on-change-in this [:input-state :transaction/amount])})]
 
              [:select.input-group-field
               (opts {:on-change     (utils/on-change-in this [:input-state :transaction/currency :currency/code])
-                     :value (name (:currency/code currency))
-                     :default-value currency})
+                     :value (name (:currency/code currency))})
               (map-all all-currencies
                        (fn [{:keys [currency/code]}]
                          [:option

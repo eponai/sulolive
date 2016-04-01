@@ -92,7 +92,7 @@
      [:div.input-group
       [:input.input-group-field
        {:type        "text"
-        :value       (:tag/name input-tag)
+        :value       (or (:tag/name input-tag) "")
         :on-change   #(on-change {:tag/name (.-value (.-target %))})
         :on-key-down (fn [e]
                        (on-enter-down e #(on-add-tag {:tag/name %})))
