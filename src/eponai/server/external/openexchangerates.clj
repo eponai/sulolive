@@ -25,6 +25,9 @@
   [app-id]
   (fn [date-str]
     (info "Posting currency-rates for date:" date-str)
+    (if app-id
+      (info "App Id provided, will pull from OpenExchangeRates")
+      (info "App Id nil, using local rates."))
     (if (and app-id date-str)
       (let [rates (json/read-str (:body (client/get (currency-rates-url app-id date-str))) :key-fn keyword)]
         (info "Pulled conversions from OpenExchangeRates.")

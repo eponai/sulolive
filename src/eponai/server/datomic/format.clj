@@ -18,7 +18,8 @@
   (let [map-fn (fn [[code rate]]
                  {:db/id               (d/tempid :db.part/user)
                   :conversion/date     (cf/str->date (:date data))
-                  :conversion/currency [:currency/code (name code)]
+                  :conversion/currency {:db/id         (d/tempid :db.part/user)
+                                        :currency/code (name code)}
                   :conversion/rate     (bigdec rate)})]
     (map map-fn (:rates data))))
 
