@@ -18,7 +18,7 @@
      {:query/all-currencies [:currency/code
                              :currency/name]}
      {:query/stripe [:stripe/user
-                     {:stripe/subscription [:stripe.subscription/ends-at
+                     {:stripe/subscription [:stripe.subscription/period-end
                                             :stripe.subscription/status]}]}
      {:query/fb-user [:fb-user/name
                       :fb-user/id
@@ -67,11 +67,11 @@
 
               [:div.columns.small-10
                ;[:p "You have "
-               ; (f/days-until (:stripe.subscription/ends-at subscription)) " days left on your trial."]
+               ; (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial."]
                ;[:div.columns.small-12.medium-6.text-center]
                (utils/upgrade-button {:style {:margin 0}})
                ;[:div [:small "You have "
-               ;       (f/days-until (:stripe.subscription/ends-at subscription)) " days left on your trial."]]
+               ;       (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial."]]
                ])]
            [:hr]
            [:div.row
@@ -87,7 +87,7 @@
               "Name:"]]
             [:div.columns.small-10
              [:input
-              {:value user-name
+              {:value (or user-name "")
                :type  "text"}]]]
            [:div.row
 
@@ -96,16 +96,17 @@
               "Currency:"]]
             [:div.columns.small-10
              [:input
-              {:value     input-currency
+              {:value     (or input-currency "")
                :type      "text"
                :on-change #(om/update-state! this assoc :input-currency (.-value (.-target %)))
                :list      "currency-name"}]]
             [:datalist#currency-name
              (map-all
                all-currencies
-               (fn [c]
-                 [:option {:value (:currency/code c)}
-                  (:currency/name c)]))]]
+               (fn [{:keys [currency/code currency/name]}]
+                 [:option (opts {:key   [code]
+                                 :value code})
+                  name]))]]
 
            [:a.button.primary.hollow.float-right
             {:on-click #(om/transact! this `[(settings/save ~{:currency      input-currency

@@ -25,12 +25,12 @@
 
 (defmethod validate :default
   [_ k _]
-  (info "Validator not implemented: ") {:key k})
+  (info "Validator not implemented: " {:key k}))
 
 (defmethod validate 'transaction/create
 ;; Validate input when creating a new transaction. Checks the following:
 ;; 1) The required fields are included in the input transaction.
-;; 2) The user creating the transaction has access to the budget in :transaction/budget.
+;; 2) The user creating the transaction has access to the project in :transaction/project.
 ;; 3) All the tags in :transaction/tags are unique.
   [{:keys [state]} k {:keys [transaction user-uuid] :as p}]
   (let [required-fields #{:transaction/uuid
@@ -39,7 +39,7 @@
                           :transaction/amount
                           :transaction/currency
                           :transaction/created-at
-                          :transaction/budget
+                          :transaction/project
                           :transaction/type}
         missing-keys (into [] (filter #(nil? (get transaction %))) required-fields)]
     ;; Verify that all required fields are included in the transaction.
@@ -49,16 +49,16 @@
                   :missing-keys missing-keys})
 
     (let [{:keys [transaction/tags]} transaction
-          {budget-uuid :budget/uuid} (:transaction/budget transaction)
-          db-budget (p/one-with (d/db state) {:where   '[[?u :user/uuid ?user-uuid]
-                                                         [?e :budget/users ?u]
-                                                         [?e :budget/uuid ?budget-uuid]]
+          {project-uuid :project/uuid} (:transaction/project transaction)
+          db-project (p/one-with (d/db state) {:where   '[[?u :user/uuid ?user-uuid]
+                                                         [?e :project/users ?u]
+                                                         [?e :project/uuid ?project-uuid]]
                                               :symbols {'?user-uuid   user-uuid
-                                                        '?budget-uuid budget-uuid}})]
+                                                        '?project-uuid project-uuid}})]
       ;; Verify that that the transaction is added is accessible by the user adding the transaction.
-      (do-validate k p #(some? db-budget)
-                   {:message "You don't have access to modify the specified budget."
-                    :code    :project-unaccessible})
+      (do-validate k p #(some? db-project)
+                   {:message "You don't have access to modify the specified project."
+                    :code :project-unaccessible})
       ;; Verify that the collection of tags does not include duplicate tag names.
       (do-validate k p #(= (frequencies (set tags)) (frequencies tags))
                    {:message "Illegal argument :transaction/tags. Each tag must be unique."

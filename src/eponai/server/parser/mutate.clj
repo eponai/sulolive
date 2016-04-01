@@ -34,22 +34,22 @@
                (debug "editing transaction: " uuid " txs: " txs)
                (transact/mutate state mutation-uuid txs)))})
 
-;; ----------------- Budget --------------------
+;; ----------------- project --------------------
 
-(defmethod mutate 'budget/save
+(defmethod mutate 'project/save
   [{:keys [state auth mutation-uuid]} _ params]
-  (debug "budget/save with params: " params)
+  (debug "project/save with params: " params)
   {:action (fn []
              (let [user-ref [:user/uuid (:username auth)]
-                   budget (format/budget user-ref params)
-                   dashboard (format/dashboard (:db/id budget) params)]
-               (transact/mutate state mutation-uuid [budget dashboard])))})
+                   project (format/project user-ref params)
+                   dashboard (format/dashboard (:db/id project) params)]
+               (transact/mutate state mutation-uuid [project dashboard])))})
 
-(defmethod mutate 'budget/share
-  [{:keys [state]} _ {:keys [budget/uuid user/email] :as params}]
-  (debug "budget/save with params: " params)
+(defmethod mutate 'project/share
+  [{:keys [state]} _ {:keys [project/uuid user/email] :as params}]
+  (debug "project/save with params: " params)
   {:action (fn []
-             (api/share-budget state uuid email))})
+             (api/share-project state uuid email))})
 
 ;; --------------- Widget ----------------
 

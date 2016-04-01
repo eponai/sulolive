@@ -13,8 +13,9 @@
             [eponai.server.http :as http]
             [taoensso.timbre :refer [debug error info]]
             [environ.core :refer [env]]
-            [eponai.common.database.pull :as p])
-  (:import (datomic.peer LocalConnection)))
+            [eponai.common.database.pull :as p]
+            [clj-time.core :as t])
+  (:import (datomic Connection)))
 
 ;(defn currency-infos
 ;  "Post information about currencies with a map of the form:
@@ -40,13 +41,13 @@
 
   Returns channel with username and db-after user is added to use for email verification."
   [conn email]
-  {:pre [(instance? LocalConnection conn)
+  {:pre [(instance? Connection conn)
          (string? email)]}
   (if email
     (let [user (pull/lookup-entity (d/db conn) [:user/email email])
           email-chan (chan 1)]
       (if user
-        (let [{:keys [verification/uuid] :as verification} (datomic.format/verification user)]
+        (let [{:keys [verification/uuid] :as verification} (datomic.format/email-verification user)]
           (transact-one conn verification)
           (info "New verification " uuid "for user:" email)
           (debug (str "Helper for mobile dev. verify uri: jourmoney://ios/1/login/verify/" uuid))
@@ -77,14 +78,12 @@
 
   On success returns {:db/id some-id} for the user this verification belongs to."
   [conn verification-uuid]
-  {:pre [(instance? LocalConnection conn)
+  {:pre [(instance? Connection conn)
          (string? verification-uuid)]}
   (if-let [verification (pull/lookup-entity (d/db conn) [:verification/uuid (common.format/str->uuid verification-uuid)])]
-    (let [verification-time (c/from-long (:verification/created-at verification))
-          time-interval (time/in-minutes (time/interval verification-time (time/now)))
-          time-limit (:verification/time-limit verification)]
+    (let [expiry-time (:verification/expires-at verification)]
       ; If the verification was not used within 15 minutes, it's expired.
-      (if (or (<= time-limit 0) (>= time-limit time-interval))
+      (if (or (nil? expiry-time) (>= expiry-time (c/to-long (t/now))))
         ;If verification status is not pending, we've already verified this or it's expired.
         (if (= (:verification/status verification)
                :verification.status/pending)
@@ -125,7 +124,7 @@
   Throws exception if the email provided is not already verified, email is already in use,
   or the user UUID is not found."
   [conn user-uuid email & [opts]]
-  {:pre [(instance? LocalConnection conn)
+  {:pre [(instance? Connection conn)
          (string? user-uuid)
          (string? email)]}
   (if-let [user (pull/lookup-entity (d/db conn) [:user/uuid (common.format/str->uuid user-uuid)])]
@@ -150,7 +149,7 @@
         ; Create a new verification and throw exception
         (when-not (seq verifications)
           (debug "User not verified for email:" email "will create new verification for user: " user-db-id)
-          (let [verification (datomic.format/verification user)]
+          (let [verification (datomic.format/email-verification user)]
             (transact-one conn verification)
             (throw (api-error ::http/unathorized :unverified-email
                               {:type          :authentication-error
@@ -165,11 +164,11 @@
             (debug "User already activated, returning user.")
             (pull/lookup-entity (d/db conn) [:user/email email]))
           ; First time activation, set status to active and return user entity.
-          (let [budget (common.format/budget user-db-id)
-                dashboard (common.format/dashboard (:db/id budget))
+          (let [project (common.format/project user-db-id)
+                dashboard (common.format/dashboard (:db/id project))
                 activated-db (:db-after (transact conn [[:db/add user-db-id :user/status :user.status/active]
                                                         [:db/add user-db-id :user/currency [:currency/code "USD"]]
-                                                        budget
+                                                        project
                                                         dashboard]))]
             (debug "Activated account for user-uuid:" user-uuid)
             (pull/lookup-entity activated-db [:user/email email])))))
@@ -182,48 +181,49 @@
                        :function      (str activate-account)
                        :function-args {'user-uuid user-uuid 'email email}}))))
 
-(defn share-budget [conn budget-uuid user-email]
+(defn share-project [conn project-uuid user-email]
   (let [db (d/db conn)
         user (pull/lookup-entity db [:user/email user-email])
         email-chan (chan 1)]
     (if user
-      ;; If user already exists, check that they are not already sharing this budget.
-      (let [user-budgets (pull/pull db [{:budget/_users [:budget/uuid]}] (:db/id user))
-            grouped (group-by :budget/uuid (:budget/_users user-budgets))]
+      ;; If user already exists, check that they are not already sharing this project.
+      (let [user-projects (pull/pull db [{:project/_users [:project/uuid]}] (:db/id user))
+            grouped (group-by :project/uuid (:project/_users user-projects))]
         ;; If the user is already sharing this budget, throw an exception.
-        (when (get grouped budget-uuid)
+        (when (get grouped project-uuid)
           (throw (api-error ::http/unprocessable-entity :duplicate-project-shares
                             {:message       (str "Project is already shared with " user-email ".")
-                             :function      (str share-budget)
-                             :function-args {'project budget-uuid 'user-email user-email}
-                             :data          {:project    budget-uuid
+                             :function      (str share-project)
+                             :function-args {'project project-uuid 'user-email user-email}
+                             :data          {:project    project-uuid
                                              :user-email user-email}})))
         ;; Else create a new verification for the user, to login through their email.
         ;; We let this verification be unlimited time, as the user invited may not see their email within 15 minutes from the invitation
-        (let [verification (datomic.format/verification user {:verification/time-limit 0})]
+        (let [verification (datomic.format/verification user)]
           (transact conn [verification
-                          [:db/add [:budget/uuid budget-uuid] :budget/users [:user/email user-email]]])
+                          [:db/add [:project/uuid project-uuid] :project/users [:user/email user-email]]])
           (put! email-chan verification)
           {:email-chan email-chan
            :status     (:user/status user)}))
 
       ;; If no user exists, create a new account, and verification as normal.
-      ;; And add that user to the users for the budget.
+      ;; And add that user to the users for the project.
       ;; TODO: We might want to create an 'invitation' entity, so that it can be pending if the user hasn't accepted to share
-      (let [{:keys [verification]
-             new-user :user
-             :as new-account} (datomic.format/user-account-map user-email {:verification/time-limit 0})]
+      (let [new-user (datomic.format/user user-email)
+            verification (datomic.format/verification new-user)]
         (info "New user created: " (:user/uuid new-user))
-        (transact-map conn (assoc new-account :add [:db/add [:budget/uuid budget-uuid] :budget/users (:db/id  new-user)]))
+        (transact conn [new-user
+                        verification
+                        [:db/add [:project/uuid project-uuid] :project/users (:db/id new-user)]])
         (put! email-chan verification)
         {:email-chan email-chan
-         :status (:user/status new-user)}))))
+         :status     (:user/status new-user)}))))
 
 (defn stripe-subscribe
   "Subscribe user to a plan in Stripe. Basically create a Stripe customer for this user and subscribe to a plan."
   [conn stripe-fn {:keys [stripe/customer
                           stripe/subscription]} {:keys [token plan] :as p}]
-  {:pre [(instance? LocalConnection conn) (fn? stripe-fn) (map? p)]}
+  {:pre [(instance? Connection conn) (fn? stripe-fn) (map? p)]}
   (let [{:keys [id email]} token
         params {"source"    id
                 "plan"      plan
@@ -236,7 +236,7 @@
                                   :subscription-id subscription-id
                                   :params          params})]
           (transact conn [[:db/add [:stripe.subscription/id subscription-id] :stripe.subscription/status (:stripe.subscription/status updated)]
-                          [:db/add [:stripe.subscription/id subscription-id] :stripe.subscription/ends-at (:stripe.subscription/ends-at updated)]]))
+                          [:db/add [:stripe.subscription/id subscription-id] :stripe.subscription/period-end (:stripe.subscription/period-end updated)]]))
 
         ;; We don't have a subscription saved for the customer (maybe the user canceled at some point). Create a new one.
         (let [created (stripe-fn :subscription/create
@@ -256,9 +256,8 @@
 
 (defn stripe-trial
   "Subscribe user to trial, without requesting credit carg."
-  [conn stripe-fn {:keys [user/email
-                          stripe/_user] :as user}]
-  {:pre [(instance? LocalConnection conn)
+  [conn stripe-fn {:keys [user/email stripe/_user] :as user}]
+  {:pre [(instance? Connection conn)
          (fn? stripe-fn)
          (string? email)]}
   (when (seq _user)
@@ -277,7 +276,7 @@
 (defn stripe-cancel
   "Cancel the subscription in Stripe for user with uuid."
   [conn stripe-fn stripe-account]
-  {:pre [(instance? LocalConnection conn)
+  {:pre [(instance? Connection conn)
          (fn? stripe-fn)
          (map? stripe-account)]}
   ;; If no customer-id exists, we cannot cancel anything.
@@ -302,7 +301,7 @@
                        :function-args {'stripe-fn stripe-fn 'stripe-account stripe-account}}))))
 
 (defn newsletter-subscribe [conn email]
-  (let [{:keys [verification] :as account} (datomic.format/user-account-map email {:verification/time-limit 0})]
+  (let [{:keys [verification] :as account} (datomic.format/user-account-map email {:verification/expires-at 0})]
     (mailchimp/subscribe (env :mail-chimp-api-key)
                          (env :mail-chimp-list-id)
                          email

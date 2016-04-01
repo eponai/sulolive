@@ -27,12 +27,12 @@
 (defn obj->subscription-map [stripe-obj]
   {:stripe.subscription/id      (.getId stripe-obj)
    :stripe.subscription/status  (keyword (.getStatus stripe-obj))
-   :stripe.subscription/ends-at (* 1000 (.getCurrentPeriodEnd stripe-obj))})
+   :stripe.subscription/period-end (* 1000 (.getCurrentPeriodEnd stripe-obj))})
 
 (defn json->subscription-map [{:keys [id period_end status]}]
   {:stripe.subscription/id      id
    :stripe.subscription/status  (keyword status)
-   :stripe.subscription/ends-at (* 1000 period_end)})
+   :stripe.subscription/period-end (* 1000 period_end)})
 
 (declare stripe-action)
 
@@ -210,7 +210,7 @@
         {:keys [stripe/subscription]} (p/pull (d/db conn) [:stripe/subscription] [:stripe/customer customer])
         subscription-ends-at (* 1000 period_end)]
     (if subscription
-      (transact/transact-one conn [:db/add (:db/id subscription) :stripe.subscription/ends-at subscription-ends-at])
+      (transact/transact-one conn [:db/add (:db/id subscription) :stripe.subscription/period-end subscription-ends-at])
       (throw (webhook-ex event
                          (str "No :stripe/subscription associated with :stripe/customer: " customer)
                          {:customer customer})))))

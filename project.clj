@@ -3,7 +3,9 @@
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.omcljs/om "1.0.0-alpha31"]
+  :dependencies [[cljsjs/react "15.0.0-rc.2-0"]
+                 [cljsjs/react-dom "15.0.0-rc.2-0"]
+                 [org.omcljs/om "1.0.0-alpha32"]
                  [clj-http "2.1.0"]
                  [clj-time "0.11.0"]
                  [compojure "1.4.0"]
@@ -38,7 +40,7 @@
 
                  ;; CLJS
                  [com.cognitect/transit-cljs "0.8.237"]
-                 [org.clojure/clojurescript "1.7.228"
+                 [org.clojure/clojurescript "1.8.40"
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
@@ -50,14 +52,13 @@
                  [sablono "0.6.2"]
                  [cljsjs/d3 "3.5.7-1"]
                  [cljsjs/pikaday "1.4.0-1"]
-                 [cljsjs/react-grid-layout "0.8.5-0"]
+                 [cljsjs/react-grid-layout "0.10.8-0"]
                  [cljsjs/stripe "2.0-0"]
                  [bidi "2.0.0"]
                  [kibu/pushy "0.3.6"]
                  [binaryage/devtools "0.5.2"]
                  [org.clojure/tools.nrepl "0.2.11"
                   :exclusions [org.clojure/clojure]]
-                 [figwheel-sidecar "0.5.0-2"]
 
                  ;; React-native
                  [natal-shell "0.1.6"]
@@ -75,7 +76,7 @@
            ;; [lein-npm "0.6.1"]
             [lein-shell "0.5.0"]
             [lein-doo "0.1.6"]
-            [lein-cljsbuild "1.1.1"]
+            [lein-cljsbuild "1.1.3"]
             [lein-figwheel "0.5.0-6"]
             [lein-ring "0.9.7"]
             [lein-test-out "0.3.1"]
@@ -114,8 +115,8 @@
                                       ["with-profile" "web" "cljsbuild" "once" "dev"]]
             "run-tests-web"          ^{:doc "Compile and run web tests"}
                                      ["do"
-                                      ["with-profile" "web" "cljsbuild" "once" "test"]
-                                      ["with-profile" "web" "doo" "phantom" "test" "once"]]
+                                      ["with-profile" "web" "cljsbuild" "once" "doo-test"]
+                                      ["with-profile" "web" "doo" "phantom" "doo-test" "once"]]
             "figwheel-ios"           ^{:doc "Start figwheel for ios"}
                                      ["do"
                                       ["with-profile" "mobile" "figwheel" "ios"]]
@@ -153,30 +154,31 @@
                         :aot        :all
                         :prep-tasks ["compile" "prod-build-web"]}
 
-             :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha31"
+             :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha32"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
+                                       [figwheel-sidecar "0.5.0-2"]
                                        [com.cemerick/piggieback "0.2.1"]]
-                        :source-paths ["src" "src-hacks/react-native" "env/dev"]
+                        :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
                         :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
                         :cljsbuild    {:builds [{:id           "ios"
-                                                 :source-paths ["src" "src-hacks/react-native" "env/dev"]
+                                                 :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
                                                  :figwheel     true
                                                  :compiler     {:output-to     "target/ios/not-used.js"
                                                                 :main          "env.ios.main"
                                                                 :output-dir    "target/ios"
                                                                 :optimizations :none}}
                                                 {:id           "android"
-                                                 :source-paths ["src" "src-hacks/react-native" "env/dev"]
+                                                 :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
                                                  :figwheel     true
                                                  :compiler     {:output-to     "target/android/not-used.js"
                                                                 :main          "env.android.main"
                                                                 :output-dir    "target/android"
                                                                 :optimizations :none}}]}}
 
-             :mob-prod {:dependencies [[org.omcljs/om "1.0.0-alpha31"
+             :mob-prod {:dependencies [[org.omcljs/om "1.0.0-alpha32"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]]
                         :cljsbuild    {:builds [{:id           "ios-release"
-                                                 :source-paths ["src" "src-hacks/react-native" "env/prod"]
+                                                 :source-paths ["src" "src-hacks/react-native" "env/client/prod"]
                                                  :compiler     {:output-to     "index.ios.js"
                                                                 :main          "env.ios.main"
                                                                 :output-dir    "target/ios"
@@ -184,13 +186,13 @@
                                                 {:id           "ios-local"
                                                  ;; A production build, run against a local/laptop
                                                  ;; jourmoney server.
-                                                 :source-paths ["src" "src-hacks/react-native" "env/prod"]
+                                                 :source-paths ["src" "src-hacks/react-native" "env/client/prod"]
                                                  :compiler     {:output-to     "index.ios.js"
                                                                 :main          "env.ios.local-main"
                                                                 :output-dir    "target/ios-local"
                                                                 :optimizations :simple}}
                                                 {:id           "android"
-                                                 :source-paths ["src" "src-hacks/react-native" "env/prod"]
+                                                 :source-paths ["src" "src-hacks/react-native" "env/client/prod"]
                                                  :compiler     {:output-to     "index.android.js"
                                                                 :main          "env.android.main"
                                                                 :output-dir    "target/android"
@@ -225,13 +227,22 @@
                                                              :optimizations :none
                                                              :source-map    true
                                                              }}
+                                             {:id           "doo-test"
+                                              :source-paths ["src/" "src-hacks/web/" "test/"]
+                                              :compiler     {:output-to     "resources/public/doo-test/js/out/budget.js"
+                                                             :output-dir    "resources/public/doo-test/js/out"
+                                                             :main          "eponai.client.tests"
+                                                             :optimizations :none
+                                                             :source-map    true
+                                                             }}
                                              {:id           "release"
-                                              :source-paths ["src/" "src-hacks/web/"]
-                                              :compiler     {:main          "eponai.web.core"
+                                              :source-paths ["src/" "src-hacks/web/" "env/client/prod"]
+                                              :compiler     {:main          "env.web.main"
                                                              :asset-path    "/release/js/out"
                                                              :output-to     "resources/public/release/js/out/budget.js"
                                                              :output-dir    "resources/public/release/js/out/"
                                                              :optimizations :advanced
+                                                             :externs ["src-hacks/js/externs/stripe-checkout.js"]
                                                              ;;   :parallel-build true
                                                              ;;   :pseudo-names true
                                                              ;;   :pretty-print true
@@ -242,7 +253,7 @@
   ;;;;;;;;;;;;;
   :target-path "target/%s"
   :source-paths ["src"]
-  :test-paths ["test" "env/dev"]
+  :test-paths ["test" "env/server/dev"]
   :ring {:handler eponai.server.core/app
          :init    eponai.server.core/init}
   :main eponai.server.core

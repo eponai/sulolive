@@ -1,6 +1,7 @@
 (ns eponai.client.parser.mutate
   (:require [eponai.common.parser :refer [mutate]]
             [taoensso.timbre :refer-macros [info debug error trace]]
+            [datascript.core :as d]
             [eponai.common.format :as format]
             [eponai.common.database.transact :as transact]
             [eponai.common.validate :as validate]))
@@ -15,9 +16,9 @@
 
 (defmethod mutate 'transaction/create
   [{:keys [state mutation-uuid parser] :as e} k input-transaction]
-  (debug "transaction/create with params:" input-transaction)
-  (let [{user-uuid :user/uuid} (parser e '[{:query/current-user [:user/uuid]}])]
-    (validate/validate k {:transaction input-transaction :user-uuid user-uuid})
+  (let [user-uuid (-> (parser e '[{:query/current-user [:user/uuid]}])
+                      (get-in [:query/current-user :user/uuid]))]
+    (validate/validate e k {:transaction input-transaction :user-uuid user-uuid})
     {:action (fn []
                (let [transaction (format/transaction input-transaction)]
                  (transact/mutate-one state mutation-uuid transaction)))
@@ -34,20 +35,20 @@
    :remote true})
 
 
-;; ---------------- Budget --------------
+;; ---------------- project --------------
 
-(defmethod mutate 'budget/save
+(defmethod mutate 'project/save
   [{:keys [state mutation-uuid]} _ params]
-  (debug "budget/save with params: " params)
-  (let [ budget (format/budget nil params)
-        dashboard (format/dashboard (:db/id budget) params)]
+  (debug "project/save with params: " params)
+  (let [ project (format/project nil params)
+        dashboard (format/dashboard (:db/id project) params)]
     {:action (fn []
-               (transact/mutate state mutation-uuid [budget dashboard]))
+               (transact/mutate state mutation-uuid [project dashboard]))
      :remote true}))
 
-(defmethod mutate 'budget/share
+(defmethod mutate 'project/share
   [{:keys [state mutation-uuid]} _ params]
-  (debug "budget/share with params: " params)
+  (debug "project/share with params: " params)
   {:remote true})
 
 ;; -------------- Widget ---------------

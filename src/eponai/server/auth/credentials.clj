@@ -33,7 +33,7 @@
     (let [txs [(f/fb-user user opts)]]
       ; We already have a user account for the FB email.
       ; If we had a user with that email, loggin in with FB means it's now verified.
-      (transact conn (conj txs (f/verification user {:verification/status :verification.status/verified}))))
+      (transact conn (conj txs (f/email-verification user {:verification/status :verification.status/verified}))))
 
     ;; No user exists, create a new user account
     (if email
@@ -85,7 +85,6 @@
         ;; Linking the FB user to u user account. If a user accunt with the same email exists,
         ;; it will be linked. Otherwise, a new user is created.
         (let [db-after-link (:db-after (link-fb-user-to-account conn {:user/email    email
-                                                                      :user/picture  (:url (:data picture))
                                                                       :fb-user/id    user_id
                                                                       :fb-user/token access_token}))
               fb-user (p/lookup-entity db-after-link [:fb-user/id user_id])

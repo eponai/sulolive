@@ -42,7 +42,7 @@
           [:p "Sign in with email"]
 
           [:input
-           (opts {:value       input-email
+           (opts {:value       (or input-email "")
                   :on-change   (on-input-change this :input-email)
                   :type        :email
                   :placeholder "youremail@example.com"})]

@@ -12,7 +12,21 @@
 (defn currencies
   "Get currencies with given app-id."
   [app-id]
-  (json/read-str (:body (client/get (currencies-url app-id))) :key-fn keyword))
+  (if app-id
+    (do
+      (info "App Id provided, will pull currencies from OpenExchangeRates.")
+      (let [currencies (json/read-str (:body (client/get (currencies-url app-id))) :key-fn keyword)]
+        (info "Pulled currencies from OER.")
+        currencies))
+
+    (do
+      (info "App Id nil, using local currencies.")
+      ;; Dev mode currencies
+      {:currencies {:SEK "Swedish Krona"
+                    :USD "US Dollar"
+                    :MYR "Malaysian Ringit"
+                    :NOK "Norsk Krona"
+                    :THB "Thai Baht"}})))
 
 (defn currency-rates-url
   "Get open exchange rates api URL for fetching currency rates for the given
@@ -25,10 +39,18 @@
   [app-id]
   (fn [date-str]
     (info "Posting currency-rates for date:" date-str)
-    (when (and app-id date-str)
+    (if app-id
+      (info "App Id provided, will pull conversions from OpenExchangeRates.")
+      (info "App Id nil, using local conversion rates."))
+    (if (and app-id date-str)
       (let [rates (json/read-str (:body (client/get (currency-rates-url app-id date-str))) :key-fn keyword)]
-        (assoc rates :date date-str)))
-    {:date  date-str
-     :rates {:SEK 8.56
-             :USD 1
-             :THB 35.64}}))
+        (info "Pulled conversions from OpenExchangeRates.")
+        (assoc rates :date date-str))
+
+      ;; Dev mode currency rates.
+      {:date  date-str
+       :rates {:SEK 8.56
+               :USD 1
+               :THB 35.64
+               :MYR 3.8
+               :NOK 7.5}})))

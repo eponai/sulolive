@@ -35,8 +35,8 @@
                          :date/day
                          :date/month
                          :date/year]}
-     {:transaction/budget [:budget/uuid
-                           :budget/name]}
+     {:transaction/project [:project/uuid
+                           :project/name]}
      {:transaction/type [:db/ident]}
      :transaction/conversion])
   Object
@@ -132,13 +132,13 @@
          {:transaction/currency [:currency/code :currency/symbol-native]}
          {:transaction/tags [:tag/name]}
          {:transaction/date [:date/ymd]}
-         {:transaction/budget [:budget/uuid :budget/name]}
+         {:transaction/project [:project/uuid :project/name]}
          {:transaction/type [:db/ident]}
          :transaction/conversion]}]}
      {:query/all-currencies [:currency/code]}
-     {:query/all-budgets [:budget/uuid
-                          :budget/name
-                          :transaction/_budget]}])
+     {:query/all-projects [:project/uuid
+                          :project/name
+                          :transaction/_project]}])
   Object
   (init-state [_ props]
     (let [transaction (-> (get-selected-transaction props)
@@ -195,7 +195,7 @@
   (render [this]
     (let [props (om/props this)
           {:keys [query/all-currencies
-                  query/all-budgets]} props
+                  query/all-projects]} props
           {:keys [transaction/uuid]
            :as transaction} (get-selected-transaction props)
           {:keys [input-state
@@ -204,7 +204,7 @@
           {:keys [transaction/title
                   transaction/amount
                   transaction/currency
-                  transaction/budget
+                  transaction/project
                   transaction/type
                   transaction/date
                   transaction/tags]} input-state
@@ -223,7 +223,7 @@
              [:small "x"]]
 
             [:h3 title]
-            [:input {:value     title
+            [:input {:value     (or title "")
                      :type      "text"
                      :on-change (utils/on-change-in this [:input-state :transaction/title])}]
 
@@ -238,13 +238,12 @@
               (opts {:type        "number"
                      :placeholder "0.00"
                      :min         "0"
-                     :value       amount
+                     :value       (or amount "")
                      :on-change   (utils/on-change-in this [:input-state :transaction/amount])})]
 
              [:select.input-group-field
               (opts {:on-change     (utils/on-change-in this [:input-state :transaction/currency :currency/code])
-                     :value (name (:currency/code currency))
-                     :default-value currency})
+                     :value (name (:currency/code currency))})
               (map-all all-currencies
                        (fn [{:keys [currency/code]}]
                          [:option
@@ -253,11 +252,11 @@
                           (name code)]))]]
 
             [:select
-             {:on-change     (utils/on-change-in this [:input-state :transaction/budget :budget/uuid])
+             {:on-change     (utils/on-change-in this [:input-state :transaction/project :project/uuid])
               :type          "text"
-              :default-value (:budget/name budget)}
-             (map-all all-budgets
-                      (fn [{:keys [budget/uuid budget/name]}]
+              :default-value (:project/name project)}
+             (map-all all-projects
+                      (fn [{:keys [project/uuid project/name]}]
                         [:option
                          (opts {:value uuid
                                 :key   [uuid]})
@@ -290,7 +289,7 @@
                                                       ;; Copied from AddTransaction.
                                                       :query/selected-transaction
                                                       :query/dashboard
-                                                      :query/all-budgets
+                                                      :query/all-projects
                                                       :query/transactions])}
                      (when-not edited?
                        {:class "disabled"}))
@@ -354,9 +353,6 @@
   static om/IQuery
   (query [_]
     ['({:query/transactions ?transaction} {:filter ?filter})
-     {:query/conversions [:conversion/currency
-                          :conversion/rate
-                          :conversion/date]}
      {:query/current-user [:user/uuid
                            {:user/currency [:currency/code
                                             :currency/symbol-native]}]}

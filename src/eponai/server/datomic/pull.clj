@@ -51,15 +51,24 @@
      {:transaction/date [:date/ymd
                          :date/timestamp]}]))
 
-(defn widgets-with-data [{:keys [db auth] :as env} budget-eid widgets]
+(defn widgets-with-data [{:keys [db auth] :as env} project-eid widgets]
   (map (fn [{:keys [widget/uuid]}]
          (let [widget (p/pull db (widget-report-query) [:widget/uuid uuid])
-               budget (p/pull db [:budget/uuid] budget-eid)
+               project (p/pull db [:project/uuid] project-eid)
                transactions (p/transactions-with-conversions
                               (assoc env :query (transaction-query))
                               (:username auth)
                               {:filter      (:widget/filter widget)
-                               :budget-uuid (:budget/uuid budget)})
+                               :project-uuid (:project/uuid project)})
                report-data (report/generate-data (:widget/report widget) (:widget/filter widget) transactions)]
            (assoc widget :widget/data report-data)))
        widgets))
+
+(defn new-currencies [db rates]
+  (let [currency-codes (mapv #(get-in % [:conversion/currency :currency/code]) rates)
+        currencies (p/pull-many db [:currency/code] (p/all-with db {:where   '[[?e :currency/code ?code]]
+                                                                    :symbols {'[?code ...] currency-codes}}))
+        db-currency-codes (map :currency/code currencies)
+        new-currencies (clojure.set/difference (set currency-codes) (set db-currency-codes))]
+    (debug "Found new currencies: " new-currencies)
+    new-currencies))

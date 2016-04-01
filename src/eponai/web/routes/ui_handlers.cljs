@@ -1,7 +1,7 @@
 (ns eponai.web.routes.ui-handlers
   (:require [bidi.bidi :as bidi]
             [eponai.client.route-helper :refer [map->UiComponentMatch]]
-            [eponai.web.ui.budget :refer [Budget ->Budget]]
+            [eponai.web.ui.project :refer [project ->project]]
             [eponai.web.ui.all-transactions :refer [AllTransactions ->AllTransactions]]
             [eponai.web.ui.settings :refer [Settings ->Settings]]
             [eponai.web.ui.stripe :refer [Payment ->Payment]]
@@ -10,13 +10,13 @@
 
 (def dashboard-handler
   (map->UiComponentMatch
-    {:component      Budget
-     :factory        ->Budget
-     :route-param-fn (fn [reconciler {:keys [budget-uuid]}]
+    {:component      project
+     :factory        ->project
+     :route-param-fn (fn [reconciler {:keys [project-uuid]}]
                        {:pre [(om/reconciler? reconciler)]}
                        (om/transact! reconciler
-                                     `[(budget/set-active-uuid
-                                         {:budget-uuid ~(uuid budget-uuid)})
+                                     `[(project/set-active-uuid
+                                         {:project-uuid ~(uuid project-uuid)})
                                        :proxy/side-bar
                                        ]))}))
 

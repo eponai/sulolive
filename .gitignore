@@ -78,4 +78,5 @@ local.properties
 /index.android.js
 /index.ios.js
 /target/
+/env/dev/
 

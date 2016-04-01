@@ -30,7 +30,7 @@
                             {:transaction/date [:date/ymd]}
                             {:transaction/tags [:tag/name]}
                             {:transaction/currency [:currency/code]}
-                            {:transaction/budget [:budget/uuid]}
+                            {:transaction/project [:project/uuid]}
                             {:transaction/type [:db/ident]}]}
       {:proxy/edit-transaction ?edit-transaction}])
   Object

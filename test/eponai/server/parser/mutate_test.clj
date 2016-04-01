@@ -45,8 +45,8 @@
                         {:db/id         (d/tempid :db.part/user)
                          :currency/code (:currency/code (:transaction/currency transaction))}
                         {:db/id       (d/tempid :db.part/user)
-                         :budget/uuid (:budget/uuid (:transaction/budget transaction))
-                         :budget/users (:db/id user)}])
+                         :project/uuid (:project/uuid (:transaction/project transaction))
+                         :project/users (:db/id user)}])
           parsed (routes/handle-parser-request
                    (session-request conn user`[(transaction/create ~(assoc transaction :mutation-uuid (d/squuid)))]))
           _ (debug "Parsed: " parsed)

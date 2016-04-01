@@ -218,7 +218,7 @@
          [:ul.breadcrumbs
           [:li
            [:a
-            {:href (routes/inside "dashboard/" (:budget/uuid (:dashboard/budget dashboard)))}
+            {:href (routes/inside "dashboard/" (:project/uuid (:dashboard/project dashboard)))}
             "Dashboard"]]
           [:li
            [:span (if widget "Edit widget" "New widget")]]]

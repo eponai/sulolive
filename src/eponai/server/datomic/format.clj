@@ -18,7 +18,8 @@
   (let [map-fn (fn [[code rate]]
                  {:db/id               (d/tempid :db.part/user)
                   :conversion/date     (cf/str->date (:date data))
-                  :conversion/currency [:currency/code (name code)]
+                  :conversion/currency {:db/id         (d/tempid :db.part/user)
+                                        :currency/code (name code)}
                   :conversion/rate     (bigdec rate)})]
     (map map-fn (:rates data))))
 
@@ -67,8 +68,6 @@
      :user/uuid     (d/squuid)
      :user/status   (or (:user/status opts) :user.status/new)}
 
-    (:user/picture opts)
-    (assoc :user/picture (:user/picture opts))
     email
     (assoc :user/email email)))
 
@@ -97,24 +96,29 @@
   * :verification/status - status of verification, default is :verification.status/pending.
   * :verification/created-at - timestamp if when verification was created, default value is now.
   * :verification/attribute - key in this entity with a value that this verification should verify, default is :user/email.
-  * :verification/time-limit - time limit in minutes before this verification should expire, default is 15.
+  * :verification/expires-at - timestamp for when verification expires.
 
   Returns a map representing a verification entity"
   [entity & [opts]]
   (let [attribute (or (:verification/attribute opts) :user/email)]
-    {:db/id                   (d/tempid :db.part/user)
-     :verification/status     (or (:verification/status opts) :verification.status/pending)
-     :verification/created-at (or (:verification/created-at opts) (c/to-long (t/now)))
-     :verification/uuid       (d/squuid)
-     :verification/entity     (:db/id entity)
-     :verification/attribute  attribute
-     :verification/value      (get entity attribute)
-     :verification/time-limit (or (:verification/time-limit opts) 15)}))
+    (cond->
+      {:db/id                   (d/tempid :db.part/user)
+       :verification/status     (or (:verification/status opts) :verification.status/pending)
+       :verification/created-at (or (:verification/created-at opts) (c/to-long (t/now)))
+       :verification/uuid       (d/squuid)
+       :verification/entity     (:db/id entity)
+       :verification/attribute  attribute
+       :verification/value      (get entity attribute)})))
 
-(defn dashboard [budget-eid]
+(defn email-verification [entity & [opts]]
+  (let [v (verification entity opts)
+        expiry-time (c/to-long (t/plus (c/from-long (:verification/created-at v)) (t/minutes 15)))]
+    (assoc v :verification/expires-at expiry-time)))
+
+(defn dashboard [project-eid]
   {:db/id            (d/tempid :db.part/user)
    :dashboard/uuid (d/squuid)
-   :dashboard/budget budget-eid})
+   :dashboard/project project-eid})
 
 (defn stripe-account
   "Takes a map with stripe information and formats to be transacted into datomic.
@@ -132,12 +136,12 @@
 
   Refer to followg functions for considered keys:
   * (user email)
-  * (budget user)
+  * (project user)
   * (fb-user user opts) - returns nil if no fb-user opts provided
   * (verification user opts) - if email is not nil
 
   Returns a map representing a user account map including keys
-  #{:user :budget :verification(if email not nil) :fb-user(if not nil)}"
+  #{:user :project :verification(if email not nil) :fb-user(if not nil)}"
   [email & [opts]]
   (let [user (user email opts)
         fb-user (fb-user user opts)]
@@ -145,7 +149,7 @@
       {:user   user}
 
       email
-      (assoc :verification (verification user opts))
+      (assoc :verification (email-verification user opts))
 
       fb-user
       (assoc :fb-user fb-user))))

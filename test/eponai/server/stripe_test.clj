@@ -17,7 +17,7 @@
 
 (defn subscription [id status]
   {:stripe.subscription/id      id
-   :stripe.subscription/ends-at default-period-end
+   :stripe.subscription/period-end default-period-end
    :stripe.subscription/status  status})
 
 
@@ -88,7 +88,7 @@
                                  :period_end period-end}}}
           _ (stripe/webhook conn event)
           result (p/lookup-entity (d/db conn) [:stripe.subscription/id subscription-id])]
-      (is (= (:stripe.subscription/ends-at result) (* 1000 period-end)))
+      (is (= (:stripe.subscription/period-end result) (* 1000 period-end)))
       (is (= (:stripe.subscription/id result) subscription-id)))))
 
 (deftest invoice.payment-successful
@@ -104,5 +104,5 @@
                                  :period_end period-end}}}
           _ (stripe/webhook conn event)
           result (p/lookup-entity (d/db conn) [:stripe.subscription/id default-subscription-id])]
-      (is (= (:stripe.subscription/ends-at result) (* 1000 period-end))))))
+      (is (= (:stripe.subscription/period-end result) (* 1000 period-end))))))
 

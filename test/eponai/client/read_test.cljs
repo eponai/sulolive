@@ -15,7 +15,7 @@
                                    (common.datascript/ui-schema)))]
     (transact/transact conn [{:ui/singleton :ui.singleton/app}
                       {:ui/singleton :ui.singleton/auth}
-                      {:ui/component :ui.component/budget}])
+                      {:ui/component :ui.component/project}])
     conn))
 
 (defn conversion [date-ymd currency-code]
@@ -24,14 +24,14 @@
    :conversion/currency (format/currency* {:currency/code currency-code})
    :conversion/rate     1.0})
 
-(defn transaction [budget date-ymd currency-code]
+(defn transaction [project date-ymd currency-code]
   (format/transaction
     {:db/id                (d/tempid :db.part/user)
      :transaction/amount   "0"
      :transaction/title      "title"
      :transaction/currency {:currency/code currency-code}
      :transaction/date     {:date/ymd date-ymd}
-     :transaction/budget   budget
+     :transaction/project   project
      :transaction/type       :transaction.type/expense
      :transaction/uuid       (d/squuid)
      :transaction/created-at 0
@@ -43,15 +43,15 @@
    :user/email "user@email.com"
    :user/currency {:currency/code "SEK"}})
 
-(defn read-transactions [parser conn user budget]
+(defn read-transactions [parser conn user project]
   (parser {:state conn}
-         `[({:query/transactions [:db/id {:transaction/date [:date/timestamp :date/ymd]}]} ~{:budget-uuid (:budget/uuid budget)
+         `[({:query/transactions [:db/id {:transaction/date [:date/timestamp :date/ymd]}]} ~{:project-uuid (:project/uuid project)
                                                                                              :conversion-query [:conversion/rate
                                                                                                                 {:conversion/date [:date/timestamp]}]})]))
 
 (t/deftest read-transactions-return-conversions-matching-all
   (let [user (test-user)
-        budget (format/budget (:db/id user))
+        project (format/project (:db/id user))
         convs [(conversion "1000-01-01" "SEK")
                (conversion "1000-01-02" "SEK")
                (conversion "1000-01-03" "SEK")
@@ -60,22 +60,22 @@
                (conversion "1000-01-03" "USD")]
         conn (new-db)
 
-        ts [(transaction budget "1000-01-01" "SEK")
-            (transaction budget "1000-01-02" "USD")
-            (transaction budget "1000-01-03" "SEK")]]
-    (transact/transact conn (concat [user budget
+        ts [(transaction project "1000-01-01" "SEK")
+            (transaction project "1000-01-02" "USD")
+            (transaction project "1000-01-03" "SEK")]]
+    (transact/transact conn (concat [user project
                                      {:ui/singleton :ui.singleton/auth
                                       :ui.singleton.auth/user (:db/id user)}]
                                     convs))
     (transact/transact conn ts)
-    (let [{:keys [query/transactions]} (read-transactions (parser/parser) conn user budget)]
+    (let [{:keys [query/transactions]} (read-transactions (parser/parser) conn user project)]
       (t/is (count ts) (count transactions))
       ;; Conversion rates are attached to the transactions on the client side, vefiry that all the transactions got conversions.
       (t/is (= (count (filter some? (map :transaction/conversion transactions))) (count ts))))))
 
 (t/deftest read-transactions-return-conversions-matching-some
   (let [user (test-user)
-        budget (format/budget (:db/id user))
+        project (format/project (:db/id user))
         convs [(conversion "1000-01-01" "SEK")
                (conversion "1000-01-02" "SEK")
                (conversion "1000-01-03" "SEK")
@@ -84,17 +84,17 @@
                (conversion "1000-01-03" "USD")]
         conn (new-db)
 
-        ts [(transaction budget "1000-01-01" "SEK")
-            (transaction budget "1000-01-02" "USD")
-            (transaction budget "1000-01-04" "SEK")]
+        ts [(transaction project "1000-01-01" "SEK")
+            (transaction project "1000-01-02" "USD")
+            (transaction project "1000-01-04" "SEK")]
         grouped (group-by #(get-in % [:conversion/date :date/timestamp]) convs)]
 
-    (transact/transact conn (concat [user budget
+    (transact/transact conn (concat [user project
                                      {:ui/singleton :ui.singleton/auth
                                       :ui.singleton.auth/user (:db/id user)}]
                                     convs))
     (transact/transact conn ts)
-    (let [{:keys [query/transactions]} (read-transactions (parser/parser) conn user budget)]
+    (let [{:keys [query/transactions]} (read-transactions (parser/parser) conn user project)]
       (t/is (count ts) (count transactions))
       (t/is (= (count (filter some? (map :transaction/conversion transactions))) (count ts)))
       (t/is (every? true? (map (fn [transaction]

@@ -25,20 +25,20 @@
   static om/IQuery
   (query [_]
     [{:query/all-currencies [:currency/code]}
-     {:query/all-budgets [:budget/uuid
-                          :budget/name]}])
+     {:query/all-projects [:project/uuid
+                          :project/name]}])
   Object
   (initLocalState [this]
     (let [{:keys [query/all-currencies
-                  query/all-budgets]} (om/props this)]
+                  query/all-projects]} (om/props this)]
       {:input-transaction {:transaction/date     (js/Date.)
                            :transaction/tags     #{}
                            :transaction/currency {:currency/code (-> all-currencies
                                                                      first
                                                                      :currency/code)}
-                           :transaction/budget   {:budget/uuid (-> all-budgets
+                           :transaction/project   {:project/uuid (-> all-projects
                                                                    first
-                                                                   :budget/uuid)}
+                                                                   :project/uuid)}
                            :transaction/type     :transaction.type/expense}}))
   (add-transaction [this]
     (let [st (om/get-state this)]
@@ -63,8 +63,8 @@
 
   (select-date [this date]
     (om/update-state! this assoc-in [:input-transaction :transaction/date] date))
-  (select-budget [this budget-uuid]
-    (om/update-state! this assoc-in [:input-transaction :transaction/budget :budget/uuid] (uuid budget-uuid)))
+  (select-project [this project-uuid]
+    (om/update-state! this assoc-in [:input-transaction :transaction/project :project/uuid] (uuid project-uuid)))
 
   (ui-config [this]
     (let [{:keys [input-transaction]} (om/get-state this)
@@ -79,11 +79,11 @@
   (render
     [this]
     (let [{:keys [query/all-currencies
-                  query/all-budgets]} (om/props this)
+                  query/all-projects]} (om/props this)
           {:keys [input-tag
                   input-transaction]} (om/get-state this)
           {:keys [transaction/date transaction/tags transaction/currency
-                  transaction/budget transaction/amount transaction/title
+                  transaction/project transaction/amount transaction/title
                   transaction/type]} input-transaction
           {:keys [on-close]} (om/get-computed this)
           {:keys [btn-class
@@ -100,17 +100,17 @@
 
          [:div
           [:label
-           "Sheet:"]
+           "Project:"]
           [:select
-           {:on-change     #(.select-budget this (.-value (.-target %)))
+           {:on-change     #(.select-project this (.-value (.-target %)))
             :type          "text"
-            :default-value budget}
-           (map-all all-budgets
-                    (fn [budget]
+            :default-value project}
+           (map-all all-projects
+                    (fn [project]
                       [:option
-                       (opts {:value (:budget/uuid budget)
-                              :key   [(:db/id budget)]})
-                       (or (:budget/name budget) "Untitled")]))]
+                       (opts {:value (:project/uuid project)
+                              :key   [(:db/id project)]})
+                       (or (:project/name project) "Untitled")]))]
 
           [:label
            "Amount:"]

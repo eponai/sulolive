@@ -13,7 +13,7 @@
             [eponai.server.external.stripe :as stripe]
             [clojure.data.json :as json]
             [eponai.server.email :as email])
-  (:import (clojure.lang ExceptionInfo)))
+  (:import [clojure.lang ExceptionInfo]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -22,7 +22,7 @@
 
 (defroutes
   app-routes
-  (GET "/*" request (html (::m/cljs-build-id request) "budget.html")))
+  (GET "/*" request (html (::m/cljs-build-id request) "app.html")))
 
 (defroutes
   site-routes
@@ -50,7 +50,7 @@
     (html (::m/cljs-build-id request) "signup.html"))
 
   (GET "/devcards" []
-    (html "devcards" "budget.html"))
+    (html "devcards" "app.html"))
 
   (POST
     "/newsletter/subscribe" {params :params

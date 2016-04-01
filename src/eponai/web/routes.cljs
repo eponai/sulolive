@@ -8,7 +8,7 @@
 
 (def dashboard-routes
   {(bidi/alts "" "/") :route/dashboard
-   "/dashboard"       {(bidi/alts "" "/" ["/" :budget-uuid]) :route/dashboard}})
+   "/dashboard"       {(bidi/alts "" "/" ["/" :project-uuid]) :route/dashboard}})
 
 (def routes [app-root (merge
                         dashboard-routes

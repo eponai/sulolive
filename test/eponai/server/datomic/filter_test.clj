@@ -36,10 +36,10 @@
   (let [user "filter-test@e.com"
         user2 "other-user@e.com"
         conn (util/new-db)
-        budget-uuid (d/squuid)
-        budget-uuid2 (d/squuid)
-        _ (util/setup-db-with-user! conn [{:user user :budget-uuid budget-uuid}
-                                          {:user user2 :budget-uuid budget-uuid2}])
+        project-uuid (d/squuid)
+        project-uuid2 (d/squuid)
+        _ (util/setup-db-with-user! conn [{:user user :project-uuid project-uuid}
+                                          {:user user2 :project-uuid project-uuid2}])
         db (d/db conn)
         user-uuid (util/user-email->user-uuid db user)
         auth-db (filter-db db (f/authenticated-db-filters user-uuid))
@@ -59,10 +59,10 @@
                              = [:tag/name] auth-db
                              = [:conversion/date] auth-db
                              something!= '[?e :transaction/uuid] auth-db
-                             something!= '[?e :budget/uuid] auth-db
+                             something!= '[?e :project/uuid] auth-db
                                   ;; something!= '[?e :dashboard/uuid] auth-db
                              none '[?e :transaction/uuid] no-auth-db
-                             none '[?e :budget/uuid] no-auth-db
+                             none '[?e :project/uuid] no-auth-db
                                   ;; none '[?e :dashboard/uuid] no-auth-db
                              = [:db/ident :db/valueType] auth-db
                              = [:db.install/attribute] auth-db
@@ -79,20 +79,20 @@
 (deftest filtered-db-contains-newly-created-entity
   (let [user "filter-test@e.com"
         conn (util/new-db)
-        budget-uuid (d/squuid)
-        _ (util/setup-db-with-user! conn [{:user user :budget-uuid budget-uuid}])
+        project-uuid (d/squuid)
+        _ (util/setup-db-with-user! conn [{:user user :project-uuid project-uuid}])
         db (d/db conn)
         user-uuid (util/user-email->user-uuid db user)
-        new-budget-uuid (d/squuid)
+        new-project-uuid (d/squuid)
         auth-filters (f/update-filters db (f/authenticated-db-filters user-uuid))
-        {:keys [db-after]} (t/transact conn [{:budget/name       "foo"
-                                              :budget/uuid       new-budget-uuid
-                                              :budget/created-by [:user/uuid user-uuid]
-                                              :budget/users      [[:user/uuid user-uuid]]
+        {:keys [db-after]} (t/transact conn [{:project/name       "foo"
+                                              :project/uuid       new-project-uuid
+                                              :project/created-by [:user/uuid user-uuid]
+                                              :project/users      [[:user/uuid user-uuid]]
                                               :db/id             (d/tempid :db.part/user)}])
         updated-filters (f/update-filters db-after auth-filters)
         db-after-with-filters (f/apply-filters db-after updated-filters)]
     (is (= db-after (d/db conn)))
-    (are [db] (some? (d/entity db [:budget/uuid new-budget-uuid]))
+    (are [db] (some? (d/entity db [:project/uuid new-project-uuid]))
               (d/db conn)
               db-after-with-filters)))

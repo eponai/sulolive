@@ -168,10 +168,10 @@
                                         :user-email (:user/email user)}
                                        {::friend/workflow :activate-account}))
              (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]))))
-      (let [budget-eid (p/one-with (d/db conn) (p/budget-with-auth (:user/uuid user)))
-            budget (p/pull (d/db conn) '[* :dashboard/_budget] budget-eid)]
-        (is (and budget
-                 (:dashboard/_budget budget)))))))
+      (let [project-eid (p/one-with (d/db conn) (p/project-with-auth (:user/uuid user)))
+            project (p/pull (d/db conn) '[* :dashboard/_project] project-eid)]
+        (is (and project
+                 (:dashboard/_project project)))))))
 
 (deftest user-activates-account-already-activated
   (testing "User activates account which as already activated (could bypass trial period).

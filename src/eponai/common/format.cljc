@@ -81,30 +81,30 @@
 
 ;; -------------------------- Database entities -----------------------------
 
-(defn budget
-  "Create budget db entity belonging to user with :db/id user-eid.
+(defn project
+  "Create project db entity belonging to user with :db/id user-eid.
 
   Provide opts including keys that should be specifically set. Will consider keys:
-  * :budget/name - name of this budget, default value is 'Default'.
-  * :budget/created-at - timestamp if when budget was created, default value is now.
-  * :budget/uuid - UUID to assign to this budget entity, default will call (d/squuid).
+  * :project/name - name of this project, default value is 'Default'.
+  * :project/created-at - timestamp if when project was created, default value is now.
+  * :project/uuid - UUID to assign to this project entity, default will call (d/squuid).
 
-  Returns a map representing a budget entity"
+  Returns a map representing a project entity"
   ([user-dbid & [opts]]
    (cond->
      {:db/id             (d/tempid :db.part/user)
-      :budget/uuid       (or (:budget/uuid opts) (d/squuid))
-      :budget/created-at (or (:budget/created-at opts) (c/to-long (t/now)))
-      :budget/name       (or (:budget/name opts) "Default")}
+      :project/uuid       (or (:project/uuid opts) (d/squuid))
+      :project/created-at (or (:project/created-at opts) (c/to-long (t/now)))
+      :project/name       (or (:project/name opts) "Default")}
      user-dbid
      (->
-       (assoc :budget/created-by user-dbid)
-       (assoc :budget/users [user-dbid])))))
+       (assoc :project/created-by user-dbid)
+       (assoc :project/users [user-dbid])))))
 
-(defn dashboard [budget-ref & [opts]]
+(defn dashboard [project-ref & [opts]]
   {:db/id (d/tempid :db.part/user)
    :dashboard/uuid (or (:dashboard/uuid opts) (d/squuid))
-   :dashboard/budget budget-ref})
+   :dashboard/project project-ref})
 
 (defn add-tempid
   "Add tempid to provided entity or collection of entities. If e is a map, assocs :db/id.
@@ -164,7 +164,7 @@
   * :transaction/date - takes a \"yyy-MM-dd\" string, returns a date entity.
   * :transaction/tags - takes a collections of strings, returns a collection of tag entities.
   * :transaction/amount - takes a number string, returns a number.
-  * :transaction/budget - takes a string UUID, returns a lookup ref.
+  * :transaction/project - takes a string UUID, returns a lookup ref.
 
   Returns a map representing a transaction entity"
   [input]
@@ -178,9 +178,9 @@
                                              {:pre [(string? a)]}
                                              #?(:clj  (bigdec a)
                                                 :cljs (cljs.reader/read-string a)))
-                     :transaction/budget   (fn [b] {:pre [(map? b)]}
-                                             (assert (:budget/uuid b))
-                                             [:budget/uuid (:budget/uuid b)])
+                     :transaction/project   (fn [b] {:pre [(map? b)]}
+                                             (assert (:project/uuid b))
+                                             [:project/uuid (:project/uuid b)])
                      :transaction/type     (fn [t] {:pre [(keyword? t)]}
                                              {:db/ident t})}
         update-fn (fn [m k]
@@ -255,7 +255,7 @@
                                                        :transaction/currency (assoc v :db/id (d/tempid :db.part/user))
                                                        :transaction/type (assoc v :db/id (d/tempid :db.part/user))
                                                        :transaction/date (str->date (:date/ymd v))
-                                                       :transaction/budget {:budget/uuid (str->uuid (:budget/uuid v))}
+                                                       :transaction/project {:project/uuid (str->uuid (:project/uuid v))}
                                                        v)))
                                         {})))]
     (cond-> [transaction]
