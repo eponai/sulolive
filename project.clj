@@ -234,9 +234,10 @@
                                                              :output-to     "resources/public/release/js/out/budget.js"
                                                              :output-dir    "resources/public/release/js/out/"
                                                              :optimizations :advanced
+                                                             :externs ["src-hacks/js/externs/stripe-checkout.js"]
                                                              ;;   :parallel-build true
-                                                                :pseudo-names true
-                                                                :pretty-print true
+                                                             ;;   :pseudo-names true
+                                                             ;;   :pretty-print true
                                                              }}]}}}
 
   ;;;;;;;;;;;;;
