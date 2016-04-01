@@ -21,7 +21,8 @@
 (defn- validate-transaction [t]
   (letfn [(verify-keys-in [ks keys-to-verify]
             (assert (every? (set (keys (get-in t ks))) keys-to-verify)
-                    (str "Transaction did not have every required key. Transaction: " t)))]
+                    (str "Transaction did not have every required key. Keys: " keys-to-verify
+                         "  Transaction:" t)))]
     (when t
       (verify-keys-in [] [:transaction/uuid :transaction/amount :transaction/date
                           :transaction/type :transaction/currency :transaction/project
@@ -42,7 +43,7 @@
   (query [this]
     '[({:query/messages [:tx/mutation-uuid :tx/message :tx/status]} {:mutation-uuids ?mutation-uuids})
       {:query/all-currencies [:currency/code :currency/name]}
-      {:query/all-projects [:project/uuid :project/name]}])
+      {:query/all-projects [:project/uuid :project/name :project/users]}])
   Object
   (initLocalState [this]
     (let [props (om/props this)

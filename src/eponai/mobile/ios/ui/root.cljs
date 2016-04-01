@@ -26,6 +26,7 @@
           ;; want to subquery.
           subquery (om-helper/subquery-in this [:nav route] static-query)
           query (cond-> [:datascript/schema
+                         :user/current
                          {:query/app [:ui.component.app/route]}]
                         (some? subquery)
                         (conj {:proxy/route-data subquery}))]
