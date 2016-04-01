@@ -28,4 +28,5 @@
 (doo-tests 'eponai.common.datascript_test
            'eponai.web.ui.add-transaction-test
            'eponai.web.routes-test
-           'eponai.client.read-test)
+           ;'eponai.client.read-test
+           )
