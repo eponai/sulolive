@@ -15,7 +15,7 @@
             [environ.core :refer [env]]
             [eponai.common.database.pull :as p]
             [clj-time.core :as t])
-  (:import (datomic.peer Connection)))
+  (:import (datomic Connection)))
 
 ;(defn currency-infos
 ;  "Post information about currencies with a map of the form:
