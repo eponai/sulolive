@@ -307,15 +307,18 @@
             (let [;; All rates are relative USD so we need to pull what rates the user currency has,
                   ;; so we can convert the rate appropriately for the user's selected currency
                   user-currency-conversion (pull db conversion-query user-conv)
-                  transaction-conversion (pull db conversion-query tx-conv)]
+                  transaction-conversion (pull db conversion-query tx-conv)
+                  #?@(:cljs [rate (/ (:conversion/rate transaction-conversion)
+                                     (:conversion/rate user-currency-conversion))]
+                      :clj  [rate (with-precision 10 (bigdec (/ (:conversion/rate transaction-conversion)
+                                                                (:conversion/rate user-currency-conversion))))])]
               (assoc
                 transaction
                 :transaction/conversion
                 ;; Convert the rate from USD to whatever currency the user has set
                 ;; (e.g. user is using SEK, so the new rate will be
                 ;; conversion-of-transaction-currency / conversion-of-user-currency
-                {:conversion/rate (/ (:conversion/rate transaction-conversion)
-                                     (:conversion/rate user-currency-conversion))
+                {:conversion/rate rate
                  :conversion/date (:conversion/date transaction-conversion)}))
             transaction)))
       transactions)))
