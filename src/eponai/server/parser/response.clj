@@ -1,12 +1,14 @@
 (ns eponai.server.parser.response
-  (:require [clojure.core.async :refer [go <!]]
-            [datomic.api :as d]
-            [eponai.common.database.transact :as t]
-            [eponai.server.middleware :as m]
-            [taoensso.timbre :refer [debug error trace]]
-            [eponai.server.datomic.format :as f]
-            [eponai.common.database.pull :as p]
-            [eponai.server.email :as email]))
+  (:require
+    [clojure.core.async :refer [go <!]]
+    [datomic.api :as d]
+    [eponai.common.database.pull :as p]
+    [eponai.common.database.transact :as t]
+    [eponai.server.datomic.format :as f]
+    [eponai.server.datomic.pull :as server.pull]
+    [eponai.server.email :as email]
+    [eponai.server.middleware :as m]
+    [taoensso.timbre :refer [debug error trace info]]))
 
 ;; function to use with eponai.common.parser/post-process-parse
 (defmulti response-handler (fn [_ k _] k))
@@ -20,13 +22,19 @@
     nil))
 
 (defmethod response-handler 'transaction/create
-  [{:keys [state ::m/currency-rates-fn]} _ response]
+  [{:keys [state ::m/currency-rates-fn ::m/currencies-fn]} _ response]
   (when-let [chan (get-in response [:result :currency-chan])]
     (go
       (let [date (<! chan)]
         (when-not (p/pull (d/db state) '[:conversion/_date] [:date/ymd (:date/ymd date)])
-          (let [rates (f/currency-rates (currency-rates-fn (:date/ymd date)))]
-            (t/transact state rates))))))
+          (let [rates (f/currency-rates (currency-rates-fn (:date/ymd date)))
+                new-currencies (server.pull/new-currencies (d/db state) rates)]
+            (t/transact state rates)
+            (info "Currency rates transacted for date: " (:date/ymd date))
+
+            (when (seq new-currencies)
+              (info "Found currencies not in DB. Pulling and transacting currencies.")
+              (t/transact state (f/currencies (currencies-fn)))))))))
   (update response :result dissoc :currency-chan))
 
 (defmethod response-handler 'signup/email

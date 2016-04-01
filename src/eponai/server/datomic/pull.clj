@@ -63,3 +63,12 @@
                report-data (report/generate-data (:widget/report widget) (:widget/filter widget) transactions)]
            (assoc widget :widget/data report-data)))
        widgets))
+
+(defn new-currencies [db rates]
+  (let [currency-codes (mapv #(get-in % [:conversion/currency :currency/code]) rates)
+        currencies (p/pull-many db [:currency/code] (p/all-with db {:where   '[[?e :currency/code ?code]]
+                                                                    :symbols {'[?code ...] currency-codes}}))
+        db-currency-codes (map :currency/code currencies)
+        new-currencies (clojure.set/difference (set currency-codes) (set db-currency-codes))]
+    (debug "Found new currencies: " new-currencies)
+    new-currencies))

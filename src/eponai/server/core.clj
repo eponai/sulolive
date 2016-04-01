@@ -29,6 +29,7 @@
       m/wrap-format
       (m/wrap-state {::m/conn              conn
                      ::m/parser            (parser/parser)
+                     ::m/currencies-fn     #(exch/currencies (when @in-production? (env :open-exhange-app-id)))
                      ::m/currency-rates-fn (exch/currency-rates-fn (when @in-production? (env :open-exhange-app-id)))
                      ::m/send-email-fn     (e/send-email-fn conn)
                      ::m/stripe-fn         (fn [k p]
