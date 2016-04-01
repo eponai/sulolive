@@ -43,8 +43,8 @@
   {:host (env :smtp-host)
    :user (env :smtp-user)
    :pass (env :smtp-pass)
-   :tls  (env :smtp-tls)
-   :port (env :smtp-port)})
+   :tls  (cond-> (env :smtp-tls) string? Boolean/parseBoolean)
+   :port (cond-> (env :smtp-port) string? Integer/parseInt)})
 
 (defn url []
   (let [schema (env :jourmoney-server-url-schema)
