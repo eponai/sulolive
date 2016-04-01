@@ -116,8 +116,8 @@
                                       ["with-profile" "web" "cljsbuild" "once" "dev"]]
             "run-tests-web"          ^{:doc "Compile and run web tests"}
                                      ["do"
-                                      ["with-profile" "web" "cljsbuild" "once" "test"]
-                                      ["with-profile" "web" "doo" "phantom" "test" "once"]]
+                                      ["with-profile" "web" "cljsbuild" "once" "doo-test"]
+                                      ["with-profile" "web" "doo" "phantom" "doo-test" "once"]]
             "figwheel-ios"           ^{:doc "Start figwheel for ios"}
                                      ["do"
                                       ["with-profile" "mobile" "figwheel" "ios"]]
@@ -224,6 +224,14 @@
                                                              :output-dir    "resources/public/test/js/out"
                                                              :asset-path    "/test/js/out"
                                                              :main          "eponai.client.figwheel.test-main"
+                                                             :optimizations :none
+                                                             :source-map    true
+                                                             }}
+                                             {:id           "doo-test"
+                                              :source-paths ["src/" "src-hacks/web/" "test/"]
+                                              :compiler     {:output-to     "resources/public/doo-test/js/out/budget.js"
+                                                             :output-dir    "resources/public/doo-test/js/out"
+                                                             :main          "eponai.client.tests"
                                                              :optimizations :none
                                                              :source-map    true
                                                              }}
