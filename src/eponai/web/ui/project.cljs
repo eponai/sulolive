@@ -42,7 +42,7 @@
          [:label "Invite a friend to collaborate on this project:"]
          [:input
           {:type        "email"
-           :value       input-email
+           :value       (or input-email "")
            :on-change   #(om/update-state! this assoc :input-email (.. % -target -value))
            :placeholder "yourfriend@example.com"}]
 

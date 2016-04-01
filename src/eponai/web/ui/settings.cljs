@@ -87,7 +87,7 @@
               "Name:"]]
             [:div.columns.small-10
              [:input
-              {:value user-name
+              {:value (or user-name "")
                :type  "text"}]]]
            [:div.row
 
@@ -96,16 +96,17 @@
               "Currency:"]]
             [:div.columns.small-10
              [:input
-              {:value     input-currency
+              {:value     (or input-currency "")
                :type      "text"
                :on-change #(om/update-state! this assoc :input-currency (.-value (.-target %)))
                :list      "currency-name"}]]
             [:datalist#currency-name
              (map-all
                all-currencies
-               (fn [c]
-                 [:option {:value (:currency/code c)}
-                  (:currency/name c)]))]]
+               (fn [{:keys [currency/code currency/name]}]
+                 [:option (opts {:key   [code]
+                                 :value code})
+                  name]))]]
 
            [:a.button.primary.hollow.float-right
             {:on-click #(om/transact! this `[(settings/save ~{:currency      input-currency
