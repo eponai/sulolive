@@ -1,6 +1,6 @@
 (ns eponai.common.database.pull
   (:require
-    [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug trace]]
+    [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug trace info]]
     [eponai.common.format :as f]
     [clojure.set :as s]
     [clojure.walk :as walk]
@@ -236,6 +236,7 @@
     (all-with db pull-params)))
 
 (defn find-latest-conversion [db {:keys [currency user] :as params}]
+  (info "Finding latest conversion with params: " params)
   (let [query (cond currency
                     {:find-pattern '[?t ?co]
                      :symbols      {'?currency (:db/id currency)}

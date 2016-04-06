@@ -39,20 +39,22 @@
   [app-id]
   (fn [date-str]
     (info "Posting currency-rates for date:" date-str)
-    (if (and app-id date-str)
-      (do
-        (info "App Id provided, will pull conversions from OpenExchangeRates.")
+    (if date-str
+      (if app-id
+        (do
+          (info "App Id provided, will pull conversions from OpenExchangeRates.")
 
-        (let [rates (json/read-str (:body (client/get (currency-rates-url app-id date-str))) :key-fn keyword)]
-          (info "Pulled conversions from OpenExchangeRates.")
-          (assoc rates :date date-str)))
+          (let [rates (json/read-str (:body (client/get (currency-rates-url app-id date-str))) :key-fn keyword)]
+            (info "Pulled conversions from OpenExchangeRates.")
+            (assoc rates :date date-str)))
 
-      (do
-        (info "App Id nil, using local conversion rates.")
-        ;; Dev mode currency rates.
-        {:date  date-str
-         :rates {:SEK 8.56
-                 :USD 1
-                 :THB 35.64
-                 :MYR 3.8
-                 :NOK 7.5}}))))
+        (do
+          (info "App Id nil, using local conversion rates.")
+          ;; Dev mode currency rates.
+          {:date  date-str
+           :rates {:SEK 8.56
+                   :USD 1
+                   :THB 35.64
+                   :MYR 3.8
+                   :NOK 7.5}}))
+      (info "No date string provided, returning nil for conversion rates."))))
