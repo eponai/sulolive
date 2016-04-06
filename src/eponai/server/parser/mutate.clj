@@ -118,14 +118,14 @@
                (api/stripe-trial state stripe-fn user))}))
 
 (defmethod mutate 'stripe/cancel
-  [{:keys [state auth stripe-fn]} _ p]
+  [{:keys [state auth] :as env} _ p]
   (debug "stripe/cancel with params:" p)
   (let [db (d/db state)
-        eid (p/one-with db {:where   '[[?u :user/uuid ?useruuid]
+        eid (p/one-with db {:where   '[[?u :user/uuid ?user-uuid]
                                        [?e :stripe/user ?u]]
                             :symbols {'?user-uuid (:username auth)}})
         stripe-account (when eid
                          (p/pull db [:stripe/customer
                                      {:stripe/subscription [:stripe.subscription/id]}] eid))]
     {:action (fn []
-               (api/stripe-cancel state stripe-fn stripe-account))}))
+               (api/stripe-cancel env stripe-account))}))

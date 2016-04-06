@@ -7,6 +7,8 @@
             [eponai.web.ui.utils :as utils]
             [eponai.web.ui.format :as f]))
 
+(defn get-loader [props]
+  (get props [:ui/singleton :ui.singleton/loader]))
 (defui Settings
   static om/IQuery
   (query [_]
@@ -15,6 +17,7 @@
                            :user/name
                            {:user/currency [:currency/code
                                             :currency/name]}]}
+     {[:ui/singleton :ui.singleton/loader] [:ui.singleton.loader/visible]}
      {:query/all-currencies [:currency/code
                              :currency/name]}
      {:query/stripe [:stripe/user
@@ -38,7 +41,8 @@
     (let [{:keys [query/current-user
                   query/all-currencies
                   query/fb-user
-                  query/stripe]} (om/props this)
+                  query/stripe] :as props} (om/props this)
+          loader (get-loader props)
           {user-name :user/name
            :keys [user/email]} current-user
           {:keys [input-currency]} (om/get-state this)
@@ -60,10 +64,12 @@
                 [:strong "Monthly"]
                 [:a.link
                  (opts {:style    {:margin "1em 0"}
-                        :on-click #(om/transact! this `[(stripe/cancel)
+                        :on-click #(om/transact! this `[(stripe/cancel ~{:mutation-uuid (d/squuid)})
                                                         :query/stripe])})
                  [:small
-                  "Cancel plan"]]]]
+                  "Cancel plan"]]]
+               (when (:ui.singleton.loader/visible loader)
+                 (utils/loader))]
 
               [:div.columns.small-10
                ;[:p "You have "

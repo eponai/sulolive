@@ -98,12 +98,17 @@
   (debug "stripe/charge with params:" params)
   {:remote true})
 
-(defmethod mutate 'stripe/trial
-  [_ _ params]
-  (debug "stripe/trial with params:" params)
-  {:remote true})
-
 (defmethod mutate 'stripe/cancel
+  [{:keys [state mutation-uuid]} _ params]
+  (debug "stripe/cancel with params:" params)
+  {:action (fn []
+             (transact/mutate-one state mutation-uuid {:ui/singleton                :ui.singleton/loader
+                                                       :ui.singleton.loader/visible true}))
+   :remote true})
+
+
+
+(defmethod mutate 'stripe/trial
   [_ _ p]
-  (debug "stripe/cancel with params:" p)
+  (debug "stripe/trial with params:" p)
   {:remote true})

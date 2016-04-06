@@ -35,6 +35,7 @@
                                           db
                                           mutation-uuid))
           _ (when-not tx-time
+              (debug "No tx-time found. Did the datascript transaction actually happen in your optimistic mutation?")
               (let [tx (d/touch (d/entity db [:tx/mutation-uuid mutation-uuid]))]
                 (if (true? (:tx/reverted tx))
                   (debug "Had already reverted optimistic transaction: " tx
