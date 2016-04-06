@@ -3,7 +3,7 @@
             [postal.core :as email]
             [datomic.api :as d]
             [environ.core :refer [env]]
-            [taoensso.timbre :refer [debug error info]]
+            [taoensso.timbre :refer [debug error info warn]]
             [eponai.common.database.pull :as p]
             [hiccup.page :refer [xhtml]]
             [garden.core :refer [css]]))
@@ -59,10 +59,13 @@
 (defn- verify-link-by-device [device uuid]
   (debug "Will return verify link by device: " device " uuid: " uuid)
   (let [{:keys [schema host]} (url)
-        verify-link (str (condp = device
-                           :web (str schema "://" host "/verify/")
-                           :ios "jourmoney://ios/1/login/verify/")
-                         uuid)]
+        device->link {:web (str schema "://" host "/verify/")
+                      :ios "jourmoney://ios/1/login/verify/"}
+        _ (when-not (contains? device->link device)
+            (warn "Will create verify link for unknown device: " device
+                  " defaulting device to :web"))
+        device (or device :web)
+        verify-link (str (get device->link device) uuid)]
     (debug "Returning verify link: " verify-link)
     verify-link))
 
