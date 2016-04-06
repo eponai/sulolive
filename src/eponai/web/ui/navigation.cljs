@@ -154,7 +154,6 @@
           {:keys [on-sidebar-toggle]} (om/get-computed this)
           {:keys [stripe/subscription]} stripe
           {subscription-status :stripe.subscription/status} subscription]
-      (debug "Stripe: " stripe)
       (html
         [:div
          [:nav#navbar-menu
@@ -177,7 +176,10 @@
                {:class "fa fa-bars"}]]]
             [:li
              [:a.button.success.medium
-              {:on-click #(om/update-state! this assoc :new-transaction? true)}
+              {:on-click #(do
+                           (.track js/mixpanel "navigation/NewTransaction" {:user (:user/uuid current-user)
+                                                                            :subscription-status subscription-status})
+                           (om/update-state! this assoc :new-transaction? true))}
               [:i.fa.fa-plus]
               [:span "New Transaction"]]]]]
 

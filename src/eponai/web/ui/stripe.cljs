@@ -24,7 +24,8 @@
       (debug "Recieved token from Stripe.")
       (trace "Recieved token from Stripe: " clj-token)
       (om/transact! component `[(stripe/subscribe ~{:token clj-token
-                                                    :plan plan-id})]))))
+                                                    :plan plan-id})
+                                :query/stripe]))))
 
 (defn open-checkout [component plan-id args]
   (let [checkout (.configure js/StripeCheckout
