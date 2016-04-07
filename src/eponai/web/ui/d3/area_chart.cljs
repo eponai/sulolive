@@ -5,7 +5,9 @@
     [eponai.web.ui.d3 :as d3]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]))
+    [taoensso.timbre :refer-macros [debug]]
+    [cljs-time.coerce :as c]
+    [cljs-time.core :as t]))
 
 (defui AreaChart
   Object
@@ -105,6 +107,25 @@
       ; When resize is in progress and sidebar pops in, inner size can be fucked up here.
       ; So just don't do anything in that case, an update will be triggered when sidebar transition is finished anyway.
       (when-not (or (js/isNaN inner-height) (js/isNaN inner-width))
+        (if (empty? js-domain)
+          (do
+            (d3/no-data-insert svg)
+            (.. x-scale
+                (range #js [0 inner-width] 0.1)
+                (domain #js [(c/to-long (t/yesterday)) (c/to-long (t/now))]))
+            (.. y-scale
+                (range #js [inner-height 0])
+                (domain #js [0 1])))
+          (do
+            (d3/no-data-remove svg)
+            (.. x-scale
+                (range #js [0 inner-width])
+                (domain (.. js/d3
+                            (extent js-domain (fn [d] (.-name d))))))
+            (.. y-scale
+                (range #js [inner-height 0])
+                (domain #js [0 (.. js/d3
+                                   (max js-domain (fn [d] (.-value d))))]))))
         (.. line
             (y0 inner-height))
         (.. y-axis
@@ -113,16 +134,6 @@
         (.. x-axis
             (ticks (max (/ inner-width 100) 2))
             (tickSize (* -1 inner-height) 0 0))
-
-        (.. x-scale
-            (range #js [0 inner-width])
-            (domain (.. js/d3
-                        (extent js-domain (fn [d] (.-name d))))))
-        (.. y-scale
-            (range #js [inner-height 0])
-            (domain #js [0 (.. js/d3
-                               (max js-domain (fn [d] (.-value d))))]))
-
         (.. svg
             (selectAll ".x.axis")
             (attr "transform" (str "translate(0, " inner-height ")"))

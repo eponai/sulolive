@@ -74,19 +74,30 @@
       ; When resize is in progress and sidebar pops in, inner size can be fucked up here.
       ; So just don't do anything in that case, an update will be triggered when sidebar transition is finished anyway.
       (when-not (or (js/isNaN inner-height) (js/isNaN inner-width))
+        (if (empty? js-domain)
+          (do
+            (d3/no-data-insert svg)
+            (.. x-scale
+                (rangeRoundBands #js [0 inner-width] 0.1)
+                (domain #js ["" " "]))
+            (.. y-scale
+                (range #js [inner-height 0])
+                (domain #js [0 1])))
+          (do
+            (d3/no-data-remove svg)
+            (.. x-scale
+                (rangeRoundBands #js [0 inner-width] 0.1)
+                (domain (.map js-domain (fn [d] (.-name d)))))
+            (.. y-scale
+                (range #js [inner-height 0])
+                (domain #js [0 (.. js/d3
+                                   (max js-domain (fn [d] (.-value d))))]))))
+
         (.. y-axis
             (ticks (max (/ inner-height 50) 2))
             (tickSize (* -1 inner-width) 0 0))
         (.. x-axis
             (tickSize (* -1 inner-height) 0 0))
-
-        (.. x-scale
-            (rangeRoundBands #js [0 inner-width] 0.1)
-            (domain (.map js-domain (fn [d] (.-name d)))))
-        (.. y-scale
-            (range #js [inner-height 0])
-            (domain #js [0 (.. js/d3
-                               (max js-domain (fn [d] (.-value d))))]))
 
         (.. svg
             (selectAll ".x.axis")
@@ -105,11 +116,11 @@
         (mapv
           (fn [data-set]
             (let [bars (.. graph
-                          (selectAll "rect.bar")
-                          (data data-set))
+                           (selectAll "rect.bar")
+                           (data data-set))
                   texts (.. graph
-                           (selectAll "text.bar")
-                           (data data-set))]
+                            (selectAll "text.bar")
+                            (data data-set))]
               (.. bars
                   enter
                   (append "rect")
@@ -146,7 +157,9 @@
 
               (.. texts
                   exit
-                  remove)))
+                  remove)
+
+              ()))
           js-data-values))))
 
   (initLocalState [_]

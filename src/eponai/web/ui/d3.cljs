@@ -21,6 +21,29 @@
     {:width  (- width (or (:left margin) 0) (or (:right margin) 0))
      :height (- height (or (:top margin) 0) (or (:bottom margin) 0))}))
 
+(defn no-data-insert [container]
+  (let [no-data-text (.. container
+                    (selectAll "text.no-data")
+                    (data #js ["No transactions available"]))
+
+        width (js/parseInt (.. container (style "width")) 10)
+        height (js/parseInt (.. container (style "height")) 10)]
+    (.. no-data-text
+        enter
+        (append "text")
+        (attr "class" "no-data")
+        (attr "dy" "-.7em")
+        (style "text-anchor" "middle"))
+
+    (.. no-data-text
+        (attr "x" (/ width 2))
+        (attr "y" (/ height 2))
+        (text (fn [t] t)))))
+
+(defn no-data-remove [container]
+  (.. container
+      (selectAll "text.no-data")
+      remove))
 
 ;; Responsive update helpers
 (defn window-resize [component]
