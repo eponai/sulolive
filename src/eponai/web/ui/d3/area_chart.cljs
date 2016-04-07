@@ -97,10 +97,10 @@
         js-data-values)
 
       (d3/update-on-resize this id)
-      (om/update-state! this assoc :svg svg :js-domain js-domain :js-data-values js-data-values :x-scale x-scale :y-scale y-scale :line line :x-axis x-axis :y-axis y-axis)))
+      (om/update-state! this assoc :svg svg :js-domain js-domain :js-data-values js-data-values :x-scale x-scale :y-scale y-scale :line line :x-axis x-axis :y-axis y-axis :graph graph :color-scale color-scale)))
 
   (update [this]
-    (let [{:keys [svg x-scale y-scale x-axis y-axis line js-data-values js-domain margin]} (om/get-state this)
+    (let [{:keys [svg x-scale y-scale x-axis y-axis line js-data-values js-domain margin graph color-scale]} (om/get-state this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})]
 
@@ -149,11 +149,31 @@
 
         (mapv
           (fn [i data-set]
-            (.. svg
-                (selectAll (str "#area-" i))
-                transition
-                (duration 250)
-                (attr "d" (line data-set))))
+            (let [points (.. graph
+                             (selectAll "circle")
+                             (data data-set))]
+              (.. graph
+                  (selectAll (str "#area-" i))
+                  transition
+                  (duration 250)
+                  (attr "d" (line data-set)))
+              (.. points
+                  enter
+                  (append "circle")
+                  (attr "class" "data-point")
+                  (attr "r" "3.0")
+                  (style "fill" (fn [] (color-scale i)))
+                  (style "stroke" (fn [] (color-scale i)))
+                  (attr "cx" (fn [d] (x-scale (.-name d))))
+                  (attr "cy" inner-height))
+              (.. points
+                  transition
+                  (duration 250)
+                  (attr "cx" (fn [d] (x-scale (.-name d))))
+                  (attr "cy" (fn [d] (y-scale (.-value d)))))
+              (.. points
+                  exit
+                  remove)))
           (range)
           js-data-values))))
 
