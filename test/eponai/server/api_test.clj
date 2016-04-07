@@ -186,7 +186,9 @@
                                                   :stripe/subscription subscription})
           conn (new-db (conj (vals account)
                              stripe))
-          _ (api/stripe-cancel conn (test-stripe-read :active) stripe)
+          _ (api/stripe-cancel {:state         conn
+                                :stripe-fn     (test-stripe-read :active)
+                                :mutation-uuid (d/squuid)} stripe)
           customer (p/pull (d/db conn) [{:stripe/user [:user/email]} {:stripe/subscription '[*]}] [:stripe/customer customer-id])]
       (is (some? customer))
       (is (nil? (:stripe/subscription customer))))))
@@ -214,7 +216,9 @@
                              stripe))]
       (is (thrown-with-msg? ExceptionInfo
                             #"missing-required-fields"
-                            (api/stripe-cancel conn (test-stripe-read :active) stripe))))))
+                            (api/stripe-cancel {:state         conn
+                                                :stripe-fn     (test-stripe-read :active)
+                                                :mutation-uuid (d/squuid)} stripe))))))
 
 (deftest user-starts-trial-after-already-having-a-customer-account
   (testing "User starts a trial when they already have been subscribed. Throw exception."
