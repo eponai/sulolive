@@ -40,11 +40,13 @@
 
 (defn- smtp []
   ;;TODO: Add a warning when this is being used in development.
-  {:host (env :smtp-host)
-   :user (env :smtp-user)
-   :pass (env :smtp-pass)
-   :tls  (cond-> (env :smtp-tls) string? Boolean/parseBoolean)
-   :port (cond-> (env :smtp-port) string? Integer/parseInt)})
+  (let [port (env :smtp-port)
+        tls (env :smtp-tls)]
+    {:host (env :smtp-host)
+     :user (env :smtp-user)
+     :pass (env :smtp-pass)
+     :tls  (cond-> tls (string? tls) Boolean/parseBoolean)
+     :port (cond-> port (string? port) Integer/parseInt)}))
 
 (defn url []
   (let [schema (env :jourmoney-server-url-schema)
