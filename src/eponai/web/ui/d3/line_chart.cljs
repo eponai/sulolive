@@ -104,7 +104,33 @@
   (update [this]
     (let [{:keys [svg x-scale y-scale x-axis y-axis line js-data-values js-domain margin graph color-scale]} (om/get-state this)
           {inner-width :width
-           inner-height :height} (d3/svg-dimensions svg {:margin margin})]
+           inner-height :height} (d3/svg-dimensions svg {:margin margin})
+          draw-graph (fn [i data-set]
+                        (let [points (.. graph
+                                         (selectAll "circle")
+                                         (data data-set))]
+                          (.. graph
+                                (selectAll (str "#line-" i))
+                                transition
+                                (duration 250)
+                              (attr "d" (line data-set)))
+                          (.. points
+                              enter
+                              (append "circle")
+                              (attr "class" "data-point")
+                              (attr "r" "3.5")
+                              (style "fill" (fn [] (color-scale i)))
+                              (style "stroke" (fn [] (color-scale i)))
+                              (attr "cx" (fn [d] (x-scale (.-name d))))
+                              (attr "cy" inner-height))
+                          (.. points
+                              transition
+                              (duration 250)
+                              (attr "cx" (fn [d] (x-scale (.-name d))))
+                              (attr "cy" (fn [d] (y-scale (.-value d)))))
+                          (.. points
+                              exit
+                              remove)))]
 
       ; When resize is in progress and sidebar pops in, inner size can be fucked up here.
       ; So just don't do anything in that case, an update will be triggered when sidebar transition is finished anyway.
@@ -114,10 +140,17 @@
             (d3/no-data-insert svg)
             (.. x-scale
                 (range #js [0 inner-width] 0.1)
-                (domain #js [(c/to-long (t/yesterday)) (c/to-long (t/now))]))
+                (domain #js [(t/minus (t/today) (t/days 30)) (c/to-long (t/now))]))
             (.. y-scale
                 (range #js [inner-height 0])
-                (domain #js [0 1])))
+                (domain #js [0 1]))
+            (mapv
+              draw-graph
+              (range)
+              (clj->js [(mapv (fn [days]
+                                {:name  (c/to-long (t/minus (t/today) (t/days days)))
+                                 :value 0})
+                              (take 30 (range)))])))
           (do
             (d3/no-data-remove svg)
             (.. x-scale
@@ -127,7 +160,11 @@
             (.. y-scale
                 (range #js [inner-height 0])
                 (domain #js [0 (.. js/d3
-                                   (max js-domain (fn [d] (.-value d))))]))))
+                                   (max js-domain (fn [d] (.-value d))))]))
+            (mapv
+              draw-graph
+              (range)
+              js-data-values)))
         (.. y-axis
             (ticks (max (/ inner-height 50) 2))
             (tickSize (* -1 inner-width) 0 0))
@@ -145,37 +182,7 @@
             (selectAll ".y.axis")
             transition
             (duration 250)
-            (call y-axis))
-
-        (mapv
-          (fn [i data-set]
-            (let [points (.. graph
-                             (selectAll "circle")
-                             (data data-set))]
-              (.. graph
-                  (selectAll (str "#line-" i))
-                  transition
-                  (duration 250)
-                  (attr "d" (line data-set)))
-              (.. points
-                  enter
-                  (append "circle")
-                  (attr "class" "data-point")
-                  (attr "r" "3.5")
-                  (style "fill" (fn [] (color-scale i)))
-                  (style "stroke" (fn [] (color-scale i)))
-                  (attr "cx" (fn [d] (x-scale (.-name d))))
-                  (attr "cy" inner-height))
-              (.. points
-                  transition
-                  (duration 250)
-                  (attr "cx" (fn [d] (x-scale (.-name d))))
-                  (attr "cy" (fn [d] (y-scale (.-value d)))))
-              (.. points
-                  exit
-                  remove)))
-          (range)
-          js-data-values))))
+            (call y-axis)))))
 
   (initLocalState [_]
     {:margin {:top 10 :bottom 30 :left 40 :right 10}})
