@@ -62,7 +62,7 @@
    (utils/click-outside-target on-close)
    [:ul.dropdown-menu
     [:li [:a
-          (opts {:href     (routes/inside "/settings")
+          (opts {:href     (routes/key->route :route/settings)
                  :on-click on-close
                  :style    {:padding "0.5em"}})
           [:i
@@ -71,7 +71,7 @@
           [:span "Settings"]]]
     [:li.divider]
     [:li [:a
-          (opts {:href     (routes/outside "/api/logout")
+          (opts {:href     (routes/key->route :route/api->logout)
                  :on-click on-close
                  :style    {:padding "0.5em"}})
           "Sign Out"]]]])
@@ -192,7 +192,7 @@
             (when-not (= subscription-status :active)
               [:li
                (utils/upgrade-button
-                 {:href     (routes/inside "/subscribe/")})])
+                 {:href     (routes/key->route :route/subscribe)})])
             ;[:li
             ; [:a
             ;  [:i.fa.fa-bell]]]
@@ -267,7 +267,7 @@
                             :flex-direction :row}})
 
              [:a.navbar-brand
-              {:href (routes/inside "/")}
+              {:href (routes/key->route :route/home)}
               [:strong
                "JourMoney"]
               [:small
@@ -279,7 +279,7 @@
                                       :style    {:margin "0.5em"}})])
             [:li
              [:a
-              (opts {:href (routes/inside "/profile")
+              (opts {:href (routes/key->route :route/profile)
                      :on-click on-close})
               [:i.fa.fa-user
                (opts {:style {:display :inline
@@ -291,7 +291,8 @@
               (fn [{project-uuid :project/uuid :as project}]
                 [:li
                  (opts {:key [project-uuid]})
-                 [:a {:href          (routes/inside "/dashboard/" (:project/uuid project))
+                 [:a {:href          (routes/key->route :route/project->dashboard
+                                                        {:route-param/project-id (:db/id project)})
                       :class         (cond
                                        (= drop-target project-uuid)
                                        "highlighted"
@@ -317,7 +318,7 @@
             [:li.divider]
             [:li.profile-menu
              [:a
-              (opts {:href     (routes/inside "/settings")
+              (opts {:href     (routes/key->route :route/settings)
                      :on-click on-close})
               [:i.fa.fa-gear
                (opts {:style {:display :inline
@@ -326,7 +327,7 @@
 
             [:li.profile-menu
              [:a
-              (opts {:href     (routes/outside "/api/logout")
+              (opts {:href     (routes/key->route :route/api->logout)
                      :on-click on-close})
               "Sign Out"]]]]
           [:footer.footer

@@ -2,6 +2,8 @@
   (:require [clojure.string :as s]
             [bidi.bidi :as bidi]))
 
+(def end (bidi/alts "" "/"))
+
 (defn- create-route [root paths]
   (letfn [(trim-separators [s]
             (let [s (str s)]

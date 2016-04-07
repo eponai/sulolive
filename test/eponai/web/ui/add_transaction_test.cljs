@@ -12,7 +12,7 @@
             [clojure.test.check.clojure-test :refer-macros [defspec]]
             [cljs.test :refer-macros [deftest is]]
             [om.next :as om]
-            [taoensso.timbre :refer-macros [debug error]]
+            [taoensso.timbre :as timbre :refer-macros [debug error]]
             [clojure.test.check.properties :as prop :include-macros true]
             [eponai.common.database.transact :as t]))
 
@@ -58,20 +58,23 @@
   (let [{:keys [parser conn user-uuid]} (init-state)
         project-uuid (d/squuid)]
     (d/transact conn [{:project/uuid project-uuid :project/users [[:user/uuid user-uuid]]}])
-    (is (thrown-with-msg? cljs.core.ExceptionInfo
-                          #".*validation error.*transaction/create"
-                          (some-> (parser {:state conn}
-                                          `[(transaction/create
-                                              ~{:transaction/uuid        (d/squuid)
-                                                :transaction/amount      "0"
-                                                :transaction/currency    {:currency/code ""}
-                                                :transaction/title       ""
-                                                :transaction/date        {:date/ymd "1000-10-10"}
-                                                :transaction/description ""
-                                                :transaction/tags        [{:tag/name ""} {:tag/name ""}]
-                                                :transaction/created-at  0
-                                                :transaction/project     {:project/uuid project-uuid}
-                                                :transaction/type        :transaction.type/expense
-                                                :mutation-uuid           (d/squuid)})])
-                                  (get-in ['transaction/create :om.next/error])
-                                  (throw))))))
+    ;; Hide error prints. Set to :error or lower too see errors logged.
+    (timbre/with-level
+      :fatal
+      (is (thrown-with-msg? cljs.core.ExceptionInfo
+                            #".*validation error.*transaction/create"
+                            (some-> (parser {:state conn}
+                                            `[(transaction/create
+                                                ~{:transaction/uuid        (d/squuid)
+                                                  :transaction/amount      "0"
+                                                  :transaction/currency    {:currency/code ""}
+                                                  :transaction/title       ""
+                                                  :transaction/date        {:date/ymd "1000-10-10"}
+                                                  :transaction/description ""
+                                                  :transaction/tags        [{:tag/name ""} {:tag/name ""}]
+                                                  :transaction/created-at  0
+                                                  :transaction/project     {:project/uuid project-uuid}
+                                                  :transaction/type        :transaction.type/expense
+                                                  :mutation-uuid           (d/squuid)})])
+                                    (get-in ['transaction/create :om.next/error])
+                                    (throw)))))))

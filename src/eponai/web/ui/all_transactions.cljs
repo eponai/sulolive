@@ -14,7 +14,8 @@
             [taoensso.timbre :refer-macros [debug]]
             [datascript.core :as d]
             [cljs-time.core :as time]
-            [cljs-time.coerce :as coerce]))
+            [cljs-time.coerce :as coerce]
+            [eponai.web.routes :as routes]))
 
 ;; ################### Om next components ###################
 
@@ -35,8 +36,7 @@
                          :date/day
                          :date/month
                          :date/year]}
-     {:transaction/project [:project/uuid
-                           :project/name]}
+     {:transaction/project [:db/id :project/uuid :project/name]}
      {:transaction/type [:db/ident]}
      :transaction/conversion])
   Object
@@ -46,9 +46,10 @@
                   transaction/amount
                   transaction/uuid
                   transaction/type
-                  transaction/conversion]
+                  transaction/conversion
+                  transaction/project]
            :as   transaction} (om/props this)
-          {:keys [user on-select on-deselect is-selected on-tag-click]} (om/get-computed this)
+          {:keys [user is-selected on-tag-click]} (om/get-computed this)
           {:keys [tooltip-visible?]} (om/get-state this)]
       (html
         [:tr
@@ -108,10 +109,13 @@
          [:td
           (if is-selected
             [:a
-             {:on-click #(on-deselect)}
+             {:href (routes/key->route :route/project->txs
+                                       {:route-param/project-id (:db/id project)})}
              [:i.fa.fa-chevron-right]]
             [:a.edit-transaction.secondary
-             {:on-click #(on-select (dissoc transaction :om.next/computed))}
+             {:href (routes/key->route :route/project->txs->tx
+                                       {:route-param/project-id (:db/id project)
+                                        :route-param/transaction-id (:db/id transaction)})}
              [:i.fa.fa-chevron-right]])]]))))
 
 (def ->Transaction (om/factory Transaction))
@@ -209,7 +213,6 @@
                   transaction/date
                   transaction/tags]} input-state
           edited? (not= init-state input-state)
-          {:keys [on-close]} (om/get-computed this)
           {:keys [i-class btn-class]} (.ui-config this)]
       (html
         [:div
@@ -219,7 +222,8 @@
            [:div.callout
             ;(opts {:style {:max-width "35rem"}})
             [:a.close-button
-             {:on-click on-close}
+             {:href (routes/key->route :route/project->txs
+                                       {:route-param/project-id (:db/id project)})}
              [:small "x"]]
 
             [:h3 title]
@@ -364,15 +368,6 @@
     {:input-tag    ""
      :input-filter {:filter/include-tags #{}}})
 
-  (componentWillUnmount [this]
-    (.deselect-transaction this))
-
-  (select-transaction [this transaction]
-    (om/transact! this `[(transactions/select ~{:transaction transaction})]))
-
-  (deselect-transaction [this]
-    (om/transact! this `[(transactions/deselect)]))
-
   (set-this-month-filter [this]
     (let [update-filter-fn (fn [filter]
                              (-> filter
@@ -440,16 +435,13 @@
                           (->Transaction
                             (om/computed props
                                          {:user         user
-                                          :on-select    #(.select-transaction this %)
-                                          :on-deselect  #(.deselect-transaction this)
                                           :is-selected  (= (:db/id selected-transaction)
                                                            (:db/id props))
                                           :on-tag-click #(utils/add-tag-filter this %)})))
                         (sort-by :transaction/created-at > transactions))]]]
                 [:div.edit-transaction-form
 
-                 (->SelectedTransaction (om/computed sel-transaction-props
-                                                     {:on-close #(.deselect-transaction this)}))]]
+                 (->SelectedTransaction sel-transaction-props)]]
                [:div.empty-message
                 [:div.lead
                  [:i.fa.fa-search.fa-fw]

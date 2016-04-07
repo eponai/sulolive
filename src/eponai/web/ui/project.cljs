@@ -6,10 +6,8 @@
             [eponai.client.ui :refer-macros [opts]]
             [om.next :as om :refer-macros [defui]]
             [sablono.core :refer-macros [html]]
-            [taoensso.timbre :refer-macros [debug]]))
-
-(defn update-content [component content]
-  (om/update-state! component assoc :content content))
+            [taoensso.timbre :refer-macros [debug]]
+            [eponai.web.routes :as routes]))
 
 (defn- submenu [component project]
   (html
@@ -24,11 +22,12 @@
        [:i.fa.fa-share-alt]]]
      [:li
       [:a
-       {:on-click #(update-content component :dashboard)}
+       {:href (routes/key->route :route/project->dashboard
+                                 {:route-param/project-id (:db/id project)})}
        [:span "Dashboard"]]]
      [:li
       [:a
-       {:on-click #(update-content component :transactions)}
+       {:href (routes/key->route :route/project->txs {:route-param/project-id (:db/id project)})}
        [:span "Transactions"]]]]))
 
 (defui Shareproject
@@ -57,10 +56,11 @@
 
 (def ->Shareproject (om/factory Shareproject))
 
-(defui project
+(defui Project
   static om/IQuery
   (query [_]
-    [{:proxy/dashboard (om/get-query Dashboard)}
+    [{:query/active-project [:ui.component.project/selected-tab]}
+     {:proxy/dashboard (om/get-query Dashboard)}
      {:proxy/all-transactions (om/get-query AllTransactions)}])
   Object
   (share [this]
@@ -68,34 +68,26 @@
 
   (share-project [this project-uuid email]
     (om/transact! this `[(project/share ~{:project/uuid project-uuid
-                                         :user/email email})]))
-  (init-state [_]
-    {:content :dashboard})
-  (initLocalState [this]
-    (.init-state this))
-
+                                          :user/email email})]))
   (componentWillUnmount [this]
     (om/transact! this `[(ui.component.project/clear)
                          :query/transactions]))
 
   (render [this]
-    (let [{:keys [proxy/dashboard
+    (let [{:keys [query/active-project proxy/dashboard
                   proxy/all-transactions]} (om/props this)
-          {:keys [content
-                  share-project?]} (om/get-state this)
-          project (-> dashboard
-                     :query/dashboard
-                     :dashboard/project)]
+          {:keys [share-project?]} (om/get-state this)
+          project (get-in dashboard [:query/dashboard :dashboard/project])]
       (html
         [:div
          (nav/->NavbarSubmenu (om/computed {}
-                                           {:content (submenu this project)}))
+                                           {:content (when project
+                                                       (submenu this project))}))
          [:div#project-content
-          (cond (= content :dashboard)
-                (->Dashboard dashboard)
-
-                (= content :transactions)
-                (->AllTransactions all-transactions))]
+          (condp = (or (:ui.component.project/selected-tab active-project)
+                       :dashboard)
+            :dashboard (->Dashboard dashboard)
+            :transactions (->AllTransactions all-transactions))]
 
          (when share-project?
            (let [on-close #(om/update-state! this assoc :share-project? false)]
@@ -104,4 +96,4 @@
                                                                  :on-save #(.share-project this (:project/uuid project) %)}))
                            :on-close on-close})))]))))
 
-(def ->project (om/factory project))
+(def ->Project (om/factory Project))

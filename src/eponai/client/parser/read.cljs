@@ -54,20 +54,22 @@
       (let [{:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
         {:value (p/transactions-with-conversions env (:user/uuid current-user) p)}))))
 
+(defn active-project-uuid [db]
+  (:ui.component.project/uuid (d/entity db [:ui/component :ui.component/project])))
+
 (defmethod read :query/transactions
   [{:keys [db target ast] :as env} k p]
-  (let [project (-> (d/entity db [:ui/component :ui.component/project]) :ui.component.project/uuid)]
+  (let [project-uuid (active-project-uuid db)]
     (if (= target :remote)
       ;; Pass the active project uuid to remote reader
-      {:remote (assoc-in ast [:params :project-uuid] project)}
+      {:remote (assoc-in ast [:params :project-uuid] project-uuid)}
 
       ;; Local read
-      (query-local-transactions env k (assoc p :project-uuid project)))))
+      (query-local-transactions env k (assoc p :project-uuid project-uuid)))))
 
 (defmethod read :query/dashboard
   [{:keys [db ast query target]} _ _]
-  (let [project-uuid (-> (d/entity db [:ui/component :ui.component/project])
-                        :ui.component.project/uuid)]
+  (let [project-uuid (active-project-uuid db)]
     (if (= target :remote)
       ;; Pass the active project uuid to remote reader
       {:remote (assoc-in ast [:params :project-uuid] project-uuid)}

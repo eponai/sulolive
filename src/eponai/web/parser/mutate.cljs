@@ -2,6 +2,7 @@
   (:require [eponai.common.database.transact :as t]
             [eponai.common.parser :refer [mutate]]
             [eponai.client.parser.mutate]
+            [datascript.core :as d]
             [taoensso.timbre :refer-macros [info debug error trace]]))
 
 ;; ################ Local mutations ####################
@@ -43,9 +44,15 @@
                                  :ui.singleton.loader/visible false}])})
 
 (defmethod mutate 'project/set-active-uuid
-  [{:keys [state]} _ {:keys [project-uuid]}]
+  [{:keys [state]} _ {:keys [project-dbid]}]
+  {:action #(let [project-uuid (:project/uuid (d/entity (d/db state) project-dbid))]
+             (t/transact state [{:ui/component              :ui.component/project
+                                 :ui.component.project/uuid project-uuid}]))})
+
+(defmethod mutate 'project/select-tab
+  [{:keys [state]} _ {:keys [selected-tab]}]
   {:action #(t/transact state [{:ui/component             :ui.component/project
-                                 :ui.component.project/uuid project-uuid}])})
+                                :ui.component.project/selected-tab selected-tab}])})
 
 (defmethod mutate 'ui.component.project/clear
   [{:keys [state]} _ _]
@@ -64,13 +71,13 @@
                          [[:db.fn/retractAttribute [:ui/component :ui.component/transactions] :ui.component.transactions/filter]])})
 
 (defmethod mutate 'transactions/deselect
-  [{:keys [state]} _ ]
+  [{:keys [state]} _ _]
   {:action #(t/transact-one state [:db.fn/retractAttribute
                                    [:ui/component :ui.component/transactions]
                                    :ui.component.transactions/selected-transaction])})
 
-(defmethod mutate 'transactions/select
-  [{:keys [state]} _ {:keys [transaction]}]
+(defmethod mutate 'transactions/select-transaction
+  [{:keys [state]} _ {:keys [transaction-dbid]}]
   {:action #(t/transact-one state
                             {:ui/component                                   :ui.component/transactions
-                             :ui.component.transactions/selected-transaction (:db/id transaction)})})
+                             :ui.component.transactions/selected-transaction transaction-dbid})})

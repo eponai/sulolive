@@ -134,7 +134,7 @@
                                 message (get-in response [:body :message])]
                             (if-not (= (:status response) 200)
                               (om/update-state! this assoc :message message :status status)
-                              (set! js/document.location.href (routes/inside "/"))))))}
+                              (set! js/document.location.href (routes/key->route :route/home))))))}
            "Create account"]
 
           [:p.small

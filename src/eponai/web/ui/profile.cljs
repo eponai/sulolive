@@ -59,7 +59,7 @@
           [:h1 (:user/email current-user)]]
 
          [:a.button.secondary
-          {:href (routes/inside "/transactions")}
+          {:href (routes/key->route :route/profile->txs)}
           "All transactions"]
 
          (when layout
@@ -80,7 +80,8 @@
                                  (html
                                    [:div {:key  (str (:project/uuid project-props))}
                                     [:a
-                                     (opts {:href  (routes/inside "/dashboard/" (:project/uuid project-props))
+                                     (opts {:href  (routes/key->route :route/project->dashboard
+                                                                      {:route-param/project-id (:db/id project-props)})
                                             :style {:border "1px solid #e7e7e7"
                                                     :height "100%"
                                                     :width  "100%"}})

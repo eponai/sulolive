@@ -16,7 +16,7 @@
       (defmethod cljs.test/report [:cljs.test/default :end-run-tests] [m]
         (reset! test-report m)
         (if (cljs.test/successful? m)
-          (info "Tests: PASS")
+          (info "Tests: PASSED <3")
           (error "Tests: FAILED")))
 
       (test-fn)
@@ -30,3 +30,4 @@
            'eponai.web.routes-test
            ;'eponai.client.read-test
            )
+

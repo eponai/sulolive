@@ -1,13 +1,43 @@
 (ns eponai.web.routes-test
-  (:require [bidi.bidi :as bidi]
-            [cljs.test :refer-macros [deftest is are]]
-            [eponai.web.routes :as routes]))
+  (:require [cljs.test :refer-macros [deftest is are]]
+            [eponai.web.routes :as routes]
+            [eponai.client.route-helper :as route-helper]))
 
-(deftest dashboard-routes
-  (are [route] (= (:handler (bidi/match-route routes/routes (routes/inside route)))
-                  :route/dashboard)
-               ""
-               "/"
-               "/dashboard"
-               "/dashboard/"
-               "/dashboard/foo-bar"))
+;; function which creates a version-1 route.
+(def version-1-route (route-helper/create-inside-route-fn (str routes/app-root "/" routes/version)))
+
+(deftest web-routes-version-1
+  (are [handler route params]
+    (= (routes/key->route handler params)
+       (version-1-route route))
+    :route/project "/project/123" {:route-param/project-id "123"}
+    :route/project-empty "/project" {}
+    :route/project-empty "/project/" {}
+    :route/project->dashboard "/project/123/dashboard/" {:route-param/project-id "123"}
+    :route/project->dashboard->widget "/project/123/dashboard/widget/987"
+    {:route-param/project-id "123" :route-param/widget-id "987"}
+
+    :route/project->dashboard->widget+mode "/project/123/dashboard/widget/987/edit"
+    {:route-param/project-id  "123" :route-param/widget-id   "987" :route-param/widget-mode "edit"}
+
+    :route/project->dashboard->widget+mode "/project/123/dashboard/widget/987/create"
+    {:route-param/project-id  "123" :route-param/widget-id   "987" :route-param/widget-mode "create"}
+
+    :route/project->txs"/project/123/transactions" {:route-param/project-id "123"}
+    :route/project->txs->tx "/project/123/transactions/transaction/42"
+    {:route-param/project-id     "123" :route-param/transaction-id "42"}
+
+    :route/project->txs->tx+mode "/project/123/transactions/transaction/42/edit"
+    {:route-param/project-id       "123"
+     :route-param/transaction-id   "42"
+     :route-param/transaction-mode "edit"}
+
+    :route/profile "/profile" {}
+    :route/profile->txs "/profile/transactions" {}
+
+    :route/settings "/settings" {}
+    :route/subscribe "/subscribe" {}))
+
+(deftest api-routes
+  (is (= (routes/key->route :route/api->logout)
+         "/api/logout")))
