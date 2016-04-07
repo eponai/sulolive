@@ -67,10 +67,10 @@
         sum-by-tag (reduce sum-fn {} transactions)]
 
     [{:key    "All Transactions"
-      :values (reduce #(conj %1 {:name  (first %2)          ;tag name
-                                 :value (second %2)})       ;sum for tag
-                      []
-                      sum-by-tag)}]))
+      :values (sort-by :name (reduce #(conj %1 {:name  (first %2) ;tag name
+                                                :value (second %2)}) ;sum for tag
+                                     []
+                                     sum-by-tag))}]))
 
 (defmethod sum :transaction/currency
   [_ data-filter transactions]

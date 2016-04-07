@@ -223,7 +223,7 @@
           [:li
            [:span (if widget "Edit widget" "New widget")]]]
          [:input
-          {:value       (:report/title input-report)
+          {:value       (or (:report/title input-report) "")
            :type        "text"
            :placeholder "Untitled"
            :on-change   #(change-report-title this (.-value (.-target %)))}]

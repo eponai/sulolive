@@ -130,7 +130,7 @@
       (om/update-state! this assoc :is-editing? false)))
 
   (initLocalState [_]
-    {:cols {:lg 4 :md 3 :sm 2 :xs 1 :xxs 1}
+    {:cols {:lg 4 :md 2 :sm 2 :xs 1 :xxs 1}
      :add-widget? false
      :is-loading? true})
   (render [this]

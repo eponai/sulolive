@@ -61,38 +61,6 @@
           (attr "class" "y axis grid")
           (attr "transform" (str "translate(0,0)"))
           (call y-axis))
-
-      (mapv
-        (fn [data-set]
-          (let [bar (.. graph
-                        (selectAll "rect.bar")
-                        (data data-set))]
-            (.. bar
-                enter
-                (append "rect")
-                (attr "class" "bar")
-                (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))
-                (style "fill" (fn [d] (color-scale (.-name d))))
-                (attr "y" inner-height)
-                (attr "height" 0)
-                (attr "width" (.. x-scale rangeBand))
-                transition
-                (duration 250)
-                (attr "y" (fn [d] (y-scale (.-value d))))
-                (attr "height" (fn [d] (- inner-height (y-scale (.-value d))))))
-
-            (.. graph
-                (selectAll "text.bar")
-                (data data-set)
-                enter
-                (append "text")
-                (attr "class" "bar")
-                (attr "text-anchor" "middle")
-                (attr "x" (fn [d] (+ (x-scale (.-name d)) (/ (.. x-scale rangeBand) 2))))
-                (attr "y" (fn [d] (+ 3 (y-scale (.-value d)))))
-                (text (fn [d] (gstring/format "%.2f" (.-value d)))))))
-        js-data-values)
-
       (d3/update-on-resize this id)
 
       (om/update-state! this assoc :svg svg :js-domain js-domain :js-data-values js-data-values :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :color-scale color-scale :graph graph)))
@@ -136,31 +104,22 @@
 
         (mapv
           (fn [data-set]
-            (let [bar (.. graph
+            (let [bars (.. graph
                           (selectAll "rect.bar")
                           (data data-set))
-                  text (.. svg
+                  texts (.. graph
                            (selectAll "text.bar")
-                           (data data-set)
-                           transition
-                           (duration 250)
-                           (attr "x" (fn [d] (+ (x-scale (.-name d)) (/ (.. x-scale rangeBand) 2))))
-                           (attr "y" (fn [d] (y-scale (.-value d)))))]
-              (.. bar
+                           (data data-set))]
+              (.. bars
                   enter
                   (append "rect")
                   (attr "class" "bar")
                   (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))
                   (style "fill" (fn [d] (color-scale (.-name d))))
                   (attr "y" inner-height)
-                  (attr "height" 0)
-                  (attr "width" (.. x-scale rangeBand))
-                  transition
-                  (duration 250)
-                  (attr "y" (fn [d] (y-scale (.-value d))))
-                  (attr "height" (fn [d] (- inner-height (y-scale (.-value d))))))
+                  (attr "height" 0))
 
-              (.. bar
+              (.. bars
                   transition
                   (duration 250)
                   (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))
@@ -168,8 +127,26 @@
                   (attr "y" (fn [d] (+ 3 (y-scale (.-value d)))))
                   (attr "height" (fn [d] (- inner-height (y-scale (.-value d))))))
 
-              (.. text
-                  (text (fn [d] (gstring/format "%.2f" (.-value d)))))))
+              (.. bars
+                  exit
+                  remove)
+
+              (.. texts
+                  enter
+                  (append "text")
+                  (attr "class" "bar")
+                  (attr "text-anchor" "middle"))
+
+              (.. texts
+                  transition
+                  (duration 250)
+                  (attr "x" (fn [d] (+ (x-scale (.-name d)) (/ (.. x-scale rangeBand) 2))))
+                  (attr "y" (fn [d] (y-scale (.-value d))))
+                  (text (fn [d] (gstring/format "%.2f" (.-value d)))))
+
+              (.. texts
+                  exit
+                  remove)))
           js-data-values))))
 
   (initLocalState [_]
