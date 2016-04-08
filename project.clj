@@ -199,10 +199,10 @@
                                                                 :optimizations :simple}}]}}
 
              :web      {:cljsbuild {:builds [{:id           "dev"
-                                              :source-paths ["src/" "src-hacks/web/"]
+                                              :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
                                               :figwheel     {:on-jsload "eponai.web.figwheel/reload!"
                                                              :server-port 3450}
-                                              :compiler     {:main          "eponai.web.core"
+                                              :compiler     {:main          "env.web.main"
                                                              :asset-path    "/dev/js/out"
                                                              :output-to     "resources/public/dev/js/out/budget.js"
                                                              :output-dir    "resources/public/dev/js/out/"

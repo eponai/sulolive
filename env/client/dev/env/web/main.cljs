@@ -1,8 +1,7 @@
-(ns eponai.web.core
+(ns env.web.main
   (:require [eponai.web.app :as app]
             [eponai.web.signup :as signup]
-            [eponai.client.utils :as utils]
-            ))
+            [eponai.client.utils :as utils]))
 
 (defn ^:export run []
   (utils/install-app)
