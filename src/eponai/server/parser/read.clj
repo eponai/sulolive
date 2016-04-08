@@ -23,14 +23,15 @@
 ;; ############## App ################
 
 (defmethod read :query/transactions
-  [{:keys [db query auth]} _ {:keys [project-uuid filter]}]
-  (let [tx-ids (pull/all-with db {:where '[[?e :transaction/uuid]]})
-        _ (common.pull/find-transactions db {:project-uuid  project-uuid
-                                             :filter       filter
-                                             :query-params {:where   '[[?e :transaction/project ?b]
-                                                                       [?b :project/users ?u]
-                                                                       [?u :user/uuid ?user-uuid]]
-                                                            :symbols {'?user-uuid (:username auth)}}})]
+  [{:keys [db db-since query auth]} _ {:keys [project-uuid filter]}]
+  (let [tx-ids (common.pull/find-transactions db
+                                              {:project-uuid project-uuid
+                                               :filter       filter
+                                               :query-params (-> {:where   '[[?e :transaction/project ?b]
+                                                                             [?b :project/users ?u]
+                                                                             [?u :user/uuid ?user-uuid]]
+                                                                  :symbols {'?user-uuid (:username auth)}}
+                                                                 (common.pull/with-db-since db-since))})]
     {:value {:transactions (pull/pull-many db query tx-ids)
              :conversions (pull/conversions db tx-ids (:username auth))}}))
 
@@ -51,15 +52,16 @@
                 (update dashboard :widget/_dashboard #(p/widgets-with-data env eid %))))}))
 
 (defmethod read :query/all-projects
-  [{:keys [db query auth]} _ _]
-  {:value  (common.pull/pull-many db query
-                                  (common.pull/all-with db {:where   '[[?e :project/users ?u]
-                                                                       [?u :user/uuid ?user-uuid]]
-                                                            :symbols {'?user-uuid (:username auth)}}))})
+  [{:keys [db db-since query auth]} _ _]
+  {:value (common.pull/pull-all-since db db-since query
+                                      {:where   '[[?e :project/users ?u]
+                                                  [?u :user/uuid ?user-uuid]]
+                                       :symbols {'?user-uuid (:username auth)}})})
 
 (defmethod read :query/all-currencies
-  [{:keys [db query]} _ _]
-  {:value  (common.pull/pull-many db query (common.pull/all-with db {:where '[[?e :currency/code]]}))})
+  [{:keys [db db-since query]} _ _]
+  {:value (common.pull/pull-all-since db db-since query
+                                      {:where '[[?e :currency/code]]})})
 
 (defmethod read :query/current-user
   [{:keys [db query auth]} _ _]
@@ -67,9 +69,9 @@
     {:value (pull db query eid)}))
 
 (defmethod read :query/stripe
-  [{:keys [db query auth]} _ _]
-  (let [stripe-eid (common.pull/all-with db {:where [['?e :stripe/user [:user/uuid (:username auth)]]]})]
-    {:value (common.pull/pull-many db query stripe-eid)}))
+  [{:keys [db db-since query auth]} _ _]
+  {:value (common.pull/pull-all-since db db-since query
+                                      {:where [['?e :stripe/user [:user/uuid (:username auth)]]]})})
 
 ;; ############### Signup page reader #################
 

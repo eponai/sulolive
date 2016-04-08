@@ -135,6 +135,34 @@
       (update :where concat (:where addition))
       (update :symbols merge (:symbols addition))))
 
+(defn with-db-since
+  "Adds a where clause for which symbol that should be available in
+  the since-db. Binds the since-db to symbol $since.
+
+  More complicated usages are easier to just do inline."
+  ([query db-since] (with-db-since query db-since '[$since ?e]))
+  ([query db-since since-clause]
+   (if (nil? db-since)
+     query
+     (let [where-since (reduce (fn [w [e :as clause]]
+                                 (conj w (if (symbol? e)
+                                           (vec (cons '$ clause))
+                                           clause)))
+                               [since-clause]
+                               (:where query))]
+       (-> query
+           (assoc :where where-since)
+           (update :symbols assoc '$since db-since))))))
+
+(defn pull-all-since [db db-since pull-query entity-query]
+  {:pre [(db-instance? db)
+         (or (nil? db-since) (db-instance? db-since))
+         (vector? pull-query)
+         (map? entity-query)]}
+  (->> (with-db-since entity-query db-since)
+       (all-with db)
+       (pull-many db pull-query)))
+
 (defn min-by [db k params]
   (some->> params
            (all-with db)
