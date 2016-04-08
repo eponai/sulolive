@@ -14,16 +14,18 @@
 (defn schema
   "Pulls schema from the db. If data is provided includes only the necessary fields for that data.
   (type/ref, cardinality/many or unique/identity)."
-  [db]
-  (let [schema (p/q '[:find [?e ...]
-                      :where
-                      [?e :db/ident ?id]
-                      [:db.part/db :db.install/attribute ?e]
-                      [(namespace ?id) ?ns]
-                      [(.startsWith ^String ?ns "db") ?d]
-                      [(not ?d)]
-                      ] db)]
-    (map #(into {} (d/entity db %)) schema)))
+  ([db] (schema db nil))
+  ([db db-since]
+   (let [query (cond-> {:where '[[$ ?e :db/ident ?id]
+                                 [$ :db.part/db :db.install/attribute ?e]
+                                 [(namespace ?id) ?ns]
+                                 [(.startsWith ^String ?ns "db") ?d]
+                                 [(not ?d)]]}
+                       (some? db-since)
+                       (p/merge-query {:where '[[$since ?e]]
+                                       :symbols {'$since db-since}}))]
+     (mapv #(into {} (d/entity db %))
+           (p/all-with db query)))))
 
 (defn widget-report-query []
   (parser/put-db-id-in-query

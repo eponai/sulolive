@@ -11,9 +11,8 @@
     [eponai.common.database.pull :as pull]))
 
 (defmethod read :datascript/schema
-  [{:keys [db]} _ _]
-  {:value (-> db
-              p/schema
+  [{:keys [db db-since]} _ _]
+  {:value (-> (p/schema db db-since)
               eponai.datascript/schema-datomic->datascript)})
 
 (defmethod read :user/current
