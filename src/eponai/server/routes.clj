@@ -70,14 +70,15 @@
 
 (defn handle-parser-request
   [{:keys [::m/conn ::m/parser ::m/make-parser-error-fn ::m/stripe-fn body] :as request}]
-  (debug "Handling parser request with body:" (into [] body))
+  (debug "Handling parser request with body:" body)
   (parser
-    {:state           conn
+    {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
+     :state           conn
      :auth            (friend/current-authentication request)
      :parser-error-fn (when make-parser-error-fn
                         (make-parser-error-fn request))
      :stripe-fn       stripe-fn}
-    body))
+    (:query body)))
 
 (defn trace-parser-response-handlers
   "Wrapper with logging for parser.response/response-handler."
@@ -96,17 +97,37 @@
              response
              response))
 
+(defn meta-from-keys [x]
+  {:post [(or (nil? %) (map? %))]}
+  (cond
+    (map? x)
+    (reduce-kv (fn [m k v]
+                 (if (keyword? k)
+                   (merge-with merge
+                               m
+                               (meta v)
+                               (meta-from-keys v))
+                   m))
+               {}
+               x)
+    (sequential? x)
+    (apply merge (mapv meta-from-keys x))
+    :else (meta x)))
+
 (def handle-parser-response
   "Will call response-handler for each key value in the parsed result."
-  (parser.util/post-process-parse trace-parser-response-handlers []))
+  (-> (parser.util/post-process-parse trace-parser-response-handlers [])))
 
 (defroutes
   user-routes
   (POST "/" {:keys [::m/conn] :as request}
     (r/response
-      (->> (handle-parser-request request)
-           (handle-parser-response (assoc request :state conn))
-           (remove-mutation-tx-reports)))))
+      (let [ret (->> (handle-parser-request request)
+                     (handle-parser-response (assoc request :state conn))
+                     (remove-mutation-tx-reports))
+            m (meta-from-keys ret)]
+        {:result ret
+         :meta m}))))
 
 (defroutes
   api-routes

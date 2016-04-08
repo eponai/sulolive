@@ -92,13 +92,25 @@
       (d/transact! conn ui-state)
       (reset! conn-atom conn))))
 
+(defn remote-fn [conn]
+  (let [f (backend/post-to-url homeless/om-next-endpoint-user-auth)]
+    (fn [query]
+     (let [ret (f query)
+           db (d/db conn)]
+       (assoc-in ret [:opts :transit-params :eponai.common.parser/read-basis-t]
+                 (some->> (d/q '{:find [?e .] :where [[?e :db/ident :eponai.common.parser/read-basis-t]]}
+                               db)
+                          (d/entity db)
+                          (d/touch)
+                          (into {})))))))
+
 (defn initialize-app [conn]
   (debug "Initializing App")
   (let [parser (parser/parser)
         reconciler (om/reconciler {:state   conn
                                    :parser  parser
                                    :remotes [:remote]
-                                   :send    (backend/send! {:remote (backend/post-to-url homeless/om-next-endpoint-user-auth)})
+                                   :send    (backend/send! {:remote (remote-fn conn)})
                                    :merge   (merge/merge! web.merge/web-merge)
                                    :migrate nil})
         history (history/init-history reconciler)]

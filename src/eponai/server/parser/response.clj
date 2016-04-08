@@ -8,7 +8,7 @@
     [eponai.server.datomic.pull :as server.pull]
     [eponai.server.email :as email]
     [eponai.server.middleware :as m]
-    [taoensso.timbre :refer [debug error trace info]]))
+    [taoensso.timbre :refer [debug error trace info warn]]))
 
 ;; function to use with eponai.common.parser/post-process-parse
 (defmulti response-handler (fn [_ k _] k))
@@ -18,8 +18,7 @@
   (cond
     (= "proxy" (namespace k)) :call
 
-    :else
-    nil))
+    :else nil))
 
 (defmethod response-handler 'transaction/create
   [{:keys [state ::m/currency-rates-fn ::m/currencies-fn]} _ response]

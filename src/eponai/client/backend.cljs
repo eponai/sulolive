@@ -36,6 +36,7 @@
                              :status status
                              :url    url
                              :body   body
+                             :query query
                              :TODO   "Handle HTTP errors better."}))))
         (catch :default e
           (error "Error when posting query to remote:" remote-key "error:" e)
@@ -54,5 +55,5 @@
   (fn [query]
     {:method      :post
      :url         url
-     :opts        {:transit-params query}
+     :opts        {:transit-params {:query query}}
      :response-fn identity}))

@@ -168,11 +168,21 @@
         (debug "Merging response for key:" key "value:" value)
         (if (symbol? key)
           (assoc m :next (merge-mutation merge-fn next key value))
+          ;; Unwrap keys if they are wrapped in maps with :value
           (-> m
               (assoc :next (merge-read merge-fn next key value))
               (update :keys conj key))))
       {:keys [] :next db}
       ordered-novelty)))
+
+(defn merge-meta [db novelty-meta]
+  {:post [(db/db? %)]}
+  (reduce-kv (fn [db k v]
+               (condp = k
+                 :eponai.common.parser/read-basis-t
+                 (transact db (assoc v :db/ident :eponai.common.parser/read-basis-t))))
+             db
+             novelty-meta))
 
 (defn merge!
   "Takes a merge-fn which is passed [db key params] and
@@ -182,6 +192,8 @@
   [merge-fn]
   (fn [reconciler db novelty]
     (debug "Merge! transacting novelty:" novelty)
-    (let [merged-novelty (merge-novelty-by-key merge-fn db novelty)]
+    (let [merged-novelty (merge-novelty-by-key merge-fn db (:result novelty))
+          db-with-meta (merge-meta (:next merged-novelty) (:meta novelty))]
       (debug "Merge! returning keys:" (:keys merged-novelty))
-      merged-novelty)))
+      {:next db-with-meta
+       :keys (:keys merged-novelty)})))

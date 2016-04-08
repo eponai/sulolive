@@ -223,9 +223,21 @@
                (log-error e "body")
           (throw e))))))
 
+#?(:clj
+   (defn read-returning-basis-t [read]
+     (fn [{:keys [db] :as env} k p]
+       {:pre [(some? db)]}
+       (let [basis-t-for-this-key (-> env :eponai.common.parser/read-basis-t (get k))
+             env (cond-> env
+                         (some? basis-t-for-this-key)
+                         (assoc :db-since (d/since db basis-t-for-this-key)))]
+         (-> (read env k p)
+             (update :value with-meta {:eponai.common.parser/read-basis-t {k (d/basis-t db)}}))))))
+
 (defn parser
   ([]
    (let [parser (om/parser {:read   (-> read
+                                        #?(:clj read-returning-basis-t)
                                         read-without-state
                                         read-with-dbid-in-query
                                         wrap-db)
