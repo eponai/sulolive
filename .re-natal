@@ -2,7 +2,7 @@
   "name": "JourMoneyApp",
   "interface": "om-next",
   "androidHost": "localhost",
-  "iosHost": "192.168.0.4",
+  "iosHost": "localhost",
   "modules": [],
   "imageDirs": [
     "images"
