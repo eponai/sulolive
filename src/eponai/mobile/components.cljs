@@ -1,12 +1,7 @@
 (ns eponai.mobile.components
   (:require-macros [eponai.mobile.components :refer [create-component-functions]])
-  (:require [eponai.mobile.components.listview-datasource :as ds]))
-
-(defn force-children [x]
-  (cond->> x
-           (seq? x) (into [] (map force-children))))
-
-(create-component-functions)
+  (:require [eponai.mobile.components.listview-datasource :as ds]
+            [om.util]))
 
 (defn list-view-data-source
   "Returns a React.ListView.DataSource(ish) which works
@@ -31,3 +26,5 @@
   (if (map? next-data)
     (ds/data-source-with-sections prev-data next-data)
     (ds/data-source-sectionless prev-data next-data)))
+
+(create-component-functions)

@@ -1,6 +1,7 @@
 (ns eponai.mobile.components
   (:require [natal-shell.components-list :as cl]
-            [natal-shell.utils :refer [to-kebab]]))
+            [natal-shell.utils :refer [to-kebab]]
+            [om.util]))
 
 (defn components []
   (let [not-yet-included ["Picker"
@@ -22,7 +23,7 @@
                  (cljs.core/clj->js (cljs.core/cond-> props#
                                                       (cljs.core/keyword? ref#)
                                                       (cljs.core/update :ref cljs.core/str)))
-                 (eponai.mobile.components/force-children children#)))))))))
+                 (om.util/force-children children#)))))))))
 
 (defmacro create-component-functions
   "Wraps components which natal hasn't wrapped yet."
