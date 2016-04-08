@@ -18,13 +18,13 @@
       (om/update-state! this assoc :svg svg)))
   (componentWillReceiveProps [this _]
     (let [{:keys [data]} (om/props this)
-          [start-val] (:values data)]
+          [start-val] (:values (first data))]
       (om/update-state! this assoc :start-val (or start-val 0))))
   (componentDidUpdate [this _ _]
     (let [{:keys [svg]} (om/get-state this)
           {:keys [data]} (om/props this)
           {:keys [start-val]} (om/get-state this)
-          [end-val] (:values data)]
+          [end-val] (:values (first data))]
       (let [text-element (.. svg
                              (selectAll ".txt")
                              (data #js [(gstring/format "%.2f" end-val)]))]

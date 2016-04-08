@@ -27,11 +27,11 @@
   [{:keys [db query auth]} _ {:keys [project-uuid filter]}]
   (let [tx-ids (pull/all-with db {:where '[[?e :transaction/uuid]]})
         _ (common.pull/find-transactions db {:project-uuid  project-uuid
-                                                  :filter       filter
-                                                  :query-params {:where   '[[?e :transaction/project ?b]
-                                                                            [?b :project/users ?u]
-                                                                            [?u :user/uuid ?user-uuid]]
-                                                                 :symbols {'?user-uuid (:username auth)}}})]
+                                             :filter       filter
+                                             :query-params {:where   '[[?e :transaction/project ?b]
+                                                                       [?b :project/users ?u]
+                                                                       [?u :user/uuid ?user-uuid]]
+                                                            :symbols {'?user-uuid (:username auth)}}})]
     {:value {:transactions (pull/pull-many db query tx-ids)
              :conversions (pull/conversions db tx-ids (:username auth))}}))
 

@@ -46,7 +46,7 @@
           svg (d3/build-svg (str "#area-chart-" id) width height)
 
           js-domain (clj->js (flatten (map :values data)))
-          js-data-values (clj->js (map :values data))
+          js-data (clj->js data)
 
           {:keys [margin]} (om/get-state this)
           {inner-width :width
@@ -55,10 +55,13 @@
           {:keys [x-axis y-axis x-scale y-scale]} (.make-axis this inner-width inner-height js-domain)
           color-scale (.. js/d3 -scale category20)
 
-          line (.. js/d3 -svg area
+          area (.. js/d3 -svg area
                    (x (fn [d] (x-scale (.-name d))))
                    (y0 inner-height)
                    (y1 (fn [d] (y-scale (.-value d)))))
+          line (.. js/d3 -svg line
+                   (x (fn [d] (x-scale (.-name d))))
+                   (y (fn [d] (y-scale (.-value d)))))
 
           graph (.. svg
                     (append "g")
@@ -76,59 +79,13 @@
           (attr "transform" (str "translate(0,0)"))
           (call y-axis))
 
-      (mapv
-        (fn [i data-set]
-          (let [start-data (.map data-set
-                                 (fn [d] #js {:name  (.-name d)
-                                              :value 0}))]
-            (.. graph
-                (append "path")
-                (attr "class" "area")
-                (attr "id" (str "area-" i))
-                (style "fill" (fn [] (color-scale i)))
-                transition
-                (duration 500)
-                (attrTween "d" (fn []
-                                 (let [interpolator (.. js/d3
-                                                        (interpolateArray start-data data-set))]
-                                   (fn [t]
-                                     (line (interpolator t)))))))))
-        (range)
-        js-data-values)
-
       (d3/update-on-resize this id)
-      (om/update-state! this assoc :svg svg :js-domain js-domain :js-data-values js-data-values :x-scale x-scale :y-scale y-scale :line line :x-axis x-axis :y-axis y-axis :graph graph :color-scale color-scale)))
+      (om/update-state! this assoc :svg svg :js-domain js-domain :js-data js-data :x-scale x-scale :y-scale y-scale :area area :x-axis x-axis :y-axis y-axis :graph graph :color-scale color-scale :line line)))
 
   (update [this]
-    (let [{:keys [svg x-scale y-scale x-axis y-axis line js-data-values js-domain margin graph color-scale]} (om/get-state this)
+    (let [{:keys [svg graph x-scale y-scale x-axis y-axis area js-domain margin]} (om/get-state this)
           {inner-width :width
-           inner-height :height} (d3/svg-dimensions svg {:margin margin})
-          draw-graph (fn [i data-set]
-                       (let [points (.. graph
-                                        (selectAll "circle")
-                                        (data data-set))]
-                         (.. graph
-                             (selectAll (str "#area-" i))
-                             transition
-                             (duration 250)
-                             (attr "d" (line data-set)))
-                         (.. points
-                             enter
-                             (append "circle")
-                             (attr "class" "data-point")
-                             (attr "r" "3.0")
-                             (style "fill" (fn [] (color-scale i)))
-                             (style "stroke" (fn [] (color-scale i)))
-                             (attr "cx" (fn [d] (x-scale (.-name d))))
-                             (attr "cy" inner-height))
-                         (.. points
-                             transition
-                             (duration 250)
-                             (attr "cx" (fn [d] (x-scale (.-name d))))
-                             (attr "cy" (fn [d] (y-scale (.-value d)))))
-                         (.. points
-                             exit
-                             remove)))]
+           inner-height :height} (d3/svg-dimensions svg {:margin margin})]
 
       ; When resize is in progress and sidebar pops in, inner size can be fucked up here.
       ; So just don't do anything in that case, an update will be triggered when sidebar transition is finished anyway.
@@ -141,14 +98,7 @@
                 (domain #js [(t/minus (t/today) (t/days 30)) (c/to-long (t/now))]))
             (.. y-scale
                 (range #js [inner-height 0])
-                (domain #js [0 1]))
-            (mapv
-              draw-graph
-              (range)
-              (clj->js [(mapv (fn [days]
-                                {:name  (c/to-long (t/minus (t/today) (t/days days)))
-                                 :value 0})
-                              (take 30 (range)))])))
+                (domain #js [0 1])))
           (do
             (d3/no-data-remove svg)
             (.. x-scale
@@ -158,31 +108,64 @@
             (.. y-scale
                 (range #js [inner-height 0])
                 (domain #js [0 (.. js/d3
-                                   (max js-domain (fn [d] (.-value d))))]))
-            (mapv
-              draw-graph
-              (range)
-              js-data-values)))
-        (.. line
+                                   (max js-domain (fn [d] (.-value d))))]))))
+        (.. area
             (y0 inner-height))
+
+        (.update-areas this)
+
         (.. y-axis
             (ticks (max (/ inner-height 50) 2))
             (tickSize (* -1 inner-width) 0 0))
         (.. x-axis
             (ticks (max (/ inner-width 100) 2))
             (tickSize (* -1 inner-height) 0 0))
-        (.. svg
+        (.. graph
             (selectAll ".x.axis")
             (attr "transform" (str "translate(0, " inner-height ")"))
             transition
             (duration 250)
             (call x-axis))
 
-        (.. svg
+        (.. graph
             (selectAll ".y.axis")
             transition
             (duration 250)
             (call y-axis)))))
+
+  (update-areas [this]
+    (let [{:keys [graph js-data color-scale area line]} (om/get-state this)
+          graph-area (.. graph
+                         (selectAll ".area")
+                         (data js-data))]
+      (.. graph-area
+          enter
+          (append "path")
+          (attr "class" "area")
+          (style "fill" (fn [d i]
+                          (let [data-id (.-id d)]
+                            (if (= data-id "mean")
+                              "none"
+                              (color-scale i)))))
+          (style "stroke" (fn [d i]
+                            (let [data-id (.-id d)]
+                              (if (= data-id "mean")
+                                "black"
+                                (color-scale i))))))
+
+      (.. graph-area
+          transition
+          (duration 250)
+          (attr "d" (fn [d]
+                      (let [data-id (.-id d)]
+                        (debug "Found area chart id: " data-id)
+                        (if (= data-id "mean")
+                          (line (.-values d))
+                          (area (.-values d)))))))
+
+      (.. graph-area
+          exit
+          remove)))
 
   (initLocalState [_]
     {:margin {:top 10 :bottom 30 :left 40 :right 10}})

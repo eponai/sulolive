@@ -39,7 +39,8 @@
                                           :report.function/id]}]}
      :widget/index
      :widget/data
-     {:widget/graph [:graph/style]}]))
+     {:widget/graph [:graph/style
+                     {:graph/filter [{:filter/include-tags [:tag/name]}]}]}]))
 
 (defn transaction-query []
   (parser/put-db-id-in-query
@@ -60,7 +61,7 @@
                               (:username auth)
                               {:filter      (:widget/filter widget)
                                :project-uuid (:project/uuid project)})
-               report-data (report/generate-data (:widget/report widget) (:widget/filter widget) transactions)]
+               report-data (report/generate-data (:widget/report widget) (get-in widget [:widget/graph :graph/filter]) transactions)]
            (assoc widget :widget/data report-data)))
        widgets))
 

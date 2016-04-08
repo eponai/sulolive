@@ -38,7 +38,7 @@
           svg (d3/build-svg (str "#bar-chart-" id) width height)
 
           js-domain (clj->js (flatten (map :values data)))
-          js-data-values (clj->js (map :values data))
+          js-data (clj->js data)
 
           {:keys [margin]} (om/get-state this)
           {inner-width :width
@@ -63,10 +63,10 @@
           (call y-axis))
       (d3/update-on-resize this id)
 
-      (om/update-state! this assoc :svg svg :js-domain js-domain :js-data-values js-data-values :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :color-scale color-scale :graph graph)))
+      (om/update-state! this assoc :svg svg :js-domain js-domain :js-data js-data :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :color-scale color-scale :graph graph)))
 
   (update [this]
-    (let [{:keys [svg x-scale y-scale x-axis y-axis js-data-values js-domain margin color-scale graph]} (om/get-state this)
+    (let [{:keys [svg x-scale y-scale x-axis y-axis js-data js-domain margin color-scale graph]} (om/get-state this)
           {:keys [data]} (om/props this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})]
@@ -115,12 +115,13 @@
 
         (mapv
           (fn [data-set]
-            (let [bars (.. graph
+            (let [data-values (.-values data-set)
+                  bars (.. graph
                            (selectAll "rect.bar")
-                           (data data-set))
+                           (data data-values))
                   texts (.. graph
                             (selectAll "text.bar")
-                            (data data-set))]
+                            (data data-values))]
               (.. bars
                   enter
                   (append "rect")
@@ -160,7 +161,7 @@
                   remove)
 
               ()))
-          js-data-values))))
+          js-data))))
 
   (initLocalState [_]
     {:margin {:top 10 :bottom 30 :left 40 :right 10}})

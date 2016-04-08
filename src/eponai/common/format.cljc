@@ -112,10 +112,15 @@
   [e]
   {:pre [(coll? e)]}
   (cond (map? e)
-        (assoc e :db/id (d/tempid :db.part/user))
+        (if (some? (:db/id e))
+          e
+          (assoc e :db/id (d/tempid :db.part/user)))
 
         (coll? e)
-        (map #(assoc % :db/id (d/tempid :db.part/user)) e)))
+        (map (fn [v]
+               (if (some? (:db/id v))
+                 v
+                 (assoc v :db/id (d/tempid :db.part/user)))) e)))
 
 (defn str->date
   "Create a date entity.
@@ -194,11 +199,13 @@
 
 (defn data-filter
   [input & opts]
+  (debug "Doing data filter: " input)
   (let [filter-value-format (fn [k v]
                               (cond (or (= k :filter/include-tags)
                                         (= k :filter/exclude-tags))
                                     ;; These are tags, assoc db/id
-                                    (map #(assoc % :db/id (d/tempid :db.part/user)) v)
+                                    (when v
+                                      (add-tempid v))
 
                                     (or (= k :filter/start-date)
                                         (= k :filter/end-date))
@@ -217,24 +224,31 @@
       (assoc clean-filters :db/id (d/tempid :db.part/user))
       nil)))
 
-(defn widget-create [{:keys [input-function input-report input-graph input-widget input-filter] :as input}]
-  (let [function (add-tempid input-function)                ;(assoc input-function :db/id (d/tempid :db.part/user))
-        report (assoc (add-tempid input-report) :report/functions #{(:db/id function)})
-        graph (add-tempid input-graph)
-        filter (data-filter input-filter)
+(defn widget-create [{:keys [input-report input-graph input-widget] :as input}]
+  (let [report (-> input-report
+                   add-tempid
+                   (update :report/functions add-tempid))
+        graph (cond-> (add-tempid input-graph)
+
+                      (some? (:graph/filter input-graph))
+                      (update :graph/filter data-filter))
         widget (cond-> (merge input-widget
                               {:db/id            (d/tempid :db.part/user)
                                :widget/graph     (:db/id graph)
                                :widget/report    (:db/id report)
                                :widget/dashboard [:dashboard/uuid (:dashboard/uuid (:input-dashboard input))]})
-                       filter
-                       (assoc :widget/filter (:db/id filter)))]
-    (cond-> {:function function
-             :report   report
+
+                       (some? (:widget/filter input-widget))
+                       (update :widget/filter data-filter)
+
+                       (nil? (:widget/filter input-widget))
+                       (dissoc :widget/filter))]
+    (debug "Creating widget: " {:report   report
+                                :graph    graph
+                                :widget   widget})
+    (cond-> {:report   report
              :graph    graph
-             :widget   widget}
-            filter
-            (assoc :filter filter))))
+             :widget   widget})))
 
 (defn transaction-edit [{:keys [transaction/tags
                                 transaction/uuid] :as input-transaction}]

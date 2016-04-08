@@ -3,6 +3,7 @@
             [eponai.web.ui.add-transaction :refer [->AddTransaction AddTransaction]]
             [eponai.web.ui.format :as f]
             [eponai.web.ui.datepicker :refer [->Datepicker]]
+            [eponai.web.ui.utils.filter :as filter]
             [eponai.client.lib.transactions :as lib.t]
             [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
             [eponai.web.ui.utils :as utils]
@@ -307,47 +308,20 @@
 (def ->SelectedTransaction (om/factory SelectedTransaction))
 
 (defn filter-settings [component]
-  (let [{:keys [input-filter date-filter]} (om/get-state component)]
-    (html
-      [:div.transaction-filters
-       [:div.row.small-up-1.medium-up-3.large-up-4
-        (opts {:style {:padding "1em 0"}})
-        [:div.column
-         (utils/tag-filter component (:filter/include-tags input-filter))]
-
-        [:div.column
-         [:select
-          (opts {:on-change #(.update-date-filter component (.-value (.-target %)))})
-          [:option
-           {:value :all-time}
-           "all time"]
-          [:option
-           {:value :this-month}
-           "this month"]
-          [:option
-           {:value :last-7-days}
-           "last 7 days"]
-          [:option
-           {:value :last-30-days}
-           "last 30 days"]
-          [:option
-           {:value :date-range}
-           "custom..."]]]
-        (when (= :date-range date-filter)
-          [:div.column
-           (->Datepicker
-             (opts {:key         ["From date..."]
-                    :placeholder "From date..."
-                    :value       (:filter/start-date input-filter)
-                    :on-change   #(utils/select-date-filter component :filter/start-date %)}))])
-        (when (= :date-range date-filter)
-          [:div.column
-           (->Datepicker
-             (opts {:key         ["To date..."]
-                    :placeholder "To date..."
-                    :value       (:filter/end-date input-filter)
-                    :on-change   #(utils/select-date-filter component :filter/end-date %)
-                    :min-date    (:filter/start-date input-filter)}))])]])))
+  (html
+    [:div.transaction-filters
+     [:div.row
+      (opts {:style {:padding "1em 0"}})
+      [:div.columns.small-3
+       (filter/->TagFilter (om/computed {}
+                                        {:on-change #(do
+                                                      (om/update-state! component assoc :tag-filter {:filter/include-tags %})
+                                                      (update-query-params! component assoc :filter (.filter component)))}))]
+      [:div.columns.small-9
+       (filter/->DateFilter (om/computed {}
+                                         {:on-change #(do
+                                                       (om/update-state! component assoc :date-filter %)
+                                                       (update-query-params! component assoc :filter (.filter component)))}))]]]))
 
 (defui AllTransactions
   static om/IQueryParams
@@ -368,37 +342,18 @@
     {:input-tag    ""
      :input-filter {:filter/include-tags #{}}})
 
-  (set-this-month-filter [this]
-    (let [update-filter-fn (fn [filter]
-                             (-> filter
-                                 (dissoc :filter/end-date :filter/last-x-days)
-                                 (assoc :filter/start-date (let [today (time/today)
-                                                                 year (time/year today)
-                                                                 month (time/month today)]
-                                                             (coerce/to-date (time/date-time year month 1))))))]
-      (om/update-state! this update :input-filter update-filter-fn)
-      (utils/update-filter this (:input-filter (om/get-state this)))))
-  
-  (set-last-x-days-filter [this span]
-    (om/update-state! this update :input-filter (fn [filter]
-                                                  (-> filter
-                                                      (dissoc :filter/end-date :filter/start-date)
-                                                      (assoc :filter/last-x-days span))))
-    (utils/update-filter this (:input-filter (om/get-state this))))
+  (componentWillUnmount [this]
+    (.deselect-transaction this))
 
-  (reset-date-filters [this]
-    (om/update-state! this update :input-filter dissoc :filter/start-date :filter/end-date :filter/last-x-days)
-    (utils/update-filter this (:input-filter (om/get-state this))))
+  (select-transaction [this transaction]
+    (om/transact! this `[(transactions/select ~{:transaction transaction})]))
 
-  (update-date-filter [this value]
-    (let [time-type (cljs.reader/read-string value)]
-      (cond
-        (= time-type :all-time) (.reset-date-filters this)
-        (= time-type :last-7-days) (.set-last-x-days-filter this 7)
-        (= time-type :last-30-days) (.set-last-x-days-filter this 30)
-        (= time-type :this-month) (.set-this-month-filter this)
-        true (om/update-state! this update :input-filter dissoc :filter/last-x-days))
-      (om/update-state! this assoc :date-filter time-type)))
+  (deselect-transaction [this]
+    (om/transact! this `[(transactions/deselect)]))
+
+  (filter [this]
+    (let [{:keys [date-filter tag-filter]} (om/get-state this)]
+      (merge tag-filter date-filter)))
 
   (render [this]
     (let [{transactions          :query/transactions

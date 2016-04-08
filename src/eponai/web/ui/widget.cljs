@@ -25,7 +25,10 @@
                                           :report.function/id]}]}
      :widget/index
      :widget/data
-     {:widget/graph [:graph/style]}])
+     {:widget/graph [:graph/style
+                     {:graph/filter [{:filter/include-tags [:tag/name]}
+                                     {:filter/end-date [:date/timestamp]}
+                                     {:filter/start-date [:date/timestamp]}]}]}])
 
   Object
   (render [this]
@@ -36,8 +39,7 @@
       (html
         [:div.widget
          [:div.widget-title
-          [:h5
-           (:report/title report)]
+          [:p [:strong (:report/title report)]]
           [:div.flex-right.widget-menu
            [:a.widget-edit.secondary
             (opts {:style    {:padding "0.5em"}

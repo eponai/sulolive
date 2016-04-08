@@ -17,7 +17,7 @@
     (let [txs (map #(assoc-in (f/transaction (first %))
                               [:transaction/conversion
                                :conversion/rate] (second %)) txs-convs)
-          {[tx-sum] :values} (report/sum :default nil txs)]
+          [tx-sum] (report/sum :default nil txs)]
       (zero? (apply - tx-sum (map report/converted-amount
                                   txs))))))
 
@@ -29,7 +29,7 @@
     (let [txs (map #(assoc-in (f/transaction (first %))
                               [:transaction/conversion
                                :conversion/rate] (second %)) txs-convs)
-          [{tx-sums :values}] (report/sum :transaction/tags nil txs)
+          tx-sums (report/sum :transaction/tags nil txs)
           sum-by-tag (reduce (fn [m [k v]]
                                (assoc m k (:value (first v)))) {} (group-by :name tx-sums))]
       (every? #(zero? (val %)) (reduce (fn [m tx]
@@ -52,7 +52,7 @@
     (let [txs (map #(assoc-in (f/transaction (first %))
                               [:transaction/conversion
                                :conversion/rate] (second %)) txs-convs)
-          [{tx-sums :values}] (report/sum :transaction/date nil txs)
+          tx-sums (report/sum :transaction/date nil txs)
           sum-by-date (reduce (fn [m [k v]]
                                (assoc m k (:value (first v)))) {} (group-by :name tx-sums))]
       (every? #(zero? (val %)) (reduce (fn [m tx]
@@ -69,7 +69,7 @@
     (let [txs (map #(assoc-in (f/transaction (first %))
                               [:transaction/conversion
                                :conversion/rate] (second %)) txs-convs)
-          [{tx-sums :values}] (report/sum :transaction/currency nil txs)
+          tx-sums (report/sum :transaction/currency nil txs)
           sum-by-cur (reduce (fn [m [k v]]
                                (assoc m k (:value (first v)))) {} (group-by :name tx-sums))]
       (every? #(zero? (val %)) (reduce (fn [m tx]

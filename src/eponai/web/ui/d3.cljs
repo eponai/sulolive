@@ -75,7 +75,7 @@
 (defn update-chart-data [component props]
   (let [{new-data :data} props
         js-domain (clj->js (flatten (map :values new-data)))
-        js-data-values (clj->js (map :values new-data))]
+        js-data (clj->js new-data)]
     (om/update-state! component assoc
                       :js-domain js-domain
-                      :js-data-values js-data-values)))
+                      :js-data js-data)))

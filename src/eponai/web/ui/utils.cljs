@@ -125,9 +125,6 @@
 
 ;################## Filter ##############
 
-(defn update-filter [component input-filter]
-  (update-query-params! component assoc :filter input-filter))
-
 (defn add-tag-filter [component tag]
   (let [{:keys [input-filter]} (om/get-state component)
         new-filters (update input-filter :filter/include-tags #(conj % tag))]
@@ -135,36 +132,8 @@
     (om/update-state! component assoc
                       :input-filter new-filters
                       :input-tag nil)
-    (update-filter component new-filters)))
+    (update-query-params! component assoc :filter input-filter)))
 
-(defn- delete-tag-filter [component tag]
-  (let [{:keys [input-filter]} (om/get-state component)
-        new-filters (update input-filter :filter/include-tags #(disj % tag))]
-
-    (om/update-state! component assoc
-                      :input-filter new-filters)
-    (update-filter component new-filters)))
-
-(defn tag-filter [component include-tags]
-  (let [{:keys [input-tag]} (om/get-state component)]
-    (html
-      [:div
-       (opts {:style {:display        :flex
-                      :flex-direction :column}})
-
-       (tag-input {:input-tag     input-tag
-                   :selected-tags include-tags
-                   :on-change     #(om/update-state! component assoc :input-tag %)
-                   :on-add-tag    #(add-tag-filter component %)
-                   :on-delete-tag #(delete-tag-filter component %)})])))
-
-(defn select-date-filter [component k date]
-  (let [{:keys [input-filter]} (om/get-state component)
-        new-filters (assoc input-filter k date)]
-
-    (om/update-state! component assoc
-                      :input-filter new-filters)
-    (update-filter component new-filters)))
 
 ;;############## Drag-drop transactions #############
 

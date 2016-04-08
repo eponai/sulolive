@@ -24,8 +24,7 @@
   [_ _ transactions]
   (let [sum-fn (fn [s tx]
                  (+ s (converted-amount tx)))]
-    {:key    "All Transactions"
-     :values [(reduce sum-fn 0 transactions)]}))
+    [(reduce sum-fn 0 transactions)]))
 
 (defmethod sum :transaction/date
   [_ _ transactions]
@@ -36,15 +35,14 @@
                                               0
                                               ts)))
         sum-by-day (map sum-fn grouped)]
-    [{:key    "All Transactions"
-      :values (reduce (fn [l date]
-                        (if (some? (:date/timestamp date))
-                          (conj l
-                                {:name  (:date/timestamp date) ;date timestamp
-                                 :value (:date/sum date)})
-                          l)) ;sum for date
-                      []
-                      (sort-by :date/timestamp sum-by-day))}]))
+    (reduce (fn [l date]
+              (if (some? (:date/timestamp date))
+                (conj l
+                      {:name  (:date/timestamp date) ;date timestamp
+                       :value (:date/sum date)})
+                l))                             ;sum for date
+            []
+            (sort-by :date/timestamp sum-by-day))))
 
 (defmethod sum :transaction/tags
   [_ data-filter transactions]
@@ -66,14 +64,13 @@
                              (map :tag/name filtered-tags)))))
         sum-by-tag (reduce sum-fn {} transactions)]
 
-    [{:key    "All Transactions"
-      :values (sort-by :name (reduce #(conj %1 {:name  (first %2) ;tag name
-                                                :value (second %2)}) ;sum for tag
-                                     []
-                                     sum-by-tag))}]))
+    (sort-by :name (reduce #(conj %1 {:name  (first %2) ;tag name
+                                      :value (second %2)}) ;sum for tag
+                           []
+                           sum-by-tag))))
 
 (defmethod sum :transaction/currency
-  [_ data-filter transactions]
+  [_ _ transactions]
   (let [grouped (group-by #(select-keys (:transaction/currency %) [:currency/code]) transactions)
         sum-fn (fn [[c ts]]
                  (assoc c :currency/sum (reduce (fn [s tx]
@@ -81,22 +78,63 @@
                                               0
                                               ts)))
         sum-by-currency (map sum-fn grouped)]
-    [{:key    "All Transactions"
-      :values (reduce #(conj %1
-                             {:name  (:currency/code %2)
-                              :value (:currency/sum %2)})
-                      []
-                      (sort-by :currency/code sum-by-currency))}]))
+    (reduce #(conj %1
+                   {:name  (:currency/code %2)
+                    :value (:currency/sum %2)})
+            []
+            (sort-by :currency/code sum-by-currency))))
 
+(defmulti mean (fn [k _ _ ] k))
+
+(defmethod mean :default
+  [_ data-filter transactions]
+  (let [by-timestamp (group-by #(select-keys (:transaction/date %) [:date/timestamp]) transactions)
+        [sum-value] (sum :default data-filter transactions)]
+    [(/ sum-value (count by-timestamp))]))
+
+(defmethod mean :transaction/date
+  [_ data-filter transactions]
+  (let [by-timestamp (group-by #(select-keys (:transaction/date %) [:date/timestamp]) transactions)
+        [sum] (sum :default data-filter transactions)
+        mean-value (/ sum (count by-timestamp))]
+    (debug "Found mean value: " mean-value)
+    (reduce (fn [l [date _]]
+              (if (some? (:date/timestamp date))
+                   (conj l {:name  (:date/timestamp date)
+                            :value mean-value})
+                   l))
+            []
+            by-timestamp)))
+
+(defmethod mean :transaction/tags
+  [_ data-filter transactions]
+  (let [by-timestamp (group-by #(select-keys (:transaction/date %) [:date/timestamp]) transactions)
+        sum-by-tag (sum :transaction/tags data-filter transactions)]
+    (map (fn [tag-sum]
+           {:name  (:name tag-sum)
+            :value (/ (or (:value tag-sum) 0) (count by-timestamp))})
+         sum-by-tag)))
 
 (defmulti calculation (fn [_ function-id _ _] function-id))
 
 (defmethod calculation :report.function.id/sum
   [{:keys [report/group-by]} _ data-filter transactions]
-  (sum group-by data-filter transactions))
+  {:key    "All transactions sum"
+   :id     :report.function.id/sum
+   :values (sum group-by data-filter transactions)})
+
+(defmethod calculation :report.function.id/mean
+  [{:keys [report/group-by]} _ data-filter transactions]
+  {:key    "All Transactions mean"
+   :id     :report.function.id/mean
+   :values (mean group-by data-filter transactions)})
 
 (defn generate-data [report data-filter transactions]
+  (debug "Generate data: " report)
   (let [functions (:report/functions report)
-        k (:report.function/id (first functions))]
-    (debug "Make calc: " k " with filter: " data-filter)
-    (calculation report (or k :report.function.id/sum) data-filter transactions)))
+        calculation-fn (fn [f]
+                         (let [k (or (:report.function/id f) :report.function.id/sum)]
+                           (debug "Make calc: " k " with filter: " data-filter)
+                           (calculation report k data-filter transactions)))]
+    (debug "Generated data: " (mapv calculation-fn functions))
+    (map calculation-fn functions)))
