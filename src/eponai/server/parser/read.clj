@@ -70,7 +70,8 @@
 (defmethod read :query/stripe
   [{:keys [db db-since query auth]} _ _]
   {:value (common.pull/pull-all-since db db-since query
-                                      {:where [['?e :stripe/user [:user/uuid (:username auth)]]]})})
+                                      {:where ['[?e :stripe/user ?u]
+                                               ['?u :user/uuid (:username auth)]]})})
 
 ;; ############### Signup page reader #################
 

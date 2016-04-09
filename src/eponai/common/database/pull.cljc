@@ -159,18 +159,18 @@
          (or (nil? db-since) (db-instance? db-since))
          (vector? pull-query)
          (map? entity-query)]}
-  (->> (with-db-since entity-query db-since)
-       (one-with db)
-       (pull db pull-query)))
+  (some->> (with-db-since entity-query db-since)
+           (one-with db)
+           (pull db pull-query)))
 
 (defn pull-all-since [db db-since pull-query entity-query]
   {:pre [(db-instance? db)
          (or (nil? db-since) (db-instance? db-since))
          (vector? pull-query)
          (map? entity-query)]}
-  (->> (with-db-since entity-query db-since)
-       (all-with db)
-       (pull-many db pull-query)))
+  (some->> (with-db-since entity-query db-since)
+           (all-with db)
+           (pull-many db pull-query)))
 
 (defn min-by [db k params]
   (some->> params

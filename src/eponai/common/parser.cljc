@@ -66,7 +66,8 @@
            (let [ret (parser env body)]
              (trace "Called parser with body: " body " returned: " ret)
              (reduce-kv map-parser-errors ret ret))
-           (catch Exception e
+           (catch Throwable e
+             (error e)
              {:om.next/error (parser-error-fn e)}))))))
 
 #?(:clj
@@ -234,6 +235,7 @@
                          (some? basis-t-for-this-key)
                          (assoc :db-since (d/since db basis-t-for-this-key)))]
          (-> (read env k p)
+             (update :value #(or % {}))
              (update :value with-meta {:eponai.common.parser/read-basis-t {k (d/basis-t db)}}))))))
 
 (defn parser
