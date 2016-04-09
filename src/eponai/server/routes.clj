@@ -118,26 +118,25 @@
   "Will call response-handler for each key value in the parsed result."
   (-> (parser.util/post-process-parse trace-parser-response-handlers [])))
 
+(defn call-parser [{:keys [::m/conn] :as request}]
+  (let [ret (->> (handle-parser-request request)
+                 (handle-parser-response (assoc request :state conn))
+                 (remove-mutation-tx-reports))
+        m (meta-from-keys ret)]
+    {:result ret
+     :meta m}))
+
 (defroutes
   user-routes
-  (POST "/" {:keys [::m/conn] :as request}
-    (r/response
-      (let [ret (->> (handle-parser-request request)
-                     (handle-parser-response (assoc request :state conn))
-                     (remove-mutation-tx-reports))
-            m (meta-from-keys ret)]
-        {:result ret
-         :meta m}))))
+  (POST "/" request
+    (r/response (call-parser request))))
 
 (defroutes
   api-routes
   (context "/api" []
 
     (POST "/" request
-      (let [ret
-            (->> (handle-parser-request request)
-                 (handle-parser-response request))]
-        (r/response ret)))
+      (r/response (call-parser request)))
 
     ; Requires user login
     (context "/user" _

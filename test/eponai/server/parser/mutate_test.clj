@@ -13,14 +13,15 @@
             [eponai.server.auth.credentials :as a]
             [taoensso.timbre :refer [debug]]
             [eponai.common.parser :as parser]
-            [eponai.server.datomic.format :as f]))
+            [eponai.server.datomic.format :as f]
+            [taoensso.timbre :as timbre]))
 
 (defn- new-db [txs]
   (let [conn (util/new-db txs)]
     (api/signin conn util/user-email)
     conn))
 
-(defn session-request [conn user body]
+(defn session-request [conn user query]
   {:session          {:cemerick.friend/identity
                       {:authentications
                                 {1
@@ -28,7 +29,7 @@
                                   :username (:user/uuid user),
                                   :roles    #{::a/user}}},
                        :current 1}}
-   :body             body
+   :body             {:query query}
    ::m/parser        (parser/parser)
    ::m/currency-chan (async/chan (async/sliding-buffer 1))
    ::m/conn          conn})
@@ -44,11 +45,11 @@
           conn (new-db [user
                         {:db/id         (d/tempid :db.part/user)
                          :currency/code (:currency/code (:transaction/currency transaction))}
-                        {:db/id       (d/tempid :db.part/user)
-                         :project/uuid (:project/uuid (:transaction/project transaction))
+                        {:db/id         (d/tempid :db.part/user)
+                         :project/uuid  (:project/uuid (:transaction/project transaction))
                          :project/users (:db/id user)}])
           parsed (routes/handle-parser-request
-                   (session-request conn user`[(transaction/create ~(assoc transaction :mutation-uuid (d/squuid)))]))
+                   (session-request conn user `[(transaction/create ~(assoc transaction :mutation-uuid (d/squuid)))]))
           _ (debug "Parsed: " parsed)
           result (get-in parsed ['transaction/create :result])
           db (d/db conn)]

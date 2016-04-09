@@ -1,7 +1,7 @@
 (ns eponai.common.parser
   (:refer-clojure :exclude [read])
   (:require [eponai.common.parser.util :as util]
-            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn trace]]
     #?(:clj
             [om.next.server :as om]
        :cljs [om.next :as om])
@@ -62,7 +62,9 @@
                                    m
                                    (update-in m [k :om.next/error] parser-error-fn)))]
          (try
+           (trace "Calling parser with body: " body)
            (let [ret (parser env body)]
+             (trace "Called parser with body: " body " returned: " ret)
              (reduce-kv map-parser-errors ret ret))
            (catch Exception e
              {:om.next/error (parser-error-fn e)}))))))
