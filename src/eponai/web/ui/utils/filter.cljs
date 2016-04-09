@@ -107,6 +107,16 @@
 
 (def ->DateFilter (om/factory DateFilter))
 
+(defn add-tag [tags tag]
+  (if-not (some #(= (:tag/name %) (:tag/name tag)) tags)
+    (if (empty? tags)
+      [tag]
+      (conj tags tag))
+    tags))
+
+(defn delete-tag [tags tag]
+  (into [] (remove #(= (:tag/name %) (:tag/name tag))) tags))
+
 (defui TagFilter
   Object
   (add-tag [this tag]
@@ -114,26 +124,22 @@
       (om/update-state! this
                         (fn [st] (-> st
                                      (assoc :input-tag "")
-                                     (update :tags
-                                             (fn [tags]
-                                               (if-not (some #(= (:tag/name %) (:tag/name tag)) tags)
-                                                 (if (empty? tags)
-                                                   [tag]
-                                                   (conj tags tag))
-                                                 tags))))))
+                                     (update :tags add-tag tag))))
       (when on-change
         (on-change (:tags (om/get-state this))))))
   (delete-tag [this tag]
     (let [{:keys [on-change]} (om/get-computed this)]
-      (om/update-state! this update :tags
-                        (fn [tags]
-                          (into [] (remove #(= (:tag/name %) (:tag/name tag))) tags)))
+      (om/update-state! this update :tags delete-tag tag)
       (when on-change
         (on-change (:tags (om/get-state this))))))
 
   (initLocalState [this]
     (let [{:keys [tags]} (om/props this)]
       {:tags tags}))
+  (componentWillReceiveProps [this new-props]
+    (let [{:keys [tags]} new-props]
+      (om/update-state! this assoc :tags tags)))
+
   (render [this]
     (let [{:keys [input-tag tags]} (om/get-state this)]
       (debug "Rendering tags: " tags)

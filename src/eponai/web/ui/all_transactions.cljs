@@ -50,8 +50,7 @@
                   transaction/conversion
                   transaction/project]
            :as   transaction} (om/props this)
-          {:keys [user is-selected on-tag-click]} (om/get-computed this)
-          {:keys [tooltip-visible?]} (om/get-state this)]
+          {:keys [user is-selected on-tag-click]} (om/get-computed this)]
       (html
         [:tr
          (opts {:key         [uuid]
@@ -59,15 +58,6 @@
                 :class       (if is-selected "is-selected" "")
                 :draggable   true
                 :onDragStart #(utils/on-drag-transaction-start this (str uuid) %)})
-
-         ;[:td
-         ; [:a.secondary.move-transaction
-         ;  {:draggable   true
-         ;   :onDragStart (fn [e]
-         ;                  (debug "Drag id: " (str uuid))
-         ;                  (.. e -dataTransfer (setData "text" uuid)))}
-         ;  [:i.fa.fa-th]]]
-
          [:td
           (opts {:key [uuid]})
           [:span (str (f/month-name (:date/month date)) " " (:date/day date))]]
@@ -83,15 +73,8 @@
                 (gstring/format (str "-%.2f") (/ amount rate))]
                [:strong.label.success
                 (gstring/format (str "%.2f") (/ amount rate))])]
-            ;[:strong
-            ;
-            ; (gstring/format (str (or (:currency/code (:user/currency user))
-            ;                          (:currency/symbol-native (:user/currency user))) " %.2f") (/ amount rate))]
             [:span.has-tip.right
-             ; {:on-mouse-over #(om/update-state! this assoc :tooltip-visible? true)
-             ;  :on-mouse-out #(om/update-state! this assoc :tooltip-visible? false)}
-             "?"]
-            )]
+             "?"])]
          [:td
           [:small (str (or (:currency/symbol-native currency)
                            (:currency/code currency)) " " amount)]]
@@ -308,20 +291,21 @@
 (def ->SelectedTransaction (om/factory SelectedTransaction))
 
 (defn filter-settings [component]
-  (html
-    [:div.transaction-filters
-     [:div.row
-      (opts {:style {:padding "1em 0"}})
-      [:div.columns.small-3
-       (filter/->TagFilter (om/computed {}
-                                        {:on-change #(do
-                                                      (om/update-state! component assoc :tag-filter {:filter/include-tags %})
-                                                      (update-query-params! component assoc :filter (.filter component)))}))]
-      [:div.columns.small-9
-       (filter/->DateFilter (om/computed {}
-                                         {:on-change #(do
-                                                       (om/update-state! component assoc :date-filter %)
-                                                       (update-query-params! component assoc :filter (.filter component)))}))]]]))
+  (let [{:keys [tag-filter date-filter]} (om/get-state component)]
+    (html
+      [:div.transaction-filters
+       [:div.row
+        (opts {:style {:padding "1em 0"}})
+        [:div.columns.small-3
+         (filter/->TagFilter (om/computed {:tags (:filter/include-tags tag-filter)}
+                                          {:on-change #(do
+                                                        (om/update-state! component assoc :tag-filter {:filter/include-tags %})
+                                                        (update-query-params! component assoc :filter (.filter component)))}))]
+        [:div.columns.small-9
+         (filter/->DateFilter (om/computed {:filter date-filter}
+                                           {:on-change #(do
+                                                         (om/update-state! component assoc :date-filter %)
+                                                         (update-query-params! component assoc :filter (.filter component)))}))]]])))
 
 (defui AllTransactions
   static om/IQueryParams
@@ -361,19 +345,22 @@
            sel-transaction-props :proxy/selected-transaction
            add-transaction       :proxy/add-transaction} (om/props this)
           selected-transaction (get-selected-transaction sel-transaction-props)
-          {:keys [input-filter add-transaction?]} (om/get-state this)]
+          {:keys [add-transaction?]} (om/get-state this)
+          input-filter (.filter this)]
       (println "Input-filter: " input-filter)
       (prn "Has filter: " (some? (or (seq (:filter/include-tags input-filter))
                                      (seq (:filter/exclude-tags input-filter))
                                      (:filter/start-date input-filter)
-                                     (:filter/end-date input-filter))))
+                                     (:filter/end-date input-filter)
+                                     (:filter/last-x-days input-filter))))
       (html
         [:div
          (if (or (seq transactions)
                  (some? (or (seq (:filter/include-tags input-filter))
                             (seq (:filter/exclude-tags input-filter))
                             (:filter/start-date input-filter)
-                            (:filter/end-date input-filter))))
+                            (:filter/end-date input-filter)
+                            (:filter/last-x-days input-filter))))
            [:div
             (filter-settings this)
             [:div#all-transactions
@@ -392,7 +379,9 @@
                                          {:user         user
                                           :is-selected  (= (:db/id selected-transaction)
                                                            (:db/id props))
-                                          :on-tag-click #(utils/add-tag-filter this %)})))
+                                          :on-tag-click #(do
+                                                          (om/update-state! this update-in [:tag-filter :filter/include-tags] filter/add-tag %)
+                                                          (update-query-params! this assoc :filter (.filter this)))})))
                         (sort-by :transaction/created-at > transactions))]]]
                 [:div.edit-transaction-form
 

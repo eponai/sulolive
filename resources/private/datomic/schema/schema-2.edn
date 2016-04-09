@@ -1,0 +1,8 @@
+[
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :graph/filter
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Graph filter, what to display in the graph."
+  :db.install/_attribute :db.part/db}
+ ]

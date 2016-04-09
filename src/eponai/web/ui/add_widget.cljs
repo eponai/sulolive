@@ -102,6 +102,29 @@
             "Dashboard"]]
           [:li
            [:span (if widget "Edit widget" "New widget")]]]
+         [:fieldset.fieldset
+          [:legend "Dataset"]
+          [:div.row
+           [:div.columns.small-12.medium-3
+            "Transactions with tags"]
+           [:div.columns.small-12.medium-9
+            "Filter date"]]
+          [:div.row
+           ;[:div.columns.small-12.medium-2.text-right
+           ; "Transactions with tags:"]
+           [:div.columns.small-12.medium-3
+            (filter/->TagFilter (om/computed {:tags (get-in data-set [:tag-filter :filter/include-tags])}
+                                             {:on-change #(do
+                                                           (om/update-state! this assoc-in [:data-set :tag-filter] {:filter/include-tags %})
+                                                           (update-query-params! this assoc :filter (.data-set this)))}))]
+           ;[:div.row]
+           ;[:div.columns.small-12.medium-2.text-right
+           ; "Date:"]
+           [:div.columns.small-12.medium-9
+            (filter/->DateFilter (om/computed {:filter (:date-filter data-set)}
+                                              {:on-change #(do
+                                                            (om/update-state! this assoc-in [:data-set :date-filter] %)
+                                                            (update-query-params! this assoc :filter (.data-set this)))}))]]]
          [:div.input-group
           [:select.input-group-field
            (opts {:on-change #(do
@@ -131,53 +154,39 @@
           ;[:div.columns.small-2.text-right
           ; "Title:"]
           ;[:div.columns.small-10]
+          ]
+         [:fieldset.fieldset
+          [:legend "Settings"]
           [:input
            {:value       (or (:report/title input-report) "")
             :type        "text"
             :placeholder "Untitled"
-            :on-change   #(change-report-title this (.-value (.-target %)))}]]
-         (->ChartSettings (om/computed {}
-                                       {:graph input-graph
-                                        :report input-report
-                                        :on-change (fn [new-report]
-                                                     (debug "New report: " new-report)
-                                                     (om/update-state! this assoc :input-report new-report))}))
-         [:fieldset.fieldset
-          [:legend "Graph Filters"]
-          ;[:div.row
-          ; [:div.columns.small-12.medium-2.text-right
-          ;  "Filter tags:"]]
-          [:div.row
-           [:div.columns.small-12.large-3
-            (filter/->TagFilter (om/computed {:tags (get-in graph-filter [:tag-filter :filter/include-tags])}
-                                             {:on-change #(do
-                                                           (om/update-state! this assoc-in [:graph-filter :tag-filter] {:filter/include-tags %}))}))]
+            :on-change   #(change-report-title this (.-value (.-target %)))}]
+          (->ChartSettings (om/computed {}
+                                        {:graph     input-graph
+                                         :report    input-report
+                                         :on-change (fn [new-report]
+                                                      (debug "New report: " new-report)
+                                                      (om/update-state! this assoc :input-report new-report))}))
+          [:fieldset
+           [:legend "Filters"]
            ;[:div.row
            ; [:div.columns.small-12.medium-2.text-right
-           ;  "Filter time:"]]
-           [:div.columns.small-12.large-9
-            (filter/->DateFilter (om/computed {:filter (:date-filter graph-filter)}
+           ;  "Filter tags:"]]
+           [:div.row
+            [:div.columns.small-12.large-3
+             (filter/->TagFilter (om/computed {:tags (get-in graph-filter [:tag-filter :filter/include-tags])}
                                               {:on-change #(do
-                                                            (om/update-state! this assoc-in [:graph-filter :date-filter] %))}))]]]
+                                                            (om/update-state! this assoc-in [:graph-filter :tag-filter] {:filter/include-tags %}))}))]
+            ;[:div.row
+            ; [:div.columns.small-12.medium-2.text-right
+            ;  "Filter time:"]]
+            [:div.columns.small-12.large-9
+             (filter/->DateFilter (om/computed {:filter (:date-filter graph-filter)}
+                                               {:on-change #(do
+                                                             (om/update-state! this assoc-in [:graph-filter :date-filter] %))}))]]]]
 
-         [:fieldset.fieldset
-          [:legend "Dataset"]
-          [:div.row
-           [:div.columns.small-12.medium-2.text-right
-            "Transactions with tags:"]
-           [:div.columns.small-12.medium-10
-            (filter/->TagFilter (om/computed {:tags (get-in data-set [:tag-filter :filter/include-tags])}
-                                             {:on-change #(do
-                                                           (om/update-state! this assoc-in [:data-set :tag-filter] {:filter/include-tags %})
-                                                           (update-query-params! this assoc :filter (.data-set this)))}))]]
-          [:div.row
-           [:div.columns.small-12.medium-2.text-right
-            "Date:"]
-           [:div.columns.small-12.medium-10
-            (filter/->DateFilter (om/computed {:filter (:date-filter data-set)}
-                                              {:on-change #(do
-                                                            (om/update-state! this assoc-in [:data-set :date-filter] %)
-                                                            (update-query-params! this assoc :filter (.data-set this)))}))]]]
+
 
 
 

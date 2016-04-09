@@ -25,7 +25,7 @@
 (defn- chart-function [component input-function]
   (let [function-id (:report.function/id input-function)]
     (html
-      [:fieldset.fieldset
+      [:fieldset
        [:legend "Calculate"]
        [:input
         (opts {:type     "radio"
@@ -44,7 +44,7 @@
 
 (defn- chart-group-by [component {:keys [report/group-by]} groups]
   (html
-    [:fieldset.fieldset
+    [:fieldset
      [:legend "Group by"]
      (map
        (fn [k]
@@ -126,7 +126,7 @@
              ;[:div.column
              ; (chart-group-by this input-report [:transaction/date])]
              [:div.column
-              [:fieldset.fieldset
+              [:fieldset
                [:legend "Options"]
                [:input
                 {:type     :checkbox

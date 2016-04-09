@@ -123,18 +123,6 @@
   {:pre [(keyword? k)]}
   (on-change-in c [k]))
 
-;################## Filter ##############
-
-(defn add-tag-filter [component tag]
-  (let [{:keys [input-filter]} (om/get-state component)
-        new-filters (update input-filter :filter/include-tags #(conj % tag))]
-
-    (om/update-state! component assoc
-                      :input-filter new-filters
-                      :input-tag nil)
-    (update-query-params! component assoc :filter input-filter)))
-
-
 ;;############## Drag-drop transactions #############
 
 (defn on-drag-transaction-start [_ tx-uuid event]
