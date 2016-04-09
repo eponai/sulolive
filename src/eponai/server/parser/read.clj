@@ -13,7 +13,7 @@
 (defmethod read :datascript/schema
   [{:keys [db db-since]} _ _]
   {:value (-> (p/schema db db-since)
-              eponai.datascript/schema-datomic->datascript)})
+              (eponai.datascript/schema-datomic->datascript))})
 
 (defmethod read :user/current
   [{:keys [db auth]} _ _]
@@ -64,9 +64,8 @@
                                       {:where '[[?e :currency/code]]})})
 
 (defmethod read :query/current-user
-  [{:keys [db query auth]} _ _]
-  (let [eid (one-with db {:where [['?e :user/uuid (:username auth)]]})]
-    {:value (pull db query eid)}))
+  [{:keys [db db-since query auth]} _ _]
+  {:value (common.pull/pull-one-since db db-since query {:where [['?e :user/uuid (:username auth)]]})})
 
 (defmethod read :query/stripe
   [{:keys [db db-since query auth]} _ _]
@@ -81,10 +80,11 @@
             (pull db query [:user/uuid (f/str->uuid uuid)]))})
 
 (defmethod read :query/fb-user
-  [{:keys [db query auth]} _ _]
-  (let [eid (one-with db {:where '[[?e :fb-user/user ?u]
-                                   [?u :user/uuid ?uuid]]
-                          :symbols {'?uuid (:username auth)}})]
+  [{:keys [db db-since query auth]} _ _]
+  (let [eid (one-with db (-> {:where   '[[?e :fb-user/user ?u]
+                                         [?u :user/uuid ?uuid]]
+                              :symbols {'?uuid (:username auth)}}
+                             (common.pull/with-db-since db-since)))]
     {:value (when eid
               (let [{:keys [fb-user/token
                             fb-user/id]} (pull db [:fb-user/token :fb-user/id] eid)

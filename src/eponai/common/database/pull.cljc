@@ -154,6 +154,15 @@
            (assoc :where where-since)
            (update :symbols assoc '$since db-since))))))
 
+(defn pull-one-since [db db-since pull-query entity-query]
+  {:pre [(db-instance? db)
+         (or (nil? db-since) (db-instance? db-since))
+         (vector? pull-query)
+         (map? entity-query)]}
+  (->> (with-db-since entity-query db-since)
+       (one-with db)
+       (pull db pull-query)))
+
 (defn pull-all-since [db db-since pull-query entity-query]
   {:pre [(db-instance? db)
          (or (nil? db-since) (db-instance? db-since))
@@ -286,7 +295,7 @@
 (defn find-conversions [db tx-ids user-uuid]
   (all-with db {:find-pattern '[?t ?e ?e2]
                 :symbols      {'[?t ...] tx-ids
-                               '?uuid user-uuid}
+                               '?uuid    user-uuid}
                 :where        '[[?t :transaction/date ?d]
                                 [?e :conversion/date ?d]
                                 [?t :transaction/currency ?cur]
@@ -296,19 +305,16 @@
                                 [?e2 :conversion/currency ?u-cur]
                                 [?e2 :conversion/date ?d]]}))
 
-(defn conversion-query []
-  (parser/put-db-id-in-query
-    [{:conversion/date [:date/ymd]}
-     :conversion/rate
-     {:conversion/currency [:currency/code]}]))
+(def conversion-query (parser/put-db-id-in-query
+                        [{:conversion/date [:date/ymd]}
+                         :conversion/rate
+                         {:conversion/currency [:currency/code]}]))
 
 (defn conversions [db tx-ids user-uuid]
-  (let [tx-conv-uconv (find-conversions db tx-ids user-uuid)
-        tx-convs (map second tx-conv-uconv)
-        user-convs (map last tx-conv-uconv)]
-    (distinct
-      (concat (pull-many db (conversion-query) tx-convs)
-              (pull-many db (conversion-query) user-convs)))))
+  (->> (find-conversions db tx-ids user-uuid)
+       (sequence (comp (mapcat (juxt second last))
+                       (distinct)))
+       (pull-many db conversion-query)))
 
 (defn add-conversions [db conversion-query user-uuid transactions]
   (assert (some #{:conversion/rate} conversion-query))
