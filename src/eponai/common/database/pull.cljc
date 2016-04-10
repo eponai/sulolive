@@ -4,8 +4,8 @@
     [eponai.common.format :as f]
     [clojure.set :as s]
     [clojure.walk :as walk]
-    #?(:clj
-    [datomic.api :as d]
+    [datascript.db]
+    #?(:clj [datomic.api :as d]
        :cljs [datascript.core :as d])
     #?(:clj
     [clj-time.core :as time]
@@ -16,8 +16,8 @@
               (datomic.db Db))))
 
 (defn db-instance? [db]
-  (instance? #?(:clj  Db
-                :cljs datascript.db/DB) db))
+  #?(:clj (instance? Db db)
+     :cljs (satisfies? datascript.db/IDB db)))
 
 (defn- throw-error [e cause data]
   (let [#?@(:clj  [msg (.getMessage e)]
@@ -154,13 +154,15 @@
            (assoc :where where-since)
            (update :symbols assoc '$since db-since))))))
 
+(defn one-since [db db-since query]
+  (one-with db (with-db-since query db-since)))
+
 (defn pull-one-since [db db-since pull-query entity-query]
   {:pre [(db-instance? db)
          (or (nil? db-since) (db-instance? db-since))
          (vector? pull-query)
          (map? entity-query)]}
-  (some->> (with-db-since entity-query db-since)
-           (one-with db)
+  (some->> (one-since db db-since entity-query)
            (pull db pull-query)))
 
 (defn pull-all-since [db db-since pull-query entity-query]
@@ -198,10 +200,13 @@
   {:where   '[[?e :project/uuid ?project-uuid]]
    :symbols {'?project-uuid project-uuid}})
 
+(defn with-auth [query user-uuid]
+  (merge-query query
+               {:where '[[?u :user/uuid ?user-uuid]]
+                :symbols {'?user-uuid user-uuid}}))
+
 (defn project-with-auth [user-uuid]
-  {:where   '[[?e :project/users ?u]
-              [?u :user/uuid ?user-uuid]]
-   :symbols {'?user-uuid user-uuid}})
+  (with-auth {:where '[[?e :project/users ?u]]} user-uuid))
 
 (defn transaction-date-filter
   "Takes a query-map, date and a compare function symbol. Merges the query-map

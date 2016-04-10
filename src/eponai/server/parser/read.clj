@@ -36,20 +36,37 @@
              :conversions (pull/conversions db tx-ids (:username auth))}}))
 
 (defmethod read :query/dashboard
-  [{:keys [db auth query] :as env} _ {:keys [project-uuid]}]
+  [{:keys [db db-since auth query] :as env} _ {:keys [project-uuid]}]
 
-  (let [project-with-auth (common.pull/project-with-auth (:username auth))
-        eid (if project-uuid
+  (let [user-uuid (:username auth)
+        project-with-auth (common.pull/project-with-auth user-uuid)
+        project-eid (if project-uuid
               (one-with db (merge-query
                              (common.pull/project-with-uuid project-uuid)
                              project-with-auth))
 
               ;; No project-uuid, grabbing the one with the smallest created-at
-              (min-by db :project/created-at project-with-auth))]
+              (min-by db :project/created-at project-with-auth))
+        dashboard-query (-> {:where   '[[?e :dashboard/user ?u]
+                                        [?e :dashboard/project ?p]]
+                             :symbols {'?p project-eid}}
+                            (common.pull/with-auth user-uuid))]
 
-    {:value (when eid
-              (let [dashboard (pull db query (one-with db {:where [['?e :dashboard/project eid]]}))]
-                (update dashboard :widget/_dashboard #(p/widgets-with-data env eid %))))}))
+    {:value (when project-eid
+              (let [updated-transactions? (p/any-transaction-in-project-since-last-read db db-since project-eid)
+                    updated-widgets? (common.pull/one-since db db-since (-> dashboard-query
+                                                                            (common.pull/rename-symbols {'?e '?d})
+                                                                            ))
+                    updated-dashboard? (common.pull/one-since db db-since dashboard-query)
+                    dashboard-pull-query (if updated-dashboard?
+                                           query
+                                           [:db/id :widget/_dashboard])
+                    dashboard (pull db dashboard-pull-query (one-with db dashboard-query))]
+                (cond-> dashboard
+                        updated-transactions?
+                        (update :widget/_dashboard #(p/widgets-with-data env project-eid %))
+                        (not updated-widgets?)
+                        (select-keys [:widget/_dashboard]))))}))
 
 (defmethod read :query/all-projects
   [{:keys [db db-since query auth]} _ _]
