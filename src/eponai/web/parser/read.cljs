@@ -20,3 +20,15 @@
 (defmethod read :query/selected-transaction
   [{:keys [db query]} _ _]
   (read/read-entity-by-key db query [:ui/component :ui.component/transactions]))
+
+(defmethod read :query/active-widget-open
+  [{:keys [db query]} _ _]
+  {:value (p/pull db query [:ui/component :ui.component/widget])})
+
+(defmethod read :query/active-widget
+  [{:keys [db query]} _ _]
+  (debug "Query" query)
+  (let [{:keys [ui.component.widget/id]} (p/lookup-entity db [:ui/component :ui.component/widget])
+        _ (debug "Did find id: " id)]
+    {:value (when (number? id)
+              (p/pull db query id))}))

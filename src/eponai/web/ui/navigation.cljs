@@ -124,9 +124,12 @@
         [:div#navbar-submenu
          (opts {:style {:background "#fff"
                         :border "1px solid #e7e7e7"
-                        :width    "100%"
+                        ;:width    "100%"
+                        ;:left :inherit
+                        ;:right 0
                         :z-index  999
-                        :position :fixed}})
+                        ;:position :fixed
+                        }})
          content]))))
 
 (def ->NavbarSubmenu (om/factory NavbarSubmenu))
@@ -175,7 +178,7 @@
               [:i
                {:class "fa fa-bars"}]]]
             [:li
-             [:a.button.success.medium
+             [:a.button.success.small
               {:on-click #(do
                            (.track js/mixpanel "navigation/NewTransaction" {:user (:user/uuid current-user)
                                                                             :subscription-status subscription-status})
@@ -197,7 +200,7 @@
             ; [:a
             ;  [:i.fa.fa-bell]]]
             [:li.has-submenu
-             [:a.button.hollow.secondary
+             [:a.button.hollow.secondary.small
               {:on-click #(open-profile-menu this true)}
               [:small (:user/email current-user)]]
              ;[:img

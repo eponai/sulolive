@@ -14,14 +14,14 @@
     :route/project-empty "/project" {}
     :route/project-empty "/project/" {}
     :route/project->dashboard "/project/123/dashboard/" {:route-param/project-id "123"}
-    :route/project->dashboard->widget "/project/123/dashboard/widget/987"
+    :route/project->widget+id "/project/123/widget/987"
     {:route-param/project-id "123" :route-param/widget-id "987"}
 
-    :route/project->dashboard->widget+mode "/project/123/dashboard/widget/987/edit"
-    {:route-param/project-id  "123" :route-param/widget-id   "987" :route-param/widget-mode "edit"}
+    :route/project->widget+id "/project/123/widget/new"
+    {:route-param/project-id  "123" :route-param/widget-id "new"}
 
-    :route/project->dashboard->widget+mode "/project/123/dashboard/widget/987/create"
-    {:route-param/project-id  "123" :route-param/widget-id   "987" :route-param/widget-mode "create"}
+    ;:route/project->dashboard->widget+mode "/project/123/widget/"
+    ;{:route-param/project-id  "123" :route-param/widget-id   "new"}
 
     :route/project->txs"/project/123/transactions" {:route-param/project-id "123"}
     :route/project->txs->tx "/project/123/transactions/transaction/42"

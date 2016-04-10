@@ -52,7 +52,7 @@
 
 (defn upgrade-button [& [options]]
   (html
-    [:a.button.warning.medium
+    [:a.button.warning.small
      (opts (merge {:href (routes/key->route :route/subscribe)}
                   options))
      [:strong "Upgrade"]]))

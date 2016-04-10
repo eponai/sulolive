@@ -1,34 +1,40 @@
 (ns eponai.web.ui.project
-  (:require [eponai.web.ui.all-transactions :refer [->AllTransactions AllTransactions]]
-            [eponai.web.ui.dashboard :refer [->Dashboard Dashboard]]
-            [eponai.web.ui.navigation :as nav]
-            [eponai.web.ui.utils :as utils]
-            [eponai.client.ui :refer-macros [opts]]
-            [om.next :as om :refer-macros [defui]]
-            [sablono.core :refer-macros [html]]
-            [taoensso.timbre :refer-macros [debug]]
-            [eponai.web.routes :as routes]))
+  (:require
+    [eponai.web.ui.add-widget :refer [NewWidget ->NewWidget]]
+    [eponai.web.ui.all-transactions :refer [->AllTransactions AllTransactions]]
+    [eponai.web.ui.dashboard :as dashboard :refer [->Dashboard Dashboard]]
+    [eponai.web.ui.navigation :as nav]
+    [eponai.web.ui.utils :as utils]
+    [eponai.client.ui :refer-macros [opts]]
+    [om.next :as om :refer-macros [defui]]
+    [sablono.core :refer-macros [html]]
+    [taoensso.timbre :refer-macros [debug]]
+    [eponai.web.routes :as routes]))
 
 (defn- submenu [component project]
   (html
-    [:ul.menu
-     [:li
-      [:a.disabled
-       [:i.fa.fa-user]
-       [:small (count (:project/users project))]]]
-     [:li
-      [:a
-       {:on-click #(.share component)}
-       [:i.fa.fa-share-alt]]]
-     [:li
-      [:a
-       {:href (routes/key->route :route/project->dashboard
-                                 {:route-param/project-id (:db/id project)})}
-       [:span "Dashboard"]]]
-     [:li
-      [:a
-       {:href (routes/key->route :route/project->txs {:route-param/project-id (:db/id project)})}
-       [:span "Transactions"]]]]))
+    [:div
+     [:ul.menu.top-bar-left
+      [:li
+       [:a
+        {:href (routes/key->route :route/project->txs {:route-param/project-id (:db/id project)})}
+        [:i.fa.fa-list]]]
+      [:li
+       [:a
+        {:href (routes/key->route :route/project->dashboard
+                                  {:route-param/project-id (:db/id project)})}
+        [:strong (:project/name project)]]]]
+     ;[:div.top-bar-right]
+     [:ul.menu.top-bar-right
+      [:li
+       [:a.disabled
+        [:i.fa.fa-user]
+        [:small (count (:project/users project))]]]
+      [:li
+       [:a
+        {:on-click #(.share component)}
+        [:i.fa.fa-share-alt]]]
+      ]]))
 
 (defui Shareproject
   Object
@@ -61,7 +67,8 @@
   (query [_]
     [{:query/active-project [:ui.component.project/selected-tab]}
      {:proxy/dashboard (om/get-query Dashboard)}
-     {:proxy/all-transactions (om/get-query AllTransactions)}])
+     {:proxy/all-transactions (om/get-query AllTransactions)}
+     {:proxy/new-widget (om/get-query NewWidget)}])
   Object
   (share [this]
     (om/update-state! this assoc :share-project? true))
@@ -74,8 +81,10 @@
                          :query/transactions]))
 
   (render [this]
-    (let [{:keys [query/active-project proxy/dashboard
-                  proxy/all-transactions]} (om/props this)
+    (let [{:keys [query/active-project
+                  proxy/dashboard
+                  proxy/all-transactions
+                  proxy/new-widget]} (om/props this)
           {:keys [share-project?]} (om/get-state this)
           project (get-in dashboard [:query/dashboard :dashboard/project])]
       (html
@@ -87,7 +96,12 @@
           (condp = (or (:ui.component.project/selected-tab active-project)
                        :dashboard)
             :dashboard (->Dashboard dashboard)
-            :transactions (->AllTransactions all-transactions))]
+            :transactions (->AllTransactions all-transactions)
+            :widget (->NewWidget (om/computed new-widget
+                                              {:dashboard (:query/dashboard dashboard)
+                                               :index (dashboard/calculate-last-index 8 (:widget/_dashboard dashboard))})))]
+
+
 
          (when share-project?
            (let [on-close #(om/update-state! this assoc :share-project? false)]

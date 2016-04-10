@@ -5,8 +5,10 @@
     [eponai.web.ui.d3.bar-chart :refer [->BarChart]]
     [eponai.web.ui.d3.line-chart :refer [->LineChart]]
     [eponai.web.ui.d3.number-chart :refer [->NumberChart]]
+    [eponai.web.routes :as routes]
     [om.next :as om :refer-macros [defui]]
-    [sablono.core :refer-macros [html]]))
+    [sablono.core :refer-macros [html]]
+    [taoensso.timbre :refer-macros [debug]]))
 
 (defui Widget
   static om/IQuery
@@ -35,7 +37,9 @@
     (let [{:keys [widget/report
                   widget/graph
                   widget/data] :as widget} (om/props this)
-          {:keys [on-edit]} (om/get-computed this)]
+          {:keys [on-edit
+                  id]} (om/get-computed this)]
+      (debug "Render widget: " widget)
       (html
         [:div.widget
          [:div.widget-title
@@ -43,8 +47,8 @@
           [:div.flex-right.widget-menu
            [:a.widget-edit.secondary
             (opts {:style    {:padding "0.5em"}
-                   :on-click #(on-edit (dissoc widget ::om/computed :widget/data))
-                   :href     "#"})
+                   ;:on-click #(on-edit (dissoc widget ::om/computed :widget/data))
+                   :href     on-edit})
             [:i.fa.fa-pencil]]
            [:a.widget-move.secondary
             (opts {:style {:padding "0.5em"}})
@@ -52,7 +56,7 @@
 
          (let [{:keys [graph/style]} graph
                settings {:data         data
-                         :id           (str (or (:widget/uuid widget) "widget"))
+                         :id           (str (or (:widget/uuid widget) id "widget"))
                          ;; Pass the widget to make this component re-render
                          ;; if the widget data changes.
                          :widget       widget

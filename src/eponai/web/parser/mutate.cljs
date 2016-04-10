@@ -11,7 +11,7 @@
 ;; Remote mutations should be defined in:
 ;;     eponai.client.parser.mutate
 
-;;---------------- Modal show/hide
+;;####################### Singletons show/hide
 (defmethod mutate 'ui.modal/show
   [{:keys [state]} _ _]
   {:action #(t/transact state [{:ui/singleton               :ui.singleton/modal
@@ -22,7 +22,6 @@
   {:action #(t/transact state [{:ui/singleton               :ui.singleton/modal
                                  :ui.singleton.modal/visible false}])})
 
-;;------------ Profile menu show/hide
 (defmethod mutate 'ui.menu/show
   [{:keys [state]} _ _]
   {:action #(t/transact state [{:ui/singleton               :ui.singleton/menu
@@ -43,11 +42,14 @@
   {:action #(t/transact state [{:ui/singleton                :ui.singleton/loader
                                  :ui.singleton.loader/visible false}])})
 
+;; ################## Project ###############################
+
 (defmethod mutate 'project/set-active-uuid
   [{:keys [state]} _ {:keys [project-dbid]}]
   {:action #(let [project-uuid (:project/uuid (d/entity (d/db state) project-dbid))]
-             (t/transact state [{:ui/component              :ui.component/project
-                                 :ui.component.project/uuid project-uuid}]))})
+             (when project-uuid
+               (t/transact state [{:ui/component              :ui.component/project
+                                   :ui.component.project/uuid project-uuid}])))})
 
 (defmethod mutate 'project/select-tab
   [{:keys [state]} _ {:keys [selected-tab]}]
@@ -58,6 +60,8 @@
   [{:keys [state]} _ _]
   {:action #(t/transact state
                          [[:db.fn/retractAttribute [:ui/component :ui.component/project] :ui.component.project/uuid]])})
+
+;; ################### Transactions ################
 
 (defmethod mutate 'transactions.filter/update
   [{:keys [state]} _ {:keys [filter]}]
@@ -81,3 +85,11 @@
   {:action #(t/transact-one state
                             {:ui/component                                   :ui.component/transactions
                              :ui.component.transactions/selected-transaction transaction-dbid})})
+
+;;; ####################### Dashboard #########################
+
+(defmethod mutate 'widget/set-active-id
+  [{:keys [state]} _ {:keys [widget-id]}]
+  {:action #(t/transact-one state
+                            {:ui/component              :ui.component/widget
+                             :ui.component.widget/id    (or widget-id :new)})})

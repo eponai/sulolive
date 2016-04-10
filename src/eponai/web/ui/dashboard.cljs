@@ -8,11 +8,8 @@
             [sablono.core :refer-macros [html]]
             [taoensso.timbre :refer-macros [error debug]]
             [eponai.web.ui.utils :as utils]
-            [datascript.core :as d]))
-
-(defn save-widget [component widget]
-  (om/transact! component `[(widget/save ~(assoc widget :mutation-uuid (d/squuid)))
-                            :query/dashboard]))
+            [datascript.core :as d]
+            [eponai.web.routes :as routes]))
 
 (defmulti grid-layout (fn [k num-cols _]
                         (if (< 1 num-cols)
@@ -77,10 +74,10 @@
   (query [_]
     [{:query/dashboard [:dashboard/uuid
                         {:widget/_dashboard (om/get-query Widget)}
-                        {:dashboard/project [:project/uuid
+                        {:dashboard/project [:db/id
+                                             :project/uuid
                                             :project/name
-                                            :project/users]}]}
-     {:proxy/new-widget (om/get-query NewWidget)}])
+                                            :project/users]}]}])
   Object
   (componentWillReceiveProps [this new-props]
     (let [{:keys [cols]} (om/get-state this)
@@ -115,10 +112,6 @@
                                              :mutation-uuid (d/squuid)})
                            :query/dashboard])))
 
-  (delete-widget [this widget]
-    (om/transact! this `[(widget/delete ~(assoc (select-keys widget [:widget/uuid]) :mutation-uuid (d/squuid)))
-                         :query/dashboard]))
-
   (edit-start [this]
     (om/update-state! this assoc :is-editing? true))
   (edit-stop [this widgets layout]
@@ -149,7 +142,10 @@
       (html
         [:div
          [:a.button.hollow
-          (opts {:on-click #(om/update-state! this assoc :add-widget? true)
+          (opts {:href  (if (:db/id (:dashboard/project dashboard))
+                          (routes/key->route :route/project->widget+id {:route-param/project-id  (:db/id (:dashboard/project dashboard))
+                                                                        :route-param/widget-id "new"})
+                          "#")
                  :style {:margin "0.5em"}})
           [:span "Add widget"]]
 
@@ -178,7 +174,12 @@
                                                  #js {:key (str (:widget/uuid widget-props))}
                                                  (->Widget
                                                    (om/computed widget-props
-                                                                {:on-edit #(om/update-state! this assoc :edit-widget %)}))))
+                                                                {:on-edit (when (:db/id (:dashboard/project dashboard))
+                                                                            (routes/key->route :route/project->widget+id
+                                                                                               {:route-param/project-id (:db/id (:dashboard/project dashboard))
+                                                                                                :route-param/widget-id (:db/id widget-props)}))
+                                                                 ;#(om/update-state! this assoc :edit-widget %)
+                                                                 }))))
                                (sort-by :widget/index widgets))))
            [:div.empty-message.text-center
             [:i.fa.fa-tachometer.fa-5x]
@@ -192,27 +193,28 @@
               "add a new widget"]
              "."]])
 
-         (when add-widget?
-           (utils/modal {:content  (->NewWidget (om/computed new-widget
-                                                             {:on-close #(om/update-state! this assoc :add-widget? false)
-                                                              :on-save  #(do
-                                                                          (save-widget this %)
-                                                                          (om/update-state! this assoc :add-widget? false))
-                                                              :dashboard dashboard
-                                                              :index (calculate-last-index cols widgets)}))
-                         :on-close #(om/update-state! this assoc :add-widget? false)
-                         :size "large"}))
+         ;(when add-widget?
+         ;  (utils/modal {:content  (->NewWidget (om/computed new-widget
+         ;                                                    {:on-close #(om/update-state! this assoc :add-widget? false)
+         ;                                                     :on-save  #(do
+         ;                                                                 (save-widget this %)
+         ;                                                                 (om/update-state! this assoc :add-widget? false))
+         ;                                                     :dashboard dashboard
+         ;                                                     :index (calculate-last-index cols widgets)}))
+         ;                :on-close #(om/update-state! this assoc :add-widget? false)
+         ;                :size "large"}))
 
-         (when edit-widget
-           (utils/modal {:content  (->NewWidget (om/computed new-widget
-                                                             {:on-close  #(om/update-state! this assoc :edit-widget nil)
-                                                              :on-save   #(do
-                                                                           (save-widget this %)
-                                                                           (om/update-state! this assoc :edit-widget nil))
-                                                              :on-delete #(.delete-widget this %)
-                                                              :dashboard dashboard
-                                                              :widget    edit-widget}))
-                         :on-close #(om/update-state! this assoc :edit-widget nil)
-                         :size     "large"}))]))))
+         ;(when edit-widget
+         ;  (utils/modal {:content  (->NewWidget (om/computed new-widget
+         ;                                                    {:on-close  #(om/update-state! this assoc :edit-widget nil)
+         ;                                                     :on-save   #(do
+         ;                                                                  (save-widget this %)
+         ;                                                                  (om/update-state! this assoc :edit-widget nil))
+         ;                                                     :on-delete #(.delete-widget this %)
+         ;                                                     :dashboard dashboard
+         ;                                                     :widget    edit-widget}))
+         ;                :on-close #(om/update-state! this assoc :edit-widget nil)
+         ;                :size     "large"}))
+         ]))))
 
 (def ->Dashboard (om/factory Dashboard))

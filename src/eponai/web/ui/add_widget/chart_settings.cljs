@@ -1,15 +1,11 @@
-(ns eponai.web.ui.chart-settings
+(ns eponai.web.ui.add-widget.chart-settings
   (:require
-    [cljs-time.coerce :as coerce]
-    [cljs-time.core :as time]
     [eponai.client.ui :refer-macros [opts]]
-    [eponai.common.format :as format]
-    [eponai.web.ui.utils :as utils]
-    [eponai.web.ui.utils.filter :as filter]
+    [eponai.web.ui.widget :as widget]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]
-    ))
+    [eponai.common.report :as report]))
 
 (defn- button-class [field value]
   (if (= field value)
@@ -83,14 +79,21 @@
        :input-report   report}))
   (componentWillReceiveProps [this new-props]
     (let [{:keys [graph
-                  report]} (::om/computed new-props)
+                  report
+                  transactions]} (::om/computed new-props)
           {:keys [include-mean-line?]} (om/get-state this)
           include-mean-option? (let [{:keys [graph/style]} graph]
-                                 (or (= style :graph.style/line) (= style :graph.style/area)))]
+                                 (or (= style :graph.style/line) (= style :graph.style/area)))
+          widget-data (report/generate-data report nil transactions)]
       (om/update-state! this assoc
                         :input-function (first (:report/functions report))
                         :input-report report
-                        :include-mean-line? (if include-mean-option? include-mean-line? false))))
+                        :include-mean-line? (if include-mean-option? include-mean-line? false)
+                        :widget-data widget-data)))
+  (componentDidMount [this]
+    (let [{:keys [transactions
+                  report]} (om/get-computed this)]
+      (om/update-state! this assoc :widget-data (report/generate-data report {} transactions))))
   (componentDidUpdate [this _ _]
     (let [{:keys [input-function
                   input-report
@@ -102,43 +105,43 @@
                           [input-function])]
           (on-change (assoc input-report :report/functions functions))))))
   (render [this]
-    (let [{{:keys [graph/style]} :graph} (om/get-computed this)
+    (let [{{:keys [graph/style] :as graph} :graph} (om/get-computed this)
           {:keys [input-function
                   input-report
-                  include-mean-line?]} (om/get-state this)]
+                  include-mean-line?
+                  widget-data]} (om/get-state this)]
       (debug "Include mean: " include-mean-line?)
       (html
-        [:div
-         (cond
-           (= style :graph.style/bar)
-           [:div
-            [:div.row.small-up-2.collapse
-             [:div.column
-              (chart-function this input-function)]
-             [:div.column
-              (chart-group-by this input-report [:transaction/tags :transaction/currency])]]]
+        (cond
+          (= style :graph.style/bar)
+          [:div
+           [:div.row.small-up-2.collapse
+            [:div.column
+             (chart-function this input-function)]
+            [:div.column
+             (chart-group-by this input-report [:transaction/tags :transaction/currency])]]]
 
-           (or (= style :graph.style/area) (= style :graph.style/line))
-           [:div
-            [:div.row.small-up-2.collapse
-             [:div.column
-              (chart-function this input-function)]
-             ;[:div.column
-             ; (chart-group-by this input-report [:transaction/date])]
-             [:div.column
-              [:fieldset
-               [:legend "Options"]
-               [:input
-                {:type     :checkbox
-                 :id       "mean-check"
-                 :checked  include-mean-line?
-                 :on-click #(om/update-state! this update :include-mean-line? not)}]
-               [:label
-                {:for "mean-check"}
-                "Include average line"]]]]]
+          (or (= style :graph.style/area) (= style :graph.style/line))
+          [:div
+           [:div.row.small-up-2.collapse
+            [:div.column
+             (chart-function this input-function)]
+            ;[:div.column
+            ; (chart-group-by this input-report [:transaction/date])]
+            [:div.column
+             [:fieldset
+              [:legend "Options"]
+              [:input
+               {:type     :checkbox
+                :id       "mean-check"
+                :checked  include-mean-line?
+                :on-click #(om/update-state! this update :include-mean-line? not)}]
+              [:label
+               {:for "mean-check"}
+               "Include average line"]]]]]
 
-           (= style :graph.style/number)
-           [:div
-            (chart-function this input-function)])]))))
+          (= style :graph.style/number)
+          [:div
+           (chart-function this input-function)])))))
 
 (def ->ChartSettings (om/factory ChartSettings))

@@ -86,7 +86,8 @@
     (let [ui-schema (common.datascript/ui-schema)
           ui-state [{:ui/singleton :ui.singleton/app}
                     {:ui/singleton :ui.singleton/auth}
-                    {:ui/component :ui.component/project}]
+                    {:ui/component :ui.component/project}
+                    {:ui/component :ui.component/widget}]
           conn (d/create-conn ui-schema)]
       (d/transact! conn ui-state)
       (reset! conn-atom conn))))

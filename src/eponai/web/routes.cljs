@@ -5,10 +5,11 @@
 (def app-root "/app")
 (def version 1)
 
+(def widget-routes
+  {["/" :route-param/widget-id] {end :route/project->widget+id}})
+
 (def dashboard-routes
-  {end                               :route/project->dashboard
-   ["/widget/" :route-param/widget-id] {end                          :route/project->dashboard->widget
-                                        ["/" :route-param/widget-mode] :route/project->dashboard->widget+mode}})
+  {end                               :route/project->dashboard})
 
 (def transaction-routes
   {end :route/project->txs
@@ -20,7 +21,8 @@
   {"/project" {end                         :route/project-empty
                ["/" :route-param/project-id] {end           :route/project
                                               "/dashboard"    dashboard-routes
-                                              "/transactions" transaction-routes}}})
+                                              "/transactions" transaction-routes
+                                              "/widget" widget-routes}}})
 
 (def profile-routes
   {"/profile" {end           :route/profile
