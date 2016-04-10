@@ -125,7 +125,11 @@
                (->SelectGraph (om/computed {:graph input-graph}
                                            {:on-change    #(select-graph-style this %)
                                             :transactions transactions
-                                            :on-next      #(om/update-state! this assoc :step 2)}))
+                                            :on-next      #(om/update-state! this assoc :step 2)
+                                            :styles       [:graph.style/bar
+                                                           :graph.style/area
+                                                           :graph.style/line
+                                                           :graph.style/number]}))
 
                (= step 2)
                [:div

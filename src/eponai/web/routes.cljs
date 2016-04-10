@@ -8,6 +8,9 @@
 (def widget-routes
   {["/" :route-param/widget-id] {end :route/project->widget+id}})
 
+(def goal-routes
+  {["/" :route-param/goal-id] {end :route/project->goal+id}})
+
 (def dashboard-routes
   {end                               :route/project->dashboard})
 
@@ -18,11 +21,12 @@
           ["/" :route-param/transaction-mode] :route/project->txs->tx+mode}})
 
 (def project-routes
-  {"/project" {end                         :route/project-empty
-               ["/" :route-param/project-id] {end           :route/project
+  {"/project" {end                           :route/project-empty
+               ["/" :route-param/project-id] {end             :route/project
                                               "/dashboard"    dashboard-routes
                                               "/transactions" transaction-routes
-                                              "/widget" widget-routes}}})
+                                              "/widget"       widget-routes
+                                              "/goal"         goal-routes}}})
 
 (def profile-routes
   {"/profile" {end           :route/profile

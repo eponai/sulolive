@@ -7,7 +7,7 @@
             [eponai.web.ui.stripe :refer [Payment ->Payment]]
             [eponai.web.ui.profile :refer [Profile ->Profile]]
             [om.next :as om]
-            [taoensso.timbre :refer-macros [warn]]))
+            [taoensso.timbre :refer-macros [warn debug]]))
 
 (defn param->x-fn [f validate-f]
   (fn [x]
@@ -35,6 +35,8 @@
    :route-param/widget-id             (fn [_ wid]
                                         `[(widget/set-active-id ~{:widget-id (when wid
                                                                                (param->number wid))})])
+   :route-param/goal-id               (fn [_ gid]
+                                        (debug "Goal id: " gid))
    :route-param/widget-mode           #()
    :route-param/transaction-mode      #()})
 
@@ -62,6 +64,13 @@
                          (fn [r p]
                            (mutate-route-params! r (assoc p :route-param/project->selected-tab :dashboard)))))
 
+(def goal-handler (assoc project-handler
+                    :route-param-fn
+                    (fn [r p]
+                      (mutate-route-params! r (-> p
+                                                  (assoc :route-param/project->selected-tab :goal)
+                                                  (update :route-param/goal-id identity))))))
+
 (def widget-handler (assoc project-handler
                       :route-param-fn
                       (fn [r p]
@@ -79,19 +88,20 @@
 
 
 (def route-handler->ui-component
-  {:route/home                            project-handler
-   :route/project                         project-handler
-   :route/project-empty                   project-handler
-   :route/project->dashboard              dashboard-handler
-   :route/project->widget+id              widget-handler
-   :route/project->txs                    transactions-handler
-   :route/project->txs->tx                transactions-handler
-   :route/project->txs->tx+mode           transactions-handler
-   :route/settings                        (map->UiComponentMatch {:component Settings
-                                                                  :factory   ->Settings})
-   :route/subscribe                       (map->UiComponentMatch {:component Payment
-                                                                  :factory   ->Payment})
-   :route/profile                         (map->UiComponentMatch {:component Profile
-                                                                  :factory   ->Profile})
-   :route/profile->txs                    (map->UiComponentMatch {:component AllTransactions
-                                                                  :factory   ->AllTransactions})})
+  {:route/home                  project-handler
+   :route/project               project-handler
+   :route/project-empty         project-handler
+   :route/project->dashboard    dashboard-handler
+   :route/project->widget+id    widget-handler
+   :route/project->goal+id      goal-handler
+   :route/project->txs          transactions-handler
+   :route/project->txs->tx      transactions-handler
+   :route/project->txs->tx+mode transactions-handler
+   :route/settings              (map->UiComponentMatch {:component Settings
+                                                        :factory   ->Settings})
+   :route/subscribe             (map->UiComponentMatch {:component Payment
+                                                        :factory   ->Payment})
+   :route/profile               (map->UiComponentMatch {:component Profile
+                                                        :factory   ->Profile})
+   :route/profile->txs          (map->UiComponentMatch {:component AllTransactions
+                                                        :factory   ->AllTransactions})})

@@ -9,10 +9,6 @@
     [eponai.common.report :as report]
     [taoensso.timbre :refer-macros [debug]]))
 
-(def styles [:graph.style/bar
-             :graph.style/area
-             :graph.style/line
-             :graph.style/number])
 
 (defn default-report [style]
   (-> {:report/group-by (cond (= style :graph.style/bar)
@@ -23,7 +19,7 @@
                               :transaction/date)}
       (assoc :report/functions [{:report.function/id :report.function.id/sum}])))
 
-(defn generate-layout []
+(defn generate-layout [styles]
   (map (fn [style i]
          {:x (mod i 2)
           :y (int (/ i 2))
@@ -41,7 +37,7 @@
       (om/update-state! this assoc :grid-element grid-element)))
 
   (componentWillReceiveProps [this new-props]
-    (let [{:keys [transactions]} (::om/computed new-props)
+    (let [{:keys [transactions styles]} (::om/computed new-props)
           style->data (reduce (fn [m style]
                                 (assoc m style (report/generate-data (default-report style) nil transactions)))
                               {}
@@ -49,7 +45,7 @@
       (om/update-state! this assoc :style->data style->data)))
 
   (componentDidMount [this]
-    (let [{:keys [transactions]} (om/get-computed this)
+    (let [{:keys [transactions styles]} (om/get-computed this)
           style->data (reduce (fn [m style]
                                 (assoc m style (report/generate-data (default-report style) nil transactions)))
                               {}
@@ -60,7 +56,7 @@
       (.update-grid-layout this)
       (om/update-state! this
                         assoc
-                        :layout (clj->js (generate-layout))
+                        :layout (clj->js (generate-layout styles))
                         :style->data style->data)))
   (componentWillUnmount [this]
     (let [sidebar (.getElementById js/document "sidebar")]
@@ -72,7 +68,8 @@
                   grid-element
                   style->data]} (om/get-state this)
           {:keys [on-change
-                  on-next]} (om/get-computed this)
+                  on-next
+                  styles]} (om/get-computed this)
           React (.-React js/window)]
       (html
         [:div

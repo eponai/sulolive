@@ -141,13 +141,20 @@
           React (.-React js/window)]
       (html
         [:div
-         [:a.button.hollow
+         [:a.button.hollow.small
           (opts {:href  (if (:db/id (:dashboard/project dashboard))
                           (routes/key->route :route/project->widget+id {:route-param/project-id  (:db/id (:dashboard/project dashboard))
                                                                         :route-param/widget-id "new"})
                           "#")
                  :style {:margin "0.5em"}})
-          [:span "Add widget"]]
+          [:span "+ Track"]]
+         [:a.button.hollow.small
+          (opts {:href  (if (:db/id (:dashboard/project dashboard))
+                          (routes/key->route :route/project->goal+id {:route-param/project-id (:db/id (:dashboard/project dashboard))
+                                                                      :route-param/goal-id  "new"})
+                          "#")
+                 :style {:margin "0.5em"}})
+          [:span "+ Goal"]]
 
          (if (and layout
                   grid-element

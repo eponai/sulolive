@@ -1,5 +1,6 @@
 (ns eponai.web.ui.project
   (:require
+    [eponai.web.ui.add-goal :refer [->NewGoal]]
     [eponai.web.ui.add-widget :refer [NewWidget ->NewWidget]]
     [eponai.web.ui.all-transactions :refer [->AllTransactions AllTransactions]]
     [eponai.web.ui.dashboard :as dashboard :refer [->Dashboard Dashboard]]
@@ -14,7 +15,7 @@
 (defn- submenu [component project]
   (html
     [:div
-     [:ul.menu.top-bar-left
+     [:ul.menu.float-left
       [:li
        [:a
         {:href (routes/key->route :route/project->txs {:route-param/project-id (:db/id project)})}
@@ -23,9 +24,10 @@
        [:a
         {:href (routes/key->route :route/project->dashboard
                                   {:route-param/project-id (:db/id project)})}
-        [:strong (:project/name project)]]]]
+        [:strong "Dashboard"]
+        ]]]
      ;[:div.top-bar-right]
-     [:ul.menu.top-bar-right
+     [:ul.menu.float-right
       [:li
        [:a.disabled
         [:i.fa.fa-user]
@@ -99,7 +101,8 @@
             :transactions (->AllTransactions all-transactions)
             :widget (->NewWidget (om/computed new-widget
                                               {:dashboard (:query/dashboard dashboard)
-                                               :index (dashboard/calculate-last-index 8 (:widget/_dashboard dashboard))})))]
+                                               :index (dashboard/calculate-last-index 8 (:widget/_dashboard dashboard))}))
+            :goal (->NewGoal))]
 
 
 
