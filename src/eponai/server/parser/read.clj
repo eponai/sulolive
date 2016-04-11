@@ -16,9 +16,11 @@
               (eponai.datascript/schema-datomic->datascript))})
 
 (defmethod read :user/current
-  [{:keys [db auth]} _ _]
+  [{:keys [db db-since auth]} _ _]
   {:value (when (:username auth)
-            (common.pull/pull db [:db/id :user/uuid] [:user/uuid (:username auth)]))})
+            (server.pull/pull-one-since db db-since [:db/id :user/uuid]
+                                        {:where   '[[?e :user/uuid ?user-uuid]]
+                                         :symbols {'?user-uuid (:username auth)}}))})
 
 ;; ############## App ################
 
