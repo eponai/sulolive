@@ -58,7 +58,7 @@
   (debug "widget/save with params: " params)
   (let [widget (format/widget-create params)]
     {:action (fn []
-               (transact/mutate-map state mutation-uuid widget))}))
+               (transact/mutate-one state mutation-uuid widget))}))
 
 (defmethod mutate 'widget/delete
   [{:keys [state mutation-uuid]} _ params]

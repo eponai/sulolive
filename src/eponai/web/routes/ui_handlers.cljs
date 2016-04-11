@@ -37,7 +37,8 @@
                                                                                (param->number wid))})])
    :route-param/goal-id               (fn [_ gid]
                                         (debug "Goal id: " gid))
-   :route-param/widget-mode           #()
+   :route-param/widget-type           (fn [_ type]
+                                        `[(widget/select-type ~{:type (param->keyword type)})])
    :route-param/transaction-mode      #()})
 
 (defn route-params->mutations [route-params]
@@ -88,20 +89,19 @@
 
 
 (def route-handler->ui-component
-  {:route/home                  project-handler
-   :route/project               project-handler
-   :route/project-empty         project-handler
-   :route/project->dashboard    dashboard-handler
-   :route/project->widget+id    widget-handler
-   :route/project->goal+id      goal-handler
-   :route/project->txs          transactions-handler
-   :route/project->txs->tx      transactions-handler
-   :route/project->txs->tx+mode transactions-handler
-   :route/settings              (map->UiComponentMatch {:component Settings
-                                                        :factory   ->Settings})
-   :route/subscribe             (map->UiComponentMatch {:component Payment
-                                                        :factory   ->Payment})
-   :route/profile               (map->UiComponentMatch {:component Profile
-                                                        :factory   ->Profile})
-   :route/profile->txs          (map->UiComponentMatch {:component AllTransactions
-                                                        :factory   ->AllTransactions})})
+  {:route/home                    project-handler
+   :route/project                 project-handler
+   :route/project-empty           project-handler
+   :route/project->dashboard      dashboard-handler
+   :route/project->widget+type+id widget-handler
+   :route/project->txs            transactions-handler
+   :route/project->txs->tx        transactions-handler
+   :route/project->txs->tx+mode   transactions-handler
+   :route/settings                (map->UiComponentMatch {:component Settings
+                                                          :factory   ->Settings})
+   :route/subscribe               (map->UiComponentMatch {:component Payment
+                                                          :factory   ->Payment})
+   :route/profile                 (map->UiComponentMatch {:component Profile
+                                                          :factory   ->Profile})
+   :route/profile->txs            (map->UiComponentMatch {:component AllTransactions
+                                                          :factory   ->AllTransactions})})

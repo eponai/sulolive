@@ -143,15 +143,17 @@
         [:div
          [:a.button.hollow.small
           (opts {:href  (if (:db/id (:dashboard/project dashboard))
-                          (routes/key->route :route/project->widget+id {:route-param/project-id  (:db/id (:dashboard/project dashboard))
-                                                                        :route-param/widget-id "new"})
+                          (routes/key->route :route/project->widget+type+id {:route-param/project-id  (:db/id (:dashboard/project dashboard))
+                                                                             :route-param/widget-type :track
+                                                                             :route-param/widget-id "new"})
                           "#")
                  :style {:margin "0.5em"}})
           [:span "+ Track"]]
          [:a.button.hollow.small
           (opts {:href  (if (:db/id (:dashboard/project dashboard))
-                          (routes/key->route :route/project->goal+id {:route-param/project-id (:db/id (:dashboard/project dashboard))
-                                                                      :route-param/goal-id  "new"})
+                          (routes/key->route :route/project->widget+type+id {:route-param/project-id (:db/id (:dashboard/project dashboard))
+                                                                             :route-param/widget-type :goal
+                                                                             :route-param/widget-id  "new"})
                           "#")
                  :style {:margin "0.5em"}})
           [:span "+ Goal"]]

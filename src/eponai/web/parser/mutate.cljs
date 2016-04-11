@@ -93,3 +93,9 @@
   {:action #(t/transact-one state
                             {:ui/component              :ui.component/widget
                              :ui.component.widget/id    (or widget-id :new)})})
+
+(defmethod mutate 'widget/select-type
+  [{:keys [state]} _ {:keys [type]}]
+  {:action #(t/transact-one state
+                            {:ui/component             :ui.component/widget
+                             :ui.component.widget/type type})})

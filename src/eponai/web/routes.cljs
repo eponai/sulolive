@@ -6,7 +6,7 @@
 (def version 1)
 
 (def widget-routes
-  {["/" :route-param/widget-id] {end :route/project->widget+id}})
+  {["/" :route-param/widget-type] {["/" :route-param/widget-id] {end :route/project->widget+type+id}}})
 
 (def goal-routes
   {["/" :route-param/goal-id] {end :route/project->goal+id}})

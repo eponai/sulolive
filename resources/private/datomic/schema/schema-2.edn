@@ -6,36 +6,30 @@
  ; :db/doc                "Graph filter, what to display in the graph."
  ; :db.install/_attribute :db.part/db}
 
- ;; Widget
+ ;; Report
+
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :widget/track
-  :db/valueType          :db.type/ref
+  :db/ident              :report/type
+  :db/valueType          :db.type/keyword
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Track report for widget."
+  :db/doc                "Report type (:report/track, :report/goal)."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :widget/goal
+  :db/ident              :report/track
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Goal saved for widget."
+  :db/doc                "Tracking report."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :widget/title
-  :db/valueType          :db.type/string
+  :db/ident              :report/goal
+  :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Title for widget."
+  :db/doc                "Goal report."
   :db.install/_attribute :db.part/db}
 
  ;; Goal
- ;{:db/id                 #db/id[:db.part/db]
- ; :db/ident              :goal/title
- ; :db/valueType          :db.type/string
- ; :db/cardinality        :db.cardinality/one
- ; :db/doc                "User specified title for this goal."
- ; :db.install/_attribute :db.part/db}
-
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :goal/cycle
   :db/valueType          :db.type/ref
@@ -117,10 +111,10 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :cycle/start-date
-  :db/valueType          :db.type/ref
+  :db/ident              :cycle/start
+  :db/valueType          :db.type/long
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Start date for cycle."
+  :db/doc                "Start timestamp for cycle."
   :db.install/_attribute :db.part/db}
 
  ;; Function

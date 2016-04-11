@@ -11,13 +11,15 @@
 
 
 (defn default-report [style]
-  (-> {:report/group-by (cond (= style :graph.style/bar)
-                              :transaction/tags
-                              (= style :graph.style/number)
-                              :default
-                              true
-                              :transaction/date)}
-      (assoc :report/functions [{:report.function/id :report.function.id/sum}])))
+  {:report/track
+   {:track/functions
+    [{:track.function/id       :track.function.id/sum
+      :track.function/group-by (cond (= style :graph.style/bar)
+                                     :transaction/tags
+                                     (= style :graph.style/number)
+                                     :default
+                                     true
+                                     :transaction/date)}]}})
 
 (defn generate-layout [styles]
   (map (fn [style i]

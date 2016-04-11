@@ -27,8 +27,10 @@
 
 (defmethod read :query/active-widget
   [{:keys [db query]} _ _]
-  (debug "Query" query)
-  (let [{:keys [ui.component.widget/id]} (p/lookup-entity db [:ui/component :ui.component/widget])
-        _ (debug "Did find id: " id)]
+  (let [{:keys [ui.component.widget/id]} (p/lookup-entity db [:ui/component :ui.component/widget])]
     {:value (when (number? id)
               (p/pull db query id))}))
+
+(defmethod read :query/widget-type
+  [{:keys [db query]} _ _]
+  {:value (p/pull db query [:ui/component :ui.component/widget])})

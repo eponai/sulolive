@@ -236,7 +236,7 @@
     (all-with db pull-params)))
 
 (defn find-latest-conversion [db {:keys [currency user] :as params}]
-  (info "Finding latest conversion with params: " params)
+  ;(info "Finding latest conversion with params: " params)
   (let [query (cond currency
                     {:find-pattern '[?t ?co]
                      :symbols      {'?currency (:db/id currency)}

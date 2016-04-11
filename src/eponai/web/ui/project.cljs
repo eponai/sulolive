@@ -1,6 +1,6 @@
 (ns eponai.web.ui.project
   (:require
-    [eponai.web.ui.add-goal :refer [->NewGoal]]
+    [eponai.web.ui.add-widget.add-goal :refer [->NewGoal]]
     [eponai.web.ui.add-widget :refer [NewWidget ->NewWidget]]
     [eponai.web.ui.all-transactions :refer [->AllTransactions AllTransactions]]
     [eponai.web.ui.dashboard :as dashboard :refer [->Dashboard Dashboard]]

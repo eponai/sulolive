@@ -18,10 +18,12 @@
                   rate))
       0)))
 
-(defmulti sum (fn [k _ _] k))
+(defmulti sum (fn [k _ ts]
+                k))
 
 (defmethod sum :default
-  [_ _ transactions]
+  [k _ transactions]
+  (debug "Generating sum data: " k " " transactions)
   (let [sum-fn (fn [s tx]
                  (+ s (converted-amount tx)))]
     [(reduce sum-fn 0 transactions)]))
@@ -115,26 +117,26 @@
             :value (/ (or (:value tag-sum) 0) (count by-timestamp))})
          sum-by-tag)))
 
-(defmulti calculation (fn [_ function-id _ _] function-id))
+(defmulti track (fn [f _ _] (:track.function/id f)))
 
-(defmethod calculation :report.function.id/sum
-  [{:keys [report/group-by]} _ data-filter transactions]
+(defmethod track :track.function.id/sum
+  [{:keys [track.function/group-by]} data-filter transactions]
   {:key    "All transactions sum"
-   :id     :report.function.id/sum
+   :id     :track.function.id/sum
    :values (sum group-by data-filter transactions)})
 
-(defmethod calculation :report.function.id/mean
-  [{:keys [report/group-by]} _ data-filter transactions]
+(defmethod track :track.function.id/mean
+  [{:keys [track.function/group-by]} data-filter transactions]
   {:key    "All Transactions mean"
-   :id     :report.function.id/mean
+   :id     :track.function.id/mean
    :values (mean group-by data-filter transactions)})
 
 (defn generate-data [report data-filter transactions]
   (debug "Generate data: " report)
-  (let [functions (:report/functions report)
-        calculation-fn (fn [f]
-                         (let [k (or (:report.function/id f) :report.function.id/sum)]
-                           (debug "Make calc: " k " with filter: " data-filter)
-                           (calculation (:report.function/group-by f) k data-filter transactions)))]
-    (debug "Generated data: " (mapv calculation-fn functions))
-    (map calculation-fn functions)))
+  (debug "generate for Transactions: " transactions)
+  (let [functions (get-in report [:report/track :track/functions])
+        track-fn (fn [f]
+                         (debug "Make calc: " f " with filter: " data-filter)
+                         (track f data-filter transactions))]
+    (debug "Generated data: " (mapv track-fn functions))
+    (map track-fn functions)))

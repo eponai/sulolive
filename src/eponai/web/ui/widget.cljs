@@ -20,11 +20,11 @@
                       {:filter/end-date [:date/timestamp]}
                       {:filter/start-date [:date/timestamp]}]}
      {:widget/report [:report/uuid
-                      :report/group-by
                       :report/title
-                      {:report/functions [:report.function/uuid
-                                          :report.function/attribute
-                                          :report.function/id]}]}
+                      {:report/track [:track/filter
+                                      {:track/functions [:track.function/group-by
+                                                         :track.function/attribute
+                                                         :track.function/id]}]}]}
      :widget/index
      :widget/data
      {:widget/graph [:graph/style
@@ -73,6 +73,17 @@
                  (->NumberChart settings)
 
                  (= style :graph.style/line)
-                 (->LineChart settings)))]))))
+                 (->LineChart settings)
+
+                 (= style :graph.style/progress-bar)
+                 [:div
+                  "Progress: "
+                  [:div.progress
+                   {:aria-valuenow  "50"
+                    :aria-valuemin  "0"
+                    :aria-valuetext "$10"
+                    :aria-valuemax  "100"}
+                   [:div.progress-meter
+                    (opts {:style {:width "50%"}})]]]))]))))
 
 (def ->Widget (om/factory Widget))

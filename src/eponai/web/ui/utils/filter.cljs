@@ -25,17 +25,20 @@
       (om/update-state! this
                         #(-> %
                              (update :filter dissoc :filter/end-date :filter/last-x-days)
-                             (assoc-in [:filter :filter/start-date] start-date)))))
+                             (assoc-in [:filter :filter/start-date] start-date)))
+      (.should-notify-change this)))
 
   (set-last-x-days-filter [this span]
     (om/update-state! this
                       #(-> %
                            (update :filter dissoc :filter/end-date :filter/start-date)
-                           (assoc-in [:filter :filter/last-x-days] span))))
+                           (assoc-in [:filter :filter/last-x-days] span)))
+    (.should-notify-change this))
 
   (reset-date-filters [this]
     (om/update-state! this
-                      #(update % :filter dissoc :filter/start-date :filter/end-date :filter/last-x-days)))
+                      #(update % :filter dissoc :filter/start-date :filter/end-date :filter/last-x-days))
+    (.should-notify-change this))
 
   (update-date-filter [this value]
     (let [time-type (cljs.reader/read-string value)]
@@ -50,9 +53,10 @@
         (.set-this-month-filter this)
         true
         (om/update-state! this #(update % :filter dissoc :filter/last-x-days)))
-      (om/update-state! this assoc :type time-type)))
+      (om/update-state! this assoc :type time-type)
+      (.should-notify-change this)))
 
-  (componentDidUpdate [this _ _]
+  (should-notify-change [this]
     (let [{:keys [on-change]} (om/get-computed this)
           input-filter (:filter (om/get-state this))]
 

@@ -32,15 +32,15 @@
      :widget/height
      {:widget/filter [{:filter/include-tags [:tag/name]}]}
      {:widget/report [:report/uuid
-                      :report/group-by
-                      :report/title
-                      {:report/functions [:report.function/uuid
-                                          :report.function/attribute
-                                          :report.function/id]}]}
+                      {:report/track [{:track/functions [:track.function/uuid
+                                                         :track.function/group-by
+                                                         :track.function/attribute
+                                                         :track.function/id]}
+                                      {:track/filter [{:filter/include-tags [:tag/name]}]}]}
+                      :report/title]}
      :widget/index
      :widget/data
-     {:widget/graph [:graph/style
-                     {:graph/filter [{:filter/include-tags [:tag/name]}]}]}]))
+     {:widget/graph [:graph/style]}]))
 
 (defn transaction-query []
   (parser/put-db-id-in-query

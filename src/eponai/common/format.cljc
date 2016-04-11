@@ -79,6 +79,10 @@
   #?(:clj  (java.util.UUID/fromString str-uuid)
      :cljs (uuid str-uuid)))
 
+(defn str->number [n]
+  #?(:cljs (cljs.reader/read-string n)
+     :clj (bigdec n)))
+
 ;; -------------------------- Database entities -----------------------------
 
 (defn project
@@ -224,31 +228,79 @@
       (assoc clean-filters :db/id (d/tempid :db.part/user))
       nil)))
 
-(defn widget-create [{:keys [input-report input-graph input-widget] :as input}]
-  (let [report (-> input-report
-                   add-tempid
-                   (update :report/functions add-tempid))
-        graph (cond-> (add-tempid input-graph)
+(defn track-function* [input]
+  (add-tempid (select-keys input [:track.function/id
+                                  :track.function/group-by])))
 
-                      (some? (:graph/filter input-graph))
-                      (update :graph/filter data-filter))
-        widget (cond-> (merge input-widget
-                              {:db/id            (d/tempid :db.part/user)
-                               :widget/graph     (:db/id graph)
-                               :widget/report    (:db/id report)
-                               :widget/dashboard [:dashboard/uuid (:dashboard/uuid (:input-dashboard input))]})
+(defn track* [input]
+  (cond-> (add-tempid (select-keys input [:track/functions
+                                          :track/filter]))
+          (some? (:track/filter input))
+          (update :track/filter add-tempid)
 
-                       (some? (:widget/filter input-widget))
-                       (update :widget/filter data-filter)
+          (seq (:track/functions input))
+          (update :track/functions #(mapv track-function* %))))
 
-                       (nil? (:widget/filter input-widget))
-                       (dissoc :widget/filter))]
-    (debug "Creating widget: " {:report   report
-                                :graph    graph
-                                :widget   widget})
-    (cond-> {:report   report
-             :graph    graph
-             :widget   widget})))
+(defn cycle* [input]
+  (-> input
+      (select-keys [:cycle/period
+                    :cycle/period-count
+                    :cycle/repeat
+                    :cycle/start-date])
+      add-tempid))
+(defn goal* [input]
+  (cond->
+    (-> input
+        (select-keys [:goal/cycle
+                      :goal/value
+                      :goal/filter])
+        add-tempid
+        (update :goal/value str->number)
+        (update :goal/cycle cycle*))
+
+    (some? (:goal/filter input))
+    (update :goal/filter data-filter)))
+
+(defn report* [input]
+  (cond
+    (some? (:report/track input))
+    (-> input
+        (select-keys [:report/track :report/title])
+        add-tempid
+        (update :report/track track*))
+
+    (some? (:report/goal input))
+    (-> input
+        (select-keys [:report/goal :report/title])
+        add-tempid
+        (update :report/goal goal*))))
+
+(defn graph* [input]
+  (cond->
+    (-> input
+        (select-keys [:graph/style :graph/filter])
+        add-tempid)
+
+    (some? (:graph/filter input))
+    (update :graph/filter data-filter)))
+
+(defn widget* [input]
+  (cond->
+    (-> input
+        (select-keys [:widget/filter :widget/graph :widget/report :widget/dashboard
+                      :widget/index :widget/height :widget/width :widget/uuid])
+        add-tempid)
+    (some? (:widget/filter input))
+    (update :widget/filter data-filter)))
+
+(defn widget-create [input]
+  (assert (some? (:widget/dashboard input)) "Widget needs to ba associated to a dashboard.")
+  (assert (some? (:widget/uuid input)) "Widget needs a UUID to be saved.")
+
+  (-> input
+      widget*
+      (update :widget/graph graph*)
+      (update :widget/report report*)))
 
 (defn transaction-edit [{:keys [transaction/tags
                                 transaction/uuid] :as input-transaction}]
@@ -265,7 +317,7 @@
                         (assoc :db/id (d/tempid :db.part/user))
                         (->> (reduce-kv (fn [m k v]
                                           (assoc m k (condp = k
-                                                       :transaction/amount #?(:cljs (cljs.reader/read-string v) :clj (bigdec v))
+                                                       :transaction/amount (str->number v)
                                                        :transaction/currency (assoc v :db/id (d/tempid :db.part/user))
                                                        :transaction/type (assoc v :db/id (d/tempid :db.part/user))
                                                        :transaction/date (str->date (:date/ymd v))
