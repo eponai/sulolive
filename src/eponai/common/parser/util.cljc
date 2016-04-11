@@ -25,7 +25,10 @@
                                                              (assoc m k {})
                                                              (post-parse-subset v v))
                                  ;; For proxies: Call post-parse-fn for the values returned.
-                                 (= ret :call)   (assoc m k (post-parse-subset v v))
+                                 (= ret :call)   (let [r (post-parse-subset v v)]
+                                                   (if (and (coll? r) (empty? r))
+                                                     (dissoc m k)
+                                                     (assoc m k r)))
                                  :else (assoc m k ret))))
                            result
                            subset))]

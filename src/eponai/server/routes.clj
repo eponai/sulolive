@@ -119,10 +119,11 @@
   (-> (parser.util/post-process-parse trace-parser-response-handlers [])))
 
 (defn call-parser [{:keys [::m/conn] :as request}]
-  (let [ret (->> (handle-parser-request request)
+  (let [ret (handle-parser-request request)
+        m (meta-from-keys ret)
+        ret (->> ret
                  (handle-parser-response (assoc request :state conn))
-                 (remove-mutation-tx-reports))
-        m (meta-from-keys ret)]
+                 (remove-mutation-tx-reports))]
     {:result ret
      :meta m}))
 
