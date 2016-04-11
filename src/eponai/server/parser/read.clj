@@ -26,16 +26,21 @@
 
 (defmethod read :query/transactions
   [{:keys [db db-since query auth]} _ {:keys [project-uuid filter]}]
-  (let [tx-ids (common.pull/find-transactions db
-                                              {:project-uuid project-uuid
-                                               :filter       filter
-                                               :query-params (-> {:where   '[[?e :transaction/project ?b]
-                                                                             [?b :project/users ?u]
-                                                                             [?u :user/uuid ?user-uuid]]
-                                                                  :symbols {'?user-uuid (:username auth)}}
-                                                                 (common.pull/with-db-since db-since))})]
-    {:value {:transactions (pull/pull-many db query tx-ids)
-             :conversions (pull/conversions db tx-ids (:username auth))}}))
+  (let [filters? (and (map? filter) (some #(seq (val %)) filter))
+        entity-query (common.pull/transaction-entity-query
+                       {:project-uuid project-uuid
+                        :filter       filter
+                        :query-params {:where   '[[?e :transaction/project ?b]
+                                                  [?b :project/users ?u]
+                                                  [?u :user/uuid ?user-uuid]]
+                                       :symbols {'?user-uuid (:username auth)}}})
+        tx-ids (server.pull/all-since db db-since query entity-query)]
+    {:value (cond-> {:transactions (pull/pull-many db query tx-ids)
+                     :conversions  (pull/conversions db tx-ids (:username auth))}
+                    ;; We cannot set read-basis-t when we have filters enabled.
+                    ;; To prevent read-basis-t from being set by setting it to nil.
+                    filters?
+                    (with-meta {:eponai.common.parser/read-basis-t nil}))}))
 
 (defmethod read :query/dashboard
   [{:keys [db db-since auth query] :as env} _ {:keys [project-uuid]}]
@@ -56,8 +61,6 @@
                                 [?e :transaction/project ?project]]
                      :symbols {'?project-eid project-eid}}
                     updated-transactions? (server.pull/one-since db db-since t-p-query t-e-query)
-                    _ (debug "Updated transaction: " updated-transactions?
-                             "pull-all-since: " (server.pull/pull-all-since db db-since t-p-query t-e-query))
                     dashboard (server.pull/pull-one-since db db-since query (-> {:where   '[[?e :dashboard/project ?p]
                                                                                             [?p :project/users ?u]]
                                                                                  :symbols {'?p project-eid}}

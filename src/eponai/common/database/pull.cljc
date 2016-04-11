@@ -254,21 +254,23 @@
      user-db-id
      status))
 
+(defn transaction-entity-query [{:keys [filter project-uuid query-params]}]
+  (cond-> {:where '[[?e :transaction/uuid]]}
+
+          (some? query-params)
+          (merge-query query-params)
+
+          (some? filter)
+          (merge-query (transactions filter))
+
+          (some? project-uuid)
+          (merge-query {:where   '[[?e :transaction/project ?b]
+                                   [?b :project/uuid ?project-uuid]]
+                        :symbols {'?project-uuid project-uuid}})))
+
 (defn find-transactions
-  [db {:keys [filter project-uuid query-params]}]
-  (let [pull-params (cond-> {:where '[[?e :transaction/uuid]]}
-
-                            (some? query-params)
-                            (merge-query query-params)
-
-                            (some? filter)
-                            (merge-query (transactions filter))
-
-                            (some? project-uuid)
-                            (merge-query {:where   '[[?e :transaction/project ?b]
-                                                     [?b :project/uuid ?project-uuid]]
-                                          :symbols {'?project-uuid project-uuid}}))]
-    (all-with db pull-params)))
+  [db params]
+  (all-with db (transaction-entity-query params)))
 
 (defn find-latest-conversion [db {:keys [currency user] :as params}]
   ;(info "Finding latest conversion with params: " params)

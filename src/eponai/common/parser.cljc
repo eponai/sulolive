@@ -233,10 +233,14 @@
        (let [basis-t-for-this-key (-> env :eponai.common.parser/read-basis-t (get k))
              env (cond-> env
                          (some? basis-t-for-this-key)
-                         (assoc :db-since (d/since db basis-t-for-this-key)))]
-         (-> (read env k p)
-             (update :value #(or % {}))
-             (update :value with-meta {:eponai.common.parser/read-basis-t {k (d/basis-t db)}}))))))
+                         (assoc :db-since (d/since db basis-t-for-this-key)))
+             ret (read env k p)]
+         (cond-> ret
+                 (nil? (:value ret))
+                 (assoc :value {})
+                 ;; Value has not already been set?
+                 (not (contains? (meta (:value ret)) :eponai.common.parser/read-basis-t))
+                 (update :value with-meta {:eponai.common.parser/read-basis-t {k (d/basis-t db)}}))))))
 
 (defn parser
   ([]

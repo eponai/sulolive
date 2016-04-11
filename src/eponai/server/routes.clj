@@ -112,7 +112,10 @@
                x)
     (sequential? x)
     (apply merge (mapv meta-from-keys x))
-    :else (meta x)))
+    :else (reduce-kv (fn [m k v]
+                       (cond-> m (some? v) (assoc k v)))
+                     nil
+                     (meta x))))
 
 (def handle-parser-response
   "Will call response-handler for each key value in the parsed result."
