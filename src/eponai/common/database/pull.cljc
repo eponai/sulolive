@@ -142,17 +142,10 @@
   More complicated usages are easier to just do inline."
   ([query db-since] (with-db-since query db-since '[$since ?e]))
   ([query db-since since-clause]
-   (if (nil? db-since)
-     query
-     (let [where-since (reduce (fn [w [e :as clause]]
-                                 (conj w (if (symbol? e)
-                                           (vec (cons '$ clause))
-                                           clause)))
-                               [since-clause]
-                               (:where query))]
-       (-> query
-           (assoc :where where-since)
-           (update :symbols assoc '$since db-since))))))
+   (cond-> query
+           (some? db-since)
+           (merge-query {:where [since-clause]
+                         :symbols {'$since db-since}}))))
 
 (defn one-since [db db-since query]
   (one-with db (with-db-since query db-since)))

@@ -81,29 +81,6 @@
     (debug "Found new currencies: " new-currencies)
     new-currencies))
 
-(defn k->sym [k]
-  (gensym (str "?" (name k) "_")))
-
-(defn pull-pattern->where-clauses [pattern sym]
-  (cond
-    (keyword? pattern)
-    (if (= pattern :db/id)
-      []
-      [[sym pattern (k->sym pattern)]])
-
-    (map? pattern)
-    (let [[k v] (first pattern)]
-      (concat (pull-pattern->where-clauses k sym)
-              (pull-pattern->where-clauses v (k->sym k))))
-
-    (sequential? pattern)
-    ;; Handles the case with default and limit. (they can only take keywords).
-    (when-not (symbol? (first pattern))
-      (seq (filter some? (mapcat #(pull-pattern->where-clauses % sym) pattern))))
-
-    :else (do (warn "Pattern not matched: " pattern)
-              nil)))
-
 (defn pull-pattern->paths
   ([pattern] (pull-pattern->paths pattern []))
   ([pattern prev]
@@ -135,69 +112,15 @@
     {:query query :last-symbol sym}))
 
 (defn match-path [db db-since path entity-query]
-  (loop [datoms (d/seek-datoms db-since :aevt (last path))]
+  (let [datoms (d/seek-datoms db-since :aevt (last path))]
     (when (seq datoms)
       (let [{:keys [query last-symbol]} (path->query path '?e)]
-        (debug "query: " query "path: " path)
         (p/one-with db (-> entity-query
-                           (p/merge-query query)
-                           (p/merge-query {:symbols {'[last-symbol ...] (mapv #(.e %) datoms)}})))))))
-
-(comment (if (empty? attrs)
-           (when (seq datoms)
-             (debug "datoms: " datoms "path: " rpath "targets: " targets)
-             (some (set targets) (sequence (comp seen (map #(.e %))) datoms)))
-           (recur (sequence (comp seen
-                                  (map #(.v %))
-                                  (mapcat #(d/seek-datoms db :eavt % (first attrs))))
-                            datoms)
-                  (rest attrs))))
-
-(defn paths->matches [db db-since pull-pattern entity-query]
-  (let [paths (sequence (filter #(> (count %) 1)) (pull-pattern->paths pull-pattern))
-        any-matches? (some (fn [path] (match-path db db-since path entity-query)) paths)]
-    (debug "pull-pattern: " pull-pattern "entity-query: " entity-query "any-matches?: " any-matches?)
-    (if any-matches?
-      (p/pull-many db pull-pattern (p/all-with db entity-query))
-      ;; Can we do even better here? pull with db-since?
-      (p/pull-many db-since pull-pattern (p/all-with db (p/with-db-since entity-query db-since))))))
-
-(defn clauses->with-missing-checks [clauses]
-  (let [missing-clauses (reduce (fn [m [sym k]]
-                                  ;; k is nil for the :db/id case.
-                                  (if (nil? k)
-                                    m
-                                    (let [ret (gensym (str "?" (name k) "-in-since?" "_"))
-                                          clause [(list 'missing? '$since sym k) ret]]
-                                      (-> m
-                                          (update :clauses conj clause)
-                                          (update :symbols conj ret)))))
-                                {:symbols []
-                                 :clauses []}
-                                clauses)
-        or-not-clauses (when (seq (:symbols missing-clauses))
-                         `(~'or-join ~(:symbols missing-clauses)
-                            ~@(map (fn [miss?] [(list 'not miss?)])
-                                   (:symbols missing-clauses))))]
-    (cond-> (into (vec clauses) (:clauses missing-clauses))
-            or-not-clauses
-            (conj or-not-clauses))))
-
-(defn pattern->query-map [pull-pattern]
-  (let [clauses (into [] (comp (map #(pull-pattern->where-clauses % '?e))
-                               (map #(clauses->with-missing-checks %))
-                               (map #(cons 'and %)))
-                      pull-pattern)
-        or-join `(~'or-join [~'?e] ~@clauses)]
-    {:where [or-join]}))
-
-(defn- include-changed-children [db-since pull-pattern]
-  (assoc (pattern->query-map pull-pattern)
-    :symbols {'$since db-since}))
+                           (p/merge-query (assoc query :symbols {'[last-symbol ...] (mapv #(.e %) datoms)}))))))))
 
 (defn pull-all-since [db db-since pull-pattern entity-query]
-  (->> (p/merge-query entity-query
-                      (include-changed-children db-since pull-pattern))
-       ;;(#(do (debug "QUERY: " %) %))
-       (p/all-with db)
-       (p/pull-many db pull-pattern)))
+  (let [paths (filter #(> (count %) 1) (pull-pattern->paths pull-pattern))
+        any-matches? (some #(match-path db db-since % entity-query) paths)]
+    (if any-matches?
+      (p/pull-many db pull-pattern (p/all-with db entity-query))
+      (p/pull-many db-since pull-pattern (p/all-with db (p/with-db-since entity-query db-since))))))

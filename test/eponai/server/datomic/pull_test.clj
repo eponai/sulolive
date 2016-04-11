@@ -25,7 +25,7 @@
              (are [txs pull-pattern entity-query res]
                (= (let [db (cond-> db (seq txs) (-> (d/with txs) :db-after))
                         db-since (d/since db basis-t)]
-                    (s.pull/paths->matches db db-since pull-pattern entity-query))
+                    (s.pull/pull-all-since db db-since pull-pattern entity-query))
                   res)
                [] [:db/id] transaction-query []
                [] [:transaction/title] transaction-query []
