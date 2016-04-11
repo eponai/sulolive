@@ -135,6 +135,6 @@
         calculation-fn (fn [f]
                          (let [k (or (:report.function/id f) :report.function.id/sum)]
                            (debug "Make calc: " k " with filter: " data-filter)
-                           (calculation report k data-filter transactions)))]
+                           (calculation (:report.function/group-by f) k data-filter transactions)))]
     (debug "Generated data: " (mapv calculation-fn functions))
     (map calculation-fn functions)))

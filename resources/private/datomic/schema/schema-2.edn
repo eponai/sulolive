@@ -1,8 +1,155 @@
 [
+ ;{:db/id                 #db/id[:db.part/db]
+ ; :db/ident              :graph/filter
+ ; :db/valueType          :db.type/ref
+ ; :db/cardinality        :db.cardinality/one
+ ; :db/doc                "Graph filter, what to display in the graph."
+ ; :db.install/_attribute :db.part/db}
+
+ ;; Widget
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :graph/filter
+  :db/ident              :widget/track
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Graph filter, what to display in the graph."
+  :db/doc                "Track report for widget."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :widget/goal
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Goal saved for widget."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :widget/title
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Title for widget."
+  :db.install/_attribute :db.part/db}
+
+ ;; Goal
+ ;{:db/id                 #db/id[:db.part/db]
+ ; :db/ident              :goal/title
+ ; :db/valueType          :db.type/string
+ ; :db/cardinality        :db.cardinality/one
+ ; :db/doc                "User specified title for this goal."
+ ; :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :goal/cycle
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Cycle for this goal."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :goal/value
+  :db/valueType          :db.type/bigdec
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Goal value (in money e.g. 100)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :goal/currency
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Currency for goal value."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :goal/type
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Goal type (e.g. limit spending or save)"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :goal/filter
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Filter goal data."
+  :db.install/_attribute :db.part/db}
+
+ ;; Track
+ ;{:db/id                 #db/id[:db.part/db]
+ ; :db/ident              :track/title
+ ; :db/valueType          :db.type/string
+ ; :db/cardinality        :db.cardinality/one
+ ; :db/doc                "Use specified title for this track."
+ ; :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :track/filter
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Filter track data."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :track/functions
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/many
+  :db/doc                "Functions for tracking data."
+  :db.install/_attribute :db.part/db}
+
+ ;; Cycle
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :cycle/period
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Cycle period, (:day, :month, :year)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :cycle/period-count
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "How many periods is in this cycle."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :cycle/repeat
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "How many times this cycle repeats, (infinity if none)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :cycle/start-date
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Start date for cycle."
+  :db.install/_attribute :db.part/db}
+
+ ;; Function
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :track.function/id
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Function identifier."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :track.function/attribute
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Which transaction attribute to apply the function (e.g. amount, currency)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :track.function/group-by
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "What transaction attribute that should be grouped (e.g. currency, tags)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :track.function/label
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "User specified label for this function."
   :db.install/_attribute :db.part/db}
  ]
