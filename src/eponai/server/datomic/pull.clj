@@ -16,14 +16,12 @@
   (type/ref, cardinality/many or unique/identity)."
   ([db] (schema db nil))
   ([db db-since]
-   (let [query (cond-> {:where '[[$ ?e :db/ident ?id]
-                                 [$ :db.part/db :db.install/attribute ?e]
-                                 [(namespace ?id) ?ns]
-                                 [(.startsWith ^String ?ns "db") ?d]
-                                 [(not ?d)]]}
-                       (some? db-since)
-                       (p/merge-query {:where '[[$since ?e]]
-                                       :symbols {'$since db-since}}))]
+   (let [query (-> {:where '[[?e :db/ident ?id]
+                             [:db.part/db :db.install/attribute ?e]
+                             [(namespace ?id) ?ns]
+                             [(.startsWith ^String ?ns "db") ?d]
+                             [(not ?d)]]}
+                   (p/with-db-since db-since))]
      (mapv #(into {} (d/entity db %))
            (p/all-with db query)))))
 
@@ -52,12 +50,6 @@
      {:transaction/tags [:tag/name]}
      {:transaction/date [:date/ymd
                          :date/timestamp]}]))
-
-(defn any-transaction-in-project-since-last-read [db db-since project-eid]
-  (p/one-since db db-since {:where   '[[?e :transaction/project ?project]
-                                       [?project :project/uuid]
-                                       [(= ?project ?project-eid)]]
-                            :symbols {'?project-eid project-eid}}))
 
 (defn widgets-with-data [{:keys [db auth] :as env} project-eid widgets]
   (->> widgets
@@ -112,15 +104,33 @@
     {:query query :last-symbol sym}))
 
 (defn match-path [db db-since path entity-query]
-  (let [datoms (d/seek-datoms db-since :aevt (last path))]
+  (let [datoms (d/datoms db-since :aevt (last path))]
     (when (seq datoms)
+      (debug "Might match path: " path "for entity-query: " entity-query " datoms: " (into [] datoms))
       (let [{:keys [query last-symbol]} (path->query path '?e)]
         (p/one-with db (-> entity-query
                            (p/merge-query (assoc query :symbols {'[last-symbol ...] (mapv #(.e %) datoms)}))))))))
 
-(defn pull-all-since [db db-since pull-pattern entity-query]
-  (let [paths (filter #(> (count %) 1) (pull-pattern->paths pull-pattern))
-        any-matches? (some #(match-path db db-since % entity-query) paths)]
+(defn- x-since [x-with db db-since pull-pattern entity-query]
+  (let [any-matches? (or (nil? db-since)
+                         (->> (pull-pattern->paths pull-pattern)
+                              (filter #(> (count %) 1))
+                              (#(do (debug "matching paths: " (into [] %) "with pull-pattern:" pull-pattern) %))
+                              (some #(match-path db db-since % entity-query))))]
     (if any-matches?
-      (p/pull-many db pull-pattern (p/all-with db entity-query))
-      (p/pull-many db-since pull-pattern (p/all-with db (p/with-db-since entity-query db-since))))))
+      (x-with db entity-query)
+      (x-with db (p/with-db-since entity-query db-since)))))
+
+(defn one-since [db db-since pull-pattern entity-query]
+  (x-since p/one-with db db-since pull-pattern entity-query))
+
+(defn pull-one-since [db db-since pull-pattern entity-query]
+  (some->> (one-since db db-since pull-pattern entity-query)
+       (p/pull db pull-pattern)))
+
+(defn all-since [db db-since pull-pattern entity-query]
+  (x-since p/all-with db db-since pull-pattern entity-query))
+
+(defn pull-all-since [db db-since pull-pattern entity-query]
+  (some->> (all-since db db-since pull-pattern entity-query)
+       (p/pull-many db pull-pattern)))

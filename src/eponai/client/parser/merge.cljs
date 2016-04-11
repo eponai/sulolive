@@ -5,9 +5,11 @@
             [taoensso.timbre :refer-macros [info debug error trace warn]]))
 
 (defn transact [db tx]
-  (let [tx (if (sequential? tx) tx [tx])]
-    (debug "transacting: " tx)
-    (d/db-with db tx)))
+  (if (empty? tx)
+    db
+    (let [tx (if (sequential? tx) tx [tx])]
+      (debug "transacting: " tx)
+      (d/db-with db tx))))
 
 (defn- error-popup-window! [k value]
   ;; when there's an error and it's of text/html content type,
