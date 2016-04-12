@@ -58,3 +58,9 @@
                (assoc-in (c.pull/pull-many db '[{:project/_users [{:transaction/_project [{:transaction/currency [:currency/code]}]}]}]
                                            (c.pull/all-with db user-query))
                          [0 :project/_users 0 :transaction/_project 0 :transaction/currency :currency/code] "XYZ")))))
+
+;; Test this
+(comment (deftest path->query
+   (are [path query]
+     (is (= (s.pull/path->query path '?e) query))
+     [:foo] {:where '[[]]})))

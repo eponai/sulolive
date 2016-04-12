@@ -73,6 +73,8 @@
     (debug "Found new currencies: " new-currencies)
     new-currencies))
 
+;; Generate tests for this?
+;; Something with (get-in paths) or something.
 (defn pull-pattern->paths
   ([pattern] (pull-pattern->paths pattern []))
   ([pattern prev]
@@ -93,24 +95,43 @@
                  pattern))
      :else nil)))
 
-(defn path->query [[p :as path] sym]
-  (let [next-sym (gensym (str "?" (name p) "_"))
-        query (cond-> {:where (if (= \_ (first (name p)))
-                                (let [k (keyword (namespace p) (subs (name p) 1))]
-                                  [[next-sym k sym]])
-                                [[sym p next-sym]])}
-                      (seq (rest path))
-                      (p/merge-query (path->query (rest path) next-sym)))]
-    {:query query :last-symbol sym}))
+(defn sym-fn-seq
+  "Generates an infinite seq of fn(keyword)->symbol.
+  Using this instead of a direct call to gensym for testability."
+  []
+  (lazy-seq
+    (let [sym (gensym)]
+      (cons (fn [k] (symbol (str "?" (name k) "_" sym)))
+           (sym-fn-seq)))))
 
+(defn path->query
+  ([[p :as path] sym sym-fns]
+   (let [next-sym ((first sym-fns) p)
+         query (cond-> {:where (if (= \_ (first (name p)))
+                                 (let [k (keyword (namespace p) (subs (name p) 1))]
+                                   [[next-sym k sym]])
+                                 [[sym p next-sym]])}
+                       (seq (rest path))
+                       (p/merge-query (path->query (rest path) next-sym (rest sym-fns))))]
+     query)))
+
+;; Test this function too?
 (defn match-path [db db-since path entity-query]
   (let [datoms (d/datoms db-since :aevt (last path))]
     (when (seq datoms)
-      (debug "Might match path: " path "for entity-query: " entity-query " datoms: " (into [] datoms))
-      (let [{:keys [query last-symbol]} (path->query path '?e)]
+      (let [sym-fns (sym-fn-seq)
+            ;; Wrap this let into a testable function?
+            query (path->query path '?e sym-fns)
+            p (last path)
+            last-symbol (if (= \_ (first (name p)))
+                          ;; Test the edge cases of this (dec ...) and (dec (dec ...))
+                          ((nth sym-fns (dec (count path))) (last path))
+                          ((nth sym-fns (dec (dec (count path)))) (last path)))]
+        (debug "query: " query " last-symbol: " last-symbol)
         (p/one-with db (-> entity-query
-                           (p/merge-query (assoc query :symbols {'[last-symbol ...] (mapv #(.e %) datoms)}))))))))
+                           (p/merge-query (assoc query :symbols {[last-symbol '...] (map #(.e %) datoms)}))))))))
 
+;; Testable?
 (defn- x-since [x-with db db-since pull-pattern entity-query]
   (let [any-matches? (or (nil? db-since)
                          (->> (pull-pattern->paths pull-pattern)

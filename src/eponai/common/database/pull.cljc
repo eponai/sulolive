@@ -67,7 +67,7 @@
                       symbols))
    :where where-clauses})
 
-(defn- x-with [db {:keys [find-pattern where symbols]}]
+(defn- x-with [db {:keys [find-pattern where symbols] :as entity-query}]
   {:pre [(db-instance? db)
          (or (vector? where) (seq? where))
          (or (nil? symbols) (map? symbols))]}
@@ -75,7 +75,7 @@
         query (where->query where
                             find-pattern
                             (map first symbol-seq))]
-    (trace "query:" query)
+    (trace "query: " entity-query)
     (apply q query
        db
        (map second symbol-seq))))
