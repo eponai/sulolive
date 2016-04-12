@@ -5,7 +5,7 @@
     [eponai.common.format :as format]
     [eponai.common.parser :as parser]
     [eponai.common.datascript :as common.datascript]
-    [eponai.client.testdata :as testdata]
+    [eponai.common.testdata :as testdata]
     [eponai.common.database.transact :as transact]
     [taoensso.timbre :refer-macros [debug]]
     [eponai.common.database.pull :as p]))

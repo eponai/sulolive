@@ -147,26 +147,6 @@
            (merge-query {:where [since-clause]
                          :symbols {'$since db-since}}))))
 
-(defn one-since [db db-since query]
-  (one-with db (with-db-since query db-since)))
-
-(defn pull-one-since [db db-since pull-query entity-query]
-  {:pre [(db-instance? db)
-         (or (nil? db-since) (db-instance? db-since))
-         (vector? pull-query)
-         (map? entity-query)]}
-  (some->> (one-since db db-since entity-query)
-           (pull db pull-query)))
-
-(defn pull-all-since [db db-since pull-query entity-query]
-  {:pre [(db-instance? db)
-         (or (nil? db-since) (db-instance? db-since))
-         (vector? pull-query)
-         (map? entity-query)]}
-  (some->> (with-db-since entity-query db-since)
-           (all-with db)
-           (pull-many db pull-query)))
-
 (defn min-by [db k params]
   (some->> params
            (all-with db)

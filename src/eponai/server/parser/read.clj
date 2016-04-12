@@ -56,17 +56,18 @@
               (min-by db :project/created-at project-with-auth))]
     {:value (when project-eid
               (let [t-p-query (server.pull/transaction-query)
-                    t-e-query{:where   '[[(= ?project ?project-eid)]
-                                [?project :project/uuid]
-                                [?e :transaction/project ?project]]
-                     :symbols {'?project-eid project-eid}}
+                    t-e-query {:where   '[[?e :transaction/project ?project]]
+                               :symbols {'?project project-eid}}
+                    dashboard-entity-q (-> {:where   '[[?e :dashboard/project ?p]
+                                                       [?p :project/users ?u]]
+                                            :symbols {'?p project-eid}}
+                                           (common.pull/with-auth user-uuid))
                     updated-transactions? (server.pull/one-since db db-since t-p-query t-e-query)
-                    dashboard (server.pull/pull-one-since db db-since query (-> {:where   '[[?e :dashboard/project ?p]
-                                                                                            [?p :project/users ?u]]
-                                                                                 :symbols {'?p project-eid}}
-                                                                                (common.pull/with-auth user-uuid)))]
+                    new-widgets? (server.pull/one-since db db-since [{:widget/_dashboard [:widget/uuid]}]
+                                                        dashboard-entity-q)
+                    dashboard (server.pull/pull-one-since db db-since query dashboard-entity-q)]
                 (cond-> dashboard
-                        updated-transactions?
+                        (or updated-transactions? new-widgets?)
                         (update :widget/_dashboard #(server.pull/widgets-with-data env project-eid %)))))}))
 
 (defmethod read :query/all-projects
