@@ -95,49 +95,58 @@
                  pattern))
      :else nil)))
 
-(defn sym-fn-seq
-  "Generates an infinite seq of fn(keyword)->symbol.
-  Using this instead of a direct call to gensym for testability."
-  []
-  (lazy-seq
-    (let [sym (gensym)]
-      (cons (fn [k] (symbol (str "?" (name k) "_" sym)))
-           (sym-fn-seq)))))
+(defn sym-seq
+  "Generates symbols. Is passed around for testability."
+  [path]
+  (map #(gensym (str "?" (name %) "_")) path))
 
-(defn path->query
-  ([[p :as path] sym sym-fns]
-   (let [next-sym ((first sym-fns) p)
-         query (cond-> {:where (if (= \_ (first (name p)))
-                                 (let [k (keyword (namespace p) (subs (name p) 1))]
-                                   [[next-sym k sym]])
-                                 [[sym p next-sym]])}
-                       (seq (rest path))
-                       (p/merge-query (path->query (rest path) next-sym (rest sym-fns))))]
-     query)))
+(defn reverse-lookup-attr? [attr]
+  {:pre [(keyword? attr)]}
+  (= \_ (first (name attr))))
+
+(defn normalize-attribute [attr]
+  (if (reverse-lookup-attr? attr)
+    (keyword (namespace attr) (subs (name attr) 1))
+    attr))
+
+(defn- path->where-clause
+  [attr [sym next-sym]]
+  (let [k (normalize-attribute attr)]
+    (if (reverse-lookup-attr? attr)
+      [next-sym k sym]
+      [sym k next-sym])))
+
+(defn query-matching-new-datoms-with-path [path eids path-symbols]
+  {:pre [(> (count path) 1)]}
+  (let [where-clauses (mapv path->where-clause
+                            path
+                            (partition 2 1 (cons '?e path-symbols)))
+        eid-symbol (nth path-symbols (dec (dec (count path))))]
+    {:where where-clauses
+     :symbols {[eid-symbol '...] eids}}))
 
 ;; Test this function too?
-(defn match-path [db db-since path entity-query]
-  (let [datoms (d/datoms db-since :aevt (last path))]
+(defn any-changed-entities-in-pull-pattern?
+  "Given paths through the pull pattern (paths of refs in the pull pattern (think
+  all nested maps))), check if there's an entity which matches the entity-query
+  that can follow a path (via refs) which hits an entity that's changed in db-since.
+
+  Basically: Are there any entities changed in db-since in the pull pattern of the entity-query."
+  [db db-since path entity-query]
+  {:pre [#(> (count path) 1)]}
+  (let [attr (last path)
+        datom->eid (if (reverse-lookup-attr? attr) #(.v %) #(.e %))
+        datoms (d/datoms db-since :aevt (normalize-attribute attr))]
     (when (seq datoms)
-      (let [sym-fns (sym-fn-seq)
-            ;; Wrap this let into a testable function?
-            query (path->query path '?e sym-fns)
-            p (last path)
-            last-symbol (if (= \_ (first (name p)))
-                          ;; Test the edge cases of this (dec ...) and (dec (dec ...))
-                          ((nth sym-fns (dec (count path))) (last path))
-                          ((nth sym-fns (dec (dec (count path)))) (last path)))]
-        (debug "query: " query " last-symbol: " last-symbol)
-        (p/one-with db (-> entity-query
-                           (p/merge-query (assoc query :symbols {[last-symbol '...] (map #(.e %) datoms)}))))))))
+      (p/one-with db (p/merge-query entity-query
+                                    (query-matching-new-datoms-with-path path (map datom->eid datoms) (sym-seq path)))))))
 
 ;; Testable?
 (defn- x-since [x-with db db-since pull-pattern entity-query]
   (let [any-matches? (or (nil? db-since)
-                         (->> (pull-pattern->paths pull-pattern)
-                              (filter #(> (count %) 1))
-                              (#(do (debug "matching paths: " (into [] %) "with pull-pattern:" pull-pattern) %))
-                              (some #(match-path db db-since % entity-query))))]
+                         (first (sequence (comp (filter #(> (count %) 1))
+                                                (filter #(any-changed-entities-in-pull-pattern? db db-since % entity-query)))
+                                          (pull-pattern->paths pull-pattern))))]
     (if any-matches?
       (x-with db entity-query)
       (x-with db (p/with-db-since entity-query db-since)))))

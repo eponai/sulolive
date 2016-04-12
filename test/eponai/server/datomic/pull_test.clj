@@ -59,8 +59,18 @@
                                            (c.pull/all-with db user-query))
                          [0 :project/_users 0 :transaction/_project 0 :transaction/currency :currency/code] "XYZ")))))
 
-;; Test this
-(comment (deftest path->query
-   (are [path query]
-     (is (= (s.pull/path->query path '?e) query))
-     [:foo] {:where '[[]]})))
+(deftest query-matching-new-datoms-with-path
+  (let [datoms []]
+    (let [path [:transaction/tags :tag/name]
+          symbols (s.pull/sym-seq path)
+          query {:where   [['?e :transaction/tags (first symbols)]
+                           [(first symbols) :tag/name (second symbols)]]
+                 :symbols {[(first symbols) '...] datoms}}]
+      (is (= (s.pull/query-matching-new-datoms-with-path path datoms symbols) query)))
+
+    (let [path [:project/_users :transaction/_project]
+          symbols (s.pull/sym-seq path)
+          query {:where   [[(first symbols) :project/users '?e]
+                           [(second symbols) :transaction/project (first symbols)]]
+                 :symbols {[(first symbols) '...] datoms}}]
+      (is (= (s.pull/query-matching-new-datoms-with-path path datoms symbols) query)))))
