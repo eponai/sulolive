@@ -159,21 +159,27 @@
       (cons (f (first coll))
             (unchunked-map f (rest coll))))))
 
+(defn concat-distinct [coll colls]
+  (let [distinct! ((distinct) conj!)
+        unique-first (reduce distinct! (transient []) coll)]
+    (persistent! (reduce (fn [all coll] (reduce distinct! all coll))
+                         unique-first
+                         colls))))
+
 ;; Testable?
-(defn- x-since [db db-since pull-pattern entity-query {:keys [x-with eids-fn map-f]}]
+(defn- x-since [db db-since pull-pattern entity-query {:keys [x-with map-f combine]}]
   (if (nil? db-since)
     (x-with db entity-query)
-    (let [eids (->> (pull-pattern->paths pull-pattern)
-                    (filter #(> (count %) 1))
-                    (map-f #(x-changed-entities-in-pull-pattern x-with db db-since % entity-query)))]
-      (if (seq eids)
-        (eids-fn eids)
-        (x-with db (p/with-db-since entity-query db-since))))))
+    (combine (x-with db (p/with-db-since entity-query db-since))
+             (->> (pull-pattern->paths pull-pattern)
+                  (filter #(> (count %) 1))
+                  (map-f #(x-changed-entities-in-pull-pattern x-with db db-since % entity-query))))))
 
 (defn one-since [db db-since pull-pattern entity-query]
   (x-since db db-since pull-pattern entity-query {:x-with  p/one-with
-                                                  :eids-fn first
-                                                  :map-f   unchunked-map}))
+                                                  :map-f   unchunked-map
+                                                  :combine (fn [entity-eid pull-eids]
+                                                             (or entity-eid (first pull-eids)))}))
 
 (defn pull-one-since [db db-since pull-pattern entity-query]
   (some->> (one-since db db-since pull-pattern entity-query)
@@ -182,7 +188,8 @@
 (defn all-since [db db-since pull-pattern entity-query]
   (x-since db db-since pull-pattern entity-query
            {:x-with  p/all-with
-            :eids-fn #(into [] (comp (mapcat identity) (distinct)) %)
+            :combine (fn [entity-eids pull-eidss]
+                       (concat-distinct entity-eids pull-eidss))
             :map-f   map}))
 
 (defn pull-all-since [db db-since pull-pattern entity-query]

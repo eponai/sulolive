@@ -15,12 +15,21 @@
                  project-uuid (d/squuid)
                  db (d/db (util/setup-db-with-user! [{:user user :project-uuid project-uuid}]))
                  t-entity (->> (d/q '{:find [?e .] :where [[?e :transaction/uuid]
-                                                           [?e :transaction/tags ?t]]} db)
+                                                              [?e :transaction/tags ?t]]} db)
                                (c.pull/pull db '[{:transaction/tags [*]} :db/id *]))
                  user-entity (d/entity db (d/q {:find '[?e .] :where [['?e :user/email user]]} db))
                  transaction-query {:where [['?e :transaction/uuid (:transaction/uuid t-entity)]]}
                  user-query {:where '[[?e :user/uuid ?user-uuid]]
                              :symbols {'?user-uuid (:user/uuid user-entity)}}
+
+                 project-1 (f/project (:db/id user-entity) {:project/name "PROJECT-1"})
+                 project-2 (f/project (:db/id user-entity) {:project/name "PROJECT-2"})
+                 project-2-transaction (assoc t-entity :db/id (d/tempid :db.part/user)
+                                                       :transaction/uuid (d/squuid))
+                 db (:db-after (d/with db [project-1
+                                           (assoc project-2 :db/id (d/tempid :db.part/user -1))
+                                           (assoc project-2-transaction :transaction/project (d/tempid :db.part/user -1))]))
+
                  basis-t (d/basis-t db)]
              (are [txs pull-pattern entity-query res]
                (= (let [db (cond-> db (seq txs) (-> (d/with txs) :db-after))
@@ -30,6 +39,20 @@
                [] [:db/id] transaction-query []
                [] [:transaction/title] transaction-query []
                [] [{:transaction/tags [:db/id]}] transaction-query []
+
+               ;; Change two projects. One which has a pull-pattern entity change and
+               ;; another which has a project change. Get both.
+               [{:db/id        (d/tempid :db.part/user)
+                 :project/uuid (:project/uuid project-1) :project/name "NEW_PROJECT_NAME"}
+                {:db/id            (d/tempid :db.part/user)
+                 :transaction/uuid (:transaction/uuid project-2-transaction)
+                 :transaction/title "NEW_TRANSACTION_NAME"}]
+               [:project/name {:transaction/_project [:transaction/title]}]
+               {:where   '[[?e :project/uuid ?project-uuid]]
+                :symbols {'[?project-uuid ...] [(:project/uuid project-1) (:project/uuid project-2)]}}
+               [{:project/name         "NEW_PROJECT_NAME"}
+                {:project/name         (:project/name project-2)
+                 :transaction/_project [{:transaction/title "NEW_TRANSACTION_NAME"}]}]
 
                ;; Pull tags since
                [{:db/id (:db/id t-entity) :transaction/tags (conj (:transaction/tags t-entity) (f/tag* {:tag/name "foo"}))}]
