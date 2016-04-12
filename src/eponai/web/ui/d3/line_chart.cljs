@@ -27,6 +27,7 @@
                    (scale x-scale)
                    (orient "bottom")
                    (ticks (max (/ width 150) 2))
+                   (tickSize (* -1 height) 0 0)
                    (tickFormat #((.. js/d3
                                      -time
                                      (format "%b %Y"))
@@ -36,6 +37,7 @@
                    (scale y-scale)
                    (orient "left")
                    (ticks (max (/ height 50) 2))
+                   (tickSize (* -1 width) 0 0)
                    (tickFormat (.. js/d3
                                    (format ",.2f"))))
        :x-scale x-scale
@@ -56,6 +58,7 @@
           color-scale (.. js/d3 -scale category20)
           graph (.. svg
                     (append "g")
+                    (attr "class" "line-chart")
                     (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))]
 
       (.. graph
@@ -118,6 +121,7 @@
 
         (.. svg
             (selectAll ".y.axis")
+            (attr "transform" "translate(50, 0)")
             transition
             (duration 250)
             (call y-axis)))))
@@ -146,7 +150,7 @@
           remove)))
 
   (initLocalState [_]
-    {:margin {:top 10 :bottom 30 :left 40 :right 10}})
+    {:margin {:top 0 :bottom 20 :left 0 :right 0}})
   (componentDidMount [this]
     (d3/create-chart this))
 

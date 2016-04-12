@@ -1,7 +1,13 @@
 (ns eponai.common.report
   (:require
+
     #?(:clj [taoensso.timbre :refer [debug]]
-       :cljs [taoensso.timbre :refer-macros [debug]])))
+       :cljs [taoensso.timbre :refer-macros [debug]])
+    #?(:clj [clj-time.coerce :as c]
+       :cljs [cljs-time.coerce :as c])
+    #?(:clj [clj-time.core :as t]
+       :cljs [cljs-time.core :as t]))
+  )
 
 (defn converted-amount [{:keys [transaction/conversion
                                 transaction/amount]}]
@@ -134,18 +140,33 @@
 (defn goal [g transactions]
   (debug "transactions: " transactions)
   (debug "Generate goal: " g)
-  (let [{:keys [goal/value]} g]
+  (let [{:keys [goal/value
+                goal/cycle]} g
+        {:keys [cycle/start]} cycle
+        txs-by-timestamp (group-by #(:date/timestamp (:transaction/date %)) transactions)
+        today (c/to-long (t/today))
+        today-transactions (or (get txs-by-timestamp today) [])]
+    (debug "Goal: Transactions: " txs-by-timestamp)
+    (debug "Goal today: " today)
+    (debug "Goal: Got transactions for today: " today-transactions)
 
-    (let [sum-by-day (sum :transaction/date {} transactions)]
-      (debug "Sum for goal: " sum-by-day)
-      (map (fn [data-point]
-             (debug "Using data-point " data-point)
-             (assoc data-point :max value))
-           sum-by-day))
-    ))
+    {:name today
+     :value (reduce (fn [s tx]
+                      (+ s (converted-amount tx)))
+                    0
+                    today-transactions)
+     :max value}
+    ;(let [sum-by-day (sum :transaction/date {} transactions)]
+    ;  (debug "Sum for goal: " sum-by-day)
+    ;  (map (fn [data-point]
+    ;         (debug "Using data-point " data-point)
+    ;         (assoc data-point :max value))
+    ;       sum-by-day))
+    )
+  )
 
 (defn generate-data [report data-filter transactions]
-  ;(debug "Generate data: " report)
+  (debug "Generate data goal: " report)
   ;(debug "generate for Transactions: " transactions)
   (cond
     (some? (:report/track report))
@@ -159,5 +180,5 @@
     (some? (:report/goal report))
     (let [g (:report/goal report)
           ret (goal g transactions)]
-      ;(debug "Generated goal data: " ret)
+      (debug "Generated goal data: " ret)
       ret)))

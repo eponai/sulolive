@@ -125,7 +125,7 @@
             (opts {:type        "number"
                    :placeholder "0.00"
                    :min         "0"
-                   :value       amount
+                   :value       (or amount "")
                    :on-change   (utils/on-change-in this [:input-transaction :transaction/amount])})]
 
            [:select.input-group-field
@@ -144,7 +144,7 @@
           [:input
            {:on-change (utils/on-change-in this [:input-transaction :transaction/title])
             :type      "text"
-            :value     title}]
+            :value     (or title "")}]
 
           [:label
            "Date:"]

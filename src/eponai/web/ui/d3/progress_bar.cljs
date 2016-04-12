@@ -16,33 +16,37 @@
           {:keys [margin]} (om/get-state this)
           {inner-height :height
            inner-width :width} (d3/svg-dimensions svg {:margin margin})
-          js-first-data (clj->js (assoc (first data) :endAngle 0))
+          js-data (clj->js (assoc data :endAngle 0))
+          _ (debug "Progress bar goal got data: " data)
+          path-width (/ (min inner-width inner-height) 7)
+          ;js-first-data (last js-data)
           graph (.. svg
                     (append "g")
                     (attr "transform" (str "translate(" (/ inner-width 2) "," (/ inner-height 2) ")")))
           meter (.. graph
                     (append "g")
-                    (attr "class" "season-progress"))
+                    (attr "class" "circle-progress"))
           arc (.. js/d3
                   -svg
                   arc
-                  (innerRadius (- (/ inner-height 2) 50))
-                  (outerRadius (/ inner-height 2))
+                  (innerRadius (- (/ (min inner-width inner-height) 2) path-width))
+                  (outerRadius (/ (min inner-width inner-height) 2))
                   (startAngle 0))
           text-element (.. meter
                            (selectAll ".txt")
-                           (data #js [js-first-data]))]
+                           (data #js [js-data]))]
       (.. meter
           (append "path")
+          (attr "class" "background")
           (datum #js {:endAngle (* 2 js/Math.PI)})
           (style "fill" "#ddd")
           (attr "d" arc))
 
       (.. meter
           (append "path")
-          (datum js-first-data)
-          (style "fill" "orange")
           (attr "class" "foreground")
+          (datum js-data)
+          (style "fill" "orange")
           (attr "d" arc)
           transition
           (duration 500)
@@ -65,23 +69,65 @@
       (.. text-element
           transition
           (duration 500)
-          (tween "text" (fn [d]
-                          (debug "Progress data text: ")
-                          (this-as jthis
-                            (let [value (.-value d)
-                                  i (.. js/d3
-                                        (interpolate (.-textContent jthis) value))
-                                  prec (.split (str value) ".")
-                                  round (if (> (.-length prec) 1)
-                                          (.pow js/Math 10 (.-length (get prec 1)))
-                                          1)]
-                              (fn [t]
-                                (set! (.-textContent jthis) (gstring/format "%.2f" (/ (.round js/Math (* (i t) round)) round)))))))))
+          (text (fn [d] ((.. js/d3
+                             -time
+                             (format "%d %b %y"))
+                          (js/Date. (.-name d)))))
+          ;(tween "text" (fn [d]
+          ;                (debug "Progress data text: ")
+          ;                (this-as jthis
+          ;                  (let [value (.-value d)
+          ;                        i (.. js/d3
+          ;                              (interpolate (.-textContent jthis) value))
+          ;                        prec (.split (str value) ".")
+          ;                        round (if (> (.-length prec) 1)
+          ;                                (.pow js/Math 10 (.-length (get prec 1)))
+          ;                                1)]
+          ;                    (fn [t]
+          ;
+          ;                      (set! (.-textContent jthis) (gstring/format "%.2f" (/ (.round js/Math (* (i t) round)) round)))))))
+          ;       )
+          )
 
-      (om/update-state! this assoc :svg svg :graph graph)))
+      (d3/update-on-resize this id)
+      (om/update-state! this assoc :svg svg :graph graph :meter meter :arc arc :js-data js-data)))
+
+  (update [this]
+    (let [{:keys [svg meter arc js-data margin graph]} (om/get-state this)
+          {inner-width :width
+           inner-height :height} (d3/svg-dimensions svg {:margin margin})
+          ;js-first-data (last js-data)
+          path-width (/ (min inner-width inner-height) 7)]
+      ;(debug "Progress meter update: " js-first-data)
+      (when-not (or (js/isNaN inner-height) (js/isNaN inner-width))
+        (.. graph
+            (attr "transform" (str "translate(" (/ inner-width 2) "," (/ inner-height 2) ")")))
+
+        (.. arc
+            (innerRadius (- (/ (min inner-width inner-height) 2) path-width))
+            (outerRadius (/ (min inner-width inner-height) 2)))
+        ;(.. meter
+        ;    (selectAll ".foreground")
+        ;    ;(datum js-first-data)
+        ;    transition
+        ;    (duration 250)
+        ;    (attr "d" arc))
+        (.. meter
+            (selectAll ".foreground")
+            (attr "d" arc))
+        (.. meter
+            (selectAll ".background")
+            (attr "d" arc))
+        )))
 
   (componentDidMount [this]
     (d3/create-chart this))
+
+  (componentDidUpdate [this _ _]
+    (d3/update-chart this))
+
+  (componentWillReceiveProps [this next-props]
+    (d3/update-chart-data this next-props))
 
   (render [this]
     (let [{:keys [id]} (om/props this)]

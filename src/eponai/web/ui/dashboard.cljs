@@ -166,7 +166,8 @@
                            #js {:className        (if is-editing? "layout animate" "layout"),
                                 :draggableHandle  ".widget-move"
                                 :layouts          layout
-                                :rowHeight        100,
+                                :rowHeight        100
+                                :margin           #js [20 20]
                                 :cols             (clj->js cols)
                                 :useCSSTransforms true
                                 :isDraggable      true

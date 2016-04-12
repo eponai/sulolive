@@ -22,7 +22,8 @@
                                          (max domain (fn [d] (.-value d))))]))]
       {:x-axis (.. js/d3 -svg axis
                    (scale x-scale)
-                   (orient "bottom"))
+                   (orient "bottom")
+                   (tickSize (* -1 height) 0 0))
 
        :y-axis (.. js/d3 -svg axis
                    (scale y-scale)
@@ -79,14 +80,14 @@
             (d3/no-data-insert svg)
             (.. x-scale
                 (rangeRoundBands #js [0 inner-width] 0.1)
-                (domain #js ["" " "]))
+                (domain #js []))
             (.. y-scale
                 (range #js [inner-height 0])
                 (domain #js [0 1])))
           (do
             (d3/no-data-remove svg)
             (.. x-scale
-                (rangeRoundBands #js [0 inner-width] 0.1)
+                (rangeRoundBands #js [0 inner-width] 0.01)
                 (domain (.map js-domain (fn [d] (.-name d)))))
             (.. y-scale
                 (range #js [inner-height 0])
@@ -127,16 +128,16 @@
                   (append "rect")
                   (attr "class" "bar")
                   (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))
-                  (style "fill" (fn [d] (color-scale (.-name d))))
                   (attr "y" inner-height)
                   (attr "height" 0))
 
               (.. bars
+                  (style "fill" (fn [d] (color-scale (.-name d))))
                   transition
                   (duration 250)
                   (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))
                   (attr "width" (.. x-scale rangeBand))
-                  (attr "y" (fn [d] (+ 3 (y-scale (.-value d)))))
+                  (attr "y" (fn [d] (y-scale (.-value d))))
                   (attr "height" (fn [d] (- inner-height (y-scale (.-value d))))))
 
               (.. bars
@@ -154,6 +155,7 @@
                   (duration 250)
                   (attr "x" (fn [d] (+ (x-scale (.-name d)) (/ (.. x-scale rangeBand) 2))))
                   (attr "y" (fn [d] (y-scale (.-value d))))
+                  (attr "dy" "-0.3em")
                   (text (fn [d] (gstring/format "%.2f" (.-value d)))))
 
               (.. texts
@@ -164,7 +166,7 @@
           js-data))))
 
   (initLocalState [_]
-    {:margin {:top 10 :bottom 30 :left 40 :right 10}})
+    {:margin {:top 20 :bottom 20 :left 0 :right 0}})
 
   (componentDidMount [this]
     (d3/create-chart this))

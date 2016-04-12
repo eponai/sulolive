@@ -27,6 +27,7 @@
                    (scale x-scale)
                    (orient "bottom")
                    (ticks (max (/ width 150) 2))
+                   (tickSize (* -1 height) 0 0)
                    (tickFormat #((.. js/d3
                                      -time
                                      (format "%b %Y"))
@@ -36,6 +37,7 @@
                    (scale y-scale)
                    (orient "left")
                    (ticks (max (/ height 50) 2))
+                   (tickSize (* -1 width) 0 0)
                    (tickFormat (.. js/d3
                                    (format ",.2f"))))
        :x-scale x-scale
@@ -76,7 +78,7 @@
       (.. graph
           (append "g")
           (attr "class" "y axis grid")
-          (attr "transform" (str "translate(0,0)"))
+          (attr "transform" (str "translate(50,0)"))
           (call y-axis))
 
       (d3/update-on-resize this id)
@@ -168,7 +170,7 @@
           remove)))
 
   (initLocalState [_]
-    {:margin {:top 10 :bottom 30 :left 40 :right 10}})
+    {:margin {:top 0 :bottom 20 :left 0 :right 0}})
   (componentDidMount [this]
     (d3/create-chart this))
 
