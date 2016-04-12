@@ -22,9 +22,8 @@
   (trace "no response-handler for key:" k)
   (cond
     (= "proxy" (namespace k)) :call
-    (keyword? k) (do
-                   (debug "Handling k: "k " v: " v " by returning: " :dissoc)
-                   (when (empty-coll? v) :dissoc))
+    ;; Check for empty responses
+    (keyword? k) (when (empty-coll? v) :dissoc)
 
     :else nil))
 
