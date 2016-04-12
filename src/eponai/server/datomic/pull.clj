@@ -125,42 +125,66 @@
     {:where where-clauses
      :symbols {[eid-symbol '...] eids}}))
 
-;; Test this function too?
-(defn any-changed-entities-in-pull-pattern?
+(defn x-changed-entities-in-pull-pattern [x-with db db-since path entity-query]
   "Given paths through the pull pattern (paths of refs in the pull pattern (think
-  all nested maps))), check if there's an entity which matches the entity-query
-  that can follow a path (via refs) which hits an entity that's changed in db-since.
+   all nested maps))), check if there's an entity which matches the entity-query
+   that can follow a path (via refs) which hits an entity that's changed in db-since.
 
-  Basically: Are there any entities changed in db-since in the pull pattern of the entity-query."
-  [db db-since path entity-query]
+   Basically: Are there any entities changed in db-since in the pull pattern of the entity-query."
   {:pre [#(> (count path) 1)]}
   (let [attr (last path)
         datom->eid (if (reverse-lookup-attr? attr) #(.v %) #(.e %))
         datoms (d/datoms db-since :aevt (normalize-attribute attr))]
     (when (seq datoms)
-      (p/one-with db (p/merge-query entity-query
+      (x-with db (p/merge-query entity-query
                                     (query-matching-new-datoms-with-path path (map datom->eid datoms) (sym-seq path)))))))
 
+(defn unchunked-map
+  "This version of map will only return 1 at a time.
+
+  For performance reasons, we may only want to do some operations as
+  lazy as possible. The normal clojure.core/map chunks the results,
+  calculating 32 items or more each time items need to be produced.
+
+  Test in repl:
+  (defn map-test [map-f]
+    (let [a (map-f #(do (prn %) %) (range 1000))]
+      (seq a)
+      nil))
+  (map-test map)
+  (map-test unchunked-map)"
+  [f coll]
+  (lazy-seq
+    (when (seq coll)
+      (cons (f (first coll))
+            (unchunked-map f (rest coll))))))
+
 ;; Testable?
-(defn- x-since [x-with db db-since pull-pattern entity-query]
-  (let [any-matches? (or (nil? db-since)
-                         (first (sequence (comp (filter #(> (count %) 1))
-                                                (filter #(any-changed-entities-in-pull-pattern? db db-since % entity-query)))
-                                          (pull-pattern->paths pull-pattern))))]
-    (if any-matches?
-      (x-with db entity-query)
-      (x-with db (p/with-db-since entity-query db-since)))))
+(defn- x-since [db db-since pull-pattern entity-query {:keys [x-with eids-fn map-f]}]
+  (if (nil? db-since)
+    (x-with db entity-query)
+    (let [eids (->> (pull-pattern->paths pull-pattern)
+                    (filter #(> (count %) 1))
+                    (map-f #(x-changed-entities-in-pull-pattern x-with db db-since % entity-query)))]
+      (if (seq eids)
+        (eids-fn eids)
+        (x-with db (p/with-db-since entity-query db-since))))))
 
 (defn one-since [db db-since pull-pattern entity-query]
-  (x-since p/one-with db db-since pull-pattern entity-query))
+  (x-since db db-since pull-pattern entity-query {:x-with  p/one-with
+                                                  :eids-fn first
+                                                  :map-f   unchunked-map}))
 
 (defn pull-one-since [db db-since pull-pattern entity-query]
   (some->> (one-since db db-since pull-pattern entity-query)
-       (p/pull db pull-pattern)))
+           (p/pull db pull-pattern)))
 
 (defn all-since [db db-since pull-pattern entity-query]
-  (x-since p/all-with db db-since pull-pattern entity-query))
+  (x-since db db-since pull-pattern entity-query
+           {:x-with  p/all-with
+            :eids-fn #(into [] (comp (mapcat identity) (distinct)) %)
+            :map-f   map}))
 
 (defn pull-all-since [db db-since pull-pattern entity-query]
   (some->> (all-since db db-since pull-pattern entity-query)
-       (p/pull-many db pull-pattern)))
+           (p/pull-many db pull-pattern)))
