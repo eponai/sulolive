@@ -40,21 +40,13 @@
                [] [:transaction/title] transaction-query []
                [] [{:transaction/tags [:db/id]}] transaction-query []
 
-               ;; Change two projects. One which has a pull-pattern entity change and
-               ;; another which has a project change. Get both.
-               [{:db/id        (d/tempid :db.part/user)
-                 :project/uuid (:project/uuid project-1) :project/name "NEW_PROJECT_NAME"}
-                {:db/id            (d/tempid :db.part/user)
-                 :transaction/uuid (:transaction/uuid project-2-transaction)
-                 :transaction/title "NEW_TRANSACTION_NAME"}]
-               [:project/name {:transaction/_project [:transaction/title]}]
-               {:where   '[[?e :project/uuid ?project-uuid]]
-                :symbols {'[?project-uuid ...] [(:project/uuid project-1) (:project/uuid project-2)]}}
-               [{:project/name         "NEW_PROJECT_NAME"}
-                {:project/name         (:project/name project-2)
-                 :transaction/_project [{:transaction/title "NEW_TRANSACTION_NAME"}]}]
+               ;; Updates transaction, gets change
+               [{:db/id (:db/id t-entity) :transaction/title "new title"}]
+               [:transaction/title]
+               transaction-query
+               [{:transaction/title "new title"}]
 
-               ;; Pull tags since
+               ;; New tag entity in db-since and change on a transaction, get changes.
                [{:db/id (:db/id t-entity) :transaction/tags (conj (:transaction/tags t-entity) (f/tag* {:tag/name "foo"}))}]
                [{:transaction/tags [:tag/name]}]
                transaction-query
@@ -74,13 +66,20 @@
                  :transaction/tags    (map #(select-keys % [:tag/name]) (:transaction/tags t-entity))
                  :transaction/project {:project/created-by {:user/currency {:currency/code "XYZ"}}}}]
 
-               ;; reverse lookups
-               [{:db/id (:db/id t-entity) :transaction/currency (f/currency* {:currency/code "XYZ"})}]
-               [{:project/_users [{:transaction/_project [{:transaction/currency [:currency/code]}]}]}]
-               user-query
-               (assoc-in (c.pull/pull-many db '[{:project/_users [{:transaction/_project [{:transaction/currency [:currency/code]}]}]}]
-                                           (c.pull/all-with db user-query))
-                         [0 :project/_users 0 :transaction/_project 0 :transaction/currency :currency/code] "XYZ")))))
+               ;; Change two projects. One which has a pull-pattern entity change and
+               ;; another which has a project change. Get both.
+               ;; Also tests reverse-lookups
+               [{:db/id        (d/tempid :db.part/user)
+                 :project/uuid (:project/uuid project-1) :project/name "NEW_PROJECT_NAME"}
+                {:db/id            (d/tempid :db.part/user)
+                 :transaction/uuid (:transaction/uuid project-2-transaction)
+                 :transaction/title "NEW_TRANSACTION_NAME"}]
+               [:project/name {:transaction/_project [:transaction/title]}]
+               {:where   '[[?e :project/uuid ?project-uuid]]
+                :symbols {'[?project-uuid ...] [(:project/uuid project-1) (:project/uuid project-2)]}}
+               [{:project/name         "NEW_PROJECT_NAME"}
+                {:project/name         (:project/name project-2)
+                 :transaction/_project [{:transaction/title "NEW_TRANSACTION_NAME"}]}]))))
 
 (deftest query-matching-new-datoms-with-path
   (let [datoms []]
