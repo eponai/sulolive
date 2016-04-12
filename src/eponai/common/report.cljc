@@ -23,7 +23,7 @@
 
 (defmethod sum :default
   [k _ transactions]
-  (debug "Generating sum data: " k " " transactions)
+  ;(debug "Generating sum data: " k " " transactions)
   (let [sum-fn (fn [s tx]
                  (+ s (converted-amount tx)))]
     [(reduce sum-fn 0 transactions)]))
@@ -131,12 +131,33 @@
    :id     :track.function.id/mean
    :values (mean group-by data-filter transactions)})
 
+(defn goal [g transactions]
+  (debug "transactions: " transactions)
+  (debug "Generate goal: " g)
+  (let [{:keys [goal/value]} g]
+
+    (let [sum-by-day (sum :transaction/date {} transactions)]
+      (debug "Sum for goal: " sum-by-day)
+      (map (fn [data-point]
+             (debug "Using data-point " data-point)
+             (assoc data-point :max value))
+           sum-by-day))
+    ))
+
 (defn generate-data [report data-filter transactions]
-  (debug "Generate data: " report)
-  (debug "generate for Transactions: " transactions)
-  (let [functions (get-in report [:report/track :track/functions])
-        track-fn (fn [f]
-                         (debug "Make calc: " f " with filter: " data-filter)
-                         (track f data-filter transactions))]
-    (debug "Generated data: " (mapv track-fn functions))
-    (map track-fn functions)))
+  ;(debug "Generate data: " report)
+  ;(debug "generate for Transactions: " transactions)
+  (cond
+    (some? (:report/track report))
+    (let [functions (get-in report [:report/track :track/functions])
+          track-fn (fn [f]
+                     (debug "Make calc: " f " with filter: " data-filter)
+                     (track f data-filter transactions))]
+      ;(debug "Generated data: " (mapv track-fn functions))
+      (map track-fn functions))
+
+    (some? (:report/goal report))
+    (let [g (:report/goal report)
+          ret (goal g transactions)]
+      ;(debug "Generated goal data: " ret)
+      ret)))

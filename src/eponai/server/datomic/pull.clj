@@ -27,16 +27,15 @@
 
 (defn widget-report-query []
   (parser/put-db-id-in-query
-    [:widget/uuid
+    '[:widget/uuid
      :widget/width
      :widget/height
      {:widget/filter [{:filter/include-tags [:tag/name]}]}
      {:widget/report [:report/uuid
-                      {:report/track [{:track/functions [:track.function/uuid
-                                                         :track.function/group-by
-                                                         :track.function/attribute
-                                                         :track.function/id]}
+                      {:report/track [{:track/functions [*]}
                                       {:track/filter [{:filter/include-tags [:tag/name]}]}]}
+                      {:report/goal [*
+                                     {:goal/cycle [*]}]}
                       :report/title]}
      :widget/index
      :widget/data

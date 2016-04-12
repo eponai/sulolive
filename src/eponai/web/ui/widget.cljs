@@ -5,6 +5,7 @@
     [eponai.web.ui.d3.bar-chart :refer [->BarChart]]
     [eponai.web.ui.d3.line-chart :refer [->LineChart]]
     [eponai.web.ui.d3.number-chart :refer [->NumberChart]]
+    [eponai.web.ui.d3.progress-bar :refer [->ProgressBar]]
     [eponai.web.routes :as routes]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
@@ -76,14 +77,16 @@
                  (->LineChart settings)
 
                  (= style :graph.style/progress-bar)
-                 [:div
-                  "Progress: "
-                  [:div.progress
-                   {:aria-valuenow  "50"
-                    :aria-valuemin  "0"
-                    :aria-valuetext "$10"
-                    :aria-valuemax  "100"}
-                   [:div.progress-meter
-                    (opts {:style {:width "50%"}})]]]))]))))
+                 (->ProgressBar settings)
+                 ;[:div
+                 ; "Progress: "
+                 ; [:div.progress
+                 ;  {:aria-valuenow  "50"
+                 ;   :aria-valuemin  "0"
+                 ;   :aria-valuetext "$10"
+                 ;   :aria-valuemax  "100"}
+                 ;  [:div.progress-meter
+                 ;   (opts {:style {:width "50%"}})]]]
+                 ))]))))
 
 (def ->Widget (om/factory Widget))
