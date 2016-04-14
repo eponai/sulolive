@@ -65,9 +65,18 @@
                     updated-transactions? (server.pull/one-since db db-since t-p-query t-e-query)
                     new-widgets? (server.pull/one-since db db-since [{:widget/_dashboard [:widget/uuid]}]
                                                         dashboard-entity-q)
-                    dashboard (server.pull/pull-one-since db db-since query dashboard-entity-q)]
+                    dashboard (if updated-transactions?
+                                ;; There are new transactions, so we have to update all widget's data.
+                                ;; We can make this update incrementally in the future?
+                                ;; Can we maybe just do this on the client?
+                                ;; We'll probably need this for the playground on the client side anyway.
+                                (common.pull/pull db query (common.pull/one-with db dashboard-entity-q))
+                                (server.pull/pull-one-since db db-since query dashboard-entity-q))]
                 (cond-> dashboard
-                        (or updated-transactions? new-widgets?)
+                        ;; When there are widgets and there's either updated-transactions or widgets,
+                        ;; only then should we add data to the widgets.
+                        (and (contains? dashboard :widget/_dashboard)
+                             (or updated-transactions? new-widgets?))
                         (update :widget/_dashboard #(server.pull/widgets-with-data env project-eid %)))))}))
 
 (defmethod read :query/all-projects

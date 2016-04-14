@@ -159,6 +159,15 @@
       (cons (f (first coll))
             (unchunked-map f (rest coll))))))
 
+(defn unchunked-filter
+  [pred coll]
+  (lazy-seq
+    (when (seq coll)
+      (let [f (first coll) r (rest coll)]
+        (if (pred f)
+          (cons f (unchunked-filter pred r))
+          (unchunked-filter pred r))))))
+
 (defn concat-distinct [coll colls]
   (let [distinct! ((distinct) conj!)
         unique-first (reduce distinct! (transient []) coll)]
@@ -167,19 +176,21 @@
                          colls))))
 
 ;; Testable?
-(defn- x-since [db db-since pull-pattern entity-query {:keys [x-with map-f combine]}]
+(defn- x-since [db db-since pull-pattern entity-query {:keys [x-with map-f filter-f combine]}]
   (if (nil? db-since)
     (x-with db entity-query)
     (combine (x-with db (p/with-db-since entity-query db-since))
              (->> (pull-pattern->paths pull-pattern)
                   (filter #(> (count %) 1))
-                  (map-f #(x-changed-entities-in-pull-pattern x-with db db-since % entity-query))))))
+                  (map-f #(x-changed-entities-in-pull-pattern x-with db db-since % entity-query))
+                  (filter-f some?)))))
 
 (defn one-since [db db-since pull-pattern entity-query]
-  (x-since db db-since pull-pattern entity-query {:x-with  p/one-with
-                                                  :map-f   unchunked-map
-                                                  :combine (fn [entity-eid pull-eids]
-                                                             (or entity-eid (first pull-eids)))}))
+  (x-since db db-since pull-pattern entity-query {:x-with   p/one-with
+                                                  :map-f    unchunked-map
+                                                  :filter-f unchunked-filter
+                                                  :combine  (fn [entity-eid pull-eids]
+                                                              (or entity-eid (first pull-eids)))}))
 
 (defn pull-one-since [db db-since pull-pattern entity-query]
   (some->> (one-since db db-since pull-pattern entity-query)
@@ -190,6 +201,7 @@
            {:x-with  p/all-with
             :combine (fn [entity-eids pull-eidss]
                        (concat-distinct entity-eids pull-eidss))
+            :filter-f filter
             :map-f   map}))
 
 (defn pull-all-since [db db-since pull-pattern entity-query]
