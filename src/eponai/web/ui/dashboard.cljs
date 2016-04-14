@@ -40,9 +40,8 @@
               :widget/height new-height}))
          layout)))
 
-(defn calculate-last-index [cols widgets]
-  (let [num-cols (:lg cols)
-        {:keys [widget/index
+(defn calculate-last-index [num-cols widgets]
+  (let [{:keys [widget/index
                 widget/height
                 widget/width]} (last (sort-by :widget/index widgets))]
     (max 0 (+ index (* num-cols (dec height)) (.round js/Math (/ (* width num-cols) 100))))))
@@ -89,7 +88,7 @@
       (when sidebar
         (.removeEventListener sidebar "transitionend" #(.update-layout this)))))
 
-  (layout-changed [this widgets layout]
+  (save-layout [this widgets layout]
     (let [{:keys [cols breakpoint]} (om/get-state this)
           num-cols (get cols breakpoint)
           new-layout (layout->widgets num-cols widgets (js->clj layout))]
@@ -97,34 +96,26 @@
                                              :mutation-uuid (d/squuid)})
                            :query/dashboard])))
 
+  (layout-changed [this widgets layout]
+    (.save-layout this widgets layout))
+
   (edit-start [this]
     (om/update-state! this assoc :is-editing? true))
   (edit-stop [this widgets layout]
-    (let [{:keys [cols breakpoint]} (om/get-state this)
-          num-cols (get cols breakpoint)
-          new-layout (layout->widgets num-cols widgets (js->clj layout))]
-      (om/transact! this `[(dashboard/save ~{:widget-layout new-layout
-                                             :mutation-uuid (d/squuid)})
-                           :query/dashboard])
-      (om/update-state! this assoc :is-editing? false)))
+    (.save-layout this widgets layout)
+    (om/update-state! this assoc :is-editing? false))
 
   (on-breakpoint-change [this breakpoint]
     (om/update-state! this assoc :breakpoint (keyword breakpoint)))
 
   (initLocalState [_]
-    {:cols {:lg 8 :md 4 :sm 2 :xs 1 :xxs 1}
-     :add-widget? false
-     :is-loading? true})
+    {:cols {:lg 4 :md 4 :sm 2 :xs 1 :xxs 1}
+     :breakpoint :lg})
   (render [this]
-    (let [{:keys [query/dashboard
-                  proxy/new-widget]} (om/props this)
+    (let [{:keys [query/dashboard]} (om/props this)
           {:keys [layout
-                  edit?
                   grid-element
-                  edit-widget
-                  add-widget?
                   is-editing?
-                  is-loading?
                   cols]} (om/get-state this)
           widgets (:widget/_dashboard dashboard)
           project-id (:db/id (:dashboard/project dashboard))
@@ -187,30 +178,6 @@
              [:a.link
               {:on-click #(om/update-state! this assoc :add-widget? true)}
               "add a new widget"]
-             "."]])
-
-         ;(when add-widget?
-         ;  (utils/modal {:content  (->NewWidget (om/computed new-widget
-         ;                                                    {:on-close #(om/update-state! this assoc :add-widget? false)
-         ;                                                     :on-save  #(do
-         ;                                                                 (save-widget this %)
-         ;                                                                 (om/update-state! this assoc :add-widget? false))
-         ;                                                     :dashboard dashboard
-         ;                                                     :index (calculate-last-index cols widgets)}))
-         ;                :on-close #(om/update-state! this assoc :add-widget? false)
-         ;                :size "large"}))
-
-         ;(when edit-widget
-         ;  (utils/modal {:content  (->NewWidget (om/computed new-widget
-         ;                                                    {:on-close  #(om/update-state! this assoc :edit-widget nil)
-         ;                                                     :on-save   #(do
-         ;                                                                  (save-widget this %)
-         ;                                                                  (om/update-state! this assoc :edit-widget nil))
-         ;                                                     :on-delete #(.delete-widget this %)
-         ;                                                     :dashboard dashboard
-         ;                                                     :widget    edit-widget}))
-         ;                :on-close #(om/update-state! this assoc :edit-widget nil)
-         ;                :size     "large"}))
-         ]))))
+             "."]])]))))
 
 (def ->Dashboard (om/factory Dashboard))
