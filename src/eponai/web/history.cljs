@@ -3,7 +3,6 @@
             [eponai.client.route-helper :as route-helper]
             [eponai.web.routes :as routes]
             [eponai.web.routes.ui-handlers :as ui-handlers]
-            [eponai.client.ui :refer [update-query-params!]]
             [om.next :as om]
             [pushy.core :as pushy]))
 
@@ -20,6 +19,7 @@
   {:pre [(instance? route-helper/UiComponentMatch ui-handler)]}
   (let [{:keys [component factory]} ui-handler]
     {:url/component component
+     :url/query     (om/get-query component)
      :url/factory   {:value factory}}))
 
 (defn set-page! [reconciler]
@@ -27,10 +27,7 @@
     (let [ui-handler (get ui-handlers/route-handler->ui-component handler)]
       (when route-params
         (route-helper/handle-route-params ui-handler reconciler route-params))
-      (update-query-params! (om/app-root reconciler)
-                            update
-                            merge
-                            (url-query-params ui-handler)))))
+      (om/set-query! (om/app-root reconciler) {:params (url-query-params ui-handler)}))))
 
 (defn init-history [reconciler]
   (when-let [h @history-atom]

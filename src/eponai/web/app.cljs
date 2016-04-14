@@ -24,11 +24,7 @@
 (defui ^:once App
   static om/IQueryParams
   (params [_]
-    (let [{:keys [url/component url/factory]}
-          (history/url-query-params (history/url-handler-form-token))]
-      {:url/component component
-       :url/query (om/get-query component)
-       :url/factory factory}))
+    (history/url-query-params (history/url-handler-form-token)))
   static om/IQuery
   (query [_]
     [:datascript/schema
