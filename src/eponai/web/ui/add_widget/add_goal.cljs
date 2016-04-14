@@ -67,6 +67,6 @@
                                                          (t/in-days (t/interval start (c/from-date %)))))))}))]]
 
           (filter/->TagFilter {:tags filtered-tags}
-                              {:on-change #(om/update-state! this assoc :filtered-tags %)})]))))
+                              {:on-change #(om/update-state! this assoc :filtered-tags %)})]]))))
 
 (def ->NewGoal (om/factory NewGoal))

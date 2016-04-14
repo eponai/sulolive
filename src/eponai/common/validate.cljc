@@ -57,9 +57,27 @@
                                                         '?project-uuid project-uuid}})]
       ;; Verify that that the transaction is added is accessible by the user adding the transaction.
       (do-validate k p #(some? db-project)
-                   {:message "You don't have access to modify the specified project."
-                    :code :project-unaccessible})
+                   {:message      "You don't have access to modify the specified project."
+                    :code         :project-unaccessible
+                    :project-uuid project-uuid
+                    :user-uuid    user-uuid})
       ;; Verify that the collection of tags does not include duplicate tag names.
       (do-validate k p #(= (frequencies (set tags)) (frequencies tags))
                    {:message "Illegal argument :transaction/tags. Each tag must be unique."
-                    :code    :duplicate-tags}))))
+                    :code    :duplicate-tags
+                    :duplicates (filter #(< 1 (val %)) (frequencies tags))}))))
+
+(defmethod validate 'widget/create
+  [{:keys [state]} k {:keys [widget] :as p}]
+  (let [required-fields #{:widget/uuid
+                          :widget/index
+                          :widget/width
+                          :widget/height
+                          :widget/report
+                          :widget/graph}
+        missing-keys (into [] (filter #(nil? (get widget %))) required-fields)]
+    ;; Verify that all required fields are included in the transaction.
+    (do-validate k p #(empty? missing-keys)
+                 {:message      "Required fields are missing."
+                  :code         :missing-required-fields
+                  :missing-keys missing-keys})))
