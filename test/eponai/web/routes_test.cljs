@@ -14,11 +14,11 @@
     :route/project-empty "/project" {}
     :route/project-empty "/project/" {}
     :route/project->dashboard "/project/123/dashboard/" {:route-param/project-id "123"}
-    :route/project->widget+id "/project/123/widget/987"
-    {:route-param/project-id "123" :route-param/widget-id "987"}
+    :route/project->widget+type+id "/project/123/widget/track/987" 
+    {:route-param/project-id "123" :route-param/widget-id "987" :route-param/widget-type "track"}
 
-    :route/project->widget+id "/project/123/widget/new"
-    {:route-param/project-id  "123" :route-param/widget-id "new"}
+    :route/project->widget+type+id "/project/123/widget/track/new"
+    {:route-param/project-id "123" :route-param/widget-id "new" :route-param/widget-type "track"}
 
     ;:route/project->dashboard->widget+mode "/project/123/widget/"
     ;{:route-param/project-id  "123" :route-param/widget-id   "new"}

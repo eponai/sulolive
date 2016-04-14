@@ -25,8 +25,7 @@
                ["/" :route-param/project-id] {end             :route/project
                                               "/dashboard"    dashboard-routes
                                               "/transactions" transaction-routes
-                                              "/widget"       widget-routes
-                                              "/goal"         goal-routes}}})
+                                              "/widget"       widget-routes}}})
 
 (def profile-routes
   {"/profile" {end           :route/profile

@@ -1,23 +1,18 @@
 (ns eponai.web.ui.dashboard
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
-            [eponai.web.ui.add-widget :refer [NewWidget ->NewWidget]]
-            [eponai.web.ui.widget :refer [Widget ->Widget]]
-            [garden.core :refer [css]]
-            [om.next :as om :refer-macros [defui]]
-            [sablono.core :refer-macros [html]]
-            [taoensso.timbre :refer-macros [error debug]]
-            [eponai.web.ui.utils :as utils]
-            [datascript.core :as d]
-            [eponai.web.routes :as routes]))
+  (:require
+    [datascript.core :as d]
+    [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
+    [eponai.web.routes :as routes]
+    [eponai.web.ui.add-widget :refer [NewWidget ->NewWidget]]
+    [eponai.web.ui.widget :refer [Widget ->Widget]]
+    [garden.core :refer [css]]
+    [om.next :as om :refer-macros [defui]]
+    [sablono.core :refer-macros [html]]
+    [taoensso.timbre :refer-macros [error debug]]))
 
-(defmulti grid-layout (fn [k num-cols _]
-                        (if (< 1 num-cols)
-                          :multi-col
-                          :single-col)))
-
-(defmethod grid-layout :multi-col
-  [k num-cols widgets]
+(defn grid-layout
+  [num-cols widgets]
   (let [layout-fn (fn [{:keys [widget/index] :as widget}]
                     {:x (mod index num-cols)
                      :y (int (/ index num-cols))
@@ -26,25 +21,14 @@
                      :i (str (:widget/uuid widget))})]
     (map layout-fn widgets)))
 
-(defmethod grid-layout :single-col
-  [k num-cols widgets]
-  (let [layout-fn (fn [{:keys [widget/index] :as widget}]
-                    {:x 0
-                     :y index
-                     :w 1
-                     :h (:widget/height widget)
-                     :i (str (:widget/uuid widget))})]
-    (map layout-fn widgets)))
-
 (defn widgets->layout [cols widgets]
-  (reduce (fn [m [k v]]
-            (assoc m k (grid-layout k v widgets)))
+  (reduce (fn [m [breakpoint num-cols]]
+            (assoc m breakpoint (grid-layout num-cols widgets)))
           {}
           cols))
 
-(defn layout->widgets [cols widgets layout]
-  (let [num-cols (:lg cols)
-        grouped (group-by :widget/uuid widgets)]
+(defn layout->widgets [num-cols widgets layout]
+  (let [grouped (group-by :widget/uuid widgets)]
     (map (fn [item]
            (let [widget (first (get grouped (uuid (get item "i"))))
                  new-width (int (* 100 (/ (get item "w") num-cols)))
@@ -106,8 +90,9 @@
         (.removeEventListener sidebar "transitionend" #(.update-layout this)))))
 
   (layout-changed [this widgets layout]
-    (let [{:keys [cols]} (om/get-state this)
-          new-layout (layout->widgets cols widgets (js->clj layout))]
+    (let [{:keys [cols breakpoint]} (om/get-state this)
+          num-cols (get cols breakpoint)
+          new-layout (layout->widgets num-cols widgets (js->clj layout))]
       (om/transact! this `[(dashboard/save ~{:widget-layout new-layout
                                              :mutation-uuid (d/squuid)})
                            :query/dashboard])))
@@ -115,12 +100,16 @@
   (edit-start [this]
     (om/update-state! this assoc :is-editing? true))
   (edit-stop [this widgets layout]
-    (let [{:keys [cols]} (om/get-state this)
-          new-layout (layout->widgets cols widgets (js->clj layout))]
+    (let [{:keys [cols breakpoint]} (om/get-state this)
+          num-cols (get cols breakpoint)
+          new-layout (layout->widgets num-cols widgets (js->clj layout))]
       (om/transact! this `[(dashboard/save ~{:widget-layout new-layout
                                              :mutation-uuid (d/squuid)})
                            :query/dashboard])
       (om/update-state! this assoc :is-editing? false)))
+
+  (on-breakpoint-change [this breakpoint]
+    (om/update-state! this assoc :breakpoint (keyword breakpoint)))
 
   (initLocalState [_]
     {:cols {:lg 8 :md 4 :sm 2 :xs 1 :xxs 1}
@@ -172,6 +161,7 @@
                                 :useCSSTransforms true
                                 :isDraggable      true
                                 :isResizable      true
+                                :onBreakpointChange #(.on-breakpoint-change this %)
                                 :onResizeStart    #(.edit-start this)
                                 :onResizeStop     #(.edit-stop this widgets %)
                                 :onDragStart      #(.edit-start this)
