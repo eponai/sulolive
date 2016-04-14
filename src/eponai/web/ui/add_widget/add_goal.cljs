@@ -14,13 +14,18 @@
 (defui NewGoal
 
   Object
-  (initLocalState [this]
-    (let [{:keys [widget]} (om/get-computed this)
+  (set-input [this props]
+    (let [{:keys [widget]} (::om/computed props)
           goal (get-in widget [:widget/report :report/goal])]
-      {:daily-limit (:goal/value goal)
-       :start       (c/from-long (get-in goal [:goal/cycle :cycle/start]))
-       :end         (c/to-date (t/plus (c/from-long (get-in goal [:goal/cycle :cycle/start]))
-                                       (t/days (get-in goal [:goal/cycle :cycle/period-count]))))}))
+      (when widget
+        (om/update-state! this assoc
+                          :daily-limit (:goal/value goal)
+                          :start (c/from-long (get-in goal [:goal/cycle :cycle/start]))))))
+  (componentDidMount [this]
+    (.set-input this (om/props this)))
+  (componentWillReceiveProps [this new-props]
+    (.set-input this new-props))
+
   (render [this]
     (let [{:keys [widget
                   on-change]} (om/get-computed this)
@@ -28,8 +33,6 @@
                   filtered-tags
                   start
                   end]} (om/get-state this)]
-      (debug "New goal for widget: " widget)
-      (debug "State: " (om/get-state this))
       (html
         [:div
          [:ul.breadcrumbs
@@ -64,26 +67,6 @@
                                                          (t/in-days (t/interval start (c/from-date %)))))))}))]]
 
           (filter/->TagFilter {:tags filtered-tags}
-                              {:on-change #(om/update-state! this assoc :filtered-tags %)})
-
-          ;[:a.button.hollow
-          ; {:on-click (fn []
-          ;              (om/transact! this `[(widget.goal/save ~{:widget/report {:report/goal {:goal/value    daily-limit
-          ;                                                                                     :goal/end-date end-date
-          ;                                                                                     :goal/cycle    {:cycle/start        (c/to-long (t/today))
-          ;                                                                                                     :cycle/period       :cycle.period/day
-          ;                                                                                                     :cycle/period-count 1
-          ;                                                                                                     :cycle/repeat       0}
-          ;                                                                                     :goal/type     :goal.type/budget}}
-          ;                                                       :mutation-uuid (d/squuid)})]))}
-          ; "Save"]
-          ]
-
-
-         ;(when (some? goal-type)
-         ;  (cond (= goal-type :save)
-         ;        (->SelectGraph (om/computed {:graph {:graph/style :graph.style/bar}}
-         ;                                    {:styles [:graph.style/bar]}))))
-         ]))))
+                              {:on-change #(om/update-state! this assoc :filtered-tags %)})]))))
 
 (def ->NewGoal (om/factory NewGoal))

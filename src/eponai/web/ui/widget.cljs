@@ -14,18 +14,17 @@
 (defui Widget
   static om/IQuery
   (query [_]
-    [:widget/uuid
+    '[:widget/uuid
      :widget/width
      :widget/height
      {:widget/filter [{:filter/include-tags [:tag/name]}
                       {:filter/end-date [:date/timestamp]}
                       {:filter/start-date [:date/timestamp]}]}
-     {:widget/report [:report/uuid
-                      :report/title
-                      {:report/track [:track/filter
-                                      {:track/functions [:track.function/group-by
-                                                         :track.function/attribute
-                                                         :track.function/id]}]}]}
+     {:widget/report [*
+                      {:report/track [*
+                                      {:track/functions [*]}]}
+                      {:report/goal [*
+                                     {:goal/cycle [*]}]}]}
      :widget/index
      :widget/data
      {:widget/graph [:graph/style
@@ -38,7 +37,7 @@
     (let [{:keys [widget/report
                   widget/graph
                   widget/data] :as widget} (om/props this)
-          {:keys [on-edit
+          {:keys [project-id
                   id]} (om/get-computed this)]
       (debug "Render widget: " widget)
       (html
@@ -47,9 +46,12 @@
           [:p [:strong (:report/title report)]]
           [:div.flex-right.widget-menu
            [:a.widget-edit.secondary
-            (opts {:style    {:padding "0.5em"}
+            (opts {:style {:padding "0.5em"}
                    ;:on-click #(on-edit (dissoc widget ::om/computed :widget/data))
-                   :href     on-edit})
+                   :href  (when project-id
+                            (routes/key->route :route/project->widget+type+id {:route-param/project-id  project-id
+                                                                               :route-param/widget-type (if (:report/track report) :track :goal)
+                                                                               :route-param/widget-id   (str (:db/id widget))}))})
             [:i.fa.fa-pencil]]
            [:a.widget-move.secondary
             (opts {:style {:padding "0.5em"}})

@@ -127,20 +127,21 @@
                   is-loading?
                   cols]} (om/get-state this)
           widgets (:widget/_dashboard dashboard)
+          project-id (:db/id (:dashboard/project dashboard))
           React (.-React js/window)]
       (html
         [:div
          [:a.button.hollow.small
-          (opts {:href  (if (:db/id (:dashboard/project dashboard))
-                          (routes/key->route :route/project->widget+type+id {:route-param/project-id  (:db/id (:dashboard/project dashboard))
+          (opts {:href  (if project-id
+                          (routes/key->route :route/project->widget+type+id {:route-param/project-id  project-id
                                                                              :route-param/widget-type :track
                                                                              :route-param/widget-id "new"})
                           "#")
                  :style {:margin "0.5em"}})
           [:span "+ Track"]]
          [:a.button.hollow.small
-          (opts {:href  (if (:db/id (:dashboard/project dashboard))
-                          (routes/key->route :route/project->widget+type+id {:route-param/project-id (:db/id (:dashboard/project dashboard))
+          (opts {:href  (if project-id
+                          (routes/key->route :route/project->widget+type+id {:route-param/project-id project-id
                                                                              :route-param/widget-type :goal
                                                                              :route-param/widget-id  "new"})
                           "#")
@@ -174,12 +175,7 @@
                                                  #js {:key (str (:widget/uuid widget-props))}
                                                  (->Widget
                                                    (om/computed widget-props
-                                                                {:on-edit (when (:db/id (:dashboard/project dashboard))
-                                                                            (routes/key->route :route/project->widget+id
-                                                                                               {:route-param/project-id (:db/id (:dashboard/project dashboard))
-                                                                                                :route-param/widget-id (:db/id widget-props)}))
-                                                                 ;#(om/update-state! this assoc :edit-widget %)
-                                                                 }))))
+                                                                {:project-id project-id}))))
                                (sort-by :widget/index widgets))))
            [:div.empty-message.text-center
             [:i.fa.fa-tachometer.fa-5x]

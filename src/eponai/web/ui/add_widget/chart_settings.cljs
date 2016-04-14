@@ -70,7 +70,8 @@
                        :transaction/date     {:icon "fa fa-calendar"
                                               :text "Dates"}}]
              [:div
-              (opts {:style {:display :inline-block}})
+              (opts {:style {:display :inline-block}
+                     :key [k]})
               [:input
                (opts {:type     "radio"
                       :on-click #(select-group-by component k)
