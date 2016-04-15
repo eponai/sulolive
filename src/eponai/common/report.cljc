@@ -150,12 +150,12 @@
     (debug "Goal today: " today)
     (debug "Goal: Got transactions for today: " today-transactions)
 
-    {:name today
-     :value (reduce (fn [s tx]
-                      (+ s (converted-amount tx)))
-                    0
-                    today-transactions)
-     :max value}
+    [{:name  today
+      :value (reduce (fn [s tx]
+                       (+ s (converted-amount tx)))
+                     0
+                     today-transactions)
+      :max   value}]
     ;(let [sum-by-day (sum :transaction/date {} transactions)]
     ;  (debug "Sum for goal: " sum-by-day)
     ;  (map (fn [data-point]

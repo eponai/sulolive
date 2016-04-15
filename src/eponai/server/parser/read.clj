@@ -26,7 +26,7 @@
 
 (defmethod read :query/transactions
   [{:keys [db db-since query auth]} _ {:keys [project-uuid filter]}]
-  (let [filters? (and (map? filter) (some #(seq (val %)) filter))
+  (let [filters? (and (map? filter) (some #(val %) filter))
         entity-query (common.pull/transaction-entity-query
                        {:project-uuid project-uuid
                         :filter       filter
