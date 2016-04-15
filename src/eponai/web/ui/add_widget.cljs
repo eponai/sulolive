@@ -43,8 +43,11 @@
      ])
   Object
   (save-widget [this widget]
-    (om/transact! this `[(widget/save ~(assoc widget :mutation-uuid (d/squuid)))
-                         :query/dashboard]))
+    (if (some? (:db/id widget))
+      (om/transact! this `[(widget/edit ~(assoc widget :mutation-uuid (d/squuid)))
+                           :query/dashboard])
+      (om/transact! this `[(widget/create ~(assoc widget :mutation-uuid (d/squuid)))
+                           :query/dashboard])))
   (delete-widget [this widget]
     (om/transact! this `[(widget/delete ~(assoc (select-keys widget [:widget/uuid]) :mutation-uuid (d/squuid)))
                          :query/dashboard]))
@@ -119,7 +122,6 @@
            (->NewGoal (om/computed {}
                                    {:widget    input-widget
                                     :on-change (fn [new-widget & [{:keys [update-data?]}]]
-                                                 (debug "New widget: " (str new-widget))
                                                  (om/update-state! this assoc :input-widget new-widget)
                                                  (when update-data?
                                                    (update-query-params! this assoc :filter (:widget/filter new-widget))))})))
@@ -133,7 +135,7 @@
             ;        (routes/key->route :route/project->dashboard
             ;                           {:route-param/project-id (:db/id (:dashboard/project dashboard))}))
             :on-click
-                  #(.save-widget this (assoc input-widget :widget/dashboard [:dashboard/uuid (:dashboard/uuid dashboard)]))
+                  #(.save-widget this (assoc input-widget :widget/dashboard (:dashboard/uuid dashboard)))
             }
            "Save"]]
          (when (some? active-widget)

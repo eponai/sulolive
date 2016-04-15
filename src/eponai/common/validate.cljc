@@ -68,7 +68,7 @@
                     :duplicates (filter #(< 1 (val %)) (frequencies tags))}))))
 
 (defmethod validate 'widget/create
-  [{:keys [state]} k {:keys [widget] :as p}]
+  [{:keys [state]} k {:keys [widget user-uuid] :as p}]
   (let [required-fields #{:widget/uuid
                           :widget/index
                           :widget/width
@@ -80,4 +80,17 @@
     (do-validate k p #(empty? missing-keys)
                  {:message      "Required fields are missing."
                   :code         :missing-required-fields
-                  :missing-keys missing-keys})))
+                  :missing-keys missing-keys})
+    (let [dashboard-uuid (:widget/dashboard widget)
+          db-project (p/one-with (d/db state) {:where   '[[?u :user/uuid ?user-uuid]
+                                                          [?p :project/users ?u]
+                                                          [?e :dashboard/project ?p]
+                                                          [?e :dashboard/uuid ?d-uuid]]
+                                               :symbols {'?user-uuid   user-uuid
+                                                         '?d-uuid dashboard-uuid}})]
+      ;; Verify that that the transaction is added is accessible by the user adding the transaction.
+      (do-validate k p #(some? db-project)
+                   {:message        "You don't have access to modify the specified project."
+                    :code           :project-unaccessible
+                    :dashboard-uuid dashboard-uuid
+                    :user-uuid      user-uuid}))))

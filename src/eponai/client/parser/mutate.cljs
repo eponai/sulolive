@@ -53,10 +53,18 @@
 
 ;; -------------- Widget ---------------
 
-(defmethod mutate 'widget/save
-  [{:keys [state mutation-uuid]} _ params]
+(defmethod mutate 'widget/create
+  [{:keys [state mutation-uuid parser] :as e} _ params]
   (debug "widget/save with params: " params)
-  (let [widget (format/widget-create params)]
+  {:action (fn []
+             (let [widget (format/widget-create params)]
+               (transact/mutate-one state mutation-uuid widget)))
+   :remote true})
+
+(defmethod mutate 'widget/edit
+  [{:keys [state mutation-uuid]} _ params]
+  (debug "widget/edit with params: " params)
+  (let [widget (format/widget-edit params)]
     {:action (fn []
                (transact/mutate-one state mutation-uuid widget))
      :remote true}))
