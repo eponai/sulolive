@@ -44,8 +44,10 @@
 
 (defmethod read :query/dashboard
   [{:keys [db db-since auth query] :as env} _ {:keys [project-uuid]}]
-
-  (let [user-uuid (:username auth)
+  ;; TODO: Read-basis-t when using params:
+  ;; https://app.asana.com/0/109022987372058/113539551736534
+  (let [db-since db
+        user-uuid (:username auth)
         project-with-auth (common.pull/project-with-auth user-uuid)
         project-eid (if project-uuid
               (one-with db (merge-query
