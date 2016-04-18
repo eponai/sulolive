@@ -32,8 +32,7 @@
      :widget/height
      {:widget/filter [{:filter/include-tags [:tag/name]}]}
      {:widget/report [:report/uuid
-                      {:report/track [{:track/functions [*]}
-                                      {:track/filter [{:filter/include-tags [:tag/name]}]}]}
+                      {:report/track [{:track/functions [*]}]}
                       {:report/goal [*
                                      {:goal/cycle [*]}]}
                       :report/title]}

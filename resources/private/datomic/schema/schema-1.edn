@@ -115,51 +115,51 @@
   :db/doc                "Report title."
   :db.install/_attribute :db.part/db}
 
- ;{:db/id                 #db/id[:db.part/db]
- ; :db/ident              :report/functions
- ; :db/valueType          :db.type/ref
- ; :db/isComponent        true
- ; :db/cardinality        :db.cardinality/many
- ; :db/doc                "Functions that this report will use."
- ; :db.install/_attribute :db.part/db}
- ;
- ;{:db/id                 #db/id[:db.part/db]
- ; :db/ident              :report/group-by
- ; :db/valueType          :db.type/keyword
- ; :db/cardinality        :db.cardinality/one
- ; :db/doc                "Filter that this report will apply to the data."
- ; :db.install/_attribute :db.part/db}
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :report/functions
+  :db/valueType          :db.type/ref
+  :db/isComponent        true
+  :db/cardinality        :db.cardinality/many
+  :db/doc                "Functions that this report will use."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :report/group-by
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Filter that this report will apply to the data."
+  :db.install/_attribute :db.part/db}
 
 
  ;; ------------------- Function
 
- ;{:db/id                 #db/id[:db.part/db]
- ; :db/ident              :report.function/id
- ; :db/valueType          :db.type/keyword
- ; :db/cardinality        :db.cardinality/one
- ; :db/doc                "Function identifier."
- ; :db.install/_attribute :db.part/db}
- ;
- ;{:db/id                 #db/id[:db.part/db]
- ; :db/ident              :report.function/attribute
- ; :db/valueType          :db.type/keyword
- ; :db/cardinality        :db.cardinality/one
- ; :db/doc                "Which transaction attribute to apply the function (e.g. amount, currency)."
- ; :db.install/_attribute :db.part/db}
- ;
- ;{:db/id                 #db/id[:db.part/db]
- ; :db/ident              :report.function/group-by
- ; :db/valueType          :db.type/keyword
- ; :db/cardinality        :db.cardinality/one
- ; :db/doc                "What transaction attribute that should be grouped (e.g. currency, tags)."
- ; :db.install/_attribute :db.part/db}
- ;
- ;{:db/id                 #db/id[:db.part/db]
- ; :db/ident              :report.function/label
- ; :db/valueType          :db.type/string
- ; :db/cardinality        :db.cardinality/one
- ; :db/doc                "User specified label for this function."
- ; :db.install/_attribute :db.part/db}
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :report.function/id
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Function identifier."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :report.function/attribute
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Which transaction attribute to apply the function (e.g. amount, currency)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :report.function/group-by
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "What transaction attribute that should be grouped (e.g. currency, tags)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :report.function/label
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "User specified label for this function."
+  :db.install/_attribute :db.part/db}
 
  ;; Filter
 

@@ -233,11 +233,7 @@
                                   :track.function/group-by])))
 
 (defn track* [input]
-  (cond-> (add-tempid (select-keys input [:track/functions
-                                          :track/filter]))
-          (some? (:track/filter input))
-          (update :track/filter add-tempid)
-
+  (cond-> (add-tempid (select-keys input [:track/functions]))
           (seq (:track/functions input))
           (update :track/functions #(mapv track-function* %))))
 

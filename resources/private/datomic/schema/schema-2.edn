@@ -1,32 +1,33 @@
 [
- ;{:db/id                 #db/id[:db.part/db]
- ; :db/ident              :graph/filter
- ; :db/valueType          :db.type/ref
- ; :db/cardinality        :db.cardinality/one
- ; :db/doc                "Graph filter, what to display in the graph."
- ; :db.install/_attribute :db.part/db}
+ ;; Attribute Renames
+ {:db/id    :report/functions
+  :db/ident :track/functions}
+
+ {:db/id    :report.function/id
+  :db/ident :track.function/id}
+
+ {:db/id    :report.function/attribute
+  :db/ident :track.function/attribute}
+
+ {:db/id    :report.function/group-by
+  :db/ident :track.function/group-by}
+
+ {:db/id    :report.function/label
+  :db/ident :track.function/label}
 
  ;; Report
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :report/type
-  :db/valueType          :db.type/keyword
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Report type (:report/track, :report/goal)."
-  :db.install/_attribute :db.part/db}
-
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :report/track
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Tracking report."
+  :db/doc                "Report Track type entity."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :report/goal
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Goal report."
+  :db/doc                "Report Goal type entity."
   :db.install/_attribute :db.part/db}
 
  ;; Goal
@@ -65,28 +66,6 @@
   :db/doc                "Filter goal data."
   :db.install/_attribute :db.part/db}
 
- ;; Track
- ;{:db/id                 #db/id[:db.part/db]
- ; :db/ident              :track/title
- ; :db/valueType          :db.type/string
- ; :db/cardinality        :db.cardinality/one
- ; :db/doc                "Use specified title for this track."
- ; :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :track/filter
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Filter track data."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :track/functions
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/many
-  :db/doc                "Functions for tracking data."
-  :db.install/_attribute :db.part/db}
-
  ;; Cycle
 
  {:db/id                 #db/id[:db.part/db]
@@ -115,35 +94,5 @@
   :db/valueType          :db.type/long
   :db/cardinality        :db.cardinality/one
   :db/doc                "Start timestamp for cycle."
-  :db.install/_attribute :db.part/db}
-
- ;; Function
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :track.function/id
-  :db/valueType          :db.type/keyword
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Function identifier."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :track.function/attribute
-  :db/valueType          :db.type/keyword
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Which transaction attribute to apply the function (e.g. amount, currency)."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :track.function/group-by
-  :db/valueType          :db.type/keyword
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "What transaction attribute that should be grouped (e.g. currency, tags)."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :track.function/label
-  :db/valueType          :db.type/string
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "User specified label for this function."
   :db.install/_attribute :db.part/db}
  ]
