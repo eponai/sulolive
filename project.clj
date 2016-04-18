@@ -115,8 +115,8 @@
                                       ["with-profile" "web" "cljsbuild" "once" "dev"]]
             "run-tests-web"          ^{:doc "Compile and run web tests"}
                                      ["do"
-                                      ["with-profile" "web" "cljsbuild" "once" "doo-test"]
-                                      ["with-profile" "web" "doo" "phantom" "doo-test" "once"]]
+                                      ["with-profile" "web-test" "cljsbuild" "once" "doo-test"]
+                                      ["with-profile" "web-test" "doo" "phantom" "doo-test" "once"]]
             "figwheel-ios"           ^{:doc "Start figwheel for ios"}
                                      ["do"
                                       ["with-profile" "mobile" "figwheel" "ios"]]
@@ -198,6 +198,15 @@
                                                                 :output-dir    "target/android"
                                                                 :optimizations :simple}}]}}
 
+             :web-test {:dependencies [[figwheel-sidecar "0.5.0-2"]]
+                        :cljsbuild {:builds [{:id           "doo-test"
+                                              :source-paths ["src/" "src-hacks/web/" "test/"]
+                                              :compiler     {:output-to     "resources/public/doo-test/js/out/budget.js"
+                                                             :output-dir    "resources/public/doo-test/js/out"
+                                                             :main          "eponai.client.tests"
+                                                             :optimizations :none
+                                                             :source-map    true
+                                                             }}]}}
              :web      {:cljsbuild {:builds [{:id           "dev"
                                               :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
                                               :figwheel     {:on-jsload "eponai.web.figwheel/reload!"
@@ -224,14 +233,6 @@
                                                              :output-dir    "resources/public/test/js/out"
                                                              :asset-path    "/test/js/out"
                                                              :main          "eponai.client.figwheel.test-main"
-                                                             :optimizations :none
-                                                             :source-map    true
-                                                             }}
-                                             {:id           "doo-test"
-                                              :source-paths ["src/" "src-hacks/web/" "test/"]
-                                              :compiler     {:output-to     "resources/public/doo-test/js/out/budget.js"
-                                                             :output-dir    "resources/public/doo-test/js/out"
-                                                             :main          "eponai.client.tests"
                                                              :optimizations :none
                                                              :source-map    true
                                                              }}
