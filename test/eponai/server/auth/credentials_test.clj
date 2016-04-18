@@ -5,7 +5,7 @@
             [eponai.server.datomic.format :as f]
             [eponai.server.auth.credentials :as a]
             [eponai.common.database.pull :as p]
-            [eponai.server.test-util :refer [new-db schema]])
+            [eponai.server.test-util :refer [new-db]])
   (:import (clojure.lang ExceptionInfo)))
 
 (defn test-fb-info

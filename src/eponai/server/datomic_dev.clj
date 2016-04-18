@@ -75,7 +75,7 @@
                             slurp
                             (edn/read-string {:readers *data-readers*}))
                       schema-files)]
-     (reduce concat [] schemas))))
+     schemas)))
 
 (defn add-verified-user-account [conn email project-uuid]
   (let [{:keys [user] :as account} (f/user-account-map email {:verification/status :verification.status/verified
@@ -105,10 +105,10 @@
                                                 :USD 1}})))
 
 (defn add-data-to-connection [conn]
-  (let [schema (read-schema-files)
+  (let [schemas (read-schema-files)
         email test-user-email
         project-uuid (d/squuid)]
-    (d/transact conn schema)
+    (transact/transact-schemas conn schemas)
     (debug "Schema added.")
     (add-currencies conn)
     (debug "Currencies added.")

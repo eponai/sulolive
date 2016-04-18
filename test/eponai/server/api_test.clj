@@ -8,7 +8,7 @@
     [eponai.server.api :as api]
     [eponai.server.datomic.format :as f]
     [eponai.server.stripe-test :as stripe-test]
-    [eponai.server.test-util :refer [new-db user-email schema]]
+    [eponai.server.test-util :refer [new-db user-email]]
     [eponai.common.format :as common.format]
     [clojure.core.async :as async])
   (:import (clojure.lang ExceptionInfo)))

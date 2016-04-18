@@ -37,6 +37,10 @@
   [conn value]
   (transact conn [value]))
 
+(defn transact-schemas [conn schemas]
+  (doseq [schema schemas]
+    (transact conn schema)))
+
 (defn tx-mutation [mutation-uuid]
   {:db/id            (d/tempid :db.part/tx)
    :tx/mutation-uuid mutation-uuid
