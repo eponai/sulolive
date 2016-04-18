@@ -4,7 +4,7 @@ url=
 if [ "$1" != "" ]; then
     case $1 in
         -r | --remote )         if [ "$3" != "" -a "$4" != "" ] ; then
-					url="datomic:ddb://us-east-1/eponai-budget?aws_access_key_id=$3&aws_secret_key=$4"
+					url="datomic:ddb://us-east-1/eponai-jourmoney-2?aws_access_key_id=$3&aws_secret_key=$4"
 				else
 					echo "must provide aws_access_key_id and aws_secret_key with remote option"
 					exit
