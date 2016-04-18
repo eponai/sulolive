@@ -3,6 +3,8 @@
             [eponai.web.signup :as signup]
             [eponai.client.utils :as utils]))
 
+(set! js/window.mixpanel #js {"track" (fn [& args] )})
+
 (defn ^:export run []
   (utils/install-app)
   (app/run))
