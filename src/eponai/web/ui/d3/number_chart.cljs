@@ -43,13 +43,9 @@
             (tween "text" (fn [d]
                             (this-as jthis
                               (let [i (.. js/d3
-                                          (interpolate (.-textContent jthis) (cljs.reader/read-string d)))
-                                    prec (.split d ".")
-                                    round (if (> (.-length prec) 1)
-                                            (.pow js/Math 10 (.-length (get prec 1)))
-                                            1)]
+                                          (interpolate (.-textContent jthis) d))]
                                 (fn [t]
-                                  (set! (.-textContent jthis) (gstring/format "%.2f" (/ (.round js/Math (* (i t) round)) round))))))))))))
+                                  (set! (.-textContent jthis) (gstring/format "%.2f" (i t))))))))))))
   (render [this]
     (let [{:keys [id]} (om/props this)]
       (html
