@@ -276,19 +276,26 @@
               [:small
                " by eponai"]]]
 
-            (when (= subscription-status :trialing)
-              [:li.profile-menu
-               (utils/upgrade-button {:on-click on-close
-                                      :style    {:margin "0.5em"}})])
-            [:li
-             [:a
-              (opts {:href (routes/key->route :route/profile)
-                     :on-click on-close})
-              [:i.fa.fa-user
-               (opts {:style {:display :inline
-                              :padding "0.5em"}})]
-              [:strong "Profile"]]]
+            (when-not (= subscription-status :active)
+              [:li
+               (utils/upgrade-button
+                 {:href     (routes/key->route :route/subscribe)
+                  :style {:margin "1em"}})])
+            ;(when (= subscription-status :trialing)
+            ;  [:li.profile-menu
+            ;   (utils/upgrade-button {:on-click on-close
+            ;                          :style    {:margin "0.5em"}})])
+            ;[:li
+            ; [:a
+            ;  (opts {:href (routes/key->route :route/profile)
+            ;         :on-click on-close})
+            ;  [:i.fa.fa-user
+            ;   (opts {:style {:display :inline
+            ;                  :padding "0.5em"}})]
+            ;  [:strong "Profile"]]]
             [:li.divider]
+            [:li
+             [:a.disabled [:small [:strong "Projects"]]]]
 
             (map
               (fn [{project-uuid :project/uuid :as project}]
