@@ -32,7 +32,7 @@
       (html "index.html")))
   (ANY "/stripe" {:keys [::m/conn body]}
     (try
-      (r/response (stripe/webhook conn body {:send-email-fn #(email/send-email %1 nil %2)}))
+      (r/response (stripe/webhook conn body {::email/send-payment-reminder-fn email/send-payment-reminder-email}))
       (catch ExceptionInfo e
         (error e)
         (r/response {:ERROR   (.getMessage e)
@@ -73,11 +73,11 @@
   (debug "Handling parser request with body:" body)
   (parser
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
-     :state           conn
-     :auth            (friend/current-authentication request)
-     :parser-error-fn (when make-parser-error-fn
-                        (make-parser-error-fn request))
-     :stripe-fn       stripe-fn}
+     :state                             conn
+     :auth                              (friend/current-authentication request)
+     :parser-error-fn                   (when make-parser-error-fn
+                                          (make-parser-error-fn request))
+     :stripe-fn                         stripe-fn}
     (:query body)))
 
 (defn trace-parser-response-handlers

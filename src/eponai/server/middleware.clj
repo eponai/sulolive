@@ -13,8 +13,8 @@
             [cemerick.friend :as friend]
             [eponai.server.auth.credentials :as ac]
             [eponai.server.auth.workflows :as workflows]
-            [eponai.server.email :as e]
-            [taoensso.timbre :refer [debug error trace]])
+            [taoensso.timbre :refer [debug error trace]]
+            [eponai.server.email :as email])
 
   (:import (clojure.lang ExceptionInfo)
            (datomic.query EntityMap)))
@@ -92,7 +92,7 @@
   (friend/authenticate
     handler {:credential-fn        (ac/credential-fn conn)
              :workflows            [(workflows/form)
-                                    (workflows/create-account (e/send-email-fn conn))
+                                    (workflows/create-account email/send-verification-email)
                                     (workflows/facebook (env :facebook-app-id)
                                                         (env :facebook-app-secret))]
              :login-uri            "/signup"

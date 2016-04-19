@@ -44,36 +44,26 @@
   (update response :result dissoc :currency-chan))
 
 (defmethod response-handler 'signup/email
-  [{:keys [::m/send-email-fn]} _ response]
+  [{:keys [::email/send-verification-fn state]} _ response]
   (when-let [chan (get-in response [:result :email-chan])]
     (go
-      (let [user-status (get-in response [:result :status])]
-        (send-email-fn (<! chan)
-                       {:html-content #(email/html-content %
-                                                           (email/subject user-status)
-                                                           (email/message user-status)
-                                                           (email/button-title user-status)
-                                                           (email/link-message user-status))
-                        :text-content #(email/text-content % user-status)
-                        :subject      (email/subject user-status)
-                        :device (get-in response [:result :device])}))))
+      (let [verification (<! chan)]
+        (send-verification-fn (p/lookup-entity (d/db state) [:verification/uuid (:verification/uuid verification)])
+                              {:user-status (get-in response [:result :status])
+                               :device      (get-in response [:result :device])}))))
   ;; TODO: What's the plan here? Do we really just want to return nil?
   (update response :result dissoc :email-chan :status :device))
 
 (defmethod response-handler 'project/share
-  [{:keys [::m/send-email-fn]} _ response]
+  [{:keys [::email/send-invitation-fn state]} _ response]
   (when-let [chan (get-in response [:result :email-chan])]
     (go
       (let [user-status (get-in response [:result :status])
-            inviter (get-in response [:result :inviter])]
-        (send-email-fn (<! chan)
-                       {:html-content #(email/html-content %
-                                                           (email/invite-subject inviter user-status)
-                                                           (email/message user-status)
-                                                           (email/button-title user-status)
-                                                           (email/link-message user-status))
-                        :text-content #(email/text-content % user-status)
-                        :subject      "You're invited to share project."}))))
+            inviter (get-in response [:result :inviter])
+            verification (<! chan)]
+        (send-invitation-fn (p/lookup-entity (d/db state) [:verification/uuid (:verification/uuid verification)])
+                            {:inviter inviter
+                             :user-status user-status}))))
   (-> response
       (update :result dissoc :email-chan)
       (update :result dissoc :status)))

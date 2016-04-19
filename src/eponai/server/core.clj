@@ -17,7 +17,8 @@
     ;; Debug/dev requires
             [ring.middleware.reload :as reload]
             [prone.middleware :as prone]
-            [eponai.server.external.stripe :as stripe]))
+            [eponai.server.external.stripe :as stripe]
+            [eponai.server.email :as email]))
 
 (defonce in-production? (atom true))
 
@@ -31,9 +32,11 @@
                      ::m/parser            (parser/parser)
                      ::m/currencies-fn     #(exch/currencies (when @in-production? (env :open-exchange-app-id)))
                      ::m/currency-rates-fn (exch/currency-rates-fn (when @in-production? (env :open-exchange-app-id)))
-                     ::m/send-email-fn     (e/send-email-fn conn)
+                     ;::m/send-email-fn     (e/send-email-fn conn)
                      ::m/stripe-fn         (fn [k p]
                                              (stripe/stripe (env :stripe-secret-key-test) k p))
+                     ::email/send-verification-fn email/send-verification-email
+                     ::email/send-invitation-fn   email/send-invitation-email
                      ;; either "dev" or "release"
                      ::m/cljs-build-id     (or (env :cljs-build-id) "dev")})
       m/wrap-defaults

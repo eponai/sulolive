@@ -71,45 +71,73 @@
     (debug "Returning verify link: " verify-link)
     verify-link))
 
-(defn send-email
-  "Send a verification email to the provided address with the given uuid.
-  Will send a link with the path /verify/:uuid that will verify when the user opens the link."
-  [address uuid {:keys [subject text-content html-content device]}]
+(defn- send-email [address subject body]
   (debug "Sending email... ")
-  (let [link (verify-link-by-device device uuid)
-        body {:from    "info@gmail.com"
-              :to      address
-              :subject subject
-              :body    [:alternative
-                        {:type    "text/plain"
-                         :content (text-content link)}
-                        {:type    "text/html"
-                         :content (html-content link)}]}
-        status (email/send-message (smtp) body)]
-
-    (debug "Sent verification email to uuid: " uuid "with status:" status)
+  (let [content {:from    "info@gmail.com"
+                 :to      "info@jourmoney.com"
+                 :subject subject
+                 :body    body}
+        status (email/send-message (smtp) content)]
     (if (= 0 (:code status))
       status
       (throw (ex-info (:message status) {:cause   ::email-error
                                          :status  ::h/service-unavailable
                                          :message (:message status)
-                                         :data    {:email address
-                                                   :uuid  uuid
-                                                   :error (:error status)}})))))
-(defn send-email-fn
-  "Function that checks if there's any pending verification for the provided user emal,
-  and sends a verification email if so.
+                                         :content content
+                                         :error   (:error status)})))))
 
-  Conn is the connection to the database."
-  [conn]
-  (fn [verification content]
-    (let [db (d/db conn)
-          {:keys [verification/uuid]} verification]
+(defn send-payment-reminder-email
+  [address]
+  (let [subject "Payment failed"
+        body [:alternative
+              {:type    "text/plain"
+               :content "We tried to charge your card, but it failed. Check your payment settings. "}
+              {:type    "text/html"
+               :content (html-content ""
+                                      "Payment failed"
+                                      "We tried to charge your card, but it failed. Check your payment settings."
+                                      "Update payment preferences"
+                                      "link -message")}]
+        status (send-email address subject body)]
+    (debug "Payment reminder sent to: " address " with status: " status)))
 
-      (cond (p/lookup-entity db [:verification/uuid uuid])
-            (send-email (:verification/value verification)
-                        uuid
-                        content)))))
+(defn send-invitation-email
+  [verification {:keys [user-status inviter]}]
+  (let [{:keys [verification/uuid]
+         address :verification/value} verification
+        link (verify-link-by-device :web uuid)
+        body [:alternative
+              {:type    "text/plain"
+               :content (text-content link user-status)}
+              {:type    "text/html"
+               :content (html-content link
+                                      (invite-subject inviter user-status)
+                                      (message user-status)
+                                      (button-title user-status)
+                                      (link-message user-status))}]
+        status (send-email address "You're invited to share project." body)]
+    (debug "Sent invitation email to uuid: " uuid "with status:" status)))
+
+(defn send-verification-email
+  "Send a verification email to the provided address with the given uuid.
+  Will send a link with the path /verify/:uuid that will verify when the user opens the link."
+  [verification {:keys [user-status device]}]
+  (debug "Send email for verification: " verification)
+  (when verification
+    (let [{:keys   [verification/uuid]
+           address :verification/value} verification
+          link (verify-link-by-device device uuid)
+          body [:alternative
+                {:type    "text/plain"
+                 :content (text-content link user-status)}
+                {:type    "text/html"
+                 :content (html-content link
+                                        (subject user-status)
+                                        (message user-status)
+                                        (button-title user-status)
+                                        (link-message user-status))}]
+          status (send-email address (subject user-status) body)]
+      (debug "Sent verification email to uuid: " uuid "with status:" status))))
 
 (defn text-content [link user-status]
   (if (= user-status :user.status/new)

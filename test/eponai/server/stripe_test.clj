@@ -1,12 +1,11 @@
 (ns eponai.server.stripe-test
   (:require
     [clojure.test :refer :all]
-    [clj-time.core :as time]
-    [clj-time.coerce :as c]
-    [eponai.server.test-util :refer [new-db]]
-    [eponai.server.datomic.format :as f]
-    [eponai.server.external.stripe :as stripe]
     [eponai.common.database.pull :as p]
+    [eponai.server.email :as email]
+    [eponai.server.external.stripe :as stripe]
+    [eponai.server.datomic.format :as f]
+    [eponai.server.test-util :refer [new-db]]
     [datomic.api :as d]))
 
 (def user-email "user@email.com")
@@ -52,8 +51,8 @@
           event {:id "event-id"
                  :type "charge.failed"
                  :data {:object {:customer   default-customer-id}}}
-          result (stripe/webhook conn event {:send-email-fn (fn [email _]
-                                                              email)})]
+          result (stripe/webhook conn event {::email/send-payment-reminder-fn (fn [email]
+                                                                                email)})]
       (is (= result user-email)))))
 
 (deftest customer.deleted

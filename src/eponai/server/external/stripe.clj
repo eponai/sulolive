@@ -106,12 +106,12 @@
 
 (defn webhook-ex [event message & [ex-data]]
   (ex-info (str "Stripe webhook error: " (:type event))
-           (merge ex-data
-                  {:cause   (or (:cause ex-data) ::h/internal-error)
+           (merge {:cause   ::h/internal-error
                    :message message
                    :key     (:type event)
                    :event   event
-                   :object  (get-in event [:data :object])})))
+                   :object  (get-in event [:data :object])}
+                  ex-data)))
 
 ; Multi method for Stripe event types passed in via webhooks.
 ; Reference Events: https://stripe.com/docs/api#events
@@ -139,8 +139,8 @@
   ;; Reference: https://stripe.com/docs/api#charge_object
   [conn event & [opts]]
   (let [{:keys [customer] :as charge} (get-in event [:data :object]) ;; customer id
-        {:keys [send-email-fn]} opts]
-    (when customer
+        {:keys [::email/send-payment-reminder-fn]} opts]
+    (if customer
       ;; Find the customer entry in the db.
       (let [db-customer (p/lookup-entity (d/db conn) [:stripe/customer customer])]
         ;; If the customer is not found in the DB, something is wrong and we're out of sync with Stripe.
@@ -148,7 +148,8 @@
           (throw (webhook-ex event
                              (str ":stripe/customer not found: " customer)
                              {:customer customer
-                              :cause ::h/unprocessable-entity})))
+                              :cause    ::h/unprocessable-entity
+                              :code     :entity-not-found})))
 
         ;; Find the user corresponding to the specified stripe customer.
         (let [user (p/lookup-entity (d/db conn) (get-in db-customer [:stripe/user :db/id]))]
@@ -156,19 +157,17 @@
           (when-not user
             (throw (webhook-ex event
                                (str "No :stripe/user associated with :stripe/customer: " customer)
-                               {:customer customer})))
+                               {:customer customer
+                                :code     :entity-not-found})))
 
           (info "Stripe charge.failed for user " (d/touch user))
-          (when send-email-fn
-            ;; Notify the user by ending an email to the user for the customer. That payment failed and they should check their payment settings.
-            (send-email-fn (or (:user/email user) "test@email.com")
-                           {:html-content #(email/html-content %
-                                                               "Payment failed"
-                                                               "We tried to charge your card, but it failed. Check your payment settings."
-                                                               "Update payment preferences"
-                                                               "link -message")
-                            :text-content #(str "We tried to charge your card, but it failed. Check your payment settings. " %)
-                            :subject      "Payment failed"})))))))
+
+          ;; Notify the user by ending an email to the user for the customer. That payment failed and they should check their payment settings.
+          (when send-payment-reminder-fn
+            (send-payment-reminder-fn (:user/email user)))))
+      (when-let [email (get-in charge [:source :name])]
+        (when send-payment-reminder-fn
+          (send-payment-reminder-fn email))))))
 
 (defmethod webhook "customer.deleted"
   ;; Receiving a Customer object in event.
@@ -193,7 +192,8 @@
       (throw (webhook-ex event
                          (str ":stripe/customer not found: " customer)
                          {:customer customer
-                          :cause ::h/unprocessable-entity})))))
+                          :cause    ::h/unprocessable-entity
+                          :code     :entity-not-found})))))
 
 (defmethod webhook "customer.subscription.deleted"
   ;; Receiving a Subscription object in event.
@@ -213,6 +213,41 @@
       (transact/transact-one conn [:db/add (:db/id subscription) :stripe.subscription/period-end subscription-ends-at])
       (throw (webhook-ex event
                          (str "No :stripe/subscription associated with :stripe/customer: " customer)
-                         {:customer customer})))))
+                         {:customer customer
+                          :code     :entity-not-found})))))
+
+(defmethod webhook "invoice.payment_failed"
+  ;; Receiving an Invoice object in event
+  ;; reference: https://stripe.com/docs/api#invoice_object
+  [conn event & [opts]]
+  (let [{:keys [customer] :as invoice} (get-in event [:data :object])
+        {:keys [::email/send-payment-reminder-fn]} opts]
+    (if customer
+      ;; Find the customer entry in the db.
+      (let [db-customer (p/lookup-entity (d/db conn) [:stripe/customer customer])]
+        ;; If the customer is not found in the DB, something is wrong and we're out of sync with Stripe.
+        (when-not db-customer
+          (throw (webhook-ex event
+                             (str ":stripe/customer not found: " customer)
+                             {:code     :entity-not-found
+                              :customer customer
+                              :cause    ::h/unprocessable-entity})))
+
+        ;; Find the user corresponding to the specified stripe customer.
+        (let [user (p/lookup-entity (d/db conn) (get-in db-customer [:stripe/user :db/id]))]
+          ;; If the customer entity has no user, something is wrong in the db entry, throw exception.
+          (when-not user
+            (throw (webhook-ex event
+                               (str "No :stripe/user associated with :stripe/customer: " customer)
+                               {:customer customer
+                                :code     :entity-not-found})))
+
+          (info "Stripe invoice.payment_failed for user " (d/touch user))
+          (when send-payment-reminder-fn
+            ;; Notify the user by ending an email to the user for the customer. That payment failed and they should check their payment settings.
+            (send-payment-reminder-fn (:user/email user)))))
+      (when-let [email (get-in invoice [:source :name])]
+        (when send-payment-reminder-fn
+          (send-payment-reminder-fn email))))))
 
 ;(defmethod webhook "invoice.payment_succeeded")
