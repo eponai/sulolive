@@ -84,13 +84,28 @@
                  :data {:object {:customer   default-customer-id
                                  :id         subscription-id
                                  :status     "active"
-                                 :period_end period-end}}}
+                                 :current_period_end period-end}}}
           _ (stripe/webhook conn event)
           result (p/lookup-entity (d/db conn) [:stripe.subscription/id subscription-id])]
       (is (= (:stripe.subscription/period-end result) (* 1000 period-end)))
       (is (= (:stripe.subscription/id result) subscription-id)))))
 
-(deftest invoice.payment-successful
+(deftest customer.subscription.deleted
+  (testing "Subscription was deleted, delete subscription in datomic."
+    (let [{:keys [user]} (f/user-account-map user-email)
+          stripe (f/stripe-account (:db/id user) {:stripe/customer default-customer-id
+                                                  :stripe/subscription (subscription default-subscription-id :active)})
+          conn (new-db [user
+                        stripe])
+          _ (assert (some? (p/lookup-entity (d/db conn) [:stripe.subscription/id default-subscription-id])))
+          event {:id "event-id"
+                 :type "customer.subscription.deleted"
+                 :data {:object {:customer   default-customer-id
+                                 :id         default-subscription-id}}}
+          _ (stripe/webhook conn event)]
+      (is (nil? (p/lookup-entity (d/db conn) [:stripe.subscription/id default-subscription-id]))))))
+
+(deftest invoice.payment-succeeded
   (testing "Invoice was paid, should update the subscription entity in datomic and extend the ends-at attribute."
     (let [{:keys [user]} (f/user-account-map user-email)
           stripe (f/stripe-account (:db/id user) (test-stripe :active :customer/create nil))

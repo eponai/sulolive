@@ -32,10 +32,14 @@
       (html "index.html")))
   (ANY "/stripe" {:keys [::m/conn body]}
     (try
-      (r/response (stripe/webhook conn body {::email/send-payment-reminder-fn email/send-payment-reminder-email}))
+      (let [result (stripe/webhook conn body {::email/send-payment-reminder-fn email/send-payment-reminder-email})]
+        (debug "Stripe webhook handled with result: " result)
+        (r/response {:status :SUCCESS
+                     :message "ok"}))
       (catch ExceptionInfo e
         (error e)
-        (r/response {:ERROR   (.getMessage e)
+        (r/response {:status :ERROR
+                     :message (.getMessage e)
                      :ex-data (ex-data e)}))
       (catch Exception e
         (error e))))

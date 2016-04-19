@@ -29,10 +29,10 @@
    :stripe.subscription/status  (keyword (.getStatus stripe-obj))
    :stripe.subscription/period-end (* 1000 (.getCurrentPeriodEnd stripe-obj))})
 
-(defn json->subscription-map [{:keys [id period_end status]}]
+(defn json->subscription-map [{:keys [id current_period_end status]}]
   {:stripe.subscription/id      id
    :stripe.subscription/status  (keyword status)
-   :stripe.subscription/period-end (* 1000 period_end)})
+   :stripe.subscription/period-end (* 1000 current_period_end)})
 
 (declare stripe-action)
 
@@ -123,7 +123,7 @@
 
 (defmethod webhook :default
   [_ event & _]
-  (info "Received Stripe webhook event type not implemented: " (:type event))
+  (info "Stripe webhook event type not implemented: " (:type event))
   (debug "Stripe event: " event))
 
 (defmethod webhook "charge.succeeded"
@@ -187,6 +187,7 @@
         db-customer (p/lookup-entity (d/db conn) [:stripe/customer customer])]
     (if db-customer
       (let [db-sub (f/add-tempid (json->subscription-map subscription))]
+        (debug "Customer subscription created: " (:id subscription))
         (transact/transact conn [db-sub
                                  [:db/add (:db/id db-customer) :stripe/subscription (:db/id db-sub)]]))
       (throw (webhook-ex event
@@ -198,9 +199,13 @@
 (defmethod webhook "customer.subscription.deleted"
   ;; Receiving a Subscription object in event.
   ;; Reference: https://stripe.com/docs/api#subscription_object
-  [_ event & _]
-  (let [subscription (get-in event [:data :object])]
-    (prn "Subscription" subscription)))
+  [conn event & _]
+  (let [subscription (get-in event [:data :object])
+        db-entry (p/lookup-entity (d/db conn) [:stripe.subscription/id (:id subscription)])]
+    (debug "Customer subscription deleted: " (:id subscription))
+    (when db-entry
+      (info "Stripe customer.subscription.deleted, retracting entity from db: " (d/touch db-entry))
+      (transact/transact-one conn [:db.fn/retractEntity (:db/id db-entry)]))))
 
 (defmethod webhook "invoice.payment_succeeded"
   ;; Receiving an Invoice object in event
@@ -210,7 +215,9 @@
         {:keys [stripe/subscription]} (p/pull (d/db conn) [:stripe/subscription] [:stripe/customer customer])
         subscription-ends-at (* 1000 period_end)]
     (if subscription
-      (transact/transact-one conn [:db/add (:db/id subscription) :stripe.subscription/period-end subscription-ends-at])
+      (do
+        (debug "Invoice payment succeeded: " (:id invoice))
+        (transact/transact-one conn [:db/add (:db/id subscription) :stripe.subscription/period-end subscription-ends-at]))
       (throw (webhook-ex event
                          (str "No :stripe/subscription associated with :stripe/customer: " customer)
                          {:customer customer
