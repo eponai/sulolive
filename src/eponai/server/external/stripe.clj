@@ -1,30 +1,33 @@
 (ns eponai.server.external.stripe
-  (:require [eponai.common.database.transact :as t]
-            [eponai.common.database.pull :as p]
-            [taoensso.timbre :refer [debug error info]]
-            [datomic.api :as d]
-            [clojure.data.json :as json]
-            [eponai.server.http :as h]
-            [eponai.common.database.transact :as transact]
-            [eponai.common.format :as f]
-            [eponai.server.email :as email])
-  (:import (com.stripe.model Customer)
-           (com.stripe Stripe)
-           (clojure.lang ExceptionInfo)
-           (com.stripe.exception CardException)))
+  (:require
+    [datomic.api :as d]
+    [eponai.common.database.pull :as p]
+    [eponai.common.database.transact :as transact]
+    [eponai.common.format :as f]
+    [eponai.server.email :as email]
+    [eponai.server.http :as h]
+    [taoensso.timbre :refer [debug error info]])
+  (:import
+    (com.stripe Stripe)
+    (com.stripe.exception CardException)
+    (com.stripe.model Customer)
+    (com.stripe.model Card)
+    (com.stripe.model Subscription)))
+;; ########### Stripe objects ################
 
-(defn stripe-subscription [customer]
-  (-> customer
-      (.getSubscriptions)
-      (.getData)
-      first))
+(defn customer [customer-id]
+  (let [^Customer customer (Customer/retrieve customer-id)
+        ^Card card (.retrieve (.getSources customer) (.getDefaultSource customer))]
+    {:id    (.getId customer)
+     :email (.getEmail customer)
+     :card  {:exp-month (.getExpMonth card)
+             :exp-year  (.getExpYear card)
+             :name (.getName card)
+             :last4 (.getLast4 card)
+             :brand (.getBrand card)}}))
+;; ######################################
 
-(defn has-subscription?
-  "Check if Stripe customer has any subscription registerd in Stripe."
-  [customer]
-  (some? (stripe-subscription customer)))
-
-(defn obj->subscription-map [stripe-obj]
+(defn obj->subscription-map [^Subscription stripe-obj]
   {:stripe.subscription/id      (.getId stripe-obj)
    :stripe.subscription/status  (keyword (.getStatus stripe-obj))
    :stripe.subscription/period-end (* 1000 (.getCurrentPeriodEnd stripe-obj))})
@@ -65,7 +68,10 @@
   [_ {:keys [params]}]
   {:post [(map? %)]}
   (let [customer (Customer/create params)
-        subscription (stripe-subscription customer)]
+        subscription (-> customer
+                         (.getSubscriptions)
+                         (.getData)
+                         first)]
     (debug "Created customer: " customer)
     {:stripe/customer     (.getId customer)
      :stripe/subscription (obj->subscription-map subscription)}))

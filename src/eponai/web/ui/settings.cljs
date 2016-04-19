@@ -21,6 +21,7 @@
      {:query/all-currencies [:currency/code
                              :currency/name]}
      {:query/stripe [:stripe/user
+                     :stripe/info
                      {:stripe/subscription [:stripe.subscription/period-end
                                             :stripe.subscription/status]}]}
      {:query/fb-user [:fb-user/name
@@ -46,40 +47,15 @@
           {user-name :user/name
            :keys [user/email]} current-user
           {:keys [input-currency]} (om/get-state this)
-          {:keys [stripe/subscription]} stripe
+          {:keys [stripe/subscription stripe/info]} stripe
           {subscription-status :stripe.subscription/status} subscription]
       (html
         [:div
          [:div#settings-general.row.column.small-12.medium-6
           [:div.callout.clearfix
-           [:h3
+           [:h4
             "General"]
-           [:div.row
-            [:div.columns.small-2.text-right
-             [:label
-              "Plan:"]]
-            (if (= subscription-status :active)
-              [:div.columns.small-10
-               [:div
-                [:strong "Monthly"]
-                [:a.link
-                 (opts {:style    {:margin "1em 0"}
-                        :on-click #(om/transact! this `[(stripe/cancel ~{:mutation-uuid (d/squuid)})
-                                                        :query/stripe])})
-                 [:small
-                  "Cancel plan"]]]
-               (when (:ui.singleton.loader/visible loader)
-                 (utils/loader))]
-
-              [:div.columns.small-10
-               ;[:p "You have "
-               ; (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial."]
-               ;[:div.columns.small-12.medium-6.text-center]
-               (utils/upgrade-button {:style {:margin 0}})
-               ;[:div [:small "You have "
-               ;       (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial."]]
-               ])]
-           [:hr]
+           ;[:hr]
            [:div.row
             [:div.columns.small-2.text-right
              [:label
@@ -123,8 +99,70 @@
             "Save settings"]]]
          [:div.row.column.small-12.medium-6
           [:div.callout
-           [:h3 "Social"]
-           [:hr]
+           [:h4 "Account"]
+           ;[:hr]
+           [:div.row
+            [:div.columns.small-2.text-right
+             [:label
+              "Plan:"]]
+            (if (= subscription-status :active)
+              [:div.columns.small-10
+               [:div
+                [:strong "Monthly"]
+                [:label
+                 "Account active until: " (f/to-str (:stripe.subscription/period-end subscription) "yyyyMMdd")]]
+               (when (:ui.singleton.loader/visible loader)
+                 (utils/loader))]
+
+              [:div.columns.small-10
+               ;[:p "You have "
+               ; (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial."]
+               ;[:div.columns.small-12.medium-6.text-center]
+               (utils/upgrade-button {:style {:margin 0}})
+               ;[:div [:small "You have "
+               ;       (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial."]]
+               ])]
+           (when (= subscription-status :active)
+             [:div.row
+              [:div.columns.small-2.text-right]
+              [:div.columns.small-10
+               [:a.link
+                (opts {:style    {:margin "1em 0"}
+                       :on-click #(om/transact! this `[(stripe/cancel ~{:mutation-uuid (d/squuid)})
+                                                       :query/stripe])})
+                [:small
+                 "Cancel"]]
+               [:a.link
+                (opts {:style    {:margin "1em"}})
+                [:small
+                 "Edit"]]]])
+           ;[:hr]
+           ;[:h5 "Payment method"]
+           ;[:div.payment
+           ; [:div.row
+           ;  [:div.columns.small-2.text-right
+           ;   [:label
+           ;    "Name:"]]
+           ;  [:div.columns.small-10
+           ;   (get-in info [:card :brand])]]
+           ; [:div.row
+           ;  [:div.columns.small-2.text-right
+           ;   [:label
+           ;    "Number:"]]
+           ;  [:div.columns.small-10
+           ;   (str "**** **** **** " (get-in info [:card :last4]))]]
+           ; [:div.row
+           ;  [:div.columns.small-2.text-right
+           ;   [:label "Expires: "]]
+           ;  [:div.columns.small-10
+           ;   (str (get-in info [:card :exp-month])
+           ;        " / "
+           ;        (get-in info [:card :exp-year]))]]]
+           ]]
+         [:div.row.column.small-12.medium-6
+          [:div.callout
+           [:h4 "Social"]
+           ;[:hr]
            [:div#facebook-connect
             (if (nil? fb-user)
               [:div.row

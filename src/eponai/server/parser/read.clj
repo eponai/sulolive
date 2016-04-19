@@ -7,6 +7,7 @@
     [eponai.common.parser :refer [read]]
     [eponai.server.datomic.pull :as server.pull]
     [eponai.server.external.facebook :as facebook]
+    [eponai.server.external.stripe :as stripe]
     [taoensso.timbre :refer [debug]]
     [eponai.common.database.pull :as pull]))
 
@@ -99,9 +100,22 @@
 
 (defmethod read :query/stripe
   [{:keys [db db-since query auth]} _ _]
-  {:value (server.pull/pull-all-since db db-since query
-                                      {:where ['[?e :stripe/user ?u]
-                                               ['?u :user/uuid (:username auth)]]})})
+  {:value (let [customer-id (one-with db {:where   '[[?u :user/uuid ?user-uuid]
+                                                     [?c :stripe/user ?u]
+                                                     [?c :stripe/customer ?e]]
+                                          :symbols {'?user-uuid (:username auth)}})
+                ;_ (debug "Found customer id: " customer-id)
+                ;TODO: uncomment this when doing settings
+                customer {}                                 ;(stripe/customer customer-id)
+                ]
+            (assoc
+              (common.pull/pull db query [:stripe/customer customer-id])
+              :stripe/info
+              customer)
+            ;(server.pull/pull-all-since db db-since query
+            ;                            {:where ['[?e :stripe/user ?u]
+            ;                                     ['?u :user/uuid (:username auth)]]})
+            )})
 
 ;; ############### Signup page reader #################
 

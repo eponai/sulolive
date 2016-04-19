@@ -277,7 +277,7 @@
                " by eponai"]]]
 
             (when-not (= subscription-status :active)
-              [:li
+              [:li.profile-menu
                (utils/upgrade-button
                  {:href     (routes/key->route :route/subscribe)
                   :style {:margin "1em"}})])
@@ -295,7 +295,7 @@
             ;  [:strong "Profile"]]]
             [:li.divider]
             [:li
-             [:a.disabled [:small [:strong "Projects"]]]]
+             [:small [:strong "Projects"]]]
 
             (map
               (fn [{project-uuid :project/uuid :as project}]
@@ -313,7 +313,8 @@
                       :on-drag-leave #(utils/on-drag-transaction-leave this %)
                       :on-drop       #(utils/on-drop-transaction this project-uuid %)}
                   [:span (or (:project/name project) "Untitled")]
-                  (when-not (= (:user/uuid (:project/created-by project)) (:user/uuid current-user))
+                  (when (and (:project/created-by project)
+                             (not (= (:user/uuid (:project/created-by project)) (:user/uuid current-user))))
                     [:small " by " (:user/email (:project/created-by project))])]])
               all-projects)
 
