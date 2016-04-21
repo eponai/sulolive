@@ -97,7 +97,7 @@
                [:div
                 [:div.row.column.small-12.medium-6
                  ;(opts {:style {:height "15em"}})
-                 (->Widget (assoc widget :widget/data (report/generate-data (:widget/report widget) {} transactions)))]
+                 (->Widget (assoc widget :widget/data (report/generate-data (:widget/report widget) transactions)))]
 
                 [:fieldset.fieldset
                  [:legend "Settings"]

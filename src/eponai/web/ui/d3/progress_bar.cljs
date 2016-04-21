@@ -106,8 +106,8 @@
   (componentWillReceiveProps [this next-props]
     (let [{:keys [data]} next-props
           new-start-angle (end-angle (first data))]
-      (om/update-state! this assoc :start-angle new-start-angle))
-    (d3/update-chart-data this next-props))
+      (om/update-state! this assoc :start-angle new-start-angle)
+      (d3/update-chart-data this data)))
 
   (initLocalState [_]
     {:start-angle 0})

@@ -175,7 +175,7 @@
     (d3/update-chart this))
 
   (componentWillReceiveProps [this next-props]
-    (d3/update-chart-data this next-props))
+    (d3/update-chart-data this (:data next-props)))
 
   (render [this]
     (let [{:keys [id]} (om/props this)]

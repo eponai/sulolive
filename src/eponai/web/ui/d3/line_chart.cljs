@@ -9,6 +9,7 @@
     [cljs-time.core :as t]
     [cljs-time.coerce :as c]))
 
+
 (defui LineChart
   Object
   (make-axis [_ width height domain]
@@ -46,9 +47,10 @@
   (create [this]
     (let [{:keys [id width height data]} (om/props this)
           svg (d3/build-svg (str "#line-chart-" id) width height)
+          padded-data (d3/zero-padding-to-time-series-data data)
 
-          js-domain (clj->js (flatten (map :values data)))
-          js-data (clj->js data)
+          js-domain (clj->js (flatten (map :values padded-data)))
+          js-data (clj->js padded-data)
 
           {:keys [margin]} (om/get-state this)
           {inner-width :width
@@ -78,7 +80,7 @@
                         :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :color-scale color-scale)))
 
   (update [this]
-    (let [{:keys [svg x-scale y-scale x-axis y-axis js-data js-domain margin graph]} (om/get-state this)
+    (let [{:keys [svg x-scale y-scale x-axis y-axis js-domain margin]} (om/get-state this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})]
 
@@ -158,7 +160,7 @@
     (d3/update-chart this))
 
   (componentWillReceiveProps [this next-props]
-    (d3/update-chart-data this next-props))
+    (d3/update-chart-data this (d3/zero-padding-to-time-series-data (:data next-props))))
 
   (render [this]
     (let [{:keys [id]} (om/props this)]

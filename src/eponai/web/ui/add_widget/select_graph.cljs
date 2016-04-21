@@ -41,7 +41,7 @@
   (componentWillReceiveProps [this new-props]
     (let [{:keys [transactions styles]} (::om/computed new-props)
           style->data (reduce (fn [m style]
-                                (assoc m style (report/generate-data (default-report style) nil transactions)))
+                                (assoc m style (report/generate-data (default-report style) transactions)))
                               {}
                               styles)]
       (om/update-state! this assoc :style->data style->data)))
@@ -49,7 +49,7 @@
   (componentDidMount [this]
     (let [{:keys [transactions styles]} (om/get-computed this)
           style->data (reduce (fn [m style]
-                                (assoc m style (report/generate-data (default-report style) nil transactions)))
+                                (assoc m style (report/generate-data (default-report style) transactions)))
                               {}
                               styles)
           sidebar (.getElementById js/document "sidebar")]

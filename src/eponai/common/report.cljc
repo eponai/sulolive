@@ -28,32 +28,25 @@
                 k))
 
 (defmethod sum :default
-  [k _ transactions]
-  ;(debug "Generating sum data: " k " " transactions)
+  [_ transactions _]
   (let [sum-fn (fn [s tx]
                  (+ s (converted-amount tx)))]
     [(reduce sum-fn 0 transactions)]))
 
 (defmethod sum :transaction/date
-  [_ _ transactions]
-  (let [grouped (group-by #(select-keys (:transaction/date %) [:date/timestamp]) transactions)
-        sum-fn (fn [[day ts]]
-                 (assoc day :date/sum (reduce (fn [s tx]
-                                                (+ s (converted-amount tx)))
-                                              0
-                                              ts)))
-        sum-by-day (map sum-fn grouped)]
-    (reduce (fn [l date]
-              (if (some? (:date/timestamp date))
-                (conj l
-                      {:name  (:date/timestamp date) ;date timestamp
-                       :value (:date/sum date)})
-                l))                             ;sum for date
-            []
-            (sort-by :date/timestamp sum-by-day))))
+  [_ transactions _]
+  (let [by-timestamp (group-by #(:date/timestamp (:transaction/date %)) transactions)
+        sum-fn (fn [[timestamp ts]]
+                 {:name  timestamp
+                  :value (reduce (fn [s tx]
+                                   (+ s (converted-amount tx)))
+                                 0
+                                 ts)})
+        sum-by-day (mapv sum-fn by-timestamp)]
+    (sort-by :name sum-by-day)))
 
 (defmethod sum :transaction/tags
-  [_ data-filter transactions]
+  [_ transactions {:keys [data-filter]}]
   (let [sum-fn (fn [m transaction]
                  (let [include-tag-names (map :tag/name (:filter/include-tags data-filter))
                        tags (:transaction/tags transaction)
@@ -78,7 +71,7 @@
                            sum-by-tag))))
 
 (defmethod sum :transaction/currency
-  [_ _ transactions]
+  [_ transactions _]
   (let [grouped (group-by #(select-keys (:transaction/currency %) [:currency/code]) transactions)
         sum-fn (fn [[c ts]]
                  (assoc c :currency/sum (reduce (fn [s tx]
@@ -95,17 +88,16 @@
 (defmulti mean (fn [k _ _ ] k))
 
 (defmethod mean :default
-  [_ data-filter transactions]
+  [_ transactions opts]
   (let [by-timestamp (group-by #(select-keys (:transaction/date %) [:date/timestamp]) transactions)
-        [sum-value] (sum :default data-filter transactions)]
+        [sum-value] (sum :default transactions opts)]
     [(/ sum-value (count by-timestamp))]))
 
 (defmethod mean :transaction/date
-  [_ data-filter transactions]
+  [_ transactions opts]
   (let [by-timestamp (group-by #(select-keys (:transaction/date %) [:date/timestamp]) transactions)
-        [sum] (sum :default data-filter transactions)
+        [sum] (sum :default transactions opts)
         mean-value (/ sum (count by-timestamp))]
-    (debug "Found mean value: " mean-value)
     (reduce (fn [l [date _]]
               (if (some? (:date/timestamp date))
                    (conj l {:name  (:date/timestamp date)
@@ -115,9 +107,9 @@
             by-timestamp)))
 
 (defmethod mean :transaction/tags
-  [_ data-filter transactions]
+  [_ transactions opts]
   (let [by-timestamp (group-by #(select-keys (:transaction/date %) [:date/timestamp]) transactions)
-        sum-by-tag (sum :transaction/tags data-filter transactions)]
+        sum-by-tag (sum :transaction/tags transactions opts)]
     (map (fn [tag-sum]
            {:name  (:name tag-sum)
             :value (/ (or (:value tag-sum) 0) (count by-timestamp))})
@@ -126,16 +118,16 @@
 (defmulti track (fn [f _ _] (:track.function/id f)))
 
 (defmethod track :track.function.id/sum
-  [{:keys [track.function/group-by]} data-filter transactions]
+  [{:keys [track.function/group-by]} transactions opts]
   {:key    "All transactions sum"
    :id     :track.function.id/sum
-   :values (sum group-by data-filter transactions)})
+   :values (sum group-by transactions opts)})
 
 (defmethod track :track.function.id/mean
-  [{:keys [track.function/group-by]} data-filter transactions]
+  [{:keys [track.function/group-by]} transactions opts]
   {:key    "All Transactions mean"
    :id     :track.function.id/mean
-   :values (mean group-by data-filter transactions)})
+   :values (mean group-by transactions opts)})
 
 (defn goal [g transactions]
   (debug "transactions: " transactions)
@@ -165,15 +157,15 @@
     )
   )
 
-(defn generate-data [report data-filter transactions]
+(defn generate-data [report transactions & [opts]]
   (debug "Generate data goal: " report)
   ;(debug "generate for Transactions: " transactions)
   (cond
     (some? (:report/track report))
     (let [functions (get-in report [:report/track :track/functions])
           track-fn (fn [f]
-                     (debug "Make calc: " f " with filter: " data-filter)
-                     (track f data-filter transactions))]
+                     (debug "Make calc: " f " with opts: " opts)
+                     (track f transactions opts))]
       ;(debug "Generated data: " (mapv track-fn functions))
       (map track-fn functions))
 

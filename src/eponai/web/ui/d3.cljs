@@ -2,6 +2,8 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
     [cljsjs.d3]
+    [cljs-time.coerce :as c]
+    [cljs-time.core :as t]
     [sablono.core :refer-macros [html]]
     [om.next :as om]
     [taoensso.timbre :refer-macros [debug]]))
@@ -45,6 +47,23 @@
       (selectAll "text.no-data")
       remove))
 
+;; Data helper
+(defn zero-padding-to-time-series-data [data]
+  (let [padding-fn (fn [data-set]
+                     (let [values (:values data-set)
+                           timestamps (map #(get % :name) values)
+                           start (apply min timestamps)
+                           end (apply max timestamps)]
+                       (loop [current start
+                              new-values values]
+                         (let [add-value (some #(when (= (:name %) current)
+                                                 %) values)]
+                           (if (<= current end)
+                             (recur (c/to-long (t/plus (c/from-long current) (t/days 1)))
+                                    (conj new-values (or add-value {:name current :value 0})))
+                             (assoc data-set :values (sort-by :name new-values)))))))]
+    (mapv padding-fn data)))
+
 ;; Responsive update helpers
 (defn window-resize [component]
   (let [{:keys [resize-timer]} (om/get-state component)]
@@ -72,10 +91,9 @@
     (when-not resize-timer
       (.update component))))
 
-(defn update-chart-data [component props]
-  (let [{new-data :data} props
-        js-domain (clj->js (flatten (map :values new-data)))
-        js-data (clj->js new-data)]
+(defn update-chart-data [component new-data]
+  (let [js-domain (clj->js (flatten (map :values new-data)))
+        js-data (clj->js (or new-data []))]
     (om/update-state! component assoc
                       :js-domain js-domain
                       :js-data js-data)))

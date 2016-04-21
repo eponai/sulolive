@@ -50,6 +50,13 @@
      {:transaction/date [:date/ymd
                          :date/timestamp]}]))
 
+;(defn dates-between [db start end]
+;  (p/pull-many db [:date/timestamp] (p/all-with db {:where '[[?e :date/timestamp ?time]
+;                                                            [(<= ?start ?time)]
+;                                                            [(<= ?time ?end)]]
+;                                                    :symbols {'?start start
+;                                                              '?end end}})))
+
 (defn widgets-with-data [{:keys [db auth] :as env} project-eid widgets]
   (->> widgets
        (mapv (fn [{:keys [widget/uuid]}]
@@ -60,7 +67,8 @@
                                     (:username auth)
                                     {:filter       (:widget/filter widget)
                                      :project-uuid (:project/uuid project)})
-                     report-data (report/generate-data (:widget/report widget) (get-in widget [:widget/graph :graph/filter]) transactions)]
+                     timestamps (map #(:date/timestamp (:transaction/date %)) transactions)
+                     report-data (report/generate-data (:widget/report widget) transactions {:data-filter (get-in widget [:widget/graph :graph/filter])})]
                  (assoc widget :widget/data report-data))))))
 
 (defn new-currencies [db rates]
