@@ -27,8 +27,8 @@
 
 (defui NewWidget
   static om/IQueryParams
-  (params [_]
-    {:filter {:filter/include-tags #{}}})
+  (params [this]
+    {:filter {}})
   static om/IQuery
   (query [_]
     ['{(:query/transactions {:filter ?filter}) [:transaction/uuid
@@ -39,8 +39,7 @@
                                                 {:transaction/date [:date/ymd
                                                                     :date/timestamp]}]}
      {:query/active-widget (om/get-query Widget)}
-     {:query/widget-type [:ui.component.widget/type]}
-     ])
+     {:query/widget-type [:ui.component.widget/type]}])
   Object
   (save-widget [this widget]
     (if (some? (:db/id widget))
@@ -91,7 +90,7 @@
           {:keys [query/active-widget]} (om/props this)]
       (if active-widget
         (do
-          (update-query-params! this assoc :filter (:widget/filter active-widget))
+          (om/set-query! this {:params {:filter (or (:widget/filter active-widget) {})}})
           {:input-widget active-widget})
         {:input-widget {:widget/uuid (d/squuid)
                         :widget/index  index
@@ -116,7 +115,8 @@
                                      :on-change    (fn [new-widget & [{:keys [update-data?]}]]
                                                      (om/update-state! this assoc :input-widget new-widget)
                                                      (when update-data?
-                                                       (update-query-params! this assoc :filter (:widget/filter new-widget))))}))
+                                                       (debug "Updating query params: " {:filter (:widget/filter new-widget)})
+                                                       (om/update-query! this assoc-in [:params :filter] (:widget/filter new-widget))))}))
 
            (= :goal (:ui.component.widget/type widget-type))
            (->NewGoal (om/computed {}
@@ -124,7 +124,7 @@
                                     :on-change (fn [new-widget & [{:keys [update-data?]}]]
                                                  (om/update-state! this assoc :input-widget new-widget)
                                                  (when update-data?
-                                                   (update-query-params! this assoc :filter (:widget/filter new-widget))))})))
+                                                   (om/update-query! this assoc-in [:params :filter] (:widget/filter new-widget))))})))
          [:div.float-right
           [:a.button.secondary
            ;{:on-click on-close}

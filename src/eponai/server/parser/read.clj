@@ -31,10 +31,7 @@
         entity-query (common.pull/transaction-entity-query
                        {:project-uuid project-uuid
                         :filter       filter
-                        :query-params {:where   '[[?e :transaction/project ?b]
-                                                  [?b :project/users ?u]
-                                                  [?u :user/uuid ?user-uuid]]
-                                       :symbols {'?user-uuid (:username auth)}}})
+                        :user-uuid (:username auth)})
         tx-ids (server.pull/all-since db db-since query entity-query)]
     {:value (cond-> {:transactions (pull/pull-many db query tx-ids)
                      :conversions  (pull/conversions db tx-ids (:username auth))}

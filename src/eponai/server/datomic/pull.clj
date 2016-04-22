@@ -30,7 +30,8 @@
     '[:widget/uuid
      :widget/width
      :widget/height
-     {:widget/filter [{:filter/include-tags [:tag/name]}]}
+     {:widget/filter [{:filter/include-tags [:tag/name]}
+                      {:filter/exclude-tags [:tag/name]}]}
      {:widget/report [:report/uuid
                       {:report/track [{:track/functions [*]}]}
                       {:report/goal [*
@@ -38,7 +39,9 @@
                       :report/title]}
      :widget/index
      :widget/data
-     {:widget/graph [:graph/style]}]))
+     {:widget/graph [:graph/style
+                     {:graph/filter [{:filter/include-tags [:tag/name]}
+                                     {:filter/exclude-tags [:tag/name]}]}]}]))
 
 (defn transaction-query []
   (parser/put-db-id-in-query

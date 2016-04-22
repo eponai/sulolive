@@ -39,17 +39,19 @@
       (om/update-state! this assoc :grid-element grid-element)))
 
   (componentWillReceiveProps [this new-props]
-    (let [{:keys [transactions styles]} (::om/computed new-props)
+    (let [{:keys [graph]} new-props
+          {:keys [transactions styles]} (::om/computed new-props)
           style->data (reduce (fn [m style]
-                                (assoc m style (report/generate-data (default-report style) transactions)))
+                                (assoc m style (report/generate-data (default-report style) transactions {:data-filter (:graph/filter graph)})))
                               {}
                               styles)]
       (om/update-state! this assoc :style->data style->data)))
 
   (componentDidMount [this]
-    (let [{:keys [transactions styles]} (om/get-computed this)
+    (let [{:keys [graph]} (om/props this)
+          {:keys [transactions styles]} (om/get-computed this)
           style->data (reduce (fn [m style]
-                                (assoc m style (report/generate-data (default-report style) transactions)))
+                                (assoc m style (report/generate-data (default-report style) transactions {:data-filter (:graph/filter graph)})))
                               {}
                               styles)
           sidebar (.getElementById js/document "sidebar")]
@@ -114,12 +116,15 @@
                                  (html
                                    [:div
                                     {:key      (str style)
-                                     :class    (when (= style (:graph/style graph))
+                                     :class    (when
+                                                 (or (= style (:graph/style graph))
+                                                     (and (= style :graph.style/line)
+                                                          (= (:graph/style graph) :graph.style/area)))
                                                  "selected")
                                      :on-click #(when on-change
                                                  (on-change style))}
                                     (widget/->Widget (om/computed
-                                                       {:widget/graph  {:graph/style style}
+                                                       {:widget/graph  (assoc graph :graph/style style)
                                                         :widget/report {:report/title (clojure.string/capitalize (name style))}
                                                         :widget/data   (get style->data style)}
                                                        {:id (name style)}))]))

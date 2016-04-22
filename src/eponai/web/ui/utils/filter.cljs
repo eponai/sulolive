@@ -113,7 +113,7 @@
 
 (defn add-tag [tags tag]
   (if-not (some #(= (:tag/name %) (:tag/name tag)) tags)
-    (if (empty? tags)
+    (if (nil? tags)
       [tag]
       (conj tags tag))
     tags))
@@ -124,28 +124,32 @@
 (defui TagFilter
   Object
   (add-tag [this tag]
-    (let [{:keys [on-change]} (om/get-computed this)]
-      (om/update-state! this
-                        (fn [st] (-> st
-                                     (assoc :input-tag "")
-                                     (update :tags add-tag tag))))
+    (let [{:keys [on-change]} (om/get-computed this)
+          {:keys [tags]} (om/get-state this)
+          new-tags (add-tag tags tag)]
+      (om/update-state! this assoc
+                        :input-tag ""
+                        :tags new-tags)
       (when on-change
-        (on-change (:tags (om/get-state this))))))
+        (on-change new-tags))))
   (delete-tag [this tag]
-    (let [{:keys [on-change]} (om/get-computed this)]
-      (om/update-state! this update :tags delete-tag tag)
+    (let [{:keys [on-change]} (om/get-computed this)
+          {:keys [tags]} (om/get-state this)
+          new-tags (delete-tag tags tag)]
+      (om/update-state! this assoc :tags new-tags)
       (when on-change
-        (on-change (:tags (om/get-state this))))))
+        (on-change new-tags))))
 
   (initLocalState [this]
-    (let [{:keys [tags]} (om/props this)]
-      {:tags tags}))
+    (let [{:keys [tags placeholder]} (om/props this)]
+      {:tags        (or tags [])
+       :placeholder placeholder}))
   (componentWillReceiveProps [this new-props]
-    (let [{:keys [tags]} new-props]
-      (om/update-state! this assoc :tags tags)))
+    (let [{:keys [tags placeholder]} new-props]
+      (om/update-state! this assoc :tags tags :placeholder placeholder)))
 
   (render [this]
-    (let [{:keys [input-tag tags]} (om/get-state this)]
+    (let [{:keys [input-tag tags placeholder]} (om/get-state this)]
       (debug "Rendering tags: " tags)
       (html
         [:div
@@ -156,6 +160,7 @@
                            :selected-tags tags
                            :on-change     #(om/update-state! this assoc :input-tag %)
                            :on-add-tag    #(.add-tag this %)
-                           :on-delete-tag #(.delete-tag this %)})]))))
+                           :on-delete-tag #(.delete-tag this %)
+                           :placeholder placeholder})]))))
 
 (def ->TagFilter (om/factory TagFilter))

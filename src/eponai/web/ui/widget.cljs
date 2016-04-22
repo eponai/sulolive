@@ -18,6 +18,7 @@
      :widget/width
      :widget/height
      {:widget/filter [{:filter/include-tags [:tag/name]}
+                      {:filter/exclude-tags [:tag/name]}
                       {:filter/end-date [:date/timestamp]}
                       {:filter/start-date [:date/timestamp]}]}
      {:widget/report [*
@@ -29,8 +30,7 @@
      :widget/data
      {:widget/graph [:graph/style
                      {:graph/filter [{:filter/include-tags [:tag/name]}
-                                     {:filter/end-date [:date/timestamp]}
-                                     {:filter/start-date [:date/timestamp]}]}]}])
+                                     {:filter/exclude-tags [:tag/name]}]}]}])
 
   Object
   (render [this]

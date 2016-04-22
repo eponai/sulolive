@@ -6,8 +6,7 @@
     #?(:clj [clj-time.coerce :as c]
        :cljs [cljs-time.coerce :as c])
     #?(:clj [clj-time.core :as t]
-       :cljs [cljs-time.core :as t]))
-  )
+       :cljs [cljs-time.core :as t])))
 
 (defn converted-amount [{:keys [transaction/conversion
                                 transaction/amount]}]
@@ -24,7 +23,7 @@
                   rate))
       0)))
 
-(defmulti sum (fn [k _ ts]
+(defmulti sum (fn [k _ _]
                 k))
 
 (defmethod sum :default
@@ -48,11 +47,16 @@
 (defmethod sum :transaction/tags
   [_ transactions {:keys [data-filter]}]
   (let [sum-fn (fn [m transaction]
-                 (let [include-tag-names (map :tag/name (:filter/include-tags data-filter))
+                 (let [
+                       include-tag-names (map :tag/name (:filter/include-tags data-filter))
+                       exclude-tag-names (map :tag/name (:filter/exclude-tags data-filter))
                        tags (:transaction/tags transaction)
-                       filtered-tags (if (seq include-tag-names)
-                                       (filter #(contains? (set include-tag-names) (:tag/name %)) tags)
-                                       tags)]
+                       filtered-tags (let [filtered-included (if (seq include-tag-names)
+                                                               (filter #(contains? (set include-tag-names) (:tag/name %)) tags)
+                                                               tags)]
+                                       (if (seq exclude-tag-names)
+                                         (remove #(contains? (set exclude-tag-names) (:tag/name %)) filtered-included)
+                                         filtered-included))]
                    (if (empty? filtered-tags)
                      m
                      (reduce (fn [m2 tagname]
@@ -158,7 +162,7 @@
   )
 
 (defn generate-data [report transactions & [opts]]
-  (debug "Generate data goal: " report)
+  ;(debug "Generate data goal: " report)
   ;(debug "generate for Transactions: " transactions)
   (cond
     (some? (:report/track report))

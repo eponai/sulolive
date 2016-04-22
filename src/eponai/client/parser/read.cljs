@@ -52,7 +52,8 @@
     (fn
       [{:keys [parser] :as env} _ p]
       (let [{:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
-        {:value (p/transactions-with-conversions env (:user/uuid current-user) p)}))))
+        {:value (when current-user
+                  (p/transactions-with-conversions env (:user/uuid current-user) p))}))))
 
 (defn active-project-uuid [db]
   (:ui.component.project/uuid (d/entity db [:ui/component :ui.component/project])))

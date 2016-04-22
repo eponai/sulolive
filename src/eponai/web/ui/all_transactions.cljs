@@ -300,17 +300,17 @@
          (filter/->TagFilter (om/computed {:tags (:filter/include-tags tag-filter)}
                                           {:on-change #(do
                                                         (om/update-state! component assoc :tag-filter {:filter/include-tags %})
-                                                        (update-query-params! component assoc :filter (.filter component)))}))]
+                                                        (om/update-query! component assoc-in [:params :filter] (.filter component)))}))]
         [:div.columns.small-9
          (filter/->DateFilter (om/computed {:filter date-filter}
                                            {:on-change #(do
                                                          (om/update-state! component assoc :date-filter %)
-                                                         (update-query-params! component assoc :filter (.filter component)))}))]]])))
+                                                         (om/update-query! component assoc-in [:params :filter] (.filter component)))}))]]])))
 
 (defui AllTransactions
   static om/IQueryParams
   (params [_]
-    {:filter {:filter/include-tags #{}}
+    {:filter {}
      :transaction (om/get-query Transaction)})
   static om/IQuery
   (query [_]
@@ -381,7 +381,7 @@
                                                            (:db/id props))
                                           :on-tag-click #(do
                                                           (om/update-state! this update-in [:tag-filter :filter/include-tags] filter/add-tag %)
-                                                          (update-query-params! this assoc :filter (.filter this)))})))
+                                                          (om/update-query! this assoc-in [:params :filter] (.filter this)))})))
                         (sort-by :transaction/created-at > transactions))]]]
                 [:div.edit-transaction-form
 

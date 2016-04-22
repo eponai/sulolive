@@ -197,14 +197,21 @@
      :symbols {filter-sym date-time}}))
 
 (defn transactions
-  [{:keys [filter/start-date filter/end-date filter/include-tags filter/last-x-days] :as filter}]
+  [{:keys [filter/start-date
+           filter/end-date
+           filter/include-tags
+           filter/exclude-tags
+           filter/last-x-days] :as filter}]
   {:pre [(map? filter)]}
   (cond->
     {}
-    (not-empty include-tags)
+    (seq include-tags)
     (merge-query {:where   '[[?e :transaction/tags ?tag]
-                             [?tag :tag/name ?tag-name]]
-                  :symbols {'[?tag-name ...] (mapv :tag/name include-tags)}})
+                             [?tag :tag/name ?include-tag]]
+                  :symbols {'[?include-tag ...] (mapv :tag/name include-tags)}})
+    ;(seq exclude-tags)
+    ;(merge-query {:where   '[[(not= ?tag-name ?exclude-tag)]]
+    ;              :symbols {'[?exclude-tag ...] (mapv :tag/name exclude-tags)}})
 
 
     (some? last-x-days)
@@ -234,19 +241,21 @@
      user-db-id
      status))
 
-(defn transaction-entity-query [{:keys [filter project-uuid query-params]}]
-  (cond-> {:where '[[?e :transaction/uuid]]}
+(defn transaction-entity-query [{:keys [filter project-uuid user-uuid]}]
+  (assert (some? user-uuid) "User UUID must be supplied to read transactions.")
+  (debug "Find transactions with filter: " filter)
 
-          (some? query-params)
-          (merge-query query-params)
-
-          (some? filter)
-          (merge-query (transactions filter))
+  (cond-> {:where   '[[?u :user/uuid ?user-uuid]
+                      [?b :project/users ?u]
+                      [?e :transaction/project ?b]]
+           :symbols {'?user-uuid    user-uuid}}
 
           (some? project-uuid)
-          (merge-query {:where   '[[?e :transaction/project ?b]
-                                   [?b :project/uuid ?project-uuid]]
-                        :symbols {'?project-uuid project-uuid}})))
+          (merge-query {:where   '[[?b :project/uuid ?project-uuid]]
+                        :symbols {'?project-uuid project-uuid}})
+
+          (seq (keys filter))
+          (merge-query (transactions filter))))
 
 (defn find-transactions
   [db params]
@@ -339,7 +348,7 @@
       transactions)))
 
 (defn transactions-with-conversions [{:keys [db query]} user-uuid {:keys [conversion-query] :as params}]
-  (let [tx-ids (find-transactions db params)
+  (let [tx-ids (find-transactions db (assoc params :user-uuid user-uuid))
         pulled (pull-many db query tx-ids)]
     (->> pulled
          (add-conversions db

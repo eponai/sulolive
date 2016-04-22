@@ -56,38 +56,37 @@
                :checked  (= function-id :track.function.id/mean)})]
        [:label {:for "function-mean"} "Mean"]])))
 
-(defn- chart-group-by [component {:keys [report/track]} groups]
-  (let [{:keys [track/group-by]} track]
-    (html
-      [:fieldset
-       [:legend "Group by"]
-       (map
-         (fn [k]
-           (let [conf {:transaction/tags     {:icon "fa fa-tag"
-                                              :text "Tags"}
-                       :transaction/currency {:icon "fa fa-usd"
-                                              :text "Currencies"}
-                       :transaction/date     {:icon "fa fa-calendar"
-                                              :text "Dates"}}]
-             [:div
-              (opts {:style {:display :inline-block}
-                     :key [k]})
-              [:input
-               (opts {:type     "radio"
-                      :on-click #(select-group-by component k)
-                      :name     "group-by"
-                      :id       (str "group-by-" k)
-                      :checked  (= group-by k)})]
-              [:label {:for (str "group-by-" k)}
-               [:i
-                (opts {:key   [(get-in conf [k :icon])]
-                       :class (get-in conf [k :icon])
-                       :style {:margin-right 5}})]
-               [:span
-                (opts {:key [(get-in conf [k :text])]})
-                (get-in conf [k :text])]]]
-             ))
-         groups)])))
+(defn- chart-group-by [component {:keys [track.function/group-by]} groups]
+  (html
+    [:fieldset
+     [:legend "Group by"]
+     (map
+       (fn [k]
+         (let [conf {:transaction/tags     {:icon "fa fa-tag"
+                                            :text "Tags"}
+                     :transaction/currency {:icon "fa fa-usd"
+                                            :text "Currencies"}
+                     :transaction/date     {:icon "fa fa-calendar"
+                                            :text "Dates"}}]
+           [:div
+            (opts {:style {:display :inline-block}
+                   :key   [k]})
+            [:input
+             (opts {:type     "radio"
+                    :on-click #(select-group-by component k)
+                    :name     "group-by"
+                    :id       (str "group-by-" k)
+                    :checked  (= group-by k)})]
+            [:label {:for (str "group-by-" k)}
+             [:i
+              (opts {:key   [(get-in conf [k :icon])]
+                     :class (get-in conf [k :icon])
+                     :style {:margin-right 5}})]
+             [:span
+              (opts {:key [(get-in conf [k :text])]})
+              (get-in conf [k :text])]]]
+           ))
+       groups)]))
 
 
 
@@ -118,11 +117,11 @@
         (cond
           (= style :graph.style/bar)
           [:div
-           [:div.row.small-up-2.collapse
-            [:div.column
-             (chart-function this input-function)]
-            [:div.column
-             (chart-group-by this input-report [:transaction/tags :transaction/currency])]]]
+           [:div
+            (chart-function this input-function)]
+           ;[:div
+           ; (chart-group-by this input-function [:transaction/tags])]
+           ]
 
           (or (= style :graph.style/area) (= style :graph.style/line))
           [:div
@@ -131,17 +130,18 @@
              (chart-function this input-function)]
             ;[:div.column
             ; (chart-group-by this input-report [:transaction/date])]
-            [:div.column
-             [:fieldset
-              [:legend "Options"]
-              [:input
-               {:type     :checkbox
-                :id       "mean-check"
-                :checked  include-mean-line?
-                :on-click #(om/update-state! this update :include-mean-line? not)}]
-              [:label
-               {:for "mean-check"}
-               "Include average line"]]]]]
+            ;[:div.column
+            ; [:fieldset
+            ;  [:legend "Options"]
+            ;  [:input
+            ;   {:type     :checkbox
+            ;    :id       "mean-check"
+            ;    :checked  include-mean-line?
+            ;    :on-click #(om/update-state! this update :include-mean-line? not)}]
+            ;  [:label
+            ;   {:for "mean-check"}
+            ;   "Include average line"]]]
+            ]]
 
           (= style :graph.style/number)
           [:div
