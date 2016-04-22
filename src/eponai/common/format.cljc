@@ -69,11 +69,13 @@
   {:pre [(string? ymd)]}
   (f/parse ymd))
 
+(def ymd-date-formatter (f/formatters :date))
+
 (defn date->ymd-string
   "Takes a date and returns a string for that date of the form yyyy-MM-dd."
   [date]
   (when date
-    (f/unparse (f/formatters :date) (ensure-date date))))
+    (f/unparse ymd-date-formatter (ensure-date date))))
 
 (defn str->uuid [str-uuid]
   #?(:clj  (java.util.UUID/fromString str-uuid)

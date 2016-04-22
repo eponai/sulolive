@@ -19,6 +19,7 @@
                  [com.draines/postal "1.11.3"]
                  [com.stripe/stripe-java "1.45.0"]
                  [com.taoensso/timbre "4.3.1"]
+                 [org.clojure/data.xml "0.0.8"]
                  [environ "1.0.1"]
                  [hiccup "1.0.5"]
                  [org.clojure/clojure "1.8.0"]
