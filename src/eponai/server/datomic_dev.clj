@@ -135,7 +135,9 @@
         (let [mem-conn (create-new-inmemory-db)]
           (info "Setting up inmemory db because uri is set to:" uri)
           (add-data-to-connection mem-conn
-                                  (ods/doit-parsed (ods/test-data-parsed)))
+                                  ;; Use larger dataset:
+                                  ;;(ods/doit-parsed (ods/test-data-parsed))
+                                  )
           (debug "Successfully set up inmemory db!")
           mem-conn)
         (do
