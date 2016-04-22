@@ -2,50 +2,45 @@
   (:require [datomic.api :as d]
             [environ.core :refer [env]]
             [eponai.common.format :as format]
+            [eponai.server.import.ods :as ods]
             [clojure.tools.reader.edn :as edn]
             [clojure.java.io :as io]
             [eponai.common.database.transact :as transact]
             [taoensso.timbre :refer [debug error info]]
             [eponai.server.datomic.format :as f])
-  (:import (java.util UUID)
-           (java.io File)))
+  (:import (java.util UUID)))
 
 (def currencies {:THB "Thai Baht"
                  :SEK "Swedish Krona"
                  :USD "US Dollar"})
 
 (defn transactions []
-  [{:transaction/uuid       (UUID/randomUUID)
-    :transaction/title      "lunch"
+  [{:transaction/title      "lunch"
     :transaction/date       {:date/ymd "2015-10-10"}
     :transaction/amount     "180"
     :transaction/currency   {:currency/code "THB"}
     :transaction/created-at 1
     :transaction/tags       [{:tag/name "thailand"}]
     :transaction/type       :transaction.type/expense}
-   {:transaction/uuid       (UUID/randomUUID)
-    :transaction/title      "coffee"
+   {:transaction/title      "coffee"
     :transaction/date       {:date/ymd "2015-10-10"}
     :transaction/amount     "140"
     :transaction/currency   {:currency/code "THB"}
     :transaction/created-at 1
     :transaction/type       :transaction.type/expense}
-   {:transaction/uuid       (UUID/randomUUID)
-    :transaction/title      "dinner"
+   {:transaction/title      "dinner"
     :transaction/date       {:date/ymd "2015-10-10"}
     :transaction/amount     "350"
     :transaction/currency   {:currency/code "THB"}
     :transaction/created-at 1
     :transaction/type       :transaction.type/expense}
-   {:transaction/uuid       (UUID/randomUUID)
-    :transaction/title      "market"
+   {:transaction/title      "market"
     :transaction/date       {:date/ymd "2015-10-11"}
     :transaction/amount     "789"
     :transaction/currency   {:currency/code "THB"}
     :transaction/created-at 1
     :transaction/type       :transaction.type/expense}
-   {:transaction/uuid       (UUID/randomUUID)
-    :transaction/title      "lunch"
+   {:transaction/title      "lunch"
     :transaction/date       {:date/ymd "2015-10-11"}
     :transaction/amount     "125"
     :transaction/currency   {:currency/code "THB"}
@@ -88,11 +83,14 @@
     (debug "New user created with email:" email)
     ret))
 
-(defn add-transactions [conn project-uuid]
-  (->> (transactions)
-       (map #(assoc % :transaction/project {:project/uuid project-uuid}))
-       (map #(format/transaction %))
-       (transact/transact conn)))
+(defn add-transactions
+  ([conn project-uuid] (add-transactions conn project-uuid (transactions)))
+  ([conn project-uuid transactions]
+   (->> transactions
+        (map #(assoc % :transaction/uuid (d/squuid)))
+        (map #(assoc % :transaction/project {:project/uuid project-uuid}))
+        (map #(format/transaction %))
+        (transact/transact conn))))
 
 (defn add-currencies [conn]
   (transact/transact conn (f/currencies {:currencies currencies})))
@@ -102,23 +100,31 @@
                      (f/currency-rates {:date  "2015-10-10"
                                         :rates {:THB 36
                                                 :SEK 8.4
-                                                :USD 1}})))
+                                                :USD 1
+                                                :JPY 110.61
+                                                :MYR 3.91
+                                                :VND 22295.00
+                                                :EUR 0.89
+                                                :ALL 121.35
+                                                :HRK 6.64}})))
 
-(defn add-data-to-connection [conn]
-  (let [schemas (read-schema-files)
-        email test-user-email
-        project-uuid (d/squuid)]
-    (transact/transact-schemas conn schemas)
-    (debug "Schema added.")
-    (add-currencies conn)
-    (debug "Currencies added.")
+(defn add-data-to-connection
+  ([conn] (add-data-to-connection conn (transactions)))
+  ([conn transactions]
+   (let [schemas (read-schema-files)
+         email test-user-email
+         project-uuid (d/squuid)]
+     (transact/transact-schemas conn schemas)
+     (debug "Schema added.")
+     (add-currencies conn)
+     (debug "Currencies added.")
 
-    (add-verified-user-account conn email project-uuid)
-    (debug "New user created and verified.")
-    (add-transactions conn project-uuid)
-    (debug "User transactions added.")
-    (add-conversion-rates conn)
-    (debug "Conversion rates added")))
+     (add-verified-user-account conn email project-uuid)
+     (debug "New user created and verified.")
+     (add-transactions conn project-uuid transactions)
+     (debug "User transactions added.")
+     (add-conversion-rates conn)
+     (debug "Conversion rates added"))))
 
 (defonce connection (atom nil))
 
@@ -128,7 +134,8 @@
       (if (contains? #{nil "" "test"} uri)
         (let [mem-conn (create-new-inmemory-db)]
           (info "Setting up inmemory db because uri is set to:" uri)
-          (add-data-to-connection mem-conn)
+          (add-data-to-connection mem-conn
+                                  (ods/doit-parsed (ods/test-data-parsed)))
           (debug "Successfully set up inmemory db!")
           mem-conn)
         (do

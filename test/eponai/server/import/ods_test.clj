@@ -18,7 +18,7 @@
                                     transaction/tags
                                     transaction/type
                                     transaction/created-at]}]
-                         (and (decimal? amount)
+                         (and (string? amount)
                               (string? (:currency/code currency))
                               (string? (:date/ymd date))
                               (string? title)

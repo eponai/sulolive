@@ -1,5 +1,6 @@
 (ns eponai.server.import.ods
   "Namespace for importing open office expenses.
+  The name 'ods' comes from the open office file format (.ods).
 
   How to:
   1. Export .ods format to .html in
@@ -211,7 +212,8 @@
                             :transaction/created-at (time-coerce/to-long date))))]
     (into [] (comp (map html-t->jourmoney->t)
                    (filter (fn [{:keys [:transaction/amount]}]
-                             (pos? amount))))
+                             (pos? amount)))
+                   (map #(update % :transaction/amount str)))
           transactions)))
 
 ;; END JOUR MONEY
