@@ -72,17 +72,29 @@
           {next-value :value} next-props]
       (set-date-if-changed this next-value old-value)))
   (render [this]
-    (let [{:keys [key on-change]} (om/props this)]
+    (let [{:keys [key on-change style input-only?]} (om/props this)]
       (assert key "Datepicker needs :key in props")
       (html
-        [:div.input-group
-         [:input.input-group-field
-          (opts {:on-key-down (on-input-field-change on-change)
-                 :type        "text"
-                 :ref         (pikaday-ref-name this)
-                 :placeholder (-> this om/props :placeholder)})]
-         [:span.input-group-label
-          [:i.fa.fa-calendar]]]))))
+        [:div
+         (if input-only?
+           ;; Input field only
+           [:input#datepicker
+            (opts {:on-key-down (on-input-field-change on-change)
+                   :style       style
+                   :type        "text"
+                   :ref         (pikaday-ref-name this)
+                   :placeholder (-> this om/props :placeholder)})]
+
+           ;; Input group with calendar icon
+           [:div.input-group#datepicker
+            (opts {:style style})
+            [:input.input-group-field
+             (opts {:on-key-down (on-input-field-change on-change)
+                    :type        "text"
+                    :ref         (pikaday-ref-name this)
+                    :placeholder (-> this om/props :placeholder)})]
+            [:span.input-group-label
+             [:i.fa.fa-calendar]]])]))))
 
 ;; props: {:value js/Date :on-change f :placeholder str}
 (def ->Datepicker (om/factory DatePicker))

@@ -15,10 +15,7 @@
   {end                               :route/project->dashboard})
 
 (def transaction-routes
-  {end :route/project->txs
-   ["/transaction/" :route-param/transaction-id]
-         {end                               :route/project->txs->tx
-          ["/" :route-param/transaction-mode] :route/project->txs->tx+mode}})
+  {end :route/project->txs})
 
 (def project-routes
   {"/project" {end                           :route/project-empty

@@ -65,13 +65,28 @@
             :key [tag-name]})
 
      [:a.button
-      (opts {:on-click (or on-click #(prn (.. % -target)))})
-      tag-name]
+      (opts {:on-click (when on-click
+                         #(on-click %))})
+      [:small
+       tag-name]]
 
      (when on-delete
        [:a.button
-        (opts {:on-click #(on-delete)})
-        "x"])]))
+        (opts {:on-click #(on-delete %)
+               :style {:padding "0 0.2em"}})
+        [:small
+         [:strong
+          "x"]]])]))
+
+(defn add-tag [tags tag]
+  (if-not (some #(= (:tag/name %) (:tag/name tag)) tags)
+    (if (nil? tags)
+      [tag]
+      (conj tags tag))
+    tags))
+
+(defn delete-tag [tags tag]
+  (into [] (remove #(= (:tag/name %) (:tag/name tag))) tags))
 
 (defn- on-enter-down [e f]
   (when (and (= 13 (.-keyCode e))
@@ -85,20 +100,30 @@
                          on-add-tag
                          on-delete-tag
                          placeholder
-                         no-render-tags?]}]
-  (prn "Render tags: " selected-tags)
+                         no-render-tags?
+                         input-only?]}]
   (html
     [:div
-     [:div.input-group
-      [:input.input-group-field
-       {:type        "text"
-        :value       (or (:tag/name input-tag) "")
-        :on-change   #(on-change {:tag/name (.-value (.-target %))})
-        :on-key-down (fn [e]
-                       (on-enter-down e #(on-add-tag {:tag/name %})))
-        :placeholder (or placeholder "Filter tags...")}]
-      [:span.input-group-label
-       [:i.fa.fa-tag]]]
+
+     (if input-only?
+       [:input
+        {:type        "text"
+         :value       (or (:tag/name input-tag) "")
+         :on-change   #(on-change {:tag/name (.-value (.-target %))})
+         :on-key-down (fn [e]
+                        (on-enter-down e #(on-add-tag {:tag/name %})))
+         :placeholder (or placeholder "Filter tags...")}]
+
+       [:div.input-group
+        [:input.input-group-field
+         {:type        "text"
+          :value       (or (:tag/name input-tag) "")
+          :on-change   #(on-change {:tag/name (.-value (.-target %))})
+          :on-key-down (fn [e]
+                         (on-enter-down e #(on-add-tag {:tag/name %})))
+          :placeholder (or placeholder "Filter tags...")}]
+        [:span.input-group-label
+         [:i.fa.fa-tag]]])
 
      (when-not no-render-tags?
        [:div

@@ -111,22 +111,12 @@
 
 (def ->DateFilter (om/factory DateFilter))
 
-(defn add-tag [tags tag]
-  (if-not (some #(= (:tag/name %) (:tag/name tag)) tags)
-    (if (nil? tags)
-      [tag]
-      (conj tags tag))
-    tags))
-
-(defn delete-tag [tags tag]
-  (into [] (remove #(= (:tag/name %) (:tag/name tag))) tags))
-
 (defui TagFilter
   Object
   (add-tag [this tag]
     (let [{:keys [on-change]} (om/get-computed this)
           {:keys [tags]} (om/get-state this)
-          new-tags (add-tag tags tag)]
+          new-tags (utils/add-tag tags tag)]
       (om/update-state! this assoc
                         :input-tag ""
                         :tags new-tags)
@@ -135,7 +125,7 @@
   (delete-tag [this tag]
     (let [{:keys [on-change]} (om/get-computed this)
           {:keys [tags]} (om/get-state this)
-          new-tags (delete-tag tags tag)]
+          new-tags (utils/delete-tag tags tag)]
       (om/update-state! this assoc :tags new-tags)
       (when on-change
         (on-change new-tags))))
@@ -149,18 +139,21 @@
       (om/update-state! this assoc :tags tags :placeholder placeholder)))
 
   (render [this]
-    (let [{:keys [input-tag tags placeholder]} (om/get-state this)]
+    (let [{:keys [input-tag tags placeholder]} (om/get-state this)
+          {:keys [type]} (om/get-computed this)]
       (debug "Rendering tags: " tags)
       (html
-        [:div
-         (opts {:style {:display        :flex
-                        :flex-direction :column}})
+        (cond
+          (nil? type)
+          [:div
+           (opts {:style {:display        :flex
+                          :flex-direction :column}})
 
-         (utils/tag-input {:input-tag     input-tag
-                           :selected-tags tags
-                           :on-change     #(om/update-state! this assoc :input-tag %)
-                           :on-add-tag    #(.add-tag this %)
-                           :on-delete-tag #(.delete-tag this %)
-                           :placeholder placeholder})]))))
+           (utils/tag-input {:input-tag     input-tag
+                             :selected-tags tags
+                             :on-change     #(om/update-state! this assoc :input-tag %)
+                             :on-add-tag    #(.add-tag this %)
+                             :on-delete-tag #(.delete-tag this %)
+                             :placeholder   placeholder})])))))
 
 (def ->TagFilter (om/factory TagFilter))

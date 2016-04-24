@@ -27,11 +27,6 @@
                                           :proxy/side-bar])
    :route-param/project->selected-tab (fn [_ tab]
                                         `[(project/select-tab ~{:selected-tab (param->keyword tab)})])
-   :route-param/transaction-id        (fn [_ tid]
-                                        (if (nil? tid)
-                                          `[(transactions/deselect)]
-                                          `[(transactions/select-transaction ~{:transaction-dbid (param->number tid)})
-                                            :query/selected-transaction]))
    :route-param/widget-id             (fn [_ wid]
                                         `[(widget/set-active-id ~{:widget-id (when wid
                                                                                (param->number wid))})])
@@ -85,7 +80,7 @@
                                                           (assoc :route-param/project->selected-tab :transactions)
                                                           ;; (update {} :foo identity) => {:foo nil}
                                                           ;; Ensures :route-param/transaction-id is in the map.
-                                                          (update :route-param/transaction-id identity))))))
+                                                          )))))
 
 
 (def route-handler->ui-component
@@ -95,8 +90,8 @@
    :route/project->dashboard      dashboard-handler
    :route/project->widget+type+id widget-handler
    :route/project->txs            transactions-handler
-   :route/project->txs->tx        transactions-handler
-   :route/project->txs->tx+mode   transactions-handler
+   ;:route/project->txs->tx        transactions-handler
+   ;:route/project->txs->tx+mode   transactions-handler
    :route/settings                (map->UiComponentMatch {:component Settings
                                                           :factory   ->Settings})
    :route/subscribe               (map->UiComponentMatch {:component Payment

@@ -26,10 +26,12 @@
                (assoc tx-report :currency-chan currency-chan)))})
 
 (defmethod mutate 'transaction/edit
-  [{:keys [state mutation-uuid]} _ {:keys [transaction/uuid] :as transaction}]
+  [{:keys [state mutation-uuid auth] :as env} k {:keys [transaction/uuid] :as transaction}]
   (debug "transaction/edit with params:" transaction)
   {:action (fn []
-             {:pre [(some? uuid)]}
+             (validate/validate env k {:transaction transaction
+                                       :user-uuid (:username auth)})
+             (debug "validated transaction")
              (let [txs (format/transaction-edit transaction)]
                (debug "editing transaction: " uuid " txs: " txs)
                (transact/mutate state mutation-uuid txs)))})
