@@ -218,7 +218,7 @@
 
 ;; END JOUR MONEY
 
-(defn doit-parsed
+(defn import-parsed
   "Test helper. Since parsing takes most of the time and we don't
   want need to test parsing, we can skip the parsing step and only
   run the code we've written."
@@ -229,20 +229,20 @@
        transaction-pages->parsed-pages
        (sequence (mapcat page->jourmoney-entities))))
 
-(defn doit [expenses-html]
+(defn import-expenses [expenses-html]
   {:pre  [(or (string? expenses-html)
               (instance? java.io.Reader expenses-html))]
    :post [(seq %)]}
-  (doit-parsed (parse expenses-html)))
+  (import-parsed (parse expenses-html)))
 
-(defn test-data []
+(defn raw-expenses []
   {:post [(instance? java.io.Reader %)]}
   (InputStreamReader.
     (GZIPInputStream.
      (io/input-stream
        (io/resource "private/test/import/ods/expenses.html.gz")))))
 
-(defn test-data-parsed []
+(defn parsed-transactions []
   (read-string
     (slurp
       (GZIPInputStream.
@@ -256,4 +256,4 @@
   (when (or (nil? path)
             (not (s/ends-with? path ".html")))
     (throw (ex-info "Must specify path to expenses with .html extension" {:path path}))
-    (doit (slurp path))))
+    (import-expenses (slurp path))))

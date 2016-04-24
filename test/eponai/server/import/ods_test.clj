@@ -8,7 +8,7 @@
   (= (doit (test-data)) (doit-parsed (test-data-parsed))))
 
 (deftest regression
-  (let [txs (time (e/doit-parsed (e/test-data-parsed)))]
+  (let [txs (time (e/import-parsed (e/parsed-transactions)))]
     (is (= 616 (count txs)))
     ;; Type checks
     (is (true? (every? (fn [{:keys [transaction/amount

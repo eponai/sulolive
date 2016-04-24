@@ -231,9 +231,8 @@
      (fn [{:keys [db] :as env} k p]
        {:pre [(some? db)]}
        (let [basis-t-for-this-key (-> env :eponai.common.parser/read-basis-t (get k))
-             env (cond-> env
-                         (some? basis-t-for-this-key)
-                         (assoc :db-since (d/since db basis-t-for-this-key)))
+             env (assoc env :db-since (when basis-t-for-this-key
+                                        (d/since db basis-t-for-this-key)))
              ret (read env k p)]
          (cond-> ret
                  (nil? (:value ret))

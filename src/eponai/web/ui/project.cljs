@@ -1,6 +1,6 @@
 (ns eponai.web.ui.project
   (:require
-    [eponai.web.ui.add-widget.add-goal :refer [->NewGoal]]
+    [eponai.web.ui.add-widget.add-goal :refer [->NewGoal NewGoal]]
     [eponai.web.ui.add-widget :refer [NewWidget ->NewWidget]]
     [eponai.web.ui.all-transactions :refer [->AllTransactions AllTransactions]]
     [eponai.web.ui.dashboard :as dashboard :refer [->Dashboard Dashboard]]
@@ -9,8 +9,9 @@
     [eponai.client.ui :refer-macros [opts]]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]
-    [eponai.web.routes :as routes]))
+    [taoensso.timbre :refer-macros [debug error]]
+    [eponai.web.routes :as routes]
+    [datascript.core :as d]))
 
 (defui SubMenu
   Object
@@ -115,13 +116,37 @@
 
 (def ->Shareproject (om/factory Shareproject))
 
+(def content->component {:dashboard    {:factory ->Dashboard :component Dashboard}
+                         :transactions {:factory ->AllTransactions :component AllTransactions}
+                         :widget       {:factory ->NewWidget :component NewWidget}
+                         :goal         {:factory ->NewGoal :component NewGoal}})
+
+
+(defn default-content []
+  (let [r (deref utils/reconciler-atom)
+        db-content (when r
+                     (d/q '{:find  [?tab .]
+                            :where [[?e :ui/component :ui.component/project]
+                                    [?e :ui.component.project/selected-tab ?tab]]}
+                          (d/db (om/app-state r))))]
+    (debug "db-content: " db-content)
+    (or db-content)))
+
+(defn project-content [component]
+  (default-content))
+
 (defui Project
   static om/IQuery
-  (query [_]
-    [{:query/active-project [:ui.component.project/selected-tab]}
-     {:proxy/dashboard (om/get-query Dashboard)}
-     {:proxy/all-transactions (om/get-query AllTransactions)}
-     {:proxy/new-widget (om/get-query NewWidget)}])
+  (query [this]
+    (let [content (project-content this)
+          component (get-in content->component [content :component])
+          query (om/subquery this content component)]
+      (cond-> [{:query/active-project [:ui.component.project/selected-tab
+                                       :ui.component.project/active-project]}]
+              (some? query)
+              (conj {:proxy/child-content query})
+              (= :widget content)
+              (conj {:proxy/dashboard (om/get-query Dashboard)}))))
   Object
   (componentWillUnmount [this]
     (om/transact! this `[(ui.component.project/clear)
@@ -129,11 +154,10 @@
 
   (render [this]
     (let [{:keys [query/active-project
-                  proxy/dashboard
-                  proxy/all-transactions
-                  proxy/new-widget]} (om/props this)
+                  proxy/child-content
+                  proxy/dashboard]} (om/props this)
           {:keys [share-project?]} (om/get-state this)
-          project (get-in dashboard [:query/dashboard :dashboard/project])]
+          project (:ui.component.project/active-project active-project)]
       (html
         [:div
          (when project
@@ -142,15 +166,13 @@
                                                                                {:project project
                                                                                 :selected-tab (:ui.component.project/selected-tab active-project)}))})))
          [:div#project-content
-          (condp = (or (:ui.component.project/selected-tab active-project)
-                       :dashboard)
-            :dashboard (->Dashboard dashboard)
-            :transactions (->AllTransactions all-transactions)
-            :widget (->NewWidget (om/computed new-widget
-                                              {:dashboard (:query/dashboard dashboard)
-                                               :index (dashboard/calculate-last-index 4 (:widget/_dashboard dashboard))})))]
-
-
+          (let [content (project-content this)
+                factory (get-in content->component [content :factory])
+                props (cond-> (assoc child-content :ref content)
+                              (= :widget content)
+                              (om/computed {:dashboard (:query/dashboard dashboard)
+                                            :index (dashboard/calculate-last-index 4 (:widget/_dashboard dashboard))}))]
+            (factory props))]
 
          (when share-project?
            (let [on-close #(om/update-state! this assoc :share-project? false)]

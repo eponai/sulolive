@@ -1,5 +1,6 @@
 (ns eponai.web.parser.read
-  (:require [eponai.client.parser.read :as read]
+  (:require [datascript.core :as d]
+            [eponai.client.parser.read :as read]
             [eponai.common.parser :refer [read]]
             [eponai.common.database.pull :as p]
             [taoensso.timbre :refer-macros [debug]]))
@@ -13,9 +14,10 @@
 ;; -------- Readers for UI components
 
 (defmethod read :query/active-project
-  [{:keys [db query]} _ _]
-  (debug "Pulling project query:" query)
-  {:value (p/pull db query [:ui/component :ui.component/project])})
+  [{:keys [db _]} _ _]
+  {:value (assoc (into {} (d/entity db [:ui/component :ui.component/project]))
+            :ui.component.project/active-project
+            (d/entity db (p/one-with db {:where [['?e :project/uuid (read/active-project-uuid db)]]})))})
 
 (defmethod read :query/selected-transaction
   [{:keys [db query]} _ _]

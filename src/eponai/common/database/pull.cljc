@@ -2,7 +2,7 @@
   (:require
     [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug trace info]]
     [eponai.common.format :as f]
-    [clojure.set :as s]
+    [clojure.set :as set]
     [clojure.walk :as walk]
     [datascript.db]
     #?(:clj [datomic.api :as d]
@@ -161,7 +161,7 @@
   [query-map renames]
   {:pre [(map? query-map) (map? renames)]}
   (-> query-map
-      (update :symbols s/rename-keys renames)
+      (update :symbols set/rename-keys renames)
       (update :where #(walk/postwalk-replace renames %))))
 
 (defn project []
@@ -277,18 +277,21 @@
         [_ conversion] (last data)]
     conversion))
 
+;; TODO: THIS IS PROBABLY SLOW! Fix this.
 (defn find-conversions [db tx-ids user-uuid]
-  (all-with db {:find-pattern '[?t ?e ?e2]
-                :symbols      {'[?t ...] tx-ids
-                               '?uuid    user-uuid}
-                :where        '[[?t :transaction/date ?d]
-                                [?e :conversion/date ?d]
-                                [?t :transaction/currency ?cur]
-                                [?e :conversion/currency ?cur]
-                                [?u :user/uuid ?uuid]
-                                [?u :user/currency ?u-cur]
-                                [?e2 :conversion/currency ?u-cur]
-                                [?e2 :conversion/date ?d]]}))
+  (->> (all-with db {:find-pattern '[?t ?e ?e2]
+                 :symbols      {'[?t ...] tx-ids
+                                '?uuid    user-uuid}
+                 :where        '[[?t :transaction/date ?d]
+                                 [?e :conversion/date ?d]
+                                 [?t :transaction/currency ?cur]
+                                 [?e :conversion/currency ?cur]
+                                 [?u :user/uuid ?uuid]
+                                 [?u :user/currency ?u-cur]
+                                 [?e2 :conversion/currency ?u-cur]
+                                 [?e2 :conversion/date ?d]]})
+       (sequence (comp (mapcat (juxt second last))
+                       (distinct)))))
 
 (def conversion-query (parser/put-db-id-in-query
                         [{:conversion/date [:date/ymd]}
@@ -296,52 +299,76 @@
                          {:conversion/currency [:currency/code]}]))
 
 (defn conversions [db tx-ids user-uuid]
-  (->> (find-conversions db tx-ids user-uuid)
-       (sequence (comp (mapcat (juxt second last))
-                       (distinct)))
-       (pull-many db conversion-query)))
+  (pull-many db conversion-query (find-conversions db tx-ids user-uuid)))
 
-(defn add-conversions [db conversion-query user-uuid transactions]
+(defn transaction-with-conversion-fn [db transaction-convs user-convs]
+  {:pre [(delay? transaction-convs) (delay? user-convs)]}
+  (let [approx-tx-conv (memoize
+                         (fn [curr]
+                           ;; (debug "Approximating: " curr)
+                           (some->> curr (get @transaction-convs) (first) (val))))
+        approx-user-curr (delay (some-> @user-convs (first) (val)))]
+    (fn [transaction]
+      #?(:cljs (debug "executing transaction-with-conversion on tx: " transaction))
+     (let [tx-date (get-in transaction [:transaction/date :db/id])
+           tx-curr (get-in transaction [:transaction/currency :db/id])
+           tx-conv (get-in transaction-convs [tx-curr tx-date])
+           tx-conv (or tx-conv (approx-tx-conv tx-curr))
+           user-conv (get user-convs tx-date)
+           user-conv (or user-conv @approx-user-curr)]
+       (when (and (some? tx-conv) (some? user-conv))
+         (let [;; All rates are relative USD so we need to pull what rates the user currency has,
+               ;; so we can convert the rate appropriately for the user's selected currency
+               user-currency-conversion (d/entity db user-conv)
+               transaction-conversion (d/entity db tx-conv)
+               #?@(:cljs [rate (/ (:conversion/rate transaction-conversion)
+                                  (:conversion/rate user-currency-conversion))]
+                   :clj  [rate (with-precision 10 (bigdec (/ (:conversion/rate transaction-conversion)
+                                                             (:conversion/rate user-currency-conversion))))])]
+           ;; Convert the rate from USD to whatever currency the user has set
+           ;; (e.g. user is using SEK, so the new rate will be
+           ;; conversion-of-transaction-currency / conversion-of-user-currency
+           [(:db/id transaction)
+            {:conversion/rate rate
+             :conversion/date (:conversion/date transaction-conversion)}]))))))
+
+(defn transaction-conversions [db conversion-query user-uuid transaction-entities]
   (assert (some #{:conversion/rate} conversion-query))
-  (let [tx-conv-tuples (all-with db {:find-pattern '[?t ?e ?e2]
-                                     :symbols      {'[?t ...] (mapv :db/id transactions)
-                                                    '?uuid    user-uuid}
-                                     :where        '[[?t :transaction/date ?d]
-                                                     [?e :conversion/date ?d]
-                                                     [?t :transaction/currency ?cur]
-                                                     [?e :conversion/currency ?cur]
-                                                     [?u :user/uuid ?uuid]
-                                                     [?u :user/currency ?u-cur]
-                                                     [?e2 :conversion/currency ?u-cur]
-                                                     [?e2 :conversion/date ?d]]})
-        tx-convs-by-tx-id (group-by first tx-conv-tuples)]
-    (mapv
-      (fn [transaction]
-        (let [transaction-id (:db/id transaction)
-              [[_ tx-conv user-conv]] (get tx-convs-by-tx-id transaction-id)
-              currency (or (:transaction/currency transaction)
-                           (:transaction/currency (pull db [:transaction/currency] transaction-id)))
-              tx-conv (or tx-conv (find-latest-conversion db {:currency currency}))
-              user-conv (or user-conv (find-latest-conversion db {:user {:user/uuid user-uuid}}))]
-          (if (and (some? tx-conv) (some? user-conv))
-            (let [;; All rates are relative USD so we need to pull what rates the user currency has,
-                  ;; so we can convert the rate appropriately for the user's selected currency
-                  user-currency-conversion (pull db conversion-query user-conv)
-                  transaction-conversion (pull db conversion-query tx-conv)
-                  #?@(:cljs [rate (/ (:conversion/rate transaction-conversion)
-                                     (:conversion/rate user-currency-conversion))]
-                      :clj  [rate (with-precision 10 (bigdec (/ (:conversion/rate transaction-conversion)
-                                                                (:conversion/rate user-currency-conversion))))])]
-              (assoc
-                transaction
-                :transaction/conversion
-                ;; Convert the rate from USD to whatever currency the user has set
-                ;; (e.g. user is using SEK, so the new rate will be
-                ;; conversion-of-transaction-currency / conversion-of-user-currency
-                {:conversion/rate rate
-                 :conversion/date (:conversion/date transaction-conversion)}))
-            transaction)))
-      transactions)))
+  ;; user currency is always the same
+  ;; transaction/dates and currencies are shared across multiple transactions.
+  ;; Must be possible to pre-compute some table between date<->conversion<->currency.
+  (let [currency-date-pairs (delay
+                              (transduce (comp (map (juxt (comp :db/id :transaction/currency)
+                                                         (comp :db/id :transaction/date)))
+                                              (distinct))
+                                        (completing (fn [m [k v]]
+                                                      {:pre [(number? k) (number? v)]}
+                                                      (assoc m k (conj (get m k []) v))))
+                                        {}
+                                        transaction-entities))
+        transaction-convs (delay
+                            (->> (all-with db {:find-pattern '[?currency ?date ?conv]
+                                               :symbols      {'[[?currency [?date ...]] ...] @currency-date-pairs}
+                                               :where        '[[?conv :conversion/currency ?currency]
+                                                               [?conv :conversion/date ?date]]})
+                                 (reduce (fn [m [curr date conv]]
+                                           (assoc-in m [curr date] conv))
+                                         {})))
+
+        user-curr (:db/id (:user/currency (d/entity db (one-with db {:where [['?e :user/uuid user-uuid]]}))))
+        user-convs (delay
+                     (when user-curr
+                       (->> (all-with db {:find-pattern '[?date ?conv]
+                                          :symbols      {'[?date ...] (reduce into #{} (vals @currency-date-pairs))
+                                                         '?user-curr  user-curr}
+                                          :where        '[[?conv :conversion/currency ?user-curr]
+                                                          [?conv :conversion/date ?date]]})
+                            (into {}))))]
+    (into {}
+      (comp (remove #(contains? % :transaction/conversion))
+            (map (transaction-with-conversion-fn db transaction-convs user-convs))
+            (filter some?))
+          transaction-entities)))
 
 (defn filter-excluded-tags [data-filter transactions]
   (if (:filter/exclude-tags data-filter)
@@ -351,13 +378,18 @@
                   (empty? (clojure.set/intersection filter-set tag-set)))) transactions))
     transactions))
 
-(defn transactions-with-conversions [{:keys [db query]} user-uuid {:keys [conversion-query filter]
-                                                                   :as params}]
-  (let [tx-ids (find-transactions db (assoc params :user-uuid user-uuid))
-        pulled (pull-many db query tx-ids)
-        pulled-filtered (filter-excluded-tags filter pulled)]
-    (->> pulled-filtered
-         (add-conversions db
-                          (or conversion-query [:conversion/rate])
-                          user-uuid))))
+(defn transactions-with-conversions [{:keys [db query]} user-uuid {:keys [conversion-query filter] :as params}]
+  (let [tx-entities (sequence (comp (filter some?)
+                                   (map #(d/entity db %)))
+                              (find-transactions db (assoc params :user-uuid user-uuid)))
+        ;; include filter-excluded-tags in the transducer and use into [] instead of sequence.
+        tx-entities (filter-excluded-tags filter tx-entities)
+        conversions (transaction-conversions db
+                                     (or conversion-query [:conversion/rate])
+                                     user-uuid
+                                     tx-entities)]
 
+    (mapv #(cond-> (assoc (into {} %) :db/id (:db/id %))
+                   (contains? conversions (:db/id %))
+                   (assoc :transaction/conversion (get conversions (:db/id %))))
+          tx-entities)))

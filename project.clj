@@ -50,7 +50,7 @@
                  [org.clojure/tools.reader "1.0.0-alpha2"]
                  [garden "1.3.2"]
                  [datascript "0.15.0"]
-                 [sablono "0.6.2"]
+                 [sablono "0.7.1"]
                  [cljsjs/d3 "3.5.7-1"]
                  [cljsjs/pikaday "1.4.0-1"]
                  [cljsjs/react-grid-layout "0.10.8-0"]

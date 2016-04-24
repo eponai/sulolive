@@ -1,6 +1,7 @@
 (ns eponai.server.datomic.pull
   (:require
-    [clojure.walk :refer [walk]]
+    [clojure.walk :as w :refer [walk]]
+    [clojure.set :as set]
     [datomic.api :as d]
     [eponai.common.database.pull :as p]
     [eponai.common.parser.util :as parser]
@@ -82,6 +83,40 @@
         new-currencies (clojure.set/difference (set currency-codes) (set db-currency-codes))]
     (debug "Found new currencies: " new-currencies)
     new-currencies))
+
+;; Pull pattern stuff
+
+(defn keep-refs-only
+  "Given a pull pattern, keeps only the refs (maps).
+
+  Example:
+  [:db/id
+   {:conversion/date [:db/id :date/ymd]}
+   :conversion/rate
+   {:conversion/currency [:db/id :currency/code]}]
+   => retruns =>
+   [{:conversion/date [:date/ymd]}
+    {:conversion/currency [:currency/code]}]"
+  [pattern]
+  (letfn [(keep-maps [x]
+            (if (vector? x)
+              (filterv map? x)
+              (filter map? x)))]
+    (w/prewalk (fn [x]
+                 (cond
+                   (map-entry? x)
+                   (let [v (val x)
+                         v (if (some map? v)
+                             (keep-maps v)
+                             (some-> (some #(when (not= :db/id %) %) v)
+                                     (vector)
+                                     (with-meta {::keep true})))]
+                     [(key x) v])
+                   (and (sequential? x) (not (::keep (meta x))))
+                   (keep-maps x)
+
+                   :else x))
+               pattern)))
 
 ;; Generate tests for this?
 ;; Something with (get-in paths) or something.
@@ -190,7 +225,8 @@
   (if (nil? db-since)
     (x-with db entity-query)
     (combine (x-with db (p/with-db-since entity-query db-since))
-             (->> (pull-pattern->paths pull-pattern)
+             (->> (keep-refs-only pull-pattern)
+                  (pull-pattern->paths)
                   (filter #(> (count %) 1))
                   (map-f #(x-changed-entities-in-pull-pattern x-with db db-since % entity-query))
                   (filter-f some?)))))
@@ -217,3 +253,36 @@
 (defn pull-all-since [db db-since pull-pattern entity-query]
   (some->> (all-since db db-since pull-pattern entity-query)
            (p/pull-many db pull-pattern)))
+
+(defn eid->refs [db eid attr]
+  (if (reverse-lookup-attr? attr)
+    (map :e (d/datoms db :vaet eid (normalize-attribute attr)))
+    (map :v (d/datoms db :eavt eid attr))))
+
+(defn eids->refs [db eids attr]
+  {:post [(set? %)]}
+  (transduce (comp (map (fn [e]
+                          (let [ret (eid->refs db e attr)]
+                            ret)))
+                   (filter seq))
+             (completing into)
+             #{}
+             eids))
+
+(defn path+eids->refs [db eids path]
+  {:post [(set? %)]}
+  (loop [eids eids path path ret #{}]
+    (if (and (seq eids) (seq (rest path)))
+      (let [attr (first path)]
+        (let [refs (eids->refs db eids attr)]
+          (recur refs (rest path) (into ret refs))))
+      ret)))
+
+(defn all-entities [db pull-pattern eids]
+  {:post [(set? %)]}
+  (let [ref-pattern (keep-refs-only pull-pattern)
+        paths (pull-pattern->paths ref-pattern)]
+    (->> (map (fn [path]
+                {:post [(or (nil? %) (set? %))]}
+                (path+eids->refs db eids path)) paths)
+         (apply set/union))))

@@ -2,6 +2,8 @@
   (:refer-clojure :exclude [read])
   (:require
     [eponai.common.database.pull :as common.pull :refer [merge-query one-with min-by pull]]
+    [clojure.set :as set]
+    [datomic.api :as d]
     [eponai.common.datascript :as eponai.datascript]
     [eponai.common.format :as f]
     [eponai.common.parser :refer [read]]
@@ -31,10 +33,31 @@
         entity-query (common.pull/transaction-entity-query
                        {:project-uuid project-uuid
                         :filter       filter
-                        :user-uuid (:username auth)})
-        tx-ids (server.pull/all-since db db-since query entity-query)]
-    {:value (cond-> {:transactions (common.pull/filter-excluded-tags filter (pull/pull-many db query tx-ids))
-                     :conversions  (pull/conversions db tx-ids (:username auth))}
+                        :user-uuid (:username auth)
+                        :query-params {:where   '[[?e :transaction/project ?b]
+                                                  [?b :project/users ?u]
+                                                  [?u :user/uuid ?user-uuid]]
+                                       :symbols {'?user-uuid (:username auth)}}})
+        tx-ids (server.pull/all-since db db-since query entity-query)
+        conv-ids (pull/find-conversions db tx-ids (:username auth))
+        ref-ids (set/union
+                   (server.pull/all-entities db query tx-ids)
+                   (server.pull/all-entities db pull/conversion-query conv-ids))
+        pull-xf (map #(d/pull db '[*] %))
+        conversions (common.pull/filter-excluded-tags filter
+                                                      (pull/transaction-conversions db pull/conversion-query (:username auth) (map #(d/entity db %) tx-ids)))]
+    {:value (cond-> {:transactions (into [] (comp pull-xf
+                                                  (map #(if-let [tx-conv (get conversions (:db/id %))]
+                                                         ;; TODO: Do not transfer the whole conversion entity?
+                                                         (assoc % :transaction/conversion tx-conv)
+                                                         %))) tx-ids)
+                     :conversions  (into [] pull-xf conv-ids)
+                     :refs         (into [] pull-xf ref-ids)
+
+                     ;; This breaks tests. Do something about it.
+                     ;;:transactions (pull/pull-many db query tx-ids)
+                     ;;:conversions  (pull/conversions db tx-ids (:username auth))
+                     }
                     ;; We cannot set read-basis-t when we have filters enabled.
                     ;; To prevent read-basis-t from being set by setting it to nil.
                     filters?

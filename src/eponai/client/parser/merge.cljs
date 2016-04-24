@@ -81,11 +81,12 @@
   (d/db-with db [{:ui/singleton :ui.singleton/auth
                   :ui.singleton.auth/user current-user}]))
 
-(defn merge-transactions [db _ {:keys [transactions conversions]}]
-  (let [txs (concat transactions conversions)]
-    (if (seq txs)
-      (d/db-with db (concat transactions conversions))
-      db)))
+(defn merge-transactions [db _ {:keys [transactions conversions refs]}]
+  (-> db
+      (transact refs)
+      ;;(transact conversions)
+      ;;(transact transactions)
+      ))
 
 ;;;;;;; API
 

@@ -12,7 +12,13 @@
 
 (def currencies {:THB "Thai Baht"
                  :SEK "Swedish Krona"
-                 :USD "US Dollar"})
+                 :USD "US Dollar"
+                 :JPY "Japanese Yen"
+                 :MYR "Malaysian Ringit"
+                 :VND "Vietnamese Dollar"
+                 :EUR "Euro"
+                 :ALL "Albanian Money"
+                 :HRK "Croatian Money"})
 
 (defn transactions []
   [{:transaction/title      "lunch"
@@ -136,7 +142,7 @@
           (info "Setting up inmemory db because uri is set to:" uri)
           (add-data-to-connection mem-conn
                                   ;; Use larger dataset:
-                                  ;;(ods/doit-parsed (ods/test-data-parsed))
+                                  (ods/import-parsed (ods/parsed-transactions))
                                   )
           (debug "Successfully set up inmemory db!")
           mem-conn)

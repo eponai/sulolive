@@ -26,24 +26,24 @@
   (params [_]
     (history/url-query-params (history/url-handler-form-token)))
   static om/IQuery
-  (query [_]
-    [:datascript/schema
-     :user/current
-     {:proxy/nav-bar (om/get-query nav/NavbarMenu)}
-     {:proxy/side-bar (om/get-query nav/SideBar)}
-     '{:proxy/app-content ?url/query}
-     '(:return/content-factory ?url/factory)])
+  (query [this]
+    (let [{:keys [url/component]} (if (om/component? this) (om/get-params this) (om/params this))
+          subquery (om/get-query component)]
+      [:datascript/schema
+      :user/current
+      {:proxy/nav-bar (om/get-query nav/NavbarMenu)}
+      {:proxy/side-bar (om/get-query nav/SideBar)}
+      {:proxy/app-content subquery}]))
   Object
   (initLocalState [_]
     {:sidebar-visible? false})
   (render
     [this]
-    (debug "app this: " this)
     (let [{:keys [proxy/app-content
-                  return/content-factory
                   proxy/nav-bar
                   proxy/side-bar]} (om/props this)
-          {:keys [sidebar-visible?]} (om/get-state this)]
+          {:keys [sidebar-visible?]} (om/get-state this)
+          {:keys [url/factory]} (om/get-params this)]
       (html
         [:div
          [:div#wrapper
@@ -66,8 +66,8 @@
          [:div#page-content
           (opts {:class "container-fluid content-section"
                  :style {:border "1px solid transparent"}})
-          (when content-factory
-            (content-factory app-content))]]))))
+          (when factory
+            (factory (assoc app-content :ref :content)))]]))))
 
 (defonce conn-atom (atom nil))
 
@@ -82,7 +82,8 @@
     (let [ui-schema (common.datascript/ui-schema)
           ui-state [{:ui/singleton :ui.singleton/app}
                     {:ui/singleton :ui.singleton/auth}
-                    {:ui/component :ui.component/project}
+                    {:ui/component :ui.component/project
+                     :ui.component.project/selected-tab :dashboard}
                     {:ui/component :ui.component/widget}]
           conn (d/create-conn ui-schema)]
       (d/transact! conn ui-state)
