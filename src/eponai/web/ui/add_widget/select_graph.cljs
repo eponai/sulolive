@@ -23,8 +23,8 @@
 
 (defn generate-layout [styles]
   (map (fn [style i]
-         {:x (mod i 2)
-          :y (int (/ i 2))
+         {:x (mod i 3)
+          :y (int (/ i 3))
           :w 1
           :h 1
           :i (str style)})
@@ -104,7 +104,7 @@
                                 :layouts          #js {:lg layout :md layout}
                                 :rowHeight        200,
                                 :margin           #js [60 20]
-                                :cols             #js {:lg 2 :md 2 :sm 2 :xs 1 :xxs 1}
+                                :cols             #js {:lg 3 :md 3 :sm 2 :xs 1 :xxs 1}
                                 :useCSSTransforms true
                                 :isDraggable      false
                                 :isResizable      false
