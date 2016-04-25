@@ -132,7 +132,10 @@
                   (attr "height" 0))
 
               (.. bars
-                  (style "fill" (fn [d] (color-scale (.-name d))))
+                  (style "fill" (fn [d]
+                                  (if (.-count d)
+                                    "lightgray"
+                                    (color-scale (.-name d)))))
                   transition
                   (duration 250)
                   (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))

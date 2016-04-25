@@ -67,12 +67,29 @@
                                            (converted-amount transaction)))))
                              m
                              (map :tag/name filtered-tags)))))
-        sum-by-tag (reduce sum-fn {} transactions)]
-
-    (sort-by :name (reduce #(conj %1 {:name  (first %2) ;tag name
-                                      :value (second %2)}) ;sum for tag
-                           []
-                           sum-by-tag))))
+        sum-by-tag (reduce sum-fn {} transactions)
+        ordered (sort-by :value > (reduce #(conj %1 {:name  (first %2) ;tag name
+                                                 :value (second %2)}) ;sum for tag
+                                      []
+                                      sum-by-tag))]
+    (if (< 7 (count ordered))
+      (conj (vec (take 7 ordered))
+            ;; If we have more than 7 tags, it will be too cramped in the chart,
+            ;; so group the smallest values into one single data point (one bar)
+            (reduce #(let [{c :count :as m} (update %1 :count inc)]
+                      (-> m
+                          (assoc :name (str c
+                                            (if (> c 1)     ; Use plural or singular depending on how many tags are grouped
+                                              " tags"
+                                              " tag")))
+                          (update :value + (:value %2))
+                          (update :sub-values conj %2)))
+                    {:count 0                               ; Use this count to include in the name.
+                     :value 0
+                     :sub-values []}
+                    (drop 7 ordered)))                      ; Only the rest of the values except the first 7
+      ordered)
+    ))
 
 (defmethod sum :transaction/currency
   [_ transactions _]
@@ -170,7 +187,7 @@
           track-fn (fn [f]
                      (debug "Make calc: " f " with opts: " opts)
                      (track f transactions opts))]
-      ;(debug "Generated data: " (mapv track-fn functions))
+      (debug "Generated data: " (mapv track-fn functions))
       (map track-fn functions))
 
     (some? (:report/goal report))
