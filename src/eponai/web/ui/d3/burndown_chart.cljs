@@ -1,4 +1,4 @@
-(ns eponai.web.ui.d3.line-chart
+(ns eponai.web.ui.d3.burndown-chart
   (:require
     [cljsjs.d3]
     [eponai.client.ui :refer-macros [opts]]
@@ -9,8 +9,7 @@
     [cljs-time.core :as t]
     [cljs-time.coerce :as c]))
 
-
-(defui LineChart
+(defui BurndownChart
   Object
   (make-axis [_ width height domain]
     (let [x-scale (.. js/d3 -time scale
@@ -46,10 +45,15 @@
 
   (create [this]
     (let [{:keys [id width height data]} (om/props this)
-          svg (d3/build-svg (str "#line-chart-" id) width height)
+          svg (d3/build-svg (str "#burndown-chart-" id) width height)
+          last-data (last data)
+          chart-data [{:key "user-input"
+                       :values (:values last-data)}
+                      {:key "guideline"
+                       :values (:guide last-data)}]
 
-          js-domain (clj->js (flatten (map :values data)))
-          js-data (clj->js data)
+          js-domain (clj->js (flatten (map :values chart-data)))
+          js-data (clj->js chart-data)
 
           {:keys [margin]} (om/get-state this)
           {inner-width :width
@@ -135,11 +139,17 @@
           graph-area (.. graph
                          (selectAll ".line")
                          (data js-data))]
+      (debug "Goal data: " js-data)
       (.. graph-area
           enter
           (append "path")
           (attr "class" "line")
-          (style "stroke" (fn [_ i] (color-scale i))))
+          (style "stroke" (fn [d]
+                            (condp = (.-key d)
+                              "user-input"
+                              "orange"
+                              "guideline"
+                              "green"))))
 
       (.. graph-area
           transition
@@ -151,7 +161,7 @@
           remove)))
 
   (initLocalState [_]
-    {:margin {:top 0 :bottom 20 :left 0 :right 0}})
+    {:margin {:top 5 :bottom 20 :left 0 :right 0}})
   (componentDidMount [this]
     (d3/create-chart this))
 
@@ -159,14 +169,19 @@
     (d3/update-chart this))
 
   (componentWillReceiveProps [this next-props]
-    (d3/update-chart-data this (:data next-props)))
+    (let [last-data (last (:data next-props))
+          chart-data [{:key    "user-input"
+                       :values (:values last-data)}
+                      {:key    "guideline"
+                       :values (:guide last-data)}]]
+      (d3/update-chart-data this chart-data)))
 
   (render [this]
     (let [{:keys [id]} (om/props this)]
       (html
         [:div
-         (opts {:id (str "line-chart-" id)
+         (opts {:id (str "burndown-chart-" id)
                 :style {:height "100%"
                         :width "100%"}})]))))
 
-(def ->LineChart (om/factory LineChart))
+(def ->BurndownChart (om/factory BurndownChart))

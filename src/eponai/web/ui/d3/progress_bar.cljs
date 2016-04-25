@@ -12,6 +12,7 @@
   (let [progress (if (map? d)
                    (/ (:value d) (:max d))
                    (/ (.-value d) (.-max d)))]
+    (debug "Goal end angle: " progress)
     (* 2 js/Math.PI progress)))
 (defui ProgressBar
   Object
@@ -21,7 +22,11 @@
           {:keys [margin]} (om/get-state this)
           {inner-height :height
            inner-width :width} (d3/svg-dimensions svg {:margin margin})
-          js-data (clj->js (map #(assoc % :endAngle 0) data))
+
+          cycle (first data)
+          _ (debug "Goal cycle: " cycle)
+
+          js-data (clj->js [(assoc (last (:values cycle)) :endAngle 0 :max (:limit cycle))])
           path-width (/ (min inner-width inner-height) 7)
           graph (.. svg
                     (append "g")
@@ -29,23 +34,30 @@
           meter (.. graph
                     (append "g")
                     (attr "class" "circle-progress"))
+          txt (.. meter
+                  (append "text")
+                  (attr "class" "txt")
+                  (attr "text-anchor" "middle")
+                  ;(attr "dy" ".15em")
+                  (attr "font-size" 14))
           arc (.. js/d3
                   -svg
                   arc
                   (innerRadius (- (/ (min inner-width inner-height) 2) path-width))
                   (outerRadius (/ (min inner-width inner-height) 2))
                   (startAngle 0))]
+
       (.. meter
           (append "path")
           (attr "class" "background")
           (datum #js {:endAngle (* 2 js/Math.PI)})
-          (style "fill" "#ddd")
+          (style "fill" "green")
           (attr "d" arc))
       (d3/update-on-resize this id)
-      (om/update-state! this assoc :svg svg :graph graph :meter meter :arc arc :js-data js-data)))
+      (om/update-state! this assoc :svg svg :graph graph :meter meter :arc arc :js-data js-data :txt txt)))
 
   (update [this]
-    (let [{:keys [svg meter arc js-data margin graph start-angle]} (om/get-state this)
+    (let [{:keys [svg meter arc js-data margin graph start-angle txt]} (om/get-state this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
           path-width (/ (min inner-width inner-height) 7)]
@@ -53,15 +65,21 @@
         (let [progress (.. meter
                            (selectAll ".foreground")
                            (data js-data))
-              text-element (.. meter
-                               (selectAll ".txt")
-                               (data js-data))]
+              date-txt (.. txt
+                           (selectAll ".date-txt")
+                           (data js-data))
+              val-txt (.. txt
+                          (selectAll ".val-txt")
+                          (data js-data))]
+
+          (debug "Goal data progress-meter: " js-data)
           (.. graph
               (attr "transform" (str "translate(" (/ inner-width 2) "," (/ inner-height 2) ")")))
 
           (.. arc
               (innerRadius (- (/ (min inner-width inner-height) 2) path-width))
               (outerRadius (/ (min inner-width inner-height) 2)))
+
           (.. progress
               enter
               (append "path")
@@ -71,30 +89,43 @@
           (.. progress
               transition
               (duration 250)
-              (attrTween "d" (fn [d]
-                               (let [interpolate (.. js/d3
-                                                     (interpolate start-angle (end-angle d)))]
-                                 (fn [t]
-                                   (set! (.-endAngle d) (interpolate t))
-                                   (arc d))))))
+              (attrTween "d"
+                         (fn [d]
+                           (let [interpolate (.. js/d3
+                                                 (interpolate start-angle (end-angle d)))]
+                             (fn [t]
+                               (set! (.-endAngle d) (interpolate t))
+                               (arc d))))))
           (.. meter
               (selectAll ".background")
               (attr "d" arc))
-
-          (.. text-element
+          (.. val-txt
               enter
-              (append "text")
-              (attr "text-anchor" "middle")
-              (attr "dy" ".35em")
-              (attr "font-size" "24")
+              (append "tspan")
+              (attr "class" "val-txt")
               (text "0"))
 
-          (.. text-element
+          (.. val-txt
               transition
               (duration 500)
-              (text (fn [d] ((.. js/d3
+              (text (fn [d]
+                      (gstring/format "%.2f" (.-value d)))))
+
+          (.. date-txt
+              enter
+              (append "tspan")
+              (attr "class" "date-txt")
+              (attr "dy" "1.5em")
+              (attr "x" 0)
+              (text ""))
+
+          (.. date-txt
+              transition
+              (duration 500)
+              (text (fn [d]
+                       ((.. js/d3
                                  -time
-                                 (format "%d %b %y"))
+                                 (format "%a %d %b"))
                               (js/Date. (.-name d))))))))))
 
   (componentDidMount [this]
@@ -105,9 +136,11 @@
 
   (componentWillReceiveProps [this next-props]
     (let [{:keys [data]} next-props
-          new-start-angle (end-angle (first data))]
+          cycle (first data)
+          ;new-data (assoc (last (:values cycle)) :endAngle 0 :max (:limit cycle))
+          new-start-angle (end-angle (assoc (last (:values cycle)) :max (:limit cycle)))]
       (om/update-state! this assoc :start-angle new-start-angle)
-      (d3/update-chart-data this data)))
+      (d3/update-chart-data this [(last (:values cycle))])))
 
   (initLocalState [_]
     {:start-angle 0})

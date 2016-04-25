@@ -19,6 +19,7 @@
           goal (get-in widget [:widget/report :report/goal])]
       (when widget
         (om/update-state! this assoc
+                          :style (get-in widget [:widget/graph :graph/style])
                           :daily-limit (:goal/value goal)
                           :start (c/from-long (get-in goal [:goal/cycle :cycle/start]))))))
   (componentDidMount [this]
@@ -32,41 +33,67 @@
           {:keys [daily-limit
                   filtered-tags
                   start
-                  end]} (om/get-state this)]
+                  end
+                  style]} (om/get-state this)]
+      (debug "Goal widget: " widget)
       (html
         [:div
          [:ul.breadcrumbs
           [:li
            [:a.disabled
             "New Goal"]]]
+         [:div "State "]
          [:div.row.column.small-12.medium-6
-          [:div.row
-           [:div.columns.small-3.text-right
-            [:label "Daily limit:"]]
-           [:div.columns.small-9.end
-            [:input
-             {:value     (or daily-limit "")
-              :type      "number"
-              :on-change #(do
-                           (let [value (.-value (.-target %))]
-                             (om/update-state! this assoc :daily-limit value)
-                             (when on-change
-                               (on-change (assoc-in widget [:widget/report :report/goal :goal/value] value)))))}]]]
+          [:div.callout
+           [:div.row
+            [:div.columns.small-12
+             [:input
+              {:type     "radio"
+               :id       "burndown-option"
+               :checked  (= style :graph.style/burndown)
+               :on-click #(when on-change
+                           (on-change (-> widget
+                                          (assoc-in [:widget/graph :graph/style] :graph.style/burndown)
+                                          (assoc-in [:widget/report :report/goal :goal/cycle :cycle/period] :cycle.period/month))))}]
+             [:label {:for "burndown-option"} "Burndown chart"]
+             [:input
+              {:type     "radio"
+               :id       "progress-option"
+               :checked  (= style :graph.style/progress-bar)
+               :on-click #(when on-change
+                           (on-change (assoc-in widget [:widget/graph :graph/style] :graph.style/progress-bar)))}]
+             [:label {:for "progress-option"} "Progress meter"]]]
+           [:div.row
+            [:div.columns.small-3.text-right
+             [:label (if (= style :graph.style/progress-bar)
+                       "Daily limit:"
+                       "Monthly limit:")]]
+            [:div.columns.small-3.end
+             [:input
+              {:value     (or daily-limit "")
+               :type      "number"
+               :on-change #(do
+                            (let [value (.-value (.-target %))]
+                              (om/update-state! this assoc :daily-limit value)
+                              (when on-change
+                                (on-change (-> widget
+                                               (assoc-in [:widget/report :report/goal :goal/value] value))))))}]]]]
 
-          [:div.row
-           [:div.columns.small-3.text-right
-            [:label "End Date:"]]
-           [:div.columns.small-9.end
-            (->Datepicker
-              (opts {:key       [::date-picker]
-                     :value     end
-                     :on-change #(do
-                                  (om/update-state! this assoc :end %)
-                                  (when on-change
-                                    (on-change (assoc-in widget [:widget/report :report/goal :goal/cycle :cycle/period-count]
-                                                         (t/in-days (t/interval start (c/from-date %)))))))}))]]
+          ;[:div.row
+          ; [:div.columns.small-3.text-right
+          ;  [:label "End Date:"]]
+          ; [:div.columns.small-9.end
+          ;  (->Datepicker
+          ;    (opts {:key       [::date-picker]
+          ;           :value     end
+          ;           :on-change #(do
+          ;                        (om/update-state! this assoc :end %)
+          ;                        (when on-change
+          ;                          (on-change (assoc-in widget [:widget/report :report/goal :goal/cycle :cycle/period-count]
+          ;                                               (t/in-days (t/interval start (c/from-date %)))))))}))]]
 
-          (filter/->TagFilter {:tags filtered-tags}
-                              {:on-change #(om/update-state! this assoc :filtered-tags %)})]]))))
+          ;(filter/->TagFilter {:tags filtered-tags}
+          ;                    {:on-change #(om/update-state! this assoc :filtered-tags %)})
+          ]]))))
 
 (def ->NewGoal (om/factory NewGoal))

@@ -45,13 +45,12 @@
 
 (defn transaction-query []
   (parser/put-db-id-in-query
-    [:transaction/uuid
+    '[:transaction/uuid
      :transaction/amount
      :transaction/conversion
      {:transaction/currency [:currency/code]}
      {:transaction/tags [:tag/name]}
-     {:transaction/date [:date/ymd
-                         :date/timestamp]}]))
+     {:transaction/date [*]}]))
 
 ;(defn dates-between [db start end]
 ;  (p/pull-many db [:date/timestamp] (p/all-with db {:where '[[?e :date/timestamp ?time]

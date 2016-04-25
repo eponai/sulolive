@@ -3,6 +3,7 @@
     [eponai.client.ui :refer-macros [opts]]
     [eponai.web.ui.d3.area-chart :refer [->AreaChart]]
     [eponai.web.ui.d3.bar-chart :refer [->BarChart]]
+    [eponai.web.ui.d3.burndown-chart :refer [->BurndownChart]]
     [eponai.web.ui.d3.line-chart :refer [->LineChart]]
     [eponai.web.ui.d3.number-chart :refer [->NumberChart]]
     [eponai.web.ui.d3.progress-bar :refer [->ProgressBar]]
@@ -80,6 +81,9 @@
 
                  (= style :graph.style/progress-bar)
                  (->ProgressBar settings)
+
+                 (= style :graph.style/burndown)
+                 (->BurndownChart settings)
                  ;[:div
                  ; "Progress: "
                  ; [:div.progress
