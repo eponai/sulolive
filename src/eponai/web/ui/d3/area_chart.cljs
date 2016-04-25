@@ -23,33 +23,32 @@
                       (nice)
                       (domain #js [0 (.. js/d3
                                          (max domain (fn [d] (.-value d))))]))]
-      {:x-axis (.. js/d3 -svg axis
-                   (scale x-scale)
-                   (orient "bottom")
-                   (ticks (max (/ width 150) 2))
-                   (tickSize (* -1 height) 0 0)
-                   (tickFormat #((.. js/d3
-                                     -time
-                                     (format "%b %Y"))
-                                 (js/Date. %))))
+      {:x-axis  (.. js/d3 -svg axis
+                    (scale x-scale)
+                    (orient "bottom")
+                    (ticks (max (/ width 150) 2))
+                    (tickSize (* -1 height) 0 0)
+                    (tickFormat (fn [t]
+                                  (let [time-format (.. js/d3
+                                                        -time
+                                                        (format "%b %d"))]
+                                    (time-format (js/Date. t))))))
 
-       :y-axis (.. js/d3 -svg axis
-                   (scale y-scale)
-                   (orient "left")
-                   (ticks (max (/ height 50) 2))
-                   (tickSize (* -1 width) 0 0)
-                   (tickFormat (.. js/d3
-                                   (format ",.2f"))))
+       :y-axis  (.. js/d3 -svg axis
+                    (scale y-scale)
+                    (orient "left")
+                    (ticks (max (/ height 50) 2))
+                    (tickSize (* -1 width) 0 0)
+                    (tickFormat (.. js/d3
+                                    (format ",.2f"))))
        :x-scale x-scale
        :y-scale y-scale}))
 
   (create [this]
     (let [{:keys [id width height data]} (om/props this)
           svg (d3/build-svg (str "#area-chart-" id) width height)
-          padded-data (d3/zero-padding-to-time-series-data data)
-
-          js-domain (clj->js (flatten (map :values padded-data)))
-          js-data (clj->js padded-data)
+          js-domain (clj->js (flatten (map :values data)))
+          js-data (clj->js data)
 
           {:keys [margin]} (om/get-state this)
           {inner-width :width
@@ -68,7 +67,8 @@
 
           graph (.. svg
                     (append "g")
-                    (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))]
+                    (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")"))
+                    (attr "width" inner-width))]
 
       (.. graph
           (append "g")
@@ -76,11 +76,11 @@
           (attr "transform" (str "translate(0," inner-height ")"))
           (call x-axis))
 
-      (.. graph
-          (append "g")
-          (attr "class" "y axis grid")
-          (attr "transform" (str "translate(50,0)"))
-          (call y-axis))
+      ;(.. graph
+      ;    (append "g")
+      ;    (attr "class" "y axis grid")
+      ;    (attr "transform" (str "translate(0,0)"))
+      ;    (call y-axis))
 
       (d3/update-on-resize this id)
       (om/update-state! this assoc :svg svg :js-domain js-domain :js-data js-data :x-scale x-scale :y-scale y-scale :area area :x-axis x-axis :y-axis y-axis :graph graph :color-scale color-scale :line line)))
@@ -179,7 +179,7 @@
     (d3/update-chart this))
 
   (componentWillReceiveProps [this next-props]
-    (d3/update-chart-data this (d3/zero-padding-to-time-series-data (:data next-props))))
+    (d3/update-chart-data this (:data next-props)))
 
   (render [this]
     (let [{:keys [id]} (om/props this)]

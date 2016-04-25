@@ -32,6 +32,20 @@
                  (+ s (converted-amount tx)))]
     [(reduce sum-fn 0 transactions)]))
 
+;; Data helper
+(defn zero-padding-to-time-series-data [values]
+  (let [timestamps (map #(get % :name) values)
+        start (apply min timestamps)
+        end (c/to-long (t/today))]
+    (loop [current start
+           new-values values]
+      (let [add-value (some #(when (= (:name %) current)
+                              %) values)]
+        (if (<= current end)
+          (recur (c/to-long (t/plus (c/from-long current) (t/days 1)))
+                 (conj new-values (or add-value {:name current :value 0})))
+          (sort-by :name new-values))))))
+
 (defmethod sum :transaction/date
   [_ transactions _]
   (let [by-timestamp (group-by #(:date/timestamp (:transaction/date %)) transactions)
@@ -42,7 +56,7 @@
                                  0
                                  ts)})
         sum-by-day (mapv sum-fn by-timestamp)]
-    (sort-by :name sum-by-day)))
+    (zero-padding-to-time-series-data sum-by-day)))
 
 (defmethod sum :transaction/tags
   [_ transactions {:keys [data-filter]}]

@@ -47,10 +47,9 @@
   (create [this]
     (let [{:keys [id width height data]} (om/props this)
           svg (d3/build-svg (str "#line-chart-" id) width height)
-          padded-data (d3/zero-padding-to-time-series-data data)
 
-          js-domain (clj->js (flatten (map :values padded-data)))
-          js-data (clj->js padded-data)
+          js-domain (clj->js (flatten (map :values data)))
+          js-data (clj->js data)
 
           {:keys [margin]} (om/get-state this)
           {inner-width :width
@@ -160,7 +159,7 @@
     (d3/update-chart this))
 
   (componentWillReceiveProps [this next-props]
-    (d3/update-chart-data this (d3/zero-padding-to-time-series-data (:data next-props))))
+    (d3/update-chart-data this (:data next-props)))
 
   (render [this]
     (let [{:keys [id]} (om/props this)]
