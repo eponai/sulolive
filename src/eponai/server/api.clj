@@ -165,12 +165,8 @@
             (debug "User already activated, returning user.")
             (pull/lookup-entity (d/db conn) [:user/email email]))
           ; First time activation, set status to active and return user entity.
-          (let [project (common.format/project user-db-id)
-                dashboard (common.format/dashboard (:db/id project))
-                activated-db (:db-after (transact conn [[:db/add user-db-id :user/status :user.status/active]
-                                                        [:db/add user-db-id :user/currency [:currency/code "USD"]]
-                                                        project
-                                                        dashboard]))]
+          (let [activated-db (:db-after (transact conn [[:db/add user-db-id :user/status :user.status/active]
+                                                        [:db/add user-db-id :user/currency [:currency/code "USD"]]]))]
             (debug "Activated account for user-uuid:" user-uuid)
             (pull/lookup-entity activated-db [:user/email email])))))
 

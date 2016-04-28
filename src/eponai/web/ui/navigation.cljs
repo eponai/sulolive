@@ -122,7 +122,7 @@
           {:keys [top]} (om/get-state this)]
       (html
         [:div#navbar-submenu
-         (opts {:style {:background "#fff"
+         (opts {:style {:background "#28B0A4"
                         :border "1px solid #e7e7e7"
                         ;:width    "100%"
                         ;:left :inherit
