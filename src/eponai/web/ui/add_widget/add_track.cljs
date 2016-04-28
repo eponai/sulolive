@@ -99,6 +99,7 @@
          ;     [:span "Settings"]]])]
          [:div.row.columns.small-12.medium-6
           [:div.callout
+           [:p.currency-code "Filter"]
            [:div.row
             [:div.columns.small-12
              [:div
@@ -127,7 +128,8 @@
                                                                                   (dissoc tag-filter :filter/include-tags))]
                                                                 (om/update-state! this assoc :tag-filter new-filters)
                                                                 (on-change (assoc widget :widget/filter new-filters) {:update-data? true})))})))]]
-
+           [:hr]
+           [:p.currency-code "Preview"]
            [:div.row
             [:div.columns.small-12
              (->Widget (assoc widget :widget/data (report/generate-data (:widget/report widget) transactions {:data-filter (get-in widget [:widget/graph :graph/filter])})))]]
@@ -141,38 +143,42 @@
                  :checked  (= style :graph.style/bar)
                  :on-click #(when (and on-change (not= style :graph.style/bar))
                              (on-change (change-graph-style widget :graph.style/bar)))}]
-               [:label {:for "bar-option"} "Bar Chart"]
+               [:label {:for "bar-option"}
+                [:span.currency-code "Bars"]]
                [:input
                 {:type     "radio"
                  :id       "number-option"
                  :checked  (= style :graph.style/number)
                  :on-click #(when (and on-change (not= style :graph.style/number))
                              (on-change (change-graph-style widget :graph.style/number)))}]
-               [:label {:for "number-option"} "Number Chart"]
+               [:label {:for "number-option"}
+                [:span.currency-code "Number"]]
                [:input
                 {:type     "radio"
                  :id       "area-option"
                  :checked  (= style :graph.style/area)
                  :on-click #(when (and on-change (not= style :graph.style/area))
                              (on-change (change-graph-style widget :graph.style/area)))}]
-               [:label {:for "area-option"} "Area Chart"]
+               [:label {:for "area-option"}
+                [:span.currency-code "Area"]]
                [:input
                 {:type     "radio"
                  :id       "line-option"
                  :checked  (= style :graph.style/line)
                  :on-click #(when (and on-change (not= style :graph.style/line))
                              (on-change (change-graph-style widget :graph.style/line)))}]
-               [:label {:for "line-option"} "Line Chart"]])]
+               [:label {:for "line-option"}
+                [:span.currency-code "Line"]]])]
 
-           [:hr]
-
+           (when (= :graph.style/bar (:graph/style graph))
+             [:hr])
            (when (= :graph.style/bar (:graph/style graph))
 
              [:div.row
               [:div.columns.small-12.medium-6
-               "Show tags"]
+               [:span.currency-code "Show tags"]]
               [:div.columns.small-12.medium-6
-               "Hide tags"]])
+               [:span.currency-code "Hide tags"]]])
 
            (when (= :graph.style/bar (:graph/style graph))
              [:div.row

@@ -312,7 +312,9 @@
           {:keys [add-transaction?]} (om/get-state this)
           input-filter (.filter this)]
       (html
-        [:div
+        [:div#txs
+         (opts {:style {:padding "1em"}})
+
          (if (or (seq transactions)
                  (some? (or (seq (:filter/include-tags input-filter))
                             (seq (:filter/exclude-tags input-filter))

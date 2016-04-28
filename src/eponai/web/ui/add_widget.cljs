@@ -9,7 +9,8 @@
     [eponai.web.ui.widget :refer [Widget]]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]))
+    [taoensso.timbre :refer-macros [debug]]
+    [eponai.web.routes :as routes]))
 
 ;;; ####################### Actions ##########################
 
@@ -112,18 +113,25 @@
           {:keys [dashboard]} (om/get-computed this)]
       (html
         [:div
+         (opts {:style {:padding "1em"}})
+         [:div.row.column.small-12.medium-6
+          [:ul.breadcrumbs [:li (if active-widget "Edit widget" "Add new widget")]]]
+         ;[:ul.breadcrumbs
+         ; [:li (if active-widget "Edit widget" "Add new widget")]]
+         ;[:h4 (if active-widget "Edit widget" "Add new widget")]
          [:div.float-right
           (when (some? active-widget)
             [:a.button.alert
-             {:on-click #(.delete-widget this active-widget)}
+             {:href (when (:db/id (:dashboard/project dashboard))
+                      (routes/key->route :route/project->dashboard
+                                         {:route-param/project-id (:db/id (:dashboard/project dashboard))}))
+              :on-click #(.delete-widget this active-widget)}
              "Delete"])
           [:a.button.primary
-           {:href "#"
-            ;(when (:db/id (:dashboard/project dashboard))
-            ;        (routes/key->route :route/project->dashboard
-            ;                           {:route-param/project-id (:db/id (:dashboard/project dashboard))}))
-            :on-click
-                  #(.save-widget this (assoc input-widget :widget/dashboard (:dashboard/uuid dashboard)))}
+           {:href (when (:db/id (:dashboard/project dashboard))
+                    (routes/key->route :route/project->dashboard
+                                 {:route-param/project-id (:db/id (:dashboard/project dashboard))}))
+                  :on-click #(.save-widget this (assoc input-widget :widget/dashboard (:dashboard/uuid dashboard)))}
            "Save"]]
 
          (cond

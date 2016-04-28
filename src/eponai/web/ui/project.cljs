@@ -12,45 +12,82 @@
     [taoensso.timbre :refer-macros [debug]]
     [eponai.web.routes :as routes]))
 
-(defn- submenu [component {:keys [db/id] :as project} selected-tab]
-  (html
-    [:div
-     [:ul.menu.float-left
-      [:li
-       [:a
-        {:href (routes/key->route :route/project->txs {:route-param/project-id id})}
-        [:i.fa.fa-list]]]
-      [:li
-       [:a
-        {:href (routes/key->route :route/project->dashboard
-                                  {:route-param/project-id id})}
-        [:strong "Dashboard"]]]
-      [:li
-       [:a
-        (opts {:href  (routes/key->route :route/project->widget+type+id {:route-param/project-id  id
-                                                                         :route-param/widget-type :track
-                                                                         :route-param/widget-id   "new"})
-               :style {:margin "0.5em"}})
-        [:span "+ Track"]]]
-      [:li
-       [:a
-        (opts {:href  (routes/key->route :route/project->widget+type+id {:route-param/project-id  id
-                                                                         :route-param/widget-type :goal
-                                                                         :route-param/widget-id   "new"})
-               :style {:margin "0.5em"}})
-        [:span "+ Goal"]]]
-      ]
-     ;[:div.top-bar-right]
-     [:ul.menu.float-right
-      [:li
-       [:a.disabled
-        [:i.fa.fa-user]
-        [:small (count (:project/users project))]]]
-      [:li
-       [:a
-        {:on-click #(.share component)}
-        [:i.fa.fa-share-alt]]]
-      ]]))
+(defui SubMenu
+  Object
+  (share [this]
+    (om/update-state! this assoc :share-project? true))
+
+  (share-project [this project-uuid email]
+    (om/transact! this `[(project/share ~{:project/uuid project-uuid
+                                          :user/email email})]))
+  (render [this]
+    (let [{:keys [project selected-tab]} (om/get-computed this)
+          {:keys [menu-visible?]} (om/get-state this)
+          {:keys [db/id]} project
+          on-close #(om/update-state! this assoc :menu-visible? false)]
+      (html
+        [:div
+         [:ul.dropdown.menu.float-left
+          [:li
+           [:a
+            {:href (routes/key->route :route/project->txs {:route-param/project-id id})}
+            [:i.fa.fa-list]]]
+          [:li
+           [:a
+            {:href (routes/key->route :route/project->dashboard
+                                      {:route-param/project-id id})}
+            [:strong "Dashboard"]]]
+
+
+
+          [:li.has-submenu.opens-right
+           [:a
+            {:on-click #(om/update-state! this assoc :menu-visible? true)}
+            "New..."]
+
+           (when menu-visible?
+             [:div
+              ;(opts {:style {:position :absolute
+              ;               :right 0}})
+              ;{:class "dropdown open"}
+              (utils/click-outside-target on-close)
+              [:ul.dropdown-menu
+               (opts {:style {:left 0}})
+               [:li
+                [:a
+                 (opts {:href     (routes/key->route :route/project->widget+type+id {:route-param/project-id  id
+                                                                                     :route-param/widget-type :track
+                                                                                     :route-param/widget-id   "new"})
+                        :on-click on-close
+                        :style    {:padding "0.5em"}})
+                 [:i.fa.fa-line-chart.fa-fw
+                  (opts {:style {:width "15%"
+                                 :color "green"}})]
+                 [:strong "Track"]]]
+               [:li
+                [:a
+                 (opts {:href     (routes/key->route :route/project->widget+type+id {:route-param/project-id  id
+                                                                                     :route-param/widget-type :goal
+                                                                                     :route-param/widget-id   "new"})
+                        :on-click on-close
+                        :style {:padding "0.5em"}})
+                 [:i.fa.fa-star.fa-fw
+                  (opts {:style {:width "15%"
+                                 :color "orange"}})]
+                 [:strong "Goal"]]]]])]
+          ]
+         ;[:div.top-bar-right]
+         [:ul.menu.float-right
+          [:li
+           [:a.disabled
+            [:i.fa.fa-user]
+            [:small (count (:project/users project))]]]
+          [:li
+           [:a
+            {:on-click #(.share this)}
+            [:i.fa.fa-share-alt]]]
+          ]]))))
+(def ->SubMenu (om/factory SubMenu))
 
 (defui Shareproject
   Object
@@ -86,12 +123,6 @@
      {:proxy/all-transactions (om/get-query AllTransactions)}
      {:proxy/new-widget (om/get-query NewWidget)}])
   Object
-  (share [this]
-    (om/update-state! this assoc :share-project? true))
-
-  (share-project [this project-uuid email]
-    (om/transact! this `[(project/share ~{:project/uuid project-uuid
-                                          :user/email email})]))
   (componentWillUnmount [this]
     (om/transact! this `[(ui.component.project/clear)
                          :query/transactions]))
@@ -107,9 +138,9 @@
         [:div
          (when project
            (nav/->NavbarSubmenu (om/computed {}
-                                             {:content (submenu this
-                                                                project
-                                                                (:ui.component.project/selected-tab active-project))})))
+                                             {:content (->SubMenu (om/computed {}
+                                                                               {:project project
+                                                                                :selected-tab (:ui.component.project/selected-tab active-project)}))})))
          [:div#project-content
           (condp = (or (:ui.component.project/selected-tab active-project)
                        :dashboard)
