@@ -52,8 +52,8 @@
     (om/transact! this `[(widget/delete ~(assoc (select-keys widget [:widget/uuid]) :mutation-uuid (d/squuid)))
                          :query/dashboard]))
 
-  (default-report [this]
-    (let [{:keys [query/widget-type]} (om/props this)
+  (default-report [_ props]
+    (let [{:keys [query/widget-type]} props
           type (:ui.component.widget/type widget-type)]
       (cond (= type :track)
             {:report/uuid  (d/squuid)
@@ -68,8 +68,8 @@
                                         :cycle/period-count 1
                                         :cycle/start        (c/to-long (t/today))}}})))
 
-  (default-graph [this]
-    (let [{:keys [query/widget-type]} (om/props this)
+  (default-graph [_ props]
+    (let [{:keys [query/widget-type]} props
           type (:ui.component.widget/type widget-type)]
       (cond (= type :track)
             {:graph/uuid  (d/squuid)
@@ -98,12 +98,12 @@
                         :widget/index  index
                         :widget/width  25
                         :widget/height 2
-                        :widget/graph (.default-graph this)
-                        :widget/report (.default-report this)}})))
+                        :widget/graph (.default-graph this props)
+                        :widget/report (.default-report this props)}})))
   (initLocalState [this]
     (.init-state this (om/props this)))
   (componentWillReceiveProps [this new-props]
-    (.init-state this new-props))
+    (om/set-state! this (.init-state this new-props)))
   (render [this]
     (let [{:keys [query/transactions
                   query/active-widget
@@ -112,6 +112,19 @@
           {:keys [dashboard]} (om/get-computed this)]
       (html
         [:div
+         [:div.float-right
+          (when (some? active-widget)
+            [:a.button.alert
+             {:on-click #(.delete-widget this active-widget)}
+             "Delete"])
+          [:a.button.primary
+           {:href "#"
+            ;(when (:db/id (:dashboard/project dashboard))
+            ;        (routes/key->route :route/project->dashboard
+            ;                           {:route-param/project-id (:db/id (:dashboard/project dashboard))}))
+            :on-click
+                  #(.save-widget this (assoc input-widget :widget/dashboard (:dashboard/uuid dashboard)))}
+           "Save"]]
 
          (cond
            (= :track (:ui.component.widget/type widget-type))
@@ -131,23 +144,6 @@
                                     :on-change    (fn [new-widget & [{:keys [update-data?]}]]
                                                     (om/update-state! this assoc :input-widget new-widget)
                                                     (when update-data?
-                                                      (om/update-query! this assoc-in [:params :filter] (:widget/filter new-widget))))})))
-         [:div.float-right
-          [:a.button.secondary
-           ;{:on-click on-close}
-           "Cancel"]
-          [:a.button.primary
-           {:href "#"
-            ;(when (:db/id (:dashboard/project dashboard))
-            ;        (routes/key->route :route/project->dashboard
-            ;                           {:route-param/project-id (:db/id (:dashboard/project dashboard))}))
-            :on-click
-                  #(.save-widget this (assoc input-widget :widget/dashboard (:dashboard/uuid dashboard)))}
-           "Save"]]
-         (when (some? active-widget)
-           [:div.float-left
-            [:a.button.alert
-             {:on-click #(.delete-widget this active-widget)}
-             "Delete"]])]))))
+                                                      (om/update-query! this assoc-in [:params :filter] (:widget/filter new-widget))))})))]))))
 
 (def ->NewWidget (om/factory NewWidget))

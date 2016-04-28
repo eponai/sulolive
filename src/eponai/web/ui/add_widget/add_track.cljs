@@ -77,134 +77,122 @@
           {:keys [widget/graph]} widget]
       (html
         [:div
-         [:ul.breadcrumbs
-          [:li
-           [:a.disabled
-            (if (:db/id widget)
-              "Edit Track"
-              "New Track")]]
-          (if (= 1 step)
-            [:li
-             [:span "Style"]]
-            [:li
-             [:a
-              {:on-click #(om/update-state! this assoc :step 1)}
-              [:span "Style"]]])
-          (if (= 2 step)
-            [:li
-             [:span "Settings"]]
-            [:li
-             [:a
-              {:on-click #(om/update-state! this assoc :step 2)}
-              [:span "Settings"]]])]
+         ;[:ul.breadcrumbs
+         ; [:li
+         ;  [:a.disabled
+         ;   (if (:db/id widget)
+         ;     "Edit Track"
+         ;     "New Track")]]
+         ; (if (= 1 step)
+         ;   [:li
+         ;    [:span "Style"]]
+         ;   [:li
+         ;    [:a
+         ;     {:on-click #(om/update-state! this assoc :step 1)}
+         ;     [:span "Style"]]])
+         ; (if (= 2 step)
+         ;   [:li
+         ;    [:span "Settings"]]
+         ;   [:li
+         ;    [:a
+         ;     {:on-click #(om/update-state! this assoc :step 2)}
+         ;     [:span "Settings"]]])]
+         [:div.row.columns.small-12.medium-6
+          [:div.callout
+           [:div.row
+            [:div.columns.small-12
+             [:div
+              (filter/->DateFilter (om/computed {:filter date-filter}
+                                                {:on-change #(let [new-filters (merge date-filter %)]
+                                                              (om/update-state! this assoc :date-filter %)
+                                                              (on-change (assoc widget :widget/filter new-filters) {:update-data? true}))}))]]]
+           [:div.row
+            [:div.columns.small-12.medium-6
+             [:select
+              {:value     (name selected-transactions)
+               :on-change #(.update-selected-transactions this (keyword (.-value (.-target %))))}
+              [:option
+               {:value (name :all-transactions)}
+               "All transactions"]
+              [:option
+               {:value (name :include-tags)}
+               "Transactions with tags"]]]
+            [:div.columns.small-12.medium-6
+             (when (= selected-transactions :include-tags)
+               (filter/->TagFilter (om/computed {:tags        (:filter/include-tags tag-filter)
+                                                 :placeholder "Hit enter to add tag..."}
+                                                {:on-change (fn [tags]
+                                                              (let [new-filters (if (seq tags)
+                                                                                  (merge tag-filter {:filter/include-tags tags})
+                                                                                  (dissoc tag-filter :filter/include-tags))]
+                                                                (om/update-state! this assoc :tag-filter new-filters)
+                                                                (on-change (assoc widget :widget/filter new-filters) {:update-data? true})))})))]]
 
-         (cond (= step 1)
-               (->SelectGraph (om/computed {:graph (:widget/graph widget)}
-                                           {:on-change    #(when on-change
-                                                            (on-change (change-graph-style widget %)))
-                                            :transactions transactions
-                                            :on-next      #(om/update-state! this assoc :step 2)
-                                            :styles       [:graph.style/bar
-                                                           :graph.style/line
-                                                           :graph.style/number]}))
+           [:div.row
+            [:div.columns.small-12
+             (->Widget (assoc widget :widget/data (report/generate-data (:widget/report widget) transactions {:data-filter (get-in widget [:widget/graph :graph/filter])})))]]
 
-               (= step 2)
-               [:div
-                ;[:fieldset.fieldset
-                ; [:legend "Select transactions"]]
-                [:h4 "Settings"]
+           [:div.row
+            (let [style (:graph/style graph)]
+              [:div.columns.small-12
+               [:input
+                {:type     "radio"
+                 :id       "bar-option"
+                 :checked  (= style :graph.style/bar)
+                 :on-click #(when (and on-change (not= style :graph.style/bar))
+                             (on-change (change-graph-style widget :graph.style/bar)))}]
+               [:label {:for "bar-option"} "Bar Chart"]
+               [:input
+                {:type     "radio"
+                 :id       "number-option"
+                 :checked  (= style :graph.style/number)
+                 :on-click #(when (and on-change (not= style :graph.style/number))
+                             (on-change (change-graph-style widget :graph.style/number)))}]
+               [:label {:for "number-option"} "Number Chart"]
+               [:input
+                {:type     "radio"
+                 :id       "area-option"
+                 :checked  (= style :graph.style/area)
+                 :on-click #(when (and on-change (not= style :graph.style/area))
+                             (on-change (change-graph-style widget :graph.style/area)))}]
+               [:label {:for "area-option"} "Area Chart"]
+               [:input
+                {:type     "radio"
+                 :id       "line-option"
+                 :checked  (= style :graph.style/line)
+                 :on-click #(when (and on-change (not= style :graph.style/line))
+                             (on-change (change-graph-style widget :graph.style/line)))}]
+               [:label {:for "line-option"} "Line Chart"]])]
 
-                (when (some #{:graph.style/area :graph.style/line} [(:graph/style graph)])
-                  [:div.row.column.small-12.medium-6
-                   [:select
-                    {:value (str (:graph/style graph))
-                     :on-change #(when on-change
-                                  (on-change (change-graph-style widget (keyword (subs (.-value (.-target %)) 1)))))}
-                    [:option
-                     {:value (str :graph.style/line)}
-                     "Line"]
-                    [:option
-                     {:value (str :graph.style/area)}
-                     "Area"]]])
-                [:div.row
-                 [:div.columns.small-12.medium-6
-                  ;(opts {:style {:height "15em"}})
-                  (->Widget (assoc widget :widget/data (report/generate-data (:widget/report widget) transactions {:data-filter (get-in widget [:widget/graph :graph/filter])})))]
+           [:hr]
 
-                 [:div.columns.small-12.medium-6
-                  [:fieldset.fieldset
-                   (opts {:style {:margin 0}})
-                   [:legend "Transactions"]
-                   [:div.row
-                    ;[:div.columns.small-2.text-right
-                    ; [:label "Transactions:"]]
-                    [:div.columns.small-10
-                     [:select
-                      {:value     (name selected-transactions)
-                       :on-change #(.update-selected-transactions this (keyword (.-value (.-target %))))}
-                      [:option
-                       {:value (name :all-transactions)}
-                       "All transactions"]
-                      [:option
-                       {:value (name :include-tags)}
-                       "Transactions with tags"]]
-                     (when (= selected-transactions :include-tags)
-                       (filter/->TagFilter (om/computed {:tags        (:filter/include-tags tag-filter)
-                                                         :placeholder "Hit enter to add tag..."}
-                                                        {:on-change (fn [tags]
-                                                                      (let [new-filters (if (seq tags)
-                                                                                          (merge tag-filter {:filter/include-tags tags})
-                                                                                          (dissoc tag-filter :filter/include-tags))]
-                                                                        (om/update-state! this assoc :tag-filter new-filters)
-                                                                        (on-change (assoc widget :widget/filter new-filters) {:update-data? true})))})))]]]
-                  ;[:fieldset.fieldset
-                  ; [:legend "Settings"]]
-                  ;(->ChartSettings (om/computed {}
-                  ;                              {:graph        graph
-                  ;                               :report       (:widget/report widget)
-                  ;                               :transactions transactions
-                  ;                               :on-change    #(when on-change
-                  ;                                               (on-change (assoc widget :widget/report %)))}))
-                  ]]
-                [:fieldset
-                 [:legend "Filters"]
-                 [:div.row
-                  [:div.columns.small-12.medium-3
-                   "Time"]]
-                 [:div.row
-                  [:div.columns.small-12.medium-9
-                   (filter/->DateFilter (om/computed {:filter date-filter}
-                                                     {:on-change #(let [new-filters (merge date-filter %)]
-                                                                   (om/update-state! this assoc :date-filter %)
-                                                                   (on-change (assoc widget :widget/filter new-filters) {:update-data? true}))}))]]
-                 (when (= :graph.style/bar (:graph/style graph))
+           (when (= :graph.style/bar (:graph/style graph))
 
-                   [:div.row
-                    [:div.columns.small-12.medium-3
-                     "Show tags"]
-                    [:div.columns.small-12.medium-3.end
-                     "Hide tags"]])
-                 (when (= :graph.style/bar (:graph/style graph))
-                   [:div.row
-                    [:div.columns.small-12.medium-3
-                     (filter/->TagFilter (om/computed {:tags        (:filter/include-tags graph-filter)
-                                                       :placeholder "Hit enter to add tag..."}
-                                                      {:on-change (fn [tags]
-                                                                    (let [new-filters (if (seq tags)
-                                                                                        (merge graph-filter {:filter/include-tags tags})
-                                                                                        (dissoc graph-filter :filter/include-tags))]
-                                                                      (om/update-state! this assoc :graph-filter new-filters)
-                                                                      (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))}))]
-                    [:div.columns.small-12.medium-3.end
-                     (filter/->TagFilter (om/computed {:tags        (:filter/exclude-tags graph-filter)
-                                                       :placeholder "Hit enter to add tag..."}
-                                                      {:on-change (fn [tags]
-                                                                    (let [new-filters (if (seq tags)
-                                                                                        (merge graph-filter {:filter/exclude-tags tags})
-                                                                                        (dissoc graph-filter :filter/exclude-tags))]
-                                                                      (om/update-state! this assoc :graph-filter new-filters)
-                                                                      (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))}))]])]])
+             [:div.row
+              [:div.columns.small-12.medium-6
+               "Show tags"]
+              [:div.columns.small-12.medium-6
+               "Hide tags"]])
 
-         ]))))
+           (when (= :graph.style/bar (:graph/style graph))
+             [:div.row
+              [:div.columns.small-12.medium-6
+               (filter/->TagFilter (om/computed {:tags        (:filter/include-tags graph-filter)
+                                                 :placeholder "Hit enter to add tag..."}
+                                                {:on-change (fn [tags]
+                                                              (let [new-filters (if (seq tags)
+                                                                                  (merge graph-filter {:filter/include-tags tags})
+                                                                                  (dissoc graph-filter :filter/include-tags))]
+                                                                (om/update-state! this assoc :graph-filter new-filters)
+                                                                (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))}))]
+              [:div.columns.small-12.medium-6
+               (filter/->TagFilter (om/computed {:tags        (:filter/exclude-tags graph-filter)
+                                                 :placeholder "Hit enter to add tag..."}
+                                                {:on-change (fn [tags]
+                                                              (let [new-filters (if (seq tags)
+                                                                                  (merge graph-filter {:filter/exclude-tags tags})
+                                                                                  (dissoc graph-filter :filter/exclude-tags))]
+                                                                (om/update-state! this assoc :graph-filter new-filters)
+                                                                (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))}))]])]]]))))
 
 (def ->NewTrack (om/factory NewTrack))

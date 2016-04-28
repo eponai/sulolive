@@ -185,8 +185,7 @@
                 :value (reduce (fn [s tx]
                                  (+ s (converted-amount tx)))
                                0
-                               today-transactions)
-                :max   value}]}]))
+                               today-transactions)}]}]))
 
 (defmethod goal :cycle.period/month
   [g transactions]

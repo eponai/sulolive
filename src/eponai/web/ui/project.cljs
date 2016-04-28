@@ -117,8 +117,7 @@
             :transactions (->AllTransactions all-transactions)
             :widget (->NewWidget (om/computed new-widget
                                               {:dashboard (:query/dashboard dashboard)
-                                               :index (dashboard/calculate-last-index 4 (:widget/_dashboard dashboard))}))
-            :goal (->NewGoal))]
+                                               :index (dashboard/calculate-last-index 4 (:widget/_dashboard dashboard))})))]
 
 
 

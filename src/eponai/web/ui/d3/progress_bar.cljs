@@ -6,15 +6,19 @@
     [goog.string :as gstring]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]))
+    [taoensso.timbre :refer-macros [debug]]
+    [eponai.common.format :as f]))
 
-(defn- end-angle [d]
+(defn- end-angle [d limit]
   (debug "Goal end angle data: " d)
-  (let [progress (if (map? d)
-                   (/ (:value d) (:max d))
-                   (/ (.-value d) (.-max d)))]
-    (debug "Goal end angle: " progress)
-    (* 2 js/Math.PI progress)))
+  (let [v (if (map? d)
+                 (:value d)
+                  (.-value d))]
+    (if (and limit v)
+      (let [progress (/ v limit)]
+        (debug "Goal end angle: " progress)
+        (* 2 js/Math.PI progress))
+      0)))
 (defui ProgressBar
   Object
   (create [this]
@@ -27,7 +31,7 @@
           cycle (first data)
           _ (debug "Goal cycle: " cycle)
 
-          js-data (clj->js [(assoc (last (:values cycle)) :endAngle 0 :max (:limit cycle))])
+          js-data (clj->js [(assoc (last (:values cycle)) :endAngle 0)])
           path-width (/ (min inner-width inner-height) 7)
           graph (.. svg
                     (append "g")
@@ -58,10 +62,13 @@
       (om/update-state! this assoc :svg svg :graph graph :meter meter :arc arc :js-data js-data :txt txt)))
 
   (update [this]
-    (let [{:keys [svg meter arc js-data margin graph start-angle txt]} (om/get-state this)
+    (let [{:keys [data]} (om/props this)
+          {:keys [svg meter arc js-data margin graph start-angle txt]} (om/get-state this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
-          path-width (/ (min inner-width inner-height) 7)]
+          path-width (/ (min inner-width inner-height) 7)
+          limit (f/str->number (:limit (first data)))
+          ]
       (when-not (or (js/isNaN inner-height) (js/isNaN inner-width))
         (let [progress (.. meter
                            (selectAll ".foreground")
@@ -93,7 +100,7 @@
               (attrTween "d"
                          (fn [d]
                            (let [interpolate (.. js/d3
-                                                 (interpolate start-angle (end-angle d)))]
+                                                 (interpolate start-angle (end-angle d limit)))]
                              (fn [t]
                                (set! (.-endAngle d) (interpolate t))
                                (arc d))))))
@@ -137,12 +144,11 @@
 
   (componentWillReceiveProps [this next-props]
     (let [{:keys [data]} next-props
-          cycle (first data)
-          ;new-data (assoc (last (:values cycle)) :endAngle 0 :max (:limit cycle))
-          _ (debug "Goal receive props: " cycle)
-          new-start-angle (end-angle (assoc (last (:values cycle)) :max (:limit cycle)))]
+          {:keys [limit values]} (first data)
+          v (last values)
+          new-start-angle (end-angle v limit)]
       (om/update-state! this assoc :start-angle new-start-angle)
-      (d3/update-chart-data this [(last (:values cycle))])))
+      (d3/update-chart-data this [v])))
 
   (initLocalState [_]
     {:start-angle 0})

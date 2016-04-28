@@ -36,13 +36,12 @@
                   end
                   style]} (om/get-state this)]
       (debug "Goal widget: " widget)
-      (debug "Goal transactions: " transactions)
       (html
         [:div
-         [:ul.breadcrumbs
-          [:li
-           [:a.disabled
-            "New Goal"]]]
+         ;[:ul.breadcrumbs
+         ; [:li
+         ;  [:a.disabled
+         ;   "New Goal"]]]
          [:div.row.column.small-12.medium-6
           [:div.callout
            [:div.row
