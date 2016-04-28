@@ -91,9 +91,9 @@
           project (get-in dashboard [:query/dashboard :dashboard/project])]
       (html
         [:div
-         (nav/->NavbarSubmenu (om/computed {}
-                                           {:content (when project
-                                                       (submenu this project))}))
+         (when project
+           (nav/->NavbarSubmenu (om/computed {}
+                                             {:content (submenu this project)})))
          [:div#project-content
           (condp = (or (:ui.component.project/selected-tab active-project)
                        :dashboard)

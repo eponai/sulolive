@@ -61,6 +61,16 @@
   [date]
   (c/to-long (ensure-date date)))
 
+(defn today []
+  (let [t (t/today)]
+    (t/date-time (t/year t) (t/month t) (t/day t))))
+
+(defn date->long [d]
+  (c/to-long (t/date-time (t/year d) (t/month d) (t/day d))))
+
+(defn month->long [d]
+  (c/to-long (t/date-time (t/year d) (t/month d))))
+
 (defn ymd-string->js-date [ymd]
   {:pre [(string? ymd)]}
   (c/to-date (f/parse ymd)))
@@ -82,8 +92,10 @@
      :cljs (uuid str-uuid)))
 
 (defn str->number [n]
-  #?(:cljs (cljs.reader/read-string n)
-     :clj (bigdec n)))
+  #?(:cljs (if-not (number? n)
+             (cljs.reader/read-string n)
+             n)
+     :clj  (bigdec n)))
 
 ;; -------------------------- Database entities -----------------------------
 

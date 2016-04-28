@@ -12,6 +12,7 @@
 (defui BurndownChart
   Object
   (make-axis [_ width height domain]
+    (debug "Make axis: " domain)
     (let [x-scale (.. js/d3 -time scale
                       (range #js [0 width])
                       (nice (.. js/d3 -time -year))
@@ -47,10 +48,10 @@
     (let [{:keys [id width height data]} (om/props this)
           svg (d3/build-svg (str "#burndown-chart-" id) width height)
           last-data (last data)
-          chart-data [{:key "user-input"
-                       :values (:values last-data)}
-                      {:key "guideline"
-                       :values (:guide last-data)}]
+          chart-data [{:key    "user-input"
+                       :values (or (:values last-data) [])}
+                      {:key    "guideline"
+                       :values (or (:guide last-data) [])}]
 
           js-domain (clj->js (flatten (map :values chart-data)))
           js-data (clj->js chart-data)

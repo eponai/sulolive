@@ -1,13 +1,16 @@
 (ns eponai.common.report
   (:require
-
+    [eponai.common.format :as f]
     #?(:clj [taoensso.timbre :refer [debug]]
        :cljs [taoensso.timbre :refer-macros [debug]])
-    #?(:clj [clj-time.coerce :as c]
+    #?(:clj
+            [clj-time.coerce :as c]
        :cljs [cljs-time.coerce :as c])
-    #?(:clj [clj-time.core :as t]
+    #?(:clj
+            [clj-time.core :as t]
        :cljs [cljs-time.core :as t])
-    #?(:clj [clj-time.periodic :as p]
+    #?(:clj
+            [clj-time.periodic :as p]
        :cljs [cljs-time.periodic :as p])))
 
 (defn converted-amount [{:keys [transaction/conversion
@@ -38,24 +41,13 @@
 (defn zero-padding-to-time-series-data [values & [opts]]
   (let [by-timestamp (group-by :name values)
         start (or (:start opts) (c/from-long (apply min (keys by-timestamp))))
-        end (or (:end opts) (c/to-date-time (t/plus (t/today) (t/days 1)))) ;;Use tomorrow as end cause we want to include today.
+        end (or (:end opts) (c/to-date-time (t/plus (f/today) (t/days 1)))) ;;Use tomorrow as end cause we want to include today.
         time-range (p/periodic-seq start end (or (:step opts) (t/days 1)))]
     (map (fn [date]
-           (let [t (c/to-long date)
+           (let [t (f/date->long date)
                  [add-value] (get by-timestamp t)]
              (or add-value {:name t :value 0})))
          time-range)))
-
-;(defmethod sum :sum.group-by/month
-;  (let [by-timestamp (group-by #(:date/timestamp (:transaction/date %)) transactions)
-;        sum-fn (fn [[timestamp ts]]
-;                 {:name  timestamp
-;                  :value (reduce (fn [s tx]
-;                                   (+ s (converted-amount tx)))
-;                                 0
-;                                 ts)})
-;        sum-by-day (mapv sum-fn by-timestamp)]
-;    (zero-padding-to-time-series-data sum-by-day)))
 
 (defmethod sum :transaction/date
   [_ transactions _]
@@ -71,8 +63,7 @@
 (defmethod sum :transaction/tags
   [_ transactions {:keys [data-filter]}]
   (let [sum-fn (fn [m transaction]
-                 (let [
-                       include-tag-names (map :tag/name (:filter/include-tags data-filter))
+                 (let [include-tag-names (map :tag/name (:filter/include-tags data-filter))
                        exclude-tag-names (map :tag/name (:filter/exclude-tags data-filter))
                        tags (:transaction/tags transaction)
                        filtered-tags (let [filtered-included (if (seq include-tag-names)
@@ -185,11 +176,12 @@
         {:keys [cycle/start
                 cycle/period
                 cycle/period-count]} cycle
+        today-long (f/date->long (t/today))
         txs-by-timestamp (group-by #(:date/timestamp (:transaction/date %)) transactions)
-        today-transactions (or (get txs-by-timestamp (c/to-long (t/today))) [])]
-    [{:date   (c/to-long (t/today))
-      :limit value
-      :values [{:name  (c/to-long (t/today))
+        today-transactions (or (get txs-by-timestamp today-long) [])]
+    [{:date   today-long
+      :limit  value
+      :values [{:name  today-long
                 :value (reduce (fn [s tx]
                                  (+ s (converted-amount tx)))
                                0
@@ -203,43 +195,45 @@
         {:keys [cycle/start
                 cycle/period
                 cycle/period-count]} cycle]
+    ;(debug "Goal with txs: " transactions)
     (let [by-month (group-by #(let [date (:transaction/date %)]
-                               (t/date-time (:date/year date) (:date/month date))) transactions)
+                               (f/month->long (t/date-time (:date/year date) (:date/month date)))) transactions)
           sum-by-month (map (fn [[k v]]
-                              (let [end (min (c/to-long (t/today)) (c/to-long (t/last-day-of-the-month k)))
-                                    values (zero-padding-to-time-series-data (sum :transaction/date v {}) {:start k
+                              (let [month (c/from-long k)
+                                    end (min (f/date->long (f/today)) (f/date->long (t/last-day-of-the-month month)))
+                                    values (zero-padding-to-time-series-data (sum :transaction/date v {}) {:start month
                                                                                                            :end   (t/plus (c/from-long end) (t/days 1))})
                                     #?@(:clj  [avg (with-precision 10 (/ value (count values)))]
                                         :cljs [avg (/ value (count values))])]
-                                {:date   (c/to-long k)
+                                {:date   k
                                  :limit  value
                                  :values (loop [input values
-                                                output [{:name (c/to-long k) :value 0}]
+                                                output [{:name k :value 0}]
                                                 tot 0]
                                            (if-let [v (:value (first input))]
-                                             (recur (drop 1 input)
+                                             (recur (rest input)
                                                     (conj output (assoc (first input) :value (+ tot v)))
                                                     (+ tot v))
                                              output))
-                                 :guide  [{:name (c/to-long k) :value 0}
-                                          {:name (c/to-long (t/last-day-of-the-month k)) :value value}]}))
+                                 :guide  [{:name k :value 0}
+                                          {:name (f/date->long (t/last-day-of-the-month month)) :value value}]}))
                                by-month)]
       (sort-by :date sum-by-month))))
 
-(defn generate-data [report transactions & [opts]]
+(defn generate-data [report ts & [opts]]
   ;(debug "Generate data goal: " report)
-  ;(debug "generate for Transactions: " transactions)
-  (cond
-    (some? (:report/track report))
-    (let [functions (get-in report [:report/track :track/functions])
-          track-fn (fn [f]
-                     (debug "Make calc: " f " with opts: " opts)
-                     (track f transactions opts))]
-      ;(debug "Generated data: " (mapv track-fn functions))
-      (map track-fn functions))
+  (let [transactions (filter #(= :transaction.type/expense (:db/ident (:transaction/type %))) ts)] ;;TODO: do this some better place?
+    (cond
+      (some? (:report/track report))
+      (let [functions (get-in report [:report/track :track/functions])
+            track-fn (fn [f]
+                       ;(debug "Make calc: " f " with opts: " opts)
+                       (track f transactions opts))]
+        ;(debug "Generated data: " (mapv track-fn functions))
+        (map track-fn functions))
 
-    (some? (:report/goal report))
-    (let [g (:report/goal report)
-          ret (goal g transactions)]
-      (debug "Generated goal data: " ret)
-      ret)))
+      (some? (:report/goal report))
+      (let [g (:report/goal report)
+            ret (goal g transactions)]
+        ;(debug "Generated goal data: " ret)
+        ret))))

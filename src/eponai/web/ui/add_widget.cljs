@@ -34,6 +34,7 @@
     ['{(:query/transactions {:filter ?filter}) [:transaction/uuid
                                                 :transaction/amount
                                                 :transaction/conversion
+                                                {:transaction/type [:db/ident]}
                                                 {:transaction/currency [:currency/code]}
                                                 {:transaction/tags [:tag/name]}
                                                 {:transaction/date [:date/ymd
@@ -61,7 +62,8 @@
 
             (= type :goal)
             {:report/uuid (d/squuid)
-             :report/goal {:goal/cycle {:cycle/repeat       0
+             :report/goal {:goal/value 50
+                           :goal/cycle {:cycle/repeat       0
                                         :cycle/period       :cycle.period/day
                                         :cycle/period-count 1
                                         :cycle/start        (c/to-long (t/today))}}})))
@@ -120,11 +122,12 @@
 
            (= :goal (:ui.component.widget/type widget-type))
            (->NewGoal (om/computed {}
-                                   {:widget    input-widget
-                                    :on-change (fn [new-widget & [{:keys [update-data?]}]]
-                                                 (om/update-state! this assoc :input-widget new-widget)
-                                                 (when update-data?
-                                                   (om/update-query! this assoc-in [:params :filter] (:widget/filter new-widget))))})))
+                                   {:widget       input-widget
+                                    :transactions transactions
+                                    :on-change    (fn [new-widget & [{:keys [update-data?]}]]
+                                                    (om/update-state! this assoc :input-widget new-widget)
+                                                    (when update-data?
+                                                      (om/update-query! this assoc-in [:params :filter] (:widget/filter new-widget))))})))
          [:div.float-right
           [:a.button.secondary
            ;{:on-click on-close}
@@ -135,8 +138,7 @@
             ;        (routes/key->route :route/project->dashboard
             ;                           {:route-param/project-id (:db/id (:dashboard/project dashboard))}))
             :on-click
-                  #(.save-widget this (assoc input-widget :widget/dashboard (:dashboard/uuid dashboard)))
-            }
+                  #(.save-widget this (assoc input-widget :widget/dashboard (:dashboard/uuid dashboard)))}
            "Save"]]
          (when (some? active-widget)
            [:div.float-left

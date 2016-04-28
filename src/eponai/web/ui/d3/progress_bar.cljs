@@ -9,6 +9,7 @@
     [taoensso.timbre :refer-macros [debug]]))
 
 (defn- end-angle [d]
+  (debug "Goal end angle data: " d)
   (let [progress (if (map? d)
                    (/ (:value d) (:max d))
                    (/ (.-value d) (.-max d)))]
@@ -138,6 +139,7 @@
     (let [{:keys [data]} next-props
           cycle (first data)
           ;new-data (assoc (last (:values cycle)) :endAngle 0 :max (:limit cycle))
+          _ (debug "Goal receive props: " cycle)
           new-start-angle (end-angle (assoc (last (:values cycle)) :max (:limit cycle)))]
       (om/update-state! this assoc :start-angle new-start-angle)
       (d3/update-chart-data this [(last (:values cycle))])))

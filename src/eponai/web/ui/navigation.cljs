@@ -88,11 +88,11 @@
           "Add project"]
          [:input
           (opts
-            {:value       input-name
+            {:value       (or input-name "")
              :placeholder "Untitled"
              :type        "text"
              :on-change   #(om/update-state! this assoc :input-name (.-value (.-target %)))
-             :style {:width "100%"}})]
+             :style       {:width "100%"}})]
          ;[:br]
          [:div.inline-block
           (opts {:style {:float :right}})

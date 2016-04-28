@@ -48,7 +48,8 @@
     '[:transaction/uuid
      :transaction/amount
      :transaction/conversion
-     {:transaction/currency [:currency/code]}
+      {:transaction/type [:db/ident]}
+      {:transaction/currency [:currency/code]}
      {:transaction/tags [:tag/name]}
      {:transaction/date [*]}]))
 

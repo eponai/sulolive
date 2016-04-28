@@ -3,12 +3,11 @@
     [cljs-time.coerce :as c]
     [cljs-time.core :as t]
     [eponai.client.ui :refer-macros [opts]]
+    [eponai.common.report :as report]
     [eponai.web.ui.datepicker :refer [->Datepicker]]
-    [eponai.web.ui.utils.filter :as filter]
+    [eponai.web.ui.widget :refer [->Widget]]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [datascript.core :as d]
-    [eponai.common.format :as f]
     [taoensso.timbre :refer-macros [debug]]))
 
 (defui NewGoal
@@ -29,39 +28,49 @@
 
   (render [this]
     (let [{:keys [widget
-                  on-change]} (om/get-computed this)
+                  on-change
+                  transactions]} (om/get-computed this)
           {:keys [daily-limit
                   filtered-tags
                   start
                   end
                   style]} (om/get-state this)]
       (debug "Goal widget: " widget)
+      (debug "Goal transactions: " transactions)
       (html
         [:div
          [:ul.breadcrumbs
           [:li
            [:a.disabled
             "New Goal"]]]
-         [:div "State "]
          [:div.row.column.small-12.medium-6
           [:div.callout
+           [:div.row
+            (->Widget (assoc widget :widget/data (report/generate-data (:widget/report widget) transactions {:data-filter (get-in widget [:widget/graph :graph/filter])})))]
            [:div.row
             [:div.columns.small-12
              [:input
               {:type     "radio"
                :id       "burndown-option"
                :checked  (= style :graph.style/burndown)
-               :on-click #(when on-change
+               :on-click #(when (and (not= style :graph.style/burndown)
+                                     on-change)
                            (on-change (-> widget
                                           (assoc-in [:widget/graph :graph/style] :graph.style/burndown)
+                                          (update-in [:widget/report :report/goal :goal/value] * (t/number-of-days-in-the-month (t/today)))
                                           (assoc-in [:widget/report :report/goal :goal/cycle :cycle/period] :cycle.period/month))))}]
              [:label {:for "burndown-option"} "Burndown chart"]
              [:input
               {:type     "radio"
                :id       "progress-option"
                :checked  (= style :graph.style/progress-bar)
-               :on-click #(when on-change
-                           (on-change (assoc-in widget [:widget/graph :graph/style] :graph.style/progress-bar)))}]
+               :on-click #(when (and (not= style :graph.style/progress-bar)
+                                     on-change)
+                           (on-change
+                             (-> widget
+                                 (assoc-in [:widget/graph :graph/style] :graph.style/progress-bar)
+                                 (assoc-in [:widget/report :report/goal :goal/cycle :cycle/period] :cycle.period/day)
+                                 (update-in [:widget/report :report/goal :goal/value] / (t/number-of-days-in-the-month (t/today))))))}]
              [:label {:for "progress-option"} "Progress meter"]]]
            [:div.row
             [:div.columns.small-3.text-right
@@ -70,14 +79,25 @@
                        "Monthly limit:")]]
             [:div.columns.small-3.end
              [:input
-              {:value     (or daily-limit "")
+              {:value     (or (get-in widget [:widget/report :report/goal :goal/value]) "")
                :type      "number"
-               :on-change #(do
-                            (let [value (.-value (.-target %))]
-                              (om/update-state! this assoc :daily-limit value)
-                              (when on-change
-                                (on-change (-> widget
-                                               (assoc-in [:widget/report :report/goal :goal/value] value))))))}]]]]
+               :on-change #(let [value (.-value (.-target %))]
+                            (debug "Value: " (type value))
+                            (om/update-state! this assoc :daily-limit value)
+                            (when on-change
+                              (on-change (-> widget
+                                             (assoc-in [:widget/report :report/goal :goal/value] value)))))}]]]
+           [:div.row
+            [:div.columns.small-3.text-right
+             "Title:"]
+            [:div.columns.small-9
+             [:input
+              {:value     (or (get-in widget [:widget/report :report/title]) "")
+               :type      "text"
+               :on-change #(let [t (.-value (.-target %))]
+                            (when on-change
+                              (on-change (assoc-in widget [:widget/report :report/title] t))))}]]]
+           ]
 
           ;[:div.row
           ; [:div.columns.small-3.text-right
