@@ -122,23 +122,6 @@
           React (.-React js/window)]
       (html
         [:div
-         [:a.button.hollow.small
-          (opts {:href  (if project-id
-                          (routes/key->route :route/project->widget+type+id {:route-param/project-id  project-id
-                                                                             :route-param/widget-type :track
-                                                                             :route-param/widget-id "new"})
-                          "#")
-                 :style {:margin "0.5em"}})
-          [:span "+ Track"]]
-         [:a.button.hollow.small
-          (opts {:href  (if project-id
-                          (routes/key->route :route/project->widget+type+id {:route-param/project-id project-id
-                                                                             :route-param/widget-type :goal
-                                                                             :route-param/widget-id  "new"})
-                          "#")
-                 :style {:margin "0.5em"}})
-          [:span "+ Goal"]]
-
          (if (and layout
                   grid-element
                   (seq widgets))

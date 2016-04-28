@@ -115,6 +115,7 @@
          :placeholder (or placeholder "Filter tags...")}]
 
        [:div.input-group
+        (opts {:style {:margin-bottom 0}})
         [:input.input-group-field
          {:type        "text"
           :value       (or (:tag/name input-tag) "")

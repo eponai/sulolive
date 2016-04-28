@@ -243,8 +243,7 @@
   (let [{:keys [tag-filter date-filter]} (om/get-state component)]
     (html
       [:div.transaction-filters
-       [:div.row
-        (opts {:style {:padding "1em 0"}})
+       [:div.row.collapse
         [:div.columns.small-3
          (filter/->TagFilter (om/computed {:tags (:filter/include-tags tag-filter)}
                                           {:on-change #(do

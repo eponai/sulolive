@@ -12,20 +12,34 @@
     [taoensso.timbre :refer-macros [debug]]
     [eponai.web.routes :as routes]))
 
-(defn- submenu [component project]
+(defn- submenu [component {:keys [db/id] :as project} selected-tab]
   (html
     [:div
      [:ul.menu.float-left
       [:li
        [:a
-        {:href (routes/key->route :route/project->txs {:route-param/project-id (:db/id project)})}
+        {:href (routes/key->route :route/project->txs {:route-param/project-id id})}
         [:i.fa.fa-list]]]
       [:li
        [:a
         {:href (routes/key->route :route/project->dashboard
-                                  {:route-param/project-id (:db/id project)})}
-        [:strong "Dashboard"]
-        ]]]
+                                  {:route-param/project-id id})}
+        [:strong "Dashboard"]]]
+      [:li
+       [:a
+        (opts {:href  (routes/key->route :route/project->widget+type+id {:route-param/project-id  id
+                                                                         :route-param/widget-type :track
+                                                                         :route-param/widget-id   "new"})
+               :style {:margin "0.5em"}})
+        [:span "+ Track"]]]
+      [:li
+       [:a
+        (opts {:href  (routes/key->route :route/project->widget+type+id {:route-param/project-id  id
+                                                                         :route-param/widget-type :goal
+                                                                         :route-param/widget-id   "new"})
+               :style {:margin "0.5em"}})
+        [:span "+ Goal"]]]
+      ]
      ;[:div.top-bar-right]
      [:ul.menu.float-right
       [:li
@@ -93,7 +107,9 @@
         [:div
          (when project
            (nav/->NavbarSubmenu (om/computed {}
-                                             {:content (submenu this project)})))
+                                             {:content (submenu this
+                                                                project
+                                                                (:ui.component.project/selected-tab active-project))})))
          [:div#project-content
           (condp = (or (:ui.component.project/selected-tab active-project)
                        :dashboard)

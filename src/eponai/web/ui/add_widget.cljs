@@ -87,9 +87,9 @@
     (let [{:keys [graph-filter]} (om/get-state this)]
       (merge (:tag-filter graph-filter)
              (:date-filter graph-filter))))
-  (initLocalState [this]
-    (let [{:keys [index]} (om/get-computed this)
-          {:keys [query/active-widget]} (om/props this)]
+  (init-state [this props]
+    (let [{:keys [index]} (::om/computed props)
+          {:keys [query/active-widget]} props]
       (if active-widget
         (do
           (om/set-query! this {:params {:filter (or (:widget/filter active-widget) {})}})
@@ -100,6 +100,10 @@
                         :widget/height 2
                         :widget/graph (.default-graph this)
                         :widget/report (.default-report this)}})))
+  (initLocalState [this]
+    (.init-state this (om/props this)))
+  (componentWillReceiveProps [this new-props]
+    (.init-state this new-props))
   (render [this]
     (let [{:keys [query/transactions
                   query/active-widget
