@@ -43,7 +43,7 @@
          ;  [:a.disabled
          ;   "New Goal"]]]
          [:div.row.column.small-12.medium-6
-          [:div.callout
+          [:div
            [:div.row
             (->Widget (assoc widget :widget/data (report/generate-data (:widget/report widget) transactions {:data-filter (get-in widget [:widget/graph :graph/filter])})))]
            [:div.row

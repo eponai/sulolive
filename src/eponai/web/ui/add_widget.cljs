@@ -114,25 +114,9 @@
       (html
         [:div
          (opts {:style {:padding "1em"}})
-         [:div.row.column.small-12.medium-6
-          [:ul.breadcrumbs [:li (if active-widget "Edit widget" "Add new widget")]]]
-         ;[:ul.breadcrumbs
-         ; [:li (if active-widget "Edit widget" "Add new widget")]]
-         ;[:h4 (if active-widget "Edit widget" "Add new widget")]
-         [:div.float-right
-          (when (some? active-widget)
-            [:a.button.alert
-             {:href (when (:db/id (:dashboard/project dashboard))
-                      (routes/key->route :route/project->dashboard
-                                         {:route-param/project-id (:db/id (:dashboard/project dashboard))}))
-              :on-click #(.delete-widget this active-widget)}
-             "Delete"])
-          [:a.button.primary
-           {:href (when (:db/id (:dashboard/project dashboard))
-                    (routes/key->route :route/project->dashboard
-                                 {:route-param/project-id (:db/id (:dashboard/project dashboard))}))
-                  :on-click #(.save-widget this (assoc input-widget :widget/dashboard (:dashboard/uuid dashboard)))}
-           "Save"]]
+         [:div.row.column.small-12.medium-10
+          [:span.currency-code (if active-widget "Edit widget" "Add new widget")]
+          [:hr]]
 
          (cond
            (= :track (:ui.component.widget/type widget-type))
@@ -152,6 +136,23 @@
                                     :on-change    (fn [new-widget & [{:keys [update-data?]}]]
                                                     (om/update-state! this assoc :input-widget new-widget)
                                                     (when update-data?
-                                                      (om/update-query! this assoc-in [:params :filter] (:widget/filter new-widget))))})))]))))
+                                                      (om/update-query! this assoc-in [:params :filter] (:widget/filter new-widget))))})))
+         [:div.row.column.small-12.medium-10
+          [:hr]
+          [:div.float-right
+           (opts {:style {:display :inline-block}})
+           (when (some? active-widget)
+             [:a.button.alert
+              {:href     (when (:db/id (:dashboard/project dashboard))
+                           (routes/key->route :route/project->dashboard
+                                              {:route-param/project-id (:db/id (:dashboard/project dashboard))}))
+               :on-click #(.delete-widget this active-widget)}
+              "Delete"])
+           [:a.button.primary
+            {:href     (when (:db/id (:dashboard/project dashboard))
+                         (routes/key->route :route/project->dashboard
+                                            {:route-param/project-id (:db/id (:dashboard/project dashboard))}))
+             :on-click #(.save-widget this (assoc input-widget :widget/dashboard (:dashboard/uuid dashboard)))}
+            "Save"]]]]))))
 
 (def ->NewWidget (om/factory NewWidget))

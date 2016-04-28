@@ -35,7 +35,7 @@
   Object
   (initLocalState [this]
     {:step 1
-     :selected-transactions :include-tags})
+     :selected-transactions :all-transactions})
   (set-filters [this props]
     (let [{:keys [widget]} (::om/computed props)]
       (om/update-state! this assoc
@@ -97,8 +97,8 @@
          ;    [:a
          ;     {:on-click #(om/update-state! this assoc :step 2)}
          ;     [:span "Settings"]]])]
-         [:div.row.columns.small-12.medium-6
-          [:div.callout
+         [:div.row.columns.small-12.medium-8
+          [:div
            [:p.currency-code "Filter"]
            [:div.row
             [:div.columns.small-12
@@ -117,17 +117,23 @@
                "All transactions"]
               [:option
                {:value (name :include-tags)}
-               "Transactions with tags"]]]
+               "Transactions with tags"]
+              [:option
+               {:value (name :exclude-tags)}
+               "Transactions without tags"]]]
             [:div.columns.small-12.medium-6
-             (when (= selected-transactions :include-tags)
-               (filter/->TagFilter (om/computed {:tags        (:filter/include-tags tag-filter)
-                                                 :placeholder "Hit enter to add tag..."}
-                                                {:on-change (fn [tags]
-                                                              (let [new-filters (if (seq tags)
-                                                                                  (merge tag-filter {:filter/include-tags tags})
-                                                                                  (dissoc tag-filter :filter/include-tags))]
-                                                                (om/update-state! this assoc :tag-filter new-filters)
-                                                                (on-change (assoc widget :widget/filter new-filters) {:update-data? true})))})))]]
+             (let [tag-filter-fn (fn [tag-filter-key]
+                                   (filter/->TagFilter (om/computed {:tags        (get tag-filter tag-filter-key)}
+                                                                    {:on-change (fn [tags]
+                                                                                  (let [new-filters (if (seq tags)
+                                                                                                      {tag-filter-key tags}
+                                                                                                      (dissoc tag-filter tag-filter-key))]
+                                                                                    (om/update-state! this assoc :tag-filter new-filters)
+                                                                                    (on-change (assoc widget :widget/filter new-filters) {:update-data? true})))})))]
+               (condp = selected-transactions
+                 :include-tags (tag-filter-fn :filter/include-tags)
+                 :exclude-tags (tag-filter-fn :filter/exclude-tags)
+                 :all-transactions nil))]]
            [:hr]
            [:p.currency-code "Preview"]
            [:div.row
@@ -183,8 +189,7 @@
            (when (= :graph.style/bar (:graph/style graph))
              [:div.row
               [:div.columns.small-12.medium-6
-               (filter/->TagFilter (om/computed {:tags        (:filter/include-tags graph-filter)
-                                                 :placeholder "Hit enter to add tag..."}
+               (filter/->TagFilter (om/computed {:tags        (:filter/include-tags graph-filter)}
                                                 {:on-change (fn [tags]
                                                               (let [new-filters (if (seq tags)
                                                                                   (merge graph-filter {:filter/include-tags tags})
@@ -192,8 +197,7 @@
                                                                 (om/update-state! this assoc :graph-filter new-filters)
                                                                 (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))}))]
               [:div.columns.small-12.medium-6
-               (filter/->TagFilter (om/computed {:tags        (:filter/exclude-tags graph-filter)
-                                                 :placeholder "Hit enter to add tag..."}
+               (filter/->TagFilter (om/computed {:tags        (:filter/exclude-tags graph-filter)}
                                                 {:on-change (fn [tags]
                                                               (let [new-filters (if (seq tags)
                                                                                   (merge graph-filter {:filter/exclude-tags tags})

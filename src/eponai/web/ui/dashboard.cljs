@@ -44,7 +44,7 @@
   (let [{:keys [widget/index
                 widget/height
                 widget/width]} (last (sort-by :widget/index widgets))]
-    (max 0 (+ index (* num-cols (dec height)) (.round js/Math (/ (* width num-cols) 100))))))
+    (max 0 (inc index))))
 
 (defn build-react [component props & children]
   (let [React (.-React js/window)]

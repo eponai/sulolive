@@ -154,6 +154,6 @@
                              :on-change     #(om/update-state! this assoc :input-tag %)
                              :on-add-tag    #(.add-tag this %)
                              :on-delete-tag #(.delete-tag this %)
-                             :placeholder   placeholder})])))))
+                             :placeholder   (or placeholder "Enter to add tag...")})])))))
 
 (def ->TagFilter (om/factory TagFilter))

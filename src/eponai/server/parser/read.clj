@@ -33,7 +33,7 @@
                         :filter       filter
                         :user-uuid (:username auth)})
         tx-ids (server.pull/all-since db db-since query entity-query)]
-    {:value (cond-> {:transactions (pull/pull-many db query tx-ids)
+    {:value (cond-> {:transactions (common.pull/filter-excluded-tags filter (pull/pull-many db query tx-ids))
                      :conversions  (pull/conversions db tx-ids (:username auth))}
                     ;; We cannot set read-basis-t when we have filters enabled.
                     ;; To prevent read-basis-t from being set by setting it to nil.

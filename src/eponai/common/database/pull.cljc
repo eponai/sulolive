@@ -209,10 +209,6 @@
     (merge-query {:where   '[[?e :transaction/tags ?tag]
                              [?tag :tag/name ?include-tag]]
                   :symbols {'[?include-tag ...] (mapv :tag/name include-tags)}})
-    ;(seq exclude-tags)
-    ;(merge-query {:where   '[[(not= ?tag-name ?exclude-tag)]]
-    ;              :symbols {'[?exclude-tag ...] (mapv :tag/name exclude-tags)}})
-
 
     (some? last-x-days)
     (merge-query (transaction-date-filter (time/minus (time/today) (time/days last-x-days)) '>=))
@@ -347,10 +343,20 @@
             transaction)))
       transactions)))
 
-(defn transactions-with-conversions [{:keys [db query]} user-uuid {:keys [conversion-query] :as params}]
+(defn filter-excluded-tags [data-filter transactions]
+  (if (:filter/exclude-tags data-filter)
+    (let [filter-set (set (map #(select-keys % [:tag/name]) (:filter/exclude-tags data-filter)))]
+      (filter (fn [tx]
+                (let [tag-set (set (map #(select-keys % [:tag/name]) (:transaction/tags tx)))]
+                  (empty? (clojure.set/intersection filter-set tag-set)))) transactions))
+    transactions))
+
+(defn transactions-with-conversions [{:keys [db query]} user-uuid {:keys [conversion-query filter]
+                                                                   :as params}]
   (let [tx-ids (find-transactions db (assoc params :user-uuid user-uuid))
-        pulled (pull-many db query tx-ids)]
-    (->> pulled
+        pulled (pull-many db query tx-ids)
+        pulled-filtered (filter-excluded-tags filter pulled)]
+    (->> pulled-filtered
          (add-conversions db
                           (or conversion-query [:conversion/rate])
                           user-uuid))))
