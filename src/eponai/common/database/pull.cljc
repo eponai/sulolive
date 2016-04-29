@@ -360,12 +360,18 @@
         user-curr (:db/id (:user/currency (d/entity db (one-with db {:where [['?e :user/uuid user-uuid]]}))))
         user-convs (delay
                      (when user-curr
-                       (->> (all-with db {:find-pattern '[?date ?conv]
-                                          :symbols      {'[?date ...] (reduce into #{} (vals @currency-date-pairs))
-                                                         '?user-curr  user-curr}
-                                          :where        '[[?conv :conversion/currency ?user-curr]
-                                                          [?conv :conversion/date ?date]]})
-                            (into {}))))]
+                       (let [convs (into {}
+                                         (all-with db {:find-pattern '[?date ?conv]
+                                                       :symbols      {'[?date ...] (reduce into #{} (vals @currency-date-pairs))
+                                                                      '?user-curr  user-curr}
+                                                       :where        '[[?conv :conversion/currency ?user-curr]
+                                                                       [?conv :conversion/date ?date]]}))]
+                         (if (seq convs)
+                           convs
+                           ;; When there are no conversions for any of the transaction's dates, just pick any one.
+                           (let [one-conv (d/entity db (one-with db {:where   '[[?e :conversion/currency ?user-curr]]
+                                                                     :symbols {'?user-curr user-curr}}))]
+                             {(get-in one-conv [:conversion/date :db/id]) (:db/id one-conv)})))))]
     (into {}
       (comp (remove #(contains? % :transaction/conversion))
             (map (transaction-with-conversion-fn db transaction-convs user-convs))
@@ -393,7 +399,6 @@
                                              (or conversion-query [:conversion/rate])
                                              user-uuid
                                              tx-entities)]
-
     (mapv #(cond-> (assoc (into {} %) :db/id (:db/id %))
                    (contains? conversions (:db/id %))
                    (assoc :transaction/conversion (get conversions (:db/id %))))
