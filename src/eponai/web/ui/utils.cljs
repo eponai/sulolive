@@ -61,7 +61,8 @@
 (defn tag [{tag-name :tag/name} {:keys [on-delete
                                         on-click]}]
   (dom/div #js {:className "label secondary tag"
-                :style     #js {:display "inline-block"}}
+                :style     #js {:display "inline-block"}
+                :key tag-name}
     (dom/a #js {:className "button"
                 :onClick on-click}
            (dom/small nil tag-name))

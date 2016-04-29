@@ -8,8 +8,10 @@
             [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
             [eponai.web.ui.utils :as utils]
             [eponai.common.format :as format]
+            [clojure.data :as clj.data]
             [garden.core :refer [css]]
             [goog.string :as gstring]
+            [goog.object :as goog.object]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
             [sablono.core :refer-macros [html]]
@@ -67,21 +69,14 @@
                            :query/all-projects
                            :query/transactions])))
 
-  (init-selected-state [this props]
-    (let [transaction (update props :transaction/tags (fn [tags] (sort-by :tag/name (map #(select-keys % [:tag/name]) tags))))]
-      (om/update-state! this assoc
-                        :input-transaction transaction
-                        :init-state transaction)))
-
   (select-transaction [this]
     (let [{:keys [db/id] :as props} (om/props this)]
-      (.init-selected-state this props)
+      (let [transaction (update props :transaction/tags (fn [tags] (sort-by :tag/name (map #(select-keys % [:tag/name]) tags))))]
+        (om/update-state! this assoc
+                          :input-transaction transaction
+                          :init-state transaction))
       (om/transact! this `[(transactions/select-transaction ~{:transaction-dbid id})
                             :query/selected-transaction])))
-
-  (componentWillReceiveProps [this new-props]
-    (when (:is-selected (om/get-computed this))
-      (.init-selected-state this new-props)))
 
   ;; Render a normal transaction (not in edit mode)
   (render-normal [this]
@@ -132,8 +127,7 @@
                                                         (.stopPropagation %)
                                                         (on-tag-click tag))}))))
           (dom/div #js {:className "columns small-2 large-1 text-right"}
-            (dom/a #js {:className "edit-transaction secondary"
-                        :onClick #(.select-transaction this)}
+            (dom/a #js {:className "edit-transaction secondary"}
                    (dom/i #js {:className "fa fa-fw fa-pencil"})))))))
 
   ;; Render a transaction in edit mode.
@@ -178,7 +172,7 @@
               currencies
               (fn [c]
                 [:option
-                 {:key   [(:currency/code c)]
+                 {:key   (str (:currency/code c))
                   :value (:currency/code c)}
                  (:currency/code c)]))]]
           [:div.columns.small-12.medium-4.large-2
@@ -277,9 +271,12 @@
      {:proxy/add-transaction (om/get-query AddTransaction)}])
 
   Object
-  (initLocalState [_]
+  (initLocalState [this]
     {:input-tag    ""
-     :input-filter {}})
+     :input-filter {}
+     :on-tag-click #(do
+                     (om/update-state! this update-in [:tag-filter :filter/include-tags] utils/add-tag %)
+                     (om/update-query! this assoc-in [:params :filter] (.filter this)))})
 
   (componentWillUnmount [this]
     (.deselect-transaction this))
@@ -301,7 +298,7 @@
            sel-transaction-props :query/selected-transaction
            add-transaction       :proxy/add-transaction} (om/props this)
           selected-transaction (get-selected-transaction sel-transaction-props)
-          {:keys [add-transaction?]} (om/get-state this)
+          {:keys [add-transaction? on-tag-click]} (om/get-state this)
           input-filter (.filter this)]
       (html
         [:div#txs
@@ -331,9 +328,7 @@
                                          :currencies   currencies
                                          :is-selected  (= (:db/id selected-transaction)
                                                           (:db/id props))
-                                         :on-tag-click #(do
-                                                         (om/update-state! this update-in [:tag-filter :filter/include-tags] utils/add-tag %)
-                                                         (om/update-query! this assoc-in [:params :filter] (.filter this)))})))
+                                         :on-tag-click on-tag-click})))
                        (sort-by #(get-in % [:transaction/date :date/timestamp]) > transactions))]]]
                [:div.empty-message
                 [:div.lead
