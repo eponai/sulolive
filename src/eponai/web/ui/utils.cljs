@@ -3,6 +3,7 @@
             [eponai.web.ui.datepicker :refer [->Datepicker]]
             [sablono.core :refer-macros [html]]
             [om.next :as om]
+            [om.dom :as dom]
             [taoensso.timbre :refer-macros [debug]]
             [eponai.common.format :as format]
             [datascript.core :as d]
@@ -59,24 +60,16 @@
 
 (defn tag [{tag-name :tag/name} {:keys [on-delete
                                         on-click]}]
-  (html
-    [:div.label.secondary.tag
-     (opts {:style {:display :inline-block}
-            :key [tag-name]})
-
-     [:a.button
-      (opts {:on-click (when on-click
-                         #(on-click %))})
-      [:small
-       tag-name]]
-
-     (when on-delete
-       [:a.button
-        (opts {:on-click #(on-delete %)
-               :style {:padding "0 0.2em"}})
-        [:small
-         [:strong
-          "x"]]])]))
+  (dom/div #js {:className "label secondary tag"
+                :style     #js {:display "inline-block"}}
+    (dom/a #js {:className "button"
+                :onClick on-click}
+           (dom/small nil tag-name))
+    (when on-delete
+      (dom/a #js {:className "button"
+                  :style #js {:padding "0 0.2em"}
+                  :onClick on-delete}
+             (dom/small nil (dom/strong nil "x"))))))
 
 (defn add-tag [tags tag]
   (if-not (some #(= (:tag/name %) (:tag/name tag)) tags)

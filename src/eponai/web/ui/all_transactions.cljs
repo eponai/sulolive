@@ -11,6 +11,7 @@
             [garden.core :refer [css]]
             [goog.string :as gstring]
             [om.next :as om :refer-macros [defui]]
+            [om.dom :as dom]
             [sablono.core :refer-macros [html]]
             [taoensso.timbre :refer-macros [debug]]
             [datascript.core :as d]
@@ -93,53 +94,47 @@
                   transaction/title]
            :as   transaction} (om/props this)
           {:keys [user on-tag-click]} (om/get-computed this)]
-      (html
-        [:li
-         (opts {:key         [uuid]
-                :id          (str uuid)
-                :draggable   true
-                :on-click #(.select-transaction this)
-                :onDragStart #(utils/on-drag-transaction-start this (str uuid) %)})
-         [:div.row.collapse.expanded
-          [:div.columns.small-6.medium-3.large-2
-           (opts {:key [uuid]})
-           [:span (str (f/month-name (:date/month date)) " " (:date/day date))]]
+      (dom/li
+        #js {:draggable   true
+             :onClick    #(.select-transaction this)
+             :onDragStart #(utils/on-drag-transaction-start this (str uuid) %)}
+        (dom/div #js {:className "row collapse expanded"}
+          (dom/div #js {:className "columns small-6 medium-3 large-2"}
+            (dom/span nil (str (f/month-name (:date/month date)) " " (:date/day date))))
+          (dom/div #js {:className "columns small-6 medium-3 large-2"}
+            (if-let [rate (:conversion/rate conversion)]
+              (dom/div
+                nil
+                (dom/small #js {:className "currency-code"}
+                           (str (or (:currency/code (:user/currency user))
+                                    (:currency/symbol-native (:user/currency user))) " "))
+                (if (= (:db/ident type) :transaction.type/expense)
+                  (dom/strong #js {:className "label alert"
+                                   :style #js {:padding "0.2em 0.3em"}}
+                              (gstring/format (str "-%.2f") (/ amount rate)))
+                  (dom/strong #js {:className "label success"
+                                   :style #js {:padding "0.2em 0.3em"}}
+                              (gstring/format (str "%.2f") (/ amount rate)))))
+              (dom/i #js {:className "fa fa-spinner fa-spin"})))
+          (dom/div #js {:className "columns small-6 medium-3 large-1"}
+            (dom/small #js {:className "currency-code"}
+                       (str (or (:currency/symbol-native currency)
+                                (:currency/code currency)) " "))
+            (dom/small nil (dom/strong nil (gstring/format (str "%.2f") amount))))
 
-          [:div.columns.small-6.medium-3.large-2
-           (if-let [rate (:conversion/rate conversion)]
-             [:div
-              [:small.currency-code
-               (str (or (:currency/code (:user/currency user))
-                        (:currency/symbol-native (:user/currency user))) " ")]
-              (if (= (:db/ident type) :transaction.type/expense)
-                [:strong.label.alert
-                 (opts {:style {:padding "0.2em 0.3em"}})
-                 (gstring/format (str "-%.2f") (/ amount rate))]
-                [:strong.label.success
-                 (opts {:style {:padding "0.2em 0.3em"}})
-                 (gstring/format (str "%.2f") (/ amount rate))])]
-             [:i.fa.fa-spinner.fa-spin])]
-          [:div.columns.small-6.medium-3.large-1
-           [:small.currency-code
-            (str (or (:currency/symbol-native currency)
-                     (:currency/code currency)) " ")]
-           [:small [:strong (gstring/format (str "%.2f") amount)]]]
+          (dom/div #js {:className "columns small-12 medium-3 large-2 l"}
+            (dom/pre nil (or title " ")))
 
-          [:div.columns.small-12.medium-3.large-2.l
-           (opts {:key         [uuid]})
-           [:pre (or title " ")]]
-
-          [:div.columns.small-10.large-4
-           (opts {:key [uuid]})
-           (map-all (:transaction/tags transaction)
-                    (fn [tag]
-                      (utils/tag tag {:on-click #(do
-                                                  (.stopPropagation %)
-                                                  (on-tag-click tag))})))]
-          [:div.columns.small-2.large-1.text-right
-           [:a.edit-transaction.secondary
-            {:on-click #(.select-transaction this)}
-            [:i.fa.fa-fw.fa-pencil]]]]])))
+          (apply dom/div #js {:className "columns small-10 large-4"}
+                 (map-all (:transaction/tags transaction)
+                          (fn [tag]
+                            (utils/tag tag {:on-click #(do
+                                                        (.stopPropagation %)
+                                                        (on-tag-click tag))}))))
+          (dom/div #js {:className "columns small-2 large-1 text-right"}
+            (dom/a #js {:className "edit-transaction secondary"
+                        :onClick #(.select-transaction this)}
+                   (dom/i #js {:className "fa fa-fw fa-pencil"})))))))
 
   ;; Render a transaction in edit mode.
   (render-selected [this]
