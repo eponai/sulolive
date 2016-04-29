@@ -27,6 +27,18 @@
 
 ;; ############## App ################
 
+(defn entity-map->shallow-map [e]
+  (persistent!
+    (reduce (fn [m k]
+              (let [v (get e k)
+                    v (cond
+                        (:db/id v) (select-keys v [:db/id])
+                        (coll? v) (into [] (map (fn [x] (select-keys x [:db/id]))) v)
+                        :else v)]
+                (assoc! m k v)))
+            (transient {:db/id (:db/id e)})
+            (keys e))))
+
 (defmethod read :query/transactions
   [{:keys [db db-since query auth]} _ {:keys [project-uuid filter]}]
   (let [filters? (and (map? filter) (some #(val %) filter))
@@ -44,13 +56,17 @@
                    (server.pull/all-entities db query tx-ids)
                    (server.pull/all-entities db pull/conversion-query conv-ids))
         pull-xf (map #(d/pull db '[*] %))
-        conversions (common.pull/filter-excluded-tags filter
-                                                      (pull/transaction-conversions db pull/conversion-query (:username auth) (map #(d/entity db %) tx-ids)))]
-    {:value (cond-> {:transactions (into [] (comp pull-xf
+        tx-entities (into [] (comp (map #(d/entity db %))
+                                   (common.pull/filter-excluded-tags filter))
+                          tx-ids)
+        conversions (pull/transaction-conversions db pull/conversion-query (:username auth) tx-entities)]
+    {:value (cond-> {:transactions (into [] (comp (map #(entity-map->shallow-map %))
+                                                  (map #(update % :transaction/type (fn [t] {:db/ident t})))
                                                   (map #(if-let [tx-conv (get conversions (:db/id %))]
                                                          ;; TODO: Do not transfer the whole conversion entity?
                                                          (assoc % :transaction/conversion tx-conv)
-                                                         %))) tx-ids)
+                                                         %)))
+                                         tx-entities)
                      :conversions  (into [] pull-xf conv-ids)
                      :refs         (into [] pull-xf ref-ids)
 

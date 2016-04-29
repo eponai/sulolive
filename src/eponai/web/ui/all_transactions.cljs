@@ -66,23 +66,21 @@
                            :query/all-projects
                            :query/transactions])))
 
-  (select-transaction [this]
-    (let [{:keys [db/id]} (om/props this)]
-      (om/transact! this `[(transactions/select-transaction ~{:transaction-dbid id})
-                            :query/selected-transaction])))
-
-  (initLocalState [this]
-    (let [transaction (update (om/props this) :transaction/tags (fn [tags]
-                                                                  (sort-by :tag/name (map #(select-keys % [:tag/name]) tags))))]
-      {:input-transaction transaction
-       :init-state        transaction}))
-
-  (componentWillReceiveProps [this new-props]
-    (let [transaction (update new-props :transaction/tags (fn [tags]
-                                                            (sort-by :tag/name (map #(select-keys % [:tag/name]) tags))))]
+  (init-selected-state [this props]
+    (let [transaction (update props :transaction/tags (fn [tags] (sort-by :tag/name (map #(select-keys % [:tag/name]) tags))))]
       (om/update-state! this assoc
                         :input-transaction transaction
                         :init-state transaction)))
+
+  (select-transaction [this]
+    (let [{:keys [db/id] :as props} (om/props this)]
+      (.init-selected-state this props)
+      (om/transact! this `[(transactions/select-transaction ~{:transaction-dbid id})
+                            :query/selected-transaction])))
+
+  (componentWillReceiveProps [this new-props]
+    (when (:is-selected (om/get-computed this))
+      (.init-selected-state this new-props)))
 
   ;; Render a normal transaction (not in edit mode)
   (render-normal [this]
@@ -127,7 +125,6 @@
                      (:currency/code currency)) " ")]
            [:small [:strong (gstring/format (str "%.2f") amount)]]]
 
-          (debug "Transaction/title: " (:transaction/title transaction))
           [:div.columns.small-12.medium-3.large-2.l
            (opts {:key         [uuid]})
            [:pre (or title " ")]]
@@ -186,7 +183,8 @@
               currencies
               (fn [c]
                 [:option
-                 {:value (:currency/code c)}
+                 {:key   [(:currency/code c)]
+                  :value (:currency/code c)}
                  (:currency/code c)]))]]
           [:div.columns.small-12.medium-4.large-2
            [:input
@@ -234,7 +232,7 @@
         (.render-selected this)
         (.render-normal this)))))
 
-(def ->Transaction (om/factory Transaction))
+(def ->Transaction (om/factory Transaction {:keyfn :db/id}))
 
 (defn get-selected-transaction [props]
   (get-in props [:ui.component.transactions/selected-transaction]))

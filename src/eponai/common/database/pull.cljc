@@ -370,24 +370,27 @@
             (filter some?))
           transaction-entities)))
 
-(defn filter-excluded-tags [data-filter transactions]
-  (if (:filter/exclude-tags data-filter)
-    (let [filter-set (set (map #(select-keys % [:tag/name]) (:filter/exclude-tags data-filter)))]
-      (filter (fn [tx]
-                (let [tag-set (set (map #(select-keys % [:tag/name]) (:transaction/tags tx)))]
-                  (empty? (clojure.set/intersection filter-set tag-set)))) transactions))
-    transactions))
+(defn filter-excluded-tags
+  ([data-filter]
+   (if (:filter/exclude-tags data-filter)
+     (let [filter-set (set (map #(select-keys % [:tag/name]) (:filter/exclude-tags data-filter)))]
+       (filter (fn [tx]
+                 (let [tag-set (set (map #(select-keys % [:tag/name]) (:transaction/tags tx)))]
+                   (empty? (clojure.set/intersection filter-set tag-set))))))
+     (map identity)))
+  ([data-filter transactions]
+   (sequence (filter-excluded-tags data-filter) transactions)))
 
-(defn transactions-with-conversions [{:keys [db query]} user-uuid {:keys [conversion-query filter] :as params}]
+(defn transactions-with-conversions [{:keys [db query]} user-uuid {:keys [conversion-query] :as params}]
   (let [tx-entities (sequence (comp (filter some?)
-                                   (map #(d/entity db %)))
+                                    (map #(d/entity db %))
+                                    (filter-excluded-tags (:filter params)))
                               (find-transactions db (assoc params :user-uuid user-uuid)))
         ;; include filter-excluded-tags in the transducer and use into [] instead of sequence.
-        tx-entities (filter-excluded-tags filter tx-entities)
         conversions (transaction-conversions db
-                                     (or conversion-query [:conversion/rate])
-                                     user-uuid
-                                     tx-entities)]
+                                             (or conversion-query [:conversion/rate])
+                                             user-uuid
+                                             tx-entities)]
 
     (mapv #(cond-> (assoc (into {} %) :db/id (:db/id %))
                    (contains? conversions (:db/id %))

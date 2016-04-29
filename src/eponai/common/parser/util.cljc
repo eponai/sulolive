@@ -1,6 +1,6 @@
 (ns eponai.common.parser.util
   (:refer-clojure :exclude [proxy])
-  (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug]]
+  (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error]]
             [om.next :as om]))
 
 (defn post-process-parse
@@ -62,7 +62,7 @@
         (if (and (= params last-params)
                  (every? equal-key? [:target :query :db]))
           (do
-            (prn (str "Returning cached for:" k))
+            (debug (str "Returning cached for:" k))
             last-ret)
           (let [ret (apply f args)]
             (reset! last-call [args ret])
