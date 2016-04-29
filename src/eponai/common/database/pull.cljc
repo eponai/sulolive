@@ -277,7 +277,9 @@
         [_ conversion] (last data)]
     conversion))
 
-;; TODO: THIS IS PROBABLY SLOW! Fix this.
+;; TODO: This is probably slow. We want to do a separate
+;;       query for transaction conversions and user
+;;       conversions.
 (defn find-conversions [db tx-ids user-uuid]
   (->> (all-with db {:find-pattern '[?t ?e ?e2]
                  :symbols      {'[?t ...] tx-ids
