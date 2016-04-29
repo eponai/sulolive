@@ -280,8 +280,7 @@
          :transaction/conversion]}]}
      {:query/all-currencies [:currency/code]}
      {:query/all-projects [:project/uuid
-                           :project/name
-                           :transaction/_project]}
+                           :project/name]}
      {:proxy/add-transaction (om/get-query AddTransaction)}])
 
   Object
