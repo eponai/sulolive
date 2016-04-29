@@ -113,7 +113,7 @@
      {:db/id             (d/tempid :db.part/user)
       :project/uuid       (or (:project/uuid opts) (d/squuid))
       :project/created-at (or (:project/created-at opts) (c/to-long (t/now)))
-      :project/name       (or (:project/name opts) "Default")}
+      :project/name       (or (:project/name opts) "untitled")}
      user-dbid
      (->
        (assoc :project/created-by user-dbid)

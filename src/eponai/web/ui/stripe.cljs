@@ -143,6 +143,6 @@
                            :plan-monthly 6
                            :user-email   (:user/email current-user)})]]
              [:div.empty-message.text-center
-              [:i.fa.fa-spinner.fa-pulse.fa-3x]])])))))
+              [:i.fa.fa-spinner.fa-spin.fa-3x]])])))))
 
 (def ->Payment (om/factory Payment))

@@ -23,13 +23,9 @@
 
 (defn click-outside-target [on-click]
   (html
-    [:div#click-outside-target
-     (opts {:style    {:top      0
-                       :bottom   0
-                       :right    0
-                       :left     0
-                       :position :fixed}
-            :on-click on-click})]))
+    [:div.click-outside-target
+     (opts {:on-click #(when (= "click-outside-target" (.-className (.-target %)))
+                        (on-click))})]))
 
 (defn modal [{:keys [content on-close size]}]
   (let [click-outside-target-id (name :click-outside-target)]
@@ -53,7 +49,7 @@
 
 (defn upgrade-button [& [options]]
   (html
-    [:a.button.warning.small
+    [:a.upgrade-button.small
      (opts (merge {:href (routes/key->route :route/subscribe)}
                   options))
      [:strong "Upgrade"]]))

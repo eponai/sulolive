@@ -5,6 +5,7 @@
             [eponai.web.ui.widget :refer [->Widget]]
             [eponai.web.ui.datepicker :refer [->Datepicker]]
             [eponai.web.ui.format :as f]
+            [eponai.web.ui.project :as project :refer [->Project]]
             [eponai.web.ui.utils :as utils]
             [eponai.web.routes :as routes]
             [garden.core :refer [css]]
@@ -58,23 +59,22 @@
 
 (defn- profile-menu [{:keys [on-close]}]
   [:div
-   ;{:class "dropdown open"}
    (utils/click-outside-target on-close)
-   [:ul.dropdown-menu
-    [:li [:a
-          (opts {:href     (routes/key->route :route/settings)
-                 :on-click on-close
-                 :style    {:padding "0.5em"}})
-          [:i
-           (opts {:class "fa fa-gear"
-                  :style {:width "15%"}})]
-          [:span "Settings"]]]
-    [:li.divider]
-    [:li [:a
-          (opts {:href     (routes/key->route :route/api->logout)
-                 :on-click on-close
-                 :style    {:padding "0.5em"}})
-          "Sign Out"]]]])
+   [:div.menu.dropdown
+    ;{:class "dropdown open"}
+
+    [:a.nav-link
+     {:href     (routes/key->route :route/settings)
+      :on-click on-close}
+     [:i.fa.fa-gear
+      (opts {:style {:color "gray"}})]
+     [:span.small-caps "Settings"]]
+    [:a.nav-link
+     {:href     (routes/key->route :route/api->logout)
+      :on-click on-close}
+     [:i.fa.fa-sign-out]
+     [:span.small-caps
+      "Sign Out"]]]])
 
 (defui Addproject
   Object
@@ -110,27 +110,20 @@
 ;;;; #################### Om Next components #####################
 
 (defui NavbarSubmenu
+  static om/IQuery
+  (query [_]
+    [{:proxy/project-submenu (om/get-query project/SubMenu)}])
   Object
-  (componentDidMount [this]
-    (let [navbar (.getElementById js/document "navbar-menu")
-          top (if navbar
-                (.-offsetHeight navbar)
-                0)]
-      (om/update-state! this assoc :top top)))
   (render [this]
-    (let [{:keys [content]} (om/get-computed this)
-          {:keys [top]} (om/get-state this)]
+    (let [{:keys [proxy/project-submenu]} (om/props this)
+          {:keys [content-factory
+                  app-content]} (om/get-computed this)]
       (html
-        [:div#navbar-submenu
-         (opts {:style {:background "#28B0A4"
-                        :border "1px solid #e7e7e7"
-                        ;:width    "100%"
-                        ;:left :inherit
-                        ;:right 0
-                        :z-index  999
-                        ;:position :fixed
-                        }})
-         content]))))
+        [:div#sub-nav-bar
+         [:div
+          (when (= content-factory ->Project)
+                (project/->SubMenu (om/computed project-submenu
+                                                {:app-content app-content})))]]))))
 
 (def ->NavbarSubmenu (om/factory NavbarSubmenu))
 
@@ -158,61 +151,35 @@
           {:keys [stripe/subscription]} stripe
           {subscription-status :stripe.subscription/status} subscription]
       (html
-        [:div
-         [:nav#navbar-menu
-          (opts {:class "top-bar"
-                 :style {:position   :fixed
-                         :z-index 1000
-                         :top        0
-                         :right      0
-                         :left       0
-                         :background :white
-                         :border     "1px solid #e7e7e7"}})
-          [:div
-           {:class "top-bar-left"}
-           [:ul.menu
-            [:li
-             [:a#sidebar-toggle
-              {:on-click #(do (prn "Did show sidebar")
-                              (on-sidebar-toggle))}
-              [:i
-               {:class "fa fa-bars"}]]]
-            [:li
-             [:a.button.success.small
-              {:on-click #(do
-                           (.track js/mixpanel "navigation/NewTransaction" {:user (:user/uuid current-user)
-                                                                            :subscription-status subscription-status})
-                           (om/update-state! this assoc :new-transaction? true))}
-              [:i.fa.fa-plus]
-              [:span "New Transaction"]]]]]
+        [:div#top-nav-bar
 
-          [:div.top-bar-right.profile-menu
-           [:ul.dropdown.menu
-            (when (= subscription-status :trialing)
-              [:li
-               [:small
-                (str "Trial: " (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left")]])
-            (when-not (= subscription-status :active)
-              [:li
-               (utils/upgrade-button
-                 {:href     (routes/key->route :route/subscribe)})])
-            ;[:li
-            ; [:a
-            ;  [:i.fa.fa-bell]]]
-            [:li.has-submenu
-             [:a.button.hollow.secondary.small
-              {:on-click #(open-profile-menu this true)}
-              [:small (:user/email current-user)]]
-             ;[:img
-             ; (opts {:class    "img-circle"
-             ;        :style    {:width         40
-             ;                   :height        40
-             ;                   :border-radius "50%"}
-             ;        :src      "/style/img/profile.png"
-             ;        :on-click #(open-profile-menu this true)})]
+         [:div.menu-horizontal
+          [:a.nav-link.hidden-xlarge-up
+           {:on-click #(do (prn "Did show sidebar")
+                           (on-sidebar-toggle))}
+           [:i.fa.fa-bars]]
+          ;[:a.nav-link.button.success.tiny
+          ; {:on-click #(do
+          ;              ;(.track js/mixpanel "navigation/NewTransaction" {:user                (:user/uuid current-user)
+          ;              ;                                                 :subscription-status subscription-status})
+          ;              (om/update-state! this assoc :new-transaction? true))}
+          ; [:i.fa.fa-plus]]
+          ]
 
-             (when menu-visible?
-               (profile-menu {:on-close #(open-profile-menu this false)}))]]]]
+         [:div.menu-horizontal
+          (when (= subscription-status :trialing)
+            [:small.nav-link
+             (str "Trial: " (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left")])
+          (when-not (= subscription-status :active)
+            [:div.nav-link.visible-medium-up
+             (utils/upgrade-button)])
+          [:div.nav-link
+           [:a
+            {:on-click #(open-profile-menu this true)}
+            [:small (:user/email current-user)]]
+
+           (when menu-visible?
+             (profile-menu {:on-close #(open-profile-menu this false)}))]]
 
          (when new-transaction?
            (let [on-close #(om/update-state! this assoc :new-transaction? false)]
@@ -249,101 +216,74 @@
                   query/active-project
                   query/current-user
                   query/stripe]} (om/props this)
-          {:keys [on-close]} (om/get-computed this)
+          {:keys [on-close expanded?]} (om/get-computed this)
           {:keys [new-project? drop-target]} (om/get-state this)
           {:keys [stripe/subscription]} stripe
           {subscription-status :stripe.subscription/status} subscription]
       (html
-        [:div
+        [:div#sidebar
+         (when expanded?
+           {:class "expanded"})
          [:div
-          (when on-close
-            (opts {:class    "reveal-overlay"
-                   :id       "click-outside-target-id"
-                   :style    {:display (if on-close "block" "none")}
-                   :on-click #(when (= "click-outside-target-id" (.-id (.-target %)))
-                               (on-close))}))]
-         [:div#sidebar.gradient-down-up
-          [:div#content
-           [:ul.sidebar-nav
-            [:li.sidebar-brand
-             (opts {:style {:display        :flex
-                            :flex-direction :row}})
+          [:a#navbar-brand
+           {:href (routes/key->route :route/home)}
+           [:strong
+            "JourMoney"]
+           [:small
+            " by eponai"]]
+          (when-not (= subscription-status :active)
+            [:div.nav-link.hidden-medium-up
+             (utils/upgrade-button)])
 
-             [:a.navbar-brand
-              {:href (routes/key->route :route/home)}
-              [:strong
-               "JourMoney"]
-              [:small
-               " by eponai"]]]
+          [:div.sidebar-submenu#project-menu
+           [:strong.header "Projects"]
 
-            (when-not (= subscription-status :active)
-              [:li.profile-menu
-               (utils/upgrade-button
-                 {:href     (routes/key->route :route/subscribe)
-                  :style {:margin "1em"}})])
-            ;(when (= subscription-status :trialing)
-            ;  [:li.profile-menu
-            ;   (utils/upgrade-button {:on-click on-close
-            ;                          :style    {:margin "0.5em"}})])
-            ;[:li
-            ; [:a
-            ;  (opts {:href (routes/key->route :route/profile)
-            ;         :on-click on-close})
-            ;  [:i.fa.fa-user
-            ;   (opts {:style {:display :inline
-            ;                  :padding "0.5em"}})]
-            ;  [:strong "Profile"]]]
-            [:li.divider]
-            [:li
-             [:small [:strong "Projects"]]]
+           (map
+             (fn [{project-uuid :project/uuid :as project}]
+               ;[:li
+               ; (opts {:key [project-uuid]})]
+               [:a.nav-link
+                {:key           (str project-uuid)
+                 :href          (routes/key->route :route/project->dashboard
+                                                   {:route-param/project-id (:db/id project)})
+                 :class         (cond
+                                  (= drop-target project-uuid)
+                                  "highlighted"
+                                  (= (:ui.component.project/uuid active-project) project-uuid)
+                                  "selected")
+                 :on-click      on-close
+                 :on-drag-over  #(utils/on-drag-transaction-over this project-uuid %)
+                 :on-drag-leave #(utils/on-drag-transaction-leave this %)
+                 :on-drop       #(utils/on-drop-transaction this project-uuid %)}
+                [:span (or (:project/name project) "Untitled")]
+                (when (and (:project/created-by project)
+                           (not (= (:user/uuid (:project/created-by project)) (:user/uuid current-user))))
+                  [:small " by " (:user/email (:project/created-by project))])])
+             all-projects)
 
-            (map
-              (fn [{project-uuid :project/uuid :as project}]
-                [:li
-                 (opts {:key [project-uuid]})
-                 [:a {:href          (routes/key->route :route/project->dashboard
-                                                        {:route-param/project-id (:db/id project)})
-                      :class         (cond
-                                       (= drop-target project-uuid)
-                                       "highlighted"
-                                       (= (:ui.component.project/uuid active-project) project-uuid)
-                                       "selected")
-                      :on-click      on-close
-                      :on-drag-over  #(utils/on-drag-transaction-over this project-uuid %)
-                      :on-drag-leave #(utils/on-drag-transaction-leave this %)
-                      :on-drop       #(utils/on-drop-transaction this project-uuid %)}
-                  [:span (or (:project/name project) "Untitled")]
-                  (when (and (:project/created-by project)
-                             (not (= (:user/uuid (:project/created-by project)) (:user/uuid current-user))))
-                    [:small " by " (:user/email (:project/created-by project))])]])
-              all-projects)
+           ;[:li]
+           [:a.nav-link
+            {:on-click #(om/update-state! this assoc :new-project? true)}
+            [:i.fa.fa-plus.fa-fw
+             (opts {:style {:padding 0}})]
+            [:span.small-caps "New..."]]]]
 
-            [:li
-             [:a.secondary
-              {:on-click #(om/update-state! this assoc :new-project? true)}
-              [:i.fa.fa-plus
-               (opts {:style {:display :inline
-                              :padding "0.5em"}})]
-              [:small "New..."]]]
+         [:div.sidebar-submenu.hidden-medium-up
+          [:a.nav-link
+           (opts {:href     (routes/key->route :route/settings)
+                  :on-click on-close})
+           [:i.fa.fa-gear
+            (opts {:style {:display :inline
+                           :padding "0.5em"}})]
+           "Settings"]
 
-            [:li.divider]
-            [:li.profile-menu
-             [:a
-              (opts {:href     (routes/key->route :route/settings)
-                     :on-click on-close})
-              [:i.fa.fa-gear
-               (opts {:style {:display :inline
-                              :padding "0.5em"}})]
-              "Settings"]]
-
-            [:li.profile-menu
-             [:a
-              (opts {:href     (routes/key->route :route/api->logout)
-                     :on-click on-close})
-              "Sign Out"]]]]
-          [:footer.footer
-           [:p.copyright.small.text-light
-            "Copyright © eponai 2016. All Rights Reserved"]]]
+          [:a.nav-link
+           (opts {:href     (routes/key->route :route/api->logout)
+                  :on-click on-close})
+           "Sign Out"]]
+         [:footer.footer
+          [:p.copyright.small.text-light
+           "Copyright © eponai 2016. All Rights Reserved"]]
 
          (when new-project?
            (let [on-close #(om/update-state! this assoc :new-project? false)]

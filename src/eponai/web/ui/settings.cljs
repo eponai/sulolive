@@ -118,7 +118,8 @@
                ;[:p "You have "
                ; (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial."]
                ;[:div.columns.small-12.medium-6.text-center]
-               (utils/upgrade-button {:style {:margin 0}})
+               [:a.upgrade-button.medium
+                "Upgrade"]
                ;[:div [:small "You have "
                ;       (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial."]]
                ])]

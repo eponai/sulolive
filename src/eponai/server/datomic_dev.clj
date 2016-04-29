@@ -81,7 +81,8 @@
 (defn add-verified-user-account [conn email project-uuid]
   (let [{:keys [user] :as account} (f/user-account-map email {:verification/status :verification.status/verified
                                            :user/status :user.status/active})
-        project (format/project (:db/id user) {:project/uuid project-uuid})
+        project (format/project (:db/id user) {:project/name "Project-1"
+                                               :project/uuid project-uuid})
         dashboard (format/dashboard (:db/id project))
         ret (transact/transact-map conn (-> account
                                             (assoc :project project :dashboard dashboard)
