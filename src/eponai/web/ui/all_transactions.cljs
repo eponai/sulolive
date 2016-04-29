@@ -329,7 +329,8 @@
                                          :is-selected  (= (:db/id selected-transaction)
                                                           (:db/id props))
                                          :on-tag-click on-tag-click})))
-                       (sort-by #(get-in % [:transaction/date :date/timestamp]) > transactions))]]]
+                       ;; TODO: Implement some way of seeing more than this limit:
+                       (take 50 (sort-by #(get-in % [:transaction/date :date/timestamp]) > transactions)))]]]
                [:div.empty-message
                 [:div.lead
                  [:i.fa.fa-search.fa-fw]
