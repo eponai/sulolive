@@ -221,7 +221,10 @@
 
 (defn generate-data [report ts & [opts]]
   ;(debug "Generate data goal: " report)
-  (let [transactions (filter #(= :transaction.type/expense (:db/ident (:transaction/type %))) ts)] ;;TODO: do this some better place?
+  (let [transactions (filter #(let [t (:transaction/type %)]
+                               ;; Is it a ref or inlined ref?
+                               (= (or (:db/ident t) t)
+                                  :transaction.type/expense)) ts)] ;;TODO: do this some better place?
     (cond
       (some? (:report/track report))
       (let [functions (get-in report [:report/track :track/functions])
