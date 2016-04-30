@@ -122,7 +122,7 @@
           React (.-React js/window)]
       (html
         [:div
-         [:div#dashboard-menu.row.column.small-12
+         [:div#dashboard-menu.row.column.small-12.expanded
           [:div.menu-horizontal
            [:a.nav-link
             (opts {:href  (when project-id (routes/key->route :route/project->widget+type+id {:route-param/project-id  project-id

@@ -53,19 +53,19 @@
         [:div
          [:div#settings-general.row.column.small-12.medium-6
           [:div.callout.clearfix
-           [:h4
+           [:h4.small-caps
             "General"]
-           ;[:hr]
+           [:hr]
            [:div.row
             [:div.columns.small-2.text-right
-             [:label
+             [:span.small-caps
               "Email:"]]
             [:div.columns.small-10
              [:p [:strong email]]]]
 
            [:div.row
             [:div.columns.small-2.text-right
-             [:label
+             [:span.small-caps
               "Name:"]]
             [:div.columns.small-10
              [:input
@@ -74,7 +74,7 @@
            [:div.row
 
             [:div.columns.small-2.text-right
-             [:label
+             [:span.small-caps
               "Currency:"]]
             [:div.columns.small-10
              [:input
@@ -96,20 +96,20 @@
                                                               :mutation-uuid (d/squuid)})
                                              :query/dashboard
                                              :query/transactions])}
-            "Save settings"]]]
+            [:span.small-caps "Save"]]]]
          [:div.row.column.small-12.medium-6
           [:div.callout
-           [:h4 "Account"]
-           ;[:hr]
+           [:h4.small-caps "Account"]
+           [:hr]
            [:div.row
             [:div.columns.small-2.text-right
-             [:label
+             [:span.small-caps
               "Plan:"]]
             (if (= subscription-status :active)
               [:div.columns.small-10
                [:div
                 [:strong "Monthly"]
-                [:label
+                [:span
                  "Account active until: " (f/to-str (:stripe.subscription/period-end subscription) "yyyyMMdd")]]
                (when (:ui.singleton.loader/visible loader)
                  (utils/loader))]
@@ -118,8 +118,7 @@
                ;[:p "You have "
                ; (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial."]
                ;[:div.columns.small-12.medium-6.text-center]
-               [:a.upgrade-button.medium
-                "Upgrade"]
+               (utils/upgrade-button)
                ;[:div [:small "You have "
                ;       (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial."]]
                ])]
@@ -162,8 +161,8 @@
            ]]
          [:div.row.column.small-12.medium-6
           [:div.callout
-           [:h4 "Social"]
-           ;[:hr]
+           [:h4.small-caps "Social"]
+           [:hr]
            [:div#facebook-connect
             (if (nil? fb-user)
               [:div.row
