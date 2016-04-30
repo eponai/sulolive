@@ -36,3 +36,7 @@
 (defmethod read :query/widget-type
   [{:keys [db query]} _ _]
   {:value (p/pull db query [:ui/component :ui.component/widget])})
+
+(defmethod read :query/root-component
+  [{:keys [db query]} _ _]
+  (read/read-entity-by-key db query [:ui/component :ui.component/root]))

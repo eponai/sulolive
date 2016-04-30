@@ -11,6 +11,18 @@
 
 (defonce reconciler-atom (atom nil))
 
+;;;;;;; Om dynamic query helpers
+
+(defprotocol IDynamicQuery
+  (update-query! [this]))
+
+(defn component->ref [c]
+  (keyword (pr-str c)))
+
+(defn component->query-key [c]
+  (let [k (component->ref c)]
+    (keyword "proxy" (str (namespace k) "." (name k)))))
+
 ;;;;;;; UI component helpers
 
 (defn loader []

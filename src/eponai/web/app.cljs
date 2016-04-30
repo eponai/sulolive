@@ -17,52 +17,12 @@
             [eponai.common.parser :as parser]
             [eponai.common.report]
             [eponai.web.ui.navigation :as nav]
+            [eponai.web.ui.project :as project]
+            [eponai.web.ui.root :as root]
+            [clojure.data :as diff]
             [taoensso.timbre :refer-macros [info debug error trace]]
             [eponai.client.ui :refer-macros [opts]]
             [eponai.web.ui.utils :as utils]))
-
-(defui ^:once App
-  static om/IQueryParams
-  (params [_]
-    (history/url-query-params (history/url-handler-form-token)))
-  static om/IQuery
-  (query [this]
-    (let [{:keys [url/component]} (if (om/component? this) (om/get-params this) (om/params this))
-          subquery (om/get-query component)]
-      [:datascript/schema
-      :user/current
-      {:proxy/nav-bar (om/get-query nav/NavbarMenu)}
-       {:proxy/nav-bar-submenu (om/get-query nav/NavbarSubmenu)}
-      {:proxy/side-bar (om/get-query nav/SideBar)}
-      {:proxy/app-content subquery}]))
-  Object
-  (initLocalState [_]
-    {:sidebar-visible? false})
-  (render
-    [this]
-    (let [{:keys [proxy/app-content
-                  proxy/nav-bar-submenu
-                  proxy/nav-bar
-                  proxy/side-bar]} (om/props this)
-          {:keys [sidebar-visible?]} (om/get-state this)
-          {:keys [url/factory]} (om/get-params this)]
-      (html
-        [:div#jourmoney-ui
-         ;[:div#wrapper]
-         (nav/->SideBar (om/computed side-bar
-                                     {:expanded? sidebar-visible?
-                                      :on-close (when sidebar-visible?
-                                                  #(om/update-state! this assoc :sidebar-visible? false))}))
-
-         [:div#main-page
-          (nav/->NavbarMenu (om/computed nav-bar
-                                         {:on-sidebar-toggle #(om/update-state! this update :sidebar-visible? not)}))
-          (nav/->NavbarSubmenu (om/computed nav-bar-submenu
-                                            {:content-factory factory
-                                             :app-content app-content}))
-          [:div#page-content
-           (when factory
-             (factory (assoc app-content :ref :content)))]]]))))
 
 (defonce conn-atom (atom nil))
 
@@ -79,7 +39,8 @@
                     {:ui/singleton :ui.singleton/auth}
                     {:ui/component :ui.component/project
                      :ui.component.project/selected-tab :dashboard}
-                    {:ui/component :ui.component/widget}]
+                    {:ui/component :ui.component/widget}
+                    {:ui/component :ui.component/root}]
           conn (d/create-conn ui-schema)]
       (d/transact! conn ui-state)
       (reset! conn-atom conn))))
@@ -107,7 +68,8 @@
                                    :migrate nil})
         history (history/init-history reconciler)]
     (reset! utils/reconciler-atom reconciler)
-    (om/add-root! reconciler App (gdom/getElement "my-app"))
+    (binding [parser/*parser-allow-remote* false]
+      (om/add-root! reconciler root/App (gdom/getElement "my-app")))
     (history/start! history)))
 
 (defn run []

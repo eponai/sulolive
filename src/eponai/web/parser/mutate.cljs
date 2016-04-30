@@ -99,3 +99,19 @@
   {:action #(t/transact-one state
                             {:ui/component             :ui.component/widget
                              :ui.component.widget/type type})})
+
+;;; ####################### Root component #########################
+
+(defmethod mutate 'root/set-app-content
+  [{:keys [state]} _ {:keys [component factory]}]
+  (assert (and component factory))
+  {:action #(t/transact-one state
+                            {:ui/component                  :ui.component/root
+                             :ui.component.root/route-changed true
+                             :ui.component.root/app-content {:component component
+                                                             :factory   factory}})})
+
+(defmethod mutate 'root/ack-route-changed
+  [{:keys [state]} _ _]
+  {:action #(t/transact-one state {:ui/component :ui.component/root
+                                   :ui.component.root/route-changed false})})

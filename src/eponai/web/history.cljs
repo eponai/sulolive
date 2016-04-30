@@ -3,23 +3,11 @@
             [eponai.client.route-helper :as route-helper]
             [eponai.web.routes :as routes]
             [eponai.web.routes.ui-handlers :as ui-handlers]
+            [eponai.common.parser :as parser]
             [om.next :as om]
             [pushy.core :as pushy]))
 
 (defonce history-atom (atom nil))
-
-(defn url-handler-form-token []
-  (->> @history-atom
-       pushy/get-token
-       (bidi/match-route routes/routes)
-       :handler
-       (get ui-handlers/route-handler->ui-component)))
-
-(defn url-query-params [ui-handler]
-  {:pre [(instance? route-helper/UiComponentMatch ui-handler)]}
-  (let [{:keys [component factory]} ui-handler]
-    {:url/component component
-     :url/factory   factory}))
 
 (defn route-handler->ui-handler [route-handler]
   (get ui-handlers/route-handler->ui-component route-handler))
@@ -31,14 +19,21 @@
 (defn set-page! [reconciler]
   (fn [{:keys [handler] :as match}]
     (update-app-state-with-route-match! reconciler match)
-    (om/set-query! (om/app-root reconciler) {:params (url-query-params (route-handler->ui-handler handler))})))
+    (binding [parser/*parser-allow-remote* false]
+      (om/transact! reconciler `[(root/set-app-content ~(select-keys (route-handler->ui-handler handler)
+                                                                     [:factory :component]))]))
+    ;; TODO: Un-hack this.
+    (let [force-render-f #(om/force-root-render! reconciler)]
+      (if (exists? js/requestAnimationFrame)
+        (js/requestAnimationFrame force-render-f)
+        (js/setTimeout force-render-f 0)))))
 
 (defn init-history [reconciler]
   (when-let [h @history-atom]
     (pushy/stop! h))
   ;; Do not call dispatch-fn on the initial dispatch, because we have to handle the
   ;; route params before om/add-root!, and we shouldn't set app-root's query twice... or something.
-  (let [initial-dispatch (atom true)
+  (let [initial-dispatch (atom false)
         dispatch-fn (set-page! reconciler)
         match-fn (partial bidi/match-route routes/routes)
         history (pushy/pushy (fn [& args] (if @initial-dispatch
@@ -46,7 +41,7 @@
                                             (apply dispatch-fn args)))
                              match-fn)]
     ;; Set the app state given an url manually, instead of doing this on (pushy/start! history).
-    (update-app-state-with-route-match! reconciler (-> (pushy/get-token history) (match-fn)))
+    ;;(update-app-state-with-route-match! reconciler (-> (pushy/get-token history) (match-fn)))
     (reset! history-atom history)))
 
 ;; Before adding root, we want to set the reconcilers state according to the url.

@@ -45,19 +45,10 @@
                          :widget       {:factory ->NewWidget :component NewWidget}
                          :goal         {:factory ->NewGoal :component NewGoal}})
 
-
-(defn default-content []
-  (let [r (deref utils/reconciler-atom)
-        db-content (when r
-                     (d/q '{:find  [?tab .]
-                            :where [[?e :ui/component :ui.component/project]
-                                    [?e :ui.component.project/selected-tab ?tab]]}
-                          (d/db (om/app-state r))))]
-    (debug "db-content: " db-content)
-    (or db-content)))
-
-(defn project-content [component]
-  (default-content))
+(defn project-content [x]
+  (let [props (if (om/component? x) (om/props x) x)]
+    (or (get-in props [:query/active-project :ui.component.project/selected-tab])
+        :dashboard)))
 
 (defui SubMenu
   static om/IQuery
@@ -129,18 +120,26 @@
 
 (def ->SubMenu (om/factory SubMenu))
 
+(defn content->query [this content]
+  (let [component (get-in content->component [content :component])
+        subquery (or (om/subquery this content component) (om/get-query component))]
+    (cond-> [{:proxy/child-content [{(utils/component->query-key component) subquery}]}
+             {:query/active-project [:ui.component.project/selected-tab
+                                     :ui.component.project/active-project]}]
+            (= :widget content)
+            (conj {:proxy/dashboard (om/get-query Dashboard)}))))
+
 (defui Project
   static om/IQuery
   (query [this]
-    (let [content (project-content this)
-          component (get-in content->component [content :component])
-          query (om/subquery this content component)]
-      (cond-> [{:query/active-project [:ui.component.project/selected-tab
-                                       :ui.component.project/active-project]}]
-              (some? query)
-              (conj {:proxy/child-content query})
-              (= :widget content)
-              (conj {:proxy/dashboard (om/get-query Dashboard)}))))
+    (let [content (project-content this)]
+      (content->query this content)))
+
+  utils/IDynamicQuery
+  (update-query! [this]
+    (let [query (om/query this)]
+      (om/set-query! this {:query query})))
+
   Object
   (componentWillUnmount [this]
     (om/transact! this `[(ui.component.project/clear)
@@ -151,7 +150,8 @@
                   proxy/child-content
                   proxy/dashboard]} (om/props this)
           {:keys [share-project?]} (om/get-state this)
-          project (:ui.component.project/active-project active-project)]
+          project (:ui.component.project/active-project active-project)
+          ]
       (html
         ;[:div]
         ;(when project
@@ -162,7 +162,9 @@
         [:div#project-content
          (let [content (project-content this)
                factory (get-in content->component [content :factory])
-               props (cond-> (assoc child-content :ref content)
+               component (get-in content->component [content :component])
+               child-props (get child-content (utils/component->query-key component))
+               props (cond-> (assoc child-props :ref content)
                              (= :widget content)
                              (om/computed {:dashboard (:query/dashboard dashboard)
                                            :index     (dashboard/calculate-last-index 4 (:widget/_dashboard dashboard))}))]

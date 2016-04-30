@@ -241,14 +241,27 @@
                  (not (contains? (meta (:value ret)) :eponai.common.parser/read-basis-t))
                  (update :value with-meta {:eponai.common.parser/read-basis-t {k (d/basis-t db)}}))))))
 
+(def ^:dynamic *parser-allow-remote* true)
+
+(defn with-remote-guard [read-or-mutate]
+  (fn [{:keys [target] :as env} k p]
+    (let [ret (read-or-mutate env k p)
+          ret (cond-> ret
+                      ;; Don't return target when we're not allowed to read/mutate remotely.
+                      (and (some? target) (false? *parser-allow-remote*))
+                      (dissoc target))]
+      ret)))
+
 (defn parser
   ([]
    (let [parser (om/parser {:read   (-> read
                                         #?(:clj read-returning-basis-t)
+                                        with-remote-guard
                                         read-without-state
                                         read-with-dbid-in-query
                                         wrap-db)
                             :mutate (-> mutate
+                                        with-remote-guard
                                         mutate-with-idempotent-invariants
                                         mutate-with-error-logging
                                         wrap-db)})]

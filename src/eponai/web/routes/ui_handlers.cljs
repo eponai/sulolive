@@ -1,13 +1,16 @@
 (ns eponai.web.routes.ui-handlers
   (:require [bidi.bidi :as bidi]
             [eponai.client.route-helper :refer [map->UiComponentMatch]]
-            [eponai.web.ui.project :refer [Project ->Project]]
+            [eponai.web.ui.project :as project :refer [Project ->Project]]
             [eponai.web.ui.all-transactions :refer [AllTransactions ->AllTransactions]]
             [eponai.web.ui.settings :refer [Settings ->Settings]]
             [eponai.web.ui.stripe :refer [Payment ->Payment]]
             [eponai.web.ui.profile :refer [Profile ->Profile]]
+            [eponai.web.ui.root :as root]
             [om.next :as om]
-            [taoensso.timbre :refer-macros [warn debug]]))
+            [om.next.protocols :as om.p]
+            [taoensso.timbre :refer-macros [warn debug error]]
+            [eponai.common.parser :as parser]))
 
 (defn param->x-fn [f validate-f]
   (fn [x]
@@ -25,8 +28,10 @@
   {:route-param/project-id            (fn [_ pid]
                                         `[(project/set-active-uuid ~{:project-dbid (param->number pid)})
                                           :proxy/side-bar])
-   :route-param/project->selected-tab (fn [_ tab]
-                                        `[(project/select-tab ~{:selected-tab (param->keyword tab)})])
+   :route-param/project->selected-tab (fn [env tab]
+                                        (let [r (:reconciler env)]
+                                          `[(project/select-tab ~{:selected-tab      (param->keyword tab)
+                                                                  :project-component (om/app-root r)})]))
    :route-param/widget-id             (fn [_ wid]
                                         `[(widget/set-active-id ~{:widget-id (when wid
                                                                                (param->number wid))})])
@@ -36,19 +41,27 @@
                                         `[(widget/select-type ~{:type (param->keyword type)})])
    :route-param/transaction-mode      #()})
 
-(defn route-params->mutations [route-params]
+(defn route-params->mutations [reconciler route-params]
   (reduce-kv (fn [mutations param value]
                (assert (contains? route-param->mutation param)
                        (str "route-param: " param " did not have a mutation function in: " route-param->mutation
                             ". Add the route-param to the map of key->function. Route-param value was: " value))
                (let [param-fn (get route-param->mutation param)]
-                 (into mutations (param-fn route-params value))))
+                 (into mutations (param-fn {:reconciler reconciler
+                                            :route-params route-params} value))))
              []
              route-params))
 
 (defn mutate-route-params! [reconciler route-params]
   {:pre [(om/reconciler? reconciler)]}
-  (om/transact! reconciler (route-params->mutations route-params)))
+  (let [{:keys [reads mutations]} (reduce (fn [m expr]
+                                            (if (and (sequential? expr) (symbol? (first expr)))
+                                              (update m :mutations conj expr)
+                                              (update m :reads conj expr)))
+                                          {:mutations [] :reads []}
+                                          (route-params->mutations reconciler route-params))]
+    (binding [parser/*parser-allow-remote* false]
+      (om/transact! reconciler (into mutations reads)))))
 
 (def project-handler (map->UiComponentMatch
                        {:component      Project
@@ -76,11 +89,7 @@
 (def transactions-handler (assoc project-handler
                             :route-param-fn
                             (fn [r p]
-                              (mutate-route-params! r (-> p
-                                                          (assoc :route-param/project->selected-tab :transactions)
-                                                          ;; (update {} :foo identity) => {:foo nil}
-                                                          ;; Ensures :route-param/transaction-id is in the map.
-                                                          )))))
+                              (mutate-route-params! r (-> p (assoc :route-param/project->selected-tab :transactions))))))
 
 
 (def route-handler->ui-component

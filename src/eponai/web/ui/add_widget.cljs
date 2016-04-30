@@ -32,14 +32,15 @@
     {:filter {}})
   static om/IQuery
   (query [_]
-    ['{(:query/transactions {:filter ?filter}) [:transaction/uuid
-                                                :transaction/amount
-                                                :transaction/conversion
-                                                {:transaction/type [:db/ident]}
-                                                {:transaction/currency [:currency/code]}
-                                                {:transaction/tags [:tag/name]}
-                                                {:transaction/date [:date/ymd
-                                                                    :date/timestamp]}]}
+    ['({:query/transactions [:transaction/uuid
+                             :transaction/amount
+                             :transaction/conversion
+                             {:transaction/type [:db/ident]}
+                             {:transaction/currency [:currency/code]}
+                             {:transaction/tags [:tag/name]}
+                             {:transaction/date [:date/ymd
+                                                 :date/timestamp]}]}
+        {:filter ?filter})
      {:query/active-widget (om/get-query Widget)}
      {:query/widget-type [:ui.component.widget/type]}])
   Object
