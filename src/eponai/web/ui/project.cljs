@@ -83,7 +83,7 @@
           {:keys [db/id]} project
           on-close #(om/update-state! this assoc :menu-visible? false)]
       (html
-        [:div#project-submenu.row.expanded
+        [:div#project-submenu.row.expanded.small-collapse.medium-uncollapse
          (when new-transaction?
            (let [on-close #(om/update-state! this assoc :new-transaction? false)]
              (utils/modal {:content  (->AddTransaction
@@ -91,54 +91,26 @@
                                                     {:on-close on-close}))
                            :on-close on-close})))
          [:div.menu-horizontal.columns.small-4
-          [:div.nav-link
-           [:small [:strong (:project/name project)]]]
-          [:div.nav-link
-           [:a
-            {:on-click #(om/update-state! this assoc :menu-visible? true)}
-            [:strong.small-caps "New..."]]
-
-           (when menu-visible?
-             [:div
-              (utils/click-outside-target on-close)
-              [:div.menu.dropdown
-               [:a.nav-link
-                {:on-click #(om/update-state! this assoc :new-transaction? true :menu-visible? false)}
-                [:i.fa.fa-money.fa-fw
-                 (opts {:style {:color "black"}})]
-                [:span.small-caps "Transaction"]]
-               [:a.nav-link
-                (opts {:href (when id (routes/key->route :route/project->widget+type+id {:route-param/project-id  id
-                                                                                         :route-param/widget-type :track
-                                                                                         :route-param/widget-id   "new"}))
-                       :on-click on-close
-                       :style    {:padding "0.5em"}})
-                [:i.fa.fa-line-chart.fa-fw
-                 (opts {:style {:color "green"}})]
-                [:span.small-caps "Track"]]
-               [:a.nav-link
-                (opts {:href     (when id
-                                   (routes/key->route :route/project->widget+type+id {:route-param/project-id  id
-                                                                                      :route-param/widget-type :goal
-                                                                                      :route-param/widget-id   "new"}))
-                       :on-click on-close
-                       :style    {:padding "0.5em"}})
-                [:i.fa.fa-star.fa-fw
-                 (opts {:style {:color "orange"}})]
-                [:span.small-caps "Goal"]]]])]]
+          [:div.nav-link.truncate
+           [:small.truncate [:strong (:project/name project)]]]
+          [:a.nav-link
+           {:on-click #(om/update-state! this assoc :new-transaction? true :menu-visible? false)}
+           [:i.fa.fa-money.fa-fw]]]
          [:div.menu-horizontal.columns.small-4.align-center
           [:a.nav-link.tab
            {:class (when (= selected-tab :transactions) "selected")
             :href  (when id
                      (routes/key->route :route/project->txs {:route-param/project-id id}))}
-           [:span.small-caps "List"]]
+           [:i.fa.fa-list.fa-fw.hidden-medium-up]
+           [:span.small-caps.visible-medium-up "List"]]
 
           [:a.nav-link.tab
-           {:class (when (= selected-tab :dashboard) "selected")
+           {:class (when (contains? #{:dashboard :widget} selected-tab) "selected")
             :href (when id
                     (routes/key->route :route/project->dashboard
                                        {:route-param/project-id id}))}
-           [:span.small-caps "Dashboard"]]]
+           [:i.fa.fa-dashboard.fa-fw.hidden-medium-up]
+           [:span.small-caps.visible-medium-up "Dashboard"]]]
          ;[:div.top-bar-right]
          [:div.menu-horizontal.columns.small-4.align-right
           [:a.nav-link
@@ -153,8 +125,7 @@
               (utils/modal {:content (->Shareproject (om/computed {}
                                                                   {:on-close on-close
                                                                    :on-save #(.share-project this (:project/uuid project) %)}))
-                            :on-close on-close})))
-          ]]))))
+                            :on-close on-close})))]]))))
 
 (def ->SubMenu (om/factory SubMenu))
 

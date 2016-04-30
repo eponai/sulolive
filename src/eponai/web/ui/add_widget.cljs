@@ -110,13 +110,23 @@
                   query/active-widget
                   query/widget-type]} (om/props this)
           {:keys [input-widget]} (om/get-state this)
-          {:keys [dashboard]} (om/get-computed this)]
+          {:keys [dashboard]} (om/get-computed this)
+          project-id (get-in dashboard [:dashboard/project :db/id])]
       (html
         [:div
          (opts {:style {:padding "1em"}})
-         [:div.row.column.small-12.medium-10
-          [:span.currency-code (if active-widget "Edit widget" "Add new widget")]
-          [:hr]]
+         [:ul.breadcrumbs
+          [:li
+           [:a
+            {:href (when project-id
+                     (routes/key->route :route/project->dashboard
+                                        {:route-param/project-id project-id}))}
+            "Dashboard"]]
+          [:li (cond (= :track (:ui.component.widget/type widget-type))
+                     "Track"
+                     (= :goal (:ui.component.widget/type widget-type))
+                     "Goal")]]
+         [:hr]
 
          (cond
            (= :track (:ui.component.widget/type widget-type))

@@ -122,25 +122,44 @@
           React (.-React js/window)]
       (html
         [:div
+         [:div#dashboard-menu.row.column.small-12
+          [:div.menu-horizontal
+           [:a.nav-link
+            (opts {:href  (when project-id (routes/key->route :route/project->widget+type+id {:route-param/project-id  project-id
+                                                                                              :route-param/widget-type :track
+                                                                                              :route-param/widget-id   "new"}))
+                   :style {:padding "0.5em"}})
+            [:i.fa.fa-line-chart.fa-fw
+             (opts {:style {:color "green"}})]
+            [:span.small-caps "Track"]]
+           [:a.nav-link
+            (opts {:href  (when project-id
+                            (routes/key->route :route/project->widget+type+id {:route-param/project-id  project-id
+                                                                               :route-param/widget-type :goal
+                                                                               :route-param/widget-id   "new"}))
+                   :style {:padding "0.5em"}})
+            [:i.fa.fa-star.fa-fw
+             (opts {:style {:color "orange"}})]
+            [:span.small-caps "Goal"]]]]
          (if (and layout
                   grid-element
                   (seq widgets))
            (.createElement React
                            grid-element
-                           #js {:className        (if is-editing? "layout animate" "layout"),
-                                :draggableHandle  ".widget-move"
-                                :layouts          layout
-                                :rowHeight        100
-                                :margin           #js [20 20]
-                                :cols             (clj->js cols)
-                                :useCSSTransforms true
-                                :isDraggable      true
-                                :isResizable      true
+                           #js {:className          (if is-editing? "layout animate" "layout"),
+                                :draggableHandle    ".widget-move"
+                                :layouts            layout
+                                :rowHeight          100
+                                :margin             #js [20 20]
+                                :cols               (clj->js cols)
+                                :useCSSTransforms   true
+                                :isDraggable        true
+                                :isResizable        true
                                 :onBreakpointChange #(.on-breakpoint-change this %)
-                                :onResizeStart    #(.edit-start this)
-                                :onResizeStop     #(.edit-stop this widgets %)
-                                :onDragStart      #(.edit-start this)
-                                :onDragStop       #(.edit-stop this widgets %)}
+                                :onResizeStart      #(.edit-start this)
+                                :onResizeStop       #(.edit-stop this widgets %)
+                                :onDragStart        #(.edit-start this)
+                                :onDragStop         #(.edit-stop this widgets %)}
                            (into-array
                              (map
                                (fn [widget-props]

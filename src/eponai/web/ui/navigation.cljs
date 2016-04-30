@@ -167,19 +167,21 @@
           ]
 
          [:div.menu-horizontal
-          (when (= subscription-status :trialing)
-            [:small.nav-link
-             (str "Trial: " (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left")])
-          (when-not (= subscription-status :active)
-            [:div.nav-link.visible-medium-up
-             (utils/upgrade-button)])
-          [:div.nav-link
-           [:a
-            {:on-click #(open-profile-menu this true)}
-            [:small (:user/email current-user)]]
+          ;(when (= subscription-status :trialing)
+          ;  [:small.nav-link
+          ;   (str "Trial: " (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left")])
+          ;(when-not (= subscription-status :active)
+          ;  [:div.nav-link.visible-medium-up
+          ;   (utils/upgrade-button)])
 
-           (when menu-visible?
-             (profile-menu {:on-close #(open-profile-menu this false)}))]]
+          [:div.nav-link
+           [:div
+            [:a
+             {:on-click #(open-profile-menu this true)}
+             [:small (:user/email current-user)]]
+
+            (when menu-visible?
+              (profile-menu {:on-close #(open-profile-menu this false)}))]]]
 
          (when new-transaction?
            (let [on-close #(om/update-state! this assoc :new-transaction? false)]
@@ -231,9 +233,16 @@
             "JourMoney"]
            [:small
             " by eponai"]]
-          (when-not (= subscription-status :active)
-            [:div.nav-link.hidden-medium-up
-             (utils/upgrade-button)])
+
+          [:div.sidebar-submenu
+           (when-not (= subscription-status :active)
+             [:small.header
+              (str "14 days left on trial")
+              ;(str "Trial: " (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left")
+              ])
+
+           (when-not (= subscription-status :active)
+             (utils/upgrade-button))]
 
           [:div.sidebar-submenu#project-menu
            [:strong.header "Projects"]
@@ -251,11 +260,10 @@
                                   "highlighted"
                                   (= (:ui.component.project/uuid active-project) project-uuid)
                                   "selected")
-                 :on-click      on-close
                  :on-drag-over  #(utils/on-drag-transaction-over this project-uuid %)
                  :on-drag-leave #(utils/on-drag-transaction-leave this %)
                  :on-drop       #(utils/on-drop-transaction this project-uuid %)}
-                [:span (or (:project/name project) "Untitled")]
+                [:span.truncate (or (:project/name project) "Untitled")]
                 (when (and (:project/created-by project)
                            (not (= (:user/uuid (:project/created-by project)) (:user/uuid current-user))))
                   [:small " by " (:user/email (:project/created-by project))])])
@@ -270,16 +278,14 @@
 
          [:div.sidebar-submenu.hidden-medium-up
           [:a.nav-link
-           (opts {:href     (routes/key->route :route/settings)
-                  :on-click on-close})
+           (opts {:href     (routes/key->route :route/settings)})
            [:i.fa.fa-gear
             (opts {:style {:display :inline
                            :padding "0.5em"}})]
            "Settings"]
 
           [:a.nav-link
-           (opts {:href     (routes/key->route :route/api->logout)
-                  :on-click on-close})
+           (opts {:href     (routes/key->route :route/api->logout)})
            "Sign Out"]]
          [:footer.footer
           [:p.copyright.small.text-light
