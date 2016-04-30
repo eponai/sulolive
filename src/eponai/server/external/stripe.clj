@@ -41,23 +41,25 @@
 
 (defn stripe [api-key k params]
   (info "Stripe action: " {:action k :params params})
-  (try
-    (set! (. Stripe apiKey) api-key)
-    (stripe-action k params)
-    (catch CardException e
-      (throw (ex-info (str (class e) " on Stripe action key: " k)
-                      {:cause   ::h/unprocessable-entity
-                       :type    (class e)
-                       :message (.getMessage e)
-                       :code    (keyword "stripe" (.getCode e))
-                       :data    params})))
-    (catch Exception e
-      (throw (ex-info (str (class e) " on Stripe action key: " k)
-                      {:cause   ::h/internal-error
-                       :code    :undefined
-                       :type    (class e)
-                       :message (.getMessage e)
-                       :data    params})))))
+  (when api-key
+    (try
+      (debug "Api key set, try connect to Stripe.")
+      (set! (. Stripe apiKey) api-key)
+      (stripe-action k params)
+      (catch CardException e
+        (throw (ex-info (str (class e) " on Stripe action key: " k)
+                        {:cause   ::h/unprocessable-entity
+                         :type    (class e)
+                         :message (.getMessage e)
+                         :code    (keyword "stripe" (.getCode e))
+                         :data    params})))
+      (catch Exception e
+        (throw (ex-info (str (class e) " on Stripe action key: " k)
+                        {:cause   ::h/internal-error
+                         :code    :undefined
+                         :type    (class e)
+                         :message (.getMessage e)
+                         :data    params}))))))
 
 
 ;;; ########### Stripe actions ###############

@@ -163,11 +163,19 @@
     (let [{:keys [user] :as account} (f/user-account-map email
                                                           {:verification/status :verification.status/verified})
           conn (new-db (vals account))
-          credential-fn (a/credential-fn conn)]
-      (is (= (credential-fn (with-meta {:user-uuid  (str (:user/uuid user))
-                                        :user-email (:user/email user)}
-                                       {::friend/workflow :activate-account}))
-             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email])))))))
+          credential-fn (a/credential-fn conn)
+          stripe-fn (fn [_ _]
+                      {:stripe/customer     "cus-id"
+                       :stripe/subscription {:stripe.subscription/id "sub-id"}})
+          activated-auth (credential-fn (with-meta {:body      {:user-uuid  (str (:user/uuid user))
+                                                                :user-email (:user/email user)}
+                                                    :stripe-fn stripe-fn}
+                                                   {::friend/workflow :activate-account}))
+          stripe-cus (p/lookup-entity (d/db conn) [:stripe/customer "cus-id"])]
+      (is (= activated-auth
+             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]))))
+      (is (and (some? stripe-cus)
+               (some? (:stripe/subscription stripe-cus)))))))
 
 (deftest user-activates-account-already-activated
   (testing "User activates account which as already activated (could bypass trial period).
@@ -177,11 +185,18 @@
                                                            :user/status :user.status/active})
           conn (new-db [user
                         verification])
-          credential-fn (a/credential-fn conn)]
-      (is (= (credential-fn (with-meta {:user-uuid  (str (:user/uuid user))
-                                        :user-email (:user/email user)}
-                                       {::friend/workflow :activate-account}))
-             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email])))))))
+          credential-fn (a/credential-fn conn)
+          stripe-fn (fn [_ _]
+                      {:stripe/customer     "cus-id"
+                       :stripe/subscription {:stripe.subscription/id "sub-id"}})
+          activated-auth (credential-fn (with-meta {:body      {:user-uuid  (str (:user/uuid user))
+                                                                :user-email (:user/email user)}
+                                                    :stripe-fn stripe-fn}
+                                                   {::friend/workflow :activate-account}))
+          stripe-cus (p/lookup-entity (d/db conn) [:stripe/customer "cus-id"])]
+      (is (= activated-auth
+             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]))))
+      (is (nil? stripe-cus)))))
 
 (deftest user-activates-account-with-invalid-input
   (testing "Invalid input is coming in to the credential fn, should throw exception."

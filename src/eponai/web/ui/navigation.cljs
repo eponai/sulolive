@@ -202,7 +202,8 @@
                                                :user/email]}]}
      {:query/current-user [:user/uuid]}
      {:query/stripe [:stripe/user
-                     {:stripe/subscription [:stripe.subscription/status]}]}
+                     {:stripe/subscription [:stripe.subscription/status
+                                            :stripe.subscription/period-end]}]}
      {:query/active-project [:ui.component.project/uuid]}])
   Object
   (initLocalState [_]
@@ -235,11 +236,10 @@
             " by eponai"]]
 
           [:div.sidebar-submenu
-           (when-not (= subscription-status :active)
+           (when (and (= subscription-status :trialing)
+                      (:stripe.subscription/period-end subscription))
              [:small.header
-              (str "14 days left on trial")
-              ;(str "Trial: " (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left")
-              ])
+              (str (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left on trial")])
 
            (when-not (= subscription-status :active)
              (utils/upgrade-button))]

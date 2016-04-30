@@ -33,8 +33,8 @@
                      ::m/currencies-fn     #(exch/currencies (when @in-production? (env :open-exchange-app-id)))
                      ::m/currency-rates-fn (exch/currency-rates-fn (when @in-production? (env :open-exchange-app-id)))
                      ;::m/send-email-fn     (e/send-email-fn conn)
-                     ::m/stripe-fn         (fn [k p]
-                                             (stripe/stripe (env :stripe-secret-key-test) k p))
+                     ::stripe/stripe-fn         (fn [k p]
+                                                  (stripe/stripe (env :stripe-secret-key-test) k p))
                      ::email/send-verification-fn email/send-verification-email
                      ::email/send-invitation-fn   email/send-invitation-email
                      ;; either "dev" or "release"

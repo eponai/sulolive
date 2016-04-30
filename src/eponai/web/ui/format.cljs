@@ -13,7 +13,7 @@
   {:pre [(number? timestamp)]}
   (let [now (c/to-long (t/now))]
     (if (> timestamp now)
-      (t/in-days (t/interval (c/from-long now) (c/from-long timestamp)))
+      (inc (t/in-days (t/interval (c/from-long now) (c/from-long timestamp)))) ;Increment to include the last day
       (* -1 (t/in-days (t/interval (c/from-long timestamp) (c/from-long now)))))))
 
 (defn to-str [timestamp & [format]]

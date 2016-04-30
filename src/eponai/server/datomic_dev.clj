@@ -7,7 +7,9 @@
             [clojure.java.io :as io]
             [eponai.common.database.transact :as transact]
             [taoensso.timbre :refer [debug error info]]
-            [eponai.server.datomic.format :as f])
+            [eponai.server.datomic.format :as f]
+            [clj-time.coerce :as c]
+            [clj-time.core :as t])
   (:import (java.util UUID)))
 
 (def currencies {:THB "Thai Baht"
@@ -80,13 +82,19 @@
 
 (defn add-verified-user-account [conn email project-uuid]
   (let [{:keys [user] :as account} (f/user-account-map email {:verification/status :verification.status/verified
-                                           :user/status :user.status/active})
+                                                              :user/status         :user.status/active})
         project (format/project (:db/id user) {:project/name "Project-1"
                                                :project/uuid project-uuid})
         dashboard (format/dashboard (:db/id project))
+        stripe-user (format/add-tempid {:stripe/user (:db/id user)
+                                        :stripe/customer     "cus-test"
+                                        :stripe/subscription (format/add-tempid {:stripe.subscription/id         "sub-test"
+                                                                                 :stripe.subscription/status     :trialing
+                                                                                 :stripe.subscription/period-end (c/to-long (t/last-day-of-the-month (t/today)))})})
         ret (transact/transact-map conn (-> account
                                             (assoc :project project :dashboard dashboard)
-                                            (update :user assoc :user/currency [:currency/code "USD"])))]
+                                            (update :user assoc :user/currency [:currency/code "USD"])
+                                            (assoc :stripe stripe-user)))]
     (debug "New user created with email:" email)
     ret))
 

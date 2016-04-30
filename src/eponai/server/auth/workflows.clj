@@ -4,10 +4,10 @@
             [cemerick.url :as url]
             [clojure.core.async :refer [go]]
             [eponai.server.external.facebook :as fb]
+            [eponai.server.external.stripe :as stripe]
             [ring.util.response :as r]
             [ring.util.request :refer [path-info request-url]]
-            [taoensso.timbre :refer [debug error info]]
-            [eponai.server.api :as api])
+            [taoensso.timbre :refer [debug error info]])
   (:import (clojure.lang ExceptionInfo)))
 
 (defn redirect-login-failed [message]
@@ -103,13 +103,14 @@
 
 (defn create-account
   [send-email-fn]
-  (fn [{:keys [body ::friend/auth-config] :as request}]
+  (fn [{:keys [body ::friend/auth-config ::stripe/stripe-fn] :as request}]
     (let [credential-fn (get auth-config :credential-fn)
           login-uri (get auth-config :activate-account-uri)]
       (when (= (path-info request)
                login-uri)
         (try
-          (let [user-record (credential-fn (with-meta body
+          (let [user-record (credential-fn (with-meta {:body body
+                                                       :stripe-fn stripe-fn}
                                                       {::friend/workflow :activate-account}))]
             (prn "Successful login")
             (workflows/make-auth user-record {::friend/workflow :activate-account

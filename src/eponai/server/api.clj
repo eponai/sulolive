@@ -166,9 +166,12 @@
             (pull/lookup-entity (d/db conn) [:user/email email]))
           ; First time activation, set status to active and return user entity.
           (let [activated-db (:db-after (transact conn [[:db/add user-db-id :user/status :user.status/active]
-                                                        [:db/add user-db-id :user/currency [:currency/code "USD"]]]))]
+                                                        [:db/add user-db-id :user/currency [:currency/code "USD"]]]))
+                activated-user (pull/lookup-entity activated-db [:user/email email])]
             (debug "Activated account for user-uuid:" user-uuid)
-            (pull/lookup-entity activated-db [:user/email email])))))
+            (when (:stripe-fn opts)
+              (stripe-trial conn (:stripe-fn opts) activated-user))
+            activated-user))))
 
 
     ; The user uuid was not found in the database.
