@@ -50,270 +50,289 @@
 
 <body>
 <!-- Header -->
-<div class="gradient-down-up text-light">
-    <div class="map map-white map-top">
-        <nav class="top-bar" id="landing-page">
-            <div class="top-bar-left">
-                <!--<div class="title-bar-title">-->
-                <a class="navbar-brand" href="">
-                    <strong>JourMoney</strong>
-                    <span class="small">by eponai</span>
-                </a>
+<div id="landing-page">
+    <div class="gradient-down-up">
+        <div class="map map-white map-top">
+            <nav class="top-bar clearfix">
+                <div class="menu-horizontal float-left">
+                    <!--<div class="title-bar-title">-->
+                    <a class="navbar-brand" href="">
+                        <strong>JourMoney</strong>
+                        <span class="small">by eponai</span>
+                    </a>
+                    <!--</div>-->
+                </div>
+                <div class="menu-horizontal float-right">
+                            <a href="#subscribe">
+                                <strong>Sign In</strong>
+                            </a>
+                    <!--<ul class="menu">-->
+                        <!--<li>-->
+                        <!--</li>-->
+                    <!--</ul>-->
+                </div>
+            </nav>
+
+            <div id="header">
+
+                <!--<div class="container clearfix ">-->
+
+                    <div class="row columns small-12 medium-8 large-5">
+                        <!--<div class="small-12 medium-10 medium-offset-1 large-6 large-offset-3 columns">-->
+                            <div class="intro-message">
+                                <h1>Track and travel</h1>
+                                <!--<h2>-->
+                                    <!--A more visual way to track your money and plan for those cool destinations.-->
+                                <!--</h2>-->
+                                <hr class="intro-divider">
+
+
+                                <p>
+                                    Use a more visual way to track your money and plan for those cool destinations.
+
+                                    Track as you go and see what your data is telling you by viewing your own easily
+                                    created dashboards.
+                                    <!--Find hidden opportunities for saving and spending.-->
+                                </p>
+                                <!--<p id="subscribe">-->
+                                    <!---->
+                                    <!--Traveling and tracking expenses is a great combo.-->
+                                    <!--It's a great way be aware of expenses.-->
+                                    <!--Being a traveler is amazing, however it can also be a little tricky to keep-->
+                                    <!--different currencies in check and be in control of where your money goes.-->
+
+                                    <!--What if you could track your expenses in any currency,-->
+                                    <!--and the sit back and watch where your money is going.-->
+                                <!--</p>-->
+                            </div>
+                        <!--</div>-->
+                    </div>
+
                 <!--</div>-->
-            </div>
-            <div class="top-bar-right">
-                <ul class="menu">
-                    <li>
-                        <a href="#subscribe">
-                            <strong>Sign In</strong>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </nav>
+                <!-- /.container -->
 
-        <div class="intro-header">
-
-            <div class="container clearfix ">
-
-                <div class="row">
-                    <div class="small-12 medium-10 medium-offset-1 large-6 large-offset-3 columns">
-                        <div class="intro-message">
-                            <h1>Finance on the road</h1>
-                            <h2><small>Know where your money goes - wherever you go</small></h2>
-                            <hr class="intro-divider">
-
-                            <p id="subscribe">
-                                Being a traveler can mean that standard patterns don't apply, like a month to month cash flow.
-                                And there is so many amazing places in the world and if you are anything like
-                                us, your route is always changing as you go - which makes it hard to budget.
-
-                                So how can you experience as much as possible on the road while
-                                keeping your cash in check? Maybe even save money?
-                            </p>
+                <div class="banner">
+                    <div class="flex flex-column">
+                        <div class="row column text-center">
+                            <h2>Subscribe to our newsletter for launch updates</h2>
                         </div>
+                        <form id="form-intro">
+                            <!--<div class="row small-up-2 small-collapse">-->
+                                <!--<div class="column">-->
+                                    <input type="email" name="email" class="form-control right" placeholder="youremail@example.com" tabindex="1">
+
+                                <!--</div>-->
+                                <!--<div class="column">-->
+                                    <a type="submit" class="button warning" onclick="onSubscribe('subscribe-intro')"
+                                            tabindex="2">
+                                        <strong>Subscribe</strong>
+                                    </a>
+                                <!--</div>-->
+                            <!--</div>-->
+                        </form>
+                        <div id="subscribe-intro" style="height:1em;"></div>
                     </div>
                 </div>
-
             </div>
-            <!-- /.container -->
+            <!-- /.intro-header -->
+        </div>
+        <!-- /.map -->
+    </div>
+    <!-- /.gradient -->
 
-            <div class="banner">
-                <div class="flex flex-column">
-                    <h2>Subscribe to our newsletter and be the first to know when we launch!</h2>
 
-                    <form id="form-intro">
-                        <div class="row small-up-2 small-collapse">
-                            <div class="column">
-                                <input type="email" name="email" class="form-control right" placeholder="Your E-Mail" tabindex="1">
-                            </div>
-                            <div class="column">
-                                <button type="submit" class="button warning radius" onclick="onSubscribe('subscribe-intro')"
-                                        tabindex="2">
-                                    <span class="network-text">Subscribe</span>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                    <div id="subscribe-intro" style="height:1em;"></div>
+
+    <!-- Page Content -->
+
+    <!--<a  name="features"></a>-->
+    <!--<div class="content-section row column">-->
+
+        <!--&lt;!&ndash;<div class="container">&ndash;&gt;-->
+        <!--&lt;!&ndash;<div class="row column">&ndash;&gt;-->
+
+            <!--<div class="lead columns medium-5 medium-offset-1 small-12 columns">-->
+                <!--<h3 class="section-heading">-->
+                    <!--Visualize your spending habits with dashboards-->
+                <!--</h3>-->
+                <!--&lt;!&ndash;Tracking money is great, but it doesn't really do much if you cannot see what the data is trying to tell you.&ndash;&gt;-->
+                <!--&lt;!&ndash;How much are you spending? On what? Where can you save money?&ndash;&gt;-->
+                <!--&lt;!&ndash;Can you include that festival in Tokyo next month?&ndash;&gt;-->
+                <!--&lt;!&ndash;To answer your questions, add meta data to your expenses with tags and build your own&ndash;&gt;-->
+                <!--&lt;!&ndash;dashboards. Add graphs over the things that you want to know and learn about your economic&ndash;&gt;-->
+                <!--&lt;!&ndash;habits and possibilities.&ndash;&gt;-->
+            <!--</div>-->
+            <!--<div class="columns small-12 medium-5 medium-offset-1">-->
+                <!--<img src="/style/img/ipad.png" alt="">-->
+            <!--</div>-->
+        <!--&lt;!&ndash;</div>&ndash;&gt;-->
+        <!--&lt;!&ndash; /.row &ndash;&gt;-->
+
+        <!--&lt;!&ndash;</div>&ndash;&gt;-->
+        <!--&lt;!&ndash; /.container &ndash;&gt;-->
+
+    <!--</div>-->
+    <!-- /.content-section-a -->
+
+    <!--<div class="content-section row column">-->
+
+        <!--&lt;!&ndash;<div class="container">&ndash;&gt;-->
+
+        <!--&lt;!&ndash;<div class="row">&ndash;&gt;-->
+            <!--<div class="medium-5 medium-offset-1 medium-push-6 small-12 columns lead">-->
+                <!--<h3 class="section-heading">-->
+                    <!--User the mobile app-->
+                <!--</h3>-->
+                <!--&lt;!&ndash;A good Internet connection is great and all, but it sucks when a bad one disrupts a good flow of&ndash;&gt;-->
+                <!--&lt;!&ndash;tracking. Traveling means all kinds of surprises can reveal themselves&ndash;&gt;-->
+                <!--&lt;!&ndash;that don't all involve a Starbucks.&ndash;&gt;-->
+                <!--&lt;!&ndash;Add your transactions in the mobile app offline when those days come, and we'll&ndash;&gt;-->
+                <!--&lt;!&ndash;keep them in mind until you are connected again and sync up for you then.&ndash;&gt;-->
+            <!--</div>-->
+            <!--<div class="medium-5 medium-pull-6 small-12 columns">-->
+                <!--<img src="/style/img/dog.png" alt="">-->
+            <!--</div>-->
+        <!--&lt;!&ndash;</div>&ndash;&gt;-->
+         <!--&lt;!&ndash;/.row&ndash;&gt;-->
+
+        <!--&lt;!&ndash;</div>&ndash;&gt;-->
+         <!--&lt;!&ndash;/.container&ndash;&gt;-->
+
+    <!--</div>-->
+     <!--/.content-section -->
+
+    <!--<div class="content-section row column">-->
+        <!--&lt;!&ndash;<div class="container clearfix">&ndash;&gt;-->
+            <!--&lt;!&ndash;<div class="row">&ndash;&gt;-->
+                <!--<div class="medium-5 medium-offset-1 small-12 columns lead">-->
+                    <!--<h3 class="section-heading">Collaborate</h3>-->
+                    <!--Sharing is caring. If you are traveling with someone, share your tracking projects with-->
+                    <!--them and collaborate on tracking your money. More ideas more possibilities.-->
+                <!--</div>-->
+                <!--<div class="medium-5 medium-offset-1 small-12 columns">-->
+                    <!--<img class="img-responsive" src="/style/img/phones.png" alt="">-->
+                <!--</div>-->
+            <!--&lt;!&ndash;</div>&ndash;&gt;-->
+            <!--&lt;!&ndash; /.row &ndash;&gt;-->
+
+        <!--&lt;!&ndash;</div>&ndash;&gt;-->
+        <!--&lt;!&ndash; /.container &ndash;&gt;-->
+
+    <!--</div>-->
+     <!--/.content-section-a-->
+
+    <div id="at-a-glance" class="content-section row column">
+        <div class="text-center">
+            <h3 class="section-heading">At a glance</h3>
+            <hr>
+            <div class="row small-up-2 medium-up-3">
+                <div class="column">
+                    <h4>Dashboards</h4>
+                    <span>
+                        Create your personal dashboard and visualize your spending in a way that works for you.
+                    </span>
+                </div>
+                <div class="column">
+                    <h4>Tags</h4>
+                    <span>
+                        Add context to your transactions with tags.
+                        Use them to filter your graphs over the data you're interested in.
+                    </span>
+                </div>
+                <div class="column">
+                    <h4>Currencies</h4>
+                    <span>
+                        Traveling goes hand in hand with cash in all currencies.
+                        Choose one that makes you happy, and we'll convert all local currencies to your chosen one.
+                    </span>
+                </div>
+                <!--<div class="column">-->
+                    <!--<h4><small>Use Offline</small></h4>-->
+                    <!--<small>-->
+                        <!--No internet access? No problem, just use the mobile app to do what you need to do offline.-->
+                        <!--We'll sync up with you when you get a connection.-->
+                    <!--</small>-->
+                <!--</div>-->
+                <div class="column">
+                    <h4>No Passwords</h4>
+                    <span>
+                        There's already way too many passwords in this world. Sign in using your email
+                        or social media account and you're good to go.
+                    </span>
+                </div>
+                <!--<div class="column">-->
+                    <!--<h4><small>Projects</small></h4>-->
+                    <!--<small>-->
+                        <!--Create projects to separate different tracking for different use cases, whatever they-->
+                        <!--might be. Maybe you have a shared part with someone, and your own secret one on the side?-->
+                        <!--No judgement, just track away!-->
+                    <!--</small>-->
+                <!--</div>-->
+                <!--<div class="column">-->
+                    <!--<h4 class="subheader">Goals</h4>-->
+                    <!--<small>-->
+                        <!--Setup economic goals and follow your progress in your dashboards.-->
+                    <!--</small>-->
+                <!--</div>-->
+                <div class="column">
+                    <h4>Share</h4>
+                    <span>
+                        Share your dashboards with friends and family and collaborate on your expense tracking.
+                    </span>
+                </div>
+                <div class="column">
+                    <h4>Time periods</h4>
+                    <span>
+                        Every traveler is different. View your finances in time
+                        periods that matches your life.
+                    </span>
                 </div>
             </div>
-        </div>
-        <!-- /.intro-header -->
-    </div>
-    <!-- /.map -->
-</div>
-<!-- /.gradient -->
+            <!-- /.row -->
 
-
-
-<!-- Page Content -->
-
-<!--<a  name="features"></a>-->
-<div class="content-section">
-
-    <!--<div class="container">-->
-    <div class="row">
-
-        <div class="lead columns medium-5 medium-offset-1 small-12 columns">
-            <h3 class="section-heading">
-                Dashboards
-            </h3>
-            How much are you spending? On what? Where can you save money?
-            Can you include that festival in Tokyo next month?
-            To answer your questions, add meta data to your expenses with tags and build your own
-            dashboards. Add graphs over the things that you want to know and learn about your economic
-            habits and possibilities.
-        </div>
-        <div class="columns small-12 medium-5 medium-offset-1">
-            <img src="/style/img/ipad.png" alt="">
-        </div>
-    </div>
-    <!-- /.row -->
-
-    <!--</div>-->
-    <!-- /.container -->
-
-</div>
-<!-- /.content-section-a -->
-
-<div class="content-section">
-
-    <!--<div class="container">-->
-
-    <div class="row">
-        <div class="medium-5 medium-offset-1 medium-push-6 small-12 columns lead">
-            <h3 class="section-heading">Offline Sync</h3>
-            A good Internet connection is great and all, but it sucks when a bad one disrupts a good flow of
-            tracking. Traveling means all kinds of surprises can reveal themselves
-            that don't all involve a Starbucks.
-            Add your transactions in the mobile app offline when those days come, and we'll
-            keep them in mind until you are connected again and sync up for you then.
-        </div>
-        <div class="medium-5 medium-pull-6 small-12 columns">
-            <img src="/style/img/dog.png" alt="">
-        </div>
-    </div>
-    <!-- /.row -->
-
-    <!--</div>-->
-    <!-- /.container -->
-
-</div>
-<!-- /.content-section -->
-
-<div class="content-section">
-    <div class="container clearfix">
-        <div class="row">
-            <div class="medium-5 medium-offset-1 small-12 columns lead">
-                <h3 class="section-heading">Collaborate</h3>
-                Sharing is caring. If you are traveling with someone, share your tracking projects with
-                them and collaborate on tracking your money. More ideas more possibilities.
-            </div>
-            <div class="medium-5 medium-offset-1 small-12 columns">
-                <img class="img-responsive" src="/style/img/phones.png" alt="">
-            </div>
-        </div>
-        <!-- /.row -->
-
-    </div>
-    <!-- /.container -->
-
-</div>
-<!-- /.content-section-a -->
-
-<div class="content-section">
-    <div class="container clearfix text-center">
-        <h3 class="section-heading">At a glance</h3>
-        <div class="row small-up-2 medium-up-3">
-            <div class="column">
-                <h4><small>Tags</small></h4>
-                <small>
-                    Add context to your transactions with tags.
-                    Use them to build graphs and develop your own way of understanding your habits.
-                </small>
-            </div>
-            <div class="column">
-                <h4><small>Currencies</small></h4>
-                <small>
-                    Traveling goes hand in hand with cash in all currencies.
-                    Choose one that makes you happy, and we'll convert all local currencies to your chosen one.
-                </small>
-            </div>
-            <!--<div class="column">-->
-                <!--<h4><small>Use Offline</small></h4>-->
-                <!--<small>-->
-                    <!--No internet access? No problem, just use the mobile app to do what you need to do offline.-->
-                    <!--We'll sync up with you when you get a connection.-->
-                <!--</small>-->
-            <!--</div>-->
-            <div class="column">
-                <h4><small>No Passwords</small></h4>
-                <small>
-                    Forget passwords, there's already way too many in this world. Sign in with your email,
-                    or social media account and you're good to go.
-                </small>
-            </div>
-            <!--<div class="column">-->
-                <!--<h4><small>Projects</small></h4>-->
-                <!--<small>-->
-                    <!--Create projects to separate different tracking for different use cases, whatever they-->
-                    <!--might be. Maybe you have a shared part with someone, and your own secret one on the side?-->
-                    <!--No judgement, just track away!-->
-                <!--</small>-->
-            <!--</div>-->
-            <div class="column">
-                <h4><small>Goals</small></h4>
-                <small>
-                    Setup economic goals that you want to achieve, and follow your progress in your dashboards.
-                </small>
-            </div>
-            <!--<div class="column">-->
-                <!--<h4><small>Share</small></h4>-->
-                <!--<small>-->
-                    <!--Share budgets and dashboards with your friends and family and collaborate on your expense tracking.-->
-                <!--</small>-->
-            <!--</div>-->
-            <div class="column">
-                <h4><small>Dashboards</small></h4>
-                <small>
-                    Create your personal dashboard for your budgets with the information that you are interested in via tags. Or just use the default graphs.
-                </small>
-            </div>
-            <div class="column">
-                <h4><small>Time periods</small></h4>
-                <small>
-                    No month-only here, every traveler is different. View your finances in time
-                    periods that matches your life, or maybe just your mood that day.
-                </small>
-            </div>
-        </div>
-        <!-- /.row -->
-
-    </div>
-    <!-- /.container -->
-</div>
-<!-- /.content-section -->
-
-<!--<a  name="contact"></a>-->
-<div class="gradient-top-down text-light">
-    <div class="intro-footer map map-white map-bottom">
-        <div class="container clearfix">
-            <!--<div>-->
-
-            <!--&lt;!&ndash;<div class="col-sm-4 col-sm-offset-4">&ndash;&gt;-->
-
-            <!--<h4 class="text-center">Subscribe to our newsletter</h4>-->
-            <!--<form id="form-footer" class="form-group row" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;">-->
-            <!--<div class="col-sm-5 col-sm-offset-3">-->
-            <!--<input type="text" name="email" class="form-control" placeholder="Your E-Mail" tabindex="3">-->
-            <!--</div>-->
-            <!--<div class="col-sm-4" style="float:left;">-->
-            <!--<button class="btn btn-info btn-md" type="submit"-->
-            <!--onclick="onSubscribe('subscribe-footer')" tabindex="4">-->
-            <!--Subscribe-->
-            <!--</button>-->
-            <!--</div>-->
-            <!--</form>-->
-            <!--&lt;!&ndash;</div>&ndash;&gt;-->
-            <!--<div id="subscribe-footer" class="text-center" style="height:1em;"></div>-->
-            <!--</div>-->
         </div>
         <!-- /.container -->
+    </div>
+    <!-- /.content-section -->
 
-        <!-- Footer -->
-        <footer>
-            <div class="container">
-                <p class="copyright text-light small">
-                    Copyright &copy; eponai 2016. All Rights Reserved
-                </p>
+    <!--<a  name="contact"></a>-->
+    <div class="gradient-top-down">
+        <div class="intro-footer map map-white map-bottom">
+            <div class="container clearfix">
+                <!--<div>-->
+
+                <!--&lt;!&ndash;<div class="col-sm-4 col-sm-offset-4">&ndash;&gt;-->
+
+                <!--<h4 class="text-center">Subscribe to our newsletter</h4>-->
+                <!--<form id="form-footer" class="form-group row" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;">-->
+                <!--<div class="col-sm-5 col-sm-offset-3">-->
+                <!--<input type="text" name="email" class="form-control" placeholder="Your E-Mail" tabindex="3">-->
+                <!--</div>-->
+                <!--<div class="col-sm-4" style="float:left;">-->
+                <!--<button class="btn btn-info btn-md" type="submit"-->
+                <!--onclick="onSubscribe('subscribe-footer')" tabindex="4">-->
+                <!--Subscribe-->
+                <!--</button>-->
+                <!--</div>-->
+                <!--</form>-->
+                <!--&lt;!&ndash;</div>&ndash;&gt;-->
+                <!--<div id="subscribe-footer" class="text-center" style="height:1em;"></div>-->
+                <!--</div>-->
             </div>
             <!-- /.container -->
-        </footer>
-    </div>
-</div>
-<!-- /.banner -->
 
+            <!-- Footer -->
+            <footer>
+                <!--<div class="container">-->
+                    <p class="copyright small">
+                        Copyright &copy; eponai 2016. All Rights Reserved
+                    </p>
+                <!--</div>-->
+                <!-- /.container -->
+            </footer>
+        </div>
+    </div>
+<!-- /.banner -->
+</div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
 <script type="text/javascript">
     function onSubscribe(elementId) {

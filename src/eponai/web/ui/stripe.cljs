@@ -107,42 +107,50 @@
                   query/stripe]} (om/props this)]
       (debug "StripeCheckout loaded: " checkout-loaded?)
       (html
-        (if-let [subscription (:stripe/subscription stripe)]
-          [:div.row.column.small-12.medium-6
-           (opts {:style {:margin "1em auto"}})
-           [:div.callout.clearfix
-            (str "Your account is active until " (f/to-str (:stripe.subscription/period-end subscription) "yyyyMMdd"))]]
-          [:div
-           [:h2
-            (opts {:style {:text-align "center"}})
-            "Select your plan"]
-           [:p
-            (opts {:style {:text-align "center"}})
-            "and get unlimited access to the app."]
-           [:hr.intro-divider]
+        (let [subscription (:stripe/subscription stripe)]
+          (if (= :active (:stripe.subscription/status subscription))
+            [:div.row.column.small-12.medium-6
+             (opts {:style {:margin "1em auto"}})
+             [:div.callout.clearfix
+              (str "Your account is active until " (f/to-str (:stripe.subscription/period-end subscription) "yyyyMMdd"))]]
+            [:div
 
-           (if checkout-loaded?
-             [:div#pricePlans
-              [:ul#plans
-               (plan-item this
-                          {:plan-name    "Monthly"
-                           :plan-price   8
-                           :plan-monthly 8
-                           :user-email   (:user/email current-user)
-                           :plan-id      "monthly"})
+             ;[:h2
+             ; (opts {:style {:text-align "center"}})
+             ; "Select your plan"]
+             [:div
+              (opts {:style {:text-align "center"}})
+              [:h4
 
-               (plan-item this
-                          {:plan-name    "3 months"
-                           :plan-price   21
-                           :plan-monthly 7
-                           :user-email   (:user/email current-user)})
+               "Unlimited app access"]
+              [:h5.subheader " - 30-day money back guarantee."]]
+             [:hr.intro-divider]
 
-               (plan-item this
-                          {:plan-name    "6 months"
-                           :plan-price   36
-                           :plan-monthly 6
-                           :user-email   (:user/email current-user)})]]
-             [:div.empty-message.text-center
-              [:i.fa.fa-spinner.fa-spin.fa-3x]])])))))
+             (if checkout-loaded?
+               [:div#pricePlans
+                [:ul#plans
+                 (plan-item this
+                            {:plan-name    "Monthly"
+                             :plan-price   8
+                             :plan-monthly 8
+                             :user-email   (:user/email current-user)
+                             :plan-id      "monthly"})
 
+                 (plan-item this
+                            {:plan-name    "3 months"
+                             :plan-price   21
+                             :plan-monthly 7
+                             :user-email   (:user/email current-user)})
+
+                 (plan-item this
+                            {:plan-name    "6 months"
+                             :plan-price   36
+                             :plan-monthly 6
+                             :user-email   (:user/email current-user)})]]
+               [:div.empty-message.text-center
+                [:i.fa.fa-spinner.fa-spin.fa-3x]])
+             [:div.row.column.small-12.medium-10
+              [:h5 "Cancelation Policy"]
+              [:p "You can cancel your subscription at any time. We will stop future charges of your card,
+              and the app will be available to you for the remaining subscription period."]]]))))))
 (def ->Payment (om/factory Payment))

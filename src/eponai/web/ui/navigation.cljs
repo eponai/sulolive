@@ -227,69 +227,70 @@
         [:div#sidebar
          (when expanded?
            {:class "expanded"})
-         [:div
-          [:a#navbar-brand
-           {:href (routes/key->route :route/home)}
-           [:strong
-            "JourMoney"]
-           [:small
-            " by eponai"]]
+         [:div.sidebar-menu.map.map-white.map-left
+          [:div
+           [:a#navbar-brand
+            {:href (routes/key->route :route/home)}
+            [:strong
+             "JourMoney"]
+            [:small
+             " by eponai"]]
 
-          [:div.sidebar-submenu
-           (when (and (= subscription-status :trialing)
-                      (:stripe.subscription/period-end subscription))
-             [:small.header
-              (str (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left on trial")])
+           [:div.sidebar-submenu
+            (when (and (= subscription-status :trialing)
+                       (:stripe.subscription/period-end subscription))
+              [:small.header
+               (str (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left on trial")])
 
-           (when-not (= subscription-status :active)
-             (utils/upgrade-button))]
+            (when-not (= subscription-status :active)
+              (utils/upgrade-button))]
 
-          [:div.sidebar-submenu#project-menu
-           [:strong.header "Projects"]
+           [:div.sidebar-submenu#project-menu
+            [:strong.header "Projects"]
 
-           (map
-             (fn [{project-uuid :project/uuid :as project}]
-               ;[:li
-               ; (opts {:key [project-uuid]})]
-               [:a.nav-link
-                {:key           (str project-uuid)
-                 :href          (routes/key->route :route/project->dashboard
-                                                   {:route-param/project-id (:db/id project)})
-                 :class         (cond
-                                  (= drop-target project-uuid)
-                                  "highlighted"
-                                  (= (:ui.component.project/uuid active-project) project-uuid)
-                                  "selected")
-                 :on-drag-over  #(utils/on-drag-transaction-over this project-uuid %)
-                 :on-drag-leave #(utils/on-drag-transaction-leave this %)
-                 :on-drop       #(utils/on-drop-transaction this project-uuid %)}
-                [:span.truncate (or (:project/name project) "Untitled")]
-                (when (and (:project/created-by project)
-                           (not (= (:user/uuid (:project/created-by project)) (:user/uuid current-user))))
-                  [:small " by " (:user/email (:project/created-by project))])])
-             all-projects)
+            (map
+              (fn [{project-uuid :project/uuid :as project}]
+                ;[:li
+                ; (opts {:key [project-uuid]})]
+                [:a.nav-link
+                 {:key           (str project-uuid)
+                  :href          (routes/key->route :route/project->dashboard
+                                                    {:route-param/project-id (:db/id project)})
+                  :class         (cond
+                                   (= drop-target project-uuid)
+                                   "highlighted"
+                                   (= (:ui.component.project/uuid active-project) project-uuid)
+                                   "selected")
+                  :on-drag-over  #(utils/on-drag-transaction-over this project-uuid %)
+                  :on-drag-leave #(utils/on-drag-transaction-leave this %)
+                  :on-drop       #(utils/on-drop-transaction this project-uuid %)}
+                 [:span.truncate (or (:project/name project) "Untitled")]
+                 (when (and (:project/created-by project)
+                            (not (= (:user/uuid (:project/created-by project)) (:user/uuid current-user))))
+                   [:small " by " (:user/email (:project/created-by project))])])
+              all-projects)
 
-           ;[:li]
+            ;[:li]
+            [:a.nav-link
+             {:on-click #(om/update-state! this assoc :new-project? true)}
+             [:i.fa.fa-plus.fa-fw
+              (opts {:style {:padding 0}})]
+             [:span.small-caps "New..."]]]]
+
+          [:div.sidebar-submenu.hidden-medium-up
            [:a.nav-link
-            {:on-click #(om/update-state! this assoc :new-project? true)}
-            [:i.fa.fa-plus.fa-fw
-             (opts {:style {:padding 0}})]
-            [:span.small-caps "New..."]]]]
+            (opts {:href (routes/key->route :route/settings)})
+            [:i.fa.fa-gear
+             (opts {:style {:display :inline
+                            :padding "0.5em"}})]
+            "Settings"]
 
-         [:div.sidebar-submenu.hidden-medium-up
-          [:a.nav-link
-           (opts {:href     (routes/key->route :route/settings)})
-           [:i.fa.fa-gear
-            (opts {:style {:display :inline
-                           :padding "0.5em"}})]
-           "Settings"]
-
-          [:a.nav-link
-           (opts {:href     (routes/key->route :route/api->logout)})
-           "Sign Out"]]
-         [:footer.footer
-          [:p.copyright.small.text-light
-           "Copyright © eponai 2016. All Rights Reserved"]]
+           [:a.nav-link
+            (opts {:href (routes/key->route :route/api->logout)})
+            "Sign Out"]]
+          [:footer.footer
+           [:p.copyright.small.text-light
+            "Copyright © eponai 2016. All Rights Reserved"]]]
 
          (when new-project?
            (let [on-close #(om/update-state! this assoc :new-project? false)]
