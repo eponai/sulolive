@@ -4,6 +4,7 @@
     [cljs-time.coerce :as coerce]
     [eponai.client.ui :refer-macros [opts]]
     [eponai.common.format :as format]
+    [eponai.common.format.date :as date]
     [eponai.web.ui.datepicker :refer [->Datepicker]]
     [eponai.web.ui.utils :as utils]
     [om.next :as om :refer-macros [defui]]
@@ -62,13 +63,7 @@
           input-filter (:filter (om/get-state this))]
 
       (when on-change
-        (on-change (cond-> input-filter
-
-                           (some? (:filter/start-date input-filter))
-                           (update :filter/start-date format/date->ymd-string)
-
-                           (some? (:filter/end-date input-filter))
-                           (update :filter/end-date format/date->ymd-string))))))
+        (on-change input-filter))))
 
   (render [this]
     (let [{:keys [filter type]} (om/get-state this)]

@@ -6,6 +6,7 @@
             [eponai.mobile.components :refer [view text text-input touchable-highlight picker picker-item date-picker-ios scroll-view activity-indicator-ios]]
             [eponai.mobile.ios.style :refer [styles]]
             [eponai.common.format :as f]
+            [eponai.common.format.date :as date]
             [om.next :as om :refer-macros [defui]]
             [taoensso.timbre :refer-macros [debug error]]))
 
@@ -55,9 +56,11 @@
        :input-tag          {:tag/name ""}
        :input-transaction  (merge
                              {:transaction/amount   "0.00"
-                              :transaction/date     {:date/ymd (-> (js/Date.)
-                                                                   (f/js-date->utc-ymd-date)
-                                                                   (f/date->ymd-string))}
+                              :transaction/date     (date/date-map (date/today))
+                              ;{:date/ymd (-> (js/Date.)
+                              ;                                     (f/js-date->utc-ymd-date)
+                              ;                                     (f/date->ymd-string))
+                              ; }
                               :transaction/tags     #{}
                               :transaction/currency {:currency/code (-> all-currencies first :currency/code)}
                               :transaction/project   {:project/uuid (-> all-projects first :project/uuid)}

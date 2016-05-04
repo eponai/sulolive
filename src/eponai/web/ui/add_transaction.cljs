@@ -48,7 +48,8 @@
                              (assoc :mutation-uuid (d/squuid))
                              (assoc :transaction/uuid (d/squuid))
                              (assoc :transaction/created-at (.getTime (js/Date.)))
-                             (update :transaction/date (fn [d] {:date/ymd (f/date->ymd-string d)}))))
+                             ;(update :transaction/date (fn [d] {:date/ymd (f/date->ymd-string d)}))
+                             ))
                       :query/transactions
                       :query/dashboard])))
 

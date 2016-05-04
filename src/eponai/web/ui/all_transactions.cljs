@@ -8,6 +8,7 @@
             [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
             [eponai.web.ui.utils :as utils]
             [eponai.common.format :as format]
+            [eponai.common.format.date :as date]
             [clojure.data :as clj.data]
             [garden.core :refer [css]]
             [goog.string :as gstring]
@@ -153,12 +154,11 @@
            (->Datepicker
              {:key         [uuid]
               :input-only? true
-              :value       (format/ymd-string->js-date
-                             (:date/ymd date))
-              :on-change   #(om/update-state!
-                             this update-in [:input-transaction :transaction/date]
-                             (fn [date]
-                               (assoc (into {} date) :date/ymd (format/date->ymd-string %))))})]
+              :value     (format/ymd-string->js-date
+                           (:date/ymd date))
+              :on-change #(om/update-state!
+                           this assoc-in [:input-transaction :transaction/date :date/ymd]
+                           (date/date-map %))})]
           [:div.columns.small-8.medium-3.large-2
            [:input
             {:value     (or amount "")

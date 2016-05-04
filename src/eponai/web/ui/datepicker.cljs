@@ -2,6 +2,7 @@
   (:require [om.next :as om :refer-macros [defui]]
             [eponai.client.ui :refer-macros [style opts]]
             [eponai.common.format :as format]
+            [eponai.common.format.date :as date]
             [clojure.string :as s]
             [cljsjs.pikaday]
             [cljsjs.react.dom]
@@ -20,14 +21,13 @@
        (js/ReactDOM.findDOMNode)))
 
 (defn set-date-if-changed [this new-date old-date]
-  (let [new-time (when new-date (.getTime new-date))
-        old-time (when old-date (.getTime old-date))]
-    (when (not= new-time old-time)
-      (if new-date
+  (when (not= new-date old-date)
+    (if new-date
+      (let [new-js-date (date/js-date new-date)]
         ;; pass true to avoid calling picker's :onSelect
-        (some-> (om/get-state this) ::picker deref (.setDate new-date true))
-        ;; workaround for pikaday not clearing value when date set to falsey
-        (aset (get-pikaday-dom-node this) "value" "")))))
+        (some-> (om/get-state this) ::picker deref (.setDate new-js-date true)))
+      ;; workaround for pikaday not clearing value when date set to falsey
+      (aset (get-pikaday-dom-node this) "value" ""))))
 
 (defn on-input-field-change
   "Fire our on-change function when the input field changes.
@@ -39,7 +39,7 @@
          text (.-value target)
          [start end] [(aget target "selectionStart") (aget target "selectionEnd")]
          fire-on-change #(let [date (format/random-string->js-date text)]
-                          (on-change date))]
+                          (on-change ()))]
      (condp = (.-keyCode e)
        goog.events.KeyCodes.ENTER (fire-on-change)
        ;; When we're clearing the whole text.
@@ -62,7 +62,7 @@
                    #js {:field    (get-pikaday-dom-node this)
                         :format   "D MMM YYYY"
                         :onSelect (fn [d]
-                                    (on-change (format/js-date->utc-ymd-date d)))
+                                    (on-change (date/date-map d)))
                         :minDate  min-date})]
       (reset! (-> this om/get-state ::picker) picker)
       (set-date-if-changed this value nil)))
