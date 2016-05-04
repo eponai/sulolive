@@ -73,8 +73,8 @@
 
 (defn- send-email [address subject body]
   (debug "Sending email... ")
-  (let [content {:from    "info@gmail.com"
-                 :to      "info@jourmoney.com"
+  (let [content {:from    "info@jourmoney.com"
+                 :to      address
                  :subject subject
                  :body    body}
         status (email/send-message (smtp) content)]
