@@ -8,6 +8,7 @@
             [cljsjs.react.dom]
             [sablono.core :refer-macros [html]]
             [garden.core :refer [css]]
+            [taoensso.timbre :refer-macros [debug]]
             [goog.events.KeyCodes]))
 
 ;; Wrapper inspired by:
@@ -38,8 +39,7 @@
     (let [target (.-target e)
          text (.-value target)
          [start end] [(aget target "selectionStart") (aget target "selectionEnd")]
-         fire-on-change #(let [date (date/js-date text)]
-                          (on-change (date/date-map date)))]
+         fire-on-change #(on-change (date/date-map text))]
      (condp = (.-keyCode e)
        goog.events.KeyCodes.ENTER (fire-on-change)
        ;; When we're clearing the whole text.
@@ -62,6 +62,8 @@
                    #js {:field    (get-pikaday-dom-node this)
                         :format   "D MMM YYYY"
                         :onSelect (fn [d]
+                                    (debug "Filter: selected date " d )
+                                    (debug "Filter: formatted date: " (date/date-map d))
                                     (on-change (date/date-map d)))
                         :minDate  min-date})]
       (reset! (-> this om/get-state ::picker) picker)

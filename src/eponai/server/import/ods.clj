@@ -19,7 +19,8 @@
             [clj-time.format :as f]
             [clj-time.coerce :as time-coerce]
             [eponai.common.format :as eponai.format]
-            [eponai.server.import.ods.tags :as ods.tags])
+            [eponai.server.import.ods.tags :as ods.tags]
+            [eponai.common.format.date :as date])
   (:import [java.util.zip GZIPInputStream]
            [java.io InputStreamReader]))
 
@@ -205,7 +206,7 @@
   (letfn [(html-t->jourmoney->t [t]
             (let [date (f/parse html-date (get t "Date"))
                   entity (-> (parse-amount currencies t)
-                             (assoc :transaction/date {:date/ymd (f/unparse eponai.format/ymd-date-formatter date)}
+                             (assoc :transaction/date (date/date-map date)
                                     :transaction/title (s/trim (get t "Product"))))]
               (assoc entity :transaction/tags (ods.tags/generate-tags entity)
                             :transaction/type :transaction.type/expense

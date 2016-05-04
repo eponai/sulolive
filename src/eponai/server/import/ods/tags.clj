@@ -9,7 +9,8 @@
             [clj-time.core :as time]
             [clj-time.periodic :as time-period]
             [datascript.core :as d]
-            [eponai.common.format :as eponai.format]))
+            [eponai.common.format :as eponai.format]
+            [eponai.common.format.date :as date]))
 
 (declare title->tags)
 (declare locations)
@@ -30,8 +31,9 @@
   (mapcat (fn [{:keys [country city from to]}]
             (assert (and country city from to)
                     {:co country :ci city :from from :to to})
-            (map (fn [d] {:country country :city city
-                          :date/ymd (f/unparse eponai.format/ymd-date-formatter d)})
+            (map (fn [d] {:country  country
+                          :city     city
+                          :date/ymd (:date/ymd (date/date-map d))})
                  (day-range from to))) locations))
 
 (def locations-db (memoize

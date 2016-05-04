@@ -1,6 +1,6 @@
 (ns eponai.common.report
   (:require
-    [eponai.common.format.date :as f]
+    [eponai.common.format.date :as date]
     #?(:clj [taoensso.timbre :refer [debug]]
        :cljs [taoensso.timbre :refer-macros [debug]])
     #?(:clj
@@ -41,10 +41,10 @@
 (defn zero-padding-to-time-series-data [values & [opts]]
   (let [by-timestamp (group-by :name values)
         start (or (:start opts) (c/from-long (apply min (keys by-timestamp))))
-        end (or (:end opts) (c/to-date-time (t/plus (f/today) (t/days 1)))) ;;Use tomorrow as end cause we want to include today.
+        end (or (:end opts) (c/to-date-time (t/plus (date/today) (t/days 1)))) ;;Use tomorrow as end cause we want to include today.
         time-range (p/periodic-seq start end (or (:step opts) (t/days 1)))]
     (map (fn [date]
-           (let [t (f/date->long date)
+           (let [t (date/date->long date)
                  [add-value] (get by-timestamp t)]
              (or add-value {:name t :value 0})))
          time-range)))
@@ -176,7 +176,7 @@
         {:keys [cycle/start
                 cycle/period
                 cycle/period-count]} cycle
-        today-long (f/date->long (t/today))
+        today-long (date/date->long (date/today))
         txs-by-timestamp (group-by #(:date/timestamp (:transaction/date %)) transactions)
         today-transactions (or (get txs-by-timestamp today-long) [])]
     [{:date   today-long
@@ -196,10 +196,10 @@
                 cycle/period-count]} cycle]
     ;(debug "Goal with txs: " transactions)
     (let [by-month (group-by #(let [date (:transaction/date %)]
-                               (f/month->long (t/date-time (:date/year date) (:date/month date)))) transactions)
+                               (date/month->long (t/date-time (:date/year date) (:date/month date)))) transactions)
           sum-by-month (map (fn [[k v]]
                               (let [month (c/from-long k)
-                                    end (min (f/date->long (f/today)) (f/date->long (t/last-day-of-the-month month)))
+                                    end (min (date/date->long (date/today)) (date/date->long (t/last-day-of-the-month month)))
                                     values (zero-padding-to-time-series-data (sum :transaction/date v {}) {:start month
                                                                                                            :end   (t/plus (c/from-long end) (t/days 1))})
                                     #?@(:clj  [avg (with-precision 10 (/ value (count values)))]
@@ -215,7 +215,7 @@
                                                     (+ tot v))
                                              output))
                                  :guide  [{:name k :value 0}
-                                          {:name (f/date->long (t/last-day-of-the-month month)) :value value}]}))
+                                          {:name (date/date->long (t/last-day-of-the-month month)) :value value}]}))
                                by-month)]
       (sort-by :date sum-by-month))))
 

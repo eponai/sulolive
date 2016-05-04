@@ -193,6 +193,7 @@
 
   (let [date-time (date/date->long date)
         filter-sym (gensym "?time-filter")]
+    (debug "Transaction-date-filter: " date-time " symbol: " compare)
     {:where   ['[?e :transaction/date ?date]
                '[?date :date/timestamp ?timestamp]
                `[(~compare ~'?timestamp ~filter-sym)]]

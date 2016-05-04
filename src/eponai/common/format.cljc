@@ -2,14 +2,6 @@
   (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
             [clojure.set :refer [rename-keys]]
     [eponai.common.format.date :as date]
-    #?@(:clj  [
-            [clj-time.core :as t]
-            [clj-time.format :as f]
-            [clj-time.coerce :as c]]
-        :cljs [[cljs-time.core :as t]
-               [cljs-time.format :as f]
-               [cljs-time.coerce :as c]
-               [goog.date.DateTime]])
     #?(:clj
             [datomic.api :as d]
        :cljs [datascript.core :as d])))
@@ -70,7 +62,7 @@
 ;  {:pre [(string? ymd)]}
 ;  (f/parse ymd))
 
-(def ymd-date-formatter (f/formatters :date))
+;(def ymd-date-formatter (f/formatters :date))
 
 ;(defn date->ymd-string
 ;  "Takes a date and returns a string for that date of the form yyyy-MM-dd."
@@ -101,9 +93,9 @@
   Returns a map representing a project entity"
   ([user-dbid & [opts]]
    (cond->
-     {:db/id             (d/tempid :db.part/user)
+     {:db/id              (d/tempid :db.part/user)
       :project/uuid       (or (:project/uuid opts) (d/squuid))
-      :project/created-at (or (:project/created-at opts) (c/to-long (t/now)))
+      :project/created-at (or (:project/created-at opts) (date/date-time->long (date/now)))
       :project/name       (or (:project/name opts) "untitled")}
      user-dbid
      (->
@@ -315,9 +307,9 @@
                         (->> (reduce-kv (fn [m k v]
                                           (assoc m k (condp = k
                                                        :transaction/amount (str->number v)
-                                                       :transaction/currency (assoc v :db/id (d/tempid :db.part/user))
-                                                       :transaction/type (assoc v :db/id (d/tempid :db.part/user))
-                                                       :transaction/date (add-tempid (date/date-map (:date/ymd v)))
+                                                       :transaction/currency (add-tempid v)
+                                                       :transaction/type (add-tempid v)
+                                                       :transaction/date (add-tempid v)
                                                        :transaction/project {:project/uuid (str->uuid (:project/uuid v))}
                                                        v)))
                                         {})))]

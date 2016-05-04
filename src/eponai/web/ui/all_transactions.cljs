@@ -156,7 +156,7 @@
               :input-only? true
               :value     date
               :on-change #(om/update-state!
-                           this assoc-in [:input-transaction :transaction/date :date/ymd]
+                           this assoc-in [:input-transaction :transaction/date]
                            (date/date-map %))})]
           [:div.columns.small-8.medium-3.large-2
            [:input
@@ -290,6 +290,7 @@
 
   (filter [this]
     (let [{:keys [date-filter tag-filter]} (om/get-state this)]
+      (debug "Using filter: " (merge tag-filter date-filter))
       (merge tag-filter date-filter)))
 
   (render [this]

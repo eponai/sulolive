@@ -6,7 +6,8 @@
        :cljs [cljs-time.coerce :as c])
     #?(:clj [clj-time.format :as f]
        :cljs [cljs-time.format :as f])
-    #?(:cljs [goog.date.DateTime]))
+    #?(:cljs [goog.date.DateTime])
+    [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug]])
   (:import #?(:clj (org.joda.time DateTime))))
 
 (defn- entity->date-time
@@ -16,6 +17,7 @@
   If neither :date/timestamp or :date/ymd exists in the map, ExceptionInfo is thrown."
   [e]
   (cond
+
 
     ;; Parse a UTC long (in milliseconds) into a UTC DateTime. The time for the date will just be 000000.
     (some? (:date/timestamp e))
@@ -34,10 +36,6 @@
   #?(:cljs (instance? goog.date.DateTime d)
      :clj (instance? DateTime d)))
 
-(defn- js-date->date-time [js-date]
-  (let [local-date (c/to-local-date js-date)]
-    (t/date-time (t/year local-date) (t/month local-date) (t/day local-date))))
-
 (defn date-time
   "Return DateTime instance formatting an input object that's one of the following:
 
@@ -55,16 +53,20 @@
     ;; This is a date entity that we use in our DB.
     (entity->date-time obj)
 
+    (number? obj)
+    (c/from-long obj)
+
     ;; Any string representing a date.
     (string? obj)
-    (some-> obj
-            f/parse)
+    (do
+      (some-> obj
+              f/parse))
 
     ;; A JS date.
     #?@(:cljs [(instance? js/Date obj)
-               (js-date->date-time obj)])
+               (t/date-time (.getFullYear obj) (inc (.getMonth obj)) (.getDate obj))])
 
-    ;; We're passed a clj-time/cljs-time date instance. Create a DateTime instance using only year/month/day to get rid of timezone issues.
+    ;; We already have a clj-time/cljs-time DateTime instance.
     (date-time? obj)
     obj
 
@@ -85,23 +87,30 @@
   Takes any input as date-time accepts, as that will be called in this function."
   [obj]
   (let [d (date-time obj)]
-    {:date/ymd       (f/unparse-local (f/formatters :date) d)
+    {:date/ymd       (f/unparse (f/formatters :date) d)
      :date/timestamp (c/to-long d)
      :date/year      (t/year d)
      :date/month     (t/month d)
      :date/day       (t/day d)}))
 
-
 (defn today []
   (let [t (t/today)]
     (t/date-time (t/year t) (t/month t) (t/day t))))
 
-(defn date->long [obj]
+(defn now []
+  (t/now))
+
+(defn date-time->long [obj]
   (let [d (date-time obj)]
-    (c/to-long (t/date-time (t/year d) (t/month d) (t/day d)))))
+    (c/to-long d)))
+
+(defn date->long [obj]
+  (if (some? (:date/timestamp obj))
+    (:date/timestamp obj)
+    (let [d (date-time obj)]
+      (c/to-long (t/date-time (t/year d) (t/month d) (t/day d))))))
 
 (defn month->long [obj]
   (let [d (date-time obj)]
     (c/to-long (t/date-time (t/year d) (t/month d)))))
 
-(defn to-long [])

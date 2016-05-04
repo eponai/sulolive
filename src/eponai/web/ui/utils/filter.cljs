@@ -14,9 +14,33 @@
 
 (defui DateFilter
   Object
+  (init-filters [this filters]
+    (debug "Will init filter: " filters)
+    (cond
+      (some? (:filter/last-x-days filters))
+      {:filter filters
+       :type (cond (= 30 (:filter/last-x-days filters))
+                   :last-30-days
+                   (= 7 (:filter/last-x-days filters))
+                   :last-7-days)}
+
+      (or (:filter/end-date filters)
+          (:filter/start-date filters))
+      {:filter filters
+       :type   :date-range}
+
+      :else
+      {:filter filters
+       :type :all-time}))
+
   (initLocalState [this]
     (let [{:keys [filter]} (om/props this)]
-      {:filter filter}))
+      (let [new-filters (.init-filters this filter)]
+        (debug "Init filter " new-filters)
+        new-filters)))
+
+  (componentWillReceiveProps [this new-props]
+    (om/set-state! this (.init-filters this (:filter new-props))))
 
   (set-this-month-filter [this]
     (let [today (time/today)
@@ -27,19 +51,27 @@
                         #(-> %
                              (update :filter dissoc :filter/end-date :filter/last-x-days)
                              (assoc-in [:filter :filter/start-date] start-date)))
-      (.should-notify-change this)))
+      ;(.should-notify-change this)
+      ))
 
   (set-last-x-days-filter [this span]
     (om/update-state! this
                       #(-> %
                            (update :filter dissoc :filter/end-date :filter/start-date)
                            (assoc-in [:filter :filter/last-x-days] span)))
-    (.should-notify-change this))
+    ;(.should-notify-change this)
+    )
 
   (reset-date-filters [this]
     (om/update-state! this
                       #(update % :filter dissoc :filter/start-date :filter/end-date :filter/last-x-days))
-    (.should-notify-change this))
+    ;(.should-notify-change this)
+    )
+
+  (set-date-range [this date-filter]
+    (om/update-state! this update :filter merge date-filter)
+    ;(.should-notify-change this)
+    )
 
   (update-date-filter [this value]
     (let [time-type (keyword (cljs.reader/read-string value))]
@@ -53,7 +85,7 @@
         (.set-last-x-days-filter this 30)
         (= time-type :this-month)
         (.set-this-month-filter this)
-        true
+        :else
         (om/update-state! this #(update % :filter dissoc :filter/last-x-days)))
       (om/update-state! this assoc :type time-type)
       (.should-notify-change this)))
@@ -74,7 +106,8 @@
 
           [:div.column
            [:select
-            (opts {:on-change #(.update-date-filter this (.-value (.-target %)))})
+            (opts {:value (name type)
+                   :on-change #(.update-date-filter this (.-value (.-target %)))})
             [:option
              {:value (name :all-time)}
              "all time"]
@@ -98,14 +131,18 @@
                       :value       (:filter/start-date filter)
                       :on-change   #(do
                                      (debug "Filter: Start-date: " %)
-                                     (om/update-state! this assoc-in [:filter :filter/start-date] %))}))])
+                                     (.set-date-range this {:filter/start-date %})
+                                     (.should-notify-change this))}))])
           (when (= :date-range type)
             [:div.column
              (->Datepicker
                (opts {:key         ["To date..."]
                       :placeholder "To date..."
                       :value       (:filter/end-date filter)
-                      :on-change   #(om/update-state! this assoc-in [:filter :filter/end-date] %)
+                      :on-change   #(do
+                                     (debug "Filter: Update date: " %)
+                                     (.set-date-range this {:filter/end-date %})
+                                     (.should-notify-change this))
                       :min-date    (:filter/start-date filter)}))])]]))))
 
 (def ->DateFilter (om/factory DateFilter))

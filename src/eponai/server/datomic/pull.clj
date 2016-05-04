@@ -32,7 +32,9 @@
      :widget/width
      :widget/height
      {:widget/filter [{:filter/include-tags [:tag/name]}
-                      {:filter/exclude-tags [:tag/name]}]}
+                      {:filter/exclude-tags [:tag/name]}
+                      {:filter/start-date [:date/timestamp]}
+                      {:filter/end-date [:date/timestamp]}]}
      {:widget/report [:report/uuid
                       {:report/track [{:track/functions [*]}]}
                       {:report/goal [*
