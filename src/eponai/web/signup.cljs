@@ -47,12 +47,10 @@
                   :type        :email
                   :placeholder "youremail@example.com"})]
 
-          [:p
-           (opts {:class "text-success small"
-                  :style {:height "1em"}})
-           (if verification-sent
-             "Check your inbox for a fancy sign in link!"
-             "")]
+          [:div
+           (opts {:style {:height "2em"}})
+           (when verification-sent
+             [:small.text-success "Check your inbox for a fancy sign in link!"])]
 
           [:div
            [:button
