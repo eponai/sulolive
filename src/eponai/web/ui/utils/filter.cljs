@@ -41,7 +41,8 @@
     (.should-notify-change this))
 
   (update-date-filter [this value]
-    (let [time-type (cljs.reader/read-string value)]
+    (let [time-type (keyword (cljs.reader/read-string value))]
+      (debug "Filter: Updateing date filter: " value)
       (cond
         (= time-type :all-time)
         (.reset-date-filters this)
@@ -71,6 +72,7 @@
 
   (render [this]
     (let [{:keys [filter type]} (om/get-state this)]
+      (debug "Filter: state: " filter)
       (html
         [:div.filters
          [:div.row.small-up-1.medium-up-3
@@ -79,19 +81,19 @@
            [:select
             (opts {:on-change #(.update-date-filter this (.-value (.-target %)))})
             [:option
-             {:value :all-time}
+             {:value (name :all-time)}
              "all time"]
             [:option
-             {:value :this-month}
+             {:value (name :this-month)}
              "this month"]
             [:option
-             {:value :last-7-days}
+             {:value (name :last-7-days)}
              "last 7 days"]
             [:option
-             {:value :last-30-days}
+             {:value (name :last-30-days)}
              "last 30 days"]
             [:option
-             {:value :date-range}
+             {:value (name :date-range)}
              "custom..."]]]
           (when (= :date-range type)
             [:div.column
@@ -99,7 +101,9 @@
                (opts {:key         ["From date..."]
                       :placeholder "From date..."
                       :value       (:filter/start-date filter)
-                      :on-change   #(om/update-state! this assoc-in [:filter :filter/start-date] %)}))])
+                      :on-change   #(do
+                                     (debug "Filter: Start-date: " %)
+                                     (om/update-state! this assoc-in [:filter :filter/start-date] %))}))])
           (when (= :date-range type)
             [:div.column
              (->Datepicker
