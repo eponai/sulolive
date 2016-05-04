@@ -39,4 +39,4 @@
 
 (defmethod read :query/root-component
   [{:keys [db query]} _ _]
-  (read/read-entity-by-key db query [:ui/component :ui.component/root]))
+  (read/read-entity-by-key db nil [:ui/component :ui.component/root]))

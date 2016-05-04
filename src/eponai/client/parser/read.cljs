@@ -26,7 +26,7 @@
   (let [e (d/entity db key)]
     {:value (cond
               (nil? e) e
-              query (into {:db/id (:db/id e)} e)
+              query (d/pull db '[*] (:db/id e))
               :else (d/touch e))}))
 
 (defmethod read :ui/component

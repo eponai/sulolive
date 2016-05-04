@@ -151,13 +151,14 @@
           [:div.columns.small-12.medium-3.large-2
            (opts {:key [uuid]})
            (->Datepicker
-             {:key       [uuid]
+             {:key         [uuid]
               :input-only? true
-              :value     (format/ymd-string->js-date
-                           (:date/ymd date))
-              :on-change #(om/update-state!
-                           this assoc-in [:input-transaction :transaction/date :date/ymd]
-                           (format/date->ymd-string %))})]
+              :value       (format/ymd-string->js-date
+                             (:date/ymd date))
+              :on-change   #(om/update-state!
+                             this update-in [:input-transaction :transaction/date]
+                             (fn [date]
+                               (assoc (into {} date) :date/ymd (format/date->ymd-string %))))})]
           [:div.columns.small-8.medium-3.large-2
            [:input
             {:value     (or amount "")
@@ -167,7 +168,9 @@
           [:div.columns.small-4.medium-2.large-1
            [:select
             {:value     (:currency/code currency)
-             :on-change #(om/update-state! this assoc-in [:input-transaction :transaction/currency :currency/code] (.-value (.-target %)))}
+             :on-change #(om/update-state! this update-in [:input-transaction :transaction/currency]
+                                           (fn [curr]
+                                             (assoc (into {} curr) :currency/code (.-value (.-target %)))))}
             (map-all
               currencies
               (fn [c]
@@ -193,9 +196,8 @@
            (when add-tag?
              [:div
               (utils/click-outside-target #(om/update-state! this assoc :add-tag? false))
-              [:ul.dropdown-menu
-               (opts {:style {:position :absolute}})
-               [:li
+              [:div.menu.dropdown
+               [:div
                 (utils/tag-input
                   {:input-tag       input-tag
                    :on-change       #(om/update-state! this assoc :input-tag %)
@@ -293,7 +295,7 @@
 
   (render [this]
     (let [{transactions          :query/transactions
-           currencies :query/all-currencies
+           currencies            :query/all-currencies
            user                  :query/current-user
            sel-transaction-props :query/selected-transaction
            add-transaction       :proxy/add-transaction} (om/props this)
