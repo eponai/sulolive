@@ -195,13 +195,11 @@
 (defn data-filter
   [input & opts]
   (debug "Doing data filter: " input)
-  (let [filter-value-format (fn [k v]
-                              (add-tempid v))
-        clean-filters (reduce
+  (let [clean-filters (reduce
                         (fn [m [k v]]
-                          (let [ent (filter-value-format k v)]
+                          (let [ent (add-tempid v)]
                             ;; Clear up and remove any empty filters, we don't want to insert nil in datomic.
-                            (if (seq ent)
+                            (if (some? ent)
                               (assoc m k ent)
                               m)))
                         {}

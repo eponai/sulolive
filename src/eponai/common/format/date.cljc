@@ -1,5 +1,6 @@
 (ns eponai.common.format.date
   (:require
+    #?(:cljs [datascript.impl.entity :as entity])
     #?(:clj [clj-time.core :as t]
        :cljs [cljs-time.core :as t])
     #?(:clj [clj-time.coerce :as c]
@@ -8,7 +9,9 @@
        :cljs [cljs-time.format :as f])
     #?(:cljs [goog.date.DateTime])
     [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug]])
-  (:import #?(:clj (org.joda.time DateTime))))
+  (:import
+    #?(:clj (org.joda.time DateTime))
+    #?(:clj (datomic.query EntityMap))))
 
 (defn- entity->date-time
   "Return DateTime instance given a date entity map.
@@ -17,8 +20,6 @@
   If neither :date/timestamp or :date/ymd exists in the map, ExceptionInfo is thrown."
   [e]
   (cond
-
-
     ;; Parse a UTC long (in milliseconds) into a UTC DateTime. The time for the date will just be 000000.
     (some? (:date/timestamp e))
     (c/from-long (:date/timestamp e))
@@ -36,6 +37,10 @@
   #?(:cljs (instance? goog.date.DateTime d)
      :clj (instance? DateTime d)))
 
+(defn entity-map? [obj]
+  #?(:cljs (entity/entity? obj)
+     :clj (instance? EntityMap obj)))
+
 (defn date-time
   "Return DateTime instance formatting an input object that's one of the following:
 
@@ -49,7 +54,8 @@
   This function is an attempt to those cases and aligns the bahavior on both sides. Always use this function when creating or formatting dates."
   [obj]
   (cond
-    (map? obj)
+    (or (map? obj)
+        (entity-map? obj))
     ;; This is a date entity that we use in our DB.
     (entity->date-time obj)
 
@@ -97,8 +103,15 @@
   (let [t (t/today)]
     (t/date-time (t/year t) (t/month t) (t/day t))))
 
+(defn first-day-of-this-month []
+  (c/to-date-time (t/first-day-of-the-month (today))))
+
 (defn now []
   (t/now))
+
+(defn days-ago [n]
+  (let [t (today)]
+    (t/minus t (t/days n))))
 
 (defn date-time->long [obj]
   (let [d (date-time obj)]

@@ -1,9 +1,6 @@
 (ns eponai.web.ui.utils.filter
   (:require
-    [cljs-time.core :as time]
-    [cljs-time.coerce :as coerce]
     [eponai.client.ui :refer-macros [opts]]
-    [eponai.common.format :as format]
     [eponai.common.format.date :as date]
     [eponai.web.ui.datepicker :refer [->Datepicker]]
     [eponai.web.ui.utils :as utils]
@@ -14,8 +11,7 @@
 
 (defui DateFilter
   Object
-  (init-filters [this filters]
-    (debug "Will init filter: " filters)
+  (init-filters [_ filters]
     (cond
       (some? (:filter/last-x-days filters))
       {:filter filters
@@ -35,47 +31,32 @@
 
   (initLocalState [this]
     (let [{:keys [filter]} (om/props this)]
-      (let [new-filters (.init-filters this filter)]
-        (debug "Init filter " new-filters)
-        new-filters)))
+      (.init-filters this filter)))
 
   (componentWillReceiveProps [this new-props]
     (om/set-state! this (.init-filters this (:filter new-props))))
 
   (set-this-month-filter [this]
-    (let [today (time/today)
-          year (time/year today)
-          month (time/month today)
-          start-date (coerce/to-date (time/date-time year month 1))]
-      (om/update-state! this
-                        #(-> %
-                             (update :filter dissoc :filter/end-date :filter/last-x-days)
-                             (assoc-in [:filter :filter/start-date] start-date)))
-      ;(.should-notify-change this)
-      ))
+    (om/update-state! this
+                      #(-> %
+                           (update :filter dissoc :filter/end-date :filter/last-x-days)
+                           (assoc-in [:filter :filter/start-date] (date/date-map (date/first-day-of-this-month))))))
 
   (set-last-x-days-filter [this span]
     (om/update-state! this
                       #(-> %
                            (update :filter dissoc :filter/end-date :filter/start-date)
-                           (assoc-in [:filter :filter/last-x-days] span)))
-    ;(.should-notify-change this)
-    )
+                           (assoc-in [:filter :filter/last-x-days] span))))
 
   (reset-date-filters [this]
     (om/update-state! this
-                      #(update % :filter dissoc :filter/start-date :filter/end-date :filter/last-x-days))
-    ;(.should-notify-change this)
-    )
+                      #(update % :filter dissoc :filter/start-date :filter/end-date :filter/last-x-days)))
 
   (set-date-range [this date-filter]
-    (om/update-state! this update :filter merge date-filter)
-    ;(.should-notify-change this)
-    )
+    (om/update-state! this update :filter merge date-filter))
 
   (update-date-filter [this value]
     (let [time-type (keyword (cljs.reader/read-string value))]
-      (debug "Filter: Updateing date filter: " value)
       (cond
         (= time-type :all-time)
         (.reset-date-filters this)
@@ -93,13 +74,11 @@
   (should-notify-change [this]
     (let [{:keys [on-change]} (om/get-computed this)
           input-filter (:filter (om/get-state this))]
-
       (when on-change
         (on-change input-filter))))
 
   (render [this]
     (let [{:keys [filter type]} (om/get-state this)]
-      (debug "Filter: state: " filter)
       (html
         [:div.filters
          [:div.row.small-up-1.medium-up-3
@@ -127,20 +106,18 @@
             [:div.column
              (->Datepicker
                (opts {:key         ["From date..."]
-                      :placeholder "From date..."
+                      :placeholder "From..."
                       :value       (:filter/start-date filter)
                       :on-change   #(do
-                                     (debug "Filter: Start-date: " %)
                                      (.set-date-range this {:filter/start-date %})
                                      (.should-notify-change this))}))])
           (when (= :date-range type)
             [:div.column
              (->Datepicker
                (opts {:key         ["To date..."]
-                      :placeholder "To date..."
+                      :placeholder "To..."
                       :value       (:filter/end-date filter)
                       :on-change   #(do
-                                     (debug "Filter: Update date: " %)
                                      (.set-date-range this {:filter/end-date %})
                                      (.should-notify-change this))
                       :min-date    (:filter/start-date filter)}))])]]))))
@@ -177,7 +154,6 @@
   (render [this]
     (let [{:keys [input-tag tags placeholder]} (om/get-state this)
           {:keys [type]} (om/get-computed this)]
-      (debug "Rendering tags: " tags)
       (html
         (cond
           (nil? type)

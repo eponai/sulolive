@@ -1,16 +1,16 @@
 (ns eponai.web.ui.add-transaction
-  (:require [om.next :as om :refer-macros [defui]]
-            [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
-            [eponai.web.ui.datepicker :refer [->Datepicker]]
-            [eponai.web.ui.utils :as utils]
-            [eponai.common.format :as format]
-            [sablono.core :refer-macros [html]]
-            [cljsjs.pikaday]
-            [cljsjs.moment]
-            [garden.core :refer [css]]
-            [datascript.core :as d]
-            [eponai.common.format :as f]
-            [taoensso.timbre :refer-macros [debug]]))
+  (:require
+    [cljsjs.moment]
+    [cljsjs.pikaday]
+    [datascript.core :as d]
+    [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
+    [eponai.common.format.date :as date]
+    [eponai.web.ui.datepicker :refer [->Datepicker]]
+    [eponai.web.ui.utils :as utils]
+    [garden.core :refer [css]]
+    [om.next :as om :refer-macros [defui]]
+    [sablono.core :refer-macros [html]]
+    [taoensso.timbre :refer-macros [debug]]))
 
 (defn- delete-tag-fn [component tag]
     (om/update-state! component update-in [:input-transaction :transaction/tags] disj tag))
@@ -31,14 +31,14 @@
   (initLocalState [this]
     (let [{:keys [query/all-currencies
                   query/all-projects]} (om/props this)]
-      {:input-transaction {:transaction/date     (js/Date.)
+      {:input-transaction {:transaction/date     (date/date-map (date/today))
                            :transaction/tags     #{}
                            :transaction/currency {:currency/code (-> all-currencies
                                                                      first
                                                                      :currency/code)}
-                           :transaction/project   {:project/uuid (-> all-projects
-                                                                   first
-                                                                   :project/uuid)}
+                           :transaction/project  {:project/uuid (-> all-projects
+                                                                    first
+                                                                    :project/uuid)}
                            :transaction/type     :transaction.type/expense}}))
   (add-transaction [this]
     (let [st (om/get-state this)]

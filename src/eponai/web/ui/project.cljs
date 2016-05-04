@@ -65,18 +65,24 @@
           on-close #(om/update-state! this assoc :menu-visible? false)]
       (html
         [:div#project-submenu.row.expanded.small-collapse.medium-uncollapse
-         (when new-transaction?
-           (let [on-close #(om/update-state! this assoc :new-transaction? false)]
-             (utils/modal {:content  (->AddTransaction
-                                       (om/computed add-transaction
-                                                    {:on-close on-close}))
-                           :on-close on-close})))
+
          [:div.menu-horizontal.columns.small-4
           [:div.nav-link.truncate
            [:small.truncate [:strong (:project/name project)]]]
-          [:a.nav-link
-           {:on-click #(om/update-state! this assoc :new-transaction? true :menu-visible? false)}
-           [:i.fa.fa-money.fa-fw]]]
+          [:div.nav-link
+           [:div
+            [:a
+             {:on-click #(om/update-state! this assoc :new-transaction? true :menu-visible? false)}
+             [:i.fa.fa-money.fa-fw]]
+            (when new-transaction?
+              (utils/modal {:content (->AddTransaction add-transaction)
+                            :on-close #(om/update-state! this assoc :new-transaction? false)})
+              ;(let [on-close #(om/update-state! this assoc :new-transaction? false)]
+              ;  [:div
+              ;   (utils/click-outside-target on-close)
+              ;   [:div.menu.dropdown
+              ;    (->AddTransaction add-transaction)]])
+              )]]]
          [:div.menu-horizontal.columns.small-4.align-center
           [:a.nav-link.tab
            {:class (when (= selected-tab :transactions) "selected")

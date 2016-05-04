@@ -214,7 +214,7 @@
                   :symbols {'[?include-tag ...] (mapv :tag/name include-tags)}})
 
     (some? last-x-days)
-    (merge-query (transaction-date-filter (time/minus (time/today) (time/days last-x-days)) '>=))
+    (merge-query (transaction-date-filter (date/days-ago last-x-days) '>=))
 
     (nil? last-x-days)
     (cond->

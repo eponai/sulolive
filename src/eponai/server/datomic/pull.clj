@@ -31,7 +31,8 @@
     '[:widget/uuid
      :widget/width
      :widget/height
-     {:widget/filter [{:filter/include-tags [:tag/name]}
+     {:widget/filter [*
+                      {:filter/include-tags [:tag/name]}
                       {:filter/exclude-tags [:tag/name]}
                       {:filter/start-date [:date/timestamp]}
                       {:filter/end-date [:date/timestamp]}]}

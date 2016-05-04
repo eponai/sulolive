@@ -187,23 +187,24 @@
            [:div.label.secondary.tag
             [:a.button
              {:on-click #(om/update-state! this assoc :add-tag? true)}
-             [:small [:strong "add..."]]]]
+             [:small [:strong "add..."]]]
+            (when add-tag?
+              [:div
+               (utils/click-outside-target #(om/update-state! this assoc :add-tag? false))
+               [:div.menu.dropdown
+                ;(opts {:style {:position :absolute}})
+                [:div.nav-link
+                 (utils/tag-input
+                   {:input-tag       input-tag
+                    :on-change       #(om/update-state! this assoc :input-tag %)
+                    :placeholder     "Add tag..."
+                    :no-render-tags? true
+                    :input-only?     true
+                    :on-add-tag      #(.add-tag this %)})]]])]
            (map-all
              tags
              (fn [t]
-               (utils/tag t {:on-delete #(.delete-tag this t)})))
-           (when add-tag?
-             [:div
-              (utils/click-outside-target #(om/update-state! this assoc :add-tag? false))
-              [:div.menu.dropdown
-               [:div
-                (utils/tag-input
-                  {:input-tag       input-tag
-                   :on-change       #(om/update-state! this assoc :input-tag %)
-                   :placeholder     "Add tag..."
-                   :no-render-tags? true
-                   :input-only?     true
-                   :on-add-tag      #(.add-tag this %)})]]])]
+               (utils/tag t {:on-delete #(.delete-tag this t)})))]
           [:div.columns.small-3.medium-2.large-1.text-right
            [:a
             (opts (merge

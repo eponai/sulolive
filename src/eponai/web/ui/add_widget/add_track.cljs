@@ -104,9 +104,9 @@
             [:div.columns.small-12
              [:div
               (filter/->DateFilter (om/computed {:filter date-filter}
-                                                {:on-change #(let [new-filters (merge date-filter %)]
+                                                {:on-change #(do
                                                               (om/update-state! this assoc :date-filter %)
-                                                              (on-change (assoc widget :widget/filter new-filters) {:update-data? true}))}))]]]
+                                                              (on-change (assoc widget :widget/filter %) {:update-data? true}))}))]]]
            [:div.row
             [:div.columns.small-12.medium-6
              [:select

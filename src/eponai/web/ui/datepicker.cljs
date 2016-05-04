@@ -39,7 +39,9 @@
     (let [target (.-target e)
          text (.-value target)
          [start end] [(aget target "selectionStart") (aget target "selectionEnd")]
-         fire-on-change #(on-change (date/date-map text))]
+         fire-on-change #(do
+                          (on-change (date/date-map (js/Date. text))))
+          ]
      (condp = (.-keyCode e)
        goog.events.KeyCodes.ENTER (fire-on-change)
        ;; When we're clearing the whole text.
@@ -60,10 +62,8 @@
     (let [{:keys [on-change value min-date]} (om/props this)
           picker (js/Pikaday.
                    #js {:field    (get-pikaday-dom-node this)
-                        :format   "D MMM YYYY"
+                        :format   "MMM DD YYYY"
                         :onSelect (fn [d]
-                                    (debug "Filter: selected date " d )
-                                    (debug "Filter: formatted date: " (date/date-map d))
                                     (on-change (date/date-map d)))
                         :minDate  min-date})]
       (reset! (-> this om/get-state ::picker) picker)
