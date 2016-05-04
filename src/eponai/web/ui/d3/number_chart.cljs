@@ -27,7 +27,9 @@
           [end-val] (:values (first data))]
       (let [text-element (.. svg
                              (selectAll ".txt")
-                             (data #js [(gstring/format "%.2f" end-val)]))]
+                             (data (if (some? end-val)
+                                     #js [(gstring/format "%.2f" end-val)]
+                                     #js [])))]
         (.. text-element
             enter
             (append "text")
