@@ -1,6 +1,7 @@
 (ns eponai.common.format
   (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
             [clojure.set :refer [rename-keys]]
+    [eponai.common.format.date :as date]
     #?@(:clj  [
             [clj-time.core :as t]
             [clj-time.format :as f]
@@ -22,60 +23,60 @@
 ;; clj:  (c/to-long (fo/parse-local "2015-10-10")) => 1444435200000
 ;; cljs: (c/to-long (fo/parse-local "2015-10-10")) => 1444406400000 !!
 
-(defn ensure-date
-  "Takes any date (js/Date, a string, goog.date.DateTime, etc..), and
-   turns it into a date instance that works with clj(s)-time."
-  [date]
-  #?(:clj  date
-     :cljs (cond
-             (instance? goog.date.DateTime date) date
-             (instance? js/Date date) (doto (goog.date.DateTime.)
-                                        (.setTime (.getTime date)))
-             :else (do
-                     (warn "Using unknown date instance: " date)
-                     date))))
+;(defn ensure-date
+;  "Takes any date (js/Date, a string, goog.date.DateTime, etc..), and
+;   turns it into a date instance that works with clj(s)-time."
+;  [date]
+;  #?(:clj  date
+;     :cljs (cond
+;             (instance? goog.date.DateTime date) date
+;             (instance? js/Date date) (doto (goog.date.DateTime.)
+;                                        (.setTime (.getTime date)))
+;             :else (do
+;                     (warn "Using unknown date instance: " date)
+;                     date))))
 
-#?(:cljs
-   (defn js-date->utc-ymd-date
-     "Takes a js/Date and returns a UTC date with only the year, month and day
-     components.
+;#?(:cljs
+;   (defn js-date->utc-ymd-date
+;     "Takes a js/Date and returns a UTC date with only the year, month and day
+;     components.
+;
+;     I recommend calling this function for all dates created with (js/Date.),
+;     since local dates seems bugged in cljs-time."
+;     [date]
+;     {:pre  [(or (nil? date) (instance? js/Date date))]
+;      :post [(instance? js/Date %)]}
+;     (some->> date
+;              (ensure-date)
+;              (f/unparse-local (f/formatters :date))
+;              (c/to-date))))
 
-     I recommend calling this function for all dates created with (js/Date.),
-     since local dates seems bugged in cljs-time."
-     [date]
-     {:pre  [(or (nil? date) (instance? js/Date date))]
-      :post [(instance? js/Date %)]}
-     (some->> date
-              (ensure-date)
-              (f/unparse-local (f/formatters :date))
-              (c/to-date))))
+;#?(:cljs
+;   (defn random-string->js-date [s]
+;     (some-> s
+;             f/parse
+;             c/to-date)))
 
-#?(:cljs
-   (defn random-string->js-date [s]
-     (some-> s
-             f/parse
-             c/to-date)))
+;(defn date->timestamp
+;  "Returns timestamp of a date"
+;  [date]
+;  (c/to-long (ensure-date date)))
 
-(defn date->timestamp
-  "Returns timestamp of a date"
-  [date]
-  (c/to-long (ensure-date date)))
+;(defn ymd-string->js-date [ymd]
+;  {:pre [(string? ymd)]}
+;  (c/to-date (f/parse ymd)))
 
-(defn ymd-string->js-date [ymd]
-  {:pre [(string? ymd)]}
-  (c/to-date (f/parse ymd)))
-
-(defn ymd-string->date [ymd]
-  {:pre [(string? ymd)]}
-  (f/parse ymd))
+;(defn ymd-string->date [ymd]
+;  {:pre [(string? ymd)]}
+;  (f/parse ymd))
 
 (def ymd-date-formatter (f/formatters :date))
 
-(defn date->ymd-string
-  "Takes a date and returns a string for that date of the form yyyy-MM-dd."
-  [date]
-  (when date
-    (f/unparse ymd-date-formatter (ensure-date date))))
+;(defn date->ymd-string
+;  "Takes a date and returns a string for that date of the form yyyy-MM-dd."
+;  [date]
+;  (when date
+;    (f/unparse ymd-date-formatter (ensure-date date))))
 
 (defn str->uuid [str-uuid]
   #?(:clj  (java.util.UUID/fromString str-uuid)
@@ -118,7 +119,6 @@
   "Add tempid to provided entity or collection of entities. If e is a map, assocs :db/id.
   If it's list, set or vector, maps over that collection and assoc's :db/id in each element."
   [e]
-  {:pre [(coll? e)]}
   (cond (map? e)
         (if (some? (:db/id e))
           e
@@ -128,21 +128,23 @@
         (map (fn [v]
                (if (some? (:db/id v))
                  v
-                 (assoc v :db/id (d/tempid :db.part/user)))) e)))
+                 (assoc v :db/id (d/tempid :db.part/user)))) e)
+        :else
+        e))
 
-(defn str->date
-  "Create a date entity.
-
-  Takes a \"yyyy-MM-dd\" string, returns a map representing a date entity."
-  [date-str]
-  {:pre [(string? date-str)]}
-  (let [date (ymd-string->date date-str)]
-    {:db/id          (d/tempid :db.part/user)
-     :date/ymd       date-str
-     :date/year      (t/year date)
-     :date/month     (t/month date)
-     :date/day       (t/day date)
-     :date/timestamp (date->timestamp date)}))
+;(defn str->date
+;  "Create a date entity.
+;
+;  Takes a \"yyyy-MM-dd\" string, returns a map representing a date entity."
+;  [date-str]
+;  {:pre [(string? date-str)]}
+;  (let [date (ymd-string->date date-str)]
+;    {:db/id          (d/tempid :db.part/user)
+;     :date/ymd       date-str
+;     :date/year      (t/year date)
+;     :date/month     (t/month date)
+;     :date/day       (t/day date)
+;     :date/timestamp (date->timestamp date)}))
 
 (defn tag*
   [input]
@@ -151,15 +153,8 @@
 
 (defn date*
   [input]
-  {:pre [(map? input)]}
-  (let [d (select-keys input [:date/ymd])
-        date (ymd-string->date (:date/ymd d))]
-    (merge d
-           {:db/id          (d/tempid :db.part/user)
-            :date/year      (t/year date)
-            :date/month     (t/month date)
-            :date/day       (t/day date)
-            :date/timestamp (date->timestamp date)})))
+  (let [date (date/date-map input)]
+    (add-tempid date)))
 
 (defn currency*
   [input]
@@ -209,16 +204,7 @@
   [input & opts]
   (debug "Doing data filter: " input)
   (let [filter-value-format (fn [k v]
-                              (cond (or (= k :filter/include-tags)
-                                        (= k :filter/exclude-tags))
-                                    ;; These are tags, assoc db/id
-                                    (when v
-                                      (add-tempid v))
-
-                                    (or (= k :filter/start-date)
-                                        (= k :filter/end-date))
-                                    ;; These are dates, create a date entity
-                                    (str->date v)))
+                              (add-tempid v))
         clean-filters (reduce
                         (fn [m [k v]]
                           (let [ent (filter-value-format k v)]
@@ -331,7 +317,7 @@
                                                        :transaction/amount (str->number v)
                                                        :transaction/currency (assoc v :db/id (d/tempid :db.part/user))
                                                        :transaction/type (assoc v :db/id (d/tempid :db.part/user))
-                                                       :transaction/date (str->date (:date/ymd v))
+                                                       :transaction/date (add-tempid (date/date-map (:date/ymd v)))
                                                        :transaction/project {:project/uuid (str->uuid (:project/uuid v))}
                                                        v)))
                                         {})))]

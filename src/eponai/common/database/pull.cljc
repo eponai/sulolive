@@ -5,12 +5,14 @@
     [clojure.set :as set]
     [clojure.walk :as walk]
     [datascript.db]
-    #?(:clj [datomic.api :as d]
+    #?(:clj
+    [datomic.api :as d]
        :cljs [datascript.core :as d])
     #?(:clj
     [clj-time.core :as time]
        :cljs [cljs-time.core :as time])
-    [eponai.common.parser.util :as parser])
+    [eponai.common.parser.util :as parser]
+    [eponai.common.format.date :as date])
   #?(:clj
      (:import (clojure.lang ExceptionInfo)
               (datomic.db Db))))
@@ -189,7 +191,7 @@
   [date compare]
   {:pre [(symbol? compare)]}
 
-  (let [date-time (f/date->timestamp date)
+  (let [date-time (date/date->long date)
         filter-sym (gensym "?time-filter")]
     {:where   ['[?e :transaction/date ?date]
                '[?date :date/timestamp ?timestamp]

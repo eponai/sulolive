@@ -10,7 +10,7 @@
 
 (defn conversion [date-ymd currency-code]
   {:db/id               (d/tempid :db.part/user)
-   :conversion/date     (format/date* {:date/ymd date-ymd})
+   :conversion/date     (format/date* date-ymd)
    :conversion/currency (format/currency* {:currency/code currency-code})
    :conversion/rate     (bigdec 1.0)})
 

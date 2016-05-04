@@ -8,7 +8,8 @@
     [eponai.common.testdata :as testdata]
     [eponai.common.database.transact :as transact]
     [taoensso.timbre :refer-macros [debug]]
-    [eponai.common.database.pull :as p]))
+    [eponai.common.database.pull :as p]
+    [eponai.common.format.date :as date]))
 
 (defn new-db []
   (let [conn (d/create-conn (merge (testdata/datascript-schema)
@@ -20,7 +21,7 @@
 
 (defn conversion [date-ymd currency-code]
   {:db/id               (d/tempid :db.part/user)
-   :conversion/date     (format/date* {:date/ymd date-ymd})
+   :conversion/date     (format/date* date-ymd)
    :conversion/currency (format/currency* {:currency/code currency-code})
    :conversion/rate     1.0})
 

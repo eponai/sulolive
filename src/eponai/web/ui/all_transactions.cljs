@@ -154,8 +154,7 @@
            (->Datepicker
              {:key         [uuid]
               :input-only? true
-              :value     (format/ymd-string->js-date
-                           (:date/ymd date))
+              :value     date
               :on-change #(om/update-state!
                            this assoc-in [:input-transaction :transaction/date :date/ymd]
                            (date/date-map %))})]

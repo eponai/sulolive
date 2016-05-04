@@ -38,8 +38,8 @@
     (let [target (.-target e)
          text (.-value target)
          [start end] [(aget target "selectionStart") (aget target "selectionEnd")]
-         fire-on-change #(let [date (format/random-string->js-date text)]
-                          (on-change ()))]
+         fire-on-change #(let [date (date/js-date text)]
+                          (on-change (date/date-map date)))]
      (condp = (.-keyCode e)
        goog.events.KeyCodes.ENTER (fire-on-change)
        ;; When we're clearing the whole text.

@@ -128,7 +128,7 @@
           {:keys [transaction/date transaction/tags transaction/currency
                   transaction/project transaction/amount transaction/title
                   transaction/type]} input-transaction
-          js-date (f/ymd-string->js-date (:date/ymd date))
+          js-date (date/js-date date)
           {:keys [mode on-saved]} (om/get-computed this)
           {:keys [tx.status/success tx.status/error]} (group-by :tx/status messages)
           all-answered (every? (set (map :tx/mutation-uuid messages))
@@ -206,12 +206,9 @@
                     (date-picker-ios (camel
                                        {:date           js-date
                                         :mode           "date"
-                                        :on-date-change #(let [ymd (-> %
-                                                                       f/js-date->utc-ymd-date
-                                                                       f/date->ymd-string)]
-                                                          (.update-transaction! this
-                                                                                :transaction/date
-                                                                                {:date/ymd ymd}))})))
+                                        :on-date-change #(.update-transaction! this
+                                                                               :transaction/date
+                                                                               %)})))
               (view (styles :row)
                     (text (styles :row-text) "Tags")
                     (text-input (styles :row-input

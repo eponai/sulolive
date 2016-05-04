@@ -47,7 +47,7 @@
    * A DateTime instance (do nothing)
 
   If input is any other type, ExceptionInfo is thrown.
-  Note: cljs-time and clj-time behaves differently in certain cases.
+  Note: cljs-time and clj-time behaviors are sometimes incosistent (https://github.com/eponai/budget/wiki/cljs-time-and-clj-time).
   This function is an attempt to those cases and aligns the bahavior on both sides. Always use this function when creating or formatting dates."
   [obj]
   (cond
@@ -84,23 +84,24 @@
   "Return a map representing a DB entity given a date input.
   Takes any input as date-time accepts, as that will be called in this function."
   [obj]
-  (if (map? obj)
-    obj
-    (let [d (date-time obj)]
-      {:date/ymd       (f/unparse-local (f/formatters :date) d)
-       :date/timestamp (c/to-long d)
-       ;:date/year (t/year d)
-       ;:date/month (t/month d)
-       ;:date/day (t/day d)
-       })))
+  (let [d (date-time obj)]
+    {:date/ymd       (f/unparse-local (f/formatters :date) d)
+     :date/timestamp (c/to-long d)
+     :date/year      (t/year d)
+     :date/month     (t/month d)
+     :date/day       (t/day d)}))
 
 
 (defn today []
   (let [t (t/today)]
     (t/date-time (t/year t) (t/month t) (t/day t))))
 
-(defn day->long [d]
-  (c/to-long (t/date-time (t/year d) (t/month d) (t/day d))))
+(defn date->long [obj]
+  (let [d (date-time obj)]
+    (c/to-long (t/date-time (t/year d) (t/month d) (t/day d)))))
 
-(defn month->long [d]
-  (c/to-long (t/date-time (t/year d) (t/month d))))
+(defn month->long [obj]
+  (let [d (date-time obj)]
+    (c/to-long (t/date-time (t/year d) (t/month d)))))
+
+(defn to-long [])

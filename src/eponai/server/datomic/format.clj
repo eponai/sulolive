@@ -3,6 +3,7 @@
             [clj-time.coerce :as c]
             [datomic.api :only [db a] :as d]
             [eponai.common.format :as cf]
+            [eponai.common.format.date :as date]
             [eponai.common.format :as common.format]))
 
 ;;; -------------------- Format to entities ----------------
@@ -17,7 +18,7 @@
   [data]
   (let [map-fn (fn [[code rate]]
                  {:db/id               (d/tempid :db.part/user)
-                  :conversion/date     (cf/str->date (:date data))
+                  :conversion/date     (cf/add-tempid (date/date-map (:date data)))
                   :conversion/currency {:db/id         (d/tempid :db.part/user)
                                         :currency/code (name code)}
                   :conversion/rate     (bigdec rate)})]
