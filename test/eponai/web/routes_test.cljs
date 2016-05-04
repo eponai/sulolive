@@ -24,13 +24,6 @@
     ;{:route-param/project-id  "123" :route-param/widget-id   "new"}
 
     :route/project->txs"/project/123/transactions" {:route-param/project-id "123"}
-    :route/project->txs->tx "/project/123/transactions/transaction/42"
-    {:route-param/project-id     "123" :route-param/transaction-id "42"}
-
-    :route/project->txs->tx+mode "/project/123/transactions/transaction/42/edit"
-    {:route-param/project-id       "123"
-     :route-param/transaction-id   "42"
-     :route-param/transaction-mode "edit"}
 
     :route/profile "/profile" {}
     :route/profile->txs "/profile/transactions" {}
