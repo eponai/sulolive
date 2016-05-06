@@ -11,7 +11,8 @@
     [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug]])
   (:import
     #?(:clj (org.joda.time DateTime))
-    #?(:clj (datomic.query EntityMap))))
+    #?(:clj
+            (datomic.query EntityMap))))
 
 (defn- entity->date-time
   "Return DateTime instance given a date entity map.
@@ -34,24 +35,26 @@
                      :input e}))))
 
 (defn- date-time? [d]
-  #?(:cljs (instance? goog.date.DateTime d)
-     :clj (instance? DateTime d)))
+  #?(:cljs (t/date? d)
+     :clj (satisfies? t/DateTimeProtocol d)))
 
 (defn entity-map? [obj]
   #?(:cljs (entity/entity? obj)
      :clj (instance? EntityMap obj)))
 
 (defn date-time
-  "Return DateTime instance formatting an input object that's one of the following:
+  "Return DateTime instance that's time agnostic, and will sett the time to 000000000 on the given date.
+  Formats an input object that's one of the following:
 
    * A map representing a date (entity) that contains either :date/timestamp or :date/ymd. (If both, :date/timestamp will be used.)
    * A js/Date instance.
    * A 'yyyy-MM-dd' string.
-   * A DateTime instance (do nothing)
+   * An object satisfying the DateTimeProtocol.
 
   If input is any other type, ExceptionInfo is thrown.
   Note: cljs-time and clj-time behaviors are sometimes incosistent (https://github.com/eponai/budget/wiki/cljs-time-and-clj-time).
-  This function is an attempt to those cases and aligns the bahavior on both sides. Always use this function when creating or formatting dates."
+  This function is an attempt to those cases and align the behavior on both sides.
+  Always use this function when creating or formatting dates."
   [obj]
   (cond
     (or (map? obj)
@@ -74,7 +77,7 @@
 
     ;; We already have a clj-time/cljs-time DateTime instance.
     (date-time? obj)
-    obj
+    (t/date-time (t/year obj) (t/month obj) (t/day obj))
 
     :else
     (throw (ex-info (str "Trying to format unexpected input to DateTime. Expected map, js/Date or DateTime. Got: " obj)

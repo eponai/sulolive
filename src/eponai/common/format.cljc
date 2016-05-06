@@ -6,70 +6,6 @@
             [datomic.api :as d]
        :cljs [datascript.core :as d])))
 
-;; Warning: clj(s)-time libraries are sometimes inconsistent.
-;; Example:
-;; clj:  (c/to-long (c/to-date-time "2015-10-10"))       => 1444435200000
-;; cljs: (c/to-long (c/to-date-time "2015-10-10"))       => 1444435200000
-;; clj:  (c/to-long (c/to-local-date-time "2015-10-10")) => 1444435200000
-;; cljs: (c/to-long (c/to-local-date-time "2015-10-10")) => 1444406400000 !!
-;; clj:  (c/to-long (fo/parse-local "2015-10-10")) => 1444435200000
-;; cljs: (c/to-long (fo/parse-local "2015-10-10")) => 1444406400000 !!
-
-;(defn ensure-date
-;  "Takes any date (js/Date, a string, goog.date.DateTime, etc..), and
-;   turns it into a date instance that works with clj(s)-time."
-;  [date]
-;  #?(:clj  date
-;     :cljs (cond
-;             (instance? goog.date.DateTime date) date
-;             (instance? js/Date date) (doto (goog.date.DateTime.)
-;                                        (.setTime (.getTime date)))
-;             :else (do
-;                     (warn "Using unknown date instance: " date)
-;                     date))))
-
-;#?(:cljs
-;   (defn js-date->utc-ymd-date
-;     "Takes a js/Date and returns a UTC date with only the year, month and day
-;     components.
-;
-;     I recommend calling this function for all dates created with (js/Date.),
-;     since local dates seems bugged in cljs-time."
-;     [date]
-;     {:pre  [(or (nil? date) (instance? js/Date date))]
-;      :post [(instance? js/Date %)]}
-;     (some->> date
-;              (ensure-date)
-;              (f/unparse-local (f/formatters :date))
-;              (c/to-date))))
-
-;#?(:cljs
-;   (defn random-string->js-date [s]
-;     (some-> s
-;             f/parse
-;             c/to-date)))
-
-;(defn date->timestamp
-;  "Returns timestamp of a date"
-;  [date]
-;  (c/to-long (ensure-date date)))
-
-;(defn ymd-string->js-date [ymd]
-;  {:pre [(string? ymd)]}
-;  (c/to-date (f/parse ymd)))
-
-;(defn ymd-string->date [ymd]
-;  {:pre [(string? ymd)]}
-;  (f/parse ymd))
-
-;(def ymd-date-formatter (f/formatters :date))
-
-;(defn date->ymd-string
-;  "Takes a date and returns a string for that date of the form yyyy-MM-dd."
-;  [date]
-;  (when date
-;    (f/unparse ymd-date-formatter (ensure-date date))))
-
 (defn str->uuid [str-uuid]
   #?(:clj  (java.util.UUID/fromString str-uuid)
      :cljs (uuid str-uuid)))
@@ -124,20 +60,6 @@
         :else
         e))
 
-;(defn str->date
-;  "Create a date entity.
-;
-;  Takes a \"yyyy-MM-dd\" string, returns a map representing a date entity."
-;  [date-str]
-;  {:pre [(string? date-str)]}
-;  (let [date (ymd-string->date date-str)]
-;    {:db/id          (d/tempid :db.part/user)
-;     :date/ymd       date-str
-;     :date/year      (t/year date)
-;     :date/month     (t/month date)
-;     :date/day       (t/day date)
-;     :date/timestamp (date->timestamp date)}))
-
 (defn tag*
   [input]
   {:pre [(map? input)]}
@@ -145,7 +67,15 @@
 
 (defn date*
   [input]
+  {:post [(map? %)
+          (= (count (select-keys % [:date/ymd
+                                    :date/timestamp
+                                    :date/year
+                                    :date/month
+                                    :date/day])) 5)]}
   (let [date (date/date-map input)]
+    (assert (and (:date/ymd date)
+                 (:date/timestamp date)) (str "Created date needs :date/timestamp or :date/ymd, got: " date))
     (add-tempid date)))
 
 (defn currency*
