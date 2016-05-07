@@ -59,10 +59,10 @@
   (componentWillUnmount [this] (some-> this om/get-state ::picker (reset! nil)))
   (componentDidMount
     [this]
-    (let [{:keys [on-change value min-date]} (om/props this)
+    (let [{:keys [on-change value min-date format]} (om/props this)
           picker (js/Pikaday.
                    #js {:field    (get-pikaday-dom-node this)
-                        :format   "MMM DD YYYY"
+                        :format   (or format "MMM DD YYYY")
                         :onSelect (fn [d]
                                     (on-change (date/date-map d)))
                         :minDate  min-date})]

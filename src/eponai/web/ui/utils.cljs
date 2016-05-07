@@ -142,7 +142,7 @@
 (defn delete-tag [tags tag]
   (into [] (remove #(= (:tag/name %) (:tag/name tag))) tags))
 
-(defn- on-enter-down [e f]
+(defn on-enter-down [e f]
   (when (and (= 13 (.-keyCode e))
              (seq (.. e -target -value)))
     (.preventDefault e)
