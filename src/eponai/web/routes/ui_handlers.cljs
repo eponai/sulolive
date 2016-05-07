@@ -30,8 +30,7 @@
                                           :proxy/side-bar])
    :route-param/project->selected-tab (fn [env tab]
                                         (let [r (:reconciler env)]
-                                          `[(project/select-tab ~{:selected-tab      (param->keyword tab)
-                                                                  :project-component (om/app-root r)})]))
+                                          `[(project/select-tab ~{:selected-tab      (param->keyword tab)})]))
    :route-param/widget-id             (fn [_ wid]
                                         `[(widget/set-active-id ~{:widget-id (when wid
                                                                                (param->number wid))})])
@@ -61,6 +60,7 @@
                                           {:mutations [] :reads []}
                                           (route-params->mutations reconciler route-params))]
     (binding [parser/*parser-allow-remote* false]
+      (debug "Transacting mutations: " mutations)
       (om/transact! reconciler (into mutations reads)))))
 
 (def project-handler (map->UiComponentMatch
@@ -93,9 +93,9 @@
 
 
 (def route-handler->ui-component
-  {:route/home                    project-handler
-   :route/project                 project-handler
-   :route/project-empty           project-handler
+  {:route/home                    dashboard-handler
+   :route/project                 dashboard-handler
+   :route/project-empty           dashboard-handler
    :route/project->dashboard      dashboard-handler
    :route/project->widget+type+id widget-handler
    :route/project->txs            transactions-handler

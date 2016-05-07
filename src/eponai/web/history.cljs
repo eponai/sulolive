@@ -3,9 +3,11 @@
             [eponai.client.route-helper :as route-helper]
             [eponai.web.routes :as routes]
             [eponai.web.routes.ui-handlers :as ui-handlers]
+            [eponai.web.ui.utils :as utils]
             [eponai.common.parser :as parser]
             [om.next :as om]
-            [pushy.core :as pushy]))
+            [pushy.core :as pushy]
+            [taoensso.timbre :refer-macros [debug error]]))
 
 (defonce history-atom (atom nil))
 
@@ -13,20 +15,30 @@
   (get ui-handlers/route-handler->ui-component route-handler))
 
 (defn update-app-state-with-route-match! [reconciler {:keys [handler route-params]}]
-  (when route-params
-    (route-helper/handle-route-params (route-handler->ui-handler handler) reconciler route-params)))
+  (let [ui-handler (route-handler->ui-handler handler)]
+    (when (fn? (:route-param-fn ui-handler))
+      (route-helper/handle-route-params ui-handler reconciler (or route-params {})))))
 
 (defn set-page! [reconciler]
   (fn [{:keys [handler] :as match}]
+    (debug "Setting page with match:"  match)
     (update-app-state-with-route-match! reconciler match)
     (binding [parser/*parser-allow-remote* false]
       (om/transact! reconciler `[(root/set-app-content ~(select-keys (route-handler->ui-handler handler)
                                                                      [:factory :component]))]))
+    (binding [parser/*parser-allow-remote* false]
+      (utils/update-dynamic-queries! reconciler))
+
+    (let [app-query (om/get-query (om/app-root reconciler))]
+      (debug "app-root query: " app-query)
+      (om/transact! reconciler app-query))
+
     ;; TODO: Un-hack this.
-    (let [force-render-f #(om/force-root-render! reconciler)]
-      (if (exists? js/requestAnimationFrame)
-        (js/requestAnimationFrame force-render-f)
-        (js/setTimeout force-render-f 0)))))
+    (comment
+      (let [force-render-f #(om/force-root-render! reconciler)]
+        (if (exists? js/requestAnimationFrame)
+          (js/requestAnimationFrame force-render-f)
+          (js/setTimeout force-render-f 0))))))
 
 (defn init-history [reconciler]
   (when-let [h @history-atom]

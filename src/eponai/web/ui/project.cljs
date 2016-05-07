@@ -47,8 +47,7 @@
 
 (defn project-content [x]
   (let [props (if (om/component? x) (om/props x) x)]
-    (or (get-in props [:query/active-project :ui.component.project/selected-tab])
-        :dashboard)))
+    (get-in props [:query/active-project :ui.component.project/selected-tab])))
 
 (defui SubMenu
   static om/IQuery
@@ -121,11 +120,12 @@
 (def ->SubMenu (om/factory SubMenu))
 
 (defn content->query [this content]
-  (let [component (get-in content->component [content :component])
-        subquery (or (om/subquery this content component) (om/get-query component))]
-    (cond-> [{:proxy/child-content [{(utils/component->query-key component) subquery}]}
-             {:query/active-project [:ui.component.project/selected-tab
+  (let [component (when content (get-in content->component [content :component]))]
+    (cond-> [{:query/active-project [:ui.component.project/selected-tab
                                      :ui.component.project/active-project]}]
+            (some? component)
+            (conj {:proxy/child-content [{(utils/component->query-key component)
+                                          (or (om/subquery this content component) (om/get-query component))}]})
             (= :widget content)
             (conj {:proxy/dashboard (om/get-query Dashboard)}))))
 
@@ -135,10 +135,15 @@
     (let [content (project-content this)]
       (content->query this content)))
 
-  utils/IDynamicQuery
-  (update-query! [this]
-    (let [query (om/query this)]
-      (om/set-query! this {:query query})))
+  static utils/IDynamicQuery
+  (dynamic-query [_]
+    [{:query/active-project [:ui.component.project/selected-tab]}])
+  (next-query [this next-props]
+    (let [content (project-content next-props)]
+      (debug "In next-query with next-props: " next-props
+             " content: " content)
+      (content->query this content)))
+
 
   Object
   (componentWillUnmount [this]
@@ -168,7 +173,8 @@
                              (= :widget content)
                              (om/computed {:dashboard (:query/dashboard dashboard)
                                            :index     (dashboard/calculate-last-index 4 (:widget/_dashboard dashboard))}))]
-           (factory props))]
+           (when factory
+             (factory props)))]
 
         ;(when share-project?
         ;  (let [on-close #(om/update-state! this assoc :share-project? false)]

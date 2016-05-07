@@ -4,7 +4,7 @@
             [sablono.core :refer-macros [html]]
             [om.next :as om]
             [om.dom :as dom]
-            [taoensso.timbre :refer-macros [debug]]
+            [taoensso.timbre :refer-macros [debug warn]]
             [eponai.common.format :as format]
             [datascript.core :as d]
             [eponai.web.routes :as routes]))
@@ -14,7 +14,46 @@
 ;;;;;;; Om dynamic query helpers
 
 (defprotocol IDynamicQuery
-  (update-query! [this]))
+  (dynamic-query [this])
+  (next-query [this next-props]))
+
+(defprotocol IDynamicQueryChildren
+  (dynamic-query-children [this next-props]))
+
+(defprotocol IDynamicQueryParams
+  ;; -> {:child Class or Component}
+  (dynamic-params [this next-props]))
+
+(defn update-dynamic-query [parser state c]
+  {:pre  [(or (om/component? c) (fn? c))]
+   :post [(or (nil? %) (vector? %))]}
+  (cond
+    (satisfies? IDynamicQuery c)
+    (let [query (dynamic-query c)
+          next-props (parser {:state state} query)
+          next-query (next-query c next-props)
+          next-params (when (satisfies? IDynamicQueryParams c)
+                        (let [params (dynamic-params c next-props)
+                              bound-params (reduce-kv (fn [p k x] (assoc p k (update-dynamic-query parser state x))) {} params)]
+                          bound-params))]
+      (debug "Setting query on component: " (pr-str c) " query: " next-query " params: " next-params)
+      (when (= next-query (om/get-query c))
+        (warn "Setting the same query"))
+      (when (om/component? c)
+        (om/set-query! c {:query next-query :params next-params} []))
+      next-query)
+
+    (satisfies? om/IQuery c)
+    (om/get-query c)
+    :else
+    (do (debug "Who is this component: " (pr-str c)))))
+
+(defn update-dynamic-queries! [reconciler]
+  {:pre [(om/reconciler? reconciler)]}
+  (let [parser (-> reconciler :config :parser)
+        state (om/app-state reconciler)]
+    (update-dynamic-query parser state (om/app-root reconciler))))
+;; Is the problem that we're setting a query for om/app-root? hmm..
 
 (defn component->ref [c]
   (keyword (pr-str c)))
