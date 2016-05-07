@@ -49,7 +49,7 @@
   (query [this]
     (component->query this (when (om/component? this) (props->main-component (om/props this)))))
 
-  u/IDynamicQuery
+  static u/IDynamicQuery
   (dynamic-query [_]
     [{:query/root-component [:ui.component.root/app-content]}])
   (next-query [this next-props]
@@ -59,7 +59,7 @@
        ;; Setting it handles the case where the path is not right?
        :params {:app-content (om/get-query c)}}))
 
-  u/IDynamicQueryParams
+  static u/IDynamicQueryParams
   (dynamic-params [this next-props]
     (let [component (props->main-component next-props)]
       {:app-content (or (when (= component (props->main-component (om/props this)))
