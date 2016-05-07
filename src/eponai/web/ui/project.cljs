@@ -40,15 +40,6 @@
 
 (def ->Shareproject (om/factory Shareproject))
 
-(def content->component {:dashboard    {:factory ->Dashboard :component Dashboard}
-                         :transactions {:factory ->AllTransactions :component AllTransactions}
-                         :widget       {:factory ->NewWidget :component NewWidget}
-                         :goal         {:factory ->NewGoal :component NewGoal}})
-
-(defn project-content [x]
-  (let [props (if (om/component? x) (om/props x) x)]
-    (get-in props [:query/active-project :ui.component.project/selected-tab])))
-
 (defui SubMenu
   static om/IQuery
   (query [_]
@@ -119,6 +110,15 @@
 
 (def ->SubMenu (om/factory SubMenu))
 
+(def content->component {:dashboard    {:factory ->Dashboard :component Dashboard}
+                         :transactions {:factory ->AllTransactions :component AllTransactions}
+                         :widget       {:factory ->NewWidget :component NewWidget}
+                         :goal         {:factory ->NewGoal :component NewGoal}})
+
+(defn project-content [x]
+  (let [props (if (om/component? x) (om/props x) x)]
+    (get-in props [:query/active-project :ui.component.project/selected-tab])))
+
 (defn content->query [this content]
   (let [component (when content (get-in content->component [content :component]))]
     (cond-> [{:query/active-project [:ui.component.project/selected-tab
@@ -135,12 +135,10 @@
       (content->query this content)))
 
   static utils/IDynamicQuery
-  (dynamic-query [_]
+  (dynamic-query-fragment [_]
     [{:query/active-project [:ui.component.project/selected-tab]}])
   (next-query [this next-props]
     (let [content (project-content next-props)]
-      (debug "In next-query with next-props: " next-props
-             " content: " content)
       {:query (content->query this content)}))
 
 
@@ -166,7 +164,6 @@
         [:div#project-content
          (let [content (project-content this)
                factory (get-in content->component [content :factory])
-               component (get-in content->component [content :component])
                props (cond-> (assoc child-content :ref content)
                              (= :widget content)
                              (om/computed {:dashboard (:query/dashboard dashboard)

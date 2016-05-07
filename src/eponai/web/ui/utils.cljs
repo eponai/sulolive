@@ -14,33 +14,29 @@
 ;;;;;;; Om dynamic query helpers
 
 (defprotocol IDynamicQuery
-  (dynamic-query [this])
-  (next-query [this next-props]))
-
-(defprotocol IDynamicQueryChildren
-  (dynamic-query-children [this next-props]))
+  (dynamic-query-fragment [this] "Fragment of the query needed to return next query.")
+  (next-query [this next-props] "Next query to be set for this component using props returned by parsing dynamic-query-fragment"))
 
 (defprotocol IDynamicQueryParams
   ;; -> {:child Class or Component}
-  (dynamic-params [this next-props]))
+  (dynamic-params [this next-props] "Return map of param key to class or component (via ref). Values will be replaced with queries."))
 
-(defn update-dynamic-query [parser state c]
+(defn update-dynamic-query! [parser state c]
   {:pre  [(or (om/component? c) (fn? c))]
-   :post [(or (map? %))]}
+   :post [(map? %)]}
   (cond
     (satisfies? IDynamicQuery c)
-    (let [query (dynamic-query c)
+    (let [query (dynamic-query-fragment c)
           next-props (parser {:state state} query)
           next-query (next-query c next-props)
           _ (when (om/component? c)
               (when (= next-query (om/get-query c))
-                (warn "Setting the same query"))
-              (debug "Setting query on component: " (pr-str c) " query: " next-query)
+                (warn "Setting the same query. Optimize this by not setting the query?"))
               (om/set-query! c next-query) [])
           next-params (when (satisfies? IDynamicQueryParams c)
                         (let [params (dynamic-params c next-props)
                               bound-params (reduce-kv (fn [p k x]
-                                                        (let [param-query (update-dynamic-query parser state x)]
+                                                        (let [param-query (update-dynamic-query! parser state x)]
                                                           (assert (nil? (:params param-query))
                                                                   (str "Params in child: " (pr-str x)
                                                                        " was not nil. Was: " (:params param-query)
@@ -56,7 +52,6 @@
                                                                                      (fn? x) x)})))) {} params)]
                           bound-params))
           _ (when (seq next-params)
-              (debug "Setting params on component: " (pr-str c) " next-params: " next-params)
               (when (om/component? c)
                 (om/set-query! c {:params next-params} [])))]
       (merge next-query next-params))
@@ -64,13 +59,13 @@
     (satisfies? om/IQuery c)
     {:query (om/get-query c)}
     :else
-    (do (debug "Who is this component: " (pr-str c)))))
+    (throw (ex-info "Unknown parameter in update-dynamic-query!" {:param  c :to-str (pr-str c)}))))
 
 (defn update-dynamic-queries! [reconciler]
   {:pre [(om/reconciler? reconciler)]}
   (let [parser (-> reconciler :config :parser)
         state (om/app-state reconciler)]
-    (update-dynamic-query parser state (om/app-root reconciler))))
+    (update-dynamic-query! parser state (om/app-root reconciler))))
 ;; Is the problem that we're setting a query for om/app-root? hmm..
 
 (defn component->ref [c]

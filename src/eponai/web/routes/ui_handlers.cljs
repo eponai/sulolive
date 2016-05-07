@@ -28,9 +28,8 @@
   {:route-param/project-id            (fn [_ pid]
                                         `[(project/set-active-uuid ~{:project-dbid (param->number pid)})
                                           :proxy/side-bar])
-   :route-param/project->selected-tab (fn [env tab]
-                                        (let [r (:reconciler env)]
-                                          `[(project/select-tab ~{:selected-tab      (param->keyword tab)})]))
+   :route-param/project->selected-tab (fn [_ tab]
+                                        `[(project/select-tab ~{:selected-tab (param->keyword tab)})])
    :route-param/widget-id             (fn [_ wid]
                                         `[(widget/set-active-id ~{:widget-id (when wid
                                                                                (param->number wid))})])
@@ -46,22 +45,18 @@
                        (str "route-param: " param " did not have a mutation function in: " route-param->mutation
                             ". Add the route-param to the map of key->function. Route-param value was: " value))
                (let [param-fn (get route-param->mutation param)]
-                 (into mutations (param-fn {:reconciler reconciler
-                                            :route-params route-params} value))))
+                 (into mutations (param-fn {:reconciler reconciler :route-params route-params}
+                                           value))))
              []
              route-params))
 
 (defn mutate-route-params! [reconciler route-params]
   {:pre [(om/reconciler? reconciler)]}
-  (let [{:keys [reads mutations]} (reduce (fn [m expr]
-                                            (if (and (sequential? expr) (symbol? (first expr)))
-                                              (update m :mutations conj expr)
-                                              (update m :reads conj expr)))
-                                          {:mutations [] :reads []}
-                                          (route-params->mutations reconciler route-params))]
-    (binding [parser/*parser-allow-remote* false]
-      (debug "Transacting mutations: " mutations)
-      (om/transact! reconciler (into mutations reads)))))
+  ;; Set new state with our route.
+  ;; Changes made with the URL shouldn't need to mutate anything remotely.
+  ;; State set that will change queries will get its reads sent remotely later.
+  (binding [parser/*parser-allow-remote* false]
+    (om/transact! reconciler (route-params->mutations reconciler route-params))))
 
 (def project-handler (map->UiComponentMatch
                        {:component      Project

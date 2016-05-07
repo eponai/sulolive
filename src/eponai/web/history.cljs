@@ -7,8 +7,7 @@
             [eponai.common.parser :as parser]
             [om.next :as om]
             [pushy.core :as pushy]
-            [taoensso.timbre :refer-macros [debug error]]
-            [om.next.protocols :as om.p]))
+            [taoensso.timbre :refer-macros [debug error]]))
 
 (defonce history-atom (atom nil))
 
@@ -24,22 +23,20 @@
   (fn [{:keys [handler] :as match}]
     (debug "Setting page with match:"  match)
     (update-app-state-with-route-match! reconciler match)
+
+    ;; Sets the root/App's app content.
+    ;; TODO: Move this in to the route-param logic?
     (binding [parser/*parser-allow-remote* false]
       (om/transact! reconciler `[(root/set-app-content ~(select-keys (route-handler->ui-handler handler)
                                                                      [:factory :component]))]))
     (binding [parser/*parser-allow-remote* false]
       (utils/update-dynamic-queries! reconciler))
 
+    ;; Transacting the full query of the app root to make sure
+    ;; we get all the data we need.
+    ;; TODO: Optimize this by just reading what we need.
     (let [app-query (om/full-query (om/app-root reconciler))]
-      (debug "app-root query: " app-query)
-      (om/transact! reconciler app-query))
-
-    ;; TODO: Un-hack this.
-    (comment
-      (let [force-render-f #(om/force-root-render! reconciler)]
-        (if (exists? js/requestAnimationFrame)
-          (js/requestAnimationFrame force-render-f)
-          (js/setTimeout force-render-f 0))))))
+      (om/transact! reconciler app-query))))
 
 (defn init-history [reconciler]
   (when-let [h @history-atom]
