@@ -53,7 +53,11 @@
   (dynamic-query [_]
     [{:query/root-component [:ui.component.root/app-content]}])
   (next-query [this next-props]
-    (component->query this (props->main-component next-props)))
+    (let [c (props->main-component next-props)]
+      {:query  (component->query this c)
+       ;; This will get updated with DynamicQueryParams later.
+       ;; Setting it handles the case where the path is not right?
+       :params {:app-content (om/get-query c)}}))
 
   u/IDynamicQueryParams
   (dynamic-params [this next-props]
@@ -70,11 +74,10 @@
     [this]
     (let [{:keys [proxy/nav-bar-submenu
                   proxy/nav-bar
-                  proxy/side-bar] :as props} (om/props this)
+                  proxy/side-bar
+                  proxy/app-content] :as props} (om/props this)
           {:keys [sidebar-visible?]} (om/get-state this)
-          factory (props->main-factory props)
-          component (props->main-component props)
-          child-props (get-in props [:proxy/app-content (u/component->query-key component)])]
+          factory (props->main-factory props)]
       (html
         [:div#jourmoney-ui
          ;[:div#wrapper]
@@ -88,7 +91,7 @@
                                          {:on-sidebar-toggle #(om/update-state! this update :sidebar-visible? not)}))
           (nav/->NavbarSubmenu (om/computed nav-bar-submenu
                                             {:content-factory factory
-                                             :app-content     child-props}))
+                                             :app-content     app-content}))
           [:div#page-content
            (when factory
-             (factory (assoc child-props :ref :app-content)))]]]))))
+             (factory (assoc app-content :ref :app-content)))]]]))))

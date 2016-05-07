@@ -124,8 +124,7 @@
     (cond-> [{:query/active-project [:ui.component.project/selected-tab
                                      :ui.component.project/active-project]}]
             (some? component)
-            (conj {:proxy/child-content [{(utils/component->query-key component)
-                                          (or (om/subquery this content component) (om/get-query component))}]})
+            (conj {:proxy/child-content (or (om/subquery this content component) (om/get-query component))})
             (= :widget content)
             (conj {:proxy/dashboard (om/get-query Dashboard)}))))
 
@@ -142,7 +141,7 @@
     (let [content (project-content next-props)]
       (debug "In next-query with next-props: " next-props
              " content: " content)
-      (content->query this content)))
+      {:query (content->query this content)}))
 
 
   Object
@@ -168,8 +167,7 @@
          (let [content (project-content this)
                factory (get-in content->component [content :factory])
                component (get-in content->component [content :component])
-               child-props (get child-content (utils/component->query-key component))
-               props (cond-> (assoc child-props :ref content)
+               props (cond-> (assoc child-content :ref content)
                              (= :widget content)
                              (om/computed {:dashboard (:query/dashboard dashboard)
                                            :index     (dashboard/calculate-last-index 4 (:widget/_dashboard dashboard))}))]

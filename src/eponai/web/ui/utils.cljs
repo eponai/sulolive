@@ -24,27 +24,33 @@
   ;; -> {:child Class or Component}
   (dynamic-params [this next-props]))
 
-(defn update-dynamic-query [parser state c]
+(defn update-dynamic-query! [parser state c]
   {:pre  [(or (om/component? c) (fn? c))]
-   :post [(or (nil? %) (vector? %))]}
+   :post [(or (om/component? c) (fn? c))]}
   (cond
     (satisfies? IDynamicQuery c)
     (let [query (dynamic-query c)
           next-props (parser {:state state} query)
           next-query (next-query c next-props)
+          _ (when (om/component? c)
+              (when (= next-query (om/get-query c))
+                (warn "Setting the same query"))
+              (debug "Setting query on component: " (pr-str c) " query: " next-query)
+              (om/set-query! c next-query))
           next-params (when (satisfies? IDynamicQueryParams c)
                         (let [params (dynamic-params c next-props)
-                              bound-params (reduce-kv (fn [p k x] (assoc p k (update-dynamic-query parser state x))) {} params)]
-                          bound-params))]
-      (debug "Setting query on component: " (pr-str c) " query: " next-query " params: " next-params)
-      (when (= next-query (om/get-query c))
-        (warn "Setting the same query"))
-      (when (om/component? c)
-        (om/set-query! c {:query next-query :params next-params} []))
-      next-query)
+                              bound-params (reduce-kv (fn [p k x]
+                                                        (let [updated-component (update-dynamic-query! parser state x)]
+                                                          (assoc p k (om/get-query updated-component)))) {} params)]
+                          bound-params))
+          _ (when (seq next-params)
+              (debug "Setting params on component: " (pr-str c) " next-params: " next-params)
+              (when (om/component? c)
+                (om/set-query! c {:params next-params} [])))]
+      c)
 
     (satisfies? om/IQuery c)
-    (om/get-query c)
+    c
     :else
     (do (debug "Who is this component: " (pr-str c)))))
 
@@ -52,7 +58,7 @@
   {:pre [(om/reconciler? reconciler)]}
   (let [parser (-> reconciler :config :parser)
         state (om/app-state reconciler)]
-    (update-dynamic-query parser state (om/app-root reconciler))))
+    (update-dynamic-query! parser state (om/app-root reconciler))))
 ;; Is the problem that we're setting a query for om/app-root? hmm..
 
 (defn component->ref [c]

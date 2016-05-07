@@ -7,7 +7,8 @@
             [eponai.common.parser :as parser]
             [om.next :as om]
             [pushy.core :as pushy]
-            [taoensso.timbre :refer-macros [debug error]]))
+            [taoensso.timbre :refer-macros [debug error]]
+            [om.next.protocols :as om.p]))
 
 (defonce history-atom (atom nil))
 
@@ -29,7 +30,7 @@
     (binding [parser/*parser-allow-remote* false]
       (utils/update-dynamic-queries! reconciler))
 
-    (let [app-query (om/get-query (om/app-root reconciler))]
+    (let [app-query (om/full-query (om/app-root reconciler))]
       (debug "app-root query: " app-query)
       (om/transact! reconciler app-query))
 
@@ -48,9 +49,15 @@
   (let [initial-dispatch (atom false)
         dispatch-fn (set-page! reconciler)
         match-fn (partial bidi/match-route routes/routes)
-        history (pushy/pushy (fn [& args] (if @initial-dispatch
-                                            (reset! initial-dispatch false)
-                                            (apply dispatch-fn args)))
+        history (pushy/pushy (fn [& args]
+                               (try
+                                 (if @initial-dispatch
+                                   (reset! initial-dispatch false)
+                                   (apply dispatch-fn args))
+                                    (catch js/Error e
+                                      (error "Error when setting page: " e))
+                                    (catch :default e
+                                      (error "Error when setting page: " e))))
                              match-fn)]
     ;; Set the app state given an url manually, instead of doing this on (pushy/start! history).
     ;;(update-app-state-with-route-match! reconciler (-> (pushy/get-token history) (match-fn)))
