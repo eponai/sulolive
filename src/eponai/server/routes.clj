@@ -12,7 +12,8 @@
             [eponai.server.api :as api]
             [eponai.server.external.stripe :as stripe]
             [clojure.data.json :as json]
-            [eponai.server.email :as email])
+            [eponai.server.email :as email]
+            [eponai.common.parser :as parser])
   (:import [clojure.lang ExceptionInfo]))
 
 (defn html [& path]
@@ -23,6 +24,10 @@
 (defroutes
   app-routes
   (GET "/*" request (html (::m/cljs-build-id request) "app.html")))
+
+(defroutes
+  playground-routes
+  (GET "/*" request (html (::m/cljs-build-id request) "playground.html")))
 
 (defroutes
   site-routes
@@ -46,6 +51,8 @@
 
   (context "/app" _
     (friend/wrap-authorize app-routes #{::a/user}))
+
+  (context "/play" _ playground-routes)
 
   (GET "/verify/:uuid" [uuid]
     (r/redirect (str "/api/login/email?uuid=" uuid)))
@@ -145,6 +152,10 @@
 
     (POST "/" request
       (r/response (call-parser request)))
+
+    ;; TODO: We need a test which fails if a request mutates the db.
+    (POST "/playground" request
+      (r/response (call-parser (update request ::m/parser parser/parse-without-mutations))))
 
     ; Requires user login
     (context "/user" _

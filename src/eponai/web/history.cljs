@@ -32,11 +32,14 @@
     (binding [parser/*parser-allow-remote* false]
       (utils/update-dynamic-queries! reconciler))
 
-    ;; Transacting the full query of the app root to make sure
-    ;; we get all the data we need.
-    ;; TODO: Optimize this by just reading what we need.
-    (let [app-query (om/full-query (om/app-root reconciler))]
-      (om/transact! reconciler app-query))))
+    ;; Checking this flag because playground doesn't need
+    ;; to send these reads remote.
+    (when parser/*parser-allow-remote*
+      ;; Transacting the full query of the app root to make sure
+      ;; we get all the data we need.
+      ;; TODO: Optimize this by just reading what we need.
+      (let [app-query (om/full-query (om/app-root reconciler))]
+        (om/transact! reconciler app-query)))))
 
 (defn init-history [reconciler]
   (when-let [h @history-atom]

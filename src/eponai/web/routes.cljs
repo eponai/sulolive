@@ -34,8 +34,8 @@
                         {"/settings"  :route/settings
                          "/subscribe" :route/subscribe}))
 
-(def app-routes {app-root {end  :route/home
-                           "/1" version-1-routes}})
+(def app-routes {(bidi/alts app-root "/play") {end  :route/home
+                                               "/1" version-1-routes}})
 
 (def api-routes {"/api/logout" :route/api->logout})
 

@@ -6,10 +6,29 @@
             [om.dom :as dom]
             [taoensso.timbre :refer-macros [debug warn]]
             [eponai.common.format :as format]
+            [eponai.common.datascript :as common.datascript]
             [datascript.core :as d]
             [eponai.web.routes :as routes]))
 
 (defonce reconciler-atom (atom nil))
+
+;;;;;;; Helpers for remote communcation
+
+;; TODO: Move this function somewhere else?
+(defn read-basis-t-remote-middleware
+  "Given a remote-fn (that describes what, where and how to send a request to a server),
+  add basis-t for each key to the request. basis-t represents at which basis-t we last
+  read a key from the remote db."
+  [remote-fn conn]
+  (fn [query]
+    (let [ret (remote-fn query)
+          db (d/db conn)]
+      (assoc-in ret [:opts :transit-params :eponai.common.parser/read-basis-t]
+                (some->> (d/q '{:find [?e .] :where [[?e :db/ident :eponai.common.parser/read-basis-t]]}
+                              db)
+                         (d/entity db)
+                         (d/touch)
+                         (into {}))))))
 
 ;;;;;;; Om dynamic query helpers
 
@@ -74,6 +93,28 @@
 (defn component->query-key [c]
   (let [k (component->ref c)]
     (keyword "proxy" (str (namespace k) "." (name k)))))
+
+;;;;;;; App initialization
+
+(defonce conn-atom (atom nil))
+
+(defn init-conn
+  "Sets up the datascript state. Caches the state so we can keep our app state between
+  figwheel reloads."
+  (if @conn-atom
+    (do
+      (debug "Reusing old conn. It currently has schema for attributes:" (-> @conn-atom deref :schema keys))
+      @conn-atom)
+    (let [ui-state [{:ui/singleton :ui.singleton/app}
+                    {:ui/singleton :ui.singleton/auth}
+                    {:ui/component                      :ui.component/project
+                     :ui.component.project/selected-tab :dashboard}
+                    {:ui/component :ui.component/widget}
+                    {:ui/component :ui.component/root}]
+          conn (d/create-conn (common.datascript/ui-schema))]
+      (d/transact! conn ui-state)
+      (reset! conn-atom conn))))
+
 
 ;;;;;;; UI component helpers
 

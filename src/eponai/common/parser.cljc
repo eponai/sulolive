@@ -252,6 +252,13 @@
                       (dissoc target))]
       ret)))
 
+(defn parse-without-mutations
+  "Returns a parser that removes remote mutations before parsing."
+  [parser]
+  (fn [env query & [target]]
+    (let [query (->> query (into [] (remove #(and (sequential? %) (symbol? (first %))))))]
+      (parser env query target))))
+
 (defn parser
   ([]
    (let [parser (om/parser {:read   (-> read
