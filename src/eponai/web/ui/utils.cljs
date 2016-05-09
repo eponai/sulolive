@@ -101,6 +101,7 @@
 (defn init-conn
   "Sets up the datascript state. Caches the state so we can keep our app state between
   figwheel reloads."
+  []
   (if @conn-atom
     (do
       (debug "Reusing old conn. It currently has schema for attributes:" (-> @conn-atom deref :schema keys))

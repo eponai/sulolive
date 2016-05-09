@@ -3,6 +3,7 @@
   (:require [clojure.core.async :refer [<! go chan]]
             [compojure.core :refer :all]
             [environ.core :refer [env]]
+            [datomic.api :as d]
             [eponai.common.parser :as parser]
             [eponai.common.validate]
             [eponai.server.email :as e]
@@ -28,17 +29,23 @@
       (m/wrap-authenticate conn)
       (cond-> @in-production? m/wrap-error)
       m/wrap-format
-      (m/wrap-state {::m/conn              conn
-                     ::m/parser            (parser/parser)
-                     ::m/currencies-fn     #(exch/currencies (when @in-production? (env :open-exchange-app-id)))
-                     ::m/currency-rates-fn (exch/currency-rates-fn (when @in-production? (env :open-exchange-app-id)))
+      (m/wrap-state {::m/conn                     conn
+                     ::m/parser                   (parser/parser)
+                     ::m/currencies-fn            #(exch/currencies (when @in-production? (env :open-exchange-app-id)))
+                     ::m/currency-rates-fn        (exch/currency-rates-fn (when @in-production? (env :open-exchange-app-id)))
                      ;::m/send-email-fn     (e/send-email-fn conn)
-                     ::stripe/stripe-fn         (fn [k p]
-                                                  (stripe/stripe (env :stripe-secret-key-test) k p))
+                     ::stripe/stripe-fn           (fn [k p]
+                                                    (stripe/stripe (env :stripe-secret-key-test) k p))
                      ::email/send-verification-fn email/send-verification-email
                      ::email/send-invitation-fn   email/send-invitation-email
+                     ::m/playground-user-uuid-fn    (or (constantly (env :playground-user-uuid))
+                                                      (when-not @in-production?
+                                                        ;; In development we'll just get the first user.
+                                                        (fn [] (d/q '{:find  [?uuid .]
+                                                                      :where [[_ :user/uuid ?uuid]]}
+                                                                    (d/db conn)))))
                      ;; either "dev" or "release"
-                     ::m/cljs-build-id     (or (env :cljs-build-id) "dev")})
+                     ::m/cljs-build-id            (or (env :cljs-build-id) "dev")})
       m/wrap-defaults
       m/wrap-trace-request
       (cond-> @in-production? m/wrap-ssl)

@@ -8,7 +8,7 @@
             [ring.util.response :as r]
             [eponai.common.parser.util :as parser.util]
             [eponai.server.parser.response :as parser.resp]
-            [taoensso.timbre :refer [debug error trace]]
+            [taoensso.timbre :refer [debug error trace warn]]
             [eponai.server.api :as api]
             [eponai.server.external.stripe :as stripe]
             [clojure.data.json :as json]
@@ -80,12 +80,12 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [::m/conn ::m/parser ::m/make-parser-error-fn ::m/stripe-fn body] :as request}]
+  [{:keys [::m/conn ::m/parser ::m/make-parser-error-fn ::m/stripe-fn ::m/playground-auth body] :as request}]
   (debug "Handling parser request with body:" body)
   (parser
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
      :state                             conn
-     :auth                              (friend/current-authentication request)
+     :auth                              (or playground-auth (friend/current-authentication request))
      :parser-error-fn                   (when make-parser-error-fn
                                           (make-parser-error-fn request))
      :stripe-fn                         stripe-fn}
@@ -155,7 +155,15 @@
 
     ;; TODO: We need a test which fails if a request mutates the db.
     (POST "/playground" request
-      (r/response (call-parser (update request ::m/parser parser/parse-without-mutations))))
+      (let [user-uuid-fn (::m/playground-user-uuid-fn request)
+            user-uuid (when (fn? user-uuid-fn) (user-uuid-fn))]
+        (when-not user-uuid
+          (warn "No playground user-uuid with request: " request))
+        (r/response (call-parser (-> request
+                                     (assoc ::m/playground-auth {:username user-uuid})
+                                     (update ::m/parser (fn [parser] (-> parser
+                                                                         parser/parse-without-mutations
+                                                                         parser/parser-require-auth))))))))
 
     ; Requires user login
     (context "/user" _
