@@ -1,10 +1,11 @@
 (ns eponai.web.playground
-  (:require [eponai.web.app :as app]
-            [eponai.web.ui.utils :as utils]
-            [eponai.common.parser :as parser]
-            [taoensso.timbre :refer-macros [debug]]
+  (:require [eponai.common.parser :as parser]
             [eponai.client.backend :as backend]
-            [eponai.web.homeless :as homeless]))
+            [eponai.web.app :as app]
+            [eponai.web.routes :as routes]
+            [eponai.web.ui.utils :as utils]
+            [eponai.web.homeless :as homeless]
+            [taoensso.timbre :refer-macros [debug]]))
 
 (defn parser-without-remote-mutations [parser]
   (let [parse-without-mutations (parser/parse-without-mutations parser)]
@@ -15,6 +16,7 @@
         (parser env query target)))))
 
 (defn run []
+  (reset! routes/app-root "/play")
   (let [conn (utils/init-conn)]
     (app/initialize-app conn {:parser (parser-without-remote-mutations (parser/parser))
                               :send   (backend/send! {:remote (-> (backend/post-to-url homeless/om-next-endpoint-playground)

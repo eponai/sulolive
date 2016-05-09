@@ -55,16 +55,16 @@
      If parser throws an exception we'll return:
      {:om.next/error (parser-error-fn e)}"
      [parser]
-     (fn [env body]
+     (fn [env query & [target]]
        (let [parser-error-fn (or (:parser-error-fn env) default-error-fn)
              map-parser-errors (fn [m k v]
                                  (if-not (:om.next/error v)
                                    m
                                    (update-in m [k :om.next/error] parser-error-fn)))]
          (try
-           (trace "Calling parser with body: " body)
-           (let [ret (parser env body)]
-             (trace "Called parser with body: " body " returned: " ret)
+           (trace "Calling parser with body: " query)
+           (let [ret (parser env query target)]
+             (trace "Called parser with body: " query " returned: " ret)
              (reduce-kv map-parser-errors ret ret))
            (catch Throwable e
              (error e)
@@ -131,9 +131,10 @@
 (defn wrap-parser-filter-atom
   "Returns a parser with a filter-atom assoc'ed in the env."
   [parser]
-  (fn [env & args]
-    (apply parser (assoc env ::filter-atom (atom nil))
-           args)))
+  (fn [env query & [target]]
+    (parser (assoc env ::filter-atom (atom nil))
+            query
+            target)))
 
 (defn mutate-with-idempotent-invariants  [mutate]
   (fn [{:keys [target ast] :as env} k {:keys [mutation-uuid] :as params}]
@@ -265,8 +266,8 @@
                                         mutate-with-idempotent-invariants
                                         mutate-with-error-logging
                                         wrap-db)})]
-     #?(:cljs (fn [env & args]
-                (apply parser env args))
+     #?(:cljs (fn [env query & [target]]
+                (parser env query target))
         :clj  (-> parser
                   wrap-parser-filter-atom
                   wrap-om-next-error-handler)))))
@@ -282,5 +283,6 @@
 
 (defn parser-require-auth [parser]
   (fn [env query & [target]]
-    {:pre [(some? (get-in env [:auth :username]))]}
+    (assert (some? (get-in env [:auth :username]))
+            (str "No auth in parser's env: " env))
     (parser env query target)))

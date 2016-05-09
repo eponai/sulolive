@@ -38,12 +38,13 @@
                                                     (stripe/stripe (env :stripe-secret-key-test) k p))
                      ::email/send-verification-fn email/send-verification-email
                      ::email/send-invitation-fn   email/send-invitation-email
-                     ::m/playground-user-uuid-fn    (or (constantly (env :playground-user-uuid))
-                                                      (when-not @in-production?
-                                                        ;; In development we'll just get the first user.
-                                                        (fn [] (d/q '{:find  [?uuid .]
-                                                                      :where [[_ :user/uuid ?uuid]]}
-                                                                    (d/db conn)))))
+                     ::m/playground-user-uuid-fn  (if (env :playground-user-uuid)
+                                                    (constantly (env :playground-user-uuid))
+                                                    (when-not @in-production?
+                                                      ;; In development we'll just get the first user.
+                                                      (fn [] (d/q '{:find  [?uuid .]
+                                                                    :where [[_ :user/uuid ?uuid]]}
+                                                                  (d/db conn)))))
                      ;; either "dev" or "release"
                      ::m/cljs-build-id            (or (env :cljs-build-id) "dev")})
       m/wrap-defaults

@@ -80,7 +80,7 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [::m/conn ::m/parser ::m/make-parser-error-fn ::m/stripe-fn ::m/playground-auth body] :as request}]
+  [{:keys [::m/conn ::m/parser ::m/make-parser-error-fn ::m/stripe-fn ::playground-auth body] :as request}]
   (debug "Handling parser request with body:" body)
   (parser
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
@@ -156,14 +156,18 @@
     ;; TODO: We need a test which fails if a request mutates the db.
     (POST "/playground" request
       (let [user-uuid-fn (::m/playground-user-uuid-fn request)
-            user-uuid (when (fn? user-uuid-fn) (user-uuid-fn))]
-        (when-not user-uuid
-          (warn "No playground user-uuid with request: " request))
-        (r/response (call-parser (-> request
-                                     (assoc ::m/playground-auth {:username user-uuid})
-                                     (update ::m/parser (fn [parser] (-> parser
-                                                                         parser/parse-without-mutations
-                                                                         parser/parser-require-auth))))))))
+            user-uuid (if (fn? user-uuid-fn)
+                        (user-uuid-fn)
+                        (warn "user-uuid-fn was not a function. Was: " user-uuid-fn))]
+        (if (some? user-uuid)
+          (r/response (call-parser (-> request
+                                       (assoc ::playground-auth {:username user-uuid})
+                                       (update ::m/parser (fn [parser] (-> parser
+                                                                           parser/parse-without-mutations
+                                                                           parser/parser-require-auth))))))
+          (throw (ex-info "No playground user-uuid with request. Will not call parser."
+                          {:request          request
+                           :keys-of-interest [::m/playground-user-uuid-fn]})))))
 
     ; Requires user login
     (context "/user" _

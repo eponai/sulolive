@@ -4,7 +4,7 @@
             [eponai.client.route-helper :as route-helper]))
 
 ;; function which creates a version-1 route.
-(def version-1-route (route-helper/create-inside-route-fn (str routes/app-root "/" routes/version)))
+(def version-1-route (route-helper/create-inside-route-fn (str @routes/app-root "/" routes/version)))
 
 (deftest web-routes-version-1
   (are [handler route params]

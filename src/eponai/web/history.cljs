@@ -48,7 +48,7 @@
   ;; route params before om/add-root!, and we shouldn't set app-root's query twice... or something.
   (let [initial-dispatch (atom false)
         dispatch-fn (set-page! reconciler)
-        match-fn (partial bidi/match-route routes/routes)
+        match-fn (partial bidi/match-route (routes/routes))
         history (pushy/pushy (fn [& args]
                                (try
                                  (if @initial-dispatch

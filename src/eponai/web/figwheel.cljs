@@ -7,7 +7,7 @@
 (defn reload! []
   (let [url js/location.pathname]
     (debug "Url is:" url)
-    (if (bidi/match-route routes/routes js/location.pathname)
+    (if (bidi/match-route (routes/routes) js/location.pathname)
       (do
         (debug "Matched an app route. Calling (app/run)")
         (app/run))
