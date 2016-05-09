@@ -43,7 +43,6 @@
   (create [this]
     (let [{:keys [id width height data]} (om/props this)
           svg (d3/build-svg (str "#area-chart-" id) width height)
-          js-domain (clj->js (flatten (map :values data)))
           js-data (clj->js data)
 
           {:keys [margin]} (om/get-state this)
@@ -72,17 +71,16 @@
                     (append "g")
                     (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")"))
                     (attr "width" inner-width))
-          ;vertical (.. svg
-          ;             (append "div")
-          ;             (attr "class" "vertical")
-          ;             (style "position" "absolute")
-          ;             (style "background" "black")
-          ;             (style "width" "2px")
-          ;             (style "height" "500px")
-          ;             (style "top" 0)
-          ;             (style "bottom" 0)
-          ;             (style "z-index" "100"))
-          ]
+          focus (.. svg
+                    (append "g")
+                    (attr "class" "focus")
+                    (style "display" "none")) ]
+
+
+      (.. focus
+          (append "text")
+          (attr "x" 9)
+          (attr "dy" ".35em"))
 
       (.. graph
           (append "g")
@@ -93,16 +91,37 @@
       (.. svg
           (on "mousemove" (fn []
                             (this-as jthis
-                              (let [mouseX (.. js/d3 (mouse jthis))]
-                                (.. js/d3
-                                    (select ".vertical")
-                                    (style "left" (str (first mouseX) "px")))))))
+                              (let [mouseX (first (.. js/d3 (mouse jthis)))
+                                    sample-data (.-values (first js-data))
+                                    bisect-date (.. js/d3
+                                                 (bisector (fn [d]
+                                                             (.-name d)))
+                                                 -left)
+                                    x0 (.invert x-scale mouseX)
+                                    i (bisect-date sample-data x0 1)
+                                    d0 (get sample-data (dec i))
+                                    d1 (get sample-data i)
+                                    x-value (if (> (- x0 (.-name d0)) (- (.-name d1) x0))
+                                              i (dec i))
+                                    found-data (.map js-data #(get (.-values %) x-value))
+
+                                    point (.. focus
+                                              (selectAll "circle")
+                                              (data found-data))]
+                                (.. point
+                                    enter
+                                    (append "circle")
+                                    (attr "r" 3.5))
+                                (.. point
+                                    (attr "transform" (fn [d]
+                                                        (str "translate(" (x-scale (.-name d)) "," (y-scale (+ (.-y0 d) (.-y d))) ")")))
+                                    (style "stroke" (fn [_ i]
+                                                    (color-scale i)))
+                                    (style "fill" "none"))))))
           (on "mouseover" (fn []
-                            (this-as jthis
-                              (let [mouseX (.. js/d3 (mouse jthis))]
-                                (.. js/d3
-                                    (select ".vertical")
-                                    (style "left" (str (first mouseX) "px"))))))))
+                            (.. focus (style "display" nil))))
+          (on "mouseout" (fn []
+                           (.. focus (style "display" "none")))))
 
 
       (d3/update-on-resize this id)
@@ -185,7 +204,6 @@
           (duration 250)
           (attr "d" (fn [d]
                       (let [data-id (.-id d)]
-                        (debug "Found area chart id: " data-id)
                         (if (= data-id "mean")
                           (line (.-values d))
                           (area (.-values d)))))))
@@ -211,8 +229,6 @@
         [:div
          (opts {:id    (str "area-chart-" id)
                 :style {:height "100%"
-                        :width  "100%"}})
-
-         [:div.vertical]]))))
+                        :width  "100%"}})]))))
 
 (def ->AreaChart (om/factory AreaChart))
