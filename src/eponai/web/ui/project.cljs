@@ -173,7 +173,7 @@
                props (cond-> (assoc child-content :ref content)
                              (= :widget content)
                              (om/computed {:dashboard (:query/dashboard dashboard)
-                                           :index     (dashboard/calculate-last-index 4 (:widget/_dashboard dashboard))}))]
+                                           :index     (dashboard/calculate-last-index (:widget/_dashboard dashboard))}))]
            (when factory
              (factory props)))]
 

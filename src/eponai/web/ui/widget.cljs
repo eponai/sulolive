@@ -12,6 +12,21 @@
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]))
 
+(defn dimensions [graph]
+  (let [style (:graph/style graph)]
+    (cond (or
+            (= style :graph.style/bar)
+            (= style :graph.style/line)
+            (= style :graph.style/area))
+          {:maxH 3
+           :minH 2
+           :minW 50
+           :maxW 100}
+
+          :else
+          {:minH 2
+           :minW 25
+           :maxW 100})))
 (defui Widget
   static om/IQuery
   (query [_]

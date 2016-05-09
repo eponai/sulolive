@@ -11,14 +11,33 @@
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [error debug]]))
 
+(defn min-dimensions [widget num-cols]
+  (let [style (get-in widget [:widget/graph :graph/style])
+        calc-w (fn [min-w]
+                      (.floor js/Math (/ (* min-w num-cols) 100)))]
+
+    (cond (or
+            (= style :graph.style/area)
+            (= style :graph.style/line)
+            (= style :graph.style/bar))
+          {:minW (calc-w 50)
+           :minH 2
+           :maxH 3}
+
+          :else
+          {:minW 1
+           :maxH 2})))
+
 (defn grid-layout
   [num-cols widgets]
   (let [layout-fn (fn [{:keys [widget/index] :as widget}]
-                    {:x (mod index num-cols)
-                     :y (int (/ index num-cols))
-                     :w (max 1 (.floor js/Math (/ (* (:widget/width widget) num-cols) 100)))
-                     :h (:widget/height widget)
-                     :i (str (:widget/uuid widget))})]
+                    (merge
+                      {:x    (mod index num-cols)
+                       :y    (int (/ index num-cols))
+                       :w    (max 1 (.floor js/Math (/ (* (:widget/width widget) num-cols) 100)))
+                       :h    (:widget/height widget)
+                       :i    (str (:widget/uuid widget))}
+                      (min-dimensions widget num-cols)))]
     (map layout-fn widgets)))
 
 (defn widgets->layout [cols widgets]
@@ -40,11 +59,11 @@
               :widget/height new-height}))
          layout)))
 
-(defn calculate-last-index [num-cols widgets]
-  (let [{:keys [widget/index
-                widget/height
-                widget/width]} (last (sort-by :widget/index widgets))]
-    (max 0 (inc index))))
+(defn calculate-last-index [widgets]
+  (let [{:keys [widget/index]} (last (sort-by :widget/index widgets))]
+    (if index
+      (inc index)
+      0)))
 
 (defn build-react [component props & children]
   (let [React (.-React js/window)]
