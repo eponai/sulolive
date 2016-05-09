@@ -122,21 +122,56 @@
     (assoc transaction
       :db/id (d/tempid :db.part/user))))
 
-(defn data-filter
-  [input & opts]
+(defn filter*
+  [input]
   (debug "Doing data filter: " input)
-  (let [clean-filters (reduce
-                        (fn [m [k v]]
-                          (let [ent (add-tempid v)]
-                            ;; Clear up and remove any empty filters, we don't want to insert nil in datomic.
-                            (if (some? ent)
-                              (assoc m k ent)
-                              m)))
-                        {}
-                        input)]
-    (if (seq clean-filters)
-      (assoc clean-filters :db/id (d/tempid :db.part/user))
-      nil)))
+  (let [remove-empty-vals (fn [i]
+                            (into {} (filter #(let [v (val %)]
+                                               (if (coll? v)
+                                                 (seq v)
+                                                 (some? v))))
+                                  i))]
+    ;(reduce
+    ;  (fn [m [k v]]
+    ;    (let [ent (add-tempid v)]
+    ;      ;; Clear up and remove any empty filters, we don't want to insert nil in datomic.
+    ;      (if (some? ent)
+    ;        (assoc m k ent)
+    ;        m)))
+    ;  {}
+    ;  f)
+    (debug "Formatting filter: " (-> input
+                                     (select-keys [:filter/last-x-days
+                                                   :filter/start-date
+                                                   :filter/end-date
+                                                   :filter/min-amount
+                                                   :filter/max-amount
+                                                   :filter/include-tags
+                                                   :filter/exclude-tags])
+                                     add-tempid
+                                     (update :filter/end-date add-tempid)
+                                     (update :filter/start-date add-tempid)
+                                     (update :filter/include-tags add-tempid)
+                                     (update :filter/exclude-tags add-tempid)
+                                     (update :filter/min-amount #(when % (str->number %)))
+                                     (update :filter/max-amount #(when % (str->number %)))
+                                     remove-empty-vals))
+    (-> input
+        (select-keys [:filter/last-x-days
+                      :filter/start-date
+                      :filter/end-date
+                      :filter/min-amount
+                      :filter/max-amount
+                      :filter/include-tags
+                      :filter/exclude-tags])
+        add-tempid
+        (update :filter/end-date add-tempid)
+        (update :filter/start-date add-tempid)
+        (update :filter/include-tags add-tempid)
+        (update :filter/exclude-tags add-tempid)
+        (update :filter/min-amount #(when % (str->number %)))
+        (update :filter/max-amount #(when % (str->number %)))
+        remove-empty-vals)))
 
 (defn track-function* [input]
   (add-tempid (select-keys input [:track.function/id
@@ -165,7 +200,7 @@
         (update :goal/cycle cycle*))
 
     (some? (:goal/filter input))
-    (update :goal/filter data-filter)))
+    (update :goal/filter filter*)))
 
 (defn report* [input]
   (cond
@@ -188,7 +223,7 @@
         add-tempid)
 
     (some? (:graph/filter input))
-    (update :graph/filter data-filter)))
+    (update :graph/filter filter*)))
 
 (defn widget* [input]
   (cond->
@@ -199,7 +234,7 @@
         (update :widget/dashboard (fn [d-uuid] (vector :dashboard/uuid d-uuid))))
 
     (some? (:widget/filter input))
-    (update :widget/filter data-filter)))
+    (update :widget/filter filter*)))
 
 (defn widget-create [input]
   (assert (some? (:widget/dashboard input)) "Widget needs to ba associated to a dashboard.")

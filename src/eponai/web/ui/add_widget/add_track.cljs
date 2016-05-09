@@ -23,13 +23,7 @@
                             (assoc f
                               :track.function/id :track.function.id/sum
                               :track.function/group-by (get default-group-by style)))
-                          fns))))
-    ;(om/update-state! component
-    ;                  #(-> %
-    ;                       (assoc-in [:input-graph :graph/style] style)
-    ;                       (assoc-in [:input-report :report/track :track/functions] [{:track.function/id :track.function.id/sum
-    ;                                                                                  :track.function/group-by (get default-group-by style)}])))
-    ))
+                          fns))))))
 
 (defui NewTrack
   Object
@@ -45,10 +39,12 @@
                                                                                                   :filter/exclude-tags])
                         :date-filter (select-keys (:widget/filter widget) [:filter/start-date
                                                                            :filter/end-date
-                                                                           :filter/last-x-days]))))
+                                                                           :filter/last-x-days])
+                        :amount-filter (select-keys (:widget/filter widget) [:filter/min-amount
+                                                                             :filter/max-amount]))))
   (get-filters [this]
-    (let [{:keys [tag-filter date-filter]} (om/get-state this)]
-      (merge tag-filter date-filter)))
+    (let [{:keys [tag-filter date-filter amount-filter]} (om/get-state this)]
+      (merge tag-filter date-filter amount-filter)))
 
   (update-selected-transactions [this selected]
     (let [{:keys [widget
@@ -72,6 +68,7 @@
            {:keys [step
                    tag-filter
                    date-filter
+                   amount-filter
                    graph-filter
                    selected-transactions]} (om/get-state this)
           {:keys [widget/graph]} widget]
@@ -106,7 +103,7 @@
               (filter/->DateFilter (om/computed {:filter date-filter}
                                                 {:on-change #(do
                                                               (om/update-state! this assoc :date-filter %)
-                                                              (on-change (assoc widget :widget/filter %) {:update-data? true}))}))]]]
+                                                              (on-change (assoc widget :widget/filter (.get-filters this)) {:update-data? true}))}))]]]
            [:div.row
             [:div.columns.small-12.medium-6
              [:select
@@ -129,11 +126,16 @@
                                                                                                       {tag-filter-key tags}
                                                                                                       (dissoc tag-filter tag-filter-key))]
                                                                                     (om/update-state! this assoc :tag-filter new-filters)
-                                                                                    (on-change (assoc widget :widget/filter new-filters) {:update-data? true})))})))]
+                                                                                    (on-change (assoc widget :widget/filter (.get-filters this)) {:update-data? true})))})))]
                (condp = selected-transactions
                  :include-tags (tag-filter-fn :filter/include-tags)
                  :exclude-tags (tag-filter-fn :filter/exclude-tags)
                  :all-transactions nil))]]
+           [:div.row
+            (filter/->AmountFilter (om/computed {:amount-filter amount-filter}
+                                                {:on-change #(do
+                                                              (om/update-state! this assoc :amount-filter %)
+                                                              (on-change (assoc widget :widget/filter (.get-filters this)) {:update-data? true}))}))]
            [:hr]
            [:p.currency-code "Preview"]
            [:div.row

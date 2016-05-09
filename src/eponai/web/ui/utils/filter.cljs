@@ -7,7 +7,50 @@
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]
-    ))
+    [eponai.common.format :as f]))
+
+(defui AmountFilter
+  Object
+  (initLocalState [this]
+    {:amount-filter (:amount-filter (om/props this))})
+  (componentWillReceiveProps [this new-props]
+    (om/update-state! this assoc :amount-filter (:amount-filter new-props)))
+  (render [this]
+    (let [{:keys [amount-filter]} (om/get-state this)
+          {:keys [on-change]} (om/get-computed this)]
+      (debug "Filter with amount: " amount-filter)
+      (html
+        [:div.row.expanded
+         [:div.columns.small-1.text-right
+          "Min:"]
+         [:div.columns.small-2
+          [:input
+           {:value       (or (:filter/min-amount amount-filter) "")
+            :type        "number"
+            :on-change   #(let [v (.-value (.-target %))]
+                           (if (seq v)
+                             (om/update-state! this update :amount-filter assoc :filter/min-amount (f/str->number v))
+                             (om/update-state! this update :amount-filter dissoc :filter/min-amount)))
+            :on-key-down #(utils/on-enter-down
+                           %
+                           (fn [_]
+                             (on-change amount-filter)))}]]
+         [:div.columns.small-1.text-right
+          "Max:"]
+         [:div.columns.small-2.end
+          [:input
+           {:value       (or (:filter/max-amount amount-filter) "")
+            :type        "number"
+            :on-change   #(let [v (.-value (.-target %))]
+                           (if (seq v)
+                             (om/update-state! this update :amount-filter assoc :filter/max-amount (f/str->number v))
+                             (om/update-state! this update :amount-filter dissoc :filter/max-amount)))
+            :on-key-down #(utils/on-enter-down
+                           %
+                           (fn [_]
+                             (on-change amount-filter)))}]]]))))
+
+(def ->AmountFilter (om/factory AmountFilter))
 
 (defui DateFilter
   Object

@@ -14,7 +14,7 @@
     [om.dom :as dom]
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]
-    ))
+    [eponai.common.format :as f]))
 
 ;; ################### Om next components ###################
 
@@ -169,7 +169,6 @@
                    (map-all (sort-by :tag/name (:transaction/tags transaction))
                             (fn [tag]
                               (utils/tag tag {:on-click  #(do
-                                                           ;(.stopPropagation %)
                                                            (on-tag-click tag))
                                               :on-delete (fn []
                                                            (debug "Delete tag: " tag)
@@ -206,9 +205,7 @@
 
   Object
   (initLocalState [this]
-    {:input-tag    ""
-     :input-filter {}
-     :on-tag-click #(do
+    {:on-tag-click #(do
                      (om/update-state! this update-in [:tag-filter :filter/include-tags] utils/add-tag %)
                      (om/update-query! this assoc-in [:params :filter] (.filter this)))})
 
@@ -222,9 +219,11 @@
     (om/transact! this `[(transactions/deselect)]))
 
   (filter [this]
-    (let [{:keys [date-filter tag-filter]} (om/get-state this)]
-      (debug "Using filter: " (merge tag-filter date-filter))
-      (merge tag-filter date-filter)))
+    (let [{:keys [date-filter tag-filter amount-filter]} (om/get-state this)]
+      (merge tag-filter date-filter amount-filter)))
+
+  (has-filter [_ filter]
+    (some #(let [v (val %)] (if (coll? v) (seq v) (some? v))) filter))
 
   (render-empty-message [this]
     (html
@@ -248,7 +247,7 @@
          "."]]]))
 
   (render-filters [this]
-    (let [{:keys [tag-filter date-filter]} (om/get-state this)]
+    (let [{:keys [tag-filter date-filter amount-filter]} (om/get-state this)]
       (html
         [:div.transaction-filters
          [:div.row.expanded.collapse
@@ -261,7 +260,13 @@
            (filter/->DateFilter (om/computed {:filter date-filter}
                                              {:on-change #(do
                                                            (om/update-state! this assoc :date-filter %)
-                                                           (om/update-query! this assoc-in [:params :filter] (.filter this)))}))]]])))
+                                                           (om/update-query! this assoc-in [:params :filter] (.filter this)))}))]]
+
+         [:div.row.expanded
+          (filter/->AmountFilter (om/computed {:amount-filter amount-filter}
+                                              {:on-change #(do
+                                                            (om/update-state! this assoc :amount-filter %)
+                                                            (om/update-query! this assoc-in [:params :filter] (.filter this)))}))]])))
 
   (render-transaction-list [this transactions]
     (let [{currencies      :query/all-currencies
@@ -297,13 +302,8 @@
       (html
         [:div#txs
          (opts {:style {:padding "1em"}})
-
          (if (or (seq transactions)
-                 (some? (or (seq (:filter/include-tags input-filter))
-                            (seq (:filter/exclude-tags input-filter))
-                            (:filter/start-date input-filter)
-                            (:filter/end-date input-filter)
-                            (:filter/last-x-days input-filter))))
+                 (.has-filter this input-filter))
            (.render-transaction-list this transactions)
            (.render-empty-message this))
          (when add-transaction?

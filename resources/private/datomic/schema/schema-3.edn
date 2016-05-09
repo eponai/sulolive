@@ -5,4 +5,18 @@
   :db/cardinality        :db.cardinality/one
   :db/doc                "Filter goal data."
   :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :filter/max-amount
+  :db/valueType          :db.type/bigdec
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Filter on maximum amount."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :filter/min-amount
+  :db/valueType          :db.type/bigdec
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Filter on minimum amount."
+  :db.install/_attribute :db.part/db}
  ]

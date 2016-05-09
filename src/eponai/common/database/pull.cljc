@@ -12,7 +12,8 @@
     [clj-time.core :as time]
        :cljs [cljs-time.core :as time])
     [eponai.common.parser.util :as parser]
-    [eponai.common.format.date :as date])
+    [eponai.common.format.date :as date]
+    [eponai.common.report :as report])
   #?(:clj
      (:import (clojure.lang ExceptionInfo)
               (datomic.db Db))))
@@ -203,7 +204,6 @@
   [{:keys [filter/start-date
            filter/end-date
            filter/include-tags
-           filter/exclude-tags
            filter/last-x-days] :as filter}]
   {:pre [(map? filter)]}
   (cond->
@@ -259,26 +259,6 @@
 (defn find-transactions
   [db params]
   (all-with db (transaction-entity-query params)))
-
-(defn find-latest-conversion [db {:keys [currency user] :as params}]
-  ;(info "Finding latest conversion with params: " params)
-  (let [query (cond currency
-                    {:find-pattern '[?t ?co]
-                     :symbols      {'?currency (:db/id currency)}
-                     :where        '[[?co :conversion/currency ?currency]
-                                     [?co :conversion/date ?d]
-                                     [?d :date/timestamp ?t]]}
-                    user
-                    {:find-pattern '[?t ?co]
-                     :symbols      {'?uuid (:user/uuid user)}
-                     :where        '[[?u :user/uuid ?uuid]
-                                     [?u :user/currency ?c]
-                                     [?co :conversion/currency ?c]
-                                     [?co :conversion/date ?d]
-                                     [?d :date/timestamp ?t]]})
-        data (sort (all-with db query))
-        [_ conversion] (last data)]
-    conversion))
 
 ;; TODO: This is probably slow. We want to do a separate
 ;;       query for transaction conversions and user
@@ -392,6 +372,17 @@
   ([data-filter transactions]
    (sequence (filter-excluded-tags data-filter) transactions)))
 
+(defn filter-amounts [{:keys [filter/min-amount
+                              filter/max-amount]} transactions]
+  (cond->> transactions
+           (some? min-amount)
+           (into [] (filter #(<= (f/str->number min-amount)
+                                 (report/converted-amount %))))
+
+           (some? max-amount)
+           (into [] (filter #(>= (f/str->number max-amount)
+                                 (report/converted-amount %))))))
+
 (defn transactions-with-conversions [{:keys [db query]} user-uuid {:keys [conversion-query] :as params}]
   (let [tx-entities (sequence (comp (filter some?)
                                     (map #(d/entity db %))
@@ -402,7 +393,9 @@
                                              (or conversion-query [:conversion/rate])
                                              user-uuid
                                              tx-entities)]
-    (mapv #(cond-> (assoc (into {} %) :db/id (:db/id %))
-                   (contains? conversions (:db/id %))
-                   (assoc :transaction/conversion (get conversions (:db/id %))))
-          tx-entities)))
+    (filter-amounts
+      (:filter params)
+      (mapv #(cond-> (assoc (into {} %) :db/id (:db/id %))
+                     (contains? conversions (:db/id %))
+                     (assoc :transaction/conversion (get conversions (:db/id %))))
+            tx-entities))))
