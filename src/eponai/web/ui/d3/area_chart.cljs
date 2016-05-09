@@ -71,7 +71,18 @@
           graph (.. svg
                     (append "g")
                     (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")"))
-                    (attr "width" inner-width))]
+                    (attr "width" inner-width))
+          ;vertical (.. svg
+          ;             (append "div")
+          ;             (attr "class" "vertical")
+          ;             (style "position" "absolute")
+          ;             (style "background" "black")
+          ;             (style "width" "2px")
+          ;             (style "height" "500px")
+          ;             (style "top" 0)
+          ;             (style "bottom" 0)
+          ;             (style "z-index" "100"))
+          ]
 
       (.. graph
           (append "g")
@@ -79,11 +90,26 @@
           (attr "transform" (str "translate(0," inner-height ")"))
           (call x-axis))
 
+      (.. svg
+          (on "mousemove" (fn []
+                            (this-as jthis
+                              (let [mouseX (.. js/d3 (mouse jthis))]
+                                (.. js/d3
+                                    (select ".vertical")
+                                    (style "left" (str (first mouseX) "px")))))))
+          (on "mouseover" (fn []
+                            (this-as jthis
+                              (let [mouseX (.. js/d3 (mouse jthis))]
+                                (.. js/d3
+                                    (select ".vertical")
+                                    (style "left" (str (first mouseX) "px"))))))))
+
+
       (d3/update-on-resize this id)
       (om/update-state! this assoc :svg svg :js-data js-data :x-scale x-scale :y-scale y-scale :stack stack :area area :x-axis x-axis :y-axis y-axis :graph graph :color-scale color-scale :line line)))
 
   (update [this]
-    (let [{:keys [svg graph x-scale y-scale x-axis y-axis js-data margin stack]} (om/get-state this)
+    (let [{:keys [svg graph x-scale y-scale x-axis y-axis js-data margin stack vertical]} (om/get-state this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
           layers (stack js-data)
@@ -183,8 +209,10 @@
     (let [{:keys [id]} (om/props this)]
       (html
         [:div
-         (opts {:id (str "area-chart-" id)
+         (opts {:id    (str "area-chart-" id)
                 :style {:height "100%"
-                        :width "100%"}})]))))
+                        :width  "100%"}})
+
+         [:div.vertical]]))))
 
 (def ->AreaChart (om/factory AreaChart))
