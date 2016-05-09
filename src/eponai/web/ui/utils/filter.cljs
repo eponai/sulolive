@@ -103,8 +103,6 @@
     (let [{state-filter :filter} (om/get-state this)
           state-end (:filter/end-date state-filter)
           state-start (:filter/start-date state-filter)]
-      (debug "Setting date range: " f)
-      (debug "State dates: " state-filter)
       (cond start-date
             (if (and state-end
                      (< (:date/timestamp state-end)

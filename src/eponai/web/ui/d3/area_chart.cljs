@@ -11,18 +11,14 @@
 
 (defui AreaChart
   Object
-  (make-axis [_ width height domain]
+  (make-axis [_ width height]
     (let [x-scale (.. js/d3 -time scale
                       (range #js [0 width])
-                      (nice (.. js/d3 -time -year))
-                      (domain (.. js/d3
-                                  (extent domain (fn [d] (.-name d))))))
+                      (nice (.. js/d3 -time -year)))
 
           y-scale (.. js/d3 -scale linear
                       (range #js [height 0])
-                      (nice)
-                      (domain #js [0 (.. js/d3
-                                         (max domain (fn [d] (.-value d))))]))]
+                      (nice))]
       {:x-axis  (.. js/d3 -svg axis
                     (scale x-scale)
                     (orient "bottom")
@@ -54,16 +50,23 @@
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
 
-          {:keys [x-axis y-axis x-scale y-scale]} (.make-axis this inner-width inner-height js-domain)
+          {:keys [x-axis y-axis x-scale y-scale]} (.make-axis this inner-width inner-height)
           color-scale (.. js/d3 -scale category20)
 
+          stack (.. js/d3 -layout stack
+                    (values (fn [d]
+                              (.-values d)))
+                    (x (fn [d] (.-name d)))
+                    (y (fn [d] (.-value d))))
+
           area (.. js/d3 -svg area
-                   (x (fn [d] (x-scale (.-name d))))
-                   (y0 inner-height)
-                   (y1 (fn [d] (y-scale (.-value d)))))
+                   (x  #(x-scale (.-name %)))
+                   (y0 #(y-scale (.-y0 %)))
+                   (y1 #(y-scale (+ (.-y0 %) (.-y %)))))
+
           line (.. js/d3 -svg line
-                   (x (fn [d] (x-scale (.-name d))))
-                   (y (fn [d] (y-scale (.-value d)))))
+                   (x #(x-scale (.-name %)))
+                   (y #(y-scale (.-value %))))
 
           graph (.. svg
                     (append "g")
@@ -76,24 +79,20 @@
           (attr "transform" (str "translate(0," inner-height ")"))
           (call x-axis))
 
-      ;(.. graph
-      ;    (append "g")
-      ;    (attr "class" "y axis grid")
-      ;    (attr "transform" (str "translate(0,0)"))
-      ;    (call y-axis))
-
       (d3/update-on-resize this id)
-      (om/update-state! this assoc :svg svg :js-domain js-domain :js-data js-data :x-scale x-scale :y-scale y-scale :area area :x-axis x-axis :y-axis y-axis :graph graph :color-scale color-scale :line line)))
+      (om/update-state! this assoc :svg svg :js-data js-data :x-scale x-scale :y-scale y-scale :stack stack :area area :x-axis x-axis :y-axis y-axis :graph graph :color-scale color-scale :line line)))
 
   (update [this]
-    (let [{:keys [svg graph x-scale y-scale x-axis y-axis area js-domain margin]} (om/get-state this)
+    (let [{:keys [svg graph x-scale y-scale x-axis y-axis js-data margin stack]} (om/get-state this)
           {inner-width :width
-           inner-height :height} (d3/svg-dimensions svg {:margin margin})]
+           inner-height :height} (d3/svg-dimensions svg {:margin margin})
+          layers (stack js-data)
+          domain (.. js/d3 (merge (.map layers (fn [d] (.-values d)))))]
 
       ; When resize is in progress and sidebar pops in, inner size can be fucked up here.
       ; So just don't do anything in that case, an update will be triggered when sidebar transition is finished anyway.
       (when-not (or (js/isNaN inner-height) (js/isNaN inner-width))
-        (if (empty? js-domain)
+        (if (empty? domain)
           (do
             (d3/no-data-insert svg)
             (.. x-scale
@@ -107,15 +106,14 @@
             (.. x-scale
                 (range #js [0 inner-width])
                 (domain (.. js/d3
-                            (extent js-domain (fn [d] (.-name d))))))
+                            (extent domain (fn [d] (.-name d))))))
             (.. y-scale
                 (range #js [inner-height 0])
                 (domain #js [0 (.. js/d3
-                                   (max js-domain (fn [d] (.-value d))))]))))
-        (.. area
-            (y0 inner-height))
-
-        (.update-areas this)
+                                   (max domain
+                                        (fn [d]
+                                          (+ (.-y0 d) (.-y d)))))]))))
+        (.update-areas this layers)
 
         (.. y-axis
             (ticks (max (/ inner-height 50) 2))
@@ -136,11 +134,11 @@
             (duration 250)
             (call y-axis)))))
 
-  (update-areas [this]
-    (let [{:keys [graph js-data color-scale area line]} (om/get-state this)
+  (update-areas [this layers]
+    (let [{:keys [graph color-scale area line]} (om/get-state this)
           graph-area (.. graph
                          (selectAll ".area")
-                         (data js-data))]
+                         (data layers))]
       (.. graph-area
           enter
           (append "path")
