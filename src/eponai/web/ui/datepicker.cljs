@@ -4,6 +4,7 @@
             [eponai.common.format :as format]
             [eponai.common.format.date :as date]
             [clojure.string :as s]
+            [cljsjs.moment]
             [cljsjs.pikaday]
             [cljsjs.react.dom]
             [sablono.core :refer-macros [html]]
@@ -60,9 +61,10 @@
   (componentDidMount
     [this]
     (let [{:keys [on-change value min-date format]} (om/props this)
+          _ (debug "Datepicker format: " format)
           picker (js/Pikaday.
                    #js {:field    (get-pikaday-dom-node this)
-                        :format   (or format "MMM DD YYYY")
+                        :format   (or "MMM DD" "MMM DD YYYY")
                         :onSelect (fn [d]
                                     (on-change (date/date-map d)))
                         :minDate  min-date})]

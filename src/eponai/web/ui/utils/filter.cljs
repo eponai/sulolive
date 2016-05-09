@@ -75,9 +75,12 @@
   (initLocalState [this]
     (let [{:keys [filter]} (om/props this)]
       (.init-filters this filter)))
+  (componentDidMount [this]
+    (om/set-state! this (.init-filters this (:filter (om/props this)))))
 
   (componentWillReceiveProps [this new-props]
-    (om/set-state! this (.init-filters this (:filter new-props))))
+    (debug "render receiving props: " new-props)
+    (om/update-state! this assoc :filter (:filter new-props)))
 
   (set-this-month-filter [this]
     (om/update-state! this
@@ -95,11 +98,30 @@
     (om/update-state! this
                       #(update % :filter dissoc :filter/start-date :filter/end-date :filter/last-x-days)))
 
-  (set-date-range [this date-filter]
-    (om/update-state! this update :filter merge date-filter))
+  (set-date-range [this {:keys [filter/end-date
+                                filter/start-date] :as f}]
+    (let [{state-filter :filter} (om/get-state this)
+          state-end (:filter/end-date state-filter)
+          state-start (:filter/start-date state-filter)]
+      (debug "Setting date range: " f)
+      (debug "State dates: " state-filter)
+      (cond start-date
+            (if (and state-end
+                     (< (:date/timestamp state-end)
+                        (:date/timestamp start-date)))
+              (om/update-state! this update :filter merge (assoc f :filter/end-date (date/date-map start-date)))
+              (om/update-state! this update :filter merge f))
+
+            end-date
+            (if (and state-start
+                     (> (:date/timestamp state-start)
+                        (:date/timestamp end-date)))
+              (om/update-state! this update :filter merge (assoc f :filter/start-date (date/date-map end-date)))
+              (om/update-state! this update :filter merge f)))))
 
   (update-date-filter [this value]
-    (let [time-type (keyword (cljs.reader/read-string value))]
+    (let [time-type (keyword value)]
+        (om/update-state! this assoc :type time-type)
       (cond
         (= time-type :all-time)
         (.reset-date-filters this)
@@ -111,7 +133,6 @@
         (.set-this-month-filter this)
         :else
         (om/update-state! this #(update % :filter dissoc :filter/last-x-days)))
-      (om/update-state! this assoc :type time-type)
       (.should-notify-change this)))
 
   (should-notify-change [this]
@@ -122,6 +143,7 @@
 
   (render [this]
     (let [{:keys [filter type]} (om/get-state this)]
+      (debug "Render filter type: " type)
       (html
         [:div.filters
          [:div.row.small-up-1.medium-up-3

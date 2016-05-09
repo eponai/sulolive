@@ -53,6 +53,7 @@
                  [sablono "0.7.1"]
                  [cljsjs/d3 "3.5.7-1"]
                  [cljsjs/pikaday "1.4.0-1"]
+                 [cljsjs/moment "2.10.6-4"]
                  [cljsjs/react-grid-layout "0.10.8-0"]
                  [cljsjs/stripe "2.0-0"]
                  [bidi "2.0.0"]
