@@ -13,6 +13,7 @@
             [sablono.core :refer-macros [html]]
             [datascript.core :as d]
             [taoensso.timbre :refer-macros [debug]]
+            [goog.format.EmailAddress]
             [eponai.common.format :as format]))
 
 ;;;;; ###################### Actions ####################
@@ -190,6 +191,22 @@
                                                     {:on-close on-close}))
                            :on-close on-close})))]))))
 
+(defn show-subscribe-modal [component]
+  (utils/modal {:on-close #(om/update-state! component assoc :playground/show-subscribe-modal? false)
+                :content  (html
+                            [:div
+                             [:span "Subscribe to our newsletter!"]
+                             [:input
+                              (opts {:value       (or (:playground/modal-input (om/get-state component)) "")
+                                     :type        "email"
+                                     :on-change   #(om/update-state! component assoc :playground/modal-input (.. % -target -value))
+                                     :on-key-down #(utils/on-enter-down % (fn [text]
+                                                                            (when (goog.format.EmailAddress/isValidAddress text)
+                                                                              (om/update-state! component assoc
+                                                                                                :playground/modal-input ""
+                                                                                                :playground/show-subscribe-modal? false)
+                                                                              (om/transact! component `[(playground/subscribe ~{:email text})]))))})]])}))
+
 (def ->NavbarMenu (om/factory NavbarMenu))
 
 (defui SideBar
@@ -220,7 +237,7 @@
                   query/current-user
                   query/stripe]} (om/props this)
           {:keys [on-close expanded?]} (om/get-computed this)
-          {:keys [new-project? drop-target]} (om/get-state this)
+          {:keys [new-project? drop-target playground/show-subscribe-modal?]} (om/get-state this)
           {:keys [stripe/subscription]} stripe
           {subscription-status :stripe.subscription/status} subscription]
       (html
@@ -242,8 +259,17 @@
               [:small.header
                (str (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left on trial")])
 
-            (when-not (= subscription-status :active)
+            (cond
+              (true? utils/*playground?*)
+              [:a.upgrade-button
+               (opts {:on-click #(om/update-state! this assoc :playground/show-subscribe-modal? true)})
+               [:strong "Subscribe"]]
+
+              (not= subscription-status :active)
               (utils/upgrade-button))]
+
+           (when show-subscribe-modal?
+             (show-subscribe-modal this))
 
            [:div.sidebar-submenu#project-menu
             [:strong.header "Projects"]

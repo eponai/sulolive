@@ -10,6 +10,8 @@
             [datascript.core :as d]
             [eponai.web.routes :as routes]))
 
+(def ^:dynamic *playground?* false)
+
 (defonce reconciler-atom (atom nil))
 
 ;;;;;;; Helpers for remote communcation

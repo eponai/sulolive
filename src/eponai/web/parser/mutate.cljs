@@ -115,3 +115,9 @@
   [{:keys [state]} _ _]
   {:action #(t/transact-one state {:ui/component :ui.component/root
                                    :ui.component.root/route-changed false})})
+;;; ####################### Playground ##############################
+
+(defmethod mutate 'playground/subscribe
+  [{:keys [state]} _ {:keys [email]}]
+  (throw (ex-info "TODO: Actually subscribe. Needs client<->server messages?"
+                  {:email email})))

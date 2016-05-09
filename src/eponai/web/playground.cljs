@@ -16,7 +16,10 @@
         (parser env query target)))))
 
 (defn run []
+  (debug "Running playground/run")
+
   (reset! routes/app-root "/play")
+  (set! utils/*playground?* true)
   (let [conn (utils/init-conn)]
     (app/initialize-app conn {:parser (parser-without-remote-mutations (parser/parser))
                               :send   (backend/send! {:remote (-> (backend/post-to-url homeless/om-next-endpoint-playground)

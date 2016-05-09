@@ -2,7 +2,7 @@
   (:require [eponai.client.route-helper :refer [end]]
             [bidi.bidi :as bidi]))
 
-(def app-root (atom "/app"))
+(defonce app-root (atom "/app"))
 (def version 1)
 
 (def widget-routes
