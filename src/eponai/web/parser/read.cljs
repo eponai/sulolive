@@ -15,9 +15,11 @@
 
 (defmethod read :query/active-project
   [{:keys [db _]} _ _]
-  {:value (assoc (into {} (d/entity db [:ui/component :ui.component/project]))
-            :ui.component.project/active-project
-            (d/entity db (p/one-with db {:where [['?e :project/uuid (read/active-project-uuid db)]]})))})
+  {:value
+   (let [project-eid (read/active-project-eid db)]
+     (cond-> (into {} (d/entity db [:ui/component :ui.component/project]))
+             (some? project-eid)
+             (assoc :ui.component.project/active-project (d/entity db project-eid))))})
 
 (defmethod read :query/selected-transaction
   [{:keys [db query]} _ _]

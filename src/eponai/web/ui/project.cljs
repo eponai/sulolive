@@ -135,6 +135,12 @@
             (= :widget content)
             (conj {:proxy/dashboard (om/get-query Dashboard)}))))
 
+(comment
+  ;; Figure out if we still want to do this
+  (componentWillUnmount [this]
+                        (om/transact! this `[(ui.component.project/clear)
+                                             :query/transactions])))
+
 (defui Project
   static om/IQuery
   (query [this]
@@ -150,9 +156,6 @@
 
 
   Object
-  (componentWillUnmount [this]
-    (om/transact! this `[(ui.component.project/clear)
-                         :query/transactions]))
 
   (render [this]
     (let [{:keys [query/active-project

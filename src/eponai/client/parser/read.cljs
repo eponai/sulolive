@@ -47,14 +47,15 @@
   [_ _ _]
   {:remote true})
 
-(defn transactions-since [db last-db]
-  {:post [(set? %)]}
+(defn transactions-since [db last-db project-eid]
+  {:pre [(number? project-eid)]
+   :post [(set? %)]}
   (let [last-basis (:max-tx last-db)
-        _ (debug "Last basis: " last-basis)
+
         new-transaction-eids (into #{} (comp (mapcat #(d/datoms db :eavt (.-e %)))
                                              (filter #(> (.-tx %) last-basis))
                                              (map #(.-e %)))
-                                   (d/datoms db :aevt :transaction/uuid))]
+                                   (d/datoms db :avet :transaction/project project-eid))]
     (debug "new-transaction-eids: " (count new-transaction-eids))
     new-transaction-eids))
 
@@ -73,54 +74,54 @@
             (do (vswap! seen conj (f input))
                 (rf result input)))))))))
 
-(defonce txs-with-convs (atom []))
+(def txs-by-project (atom {}))
 
-(defn all-transactions-by-project [env])
+(defn all-local-transactions-by-project [{:keys [parser db] :as env} project-eid]
+  (assert (number? project-eid) (str "Project-eid was not a number. Was: " project-eid))
+  (let [{:keys [db-used txs]} (get @txs-by-project project-eid)
+        {:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
+    (when (and project-eid current-user)
+      (if (= db db-used)
+        txs
+        (let [new-txs (transactions-since db db-used project-eid)
+              new-with-convs (p/transactions-with-conversions db (:user/uuid current-user) new-txs)
+              new-and-old (into (into [] new-with-convs)
+                                (distinct-by :db/id new-txs)
+                                txs)]
+          (swap! txs-by-project assoc project-eid {:db-used db :txs new-and-old})
+          new-and-old)))))
 
-(def query-all-local-transactions
-  (parser.util/cache-last-read
-    (fn
-      [{:keys [parser ::parser.util/last-db db] :as env} _ p]
-      (let [{:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
-        (when current-user
-          (let [new-txs (transactions-since db last-db)
-                new-with-convs (p/transactions-with-conversions db (:user/uuid current-user) new-txs)
-                new-and-old (into (into [] new-with-convs)
-                                  (distinct-by :db/id new-txs)
-                                  @txs-with-convs)]
-            (reset! txs-with-convs new-and-old)
-            new-and-old))))))
-
-(defn active-project-uuid [db]
-  (:ui.component.project/uuid (d/entity db [:ui/component :ui.component/project])))
+(defn active-project-eid [db]
+  (or (:ui.component.project/eid (d/entity db [:ui/component :ui.component/project]))
+      ;; No project-uuid, grabbing the one with the smallest created-at
+      (p/min-by db :project/created-at (p/project))))
 
 (defmethod read :query/transactions
   [{:keys [db target ast] :as env} k p]
-  (let [project-uuid (active-project-uuid db)]
+  (let [project-eid (active-project-eid db)
+        ;; TODO: Pass project-eid instead of project-uuid to remote.
+        project-uuid (:project/uuid (d/entity db project-eid))]
     (if (= target :remote)
       ;; Pass the active project uuid to remote reader
       {:remote (assoc-in ast [:params :project-uuid] project-uuid)}
 
       ;; Local read
-      {:value (p/filter-transactions p (query-all-local-transactions env k (assoc p :project-uuid project-uuid)))})))
+      {:value (p/filter-transactions p (all-local-transactions-by-project env project-eid))})))
 
 (defmethod read :query/dashboard
   [{:keys [db ast query target] :as env} k p]
-  (let [project-uuid (active-project-uuid db)]
+  (let [project-eid (active-project-eid db)
+        ;; TODO: Pass project-eid instead of project-uuid to remote.
+        project-uuid (:project/uuid (d/entity db project-eid))]
     (if (= target :remote)
       ;; Pass the active project uuid to remote reader
       {:remote (assoc-in ast [:params :project-uuid] project-uuid)}
 
       ;; Local read
-      (let [eid (if project-uuid
-                  (p/one-with db (p/project-with-uuid project-uuid))
+      (let [transactions (delay (all-local-transactions-by-project env project-eid))]
 
-                  ;; No project-uuid, grabbing the one with the smallest created-at
-                  (p/min-by db :project/created-at (p/project)))
-            transactions (delay (query-all-local-transactions env k (assoc p :project-uuid (:project/uuid (d/entity db eid)))))]
-
-        {:value (when eid
-                  (when-let [dashboard-id (p/one-with db {:where [['?e :dashboard/project eid]]})]
+        {:value (when project-eid
+                  (when-let [dashboard-id (p/one-with db {:where [['?e :dashboard/project project-eid]]})]
                     (update (p/pull db query dashboard-id)
                             :widget/_dashboard (fn [widgets]
                                                  (mapv #(cond->> %

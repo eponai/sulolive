@@ -46,10 +46,8 @@
 
 (defmethod mutate 'project/set-active-uuid
   [{:keys [state]} _ {:keys [project-dbid]}]
-  {:action #(let [project-uuid (:project/uuid (d/entity (d/db state) project-dbid))]
-             (when project-uuid
-               (t/transact state [{:ui/component              :ui.component/project
-                                   :ui.component.project/uuid project-uuid}])))})
+  {:action #(t/transact state [{:ui/component             :ui.component/project
+                                :ui.component.project/eid project-dbid}])})
 
 (defmethod mutate 'project/select-tab
   [{:keys [state]} _ {:keys [selected-tab]}]
@@ -59,7 +57,7 @@
 (defmethod mutate 'ui.component.project/clear
   [{:keys [state]} _ _]
   {:action #(t/transact state
-                         [[:db.fn/retractAttribute [:ui/component :ui.component/project] :ui.component.project/uuid]])})
+                         [[:db.fn/retractAttribute [:ui/component :ui.component/project] :ui.component.project/eid]])})
 
 ;; ################### Transactions ################
 
