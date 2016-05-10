@@ -63,10 +63,6 @@
                    (y0 #(y-scale (.-y0 %)))
                    (y1 #(y-scale (+ (.-y0 %) (.-y %)))))
 
-          line (.. js/d3 -svg line
-                   (x #(x-scale (.-name %)))
-                   (y #(y-scale (.-value %))))
-
           graph (.. svg
                     (append "g")
                     (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")"))
@@ -84,7 +80,6 @@
       (.. focus
           (append "rect")
           (attr "class" "guide")
-          (attr "height" inner-height)
           ;(attr "width" "1px")
           )
 
@@ -100,35 +95,36 @@
                               (let [mouseX (first (.. js/d3 (mouse jthis)))
                                     sample-data (.-values (first js-data))
                                     bisect-date (.. js/d3
-                                                 (bisector (fn [d]
-                                                             (.-name d)))
-                                                 -left)
+                                                    (bisector (fn [d]
+                                                                (.-name d)))
+                                                    -left)
                                     x0 (.invert x-scale mouseX)
                                     i (bisect-date sample-data x0 1)
                                     d0 (get sample-data (dec i))
-                                    d1 (get sample-data i)
-                                    x-value (if (> (- x0 (.-name d0)) (- (.-name d1) x0))
-                                              i (dec i))
-                                    found-data (.map js-data #(get (.-values %) x-value))
+                                    d1 (get sample-data i)]
+                                (when (and d1 d0)
+                                  (let [x-value (if (> (- x0 (.-name d0)) (- (.-name d1) x0))
+                                                  i (dec i))
+                                        found-data (.map js-data #(get (.-values %) x-value))
 
-                                    point (.. focus
-                                              (selectAll "circle")
-                                              (data found-data))
-                                    guide (.. focus
-                                              (select ".guide"))]
-                                (.. point
-                                    enter
-                                    (append "circle")
-                                    (attr "class" "point")
-                                    (attr "r" 3.5))
+                                        point (.. focus
+                                                  (selectAll "circle")
+                                                  (data found-data))
+                                        guide (.. focus
+                                                  (select ".guide"))]
+                                    (.. point
+                                        enter
+                                        (append "circle")
+                                        (attr "class" "point")
+                                        (attr "r" 3.5))
 
-                                (.. point
-                                    (attr "transform" (fn [d]
-                                                        (str "translate(" (x-scale (.-name d)) "," (y-scale (+ (.-y0 d) (.-y d))) ")")))
-                                    (style "stroke" (fn [_ i]
-                                                    (color-scale i))))
-                                (.. guide
-                                    (attr "transform" (str "translate(" (x-scale (.-name (first found-data))) ",0)")))))))
+                                    (.. point
+                                        (attr "transform" (fn [d]
+                                                            (str "translate(" (x-scale (.-name d)) "," (y-scale (+ (.-y0 d) (.-y d))) ")")))
+                                        (style "stroke" (fn [_ i]
+                                                          (color-scale i))))
+                                    (.. guide
+                                        (attr "transform" (str "translate(" (x-scale (.-name (first found-data))) ",0)")))))))))
           (on "mouseover" (fn []
                             (.. focus (style "display" nil))))
           (on "mouseout" (fn []
@@ -136,19 +132,20 @@
 
 
       (d3/update-on-resize this id)
-      (om/update-state! this assoc :svg svg :js-data js-data :x-scale x-scale :y-scale y-scale :stack stack :area area :x-axis x-axis :y-axis y-axis :graph graph :color-scale color-scale :line line)))
+      (om/update-state! this assoc :svg svg :js-data js-data :x-scale x-scale :y-scale y-scale :stack stack :area area :x-axis x-axis :y-axis y-axis :graph graph :focus focus :color-scale color-scale)))
 
   (update [this]
-    (let [{:keys [svg graph x-scale y-scale x-axis y-axis js-data margin stack vertical]} (om/get-state this)
+    (let [{:keys [svg graph focus x-scale y-scale x-axis y-axis js-data margin stack]} (om/get-state this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
+
           layers (stack js-data)
-          domain (.. js/d3 (merge (.map layers (fn [d] (.-values d)))))]
+          values (.. js/d3 (merge (.map layers (fn [d] (.-values d)))))]
 
       ; When resize is in progress and sidebar pops in, inner size can be fucked up here.
       ; So just don't do anything in that case, an update will be triggered when sidebar transition is finished anyway.
       (when-not (or (js/isNaN inner-height) (js/isNaN inner-width))
-        (if (empty? domain)
+        (if (empty? values)
           (do
             (d3/no-data-insert svg)
             (.. x-scale
@@ -162,11 +159,11 @@
             (.. x-scale
                 (range #js [0 inner-width])
                 (domain (.. js/d3
-                            (extent domain (fn [d] (.-name d))))))
+                            (extent values (fn [d] (.-name d))))))
             (.. y-scale
                 (range #js [inner-height 0])
                 (domain #js [0 (.. js/d3
-                                   (max domain
+                                   (max values
                                         (fn [d]
                                           (+ (.-y0 d) (.-y d)))))]))))
         (.update-areas this layers)
@@ -188,10 +185,13 @@
             (selectAll ".y.axis")
             transition
             (duration 250)
-            (call y-axis)))))
+            (call y-axis))
+        (.. focus
+            (select ".guide")
+            (attr "height" inner-height)))))
 
   (update-areas [this layers]
-    (let [{:keys [graph color-scale area line]} (om/get-state this)
+    (let [{:keys [graph color-scale area]} (om/get-state this)
           graph-area (.. graph
                          (selectAll ".area")
                          (data layers))]
@@ -199,25 +199,16 @@
           enter
           (append "path")
           (attr "class" "area")
-          (style "fill" (fn [d i]
-                          (let [data-id (.-id d)]
-                            (if (= data-id "mean")
-                              "none"
-                              (color-scale i)))))
-          (style "stroke" (fn [d i]
-                            (let [data-id (.-id d)]
-                              (if (= data-id "mean")
-                                "black"
-                                (color-scale i))))))
+          (style "fill" (fn [_ i]
+                          (color-scale i)))
+          (style "stroke" (fn [_ i]
+                            (color-scale i))))
 
       (.. graph-area
           transition
           (duration 250)
           (attr "d" (fn [d]
-                      (let [data-id (.-id d)]
-                        (if (= data-id "mean")
-                          (line (.-values d))
-                          (area (.-values d)))))))
+                      (area (.-values d)))))
 
       (.. graph-area
           exit

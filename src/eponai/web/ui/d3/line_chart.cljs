@@ -12,18 +12,14 @@
 
 (defui LineChart
   Object
-  (make-axis [_ width height domain]
+  (make-axis [_ width height]
     (let [x-scale (.. js/d3 -time scale
                       (range #js [0 width])
-                      (nice (.. js/d3 -time -year))
-                      (domain (.. js/d3
-                                  (extent domain (fn [d] (.-name d))))))
+                      (nice (.. js/d3 -time -year)))
 
           y-scale (.. js/d3 -scale linear
                       (range #js [height 0])
-                      (nice)
-                      (domain #js [0 (.. js/d3
-                                         (max domain (fn [d] (.-value d))))]))]
+                      (nice))]
       {:x-axis (.. js/d3 -svg axis
                    (scale x-scale)
                    (orient "bottom")
@@ -48,14 +44,13 @@
     (let [{:keys [id width height data]} (om/props this)
           svg (d3/build-svg (str "#line-chart-" id) width height)
 
-          js-domain (clj->js (flatten (map :values data)))
           js-data (clj->js data)
 
           {:keys [margin]} (om/get-state this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
 
-          {:keys [x-axis y-axis x-scale y-scale]} (.make-axis this inner-width inner-height js-domain)
+          {:keys [x-axis y-axis x-scale y-scale]} (.make-axis this inner-width inner-height)
           color-scale (.. js/d3 -scale category20)
           graph (.. svg
                     (append "g")
@@ -75,18 +70,19 @@
           (call y-axis))
       (d3/update-on-resize this id)
       (om/update-state! this assoc
-                        :svg svg :js-domain js-domain :js-data js-data
+                        :svg svg :js-data js-data
                         :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :color-scale color-scale)))
 
   (update [this]
-    (let [{:keys [svg x-scale y-scale x-axis y-axis js-domain margin]} (om/get-state this)
+    (let [{:keys [svg x-scale y-scale x-axis y-axis margin js-data]} (om/get-state this)
           {inner-width :width
-           inner-height :height} (d3/svg-dimensions svg {:margin margin})]
+           inner-height :height} (d3/svg-dimensions svg {:margin margin})
+          values (.. js/d3 (merge (.map js-data (fn [d] (.-values d)))))]
 
       ; When resize is in progress and sidebar pops in, inner size can be fucked up here.
       ; So just don't do anything in that case, an update will be triggered when sidebar transition is finished anyway.
       (when-not (or (js/isNaN inner-height) (js/isNaN inner-width))
-        (if (empty? js-domain)
+        (if (empty? values)
           (do
             (d3/no-data-insert svg)
             (.. x-scale
@@ -100,11 +96,11 @@
             (.. x-scale
                 (range #js [0 inner-width])
                 (domain (.. js/d3
-                            (extent js-domain (fn [d] (.-name d))))))
+                            (extent values (fn [d] (.-name d))))))
             (.. y-scale
                 (range #js [inner-height 0])
                 (domain #js [0 (.. js/d3
-                                   (max js-domain (fn [d] (.-value d))))]))))
+                                   (max values (fn [d] (.-value d))))]))))
         (.update-lines this)
 
         (.. y-axis

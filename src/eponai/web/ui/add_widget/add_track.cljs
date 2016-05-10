@@ -103,7 +103,9 @@
               (filter/->DateFilter (om/computed {:filter date-filter}
                                                 {:on-change #(do
                                                               (om/update-state! this assoc :date-filter %)
-                                                              (on-change (assoc widget :widget/filter (.get-filters this)) {:update-data? true}))}))]]]
+                                                              (on-change (-> widget
+                                                                             (assoc :widget/filter (.get-filters this))
+                                                                             (update-in [:widget/graph :graph/filter] merge %)) {:update-data? true}))}))]]]
            [:div.row
             [:div.columns.small-12.medium-6
              [:select

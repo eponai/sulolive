@@ -79,6 +79,9 @@
     (date-time? obj)
     (t/date-time (t/year obj) (t/month obj) (t/day obj))
 
+    (nil? obj)
+    nil
+
     :else
     (throw (ex-info (str "Trying to format unexpected input to DateTime. Expected map, js/Date or DateTime. Got: " obj)
                     {:code :illegal-argument
