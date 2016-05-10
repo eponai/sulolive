@@ -14,6 +14,33 @@
       (.append "svg")
       (.style #js {:width width :height height})))
 
+(defn tooltip-build [id]
+  (let [tooltip (.. js/d3
+                    (select "body")
+                    (append "div")
+                    (attr "id" (str "tooltip-" id))
+                    (attr "class" "d3 tooltip"))]
+    (.. tooltip
+        (append "text")
+        (attr "class" "txt title")
+        (attr "x" "50%")
+        (attr "text-anchor" "middle"))
+    tooltip))
+
+(defn tooltip-remove-all []
+  (.. js/d3
+      (selectAll ".d3.tooltip")
+      remove))
+
+(defn tooltip-remove [id]
+  (.. js/d3
+     (select (str "#tooltip-" id))
+      remove))
+
+(defn tooltip-select [id]
+  (.. js/d3
+      (select (str "#tooltip-" id))))
+
 (defn svg-dimensions [svg & [opts]]
   (let [{:keys [margin]} opts
 
@@ -59,9 +86,9 @@
         d0 (get sample-data (dec i))
         d1 (get sample-data i)]
     (when (and d1 d0 f)
-      (let [x-value (if (> (- x0 (.-name d0)) (- (.-name d1) x0))
+      (let [index (if (> (- x0 (.-name d0)) (- (.-name d1) x0))
                       i (dec i))]
-        (f (.map js-data #(get (.-values %) x-value)))))))
+        (f (.-name (get sample-data index)) (.map js-data #(get (.-values %) index)))))))
 
 ;; Responsive update helpers
 (defn window-resize [component]

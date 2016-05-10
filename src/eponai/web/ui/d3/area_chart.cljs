@@ -1,13 +1,14 @@
 (ns eponai.web.ui.d3.area-chart
   (:require
     [cljsjs.d3]
+    [cljs-time.coerce :as c]
+    [cljs-time.core :as t]
     [eponai.client.ui :refer-macros [opts]]
     [eponai.web.ui.d3 :as d3]
+    [goog.string :as gstring]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]
-    [cljs-time.coerce :as c]
-    [cljs-time.core :as t]))
+    [taoensso.timbre :refer-macros [debug]]))
 
 (defui AreaChart
   Object
@@ -70,13 +71,7 @@
           focus (.. svg
                     (append "g")
                     (attr "class" "focus")
-                    (style "display" "none")) ]
-
-
-      (.. focus
-          (append "text")
-          (attr "x" 9)
-          (attr "dy" ".35em"))
+                    (style "display" "none"))]
       (.. focus
           (append "rect")
           (attr "class" "guide"))
@@ -94,12 +89,47 @@
                                 (.. js/d3 (mouse jthis))
                                 x-scale
                                 js-data
-                                (fn [mouseover-data]
+                                (fn [x-position values]
                                   (let [point (.. focus
                                                   (selectAll "circle")
-                                                  (data mouseover-data))
+                                                  (data values))
                                         guide (.. focus
-                                                  (select ".guide"))]
+                                                  (select ".guide"))
+                                        tooltip (d3/tooltip-select id)
+                                        values (.. tooltip
+                                                  (selectAll ".values")
+                                                  (data values))
+                                        enter-sel (.. values
+                                                      enter
+                                                      (append "div")
+                                                      (attr "class" "values"))]
+                                    (.. enter-sel
+                                        (append "div")
+                                        (attr "class" "color"))
+
+                                    (.. enter-sel
+                                        (append "text")
+                                        (attr "class" "txt value"))
+
+                                    (.. tooltip
+                                        (select ".txt.title")
+                                        (text (fn []
+                                                (let [time-format (.. js/d3
+                                                                      -time
+                                                                      (format "%b %d %Y"))]
+                                                  (time-format (js/Date. x-position))))))
+
+                                    (.. values
+                                        (select ".txt.value")
+                                        (text (fn [d i]
+                                                (debug "Data point: " d)
+                                                (gstring/format "%.2f" (.-value d)))))
+                                    (.. values
+                                        (select ".color")
+                                        (style "background" (fn [_ i] (color-scale i))))
+                                    (-> tooltip
+                                        (.style "left" (str (+ 30 (.. js/d3 -event -pageX)) "px"))
+                                        (.style "top" (str (.. js/d3 -event -pageY) "px")))
                                     (.. point
                                         enter
                                         (append "circle")
@@ -112,10 +142,14 @@
                                         (style "stroke" (fn [_ i]
                                                           (color-scale i))))
                                     (.. guide
-                                        (attr "transform" (str "translate(" (x-scale (.-name (first mouseover-data))) ",0)")))))))))
+                                        (attr "transform" (fn [d]
+                                                            (str "translate(" (x-scale x-position) ",0)"))))))))))
           (on "mouseover" (fn []
+                            (d3/tooltip-remove-all)
+                            (d3/tooltip-build id)
                             (.. focus (style "display" nil))))
           (on "mouseout" (fn []
+                           (d3/tooltip-remove id)
                            (.. focus (style "display" "none")))))
 
 
