@@ -362,7 +362,7 @@
             (filter some?))
           transaction-entities)))
 
-(defn xf-with-tag-filter
+(defn xf-with-tag-filters
   [xf {:keys [filter/include-tags filter/exclude-tags]}]
   (let [to-set #(into #{} (map :tag/name) %)
         include-tags (to-set include-tags)
@@ -401,7 +401,7 @@
   (let [identity-xf (map identity)
         filter-xf (-> identity-xf
                       (xf-with-amount-filter (:filter params))
-                      (xf-with-tag-filter (:filter params)))]
+                      (xf-with-tag-filters (:filter params)))]
     (if (identical? identity-xf filter-xf)
       transactions
       (into [] filter-xf transactions))))

@@ -57,7 +57,7 @@
                    (server.pull/all-entities db pull/conversion-query conv-ids))
         pull-xf (map #(d/pull db '[*] %))
         tx-entities (into [] (-> (map #(d/entity db %))
-                                 (common.pull/xf-with-excluded-tags-filter filter))
+                                 (common.pull/xf-with-tag-filters filter))
                           tx-ids)
         conversions (pull/transaction-conversions db (:username auth) tx-entities)]
     {:value (cond-> {:transactions (into [] (comp (map #(entity-map->shallow-map %))
