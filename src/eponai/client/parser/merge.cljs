@@ -65,7 +65,7 @@
 
           tx (concat optimistic-tx-inverse real-tx)]
       (debug "Syncing optimistic transaction: " k " with transactions:" tx)
-      (if tx
+      (if (seq tx)
         (d/db-with db tx)
         db))))
 
