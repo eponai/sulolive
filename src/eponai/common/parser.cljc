@@ -253,22 +253,30 @@
                       (dissoc target))]
       ret)))
 
+(defn with-elided-paths [read-or-mutate child-parser]
+  {:pre [(delay? child-parser)]}
+  (fn [env k p]
+    (read-or-mutate (assoc env :parser @child-parser) k p)))
+
 (defn parser
-  ([]
-   (let [parser (om/parser {:read   (-> read
-                                        #?(:clj read-returning-basis-t)
-                                        with-remote-guard
-                                        read-without-state
-                                        read-with-dbid-in-query
-                                        wrap-db)
-                            :mutate (-> mutate
-                                        with-remote-guard
-                                        mutate-with-idempotent-invariants
-                                        mutate-with-error-logging
-                                        wrap-db)})]
-     #?(:cljs (fn [env query & [target]]
-                (parser env query target))
-        :clj  (-> parser
+  ([] (parser {}))
+  ([opts]
+   (let [p (om/parser (merge {:read   (-> read
+                                          #?(:clj read-returning-basis-t)
+                                          with-remote-guard
+                                          read-without-state
+                                          read-with-dbid-in-query
+                                          wrap-db
+                                          (with-elided-paths (delay (parser {:elide-paths true}))))
+                              :mutate (-> mutate
+                                          with-remote-guard
+                                          mutate-with-idempotent-invariants
+                                          mutate-with-error-logging
+                                          wrap-db
+                                          (with-elided-paths (delay (parser {:elide-paths true}))))}
+                                  opts))]
+     #?(:cljs p
+        :clj  (-> p
                   wrap-parser-filter-atom
                   wrap-om-next-error-handler)))))
 
