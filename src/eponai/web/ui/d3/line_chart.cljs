@@ -84,12 +84,20 @@
                                 (.. js/d3 (mouse jthis))
                                 x-scale
                                 js-data
-                                (fn [mouseover-data]
+                                (fn [x-position values]
                                   (let [point (.. focus
                                                   (selectAll "circle")
-                                                  (data mouseover-data))
+                                                  (data values))
                                         guide (.. focus
-                                                  (select ".guide"))]
+                                                  (select ".guide"))
+                                        tooltip (d3/tooltip-select id)
+                                        time-format (.. js/d3
+                                                        -time
+                                                        (format "%b %d %Y"))]
+                                    (d3/tooltip-add-data tooltip (time-format (js/Date. x-position)) values color-scale)
+                                    (.. tooltip
+                                        (style "left" (str (+ 30 (.. js/d3 -event -pageX)) "px"))
+                                        (style "top" (str (.. js/d3 -event -pageY) "px")))
                                     (.. point
                                         enter
                                         (append "circle")
@@ -99,13 +107,16 @@
                                     (.. point
                                         (attr "transform" (fn [d]
                                                             (str "translate(" (x-scale (.-name d)) "," (y-scale (.-value d)) ")")))
-                                        (style "stroke" (fn [_ i]
+                                        (style "fill" (fn [_ i]
                                                           (color-scale i))))
                                     (.. guide
-                                        (attr "transform" (str "translate(" (x-scale (.-name (first mouseover-data))) ",0)")))))))))
+                                        (attr "transform" (str "translate(" (x-scale x-position) ",0)")))))))))
           (on "mouseover" (fn []
+                            (d3/tooltip-remove-all)
+                            (d3/tooltip-build id)
                             (.. focus (style "display" nil))))
           (on "mouseout" (fn []
+                           (d3/tooltip-remove id)
                            (.. focus (style "display" "none")))))
 
       (d3/update-on-resize this id)

@@ -45,9 +45,9 @@
                   (date/date-time (apply min (keys by-timestamp))))
         end (or (date/date-time (:end opts))
                 (date/date-time (t/plus (date/today) (t/days 1)))) ;;Use tomorrow as end cause we want to include today.
-        _ (debug "Create report with start/end: " start end)
-        _ (debug "Create report period step: " (or (:step opts) (t/days 1)))
-        _ (debug "Create report got time-period: " (p/periodic-seq start end (or (:step opts) (t/days 1))))
+        ;_ (debug "Create report with start/end: " start end)
+        ;_ (debug "Create report period step: " (or (:step opts) (t/days 1)))
+        ;_ (debug "Create report got time-period: " (p/periodic-seq start end (or (:step opts) (t/days 1))))
         time-range (p/periodic-seq start end (or (:step opts) (t/days 1)))]
 
     (map (fn [date]

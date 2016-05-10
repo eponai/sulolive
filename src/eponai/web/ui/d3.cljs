@@ -2,8 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
     [cljsjs.d3]
-    [cljs-time.coerce :as c]
-    [cljs-time.core :as t]
+    [goog.string :as gstring]
     [sablono.core :refer-macros [html]]
     [om.next :as om]
     [taoensso.timbre :refer-macros [debug]]))
@@ -40,6 +39,34 @@
 (defn tooltip-select [id]
   (.. js/d3
       (select (str "#tooltip-" id))))
+
+(defn tooltip-add-data [tooltip title values color-scale]
+  (let [values (.. tooltip
+                   (selectAll ".values")
+                   (data values))
+        enter-sel (.. values
+                      enter
+                      (append "div")
+                      (attr "class" "values"))]
+    (.. enter-sel
+        (append "div")
+        (attr "class" "color"))
+
+    (.. enter-sel
+        (append "text")
+        (attr "class" "txt value"))
+
+    (.. tooltip
+        (select ".txt.title")
+        (text title))
+
+    (.. values
+        (select ".txt.value")
+        (text (fn [d]
+                (gstring/format "%.2f" (.-value d)))))
+    (.. values
+        (select ".color")
+        (style "background" (fn [_ i] (color-scale i))))))
 
 (defn svg-dimensions [svg & [opts]]
   (let [{:keys [margin]} opts

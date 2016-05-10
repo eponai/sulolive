@@ -96,40 +96,16 @@
                                         guide (.. focus
                                                   (select ".guide"))
                                         tooltip (d3/tooltip-select id)
-                                        values (.. tooltip
-                                                  (selectAll ".values")
-                                                  (data values))
-                                        enter-sel (.. values
-                                                      enter
-                                                      (append "div")
-                                                      (attr "class" "values"))]
-                                    (.. enter-sel
-                                        (append "div")
-                                        (attr "class" "color"))
 
-                                    (.. enter-sel
-                                        (append "text")
-                                        (attr "class" "txt value"))
+                                        time-format (.. js/d3
+                                                        -time
+                                                        (format "%b %d %Y"))]
+                                    (d3/tooltip-add-data tooltip (time-format (js/Date. x-position)) values color-scale)
 
                                     (.. tooltip
-                                        (select ".txt.title")
-                                        (text (fn []
-                                                (let [time-format (.. js/d3
-                                                                      -time
-                                                                      (format "%b %d %Y"))]
-                                                  (time-format (js/Date. x-position))))))
+                                        (style "left" (str (+ 30 (.. js/d3 -event -pageX)) "px"))
+                                        (style "top" (str (.. js/d3 -event -pageY) "px")))
 
-                                    (.. values
-                                        (select ".txt.value")
-                                        (text (fn [d i]
-                                                (debug "Data point: " d)
-                                                (gstring/format "%.2f" (.-value d)))))
-                                    (.. values
-                                        (select ".color")
-                                        (style "background" (fn [_ i] (color-scale i))))
-                                    (-> tooltip
-                                        (.style "left" (str (+ 30 (.. js/d3 -event -pageX)) "px"))
-                                        (.style "top" (str (.. js/d3 -event -pageY) "px")))
                                     (.. point
                                         enter
                                         (append "circle")
@@ -139,8 +115,10 @@
                                     (.. point
                                         (attr "transform" (fn [d]
                                                             (str "translate(" (x-scale (.-name d)) "," (y-scale (+ (.-y0 d) (.-y d))) ")")))
+                                        (style "fill" (fn [_ i]
+                                                          (color-scale i)))
                                         (style "stroke" (fn [_ i]
-                                                          (color-scale i))))
+                                                        (color-scale i))))
                                     (.. guide
                                         (attr "transform" (fn [d]
                                                             (str "translate(" (x-scale x-position) ",0)"))))))))))
