@@ -76,6 +76,8 @@
       (.. focus
           (append "rect")
           (attr "class" "guide"))
+      (d3/clip-path-append svg id)
+      (d3/brush-append svg)
 
       (d3/update-on-resize this id)
       (om/update-state! this assoc
@@ -112,30 +114,20 @@
                 (domain #js [0 (.. js/d3
                                    (max values (fn [d] (.-value d))))]))))
         (.update-lines this)
+        (.update-axis this inner-width inner-height)
 
-        (.. y-axis
-            (ticks (max (/ inner-height 50) 2))
-            (tickSize (* -1 inner-width) 0 0))
-        (.. x-axis
-            (ticks (max (/ inner-width 100) 2))
-            (tickSize (* -1 inner-height) 0 0))
+        (d3/clip-path-set-dimensions id inner-width inner-height)
+        (d3/brush-config svg
+                         {:x-scale x-scale
+                          :height inner-height
+                          :on-end (fn [new-domain]
+                                    (.domain x-scale new-domain)
+                                    (.update-axis this inner-width inner-height)
+                                    (.update-lines this))})
+
         (.. focus
             (select ".guide")
             (attr "height" inner-height))
-
-        (.. svg
-            (selectAll ".x.axis")
-            (attr "transform" (str "translate(0, " inner-height ")"))
-            transition
-            (duration 250)
-            (call x-axis))
-
-        (.. svg
-            (selectAll ".y.axis")
-            (attr "transform" "translate(0, 0)")
-            transition
-            (duration 250)
-            (call y-axis))
         (.. svg
             (on "mousemove" (fn []
                               (this-as jthis
@@ -200,6 +192,28 @@
       (.. graph-area
           exit
           remove)))
+  (update-axis [this width height]
+    (let [{:keys [y-axis x-axis svg]} (om/get-state this)]
+      (.. y-axis
+          (ticks (max (/ height 50) 2))
+          (tickSize (* -1 width) 0 0))
+      (.. x-axis
+          (ticks (max (/ width 100) 2))
+          (tickSize (* -1 height) 0 0))
+
+      (.. svg
+          (selectAll ".x.axis")
+          (attr "transform" (str "translate(0, " height ")"))
+          transition
+          (duration 250)
+          (call x-axis))
+
+      (.. svg
+          (selectAll ".y.axis")
+          (attr "transform" "translate(0, 0)")
+          transition
+          (duration 250)
+          (call y-axis))))
 
   (initLocalState [_]
     {:margin {:top 0 :bottom 20 :left 0 :right 0}})

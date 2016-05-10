@@ -95,16 +95,48 @@
         (select ".color")
         (style "background" (fn [_ i] (color-scale i))))))
 
-(defn clip-path-append [el id width height]
+(defn clip-path-append [el id]
   (.. el
       (append "clipPath")
       (attr "id" (str "clip-" id))
-      (append "rect")
+      (append "rect")))
+
+(defn clip-path-set-dimensions [id width height]
+  (.. js/d3
+      (select (str "#clip-" id))
+      (selectAll "rect")
       (attr "width" width)
       (attr "height" height)))
 
 (defn clip-path-url [id]
   (str "url(#clip-" id ")"))
+
+(defn brush-append [el]
+  (.. el
+      (append "g")
+      (attr "class" "brush")))
+
+(defn brush-config [el {:keys [x-scale height on-end]}]
+  (let [brush (.. js/d3
+                  -svg
+                  brush
+                  (x x-scale))
+        brushend (fn []
+                   (on-end (.extent brush))
+                   (.. el
+                       (select ".brush")
+                       (call (.clear brush))))]
+
+    (.. brush
+        (x x-scale)
+        (on "brushend" brushend))
+
+    (.. el
+        (selectAll ".brush")
+        (call brush)
+        (selectAll "rect")
+        (attr "y" 0)
+        (attr "height" height))))
 
 (defn svg-dimensions [svg & [opts]]
   (let [{:keys [margin]} opts

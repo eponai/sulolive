@@ -71,7 +71,7 @@
                     (append "g")
                     (attr "class" "focus")
                     (style "display" "none"))]
-      (d3/clip-path-append svg id width height)
+      (d3/clip-path-append svg id)
 
       (.. focus
           (append "rect")
@@ -83,9 +83,7 @@
           (attr "transform" (str "translate(0," inner-height ")"))
           (call x-axis))
 
-      (.. svg
-          (append "g")
-          (attr "class" "brush"))
+      (d3/brush-append svg)
 
       (d3/update-on-resize this id)
       (om/update-state! this assoc :svg svg :js-data js-data :x-scale x-scale :y-scale y-scale :stack stack :area area :x-axis x-axis :y-axis y-axis :graph graph :focus focus :color-scale color-scale)))
@@ -124,31 +122,17 @@
                                    (max values
                                         (fn [d]
                                           (+ (.-y0 d) (.-y d)))))]))))
+        (d3/clip-path-set-dimensions id inner-width inner-height)
         (.update-areas this layers)
-
-        (let [brush (.. js/d3
-                        -svg
-                        brush
-                        (x x-scale))
-              brushend (fn []
-                         (.domain x-scale (.extent brush))
-                         (.update-axis this inner-width inner-height)
-                         (.update-areas this layers)
-                         (.. svg
-                             (select ".brush")
-                             (call (.clear brush))))]
-
-          (.. brush
-              (x x-scale)
-              (on "brushend" brushend))
-          (.. svg
-              (selectAll ".brush")
-              (call brush)
-              (selectAll "rect")
-              (attr "y" 0)
-              (attr "height" inner-height)))
         (.update-axis this inner-width inner-height)
 
+        (d3/brush-config svg
+                         {:x-scale x-scale
+                          :height inner-height
+                          :on-end (fn [new-domain]
+                                    (.domain x-scale new-domain)
+                                    (.update-axis this inner-width inner-height)
+                                    (.update-areas this layers))})
         (.. focus
             (select ".guide")
             (attr "height" inner-height))
