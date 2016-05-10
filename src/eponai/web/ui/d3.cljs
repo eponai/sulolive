@@ -47,6 +47,22 @@
       (selectAll "text.no-data")
       remove))
 
+(defn mouse-over [mouse x-scale js-data f]
+  (let [mouseX (first mouse)
+        sample-data (.-values (first js-data))
+        bisect-date (.. js/d3
+                        (bisector (fn [d]
+                                    (.-name d)))
+                        -left)
+        x0 (.invert x-scale mouseX)
+        i (bisect-date sample-data x0 1)
+        d0 (get sample-data (dec i))
+        d1 (get sample-data i)]
+    (when (and d1 d0 f)
+      (let [x-value (if (> (- x0 (.-name d0)) (- (.-name d1) x0))
+                      i (dec i))]
+        (f (.map js-data #(get (.-values %) x-value)))))))
+
 ;; Responsive update helpers
 (defn window-resize [component]
   (let [{:keys [resize-timer]} (om/get-state component)]

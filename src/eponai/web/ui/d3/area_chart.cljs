@@ -92,24 +92,14 @@
       (.. svg
           (on "mousemove" (fn []
                             (this-as jthis
-                              (let [mouseX (first (.. js/d3 (mouse jthis)))
-                                    sample-data (.-values (first js-data))
-                                    bisect-date (.. js/d3
-                                                    (bisector (fn [d]
-                                                                (.-name d)))
-                                                    -left)
-                                    x0 (.invert x-scale mouseX)
-                                    i (bisect-date sample-data x0 1)
-                                    d0 (get sample-data (dec i))
-                                    d1 (get sample-data i)]
-                                (when (and d1 d0)
-                                  (let [x-value (if (> (- x0 (.-name d0)) (- (.-name d1) x0))
-                                                  i (dec i))
-                                        found-data (.map js-data #(get (.-values %) x-value))
-
-                                        point (.. focus
+                              (d3/mouse-over
+                                (.. js/d3 (mouse jthis))
+                                x-scale
+                                js-data
+                                (fn [mouseover-data]
+                                  (let [point (.. focus
                                                   (selectAll "circle")
-                                                  (data found-data))
+                                                  (data mouseover-data))
                                         guide (.. focus
                                                   (select ".guide"))]
                                     (.. point
@@ -124,7 +114,7 @@
                                         (style "stroke" (fn [_ i]
                                                           (color-scale i))))
                                     (.. guide
-                                        (attr "transform" (str "translate(" (x-scale (.-name (first found-data))) ",0)")))))))))
+                                        (attr "transform" (str "translate(" (x-scale (.-name (first mouseover-data))) ",0)")))))))))
           (on "mouseover" (fn []
                             (.. focus (style "display" nil))))
           (on "mouseout" (fn []
