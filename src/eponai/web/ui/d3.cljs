@@ -67,7 +67,11 @@
         (select ".color")
         (style "background" (color-scale (.-name value))))))
 
-(defn tooltip-add-data [tooltip title values color-scale]
+(defn tooltip-add-data [tooltip title values color-fn]
+  (debug "Tooltip: " tooltip
+         "Title " title
+         "values " values
+         "color-fn " color-fn)
   (let [values (.. tooltip
                    (selectAll ".values")
                    (data values))
@@ -93,7 +97,7 @@
                 (gstring/format "%.2f" (.-value d)))))
     (.. values
         (select ".color")
-        (style "background" (fn [_ i] (color-scale i))))))
+        (style "background" color-fn))))
 
 (defn clip-path-append [el id]
   (.. el

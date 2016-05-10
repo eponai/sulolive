@@ -85,7 +85,7 @@
                         :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :focus focus :color-scale color-scale)))
 
   (update [this]
-    (let [{:keys [svg x-scale y-scale x-axis y-axis margin js-data focus color-scale]} (om/get-state this)
+    (let [{:keys [svg x-scale y-scale margin js-data focus color-scale]} (om/get-state this)
           {:keys [id]} (om/props this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
@@ -145,7 +145,7 @@
                                           time-format (.. js/d3
                                                           -time
                                                           (format "%b %d %Y"))]
-                                      (d3/tooltip-add-data tooltip (time-format (js/Date. x-position)) values color-scale)
+                                      (d3/tooltip-add-data tooltip (time-format (js/Date. x-position)) values (fn [_ i] (color-scale i)))
                                       (.. tooltip
                                           (style "left" (str (+ 30 (.. js/d3 -event -pageX)) "px"))
                                           (style "top" (str (.. js/d3 -event -pageY) "px")))

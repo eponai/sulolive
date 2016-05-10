@@ -202,7 +202,6 @@
         {:keys [cycle/start
                 cycle/period
                 cycle/period-count]} cycle]
-    ;(debug "Goal with txs: " transactions)
     (let [by-month (group-by #(let [date (:transaction/date %)]
                                (date/month->long (t/date-time (:date/year date) (:date/month date)))) transactions)
           sum-by-month (map (fn [[k v]]
@@ -215,15 +214,23 @@
                                 {:date   k
                                  :limit  value
                                  :values (loop [input values
-                                                output [{:name k :value 0}]
+                                                output []
                                                 tot 0]
                                            (if-let [v (:value (first input))]
                                              (recur (rest input)
-                                                    (conj output (assoc (first input) :value (+ tot v)))
+                                                    (conj output (assoc (first input) :value (+ tot v)
+                                                                                      :key "user-input"))
                                                     (+ tot v))
                                              output))
-                                 :guide  [{:name k :value 0}
-                                          {:name (date/date->long (t/last-day-of-the-month month)) :value value}]}))
+                                 :guide  (loop [input values
+                                                output []
+                                                tot 0]
+                                           (if (:value (first input))
+                                             (recur (rest input)
+                                                    (conj output (assoc (first input) :value (+ tot avg)
+                                                                                      :key "guideline"))
+                                                    (+ tot avg))
+                                             output))}))
                                by-month)]
       (sort-by :date sum-by-month))))
 

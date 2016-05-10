@@ -154,7 +154,7 @@
                                           time-format (.. js/d3
                                                           -time
                                                           (format "%b %d %Y"))]
-                                      (d3/tooltip-add-data tooltip (time-format (js/Date. x-position)) values color-scale)
+                                      (d3/tooltip-add-data tooltip (time-format (js/Date. x-position)) values (fn [_ i] (color-scale i)))
 
                                       (.. tooltip
                                           (style "left" (str (+ 30 (.. js/d3 -event -pageX)) "px"))
