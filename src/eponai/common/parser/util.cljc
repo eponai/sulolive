@@ -54,9 +54,8 @@
   arguments are equal. (e.g. params, :db, :target and :query)."
   [f]
   (let [last-call (atom nil)]
-    (fn [& args]
-      (let [[env k params] args
-            [[last-env _ last-params] last-ret] @last-call
+    (fn [& [env k params :as args]]
+      (let [[[last-env _ last-params] last-ret] @last-call
             equal-key? (fn [k] (= (get env k)
                                   (get last-env k)))]
         (if (and (= params last-params)
@@ -64,7 +63,8 @@
           (do
             (debug (str "Returning cached for:" k))
             last-ret)
-          (let [ret (apply f args)]
+          (let [ret (f (assoc env ::last-return last-ret ::last-db (:db last-env))
+                       k params)]
             (reset! last-call [args ret])
             ret))))))
 

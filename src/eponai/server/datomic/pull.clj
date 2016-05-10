@@ -69,12 +69,12 @@
        (mapv (fn [{:keys [widget/uuid]}]
                (let [widget (p/pull db (widget-report-query) [:widget/uuid uuid])
                      project (p/pull db [:project/uuid] project-eid)
-                     transactions (p/transactions-with-conversions
+                     transactions (p/filtered-transactions-with-conversions
                                     (assoc env :query (transaction-query))
                                     (:username auth)
                                     {:filter       (:widget/filter widget)
                                      :project-uuid (:project/uuid project)})
-                     timestamps (map #(:date/timestamp (:transaction/date %)) transactions)
+                     ;;timestamps (map #(:date/timestamp (:transaction/date %)) transactions)
                      report-data (report/generate-data (:widget/report widget) transactions {:data-filter (get-in widget [:widget/graph :graph/filter])})]
                  (assoc widget :widget/data report-data))))))
 

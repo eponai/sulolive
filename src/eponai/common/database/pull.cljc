@@ -361,16 +361,14 @@
             (filter some?))
           transaction-entities)))
 
-(defn filter-excluded-tags
-  ([data-filter]
-   (if (:filter/exclude-tags data-filter)
-     (let [filter-set (set (map #(select-keys % [:tag/name]) (:filter/exclude-tags data-filter)))]
-       (filter (fn [tx]
-                 (let [tag-set (set (map #(select-keys % [:tag/name]) (:transaction/tags tx)))]
-                   (empty? (clojure.set/intersection filter-set tag-set))))))
-     (map identity)))
-  ([data-filter transactions]
-   (sequence (filter-excluded-tags data-filter) transactions)))
+(defn xf-with-excluded-tags-filter
+  [xf {:keys [filter/exclude-tags]}]
+  (let [filter-set (set (map #(select-keys % [:tag/name]) exclude-tags))]
+    (cond-> xf
+            (some? exclude-tags)
+            (comp (filter (fn [tx]
+                            (let [tag-set (set (map #(select-keys % [:tag/name]) (:transaction/tags tx)))]
+                              (empty? (clojure.set/intersection filter-set tag-set)))))))))
 
 (defn xf-with-amount-filter
   "Takes a transducer and applies min/max amount filters on its elements."
@@ -386,9 +384,8 @@
             (comp (filter (fn [tx] (>= max-amount (report/converted-amount tx))))))))
 
 (defn transactions-with-conversions [{:keys [db query]} user-uuid {:keys [conversion-query] :as params}]
-  (let [tx-entities (sequence (comp (filter some?)
-                                    (map #(d/entity db %))
-                                    (filter-excluded-tags (:filter params)))
+  (let [tx-entities (sequence (-> (comp (filter some?)
+                                        (map #(d/entity db %))))
                               (find-transactions db (assoc params :user-uuid user-uuid)))
         ;; include filter-excluded-tags in the transducer and use into [] instead of sequence.
         conversions (transaction-conversions db
@@ -398,5 +395,14 @@
         entities->maps-xform (map #(cond-> (assoc (into {} %) :db/id (:db/id %))
                                            (contains? conversions (:db/id %))
                                            (assoc :transaction/conversion (get conversions (:db/id %)))))]
-    (into [] (-> entities->maps-xform (xf-with-amount-filter (:filter params)))
-          tx-entities)))
+    (eduction entities->maps-xform tx-entities)))
+
+(defn filter-transactions [transactions params]
+  (into [] (-> (map identity)
+               (xf-with-amount-filter (:filter params))
+               (xf-with-excluded-tags-filter (:filter params)))
+        transactions))
+
+(defn filtered-transactions-with-conversions [env user-uuid params]
+  (filter-transactions (transactions-with-conversions env user-uuid params)
+                       params))

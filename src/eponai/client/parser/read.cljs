@@ -47,13 +47,23 @@
   [_ _ _]
   {:remote true})
 
+(comment (defn transactions-since [db last-db]
+   (let [last-basis (:max-tx last-db)
+         _ (debug "Last basis: " last-basis)
+         new-transaction-eids (into [] (comp (mapcat #(d/datoms db :eavt (.-e %)))
+                                             (filter #(> (.-tx %) last-basis))
+                                             (map #(.-e %)))
+                                    (d/datoms db :aevt :transaction/uuid))]
+     (debug "new-transaction-eids: " new-transaction-eids)
+     )))
+
 (def query-local-transactions
   (parser.util/cache-last-read
     (fn
-      [{:keys [parser] :as env} _ p]
+      [{:keys [parser ::parser.util/last-return ::parser.util/last-db] :as env} _ p]
       (let [{:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
         {:value (when current-user
-                  (p/transactions-with-conversions env (:user/uuid current-user) p))}))))
+                  (p/filtered-transactions-with-conversions env (:user/uuid current-user) p))}))))
 
 (defn active-project-uuid [db]
   (:ui.component.project/uuid (d/entity db [:ui/component :ui.component/project])))
