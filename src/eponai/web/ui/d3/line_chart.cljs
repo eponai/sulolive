@@ -55,7 +55,11 @@
           graph (.. svg
                     (append "g")
                     (attr "class" "line-chart")
-                    (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))]
+                    (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))
+          focus (.. svg
+                    (append "g")
+                    (attr "class" "focus")
+                    (style "display" "none"))]
 
       (.. graph
           (append "g")
@@ -68,13 +72,49 @@
           (attr "class" "y axis grid")
           (attr "transform" (str "translate(0,0)"))
           (call y-axis))
+
+      (.. focus
+          (append "rect")
+          (attr "class" "guide"))
+
+      (.. svg
+          (on "mousemove" (fn []
+                            (this-as jthis
+                              (d3/mouse-over
+                                (.. js/d3 (mouse jthis))
+                                x-scale
+                                js-data
+                                (fn [mouseover-data]
+                                  (let [point (.. focus
+                                                  (selectAll "circle")
+                                                  (data mouseover-data))
+                                        guide (.. focus
+                                                  (select ".guide"))]
+                                    (.. point
+                                        enter
+                                        (append "circle")
+                                        (attr "class" "point")
+                                        (attr "r" 3.5))
+
+                                    (.. point
+                                        (attr "transform" (fn [d]
+                                                            (str "translate(" (x-scale (.-name d)) "," (y-scale (.-value d)) ")")))
+                                        (style "stroke" (fn [_ i]
+                                                          (color-scale i))))
+                                    (.. guide
+                                        (attr "transform" (str "translate(" (x-scale (.-name (first mouseover-data))) ",0)")))))))))
+          (on "mouseover" (fn []
+                            (.. focus (style "display" nil))))
+          (on "mouseout" (fn []
+                           (.. focus (style "display" "none")))))
+
       (d3/update-on-resize this id)
       (om/update-state! this assoc
                         :svg svg :js-data js-data
-                        :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :color-scale color-scale)))
+                        :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :focus focus :color-scale color-scale)))
 
   (update [this]
-    (let [{:keys [svg x-scale y-scale x-axis y-axis margin js-data]} (om/get-state this)
+    (let [{:keys [svg x-scale y-scale x-axis y-axis margin js-data focus]} (om/get-state this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
           values (.. js/d3 (merge (.map js-data (fn [d] (.-values d)))))]
@@ -109,6 +149,10 @@
         (.. x-axis
             (ticks (max (/ inner-width 100) 2))
             (tickSize (* -1 inner-height) 0 0))
+        (.. focus
+            (select ".guide")
+            (attr "height" inner-height))
+
         (.. svg
             (selectAll ".x.axis")
             (attr "transform" (str "translate(0, " inner-height ")"))

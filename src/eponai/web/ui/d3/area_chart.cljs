@@ -79,9 +79,7 @@
           (attr "dy" ".35em"))
       (.. focus
           (append "rect")
-          (attr "class" "guide")
-          ;(attr "width" "1px")
-          )
+          (attr "class" "guide"))
 
       (.. graph
           (append "g")
