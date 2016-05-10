@@ -75,14 +75,16 @@
 
 (defonce txs-with-convs (atom []))
 
+(defn all-transactions-by-project [env])
+
 (def query-all-local-transactions
   (parser.util/cache-last-read
     (fn
-      [{:keys [parser ::parser.util/last-db] :as env} _ p]
+      [{:keys [parser ::parser.util/last-db db] :as env} _ p]
       (let [{:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
         (when current-user
-          (let [new-txs (transactions-since (:db env) last-db)
-                new-with-convs (p/transactions-with-conversions env (:user/uuid current-user) p new-txs)
+          (let [new-txs (transactions-since db last-db)
+                new-with-convs (p/transactions-with-conversions db (:user/uuid current-user) new-txs)
                 new-and-old (into (into [] new-with-convs)
                                   (distinct-by :db/id new-txs)
                                   @txs-with-convs)]

@@ -59,7 +59,7 @@
         tx-entities (into [] (-> (map #(d/entity db %))
                                  (common.pull/xf-with-excluded-tags-filter filter))
                           tx-ids)
-        conversions (pull/transaction-conversions db pull/conversion-query (:username auth) tx-entities)]
+        conversions (pull/transaction-conversions db (:username auth) tx-entities)]
     {:value (cond-> {:transactions (into [] (comp (map #(entity-map->shallow-map %))
                                                   (map #(update % :transaction/type (fn [t] {:db/ident t})))
                                                   (map #(if-let [tx-conv (get conversions (:db/id %))]
@@ -80,7 +80,7 @@
                     (with-meta {:eponai.common.parser/read-basis-t nil}))}))
 
 (defmethod read :query/dashboard
-  [{:keys [db db-since auth query] :as env} _ {:keys [project-uuid]}]
+  [{:keys [db db-since auth query] :as env} _ {:keys [project-uuid] :as params}]
   ;; TODO: Read-basis-t when using params:
   ;; https://app.asana.com/0/109022987372058/113539551736534
   (let [db-since db
@@ -94,7 +94,7 @@
               ;; No project-uuid, grabbing the one with the smallest created-at
               (min-by db :project/created-at project-with-auth))]
     {:value (when project-eid
-              (let [t-p-query (server.pull/transaction-query)
+              (let [t-p-query (common.pull/transaction-query)
                     t-e-query {:where   '[[?e :transaction/project ?project]]
                                :symbols {'?project project-eid}}
                     dashboard-entity-q (-> {:where   '[[?e :dashboard/project ?p]
@@ -112,18 +112,16 @@
                                 (common.pull/pull db query (common.pull/one-with db dashboard-entity-q))
                                 (server.pull/pull-one-since db db-since query dashboard-entity-q))
                     ;; Delayed because we might not need them.
-                    transactions (delay (common.pull/transactions-with-conversions
-                                          (assoc env :query (common.pull/transaction-query))
-                                          (:username auth)
-                                          {:project-uuid (:project/uuid (d/entity db project-eid))}))]
+                    transactions (delay (->> (common.pull/find-transactions db (assoc params :user-uuid user-uuid
+                                                                                             :project-uuid (:project/uuid (d/entity db project-eid))))
+                                             (common.pull/transactions-with-conversions db (:username auth))))]
                 (cond-> dashboard
                         ;; When there are widgets and there's either updated-transactions or widgets,
                         ;; only then should we add data to the widgets.
                         (and (contains? dashboard :widget/_dashboard)
                              (or updated-transactions? new-widgets?))
-                        (update :widget/_dashboard
-                                (fn [widgets]
-                                  (mapv #(common.pull/widget-with-data db @transactions %) widgets))))))}))
+                        (update :widget/_dashboard (fn [widgets]
+                                                     (mapv #(common.pull/widget-with-data db @transactions %) widgets))))))}))
 
 (defmethod read :query/all-projects
   [{:keys [db db-since query auth]} _ _]

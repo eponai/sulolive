@@ -319,8 +319,7 @@
             {:conversion/rate rate
              :conversion/date (:conversion/date transaction-conversion)}]))))))
 
-(defn transaction-conversions [db conversion-query user-uuid transaction-entities]
-  (assert (some #{:conversion/rate} conversion-query))
+(defn transaction-conversions [db user-uuid transaction-entities]
   ;; user currency is always the same
   ;; transaction/dates and currencies are shared across multiple transactions.
   ;; Must be possible to pre-compute some table between date<->conversion<->currency.
@@ -385,23 +384,16 @@
             (some? max-amount)
             (comp (filter (fn [tx] (>= max-amount (report/converted-amount tx))))))))
 
-(defn transactions-with-conversions
-  ([env user-uuid params]
-   (transactions-with-conversions env user-uuid params
-                                  (find-transactions (:db env) (assoc params :user-uuid user-uuid))))
-  ([{:keys [db query]} user-uuid {:keys [conversion-query] :as params} transaction-eids]
-   (let [tx-entities (into [] (comp (filter some?) (map #(d/entity db %)))
-                           transaction-eids)
-         ;; include filter-excluded-tags in the transducer and use into [] instead of sequence.
-         conversions (transaction-conversions db
-                                              (or conversion-query [:conversion/rate])
-                                              user-uuid
-                                              tx-entities)
-         entities->maps-xform (map #(let [id (:db/id %)]
-                                     (cond-> (into {:db/id id} %)
-                                             (contains? conversions id)
-                                             (assoc :transaction/conversion (get conversions id)))))]
-     (eduction entities->maps-xform tx-entities))))
+(defn transactions-with-conversions [db user-uuid transaction-eids]
+  (let [tx-entities (into [] (comp (filter some?) (map #(d/entity db %)))
+                          transaction-eids)
+        ;; include filter-excluded-tags in the transducer and use into [] instead of sequence.
+        conversions (transaction-conversions db user-uuid tx-entities)
+        entities->maps-xform (map #(let [id (:db/id %)]
+                                    (cond-> (into {:db/id id} %)
+                                            (contains? conversions id)
+                                            (assoc :transaction/conversion (get conversions id)))))]
+    (eduction entities->maps-xform tx-entities)))
 
 (defn filter-transactions [params transactions]
   (let [identity-xf (map identity)
@@ -412,8 +404,10 @@
       transactions
       (into [] filter-xf transactions))))
 
-(defn filtered-transactions-with-conversions [env user-uuid params]
-  (filter-transactions params (transactions-with-conversions env user-uuid params)))
+(defn filtered-transactions-with-conversions [{:keys [db]} user-uuid params]
+  (filter-transactions params
+                       (transactions-with-conversions db user-uuid
+                                                      (find-transactions db (assoc params :user-uuid user-uuid)))))
 
 ;; ############################# Widgets #############################
 
