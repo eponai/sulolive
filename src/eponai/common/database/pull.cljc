@@ -372,16 +372,18 @@
   ([data-filter transactions]
    (sequence (filter-excluded-tags data-filter) transactions)))
 
-(defn filter-amounts [{:keys [filter/min-amount
-                              filter/max-amount]} transactions]
-  (cond->> transactions
-           (some? min-amount)
-           (into [] (filter #(<= (f/str->number min-amount)
-                                 (report/converted-amount %))))
-
-           (some? max-amount)
-           (into [] (filter #(>= (f/str->number max-amount)
-                                 (report/converted-amount %))))))
+(defn xf-with-amount-filter
+  "Takes a transducer and applies min/max amount filters on its elements."
+  [xf {:keys [filter/min-amount filter/max-amount]}]
+  {:pre [(fn? xf)]}
+  (let [parse-amount #(cond-> % (some? %) (f/str->number))
+        min-amount (parse-amount min-amount)
+        max-amount (parse-amount max-amount)]
+    (cond-> xf
+            (some? min-amount)
+            (comp (filter (fn [tx] (<= min-amount (report/converted-amount tx)))))
+            (some? max-amount)
+            (comp (filter (fn [tx] (>= max-amount (report/converted-amount tx))))))))
 
 (defn transactions-with-conversions [{:keys [db query]} user-uuid {:keys [conversion-query] :as params}]
   (let [tx-entities (sequence (comp (filter some?)
@@ -392,10 +394,9 @@
         conversions (transaction-conversions db
                                              (or conversion-query [:conversion/rate])
                                              user-uuid
-                                             tx-entities)]
-    (filter-amounts
-      (:filter params)
-      (mapv #(cond-> (assoc (into {} %) :db/id (:db/id %))
-                     (contains? conversions (:db/id %))
-                     (assoc :transaction/conversion (get conversions (:db/id %))))
-            tx-entities))))
+                                             tx-entities)
+        entities->maps-xform (map #(cond-> (assoc (into {} %) :db/id (:db/id %))
+                                           (contains? conversions (:db/id %))
+                                           (assoc :transaction/conversion (get conversions (:db/id %)))))]
+    (into [] (-> entities->maps-xform (xf-with-amount-filter (:filter params)))
+          tx-entities)))
