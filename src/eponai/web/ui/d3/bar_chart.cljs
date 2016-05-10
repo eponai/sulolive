@@ -10,16 +10,13 @@
 
 (defui BarChart
   Object
-  (make-axis [_ width height domain]
+  (make-axis [_ width height]
     (let [x-scale (.. js/d3 -scale ordinal
-                      (rangeRoundBands #js [0 width] 0.1)
-                      (domain (.map domain (fn [d] (.-name d)))))
+                      (rangeRoundBands #js [0 width] 0.1))
 
           y-scale (.. js/d3 -scale linear
                       (range #js [height 0])
-                      (nice)
-                      (domain #js [0 (.. js/d3
-                                         (max domain (fn [d] (.-value d))))]))]
+                      (nice))]
       {:x-axis (.. js/d3 -svg axis
                    (scale x-scale)
                    (orient "bottom")
@@ -45,13 +42,15 @@
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
 
-          {:keys [x-axis y-axis x-scale y-scale]} (.make-axis this inner-width inner-height js-domain)
-          color-scale (.. js/d3 -scale category20
-                          (domain (.map js-domain (fn [d] (.-name d)))))
+          {:keys [x-axis y-axis x-scale y-scale]} (.make-axis this inner-width inner-height)
           graph (.. svg
                     (append "g")
                     (attr "class" "bar-chart")
-                    (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))]
+                    (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))
+          focus (.. svg
+                    (append "g")
+                    (attr "class" "focus")
+                    (style "display" "none"))]
       (.. graph
           (append "g")
           (attr "class" (if (< 30 (.. x-scale rangeBand)) "x axis grid" "x axis grid hidden"))
@@ -64,18 +63,23 @@
           (call y-axis))
       (d3/update-on-resize this id)
 
-      (om/update-state! this assoc :svg svg :js-domain js-domain :js-data js-data :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :color-scale color-scale :graph graph)))
+      (om/update-state! this assoc :svg svg :js-domain js-domain :js-data js-data :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :focus focus)))
 
   (update [this]
-    (let [{:keys [svg x-scale y-scale x-axis y-axis js-data js-domain margin color-scale graph]} (om/get-state this)
-          {:keys [data]} (om/props this)
+    (let [{:keys [svg x-scale y-scale x-axis y-axis js-data margin graph focus]} (om/get-state this)
+          {:keys [data id]} (om/props this)
           {inner-width :width
-           inner-height :height} (d3/svg-dimensions svg {:margin margin})]
+           inner-height :height} (d3/svg-dimensions svg {:margin margin})
+
+          values (.. js/d3 (merge (.map js-data (fn [d] (.-values d)))))
+
+          color-scale (.. js/d3 -scale category20
+                          (domain (.map values (fn [d] (.-name d)))))]
 
       ; When resize is in progress and sidebar pops in, inner size can be fucked up here.
       ; So just don't do anything in that case, an update will be triggered when sidebar transition is finished anyway.
       (when-not (or (js/isNaN inner-height) (js/isNaN inner-width))
-        (if (empty? js-domain)
+        (if (empty? values)
           (do
             (d3/no-data-insert svg)
             (.. x-scale
@@ -88,11 +92,11 @@
             (d3/no-data-remove svg)
             (.. x-scale
                 (rangeRoundBands #js [0 inner-width] 0.01)
-                (domain (.map js-domain (fn [d] (.-name d)))))
+                (domain (.map values (fn [d] (.-name d)))))
             (.. y-scale
                 (range #js [inner-height 0])
                 (domain #js [0 (.. js/d3
-                                   (max js-domain (fn [d] (.-value d))))]))))
+                                   (max values (fn [d] (.-value d))))]))))
 
         (.. y-axis
             (ticks (max (/ inner-height 50) 2))
@@ -129,7 +133,20 @@
                   (attr "class" "bar")
                   (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))
                   (attr "y" inner-height)
-                  (attr "height" 0))
+                  (attr "height" 0)
+                  (on "mouseover" (fn [d]
+                                    (d3/tooltip-remove-all)
+                                    (let [tooltip (d3/tooltip-build id)]
+                                      (d3/tooltip-add-value tooltip d color-scale)
+                                      (.. focus (style "display" nil)))))
+                  (on "mousemove" (fn []
+                                    (let [tooltip (d3/tooltip-select id)]
+                                      (.. tooltip
+                                          (style "left" (str (+ 10 (.. js/d3 -event -pageX)) "px"))
+                                          (style "top" (str (+ 10 (.. js/d3 -event -pageY)) "px"))))))
+                  (on "mouseout" (fn []
+                                   (d3/tooltip-remove id)
+                                   (.. focus (style "display" "none")))))
 
               (.. bars
                   (style "fill" (fn [d]
