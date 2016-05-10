@@ -81,6 +81,12 @@
           (append "text")
           (attr "x" 9)
           (attr "dy" ".35em"))
+      (.. focus
+          (append "rect")
+          (attr "class" "guide")
+          (attr "height" inner-height)
+          ;(attr "width" "1px")
+          )
 
       (.. graph
           (append "g")
@@ -107,17 +113,22 @@
 
                                     point (.. focus
                                               (selectAll "circle")
-                                              (data found-data))]
+                                              (data found-data))
+                                    guide (.. focus
+                                              (select ".guide"))]
                                 (.. point
                                     enter
                                     (append "circle")
+                                    (attr "class" "point")
                                     (attr "r" 3.5))
+
                                 (.. point
                                     (attr "transform" (fn [d]
                                                         (str "translate(" (x-scale (.-name d)) "," (y-scale (+ (.-y0 d) (.-y d))) ")")))
                                     (style "stroke" (fn [_ i]
-                                                    (color-scale i)))
-                                    (style "fill" "none"))))))
+                                                    (color-scale i))))
+                                (.. guide
+                                    (attr "transform" (str "translate(" (x-scale (.-name (first found-data))) ",0)")))))))
           (on "mouseover" (fn []
                             (.. focus (style "display" nil))))
           (on "mouseout" (fn []
