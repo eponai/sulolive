@@ -5,7 +5,6 @@
     [cljs-time.core :as t]
     [eponai.client.ui :refer-macros [opts]]
     [eponai.web.ui.d3 :as d3]
-    [goog.string :as gstring]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]))
@@ -16,7 +15,6 @@
     (let [x-scale (.. js/d3 -time scale
                       (range #js [0 width])
                       (nice (.. js/d3 -time -year)))
-
           y-scale (.. js/d3 -scale linear
                       (range #js [height 0])
                       (nice))]
@@ -30,7 +28,6 @@
                                                         -time
                                                         (format "%b %d"))]
                                     (time-format (js/Date. t))))))
-
        :y-axis  (.. js/d3 -svg axis
                     (scale y-scale)
                     (orient "left")
@@ -66,12 +63,22 @@
 
           graph (.. svg
                     (append "g")
+                    (attr "class" "chart")
                     (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")"))
                     (attr "width" inner-width))
-          focus (.. svg
+
+          focus (.. graph
                     (append "g")
                     (attr "class" "focus")
                     (style "display" "none"))]
+
+      (.. svg
+          (append "clipPath")
+          (attr "id" (str "clip-" id))
+          (append "rect")
+          (attr "width" width)
+          (attr "height" height))
+
       (.. focus
           (append "rect")
           (attr "class" "guide"))
@@ -80,8 +87,12 @@
           (append "g")
           (attr "class" "x axis grid")
           (attr "transform" (str "translate(0," inner-height ")"))
+          (attr "clip-path" "url(#clip)")
           (call x-axis))
 
+      (.. svg
+          (append "g")
+          (attr "class" "brush"))
 
       (d3/update-on-resize this id)
       (om/update-state! this assoc :svg svg :js-data js-data :x-scale x-scale :y-scale y-scale :stack stack :area area :x-axis x-axis :y-axis y-axis :graph graph :focus focus :color-scale color-scale)))
@@ -104,6 +115,7 @@
             (.. x-scale
                 (range #js [0 inner-width] 0.1)
                 (domain #js [(t/minus (t/today) (t/days 30)) (c/to-long (t/now))]))
+
             (.. y-scale
                 (range #js [inner-height 0])
                 (domain #js [0 1])))
@@ -120,6 +132,32 @@
                                         (fn [d]
                                           (+ (.-y0 d) (.-y d)))))]))))
         (.update-areas this layers)
+
+        (let [brush (.. js/d3
+                        -svg
+                        brush
+                        (x x-scale))
+              brushend (fn []
+                         (.domain x-scale (.extent brush))
+                         (.. graph
+                             (selectAll ".x.axis")
+                             transition
+                             (duration 250)
+                             (call x-axis))
+                         (.update-areas this layers)
+                         (.. svg
+                             (select ".brush")
+                             (call (.clear brush))))]
+
+          (.. brush
+              (x x-scale)
+              (on "brushend" brushend))
+          (.. svg
+              (selectAll ".brush")
+              (call brush)
+              (selectAll "rect")
+              (attr "y" 0)
+              (attr "height" inner-height)))
 
         (.. y-axis
             (ticks (max (/ inner-height 50) 2))
@@ -139,6 +177,7 @@
             transition
             (duration 250)
             (call y-axis))
+
         (.. focus
             (select ".guide")
             (attr "height" inner-height))
@@ -192,6 +231,7 @@
 
   (update-areas [this layers]
     (let [{:keys [graph color-scale area]} (om/get-state this)
+          {:keys [id]} (om/props this)
           graph-area (.. graph
                          (selectAll ".area")
                          (data layers))]
@@ -199,6 +239,7 @@
           enter
           (append "path")
           (attr "class" "area")
+          (style "clip-path" (str "url(#clip-" id ")"))
           (style "fill" (fn [_ i]
                           (color-scale i)))
           (style "stroke" (fn [_ i]
