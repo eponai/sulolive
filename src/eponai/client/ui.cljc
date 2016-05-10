@@ -18,6 +18,18 @@
   [coll f]
   (map f coll))
 
+#?(:clj
+   (defmacro component-implements
+     "Returns an object that implements the protocol or nil."
+     [protocol x]
+     `(if (cljs.core/implements? ~protocol ~x)
+        ~x
+        ;; in advanced, statics will get elided
+        (when (goog/isFunction ~x)
+          (let [y# (js/Object.create (. ~x -prototype))]
+            (when (cljs.core/implements? ~protocol y#)
+              y#))))))
+
 (defn ->camelCase [k]
   {:pre [(keyword? k)]}
   (when (namespace k)

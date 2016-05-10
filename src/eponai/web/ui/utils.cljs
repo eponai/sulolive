@@ -1,5 +1,5 @@
 (ns eponai.web.ui.utils
-  (:require [eponai.client.ui :refer-macros [opts] :refer [map-all update-query-params!]]
+  (:require [eponai.client.ui :refer-macros [opts component-implements] :refer [map-all update-query-params!]]
             [eponai.web.ui.datepicker :refer [->Datepicker]]
             [sablono.core :refer-macros [html]]
             [om.next :as om]
@@ -42,19 +42,20 @@
   ;; -> {:child Class or Component}
   (dynamic-params [this next-props] "Return map of param key to class or component (via ref). Values will be replaced with queries."))
 
-(defn update-dynamic-query! [parser state c]
-  {:pre  [(or (om/component? c) (fn? c))]
+(defn update-dynamic-query! [parser state x]
+  {:pre  [(or (om/component? x) (goog/isFunction x))]
    :post [(map? %)]}
-  (cond
-    (satisfies? IDynamicQuery c)
+  (if-let [c (component-implements IDynamicQuery x)]
     (let [query (dynamic-query-fragment c)
           next-props (parser {:state state} query)
           next-query (next-query c next-props)
-          _ (when (om/component? c)
+          ;; Checking om/mounted? because statics get elided in advanced mode
+          ;; (and we create components in (component-implements ...))
+          _ (when (om/mounted? c)
               (when (= next-query (om/get-query c))
                 (warn "Setting the same query. Optimize this by not setting the query?"))
               (om/set-query! c next-query) [])
-          next-params (when (satisfies? IDynamicQueryParams c)
+          next-params (when-let [c (component-implements IDynamicQueryParams x)]
                         (let [params (dynamic-params c next-props)
                               bound-params (reduce-kv (fn [p k x]
                                                         (let [param-query (update-dynamic-query! parser state x)]
@@ -70,17 +71,17 @@
                                                                        (:query param-query)
                                                                        {:component (cond
                                                                                      (om/component? x) (type x)
-                                                                                     (fn? x) x)})))) {} params)]
+                                                                                     (goog/isFunction x) x)}))))
+                                                      {} params)]
                           bound-params))
           _ (when (seq next-params)
-              (when (om/component? c)
+              (when (om/mounted? c)
                 (om/set-query! c {:params next-params} [])))]
       (merge next-query next-params))
-
-    (satisfies? om/IQuery c)
-    {:query (om/get-query c)}
-    :else
-    (throw (ex-info "Unknown parameter in update-dynamic-query!" {:param  c :to-str (pr-str c)}))))
+    ;; else:
+    (if (om/iquery? x)
+      {:query (om/get-query x)}
+      (throw (ex-info "Unknown parameter in update-dynamic-query!" {:param x :to-str (pr-str x)})))))
 
 (defn update-dynamic-queries! [reconciler]
   {:pre [(om/reconciler? reconciler)]}
