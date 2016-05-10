@@ -95,6 +95,17 @@
         (select ".color")
         (style "background" (fn [_ i] (color-scale i))))))
 
+(defn clip-path-append [el id width height]
+  (.. el
+      (append "clipPath")
+      (attr "id" (str "clip-" id))
+      (append "rect")
+      (attr "width" width)
+      (attr "height" height)))
+
+(defn clip-path-url [id]
+  (str "url(#clip-" id ")"))
+
 (defn svg-dimensions [svg & [opts]]
   (let [{:keys [margin]} opts
 

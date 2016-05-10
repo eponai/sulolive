@@ -71,13 +71,7 @@
                     (append "g")
                     (attr "class" "focus")
                     (style "display" "none"))]
-
-      (.. svg
-          (append "clipPath")
-          (attr "id" (str "clip-" id))
-          (append "rect")
-          (attr "width" width)
-          (attr "height" height))
+      (d3/clip-path-append svg id width height)
 
       (.. focus
           (append "rect")
@@ -87,7 +81,6 @@
           (append "g")
           (attr "class" "x axis grid")
           (attr "transform" (str "translate(0," inner-height ")"))
-          (attr "clip-path" "url(#clip)")
           (call x-axis))
 
       (.. svg
@@ -139,11 +132,7 @@
                         (x x-scale))
               brushend (fn []
                          (.domain x-scale (.extent brush))
-                         (.. graph
-                             (selectAll ".x.axis")
-                             transition
-                             (duration 250)
-                             (call x-axis))
+                         (.update-axis this inner-width inner-height)
                          (.update-areas this layers)
                          (.. svg
                              (select ".brush")
@@ -158,25 +147,7 @@
               (selectAll "rect")
               (attr "y" 0)
               (attr "height" inner-height)))
-
-        (.. y-axis
-            (ticks (max (/ inner-height 50) 2))
-            (tickSize (* -1 inner-width) 0 0))
-        (.. x-axis
-            (ticks (max (/ inner-width 100) 2))
-            (tickSize (* -1 inner-height) 0 0))
-        (.. graph
-            (selectAll ".x.axis")
-            (attr "transform" (str "translate(0, " inner-height ")"))
-            transition
-            (duration 250)
-            (call x-axis))
-
-        (.. graph
-            (selectAll ".y.axis")
-            transition
-            (duration 250)
-            (call y-axis))
+        (.update-axis this inner-width inner-height)
 
         (.. focus
             (select ".guide")
@@ -239,7 +210,7 @@
           enter
           (append "path")
           (attr "class" "area")
-          (style "clip-path" (str "url(#clip-" id ")"))
+          (style "clip-path" (d3/clip-path-url id))
           (style "fill" (fn [_ i]
                           (color-scale i)))
           (style "stroke" (fn [_ i]
@@ -254,6 +225,27 @@
       (.. graph-area
           exit
           remove)))
+
+  (update-axis [this width height]
+    (let [{:keys [x-axis y-axis graph]} (om/get-state this)]
+      (.. y-axis
+          (ticks (max (/ height 50) 2))
+          (tickSize (* -1 width) 0 0))
+      (.. x-axis
+          (ticks (max (/ width 100) 2))
+          (tickSize (* -1 height) 0 0))
+      (.. graph
+          (selectAll ".x.axis")
+          (attr "transform" (str "translate(0, " height ")"))
+          transition
+          (duration 250)
+          (call x-axis))
+
+      (.. graph
+          (selectAll ".y.axis")
+          transition
+          (duration 250)
+          (call y-axis))))
 
   (initLocalState [_]
     {:margin {:top 0 :bottom 20 :left 0 :right 0}})
