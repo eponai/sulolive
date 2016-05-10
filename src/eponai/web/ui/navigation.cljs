@@ -175,14 +175,15 @@
           ;  [:div.nav-link.visible-medium-up
           ;   (utils/upgrade-button)])
 
-          [:div.nav-link
-           [:div
-            [:a
-             {:on-click #(open-profile-menu this true)}
-             [:small (:user/email current-user)]]
+          (when-not utils/*playground?*
+            [:div.nav-link
+             [:div
+              [:a
+               {:on-click #(open-profile-menu this true)}
+               [:small (:user/email current-user)]]
 
-            (when menu-visible?
-              (profile-menu {:on-close #(open-profile-menu this false)}))]]]
+              (when menu-visible?
+                (profile-menu {:on-close #(open-profile-menu this false)}))]])]
 
          (when new-transaction?
            (let [on-close #(om/update-state! this assoc :new-transaction? false)]
@@ -254,7 +255,8 @@
              " by eponai"]]
 
            [:div.sidebar-submenu
-            (when (and (= subscription-status :trialing)
+            (when (and (not utils/*playground?*)
+                       (= subscription-status :trialing)
                        (:stripe.subscription/period-end subscription))
               [:small.header
                (str (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left on trial")])
@@ -263,7 +265,7 @@
               (true? utils/*playground?*)
               [:a.upgrade-button
                (opts {:on-click #(om/update-state! this assoc :playground/show-subscribe-modal? true)})
-               [:strong "Subscribe"]]
+                 [:strong "I want this!"]]
 
               (not= subscription-status :active)
               (utils/upgrade-button))]
@@ -303,17 +305,18 @@
               (opts {:style {:padding 0}})]
              [:span.small-caps "New..."]]]]
 
-          [:div.sidebar-submenu.hidden-medium-up
-           [:a.nav-link
-            (opts {:href (routes/key->route :route/settings)})
-            [:i.fa.fa-gear
-             (opts {:style {:display :inline
-                            :padding "0.5em"}})]
-            "Settings"]
+          (when-not utils/*playground?*
+            [:div.sidebar-submenu.hidden-medium-up
+             [:a.nav-link
+              (opts {:href (routes/key->route :route/settings)})
+              [:i.fa.fa-gear
+               (opts {:style {:display :inline
+                              :padding "0.5em"}})]
+              "Settings"]
 
-           [:a.nav-link
-            (opts {:href (routes/key->route :route/api->logout)})
-            "Sign Out"]]
+             [:a.nav-link
+              (opts {:href (routes/key->route :route/api->logout)})
+              "Sign Out"]])
           [:footer.footer
            [:p.copyright.small.text-light
             "Copyright © eponai 2016. All Rights Reserved"]]]

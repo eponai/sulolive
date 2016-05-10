@@ -103,10 +103,11 @@
           [:a.nav-link
            [:i.fa.fa-user]
            [:small (count (:project/users project))]]
-          [:a.nav-link
-           {:on-click #(do (debug "Clicked share"
-                                  (.share this)))}
-           [:i.fa.fa-share-alt]]
+          (when-not utils/*playground?*
+            [:a.nav-link
+             {:on-click #(do (debug "Clicked share"
+                                    (.share this)))}
+             [:i.fa.fa-share-alt]])
           (when share-project?
             (let [on-close #(om/update-state! this assoc :share-project? false)]
               (utils/modal {:content (->Shareproject (om/computed {}
