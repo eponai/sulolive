@@ -49,6 +49,8 @@
           []
           query))
 
+;; TODO, make a special function for caching our transactions.
+;; (That's the only thing we use this for anyway).
 (defn cache-last-read
   "Takes a read function caches its last call if data
   arguments are equal. (e.g. params, :db, :target and :query)."
@@ -59,7 +61,7 @@
             equal-key? (fn [k] (= (get env k)
                                   (get last-env k)))]
         (if (and (= params last-params)
-                 (every? equal-key? [:target :query :db]))
+                 (every? equal-key? [:target :db]))         ;; <--- contained :query. but now, it doesn't.
           (do
             (debug (str "Returning cached for:" k))
             last-ret)

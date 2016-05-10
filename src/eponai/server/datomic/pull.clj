@@ -26,57 +26,12 @@
      (mapv #(into {} (d/entity db %))
            (p/all-with db query)))))
 
-(defn widget-report-query []
-  (parser/put-db-id-in-query
-    '[:widget/uuid
-     :widget/width
-     :widget/height
-     {:widget/filter [*
-                      {:filter/include-tags [:tag/name]}
-                      {:filter/exclude-tags [:tag/name]}
-                      {:filter/start-date [:date/timestamp]}
-                      {:filter/end-date [:date/timestamp]}]}
-     {:widget/report [:report/uuid
-                      {:report/track [{:track/functions [*]}]}
-                      {:report/goal [*
-                                     {:goal/cycle [*]}]}
-                      :report/title]}
-     :widget/index
-     :widget/data
-     {:widget/graph [:graph/style
-                     {:graph/filter [{:filter/include-tags [:tag/name]}
-                                     {:filter/exclude-tags [:tag/name]}]}]}]))
-
-(defn transaction-query []
-  (parser/put-db-id-in-query
-    '[:transaction/uuid
-     :transaction/amount
-     :transaction/conversion
-      {:transaction/type [:db/ident]}
-      {:transaction/currency [:currency/code]}
-     {:transaction/tags [:tag/name]}
-     {:transaction/date [*]}]))
-
 ;(defn dates-between [db start end]
 ;  (p/pull-many db [:date/timestamp] (p/all-with db {:where '[[?e :date/timestamp ?time]
 ;                                                            [(<= ?start ?time)]
 ;                                                            [(<= ?time ?end)]]
 ;                                                    :symbols {'?start start
 ;                                                              '?end end}})))
-
-(defn widgets-with-data [{:keys [db auth] :as env} project-eid widgets]
-  (->> widgets
-       (mapv (fn [{:keys [widget/uuid]}]
-               (let [widget (p/pull db (widget-report-query) [:widget/uuid uuid])
-                     project (p/pull db [:project/uuid] project-eid)
-                     transactions (p/filtered-transactions-with-conversions
-                                    (assoc env :query (transaction-query))
-                                    (:username auth)
-                                    {:filter       (:widget/filter widget)
-                                     :project-uuid (:project/uuid project)})
-                     ;;timestamps (map #(:date/timestamp (:transaction/date %)) transactions)
-                     report-data (report/generate-data (:widget/report widget) transactions {:data-filter (get-in widget [:widget/graph :graph/filter])})]
-                 (assoc widget :widget/data report-data))))))
 
 (defn new-currencies [db rates]
   (let [currency-codes (mapv #(get-in % [:conversion/currency :currency/code]) rates)

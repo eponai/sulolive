@@ -240,6 +240,8 @@
      user-db-id
      status))
 
+;; ############################# Transactions #############################
+
 (defn transaction-entity-query [{:keys [filter project-uuid user-uuid]}]
   (assert (some? user-uuid) "User UUID must be supplied to read transactions.")
   (debug "Find transactions with filter: " filter)
@@ -412,3 +414,45 @@
 
 (defn filtered-transactions-with-conversions [env user-uuid params]
   (filter-transactions params (transactions-with-conversions env user-uuid params)))
+
+;; ############################# Widgets #############################
+
+(defn widget-report-query []
+  (parser/put-db-id-in-query
+    '[:widget/uuid
+      :widget/width
+      :widget/height
+      {:widget/filter [*
+                       {:filter/include-tags [:tag/name]}
+                       {:filter/exclude-tags [:tag/name]}
+                       {:filter/start-date [:date/timestamp]}
+                       {:filter/end-date [:date/timestamp]}]}
+      {:widget/report [:report/uuid
+                       {:report/track [{:track/functions [*]}]}
+                       {:report/goal [*
+                                      {:goal/cycle [*]}]}
+                       :report/title]}
+      :widget/index
+      :widget/data
+      {:widget/graph [:graph/style
+                      {:graph/filter [{:filter/include-tags [:tag/name]}
+                                      {:filter/exclude-tags [:tag/name]}]}]}]))
+
+(defn transaction-query []
+  (parser/put-db-id-in-query
+    '[:transaction/uuid
+      :transaction/amount
+      :transaction/conversion
+      {:transaction/type [:db/ident]}
+      {:transaction/currency [:currency/code]}
+      {:transaction/tags [:tag/name]}
+      {:transaction/date [*]}]))
+
+(defn widget-with-data [db transactions {:keys [widget/uuid] :as widget}]
+  (let [widget-entity (d/entity db [:widget/uuid uuid])
+        filtered-transactions (filter-transactions {:filter (:widget/filter widget-entity)}
+                                                   transactions)
+        ;;timestamps (map #(:date/timestamp (:transaction/date %)) transactions)
+        report-data (report/generate-data (:widget/report widget-entity) filtered-transactions
+                                          {:data-filter (get-in widget-entity [:widget/graph :graph/filter])})]
+    (assoc widget :widget/data report-data)))

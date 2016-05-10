@@ -110,13 +110,20 @@
                                 ;; Can we maybe just do this on the client?
                                 ;; We'll probably need this for the playground on the client side anyway.
                                 (common.pull/pull db query (common.pull/one-with db dashboard-entity-q))
-                                (server.pull/pull-one-since db db-since query dashboard-entity-q))]
+                                (server.pull/pull-one-since db db-since query dashboard-entity-q))
+                    ;; Delayed because we might not need them.
+                    transactions (delay (common.pull/transactions-with-conversions
+                                          (assoc env :query (common.pull/transaction-query))
+                                          (:username auth)
+                                          {:project-uuid (:project/uuid (d/entity db project-eid))}))]
                 (cond-> dashboard
                         ;; When there are widgets and there's either updated-transactions or widgets,
                         ;; only then should we add data to the widgets.
                         (and (contains? dashboard :widget/_dashboard)
                              (or updated-transactions? new-widgets?))
-                        (update :widget/_dashboard #(server.pull/widgets-with-data env project-eid %)))))}))
+                        (update :widget/_dashboard
+                                (fn [widgets]
+                                  (mapv #(common.pull/widget-with-data db @transactions %) widgets))))))}))
 
 (defmethod read :query/all-projects
   [{:keys [db db-since query auth]} _ _]

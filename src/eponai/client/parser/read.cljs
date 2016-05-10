@@ -103,7 +103,7 @@
       {:value (p/filter-transactions p (query-all-local-transactions env k (assoc p :project-uuid project-uuid)))})))
 
 (defmethod read :query/dashboard
-  [{:keys [db ast query target]} _ _]
+  [{:keys [db ast query target] :as env} k p]
   (let [project-uuid (active-project-uuid db)]
     (if (= target :remote)
       ;; Pass the active project uuid to remote reader
@@ -114,11 +114,17 @@
                   (p/one-with db (p/project-with-uuid project-uuid))
 
                   ;; No project-uuid, grabbing the one with the smallest created-at
-                  (p/min-by db :project/created-at (p/project)))]
+                  (p/min-by db :project/created-at (p/project)))
+            transactions (delay (query-all-local-transactions env k (assoc p :project-uuid (:project/uuid (d/entity db eid)))))]
 
         {:value (when eid
                   (when-let [dashboard-id (p/one-with db {:where [['?e :dashboard/project eid]]})]
-                    (p/pull db query dashboard-id)))}))))
+                    (update (p/pull db query dashboard-id)
+                            :widget/_dashboard (fn [widgets]
+                                                 (mapv #(cond->> %
+                                                                 (nil? (:widget/data %))
+                                                                 (p/widget-with-data db @transactions))
+                                                       widgets)))))}))))
 
 (defmethod read :query/all-projects
   [{:keys [db query]} _ _]
