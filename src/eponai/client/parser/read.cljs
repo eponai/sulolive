@@ -47,23 +47,47 @@
   [_ _ _]
   {:remote true})
 
-(comment (defn transactions-since [db last-db]
-   (let [last-basis (:max-tx last-db)
-         _ (debug "Last basis: " last-basis)
-         new-transaction-eids (into [] (comp (mapcat #(d/datoms db :eavt (.-e %)))
+(defn transactions-since [db last-db]
+  {:post [(set? %)]}
+  (let [last-basis (:max-tx last-db)
+        _ (debug "Last basis: " last-basis)
+        new-transaction-eids (into #{} (comp (mapcat #(d/datoms db :eavt (.-e %)))
                                              (filter #(> (.-tx %) last-basis))
                                              (map #(.-e %)))
-                                    (d/datoms db :aevt :transaction/uuid))]
-     (debug "new-transaction-eids: " new-transaction-eids)
-     )))
+                                   (d/datoms db :aevt :transaction/uuid))]
+    (debug "new-transaction-eids: " (count new-transaction-eids))
+    new-transaction-eids))
 
-(def query-local-transactions
+(defn distinct-by
+  "Like clojure.core/distinct, but items will be distinct by f applied to each item."
+  ([f] (distinct-by f #{}))
+  ([f seen-init]
+   (fn [rf]
+     (let [seen (volatile! seen-init)]
+       (fn
+         ([] (rf))
+         ([result] (rf result))
+         ([result input]
+          (if (contains? @seen (f input))
+            result
+            (do (vswap! seen conj (f input))
+                (rf result input)))))))))
+
+(defonce txs-with-convs (atom []))
+
+(def query-all-local-transactions
   (parser.util/cache-last-read
     (fn
-      [{:keys [parser ::parser.util/last-return ::parser.util/last-db] :as env} _ p]
+      [{:keys [parser ::parser.util/last-db] :as env} _ p]
       (let [{:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
-        {:value (when current-user
-                  (p/filtered-transactions-with-conversions env (:user/uuid current-user) p))}))))
+        (when current-user
+          (let [new-txs (transactions-since (:db env) last-db)
+                new-with-convs (p/transactions-with-conversions env (:user/uuid current-user) p new-txs)
+                new-and-old (into (into [] new-with-convs)
+                                  (distinct-by :db/id new-txs)
+                                  @txs-with-convs)]
+            (reset! txs-with-convs new-and-old)
+            new-and-old))))))
 
 (defn active-project-uuid [db]
   (:ui.component.project/uuid (d/entity db [:ui/component :ui.component/project])))
@@ -76,7 +100,7 @@
       {:remote (assoc-in ast [:params :project-uuid] project-uuid)}
 
       ;; Local read
-      (query-local-transactions env k (assoc p :project-uuid project-uuid)))))
+      {:value (p/filter-transactions p (query-all-local-transactions env k (assoc p :project-uuid project-uuid)))})))
 
 (defmethod read :query/dashboard
   [{:keys [db ast query target]} _ _]

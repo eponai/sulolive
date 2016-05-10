@@ -63,7 +63,7 @@
           (do
             (debug (str "Returning cached for:" k))
             last-ret)
-          (let [ret (f (assoc env ::last-return last-ret ::last-db (:db last-env))
+          (let [ret (f (assoc env ::last-db (:db last-env))
                        k params)]
             (reset! last-call [args ret])
             ret))))))
