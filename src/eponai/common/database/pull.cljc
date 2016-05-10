@@ -362,14 +362,16 @@
             (filter some?))
           transaction-entities)))
 
-(defn xf-with-excluded-tags-filter
-  [xf {:keys [filter/exclude-tags]}]
-  (let [filter-set (set (map #(select-keys % [:tag/name]) exclude-tags))]
+(defn xf-with-tag-filter
+  [xf {:keys [filter/include-tags filter/exclude-tags]}]
+  (let [to-set #(into #{} (map :tag/name) %)
+        include-tags (to-set include-tags)
+        exclude-tags (to-set exclude-tags)]
     (cond-> xf
-            (some? exclude-tags)
-            (comp (filter (fn [tx]
-                            (let [tag-set (set (map #(select-keys % [:tag/name]) (:transaction/tags tx)))]
-                              (empty? (clojure.set/intersection filter-set tag-set)))))))))
+            (seq include-tags)
+            (comp (filter (fn [tx] (some include-tags (map :tag/name (:transaction/tags tx))))))
+            (seq exclude-tags)
+            (comp (filter (fn [tx] (not-any? exclude-tags (map :tag/name (:transaction/tags tx)))))))))
 
 (defn xf-with-amount-filter
   "Takes a transducer and applies min/max amount filters on its elements."
@@ -399,7 +401,7 @@
   (let [identity-xf (map identity)
         filter-xf (-> identity-xf
                       (xf-with-amount-filter (:filter params))
-                      (xf-with-excluded-tags-filter (:filter params)))]
+                      (xf-with-tag-filter (:filter params)))]
     (if (identical? identity-xf filter-xf)
       transactions
       (into [] filter-xf transactions))))

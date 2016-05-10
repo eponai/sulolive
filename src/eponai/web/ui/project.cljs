@@ -75,8 +75,9 @@
              {:on-click #(om/update-state! this assoc :new-transaction? true :menu-visible? false)}
              [:i.fa.fa-money.fa-fw]]
             (when new-transaction?
-              (utils/modal {:content (->AddTransaction add-transaction)
-                            :on-close #(om/update-state! this assoc :new-transaction? false)})
+              (let [on-close #(om/update-state! this assoc :new-transaction? false)]
+                (utils/modal {:content  (->AddTransaction (om/computed add-transaction {:on-close on-close}))
+                              :on-close on-close}))
               ;(let [on-close #(om/update-state! this assoc :new-transaction? false)]
               ;  [:div
               ;   (utils/click-outside-target on-close)

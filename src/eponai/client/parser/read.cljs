@@ -84,9 +84,9 @@
       (if (= db db-used)
         txs
         (let [new-txs (transactions-since db db-used project-eid)
-              new-with-convs (p/transactions-with-conversions db (:user/uuid current-user) new-txs)
-              new-and-old (into (into [] new-with-convs)
-                                (distinct-by :db/id new-txs)
+              new-with-convs (vec (p/transactions-with-conversions db (:user/uuid current-user) new-txs))
+              new-and-old (into new-with-convs
+                                (distinct-by :transaction/uuid (into #{} (map :transaction/uuid) new-with-convs))
                                 txs)]
           (swap! txs-by-project assoc project-eid {:db-used db :txs new-and-old})
           new-and-old)))))
