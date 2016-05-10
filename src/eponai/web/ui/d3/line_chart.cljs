@@ -77,55 +77,14 @@
           (append "rect")
           (attr "class" "guide"))
 
-      (.. svg
-          (on "mousemove" (fn []
-                            (this-as jthis
-                              (d3/mouse-over
-                                (.. js/d3 (mouse jthis))
-                                x-scale
-                                js-data
-                                (fn [x-position values]
-                                  (let [point (.. focus
-                                                  (selectAll "circle")
-                                                  (data values))
-                                        guide (.. focus
-                                                  (select ".guide"))
-                                        tooltip (d3/tooltip-select id)
-                                        time-format (.. js/d3
-                                                        -time
-                                                        (format "%b %d %Y"))]
-                                    (d3/tooltip-add-data tooltip (time-format (js/Date. x-position)) values color-scale)
-                                    (.. tooltip
-                                        (style "left" (str (+ 30 (.. js/d3 -event -pageX)) "px"))
-                                        (style "top" (str (.. js/d3 -event -pageY) "px")))
-                                    (.. point
-                                        enter
-                                        (append "circle")
-                                        (attr "class" "point")
-                                        (attr "r" 3.5))
-
-                                    (.. point
-                                        (attr "transform" (fn [d]
-                                                            (str "translate(" (x-scale (.-name d)) "," (y-scale (.-value d)) ")")))
-                                        (style "fill" (fn [_ i]
-                                                          (color-scale i))))
-                                    (.. guide
-                                        (attr "transform" (str "translate(" (x-scale x-position) ",0)")))))))))
-          (on "mouseover" (fn []
-                            (d3/tooltip-remove-all)
-                            (d3/tooltip-build id)
-                            (.. focus (style "display" nil))))
-          (on "mouseout" (fn []
-                           (d3/tooltip-remove id)
-                           (.. focus (style "display" "none")))))
-
       (d3/update-on-resize this id)
       (om/update-state! this assoc
                         :svg svg :js-data js-data
                         :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :focus focus :color-scale color-scale)))
 
   (update [this]
-    (let [{:keys [svg x-scale y-scale x-axis y-axis margin js-data focus]} (om/get-state this)
+    (let [{:keys [svg x-scale y-scale x-axis y-axis margin js-data focus color-scale]} (om/get-state this)
+          {:keys [id]} (om/props this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
           values (.. js/d3 (merge (.map js-data (fn [d] (.-values d)))))]
@@ -176,7 +135,48 @@
             (attr "transform" "translate(0, 0)")
             transition
             (duration 250)
-            (call y-axis)))))
+            (call y-axis))
+        (.. svg
+            (on "mousemove" (fn []
+                              (this-as jthis
+                                (d3/mouse-over
+                                  (.. js/d3 (mouse jthis))
+                                  x-scale
+                                  js-data
+                                  (fn [x-position values]
+                                    (let [point (.. focus
+                                                    (selectAll "circle")
+                                                    (data values))
+                                          guide (.. focus
+                                                    (select ".guide"))
+                                          tooltip (d3/tooltip-select id)
+                                          time-format (.. js/d3
+                                                          -time
+                                                          (format "%b %d %Y"))]
+                                      (d3/tooltip-add-data tooltip (time-format (js/Date. x-position)) values color-scale)
+                                      (.. tooltip
+                                          (style "left" (str (+ 30 (.. js/d3 -event -pageX)) "px"))
+                                          (style "top" (str (.. js/d3 -event -pageY) "px")))
+                                      (.. point
+                                          enter
+                                          (append "circle")
+                                          (attr "class" "point")
+                                          (attr "r" 3.5))
+
+                                      (.. point
+                                          (attr "transform" (fn [d]
+                                                              (str "translate(" (x-scale (.-name d)) "," (y-scale (.-value d)) ")")))
+                                          (style "fill" (fn [_ i]
+                                                          (color-scale i))))
+                                      (.. guide
+                                          (attr "transform" (str "translate(" (x-scale x-position) ",0)")))))))))
+            (on "mouseover" (fn []
+                              (d3/tooltip-remove-all)
+                              (d3/tooltip-build id)
+                              (.. focus (style "display" nil))))
+            (on "mouseout" (fn []
+                             (d3/tooltip-remove id)
+                             (.. focus (style "display" "none"))))))))
 
   (update-lines [this]
     (let [{:keys [graph js-data x-scale y-scale color-scale]} (om/get-state this)

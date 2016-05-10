@@ -1,4 +1,4 @@
-(ns eponai.web.ui.d3.bar-chart
+(ns eponai.web.ui.d3.column-chart
   (:require
     [cljsjs.d3]
     [eponai.client.ui :refer-macros [opts]]
@@ -8,34 +8,32 @@
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]))
 
-(defui BarChart
+(defui ColumnChart
   Object
   (make-axis [_ width height]
-    (let [y-scale (.. js/d3 -scale ordinal
-                      (rangeRoundBands #js [height 0] 0.1))
+    (let [x-scale (.. js/d3 -scale ordinal
+                      (rangeRoundBands #js [0 width] 0.1))
 
-          x-scale (.. js/d3 -scale linear
-                      (range #js [0 width])
+          y-scale (.. js/d3 -scale linear
+                      (range #js [height 0])
                       (nice))]
-
       {:x-axis (.. js/d3 -svg axis
                    (scale x-scale)
                    (orient "bottom")
-                   ;(ticks (max (/ width 50) 2))
-                   (tickFormat (.. js/d3
-                                   (format ",.2f"))))
+                   (tickSize (* -1 height) 0 0))
 
        :y-axis (.. js/d3 -svg axis
                    (scale y-scale)
-                   (orient "right")
-                   (tickSize (* -1 width) 0 0)
-                   )
+                   (orient "left")
+                   (ticks (max (/ height 50) 2))
+                   (tickFormat (.. js/d3
+                                   (format ",.2f"))))
        :x-scale x-scale
        :y-scale y-scale}))
 
   (create [this]
     (let [{:keys [id width height data]} (om/props this)
-          svg (d3/build-svg (str "#bar-chart-" id) width height)
+          svg (d3/build-svg (str "#column-chart-" id) width height)
 
           js-domain (clj->js (flatten (map :values data)))
           js-data (clj->js data)
@@ -55,7 +53,7 @@
                     (style "display" "none"))]
       (.. graph
           (append "g")
-          (attr "class" "x axis grid")
+          (attr "class" (if (< 30 (.. x-scale rangeBand)) "x axis grid" "x axis grid hidden"))
           (attr "transform" (str "translate(0," inner-height ")"))
           (call x-axis))
       (.. graph
@@ -85,23 +83,23 @@
           (do
             (d3/no-data-insert svg)
             (.. x-scale
-                (range #js [0 inner-width])
-                (domain #js [0 1]))
+                (rangeRoundBands #js [0 inner-width] 0.1)
+                (domain #js []))
             (.. y-scale
-                (rangeRoundBands #js [inner-height 0] 0.1)
-                (domain #js [])))
+                (range #js [inner-height 0])
+                (domain #js [0 1])))
           (do
             (d3/no-data-remove svg)
             (.. x-scale
-                (range #js [0 inner-width])
-                (domain #js [0 (.. js/d3
-                                   (max values (fn [d] (.-value d))))]))
+                (rangeRoundBands #js [0 inner-width] 0.01)
+                (domain (.map values (fn [d] (.-name d)))))
             (.. y-scale
-                (rangeRoundBands #js [inner-height 0] 0.01)
-                (domain (.map values (fn [d] (.-name d)))))))
+                (range #js [inner-height 0])
+                (domain #js [0 (.. js/d3
+                                   (max values (fn [d] (.-value d))))]))))
 
         (.. y-axis
-            ;(ticks (max (/ inner-height 50) 2))
+            (ticks (max (/ inner-height 50) 2))
             (tickSize (* -1 inner-width) 0 0))
         (.. x-axis
             (tickSize (* -1 inner-height) 0 0))
@@ -109,7 +107,7 @@
         (.. svg
             (selectAll ".x.axis")
             (attr "transform" (str "translate(0, " inner-height ")"))
-            (attr "class" "x axis grid")
+            (attr "class" (if (< 30 (.. x-scale rangeBand)) "x axis grid" "x axis grid hidden"))
             transition
             (duration 250)
             (call x-axis))
@@ -126,17 +124,16 @@
                   bars (.. graph
                            (selectAll "rect.bar")
                            (data data-values))
-                  value-texts (.. graph
-                                  (selectAll "text.bar.value")
-                                  (data data-values))
-                  name-texts (.. graph
-                                 (selectAll "text.bar.name")
-                                 (data data-values))]
+                  texts (.. graph
+                            (selectAll "text.bar")
+                            (data data-values))]
               (.. bars
                   enter
                   (append "rect")
                   (attr "class" "bar")
-                  (attr "width" 0)
+                  (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))
+                  (attr "y" inner-height)
+                  (attr "height" 0)
                   (on "mouseover" (fn [d]
                                     (d3/tooltip-remove-all)
                                     (let [tooltip (d3/tooltip-build id)]
@@ -156,47 +153,33 @@
                                   (color-scale (.-name d))))
                   transition
                   (duration 250)
-                  (attr "height" (.. y-scale rangeBand))
-                  (attr "y" (fn [d] (y-scale (.-name d))))
-                  (attr "width" (fn [d] (x-scale (.-value d)))))
+                  (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))
+                  (attr "width" (.. x-scale rangeBand))
+                  (attr "y" (fn [d] (y-scale (.-value d))))
+                  (attr "height" (fn [d] (- inner-height (y-scale (.-value d))))))
 
               (.. bars
                   exit
                   remove)
 
-              (.. value-texts
+              (.. texts
                   enter
                   (append "text")
-                  (attr "class" "bar value")
-                  (attr "text-anchor" "end"))
+                  (attr "class" "bar")
+                  (attr "text-anchor" "middle"))
 
-              (.. value-texts
+              (.. texts
                   transition
                   (duration 250)
-                  (attr "y" (fn [d] (+ (y-scale (.-name d)) (/ (.. y-scale rangeBand) 2))))
-                  (attr "x" inner-width)
+                  (attr "x" (fn [d] (+ (x-scale (.-name d)) (/ (.. x-scale rangeBand) 2))))
+                  (attr "y" (fn [d] (y-scale (.-value d))))
+                  (attr "dy" "-0.3em")
                   (text (fn [d] (gstring/format "%.2f" (.-value d)))))
 
-              (.. value-texts
+              (.. texts
                   exit
                   remove)
 
-              (.. name-texts
-                  enter
-                  (append "text")
-                  (attr "class" "bar value")
-                  (attr "text-anchor" "start"))
-
-              (.. name-texts
-                  transition
-                  (duration 250)
-                  (attr "y" (fn [d] (+ (y-scale (.-name d)) (/ (.. y-scale rangeBand) 2))))
-                  (attr "x" 0)
-                  (text (fn [d] (.-name d))))
-
-              (.. name-texts
-                  exit
-                  remove)
               ()))
           js-data))))
 
@@ -216,8 +199,8 @@
     (let [{:keys [id]} (om/props this)]
       (html
         [:div
-         (opts {:id (str "bar-chart-" id)
+         (opts {:id (str "column-chart-" id)
                 :style {:height "100%"
                         :width "100%"}})]))))
 
-(def ->BarChart (om/factory BarChart))
+(def ->ColumnChart (om/factory ColumnChart))

@@ -47,8 +47,7 @@
         enter-sel (.. values
                       enter
                       (append "div")
-                      (attr "class" "values"))
-        ]
+                      (attr "class" "values"))]
     (.. enter-sel
         (append "div")
         (attr "class" "color"))
@@ -63,11 +62,10 @@
 
     (.. values
         (select ".txt.value")
-        (text (fn [d]
-                (gstring/format "%.2f" (.-value d)))))
+        (text (gstring/format "%.2f" (.-value value))))
     (.. values
         (select ".color")
-        (style "background" (fn [d] (color-scale (.-name d)))))))
+        (style "background" (color-scale (.-name value))))))
 
 (defn tooltip-add-data [tooltip title values color-scale]
   (let [values (.. tooltip

@@ -44,17 +44,18 @@
         start (or (date/date-time (:start opts))
                   (date/date-time (apply min (keys by-timestamp))))
         end (or (date/date-time (:end opts))
-                (date/date-time (t/plus (date/today) (t/days 1)))) ;;Use tomorrow as end cause we want to include today.
-        ;_ (debug "Create report with start/end: " start end)
-        ;_ (debug "Create report period step: " (or (:step opts) (t/days 1)))
-        ;_ (debug "Create report got time-period: " (p/periodic-seq start end (or (:step opts) (t/days 1))))
-        time-range (p/periodic-seq start end (or (:step opts) (t/days 1)))]
-
-    (map (fn [date]
-           (let [t (date/date->long date)
-                 [add-value] (get by-timestamp t)]
-             (or add-value {:name t :value 0})))
-         time-range)))
+                (date/date-time (t/plus (date/today) (t/days 1))))] ;;Use tomorrow as end cause we want to include today.
+    ;_ (debug "Create report with start/end: " start end)
+    ;_ (debug "Create report period step: " (or (:step opts) (t/days 1)))
+    ;_ (debug "Create report got time-period: " (p/periodic-seq start end (or (:step opts) (t/days 1))))
+    (if (and start end)
+      (let [time-range (p/periodic-seq start end (or (:step opts) (t/days 1)))]
+        (map (fn [date]
+               (let [t (date/date->long date)
+                     [add-value] (get by-timestamp t)]
+                 (or add-value {:name t :value 0})))
+             time-range))
+      [])))
 
 (defmethod sum :transaction/date
   [_ transactions _]
@@ -165,8 +166,7 @@
     {:key    "All transactions sum"
      :id     :track.function.id/sum
      :values (if (= group-by :transaction/date)
-               (zero-padding-to-time-series-data values {:start (:filter/start-date data-filter)
-                                                         :end   (:filter/end-date data-filter)})
+               (zero-padding-to-time-series-data values)
                values)}))
 
 (defmethod track :track.function.id/mean
