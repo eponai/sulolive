@@ -203,14 +203,15 @@
                 cycle/period
                 cycle/period-count]} cycle]
     (let [by-month (group-by #(let [date (:transaction/date %)]
-                               (date/month->long (t/date-time (:date/year date) (:date/month date)))) transactions)
+                               (date/month->long date)) transactions)
           sum-by-month (map (fn [[k v]]
                               (let [month (c/from-long k)
                                     end (min (date/date->long (date/today)) (date/date->long (t/last-day-of-the-month month)))
                                     values (zero-padding-to-time-series-data (sum :transaction/date v {}) {:start month
                                                                                                            :end   (t/plus (c/from-long end) (t/days 1))})
-                                    #?@(:clj  [avg (with-precision 10 (/ value (count values)))]
-                                        :cljs [avg (/ value (count values))])]
+                                    #?@(:clj  [avg (with-precision 10 (/ value (t/number-of-days-in-the-month month)))]
+                                        :cljs [avg (/ value (t/number-of-days-in-the-month month))])
+                                    last-day (date/date->long (t/last-day-of-the-month month))]
                                 {:date   k
                                  :limit  value
                                  :values (loop [input values
@@ -222,13 +223,14 @@
                                                                                       :key "user-input"))
                                                     (+ tot v))
                                              output))
-                                 :guide  (loop [input values
+                                 :guide  (loop [start k
                                                 output []
                                                 tot 0]
-                                           (if (:value (first input))
-                                             (recur (rest input)
-                                                    (conj output (assoc (first input) :value (+ tot avg)
-                                                                                      :key "guideline"))
+                                           (if (<= start last-day)
+                                             (recur (date/date->long (t/plus (date/date-time start) (t/days 1)))
+                                                    (conj output {:value (+ tot avg)
+                                                                  :name start
+                                                                  :key   "guideline"})
                                                     (+ tot avg))
                                              output))}))
                                by-month)]

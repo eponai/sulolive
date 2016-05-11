@@ -112,6 +112,17 @@
 (defn first-day-of-this-month []
   (c/to-date-time (t/first-day-of-the-month (today))))
 
+(defn first-day-of-month [n]
+  (let [t (today)]
+    (c/to-date-time (t/first-day-of-the-month (t/year t) n))))
+
+(defn last-day-of-this-month []
+  (c/to-date-time (t/last-day-of-the-month (today))))
+
+(defn last-day-of-month [n]
+  (let [t (today)]
+    (c/to-date-time (t/last-day-of-the-month (t/year t) n))))
+
 (defn now []
   (t/now))
 

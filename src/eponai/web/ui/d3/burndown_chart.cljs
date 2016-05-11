@@ -7,7 +7,8 @@
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]
     [cljs-time.core :as t]
-    [cljs-time.coerce :as c]))
+    [cljs-time.coerce :as c]
+    [eponai.common.format.date :as date]))
 
 (defui BurndownChart
   Object
@@ -42,11 +43,10 @@
   (create [this]
     (let [{:keys [id width height data]} (om/props this)
           svg (d3/build-svg (str "#burndown-chart-" id) width height)
-          last-data (last data)
           chart-data [{:key    "user-input"
-                       :values (or (:values last-data) [])}
+                       :values (apply concat (mapv :values data))}
                       {:key    "guideline"
-                       :values (or (:guide last-data) [])}]
+                       :values (apply concat (mapv :guide data))}]
 
           js-data (clj->js chart-data)
 
@@ -60,6 +60,8 @@
                     (append "g")
                     (attr "class" "line-chart")
                     (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))]
+      (debug "burndownchart: " js-data)
+      (debug "burndownchart: " chart-data)
 
       (.. graph
           (append "g")
@@ -72,8 +74,26 @@
           (attr "class" "y axis grid")
           (attr "transform" (str "translate(0,0)"))
           (call y-axis))
+      (.. svg
+          (append "text")
+          (attr "class" "d3 button prev fa fa-arrow-left")
+          (attr "y" "50%")
+          (attr "x" (:left margin))
+          (attr "height" 20)
+          (attr "width" 20)
+            (attr "text-anchor" "end")
+          (html #(str "&#xf053")))
+      (.. svg
+          (append "text")
+          (attr "class" "d3 button next fa fa-arrow-right")
+          (attr "y" "50%")
+          (attr "height" 20)
+          (attr "width" 20)
+          (attr "text-anchor" "start")
+          (html #(str "&#xf054")))
 
       (d3/focus-append svg {:margin margin})
+      (d3/clip-path-append svg id)
 
       (d3/update-on-resize this id)
       (om/update-state! this assoc
@@ -82,7 +102,7 @@
 
   (update [this]
     (let [{:keys [svg margin x-scale y-scale js-data]} (om/get-state this)
-          {:keys [id]} (om/props this)
+          {:keys [id height]} (om/props this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})]
 
@@ -93,26 +113,36 @@
         (.update-lines this)
         (.update-axis this inner-width inner-height)
 
+        (.. svg
+            (select ".d3.button.prev")
+            (on "click" #(om/update-state! this update :cycle dec)))
+        (.. svg
+            (select ".d3.button.next")
+            (attr "x" (+ inner-width 20))
+            (on "click" #(om/update-state! this update :cycle inc)))
         (d3/focus-set-height svg inner-height)
+        (d3/clip-path-set-dimensions id inner-width height)
         (.. svg
             (on "mousemove" (fn []
                               (this-as jthis
-                                (d3/mouse-over
+                                (d3/mouse-over-burndown
                                   (.. js/d3 (mouse jthis))
                                   x-scale
-                                  js-data
-                                  (fn [x-position values]
-                                    (let [time-format (.. js/d3
+                                  (last js-data)
+                                  (fn [x-position index]
+                                    (let [values (.map js-data #(get (.-values %) index))
+                                          time-format (.. js/d3
                                                           -time
                                                           (format "%b %d %Y"))]
                                       (d3/tooltip-add-data id
                                                            (time-format (js/Date. x-position))
                                                            values (fn [d]
-                                                                    (condp = (.-key d)
-                                                                      "user-input"
-                                                                      "orange"
-                                                                      "guideline"
-                                                                      "green")))
+                                                                    (when d
+                                                                      (condp = (.-key d)
+                                                                        "user-input"
+                                                                        "orange"
+                                                                        "guideline"
+                                                                        "green"))))
                                       (d3/tooltip-set-pos id
                                                           (+ 30 (.. js/d3 -event -pageX))
                                                           (.. js/d3 -event -pageY))
@@ -120,14 +150,16 @@
                                       (d3/focus-set-guide svg (x-scale x-position) 5)
                                       (d3/focus-set-data-points svg
                                                                 values
-                                                                {:x-fn     (fn [d] (x-scale (.-name d)))
-                                                                 :y-fn     (fn [d] (y-scale (.-value d)))
+                                                                {:x-fn     (fn [d] (if d (x-scale (.-name d)) 0))
+                                                                 :y-fn     (fn [d] (if d (y-scale (.-value d)) 0))
                                                                  :color-fn (fn [d]
-                                                                             (condp = (.-key d)
-                                                                               "user-input"
-                                                                               "orange"
-                                                                               "guideline"
-                                                                               "green"))})))))))
+                                                                             (if d
+                                                                               (condp = (.-key d)
+                                                                                 "user-input"
+                                                                                 "orange"
+                                                                                 "guideline"
+                                                                                 "green")
+                                                                               "transparent"))})))))))
             (on "mouseover" (fn []
                               (d3/tooltip-remove-all)
                               (d3/tooltip-build id)
@@ -137,8 +169,11 @@
                              (d3/focus-hide svg)))))))
 
   (update-scales [this width height]
-    (let [{:keys [x-scale y-scale js-data svg]} (om/get-state this)
-          values (.. js/d3 (merge (.map js-data (fn [d] (.-values d)))))]
+    (let [{:keys [x-scale y-scale js-data svg cycle]} (om/get-state this)
+          values (.. js/d3 (merge (.map js-data (fn [d] (.-values d)))))
+          month (+ cycle (t/month (date/today)))
+          cycle-domain #js [(date/first-day-of-month month)
+                            (date/last-day-of-month month)]]
       (if (empty? values)
         (do
           (d3/no-data-insert svg)
@@ -152,8 +187,7 @@
           (d3/no-data-remove svg)
           (.. x-scale
               (range #js [0 width])
-              (domain (.. js/d3
-                          (extent values (fn [d] (.-name d))))))
+              (domain cycle-domain))
           (.. y-scale
               (range #js [height 0])
               (domain #js [0 (.. js/d3
@@ -161,6 +195,7 @@
 
   (update-lines [this]
     (let [{:keys [graph js-data x-scale y-scale]} (om/get-state this)
+          {:keys [id]} (om/props this)
           line (.. js/d3 -svg line
                    (x (fn [d] (x-scale (.-name d))))
                    (y (fn [d] (y-scale (.-value d)))))
@@ -171,6 +206,7 @@
           enter
           (append "path")
           (attr "class" "line")
+          (style "clip-path" (d3/clip-path-url id))
           (style "stroke" (fn [d]
                             (condp = (.-key d)
                               "user-input"
@@ -209,7 +245,8 @@
           (call y-axis))))
 
   (initLocalState [_]
-    {:margin {:top 10 :bottom 20 :left 20 :right 20}})
+    {:margin {:top 10 :bottom 20 :left 20 :right 20}
+     :cycle 0})
   (componentDidMount [this]
     (d3/create-chart this))
 
@@ -217,11 +254,11 @@
     (d3/update-chart this))
 
   (componentWillReceiveProps [this next-props]
-    (let [last-data (last (:data next-props))
+    (let [data (:data next-props)
           chart-data [{:key    "user-input"
-                       :values (:values last-data)}
+                       :values (apply concat (mapv :values data))}
                       {:key    "guideline"
-                       :values (:guide last-data)}]]
+                       :values (apply concat (mapv :guide data))}]]
       (d3/update-chart-data this chart-data)))
 
   (render [this]

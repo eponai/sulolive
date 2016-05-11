@@ -91,7 +91,8 @@
     (.. values
         (select ".txt.value")
         (text (fn [d]
-                (gstring/format "%.2f" (.-value d)))))
+                (when d
+                  (gstring/format "%.2f" (.-value d))))))
     (.. values
         (select ".color")
         (style "background" color-fn))))
@@ -228,6 +229,22 @@
   (.. container
       (selectAll "text.no-data")
       remove))
+
+(defn mouse-over-burndown [mouse x-scale values f]
+  (let [mouseX (first mouse)
+        sample-data (.-values values)
+        bisect-date (.. js/d3
+                        (bisector (fn [d]
+                                    (.-name d)))
+                        -left)
+        x0 (.invert x-scale mouseX)
+        i (bisect-date sample-data x0 1)
+        d0 (get sample-data (dec i))
+        d1 (get sample-data i)]
+    (when (and d1 d0 f)
+      (let [index (if (> (- x0 (.-name d0)) (- (.-name d1) x0))
+                    i (dec i))]
+        (f (.-name (get sample-data index)) index)))))
 
 (defn mouse-over [mouse x-scale js-data f]
   (let [mouseX (first mouse)

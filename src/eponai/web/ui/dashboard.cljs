@@ -19,7 +19,8 @@
     (cond (or
             (= style :graph.style/area)
             (= style :graph.style/line)
-            (= style :graph.style/bar))
+            (= style :graph.style/bar)
+            (= style :graph.style/burndown))
           {:minW (calc-w 50)
            :minH 2
            :maxH 3}
