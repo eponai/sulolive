@@ -67,12 +67,9 @@
         (select ".color")
         (style "background" (color-scale (.-name value))))))
 
-(defn tooltip-add-data [tooltip title values color-fn]
-  (debug "Tooltip: " tooltip
-         "Title " title
-         "values " values
-         "color-fn " color-fn)
-  (let [values (.. tooltip
+(defn tooltip-add-data [id title values color-fn]
+  (let [tooltip (tooltip-select id)
+        values (.. tooltip
                    (selectAll ".values")
                    (data values))
         enter-sel (.. values
@@ -98,6 +95,12 @@
     (.. values
         (select ".color")
         (style "background" color-fn))))
+
+(defn tooltip-set-pos [id left top]
+  (let [tooltip (tooltip-select id)]
+    (.. tooltip
+        (style "left" (str left "px"))
+        (style "top" (str top "px")))))
 
 (defn clip-path-append [el id]
   (.. el
@@ -141,6 +144,57 @@
         (selectAll "rect")
         (attr "y" 0)
         (attr "height" height))))
+
+(defn focus-append [svg & [{:keys [margin]}]]
+  (let [focus (.. svg
+                  (append "g")
+                  (attr "class" "focus")
+                  (style "display" "none")
+                  (attr "transform" (str "translate(" (or (:left margin) 0) "," (or (:top margin) 0) ")")))]
+    (.. focus
+        (append "rect")
+        (attr "class" "guide"))))
+
+(defn focus-set-height [el height]
+  (let [focus (.. el
+                  (select ".focus"))]
+    (.. focus
+        (select ".guide")
+        (attr "height" height))))
+
+(defn focus-set-guide [elem x y]
+  (let [guide (.. elem
+                  (select ".focus")
+                  (select ".guide"))]
+    (.. guide
+        (attr "transform" (str "translate(" x "," y ")")))))
+
+(defn focus-show [elem]
+  (.. elem
+      (select ".focus")
+      (style "display" nil)))
+
+(defn focus-hide [elem]
+  (.. elem
+      (select ".focus")
+      (style "display" "none")))
+
+(defn focus-set-data-points [elem values {:keys [x-fn y-fn color-fn]}]
+  (assert (and x-fn y-fn color-fn) "Needs functions provided to find coordinate and set color.")
+  (let [focus (.. elem
+                  (select ".focus"))
+        point (.. focus
+                  (selectAll "circle")
+                  (data values))]
+    (.. point
+        enter
+        (append "circle")
+        (attr "class" "point")
+        (attr "r" 3.5))
+
+    (.. point
+        (attr "transform" #(str "translate(" (x-fn %) "," (y-fn %) ")"))
+        (style "fill" #(color-fn %)))))
 
 (defn svg-dimensions [svg & [opts]]
   (let [{:keys [margin]} opts

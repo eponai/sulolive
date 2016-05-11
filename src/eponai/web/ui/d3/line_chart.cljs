@@ -55,11 +55,7 @@
           graph (.. svg
                     (append "g")
                     (attr "class" "line-chart")
-                    (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))
-          focus (.. svg
-                    (append "g")
-                    (attr "class" "focus")
-                    (style "display" "none"))]
+                    (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))]
 
       (.. graph
           (append "g")
@@ -73,46 +69,25 @@
           (attr "transform" (str "translate(0,0)"))
           (call y-axis))
 
-      (.. focus
-          (append "rect")
-          (attr "class" "guide"))
+      (d3/focus-append svg margin)
       (d3/clip-path-append svg id)
       (d3/brush-append svg)
 
       (d3/update-on-resize this id)
       (om/update-state! this assoc
                         :svg svg :js-data js-data
-                        :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :focus focus :color-scale color-scale)))
+                        :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :color-scale color-scale)))
 
   (update [this]
-    (let [{:keys [svg x-scale y-scale margin js-data focus color-scale]} (om/get-state this)
+    (let [{:keys [svg x-scale y-scale margin js-data color-scale]} (om/get-state this)
           {:keys [id]} (om/props this)
           {inner-width :width
-           inner-height :height} (d3/svg-dimensions svg {:margin margin})
-          values (.. js/d3 (merge (.map js-data (fn [d] (.-values d)))))]
+           inner-height :height} (d3/svg-dimensions svg {:margin margin})]
 
       ; When resize is in progress and sidebar pops in, inner size can be fucked up here.
       ; So just don't do anything in that case, an update will be triggered when sidebar transition is finished anyway.
       (when-not (or (js/isNaN inner-height) (js/isNaN inner-width))
-        (if (empty? values)
-          (do
-            (d3/no-data-insert svg)
-            (.. x-scale
-                (range #js [0 inner-width] 0.1)
-                (domain #js [(t/minus (t/today) (t/days 30)) (c/to-long (t/now))]))
-            (.. y-scale
-                (range #js [inner-height 0])
-                (domain #js [0 1])))
-          (do
-            (d3/no-data-remove svg)
-            (.. x-scale
-                (range #js [0 inner-width])
-                (domain (.. js/d3
-                            (extent values (fn [d] (.-name d))))))
-            (.. y-scale
-                (range #js [inner-height 0])
-                (domain #js [0 (.. js/d3
-                                   (max values (fn [d] (.-value d))))]))))
+        (.update-scales this inner-width inner-height)
         (.update-lines this)
         (.update-axis this inner-width inner-height)
 
@@ -125,9 +100,7 @@
                                     (.update-axis this inner-width inner-height)
                                     (.update-lines this))})
 
-        (.. focus
-            (select ".guide")
-            (attr "height" inner-height))
+        (d3/focus-set-height svg inner-height)
         (.. svg
             (on "mousemove" (fn []
                               (this-as jthis
@@ -136,39 +109,30 @@
                                   x-scale
                                   js-data
                                   (fn [x-position values]
-                                    (let [point (.. focus
-                                                    (selectAll "circle")
-                                                    (data values))
-                                          guide (.. focus
-                                                    (select ".guide"))
-                                          tooltip (d3/tooltip-select id)
-                                          time-format (.. js/d3
+                                    (let [time-format (.. js/d3
                                                           -time
                                                           (format "%b %d %Y"))]
-                                      (d3/tooltip-add-data tooltip (time-format (js/Date. x-position)) values (fn [_ i] (color-scale i)))
-                                      (.. tooltip
-                                          (style "left" (str (+ 30 (.. js/d3 -event -pageX)) "px"))
-                                          (style "top" (str (.. js/d3 -event -pageY) "px")))
-                                      (.. point
-                                          enter
-                                          (append "circle")
-                                          (attr "class" "point")
-                                          (attr "r" 3.5))
+                                      (d3/tooltip-add-data id
+                                                           (time-format (js/Date. x-position))
+                                                           values (fn [_ i]
+                                                                    (color-scale i)))
+                                      (d3/tooltip-set-pos id
+                                                          (+ 30 (.. js/d3 -event -pageX))
+                                                          (.. js/d3 -event -pageY))
 
-                                      (.. point
-                                          (attr "transform" (fn [d]
-                                                              (str "translate(" (x-scale (.-name d)) "," (y-scale (.-value d)) ")")))
-                                          (style "fill" (fn [_ i]
-                                                          (color-scale i))))
-                                      (.. guide
-                                          (attr "transform" (str "translate(" (x-scale x-position) ",0)")))))))))
+                                      (d3/focus-set-guide svg (x-scale x-position) 5)
+                                      (d3/focus-set-data-points svg
+                                                                values
+                                                                {:x-fn     (fn [d] (x-scale (.-name d)))
+                                                                 :y-fn     (fn [d] (y-scale (.-value d)))
+                                                                 :color-fn (fn [_ i] (color-scale i))})))))))
             (on "mouseover" (fn []
                               (d3/tooltip-remove-all)
                               (d3/tooltip-build id)
-                              (.. focus (style "display" nil))))
+                              (d3/focus-show svg)))
             (on "mouseout" (fn []
                              (d3/tooltip-remove id)
-                             (.. focus (style "display" "none"))))))))
+                             (d3/focus-hide svg)))))))
 
   (update-lines [this]
     (let [{:keys [graph js-data x-scale y-scale color-scale]} (om/get-state this)
@@ -192,6 +156,30 @@
       (.. graph-area
           exit
           remove)))
+
+  (update-scales [this width height]
+    (let [{:keys [js-data svg x-scale y-scale]} (om/get-state this)
+          values (.. js/d3 (merge (.map js-data (fn [d] (.-values d)))))]
+      (if (empty? values)
+        (do
+          (d3/no-data-insert svg)
+          (.. x-scale
+              (range #js [0 width] 0.1)
+              (domain #js [(t/minus (t/today) (t/days 30)) (c/to-long (t/now))]))
+          (.. y-scale
+              (range #js [height 0])
+              (domain #js [0 1])))
+        (do
+          (d3/no-data-remove svg)
+          (.. x-scale
+              (range #js [0 width])
+              (domain (.. js/d3
+                          (extent values (fn [d] (.-name d))))))
+          (.. y-scale
+              (range #js [height 0])
+              (domain #js [0 (.. js/d3
+                                 (max values (fn [d] (.-value d))))]))))))
+
   (update-axis [this width height]
     (let [{:keys [y-axis x-axis svg]} (om/get-state this)]
       (.. y-axis

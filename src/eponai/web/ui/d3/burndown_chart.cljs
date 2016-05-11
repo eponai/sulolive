@@ -59,11 +59,7 @@
           graph (.. svg
                     (append "g")
                     (attr "class" "line-chart")
-                    (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))
-          focus (.. svg
-                    (append "g")
-                    (attr "class" "focus")
-                    (style "display" "none"))]
+                    (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))]
 
       (.. graph
           (append "g")
@@ -77,21 +73,18 @@
           (attr "transform" (str "translate(0,0)"))
           (call y-axis))
 
-      (.. focus
-          (append "rect")
-          (attr "class" "guide"))
+      (d3/focus-append svg {:margin margin})
 
       (d3/update-on-resize this id)
       (om/update-state! this assoc
                         :svg svg :js-data js-data
-                        :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :color-scale color-scale :focus focus)))
+                        :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :color-scale color-scale)))
 
   (update [this]
-    (let [{:keys [svg margin x-scale y-scale js-data focus]} (om/get-state this)
+    (let [{:keys [svg margin x-scale y-scale js-data]} (om/get-state this)
           {:keys [id]} (om/props this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})]
-      (debug "Burndownchart: " js-data)
 
       ; When resize is in progress and sidebar pops in, inner size can be fucked up here.
       ; So just don't do anything in that case, an update will be triggered when sidebar transition is finished anyway.
@@ -100,9 +93,7 @@
         (.update-lines this)
         (.update-axis this inner-width inner-height)
 
-        (.. focus
-            (select ".guide")
-            (attr "height" inner-height))
+        (d3/focus-set-height svg inner-height)
         (.. svg
             (on "mousemove" (fn []
                               (this-as jthis
@@ -111,48 +102,39 @@
                                   x-scale
                                   js-data
                                   (fn [x-position values]
-                                    (let [point (.. focus
-                                                    (selectAll "circle")
-                                                    (data values))
-                                          guide (.. focus
-                                                    (select ".guide"))
-                                          tooltip (d3/tooltip-select id)
-                                          time-format (.. js/d3
+                                    (let [time-format (.. js/d3
                                                           -time
                                                           (format "%b %d %Y"))]
-                                      (d3/tooltip-add-data tooltip (time-format (js/Date. x-position)) values (fn [d]
-                                                                                                                (condp = (.-key d)
-                                                                                                                  "user-input"
-                                                                                                                  "orange"
-                                                                                                                  "guideline"
-                                                                                                                  "green")))
-                                      (.. tooltip
-                                          (style "left" (str (+ 30 (.. js/d3 -event -pageX)) "px"))
-                                          (style "top" (str (.. js/d3 -event -pageY) "px")))
-                                      (.. point
-                                          enter
-                                          (append "circle")
-                                          (attr "class" "point")
-                                          (attr "r" 3.5))
+                                      (d3/tooltip-add-data id
+                                                           (time-format (js/Date. x-position))
+                                                           values (fn [d]
+                                                                    (condp = (.-key d)
+                                                                      "user-input"
+                                                                      "orange"
+                                                                      "guideline"
+                                                                      "green")))
+                                      (d3/tooltip-set-pos id
+                                                          (+ 30 (.. js/d3 -event -pageX))
+                                                          (.. js/d3 -event -pageY))
 
-                                      (.. point
-                                          (attr "transform" (fn [d]
-                                                              (str "translate(" (x-scale (.-name d)) "," (y-scale (.-value d)) ")")))
-                                          (style "fill" (fn [d]
-                                                          (condp = (.-key d)
-                                                            "user-input"
-                                                            "orange"
-                                                            "guideline"
-                                                            "green"))))
-                                      (.. guide
-                                          (attr "transform" (str "translate(" (x-scale x-position) ",5)")))))))))
+                                      (d3/focus-set-guide svg (x-scale x-position) 5)
+                                      (d3/focus-set-data-points svg
+                                                                values
+                                                                {:x-fn     (fn [d] (x-scale (.-name d)))
+                                                                 :y-fn     (fn [d] (y-scale (.-value d)))
+                                                                 :color-fn (fn [d]
+                                                                             (condp = (.-key d)
+                                                                               "user-input"
+                                                                               "orange"
+                                                                               "guideline"
+                                                                               "green"))})))))))
             (on "mouseover" (fn []
                               (d3/tooltip-remove-all)
                               (d3/tooltip-build id)
-                              (.. focus (style "display" nil))))
+                              (d3/focus-show svg)))
             (on "mouseout" (fn []
                              (d3/tooltip-remove id)
-                             (.. focus (style "display" "none"))))))))
+                             (d3/focus-hide svg)))))))
 
   (update-scales [this width height]
     (let [{:keys [x-scale y-scale js-data svg]} (om/get-state this)
@@ -227,7 +209,7 @@
           (call y-axis))))
 
   (initLocalState [_]
-    {:margin {:top 0 :bottom 20 :left 0 :right 0}})
+    {:margin {:top 10 :bottom 20 :left 20 :right 20}})
   (componentDidMount [this]
     (d3/create-chart this))
 
