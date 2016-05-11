@@ -73,9 +73,7 @@
                     (style "display" "none"))]
       (d3/clip-path-append svg id)
 
-      (.. focus
-          (append "rect")
-          (attr "class" "guide"))
+      (d3/focus-append svg {:margin margin})
 
       (.. graph
           (append "g")
@@ -133,9 +131,7 @@
                                     (.domain x-scale new-domain)
                                     (.update-axis this inner-width inner-height)
                                     (.update-areas this layers))})
-        (.. focus
-            (select ".guide")
-            (attr "height" inner-height))
+        (d3/focus-set-height svg inner-height)
         (.. svg
             (on "mousemove" (fn []
                               (this-as jthis
@@ -149,16 +145,13 @@
                                                     (data values))
                                           guide (.. focus
                                                     (select ".guide"))
-                                          tooltip (d3/tooltip-select id)
 
                                           time-format (.. js/d3
                                                           -time
                                                           (format "%b %d %Y"))]
-                                      (d3/tooltip-add-data tooltip (time-format (js/Date. x-position)) values (fn [_ i] (color-scale i)))
-
-                                      (.. tooltip
-                                          (style "left" (str (+ 30 (.. js/d3 -event -pageX)) "px"))
-                                          (style "top" (str (.. js/d3 -event -pageY) "px")))
+                                      (d3/tooltip-add-data id (time-format (js/Date. x-position)) values (fn [_ i] (color-scale i)))
+                                      (d3/tooltip-set-pos id (+ 30 (.. js/d3 -event -pageX))
+                                                           (.. js/d3 -event -pageY))
 
                                       (.. point
                                           enter
@@ -179,10 +172,10 @@
             (on "mouseover" (fn []
                               (d3/tooltip-remove-all)
                               (d3/tooltip-build id)
-                              (.. focus (style "display" nil))))
+                              (d3/focus-show svg)))
             (on "mouseout" (fn []
                              (d3/tooltip-remove id)
-                             (.. focus (style "display" "none"))))))))
+                             (d3/focus-hide svg)))))))
 
   (update-areas [this layers]
     (let [{:keys [graph color-scale area]} (om/get-state this)

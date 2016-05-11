@@ -40,8 +40,9 @@
   (.. js/d3
       (select (str "#tooltip-" id))))
 
-(defn tooltip-add-value [tooltip value color-scale]
-  (let [values (.. tooltip
+(defn tooltip-add-value [id value color-scale]
+  (let [tooltip (tooltip-select id)
+        values (.. tooltip
                    (selectAll ".values")
                    (data #js [value]))
         enter-sel (.. values

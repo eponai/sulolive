@@ -21,7 +21,7 @@
         (update-in [:widget/report :report/track :track/functions]
                    (fn [fns]
                      (map (fn [f]
-                            (let [fn-id (if (= style :graph.style/chord) :report.function.id/tags :report.function.id/sum)]
+                            (let [fn-id (if (= style :graph.style/chord) :track.function.id/tags :track.function.id/sum)]
                               (assoc f
                                 :track.function/id fn-id
                                 :track.function/group-by (get default-group-by style))))
