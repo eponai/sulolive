@@ -59,21 +59,6 @@
     (debug "new-transaction-eids: " (count new-transaction-eids))
     new-transaction-eids))
 
-(defn distinct-by
-  "Like clojure.core/distinct, but items will be distinct by f applied to each item."
-  ([f] (distinct-by f #{}))
-  ([f seen-init]
-   (fn [rf]
-     (let [seen (volatile! seen-init)]
-       (fn
-         ([] (rf))
-         ([result] (rf result))
-         ([result input]
-          (if (contains? @seen (f input))
-            result
-            (do (vswap! seen conj (f input))
-                (rf result input)))))))))
-
 (def txs-by-project (atom {}))
 
 (defn all-local-transactions-by-project [{:keys [parser db] :as env} project-eid]
@@ -86,7 +71,7 @@
         (let [new-txs (transactions-since db db-used project-eid)
               new-with-convs (vec (p/transactions-with-conversions db (:user/uuid current-user) new-txs))
               new-and-old (into new-with-convs
-                                (distinct-by :transaction/uuid (into #{} (map :transaction/uuid) new-with-convs))
+                                (remove (into #{} (map :transaction/uuid) new-with-convs))
                                 txs)]
           (swap! txs-by-project assoc project-eid {:db-used db :txs new-and-old})
           new-and-old)))))

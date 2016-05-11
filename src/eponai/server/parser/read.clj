@@ -29,15 +29,15 @@
 
 (defn entity-map->shallow-map [e]
   (persistent!
-    (reduce (fn [m k]
-              (let [v (get e k)
-                    v (cond
-                        (:db/id v) (select-keys v [:db/id])
-                        (coll? v) (into [] (map (fn [x] (select-keys x [:db/id]))) v)
-                        :else v)]
-                (assoc! m k v)))
+    (reduce (fn [m [k v]]
+                 (let [id (:db/id v)
+                       v (cond
+                           (some? id) {:db/id id}
+                           (coll? v) (mapv (fn [x] {:db/id (:db/id x)}) v)
+                           :else v)]
+                   (assoc! m k v)))
             (transient {:db/id (:db/id e)})
-            (keys e))))
+            e)))
 
 (defmethod read :query/transactions
   [{:keys [db db-since query auth]} _ {:keys [project-uuid filter]}]
@@ -45,21 +45,27 @@
         entity-query (common.pull/transaction-entity-query
                        {:project-uuid project-uuid
                         :filter       filter
-                        :user-uuid (:username auth)
+                        :user-uuid    (:username auth)
                         :query-params {:where   '[[?e :transaction/project ?b]
                                                   [?b :project/users ?u]
                                                   [?u :user/uuid ?user-uuid]]
                                        :symbols {'?user-uuid (:username auth)}}})
         tx-ids (server.pull/all-since db db-since query entity-query)
-        conv-ids (pull/find-conversions db tx-ids (:username auth))
-        ref-ids (set/union
-                   (server.pull/all-entities db query tx-ids)
-                   (server.pull/all-entities db pull/conversion-query conv-ids))
-        pull-xf (map #(d/pull db '[*] %))
         tx-entities (into [] (-> (map #(d/entity db %))
                                  (common.pull/xf-with-tag-filters filter))
                           tx-ids)
-        conversions (pull/transaction-conversions db (:username auth) tx-entities)]
+        conversions (pull/transaction-conversions db (:username auth) tx-entities)
+
+        conv-ids (into #{} (mapcat (fn [[_ v]]
+                                     {:pre [(:transaction-conversion-id v) (:user-conversion-id v)]}
+                                     (vector (:user-conversion-id v)
+                                             (:transaction-conversion-id v))))
+                       conversions)
+        ref-ids (set/union
+                  (server.pull/all-entities db query tx-ids)
+                  (server.pull/all-entities db pull/conversion-query conv-ids))
+        pull-xf (map #(d/pull db '[*] %))
+        ]
     {:value (cond-> {:transactions (into [] (comp (map #(entity-map->shallow-map %))
                                                   (map #(update % :transaction/type (fn [t] {:db/ident t})))
                                                   (map #(if-let [tx-conv (get conversions (:db/id %))]

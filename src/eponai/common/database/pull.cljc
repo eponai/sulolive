@@ -316,7 +316,9 @@
            ;; (e.g. user is using SEK, so the new rate will be
            ;; conversion-of-transaction-currency / conversion-of-user-currency
            [(:db/id transaction)
-            {:conversion/rate rate
+            {:user-conversion-id user-conv
+             :transaction-conversion-id tx-conv
+             :conversion/rate rate
              :conversion/date (:conversion/date transaction-conversion)}]))))))
 
 (defn transaction-conversions [db user-uuid transaction-entities]
@@ -394,7 +396,13 @@
         entities->maps-xform (map #(let [id (:db/id %)]
                                     (cond-> (into {:db/id id} %)
                                             (contains? conversions id)
-                                            (assoc :transaction/conversion (get conversions id)))))]
+                                            (assoc :transaction/conversion
+                                                   (reduce-kv (fn [m k v]
+                                                                ;; the conversions map's map doesn't only contain
+                                                                ;; conversion data.
+                                                                (cond-> m (= (namespace k) "conversion") (assoc m k v)))
+                                                              {}
+                                                              (get conversions id))))))]
     (eduction entities->maps-xform tx-entities)))
 
 (defn filter-transactions [params transactions]

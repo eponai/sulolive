@@ -3,6 +3,12 @@
   (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error]]
             [om.next :as om]))
 
+(defmacro timeit [label & body]
+  `(let [start# (. System (nanoTime))
+         ret# (do ~@body)]
+     (debug "Elapsed time: " (/ (double (- (. System (nanoTime)) start#)) 1000000.0) " msecs" " <= for: " ~label)
+     ret#))
+
 (defn post-process-parse
   "Calls post-parse-fn for each [k v] in the result of a (parser env query-expr).
   The post-parse-fn should be a 3 arity function taking [env key value].

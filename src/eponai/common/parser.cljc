@@ -36,6 +36,11 @@
     (debug "read key:" k "returned:" ret)
     ret))
 
+(defn with-times [read-or-mutate]
+  (fn [env k p]
+    (util/timeit (str "parsed: " k)
+                 (read-or-mutate env k p))))
+
 ;; ############ middlewares
 
 #?(:clj
@@ -267,7 +272,8 @@
                                           read-without-state
                                           read-with-dbid-in-query
                                           wrap-db
-                                          (with-elided-paths (delay (parser {:elide-paths true}))))
+                                          ;; This is interesting, since it'll re-create all middlewares.
+                                          #?(:cljs (with-elided-paths (delay (parser {:elide-paths true})))))
                               :mutate (-> mutate
                                           with-remote-guard
                                           mutate-with-idempotent-invariants

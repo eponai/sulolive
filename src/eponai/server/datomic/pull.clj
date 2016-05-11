@@ -1,6 +1,7 @@
 (ns eponai.server.datomic.pull
   (:require
     [clojure.walk :as w :refer [walk]]
+    [clojure.string :as string]
     [clojure.set :as set]
     [datomic.api :as d]
     [eponai.common.database.pull :as p]
@@ -105,7 +106,7 @@
 
 (defn reverse-lookup-attr? [attr]
   {:pre [(keyword? attr)]}
-  (= \_ (first (name attr))))
+  (string/starts-with? (name attr) "_"))
 
 (defn normalize-attribute [attr]
   (if (reverse-lookup-attr? attr)
@@ -219,13 +220,8 @@
 
 (defn eids->refs [db eids attr]
   {:post [(set? %)]}
-  (transduce (comp (map (fn [e]
-                          (let [ret (eid->refs db e attr)]
-                            ret)))
-                   (filter seq))
-             (completing into)
-             #{}
-             eids))
+  (into #{} (mapcat (fn [e] (eid->refs db e attr)))
+        eids))
 
 (defn path+eids->refs [db eids path]
   {:post [(set? %)]}
