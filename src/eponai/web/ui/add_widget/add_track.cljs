@@ -14,15 +14,17 @@
   (let [default-group-by {:graph.style/bar    :transaction/tags
                           :graph.style/area   :transaction/date
                           :graph.style/line   :transaction/date
-                          :graph.style/number :default}]
+                          :graph.style/number :default
+                          :graph.style/chord  :default}]
     (-> widget
         (assoc-in [:widget/graph :graph/style] style)
         (update-in [:widget/report :report/track :track/functions]
                    (fn [fns]
                      (map (fn [f]
-                            (assoc f
-                              :track.function/id :track.function.id/sum
-                              :track.function/group-by (get default-group-by style)))
+                            (let [fn-id (if (= style :graph.style/chord) :report.function.id/tags :report.function.id/sum)]
+                              (assoc f
+                                :track.function/id fn-id
+                                :track.function/group-by (get default-group-by style))))
                           fns))))))
 
 (defui NewTrack
@@ -178,7 +180,15 @@
                  :on-click #(when (and on-change (not= style :graph.style/line))
                              (on-change (change-graph-style widget :graph.style/line)))}]
                [:label {:for "line-option"}
-                [:span.currency-code "Line"]]])]
+                [:span.currency-code "Line"]]
+               [:input
+                {:type     "radio"
+                 :id       "chord-option"
+                 :checked  (= style :graph.style/chord)
+                 :on-click #(when (and on-change (not= style :graph.style/chord))
+                             (on-change (change-graph-style widget :graph.style/chord)))}]
+               [:label {:for "chord-option"}
+                [:span.currency-code "Chord"]]])]
 
            (when (= :graph.style/bar (:graph/style graph))
              [:hr])

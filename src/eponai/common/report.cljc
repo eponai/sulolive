@@ -175,6 +175,23 @@
    :id     :track.function.id/mean
    :values (mean group-by transactions opts)})
 
+(defmethod track :report.function.id/tags
+  [{:keys [track.function/group-by]} transactions opts]
+  (let [all-tags (map :transaction/tags transactions)
+        tag-relations (reduce (fn [m1 tags]
+                                (reduce (fn [m2 tag]
+                                          (update m2 (:tag/name tag) #(if (some? %)
+                                                                       (concat % (map :tag/name tags))
+                                                                       (map :tag/name tags))))
+                                        m1
+                                        tags))
+                              {}
+                              all-tags)]
+    (debug "Tag-data: " (map (fn [me] {:name (key me) :children (vec (remove #(= (key me) %) (val me)))}) tag-relations))
+    {:key    "All Transactions mean"
+     :id     :track.function.id/mean
+     :values (map (fn [me] {:name (key me) :children (vec (remove #(= (key me) %) (val me)))}) tag-relations)}))
+
 (defmulti goal (fn [g _ ] (get-in g [:goal/cycle :cycle/period])))
 
 (defmethod goal :cycle.period/day

@@ -25,6 +25,10 @@
            :minH 2
            :maxH 3}
 
+          (= style :graph.style/chord)
+          {:minW (calc-w 50)
+           :minH 4}
+
           :else
           {:minW 1
            :maxH 2})))

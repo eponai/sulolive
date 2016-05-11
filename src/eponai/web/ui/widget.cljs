@@ -4,6 +4,7 @@
     [eponai.web.ui.d3.area-chart :refer [->AreaChart]]
     [eponai.web.ui.d3.bar-chart :refer [->BarChart]]
     [eponai.web.ui.d3.column-chart :refer [->ColumnChart]]
+    [eponai.web.ui.d3.edge-bundling-graph :refer [->EdgeBundling]]
     [eponai.web.ui.d3.burndown-chart :refer [->BurndownChart]]
     [eponai.web.ui.d3.line-chart :refer [->LineChart]]
     [eponai.web.ui.d3.number-chart :refer [->NumberChart]]
@@ -101,6 +102,9 @@
 
                  (= style :graph.style/burndown)
                  (->BurndownChart settings)
+
+                 (= style :graph.style/chord)
+                 (->EdgeBundling settings)
                  ;[:div
                  ; "Progress: "
                  ; [:div.progress
