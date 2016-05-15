@@ -266,7 +266,7 @@
                        ;(debug "Make calc: " f " with opts: " opts)
                        (track f transactions opts))]
         ;(debug "Generated data: " (mapv track-fn functions))
-        (map track-fn [(first functions) (first functions) (first functions)]))
+        (map track-fn functions))
 
       (some? (:report/goal report))
       (let [g (:report/goal report)
