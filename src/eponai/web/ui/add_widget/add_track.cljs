@@ -157,14 +157,14 @@
                              (on-change (change-graph-style widget :graph.style/bar)))}]
                [:label {:for "bar-option"}
                 [:span.currency-code "Bars"]]
-               [:input
-                {:type     "radio"
-                 :id       "number-option"
-                 :checked  (= style :graph.style/number)
-                 :on-click #(when (and on-change (not= style :graph.style/number))
-                             (on-change (change-graph-style widget :graph.style/number)))}]
-               [:label {:for "number-option"}
-                [:span.currency-code "Number"]]
+               ;[:input
+               ; {:type     "radio"
+               ;  :id       "number-option"
+               ;  :checked  (= style :graph.style/number)
+               ;  :on-click #(when (and on-change (not= style :graph.style/number))
+               ;              (on-change (change-graph-style widget :graph.style/number)))}]
+               ;[:label {:for "number-option"}
+               ; [:span.currency-code "Number"]]
                [:input
                 {:type     "radio"
                  :id       "area-option"
@@ -181,14 +181,15 @@
                              (on-change (change-graph-style widget :graph.style/line)))}]
                [:label {:for "line-option"}
                 [:span.currency-code "Line"]]
-               [:input
-                {:type     "radio"
-                 :id       "chord-option"
-                 :checked  (= style :graph.style/chord)
-                 :on-click #(when (and on-change (not= style :graph.style/chord))
-                             (on-change (change-graph-style widget :graph.style/chord)))}]
-               [:label {:for "chord-option"}
-                [:span.currency-code "Chord"]]])]
+               ;[:input
+               ; {:type     "radio"
+               ;  :id       "chord-option"
+               ;  :checked  (= style :graph.style/chord)
+               ;  :on-click #(when (and on-change (not= style :graph.style/chord))
+               ;              (on-change (change-graph-style widget :graph.style/chord)))}]
+               ;[:label {:for "chord-option"}
+               ; [:span.currency-code "Chord"]]
+               ])]
 
            (when (= :graph.style/bar (:graph/style graph))
              [:hr])

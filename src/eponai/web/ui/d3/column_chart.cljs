@@ -137,7 +137,7 @@
                   (on "mouseover" (fn [d]
                                     (d3/tooltip-remove-all)
                                     (let [tooltip (d3/tooltip-build id)]
-                                      (d3/tooltip-add-value tooltip d color-scale)
+                                      (d3/tooltip-add-value id d color-scale)
                                       (.. focus (style "display" nil)))))
                   (on "mousemove" (fn []
                                     (let [tooltip (d3/tooltip-select id)]

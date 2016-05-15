@@ -153,6 +153,7 @@
           (.. name-texts
               exit
               remove)))))
+
   (update-axis [this width height]
     (let [{:keys [y-axis x-axis svg]} (om/get-state this)]
       (.. y-axis
