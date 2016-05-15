@@ -67,8 +67,9 @@
         txs
         (let [new-txs (transactions-since db db-used project-eid)
               new-with-convs (vec (p/transactions-with-conversions db (:user/uuid current-user) new-txs))
+              new-uuids (into #{} (map :transaction/uuid) new-with-convs)
               new-and-old (into new-with-convs
-                                (remove (into #{} (map :transaction/uuid) new-with-convs))
+                                (remove #(contains? new-uuids (:transaction/uuid %)))
                                 txs)]
           (swap! txs-by-project assoc project-eid {:db-used db :txs new-and-old})
           new-and-old)))))
