@@ -35,7 +35,8 @@
     (try
       (handler request)
       (catch Throwable e
-        (error "Request:" request "gave exception:" e)
+        (error "Error for request: " request " message: " (.getMessage e))
+        (error e)
         (let [error (ex-data e)
               code (h/error-codes (or (:status error) ::h/internal-error))]
           {:status code :body error})))))

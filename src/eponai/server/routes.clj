@@ -165,9 +165,10 @@
                                        (update ::m/parser (fn [parser] (-> parser
                                                                            parser/parse-without-mutations
                                                                            parser/parser-require-auth))))))
-          (throw (ex-info "No playground user-uuid with request. Will not call parser."
-                          {:request          request
-                           :keys-of-interest [::m/playground-user-uuid-fn]})))))
+          (let [msg "No playground user-uuid with request. Will not call parser."]
+            (throw (ex-info msg
+                            {:message          msg
+                             :keys-of-interest [::m/playground-user-uuid-fn]}))))))
 
     ; Requires user login
     (context "/user" _
