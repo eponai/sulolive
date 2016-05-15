@@ -263,24 +263,32 @@
   (fn [env k p]
     (read-or-mutate (assoc env :parser @child-parser) k p)))
 
+(defn with-txs-by-project-atom [read txs-by-project]
+  {:pre [(some? txs-by-project)]}
+  (fn [env k p]
+    (read (assoc env :txs-by-project txs-by-project) k p)))
+
 (defn parser
-  ([] (parser {}))
-  ([opts]
+  ([] (parser #?(:cljs {:txs-by-project (atom {})}
+                 :clj  {})
+              {}))
+  ([initial-state parser-opts]
    (let [p (om/parser (merge {:read   (-> read
                                           #?(:clj read-returning-basis-t)
+                                          #?(:cljs (with-txs-by-project-atom (:txs-by-project initial-state)))
                                           with-remote-guard
                                           read-without-state
                                           read-with-dbid-in-query
                                           wrap-db
                                           ;; This is interesting, since it'll re-create all middlewares.
-                                          #?(:cljs (with-elided-paths (delay (parser {:elide-paths true})))))
+                                          #?(:cljs (with-elided-paths (delay (parser initial-state (merge parser-opts {:elide-paths true}))))))
                               :mutate (-> mutate
                                           with-remote-guard
                                           mutate-with-idempotent-invariants
                                           mutate-with-error-logging
                                           wrap-db
-                                          (with-elided-paths (delay (parser {:elide-paths true}))))}
-                                  opts))]
+                                          (with-elided-paths (delay (parser initial-state {:elide-paths true}))))}
+                                  parser-opts))]
      #?(:cljs p
         :clj  (-> p
                   wrap-parser-filter-atom

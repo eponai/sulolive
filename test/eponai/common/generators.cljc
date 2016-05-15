@@ -27,13 +27,18 @@
 (defn gen-tags []
   (gen/fmap set (gen/not-empty (gen/vector (gen/hash-map :tag/name gen/string-alphanumeric)))))
 
-(defn gen-transaction []
-  (gen/hash-map :transaction/amount (gen-amount)
-                :transaction/currency (gen-currency)
-                :transaction/title (gen-title)
-                :transaction/date (gen-date)
-                :transaction/tags (gen-tags)
-                :transaction/created-at gen/pos-int
-                :transaction/uuid gen/uuid
-                :transaction/project (gen/hash-map :project/uuid gen/uuid :project/created-at gen/pos-int)
-                :transaction/type (gen/elements [:transaction.type/expense :transaction.type/income])))
+(defn gen-project []
+  (gen/hash-map :project/uuid gen/uuid :project/created-at gen/pos-int))
+
+(defn gen-transaction
+  ([] (gen-transaction (gen-project)))
+  ([project-generator]
+   (gen/hash-map :transaction/amount (gen-amount)
+                 :transaction/currency (gen-currency)
+                 :transaction/title (gen-title)
+                 :transaction/date (gen-date)
+                 :transaction/tags (gen-tags)
+                 :transaction/created-at gen/pos-int
+                 :transaction/uuid gen/uuid
+                 :transaction/project project-generator
+                 :transaction/type (gen/elements [:transaction.type/expense :transaction.type/income]))))

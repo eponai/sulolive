@@ -5,7 +5,7 @@
             [eponai.web.parser.mutate]
             [eponai.web.parser.read]
             [eponai.common.parser :as parser]
-            [eponai.common.generators :refer [gen-transaction]]
+            [eponai.common.generators :refer [gen-transaction gen-project]]
             [eponai.common.testdata :as testdata]
             [clojure.test.check]
             [clojure.test.check.generators :as gen]
@@ -30,12 +30,11 @@
      :conn   conn
      :user-uuid user-uuid}))
 
-
 (defspec
   created-transactions-are-rendered
   10
   (prop/for-all
-    [transactions (gen/vector (gen-transaction))]
+    [transactions (gen/bind (gen-project) (fn [project] (gen/vector (gen-transaction (gen/return project)))))]
     (try (let [create-mutations (mapv list (repeatedly (fn [] 'transaction/create))
                                       (map #(assoc % :mutation-uuid (d/squuid))
                                            transactions))
@@ -44,15 +43,16 @@
              (d/transact conn [(:transaction/currency tx)
                                (-> (:transaction/project tx)
                                    (assoc :project/users [[:user/uuid user-uuid]]))]))
+
            (let [parsed (parser {:state conn} create-mutations)
                  error? (get-in parsed ['transaction/create :om.next/error])
                  ui (parser {:state conn} (om/get-query transactions/AllTransactions))
                  rendered-txs (:query/transactions ui)]
              (when error?
                (error "Parsed: " parsed))
-             (and
-               (not (some? error?))
-               (= (count transactions) (count rendered-txs))))))))
+             (is (not (some? error?)))
+             (is (= (count transactions) (count rendered-txs)))
+             true)))))
 
 (deftest transaction-create-with-tags-of-the-same-name-throws-exception
   (let [{:keys [parser conn user-uuid]} (init-state)

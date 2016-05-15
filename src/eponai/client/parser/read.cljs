@@ -59,9 +59,7 @@
     (debug "new-transaction-eids: " (count new-transaction-eids))
     new-transaction-eids))
 
-(def txs-by-project (atom {}))
-
-(defn all-local-transactions-by-project [{:keys [parser db] :as env} project-eid]
+(defn all-local-transactions-by-project [{:keys [parser db txs-by-project] :as env} project-eid]
   (let [{:keys [db-used txs]} (get @txs-by-project project-eid)
         {:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
     (when (and project-eid current-user)
