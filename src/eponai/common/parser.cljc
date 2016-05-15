@@ -1,6 +1,6 @@
 (ns eponai.common.parser
   (:refer-clojure :exclude [read])
-  (:require [eponai.common.parser.util :as util]
+  (:require [eponai.common.parser.util :as util #?(:clj :refer :cljs :refer-macros) [timeit]]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn trace]]
     #?(:clj
             [om.next.server :as om]
@@ -38,8 +38,8 @@
 
 (defn with-times [read-or-mutate]
   (fn [env k p]
-    (util/timeit (str "parsed: " k)
-                 (read-or-mutate env k p))))
+    (timeit (str "parsed: " k)
+            (read-or-mutate env k p))))
 
 ;; ############ middlewares
 

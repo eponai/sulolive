@@ -35,5 +35,5 @@
                 :transaction/tags (gen-tags)
                 :transaction/created-at gen/pos-int
                 :transaction/uuid gen/uuid
-                :transaction/project (gen/hash-map :project/uuid gen/uuid)
+                :transaction/project (gen/hash-map :project/uuid gen/uuid :project/created-at gen/pos-int)
                 :transaction/type (gen/elements [:transaction.type/expense :transaction.type/income])))

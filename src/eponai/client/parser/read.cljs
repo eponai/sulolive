@@ -62,7 +62,6 @@
 (def txs-by-project (atom {}))
 
 (defn all-local-transactions-by-project [{:keys [parser db] :as env} project-eid]
-  (assert (number? project-eid) (str "Project-eid was not a number. Was: " project-eid))
   (let [{:keys [db-used txs]} (get @txs-by-project project-eid)
         {:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
     (when (and project-eid current-user)

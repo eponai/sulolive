@@ -6,7 +6,8 @@
     [eponai.server.datomic.format :as server.format]
     [eponai.server.test-util :as util]
     [eponai.common.database.pull :as p]
-    [eponai.common.database.transact :as transact]))
+    [eponai.common.database.transact :as transact]
+    [taoensso.timbre :refer [debug]]))
 
 (defn conversion [date-ymd currency-code]
   {:db/id               (d/tempid :db.part/user)

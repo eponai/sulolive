@@ -396,13 +396,7 @@
         entities->maps-xform (map #(let [id (:db/id %)]
                                     (cond-> (into {:db/id id} %)
                                             (contains? conversions id)
-                                            (assoc :transaction/conversion
-                                                   (reduce-kv (fn [m k v]
-                                                                ;; the conversions map's map doesn't only contain
-                                                                ;; conversion data.
-                                                                (cond-> m (= (namespace k) "conversion") (assoc m k v)))
-                                                              {}
-                                                              (get conversions id))))))]
+                                            (assoc :transaction/conversion (get conversions id)))))]
     (eduction entities->maps-xform tx-entities)))
 
 (defn filter-transactions [params transactions]
