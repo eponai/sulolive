@@ -13,9 +13,9 @@
 (defui LineChart
   Object
   (make-axis [_ width height]
-    (let [x-scale (.. js/d3 -time scale
+    (let [x-scale (.. js/d3 -time -scale utc
                       (range #js [0 width])
-                      (nice (.. js/d3 -time -year)))
+                      (nice (.. js/d3 -time -day)))
 
           y-scale (.. js/d3 -scale linear
                       (range #js [height 0])
@@ -186,7 +186,7 @@
           (ticks (max (/ height 50) 2))
           (tickSize (* -1 width) 0 0))
       (.. x-axis
-          (ticks (max (/ width 100) 2))
+          ;(ticks (max (/ width 100) 2))
           (tickSize (* -1 height) 0 0))
 
       (.. svg
