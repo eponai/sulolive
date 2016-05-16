@@ -32,7 +32,9 @@
                                         `[(project/select-tab ~{:selected-tab (param->keyword tab)})])
    :route-param/widget-id             (fn [_ wid]
                                         `[(widget/set-active-id ~{:widget-id (when wid
-                                                                               (param->number wid))})])
+                                                                               (if (= "new" wid)
+                                                                                 (keyword wid)
+                                                                                 (param->number wid)))})])
    :route-param/goal-id               (fn [_ gid]
                                         (debug "Goal id: " gid))
    :route-param/widget-type           (fn [_ type]
