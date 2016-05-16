@@ -7,7 +7,7 @@
     [eponai.server.test-util :as util]
     [eponai.common.database.pull :as p]
     [eponai.common.database.transact :as transact]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :as timbre :refer [debug]]))
 
 (defn conversion [date-ymd currency-code]
   {:db/id               (d/tempid :db.part/user)
@@ -49,9 +49,9 @@
                                      project]
                                     convs))
           ;; Total 4 conversions should be fetched for the following transactions.
-          ts [(transaction project "1000-01-01" "SEK")       ;; One conversions fetched SEK
-              (transaction project "1000-01-02" "USD")       ;; Two conversions fetched SEK+USD (user's + transactions's)
-              (transaction project "1000-01-03" "SEK")]]     ;; One conversions fetched SEK
+          ts [(transaction project "1000-01-01" "SEK")      ;; One conversions fetched SEK
+              (transaction project "1000-01-02" "USD")      ;; Two conversions fetched SEK+USD (user's + transactions's)
+              (transaction project "1000-01-03" "SEK")]]    ;; One conversions fetched SEK
       (transact/transact conn ts)
       (let [{result :query/transactions} (read-transactions conn user project)
             {:keys [transactions conversions]} result]

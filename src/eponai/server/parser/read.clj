@@ -10,7 +10,7 @@
     [eponai.server.datomic.pull :as server.pull]
     [eponai.server.external.facebook :as facebook]
     [eponai.server.external.stripe :as stripe]
-    [taoensso.timbre :refer [debug]]
+    [taoensso.timbre :refer [debug trace]]
     [eponai.common.database.pull :as pull]))
 
 (defmethod read :datascript/schema
@@ -56,13 +56,12 @@
                           tx-ids)
         conversions (pull/transaction-conversions db (:username auth) tx-entities)
 
-        ;; TODO: This should work. Breaks tests though.
-        ;conv-ids (into #{} (mapcat (fn [[_ v]]
-        ;                             {:pre [(:transaction-conversion-id v) (:user-conversion-id v)]}
-        ;                             (vector (:user-conversion-id v)
-        ;                                     (:transaction-conversion-id v))))
-        ;               conversions)
-        conv-ids (pull/find-conversions db tx-ids (:username auth))
+
+        conv-ids (into #{} (mapcat (fn [[_ v]]
+                                     {:pre [(:transaction-conversion-id v) (:user-conversion-id v)]}
+                                     (vector (:user-conversion-id v)
+                                             (:transaction-conversion-id v))))
+                       conversions)
         ref-ids (set/union
                   (server.pull/all-entities db query tx-ids)
                   (server.pull/all-entities db pull/conversion-query conv-ids))

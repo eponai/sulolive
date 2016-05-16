@@ -299,9 +299,9 @@
       #?(:cljs (debug "executing transaction-with-conversion on tx: " transaction))
      (let [tx-date (get-in transaction [:transaction/date :db/id])
            tx-curr (get-in transaction [:transaction/currency :db/id])
-           tx-conv (get-in transaction-convs [tx-curr tx-date])
+           tx-conv (get-in @transaction-convs [tx-curr tx-date])
            tx-conv (or tx-conv (approx-tx-conv tx-curr))
-           user-conv (get user-convs tx-date)
+           user-conv (get @user-convs tx-date)
            user-conv (or user-conv @approx-user-curr)]
        (when (and (some? tx-conv) (some? user-conv))
          (let [;; All rates are relative USD so we need to pull what rates the user currency has,
