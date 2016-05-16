@@ -54,7 +54,11 @@
                   init-state]} (om/get-state this)
           diff (lib.t/diff-transaction input-transaction init-state)]
       ;; Transact only when we have a diff to avoid unecessary mutations.
+      ;(debug "Delete tag: resulted diff: " diff)
+      ;(debug "Delete tag updated state: " input-transaction)
+      ;(debug "delete tag init state: " init-state)
       (when (seq diff)
+        ;(debug "Delete tag Will transacti diff: " diff)
         (om/transact! this `[(transaction/edit ~(-> diff
                                                     (assoc :transaction/uuid (:transaction/uuid input-transaction))
                                                     (assoc :db/id (:db/id input-transaction))
@@ -67,12 +71,11 @@
                              :query/all-projects
                              :query/transactions]))))
 
-  (select-transaction [this]
+  (initLocalState [this]
     (let [props (om/props this)
           transaction (update props :transaction/tags (fn [tags] (sort-by :tag/name (map #(select-keys % [:tag/name]) tags))))]
-      (om/update-state! this assoc
-                        :input-transaction transaction
-                        :init-state transaction)))
+      {:input-transaction transaction
+       :init-state transaction}))
 
   (render [this]
     (let [{:keys [input-transaction input-tag]} (om/get-state this)
@@ -88,8 +91,7 @@
       (dom/li
         nil
         (dom/div
-          #js {:className "row collapse expanded"
-               :onClick #(.select-transaction this)}
+          #js {:className "row collapse expanded"}
 
           ;; Date
           (dom/div
