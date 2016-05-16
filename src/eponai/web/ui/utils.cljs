@@ -220,7 +220,7 @@
           :value       (or (:tag/name input-tag) "")
           :on-change   #(on-change {:tag/name (.-value (.-target %))})
           :on-key-down (fn [e]
-                         (on-enter-down e #(on-add-tag {:tag/name %})))
+                         (on-enter-down e #(on-add-tag {:tag/name (clojure.string/trim %)})))
           :placeholder (or placeholder "Filter tags...")}]
         [:span.input-group-label
          [:i.fa.fa-tag]]])
