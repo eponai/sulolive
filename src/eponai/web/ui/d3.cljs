@@ -201,7 +201,7 @@
 
     (.. point
         (attr "transform" #(str "translate(" (x-fn %) "," (y-fn %) ")"))
-        (style "fill" #(color-fn %)))))
+        (style "stroke" color-fn))))
 
 (defn svg-dimensions [svg & [opts]]
   (let [{:keys [margin]} opts

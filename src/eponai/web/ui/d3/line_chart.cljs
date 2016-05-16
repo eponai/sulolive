@@ -133,8 +133,9 @@
                                                           (format "%b %d %Y"))]
                                       (d3/tooltip-add-data id
                                                            (time-format (js/Date. x-position))
-                                                           values (fn [_ i]
-                                                                    (color-scale i)))
+                                                           values
+                                                           (fn [_ i]
+                                                             (color-scale i)))
                                       (d3/tooltip-set-pos id
                                                           (+ 30 (.. js/d3 -event -pageX))
                                                           (.. js/d3 -event -pageY))
@@ -144,7 +145,8 @@
                                                                 values
                                                                 {:x-fn     (fn [d] (x-scale (.-name d)))
                                                                  :y-fn     (fn [d] (y-scale (.-value d)))
-                                                                 :color-fn (fn [_ i] (color-scale i))})))
+                                                                 :color-fn (fn [_ i]
+                                                                             (color-scale i))})))
                                   margin))))
             (on "mouseover" (fn []
                               (d3/tooltip-remove-all)
