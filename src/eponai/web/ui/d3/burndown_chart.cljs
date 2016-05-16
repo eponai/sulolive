@@ -13,7 +13,7 @@
 (defui BurndownChart
   Object
   (make-axis [_ width height]
-    (let [x-scale (.. js/d3 -time scale
+    (let [x-scale (.. js/d3 -time -scale utc
                       (range #js [0 width])
                       (nice (.. js/d3 -time -year)))
 
@@ -60,8 +60,6 @@
                     (append "g")
                     (attr "class" "line-chart")
                     (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))]
-      (debug "burndownchart: " js-data)
-      (debug "burndownchart: " chart-data)
 
       (.. graph
           (append "g")

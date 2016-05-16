@@ -120,10 +120,11 @@
 (defn clip-path-url [id]
   (str "url(#clip-" id ")"))
 
-(defn brush-append [el]
+(defn brush-append [el x y]
   (.. el
       (append "g")
-      (attr "class" "brush")))
+      (attr "class" "brush")
+      (attr "transform" (str "translate(" x ", " y ")"))))
 
 (defn brush-config [el {:keys [x-scale height on-end]}]
   (let [brush (.. js/d3
@@ -147,7 +148,7 @@
         (attr "y" 0)
         (attr "height" height))))
 
-(defn focus-append [svg & [{:keys [margin]}]]
+(defn focus-append [svg & [{:keys [margin clip-path]}]]
   (let [focus (.. svg
                   (append "g")
                   (attr "class" "focus")
@@ -155,7 +156,11 @@
                   (attr "transform" (str "translate(" (or (:left margin) 0) "," (or (:top margin) 0) ")")))]
     (.. focus
         (append "rect")
-        (attr "class" "guide"))))
+        (attr "class" "guide"))
+    (when clip-path
+      (.. focus
+          (select "rect")
+          (style "clip-path" clip-path)))))
 
 (defn focus-set-height [el height]
   (let [focus (.. el
@@ -231,7 +236,7 @@
       (selectAll "text.no-data")
       remove))
 
-(defn mouse-over-burndown [mouse x-scale values f]
+(defn mouse-over-burndown [mouse x-scale values f & [margin]]
   (let [mouseX (first mouse)
         sample-data (.-values values)
         bisect-date (.. js/d3
@@ -247,8 +252,8 @@
                     i (dec i))]
         (f (.-name (get sample-data index)) index)))))
 
-(defn mouse-over [mouse x-scale js-data f]
-  (let [mouseX (first mouse)
+(defn mouse-over [mouse x-scale js-data f & [margin]]
+  (let [mouseX (- (first mouse) (or (:left margin) 0))
         sample-data (.-values (first js-data))
         bisect-date (.. js/d3
                         (bisector (fn [d]

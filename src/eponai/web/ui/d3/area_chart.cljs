@@ -81,7 +81,7 @@
           (attr "transform" (str "translate(0," inner-height ")"))
           (call x-axis))
 
-      (d3/brush-append svg)
+      (d3/brush-append svg (:left margin) (:top margin))
 
       (d3/update-on-resize this id)
       (om/update-state! this assoc :svg svg :js-data js-data :x-scale x-scale :y-scale y-scale :stack stack :area area :x-axis x-axis :y-axis y-axis :graph graph :focus focus :color-scale color-scale)))

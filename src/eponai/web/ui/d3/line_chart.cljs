@@ -69,9 +69,21 @@
           (attr "transform" (str "translate(0,0)"))
           (call y-axis))
 
-      (d3/focus-append svg margin)
+      (.. svg
+          (append "text")
+          (attr "class" "d3 button reset fa")
+          (attr "y" (:top margin))
+          (attr "x" (:left margin))
+          (attr "dy" "1em")
+          (attr "height" 20)
+          (attr "width" 20)
+          (attr "text-anchor" "end")
+          (html #(str "&#xf021")))
+
       (d3/clip-path-append svg id)
-      (d3/brush-append svg)
+      (d3/focus-append svg {:margin margin
+                            :clip-path (d3/clip-path-url id)} )
+      (d3/brush-append svg (:left margin) (:top margin))
 
       (d3/update-on-resize this id)
       (om/update-state! this assoc
@@ -92,6 +104,13 @@
         (.update-axis this inner-width inner-height)
 
         (d3/clip-path-set-dimensions id inner-width inner-height)
+        (.. svg
+            (select ".d3.button.reset")
+            ;(attr "x" (+ inner-width 20))
+            (on "click" (fn []
+                          (.update-scales this inner-width inner-height)
+                          (.update-lines this)
+                          (.update-lines this))))
         (d3/brush-config svg
                          {:x-scale x-scale
                           :height inner-height
@@ -125,7 +144,8 @@
                                                                 values
                                                                 {:x-fn     (fn [d] (x-scale (.-name d)))
                                                                  :y-fn     (fn [d] (y-scale (.-value d)))
-                                                                 :color-fn (fn [_ i] (color-scale i))})))))))
+                                                                 :color-fn (fn [_ i] (color-scale i))})))
+                                  margin))))
             (on "mouseover" (fn []
                               (d3/tooltip-remove-all)
                               (d3/tooltip-build id)
@@ -136,6 +156,7 @@
 
   (update-lines [this]
     (let [{:keys [graph js-data x-scale y-scale color-scale]} (om/get-state this)
+          {:keys [id]} (om/props this)
           line (.. js/d3 -svg line
                    (x (fn [d] (x-scale (.-name d))))
                    (y (fn [d] (y-scale (.-value d)))))
@@ -146,6 +167,7 @@
           enter
           (append "path")
           (attr "class" "line")
+          (style "clip-path" (d3/clip-path-url id))
           (style "stroke" (fn [_ i] (color-scale i))))
 
       (.. graph-area
@@ -204,7 +226,7 @@
           (call y-axis))))
 
   (initLocalState [_]
-    {:margin {:top 0 :bottom 20 :left 0 :right 0}})
+    {:margin {:top 0 :bottom 20 :left 20 :right 20}})
   (componentDidMount [this]
     (d3/create-chart this))
 
