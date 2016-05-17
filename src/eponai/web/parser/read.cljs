@@ -1,5 +1,6 @@
 (ns eponai.web.parser.read
   (:require [datascript.core :as d]
+            [om.next :as om]
             [eponai.client.parser.read :as read]
             [eponai.common.parser :refer [read]]
             [eponai.common.database.pull :as p]
@@ -13,32 +14,39 @@
 
 ;; -------- Readers for UI components
 
+;; TODO: A lot of target boilerplate here. Macro instead?
 (defmethod read :query/active-project
-  [{:keys [db _]} _ _]
-  {:value
-   (let [project-eid (read/active-project-eid db)]
-     (cond-> (into {} (d/entity db [:ui/component :ui.component/project]))
-             (some? project-eid)
-             (assoc :ui.component.project/active-project (d/entity db project-eid))))})
+  [{:keys [db _ target]} _ _]
+  (when-not target
+    {:value
+     (let [project-eid (read/active-project-eid db)]
+       (cond-> (into {} (d/entity db [:ui/component :ui.component/project]))
+               (some? project-eid)
+               (assoc :ui.component.project/active-project (d/entity db project-eid))))}))
 
 (defmethod read :query/selected-transaction
-  [{:keys [db query]} _ _]
-  (read/read-entity-by-key db query [:ui/component :ui.component/transactions]))
+  [{:keys [db query target]} _ _]
+  (when-not target
+    (read/read-entity-by-key db query [:ui/component :ui.component/transactions])))
 
 (defmethod read :query/active-widget-open
-  [{:keys [db query]} _ _]
-  {:value (p/pull db query [:ui/component :ui.component/widget])})
+  [{:keys [db query target]} _ _]
+  (when-not target
+    {:value (p/pull db query [:ui/component :ui.component/widget])}))
 
 (defmethod read :query/active-widget
-  [{:keys [db query]} _ _]
-  (let [{:keys [ui.component.widget/id]} (p/lookup-entity db [:ui/component :ui.component/widget])]
-    {:value (when (number? id)
-              (p/pull db query id))}))
+  [{:keys [db query target]} _ _]
+  (when-not target
+    (let [{:keys [ui.component.widget/id]} (p/lookup-entity db [:ui/component :ui.component/widget])]
+     {:value (when (number? id)
+               (p/pull db query id))})))
 
 (defmethod read :query/widget-type
-  [{:keys [db query]} _ _]
-  {:value (p/pull db query [:ui/component :ui.component/widget])})
+  [{:keys [db query target]} _ _]
+  (when-not target
+    {:value (p/pull db query [:ui/component :ui.component/widget])}))
 
 (defmethod read :query/root-component
-  [{:keys [db query]} _ _]
-  (read/read-entity-by-key db nil [:ui/component :ui.component/root]))
+  [{:keys [db query target]} _ _]
+  (when-not target
+    (read/read-entity-by-key db nil [:ui/component :ui.component/root])))

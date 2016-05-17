@@ -1,5 +1,6 @@
 (ns eponai.client.parser.mutate
   (:require [eponai.common.parser :refer [mutate]]
+            [eponai.common.datascript :as datascript]
             [taoensso.timbre :refer-macros [info debug error trace]]
             [datascript.core :as d]
             [eponai.common.format :as format]
@@ -25,13 +26,17 @@
      :remote true}))
 
 (defmethod mutate 'transaction/edit
-  [{:keys [state mutation-uuid]} _ {:keys [transaction/uuid] :as transaction}]
+  [{:keys [state mutation-uuid]} _ {:keys [transaction/uuid db/id] :as transaction}]
   (debug "transaction/edit with params:" transaction "mutation-uuid: " mutation-uuid)
   {:action (fn []
-             {:pre [(some? uuid)]}
-             (let [txs (format/transaction-edit transaction)]
-               (debug "editing transaction: " uuid " txs: " txs)
-               (transact/mutate state mutation-uuid txs)))
+             {:pre [(some? uuid) (some? id)]}
+             (let [txs (format/transaction-edit transaction)
+                   _ (assert (vector? txs))
+                   txs (into txs (datascript/mark-entity-txs id :transaction/uuid uuid))
+                   _ (debug "editing transaction: " uuid " txs: " txs)
+                   ret (transact/mutate state mutation-uuid txs)]
+               (debug "Edit transaction tx-report: " ret)
+               ret))
    :remote true})
 
 

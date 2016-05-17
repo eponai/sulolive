@@ -14,7 +14,10 @@
   (let [transit-opts {:transit-opts
                       {:encoding-opts {:handlers {e/Entity DatascriptEntityAsMap}}
                        :decoding-opts
-                                      {:handlers {"n" cljs.reader/read-string
+                       ;; favor ClojureScript UUIDs instead of Transit UUIDs
+                       ;; https://github.com/cognitect/transit-cljs/pull/10
+                                      {:handlers {"u" uuid
+                                                  "n" cljs.reader/read-string
                                                   "f" cljs.reader/read-string}}}}]
     (send-fn url (merge opts transit-opts))))
 

@@ -2,6 +2,8 @@
   (:require [datascript.core :as d]
             [datascript.db :as db]
             [eponai.web.homeless :as homeless]
+            [eponai.client.utils :as utils]
+            [eponai.common.datascript :as common.datascript]
             [taoensso.timbre :refer-macros [info debug error trace warn]]))
 
 (defn transact [db tx]
@@ -45,14 +47,24 @@
                   (warn "Optimistic transaction:" tx
                         " had no tx-time..? What is this."))))
 
+          optimistic-tx-datoms (db/-search db [nil nil nil tx-time])
+
           optimistic-tx-inverse
           (when tx-time
             (->> (into []
-                       (comp (filter (fn [[e]] (not= e tx-entity)))
+                       (comp (remove (fn [[e]] (= e tx-entity)))
                              (map #(update % :added not))
                              (map (fn [[e a v _ added]] [(if added :db/add :db/retract) e a v])))
-                       (db/-search db [nil nil nil tx-time]))
+                       optimistic-tx-datoms)
                  (cons {:tx/mutation-uuid mutation-uuid :tx/reverted true})))
+
+          ;; When there's an optimistic edit on a transaction, mark the transaction
+          ;; so we can find it later. (make this generic when there are other entities we need to mark).
+          tx-entity
+          (some (fn [[e]] (let [entity (d/entity db e)]
+                            (when (:transaction/uuid entity)
+                              entity)))
+                (utils/distinct-by :e optimistic-tx-datoms))
 
           real-tx
           (into [] (comp
@@ -65,9 +77,22 @@
 
           tx (concat optimistic-tx-inverse real-tx)]
       (debug "Syncing optimistic transaction: " k " with transactions:" tx)
-      (if (seq tx)
-        (d/db-with db tx)
-        db))))
+      (cond-> db
+              (seq tx)
+              (d/db-with tx)
+              (some? tx-entity)
+              (as-> $db (let [tx-uuid (:transaction/uuid tx-entity)
+                              ;; This is sort of messed up, but here's the explaination:
+                              ;; When we're creating new transactions, we'll have the uuid
+                              ;; in $db (the new one). When we're editing transactions
+                              ;; we won't get the db/id by transaction/uuid, but we'll
+                              ;; have the correct db/id in the old transaction. Gah.
+                              id (:db/id (or (d/entity $db [:transaction/uuid tx-uuid])
+                                             (d/entity db [:transaction/uuid tx-uuid])))]
+                          (assert (and tx-uuid id)
+                                  (str "No uuid or db/id. Was: " tx-uuid " and " id " for tx-entity " (into {} tx-entity)))
+                          (debug "Marking transaction entity with id: " id " and uuid: " tx-uuid)
+                          (d/db-with $db (common.datascript/mark-entity-txs id :transaction/uuid tx-uuid))))))))
 
 (defn merge-schema [db _ datascript-schema]
   (let [current-schema (:schema db)

@@ -207,9 +207,15 @@
 
   Object
   (initLocalState [this]
-    {:on-tag-click #(do
+    {:list-size 0
+     :on-tag-click #(do
                      (om/update-state! this update-in [:tag-filter :filter/include-tags] utils/add-tag %)
                      (om/update-query! this assoc-in [:params :filter] (.filter this)))})
+
+  (componentDidMount [this]
+    (when (zero? (:list-size (om/get-state this)))
+      (debug "Updating list-size!")
+      (om/update-state! this assoc :list-size 50)))
 
   (componentWillUnmount [this]
     (.deselect-transaction this))
@@ -273,7 +279,7 @@
   (render-transaction-list [this transactions]
     (let [{currencies      :query/all-currencies
            user            :query/current-user} (om/props this)
-          {:keys [on-tag-click]} (om/get-state this)]
+          {:keys [on-tag-click list-size]} (om/get-state this)]
       (html
         [:div
          (.render-filters this)
@@ -290,7 +296,7 @@
                                       :currencies   currencies
                                       :on-tag-click on-tag-click})))
                     ;; TODO: Implement some way of seeing more than this limit:
-                    (take 50 (sort-by #(get-in % [:transaction/date :date/timestamp]) > transactions)))]]]
+                    (take list-size (sort-by #(get-in % [:transaction/date :date/timestamp]) > transactions)))]]]
             [:div.empty-message
              [:div.lead
               [:i.fa.fa-search.fa-fw]

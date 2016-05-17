@@ -30,12 +30,14 @@
               :else (d/touch e))}))
 
 (defmethod read :ui/component
-  [{:keys [db ast query]} _ _]
-  (read-entity-by-key db query (:key ast)))
+  [{:keys [db ast query target]} _ _]
+  (when-not target
+    (read-entity-by-key db query (:key ast))))
 
 (defmethod read :ui/singleton
-  [{:keys [db ast query]} _ _]
-  (read-entity-by-key db query (:key ast)))
+  [{:keys [db ast query target]} _ _]
+  (when-not target
+    (read-entity-by-key db query (:key ast))))
 
 ;; --------------- Remote readers ---------------
 
@@ -51,12 +53,12 @@
   {:pre [(number? project-eid)]
    :post [(set? %)]}
   (let [last-basis (:max-tx last-db)
-
+        _ (debug "Last-basis: " last-basis)
         new-transaction-eids (into #{} (comp (mapcat #(d/datoms db :eavt (.-e %)))
                                              (filter #(> (.-tx %) last-basis))
                                              (map #(.-e %)))
                                    (d/datoms db :avet :transaction/project project-eid))]
-    (debug "new-transaction-eids: " (count new-transaction-eids))
+    (debug "new-transaction-eids: " new-transaction-eids)
     new-transaction-eids))
 
 (defn all-local-transactions-by-project [{:keys [parser db txs-by-project] :as env} project-eid]
@@ -66,11 +68,22 @@
       (if (= db db-used)
         txs
         (let [new-txs (transactions-since db db-used project-eid)
-              new-with-convs (vec (p/transactions-with-conversions db (:user/uuid current-user) new-txs))
-              new-uuids (into #{} (map :transaction/uuid) new-with-convs)
-              new-and-old (into new-with-convs
-                                (remove #(contains? new-uuids (:transaction/uuid %)))
-                                txs)]
+              new-with-convs (p/transactions-with-conversions db (:user/uuid current-user) new-txs)
+              ;; Group by uuid in an atom, so we can pick transactions by id destructively.
+              new-by-uuid (atom (into {} (map #(vector (:transaction/uuid %) %)) new-with-convs))
+              ;; Replace new transactions in the same position they had in the cached transactions.
+              old-with-new-inserted (mapv (fn [{:keys [transaction/uuid] :as old}]
+                                            (if-let [new (get @new-by-uuid uuid)]
+                                              (do (swap! new-by-uuid dissoc uuid)
+                                                  new)
+                                              old))
+                                          txs)
+              ;; Pour the old into remaining new. We want new to be before old because
+              ;; of sorting (not sure that it is correct to do so).
+              remaining-new (vals @new-by-uuid)
+              new-and-old (cond->> old-with-new-inserted
+                                   (seq remaining-new)
+                                   (into (vec remaining-new)))]
           (swap! txs-by-project assoc project-eid {:db-used db :txs new-and-old})
           new-and-old)))))
 
@@ -113,47 +126,54 @@
                                                        widgets)))))}))))
 
 (defmethod read :query/all-projects
-  [{:keys [db query]} _ _]
-  {:value  (sort-by :project/created-at (p/pull-many db query (p/all-with db (p/project))))
-   :remote true})
+  [{:keys [db query target]} _ _]
+  (if target
+    {:remote true}
+    {:value (sort-by :project/created-at (p/pull-many db query (p/all-with db (p/project))))}))
 
 (defmethod read :query/all-currencies
-  [{:keys [db query]} _ _]
-  {:value  (p/pull-many db query (p/all-with db {:where '[[?e :currency/code]]}))
-   :remote true})
+  [{:keys [db query target]} _ _]
+  (if target
+    {:remote true}
+    {:value  (p/pull-many db query (p/all-with db {:where '[[?e :currency/code]]}))}))
 
 (defmethod read :query/current-user
-  [{:keys [db query]} _ _]
-  (let [{:keys [ui.singleton.auth/user]} (p/pull db [:ui.singleton.auth/user] [:ui/singleton :ui.singleton/auth])]
-    {:value  (when (:db/id user)
-               (p/pull db query (:db/id user)))
-     :remote true}))
+  [{:keys [db query target]} _ _]
+  (if target
+    {:remote true}
+    (let [{:keys [ui.singleton.auth/user]} (p/pull db [:ui.singleton.auth/user] [:ui/singleton :ui.singleton/auth])]
+      {:value (when (:db/id user)
+                (p/pull db query (:db/id user)))})))
 
 (defmethod read :query/stripe
-  [{:keys [db query parser] :as env} _ _]
-  (let [{:keys [query/current-user]} (parser env `[{:query/current-user [:db/id]}])
-        stripe (when (:db/id current-user)
-                 (p/all-with db {:where [['?e :stripe/user (:db/id current-user)]]}))]
-    {:value  (when stripe
-               (first (p/pull-many db query stripe)))
-     :remote true}))
+  [{:keys [db query parser target] :as env} _ _]
+  (if target
+    {:remote true}
+    (let [{:keys [query/current-user]} (parser env `[{:query/current-user [:db/id]}])
+          stripe (when (:db/id current-user)
+                   (p/all-with db {:where [['?e :stripe/user (:db/id current-user)]]}))]
+      {:value (when stripe
+                (first (p/pull-many db query stripe)))})))
 
 ;; ############ Signup page reader ############
 
 (defmethod read :query/user
-  [{:keys [db query]} k {:keys [uuid]}]
-  {:value  (when (and (not (= uuid '?uuid))
-                      (-> db :schema :verification/uuid))
-             (try
-               (p/pull db query [:user/uuid (f/str->uuid uuid)])
-               (catch :default e
-                 (error "Error for parser's read key:" k "error:" e)
-                 {:error {:cause :invalid-verification}})))
-   :remote (not (= uuid '?uuid))})
+  [{:keys [db query target]} k {:keys [uuid]}]
+  (if target
+    {:remote (not (= uuid '?uuid))}
+    {:value (when (and (not (= uuid '?uuid))
+                       (-> db :schema :verification/uuid))
+              (try
+                (p/pull db query [:user/uuid (f/str->uuid uuid)])
+                (catch :default e
+                  (error "Error for parser's read key:" k "error:" e)
+                  {:error {:cause :invalid-verification}})))}))
 
 (defmethod read :query/fb-user
-  [{:keys [db query]} _ _]
-  (let [eid (p/one-with db {:where '[[?e :fb-user/id]]})]
-    {:value  (when eid
-               (p/pull db query eid))
-     :remote true}))
+  [{:keys [db query target]} _ _]
+  (if target
+    {:remote true}
+    (let [eid (p/one-with db {:where '[[?e :fb-user/id]]})]
+      {:value  (when eid
+                 (p/pull db query eid))
+       :remote true})))

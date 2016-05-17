@@ -147,11 +147,12 @@
   (let [uri (env :db-url)]
     (try
       (if (contains? #{nil "" "test"} uri)
-        (let [mem-conn (create-new-inmemory-db)]
+        (let [mem-conn (create-new-inmemory-db)
+              txs (ods/import-parsed (ods/parsed-transactions))]
           (info "Setting up inmemory db because uri is set to:" uri)
           (add-data-to-connection mem-conn
                                   ;; Use larger dataset:
-                                  (ods/import-parsed (ods/parsed-transactions))
+                                  (take (* 1 (count txs)) (cycle txs))
                                   )
           (debug "Successfully set up inmemory db!")
           mem-conn)

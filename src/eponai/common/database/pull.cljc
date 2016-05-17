@@ -293,7 +293,8 @@
   (let [approx-tx-conv (memoize
                          (fn [curr]
                            ;; (debug "Approximating: " curr)
-                           (some->> curr (get @transaction-convs) (first) (val))))
+                           (or (some->> curr (get @transaction-convs) (first) (val))
+                               (one-with db {:where [['?e :conversion/currency curr]]}))))
         approx-user-curr (delay (some-> @user-convs (first) (val)))]
     (fn [transaction]
       #?(:cljs (debug "executing transaction-with-conversion on tx: " transaction))
@@ -303,7 +304,7 @@
            tx-conv (or tx-conv (approx-tx-conv tx-curr))
            user-conv (get @user-convs tx-date)
            user-conv (or user-conv @approx-user-curr)]
-       (when (and (some? tx-conv) (some? user-conv))
+       (if (and (some? tx-conv) (some? user-conv))
          (let [;; All rates are relative USD so we need to pull what rates the user currency has,
                ;; so we can convert the rate appropriately for the user's selected currency
                user-currency-conversion (d/entity db user-conv)
@@ -319,7 +320,10 @@
             {:user-conversion-id user-conv
              :transaction-conversion-id tx-conv
              :conversion/rate rate
-             :conversion/date (:conversion/date transaction-conversion)}]))))))
+             :conversion/date (:conversion/date transaction-conversion)}])
+         (debug "No tx-conv or user-conv. Tx-conv: " tx-conv
+                " user-conv: " user-conv
+                " for transaction: " (into {} transaction)))))))
 
 (defn transaction-conversions [db user-uuid transaction-entities]
   ;; user currency is always the same
