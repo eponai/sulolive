@@ -251,8 +251,8 @@
             {:href (routes/key->route :route/home)}
             [:strong
              "JourMoney"]
-            [:small
-             " by eponai"]]
+            [:span
+             " App"]]
 
            [:div.sidebar-submenu
             (when (and (not utils/*playground?*)

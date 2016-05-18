@@ -102,8 +102,8 @@
     (debug "Payment reminder sent to: " address " with status: " status)))
 
 (defn send-invitation-email
-  [verification {:keys [user-status inviter]}]
-  (let [{:keys [verification/uuid]
+  [in-prod? verification {:keys [user-status inviter]}]
+  (let [{:keys   [verification/uuid]
          address :verification/value} verification
         link (verify-link-by-device :web uuid)
         body [:alternative
@@ -114,14 +114,16 @@
                                       (invite-subject inviter user-status)
                                       (message user-status)
                                       (button-title user-status)
-                                      (link-message user-status))}]
-        status (send-email address "You're invited to share project." body)]
-    (debug "Sent invitation email to uuid: " uuid "with status:" status)))
+                                      (link-message user-status))}]]
+    (if in-prod?
+      (let [status (send-email address "You're invited to share project." body)]
+        (debug "Sent invitation email to uuid: " uuid "with status:" status))
+      (debug "Dev mode. Did not send invitation email to uuid: " uuid))))
 
 (defn send-verification-email
   "Send a verification email to the provided address with the given uuid.
   Will send a link with the path /verify/:uuid that will verify when the user opens the link."
-  [verification {:keys [user-status device]}]
+  [in-prod? verification {:keys [user-status device]}]
   (debug "Send email for verification: " verification)
   (when verification
     (let [{:keys   [verification/uuid]
@@ -135,9 +137,11 @@
                                         (subject user-status)
                                         (message user-status)
                                         (button-title user-status)
-                                        (link-message user-status))}]
-          status (send-email address (subject user-status) body)]
-      (debug "Sent verification email to uuid: " uuid "with status:" status))))
+                                        (link-message user-status))}]]
+      (if in-prod?
+        (let [status (send-email address (subject user-status) body)]
+          (debug "Sent verification email to uuid: " uuid "with status:" status))
+        (debug "Dev mode. Did not send verification email to uuid: " uuid)))))
 
 (defn text-content [link user-status]
   (if (= user-status :user.status/new)

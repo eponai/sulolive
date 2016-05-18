@@ -36,8 +36,8 @@
                      ;::m/send-email-fn     (e/send-email-fn conn)
                      ::stripe/stripe-fn           (fn [k p]
                                                     (stripe/stripe (env :stripe-secret-key-test) k p))
-                     ::email/send-verification-fn email/send-verification-email
-                     ::email/send-invitation-fn   email/send-invitation-email
+                     ::email/send-verification-fn (partial email/send-verification-email @in-production?)
+                     ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
                      ::m/playground-user-uuid-fn  (if (env :playground-user-uuid)
                                                     (constantly (env :playground-user-uuid))
                                                     (when-not @in-production?
