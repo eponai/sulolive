@@ -27,8 +27,8 @@
       ;; The http header will say so when we're behind an amazon load balancer (production).
       ssl/wrap-forwarded-scheme
       ;; This ensures the browser will only use HTTPS for future requests to the domain.
-      ;; The value 15552000 (180 days) is taken from what facebook.com uses.
-      (ssl/wrap-hsts {:max-age 15552000})))
+      ;; The value 86400 (24 hours) is taken from what instagram.com uses.
+      (ssl/wrap-hsts {:max-age 86400 :include-subdomains? false})))
 
 (defn wrap-error [handler]
   (fn [request]
