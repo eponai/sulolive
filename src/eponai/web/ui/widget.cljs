@@ -61,9 +61,13 @@
       (debug "Render widget: " widget)
       (html
         [:div.widget
-         [:div.widget-title
-          [:p [:strong (:report/title report)]]
-          [:div.flex-right.widget-menu
+         [:header.widget-header
+          [:div.widget-title
+           [:input.truncate
+            {:value (or (:report/title report) "")}]
+           ;[:span.small-caps (:report/title report)]
+           ]
+          [:div.widget-menu.float-right
            [:a.widget-edit.secondary
             (opts {:style {:padding "0.5em"}
                    ;:on-click #(on-edit (dissoc widget ::om/computed :widget/data))
@@ -75,45 +79,45 @@
            [:a.widget-move.secondary
             (opts {:style {:padding "0.5em"}})
             [:i.fa.fa-arrows.widget-move]]]]
+         [:div.widget-data
+          (let [{:keys [graph/style]} graph
+                settings {:data         data
+                          :id           (str (or (:widget/uuid widget) id "widget"))
+                          ;; Pass the widget to make this component re-render
+                          ;; if the widget data changes.
+                          :widget       widget
+                          ;:width        "100%"
+                          ;:height       "100%"
+                          :title-axis-y "Amount ($)"}]
+            (cond (= style :graph.style/bar)
+                  (->ColumnChart settings)
 
-         (let [{:keys [graph/style]} graph
-               settings {:data         data
-                         :id           (str (or (:widget/uuid widget) id "widget"))
-                         ;; Pass the widget to make this component re-render
-                         ;; if the widget data changes.
-                         :widget       widget
-                         :width        "100%"
-                         :height       "100%"
-                         :title-axis-y "Amount ($)"}]
-           (cond (= style :graph.style/bar)
-                 (->ColumnChart settings)
+                  (= style :graph.style/area)
+                  (->AreaChart settings)
 
-                 (= style :graph.style/area)
-                 (->AreaChart settings)
+                  (= style :graph.style/number)
+                  (->NumberChart settings)
 
-                 (= style :graph.style/number)
-                 (->NumberChart settings)
+                  (= style :graph.style/line)
+                  (->LineChart settings)
 
-                 (= style :graph.style/line)
-                 (->LineChart settings)
+                  (= style :graph.style/progress-bar)
+                  (->ProgressBar settings)
 
-                 (= style :graph.style/progress-bar)
-                 (->ProgressBar settings)
+                  (= style :graph.style/burndown)
+                  (->BurndownChart settings)
 
-                 (= style :graph.style/burndown)
-                 (->BurndownChart settings)
-
-                 (= style :graph.style/chord)
-                 (->EdgeBundling settings)
-                 ;[:div
-                 ; "Progress: "
-                 ; [:div.progress
-                 ;  {:aria-valuenow  "50"
-                 ;   :aria-valuemin  "0"
-                 ;   :aria-valuetext "$10"
-                 ;   :aria-valuemax  "100"}
-                 ;  [:div.progress-meter
-                 ;   (opts {:style {:width "50%"}})]]]
-                 ))]))))
+                  (= style :graph.style/chord)
+                  (->EdgeBundling settings)
+                  ;[:div
+                  ; "Progress: "
+                  ; [:div.progress
+                  ;  {:aria-valuenow  "50"
+                  ;   :aria-valuemin  "0"
+                  ;   :aria-valuetext "$10"
+                  ;   :aria-valuemax  "100"}
+                  ;  [:div.progress-meter
+                  ;   (opts {:style {:width "50%"}})]]]
+                  ))]]))))
 
 (def ->Widget (om/factory Widget))
