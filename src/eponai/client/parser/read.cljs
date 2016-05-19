@@ -67,16 +67,29 @@
     (when (and project-eid current-user)
       (if (= db db-used)
         txs
-        (let [new-txs (transactions-since db db-used project-eid)
-              new-with-convs (p/transactions-with-conversions db (:user/uuid current-user) new-txs)
+        (let [user-uuid (:user/uuid current-user)
+              new-txs (transactions-since db db-used project-eid)
+              new-with-convs (p/transactions-with-conversions db user-uuid new-txs)
               ;; Group by uuid in an atom, so we can pick transactions by id destructively.
               new-by-uuid (atom (into {} (map #(vector (:transaction/uuid %) %)) new-with-convs))
+
+              ;; Old txs may have gotten new conversions, get them.
+              ;; TODO: Optimize to only do this if there are new conversions?
+              old-convs (p/transaction-conversions db user-uuid txs)
+
+              ;; Assoc :transaction/conversion in old tx if they need it.
               ;; Replace new transactions in the same position they had in the cached transactions.
-              old-with-new-inserted (mapv (fn [{:keys [transaction/uuid] :as old}]
-                                            (if-let [new (get @new-by-uuid uuid)]
-                                              (do (swap! new-by-uuid dissoc uuid)
-                                                  new)
-                                              old))
+              old-with-new-inserted (into [] (comp
+                                               (map (fn [{:keys [db/id] :as tx}]
+                                                      {:pre [(some? id)]}
+                                                      (if-let [conv (get old-convs id)]
+                                                        (assoc tx :transaction/conversion conv)
+                                                        tx)))
+                                               (map (fn [{:keys [transaction/uuid] :as old}]
+                                                      (if-let [new (get @new-by-uuid uuid)]
+                                                        (do (swap! new-by-uuid dissoc uuid)
+                                                            new)
+                                                        old))))
                                           txs)
               ;; Pour the old into remaining new. We want new to be before old because
               ;; of sorting (not sure that it is correct to do so).

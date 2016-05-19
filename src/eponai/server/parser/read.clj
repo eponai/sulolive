@@ -21,7 +21,7 @@
 (defmethod read :user/current
   [{:keys [db db-since auth]} _ _]
   {:value (when (:username auth)
-            (server.pull/pull-one-since db db-since [:db/id :user/uuid]
+            (server.pull/pull-one-since db db-since [:db/id :user/uuid {:user/currency [:db/id :currency/code]}]
                                         {:where   '[[?e :user/uuid ?user-uuid]]
                                          :symbols {'?user-uuid (:username auth)}}))})
 
