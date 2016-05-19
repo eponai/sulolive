@@ -67,19 +67,29 @@
             {:value (or (:report/title report) "")}]
            ;[:span.small-caps (:report/title report)]
            ]
-          [:div.widget-menu.float-right
-           [:a.widget-edit.secondary
-            (opts {:style {:padding "0.5em"}
-                   ;:on-click #(on-edit (dissoc widget ::om/computed :widget/data))
+          [:div.widget-menu.float-right.menu-horizontal
+           [:a.nav-link.widget-filter.secondary
+            [:i.fa.fa-filter]]
+           [:a.nav-link.widget-edit.secondary
+            (opts {;:on-click #(on-edit (dissoc widget ::om/computed :widget/data))
                    :href  (when project-id
                             (routes/key->route :route/project->widget+type+id {:route-param/project-id  project-id
                                                                                :route-param/widget-type (if (:report/track report) :track :goal)
                                                                                :route-param/widget-id   (str (:db/id widget))}))})
             [:i.fa.fa-pencil]]
-           [:a.widget-move.secondary
-            (opts {:style {:padding "0.5em"}})
+           [:a.nav-link.widget-move.secondary
             [:i.fa.fa-arrows.widget-move]]]]
          [:div.widget-data
+          ;[:div.pull-right
+          ; {:id "reportrange"
+          ;  }
+          ; [:i.fa.fa-calendar]
+          ; "&nbsp"
+          ; [:b.caret]]
+          ;<div id="reportrange" class="pull-right" style="background: #fff; cursor: pointer; padding: 5px 10px; border: 1px solid #ccc; width: 100%">
+          ;<i class="glyphicon glyphicon-calendar fa fa-calendar"></i>&nbsp;
+          ;<span></span> <b class="caret"></b>
+          ;</div>
           (let [{:keys [graph/style]} graph
                 settings {:data         data
                           :id           (str (or (:widget/uuid widget) id "widget"))
@@ -89,6 +99,7 @@
                           ;:width        "100%"
                           ;:height       "100%"
                           :title-axis-y "Amount ($)"}]
+
             (cond (= style :graph.style/bar)
                   (->ColumnChart settings)
 
