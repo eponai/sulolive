@@ -9,6 +9,7 @@
     [eponai.web.ui.d3.line-chart :refer [->LineChart]]
     [eponai.web.ui.d3.number-chart :refer [->NumberChart]]
     [eponai.web.ui.d3.progress-bar :refer [->ProgressBar]]
+    [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.routes :as routes]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
@@ -63,13 +64,15 @@
         [:div.widget
          [:header.widget-header
           [:div.widget-title
-           [:input.truncate
-            {:value (or (:report/title report) "")}]
+           [:input.truncate.title
+            {:value (or (:report/title report) "")
+             :type "text"}]
            ;[:span.small-caps (:report/title report)]
            ]
           [:div.widget-menu.float-right.menu-horizontal
            [:a.nav-link.widget-filter.secondary
             [:i.fa.fa-filter]]
+           (->DateRangePicker)
            [:a.nav-link.widget-edit.secondary
             (opts {;:on-click #(on-edit (dissoc widget ::om/computed :widget/data))
                    :href  (when project-id

@@ -9,7 +9,8 @@
     [garden.core :refer [css]]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [error debug]]))
+    [taoensso.timbre :refer-macros [error debug]]
+    [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]))
 
 (defn min-dimensions [widget num-cols]
   (let [style (get-in widget [:widget/graph :graph/style])
@@ -165,6 +166,7 @@
             [:i.fa.fa-star.fa-fw
              (opts {:style {:color "orange"}})]
             [:span.small-caps "Goal"]]]]
+         (->DateRangePicker)
          (if (and layout
                   grid-element
                   (seq widgets))
