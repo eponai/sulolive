@@ -133,8 +133,7 @@
                   (when-let [dashboard-id (p/one-with db {:where [['?e :dashboard/project project-eid]]})]
                     (update (p/pull db query dashboard-id)
                             :widget/_dashboard (fn [widgets]
-                                                 (mapv #(cond->> %
-                                                                 (nil? (:widget/data %))
+                                                 (mapv #(->> %
                                                                  (p/widget-with-data db @transactions))
                                                        widgets)))))}))))
 

@@ -121,7 +121,8 @@
                                                 :VND 22295.00
                                                 :EUR 0.89
                                                 :ALL 121.35
-                                                :HRK 6.64}})))
+                                                :HRK 6.64
+                                                :KRW 1189.80}})))
 
 (defn add-data-to-connection
   ([conn] (add-data-to-connection conn (transactions)))

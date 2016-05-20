@@ -394,6 +394,23 @@
             (some? max-amount)
             (comp (filter (fn [tx] (>= max-amount (report/converted-amount tx))))))))
 
+(defn xf-with-date-filter
+  [xf {:keys [filter/start-date filter/end-date filter/last-x-days]}]
+  (let [date->long #(when % (date/date->long %))
+        start-date (date->long start-date)
+        end-date (date->long end-date)
+        last-x-days (date->long (when last-x-days (date/days-ago last-x-days)))
+        date-filter (fn [timestamp cmp]
+                      (filter (fn [tx]
+                                (cmp (get-in tx [:transaction/date :date/timestamp]) timestamp))))]
+    (if (some? last-x-days)
+      (comp xf (date-filter last-x-days >=))
+      (cond-> xf
+              (some? start-date)
+              (comp (date-filter start-date >=))
+              (some? end-date)
+              (comp (date-filter end-date <=))))))
+
 (defn transactions-with-conversions [db user-uuid transaction-eids]
   (let [tx-entities (into [] (comp (filter some?) (map #(d/entity db %)))
                           transaction-eids)
@@ -405,11 +422,12 @@
                                             (assoc :transaction/conversion (get conversions id)))))]
     (eduction entities->maps-xform tx-entities)))
 
-(defn filter-transactions [params transactions]
+(defn filter-transactions [{filters :filter} transactions]
   (let [identity-xf (map identity)
         filter-xf (-> identity-xf
-                      (xf-with-amount-filter (:filter params))
-                      (xf-with-tag-filters (:filter params)))]
+                      (xf-with-amount-filter filters)
+                      (xf-with-tag-filters filters)
+                      (xf-with-date-filter filters))]
     (if (identical? identity-xf filter-xf)
       transactions
       (into [] filter-xf transactions))))
