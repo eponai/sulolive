@@ -236,9 +236,9 @@
                        (:name range)))
                    ranges))
           (dom/div
-            #js {:className (str "range_inputs" (when show-calendars? " show"))}
+            #js {:className "range_inputs float-right"}
             (dom/a
-              #js {:className "applyBtn button small success"
+              #js {:className (str "apply button small success" (when show-calendars? " show"))
                    :disabled  "disabled"
                    :type      "button"
                    :onClick   #(do
@@ -250,7 +250,7 @@
                                   (on-apply (date/date-time start-date) (date/date-time end-date))))}
               "Apply")
             (dom/a
-              #js {:className "cancelBtn button small secondary"
+              #js {:className "cancel button small secondary"
                    :type      "button"
                    :onClick   #(do
                                 (om/update-state! this assoc
