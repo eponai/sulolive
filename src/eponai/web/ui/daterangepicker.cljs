@@ -190,9 +190,7 @@
 
         ; Calendar select from date.
         (dom/div
-          #js {:className "calendar left"
-               ;:style     #js {:display "block"}
-               }
+          #js {:className "calendar left"}
           (dom/div
             #js {:className "daterangepicker_input"}
             (dom/input
@@ -210,9 +208,7 @@
 
         ; Calendar select to date.
         (dom/div
-          #js {:className "calendar right"
-               ;:style     #js {:display "block"}
-               }
+          #js {:className "calendar right"}
           (dom/div
             #js {:className "daterangepicker_input"}
             (dom/input
@@ -240,7 +236,7 @@
                        (:name range)))
                    ranges))
           (dom/div
-            #js {:className "range_inputs"}
+            #js {:className (str "range_inputs" (when show-calendars? " show"))}
             (dom/a
               #js {:className "applyBtn button small success"
                    :disabled  "disabled"
@@ -251,7 +247,7 @@
                                                   :old-end-date end-date
                                                   :is-showing? false)
                                 (when on-apply
-                                  (on-apply start-date end-date)))}
+                                  (on-apply (date/date-time start-date) (date/date-time end-date))))}
               "Apply")
             (dom/a
               #js {:className "cancelBtn button small secondary"

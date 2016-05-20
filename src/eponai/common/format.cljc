@@ -230,8 +230,10 @@
     (-> input
         (select-keys [:widget/filter :widget/graph :widget/report :widget/dashboard
                       :widget/index :widget/height :widget/width :widget/uuid])
-        add-tempid
-        (update :widget/dashboard (fn [d-uuid] (vector :dashboard/uuid d-uuid))))
+        add-tempid)
+
+    (some? (:widget/dashboard input))
+    (update :widget/dashboard (fn [d-uuid] (vector :dashboard/uuid d-uuid)))
 
     (some? (:widget/filter input))
     (update :widget/filter filter*)))
@@ -246,7 +248,7 @@
       (update :widget/report report*)))
 
 (defn widget-edit [input]
-  (assert (some? (:widget/dashboard input)) "Widget needs to ba associated to a dashboard.")
+  ;(assert (some? (:widget/dashboard input)) "Widget needs to ba associated to a dashboard.")
   (assert (some? (:widget/uuid input)) "Widget needs a UUID to be saved.")
 
   (-> input

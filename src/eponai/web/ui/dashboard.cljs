@@ -84,8 +84,8 @@
                         {:widget/_dashboard (om/get-query Widget)}
                         {:dashboard/project [:db/id
                                              :project/uuid
-                                            :project/name
-                                            :project/users]}]}])
+                                             :project/name
+                                             :project/users]}]}])
   Object
   (componentWillReceiveProps [this new-props]
     (let [{:keys [cols]} (om/get-state this)

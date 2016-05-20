@@ -13,7 +13,9 @@
     [eponai.web.routes :as routes]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]))
+    [taoensso.timbre :refer-macros [debug]]
+    [datascript.core :as d]
+    [eponai.common.format.date :as date]))
 
 (defn dimensions [graph]
   (let [style (:graph/style graph)]
@@ -39,8 +41,8 @@
      {:widget/filter [*
                       {:filter/include-tags [:tag/name]}
                       {:filter/exclude-tags [:tag/name]}
-                      {:filter/end-date [:date/timestamp]}
-                      {:filter/start-date [:date/timestamp]}]}
+                      {:filter/end-date [:date/timestamp :date/ymd]}
+                      {:filter/start-date [:date/timestamp :date/ymd]}]}
      {:widget/report [*
                       {:report/track [*
                                       {:track/functions [*]}]}
@@ -53,6 +55,14 @@
                                      {:filter/exclude-tags [:tag/name]}]}]}])
 
   Object
+  (update-date-filter [this start end]
+    (let [widget (om/props this)
+          new-widget (update widget :widget/filter (fn [m]
+                                                     (-> m
+                                                         (assoc :filter/end-date (date/date-map end))
+                                                         (assoc :filter/start-date (date/date-map start)))))]
+      (om/transact! this `[(widget/edit ~(assoc new-widget :mutation-uuid (d/squuid)))
+                           :query/dashboard])))
   (render [this]
     (let [{:keys [widget/report
                   widget/graph
@@ -72,7 +82,9 @@
           [:div.widget-menu.float-right.menu-horizontal
            [:a.nav-link.widget-filter.secondary
             [:i.fa.fa-filter]]
-           (->DateRangePicker)
+           (->DateRangePicker (om/computed {}
+                                           {:on-apply #(.update-date-filter this %1 %2)
+                                            :on-cancel #()}))
            [:a.nav-link.widget-edit.secondary
             (opts {;:on-click #(on-edit (dissoc widget ::om/computed :widget/data))
                    :href  (when project-id

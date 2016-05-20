@@ -109,7 +109,7 @@
             ;(attr "x" (+ inner-width 20))
             (on "click" (fn []
                           (.update-scales this inner-width inner-height)
-                          (.update-lines this)
+                          (.update-axis this inner-width inner-height)
                           (.update-lines this))))
         (d3/brush-config svg
                          {:x-scale x-scale
