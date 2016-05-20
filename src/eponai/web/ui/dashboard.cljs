@@ -166,7 +166,7 @@
             [:i.fa.fa-star.fa-fw
              (opts {:style {:color "orange"}})]
             [:span.small-caps "Goal"]]]]
-         (->DateRangePicker)
+
          (if (and layout
                   grid-element
                   (seq widgets))

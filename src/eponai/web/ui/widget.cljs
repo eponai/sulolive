@@ -12,7 +12,7 @@
     [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.routes :as routes]
     [om.next :as om :refer-macros [defui]]
-    [sablono.core :refer-macros [html]]
+    [om.dom :as dom]
     [taoensso.timbre :refer-macros [debug]]
     [datascript.core :as d]
     [eponai.common.format.date :as date]))
@@ -70,41 +70,57 @@
           {:keys [project-id
                   id]} (om/get-computed this)]
       (debug "Render widget: " widget)
-      (html
-        [:div.widget
-         [:header.widget-header
-          [:div.widget-title
-           [:input.truncate.title
-            {:value (or (:report/title report) "")
-             :type "text"}]
-           ;[:span.small-caps (:report/title report)]
-           ]
-          [:div.widget-menu.float-right.menu-horizontal
-           [:a.nav-link.widget-filter.secondary
-            [:i.fa.fa-filter]]
-           (->DateRangePicker (om/computed {}
-                                           {:on-apply #(.update-date-filter this %1 %2)
-                                            :on-cancel #()}))
-           [:a.nav-link.widget-edit.secondary
-            (opts {;:on-click #(on-edit (dissoc widget ::om/computed :widget/data))
-                   :href  (when project-id
-                            (routes/key->route :route/project->widget+type+id {:route-param/project-id  project-id
-                                                                               :route-param/widget-type (if (:report/track report) :track :goal)
-                                                                               :route-param/widget-id   (str (:db/id widget))}))})
-            [:i.fa.fa-pencil]]
-           [:a.nav-link.widget-move.secondary
-            [:i.fa.fa-arrows.widget-move]]]]
-         [:div.widget-data
-          ;[:div.pull-right
-          ; {:id "reportrange"
-          ;  }
-          ; [:i.fa.fa-calendar]
-          ; "&nbsp"
-          ; [:b.caret]]
-          ;<div id="reportrange" class="pull-right" style="background: #fff; cursor: pointer; padding: 5px 10px; border: 1px solid #ccc; width: 100%">
-          ;<i class="glyphicon glyphicon-calendar fa fa-calendar"></i>&nbsp;
-          ;<span></span> <b class="caret"></b>
-          ;</div>
+      (dom/div
+        #js {:className "widget"}
+        (dom/header
+          #js {:className "widget-header"}
+
+          ;; Widget title
+          (dom/div
+            #js {:className "widget-title"}
+            (dom/input
+              #js {:value (or (:report/title report) "")
+                   :type "text"}))
+
+          ;; Widget menu
+          (dom/div
+            #js {:className "widget-menu float-right menu-horizontal"}
+
+            (dom/a
+              #js {:className "nav-link widget-filter secondary"}
+              (dom/i
+                #js {:className "fa fa-filter"}))
+
+            (->DateRangePicker (om/computed {}
+                                            {:on-apply #(.update-date-filter this %1 %2)
+                                             :on-cancel #()}))
+
+            ;; Widget edit navigation
+            (dom/a
+              #js {:className "nav-link widget-edit secondary"
+                   :href (when project-id
+                           (routes/key->route :route/project->widget+type+id
+                                              {:route-param/project-id  project-id
+                                               :route-param/widget-type (if (:report/track report) :track :goal)
+                                               :route-param/widget-id   (str (:db/id widget))}))}
+              (dom/i
+                #js {:className "fa fa-pencil"}))
+
+            ;; Move widget handle
+            (dom/a
+              #js {:className "nav-link widget-move secondary"}
+              (dom/i
+                #js {:className "fa fa-arrows widget-move"}))
+
+            ;; Widget submenu
+            (dom/a
+              #js {:className "nav-link secondary"}
+              (dom/i
+                #js {:className "fa fa-ellipsis-v"}))))
+
+
+        (dom/div
+          #js {:className "widget-data"}
           (let [{:keys [graph/style]} graph
                 settings {:data         data
                           :id           (str (or (:widget/uuid widget) id "widget"))
@@ -144,6 +160,6 @@
                   ;   :aria-valuemax  "100"}
                   ;  [:div.progress-meter
                   ;   (opts {:style {:width "50%"}})]]]
-                  ))]]))))
+                  )))))))
 
 (def ->Widget (om/factory Widget))
