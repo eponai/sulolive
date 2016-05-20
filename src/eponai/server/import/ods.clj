@@ -207,153 +207,154 @@
   (letfn [(tx
             ([date title amount] (tx date title amount "USD"))
             ([date title amount curr]
-             {:pre [(string? date) (string? title) (string? curr)
-                    (or (decimal? amount)
-                        (integer? amount)
-                        (and (string? amount) (not= "USD" curr)))]}
+             (assert (and (string? date) (string? title) (string? curr))
+                     (str "Wasn't all strings. Was: " date ", " title ", " curr))
+             (assert (or (decimal? amount)
+                         (integer? amount)
+                         (and (string? amount) (not= "USD" curr)))
+                     (str "Wasn't decimal, int or stuff. Was: " amount
+                          "for curr: " curr ", title: " title " date: " date))
              (as-> {"Date" date "Product" title}
                    transaction
                    (if (= "USD" curr)
                      (assoc transaction "USD" (str "$" amount))
                      (assoc transaction "USD" "$0.00"
                                         curr amount)))))]
-    [
-     ;; September
-     (tx "09/09/15" "Flight SEK to Dubrovnik" 500)
-     (tx "09/13/15" "Appartment Durres" 187)
-     (tx "09/09/15" "Hotel Croatia" 100)
-     (tx "09/25/15" "Hotel Chiang Mai" 112.14M)
-     (tx "09/12/15" "Ferry Dubrovnik to Bari" 262.50M)
-     (tx "09/13/15" "Ferry Bari to Durres" 180.80M)
-     (tx "09/25/15" "Flight Albania to BKK" 1234)
-     (tx "09/25/15" "Flight BKK to Chaing Mai" 116.13M)
-     (tx "09/25/15" "Hotel Chiang Mai 1d" 14.73M)
-     (tx "09/17/15" "Domain" 2.53M)
-     (tx "09/01/15" "T-Mobile" 118)
+    (let [september (let [first "09/09/15"]
+                      [(tx first "Flight ARN to Dubrovnik" 500)
+                       (tx "09/13/15" "Appartment Durres" 187)
+                       (tx first "Hotel Croatia" 100)
+                       (tx "09/25/15" "Hotel Chiang Mai" 112.14M)
+                       (tx "09/12/15" "Ferry Dubrovnik to Bari" 262.50M)
+                       (tx "09/13/15" "Ferry Bari to Durres" 180.80M)
+                       (tx "09/25/15" "Flight Albania to BKK" 1234)
+                       (tx "09/25/15" "Flight BKK to Chiang Mai" 116.13M)
+                       (tx "09/25/15" "Hotel Chiang Mai 1d" 14.73M)
+                       (tx "09/17/15" "Domain" 2.53M)
+                       (tx first "T-Mobile" 118)])
 
-     ;; October
-     (let [first "10/01/15"]
-       (tx first "Hotel Chiang Mai" 367.75M)
-       (tx "10/22/15" "Flight BKK to ARN" 540)
-       (tx first "T-Mobile" 118)
-       (tx "10/22/15" "Flight Chiang Mai to BKK" 85)
-       (tx first "Nike Dri-fit Petter" 60.83M)
-       (tx first "Domain" 2.53M)
-       (tx first "Pants for Diana" 3.32M)
-       (tx first "Github" 25)
-       (tx "10/24/15" "Gift Lilian" 16.04M)
-       (tx "10/26/15" "Hälinlägg" 15.54M)
-       (tx first "Netflix" 7.99M))
+          october (let [first "10/01/15"]
+                    [(tx first "Hotel Chiang Mai" 367.75M)
+                     (tx "10/22/15" "Flight BKK to ARN" 540)
+                     (tx first "T-Mobile" 118)
+                     (tx "10/22/15" "Flight Chiang Mai to BKK" 85)
+                     (tx first "Nike Dri-fit Petter" 60.83M)
+                     (tx first "Domain" 2.53M)
+                     (tx first "Pants for Diana" 3.32M)
+                     (tx first "Github" 25)
+                     (tx "10/24/15" "Gift Lilian" 16.04M)
+                     (tx "10/26/15" "Hälinlägg" 15.54M)
+                     (tx first "Netflix" 7.99M)])
+          november (let [first "11/01/15"]
+                     [(tx first "Domain" 30.32M)
+                      (tx first "T-Mobile" 118)
+                      (tx first "SL-kort" "1,570.00 kr" "SEK")
+                      (tx first "Fitness24seven" "569.00 kr" "SEK")
+                      (tx first "Go pro selfie stick" 90)
+                      (tx "11/15/15" "SL-kort" "1,200.00 kr" "SEK")
+                      (tx first "Hygiene" "495.00 kr" "SEK")
+                      (tx first "Netflix" 7.99M)
+                      (tx first "Github" 25)])
+          december (let [first "12/01/15"
+                         thailand "12/06/15"
+                         cm "12/22/15"]
+                     [(tx first "Thai visum" 36)
+                      (tx first "Fitness24seven" 11.88M)
+                      (tx thailand "Flight ARN to BKK" 900)
+                      (tx thailand "Kohub apartment" "฿27,699.00" "THB")
+                      (tx thailand "Flight BKK to Krabi" "฿4,600.00" "THB")
+                      (tx thailand "Taxi Krabi to Kohub" "฿1,700.00" "THB")
+                      (tx thailand "Bicycles" "฿2,240.00" "THB")
+                      (tx "12/12/15" "Boat trip kohub" "฿2,400.00" "THB")
+                      (tx first "T-Mobile" 118)
+                      (tx thailand "Swimsuits" "฿1,596.00" "THB")
+                      (tx cm "Flight KBV to Chiang Mai" "฿4,095.00" "THB")
+                      (tx cm "Chiang Mai Housing" "฿4,500.00" "THB")
+                      (tx cm "The Dome Residence" 24)
+                      (tx first "Netflix" 7.99M)
+                      (tx cm "Taxi Kohub to Krabi" "฿1,700.00" "THB")
+                      (tx cm "Taxi Chiang Mai" "฿200.00" "THB")
+                      (tx cm "Internet Chiang Mai" "฿375.00" "THB")])
+          january (let [first "01/01/16"
+                        vietnam "01/26/16"]
+                    [(tx first "Thai visum" 36)
+                     (tx first "Fitness24seven" "33.00 kr" "SEK")
+                     (tx first "T-Mobile" 118)
+                     (tx vietnam "Flight DMK to SGN" "฿4,260.00" "THB")
+                     (tx first "Chiang Mai Housing" "฿10,500.00" "THB")
+                     (tx first "Netflix" 7.99M)
+                     (tx first "Internet Chiang Mai" "฿875.00" "THB")
+                     (tx "01/22/16" "Chiang Mai Housing" "฿3,620.00" "THB")
+                     (tx vietnam "Hotel Vietnam" 111)
+                     (tx first "Towels" "฿550.00" "THB")
+                     (tx first "Yoga mat" "฿690.00" "THB")
+                     (tx vietnam "Flight CNX to DMK" "$4,361.00" "THB")
+                     (tx first "Github" 25)])
 
-     ;; November
-     (let [first "11/01/15"]
-       (tx first "Domain" 30.32M)
-       (tx first "T-Mobile" 118)
-       (tx first "SL-kort" "1,570.00 kr" "SEK")
-       (tx first "Fitness24seven" "569.00 kr" "SEK")
-       (tx first "Go pro selfie stick" 90)
-       (tx "11/15/15" "SL-kort" "1,200.00 kr" "SEK")
-       (tx first "Hygiene" "495.00 kr" "SEK")
-       (tx first "Netflix" 7.99M)
-       (tx first "Github" 25))
+          february (let [first "02/01/16"
+                         malaysia "02/08/16"]
+                     [(tx first "Netflix" 7.99M)
+                      (tx first "T-Mobile" 118)
+                      (tx first "Github" 25)
+                      (tx first "Hotel Vietnam" 92)
+                      (tx malaysia "Flight SGN to KUL" 138)
+                      (tx malaysia "Jeans Diana" "RM270.00" "MYR")
+                      (tx malaysia "Shirt Diana" "RM429.00" "MYR")
+                      (tx malaysia "Chinos Petter" "RM199.00" "MYR")
+                      (tx malaysia "Power adapter" "RM64.00" "MYR")
+                      (tx malaysia "Taxi to KLCC" "RM112.00" "MYR")
+                      (tx malaysia "Pants Diana" "RM140.00" "MYR")])
 
-     ;; December
-     (let [first "12/01/15"
-           thailand "12/06/15"
-           cm "12/22/15"]
-       (tx first "Thai visum" 36)
-       (tx first "Fitness24seven" 11.88M)
-       (tx thailand "Flight ARN to BKK" 900)
-       (tx thailand "Kohub apartment" 765.88M)
-       (tx thailand "Taxi Krabi to Kohub" 51)
-       (tx thailand "Bicycles" 67.20M)
-       (tx "12/12/15" "Boat trip kohub" 72)
-       (tx first "T-Mobile" 118)
-       (tx thailand "Swimsuits" 47.88)
-       (tx cm "Flight KBV to Chiang Mai" 122.85M)
-       (tx cm "Chiang Mai Housing" 135)
-       (tx first "Netflix" 7.99M)
-       (tx cm "Taxi Kohub to Krabi" 51)
-       (tx cm "Taxi Chiang Mai" 6)
-       (tx cm "Internet Chiang Mai"))
+          march (let [first "03/01/16"]
+                  [(tx first "Netflix" 7.99M)
+                   (tx first "T-Mobile" 118)
+                   (tx first "Github" 25)
+                   (tx first "Airbnb Malaysia" 877.29M)
+                   (tx first "Face cream Diana" "RM65.00" "MYR")
+                   (tx first "Shoes+Hats etc" "RM287.00" "MYR")])
 
-     ;; January
-     (let [first "01/01/16"
-           vietnam "01/26/16"]
-       (tx first "Thai visum" 36)
-       (tx first "Fitness24seven" "33.00 kr" "SEK")
-       (tx first "T-Mobile" 118)
-       (tx vietnam "Flight DMK to SGN" "฿4,260.00" "THB")
-       (tx first "Chiang Mai Housing" "฿10,500.00" "THB")
-       (tx first "Netflix" 7.99M)
-       (tx first "Internet Chiang Mai" "฿875.00" "THB")
-       (tx "01/22/16" "Chiang Mai Housing" "฿3,620.00" "THB")
-       (tx vietnam "Hotel Vietnam" 111)
-       (tx first "Towels" "฿550.00" "THB")
-       (tx first "Yoga mat" "฿690.00" "THB")
-       (tx vietnam "Flight CNX to DMK" "$4,361.00" "THB")
-       (tx first "Github" 25))
+          april (let [first "04/01/16"
+                      osaka "04/05/16"]
+                  [(tx first "Netflix" 7.99M)
+                   (tx first "T-Mobile" 118)
+                   (tx first "Github" 25)
+                   (tx first "Apartment Malaysia" 168.71M)
+                   (tx osaka "Flight KL to Osaka" 417.94M)
+                   (tx osaka "Apartment Osaka" 1033)
+                   (tx osaka "Jacket" "￥3,225" "JPY")])
 
-     ;; February
-     (let [first "02/01/16"
-           malaysia "02/08/16"]
-       (tx first "Netflix" 7.99M)
-       (tx first "T-Mobile" 118)
-       (tx first "Github" 25)
-       (tx first "Hotel Vietnam" 92)
-       (tx malaysia "Flight SGN to KUL" 138)
-       (tx malaysia "Jeans Diana" "RM270.00" "MYR")
-       (tx malaysia "Shirt Diana" "RM429.00" "MYR")
-       (tx malaysia "Chinos Petter" "RM199.00" "MYR")
-       (tx malaysia "Power adapter" "RM64.00" "MYR")
-       (tx malaysia "Taxi to KLCC" "RM112.00" "MYR")
-       (tx malaysia "Pants Diana" "RM140.00" "MYR"))
-
-     ;; March
-     (let [first "03/01/16"]
-       (tx first "Netflix" 7.99M)
-       (tx first "T-Mobile" 118)
-       (tx first "Github" 25)
-       (tx first "Airbnb Malaysia" 877.29M)
-       (tx first "Face cream Diana" "RM65.00" "MYR")
-       (tx first "Shoes+Hats etc" "RM287.00" "MYR"))
-
-     ;; April
-     (let [first "04/01/16"
-           osaka "04/05/16"]
-       (tx first "Netflix" 7.99M)
-       (tx first "T-Mobile" 118)
-       (tx first "Github" 25)
-       (tx first "Apartment Malaysia" 168.71M)
-       (tx osaka "Flight KL to Osaka" 417.94M)
-       (tx osaka "Apartment Osaka" 1033)
-       (tx osaka "Jacket" "￥3,225" "JPY"))
-
-     ;; May
-     (let [first "05/01/16"
-           seoul "05/05/16"
-           nyc "05/27/16"]
-       (tx first "Netflix" 7.99M)
-       (tx first "T-Mobile" 118)
-       (tx first "Github" 25)
-       (tx seoul "Flight Osaka to Seoul" 190)
-       (tx first "Apartment Osaka" 206.60M)
-       (tx seoul "Apartment Seoul" 863)
-       (tx nyc "Flight Seoul to NYC" 1220)
-       (tx nyc "Apartment NYC" 273.87M)
-       (tx first "Ankle weights + socks" "￥4,638" "JPY")
-       (tx seoul "Jewlery" "₩2,000" "KRW")
-       (tx seoul "Shirt Petter" "₩48,000" "KRW")
-       (tx seoul "Shirt Diana" "₩19,000" "KRW")
-       (tx seoul "Jewlery" "₩3,000" "KRW")
-       (tx seoul "Necklace" "₩8,900" "KRW")
-       (tx seoul "Diana stuff" "₩56,500" "KRW"))
-     ]))
+          may (let [first "05/01/16"
+                    seoul "05/05/16"
+                    nyc "05/27/16"]
+                [(tx first "Netflix" 7.99M)
+                 (tx first "T-Mobile" 118)
+                 (tx first "Github" 25)
+                 (tx seoul "Flight Osaka to Seoul" 190)
+                 (tx first "Apartment Osaka" 206.60M)
+                 (tx seoul "Apartment Seoul" 863)
+                 (tx nyc "Flight Seoul to NYC" 1220)
+                 (tx nyc "Apartment NYC" 273.87M)
+                 (tx first "Ankle weights + socks" "￥4,638" "JPY")
+                 (tx seoul "Jewlery" "₩2,000" "KRW")
+                 (tx seoul "Shirt Petter" "₩48,000" "KRW")
+                 (tx seoul "Shirt Diana" "₩19,000" "KRW")
+                 (tx seoul "Jewlery" "₩3,000" "KRW")
+                 (tx seoul "Necklace" "₩8,900" "KRW")
+                 (tx seoul "Diana stuff" "₩56,500" "KRW")])]
+      (vec (concat
+             september
+             october
+             november
+             december
+             january
+             february
+             march
+             april
+             may)))))
 
 (defn page->jourmoney-entities [{:keys [currencies transactions] :as page}]
   {:pre [(map? page)]}
   (letfn [(html-t->jourmoney->t [t]
-            (prn "t: " t)
             (let [date (f/parse html-date (get t "Date"))
                   entity (-> (parse-amount currencies t)
                              (assoc :transaction/date (date/date-map date)
@@ -362,12 +363,11 @@
               (assoc entity :transaction/tags (ods.tags/generate-tags entity)
                             :transaction/type :transaction.type/expense
                             :transaction/created-at (time-coerce/to-long date))))]
-    (let [left-side (left-side-of-expenses)]
-      (into [] (comp (map html-t->jourmoney->t)
-                    (filter (fn [{:keys [:transaction/amount]}]
-                              (pos? amount)))
-                    (map #(update % :transaction/amount str)))
-           transactions))))
+    (into [] (comp (map html-t->jourmoney->t)
+                   (filter (fn [{:keys [:transaction/amount]}]
+                             (pos? amount)))
+                   (map #(update % :transaction/amount str)))
+          (reduce conj transactions (left-side-of-expenses)))))
 
 ;; END JOUR MONEY
 
