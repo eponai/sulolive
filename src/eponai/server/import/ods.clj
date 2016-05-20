@@ -173,7 +173,8 @@
    "SEK"  {:trim-end 3}
    "VND"  {:trim-end 2}
    "MYR"  {:trim-start 2}
-   "JPY"  {:trim-start 1}})
+   "JPY"  {:trim-start 1}
+   "KRW"  {:trim-start 1}})
 
 (defn parse-price [currency amount]
   (if-let [{:keys [trim-start trim-end code]
