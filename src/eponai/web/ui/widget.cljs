@@ -10,7 +10,9 @@
     [eponai.web.ui.d3.number-chart :refer [->NumberChart]]
     [eponai.web.ui.d3.progress-bar :refer [->ProgressBar]]
     [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
+    [eponai.web.ui.tagfilterpicker :refer [->TagFilterPicker]]
     [eponai.web.routes :as routes]
+    [eponai.web.ui.utils :as utils]
     [om.next :as om :refer-macros [defui]]
     [om.dom :as dom]
     [taoensso.timbre :refer-macros [debug]]
@@ -61,15 +63,23 @@
                                                      (-> m
                                                          (assoc :filter/end-date (date/date-map end))
                                                          (assoc :filter/start-date (date/date-map start)))))]
-      (om/transact! this `[(widget/edit ~(assoc new-widget :mutation-uuid (d/squuid)))
+      (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/filter :db/id :widget/uuid]) :mutation-uuid (d/squuid)))
+                           :query/dashboard])))
+
+  (update-tag-filter [this include-tags]
+    (let [widget (om/props this)
+          new-widget (assoc-in widget [:widget/graph :graph/filter :filter/include-tags] include-tags)]
+      (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/graph :db/id :widget/uuid]) :mutation-uuid (d/squuid)))
                            :query/dashboard])))
   (render [this]
     (let [{:keys [widget/report
                   widget/graph
                   widget/data] :as widget} (om/props this)
+          {:keys [tag-filters-showing?]} (om/get-state this)
           {:keys [project-id
-                  id]} (om/get-computed this)]
-      (debug "Render widget: " widget)
+                  id
+                  transactions]} (om/get-computed this)]
+
       (dom/div
         #js {:className "widget"}
         (dom/header
@@ -86,12 +96,12 @@
           (dom/div
             #js {:className "widget-menu float-right menu-horizontal"}
 
-            (dom/a
-              #js {:className "nav-link widget-filter secondary"}
-              (dom/i
-                #js {:className "fa fa-filter"}))
+            (->TagFilterPicker (om/computed {:key          "tag-filter-picker"
+                                             :transactions transactions
+                                             :filters      (:graph/filter graph)}
+                                            {:on-apply #(.update-tag-filter this %)}))
 
-            (->DateRangePicker (om/computed {}
+            (->DateRangePicker (om/computed {:class "nav-link"}
                                             {:on-apply #(.update-date-filter this %1 %2)
                                              :on-cancel #()}))
 

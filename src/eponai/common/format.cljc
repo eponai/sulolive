@@ -251,10 +251,14 @@
   ;(assert (some? (:widget/dashboard input)) "Widget needs to ba associated to a dashboard.")
   (assert (some? (:widget/uuid input)) "Widget needs a UUID to be saved.")
 
-  (-> input
-      widget*
-      (update :widget/graph graph*)
-      (update :widget/report report*)))
+  (cond-> (-> input
+              widget*)
+
+          (some? (:widget/graph input))
+          (update :widget/graph graph*)
+          
+          (some? (:widget/report input))
+          (update :widget/report report*)))
 
 (defn transaction-edit [{:keys [transaction/tags
                                 transaction/uuid] :as input-transaction}]

@@ -186,7 +186,7 @@
                                                                     :end-date (time/last-day-of-the-month t))))}
                   {:name "Custom Range" :action (fn [] (om/update-state! this assoc :show-calendars? true))}]]
       (dom/div
-        #js {:className (str "daterangepicker menu-horizontal dropdown" (when show-calendars? " show-calendar"))}
+        #js {:className (str "daterangepicker menu-horizontal dropdown " (when show-calendars? " show-calendar"))}
 
         ; Calendar select from date.
         (dom/div
@@ -261,9 +261,10 @@
                                   (on-cancel)))}
               "Cancel"))))))
   (render [this]
-    (let [{:keys [old-start-date old-end-date is-showing?]} (om/get-state this)]
+    (let [{:keys [old-start-date old-end-date is-showing?]} (om/get-state this)
+          {:keys [class]} (om/props this)]
       (dom/div
-        nil
+        #js {:className class}
         (dom/div
           nil
           (dom/input
@@ -271,12 +272,12 @@
                  :type      "text"
                  :value     (str (when old-start-date (t.format/unparse (t.format/formatter "MM/dd/yyyy") old-start-date)) "-"
                                  (when old-end-date (t.format/unparse (t.format/formatter "MM/dd/yyyy") old-end-date)))
-                 :onClick   #(om/update-state! this assoc :is-showing? true)}))
+                 :onClick   #(om/update-state! this assoc :is-showing? true)})
 
-        (when is-showing?
-          (dom/div
-            nil
-            (utils/click-outside-target #(om/update-state! this assoc :is-showing? false))
-            (.renderDateRangeSelection this)))))))
+          (when is-showing?
+            (dom/div
+              nil
+              (utils/click-outside-target #(om/update-state! this assoc :is-showing? false))
+              (.renderDateRangeSelection this))))))))
 
 (def ->DateRangePicker (om/factory DateRangePicker))

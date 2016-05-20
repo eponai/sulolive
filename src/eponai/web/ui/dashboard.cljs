@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
     [datascript.core :as d]
+    [eponai.web.ui.all-transactions :refer [Transaction]]
     [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
     [eponai.web.routes :as routes]
     [eponai.web.ui.add-widget :refer [NewWidget ->NewWidget]]
@@ -85,7 +86,8 @@
                         {:dashboard/project [:db/id
                                              :project/uuid
                                              :project/name
-                                             :project/users]}]}])
+                                             :project/users]}]}
+     {:query/transactions (om/get-query Transaction)}])
   Object
   (componentWillReceiveProps [this new-props]
     (let [{:keys [cols]} (om/get-state this)
@@ -137,7 +139,8 @@
     {:cols {:lg 4 :md 4 :sm 2 :xs 1 :xxs 1}
      :breakpoint :lg})
   (render [this]
-    (let [{:keys [query/dashboard]} (om/props this)
+    (let [{:keys [query/dashboard
+                  query/transactions]} (om/props this)
           {:keys [layout
                   grid-element
                   is-editing?
@@ -194,7 +197,8 @@
                                                  #js {:key (str (:widget/uuid widget-props))}
                                                  (->Widget
                                                    (om/computed widget-props
-                                                                {:project-id project-id}))))
+                                                                {:project-id project-id
+                                                                 :transactions transactions}))))
                                (sort-by :widget/index widgets))))
            [:div.empty-message.text-center
             [:i.fa.fa-tachometer.fa-5x]
