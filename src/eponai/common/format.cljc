@@ -56,19 +56,20 @@
         (map (fn [v]
                (if (some? (:db/id v))
                  v
-                 (assoc v :db/id (d/tempid :db.part/user)))) e)
+                 (assoc v :db/id (d/tempid :db.part/user))))
+             e)
         :else
         e))
 
 (defn tag*
   [input]
   {:pre [(map? input)]}
-  (add-tempid (select-keys input [:tag/name])))
+  (add-tempid (select-keys input [:db/id :tag/name])))
 
 (defn date*
   [input]
   {:post [(map? %)
-          (= (count (select-keys % [:date/ymd
+          (= (count (select-keys % [:db/id :date/ymd
                                     :date/timestamp
                                     :date/year
                                     :date/month
@@ -81,7 +82,7 @@
 (defn currency*
   [input]
   {:pre [(map? input)]}
-  (add-tempid (select-keys input [:currency/code])))
+  (add-tempid (select-keys input [:db/id :currency/code])))
 
 (defn transaction
   "Create a transaction entity for the given input. Will replace the name space of the keys to the :transaction/ namespace
@@ -141,7 +142,7 @@
     ;  {}
     ;  f)
     (debug "Formatting filter: " (-> input
-                                     (select-keys [:filter/last-x-days
+                                     (select-keys [:db/id :filter/last-x-days
                                                    :filter/start-date
                                                    :filter/end-date
                                                    :filter/min-amount
@@ -157,7 +158,8 @@
                                      (update :filter/max-amount #(when % (str->number %)))
                                      remove-empty-vals))
     (-> input
-        (select-keys [:filter/last-x-days
+        (select-keys [:db/id
+                      :filter/last-x-days
                       :filter/start-date
                       :filter/end-date
                       :filter/min-amount
@@ -174,17 +176,18 @@
         remove-empty-vals)))
 
 (defn track-function* [input]
-  (add-tempid (select-keys input [:track.function/id
+  (add-tempid (select-keys input [:db/id :track.function/id
                                   :track.function/group-by])))
 
 (defn track* [input]
-  (cond-> (add-tempid (select-keys input [:track/functions]))
+  (cond-> (add-tempid (select-keys input [:db/id :track/functions]))
           (seq (:track/functions input))
           (update :track/functions #(mapv track-function* %))))
 
 (defn cycle* [input]
   (-> input
-      (select-keys [:cycle/period
+      (select-keys [:db/id
+                    :cycle/period
                     :cycle/period-count
                     :cycle/repeat
                     :cycle/start-date])
@@ -192,7 +195,7 @@
 (defn goal* [input]
   (cond->
     (-> input
-        (select-keys [:goal/cycle
+        (select-keys [:db/id :goal/cycle
                       :goal/value
                       :goal/filter])
         add-tempid
@@ -206,20 +209,20 @@
   (cond
     (some? (:report/track input))
     (-> input
-        (select-keys [:report/track :report/title])
+        (select-keys [:db/id :report/track :report/title])
         add-tempid
         (update :report/track track*))
 
     (some? (:report/goal input))
     (-> input
-        (select-keys [:report/goal :report/title])
+        (select-keys [:db/id :report/goal :report/title])
         add-tempid
         (update :report/goal goal*))))
 
 (defn graph* [input]
   (cond->
     (-> input
-        (select-keys [:graph/style :graph/filter])
+        (select-keys [:db/id :graph/style :graph/filter])
         add-tempid)
 
     (some? (:graph/filter input))
@@ -228,7 +231,7 @@
 (defn widget* [input]
   (cond->
     (-> input
-        (select-keys [:widget/filter :widget/graph :widget/report :widget/dashboard
+        (select-keys [:db/id :widget/filter :widget/graph :widget/report :widget/dashboard
                       :widget/index :widget/height :widget/width :widget/uuid])
         add-tempid)
 

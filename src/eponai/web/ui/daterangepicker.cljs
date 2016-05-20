@@ -280,4 +280,4 @@
               (utils/click-outside-target #(om/update-state! this assoc :is-showing? false))
               (.renderDateRangeSelection this))))))))
 
-(def ->DateRangePicker (om/factory DateRangePicker))
+(def ->DateRangePicker (om/factory DateRangePicker {:keyfn :key}))

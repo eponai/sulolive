@@ -24,8 +24,8 @@
             (= style :graph.style/bar)
             (= style :graph.style/burndown))
           {:minW (calc-w 50)
-           :minH 2
-           :maxH 3}
+           :minH 3
+           :maxH 5}
 
           (= style :graph.style/chord)
           {:minW (calc-w 50)

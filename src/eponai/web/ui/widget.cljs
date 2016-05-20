@@ -10,6 +10,7 @@
     [eponai.web.ui.d3.number-chart :refer [->NumberChart]]
     [eponai.web.ui.d3.progress-bar :refer [->ProgressBar]]
     [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
+    [eponai.web.ui.dataset-filter-picker :refer [->DatasetFilterPicker]]
     [eponai.web.ui.tagfilterpicker :refer [->TagFilterPicker]]
     [eponai.web.routes :as routes]
     [eponai.web.ui.utils :as utils]
@@ -66,6 +67,12 @@
       (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/filter :db/id :widget/uuid]) :mutation-uuid (d/squuid)))
                            :query/dashboard])))
 
+  (update-data-set-filter [this filter]
+    (let [widget (om/props this)
+          new-widget (update widget :widget/filter merge filter)]
+      (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/filter :db/id :widget/uuid]) :mutation-uuid (d/squuid)))
+                           :query/dashboard])))
+
   (update-tag-filter [this include-tags]
     (let [widget (om/props this)
           new-widget (assoc-in widget [:widget/graph :graph/filter :filter/include-tags] include-tags)]
@@ -96,12 +103,17 @@
           (dom/div
             #js {:className "widget-menu float-right menu-horizontal"}
 
+            (->DatasetFilterPicker (om/computed {:key     "dataset-filter-picker"
+                                                 :filters (:widget/filter widget)}
+                                                {:on-change #(.update-data-set-filter this %)}))
+
             (->TagFilterPicker (om/computed {:key          "tag-filter-picker"
                                              :transactions transactions
                                              :filters      (:graph/filter graph)}
                                             {:on-apply #(.update-tag-filter this %)}))
 
-            (->DateRangePicker (om/computed {:class "nav-link"}
+            (->DateRangePicker (om/computed {:key "date-range-picker"
+                                             :class "nav-link"}
                                             {:on-apply #(.update-date-filter this %1 %2)
                                              :on-cancel #()}))
 
@@ -114,19 +126,20 @@
                                                :route-param/widget-type (if (:report/track report) :track :goal)
                                                :route-param/widget-id   (str (:db/id widget))}))}
               (dom/i
-                #js {:className "fa fa-pencil"}))
+                #js {:className "fa fa-fw fa-pencil"}))
 
             ;; Move widget handle
             (dom/a
               #js {:className "nav-link widget-move secondary"}
               (dom/i
-                #js {:className "fa fa-arrows widget-move"}))
+                #js {:className "fa fa-fw fa-arrows widget-move"}))
 
             ;; Widget submenu
-            (dom/a
-              #js {:className "nav-link secondary"}
-              (dom/i
-                #js {:className "fa fa-ellipsis-v"}))))
+            ;(dom/a
+            ;  #js {:className "nav-link secondary"}
+            ;  (dom/i
+            ;    #js {:className "fa fa-fw fa-ellipsis-v"}))
+            ))
 
 
         (dom/div

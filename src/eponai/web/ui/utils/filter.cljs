@@ -212,16 +212,17 @@
        :placeholder placeholder}))
   (componentWillReceiveProps [this new-props]
     (let [{:keys [tags placeholder]} new-props]
-      (om/update-state! this assoc :tags tags :placeholder placeholder)))
+      (om/update-state! this assoc :tags (or tags []) :placeholder placeholder)))
 
   (render [this]
     (let [{:keys [input-tag tags placeholder]} (om/get-state this)
-          {:keys [type]} (om/get-computed this)]
+          {:keys [type input-only?]} (om/get-computed this)]
       (html
         (cond
           (nil? type)
           [:div
-           (opts {:style {:display        :flex
+           (opts {:class "tagfilter"
+                  :style {:display        :flex
                           :flex-direction :column}})
 
            (utils/tag-input {:input-tag     input-tag
@@ -229,6 +230,7 @@
                              :on-change     #(om/update-state! this assoc :input-tag %)
                              :on-add-tag    #(.add-tag this %)
                              :on-delete-tag #(.delete-tag this %)
+                             :input-only?   input-only?
                              :placeholder   (or placeholder "Enter to add tag...")})])))))
 
 (def ->TagFilter (om/factory TagFilter))

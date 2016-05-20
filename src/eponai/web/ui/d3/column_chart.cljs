@@ -35,7 +35,6 @@
     (let [{:keys [id width height data]} (om/props this)
           svg (d3/build-svg (str "#column-chart-" id) width height)
 
-          js-domain (clj->js (flatten (map :values data)))
           js-data (clj->js data)
 
           {:keys [margin]} (om/get-state this)
@@ -45,7 +44,7 @@
           {:keys [x-axis y-axis x-scale y-scale]} (.make-axis this inner-width inner-height)
           graph (.. svg
                     (append "g")
-                    (attr "class" "bar-chart")
+                    (attr "class" "column-chart")
                     (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))
           focus (.. svg
                     (append "g")
@@ -54,16 +53,14 @@
       (.. graph
           (append "g")
           (attr "class" (if (< 30 (.. x-scale rangeBand)) "x axis grid" "x axis grid hidden"))
-          (attr "transform" (str "translate(0," inner-height ")"))
-          (call x-axis))
+          (attr "transform" (str "translate(0," inner-height ")")))
       (.. graph
           (append "g")
           (attr "class" "y axis grid")
-          (attr "transform" (str "translate(0,0)"))
-          (call y-axis))
+          (attr "transform" (str "translate(0,0)")))
       (d3/update-on-resize this id)
 
-      (om/update-state! this assoc :svg svg :js-domain js-domain :js-data js-data :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :focus focus)))
+      (om/update-state! this assoc :svg svg :js-data js-data :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :focus focus)))
 
   (update [this]
     (let [{:keys [svg x-scale y-scale x-axis y-axis js-data margin graph focus]} (om/get-state this)
@@ -178,19 +175,18 @@
 
               (.. texts
                   exit
-                  remove)
-
-              ()))
+                  remove)))
           js-data))))
 
   (initLocalState [_]
-    {:margin {:top 20 :bottom 20 :left 0 :right 0}})
+    {:margin {:top 20 :bottom 20 :left 20 :right 20}})
 
   (componentDidMount [this]
     (d3/create-chart this))
 
   (componentDidUpdate [this _ _]
-    (d3/update-chart this))
+    (d3/update-chart this)
+    )
 
   (componentWillReceiveProps [this next-props]
     (d3/update-chart-data this (:data next-props)))
