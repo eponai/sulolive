@@ -105,22 +105,14 @@
 
 (defmethod read :query/stripe
   [{:keys [db db-since query user-uuid]} _ _]
-  {:value (let [customer-id (one-with db {:where   '[[?u :user/uuid ?user-uuid]
-                                                     [?c :stripe/user ?u]
-                                                     [?c :stripe/customer ?e]]
-                                          :symbols {'?user-uuid user-uuid}})
-                ;_ (debug "Found customer id: " customer-id)
-                ;TODO: uncomment this when doing settings
-                customer {}                                 ;(stripe/customer customer-id)
-                ]
-            (assoc
-              (common.pull/pull db query [:stripe/customer customer-id])
-              :stripe/info
-              customer)
-            ;(server.pull/pull-all-since db db-since query
-            ;                            {:where ['[?e :stripe/user ?u]
-            ;                                     ['?u :user/uuid (:username auth)]]})
-            )})
+  {:value (let [;; TODO: uncomment this when doing settings
+                ;; customer (stripe/customer customer-id)
+                customer {}]
+            (merge {:stripe/info customer}
+                   (server.pull/pull-one-since db db-since query
+                                               {:where   '[[?u :user/uuid ?user-uuid]
+                                                           [?e :stripe/user ?u]]
+                                                :symbols {'?user-uuid user-uuid}})))})
 
 ;; ############### Signup page reader #################
 
