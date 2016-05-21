@@ -203,14 +203,17 @@
       {:keys [] :next db}
       ordered-novelty)))
 
+(defn deep-merge-fn [a b]
+  (if (map? a)
+    (merge-with deep-merge-fn a b)
+    b))
+
 (defn merge-meta [db novelty-meta]
   {:post [(db/db? %)]}
-  (reduce-kv (fn [db k v]
-               (condp = k
-                 :eponai.common.parser/read-basis-t
-                 (transact db (assoc v :db/ident :eponai.common.parser/read-basis-t))))
-             db
-             novelty-meta))
+  (let [basis-t-novelty (:eponai.common.parser/read-basis-t novelty-meta)
+        basis-t-entity (->> (d/entity db [:db/ident :eponai.common.parser/read-basis-t])
+                            (into {:db/ident :eponai.common.parser/read-basis-t}))]
+    (transact db (merge-with deep-merge-fn basis-t-entity basis-t-novelty))))
 
 (defn merge!
   "Takes a merge-fn which is passed [db key params] and

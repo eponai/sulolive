@@ -106,25 +106,21 @@
       (p/min-by db :project/created-at (p/project))))
 
 (defmethod read :query/transactions
-  [{:keys [db target ast] :as env} k p]
-  (let [project-eid (active-project-eid db)
-        ;; TODO: Pass project-eid instead of project-uuid to remote.
-        project-uuid (:project/uuid (d/entity db project-eid))]
+  [{:keys [db target ast] :as env} _ p]
+  (let [project-eid (active-project-eid db)]
     (if (= target :remote)
       ;; Pass the active project uuid to remote reader
-      {:remote (assoc-in ast [:params :project-uuid] project-uuid)}
+      {:remote (assoc-in ast [:params :project-eid] project-eid)}
 
       ;; Local read
       {:value (p/filter-transactions p (all-local-transactions-by-project env project-eid))})))
 
 (defmethod read :query/dashboard
-  [{:keys [db ast query target] :as env} k p]
-  (let [project-eid (active-project-eid db)
-        ;; TODO: Pass project-eid instead of project-uuid to remote.
-        project-uuid (:project/uuid (d/entity db project-eid))]
+  [{:keys [db ast query target] :as env} _ _]
+  (let [project-eid (active-project-eid db)]
     (if (= target :remote)
       ;; Pass the active project uuid to remote reader
-      {:remote (assoc-in ast [:params :project-uuid] project-uuid)}
+      {:remote (assoc-in ast [:params :project-eid] project-eid)}
 
       ;; Local read
       (let [transactions (delay (all-local-transactions-by-project env project-eid))]
@@ -133,9 +129,7 @@
                   (when-let [dashboard-id (p/one-with db {:where [['?e :dashboard/project project-eid]]})]
                     (update (p/pull db query dashboard-id)
                             :widget/_dashboard (fn [widgets]
-                                                 (mapv #(->> %
-                                                                 (p/widget-with-data db @transactions))
-                                                       widgets)))))}))))
+                                                 (mapv #(p/widget-with-data db @transactions %) widgets)))))}))))
 
 (defmethod read :query/all-projects
   [{:keys [db query target]} _ _]

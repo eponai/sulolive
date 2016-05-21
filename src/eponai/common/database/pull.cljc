@@ -242,25 +242,14 @@
 
 ;; ############################# Transactions #############################
 
-(defn transaction-entity-query [{:keys [filter project-uuid user-uuid]}]
+(defn transaction-entity-query [{:keys [project-eid user-uuid]}]
   (assert (some? user-uuid) "User UUID must be supplied to read transactions.")
-  (debug "Find transactions with filter: " filter)
-
-  (cond-> {:where   '[[?u :user/uuid ?user-uuid]
-                      [?b :project/users ?u]
-                      [?e :transaction/project ?b]]
-           :symbols {'?user-uuid    user-uuid}}
-
-          (some? project-uuid)
-          (merge-query {:where   '[[?b :project/uuid ?project-uuid]]
-                        :symbols {'?project-uuid project-uuid}})
-
-          (seq (keys filter))
-          (merge-query (transactions filter))))
-
-(defn find-transactions
-  [db params]
-  (all-with db (transaction-entity-query params)))
+  (assert (number? project-eid) (str "Project eid must be a number to read transactions. Was: " project-eid))
+  {:where   '[[?u :user/uuid ?user-uuid]
+              [?p :project/users ?u]
+              [?e :transaction/project ?p]]
+   :symbols {'?user-uuid user-uuid
+             '?p         project-eid}})
 
 ;; TODO: This is probably slow. We want to do a separate
 ;;       query for transaction conversions and user
@@ -431,11 +420,6 @@
     (if (identical? identity-xf filter-xf)
       transactions
       (into [] filter-xf transactions))))
-
-(defn filtered-transactions-with-conversions [{:keys [db]} user-uuid params]
-  (filter-transactions params
-                       (transactions-with-conversions db user-uuid
-                                                      (find-transactions db (assoc params :user-uuid user-uuid)))))
 
 ;; ############################# Widgets #############################
 

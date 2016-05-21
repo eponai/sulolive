@@ -133,11 +133,12 @@
                                     (util/put-db-id-in-query query))))]
       (read env k p))))
 
-(defn wrap-parser-filter-atom
+(defn wrap-parser-state
   "Returns a parser with a filter-atom assoc'ed in the env."
   [parser]
   (fn [env query & [target]]
-    (parser (assoc env ::filter-atom (atom nil))
+    (parser (assoc env ::filter-atom (atom nil)
+                       :user-uuid (get-in env [:auth :username]))
             query
             target)))
 
@@ -232,11 +233,29 @@
                (log-error e "body")
           (throw e))))))
 
+;"Returns a path using params which needs its own read-basis-t.
+;For example: We query/transactions by project-uuid. Then we want
+;to store a basis-t per project-uuid. So if we query transactions
+;by project-eid 1234567890, we'd want to return
+;path: [1234567890]"
+
+#?(:clj
+   (defmulti read-basis-param-path (fn [_ k _] k)))
+#?(:clj
+   (defmethod read-basis-param-path :default
+     [_ _ _]
+     []))
+
 #?(:clj
    (defn read-returning-basis-t [read]
      (fn [{:keys [db] :as env} k p]
        {:pre [(some? db)]}
-       (let [basis-t-for-this-key (-> env :eponai.common.parser/read-basis-t (get k))
+       (let [param-path (read-basis-param-path env k p)
+             _ (assert (or (nil? param-path) (sequential? param-path))
+                       (str "Path returned from read-basis-param-path for key: " k " params: " p
+                            " was not nil or sequential. Was: " param-path))
+             path (reduce conj [:eponai.common.parser/read-basis-t k] param-path)
+             basis-t-for-this-key (get-in env path)
              env (assoc env :db-since (when basis-t-for-this-key
                                         (d/since db basis-t-for-this-key)))
              ret (read env k p)]
@@ -245,7 +264,7 @@
                  (assoc :value {})
                  ;; Value has not already been set?
                  (not (contains? (meta (:value ret)) :eponai.common.parser/read-basis-t))
-                 (update :value with-meta {:eponai.common.parser/read-basis-t {k (d/basis-t db)}}))))))
+                 (update :value vary-meta assoc-in path (d/basis-t db)))))))
 
 (def ^:dynamic *parser-allow-remote* true)
 
@@ -291,7 +310,7 @@
                                   parser-opts))]
      #?(:cljs p
         :clj  (-> p
-                  wrap-parser-filter-atom
+                  wrap-parser-state
                   wrap-om-next-error-handler)))))
 
 ;; Case by case middleware. Used when appropriate

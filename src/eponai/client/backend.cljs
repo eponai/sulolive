@@ -29,9 +29,9 @@
                                                 (apply merge-with conj))]
     ;; transact conversions before transactions
     ;; because transactions depend on conversions.
-    (concat conversions (cond-> transactions
+    (concat conversions (cond->> transactions
                                 (seq transactions)
-                                (rseq)))))
+                                (sort-by #(get-in % [:transaction/date :date/timestamp]) >)))))
 
 (defn- send-query! [remote->send cb remote-key query]
   (let [query (parser.util/unwrap-proxies query)]
