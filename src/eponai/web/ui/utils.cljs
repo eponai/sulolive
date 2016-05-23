@@ -178,14 +178,21 @@
              (dom/small nil (dom/strong nil "x"))))))
 
 (defn add-tag [tags tag]
-  (if-not (some #(= (:tag/name %) (:tag/name tag)) tags)
-    (if (nil? tags)
-      [tag]
-      (conj tags tag))
-    tags))
+  (if-let [found-tag (some #(when (= (:tag/name %) (:tag/name tag))
+                             %) tags)]
+    (if (= (:tag/status found-tag) :deleted)
+      (replace {found-tag (dissoc found-tag :tag/status)})
+      tags)
+    (conj (or tags []) (assoc tag :tag/status :added))))
 
 (defn delete-tag [tags tag]
-  (into [] (remove #(= (:tag/name %) (:tag/name tag))) tags))
+  (if-let [found-tag (some #(when (= (:tag/name %) (:tag/name tag))
+                          %) tags)]
+    (if (= (:tag/status found-tag) :added)
+      (do
+        (into [] (remove #(= (:tag/name %) (:tag/name found-tag)) tags)))
+      (replace {found-tag (assoc found-tag :tag/status :deleted)} tags))
+    tags))
 
 (defn on-enter-down [e f]
   (when (and (= 13 (.-keyCode e))

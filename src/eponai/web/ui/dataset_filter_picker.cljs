@@ -53,6 +53,12 @@
                            :filter/include-tags)]
       {:tags (or (get filters tag-filter-key) [])
        :tag-filter-key tag-filter-key}))
+  (data-set-filter [this]
+    (let [{:keys [tag-filter-key tags]} (om/get-state this)]
+      (merge {:filter/exclude-tags []
+              :filter/include-tags []}
+             {tag-filter-key tags})))
+
   (initLocalState [this]
     (.init-state this (om/props this)))
   (componentWillReceiveProps [this new-props]
@@ -107,9 +113,8 @@
                                           {:on-change   (fn [tags]
                                                           (om/update-state! this assoc :tags tags)
                                                           (when on-change
-                                                            (on-change (merge {:filter/exclude-tags []
-                                                                               :filter/include-tags []}
-                                                                              {tag-filter-key tags}))))
+                                                            (debug "Datasetfilter:  notifying filters: " (.data-set-filter this))
+                                                            (on-change (.data-set-filter this))))
                                            :input-only? true}))
                 ;(dom/div
                 ;  nil
