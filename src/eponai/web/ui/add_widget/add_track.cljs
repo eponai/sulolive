@@ -96,128 +96,129 @@
          ;    [:a
          ;     {:on-click #(om/update-state! this assoc :step 2)}
          ;     [:span "Settings"]]])]
-         [:div.row.columns.small-12.medium-8
-          [:div
-           [:p.currency-code "Filter"]
-           [:div.row
+         ;[:div.row.columns.small-12.medium-8]
+         [:div
+          [:p.currency-code "Filter"]
+          [:div.row
+           [:div.columns.small-12
+            [:div
+             (filter/->DateFilter (om/computed {:filter date-filter}
+                                               {:on-change #(do
+                                                             (om/update-state! this assoc :date-filter %)
+                                                             (on-change (-> widget
+                                                                            (assoc :widget/filter (.get-filters this))
+                                                                            (update-in [:widget/graph :graph/filter] merge %)) {:update-data? true}))}))]]]
+          [:div.row
+           [:div.columns.small-12.medium-6
+            [:select
+             {:value     (name selected-transactions)
+              :on-change #(.update-selected-transactions this (keyword (.-value (.-target %))))}
+             [:option
+              {:value (name :all-transactions)}
+              "All transactions"]
+             [:option
+              {:value (name :include-tags)}
+              "Transactions with tags"]
+             [:option
+              {:value (name :exclude-tags)}
+              "Transactions without tags"]]]
+           [:div.columns.small-12.medium-6
+            (let [tag-filter-fn (fn [tag-filter-key]
+                                  (filter/->TagFilter (om/computed {:tags        (get tag-filter tag-filter-key)}
+                                                                   {:on-change (fn [tags]
+                                                                                 (let [new-filters (if (seq tags)
+                                                                                                     {tag-filter-key tags}
+                                                                                                     (dissoc tag-filter tag-filter-key))]
+                                                                                   (om/update-state! this assoc :tag-filter new-filters)
+                                                                                   (on-change (assoc widget :widget/filter (.get-filters this)) {:update-data? true})))})))]
+              (condp = selected-transactions
+                :include-tags (tag-filter-fn :filter/include-tags)
+                :exclude-tags (tag-filter-fn :filter/exclude-tags)
+                :all-transactions nil))]]
+          [:div.row
+           (filter/->AmountFilter (om/computed {:amount-filter amount-filter}
+                                               {:on-change #(do
+                                                             (om/update-state! this assoc :amount-filter %)
+                                                             (on-change (assoc widget :widget/filter (.get-filters this)) {:update-data? true}))}))]]
+         [:hr]
+         [:p.currency-code "Preview"]
+         [:div.row
+          [:div.columns.small-12
+           (->Widget (assoc widget :widget/data (report/generate-data (:widget/report widget) transactions {:data-filter (get-in widget [:widget/graph :graph/filter])})))]]
+
+         [:div.row
+          (let [style (:graph/style graph)]
             [:div.columns.small-12
-             [:div
-              (filter/->DateFilter (om/computed {:filter date-filter}
-                                                {:on-change #(do
-                                                              (om/update-state! this assoc :date-filter %)
-                                                              (on-change (-> widget
-                                                                             (assoc :widget/filter (.get-filters this))
-                                                                             (update-in [:widget/graph :graph/filter] merge %)) {:update-data? true}))}))]]]
+             [:input
+              {:type     "radio"
+               :id       "bar-option"
+               :checked  (= style :graph.style/bar)
+               :on-click #(when (and on-change (not= style :graph.style/bar))
+                           (on-change (change-graph-style widget :graph.style/bar)))}]
+             [:label {:for "bar-option"}
+              [:span.currency-code "Bars"]]
+             ;[:input
+             ; {:type     "radio"
+             ;  :id       "number-option"
+             ;  :checked  (= style :graph.style/number)
+             ;  :on-click #(when (and on-change (not= style :graph.style/number))
+             ;              (on-change (change-graph-style widget :graph.style/number)))}]
+             ;[:label {:for "number-option"}
+             ; [:span.currency-code "Number"]]
+             [:input
+              {:type     "radio"
+               :id       "area-option"
+               :checked  (= style :graph.style/area)
+               :on-click #(when (and on-change (not= style :graph.style/area))
+                           (on-change (change-graph-style widget :graph.style/area)))}]
+             [:label {:for "area-option"}
+              [:span.currency-code "Area"]]
+             [:input
+              {:type     "radio"
+               :id       "line-option"
+               :checked  (= style :graph.style/line)
+               :on-click #(when (and on-change (not= style :graph.style/line))
+                           (on-change (change-graph-style widget :graph.style/line)))}]
+             [:label {:for "line-option"}
+              [:span.currency-code "Line"]]
+             ;[:input
+             ; {:type     "radio"
+             ;  :id       "chord-option"
+             ;  :checked  (= style :graph.style/chord)
+             ;  :on-click #(when (and on-change (not= style :graph.style/chord))
+             ;              (on-change (change-graph-style widget :graph.style/chord)))}]
+             ;[:label {:for "chord-option"}
+             ; [:span.currency-code "Chord"]]
+             ])]
+
+         (when (= :graph.style/bar (:graph/style graph))
+           [:hr])
+         (when (= :graph.style/bar (:graph/style graph))
+
            [:div.row
             [:div.columns.small-12.medium-6
-             [:select
-              {:value     (name selected-transactions)
-               :on-change #(.update-selected-transactions this (keyword (.-value (.-target %))))}
-              [:option
-               {:value (name :all-transactions)}
-               "All transactions"]
-              [:option
-               {:value (name :include-tags)}
-               "Transactions with tags"]
-              [:option
-               {:value (name :exclude-tags)}
-               "Transactions without tags"]]]
+             [:span.currency-code "Show tags"]]
             [:div.columns.small-12.medium-6
-             (let [tag-filter-fn (fn [tag-filter-key]
-                                   (filter/->TagFilter (om/computed {:tags        (get tag-filter tag-filter-key)}
-                                                                    {:on-change (fn [tags]
-                                                                                  (let [new-filters (if (seq tags)
-                                                                                                      {tag-filter-key tags}
-                                                                                                      (dissoc tag-filter tag-filter-key))]
-                                                                                    (om/update-state! this assoc :tag-filter new-filters)
-                                                                                    (on-change (assoc widget :widget/filter (.get-filters this)) {:update-data? true})))})))]
-               (condp = selected-transactions
-                 :include-tags (tag-filter-fn :filter/include-tags)
-                 :exclude-tags (tag-filter-fn :filter/exclude-tags)
-                 :all-transactions nil))]]
+             [:span.currency-code "Hide tags"]]])
+
+         (when (= :graph.style/bar (:graph/style graph))
            [:div.row
-            (filter/->AmountFilter (om/computed {:amount-filter amount-filter}
-                                                {:on-change #(do
-                                                              (om/update-state! this assoc :amount-filter %)
-                                                              (on-change (assoc widget :widget/filter (.get-filters this)) {:update-data? true}))}))]
-           [:hr]
-           [:p.currency-code "Preview"]
-           [:div.row
-            [:div.columns.small-12
-             (->Widget (assoc widget :widget/data (report/generate-data (:widget/report widget) transactions {:data-filter (get-in widget [:widget/graph :graph/filter])})))]]
-
-           [:div.row
-            (let [style (:graph/style graph)]
-              [:div.columns.small-12
-               [:input
-                {:type     "radio"
-                 :id       "bar-option"
-                 :checked  (= style :graph.style/bar)
-                 :on-click #(when (and on-change (not= style :graph.style/bar))
-                             (on-change (change-graph-style widget :graph.style/bar)))}]
-               [:label {:for "bar-option"}
-                [:span.currency-code "Bars"]]
-               ;[:input
-               ; {:type     "radio"
-               ;  :id       "number-option"
-               ;  :checked  (= style :graph.style/number)
-               ;  :on-click #(when (and on-change (not= style :graph.style/number))
-               ;              (on-change (change-graph-style widget :graph.style/number)))}]
-               ;[:label {:for "number-option"}
-               ; [:span.currency-code "Number"]]
-               [:input
-                {:type     "radio"
-                 :id       "area-option"
-                 :checked  (= style :graph.style/area)
-                 :on-click #(when (and on-change (not= style :graph.style/area))
-                             (on-change (change-graph-style widget :graph.style/area)))}]
-               [:label {:for "area-option"}
-                [:span.currency-code "Area"]]
-               [:input
-                {:type     "radio"
-                 :id       "line-option"
-                 :checked  (= style :graph.style/line)
-                 :on-click #(when (and on-change (not= style :graph.style/line))
-                             (on-change (change-graph-style widget :graph.style/line)))}]
-               [:label {:for "line-option"}
-                [:span.currency-code "Line"]]
-               ;[:input
-               ; {:type     "radio"
-               ;  :id       "chord-option"
-               ;  :checked  (= style :graph.style/chord)
-               ;  :on-click #(when (and on-change (not= style :graph.style/chord))
-               ;              (on-change (change-graph-style widget :graph.style/chord)))}]
-               ;[:label {:for "chord-option"}
-               ; [:span.currency-code "Chord"]]
-               ])]
-
-           (when (= :graph.style/bar (:graph/style graph))
-             [:hr])
-           (when (= :graph.style/bar (:graph/style graph))
-
-             [:div.row
-              [:div.columns.small-12.medium-6
-               [:span.currency-code "Show tags"]]
-              [:div.columns.small-12.medium-6
-               [:span.currency-code "Hide tags"]]])
-
-           (when (= :graph.style/bar (:graph/style graph))
-             [:div.row
-              [:div.columns.small-12.medium-6
-               (filter/->TagFilter (om/computed {:tags        (:filter/include-tags graph-filter)}
-                                                {:on-change (fn [tags]
-                                                              (let [new-filters (if (seq tags)
-                                                                                  (merge graph-filter {:filter/include-tags tags})
-                                                                                  (dissoc graph-filter :filter/include-tags))]
-                                                                (om/update-state! this assoc :graph-filter new-filters)
-                                                                (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))}))]
-              [:div.columns.small-12.medium-6
-               (filter/->TagFilter (om/computed {:tags        (:filter/exclude-tags graph-filter)}
-                                                {:on-change (fn [tags]
-                                                              (let [new-filters (if (seq tags)
-                                                                                  (merge graph-filter {:filter/exclude-tags tags})
-                                                                                  (dissoc graph-filter :filter/exclude-tags))]
-                                                                (om/update-state! this assoc :graph-filter new-filters)
-                                                                (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))}))]])]]]))))
+            [:div.columns.small-12.medium-6
+             (filter/->TagFilter (om/computed {:tags        (:filter/include-tags graph-filter)}
+                                              {:on-change (fn [tags]
+                                                            (let [new-filters (if (seq tags)
+                                                                                (merge graph-filter {:filter/include-tags tags})
+                                                                                (dissoc graph-filter :filter/include-tags))]
+                                                              (om/update-state! this assoc :graph-filter new-filters)
+                                                              (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))}))]
+            [:div.columns.small-12.medium-6
+             (filter/->TagFilter (om/computed {:tags        (:filter/exclude-tags graph-filter)}
+                                              {:on-change (fn [tags]
+                                                            (let [new-filters (if (seq tags)
+                                                                                (merge graph-filter {:filter/exclude-tags tags})
+                                                                                (dissoc graph-filter :filter/exclude-tags))]
+                                                              (om/update-state! this assoc :graph-filter new-filters)
+                                                              (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))}))]])
+         ]))))
 
 (def ->NewTrack (om/factory NewTrack))

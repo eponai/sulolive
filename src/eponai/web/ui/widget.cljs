@@ -106,52 +106,53 @@
                    :type "text"}))
 
           ;; Widget menu
-          (dom/div
-            #js {:className "widget-menu float-right menu-horizontal"}
+          (when (some? (:db/id widget))
+            (dom/div
+              #js {:className "widget-menu float-right menu-horizontal"}
 
-            (->DatasetFilterPicker (om/computed {:key     "dataset-filter-picker"
-                                                 :filters (:widget/filter widget)}
-                                                {:on-change #(.update-data-set-filter this %)}))
+              (->DatasetFilterPicker (om/computed {:key     "dataset-filter-picker"
+                                                   :filters (:widget/filter widget)}
+                                                  {:on-change #(.update-data-set-filter this %)}))
 
-            (->TagFilterPicker (om/computed {:key          "tag-filter-picker"
-                                             :transactions transactions
-                                             :filters      (:graph/filter graph)}
-                                            {:on-apply #(.update-tag-filter this %)}))
+              (->TagFilterPicker (om/computed {:key          "tag-filter-picker"
+                                               :transactions transactions
+                                               :filters      (:graph/filter graph)}
+                                              {:on-apply #(.update-tag-filter this %)}))
 
-            (->DateRangePicker (om/computed {:key "date-range-picker"
-                                             :class "nav-link"}
-                                            {:on-apply #(.update-date-filter this %1 %2)
-                                             :on-cancel #()}))
+              (->DateRangePicker (om/computed {:key   "date-range-picker"
+                                               :class "nav-link"}
+                                              {:on-apply  #(.update-date-filter this %1 %2)
+                                               :on-cancel #()}))
 
-            ;; Widget edit navigation
-            ;(dom/a
-            ;  #js {:className "nav-link widget-edit secondary"
-            ;       :href (when project-id
-            ;               (routes/key->route :route/project->widget+type+id
-            ;                                  {:route-param/project-id  project-id
-            ;                                   :route-param/widget-type (if (:report/track report) :track :goal)
-            ;                                   :route-param/widget-id   (str (:db/id widget))}))}
-            ;  (dom/i
-            ;    #js {:className "fa fa-fw fa-pencil"}))
-            (dom/a
-              #js {:className "nav-link secondary"
-                   :onClick #(.delete-widget this)}
-              (dom/i
-                #js {:className "fa fa-fw fa-trash-o"}))
+              ;; Widget edit navigation
+              ;(dom/a
+              ;  #js {:className "nav-link widget-edit secondary"
+              ;       :href (when project-id
+              ;               (routes/key->route :route/project->widget+type+id
+              ;                                  {:route-param/project-id  project-id
+              ;                                   :route-param/widget-type (if (:report/track report) :track :goal)
+              ;                                   :route-param/widget-id   (str (:db/id widget))}))}
+              ;  (dom/i
+              ;    #js {:className "fa fa-fw fa-pencil"}))
+              (dom/a
+                #js {:className "nav-link secondary"
+                     :onClick   #(.delete-widget this)}
+                (dom/i
+                  #js {:className "fa fa-fw fa-trash-o"}))
 
-            ;; Move widget handle
-            (dom/a
-              #js {:className "nav-link widget-move secondary"}
-              (dom/i
-                #js {:className "fa fa-fw fa-arrows widget-move"}))
+              ;; Move widget handle
+              (dom/a
+                #js {:className "nav-link widget-move secondary"}
+                (dom/i
+                  #js {:className "fa fa-fw fa-arrows widget-move"}))
 
 
-            ;; Widget submenu
-            ;(dom/a
-            ;  #js {:className "nav-link secondary"}
-            ;  (dom/i
-            ;    #js {:className "fa fa-fw fa-ellipsis-v"}))
-            ))
+              ;; Widget submenu
+              ;(dom/a
+              ;  #js {:className "nav-link secondary"}
+              ;  (dom/i
+              ;    #js {:className "fa fa-fw fa-ellipsis-v"}))
+              )))
 
 
         (dom/div

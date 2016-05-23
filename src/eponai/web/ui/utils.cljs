@@ -148,9 +148,7 @@
        [:div
         (opts {:class (if size (str size " reveal") "reveal")
                :style (cond-> {:display  "block"
-                               :position :relative}
-                              (= size "large")
-                              (assoc :margin-top 0))})
+                               :position :relative})})
         [:a.close-button
          {:on-click on-close}
          "x"]

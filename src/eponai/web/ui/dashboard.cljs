@@ -11,7 +11,8 @@
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [error debug]]
-    [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]))
+    [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
+    [eponai.web.ui.utils :as utils]))
 
 (defn min-dimensions [widget num-cols]
   (let [style (get-in widget [:widget/graph :graph/style])
@@ -87,7 +88,8 @@
                                              :project/uuid
                                              :project/name
                                              :project/users]}]}
-     {:query/transactions (om/get-query Transaction)}])
+     {:query/transactions (om/get-query Transaction)}
+     {:proxy/new-widget (om/get-query NewWidget)}])
   Object
   (componentWillReceiveProps [this new-props]
     (let [{:keys [cols]} (om/get-state this)
@@ -140,11 +142,13 @@
      :breakpoint :lg})
   (render [this]
     (let [{:keys [query/dashboard
-                  query/transactions]} (om/props this)
+                  query/transactions
+                  proxy/new-widget]} (om/props this)
           {:keys [layout
                   grid-element
                   is-editing?
-                  cols]} (om/get-state this)
+                  cols
+                  new-track? new-goal?]} (om/get-state this)
           widgets (:widget/_dashboard dashboard)
           project-id (:db/id (:dashboard/project dashboard))
           React (.-React js/window)]
@@ -153,22 +157,33 @@
          [:div#dashboard-menu.row.column.small-12.expanded
           [:div.menu-horizontal
            [:a.nav-link
-            (opts {:href  (when project-id (routes/key->route :route/project->widget+type+id {:route-param/project-id  project-id
-                                                                                              :route-param/widget-type :track
-                                                                                              :route-param/widget-id   "new"}))
-                   :style {:padding "0.5em"}})
+            (opts {:style {:padding "0.5em"}
+                   :on-click #(om/update-state! this assoc :new-track? true)})
             [:i.fa.fa-line-chart.fa-fw
              (opts {:style {:color "green"}})]
             [:span.small-caps "Track"]]
            [:a.nav-link
-            (opts {:href  (when project-id
-                            (routes/key->route :route/project->widget+type+id {:route-param/project-id  project-id
-                                                                               :route-param/widget-type :goal
-                                                                               :route-param/widget-id   "new"}))
-                   :style {:padding "0.5em"}})
+            (opts {:style {:padding "0.5em"}
+                   :on-click #(om/update-state! this assoc :new-goal? true)})
             [:i.fa.fa-star.fa-fw
              (opts {:style {:color "orange"}})]
             [:span.small-caps "Goal"]]]]
+         (when new-track?
+           (utils/modal {:content  (->NewWidget (om/computed new-widget
+                                                             {:dashboard dashboard
+                                                              :widget-type :track
+                                                              :index (calculate-last-index widgets)
+                                                              :on-save #(om/update-state! this assoc :new-track? false)}))
+                         :on-close #(om/update-state! this assoc :new-track? false)
+                         :size "large"}))
+         (when new-goal?
+           (utils/modal {:content  (->NewWidget (om/computed new-widget
+                                                             {:dashboard dashboard
+                                                              :widget-type :goal
+                                                              :index (calculate-last-index widgets)
+                                                              :on-save #(om/update-state! this assoc :new-goal? false)}))
+                         :on-close #(om/update-state! this assoc :new-goal? false)
+                         :size "medium"}))
 
          (if (and layout
                   grid-element
