@@ -71,7 +71,8 @@
     (let [widget (om/props this)
           new-widget (update widget :widget/filter merge filter)]
       (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/filter :db/id :widget/uuid]) :mutation-uuid (d/squuid)))
-                           :query/dashboard])))
+                           :query/dashboard
+                           :query/transactions])))
 
   (update-tag-filter [this include-tags]
     (let [widget (om/props this)

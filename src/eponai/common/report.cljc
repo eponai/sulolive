@@ -39,7 +39,6 @@
 
 ;; Data helper
 (defn zero-padding-to-time-series-data [values & [opts]]
-  (debug "Create report with opts: " opts)
   (let [by-timestamp (group-by :name values)
         start (or (date/date-time (:start opts))
                   (date/date-time (apply min (keys by-timestamp))))

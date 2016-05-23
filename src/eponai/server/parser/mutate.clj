@@ -69,7 +69,7 @@
   (debug "widget/edit with params: " params)
   (let [widget (format/widget-edit params)]
     {:action (fn []
-               (transact/mutate-one state mutation-uuid widget))
+               (transact/mutate state mutation-uuid widget))
      :remote true}))
 
 (defmethod mutate 'widget/delete

@@ -193,6 +193,7 @@
     (let [{:keys [on-change]} (om/get-computed this)
           {:keys [tags]} (om/get-state this)
           new-tags (utils/add-tag tags tag)]
+      (debug "tagfilter: new tags (added): " new-tags)
       (om/update-state! this assoc
                         :input-tag ""
                         :tags new-tags)
@@ -202,8 +203,8 @@
     (let [{:keys [on-change]} (om/get-computed this)
           {:keys [tags]} (om/get-state this)
           new-tags (utils/delete-tag tags tag)]
-      (debug "datasetfilter: deleta tag: " new-tags)
       (om/update-state! this assoc :tags new-tags)
+      (debug "tagfilter: new tags (deleted): " new-tags)
       (when on-change
         (on-change new-tags))))
 

@@ -32,32 +32,33 @@
 (defui DatasetFilterPicker
   Object
   (select-tag-filter-type [this new-tag-filter-key]
-    (let [{:keys [tag-filter-key tags]} (om/get-state this)
+    (let [{:keys [tag-filter-key tags input-filters]} (om/get-state this)
+          {:keys [filters]} (om/props this)
           {:keys [on-change]} (om/get-computed this)]
       (when-not (= tag-filter-key new-tag-filter-key)
-        (om/update-state! this assoc :tag-filter-key new-tag-filter-key)
-        (debug "Render tag using filters: " (merge {:filter/exclude-tags []
-                                                    :filter/include-tags []}
-                                                   {new-tag-filter-key tags}))
-        (when on-change
-          (on-change (merge {:filter/exclude-tags []
-                             :filter/include-tags []}
-                            {new-tag-filter-key tags}))))))
+        (let [new-filters (cond (= new-tag-filter-key :filter/include-tags)
+                                (-> input-filters
+                                    (assoc :filter/exclude-tags (map #(assoc % :tag/status :deleted) tags))
+                                    (assoc :filter/include-tags (map #(assoc % :tag/status :added) tags)))
+
+                                (= new-tag-filter-key :filter/exclude-tags)
+                                (-> filters
+                                    (assoc :filter/include-tags (map #(assoc % :tag/status :deleted) tags))
+                                    (assoc :filter/exclude-tags (map #(assoc % :tag/status :added) tags))))]
+          (om/update-state! this assoc
+                            :tag-filter-key new-tag-filter-key
+                            :input-filters new-filters)))))
 
   (init-state [this props]
     (let [{:keys [filters]} props
           tag-filter-key (cond
                            (seq (:filter/exclude-tags filters))
                            :filter/exclude-tags
-                           (seq (:filter/include-tags filters))
+                           :else
                            :filter/include-tags)]
       {:tags (or (get filters tag-filter-key) [])
-       :tag-filter-key tag-filter-key}))
-  (data-set-filter [this]
-    (let [{:keys [tag-filter-key tags]} (om/get-state this)]
-      (merge {:filter/exclude-tags []
-              :filter/include-tags []}
-             {tag-filter-key tags})))
+       :tag-filter-key tag-filter-key
+       :input-filters filters}))
 
   (initLocalState [this]
     (.init-state this (om/props this)))
@@ -65,17 +66,17 @@
     (om/set-state! this (.init-state this new-props)))
   (render [this]
     (let [{:keys [filters]} (om/props this)
-          {:keys [is-showing? new-filter]} (om/get-state this)
+          {:keys [is-showing? new-filter input-filters tags tag-filter-key]} (om/get-state this)
           {:keys [on-change on-cancel]} (om/get-computed this)
 
-          tag-filter-key (cond
-                           (seq (:filter/exclude-tags filters))
-                           :filter/exclude-tags
-                           :else
-                           :filter/include-tags)
-          tags (or (get filters tag-filter-key) [])]
-      (debug "Render tag filters: " filters)
-      (debug "Render tag: " tags)
+          ;tag-filter-key (cond
+          ;                 (seq (:filter/exclude-tags filters))
+          ;                 :filter/exclude-tags
+          ;                 :else
+          ;                 :filter/include-tags)
+          ;tags (or (get filters tag-filter-key) [])
+          ]
+      ;(debug "Tagfilter state: " input-filters)
       (dom/div
         #js {:className "nav-link datasetfilter"}
 
@@ -89,9 +90,9 @@
           (when is-showing?
             (dom/div
               nil
-              (utils/click-outside-target #(om/update-state! this assoc
-                                                             :is-showing? false
-                                                             :new-filter nil))
+              ;(utils/click-outside-target #(om/update-state! this assoc
+              ;                                               :is-showing? false
+              ;                                               :new-filter nil))
               (dom/div
                 #js {:className (str "datasetfilterpicker menu dropdown clearfix")}
 
@@ -109,12 +110,9 @@
                     #js {:value (name :exclude-tags)}
                     "without tags"))
 
-                (->TagFilter (om/computed {:tags tags}
+                (->TagFilter (om/computed {:tags (get input-filters tag-filter-key)}
                                           {:on-change   (fn [tags]
-                                                          (om/update-state! this assoc :tags tags)
-                                                          (when on-change
-                                                            (debug "Datasetfilter:  notifying filters: " (.data-set-filter this))
-                                                            (on-change (.data-set-filter this))))
+                                                          (om/update-state! this assoc-in [:input-filters tag-filter-key] tags))
                                            :input-only? true}))
                 ;(dom/div
                 ;  nil
@@ -146,6 +144,16 @@
                 ;              (:filter/exclude-tags-tags filters))))
                 (dom/div
                   #js {:className "actions"}
+                  (dom/a
+                    #js {:className "button small float-right"
+                         :onClick   #(do
+                                      (om/update-state! this assoc
+                                                           :is-showing? false
+                                                           :new-filter nil)
+                                      (when on-change
+                                        (debug "Datasetfilter:  notifying filters: " input-filters)
+                                        (on-change input-filters)))}
+                    "Apply")
                   (dom/a
                     #js {:className "button small secondary float-right"
                          :onClick   #(om/update-state! this assoc

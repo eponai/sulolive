@@ -69,7 +69,7 @@
 (defn date*
   [input]
   {:post [(map? %)
-          (= (count (select-keys % [:db/id :date/ymd
+          (= (count (select-keys % [:date/ymd
                                     :date/timestamp
                                     :date/year
                                     :date/month
@@ -253,15 +253,30 @@
 (defn widget-edit [input]
   ;(assert (some? (:widget/dashboard input)) "Widget needs to ba associated to a dashboard.")
   (assert (some? (:widget/uuid input)) "Widget needs a UUID to be saved.")
+  (let [widget (cond-> (-> input
+                           widget*)
 
-  (cond-> (-> input
-              widget*)
+                       (some? (:widget/graph input))
+                       (update :widget/graph graph*)
 
-          (some? (:widget/graph input))
-          (update :widget/graph graph*)
-          
-          (some? (:widget/report input))
-          (update :widget/report report*)))
+                       (some? (:widget/report input))
+                       (update :widget/report report*))
+        filters (:widget/filter widget)
+        tags->txs (fn [{:keys [tag/status tag/name] :as tag} attr]
+                    (cond (= status :deleted) [[:db/retract (:db/id filters) attr [:tag/name name]]]
+                          (= status :added) (let [new-tag (-> tag (dissoc :tag/status) add-tempid)]
+                                              [new-tag
+                                               [:db/add (:db/id filters) attr (:db/id new-tag)]])
+                          :else nil))]
+    (cond-> [(update widget :widget/filter dissoc :filter/include-tags :filter/exclude-tags)]
+
+            (seq (:filter/exclude-tags filters))
+            (into (comp (mapcat #(tags->txs % :filter/exclude-tags))
+                        (filter some?)) (:filter/exclude-tags filters))
+
+            (seq (:filter/include-tags filters))
+            (into (comp (mapcat #(tags->txs % :filter/include-tags))
+                        (filter some?)) (:filter/include-tags filters)))))
 
 (defn transaction-edit [{:keys [transaction/tags
                                 transaction/uuid] :as input-transaction}]
