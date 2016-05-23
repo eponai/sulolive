@@ -106,7 +106,8 @@
                    :type "text"}))
 
           ;; Widget menu
-          (when (some? (:db/id widget))
+          (when  (some? (:db/id widget))
+
             (dom/div
               #js {:className "widget-menu float-right menu-horizontal"}
 
@@ -114,10 +115,12 @@
                                                    :filters (:widget/filter widget)}
                                                   {:on-change #(.update-data-set-filter this %)}))
 
-              (->TagFilterPicker (om/computed {:key          "tag-filter-picker"
-                                               :transactions transactions
-                                               :filters      (:graph/filter graph)}
-                                              {:on-apply #(.update-tag-filter this %)}))
+              (when (not (or (= (:graph/style graph) :graph.style/burndown)
+                             (= (:graph/style graph) :graph.style/progress-bar)))
+                (->TagFilterPicker (om/computed {:key          "tag-filter-picker"
+                                                 :transactions transactions
+                                                 :filters      (:graph/filter graph)}
+                                                {:on-apply #(.update-tag-filter this %)})))
 
               (->DateRangePicker (om/computed {:key   "date-range-picker"
                                                :class "nav-link"}

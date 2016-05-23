@@ -119,7 +119,7 @@
             (attr "x" (+ inner-width 20))
             (on "click" #(om/update-state! this update :cycle inc)))
         (d3/focus-set-height svg inner-height)
-        (d3/clip-path-set-dimensions id inner-width height)
+        (d3/clip-path-set-dimensions id inner-width inner-height)
         (.. svg
             (on "mousemove" (fn []
                               (this-as jthis
