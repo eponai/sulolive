@@ -79,6 +79,11 @@
           new-widget (assoc-in widget [:widget/graph :graph/filter :filter/include-tags] include-tags)]
       (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/graph :db/id :widget/uuid]) :mutation-uuid (d/squuid)))
                            :query/dashboard])))
+  (delete-widget [this]
+    (let [widget (om/props this)]
+      (om/transact! this `[(widget/delete ~(assoc (select-keys widget [:widget/uuid]) :mutation-uuid (d/squuid)))
+                           :query/dashboard])))
+
   (render [this]
     (let [{:keys [widget/report
                   widget/graph
@@ -119,21 +124,27 @@
                                              :on-cancel #()}))
 
             ;; Widget edit navigation
+            ;(dom/a
+            ;  #js {:className "nav-link widget-edit secondary"
+            ;       :href (when project-id
+            ;               (routes/key->route :route/project->widget+type+id
+            ;                                  {:route-param/project-id  project-id
+            ;                                   :route-param/widget-type (if (:report/track report) :track :goal)
+            ;                                   :route-param/widget-id   (str (:db/id widget))}))}
+            ;  (dom/i
+            ;    #js {:className "fa fa-fw fa-pencil"}))
             (dom/a
-              #js {:className "nav-link widget-edit secondary"
-                   :href (when project-id
-                           (routes/key->route :route/project->widget+type+id
-                                              {:route-param/project-id  project-id
-                                               :route-param/widget-type (if (:report/track report) :track :goal)
-                                               :route-param/widget-id   (str (:db/id widget))}))}
+              #js {:className "nav-link secondary"
+                   :onClick #(.delete-widget this)}
               (dom/i
-                #js {:className "fa fa-fw fa-pencil"}))
+                #js {:className "fa fa-fw fa-trash-o"}))
 
             ;; Move widget handle
             (dom/a
               #js {:className "nav-link widget-move secondary"}
               (dom/i
                 #js {:className "fa fa-fw fa-arrows widget-move"}))
+
 
             ;; Widget submenu
             ;(dom/a
