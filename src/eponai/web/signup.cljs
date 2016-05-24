@@ -56,11 +56,15 @@
 
           [:div
            [:a
-            {:class    "button"
-             :on-click #(do
-                         (om/update-state! this assoc :verification-sent true)
-                         (om/transact! this `[(signup/email ~(assoc st :device :web))]))
-             :tab-index 2}
+            {:class       "button"
+             :on-click    #(do
+                            (om/update-state! this assoc :verification-sent true)
+                            (om/transact! this `[(signup/email ~(assoc st :device :web))]))
+             :on-key-down #(do (prn "Pressed key") (utils/on-enter-down % (fn [_]
+                                                                            (prn "Pressed enter: ")
+                                                                            (om/update-state! this assoc :verification-sent true)
+                                                                            (om/transact! this `[(signup/email ~(assoc st :device :web))]))))
+             :tab-index   2}
             "Sign In"]]
 
           [:br]

@@ -22,11 +22,15 @@
     (send-fn url (merge opts transit-opts))))
 
 (defn query-transactions->ds-txs [novelty]
-  (let [{:keys [transactions conversions]} (->> (:result novelty)
+  (let [{:keys [transactions conversions] :as all} (->> (:result novelty)
                                                 (tree-seq map? vals)
                                                 (filter #(and (map? %) (contains? % :query/transactions)))
                                                 (map :query/transactions)
-                                                (apply merge-with conj))]
+                                                        ;; TODO: What should we do about query/transactions
+                                                        ;; occurring in multiple places?
+                                                        ;; It should always return the same thing now that we
+                                                        ;; don't filter anymore.
+                                                (first))]
     ;; transact conversions before transactions
     ;; because transactions depend on conversions.
     (concat conversions (cond->> transactions
