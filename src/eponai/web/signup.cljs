@@ -12,6 +12,7 @@
             [goog.dom :as gdom]
     ;; To initialize ReactDOM:
             [cljsjs.react.dom]
+            [eponai.web.ui.utils :as utils]
             [eponai.web.homeless :as homeless]
             [eponai.client.backend :as backend]
             [eponai.client.parser.merge :as merge]
@@ -45,7 +46,8 @@
            (opts {:value       (or input-email "")
                   :on-change   (on-input-change this :input-email)
                   :type        :email
-                  :placeholder "youremail@example.com"})]
+                  :placeholder "youremail@example.com"
+                  :tab-index   1})]
 
           [:div
            (opts {:style {:height "2em"}})
@@ -53,11 +55,12 @@
              [:small.text-success "Check your inbox for a fancy sign in link!"])]
 
           [:div
-           [:button
-            {:class    "button primary"
+           [:a
+            {:class    "button"
              :on-click #(do
                          (om/update-state! this assoc :verification-sent true)
-                         (om/transact! this `[(signup/email ~(assoc st :device :web))]))}
+                         (om/transact! this `[(signup/email ~(assoc st :device :web))]))
+             :tab-index 2}
             "Sign In"]]
 
           [:br]
@@ -67,9 +70,10 @@
           [:form
            {:action "/api/login/fb"
             :method "POST"}
-           [:button
+           [:a
             {:class "button btn-facebook"
-             :type  "submit"}
+             :type  "submit"
+             :tab-index 3}
             [:i
              {:class "fa fa-facebook fa-fw"}]
             [:span
@@ -179,10 +183,8 @@
         true
         (->log-in)))))
 
-(defonce conn-atom (atom nil))
-
 (defn run []
- (let [conn (or @conn-atom (reset! conn-atom (d/create-conn)))
+ (let [conn       (utils/init-conn)
        reconciler (om/reconciler {:state   conn
                                   :parser  (parser/parser)
                                   :remotes [:remote]
