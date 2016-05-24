@@ -55,16 +55,24 @@
         ;; Not found:
         :else nil)))
 
-  clojure.lang.IPersistentCollection
-  (equiv [d o] (and (instance? PrefixList o) (= coll (.coll o))))
-  (empty [d] (PrefixList. [] 0 nil {}))
-  (count [d] (count coll))
-  (cons [d v] (PrefixList. (cons v coll) depth by {}))
+  #?@(:cljs
+      [ISeqable
+       (-seq [this] (seq coll))
 
-  clojure.lang.Seqable
-  (seq [this] (seq coll)))
+       IPrintWithWriter
+       (-pr-writer [pl writer opts]
+                   (-write writer (str "#eponai/PrefixList "))
+                   (-write writer (str {:coll (.-coll pl) :depth (.-depth pl)
+                                        :by (.-by pl) :lists (.-lists pl)})))]
+
+      :clj
+      [clojure.lang.Seqable
+       (seq [_] (seq coll))]))
 
 ;; --- API ------------------------
+
+(defn prepare-prefix [pl prefix]
+  (-walk-prefix pl prefix))
 
 (defn filter-prefix [pl prefix]
   (seq (-filter-prefix (-walk-prefix pl prefix) prefix)))
@@ -87,14 +95,18 @@
     (name k)))
 
 (extend-protocol IKey
-  #?(:cljs js/String :clj String)
-  (-is-key? [this] (= (count this) 1))
+  #?@(:cljs [string
+             (-is-key? [this] (= (.-length this) 1))]
+      :clj  [String
+             (-is-key? [this] (= (.length this) 1))])
+
 
   #?(:cljs Keyword :clj clojure.lang.Keyword)
   (-is-key? [this] (-is-key? (keyword->str this)))
 
   #?@(:clj [java.lang.Character (-is-key? [this] true)])
-  Object
+
+  #?(:cljs default :clj Object)
   (-is-key? [this] (and (number? this) (pos? this) (> 10 this))))
 
 (extend-protocol IKeywordize
@@ -104,16 +116,16 @@
   nil
   (-keywordize [this] nil)
 
-  Object
+  #?(:cljs default :clj Object)
   (-keywordize [this]
     (cond
       (number? this) (num->digits this)
       :else (seq this))))
 
 (extend-protocol IFilterAt
-  #?(:cljs js/String :clj String)
+  #?(:cljs string :clj String)
   (-filter-at [item depth key]
-    (when (< depth (count item))
+    (when (< depth #?(:clj (.length item) :cljs (.-length item)))
       (= (.charAt item depth)
          (cond-> key (string? key) (.charAt 0)))))
 
@@ -121,15 +133,15 @@
   (-filter-at [item depth key]
     (-filter-at (keyword->str item) depth (cond-> key (keyword? key) (keyword->str))))
 
-  Object
+  #?(:cljs default :clj Object)
   (-filter-at [item depth key]
     (when (number? item)
       (= (nth (num->digits item) depth nil) key))))
 
-#?(:clj (defmethod print-method PrefixList [dl w]
-          (.write w (str "#eponai.DeepList "))
+#?(:clj (defmethod print-method PrefixList [pl w]
+          (.write w (str "#eponai/PrefixList "))
           (binding [*out* w]
-            (pr [(.coll dl) (.lists dl) (.depth dl) (.by dl)]))))
+            (pr {:coll (.coll pl) :depth (.depth pl) :by (.by pl) :lists (.lists pl)}))))
 
 
 ;; Bug:
@@ -138,5 +150,4 @@
 ;; Solution: wrap keywordized :foo in somthing?
 ;; But it's probably just fine.
 
-;; TODO: Make it work in cljs.
 ;; TODO: Add conj (which would update DeepLists recursively)
