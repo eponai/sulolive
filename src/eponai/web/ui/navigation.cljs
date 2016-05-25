@@ -155,10 +155,11 @@
         [:div#top-nav-bar
 
          [:div.menu-horizontal
-          [:a.nav-link.hidden-xlarge-up
-           {:on-click #(do (prn "Did show sidebar")
-                           (on-sidebar-toggle))}
-           [:i.fa.fa-bars]]
+          [:div.top-bar-link
+           [:a.nav-link.hidden-xlarge-up
+            {:on-click #(do (prn "Did show sidebar")
+                            (on-sidebar-toggle))}
+            [:i.fa.fa-bars]]]
           ;[:a.nav-link.button.success.tiny
           ; {:on-click #(do
           ;              ;(.track js/mixpanel "navigation/NewTransaction" {:user                (:user/uuid current-user)
@@ -177,7 +178,7 @@
 
           (when-not utils/*playground?*
             [:div.nav-link
-             [:div
+             [:div.top-bar-link
               [:a
                {:on-click #(open-profile-menu this true)}
                [:small (:user/email current-user)]]
