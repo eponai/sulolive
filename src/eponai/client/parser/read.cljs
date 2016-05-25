@@ -3,6 +3,7 @@
             [eponai.common.database.pull :as p]
             [eponai.common.prefixlist :as pl]
             [eponai.common.parser :refer [read]]
+            [eponai.common.parser.util :as parser.util]
             [taoensso.timbre :refer-macros [debug error]]
             [eponai.common.format :as f]))
 
@@ -117,31 +118,40 @@
       ;; No project-uuid, grabbing the one with the smallest created-at
       (p/min-by db :project/created-at (p/project))))
 
+(def cached-query-transactions
+  (parser.util/cache-last-read
+    (fn [{:keys [db] :as env} _ p]
+      {:value (p/filter-transactions p (all-local-transactions-by-project env (active-project-eid db)))})))
+
 (defmethod read :query/transactions
-  [{:keys [db target ast] :as env} _ p]
-  (let [project-eid (active-project-eid db)]
-    (if (= target :remote)
-      ;; Pass the active project uuid to remote reader
-      {:remote (assoc-in ast [:params :project-eid] project-eid)}
+  [{:keys [db target ast] :as env} k p]
+  (if (= target :remote)
+    ;; Pass the active project uuid to remote reader
+    {:remote (assoc-in ast [:params :project-eid] (active-project-eid db))}
 
-      ;; Local read
-      {:value (p/filter-transactions p (all-local-transactions-by-project env project-eid))})))
+    ;; Local read
+    (cached-query-transactions env k p)))
 
-(defmethod read :query/dashboard
-  [{:keys [db ast query target] :as env} _ _]
-  (let [project-eid (active-project-eid db)]
-    (if (= target :remote)
-      ;; Pass the active project uuid to remote reader
-      {:remote (assoc-in ast [:params :project-eid] project-eid)}
-
-      ;; Local read
-      (let [transactions (delay (all-local-transactions-by-project env project-eid))]
+(def cached-query-dashboard
+  (parser.util/cache-last-read
+    (fn [{:keys [db query] :as env} _ _]
+      (let [project-eid (active-project-eid db)
+            transactions (delay (all-local-transactions-by-project env project-eid))]
 
         {:value (when project-eid
                   (when-let [dashboard-id (p/one-with db {:where [['?e :dashboard/project project-eid]]})]
                     (update (p/pull db query dashboard-id)
                             :widget/_dashboard (fn [widgets]
                                                  (mapv #(p/widget-with-data db @transactions %) widgets)))))}))))
+
+(defmethod read :query/dashboard
+  [{:keys [db ast target] :as env} k p]
+  (if (= target :remote)
+    ;; Pass the active project uuid to remote reader
+    {:remote (assoc-in ast [:params :project-eid] (active-project-eid db))}
+
+    ;; Local read
+    (cached-query-dashboard env k p)))
 
 (defmethod read :query/all-projects
   [{:keys [db query target]} _ _]
