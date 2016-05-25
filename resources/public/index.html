@@ -7,11 +7,14 @@
     <meta charset="utf-8"/>
 
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1 maximum-scale=1 user-scalable=no"/>
     <!--<meta name="description" content="">-->
     <meta name="author" content="eponai hb"/>
+    <!--<meta name="keywords" content="expense tracker,track expenses,tracking expenses,expense trackers,expense tracker app,budget app,budget">-->
+    <meta name="description" content="JourMoney is an expense tracker that lets you see your financial habits and explore
+                                    where you can do small changes to save more money over time.">
 
-    <title>JourMoney - Go the distance</title>
+    <title>Tracking Expenses & Visualizing Habits - JourMoney</title>
 
     <!-- Custom CSS -->
     <link href="/style/app/css/app.css" rel="stylesheet">
@@ -20,9 +23,9 @@
     <!--<link href="/style/css/loader.css" rel="stylesheet">-->
 
     <!-- Custom Fonts -->
-    <!--<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">-->
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
     <!--<link href="/style/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">-->
-
+<!---->
     <!-- start Mixpanel -->
     <script type="text/javascript">(function(e,b){if(!b.__SV){var a,f,i,g;window.mixpanel=b;b._i=[];b.init=function(a,e,d){function f(b,h){var a=h.split(".");2==a.length&&(b=b[a[0]],h=a[1]);b[h]=function(){b.push([h].concat(Array.prototype.slice.call(arguments,0)))}}var c=b;"undefined"!==typeof d?c=b[d]=[]:d="mixpanel";c.people=c.people||[];c.toString=function(b){var a="mixpanel";"mixpanel"!==d&&(a+="."+d);b||(a+=" (stub)");return a};c.people.toString=function(){return c.toString(1)+".people (stub)"};i="disable time_event track track_pageview track_links track_forms register register_once alias unregister identify name_tag set_config people.set people.set_once people.increment people.append people.union people.track_charge people.clear_charges people.delete_user".split(" ");
         for(g=0;g<i.length;g++)f(c,i[g]);b._i.push([a,e,d])};b.__SV=1.2;a=e.createElement("script");a.type="text/javascript";a.async=!0;a.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===e.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";f=e.getElementsByTagName("script")[0];f.parentNode.insertBefore(a,f)}})(document,window.mixpanel||[]);
@@ -80,20 +83,22 @@
                     <div class="row columns small-12 medium-8 large-5">
                         <!--<div class="small-12 medium-10 medium-offset-1 large-6 large-offset-3 columns">-->
                             <div class="intro-message">
-                                <h1>Track and travel</h1>
+                                <h1>Habits over numbers</h1>
                                 <!--<h2>-->
                                     <!--A more visual way to track your money and plan for those cool destinations.-->
                                 <!--</h2>-->
                                 <hr class="intro-divider">
 
 
-                                <p>
-                                    Use a more visual way to track your money and plan for those cool destinations.
+                                <h2>
+                                    JourMoney is an expense tracker that lets you see your financial habits and explore
+                                    where you can do small changes to save more money over time.
+                                    <!--, find where your unnecessary expenses are, explore where you can easily save money.-->
 
-                                    Track as you go and see what your data is telling you by viewing your own easily
-                                    created dashboards.
+                                    <!--Track as you go and see what your data is telling you by viewing your own easily-->
+                                    <!--created dashboards.-->
                                     <!--Find hidden opportunities for saving and spending.-->
-                                </p>
+                                </h2>
                                 <!--<p id="subscribe">-->
                                     <!---->
                                     <!--Traveling and tracking expenses is a great combo.-->
@@ -104,8 +109,9 @@
                                     <!--What if you could track your expenses in any currency,-->
                                     <!--and the sit back and watch where your money is going.-->
                                 <!--</p>-->
-                            </div>
                         <!--</div>-->
+                                    <a class="button hollow secondary" style="margin: 2em 0 0 0;" href="/play"> <strong>See In Action</strong></a>
+                    </div>
                     </div>
 
                 <!--</div>-->
@@ -113,9 +119,10 @@
 
                 <div class="banner">
                     <div class="flex flex-column">
-                        <div class="row column text-center">
-                            <h2>Subscribe to our newsletter for launch updates</h2>
+                        <div class="text-center">
+                            <h2>Be notified when JourMoney launches</h2>
                         </div>
+                        <!--<h2 style="font-size:1em;">Help us build something great for you</h2>-->
                         <form id="form-intro">
                             <!--<div class="row small-up-2 small-collapse">-->
                                 <!--<div class="column">-->
@@ -123,16 +130,16 @@
 
                                 <!--</div>-->
                                 <!--<div class="column">-->
-                                    <a type="submit" class="button warning" onclick="onSubscribe('subscribe-intro')"
+                                    <button type="submit" class="button warning" onclick="onSubscribe('subscribe-intro')"
                                             tabindex="2">
-                                        <strong>Subscribe</strong>
-                                    </a>
+                                        <strong>Notify me</strong>
+                                    </button>
                                 <!--</div>-->
                             <!--</div>-->
                         </form>
-                        <div id="subscribe-intro" style="height:1em;"></div>
                     </div>
                 </div>
+                <div class="text-center" id="subscribe-intro"></div>
             </div>
             <!-- /.intro-header -->
         </div>
@@ -228,21 +235,20 @@
                 <div class="column">
                     <h4>Dashboards</h4>
                     <span>
-                        Create your personal dashboard and visualize your spending in a way that works for you.
+                        Create your personal dashboard and see your spending habits in a way that works for you.
                     </span>
                 </div>
                 <div class="column">
                     <h4>Tags</h4>
                     <span>
-                        Add context to your transactions with tags.
-                        Use them to filter your graphs over the data you're interested in.
+                        Add context to your transactions with tags and use them to filter your graphs over the data you're interested in.
                     </span>
                 </div>
                 <div class="column">
                     <h4>Currencies</h4>
                     <span>
-                        Traveling goes hand in hand with cash in all currencies.
-                        Choose one that makes you happy, and we'll convert all local currencies to your chosen one.
+                        Dont worry about different currencies,
+                        choose one that suits you and we'll convert all local currencies to your chosen one.
                     </span>
                 </div>
                 <!--<div class="column">-->
@@ -280,10 +286,10 @@
                     </span>
                 </div>
                 <div class="column">
-                    <h4>Time periods</h4>
+                    <h4>Flexible Time periods</h4>
                     <span>
-                        Every traveler is different. View your finances in time
-                        periods that matches your life.
+                        Everyone's life is different. View your finances in time
+                        periods that matches yours.
                     </span>
                 </div>
             </div>
@@ -336,8 +342,8 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
 <script type="text/javascript">
     function onSubscribe(elementId) {
-          mixpanel.track("Newsletter Subscribe", {"element-id": elementId})
-          document.getElementById(elementId).innerHTML = "<div style='margin-left:50%;' class='loader-circle' />";
+          <!--mixpanel.track("Newsletter Subscribe", {"element-id": elementId})-->
+          document.getElementById('subscribe-intro').innerHTML = "<small><i class='fa fa-spinner fa-spin'></small>";
     }
 
     $(document).ready(function() {
@@ -349,10 +355,10 @@
               url: "/newsletter/subscribe",
               data: dataString,
               error: function(response) {
-                document.getElementById('subscribe-intro').innerHTML = "<p class='small'>" + JSON.parse(response.responseText).message + "</p>";
+                document.getElementById('subscribe-intro').innerHTML = "<small>" + JSON.parse(response.responseText).message + "</small>";
               },
               success: function(response) {
-                document.getElementById('subscribe-intro').innerHTML = "<p class='small'>" + JSON.parse(response).message + "</p>";
+                document.getElementById('subscribe-intro').innerHTML = "<small>" + JSON.parse(response).message + "</small>";
               }
             });
           });
