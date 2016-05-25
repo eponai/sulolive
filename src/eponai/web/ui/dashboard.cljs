@@ -137,9 +137,12 @@
   (on-breakpoint-change [this breakpoint]
     (om/update-state! this assoc :breakpoint (keyword breakpoint)))
 
-  (initLocalState [_]
+  (initLocalState [this]
     {:cols {:lg 4 :md 4 :sm 2 :xs 1 :xxs 1}
-     :breakpoint :lg})
+     :breakpoint :lg
+     :computed/new-track-on-save #(om/update-state! this assoc :new-track? false)
+     :computed/new-goal-on-save #(om/update-state! this assoc :new-goal? false)})
+
   (render [this]
     (let [{:keys [query/dashboard
                   query/transactions
@@ -148,7 +151,9 @@
                   grid-element
                   is-editing?
                   cols
-                  new-track? new-goal?]} (om/get-state this)
+                  new-track? new-goal?
+                  computed/new-track-on-save
+                  computed/new-goal-on-save]} (om/get-state this)
           widgets (:widget/_dashboard dashboard)
           project-id (:db/id (:dashboard/project dashboard))
           React (.-React js/window)]
@@ -173,7 +178,7 @@
                                                              {:dashboard dashboard
                                                               :widget-type :track
                                                               :index (calculate-last-index widgets)
-                                                              :on-save #(om/update-state! this assoc :new-track? false)}))
+                                                              :on-save new-track-on-save}))
                          :on-close #(om/update-state! this assoc :new-track? false)
                          :size "large"}))
          (when new-goal?
@@ -181,7 +186,7 @@
                                                              {:dashboard dashboard
                                                               :widget-type :goal
                                                               :index (calculate-last-index widgets)
-                                                              :on-save #(om/update-state! this assoc :new-goal? false)}))
+                                                              :on-save new-goal-on-save}))
                          :on-close #(om/update-state! this assoc :new-goal? false)
                          :size "medium"}))
 

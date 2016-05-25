@@ -61,12 +61,16 @@
        :input-filters filters}))
 
   (initLocalState [this]
-    (.init-state this (om/props this)))
+    (merge (.init-state this (om/props this))
+           {:computed/tag-filter-on-change (fn [tags]
+                                             (let [{:keys [tag-filter-key]} (om/get-state this)]
+                                               (om/update-state! this assoc-in [:input-filters tag-filter-key] tags)))}))
   (componentWillReceiveProps [this new-props]
     (om/set-state! this (.init-state this new-props)))
   (render [this]
     (let [{:keys [filters]} (om/props this)
-          {:keys [is-showing? new-filter input-filters tags tag-filter-key]} (om/get-state this)
+          {:keys [is-showing? new-filter input-filters tags tag-filter-key
+                  computed/tag-filter-on-change]} (om/get-state this)
           {:keys [on-change on-cancel]} (om/get-computed this)
 
           ;tag-filter-key (cond
@@ -111,8 +115,7 @@
                     "without tags"))
 
                 (->TagFilter (om/computed {:tags (get input-filters tag-filter-key)}
-                                          {:on-change   (fn [tags]
-                                                          (om/update-state! this assoc-in [:input-filters tag-filter-key] tags))
+                                          {:on-change   tag-filter-on-change
                                            :input-only? true}))
                 ;(dom/div
                 ;  nil

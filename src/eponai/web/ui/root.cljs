@@ -56,8 +56,11 @@
                         component)}))
 
   Object
-  (initLocalState [_]
-    {:sidebar-visible? false})
+  (initLocalState [this]
+    {:sidebar-visible?           false
+     :computed/side-bar-on-close #(when (:sidebar-visible? (om/get-state this))
+                                   (om/update-state! this assoc :sidebar-visible? false))
+     :computed/navbar-menu-on-sidebar-toggle #(om/update-state! this update :sidebar-visible? not)})
 
   (render
     [this]
@@ -65,22 +68,21 @@
                   proxy/nav-bar
                   proxy/side-bar
                   proxy/app-content] :as props} (om/props this)
-          {:keys [sidebar-visible?]} (om/get-state this)
+          {:keys [sidebar-visible?
+                  computed/side-bar-on-close
+                  computed/navbar-menu-on-sidebar-toggle]} (om/get-state this)
           factory (props->factory props)]
       (html
         [:div#jourmoney-ui
          ;[:div#wrapper]
          (nav/->SideBar (om/computed side-bar
                                      {:expanded? sidebar-visible?
-                                      :on-close  (when sidebar-visible?
-                                                   #(om/update-state! this assoc :sidebar-visible? false))}))
+                                      :on-close  side-bar-on-close}))
 
          [:div#main-page
-          (nav/->NavbarMenu (om/computed nav-bar
-                                         {:on-sidebar-toggle #(om/update-state! this update :sidebar-visible? not)}))
-          (nav/->NavbarSubmenu (om/computed nav-bar-submenu
-                                            {:content-factory factory
-                                             :app-content     app-content}))
+          (nav/->NavbarMenu (om/computed nav-bar {:on-sidebar-toggle navbar-menu-on-sidebar-toggle}))
+          (nav/->NavbarSubmenu (om/computed nav-bar-submenu {:content-factory factory
+                                                             :app-content     app-content}))
           [:div#page-content
            (when factory
              (factory (assoc app-content :ref :app-content)))]]]))))

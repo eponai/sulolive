@@ -207,10 +207,19 @@
 
   Object
   (initLocalState [this]
-    {:list-size 0
-     :on-tag-click #(do
-                     (om/update-state! this update-in [:tag-filter :filter/include-tags] utils/add-tag %)
-                     (om/update-query! this assoc-in [:params :filter] (.filter this)))})
+    {:list-size                         0
+     :computed/transaction-on-tag-click #(do
+                                          (om/update-state! this update-in [:tag-filter :filter/include-tags] utils/add-tag %)
+                                          (om/update-query! this assoc-in [:params :filter] (.filter this)))
+     :computed/tag-filter-on-change     #(do
+                                          (om/update-state! this assoc :tag-filter {:filter/include-tags %})
+                                          (om/update-query! this assoc-in [:params :filter] (.filter this)))
+     :computed/date-filter-on-change    #(do
+                                          (om/update-state! this assoc :date-filter %)
+                                          (om/update-query! this assoc-in [:params :filter] (.filter this)))
+     :computed/amount-filter-on-change  #(do
+                                          (om/update-state! this assoc :amount-filter %)
+                                          (om/update-query! this assoc-in [:params :filter] (.filter this)))})
 
   (componentDidMount [this]
     (when (zero? (:list-size (om/get-state this)))
@@ -255,31 +264,28 @@
          "."]]]))
 
   (render-filters [this]
-    (let [{:keys [tag-filter date-filter amount-filter]} (om/get-state this)]
+    (let [{:keys [tag-filter date-filter amount-filter
+                  computed/tag-filter-on-change
+                  computed/date-filter-on-change
+                  computed/amount-filter-on-change]} (om/get-state this)]
       (html
         [:div.transaction-filters
          [:div.row.expanded.collapse
           [:div.columns.small-3
            (filter/->TagFilter (om/computed {:tags (:filter/include-tags tag-filter)}
-                                            {:on-change #(do
-                                                          (om/update-state! this assoc :tag-filter {:filter/include-tags %})
-                                                          (om/update-query! this assoc-in [:params :filter] (.filter this)))}))]
+                                            {:on-change tag-filter-on-change}))]
           [:div.columns.small-9
            (filter/->DateFilter (om/computed {:filter date-filter}
-                                             {:on-change #(do
-                                                           (om/update-state! this assoc :date-filter %)
-                                                           (om/update-query! this assoc-in [:params :filter] (.filter this)))}))]]
+                                             {:on-change date-filter-on-change}))]]
 
          [:div.row.expanded
           (filter/->AmountFilter (om/computed {:amount-filter amount-filter}
-                                              {:on-change #(do
-                                                            (om/update-state! this assoc :amount-filter %)
-                                                            (om/update-query! this assoc-in [:params :filter] (.filter this)))}))]])))
+                                              {:on-change amount-filter-on-change}))]])))
 
   (render-transaction-list [this transactions]
     (let [{currencies      :query/all-currencies
            user            :query/current-user} (om/props this)
-          {:keys [on-tag-click list-size]} (om/get-state this)]
+          {:keys [computed/transaction-on-tag-click list-size]} (om/get-state this)]
       (html
         [:div
          (.render-filters this)
@@ -294,7 +300,7 @@
                         (om/computed props
                                      {:user         user
                                       :currencies   currencies
-                                      :on-tag-click on-tag-click})))
+                                      :on-tag-click transaction-on-tag-click})))
                     ;; TODO: Implement some way of seeing more than this limit:
                     (take list-size (sort-by #(get-in % [:transaction/date :date/timestamp]) > transactions)))]]]
             [:div.empty-message
@@ -316,9 +322,7 @@
            (.render-empty-message this))
          (when add-transaction?
            (let [on-close #(om/update-state! this assoc :add-transaction? false)]
-             (utils/modal {:content  (->AddTransaction
-                                       (om/computed add-transaction
-                                                    {:on-close on-close}))
+             (utils/modal {:content  (->AddTransaction (om/computed add-transaction {:on-close on-close}))
                            :on-close on-close})))]))))
 
 (def ->AllTransactions (om/factory AllTransactions))

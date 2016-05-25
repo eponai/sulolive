@@ -105,12 +105,24 @@
                         :widget/graph  g
                         :widget/report (.default-report this props)}})))
   (initLocalState [this]
-    (.init-state this (om/props this)))
+    (merge (.init-state this (om/props this))
+           {:computed/new-track-on-change (fn [new-widget & [{:keys [update-data?]}]]
+                                            (om/update-state! this assoc :input-widget new-widget)
+                                            (when update-data?
+                                              (om/update-query! this assoc-in [:params :filter] (:widget/filter new-widget))))
+            :computed/new-goal-on-change  (fn [new-widget & [{:keys [update-data?]}]]
+                                            (om/update-state! this assoc :input-widget new-widget)
+                                            ;(when update-data?
+                                            ;  (om/update-query! this assoc-in [:params :filter] (:widget/filter new-widget)))
+                                            )}))
+
   (componentWillReceiveProps [this new-props]
     (om/set-state! this (.init-state this new-props)))
   (render [this]
     (let [{:keys [query/transactions query/tags]} (om/props this)
-          {:keys [input-widget]} (om/get-state this)
+          {:keys [input-widget
+                  computed/new-track-on-change
+                  computed/new-goal-on-change]} (om/get-state this)
           {:keys [dashboard widget-type on-save]} (om/get-computed this)
           project-id (get-in dashboard [:dashboard/project :db/id])]
       (html
@@ -135,20 +147,13 @@
                                     {:widget       input-widget
                                      :tags         tags
                                      :transactions transactions
-                                     :on-change    (fn [new-widget & [{:keys [update-data?]}]]
-                                                     (om/update-state! this assoc :input-widget new-widget)
-                                                     (when update-data?
-                                                       (om/update-query! this assoc-in [:params :filter] (:widget/filter new-widget))))}))
+                                     :on-change    new-track-on-change}))
 
            (= :goal widget-type)
            (->NewGoal (om/computed {}
                                    {:widget       input-widget
                                     :transactions transactions
-                                    :on-change    (fn [new-widget & [{:keys [update-data?]}]]
-                                                    (om/update-state! this assoc :input-widget new-widget)
-                                                    ;(when update-data?
-                                                    ;  (om/update-query! this assoc-in [:params :filter] (:widget/filter new-widget)))
-                                                    )})))
+                                    :on-change    new-goal-on-change})))
          ;[:div.row.column.small-12.medium-10
          ; [:hr]]
          [:div.float-right

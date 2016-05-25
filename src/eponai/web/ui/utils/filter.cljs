@@ -220,8 +220,7 @@
   (componentWillReceiveProps [this new-props]
     (let [{state-tags :tags} (om/get-state this)
           {props-tags :tags} new-props]
-      (when (or (not state-tags)
-                (not= (seq props-tags) (seq state-tags)))
+      (when (not= (seq props-tags) (seq state-tags))
         (om/update-state! this assoc
                           :tags (or props-tags [])
                           :placeholder (:placeholder new-props)))))

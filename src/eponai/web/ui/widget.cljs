@@ -58,6 +58,13 @@
                                      {:filter/exclude-tags [:tag/name]}]}]}])
 
   Object
+  (initLocalState [this]
+    {:computed/dataset-filter-picker-on-change #(.update-data-set-filter this %)
+     :computed/tag-filter-picker-on-change #(.update-tag-filter this %)
+     :computed/date-range-picker-on-change #(.update-date-filter this %1 %2)
+     ;; TODO: Do something on cancel?
+     :computed/date-range-picker-on-cancel #()})
+
   (update-date-filter [this start end]
     (let [widget (om/props this)
           new-widget (update widget :widget/filter (fn [m]
@@ -88,7 +95,11 @@
     (let [{:keys [widget/report
                   widget/graph
                   widget/data] :as widget} (om/props this)
-          {:keys [tag-filters-showing?]} (om/get-state this)
+          {:keys [tag-filters-showing?
+                  computed/dataset-filter-picker-on-change
+                  computed/tag-filter-picker-on-change
+                  computed/date-range-picker-on-change
+                  computed/date-range-picker-on-cancel]} (om/get-state this)
           {:keys [project-id
                   id
                   transactions]} (om/get-computed this)]
@@ -113,19 +124,19 @@
 
               (->DatasetFilterPicker (om/computed {:key     "dataset-filter-picker"
                                                    :filters (:widget/filter widget)}
-                                                  {:on-change #(.update-data-set-filter this %)}))
+                                                  {:on-change dataset-filter-picker-on-change}))
 
               (when (not (or (= (:graph/style graph) :graph.style/burndown)
                              (= (:graph/style graph) :graph.style/progress-bar)))
                 (->TagFilterPicker (om/computed {:key          "tag-filter-picker"
                                                  :transactions transactions
                                                  :filters      (:graph/filter graph)}
-                                                {:on-apply #(.update-tag-filter this %)})))
+                                                {:on-apply tag-filter-picker-on-change})))
 
               (->DateRangePicker (om/computed {:key   "date-range-picker"
                                                :class "nav-link"}
-                                              {:on-apply  #(.update-date-filter this %1 %2)
-                                               :on-cancel #()}))
+                                              {:on-apply  date-range-picker-on-change
+                                               :on-cancel date-range-picker-on-cancel}))
 
               ;; Widget edit navigation
               ;(dom/a

@@ -30,8 +30,42 @@
 (defui NewTrack
   Object
   (initLocalState [this]
-    {:step 1
-     :selected-transactions :all-transactions})
+    {:step                                  1
+     :selected-transactions                 :all-transactions
+     :computed/date-filter-on-change        #(let [{:keys [on-change widget]} (om/get-computed this)]
+                                              (om/update-state! this assoc :date-filter %)
+                                              (on-change (-> widget
+                                                             (assoc :widget/filter (.get-filters this))
+                                                             (update-in [:widget/graph :graph/filter] merge %)) {:update-data? true}))
+     :computed/tag-filter-on-change         (memoize
+                                              (fn [tag-filter-key]
+                                                (fn [tags]
+                                                  (let [{:keys [on-change widget]} (om/get-computed this)
+                                                        {:keys [tag-filter]} (om/get-state this)
+                                                        new-filters (if (seq tags)
+                                                                      {tag-filter-key tags}
+                                                                      (dissoc tag-filter tag-filter-key))]
+                                                    (om/update-state! this assoc :tag-filter new-filters)
+                                                    (on-change (assoc widget :widget/filter (.get-filters this)) {:update-data? true})))))
+     :computed/amount-filter-on-change      #(let [{:keys [on-change widget]} (om/get-computed this)]
+                                              (om/update-state! this assoc :amount-filter %)
+                                              (on-change (assoc widget :widget/filter (.get-filters this)) {:update-data? true}))
+     :computed/include-tag-filter-on-change (fn [tags]
+                                              (let [{:keys [on-change widget]} (om/get-computed this)
+                                                    {:keys [graph-filter]} (om/get-state this)
+                                                    new-filters (if (seq tags)
+                                                                  (merge graph-filter {:filter/include-tags tags})
+                                                                  (dissoc graph-filter :filter/include-tags))]
+                                                (om/update-state! this assoc :graph-filter new-filters)
+                                                (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))
+     :computed/exclude-tag-filter-on-change (fn [tags]
+                                              (let [{:keys [on-change widget]} (om/get-computed this)
+                                                    {:keys [graph-filter]} (om/get-state this)
+                                                    new-filters (if (seq tags)
+                                                                  (merge graph-filter {:filter/exclude-tags tags})
+                                                                  (dissoc graph-filter :filter/exclude-tags))]
+                                                (om/update-state! this assoc :graph-filter new-filters)
+                                                (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))})
   (set-filters [this props]
     (let [{:keys [widget]} (::om/computed props)]
       (om/update-state! this assoc
@@ -71,7 +105,12 @@
                    date-filter
                    amount-filter
                    graph-filter
-                   selected-transactions]} (om/get-state this)
+                   selected-transactions
+                   computed/date-filter-on-change
+                   computed/tag-filter-on-change
+                   computed/amount-filter-on-change
+                   computed/include-tag-filter-on-change
+                   computed/exclude-tag-filter-on-change]} (om/get-state this)
           {:keys [widget/graph]} widget]
       (html
         [:div
@@ -102,11 +141,7 @@
            [:div.columns.small-12
             [:div
              (filter/->DateFilter (om/computed {:filter date-filter}
-                                               {:on-change #(do
-                                                             (om/update-state! this assoc :date-filter %)
-                                                             (on-change (-> widget
-                                                                            (assoc :widget/filter (.get-filters this))
-                                                                            (update-in [:widget/graph :graph/filter] merge %)) {:update-data? true}))}))]]]
+                                               {:on-change date-filter-on-change}))]]]
           [:div.row
            [:div.columns.small-12.medium-6
             [:select
@@ -124,22 +159,15 @@
            [:div.columns.small-12.medium-6
             (let [tag-filter-fn (fn [tag-filter-key]
                                   (filter/->TagFilter (om/computed {:tags (get tag-filter tag-filter-key)}
-                                                                   {:tag-list tags
-                                                                    :on-change (fn [tags]
-                                                                                 (let [new-filters (if (seq tags)
-                                                                                                     {tag-filter-key tags}
-                                                                                                     (dissoc tag-filter tag-filter-key))]
-                                                                                   (om/update-state! this assoc :tag-filter new-filters)
-                                                                                   (on-change (assoc widget :widget/filter (.get-filters this)) {:update-data? true})))})))]
+                                                                   {:tag-list  tags
+                                                                    :on-change (tag-filter-on-change tag-filter-key)})))]
               (condp = selected-transactions
                 :include-tags (tag-filter-fn :filter/include-tags)
                 :exclude-tags (tag-filter-fn :filter/exclude-tags)
                 :all-transactions nil))]]
           [:div.row
            (filter/->AmountFilter (om/computed {:amount-filter amount-filter}
-                                               {:on-change #(do
-                                                             (om/update-state! this assoc :amount-filter %)
-                                                             (on-change (assoc widget :widget/filter (.get-filters this)) {:update-data? true}))}))]]
+                                               {:on-change amount-filter-on-change}))]]
          [:hr]
          [:p.currency-code "Preview"]
          [:div.row
@@ -205,20 +233,10 @@
            [:div.row
             [:div.columns.small-12.medium-6
              (filter/->TagFilter (om/computed {:tags        (:filter/include-tags graph-filter)}
-                                              {:on-change (fn [tags]
-                                                            (let [new-filters (if (seq tags)
-                                                                                (merge graph-filter {:filter/include-tags tags})
-                                                                                (dissoc graph-filter :filter/include-tags))]
-                                                              (om/update-state! this assoc :graph-filter new-filters)
-                                                              (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))}))]
+                                              {:on-change include-tag-filter-on-change}))]
             [:div.columns.small-12.medium-6
              (filter/->TagFilter (om/computed {:tags        (:filter/exclude-tags graph-filter)}
-                                              {:on-change (fn [tags]
-                                                            (let [new-filters (if (seq tags)
-                                                                                (merge graph-filter {:filter/exclude-tags tags})
-                                                                                (dissoc graph-filter :filter/exclude-tags))]
-                                                              (om/update-state! this assoc :graph-filter new-filters)
-                                                              (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))}))]])
+                                              {:on-change exclude-tag-filter-on-change}))]])
          ]))))
 
 (def ->NewTrack (om/factory NewTrack))

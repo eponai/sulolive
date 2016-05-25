@@ -45,6 +45,11 @@
   (query [_]
     [{:proxy/add-transaction (om/get-query AddTransaction)}])
   Object
+  (initLocalState [this]
+    {:computed/share-project-on-save #(let [project (-> (om/get-computed this)
+                                                        (get-in [:app-content :query/active-project :ui.component.project/active-project]))]
+                                       (.share-project this (:project/uuid project) %))})
+
   (share [this]
     (om/update-state! this assoc :share-project? true))
 
@@ -60,7 +65,8 @@
 
           {:keys [menu-visible?
                   new-transaction?
-                  share-project?]} (om/get-state this)
+                  share-project?
+                  computed/share-project-on-save]} (om/get-state this)
           {:keys [db/id]} project
           on-close #(om/update-state! this assoc :menu-visible? false)]
       (html
@@ -113,7 +119,7 @@
             (let [on-close #(om/update-state! this assoc :share-project? false)]
               (utils/modal {:content (->Shareproject (om/computed {}
                                                                   {:on-close on-close
-                                                                   :on-save #(.share-project this (:project/uuid project) %)}))
+                                                                   :on-save share-project-on-save}))
                             :on-close on-close})))]]))))
 
 (def ->SubMenu (om/factory SubMenu))

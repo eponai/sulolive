@@ -80,8 +80,7 @@
 (defui Addproject
   Object
   (render [this]
-    (let [{:keys [on-close
-                  on-save]} (om/get-computed this)
+    (let [{:keys [on-close on-save]} (om/get-computed this)
           {:keys [input-name]} (om/get-state this)]
       (html
         [:div
@@ -117,8 +116,7 @@
   Object
   (render [this]
     (let [{:keys [proxy/project-submenu]} (om/props this)
-          {:keys [content-factory
-                  app-content]} (om/get-computed this)]
+          {:keys [content-factory app-content]} (om/get-computed this)]
       (html
         [:div#sub-nav-bar
          [:div
@@ -138,16 +136,19 @@
                      {:stripe/subscription [:stripe.subscription/status
                                             :stripe.subscription/period-end]}]}])
   Object
-  (initLocalState [_]
-    {:menu-visible? false
-     :new-transaction? false
-     :add-widget? false})
+  (initLocalState [this]
+    {:menu-visible?                     false
+     :new-transaction?                  false
+     :add-widget?                       false
+     :computed/add-transaction-on-close #(om/update-state! this assoc :new-transaction? false)})
+
   (render [this]
     (let [{:keys [proxy/add-transaction
                   query/current-user
                   query/stripe]} (om/props this)
           {:keys [menu-visible?
-                  new-transaction?]} (om/get-state this)
+                  new-transaction?
+                  computed/add-transaction-on-close]} (om/get-state this)
           {:keys [on-sidebar-toggle]} (om/get-computed this)
           {:keys [stripe/subscription]} stripe
           {subscription-status :stripe.subscription/status} subscription]
@@ -187,11 +188,10 @@
                 (profile-menu {:on-close #(open-profile-menu this false)}))]])]
 
          (when new-transaction?
-           (let [on-close #(om/update-state! this assoc :new-transaction? false)]
-             (utils/modal {:content  (->AddTransaction
-                                       (om/computed add-transaction
-                                                    {:on-close on-close}))
-                           :on-close on-close})))]))))
+           (utils/modal {:content  (->AddTransaction
+                                     (om/computed add-transaction
+                                                  {:on-close add-transaction-on-close}))
+                         :on-close add-transaction-on-close}))]))))
 
 (defn show-subscribe-modal [component]
   (utils/modal {:on-close #(om/update-state! component assoc :playground/show-subscribe-modal? false)
@@ -225,8 +225,9 @@
                                             :stripe.subscription/period-end]}]}
      {:query/active-project [:ui.component.project/uuid]}])
   Object
-  (initLocalState [_]
-    {:new-project? false})
+  (initLocalState [this]
+    {:new-project? false
+     :computed/new-project-on-save #(.save-new-project this %)})
   (save-new-project [this name]
     (om/transact! this `[(project/save ~{:project/uuid (d/squuid)
                                         :project/name name
@@ -239,7 +240,9 @@
                   query/current-user
                   query/stripe]} (om/props this)
           {:keys [on-close expanded?]} (om/get-computed this)
-          {:keys [new-project? drop-target playground/show-subscribe-modal?]} (om/get-state this)
+          {:keys [new-project? drop-target
+                  playground/show-subscribe-modal?
+                  computed/new-project-on-save]} (om/get-state this)
           {:keys [stripe/subscription]} stripe
           {subscription-status :stripe.subscription/status} subscription]
       (html
@@ -327,7 +330,7 @@
              (utils/modal {:content  (->Addproject (om/computed
                                                     {}
                                                     {:on-close on-close
-                                                     :on-save  #(.save-new-project this %)}))
+                                                     :on-save  new-project-on-save}))
                            :on-close on-close})))]))))
 
 (def ->SideBar (om/factory SideBar))
