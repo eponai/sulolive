@@ -6,7 +6,7 @@
     [goog.string :as gstring]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]))
+    [taoensso.timbre :refer-macros [debug error]]))
 
 (defui BarChart
   Object
@@ -35,7 +35,7 @@
 
   (create [this]
     (let [{:keys [id width height data]} (om/props this)
-          svg (d3/build-svg (str "#bar-chart-" id) width height)
+          svg (d3/build-svg (om/react-ref this (str "bar-chart-" id)) width height)
 
           js-data (clj->js data)
 
@@ -213,7 +213,7 @@
     (let [{:keys [id]} (om/props this)]
       (html
         [:div
-         (opts {:id (str "bar-chart-" id)
+         (opts {:ref (str "bar-chart-" id)
                 :style {:height "100%"
                         :width "100%"}})]))))
 

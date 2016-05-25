@@ -14,7 +14,7 @@
     {:start-val 0})
   (componentDidMount [this]
     (let [{:keys [id width height]} (om/props this)
-          svg (d3/build-svg (str "#number-chart-" id) width height)]
+          svg (d3/build-svg (om/react-ref this (str "number-chart-" id)) width height)]
       (om/update-state! this assoc :svg svg)))
   (componentWillReceiveProps [this _]
     (let [{:keys [data]} (om/props this)
@@ -52,7 +52,7 @@
     (let [{:keys [id]} (om/props this)]
       (html
         [:div
-         (opts {:id (str "number-chart-" id)
+         (opts {:ref (str "number-chart-" id)
                 :style {:height "100%"
                         :width "100%"}})]))))
 

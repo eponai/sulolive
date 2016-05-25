@@ -90,6 +90,7 @@
                                              :project/users]}]}
      {:query/transactions (om/get-query Transaction)}
      {:proxy/new-widget (om/get-query NewWidget)}])
+
   Object
   (componentWillReceiveProps [this new-props]
     (let [{:keys [cols]} (om/get-state this)
@@ -99,23 +100,19 @@
 
   (update-layout [this]
     (let [{:keys [cols]} (om/get-state this)
-          widgets (:widget/_dashboard (:query/dashboard (om/props this)))
-          WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
-          grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))]
-      (om/update-state! this
-                        assoc
-                        :layout (clj->js (widgets->layout cols widgets))
-                        :content :dashboard
-                        :grid-element grid-element)))
+          widgets (:widget/_dashboard (:query/dashboard (om/props this)))]
+      (om/update-state! this assoc :layout (clj->js (widgets->layout cols widgets)))))
+
   (componentDidMount [this]
     (let [sidebar (.getElementById js/document "sidebar")]
       (when sidebar
-        (.addEventListener sidebar "transitionend" #(.update-layout this)))
+        (.addEventListener sidebar "transitionend" (:side-bar-transition-fn (om/get-state this))))
       (.update-layout this)))
+
   (componentWillUnmount [this]
     (let [sidebar (.getElementById js/document "sidebar")]
       (when sidebar
-        (.removeEventListener sidebar "transitionend" #(.update-layout this)))))
+        (.removeEventListener sidebar "transitionend" (:side-bar-transition-fn (om/get-state this))))))
 
   (save-layout [this widgets layout]
     (let [{:keys [cols breakpoint]} (om/get-state this)
@@ -138,10 +135,15 @@
     (om/update-state! this assoc :breakpoint (keyword breakpoint)))
 
   (initLocalState [this]
-    {:cols {:lg 4 :md 4 :sm 2 :xs 1 :xxs 1}
-     :breakpoint :lg
-     :computed/new-track-on-save #(om/update-state! this assoc :new-track? false)
-     :computed/new-goal-on-save #(om/update-state! this assoc :new-goal? false)})
+    (let [WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
+          grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))]
+      {:cols {:lg 4 :md 4 :sm 2 :xs 1 :xxs 1}
+       :breakpoint :lg
+       :grid-element grid-element
+       :content :dashboard
+       :side-bar-transition-fn #(.update-layout this)
+       :computed/new-track-on-save #(om/update-state! this assoc :new-track? false)
+       :computed/new-goal-on-save #(om/update-state! this assoc :new-goal? false)}))
 
   (render [this]
     (let [{:keys [query/dashboard

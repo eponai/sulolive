@@ -103,7 +103,6 @@
           {:keys [project-id
                   id
                   transactions]} (om/get-computed this)]
-
       (dom/div
         #js {:className "widget"}
         (dom/header
@@ -174,9 +173,7 @@
           (let [{:keys [graph/style]} graph
                 settings {:data         data
                           :id           (str (or (:widget/uuid widget) id "widget"))
-                          ;; Pass the widget to make this component re-render
-                          ;; if the widget data changes.
-                          :widget       widget
+
                           ;:width        "100%"
                           ;:height       "100%"
                           :title-axis-y "Amount ($)"}]

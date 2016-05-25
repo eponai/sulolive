@@ -2,14 +2,15 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
     [cljsjs.d3]
+    [cljsjs.react.dom]
     [goog.string :as gstring]
     [sablono.core :refer-macros [html]]
     [om.next :as om]
-    [taoensso.timbre :refer-macros [debug]]))
+    [taoensso.timbre :refer-macros [debug error]]))
 
-(defn build-svg [element width height]
+(defn build-svg [ref width height]
   (-> js/d3
-      (.select element)
+      (.select (js/ReactDOM.findDOMNode ref))
       (.append "svg")
       (.style #js {:width width :height height})))
 

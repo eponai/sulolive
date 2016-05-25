@@ -42,7 +42,7 @@
 
   (create [this]
     (let [{:keys [id width height data]} (om/props this)
-          svg (d3/build-svg (str "#burndown-chart-" id) width height)
+          svg (d3/build-svg (om/react-ref this (str "burndown-chart-" id)) width height)
           chart-data [{:key    "user-input"
                        :values (apply concat (mapv :values data))}
                       {:key    "guideline"
@@ -263,7 +263,7 @@
     (let [{:keys [id]} (om/props this)]
       (html
         [:div
-         (opts {:id (str "burndown-chart-" id)
+         (opts {:ref (str "burndown-chart-" id)
                 :style {:height "100%"
                         :width "100%"}})]))))
 

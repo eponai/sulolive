@@ -42,7 +42,7 @@
 
   (create [this]
     (let [{:keys [id width height data]} (om/props this)
-          svg (d3/build-svg (str "#line-chart-" id) width height)
+          svg (d3/build-svg (om/react-ref this (str "line-chart-" id)) width height)
 
           js-data (clj->js data)
 
@@ -242,7 +242,7 @@
     (let [{:keys [id]} (om/props this)]
       (html
         [:div
-         (opts {:id (str "line-chart-" id)
+         (opts {:ref (str "line-chart-" id)
                 :style {:height "100%"
                         :width "100%"}})]))))
 

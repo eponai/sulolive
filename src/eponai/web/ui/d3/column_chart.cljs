@@ -6,7 +6,7 @@
     [goog.string :as gstring]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]))
+    [taoensso.timbre :refer-macros [debug error]]))
 
 (defui ColumnChart
   Object
@@ -33,7 +33,7 @@
 
   (create [this]
     (let [{:keys [id width height data]} (om/props this)
-          svg (d3/build-svg (str "#column-chart-" id) width height)
+          svg (d3/build-svg (om/react-ref this (str "column-chart-" id)) width height)
 
           js-data (clj->js data)
 
@@ -185,8 +185,7 @@
     (d3/create-chart this))
 
   (componentDidUpdate [this _ _]
-    (d3/update-chart this)
-    )
+    (d3/update-chart this))
 
   (componentWillReceiveProps [this next-props]
     (d3/update-chart-data this (:data next-props)))
@@ -195,7 +194,7 @@
     (let [{:keys [id]} (om/props this)]
       (html
         [:div
-         (opts {:id (str "column-chart-" id)
+         (opts {:ref (str "column-chart-" id)
                 :style {:height "100%"
                         :width "100%"}})]))))
 

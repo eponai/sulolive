@@ -59,6 +59,12 @@
       [ISeqable
        (-seq [this] (seq coll))
 
+       IHash
+       (-hash [p] (hash coll))
+
+       IEquiv
+       (-equiv [p o] (and (instance? PrefixList o) (= (.-coll p) (.-coll o))))
+
        IPrintWithWriter
        (-pr-writer [pl writer opts]
                    (-write writer (str "#eponai/PrefixList "))
@@ -66,8 +72,17 @@
                                         :by (.-by pl) :lists (.-lists pl)})))]
 
       :clj
-      [clojure.lang.Seqable
-       (seq [_] (seq coll))]))
+      [Object
+       (hashCode [p] (hash coll))
+
+       clojure.lang.Seqable
+       (seq [_] (seq coll))
+
+       clojure.lang.IPersistentCollection
+       (equiv [p o] (and (instance? PrefixList o) (= (.coll p) (.coll o))))
+       (empty [p] (PrefixList. [] 0 nil {}))
+       (count [p] (count coll))
+       (cons [p v] (PrefixList. (cons v (.coll p)) 0 (.by p) {}))]))
 
 (extend-protocol IFilterPrefix
   nil

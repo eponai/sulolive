@@ -4,11 +4,13 @@
             [sablono.core :refer-macros [html]]
             [om.next :as om]
             [om.dom :as dom]
+            [goog.object]
             [taoensso.timbre :refer-macros [debug warn]]
             [eponai.common.format :as format]
             [eponai.common.datascript :as common.datascript]
             [datascript.core :as d]
-            [eponai.web.routes :as routes]))
+            [eponai.web.routes :as routes]
+            [clojure.data :as diff]))
 
 (def ^:dynamic *playground?* false)
 
@@ -280,3 +282,34 @@
                                                   :transaction/project {:project/uuid (str project-uuid)}
                                                   :mutation-uuid      (d/squuid)})])
     (om/update-state! component dissoc :drop-target)))
+
+;;############# Debugging ############################
+
+(defn shouldComponentUpdate [this next-props next-state]
+  (let [next-children (. next-props -children)
+        next-children (if (undefined? next-children) nil next-children)
+        next-props (goog.object/get next-props "omcljs$value")
+        next-props (cond-> next-props
+                           (instance? om/OmProps next-props) om.next/unwrap)
+        children (.. this -props -children)
+        pe (not= (om.next/props this)
+                 next-props)
+        se (and (.. this -state)
+                (not= (goog.object/get (. this -state) "omcljs$state")
+                      (goog.object/get next-state "omcljs$state")))
+        ce (not= children next-children)
+
+        pdiff (diff/diff (om.next/props this) next-props)
+        sdiff (diff/diff (when (.. this -state) (goog.object/get (. this -state) "omcljs$state"))
+                         (goog.object/get next-state "omcljs$state"))
+        cdiff (diff/diff children next-children)
+        prn-diff (fn [label [in-first in-second :as diff]]
+                   (when (or (some? in-first) (some? in-second))
+                     (debug label " diff:" diff)))]
+    (debug "props-not-eq?: " pe
+           " state-not-eq?:" se
+           " children-not-eq?:" ce)
+    (prn-diff "props diff" pdiff)
+    (prn-diff "state diff" sdiff)
+    (prn-diff "children diff" cdiff)
+    (or pe se ce)))

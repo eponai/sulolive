@@ -23,7 +23,7 @@
   Object
   (create [this]
     (let [{:keys [id width height data]} (om/props this)
-          svg (d3/build-svg (str "#progress-bar-" id) width height)
+          svg (d3/build-svg (om/react-ref this (str "progress-bar-" id)) width height)
           {:keys [margin]} (om/get-state this)
           {inner-height :height
            inner-width :width} (d3/svg-dimensions svg {:margin margin})
@@ -157,7 +157,7 @@
     (let [{:keys [id]} (om/props this)]
       (html
         [:div
-         (opts {:id (str "progress-bar-" id)
+         (opts {:ref (str "progress-bar-" id)
                 :style {:height "100%"
                         :width "100%"}})]))))
 

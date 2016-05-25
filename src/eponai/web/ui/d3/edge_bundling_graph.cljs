@@ -70,7 +70,7 @@
   (create [this]
     (let [{:keys [id width height data]} (om/props this)
           {:keys [margin]} (om/get-state this)
-          svg (d3/build-svg (str "#edge-bundling-" id) width height)
+          svg (d3/build-svg (om/react-ref this (str "edge-bundling-" id)) width height)
           {inner-height :height
            inner-width :width} (d3/svg-dimensions svg {:margin margin})
 
@@ -180,7 +180,7 @@
     (let [{:keys [id]} (om/props this)]
       (html
         [:div
-         (opts {:id    (str "edge-bundling-" id)
+         (opts {:ref    (str "edge-bundling-" id)
                 :style {:height "100%"
                         :width  "100%"}})]))))
 
