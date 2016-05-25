@@ -200,9 +200,11 @@
 
 (defn tag-input [{:keys [input-tag
                          selected-tags
+                         ref
                          on-change
                          on-add-tag
                          on-delete-tag
+                         on-key-down
                          placeholder
                          no-render-tags?
                          input-only?]}]
@@ -212,9 +214,11 @@
      (if input-only?
        [:input
         {:type        "text"
+         :ref         ref
          :value       (or (:tag/name input-tag) "")
          :on-change   #(on-change {:tag/name (.-value (.-target %))})
          :on-key-down (fn [e]
+                        (when on-key-down (on-key-down e))
                         (on-enter-down e #(on-add-tag {:tag/name %})))
          :placeholder (or placeholder "Filter tags...")}]
 
@@ -222,9 +226,11 @@
         (opts {:style {:margin-bottom 0}})
         [:input.input-group-field
          {:type        "text"
+          :ref         ref
           :value       (or (:tag/name input-tag) "")
           :on-change   #(on-change {:tag/name (.-value (.-target %))})
           :on-key-down (fn [e]
+                         (when on-key-down (on-key-down e))
                          (on-enter-down e #(on-add-tag {:tag/name (clojure.string/trim %)})))
           :placeholder (or placeholder "Filter tags...")}]
         [:span.input-group-label

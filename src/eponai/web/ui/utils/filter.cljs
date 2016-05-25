@@ -8,7 +8,9 @@
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]
-    [eponai.common.format :as f]))
+    [eponai.common.format :as f]
+    [goog.events :as events]
+    [cljsjs.react.dom]))
 
 (defui AmountFilter
   Object
@@ -197,7 +199,9 @@
       (debug "tagfilter: new tags (added): " new-tags)
       (om/update-state! this assoc :tags new-tags)
       (when on-change
-        (on-change new-tags))))
+        (on-change new-tags))
+      true))
+
   (delete-tag [this tag]
     (let [{:keys [on-change]} (om/get-computed this)
           {:keys [tags]} (om/get-state this)
@@ -206,6 +210,11 @@
       (debug "tagfilter: new tags (deleted): " new-tags)
       (when on-change
         (on-change new-tags))))
+
+  (focus-ref [this ref-name]
+    (when-let [ref (om/react-ref this ref-name)]
+      (.focus (js/ReactDOM.findDOMNode ref))
+      true))
 
   (initLocalState [this]
     (let [{:keys [tags placeholder]} (om/props this)]
@@ -217,7 +226,8 @@
 
   (render [this]
     (let [{:keys [input-tag tags placeholder]} (om/get-state this)
-          {:keys [type input-only? tag-list]} (om/get-computed this)]
+          {:keys [type input-only? tag-list]} (om/get-computed this)
+          tag-idx->ref (fn [i] (str "tag-suggestion-" i))]
       (html
         (cond
           (nil? type)
@@ -228,19 +238,38 @@
 
            (utils/tag-input {:input-tag     input-tag
                              :selected-tags tags
+                             :ref           (tag-idx->ref -1)
                              :on-change     #(om/update-state! this assoc :input-tag %)
                              :on-add-tag    #(do (om/update-state! this assoc :input-tag "")
                                                  (.add-tag this %))
                              :on-delete-tag #(.delete-tag this %)
+                             :on-key-down   (fn [e]
+                                              (when (= events/KeyCodes.DOWN (.-keyCode e))
+                                                (.preventDefault e)
+                                                (.focus-ref this (tag-idx->ref 0))))
                              :input-only?   input-only?
                              :placeholder   (or placeholder "Enter to add tag...")})
            [:div.dropdown
-            (let [tag-dd (take 5 (map #(vector :div {:key      (:tag/name %)
-                                                     :style    {:display "flex" :flex-direction "row" :justify-content "space-between"}
-                                                     :on-click (fn [] (.add-tag this %))}
-                                               [:span (:tag/name %)]
-                                               [:span (:tag/count %)])
-                                      (pl/filter-prefix tag-list (:tag/name input-tag))))]
+            (let [tag-dd (into [] (comp (map-indexed
+                                          (fn [i {:keys [tag/name tag/count] :as tag}]
+                                            [:a
+                                             {:key         name
+                                              :tab-index   -1
+                                              :ref         (tag-idx->ref i)
+                                              :style       {:display "flex" :flex-direction "row" :justify-content "space-between"}
+                                              :on-click    #(.add-tag this tag)
+                                              :on-key-down (fn [e]
+                                                             (let [matched (condp = (.-keyCode e)
+                                                                             events/KeyCodes.DOWN (.focus-ref this (tag-idx->ref (inc i)))
+                                                                             events/KeyCodes.UP (.focus-ref this (tag-idx->ref (dec i)))
+                                                                             events/KeyCodes.ENTER (.add-tag this tag)
+                                                                             nil)]
+                                                               (when matched
+                                                                 (.preventDefault e))))}
+                                             [:span name]
+                                             [:span count]]))
+                                        (take 5))
+                               (pl/filter-prefix tag-list (:tag/name input-tag)))]
               tag-dd)]])))))
 
 (def ->TagFilter (om/factory TagFilter))
