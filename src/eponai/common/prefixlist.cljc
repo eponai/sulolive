@@ -69,6 +69,11 @@
       [clojure.lang.Seqable
        (seq [_] (seq coll))]))
 
+(extend-protocol IFilterPrefix
+  nil
+  (-walk-prefix [this prefix] nil)
+  (-filter-prefix [this prefix] nil))
+
 ;; --- API ------------------------
 
 (defn prepare-prefix [pl prefix]
@@ -77,9 +82,15 @@
 (defn filter-prefix [pl prefix]
   (seq (-filter-prefix (-walk-prefix pl prefix) prefix)))
 
-(defn prefix-list
-  ([coll] (prefix-list coll nil))
-  ([coll by] (PrefixList. coll 0 by {})))
+(defn prefix-list-by [f coll]
+  (PrefixList. coll 0 f {}))
+
+(defn prefix-list [coll]
+  (prefix-list-by nil coll))
+
+
+(defn prefix-list? [x]
+  (instance? PrefixList x))
 
 ;; --- Protocol extensions --------
 
