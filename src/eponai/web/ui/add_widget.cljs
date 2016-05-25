@@ -41,6 +41,7 @@
                              {:transaction/date [:date/ymd
                                                  :date/timestamp]}]}
         {:filter ?filter})
+     :query/tags
      ;{:query/active-widget (om/get-query Widget)}
      ;{:query/widget-type [:ui.component.widget/type]}
      ])
@@ -108,7 +109,7 @@
   (componentWillReceiveProps [this new-props]
     (om/set-state! this (.init-state this new-props)))
   (render [this]
-    (let [{:keys [query/transactions]} (om/props this)
+    (let [{:keys [query/transactions query/tags]} (om/props this)
           {:keys [input-widget]} (om/get-state this)
           {:keys [dashboard widget-type on-save]} (om/get-computed this)
           project-id (get-in dashboard [:dashboard/project :db/id])]
@@ -132,6 +133,7 @@
            (= :track widget-type)
            (->NewTrack (om/computed {}
                                     {:widget       input-widget
+                                     :tags         tags
                                      :transactions transactions
                                      :on-change    (fn [new-widget & [{:keys [update-data?]}]]
                                                      (om/update-state! this assoc :input-widget new-widget)

@@ -2,6 +2,7 @@
   (:require
     [eponai.client.ui :refer-macros [opts]]
     [eponai.common.format.date :as date]
+    [eponai.common.prefixlist :as pl]
     [eponai.web.ui.datepicker :refer [->Datepicker]]
     [eponai.web.ui.utils :as utils]
     [om.next :as om :refer-macros [defui]]
@@ -194,9 +195,7 @@
           {:keys [tags]} (om/get-state this)
           new-tags (utils/add-tag tags tag)]
       (debug "tagfilter: new tags (added): " new-tags)
-      (om/update-state! this assoc
-                        :input-tag ""
-                        :tags new-tags)
+      (om/update-state! this assoc :tags new-tags)
       (when on-change
         (on-change new-tags))))
   (delete-tag [this tag]
@@ -218,7 +217,7 @@
 
   (render [this]
     (let [{:keys [input-tag tags placeholder]} (om/get-state this)
-          {:keys [type input-only?]} (om/get-computed this)]
+          {:keys [type input-only? tag-list]} (om/get-computed this)]
       (html
         (cond
           (nil? type)
@@ -230,9 +229,18 @@
            (utils/tag-input {:input-tag     input-tag
                              :selected-tags tags
                              :on-change     #(om/update-state! this assoc :input-tag %)
-                             :on-add-tag    #(.add-tag this %)
+                             :on-add-tag    #(do (om/update-state! this assoc :input-tag "")
+                                                 (.add-tag this %))
                              :on-delete-tag #(.delete-tag this %)
                              :input-only?   input-only?
-                             :placeholder   (or placeholder "Enter to add tag...")})])))))
+                             :placeholder   (or placeholder "Enter to add tag...")})
+           [:div.dropdown
+            (let [tag-dd (take 5 (map #(vector :div {:key      (:tag/name %)
+                                                     :style    {:display "flex" :flex-direction "row" :justify-content "space-between"}
+                                                     :on-click (fn [] (.add-tag this %))}
+                                               [:span (:tag/name %)]
+                                               [:span (:tag/count %)])
+                                      (pl/filter-prefix tag-list (:tag/name input-tag))))]
+              tag-dd)]])))))
 
 (def ->TagFilter (om/factory TagFilter))

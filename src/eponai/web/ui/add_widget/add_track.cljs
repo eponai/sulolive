@@ -66,6 +66,7 @@
   (render [this]
     (let [{:keys [widget
                   transactions
+                  tags
                   on-change]} (om/get-computed this)
            {:keys [step
                    tag-filter
@@ -124,8 +125,9 @@
               "Transactions without tags"]]]
            [:div.columns.small-12.medium-6
             (let [tag-filter-fn (fn [tag-filter-key]
-                                  (filter/->TagFilter (om/computed {:tags        (get tag-filter tag-filter-key)}
-                                                                   {:on-change (fn [tags]
+                                  (filter/->TagFilter (om/computed {:tags (get tag-filter tag-filter-key)}
+                                                                   {:tag-list tags
+                                                                    :on-change (fn [tags]
                                                                                  (let [new-filters (if (seq tags)
                                                                                                      {tag-filter-key tags}
                                                                                                      (dissoc tag-filter tag-filter-key))]

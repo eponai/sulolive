@@ -1,10 +1,22 @@
 (ns eponai.client.parser.read
   (:require [datascript.core :as d]
             [eponai.common.database.pull :as p]
+            [eponai.common.prefixlist :as pl]
             [eponai.common.parser :refer [read]]
-            [eponai.common.parser.util :as parser.util]
             [taoensso.timbre :refer-macros [debug error]]
             [eponai.common.format :as f]))
+
+;; ################ Local reads  ####################
+;; Generic, client only local reads goes here.
+
+(defmethod read :query/tags
+  [{:keys [db target]} _ _]
+  (when-not target
+    (let [tags (->> (p/pull-many db '[:db/id :tag/name] (p/all-with db {:where '[[?e :tag/name]]}))
+                    (map (fn [tag] (assoc tag :tag/count (count (p/all-with db {:where [['?e :transaction/tags (:db/id tag)]]})))))
+                    (sort-by :tag/name)
+                    (pl/prefix-list-by :tag/name))]
+      {:value tags})))
 
 ;; ################ Remote reads ####################
 ;; Remote reads goes here. We share these reads
