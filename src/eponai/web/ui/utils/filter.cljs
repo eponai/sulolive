@@ -21,7 +21,6 @@
   (render [this]
     (let [{:keys [amount-filter]} (om/get-state this)
           {:keys [on-change]} (om/get-computed this)]
-      (debug "Filter with amount: " amount-filter)
       (html
         [:div.row.expanded
          [:div.columns.small-1.text-right
@@ -82,7 +81,6 @@
     (om/set-state! this (.init-filters this (:filter (om/props this)))))
 
   (componentWillReceiveProps [this new-props]
-    (debug "render receiving props: " new-props)
     (om/update-state! this assoc :filter (:filter new-props)))
 
   (set-this-month-filter [this]
@@ -144,7 +142,6 @@
 
   (render [this]
     (let [{:keys [filter type]} (om/get-state this)]
-      (debug "Render filter type: " type)
       (html
         [:div.filters
          [:div.row.small-up-1.medium-up-3
@@ -221,8 +218,13 @@
       {:tags        (or tags [])
        :placeholder placeholder}))
   (componentWillReceiveProps [this new-props]
-    (let [{:keys [tags placeholder]} new-props]
-      (om/update-state! this assoc :tags (or tags []) :placeholder placeholder)))
+    (let [{state-tags :tags} (om/get-state this)
+          {props-tags :tags} new-props]
+      (when (or (not state-tags)
+                (not= (seq props-tags) (seq state-tags)))
+        (om/update-state! this assoc
+                          :tags (or props-tags [])
+                          :placeholder (:placeholder new-props)))))
 
   (render [this]
     (let [{:keys [input-tag tags placeholder]} (om/get-state this)

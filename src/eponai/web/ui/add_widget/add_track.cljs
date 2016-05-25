@@ -60,8 +60,6 @@
                                        (assoc :tag-filter {}))))))
   (componentDidMount [this]
     (.set-filters this (om/props this)))
-  (componentWillReceiveProps [this new-props]
-    (.set-filters this new-props))
 
   (render [this]
     (let [{:keys [widget
