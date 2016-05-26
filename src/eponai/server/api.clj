@@ -301,7 +301,7 @@
                        :function-args {'stripe-fn stripe-fn 'stripe-account stripe-account}}))))
 
 (defn newsletter-subscribe [conn email]
-  (let [{:keys [verification] :as account} (datomic.format/user-account-map email {:verification/expires-at 0})]
+  (let [{:keys [verification] :as account} (datomic.format/user-account-map email)]
     (mailchimp/subscribe (env :mail-chimp-api-key)
                          (env :mail-chimp-list-id)
                          email
