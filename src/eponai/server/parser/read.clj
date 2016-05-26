@@ -12,7 +12,8 @@
     [eponai.server.external.stripe :as stripe]
     [taoensso.timbre :refer [debug trace]]
     [eponai.common.database.pull :as pull]
-    [eponai.common.parser :as parser]))
+    [eponai.common.parser :as parser]
+    [taoensso.timbre :as timbre]))
 
 (defmethod read :datascript/schema
   [{:keys [db db-since]} _ _]

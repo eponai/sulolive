@@ -206,7 +206,8 @@
                                                         :where [[?a :db/ident ?attr]]}
                                                       (:db-after action-return)
                                                       (:tx-data action-return))
-                                          _ (debug "mutation:" k " datoms: " datoms)]
+                                                 _ (debug "mutation: " k " datoms: " datoms)
+                                                 _ (debug "mutation: " k " tx-report: " action-return)]
                                       (assoc action-return :mutation-uuid mutation-uuid
                                                            :datoms datoms))))))))))))
 

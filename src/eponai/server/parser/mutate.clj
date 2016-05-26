@@ -5,7 +5,7 @@
     [eponai.common.format :as format]
     [eponai.common.parser :refer [mutate]]
     [eponai.common.validate :as validate]
-    [taoensso.timbre :refer [debug]]
+    [taoensso.timbre :as timbre :refer [debug]]
     [eponai.server.api :as api]
     [eponai.common.database.pull :as p]
     [datomic.api :as d]
@@ -67,10 +67,10 @@
 (defmethod mutate 'widget/edit
   [{:keys [state mutation-uuid]} _ params]
   (debug "widget/edit with params: " params)
-  (let [widget (format/widget-edit params)]
-    {:action (fn []
-               (transact/mutate state mutation-uuid widget))
-     :remote true}))
+  {:action (fn []
+             (let [widget (format/widget-edit params)]
+               (transact/mutate state mutation-uuid widget)))
+   :remote true})
 
 (defmethod mutate 'widget/delete
   [{:keys [state mutation-uuid]} _ params]

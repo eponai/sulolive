@@ -7,7 +7,7 @@
     [eponai.common.database.pull :as p]
     [eponai.common.parser.util :as parser]
     [eponai.common.report :as report]
-    [taoensso.timbre :refer [debug warn]]))
+    [taoensso.timbre :refer [debug warn trace]]))
 
 (defn currencies [db]
   (p/q '[:find [(pull ?e [*]) ...]
@@ -179,6 +179,11 @@
                          unique-first
                          colls))))
 
+(defn path->paths [path]
+  {:pre [(vector? path)]}
+  (when (seq path)
+    (reduce conj [path] (path->paths (subvec path 0 (dec (count path)))))))
+
 ;; Testable?
 (defn- x-since [db db-since pull-pattern entity-query {:keys [x-with map-f filter-f combine]}]
   (if (nil? db-since)
@@ -186,6 +191,10 @@
     (combine (x-with db (p/with-db-since entity-query db-since))
              (->> (keep-refs-only pull-pattern)
                   (pull-pattern->paths)
+                  ;; Expand to check all possible entities in all paths.
+                  ;; To think about: Can we order these in anyway to see if
+                  ;;                 we should check some paths before others?
+                  (mapcat path->paths)
                   (filter #(> (count %) 1))
                   (map-f #(x-changed-entities-in-pull-pattern x-with db db-since % entity-query))
                   (filter-f some?)))))
