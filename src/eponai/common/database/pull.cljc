@@ -384,7 +384,8 @@
             (comp (filter (fn [tx] (>= max-amount (report/converted-amount tx))))))))
 
 (defn xf-with-date-filter
-  [xf {:keys [filter/start-date filter/end-date filter/last-x-days]}]
+  [xf {:keys [filter/start-date filter/end-date filter/last-x-days] :as f}]
+  (debug "Create widget using filter: " f)
   (let [date->long #(when % (date/date->long %))
         start-date (date->long start-date)
         end-date (date->long end-date)

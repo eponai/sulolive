@@ -12,7 +12,7 @@
 (defui DateRangePicker
   Object
   (initLocalState [this]
-    (let [{:keys [start-date end-date]} (om/props this)
+    (let [{:keys [start-date end-date selected-range]} (om/props this)
           start-date (time/minus (date/today) (time/days 7))
           end-date (date/today)
           start-month (time/first-day-of-the-month start-date)]
@@ -21,7 +21,8 @@
        :old-start-date start-date
        :old-end-date   end-date
        :left-calendar  {:month start-month}
-       :right-calendar {:month (time/plus start-month (time/months 1))}}))
+       :right-calendar {:month (time/plus start-month (time/months 1))}
+       :selected-range selected-range}))
 
   (show [this]
     (let [{:keys [start-date end-date]} (om/get-state this)]
@@ -260,7 +261,9 @@
                                                   :old-end-date end-date
                                                   :is-showing? false)
                                 (when on-apply
-                                  (on-apply (date/date-time start-date) (date/date-time end-date))))}
+                                  (on-apply {:start-date (date/date-time start-date)
+                                             :end-date (date/date-time end-date)
+                                             :selected-range selected-range})))}
               "Apply")
             (dom/a
               #js {:className "cancel button small secondary"

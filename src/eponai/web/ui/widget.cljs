@@ -60,17 +60,30 @@
   Object
   (initLocalState [this]
     {:computed/dataset-filter-picker-on-change #(.update-data-set-filter this %)
-     :computed/tag-filter-picker-on-change #(.update-tag-filter this %)
-     :computed/date-range-picker-on-change #(.update-date-filter this %1 %2)
+     :computed/tag-filter-picker-on-change     #(.update-tag-filter this %)
+     :computed/date-range-picker-on-change     (fn [{:keys [start-date end-date]}] (.update-date-filter this start-date end-date))
      ;; TODO: Do something on cancel?
-     :computed/date-range-picker-on-cancel #()})
+     :computed/date-range-picker-on-cancel     #()})
 
-  (update-date-filter [this start end]
+  (update-date-filter [this start end selected-key]
     (let [widget (om/props this)
+          _ (debug "Create new widget... ")
           new-widget (update widget :widget/filter (fn [m]
-                                                     (-> m
-                                                         (assoc :filter/end-date (date/date-map end))
-                                                         (assoc :filter/start-date (date/date-map start)))))]
+                                                     (cond
+                                                       (= selected-key :last-30-days)
+                                                       (-> m
+                                                           (assoc :filter/last-x-days 30)
+                                                           (dissoc :filter/start-date :filter/end-date))
+                                                       (= selected-key :last-7-days)
+                                                       (-> m
+                                                           (assoc :filter/last-x-days 7)
+                                                           (dissoc :filter/start-date :filter/end-date))
+                                                       :else
+                                                       (-> m
+                                                           (assoc :filter/end-date (date/date-map end))
+                                                           (assoc :filter/start-date (date/date-map start))
+                                                           (dissoc :filter/last-x-days)))))]
+      (debug "Created new widget: " new-widget)
       (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/filter :db/id :widget/uuid]) :mutation-uuid (d/squuid)))
                            :query/dashboard])))
 
