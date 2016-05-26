@@ -29,6 +29,15 @@
                         :old-end-date end-date
                         :old-start-date start-date)))
 
+  (update-dates [this start end selected-key]
+    (let [month (time/first-day-of-the-month start)]
+      (om/update-state! this assoc
+                        :selected-range selected-key
+                        :start-date start
+                        :end-date end
+                        :left-calendar {:month month}
+                        :right-calendar {:month (time/plus month (time/months 1))})))
+
   (clickPrev [this _]
     (om/update-state! this (fn [st]
                              (-> st
@@ -152,39 +161,42 @@
   (renderDateRangeSelection [this]
     (let [{:keys [ranges]} (om/props this)
           {:keys [on-apply on-cancel]} (om/get-computed this)
-          {:keys [start-date end-date show-calendars? old-start-date old-end-date]} (om/get-state this)
-          ranges [{:name "Today"
+          {:keys [start-date end-date show-calendars? old-start-date old-end-date selected-range]} (om/get-state this)
+          ranges [{:name   "Today"
+                   :key    :today
                    :action (fn []
-                            (let [t (date/today)]
-                              (om/update-state! this assoc
-                                                :start-date t
-                                                :end-date t)))}
-                  {:name "Yesterday" :action (fn []
-                                               (let [yt (time/minus (date/today) (time/days 1))]
-                                                 (om/update-state! this assoc
-                                                                   :start-date yt
-                                                                   :end-date yt)))}
-                  {:name "Last 7 Days" :action (fn []
-                                                 (let [t (date/today)]
-                                                   (om/update-state! this assoc
-                                                                     :start-date (time/minus t (time/days 7))
-                                                                     :end-date t)))}
-                  {:name "Last 30 Days" :action (fn []
-                                                  (let [t (date/today)]
-                                                    (om/update-state! this assoc
-                                                                      :start-date (time/minus t (time/days 30))
-                                                                      :end-date t)))}
-                  {:name "This Month" :action (fn []
-                                                (let [t (date/today)]
-                                                  (om/update-state! this assoc
-                                                                    :start-date (time/first-day-of-the-month t)
-                                                                    :end-date (time/last-day-of-the-month t))))}
-                  {:name "Last Month" :action (fn []
-                                                (let [t (time/minus (date/today) (time/months 1))]
-                                                  (om/update-state! this assoc
-                                                                    :start-date (time/first-day-of-the-month t)
-                                                                    :end-date (time/last-day-of-the-month t))))}
-                  {:name "Custom Range" :action (fn [] (om/update-state! this assoc :show-calendars? true))}]]
+                             (let [t (date/today)]
+                               (.update-dates this t t :today)))}
+                  {:name   "Yesterday"
+                   :key    :yesterday
+                   :action (fn []
+                             (let [yt (time/minus (date/today) (time/days 1))]
+                               (.update-dates this yt yt :yesterday)))}
+                  {:name   "Last 7 Days"
+                   :key    :last-7-days
+                   :action (fn []
+                             (let [t (date/today)]
+                               (.update-dates this (time/minus t (time/days 7)) t :last-7-days)))}
+                  {:name   "Last 30 Days"
+                   :key    :last-30-days
+                   :action (fn []
+                             (let [t (date/today)]
+                               (.update-dates this (time/minus t (time/days 30)) t :last-30-days)))}
+                  {:name   "This Month"
+                   :key    :this-month
+                   :action (fn []
+                             (let [t (date/today)]
+                               (.update-dates this (time/first-day-of-the-month t) (time/last-day-of-the-month t) :this-month)))}
+                  {:name   "Last Month"
+                   :key    :last-month
+                   :action (fn []
+                             (let [t (time/minus (date/today) (time/months 1))]
+                               (.update-dates this (time/first-day-of-the-month t) (time/last-day-of-the-month t) :last-month)))}
+                  {:name   "Custom Range"
+                   :key    :custom-range
+                   :action (fn [] (om/update-state! this assoc
+                                                    :show-calendars? true
+                                                    :selected-range :custom-range))}]]
       (dom/div
         #js {:className (str "daterangepicker menu-horizontal dropdown " (when show-calendars? " show-calendar"))}
 
@@ -231,14 +243,15 @@
                  (map
                    (fn [range]
                      (dom/li
-                       #js {:onClick #(when-let [action-fn (:action range)]
+                       #js {:className (when (= (:key range) selected-range) "active")
+                            :onClick #(when-let [action-fn (:action range)]
                                        (action-fn))}
                        (:name range)))
                    ranges))
           (dom/div
             #js {:className "range_inputs float-right"}
             (dom/a
-              #js {:className (str "apply button small success" (when show-calendars? " show"))
+              #js {:className (str "apply button small success show")
                    :disabled  "disabled"
                    :type      "button"
                    :onClick   #(do

@@ -1,20 +1,21 @@
 (ns eponai.web.ui.all-transactions
   (:require
+    [cljs-time.core :as time]
     [datascript.core :as d]
     [eponai.client.lib.transactions :as lib.t]
     [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
     [eponai.common.format.date :as date]
     [eponai.web.ui.add-transaction :refer [->AddTransaction AddTransaction]]
     [eponai.web.ui.datepicker :refer [->Datepicker]]
-    [eponai.web.ui.utils.filter :as filter]
+    [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.ui.utils :as utils]
+    [eponai.web.ui.utils.filter :as filter]
     [garden.core :refer [css]]
     [goog.string :as gstring]
-    [om.next :as om :refer-macros [defui]]
     [om.dom :as dom]
+    [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]
-    [eponai.common.format :as f]))
+    [taoensso.timbre :refer-macros [debug]]))
 
 ;; ################### Om next components ###################
 
@@ -189,6 +190,13 @@
 
 (def ->Transaction (om/factory Transaction {:keyfn :db/id}))
 
+(defn date-range-from-filter [f]
+  (if (some? (:filter/last-x-days f))
+    (let [t (date/today)]
+      {:start-date (time/minus t (time/days (:filter/last-x-days f)))
+       :end-date   t})
+    {:start-date (date/date-time (:filter/start-date f))
+     :end-date   (date/date-time (:filter/end-date f))}))
 (defui AllTransactions
   static om/IQueryParams
   (params [_]
@@ -214,8 +222,9 @@
      :computed/tag-filter-on-change     #(do
                                           (om/update-state! this assoc :tag-filter {:filter/include-tags %})
                                           (om/update-query! this assoc-in [:params :filter] (.filter this)))
-     :computed/date-filter-on-change    #(do
-                                          (om/update-state! this assoc :date-filter %)
+     :computed/date-filter-on-change    (fn [s e]
+                                          (om/update-state! this assoc :date-filter {:filter/start-date (date/date-map s)
+                                                                                     :filter/end-date   (date/date-map e)})
                                           (om/update-query! this assoc-in [:params :filter] (.filter this)))
      :computed/amount-filter-on-change  #(do
                                           (om/update-state! this assoc :amount-filter %)
@@ -249,10 +258,10 @@
         (opts {:style {:visibility :hidden}})
         "Button"]
        [:div.empty-message.text-center
-        [:i.fa.fa-usd.fa-4x]
-        [:i.fa.fa-eur.fa-4x]
-        [:i.fa.fa-yen.fa-4x]
-        ;[:i.fa.fa-th-list.fa-5x]
+        ;[:i.fa.fa-usd.fa-4x]
+        ;[:i.fa.fa-eur.fa-4x]
+        ;[:i.fa.fa-yen.fa-4x]
+        [:i.fa.fa-th-list.fa-5x]
         [:div.lead
          "Information underload, no transactions are added."
          [:br]
@@ -267,20 +276,21 @@
     (let [{:keys [tag-filter date-filter amount-filter
                   computed/tag-filter-on-change
                   computed/date-filter-on-change
-                  computed/amount-filter-on-change]} (om/get-state this)]
+                  computed/amount-filter-on-change
+                  computed/date-range-picker-on-apply]} (om/get-state this)]
       (html
         [:div.transaction-filters
-         [:div.row.expanded.collapse
+         [:div.row.expanded
           [:div.columns.small-3
            (filter/->TagFilter (om/computed {:tags (:filter/include-tags tag-filter)}
                                             {:on-change tag-filter-on-change}))]
-          [:div.columns.small-9
-           (filter/->DateFilter (om/computed {:filter date-filter}
-                                             {:on-change date-filter-on-change}))]]
-
-         [:div.row.expanded
-          (filter/->AmountFilter (om/computed {:amount-filter amount-filter}
-                                              {:on-change amount-filter-on-change}))]])))
+          [:div.columns.small-3
+           (let [range (date-range-from-filter date-filter)]
+             (->DateRangePicker (om/computed range
+                                             {:on-apply date-filter-on-change})))]
+          [:div.columns.small-6
+           (filter/->AmountFilter (om/computed {:amount-filter amount-filter}
+                                               {:on-change amount-filter-on-change}))]]])))
 
   (render-transaction-list [this transactions]
     (let [{currencies      :query/all-currencies

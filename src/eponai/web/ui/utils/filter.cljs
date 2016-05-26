@@ -22,10 +22,10 @@
     (let [{:keys [amount-filter]} (om/get-state this)
           {:keys [on-change]} (om/get-computed this)]
       (html
-        [:div.row.expanded
-         [:div.columns.small-1.text-right
-          "Min:"]
-         [:div.columns.small-2
+        [:div.row
+         ;[:div.columns.small-1.text-right
+         ; "Min:"]
+         [:div.columns.small-6
           [:input
            {:value       (or (:filter/min-amount amount-filter) "")
             :type        "number"
@@ -36,10 +36,11 @@
             :on-key-down #(utils/on-enter-down
                            %
                            (fn [_]
-                             (on-change amount-filter)))}]]
-         [:div.columns.small-1.text-right
-          "Max:"]
-         [:div.columns.small-2.end
+                             (on-change amount-filter)))
+            :placeholder "Min"}]]
+         ;[:div.columns.small-1.text-right
+         ; "Max:"]
+         [:div.columns.small-6
           [:input
            {:value       (or (:filter/max-amount amount-filter) "")
             :type        "number"
@@ -50,7 +51,8 @@
             :on-key-down #(utils/on-enter-down
                            %
                            (fn [_]
-                             (on-change amount-filter)))}]]]))))
+                             (on-change amount-filter)))
+            :placeholder "Max"}]]]))))
 
 (def ->AmountFilter (om/factory AmountFilter))
 
