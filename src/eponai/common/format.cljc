@@ -126,7 +126,8 @@
 (defn filter*
   [input]
   (debug "Doing data filter: " input)
-  (let [remove-empty-vals (fn [i]
+  (let [format-tags (fn [tags] (mapv tag* tags))
+        remove-empty-vals (fn [i]
                             (into {} (filter #(let [v (val %)]
                                                (if (coll? v)
                                                  (seq v)
@@ -171,6 +172,8 @@
         (update :filter/start-date add-tempid)
         (update :filter/include-tags add-tempid)
         (update :filter/exclude-tags add-tempid)
+        (update :filter/include-tags format-tags)
+        (update :filter/exclude-tags format-tags)
         (update :filter/min-amount #(when % (str->number %)))
         (update :filter/max-amount #(when % (str->number %)))
         remove-empty-vals)))
