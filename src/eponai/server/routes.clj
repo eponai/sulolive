@@ -162,9 +162,11 @@
         (if (some? user-uuid)
           (r/response (call-parser (-> request
                                        (assoc ::playground-auth {:username user-uuid})
-                                       (update ::m/parser (fn [parser] (-> parser
-                                                                           parser/parse-without-mutations
-                                                                           parser/parser-require-auth))))))
+                                       (assoc ::m/parser (-> (parser/parser {:mutate (constantly nil)})
+                                                             ;; Remove mutations from query even though there
+                                                             ;; isn't any mutate function, just in case.
+                                                             parser/parse-without-mutations
+                                                             parser/parser-require-auth)))))
           (let [msg "No playground user-uuid with request. Will not call parser."]
             (throw (ex-info msg
                             {:message          msg
