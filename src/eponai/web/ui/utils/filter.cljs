@@ -12,6 +12,34 @@
     [goog.events :as events]
     [cljsjs.react.dom]))
 
+;; --------- WIP: Tag suggestion dropdown -------
+(comment
+  "Takes a list of tags (tag-list) and helps an input tag with suggesting tags."
+  [:div.dropdown
+   (let [tag-dd (into [] (comp (map-indexed
+                                 (fn [i {:keys [tag/name tag/count] :as tag}]
+                                   [:a
+                                    {:key         name
+                                     :tab-index   -1
+                                     :ref         (tag-idx->ref i)
+                                     :style       {:display "flex" :flex-direction "row" :justify-content "space-between"}
+                                     :on-click    #(.add-tag this tag)
+                                     :on-key-down (fn [e]
+                                                    (let [matched (condp = (.-keyCode e)
+                                                                    events/KeyCodes.DOWN (.focus-ref this (tag-idx->ref (inc i)))
+                                                                    events/KeyCodes.UP (.focus-ref this (tag-idx->ref (dec i)))
+                                                                    events/KeyCodes.ENTER (.add-tag this tag)
+                                                                    nil)]
+                                                      (when matched
+                                                        (.preventDefault e))))}
+                                    [:span name]
+                                    [:span count]]))
+                               (take 5))
+                      (pl/filter-prefix tag-list (:tag/name input-tag)))]
+     tag-dd)])
+
+;; ----------------
+
 (defui AmountFilter
   Object
   (initLocalState [this]
@@ -251,28 +279,6 @@
                                                 (.preventDefault e)
                                                 (.focus-ref this (tag-idx->ref 0))))
                              :input-only?   input-only?
-                             :placeholder   (or placeholder "Enter to add tag...")})
-           [:div.dropdown
-            (let [tag-dd (into [] (comp (map-indexed
-                                          (fn [i {:keys [tag/name tag/count] :as tag}]
-                                            [:a
-                                             {:key         name
-                                              :tab-index   -1
-                                              :ref         (tag-idx->ref i)
-                                              :style       {:display "flex" :flex-direction "row" :justify-content "space-between"}
-                                              :on-click    #(.add-tag this tag)
-                                              :on-key-down (fn [e]
-                                                             (let [matched (condp = (.-keyCode e)
-                                                                             events/KeyCodes.DOWN (.focus-ref this (tag-idx->ref (inc i)))
-                                                                             events/KeyCodes.UP (.focus-ref this (tag-idx->ref (dec i)))
-                                                                             events/KeyCodes.ENTER (.add-tag this tag)
-                                                                             nil)]
-                                                               (when matched
-                                                                 (.preventDefault e))))}
-                                             [:span name]
-                                             [:span count]]))
-                                        (take 5))
-                               (pl/filter-prefix tag-list (:tag/name input-tag)))]
-              tag-dd)]])))))
+                             :placeholder   (or placeholder "Enter to add tag...")})])))))
 
 (def ->TagFilter (om/factory TagFilter))
