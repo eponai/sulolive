@@ -87,16 +87,17 @@
         (dom/div
           nil
           (dom/a
-            #js {:onClick #(om/update-state! this assoc :is-showing? true)}
+            #js {:className "nav-link"
+                 :onClick #(om/update-state! this assoc :is-showing? true)}
             (dom/i
               #js {:className "fa fa-filter"}))
 
           (when is-showing?
             (dom/div
               nil
-              ;(utils/click-outside-target #(om/update-state! this assoc
-              ;                                               :is-showing? false
-              ;                                               :new-filter nil))
+              (utils/click-outside-target #(om/update-state! this assoc
+                                                             :is-showing? false
+                                                             :new-filter nil))
               (dom/div
                 #js {:className (str "datasetfilterpicker menu dropdown clearfix")}
 

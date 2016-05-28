@@ -54,10 +54,10 @@
           (append "g")
           (attr "class" (if (< 30 (.. x-scale rangeBand)) "x axis grid" "x axis grid hidden"))
           (attr "transform" (str "translate(0," inner-height ")")))
-      (.. graph
-          (append "g")
-          (attr "class" "y axis grid")
-          (attr "transform" (str "translate(0,0)")))
+      ;(.. graph
+      ;    (append "g")
+      ;    (attr "class" "y axis grid")
+      ;    (attr "transform" (str "translate(0,0)")))
       (d3/update-on-resize this id)
 
       (om/update-state! this assoc :svg svg :js-data js-data :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :focus focus)))
@@ -109,11 +109,11 @@
             (duration 250)
             (call x-axis))
 
-        (.. svg
-            (selectAll ".y.axis")
-            transition
-            (duration 250)
-            (call y-axis))
+        ;(.. svg
+        ;    (selectAll ".y.axis")
+        ;    transition
+        ;    (duration 250)
+        ;    (call y-axis))
 
         (mapv
           (fn [data-set]

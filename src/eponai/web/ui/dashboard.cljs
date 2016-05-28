@@ -6,7 +6,7 @@
     [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
     [eponai.web.routes :as routes]
     [eponai.web.ui.add-widget :refer [NewWidget ->NewWidget]]
-    [eponai.web.ui.widget :refer [Widget ->Widget]]
+    [eponai.web.ui.widget :as w :refer [Widget ->Widget]]
     [garden.core :refer [css]]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
@@ -14,31 +14,56 @@
     [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.ui.utils :as utils]))
 
+;(defn min-dimensions [widget num-cols]
+;  (let [style (get-in widget [:widget/graph :graph/style])
+;        calc-w (fn [min-w]
+;                      (.floor js/Math (/ (* min-w num-cols) 100)))]
+;
+;    (cond (or
+;            (= style :graph.style/area)
+;            (= style :graph.style/line)
+;            (= style :graph.style/bar)
+;            (= style :graph.style/burndown))
+;          {:minW (calc-w 50)
+;           :minH 3
+;           :maxH 5}
+;
+;          (= style :graph.style/chord)
+;          {:minW (calc-w 50)
+;           :minH 4}
+;
+;          :else
+;          {:minW 1
+;           :maxH 2})))
 (defn min-dimensions [widget num-cols]
   (let [style (get-in widget [:widget/graph :graph/style])
         calc-w (fn [min-w]
-                      (.floor js/Math (/ (* min-w num-cols) 100)))]
+                 (.floor js/Math (/ (* min-w num-cols) 100)))
+        dims (w/dimensions (:widget/graph widget))]
+    (update dims :minW calc-w)
 
-    (cond (or
-            (= style :graph.style/area)
-            (= style :graph.style/line)
-            (= style :graph.style/bar)
-            (= style :graph.style/burndown))
-          {:minW (calc-w 50)
-           :minH 3
-           :maxH 5}
-
-          (= style :graph.style/chord)
-          {:minW (calc-w 50)
-           :minH 4}
-
-          :else
-          {:minW 1
-           :maxH 2})))
+    ;(cond (or
+    ;        (= style :graph.style/area)
+    ;        (= style :graph.style/line)
+    ;        (= style :graph.style/bar)
+    ;        (= style :graph.style/burndown))
+    ;      {:minW (calc-w 50)
+    ;       :minH 3
+    ;       :maxH 5}
+    ;
+    ;      (= style :graph.style/chord)
+    ;      {:minW (calc-w 50)
+    ;       :minH 4}
+    ;
+    ;      :else
+    ;      {:minW 1
+    ;       :maxH 2})
+    ))
 
 (defn grid-layout
   [num-cols widgets]
   (let [layout-fn (fn [{:keys [widget/index] :as widget}]
+                    ;(debug "Layout for widget: " widget)
                     (merge
                       {:x    (mod index num-cols)
                        :y    (int (/ index num-cols))
@@ -141,9 +166,7 @@
        :breakpoint :lg
        :grid-element grid-element
        :content :dashboard
-       :side-bar-transition-fn #(.update-layout this)
-       :computed/new-track-on-save #(om/update-state! this assoc :new-track? false)
-       :computed/new-goal-on-save #(om/update-state! this assoc :new-goal? false)}))
+       :side-bar-transition-fn #(.update-layout this)}))
 
   (render [this]
     (let [{:keys [query/dashboard
@@ -153,28 +176,29 @@
                   grid-element
                   is-editing?
                   cols
-                  new-track? new-goal?
                   computed/new-track-on-save
                   computed/new-goal-on-save]} (om/get-state this)
+          {:keys [new-track? new-goal?]} (om/get-computed this)
           widgets (:widget/_dashboard dashboard)
           project-id (:db/id (:dashboard/project dashboard))
           React (.-React js/window)]
+      ;(debug "Layout: " layout)
       (html
         [:div
-         [:div#dashboard-menu.row.column.small-12.expanded
-          [:div.menu-horizontal
-           [:a.nav-link
-            (opts {:style {:padding "0.5em"}
-                   :on-click #(om/update-state! this assoc :new-track? true)})
-            [:i.fa.fa-line-chart.fa-fw
-             (opts {:style {:color "green"}})]
-            [:span.small-caps "Track"]]
-           [:a.nav-link
-            (opts {:style {:padding "0.5em"}
-                   :on-click #(om/update-state! this assoc :new-goal? true)})
-            [:i.fa.fa-star.fa-fw
-             (opts {:style {:color "orange"}})]
-            [:span.small-caps "Goal"]]]]
+         ;[:div#dashboard-menu.row.column.small-12.expanded
+         ; [:div.menu-horizontal
+         ;  [:a.nav-link
+         ;   (opts {:style {:padding "0.5em"}
+         ;          :on-click #(om/update-state! this assoc :new-track? true)})
+         ;   [:i.fa.fa-line-chart.fa-fw
+         ;    (opts {:style {:color "green"}})]
+         ;   [:span.small-caps "Track"]]
+         ;  [:a.nav-link
+         ;   (opts {:style {:padding "0.5em"}
+         ;          :on-click #(om/update-state! this assoc :new-goal? true)})
+         ;   [:i.fa.fa-star.fa-fw
+         ;    (opts {:style {:color "orange"}})]
+         ;   [:span.small-caps "Goal"]]]]
          (when new-track?
            (utils/modal {:content  (->NewWidget (om/computed new-widget
                                                              {:dashboard dashboard

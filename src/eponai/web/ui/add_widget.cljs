@@ -123,8 +123,7 @@
           {:keys [input-widget
                   computed/new-track-on-change
                   computed/new-goal-on-change]} (om/get-state this)
-          {:keys [dashboard widget-type on-save]} (om/get-computed this)
-          project-id (get-in dashboard [:dashboard/project :db/id])]
+          {:keys [dashboard-id widget-type on-save]} (om/get-computed this)]
       (html
         [:div
          (opts {:style {:padding "1em"}})
@@ -167,7 +166,7 @@
           ;   "Delete"])
           [:a.button.primary
            {:on-click #(do
-                        (.save-widget this (assoc input-widget :widget/dashboard (:dashboard/uuid dashboard)))
+                        (.save-widget this (assoc input-widget :widget/dashboard dashboard-id))
                         (when on-save
                           (on-save)))}
            "Save"]]]))))

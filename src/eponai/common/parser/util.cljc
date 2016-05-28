@@ -67,7 +67,7 @@
             equal-key? (fn [k] (= (get env k)
                                   (get last-env k)))]
         (if (and (= params last-params)
-                 (every? equal-key? [:target :db]))         ;; <--- contained :query. but now, it doesn't.
+                 (every? equal-key? [:target :db :query]))
           (do
             (debug (str "Returning cached for:" k))
             last-ret)

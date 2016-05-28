@@ -35,6 +35,7 @@
           {:minH 2
            :minW 25
            :maxW 100})))
+
 (defui Widget
   static om/IQuery
   (query [_]
@@ -116,6 +117,7 @@
           {:keys [project-id
                   id
                   transactions]} (om/get-computed this)]
+      ;(debug "Render widget: " widget)
       (dom/div
         #js {:className "widget"}
         (dom/header
@@ -138,17 +140,19 @@
                                                    :filters (:widget/filter widget)}
                                                   {:on-change dataset-filter-picker-on-change}))
 
-              (when (not (or (= (:graph/style graph) :graph.style/burndown)
-                             (= (:graph/style graph) :graph.style/progress-bar)))
+              (when-not (or (= (:graph/style graph) :graph.style/burndown)
+                            (= (:graph/style graph) :graph.style/progress-bar))
                 (->TagFilterPicker (om/computed {:key          "tag-filter-picker"
                                                  :transactions transactions
                                                  :filters      (:graph/filter graph)}
                                                 {:on-apply tag-filter-picker-on-change})))
+              (when-not (or (= (:graph/style graph) :graph.style/burndown)
+                            (= (:graph/style graph) :graph.style/progress-bar))
 
-              (->DateRangePicker (om/computed {:key   "date-range-picker"
-                                               :class "nav-link"}
-                                              {:on-apply  date-range-picker-on-change
-                                               :on-cancel date-range-picker-on-cancel}))
+                (->DateRangePicker (om/computed {:key   "date-range-picker"
+                                                 :class "nav-link"}
+                                                {:on-apply  date-range-picker-on-change
+                                                 :on-cancel date-range-picker-on-cancel})))
 
               ;; Widget edit navigation
               ;(dom/a

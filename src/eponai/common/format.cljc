@@ -238,8 +238,8 @@
                       :widget/index :widget/height :widget/width :widget/uuid])
         add-tempid)
 
-    (some? (:widget/dashboard input))
-    (update :widget/dashboard (fn [d-uuid] (vector :dashboard/uuid d-uuid)))
+    ;(some? (:widget/dashboard input))
+    ;(update :widget/dashboard (fn [d-uuid] (vector :dashboard/uuid d-uuid)))
 
     (some? (:widget/filter input))
     (update :widget/filter filter*)))

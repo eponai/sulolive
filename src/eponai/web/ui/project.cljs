@@ -43,12 +43,18 @@
 (defui SubMenu
   static om/IQuery
   (query [_]
-    [{:proxy/add-transaction (om/get-query AddTransaction)}])
+    [{:proxy/add-transaction (om/get-query AddTransaction)}
+     {:proxy/new-widget (om/get-query NewWidget)}
+     {:query/dashboard [:db/id
+                        :widget/_dashboard]}])
   Object
   (initLocalState [this]
     {:computed/share-project-on-save #(let [project (-> (om/get-computed this)
                                                         (get-in [:app-content :query/active-project :ui.component.project/active-project]))]
-                                       (.share-project this (:project/uuid project) %))})
+                                       (.share-project this (:project/uuid project) %))
+     :computed/new-track-on-save #(om/update-state! this assoc :new-track? false)
+     :computed/new-goal-on-save #(om/update-state! this assoc :new-goal? false)
+     :computed/on-menu-select #(om/update-state! this :menu-visible? true)})
 
   (share [this]
     (om/update-state! this assoc :share-project? true))
@@ -57,7 +63,9 @@
     (om/transact! this `[(project/share ~{:project/uuid project-uuid
                                           :user/email email})]))
   (render [this]
-    (let [{:keys [proxy/add-transaction]} (om/props this)
+    (let [{:keys [proxy/add-transaction
+                  proxy/new-widget
+                  query/dashboard]} (om/props this)
           {:keys [app-content]} (om/get-computed this)
           {:keys [query/active-project]} app-content
           project (:ui.component.project/active-project active-project)
@@ -65,30 +73,53 @@
 
           {:keys [menu-visible?
                   new-transaction?
+                  new-track?
+                  new-goal?
                   share-project?
-                  computed/share-project-on-save]} (om/get-state this)
-          {:keys [db/id]} project
-          on-close #(om/update-state! this assoc :menu-visible? false)]
+                  computed/share-project-on-save
+                  computed/new-track-on-save
+                  computed/new-goal-on-save]} (om/get-state this)
+          {:keys [db/id]} project]
+      ;(debug "App content..." dashboard)
       (html
-        [:div#project-submenu.row.expanded.small-collapse.medium-uncollapse
+        [:div#project-submenu.row.expanded.collapse
 
          [:div.menu-horizontal.columns.small-4
           [:div.nav-link.truncate
            [:small.truncate [:strong (:project/name project)]]]
           [:div.nav-link
            [:div
-            [:a
-             {:on-click #(om/update-state! this assoc :new-transaction? true :menu-visible? false)}
-             [:i.fa.fa-money.fa-fw]]
-            (when new-transaction?
-              (let [on-close #(om/update-state! this assoc :new-transaction? false)]
-                (utils/modal {:content  (->AddTransaction (om/computed add-transaction {:on-close on-close}))
-                              :on-close on-close}))
-              ;(let [on-close #(om/update-state! this assoc :new-transaction? false)]
-              ;  [:div
-              ;   (utils/click-outside-target on-close)
-              ;   [:div.menu.dropdown
-              ;    (->AddTransaction add-transaction)]])
+            [:a.button
+             (opts {:on-click #(om/update-state! this assoc :menu-visible? true)
+                    :style {:padding "0.5em"}})
+             [:i.fa.fa-plus.fa-fw
+              (opts {:style {:margin 0}})]
+             [:span.small-caps "New... "]]
+            (when menu-visible?
+              (let [on-close #(om/update-state! this assoc :menu-visible? false)]
+                [:div
+                 (utils/click-outside-target on-close)
+                 [:div.menu.dropdown
+                  [:a.nav-link
+                   {:on-click #(om/update-state! this assoc
+                                                 :new-transaction? true
+                                                 :menu-visible? false)}
+                   [:i.fa.fa-money.fa-fw]
+                   [:span.small-caps "Transaction"]]
+                  [:a.nav-link
+                   {:on-click #(om/update-state! this assoc
+                                                 :new-track? true
+                                                 :menu-visible? false)}
+                   [:i.fa.fa-line-chart.fa-fw
+                    (opts {:style {:color "green"}})]
+                   [:span.small-caps "Track"]]
+                  [:a.nav-link
+                   {:on-click #(om/update-state! this assoc
+                                                 :new-goal? true
+                                                 :menu-visible? false)}
+                   [:i.fa.fa-star.fa-fw
+                    (opts {:style {:color "orange"}})]
+                   [:span.small-caps "Goal"]]]])
               )]]]
          [:div.menu-horizontal.columns.small-4.align-center
           [:a.nav-link.tab
@@ -120,7 +151,28 @@
               (utils/modal {:content (->Shareproject (om/computed {}
                                                                   {:on-close on-close
                                                                    :on-save share-project-on-save}))
-                            :on-close on-close})))]]))))
+                            :on-close on-close})))
+
+          (when new-transaction?
+            (let [on-close #(om/update-state! this assoc :new-transaction? false)]
+              (utils/modal {:content  (->AddTransaction (om/computed add-transaction {:on-close on-close}))
+                            :on-close on-close})))
+          (when new-track?
+            (utils/modal {:content  (->NewWidget (om/computed new-widget
+                                                              {:dashboard-id (:db/id dashboard)
+                                                               :widget-type :track
+                                                               :index       (dashboard/calculate-last-index (:widget/_dashboard dashboard))
+                                                               :on-save     new-track-on-save}))
+                          :on-close new-track-on-save
+                          :size     "large"}))
+          (when new-goal?
+            (utils/modal {:content  (->NewWidget (om/computed new-widget
+                                                              {:dashboard-id (:db/id dashboard)
+                                                               :widget-type  :goal
+                                                               :index        (dashboard/calculate-last-index (:widget/_dashboard dashboard))
+                                                               :on-save      new-goal-on-save}))
+                          :on-close new-goal-on-save
+                          :size     "medium"}))]]))))
 
 (def ->SubMenu (om/factory SubMenu))
 

@@ -83,6 +83,7 @@
                        #js {:className "tags"}
                        (into [] (map (fn [t]
                                        (let [is-active? (contains? include-tags t)]
+
                                          (dom/a
                                            #js {:className (str "tag" (when is-active?
                                                                         " active"))
