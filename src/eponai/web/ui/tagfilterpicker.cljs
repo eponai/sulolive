@@ -34,63 +34,63 @@
                           tags)]
       ;(debug "render filter picker: " tags)
       ;(debug "render filter include: " include-tags)
+      ;(dom/div
+      ;  #js {:className class})
       (dom/div
-        #js {:className class}
-        (dom/div
-          nil
-          (dom/a
-            #js {:className "nav-link tagfilter"
-                 :onClick #(om/update-state! this assoc :is-showing? true)}
-            (dom/i
-              #js {:className "fa fa-fw fa-tags"})
-            (dom/small
-              nil
-              (count include-tags)))
-          (when is-showing?
+        nil
+        (dom/a
+          #js {:className "nav-link tagfilter"
+               :onClick   #(om/update-state! this assoc :is-showing? true)}
+          (dom/i
+            #js {:className "fa fa-fw fa-tags"})
+          (dom/small
+            nil
+            (count include-tags)))
+        (when is-showing?
+          (dom/div
+            nil
+            (utils/click-outside-target #(om/update-state! this assoc :is-showing? false))
             (dom/div
-              nil
-              (utils/click-outside-target #(om/update-state! this assoc :is-showing? false))
+              #js {:className (str "tagfilterpicker menu-horizontal dropdown")}
+
               (dom/div
-                #js {:className (str "tagfilterpicker menu-horizontal dropdown")}
-
+                nil
+                (dom/h6
+                  #js {:className "small-caps"}
+                  "Toggle Tags")
                 (dom/div
-                  nil
-                  (dom/h6
-                    #js {:className "small-caps"}
-                    "Toggle Tags")
-                  (dom/div
-                    #js {:className "actions"}
-                    (dom/a
-                      #js {:className "button small"
-                           :onClick   #(do
-                                        (om/update-state! this assoc :is-showing? false)
-                                        (when on-apply
-                                          (debug "On-apply include tags: " include-tags)
-                                          (on-apply include-tags)))}
-                      "Apply")
-                    (dom/a
-                      #js {:className "button small secondary"
-                           :onClick   #(om/update-state! this assoc :is-showing? false)}
-                      "Cancel"))
-                  (dom/input
-                    #js {:className   "tagsearch"
-                         :value       (or search-string "")
-                         :placeholder "Search..."
-                         :type        "text"
-                         :onChange    #(om/update-state! this assoc :search-string (.-value (.-target %)))}))
+                  #js {:className "actions"}
+                  (dom/a
+                    #js {:className "button small"
+                         :onClick   #(do
+                                      (om/update-state! this assoc :is-showing? false)
+                                      (when on-apply
+                                        (debug "On-apply include tags: " include-tags)
+                                        (on-apply include-tags)))}
+                    "Apply")
+                  (dom/a
+                    #js {:className "button small secondary"
+                         :onClick   #(om/update-state! this assoc :is-showing? false)}
+                    "Cancel"))
+                (dom/input
+                  #js {:className   "tagsearch"
+                       :value       (or search-string "")
+                       :placeholder "Search..."
+                       :type        "text"
+                       :onChange    #(om/update-state! this assoc :search-string (.-value (.-target %)))}))
 
-                (apply dom/div
-                       #js {:className "tags"}
-                       (into [] (map (fn [t]
-                                       (let [is-active? (contains? include-tags t)]
+              (apply dom/div
+                     #js {:className "tags"}
+                     (into [] (map (fn [t]
+                                     (let [is-active? (contains? include-tags t)]
 
-                                         (dom/a
-                                           #js {:className (str "tag" (when is-active?
-                                                                        " active"))
-                                                :onClick   #(if is-active?
-                                                             (om/update-state! this update :include-tags disj t)
-                                                             (om/update-state! this update :include-tags conj t))}
-                                           (:tag/name t)))))
-                             filtered-tags))))))))))
+                                       (dom/a
+                                         #js {:className (str "tag" (when is-active?
+                                                                      " active"))
+                                              :onClick   #(if is-active?
+                                                           (om/update-state! this update :include-tags disj t)
+                                                           (om/update-state! this update :include-tags conj t))}
+                                         (:tag/name t)))))
+                           filtered-tags)))))))))
 
 (def ->TagFilterPicker (om/factory TagFilterPicker {:keyfn :key}))

@@ -12,6 +12,7 @@
     [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.ui.dataset-filter-picker :refer [->DatasetFilterPicker]]
     [eponai.web.ui.tagfilterpicker :refer [->TagFilterPicker]]
+    [eponai.web.ui.goal-settings :refer [->GoalSettings]]
     [eponai.web.routes :as routes]
     [eponai.web.ui.utils :as utils]
     [om.next :as om :refer-macros [defui]]
@@ -63,6 +64,7 @@
     {:computed/dataset-filter-picker-on-change #(.update-data-set-filter this %)
      :computed/tag-filter-picker-on-change     #(.update-tag-filter this %)
      :computed/date-range-picker-on-change     (fn [{:keys [start-date end-date]}] (.update-date-filter this start-date end-date))
+     :computed/goal-settings-on-change #(.update-goal-value this %)
      ;; TODO: Do something on cancel?
      :computed/date-range-picker-on-cancel     #()})
 
@@ -105,6 +107,11 @@
       (om/transact! this `[(widget/delete ~(assoc (select-keys widget [:widget/uuid]) :mutation-uuid (d/squuid)))
                            :query/dashboard])))
 
+  (update-goal-value [this new-value]
+    (let [widget (om/props this)
+          new-widget (assoc-in widget [:widget/report :report/goal :goal/value] new-value)]
+      (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/report :db/id :widget/uuid]) :mutation-uuid (d/squuid)))])))
+
   (render [this]
     (let [{:keys [widget/report
                   widget/graph
@@ -113,7 +120,8 @@
                   computed/dataset-filter-picker-on-change
                   computed/tag-filter-picker-on-change
                   computed/date-range-picker-on-change
-                  computed/date-range-picker-on-cancel]} (om/get-state this)
+                  computed/date-range-picker-on-cancel
+                  computed/goal-settings-on-change]} (om/get-state this)
           {:keys [project-id
                   id
                   transactions]} (om/get-computed this)]
@@ -153,6 +161,11 @@
                                                  :class "nav-link"}
                                                 {:on-apply  date-range-picker-on-change
                                                  :on-cancel date-range-picker-on-cancel})))
+
+              (when (or (= (:graph/style graph) :graph.style/burndown)
+                        (= (:graph/style graph) :graph.style/progress-bar))
+                (->GoalSettings (om/computed {:key "goal-settings"}
+                                             {:on-change goal-settings-on-change})))
 
               ;; Widget edit navigation
               ;(dom/a

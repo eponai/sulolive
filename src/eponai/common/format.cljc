@@ -271,15 +271,17 @@
                                               [new-tag
                                                [:db/add (:db/id filters) attr (:db/id new-tag)]])
                           :else nil))]
-    (cond-> [(update widget :widget/filter dissoc :filter/include-tags :filter/exclude-tags)]
+    (if filters
+      (cond-> [(update widget :widget/filter dissoc :filter/include-tags :filter/exclude-tags)]
 
-            (seq (:filter/exclude-tags filters))
-            (into (comp (mapcat #(tags->txs % :filter/exclude-tags))
-                        (filter some?)) (:filter/exclude-tags filters))
+              (seq (:filter/exclude-tags filters))
+              (into (comp (mapcat #(tags->txs % :filter/exclude-tags))
+                          (filter some?)) (:filter/exclude-tags filters))
 
-            (seq (:filter/include-tags filters))
-            (into (comp (mapcat #(tags->txs % :filter/include-tags))
-                        (filter some?)) (:filter/include-tags filters)))))
+              (seq (:filter/include-tags filters))
+              (into (comp (mapcat #(tags->txs % :filter/include-tags))
+                          (filter some?)) (:filter/include-tags filters)))
+      [widget])))
 
 (defn transaction-edit [{:keys [transaction/tags
                                 transaction/uuid] :as input-transaction}]
