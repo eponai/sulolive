@@ -165,13 +165,15 @@
               #js {:style     #js {:fontFamily "monospace"}
                    :tabIndex  -1
                    :className "amount"
-                   :value     (or amount "")
-                   :type      "number"
+                   :value     (gstring/format "%.2f" (or amount ""))
+                   :type      "text"
                    :onChange  #(om/update-state! this assoc-in [:input-transaction :transaction/amount] (.-value (.-target %)))
                    :onKeyDown #(utils/on-enter-down % (fn [_]
                                                         (.blur (.-target %))))
                    :ref       (str "amount-" id)
-                   :onBlur    #(.save-edit this)}))
+                   :onBlur    #(do
+                                (set! (.-type (.-target %)) "text")
+                                (.save-edit this))}))
 
           ;; Title
           (dom/div
