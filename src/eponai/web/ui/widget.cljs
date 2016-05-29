@@ -138,9 +138,6 @@
             (dom/div
               #js {:className "widget-menu float-right menu-horizontal"}
 
-              (->DatasetFilterPicker (om/computed {:key     "dataset-filter-picker"
-                                                   :filters (:widget/filter widget)}
-                                                  {:on-change dataset-filter-picker-on-change}))
 
               (when-not (or (= (:graph/style graph) :graph.style/burndown)
                             (= (:graph/style graph) :graph.style/progress-bar))
@@ -158,9 +155,13 @@
 
               (when (or (= (:graph/style graph) :graph.style/burndown)
                         (= (:graph/style graph) :graph.style/progress-bar))
-                (->GoalSettings (om/computed {:key "goal-settings"}
+                (->GoalSettings (om/computed {:key "goal-settings"
+                                              :limit (get-in report [:report/goal :goal/value])}
                                              {:on-change goal-settings-on-change})))
 
+              (->DatasetFilterPicker (om/computed {:key     "dataset-filter-picker"
+                                                   :filters (:widget/filter widget)}
+                                                  {:on-change dataset-filter-picker-on-change}))
               ;; Widget edit navigation
               ;(dom/a
               ;  #js {:className "nav-link widget-edit secondary"
@@ -172,14 +173,16 @@
               ;  (dom/i
               ;    #js {:className "fa fa-fw fa-pencil"}))
               (dom/a
-                #js {:className "nav-link secondary"
+                #js {:className "nav-link secondary has-tip top"
+                     :title     "Delete"
                      :onClick   #(.delete-widget this)}
                 (dom/i
                   #js {:className "fa fa-fw fa-trash-o"}))
 
               ;; Move widget handle
               (dom/a
-                #js {:className "nav-link widget-move secondary"}
+                #js {:className "nav-link widget-move secondary has-tip top"
+                     :title "Move"}
                 (dom/i
                   #js {:className "fa fa-fw fa-arrows widget-move"}))
 

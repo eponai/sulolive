@@ -134,7 +134,7 @@
                                                              (color-scale i)))
                                       (d3/tooltip-set-pos id
                                                           (+ 30 (.. js/d3 -event -pageX))
-                                                          (.. js/d3 -event -pageY))
+                                                          (+ 10 (.. js/d3 -event -pageY)))
 
                                       (d3/focus-set-guide svg (x-scale x-position) 5)
                                       (d3/focus-set-data-points svg

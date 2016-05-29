@@ -87,7 +87,8 @@
         (dom/div
           nil
           (dom/a
-            #js {:className "nav-link"
+            #js {:className "nav-link has-tip top"
+                 :title "Filter"
                  :onClick #(om/update-state! this assoc :is-showing? true)}
             (dom/i
               #js {:className "fa fa-filter"}))

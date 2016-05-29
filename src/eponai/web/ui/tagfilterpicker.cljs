@@ -39,7 +39,8 @@
       (dom/div
         nil
         (dom/a
-          #js {:className "nav-link tagfilter"
+          #js {:className "nav-link tagfilter  has-tip top"
+               :title     "Show/hide tags"
                :onClick   #(om/update-state! this assoc :is-showing? true)}
           (dom/i
             #js {:className "fa fa-fw fa-tags"})

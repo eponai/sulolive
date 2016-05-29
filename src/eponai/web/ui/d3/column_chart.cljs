@@ -45,11 +45,7 @@
           graph (.. svg
                     (append "g")
                     (attr "class" "column-chart")
-                    (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))
-          focus (.. svg
-                    (append "g")
-                    (attr "class" "focus")
-                    (style "display" "none"))]
+                    (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))]
       (.. graph
           (append "g")
           (attr "class" (if (< 30 (.. x-scale rangeBand)) "x axis grid" "x axis grid hidden"))
@@ -58,12 +54,13 @@
       ;    (append "g")
       ;    (attr "class" "y axis grid")
       ;    (attr "transform" (str "translate(0,0)")))
+      (d3/focus-append svg {:margin margin})
       (d3/update-on-resize this id)
 
-      (om/update-state! this assoc :svg svg :js-data js-data :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph :focus focus)))
+      (om/update-state! this assoc :svg svg :js-data js-data :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph)))
 
   (update [this]
-    (let [{:keys [svg x-scale y-scale x-axis y-axis js-data margin graph focus]} (om/get-state this)
+    (let [{:keys [svg x-scale y-scale x-axis y-axis js-data margin graph]} (om/get-state this)
           {:keys [data id]} (om/props this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
@@ -76,107 +73,104 @@
       ; When resize is in progress and sidebar pops in, inner size can be fucked up here.
       ; So just don't do anything in that case, an update will be triggered when sidebar transition is finished anyway.
       (when-not (or (js/isNaN inner-height) (js/isNaN inner-width))
-        (if (empty? values)
-          (do
-            (d3/no-data-insert svg)
-            (.. x-scale
-                (rangeRoundBands #js [0 inner-width] 0.1)
-                (domain #js []))
-            (.. y-scale
-                (range #js [inner-height 0])
-                (domain #js [0 1])))
-          (do
-            (d3/no-data-remove svg)
-            (.. x-scale
-                (rangeRoundBands #js [0 inner-width] 0.01)
-                (domain (.map values (fn [d] (.-name d)))))
-            (.. y-scale
-                (range #js [inner-height 0])
-                (domain #js [0 (.. js/d3
-                                   (max values (fn [d] (.-value d))))]))))
+        (.update-scales this inner-width inner-height values)
+        (.update-axis this inner-width inner-height)
 
-        (.. y-axis
-            (ticks (max (/ inner-height 50) 2))
-            (tickSize (* -1 inner-width) 0 0))
-        (.. x-axis
-            (tickSize (* -1 inner-height) 0 0))
 
-        (.. svg
-            (selectAll ".x.axis")
-            (attr "transform" (str "translate(0, " inner-height ")"))
-            (attr "class" (if (< 30 (.. x-scale rangeBand)) "x axis grid" "x axis grid hidden"))
-            transition
-            (duration 250)
-            (call x-axis))
+        (let [bars (.. graph
+                       (selectAll "rect.bar")
+                       (data values))
+              texts (.. graph
+                        (selectAll "text.bar")
+                        (data values))]
+          (.. bars
+              enter
+              (append "rect")
+              (attr "class" "bar")
+              (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))
+              (attr "y" inner-height)
+              (attr "height" 0)
+              (on "mouseover" (fn [d]
+                                (d3/tooltip-remove-all)
+                                (d3/tooltip-build id)
+                                (d3/tooltip-add-value id d color-scale)
+                                (d3/focus-show svg)))
+              (on "mousemove" (fn []
+                                (d3/tooltip-set-pos id
+                                                    (+ 10 (.. js/d3 -event -pageX))
+                                                    (+ 10 (.. js/d3 -event -pageY)))))
+              (on "mouseout" (fn []
+                               (d3/tooltip-remove id)
+                               (d3/focus-hide svg))))
 
-        ;(.. svg
-        ;    (selectAll ".y.axis")
-        ;    transition
-        ;    (duration 250)
-        ;    (call y-axis))
+          (.. bars
+              (style "fill" (fn [d]
+                              (color-scale (.-name d))))
+              transition
+              (duration 250)
+              (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))
+              (attr "width" (.. x-scale rangeBand))
+              (attr "y" (fn [d] (y-scale (.-value d))))
+              (attr "height" (fn [d] (- inner-height (y-scale (.-value d))))))
 
-        (mapv
-          (fn [data-set]
-            (let [data-values (.-values data-set)
-                  bars (.. graph
-                           (selectAll "rect.bar")
-                           (data data-values))
-                  texts (.. graph
-                            (selectAll "text.bar")
-                            (data data-values))]
-              (.. bars
-                  enter
-                  (append "rect")
-                  (attr "class" "bar")
-                  (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))
-                  (attr "y" inner-height)
-                  (attr "height" 0)
-                  (on "mouseover" (fn [d]
-                                    (d3/tooltip-remove-all)
-                                    (let [tooltip (d3/tooltip-build id)]
-                                      (d3/tooltip-add-value id d color-scale)
-                                      (.. focus (style "display" nil)))))
-                  (on "mousemove" (fn []
-                                    (let [tooltip (d3/tooltip-select id)]
-                                      (.. tooltip
-                                          (style "left" (str (+ 10 (.. js/d3 -event -pageX)) "px"))
-                                          (style "top" (str (+ 10 (.. js/d3 -event -pageY)) "px"))))))
-                  (on "mouseout" (fn []
-                                   (d3/tooltip-remove id)
-                                   (.. focus (style "display" "none")))))
+          (.. bars
+              exit
+              remove)
 
-              (.. bars
-                  (style "fill" (fn [d]
-                                  (color-scale (.-name d))))
-                  transition
-                  (duration 250)
-                  (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))
-                  (attr "width" (.. x-scale rangeBand))
-                  (attr "y" (fn [d] (y-scale (.-value d))))
-                  (attr "height" (fn [d] (- inner-height (y-scale (.-value d))))))
+          (.. texts
+              enter
+              (append "text")
+              (attr "class" "bar")
+              (attr "text-anchor" "middle"))
 
-              (.. bars
-                  exit
-                  remove)
+          (.. texts
+              transition
+              (duration 250)
+              (attr "x" (fn [d] (+ (x-scale (.-name d)) (/ (.. x-scale rangeBand) 2))))
+              (attr "y" (fn [d] (y-scale (.-value d))))
+              (attr "dy" "-0.3em")
+              (text (fn [d] (gstring/format "%.2f" (.-value d)))))
 
-              (.. texts
-                  enter
-                  (append "text")
-                  (attr "class" "bar")
-                  (attr "text-anchor" "middle"))
+          (.. texts
+              exit
+              remove)))))
 
-              (.. texts
-                  transition
-                  (duration 250)
-                  (attr "x" (fn [d] (+ (x-scale (.-name d)) (/ (.. x-scale rangeBand) 2))))
-                  (attr "y" (fn [d] (y-scale (.-value d))))
-                  (attr "dy" "-0.3em")
-                  (text (fn [d] (gstring/format "%.2f" (.-value d)))))
+  (update-axis [this width height]
+    (let [{:keys [x-axis y-axis svg x-scale]} (om/get-state this)]
+      (.. y-axis
+          (ticks (max (/ height 50) 2))
+          (tickSize (* -1 width) 0 0))
+      (.. x-axis
+          (tickSize (* -1 height) 0 0))
 
-              (.. texts
-                  exit
-                  remove)))
-          js-data))))
+      (.. svg
+          (selectAll ".x.axis")
+          (attr "transform" (str "translate(0, " height ")"))
+          (attr "class" (if (< 30 (.. x-scale rangeBand)) "x axis grid" "x axis grid hidden"))
+          transition
+          (duration 250)
+          (call x-axis))))
+
+  (update-scales [this width height values]
+    (let [{:keys [svg x-scale y-scale]} (om/get-state this)]
+      (if (empty? values)
+        (do
+          (d3/no-data-insert svg)
+          (.. x-scale
+              (rangeRoundBands #js [0 width] 0.1)
+              (domain #js []))
+          (.. y-scale
+              (range #js [height 0])
+              (domain #js [0 1])))
+        (do
+          (d3/no-data-remove svg)
+          (.. x-scale
+              (rangeRoundBands #js [0 width] 0.01)
+              (domain (.map values (fn [d] (.-name d)))))
+          (.. y-scale
+              (range #js [height 0])
+              (domain #js [0 (.. js/d3
+                                 (max values (fn [d] (.-value d))))]))))))
 
   (initLocalState [_]
     {:margin {:top 20 :bottom 20 :left 20 :right 20}})

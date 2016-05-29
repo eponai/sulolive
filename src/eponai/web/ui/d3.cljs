@@ -106,9 +106,14 @@
         (style "background" color-fn))))
 
 (defn tooltip-set-pos [id left top]
-  (let [tooltip (tooltip-select id)]
+  (let [tooltip (tooltip-select id)
+        tooltip-width (js/parseInt (.. tooltip (style "width")))
+        window-width (js/parseInt (.. js/d3 (select "body") (style "width")))
+        left-pos (if (> (+ left tooltip-width) window-width)
+                   (- window-width tooltip-width)
+                   left)]
     (.. tooltip
-        (style "left" (str left "px"))
+        (style "left" (str left-pos "px"))
         (style "top" (str top "px")))))
 
 (defn clip-path-append [el id]
