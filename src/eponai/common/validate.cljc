@@ -95,7 +95,6 @@
 (defmethod validate 'widget/create
   [{:keys [state]} k {:keys [widget user-uuid] :as p}]
   (let [required-fields #{:widget/uuid
-                          :widget/index
                           :widget/width
                           :widget/height
                           :widget/report
@@ -107,14 +106,14 @@
                   :code         :missing-required-fields
                   :missing-keys missing-keys})
     (let [dashboard-id (:widget/dashboard widget)
-          db-project (p/one-with (d/db state) {:where   '[[?u :user/uuid ?user-uuid]
-                                                          [?p :project/users ?u]
-                                                          [?e :dashboard/project ?p]]
+          db-project (p/one-with (d/db state) {:where   '[[?d :dashboard/project ?e]
+                                                          [?u :user/uuid ?user-uuid]
+                                                          [?e :project/users ?u]]
                                                :symbols {'?user-uuid   user-uuid
-                                                         '?e dashboard-id}})]
+                                                         '?d dashboard-id}})]
       ;; Verify that that the transaction is added is accessible by the user adding the transaction.
       (do-validate k p #(some? db-project)
-                   {:message        "You don't have access to modify the specified project."
-                    :code           :project-unaccessible
+                   {:message      "You don't have access to modify the specified project."
+                    :code         :project-unaccessible
                     :dashboard-id dashboard-id
-                    :user-uuid      user-uuid}))))
+                    :user-uuid    user-uuid}))))

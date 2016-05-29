@@ -153,6 +153,16 @@
     ;; Local read
     (cached-query-dashboard env k p)))
 
+(defmethod read :query/active-dashboard
+  [{:keys [db ast target query]} _ _]
+  (let [project-id (active-project-eid db)]
+    (if (= target :remote)
+      {:remote (assoc-in ast [:params :project-eid] project-id)}
+
+      {:value (when project-id
+                (when-let [dashboard-id (p/one-with db {:where [['?e :dashboard/project project-id]]})]
+                  (p/pull db query dashboard-id)))})))
+
 (defmethod read :query/all-projects
   [{:keys [db query target]} _ _]
   (if target

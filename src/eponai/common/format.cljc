@@ -142,22 +142,22 @@
     ;        m)))
     ;  {}
     ;  f)
-    (debug "Formatting filter: " (-> input
-                                     (select-keys [:db/id :filter/last-x-days
-                                                   :filter/start-date
-                                                   :filter/end-date
-                                                   :filter/min-amount
-                                                   :filter/max-amount
-                                                   :filter/include-tags
-                                                   :filter/exclude-tags])
-                                     add-tempid
-                                     (update :filter/end-date add-tempid)
-                                     (update :filter/start-date add-tempid)
-                                     (update :filter/include-tags add-tempid)
-                                     (update :filter/exclude-tags add-tempid)
-                                     (update :filter/min-amount #(when % (str->number %)))
-                                     (update :filter/max-amount #(when % (str->number %)))
-                                     remove-empty-vals))
+    ;(debug "Formatting filter: " (-> input
+    ;                                 (select-keys [:db/id :filter/last-x-days
+    ;                                               :filter/start-date
+    ;                                               :filter/end-date
+    ;                                               :filter/min-amount
+    ;                                               :filter/max-amount
+    ;                                               :filter/include-tags
+    ;                                               :filter/exclude-tags])
+    ;                                 add-tempid
+    ;                                 (update :filter/end-date add-tempid)
+    ;                                 (update :filter/start-date add-tempid)
+    ;                                 (update :filter/include-tags add-tempid)
+    ;                                 (update :filter/exclude-tags add-tempid)
+    ;                                 (update :filter/min-amount #(when % (str->number %)))
+    ;                                 (update :filter/max-amount #(when % (str->number %)))
+    ;                                 remove-empty-vals))
     (-> input
         (select-keys [:db/id
                       :filter/last-x-days

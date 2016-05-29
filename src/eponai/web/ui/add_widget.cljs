@@ -10,7 +10,8 @@
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]
-    [eponai.web.routes :as routes]))
+    [eponai.web.routes :as routes]
+    [eponai.common.format.date :as date]))
 
 ;;; ####################### Actions ##########################
 
@@ -65,11 +66,11 @@
 
             (= widget-type :goal)
             {:report/uuid (d/squuid)
-             :report/goal {:goal/value 50
+             :report/goal {:goal/value 1500
                            :goal/cycle {:cycle/repeat       0
-                                        :cycle/period       :cycle.period/day
+                                        :cycle/period       :cycle.period/month
                                         :cycle/period-count 1
-                                        :cycle/start        (c/to-long (t/today))}}})))
+                                        :cycle/start        (date/date->long (date/first-day-of-this-month))}}})))
 
   (default-graph [_ props]
     (let [{:keys [widget-type]} (::om/computed props)]
@@ -79,7 +80,7 @@
 
             (= widget-type :goal)
             {:graph/uuid (d/squuid)
-             :graph/style :graph.style/progress-bar})))
+             :graph/style :graph.style/burndown})))
 
   (data-set [this]
     (let [{:keys [data-set]} (om/get-state this)]

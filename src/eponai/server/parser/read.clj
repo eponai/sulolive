@@ -88,6 +88,17 @@
                                             (common.pull/with-auth user-uuid)))
             (debug "No project-eid found for user-uuid: " user-uuid))})
 
+(defmethod parser/read-basis-param-path :query/active-dashboard [env _ params] [(env+params->project-eid env params)])
+(defmethod read :query/active-dashboard
+  [{:keys [db db-since query user-uuid] :as env} _ params]
+  {:value (if-let [project-id (env+params->project-eid env params)]
+            (server.pull/pull-one-since db db-since query
+                                        (-> {:where   '[[?e :dashboard/project ?p]
+                                                        [?p :project/users ?u]]
+                                             :symbols {'?p project-id}}
+                                            (common.pull/with-auth user-uuid)))
+            (debug "No project-eid found for user-uuid: " user-uuid))})
+
 (defmethod read :query/all-projects
   [{:keys [db db-since query auth]} _ _]
   {:value (server.pull/pull-all-since db db-since query

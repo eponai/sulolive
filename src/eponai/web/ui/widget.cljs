@@ -26,14 +26,16 @@
     (cond (or
             (= style :graph.style/bar)
             (= style :graph.style/line)
-            (= style :graph.style/area))
+            (= style :graph.style/area)
+            (= style :graph.style/burndown))
           {:maxH 3
-           :minH 2
+           :minH 3
            :minW 50
            :maxW 100}
 
           :else
           {:minH 2
+           :maxH 3
            :minW 25
            :maxW 100})))
 

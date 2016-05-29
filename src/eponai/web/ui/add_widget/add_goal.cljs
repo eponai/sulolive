@@ -47,31 +47,31 @@
          [:div
           [:div.row
            (->Widget (assoc widget :widget/data (report/generate-data (:widget/report widget) transactions {:data-filter (get-in widget [:widget/graph :graph/filter])})))]
-          [:div.row
-           [:div.columns.small-12
-            [:input
-             {:type     "radio"
-              :id       "burndown-option"
-              :checked  (= style :graph.style/burndown)
-              :on-click #(when (and (not= style :graph.style/burndown)
-                                    on-change)
-                          (on-change (-> widget
-                                         (assoc-in [:widget/graph :graph/style] :graph.style/burndown)
-                                         (update-in [:widget/report :report/goal :goal/value] * (t/number-of-days-in-the-month (t/today)))
-                                         (assoc-in [:widget/report :report/goal :goal/cycle :cycle/period] :cycle.period/month))))}]
-            [:label {:for "burndown-option"} "Burndown chart"]
-            [:input
-             {:type     "radio"
-              :id       "progress-option"
-              :checked  (= style :graph.style/progress-bar)
-              :on-click #(when (and (not= style :graph.style/progress-bar)
-                                    on-change)
-                          (on-change
-                            (-> widget
-                                (assoc-in [:widget/graph :graph/style] :graph.style/progress-bar)
-                                (assoc-in [:widget/report :report/goal :goal/cycle :cycle/period] :cycle.period/day)
-                                (update-in [:widget/report :report/goal :goal/value] / (t/number-of-days-in-the-month (t/today))))))}]
-            [:label {:for "progress-option"} "Progress meter"]]]
+          ;[:div.row
+          ; [:div.columns.small-12
+          ;  [:input
+          ;   {:type     "radio"
+          ;    :id       "burndown-option"
+          ;    :checked  (= style :graph.style/burndown)
+          ;    :on-click #(when (and (not= style :graph.style/burndown)
+          ;                          on-change)
+          ;                (on-change (-> widget
+          ;                               (assoc-in [:widget/graph :graph/style] :graph.style/burndown)
+          ;                               (update-in [:widget/report :report/goal :goal/value] * (t/number-of-days-in-the-month (t/today)))
+          ;                               (assoc-in [:widget/report :report/goal :goal/cycle :cycle/period] :cycle.period/month))))}]
+          ;  [:label {:for "burndown-option"} "Burndown chart"]
+          ;  [:input
+          ;   {:type     "radio"
+          ;    :id       "progress-option"
+          ;    :checked  (= style :graph.style/progress-bar)
+          ;    :on-click #(when (and (not= style :graph.style/progress-bar)
+          ;                          on-change)
+          ;                (on-change
+          ;                  (-> widget
+          ;                      (assoc-in [:widget/graph :graph/style] :graph.style/progress-bar)
+          ;                      (assoc-in [:widget/report :report/goal :goal/cycle :cycle/period] :cycle.period/day)
+          ;                      (update-in [:widget/report :report/goal :goal/value] / (t/number-of-days-in-the-month (t/today))))))}]
+          ;  [:label {:for "progress-option"} "Progress meter"]]]
           [:div.row
            [:div.columns.small-3.text-right
             [:label (if (= style :graph.style/progress-bar)

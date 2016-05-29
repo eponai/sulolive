@@ -1,18 +1,16 @@
 (ns eponai.web.ui.project
   (:require
+    [eponai.client.ui :refer-macros [opts]]
+    [eponai.web.routes :as routes]
     [eponai.web.ui.add-widget.add-goal :refer [->NewGoal NewGoal]]
     [eponai.web.ui.add-widget :refer [NewWidget ->NewWidget]]
     [eponai.web.ui.add-transaction :refer [->AddTransaction AddTransaction]]
     [eponai.web.ui.all-transactions :refer [->AllTransactions AllTransactions]]
-    [eponai.web.ui.dashboard :as dashboard :refer [->Dashboard Dashboard]]
-    ;[eponai.web.ui.navigation :as nav]
+    [eponai.web.ui.dashboard :refer [->Dashboard Dashboard]]
     [eponai.web.ui.utils :as utils]
-    [eponai.client.ui :refer-macros [opts]]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug error]]
-    [eponai.web.routes :as routes]
-    [datascript.core :as d]))
+    [taoensso.timbre :refer-macros [debug error]]))
 
 (defui Shareproject
   Object
@@ -45,8 +43,7 @@
   (query [_]
     [{:proxy/add-transaction (om/get-query AddTransaction)}
      {:proxy/new-widget (om/get-query NewWidget)}
-     {:query/dashboard [:db/id
-                        :widget/_dashboard]}])
+     {:query/active-dashboard [:db/id {:widget/_dashboard [:widget/index]}]}])
   Object
   (initLocalState [this]
     {:computed/share-project-on-save #(let [project (-> (om/get-computed this)
@@ -62,10 +59,15 @@
   (share-project [this project-uuid email]
     (om/transact! this `[(project/share ~{:project/uuid project-uuid
                                           :user/email email})]))
+
+  (last-widget-index [_ widgets]
+    (let [{:keys [widget/index]} (last (sort-by :widget/index widgets))]
+      (or index 0)))
+
   (render [this]
     (let [{:keys [proxy/add-transaction
                   proxy/new-widget
-                  query/dashboard]} (om/props this)
+                  query/active-dashboard]} (om/props this)
           {:keys [app-content]} (om/get-computed this)
           {:keys [query/active-project]} app-content
           project (:ui.component.project/active-project active-project)
@@ -80,7 +82,7 @@
                   computed/new-track-on-save
                   computed/new-goal-on-save]} (om/get-state this)
           {:keys [db/id]} project]
-      ;(debug "App content..." dashboard)
+      ;(debug "App content..." active-dashboard)
       (html
         [:div#project-submenu.row.expanded.collapse
 
@@ -159,17 +161,17 @@
                             :on-close on-close})))
           (when new-track?
             (utils/modal {:content  (->NewWidget (om/computed new-widget
-                                                              {:dashboard-id (:db/id dashboard)
+                                                              {:dashboard-id (:db/id active-dashboard)
                                                                :widget-type :track
-                                                               :index       (dashboard/calculate-last-index (:widget/_dashboard dashboard))
+                                                               :index       (.last-widget-index this (:widget/_dashboard active-dashboard))
                                                                :on-save     new-track-on-save}))
                           :on-close new-track-on-save
                           :size     "large"}))
           (when new-goal?
             (utils/modal {:content  (->NewWidget (om/computed new-widget
-                                                              {:dashboard-id (:db/id dashboard)
+                                                              {:dashboard-id (:db/id active-dashboard)
                                                                :widget-type  :goal
-                                                               :index        (dashboard/calculate-last-index (:widget/_dashboard dashboard))
+                                                               :index        (.last-widget-index this (:widget/_dashboard active-dashboard))
                                                                :on-save      new-goal-on-save}))
                           :on-close new-goal-on-save
                           :size     "medium"}))]]))))
@@ -218,8 +220,7 @@
 
   (render [this]
     (let [{:keys [query/active-project
-                  proxy/child-content
-                  proxy/dashboard]} (om/props this)
+                  proxy/child-content]} (om/props this)
           {:keys [share-project?]} (om/get-state this)
           project (:ui.component.project/active-project active-project)
           ]
@@ -233,10 +234,7 @@
         [:div#project-content
          (let [content (project-content this)
                factory (get-in content->component [content :factory])
-               props (cond-> (assoc child-content :ref content)
-                             (= :widget content)
-                             (om/computed {:dashboard (:query/dashboard dashboard)
-                                           :index     (dashboard/calculate-last-index (:widget/_dashboard dashboard))}))]
+               props (assoc child-content :ref content)]
            (when factory
              (factory props)))]
 

@@ -35,12 +35,17 @@
 ;          :else
 ;          {:minW 1
 ;           :maxH 2})))
+
 (defn min-dimensions [widget num-cols]
   (let [style (get-in widget [:widget/graph :graph/style])
         calc-w (fn [min-w]
                  (.floor js/Math (/ (* min-w num-cols) 100)))
         dims (w/dimensions (:widget/graph widget))]
-    (update dims :minW calc-w)
+    (cond-> dims
+            (some? (:minW dims))
+            (update :minW calc-w)
+            (some? (:maxW dims))
+            (update :maxW calc-w))
 
     ;(cond (or
     ;        (= style :graph.style/area)
@@ -63,13 +68,12 @@
 (defn grid-layout
   [num-cols widgets]
   (let [layout-fn (fn [{:keys [widget/index] :as widget}]
-                    ;(debug "Layout for widget: " widget)
                     (merge
-                      {:x    (mod index num-cols)
-                       :y    (int (/ index num-cols))
-                       :w    (max 1 (.floor js/Math (/ (* (:widget/width widget) num-cols) 100)))
-                       :h    (:widget/height widget)
-                       :i    (str (:widget/uuid widget))}
+                      {:x (mod index num-cols)
+                       :y (int (/ index num-cols))
+                       :w (max 1 (.floor js/Math (/ (* (:widget/width widget) num-cols) 100)))
+                       :h (:widget/height widget)
+                       :i (str (:widget/uuid widget))}
                       (min-dimensions widget num-cols)))]
     (map layout-fn widgets)))
 
@@ -91,12 +95,6 @@
               :widget/width  new-width
               :widget/height new-height}))
          layout)))
-
-(defn calculate-last-index [widgets]
-  (let [{:keys [widget/index]} (last (sort-by :widget/index widgets))]
-    (if index
-      (inc index)
-      0)))
 
 (defn build-react [component props & children]
   (let [React (.-React js/window)]
@@ -200,22 +198,22 @@
          ;   [:i.fa.fa-star.fa-fw
          ;    (opts {:style {:color "orange"}})]
          ;   [:span.small-caps "Goal"]]]]
-         (when new-track?
-           (utils/modal {:content  (->NewWidget (om/computed new-widget
-                                                             {:dashboard dashboard
-                                                              :widget-type :track
-                                                              :index (calculate-last-index widgets)
-                                                              :on-save new-track-on-save}))
-                         :on-close #(om/update-state! this assoc :new-track? false)
-                         :size "large"}))
-         (when new-goal?
-           (utils/modal {:content  (->NewWidget (om/computed new-widget
-                                                             {:dashboard dashboard
-                                                              :widget-type :goal
-                                                              :index (calculate-last-index widgets)
-                                                              :on-save new-goal-on-save}))
-                         :on-close #(om/update-state! this assoc :new-goal? false)
-                         :size "medium"}))
+         ;(when new-track?
+         ;  (utils/modal {:content  (->NewWidget (om/computed new-widget
+         ;                                                    {:dashboard dashboard
+         ;                                                     :widget-type :track
+         ;                                                     :index (calculate-last-index widgets)
+         ;                                                     :on-save new-track-on-save}))
+         ;                :on-close #(om/update-state! this assoc :new-track? false)
+         ;                :size "large"}))
+         ;(when new-goal?
+         ;  (utils/modal {:content  (->NewWidget (om/computed new-widget
+         ;                                                    {:dashboard dashboard
+         ;                                                     :widget-type :goal
+         ;                                                     :index (calculate-last-index widgets)
+         ;                                                     :on-save new-goal-on-save}))
+         ;                :on-close #(om/update-state! this assoc :new-goal? false)
+         ;                :size "medium"}))
 
          (if (and layout
                   grid-element
