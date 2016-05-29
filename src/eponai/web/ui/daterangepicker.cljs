@@ -90,9 +90,14 @@
           last-day (time/last-day-of-the-month dt)
           day-of-week (time/day-of-week first-day)          ;Return number for day (Mon = 1, Sun = 7)
           calendar-start-date (time/minus first-day (time/days (dec day-of-week))) ; Subtract 0-indexed weekday to get start date of calendar.
+          calendar-range (periodic/periodic-seq calendar-start-date (time/plus last-day (time/days 1)) (time/days 1))
+
+          calendar-end-date (if (zero? (mod (count calendar-range) 7))
+                              (time/plus last-day (time/days 1))
+                              (time/plus last-day (time/days (inc (- 7 (mod (+ days-in-month (dec day-of-week)) 7))))))
 
           ; Add days from the next month to fill upp an entire week column, add an extra day for including end date in periodiq seq
-          calendar-end-date (time/plus last-day (time/days  (inc (- 7 (mod (+ days-in-month (dec day-of-week)) 7)))))
+          ;calendar-end-date (time/plus last-day (time/days (inc (- 7 (mod (+ days-in-month (dec day-of-week)) 7)))))
           weeks (partition 7 (periodic/periodic-seq calendar-start-date calendar-end-date (time/days 1)))]
       (dom/table
         nil

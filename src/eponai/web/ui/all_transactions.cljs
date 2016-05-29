@@ -312,6 +312,7 @@
                   computed/date-range-picker-on-apply]} (om/get-state this)]
       (html
         [:div.transaction-filters
+         (opts {:style {:padding "1em 0"}})
          [:div.row.expanded
           [:div.columns.small-3
            (filter/->TagFilter (om/computed {:tags (:filter/include-tags tag-filter)}
@@ -357,7 +358,6 @@
           input-filter (.filter this)]
       (html
         [:div#txs
-         (opts {:style {:padding "1em"}})
          (if (or (seq transactions)
                  (.has-filter this input-filter))
            (.render-transaction-list this transactions)
