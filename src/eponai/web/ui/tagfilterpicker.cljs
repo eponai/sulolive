@@ -12,11 +12,8 @@
 (defui TagFilterPicker
   Object
   (init-state [this props]
-    (let [{:keys [filters transactions]} props
-          tags (sort-by :tag/name (into [] (comp (mapcat :transaction/tags)
-                                                 (map #(select-keys % [:tag/name]))
-                                                 (distinct))
-                                        transactions))
+    (let [{:keys [filters tags]} props
+          tags (sort-by :tag/name tags)
           filtered (when (seq (:filter/include-tags filters))
                      (map #(select-keys % [:tag/name]) (:filter/include-tags filters)))]
       {:include-tags (set (or filtered tags))

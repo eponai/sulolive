@@ -118,7 +118,7 @@
                   computed/date-range-picker-on-cancel
                   computed/goal-settings-on-change]} (om/get-state this)
           {:keys [id
-                  transactions
+                  tags
                   on-select-widget]} (om/get-computed this)]
       (dom/div
         #js {:className "widget"}
@@ -142,7 +142,7 @@
               (when-not (or (= (:graph/style graph) :graph.style/burndown)
                             (= (:graph/style graph) :graph.style/progress-bar))
                 (->TagFilterPicker (om/computed {:key          "tag-filter-picker"
-                                                 :transactions transactions
+                                                 :tags tags
                                                  :filters      (:graph/filter graph)}
                                                 {:on-apply tag-filter-picker-on-change
                                                  :on-open on-select-widget})))

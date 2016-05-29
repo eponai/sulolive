@@ -42,7 +42,7 @@
 (defui AmountFilter
   utils/ISyncStateWithProps
   (props->init-state [_ props]
-    (assert (:amount-filter props)
+    (assert (contains? props :amount-filter)
             (str "No amount filter in props for AmountFilter. Was: " props))
     (:amount-filter props))
 

@@ -63,7 +63,7 @@
                                              :project/uuid
                                              :project/name
                                              :project/users]}]}
-     {:query/transactions (om/get-query Transaction)}])
+     :query/tags])
 
   Object
   (componentWillReceiveProps [this new-props]
@@ -119,7 +119,7 @@
 
   (render [this]
     (let [{:keys [query/dashboard
-                  query/transactions]} (om/props this)
+                  query/tags]} (om/props this)
           {:keys [layout
                   grid-element
                   is-editing?
@@ -160,7 +160,7 @@
                                   (->Widget
                                     (om/computed widget-props
                                                  {:project-id       project-id
-                                                  :transactions     transactions
+                                                  :tags tags
                                                   :on-select-widget #(do (debug "Selected widget: " (:widget/uuid widget-props))
                                                                          (om/update-state! this assoc :active-widget-uuid (:widget/uuid widget-props)))})))
                                 ;(.createElement React
