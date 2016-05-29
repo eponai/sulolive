@@ -185,6 +185,7 @@
       ;(debug "Layout: " layout)
       (html
         [:div
+         (opts {:style {:position "relative"}})
          ;[:div#dashboard-menu.row.column.small-12.expanded
          ; [:div.menu-horizontal
          ;  [:a.nav-link
