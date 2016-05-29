@@ -1,69 +1,21 @@
 (ns eponai.web.ui.dashboard
-  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
     [datascript.core :as d]
     [eponai.web.ui.all-transactions :refer [Transaction]]
-    [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
-    [eponai.web.routes :as routes]
-    [eponai.web.ui.add-widget :refer [NewWidget ->NewWidget]]
     [eponai.web.ui.widget :as w :refer [Widget ->Widget]]
-    [garden.core :refer [css]]
+    [om.dom :as dom]
     [om.next :as om :refer-macros [defui]]
-    [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [error debug]]
-    [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
-    [eponai.web.ui.utils :as utils]))
-
-;(defn min-dimensions [widget num-cols]
-;  (let [style (get-in widget [:widget/graph :graph/style])
-;        calc-w (fn [min-w]
-;                      (.floor js/Math (/ (* min-w num-cols) 100)))]
-;
-;    (cond (or
-;            (= style :graph.style/area)
-;            (= style :graph.style/line)
-;            (= style :graph.style/bar)
-;            (= style :graph.style/burndown))
-;          {:minW (calc-w 50)
-;           :minH 3
-;           :maxH 5}
-;
-;          (= style :graph.style/chord)
-;          {:minW (calc-w 50)
-;           :minH 4}
-;
-;          :else
-;          {:minW 1
-;           :maxH 2})))
+    [taoensso.timbre :refer-macros [error debug]]))
 
 (defn min-dimensions [widget num-cols]
-  (let [style (get-in widget [:widget/graph :graph/style])
-        calc-w (fn [min-w]
+  (let [calc-w (fn [min-w]
                  (.floor js/Math (/ (* min-w num-cols) 100)))
         dims (w/dimensions (:widget/graph widget))]
     (cond-> dims
             (some? (:minW dims))
             (update :minW calc-w)
             (some? (:maxW dims))
-            (update :maxW calc-w))
-
-    ;(cond (or
-    ;        (= style :graph.style/area)
-    ;        (= style :graph.style/line)
-    ;        (= style :graph.style/bar)
-    ;        (= style :graph.style/burndown))
-    ;      {:minW (calc-w 50)
-    ;       :minH 3
-    ;       :maxH 5}
-    ;
-    ;      (= style :graph.style/chord)
-    ;      {:minW (calc-w 50)
-    ;       :minH 4}
-    ;
-    ;      :else
-    ;      {:minW 1
-    ;       :maxH 2})
-    ))
+            (update :maxW calc-w))))
 
 (defn grid-layout
   [num-cols widgets]
@@ -111,8 +63,7 @@
                                              :project/uuid
                                              :project/name
                                              :project/users]}]}
-     {:query/transactions (om/get-query Transaction)}
-     {:proxy/new-widget (om/get-query NewWidget)}])
+     {:query/transactions (om/get-query Transaction)}])
 
   Object
   (componentWillReceiveProps [this new-props]
@@ -168,93 +119,56 @@
 
   (render [this]
     (let [{:keys [query/dashboard
-                  query/transactions
-                  proxy/new-widget]} (om/props this)
+                  query/transactions]} (om/props this)
           {:keys [layout
                   grid-element
                   is-editing?
-                  cols
-                  computed/new-track-on-save
-                  computed/new-goal-on-save]} (om/get-state this)
-          {:keys [new-track? new-goal?]} (om/get-computed this)
+                  cols]} (om/get-state this)
           widgets (:widget/_dashboard dashboard)
           project-id (:db/id (:dashboard/project dashboard))
           React (.-React js/window)]
       ;(debug "Layout: " layout)
-      (html
-        [:div
-         (opts {:style {:position "relative"}})
-         ;[:div#dashboard-menu.row.column.small-12.expanded
-         ; [:div.menu-horizontal
-         ;  [:a.nav-link
-         ;   (opts {:style {:padding "0.5em"}
-         ;          :on-click #(om/update-state! this assoc :new-track? true)})
-         ;   [:i.fa.fa-line-chart.fa-fw
-         ;    (opts {:style {:color "green"}})]
-         ;   [:span.small-caps "Track"]]
-         ;  [:a.nav-link
-         ;   (opts {:style {:padding "0.5em"}
-         ;          :on-click #(om/update-state! this assoc :new-goal? true)})
-         ;   [:i.fa.fa-star.fa-fw
-         ;    (opts {:style {:color "orange"}})]
-         ;   [:span.small-caps "Goal"]]]]
-         ;(when new-track?
-         ;  (utils/modal {:content  (->NewWidget (om/computed new-widget
-         ;                                                    {:dashboard dashboard
-         ;                                                     :widget-type :track
-         ;                                                     :index (calculate-last-index widgets)
-         ;                                                     :on-save new-track-on-save}))
-         ;                :on-close #(om/update-state! this assoc :new-track? false)
-         ;                :size "large"}))
-         ;(when new-goal?
-         ;  (utils/modal {:content  (->NewWidget (om/computed new-widget
-         ;                                                    {:dashboard dashboard
-         ;                                                     :widget-type :goal
-         ;                                                     :index (calculate-last-index widgets)
-         ;                                                     :on-save new-goal-on-save}))
-         ;                :on-close #(om/update-state! this assoc :new-goal? false)
-         ;                :size "medium"}))
-
-         (if (and layout
-                  grid-element
-                  (seq widgets))
-           (.createElement React
-                           grid-element
-                           #js {:className          (if is-editing? "layout animate" "layout"),
-                                :draggableHandle    ".widget-move"
-                                :layouts            layout
-                                :rowHeight          100
-                                :margin             #js [20 20]
-                                :cols               (clj->js cols)
-                                :useCSSTransforms   true
-                                :isDraggable        true
-                                :isResizable        true
-                                :onBreakpointChange #(.on-breakpoint-change this %)
-                                :onResizeStart      #(.edit-start this)
-                                :onResizeStop       #(.edit-stop this widgets %)
-                                :onDragStart        #(.edit-start this)
-                                :onDragStop         #(.edit-stop this widgets %)}
-                           (into-array
-                             (map
-                               (fn [widget-props]
-                                 (.createElement React
-                                                 "div"
-                                                 #js {:key (str (:widget/uuid widget-props))}
-                                                 (->Widget
-                                                   (om/computed widget-props
-                                                                {:project-id project-id
-                                                                 :transactions transactions}))))
-                               (sort-by :widget/index widgets))))
-           [:div.empty-message.text-center
-            [:i.fa.fa-tachometer.fa-5x]
-            [:div.lead
-             "It's a slow day here, your dashboard is empty."
-             [:br]
-             [:br]
-             "Get started with the action and "
-             [:a.link
-              {:on-click #(om/update-state! this assoc :add-widget? true)}
-              "add a new widget"]
-             "."]])]))))
+      (dom/div
+        #js {:style {:position "relative"}}
+        (if (and layout
+                 grid-element
+                 (seq widgets))
+          (.createElement React
+                          grid-element
+                          #js {:className          (if is-editing? "layout animate" "layout"),
+                               :draggableHandle    ".widget-move"
+                               :layouts            layout
+                               :rowHeight          100
+                               :margin             #js [20 20]
+                               :cols               (clj->js cols)
+                               :useCSSTransforms   true
+                               :isDraggable        true
+                               :isResizable        true
+                               :onBreakpointChange #(.on-breakpoint-change this %)
+                               :onResizeStart      #(.edit-start this)
+                               :onResizeStop       #(.edit-stop this widgets %)
+                               :onDragStart        #(.edit-start this)
+                               :onDragStop         #(.edit-stop this widgets %)}
+                          (into-array
+                            (map
+                              (fn [widget-props]
+                                (.createElement React
+                                                "div"
+                                                #js {:key (str (:widget/uuid widget-props))}
+                                                (->Widget
+                                                  (om/computed widget-props
+                                                               {:project-id project-id
+                                                                :transactions transactions}))))
+                              (sort-by :widget/index widgets))))
+          (dom/div
+            #js {:className "empty-message text-center"}
+            (dom/i
+              #js {:className "fa fa-tachometer fa-5x"})
+            (dom/div
+              #js {:className "lead"}
+              "There's not much happening here, your dashboard is empty."
+              (dom/br nil)
+              (dom/br nil)
+              "Get started with the action and add a new widget.")))))))
 
 (def ->Dashboard (om/factory Dashboard))

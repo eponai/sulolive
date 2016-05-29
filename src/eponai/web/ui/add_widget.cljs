@@ -1,17 +1,14 @@
 (ns eponai.web.ui.add-widget
   (:require
-    [cljs-time.coerce :as c]
-    [cljs-time.core :as t]
     [datascript.core :as d]
-    [eponai.client.ui :refer [update-query-params! map-all] :refer-macros [opts]]
+    [eponai.common.format.date :as date]
     [eponai.web.ui.add-widget.add-goal :refer [->NewGoal]]
     [eponai.web.ui.add-widget.add-track :refer [->NewTrack]]
     [eponai.web.ui.widget :as widget :refer [Widget]]
+    [om.dom :as dom]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]
-    [eponai.web.routes :as routes]
-    [eponai.common.format.date :as date]))
+    [taoensso.timbre :refer-macros [debug]]))
 
 ;;; ####################### Actions ##########################
 
@@ -19,12 +16,6 @@
 (defn- change-report-title [component title]
   (om/update-state! component assoc-in [:input-report :report/title] title))
 
-;;;;; ################### UI components ######################
-
-(defn- button-class [field value]
-  (if (= field value)
-    "button primary"
-    "button secondary"))
 ;;;;;;;; ########################## Om Next components ########################
 
 (defui NewWidget
@@ -42,10 +33,7 @@
                              {:transaction/date [:date/ymd
                                                  :date/timestamp]}]}
         {:filter ?filter})
-     :query/tags
-     ;{:query/active-widget (om/get-query Widget)}
-     ;{:query/widget-type [:ui.component.widget/type]}
-     ])
+     :query/tags])
   Object
   (save-widget [this widget]
     (if (some? (:db/id widget))
@@ -91,12 +79,7 @@
       (merge (:tag-filter graph-filter)
              (:date-filter graph-filter))))
   (init-state [this props]
-    (let [{:keys [index]} (::om/computed props)
-          {:keys [query/active-widget]} props]
-      ;(if active-widget
-      ;  (do
-      ;    (om/set-query! this {:params {:filter (or (:widget/filter active-widget) {})}})
-      ;    {:input-widget active-widget}))
+    (let [{:keys [index]} (::om/computed props)]
       (let [g (.default-graph this props)
             dim (widget/dimensions g)]
         {:input-widget {:widget/uuid   (d/squuid)
@@ -125,51 +108,30 @@
                   computed/new-track-on-change
                   computed/new-goal-on-change]} (om/get-state this)
           {:keys [dashboard-id widget-type on-save]} (om/get-computed this)]
-      (html
-        [:div
-         (opts {:style {:padding "1em"}})
-         ;[:ul.breadcrumbs
-         ; [:li
-         ;  [:a
-         ;   {:href (when project-id
-         ;            (routes/key->route :route/project->dashboard
-         ;                               {:route-param/project-id project-id}))}
-         ;   "Dashboard"]]
-         ; [:li (cond (= :track widget-type)
-         ;            "Track"
-         ;            (= :goal widget-type)
-         ;            "Goal")]]
-         ;[:hr]
-
-         (cond
-           (= :track widget-type)
-           (->NewTrack (om/computed {}
-                                    {:widget       input-widget
-                                     :tags         tags
-                                     :transactions transactions
-                                     :on-change    new-track-on-change}))
-
-           (= :goal widget-type)
-           (->NewGoal (om/computed {}
+      (dom/div
+        #js {:style {:padding "1em"}}
+        (cond
+          (= :track widget-type)
+          (->NewTrack (om/computed {}
                                    {:widget       input-widget
+                                    :tags         tags
                                     :transactions transactions
-                                    :on-change    new-goal-on-change})))
-         ;[:div.row.column.small-12.medium-10
-         ; [:hr]]
-         [:div.float-right
-          (opts {:style {:display :inline-block}})
-          ;(when (some? active-widget)
-          ;  [:a.button.alert
-          ;   {:href     (when (:db/id (:dashboard/project dashboard))
-          ;                (routes/key->route :route/project->dashboard
-          ;                                   {:route-param/project-id (:db/id (:dashboard/project dashboard))}))
-          ;    :on-click #(.delete-widget this active-widget)}
-          ;   "Delete"])
-          [:a.button.primary
-           {:on-click #(do
-                        (.save-widget this (assoc input-widget :widget/dashboard dashboard-id))
-                        (when on-save
-                          (on-save)))}
-           "Save"]]]))))
+                                    :on-change    new-track-on-change}))
+
+          (= :goal widget-type)
+          (->NewGoal (om/computed {}
+                                  {:widget       input-widget
+                                   :transactions transactions
+                                   :on-change    new-goal-on-change})))
+        (dom/div
+          #js {:className "float-right"
+               :style {:display "inline-block"}}
+          (dom/a
+            #js {:className "button"
+                 :onClick #(do
+                            (.save-widget this (assoc input-widget :widget/dashboard dashboard-id))
+                            (when on-save
+                              (on-save)))}
+            "Save"))))))
 
 (def ->NewWidget (om/factory NewWidget))

@@ -98,6 +98,7 @@
                           :widget/width
                           :widget/height
                           :widget/report
+                          :widget/index
                           :widget/graph}
         missing-keys (into [] (filter #(nil? (get widget %))) required-fields)]
     ;; Verify that all required fields are included in the transaction.

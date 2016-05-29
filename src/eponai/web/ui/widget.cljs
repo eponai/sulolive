@@ -1,6 +1,7 @@
 (ns eponai.web.ui.widget
   (:require
-    [eponai.client.ui :refer-macros [opts]]
+    [datascript.core :as d]
+    [eponai.common.format.date :as date]
     [eponai.web.ui.d3.area-chart :refer [->AreaChart]]
     [eponai.web.ui.d3.bar-chart :refer [->BarChart]]
     [eponai.web.ui.d3.column-chart :refer [->ColumnChart]]
@@ -13,13 +14,9 @@
     [eponai.web.ui.dataset-filter-picker :refer [->DatasetFilterPicker]]
     [eponai.web.ui.tagfilterpicker :refer [->TagFilterPicker]]
     [eponai.web.ui.goal-settings :refer [->GoalSettings]]
-    [eponai.web.routes :as routes]
-    [eponai.web.ui.utils :as utils]
-    [om.next :as om :refer-macros [defui]]
     [om.dom :as dom]
-    [taoensso.timbre :refer-macros [debug]]
-    [datascript.core :as d]
-    [eponai.common.format.date :as date]))
+    [om.next :as om :refer-macros [defui]]
+    [taoensso.timbre :refer-macros [debug]]))
 
 (defn dimensions [graph]
   (let [style (:graph/style graph)]
@@ -29,7 +26,7 @@
             (= style :graph.style/area)
             (= style :graph.style/burndown))
           {:maxH 3
-           :minH 3
+           :minH 2
            :minW 50
            :maxW 100}
 
@@ -72,7 +69,6 @@
 
   (update-date-filter [this start end selected-key]
     (let [widget (om/props this)
-          _ (debug "Create new widget... ")
           new-widget (update widget :widget/filter (fn [m]
                                                      (cond
                                                        (= selected-key :last-30-days)
@@ -88,7 +84,6 @@
                                                            (assoc :filter/end-date (date/date-map end))
                                                            (assoc :filter/start-date (date/date-map start))
                                                            (dissoc :filter/last-x-days)))))]
-      (debug "Created new widget: " new-widget)
       (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/filter :db/id :widget/uuid]) :mutation-uuid (d/squuid)))
                            :query/dashboard])))
 
@@ -118,16 +113,13 @@
     (let [{:keys [widget/report
                   widget/graph
                   widget/data] :as widget} (om/props this)
-          {:keys [tag-filters-showing?
-                  computed/dataset-filter-picker-on-change
+          {:keys [computed/dataset-filter-picker-on-change
                   computed/tag-filter-picker-on-change
                   computed/date-range-picker-on-change
                   computed/date-range-picker-on-cancel
                   computed/goal-settings-on-change]} (om/get-state this)
-          {:keys [project-id
-                  id
+          {:keys [id
                   transactions]} (om/get-computed this)]
-      ;(debug "Render widget: " widget)
       (dom/div
         #js {:className "widget"}
         (dom/header
@@ -205,9 +197,6 @@
           (let [{:keys [graph/style]} graph
                 settings {:data         data
                           :id           (str (or (:widget/uuid widget) id "widget"))
-
-                          ;:width        "100%"
-                          ;:height       "100%"
                           :title-axis-y "Amount ($)"}]
 
             (cond (= style :graph.style/bar)
@@ -229,16 +218,6 @@
                   (->BurndownChart settings)
 
                   (= style :graph.style/chord)
-                  (->EdgeBundling settings)
-                  ;[:div
-                  ; "Progress: "
-                  ; [:div.progress
-                  ;  {:aria-valuenow  "50"
-                  ;   :aria-valuemin  "0"
-                  ;   :aria-valuetext "$10"
-                  ;   :aria-valuemax  "100"}
-                  ;  [:div.progress-meter
-                  ;   (opts {:style {:width "50%"}})]]]
-                  )))))))
+                  (->EdgeBundling settings))))))))
 
 (def ->Widget (om/factory Widget))
