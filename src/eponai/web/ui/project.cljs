@@ -217,7 +217,6 @@
 
 
   Object
-
   (render [this]
     (let [{:keys [query/active-project
                   proxy/child-content]} (om/props this)

@@ -70,9 +70,6 @@
                   init-state]} (om/get-state this)
           diff (lib.t/diff-transaction input-transaction init-state)]
       ;; Transact only when we have a diff to avoid unecessary mutations.
-      ;(debug "Delete tag: resulted diff: " diff)
-      ;(debug "Delete tag updated state: " input-transaction)
-      ;(debug "delete tag init state: " init-state)
       (when (seq diff)
         ;(debug "Delete tag Will transacti diff: " diff)
         (om/transact! this `[(transaction/edit ~(-> diff
@@ -230,13 +227,14 @@
 
 (def ->Transaction (om/factory Transaction {:keyfn :db/id}))
 
-(defn date-range-from-filter [f]
-  (if (some? (:filter/last-x-days f))
+(defn date-range-from-filter [{:keys [filter/last-x-days filter/start-date filter/end-date]}]
+  (if (some? last-x-days)
     (let [t (date/today)]
-      {:start-date (time/minus t (time/days (:filter/last-x-days f)))
+      {:start-date (time/minus t (time/days last-x-days))
        :end-date   t})
-    {:start-date (date/date-time (:filter/start-date f))
-     :end-date   (date/date-time (:filter/end-date f))}))
+    {:start-date (date/date-time start-date)
+     :end-date   (date/date-time end-date)}))
+
 (defui AllTransactions
   static om/IQueryParams
   (params [_]
@@ -256,19 +254,21 @@
   Object
   (initLocalState [this]
     {:list-size                           0
-     :computed/transaction-on-tag-click   #(do
-                                            (om/update-state! this update-in [:tag-filter :filter/include-tags] utils/add-tag %)
-                                            (om/update-query! this assoc-in [:params :filter] (.filter this)))
-     :computed/tag-filter-on-change       #(do
-                                            (om/update-state! this assoc :tag-filter {:filter/include-tags %})
-                                            (om/update-query! this assoc-in [:params :filter] (.filter this)))
+     :computed/transaction-on-tag-click   (fn [tag]
+                                            (om/update-query! this update-in [:params :filter :filter/include-tags]
+                                                              #(utils/add-tag % tag)))
+     :computed/tag-filter-on-change       (fn [tags]
+                                            (om/update-query! this update-in [:params :filter]
+                                                              #(assoc % :filter/include-tags tags)))
+     :computed/amount-filter-on-change    (fn [{:keys [filter/min-amount filter/max-amount]}]
+                                            (om/update-query! this update-in [:params :filter]
+                                                              #(assoc % :filter/min-amount min-amount
+                                                                        :filter/max-amount max-amount)))
      :computed/date-range-picker-on-apply (fn [{:keys [start-date end-date selected-range]}]
-                                            (om/update-state! this assoc :date-filter {:filter/start-date (date/date-map start-date)
-                                                                                       :filter/end-date   (date/date-map end-date)})
-                                            (om/update-query! this assoc-in [:params :filter] (.filter this)))
-     :computed/amount-filter-on-change    #(do
-                                            (om/update-state! this assoc :amount-filter %)
-                                            (om/update-query! this assoc-in [:params :filter] (.filter this)))})
+                                            (om/update-query! this update-in [:params :filter]
+                                                              #(assoc % :filter/start-date (date/date-map start-date)
+                                                                        :filter/end-date (date/date-map end-date))))
+     })
 
   (componentDidMount [this]
     (when (zero? (:list-size (om/get-state this)))
@@ -284,12 +284,9 @@
   (deselect-transaction [this]
     (om/transact! this `[(transactions/deselect)]))
 
-  (filter [this]
-    (let [{:keys [date-filter tag-filter amount-filter]} (om/get-state this)]
-      (merge tag-filter date-filter amount-filter)))
-
-  (has-filter [_ filter]
-    (some #(let [v (val %)] (if (coll? v) (seq v) (some? v))) filter))
+  (has-filter [this]
+    (some #(let [v (val %)] (if (coll? v) (seq v) (some? v)))
+          (:filter (om/get-params this))))
 
   (render-empty-message [this]
     (html
@@ -313,23 +310,24 @@
          "."]]]))
 
   (render-filters [this]
-    (let [{:keys [tag-filter date-filter amount-filter
-                  computed/tag-filter-on-change
+    (let [{:keys [computed/tag-filter-on-change
                   computed/amount-filter-on-change
-                  computed/date-range-picker-on-apply]} (om/get-state this)]
+                  computed/date-range-picker-on-apply]} (om/get-state this)
+          {:keys [filter/include-tags] :as filters} (:filter (om/get-params this))]
+      (debug "render-filters, params: " (om/get-params this))
       (html
         [:div.transaction-filters
          (opts {:style {:padding "1em 0"}})
          [:div.row.expanded
           [:div.columns.small-3
-           (filter/->TagFilter (om/computed {:tags (:filter/include-tags tag-filter)}
+           (filter/->TagFilter (om/computed {:tags include-tags}
                                             {:on-change tag-filter-on-change}))]
           [:div.columns.small-3
-           (let [range (date-range-from-filter date-filter)]
+           (let [range (date-range-from-filter filters)]
              (->DateRangePicker (om/computed range
                                              {:on-apply date-range-picker-on-apply})))]
           [:div.columns.small-6
-           (filter/->AmountFilter (om/computed {:amount-filter amount-filter}
+           (filter/->AmountFilter (om/computed {:amount-filter (select-keys filters [:filter/min-amount :filter/max-amount])}
                                                {:on-change amount-filter-on-change}))]]])))
 
   (render-transaction-list [this transactions]
@@ -361,12 +359,11 @@
   (render [this]
     (let [{transactions    :query/transactions
            add-transaction :proxy/add-transaction} (om/props this)
-          {:keys [add-transaction?]} (om/get-state this)
-          input-filter (.filter this)]
+          {:keys [add-transaction?]} (om/get-state this)]
       (html
         [:div#txs
          (if (or (seq transactions)
-                 (.has-filter this input-filter))
+                 (.has-filter this))
            (.render-transaction-list this transactions)
            (.render-empty-message this))
          (when add-transaction?

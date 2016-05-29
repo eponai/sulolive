@@ -40,13 +40,21 @@
 ;; ----------------
 
 (defui AmountFilter
+  utils/ISyncStateWithProps
+  (props->init-state [_ props]
+    (assert (:amount-filter props)
+            (str "No amount filter in props for AmountFilter. Was: " props))
+    (:amount-filter props))
+
   Object
   (initLocalState [this]
-    {:amount-filter (:amount-filter (om/props this))})
+    (utils/props->init-state this (om/props this)))
+
   (componentWillReceiveProps [this new-props]
-    (om/update-state! this assoc :amount-filter (:amount-filter new-props)))
+    (utils/sync-with-received-props this new-props))
+
   (render [this]
-    (let [{:keys [amount-filter]} (om/get-state this)
+    (let [{:keys [filter/min-amount filter/max-amount] :as filters} (om/get-state this)
           {:keys [on-change]} (om/get-computed this)]
       (html
         [:div.row
@@ -54,31 +62,27 @@
          ; "Min:"]
          [:div.columns.small-6
           [:input
-           {:value       (or (:filter/min-amount amount-filter) "")
+           {:value       (or min-amount "")
             :type        "number"
             :on-change   #(let [v (.-value (.-target %))]
                            (if (seq v)
-                             (om/update-state! this update :amount-filter assoc :filter/min-amount (f/str->number v))
-                             (om/update-state! this update :amount-filter dissoc :filter/min-amount)))
-            :on-key-down #(utils/on-enter-down
-                           %
-                           (fn [_]
-                             (on-change amount-filter)))
+                             (om/update-state! this assoc :filter/min-amount (f/str->number v))
+                             (om/update-state! this dissoc :filter/min-amount)))
+            :on-key-down #(utils/on-enter-down % (fn [_]
+                                                   (on-change filters)))
             :placeholder "Min"}]]
          ;[:div.columns.small-1.text-right
          ; "Max:"]
          [:div.columns.small-6
           [:input
-           {:value       (or (:filter/max-amount amount-filter) "")
+           {:value       (or max-amount "")
             :type        "number"
             :on-change   #(let [v (.-value (.-target %))]
                            (if (seq v)
-                             (om/update-state! this update :amount-filter assoc :filter/max-amount (f/str->number v))
-                             (om/update-state! this update :amount-filter dissoc :filter/max-amount)))
-            :on-key-down #(utils/on-enter-down
-                           %
-                           (fn [_]
-                             (on-change amount-filter)))
+                             (om/update-state! this assoc :filter/max-amount (f/str->number v))
+                             (om/update-state! this dissoc :filter/max-amount)))
+            :on-key-down #(utils/on-enter-down % (fn [_]
+                                                   (on-change filters)))
             :placeholder "Max"}]]]))))
 
 (def ->AmountFilter (om/factory AmountFilter))
