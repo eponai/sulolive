@@ -4,12 +4,14 @@
             [sablono.core :refer-macros [html]]
             [om.next :as om]
             [om.dom :as dom]
+            [cljsjs.react.dom]
             [goog.object]
             [taoensso.timbre :refer-macros [debug warn]]
             [eponai.common.format :as format]
             [eponai.common.datascript :as common.datascript]
             [datascript.core :as d]
             [eponai.web.routes :as routes]
+            [clojure.string :as string]
             [clojure.data :as diff]))
 
 (def ^:dynamic *playground?* false)
@@ -123,6 +125,26 @@
 
 
 ;;;;;;; UI component helpers
+
+(defn ref-dom-node [component ref-name]
+  {:pre [(om/component? component) (string? ref-name)]}
+  (when-let [ref (om/react-ref component ref-name)]
+    (js/ReactDOM.findDOMNode ref)))
+
+(defn focus-ref
+  "Calls .focus on ref's dom node. Returns true if focus was called."
+  [component ref-name]
+  {:pre [(om/component? component) (string? ref-name)]}
+  (when-let [node (ref-dom-node component ref-name)]
+    (.focus node)
+    true))
+
+(defn left-padding
+  "Returns the left padding required for string s"
+  [width s]
+  (let [spaces (- width (.-length (str s)))
+        spaces (if (neg? spaces) 0 spaces)]
+    (string/join  (repeat spaces " "))))
 
 (defn loader []
   (html

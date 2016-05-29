@@ -16,6 +16,21 @@
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]))
 
+(defn- trim-decimals [n] (int n))
+
+(defn select-last-number
+  "Given an input field of type number, selects the last digit (most valuable digit) in the input."
+  [dom-node]
+  (try
+    ;; Inputs of type number cannot use selection range by default.
+    ;; Using type text for the selection, then switching back to type number.
+    (set! (.-type dom-node) "text")
+    (let [sel-start (dec (.-length (.-value dom-node)))
+          sel-start (if (neg? sel-start) 0 sel-start)]
+      (.setSelectionRange dom-node sel-start sel-start))
+    (finally
+      (set! (.-type dom-node) "number"))))
+
 ;; ################### Om next components ###################
 
 (defui Transaction
@@ -79,7 +94,8 @@
 
   (render [this]
     (let [{:keys [input-transaction input-tag]} (om/get-state this)
-          {:keys [transaction/date
+          {:keys [db/id
+                  transaction/date
                   transaction/currency
                   transaction/amount
                   transaction/uuid
@@ -117,10 +133,10 @@
                 (if (= (:db/ident type) :transaction.type/expense)
                   (dom/strong #js {:className "label alert"
                                    :style     #js {:padding "0.2em 0.3em"}}
-                              (gstring/format (str "-%.2f") (/ amount rate)))
+                              (gstring/format "-%.2f" (/ amount rate)))
                   (dom/strong #js {:className "label success"
                                    :style     #js {:padding "0.2em 0.3em"}}
-                              (gstring/format (str "%.2f") (/ amount rate)))))
+                              (gstring/format "%.2f" (/ amount rate)))))
               (dom/i #js {:className "fa fa-spinner fa-spin"})))
 
           ;; Amount in local currency
@@ -140,13 +156,21 @@
                      :value (:currency/code c)}
                     (str (or (:currency/symbol-native c)
                              (:currency/code c)) " ")]))])
+            (dom/div #js {:style   #js {:fontFamily "monospace" :whiteSpace "pre"}
+                          :onClick #(when-let [node (utils/ref-dom-node this (str "amount-" id))]
+                                     (.focus node)
+                                     (select-last-number node))}
+              (utils/left-padding 10 (trim-decimals amount)))
             (dom/input
-              #js {:className "amount"
+              #js {:style     #js {:fontFamily "monospace"}
+                   :tabIndex  -1
+                   :className "amount"
                    :value     (or amount "")
                    :type      "number"
                    :onChange  #(om/update-state! this assoc-in [:input-transaction :transaction/amount] (.-value (.-target %)))
                    :onKeyDown #(utils/on-enter-down % (fn [_]
                                                         (.blur (.-target %))))
+                   :ref       (str "amount-" id)
                    :onBlur    #(.save-edit this)}))
 
           ;; Title

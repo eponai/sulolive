@@ -9,8 +9,7 @@
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]
     [eponai.common.format :as f]
-    [goog.events :as events]
-    [cljsjs.react.dom]))
+    [goog.events :as events]))
 
 ;; --------- WIP: Tag suggestion dropdown -------
 (comment
@@ -26,8 +25,8 @@
                                      :on-click    #(.add-tag this tag)
                                      :on-key-down (fn [e]
                                                     (let [matched (condp = (.-keyCode e)
-                                                                    events/KeyCodes.DOWN (.focus-ref this (tag-idx->ref (inc i)))
-                                                                    events/KeyCodes.UP (.focus-ref this (tag-idx->ref (dec i)))
+                                                                    events/KeyCodes.DOWN (utils/focus-ref this (tag-idx->ref (inc i)))
+                                                                    events/KeyCodes.UP (utils/focus-ref this (tag-idx->ref (dec i)))
                                                                     events/KeyCodes.ENTER (.add-tag this tag)
                                                                     nil)]
                                                       (when matched
@@ -238,11 +237,6 @@
       (when on-change
         (on-change new-tags))))
 
-  (focus-ref [this ref-name]
-    (when-let [ref (om/react-ref this ref-name)]
-      (.focus (js/ReactDOM.findDOMNode ref))
-      true))
-
   (initLocalState [this]
     (let [{:keys [tags placeholder]} (om/props this)]
       {:tags        (or tags [])
@@ -277,7 +271,7 @@
                              :on-key-down   (fn [e]
                                               (when (= events/KeyCodes.DOWN (.-keyCode e))
                                                 (.preventDefault e)
-                                                (.focus-ref this (tag-idx->ref 0))))
+                                                (utils/focus-ref this (tag-idx->ref 0))))
                              :input-only?   input-only?
                              :placeholder   (or placeholder "Enter to add tag...")})])))))
 
