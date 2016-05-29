@@ -4,6 +4,7 @@
             [eponai.web.homeless :as homeless]
             [eponai.client.utils :as utils]
             [eponai.common.datascript :as common.datascript]
+            [om.next :as om]
             [taoensso.timbre :refer-macros [info debug error trace warn]]))
 
 (defn transact [db tx]
@@ -224,7 +225,8 @@
   (fn [reconciler db novelty]
     (debug "Merge! transacting novelty:" novelty)
     (let [merged-novelty (merge-novelty-by-key merge-fn db (:result novelty))
-          db-with-meta (merge-meta (:next merged-novelty) (:meta novelty))]
+          db-with-meta (merge-meta (:next merged-novelty) (:meta novelty))
+          ks (vec (:keys merged-novelty))]
       (debug "Merge! returning keys:" (:keys merged-novelty))
       {:next db-with-meta
-       :keys (:keys merged-novelty)})))
+       :keys (cond-> ks (empty? ks) (conj :om.next/skip))})))
