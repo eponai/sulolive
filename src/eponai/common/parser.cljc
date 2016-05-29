@@ -303,13 +303,17 @@
                                           read-with-dbid-in-query
                                           wrap-db
                                           ;; This is interesting, since it'll re-create all middlewares.
-                                          #?(:cljs (with-elided-paths (delay (parser (merge parser-opts {:elide-paths true}) initial-state)))))
+                                          #?(:cljs (cond-> (not (:elide-paths parser-opts))
+                                                           (with-elided-paths (delay (parser (merge parser-opts {:elide-paths true})
+                                                                                             initial-state))))))
                               :mutate (-> mutate
                                           with-remote-guard
                                           mutate-with-idempotent-invariants
                                           mutate-with-error-logging
                                           wrap-db
-                                          (with-elided-paths (delay (parser {:elide-paths true} initial-state))))}
+                                          #?(:cljs (cond-> (not (:elide-paths parser-opts))
+                                                           (with-elided-paths (delay (parser (merge parser-opts {:elide-paths true})
+                                                                                             initial-state))))))}
                                   parser-opts))]
      #?(:cljs p
         :clj  (-> p
