@@ -255,20 +255,20 @@
 
   Object
   (initLocalState [this]
-    {:list-size                         0
-     :computed/transaction-on-tag-click #(do
-                                          (om/update-state! this update-in [:tag-filter :filter/include-tags] utils/add-tag %)
-                                          (om/update-query! this assoc-in [:params :filter] (.filter this)))
-     :computed/tag-filter-on-change     #(do
-                                          (om/update-state! this assoc :tag-filter {:filter/include-tags %})
-                                          (om/update-query! this assoc-in [:params :filter] (.filter this)))
-     :computed/date-filter-on-change    (fn [s e]
-                                          (om/update-state! this assoc :date-filter {:filter/start-date (date/date-map s)
-                                                                                     :filter/end-date   (date/date-map e)})
-                                          (om/update-query! this assoc-in [:params :filter] (.filter this)))
-     :computed/amount-filter-on-change  #(do
-                                          (om/update-state! this assoc :amount-filter %)
-                                          (om/update-query! this assoc-in [:params :filter] (.filter this)))})
+    {:list-size                           0
+     :computed/transaction-on-tag-click   #(do
+                                            (om/update-state! this update-in [:tag-filter :filter/include-tags] utils/add-tag %)
+                                            (om/update-query! this assoc-in [:params :filter] (.filter this)))
+     :computed/tag-filter-on-change       #(do
+                                            (om/update-state! this assoc :tag-filter {:filter/include-tags %})
+                                            (om/update-query! this assoc-in [:params :filter] (.filter this)))
+     :computed/date-range-picker-on-apply (fn [{:keys [start-date end-date selected-range]}]
+                                            (om/update-state! this assoc :date-filter {:filter/start-date (date/date-map start-date)
+                                                                                       :filter/end-date   (date/date-map end-date)})
+                                            (om/update-query! this assoc-in [:params :filter] (.filter this)))
+     :computed/amount-filter-on-change    #(do
+                                            (om/update-state! this assoc :amount-filter %)
+                                            (om/update-query! this assoc-in [:params :filter] (.filter this)))})
 
   (componentDidMount [this]
     (when (zero? (:list-size (om/get-state this)))
@@ -315,7 +315,6 @@
   (render-filters [this]
     (let [{:keys [tag-filter date-filter amount-filter
                   computed/tag-filter-on-change
-                  computed/date-filter-on-change
                   computed/amount-filter-on-change
                   computed/date-range-picker-on-apply]} (om/get-state this)]
       (html
@@ -328,7 +327,7 @@
           [:div.columns.small-3
            (let [range (date-range-from-filter date-filter)]
              (->DateRangePicker (om/computed range
-                                             {:on-apply date-filter-on-change})))]
+                                             {:on-apply date-range-picker-on-apply})))]
           [:div.columns.small-6
            (filter/->AmountFilter (om/computed {:amount-filter amount-filter}
                                                {:on-change amount-filter-on-change}))]]])))
