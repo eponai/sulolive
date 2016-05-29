@@ -123,13 +123,12 @@
         (.. svg
             (on "mousemove" (fn []
                               (this-as jthis
-                                (d3/mouse-over-burndown
+                                (d3/mouse-over
                                   (.. js/d3 (mouse jthis))
                                   x-scale
-                                  (last js-data)
-                                  (fn [x-position index]
-                                    (let [values (.map js-data #(get (.-values %) index))
-                                          time-format (.. js/d3
+                                  js-data
+                                  (fn [x-position values]
+                                    (let [time-format (.. js/d3
                                                           -time
                                                           (format "%b %d %Y"))]
                                       (d3/tooltip-add-data id
@@ -157,7 +156,8 @@
                                                                                  "orange"
                                                                                  "guideline"
                                                                                  "green")
-                                                                               "transparent"))})))))))
+                                                                               "transparent"))})))
+                                  margin))))
             (on "mouseover" (fn []
                               (d3/tooltip-remove-all)
                               (d3/tooltip-build id)
