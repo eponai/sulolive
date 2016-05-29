@@ -1,5 +1,6 @@
 (ns eponai.client.lib.transactions
-  (:require [clojure.set :as set]))
+  (:require [clojure.set :as set]
+            [cljs.reader :as reader]))
 
 (defn mark-removed-tags
   "Takes an edited transaction and an original transaction, marks every removed tag
@@ -28,9 +29,14 @@
         changed-fields (reduce-kv
                          (fn [m k v]
                            (let [init-v (get original k)
-                                 equal? (if (= :transaction/tags k)
+                                 equal? (condp = k
+                                          :transaction/tags
                                           (= (tag-set-fn v)
                                              (tag-set-fn init-v))
+                                          :transaction/amount
+                                          (= (reader/read-string (str v))
+                                             (reader/read-string (str init-v)))
+
                                           (= v init-v))]
                              (cond-> m
                                      (not equal?) (assoc k v))))
