@@ -6,7 +6,6 @@
     [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
     [eponai.common.format.date :as date]
     [eponai.web.ui.add-transaction :refer [->AddTransaction AddTransaction]]
-    [eponai.web.ui.datepicker :refer [->Datepicker]]
     [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.ui.utils :as utils]
     [eponai.web.ui.utils.filter :as filter]
@@ -97,15 +96,14 @@
           ;; Date
           (dom/div
             #js {:className "columns small-6 medium-3 large-1"}
-            (->Datepicker
-              {:key         [uuid]
-               :format      "MMM DD"
-               :input-only? true
-               :value       date
-               :on-change   #(do (om/update-state!
-                                   this assoc-in [:input-transaction :transaction/date]
-                                   (date/date-map %))
-                                 (.save-edit this))}))
+
+            (->DateRangePicker (om/computed {:single-calendar? true
+                                             :start-date       (date/date-time date)}
+                                            {:on-apply #(do (om/update-state!
+                                                              this assoc-in [:input-transaction :transaction/date]
+                                                              %)
+                                                            (.save-edit this))
+                                             :format "MMM dd"})))
 
           ;; Amount in main currency
           (dom/div
@@ -178,7 +176,8 @@
                                                            (.delete-tag this tag)
                                                            (.save-edit this))}))))
             (dom/input
-              #js {:type        "text"
+              #js {:className "tags"
+                   :type        "text"
                    :value       (or (:tag/name input-tag) "")
                    :onChange    #(om/update-state! this assoc :input-tag {:tag/name (.-value (.-target %))})
                    :onKeyDown   (fn [e]

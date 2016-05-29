@@ -12,9 +12,11 @@
 (defui DateRangePicker
   Object
   (initLocalState [this]
-    (let [{:keys [start-date end-date selected-range]} (om/props this)
-          start-date (time/minus (date/today) (time/days 7))
-          end-date (date/today)
+    (let [{:keys [start-date end-date selected-range single-calendar?]} (om/props this)
+          start-date (or start-date (time/minus (date/today) (time/days 7)))
+          end-date (if single-calendar?
+                     start-date
+                     (or end-date (date/today)))
           start-month (time/first-day-of-the-month start-date)]
       {:start-date     start-date
        :end-date       end-date
@@ -51,8 +53,21 @@
                                  (update-in [:right-calendar :month] #(time/plus % (time/months 1)))
                                  (update-in [:left-calendar :month] #(time/plus % (time/months 1)))))))
   (clickDate [this date]
-    (let [{:keys [start-date end-date]} (om/get-state this)]
-      (cond end-date
+    (let [{:keys [start-date end-date]} (om/get-state this)
+          {:keys [single-calendar?]} (om/props this)
+          {:keys [on-apply]} (om/get-computed this)]
+      (cond single-calendar?
+            (do
+              (om/update-state! this assoc
+                                :start-date date
+                                :old-start-date date
+                                :end-date date
+                                :old-end-date date
+                                :is-showing? false)
+              (when on-apply
+                (on-apply (date/date-map date))))
+
+            end-date
             ;; Starting a new date range selection, set end date to nil
             (om/update-state! this assoc
                               :start-date date
@@ -68,6 +83,7 @@
 
   (renderCalendar [this calendar-side]
     (let [{:keys [start-date end-date hover-date] :as state} (om/get-state this)
+          {:keys [single-calendar?]} (om/props this)
           dt (:month (get state calendar-side))
           days-in-month (time/number-of-days-in-the-month dt)
           first-day (time/first-day-of-the-month dt)
@@ -84,7 +100,7 @@
           nil
           (dom/tr
             nil
-            (if (= calendar-side :left-calendar)
+            (if (or single-calendar? (= calendar-side :left-calendar))
               (dom/th
                 #js {:className "prev available"
                      :onClick   #(do
@@ -96,7 +112,7 @@
               #js {:className "month"
                    :colSpan 5}
               (t.format/unparse (t.format/formatter "MMM yyyy") dt))
-            (if (= calendar-side :right-calendar)
+            (if (or single-calendar? (= calendar-side :right-calendar))
               (dom/th
                 #js {:className "next available"
                      :onClick   #(do
@@ -143,7 +159,7 @@
                                                             (time/before? date end-date))
                                                        (conj "in-range")
 
-                                                       (and hover-date (not end-date)
+                                                       (and hover-date (not end-date) (not single-calendar?)
                                                             (or (and (time/before? hover-date start-date)
                                                                      (time/after? date hover-date)
                                                                      (time/before? date start-date))
@@ -199,7 +215,7 @@
                                                     :show-calendars? true
                                                     :selected-range :custom-range))}]]
       (dom/div
-        #js {:className (str "daterangepicker menu-horizontal dropdown " (when show-calendars? " show-calendar"))}
+        #js {:className (str "daterangepicker single menu-horizontal dropdown " (when show-calendars? " show-calendar"))}
 
         ; Calendar select from date.
         (dom/div
@@ -276,9 +292,30 @@
                                 (when on-cancel
                                   (on-cancel)))}
               "Cancel"))))))
+  (renderSingleCalendar [this]
+    (let [{:keys [start-date]} (om/get-state this)]
+      (dom/div
+        #js {:className (str "daterangepicker menu-horizontal dropdown show-calendar")}
+        (dom/div
+          #js {:className "calendar"}
+          (dom/div
+            #js {:className "daterangepicker_input"}
+            (dom/input
+              #js {:className "input-mini"
+                   :type      "text"
+                   :name      "daterangepicker_start"
+                   :value     (if start-date
+                                (t.format/unparse (t.format/formatter "MM/dd/yyyy") start-date)
+                                "")})
+            (dom/i
+              #js {:className "fa fa-calendar"}))
+          (dom/div
+            #js {:className "calendar-table"}
+            (.renderCalendar this :left-calendar))))))
   (render [this]
     (let [{:keys [old-start-date old-end-date is-showing?]} (om/get-state this)
-          {:keys [class]} (om/props this)]
+          {:keys [class single-calendar?]} (om/props this)
+          {:keys [format]} (om/get-computed this)]
       (dom/div
         #js {:className class}
         (dom/div
@@ -286,14 +323,18 @@
           (dom/input
             #js {:className "daterange"
                  :type      "text"
-                 :value     (str (when old-start-date (t.format/unparse (t.format/formatter "MM/dd/yyyy") old-start-date)) "-"
-                                 (when old-end-date (t.format/unparse (t.format/formatter "MM/dd/yyyy") old-end-date)))
+                 :value     (if single-calendar?
+                              (when old-start-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-start-date))
+                              (str (when old-start-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-start-date)) "-"
+                                   (when old-end-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-end-date))))
                  :onClick   #(om/update-state! this assoc :is-showing? true)})
 
           (when is-showing?
             (dom/div
               nil
               (utils/click-outside-target #(om/update-state! this assoc :is-showing? false))
-              (.renderDateRangeSelection this))))))))
+              (if single-calendar?
+                (.renderSingleCalendar this)
+                (.renderDateRangeSelection this)))))))))
 
 (def ->DateRangePicker (om/factory DateRangePicker {:keyfn :key}))
