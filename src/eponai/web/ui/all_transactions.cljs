@@ -29,6 +29,9 @@
     (warn "Dom node was not in type text. Was: " (.-type dom-node) " for dom node: " dom-node))
   (.setSelectionRange dom-node 0 0))
 
+(defn two-decimal-string [s]
+  (gstring/format "%.2f" (str s)))
+
 ;; ################### Om next components ###################
 
 (defui Transaction
@@ -88,7 +91,7 @@
     (let [props (om/props this)
           transaction (-> props
                           (update :transaction/tags (fn [tags] (sort-by :tag/name (map #(select-keys % [:tag/name]) tags))))
-                          (update :transaction/amount (fn [amount] (gstring/format "%.2f" (str amount)))))]
+                          (update :transaction/amount two-decimal-string))]
       {:input-transaction transaction
        :init-state transaction}))
 
@@ -134,10 +137,10 @@
                   (if (= (:db/ident type) :transaction.type/expense)
                    (dom/strong #js {:className "label alert"
                                     :style     #js {:padding "0.2em 0.3em"}}
-                               (gstring/format "-%.2f" (/ amount rate)))
+                               (str "-" (two-decimal-string (/ amount rate))))
                    (dom/strong #js {:className "label success"
                                     :style     #js {:padding "0.2em 0.3em"}}
-                               (gstring/format "%.2f" (/ amount rate))))))
+                               (two-decimal-string (/ amount rate))))))
               (dom/i #js {:className "fa fa-spinner fa-spin"})))
 
           ;; Amount in local currency
@@ -171,15 +174,20 @@
                    :type      "text"
                    :onChange  #(om/update-state! this assoc-in [:input-transaction :transaction/amount] (.-value (.-target %)))
                    :onKeyDown #(condp = (.-keyCode %)
+                                ;; Prevent default on comma and period/dot.
                                 events/KeyCodes.COMMA (.preventDefault %)
                                 events/KeyCodes.PERIOD (when (string/includes? (str amount) ".") (.preventDefault %))
+                                ;; Save edit on enter.
                                 events/KeyCodes.ENTER (utils/on-enter-down % (fn [_] (.blur (.-target %))))
                                 true)
                    :ref       (str "amount-" id)
                    :onBlur    #(do
                                 (let [val (.-value (.-target %))]
-                                  (when (not= val (gstring/format "%.2f" val))
-                                    (om/update-state! this assoc-in [:input-transaction :transaction/amount] (gstring/format "%.2f" val))))
+                                  ;; When the value entered doesn't have 2 decimals, set it to be 2 decimals.
+                                  ;; TODO: What if we need more decimals? What happens? This change was made
+                                  ;;       to fix UI issues when there are less than 2 decimals.
+                                  (when (not= val (two-decimal-string val))
+                                    (om/update-state! this assoc-in [:input-transaction :transaction/amount] (two-decimal-string val))))
                                 (.save-edit this))}))
 
           ;; Title
