@@ -11,25 +11,23 @@
 (defui BarChart
   Object
   (make-axis [_ width height]
-    (let [y-scale (.. js/d3 -scale ordinal
-                      (rangeRoundBands #js [height 0] 0.1))
+    (let [x-scale (.. js/d3 -scale ordinal
+                      (rangeRoundBands #js [0 width] 0.1))
 
-          x-scale (.. js/d3 -scale linear
-                      (range #js [0 width])
+          y-scale (.. js/d3 -scale linear
+                      (range #js [height 0])
                       (nice))]
-
       {:x-axis (.. js/d3 -svg axis
                    (scale x-scale)
                    (orient "bottom")
-                   ;(ticks (max (/ width 50) 2))
-                   (tickFormat (.. js/d3
-                                   (format ",.2f"))))
+                   (tickSize (* -1 height) 0 0))
 
        :y-axis (.. js/d3 -svg axis
                    (scale y-scale)
-                   (orient "right")
-                   (tickSize (* -1 width) 0 0)
-                   )
+                   (orient "left")
+                   (ticks (max (/ height 50) 2))
+                   (tickFormat (.. js/d3
+                                   (format ",.2f"))))
        :x-scale x-scale
        :y-scale y-scale}))
 
@@ -50,21 +48,19 @@
                     (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")")))]
       (.. graph
           (append "g")
-          (attr "class" "x axis grid")
-          (attr "transform" (str "translate(0," inner-height ")"))
-          (call x-axis))
-      (.. graph
-          (append "g")
-          (attr "class" "y axis grid")
-          (attr "transform" (str "translate(0,0)"))
-          (call y-axis))
+          (attr "class" (if (< 30 (.. x-scale rangeBand)) "x axis grid" "x axis grid hidden"))
+          (attr "transform" (str "translate(0," inner-height ")")))
+      ;(.. graph
+      ;    (append "g")
+      ;    (attr "class" "y axis grid")
+      ;    (attr "transform" (str "translate(0,0)")))
       (d3/focus-append svg {:margin margin})
       (d3/update-on-resize this id)
 
       (om/update-state! this assoc :svg svg :js-data js-data :x-scale x-scale :y-scale y-scale :x-axis x-axis :y-axis y-axis :graph graph)))
 
   (update [this]
-    (let [{:keys [svg x-scale y-scale js-data margin graph]} (om/get-state this)
+    (let [{:keys [svg x-scale y-scale x-axis y-axis js-data margin graph]} (om/get-state this)
           {:keys [data id]} (om/props this)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
@@ -80,20 +76,20 @@
         (.update-scales this inner-width inner-height values)
         (.update-axis this inner-width inner-height)
 
+
         (let [bars (.. graph
                        (selectAll "rect.bar")
                        (data values))
-              value-texts (.. graph
-                              (selectAll "text.bar.value")
-                              (data values))
-              name-texts (.. graph
-                             (selectAll "text.bar.name")
-                             (data values))]
+              texts (.. graph
+                        (selectAll "text.bar")
+                        (data values))]
           (.. bars
               enter
               (append "rect")
               (attr "class" "bar")
-              (attr "width" 0)
+              (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))
+              (attr "y" inner-height)
+              (attr "height" 0)
               (on "mouseover" (fn [d]
                                 (d3/tooltip-remove-all)
                                 (d3/tooltip-build id)
@@ -112,52 +108,37 @@
                               (color-scale (.-name d))))
               transition
               (duration 250)
-              (attr "height" (.. y-scale rangeBand))
-              (attr "y" (fn [d] (y-scale (.-name d))))
-              (attr "width" (fn [d] (x-scale (.-value d)))))
+              (attr "transform" (fn [d] (str "translate(" (x-scale (.-name d)) ",0)")))
+              (attr "width" (.. x-scale rangeBand))
+              (attr "y" (fn [d] (y-scale (.-value d))))
+              (attr "height" (fn [d] (- inner-height (y-scale (.-value d))))))
 
           (.. bars
               exit
               remove)
 
-          (.. value-texts
+          (.. texts
               enter
               (append "text")
-              (attr "class" "bar value")
-              (attr "text-anchor" "end"))
+              (attr "class" "bar")
+              (attr "text-anchor" "middle"))
 
-          (.. value-texts
+          (.. texts
               transition
               (duration 250)
-              (attr "y" (fn [d] (+ (y-scale (.-name d)) (/ (.. y-scale rangeBand) 2))))
-              (attr "x" inner-width)
+              (attr "x" (fn [d] (+ (x-scale (.-name d)) (/ (.. x-scale rangeBand) 2))))
+              (attr "y" (fn [d] (y-scale (.-value d))))
+              (attr "dy" "-0.3em")
               (text (fn [d] (gstring/format "%.2f" (.-value d)))))
 
-          (.. value-texts
-              exit
-              remove)
-
-          (.. name-texts
-              enter
-              (append "text")
-              (attr "class" "bar value")
-              (attr "text-anchor" "start"))
-
-          (.. name-texts
-              transition
-              (duration 250)
-              (attr "y" (fn [d] (+ (y-scale (.-name d)) (/ (.. y-scale rangeBand) 2))))
-              (attr "x" 0)
-              (text (fn [d] (.-name d))))
-
-          (.. name-texts
+          (.. texts
               exit
               remove)))))
 
   (update-axis [this width height]
-    (let [{:keys [y-axis x-axis svg]} (om/get-state this)]
+    (let [{:keys [x-axis y-axis svg x-scale]} (om/get-state this)]
       (.. y-axis
-          ;(ticks (max (/ inner-height 50) 2))
+          (ticks (max (/ height 50) 2))
           (tickSize (* -1 width) 0 0))
       (.. x-axis
           (tickSize (* -1 height) 0 0))
@@ -165,40 +146,34 @@
       (.. svg
           (selectAll ".x.axis")
           (attr "transform" (str "translate(0, " height ")"))
-          (attr "class" "x axis grid")
+          (attr "class" (if (< 30 (.. x-scale rangeBand)) "x axis grid" "x axis grid hidden"))
           transition
           (duration 250)
-          (call x-axis))
-
-      (.. svg
-          (selectAll ".y.axis")
-          transition
-          (duration 250)
-          (call y-axis))))
+          (call x-axis))))
 
   (update-scales [this width height values]
-    (let [{:keys [x-scale y-scale svg]} (om/get-state this)]
+    (let [{:keys [svg x-scale y-scale]} (om/get-state this)]
       (if (empty? values)
         (do
           (d3/no-data-insert svg)
           (.. x-scale
-              (range #js [0 width])
-              (domain #js [0 1]))
+              (rangeRoundBands #js [0 width] 0.1)
+              (domain #js []))
           (.. y-scale
-              (rangeRoundBands #js [height 0] 0.1)
-              (domain #js [])))
+              (range #js [height 0])
+              (domain #js [0 1])))
         (do
           (d3/no-data-remove svg)
           (.. x-scale
-              (range #js [0 width])
-              (domain #js [0 (.. js/d3
-                                 (max values (fn [d] (.-value d))))]))
+              (rangeRoundBands #js [0 width] 0.01)
+              (domain (.map values (fn [d] (.-name d)))))
           (.. y-scale
-              (rangeRoundBands #js [height 0] 0.01)
-              (domain (.map values (fn [d] (.-name d)))))))))
+              (range #js [height 0])
+              (domain #js [0 (.. js/d3
+                                 (max values (fn [d] (.-value d))))]))))))
 
   (initLocalState [_]
-    {:margin {:top 20 :bottom 20 :left 0 :right 0}})
+    {:margin {:top 20 :bottom 20 :left 20 :right 20}})
 
   (componentDidMount [this]
     (d3/create-chart this))

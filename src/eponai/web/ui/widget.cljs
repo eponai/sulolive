@@ -4,7 +4,6 @@
     [eponai.common.format.date :as date]
     [eponai.web.ui.d3.area-chart :refer [->AreaChart]]
     [eponai.web.ui.d3.bar-chart :refer [->BarChart]]
-    [eponai.web.ui.d3.column-chart :refer [->ColumnChart]]
     [eponai.web.ui.d3.edge-bundling-graph :refer [->EdgeBundling]]
     [eponai.web.ui.d3.burndown-chart :refer [->BurndownChart]]
     [eponai.web.ui.d3.line-chart :refer [->LineChart]]
@@ -203,7 +202,7 @@
                           :title-axis-y "Amount ($)"}]
 
             (cond (= style :graph.style/bar)
-                  (->ColumnChart settings)
+                  (->BarChart settings)
 
                   (= style :graph.style/area)
                   (->AreaChart settings)
