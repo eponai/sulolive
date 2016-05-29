@@ -15,7 +15,7 @@
   (make-axis [_ width height]
     (let [x-scale (.. js/d3 -time -scale utc
                       (range #js [0 width])
-                      (nice (.. js/d3 -time -year)))
+                      (nice (.. js/d3 -time -day)))
 
           y-scale (.. js/d3 -scale linear
                       (range #js [height 0])
@@ -25,9 +25,7 @@
                    (orient "bottom")
                    (ticks (max (/ width 150) 2))
                    (tickSize (* -1 height) 0 0)
-                   (tickFormat #((.. js/d3
-                                     -time
-                                     (format "%b %d"))
+                   (tickFormat #((d3/time-formatter "%b %d")
                                  (js/Date. %))))
 
        :y-axis (.. js/d3 -svg axis
@@ -128,9 +126,7 @@
                                   x-scale
                                   js-data
                                   (fn [x-position values]
-                                    (let [time-format (.. js/d3
-                                                          -time
-                                                          (format "%b %d %Y"))]
+                                    (let [time-format (d3/time-formatter "%b %d %Y")]
                                       (d3/tooltip-add-data id
                                                            (time-format (js/Date. x-position))
                                                            values (fn [d]

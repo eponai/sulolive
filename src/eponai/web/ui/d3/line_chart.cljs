@@ -25,9 +25,7 @@
                    (orient "bottom")
                    (ticks (max (/ width 150) 2))
                    (tickSize (* -1 height) 0 0)
-                   (tickFormat #((.. js/d3
-                                     -time
-                                     (format "%b %d"))
+                   (tickFormat #((d3/time-formatter "%b %d")
                                  (js/Date. %))))
 
        :y-axis (.. js/d3 -svg axis
@@ -128,9 +126,7 @@
                                   x-scale
                                   js-data
                                   (fn [x-position values]
-                                    (let [time-format (.. js/d3
-                                                          -time
-                                                          (format "%b %d %Y"))]
+                                    (let [time-format (d3/time-formatter "%b %d %Y")]
                                       (d3/tooltip-add-data id
                                                            (time-format (js/Date. x-position))
                                                            values

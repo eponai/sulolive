@@ -10,13 +10,11 @@
     [eponai.common.format :as f]))
 
 (defn- end-angle [d limit]
-  (debug "Goal end angle data: " d)
   (let [v (if (map? d)
                  (:value d)
                   (.-value d))]
     (if (and limit v)
       (let [progress (/ v limit)]
-        (debug "Goal end angle: " progress)
         (* 2 js/Math.PI progress))
       0)))
 (defui ProgressBar
@@ -29,7 +27,6 @@
            inner-width :width} (d3/svg-dimensions svg {:margin margin})
 
           cycle (first data)
-          _ (debug "Goal cycle: " cycle)
 
           js-data (clj->js [(assoc (last (:values cycle)) :endAngle 0)])
           path-width (/ (min inner-width inner-height) 7)
@@ -80,7 +77,6 @@
                           (selectAll ".val-txt")
                           (data js-data))]
 
-          (debug "Goal data progress-meter: " js-data)
           (.. graph
               (attr "transform" (str "translate(" (/ inner-width 2) "," (/ inner-height 2) ")")))
 
@@ -131,9 +127,7 @@
               transition
               (duration 500)
               (text (fn [d]
-                       ((.. js/d3
-                                 -time
-                                 (format "%a %d %b"))
+                       ((d3/time-formatter "%a %d %b")
                               (js/Date. (.-name d))))))))))
 
   (componentDidMount [this]

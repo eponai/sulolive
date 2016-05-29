@@ -24,9 +24,7 @@
                     (ticks (max (/ width 150) 2))
                     (tickSize (* -1 height) 0 0)
                     (tickFormat (fn [t]
-                                  (let [time-format (.. js/d3
-                                                        -time
-                                                        (format "%b %d"))]
+                                  (let [time-format (d3/time-formatter "%b %d")]
                                     (time-format (js/Date. t))))))
        :y-axis  (.. js/d3 -svg axis
                     (scale y-scale)
@@ -147,9 +145,7 @@
                                           guide (.. focus
                                                     (select ".guide"))
 
-                                          time-format (.. js/d3
-                                                          -time
-                                                          (format "%b %d %Y"))]
+                                          time-format (d3/time-formatter "%b %d %Y")]
                                       (d3/tooltip-add-data id (time-format (js/Date. x-position)) values (fn [_ i] (color-scale i)))
                                       (d3/tooltip-set-pos id (+ 30 (.. js/d3 -event -pageX))
                                                            (.. js/d3 -event -pageY))

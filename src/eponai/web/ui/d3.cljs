@@ -8,6 +8,12 @@
     [om.next :as om]
     [taoensso.timbre :refer-macros [debug error]]))
 
+(defn time-formatter [format-str]
+  (.. js/d3
+      -time
+      -format
+      (utc format-str)))
+
 (defn build-svg [ref width height]
   (-> js/d3
       (.select (js/ReactDOM.findDOMNode ref))
