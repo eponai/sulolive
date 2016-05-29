@@ -1,6 +1,8 @@
 (ns eponai.web.ui.all-transactions
   (:require
     [cljs-time.core :as time]
+    [cljs.reader :as reader]
+    [clojure.string :as string]
     [datascript.core :as d]
     [eponai.client.lib.transactions :as lib.t]
     [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
@@ -11,25 +13,21 @@
     [eponai.web.ui.utils.filter :as filter]
     [garden.core :refer [css]]
     [goog.string :as gstring]
+    [goog.events :as events]
     [om.dom :as dom]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]))
+    [taoensso.timbre :refer-macros [debug warn]]))
 
 (defn- trim-decimals [n] (int n))
 
-(defn select-last-number
-  "Given an input field of type number, selects the last digit (most valuable digit) in the input."
+(defn select-first-digit
+  "Selects the first digit (most valuable digit) in the input dom node."
   [dom-node]
-  (try
-    ;; Inputs of type number cannot use selection range by default.
-    ;; Using type text for the selection, then switching back to type number.
-    (set! (.-type dom-node) "text")
-    (let [sel-start (dec (.-length (.-value dom-node)))
-          sel-start (if (neg? sel-start) 0 sel-start)]
-      (.setSelectionRange dom-node sel-start sel-start))
-    (finally
-      (set! (.-type dom-node) "number"))))
+  ;; make sure we're in text mode
+  (when (not= "text" (.-type dom-node))
+    (warn "Dom node was not in type text. Was: " (.-type dom-node) " for dom node: " dom-node))
+  (.setSelectionRange dom-node 0 0))
 
 ;; ################### Om next components ###################
 
@@ -88,7 +86,9 @@
 
   (initLocalState [this]
     (let [props (om/props this)
-          transaction (update props :transaction/tags (fn [tags] (sort-by :tag/name (map #(select-keys % [:tag/name]) tags))))]
+          transaction (-> props
+                          (update :transaction/tags (fn [tags] (sort-by :tag/name (map #(select-keys % [:tag/name]) tags))))
+                          (update :transaction/amount (fn [amount] (gstring/format "%.2f" (str amount)))))]
       {:input-transaction transaction
        :init-state transaction}))
 
@@ -130,13 +130,14 @@
                 (dom/small #js {:className "currency-code"}
                            (str (or (:currency/code (:user/currency user))
                                     (:currency/symbol-native (:user/currency user))) " "))
-                (if (= (:db/ident type) :transaction.type/expense)
-                  (dom/strong #js {:className "label alert"
-                                   :style     #js {:padding "0.2em 0.3em"}}
-                              (gstring/format "-%.2f" (/ amount rate)))
-                  (dom/strong #js {:className "label success"
-                                   :style     #js {:padding "0.2em 0.3em"}}
-                              (gstring/format "%.2f" (/ amount rate)))))
+                (let [amount (cond-> amount (string? amount) (reader/read-string))]
+                  (if (= (:db/ident type) :transaction.type/expense)
+                   (dom/strong #js {:className "label alert"
+                                    :style     #js {:padding "0.2em 0.3em"}}
+                               (gstring/format "-%.2f" (/ amount rate)))
+                   (dom/strong #js {:className "label success"
+                                    :style     #js {:padding "0.2em 0.3em"}}
+                               (gstring/format "%.2f" (/ amount rate))))))
               (dom/i #js {:className "fa fa-spinner fa-spin"})))
 
           ;; Amount in local currency
@@ -159,20 +160,26 @@
             (dom/div #js {:style   #js {:fontFamily "monospace" :whiteSpace "pre"}
                           :onClick #(when-let [node (utils/ref-dom-node this (str "amount-" id))]
                                      (.focus node)
-                                     (select-last-number node))}
+                                     (select-first-digit node))}
               (utils/left-padding 10 (trim-decimals amount)))
             (dom/input
               #js {:style     #js {:fontFamily "monospace"}
                    :tabIndex  -1
                    :className "amount"
-                   :value     (gstring/format "%.2f" (or amount ""))
+                   :value     (or amount "")
+                   :pattern   "[0-9]+([\\.][0-9]+)?"
                    :type      "text"
                    :onChange  #(om/update-state! this assoc-in [:input-transaction :transaction/amount] (.-value (.-target %)))
-                   :onKeyDown #(utils/on-enter-down % (fn [_]
-                                                        (.blur (.-target %))))
+                   :onKeyDown #(condp = (.-keyCode %)
+                                events/KeyCodes.COMMA (.preventDefault %)
+                                events/KeyCodes.PERIOD (when (string/includes? (str amount) ".") (.preventDefault %))
+                                events/KeyCodes.ENTER (utils/on-enter-down % (fn [_] (.blur (.-target %))))
+                                true)
                    :ref       (str "amount-" id)
                    :onBlur    #(do
-                                (set! (.-type (.-target %)) "text")
+                                (let [val (.-value (.-target %))]
+                                  (when (not= val (gstring/format "%.2f" val))
+                                    (om/update-state! this assoc-in [:input-transaction :transaction/amount] (gstring/format "%.2f" val))))
                                 (.save-edit this))}))
 
           ;; Title

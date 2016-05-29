@@ -1,6 +1,7 @@
 (ns eponai.client.lib.transactions
   (:require [clojure.set :as set]
-            [cljs.reader :as reader]))
+            [cljs.reader :as reader]
+            [taoensso.timbre :refer-macros [debug]]))
 
 (defn mark-removed-tags
   "Takes an edited transaction and an original transaction, marks every removed tag
