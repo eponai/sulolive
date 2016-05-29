@@ -220,7 +220,7 @@
                                                     :show-calendars? true
                                                     :selected-range :custom-range))}]]
       (dom/div
-        #js {:className (str "daterangepicker single menu-horizontal dropdown " (when show-calendars? " show-calendar"))}
+        #js {:className (str "daterangepicker menu-horizontal dropdown clearfix " (when show-calendars? " show-calendar"))}
 
         ; Calendar select from date.
         (dom/div
@@ -300,7 +300,7 @@
   (renderSingleCalendar [this]
     (let [{:keys [start-date]} (om/get-state this)]
       (dom/div
-        #js {:className (str "daterangepicker menu-horizontal dropdown show-calendar")}
+        #js {:className (str "daterangepicker menu-horizontal single dropdown show-calendar")}
         (dom/div
           #js {:className "calendar"}
           (dom/div
@@ -320,7 +320,7 @@
   (render [this]
     (let [{:keys [old-start-date old-end-date is-showing?]} (om/get-state this)
           {:keys [class single-calendar?]} (om/props this)
-          {:keys [format]} (om/get-computed this)]
+          {:keys [format on-open]} (om/get-computed this)]
       (dom/div
         #js {:className class}
         (dom/div
@@ -332,7 +332,9 @@
                               (when old-start-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-start-date))
                               (str (when old-start-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-start-date)) "-"
                                    (when old-end-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-end-date))))
-                 :onClick   #(om/update-state! this assoc :is-showing? true)})
+                 :onClick   #(do (om/update-state! this assoc :is-showing? true)
+                                 (when on-open
+                                   (on-open)))})
 
           (when is-showing?
             (dom/div

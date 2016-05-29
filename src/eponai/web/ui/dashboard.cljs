@@ -123,7 +123,8 @@
           {:keys [layout
                   grid-element
                   is-editing?
-                  cols]} (om/get-state this)
+                  cols
+                  active-widget-uuid]} (om/get-state this)
           widgets (:widget/_dashboard dashboard)
           project-id (:db/id (:dashboard/project dashboard))
           React (.-React js/window)]
@@ -152,13 +153,27 @@
                           (into-array
                             (map
                               (fn [widget-props]
-                                (.createElement React
-                                                "div"
-                                                #js {:key (str (:widget/uuid widget-props))}
-                                                (->Widget
-                                                  (om/computed widget-props
-                                                               {:project-id project-id
-                                                                :transactions transactions}))))
+                                (dom/div
+                                  #js {:key (str (:widget/uuid widget-props))
+                                       :className (when (= active-widget-uuid (:widget/uuid widget-props)) "selected-widget")
+                                       :style {:z-index (if (= active-widget-uuid (:widget/uuid widget-props)) 1000 0)}}
+                                  (->Widget
+                                    (om/computed widget-props
+                                                 {:project-id       project-id
+                                                  :transactions     transactions
+                                                  :on-select-widget #(do (debug "Selected widget: " (:widget/uuid widget-props))
+                                                                         (om/update-state! this assoc :active-widget-uuid (:widget/uuid widget-props)))})))
+                                ;(.createElement React
+                                ;                "div"
+                                ;                #js {:key (str (:widget/uuid widget-props))
+                                ;                     :style {:z-index (if (= active-widget-uuid (:widget/uuid widget-props)) 1000 0)}}
+                                ;                (->Widget
+                                ;                  (om/computed widget-props
+                                ;                               {:project-id       project-id
+                                ;                                :transactions     transactions
+                                ;                                :on-select-widget #(do (debug "Selected widget: " (:widget/uuid widget-props))
+                                ;                                                       (om/update-state! this assoc :active-widget-uuid (:widget/uuid widget-props)))})))
+                                )
                               (sort-by :widget/index widgets))))
           (dom/div
             #js {:className "empty-message text-center"}

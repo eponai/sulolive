@@ -118,7 +118,8 @@
                   computed/date-range-picker-on-cancel
                   computed/goal-settings-on-change]} (om/get-state this)
           {:keys [id
-                  transactions]} (om/get-computed this)]
+                  transactions
+                  on-select-widget]} (om/get-computed this)]
       (dom/div
         #js {:className "widget"}
         (dom/header
@@ -143,24 +144,28 @@
                 (->TagFilterPicker (om/computed {:key          "tag-filter-picker"
                                                  :transactions transactions
                                                  :filters      (:graph/filter graph)}
-                                                {:on-apply tag-filter-picker-on-change})))
+                                                {:on-apply tag-filter-picker-on-change
+                                                 :on-open on-select-widget})))
               (when-not (or (= (:graph/style graph) :graph.style/burndown)
                             (= (:graph/style graph) :graph.style/progress-bar))
 
                 (->DateRangePicker (om/computed {:key   "date-range-picker"
                                                  :class "nav-link"}
                                                 {:on-apply  date-range-picker-on-change
-                                                 :on-cancel date-range-picker-on-cancel})))
+                                                 :on-cancel date-range-picker-on-cancel
+                                                 :on-open on-select-widget})))
 
               (when (or (= (:graph/style graph) :graph.style/burndown)
                         (= (:graph/style graph) :graph.style/progress-bar))
                 (->GoalSettings (om/computed {:key "goal-settings"
                                               :limit (get-in report [:report/goal :goal/value])}
-                                             {:on-change goal-settings-on-change})))
+                                             {:on-change goal-settings-on-change
+                                              :on-open on-select-widget})))
 
               (->DatasetFilterPicker (om/computed {:key     "dataset-filter-picker"
                                                    :filters (:widget/filter widget)}
-                                                  {:on-change dataset-filter-picker-on-change}))
+                                                  {:on-change dataset-filter-picker-on-change
+                                                   :on-open on-select-widget}))
               ;; Widget edit navigation
               ;(dom/a
               ;  #js {:className "nav-link widget-edit secondary"

@@ -71,7 +71,7 @@
     (let [{:keys [filters]} (om/props this)
           {:keys [is-showing? new-filter input-filters tags tag-filter-key
                   computed/tag-filter-on-change]} (om/get-state this)
-          {:keys [on-change on-cancel]} (om/get-computed this)
+          {:keys [on-change on-cancel on-open]} (om/get-computed this)
 
           ;tag-filter-key (cond
           ;                 (seq (:filter/exclude-tags filters))
@@ -88,8 +88,10 @@
           nil
           (dom/a
             #js {:className "nav-link has-tip top"
-                 :title "Filter"
-                 :onClick #(om/update-state! this assoc :is-showing? true)}
+                 :title     "Filter"
+                 :onClick   #(do (om/update-state! this assoc :is-showing? true)
+                                 (when on-open
+                                   (on-open)))}
             (dom/i
               #js {:className "fa fa-filter"}))
 

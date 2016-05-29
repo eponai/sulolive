@@ -27,7 +27,7 @@
     (om/set-state! this (.init-state this new-props)))
   (render [this]
     (let [{:keys [include-tags is-showing? search-string tags]} (om/get-state this)
-          {:keys [on-cancel on-apply]} (om/get-computed this)
+          {:keys [on-cancel on-apply on-open]} (om/get-computed this)
           {:keys [class transactions filters]} (om/props this)
           filtered-tags (if (seq search-string)
                           (filter #(clojure.string/starts-with? (:tag/name %) search-string) tags)
@@ -41,7 +41,9 @@
         (dom/a
           #js {:className "nav-link tagfilter  has-tip top"
                :title     "Show/hide tags"
-               :onClick   #(om/update-state! this assoc :is-showing? true)}
+               :onClick   #(do (om/update-state! this assoc :is-showing? true)
+                               (when on-open
+                                 (on-open)))}
           (dom/i
             #js {:className "fa fa-fw fa-tags"})
           (dom/small

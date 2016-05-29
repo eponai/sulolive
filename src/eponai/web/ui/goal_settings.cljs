@@ -11,7 +11,7 @@
       {:input-limit limit}))
   (render [this]
     (let [{:keys [is-showing? input-limit]} (om/get-state this)
-          {:keys [on-change on-close]} (om/get-computed this)]
+          {:keys [on-change on-close on-open]} (om/get-computed this)]
       (dom/div
         #js {:className "nav-link"}
         (dom/div
@@ -19,7 +19,9 @@
           (dom/a
             #js {:className "nav-link has-tip top"
                  :title     "Goal settings"
-                 :onClick   #(om/update-state! this assoc :is-showing? true)}
+                 :onClick   #(do (om/update-state! this assoc :is-showing? true)
+                                 (when on-open
+                                   (on-open)))}
             (dom/i
               #js {:className "fa fa-fw fa-star"}))
 
