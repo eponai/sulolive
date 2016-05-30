@@ -184,8 +184,8 @@
               (domain cycle-domain))
           (.. y-scale
               (range #js [height 0])
-              (domain #js [0 (.. js/d3
-                                 (max values (fn [d] (.-value d))))]))))))
+              (domain #js [0 (* 1.1 (.. js/d3
+                                       (max values (fn [d] (.-value d)))))]))))))
 
   (update-lines [this]
     (let [{:keys [graph js-data x-scale y-scale]} (om/get-state this)

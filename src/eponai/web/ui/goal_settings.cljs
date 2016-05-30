@@ -31,9 +31,17 @@
               (utils/click-outside-target #(om/update-state! this assoc :is-showing? false))
               (dom/div
                 #js {:className "menu dropdown goal-settings"}
+                (dom/h6
+                  #js {:className "small-caps"}
+                  "Goal settings")
+
+                (dom/span
+                  nil
+                  "Monthly limit")
                 (dom/input
-                  #js {:value    (or input-limit "")
-                       :type "text"
+                  #js {:name "limit"
+                       :value    (or input-limit "")
+                       :type     "number"
                        :onChange #(om/update-state! this assoc :input-limit (.-value (.-target %)))})
                 (dom/div
                   #js {:className "actions"}
