@@ -10,10 +10,9 @@
     [taoensso.timbre :refer-macros [debug]]))
 
 (defui DateRangePicker
-  Object
-  (initLocalState [this]
-    (let [{:keys [start-date end-date selected-range single-calendar?]} (om/props this)
-          start-date (or start-date (time/minus (date/today) (time/days 7)))
+  utils/ISyncStateWithProps
+  (props->init-state [_ {:keys [start-date end-date selected-range single-calendar?]}]
+    (let [start-date (or start-date (time/minus (date/today) (time/days 7)))
           end-date (if single-calendar?
                      start-date
                      (or end-date (date/today)))
@@ -25,6 +24,13 @@
        :left-calendar  {:month start-month}
        :right-calendar {:month (time/plus start-month (time/months 1))}
        :selected-range selected-range}))
+
+  Object
+  (initLocalState [this]
+    (utils/props->init-state this (om/props this)))
+
+  (componentWillReceiveProps [this next-props]
+    (utils/sync-with-received-props this next-props))
 
   (show [this]
     (let [{:keys [start-date end-date]} (om/get-state this)]
