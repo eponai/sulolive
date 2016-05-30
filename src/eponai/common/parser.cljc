@@ -288,12 +288,13 @@
   (fn [env k p]
     (read (assoc env :txs-by-project txs-by-project) k p)))
 
-(def default-parser-initial-state #?(:clj {} :cljs {:txs-by-project (atom {})}))
+(defn default-parser-initial-state []
+  #?(:clj {} :cljs {:txs-by-project (atom {})}))
 
 (defn parser
   ([] (parser {}))
   ([parser-opts]
-   (parser parser-opts default-parser-initial-state))
+   (parser parser-opts (default-parser-initial-state)))
   ([parser-opts initial-state]
    (let [p (om/parser (merge {:read   (-> read
                                           #?(:clj read-returning-basis-t)

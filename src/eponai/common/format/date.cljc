@@ -73,7 +73,7 @@
 
     ;; A JS date.
     #?@(:cljs [(instance? js/Date obj)
-               (t/date-time (.getFullYear obj) (inc (.getMonth obj)) (.getDate obj))])
+               (t/date-time (.getUTCFullYear obj) (inc (.getUTCMonth obj)) (.getUTCDate obj))])
 
     ;; We already have a clj-time/cljs-time DateTime instance.
     (date-time? obj)
