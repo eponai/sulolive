@@ -90,7 +90,9 @@
                           (update :transaction/tags (fn [tags] (sort-by :tag/name (map #(select-keys % [:tag/name]) tags))))
                           (update :transaction/amount two-decimal-string))]
       {:input-transaction transaction
-       :init-state transaction}))
+       :init-state transaction
+       :computed/date-range-picker-on-apply #(do (om/update-state! this assoc-in [:input-transaction :transaction/date] %)
+                                                 (.save-edit this))}))
 
   (render [this]
     (let [{:keys [input-transaction input-tag]} (om/get-state this)
@@ -103,6 +105,7 @@
                   transaction/conversion
                   transaction/title]
            :as   transaction} (or input-transaction (om/props this))
+          {:keys [computed/date-range-picker-on-apply]} (om/get-state this)
           {:keys [user on-tag-click currencies]} (om/get-computed this)]
       (dom/li
         nil
@@ -115,11 +118,8 @@
 
             (->DateRangePicker (om/computed {:single-calendar? true
                                              :start-date       (date/date-time date)}
-                                            {:on-apply #(do (om/update-state!
-                                                              this assoc-in [:input-transaction :transaction/date]
-                                                              %)
-                                                            (.save-edit this))
-                                             :format "MMM dd"})))
+                                            {:on-apply date-range-picker-on-apply
+                                             :format   "MMM dd"})))
 
           ;; Amount in main currency
           (dom/div
@@ -276,6 +276,7 @@
       (om/update-state! this assoc :list-size 50)))
 
   (componentWillUnmount [this]
+    (debug "Unmounting all transactions")
     (.deselect-transaction this))
 
   (select-transaction [this transaction]
