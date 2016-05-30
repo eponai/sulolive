@@ -226,7 +226,7 @@
                                                     :show-calendars? true
                                                     :selected-range :custom-range))}]]
       (dom/div
-        #js {:className (str "daterangepicker menu-horizontal dropdown clearfix " (when show-calendars? " show-calendar"))}
+        #js {:className (str "daterangepicker menu-horizontal dropdown " (when show-calendars? " show-calendar"))}
 
         ; Calendar select from date.
         (dom/div
