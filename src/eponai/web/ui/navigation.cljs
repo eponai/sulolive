@@ -111,8 +111,9 @@
 
 (defui NavbarSubmenu
   static om/IQuery
-  (query [_]
-    [{:proxy/project-submenu (om/get-query project/SubMenu)}])
+  (query [this]
+    [{:proxy/project-submenu (or (om/subquery this :submenu project/SubMenu)
+                                 (om/get-query project/SubMenu))}])
   Object
   (render [this]
     (let [{:keys [proxy/project-submenu]} (om/props this)
@@ -121,7 +122,7 @@
         [:div#sub-nav-bar
          [:div
           (when (= content-factory ->Project)
-                (project/->SubMenu (om/computed project-submenu
+                (project/->SubMenu (om/computed (assoc project-submenu :ref :submenu)
                                                 {:app-content app-content})))]]))))
 
 (def ->NavbarSubmenu (om/factory NavbarSubmenu))

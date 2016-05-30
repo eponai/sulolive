@@ -21,7 +21,8 @@
            :user/current
            {:query/root-component [:ui.component.root/app-content :ui.component.root/route-changed]}
            {:proxy/nav-bar (om/get-query nav/NavbarMenu)}
-           {:proxy/nav-bar-submenu (om/get-query nav/NavbarSubmenu)}
+           {:proxy/nav-bar-submenu (or (om/subquery this :nav-bar-submenu nav/NavbarSubmenu)
+                                       (om/get-query nav/NavbarSubmenu))}
            {:proxy/side-bar (om/get-query nav/SideBar)}]
           (and (om/component? this) (some? c))
           (conj {:proxy/app-content '?app-content})))
@@ -81,8 +82,9 @@
 
          [:div#main-page
           (nav/->NavbarMenu (om/computed nav-bar {:on-sidebar-toggle navbar-menu-on-sidebar-toggle}))
-          (nav/->NavbarSubmenu (om/computed nav-bar-submenu {:content-factory factory
-                                                             :app-content     app-content}))
+          (nav/->NavbarSubmenu (om/computed (assoc nav-bar-submenu :ref :nav-bar-submenu)
+                                            {:content-factory factory
+                                             :app-content     app-content}))
           [:div#page-content
            (when factory
              (factory (assoc app-content :ref :app-content)))]]]))))

@@ -40,18 +40,25 @@
 
 (defui SubMenu
   static om/IQuery
-  (query [_]
-    [{:proxy/add-transaction (om/get-query AddTransaction)}
-     {:proxy/new-widget (om/get-query NewWidget)}
-     {:query/active-dashboard [:db/id {:widget/_dashboard [:widget/index]}]}])
+  (query [this]
+    (cond-> [{:proxy/add-transaction (om/get-query AddTransaction)}
+             {:query/active-dashboard [:db/id {:widget/_dashboard [:widget/index]}]}]
+            (and (om/component? this)
+                 (some (set (keys (om/get-state this))) [:new-track? :new-goal?]))
+            (conj {:proxy/new-widget (om/get-query NewWidget)})))
   Object
   (initLocalState [this]
     {:computed/share-project-on-save #(let [project (-> (om/get-computed this)
                                                         (get-in [:app-content :query/active-project :ui.component.project/active-project]))]
                                        (.share-project this (:project/uuid project) %))
-     :computed/new-track-on-save #(om/update-state! this assoc :new-track? false)
-     :computed/new-goal-on-save #(om/update-state! this assoc :new-goal? false)
-     :computed/on-menu-select #(om/update-state! this :menu-visible? true)})
+     :computed/new-track-on-save     #(do (om/update-state! this assoc :new-track? false)
+                                          (.set-query! this))
+     :computed/new-goal-on-save      #(do (om/update-state! this assoc :new-goal? false)
+                                          (.set-query! this))
+     :computed/on-menu-select        #(om/update-state! this :menu-visible? true)})
+
+  (set-query! [this]
+    (om/update-query! this assoc :query (om/query this)))
 
   (share [this]
     (om/update-state! this assoc :share-project? true))
@@ -109,16 +116,18 @@
                    [:i.fa.fa-money.fa-fw]
                    [:span.small-caps "Transaction"]]
                   [:a.nav-link
-                   {:on-click #(om/update-state! this assoc
-                                                 :new-track? true
-                                                 :menu-visible? false)}
+                   {:on-click #(do (om/update-state! this assoc
+                                                     :new-track? true
+                                                     :menu-visible? false)
+                                   (.set-query! this))}
                    [:i.fa.fa-line-chart.fa-fw
                     (opts {:style {:color "green"}})]
                    [:span.small-caps "Track"]]
                   [:a.nav-link
-                   {:on-click #(om/update-state! this assoc
-                                                 :new-goal? true
-                                                 :menu-visible? false)}
+                   {:on-click #(do (om/update-state! this assoc
+                                                     :new-goal? true
+                                                     :menu-visible? false)
+                                   (.set-query! this))}
                    [:i.fa.fa-star.fa-fw
                     (opts {:style {:color "orange"}})]
                    [:span.small-caps "Goal"]]]])
