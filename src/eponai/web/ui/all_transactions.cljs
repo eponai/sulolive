@@ -127,7 +127,7 @@
             (if-let [rate (:conversion/rate conversion)]
               (dom/div
                 nil
-                (dom/small #js {:className "currency-code"}
+                (dom/span #js {:className "currency-code"}
                            (str (or (:currency/code (:user/currency user))
                                     (:currency/symbol-native (:user/currency user))) " "))
                 (let [amount (cond-> amount (string? amount) (reader/read-string))]
@@ -157,7 +157,8 @@
                      :value (:currency/code c)}
                     (str (or (:currency/symbol-native c)
                              (:currency/code c)) " ")]))])
-            (dom/div #js {:style   #js {:fontFamily "monospace" :whiteSpace "pre"}
+            (dom/div #js {:className "whitespace"
+                          :style   #js {:fontFamily "monospace" :whiteSpace "pre"}
                           :onClick #(when-let [node (utils/ref-dom-node this (str "amount-" id))]
                                      (.focus node)
                                      (select-first-digit node))}

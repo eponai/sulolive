@@ -197,8 +197,8 @@
                           (extent values (fn [d] (.-name d))))))
           (.. y-scale
               (range #js [height 0])
-              (domain #js [0 (.. js/d3
-                                 (max values (fn [d] (.-value d))))]))))))
+              (domain #js [0 (+ 40 (.. js/d3
+                                       (max values (fn [d] (.-value d)))))]))))))
 
   (update-axis [this width height]
     (let [{:keys [y-axis x-axis svg]} (om/get-state this)]

@@ -193,14 +193,14 @@
              ;              (on-change (change-graph-style widget :graph.style/number)))}]
              ;[:label {:for "number-option"}
              ; [:span.currency-code "Number"]]
-             [:input
-              {:type     "radio"
-               :id       "area-option"
-               :checked  (= style :graph.style/area)
-               :on-click #(when (and on-change (not= style :graph.style/area))
-                           (on-change (change-graph-style widget :graph.style/area)))}]
-             [:label {:for "area-option"}
-              [:span.currency-code "Area"]]
+             ;[:input
+             ; {:type     "radio"
+             ;  :id       "area-option"
+             ;  :checked  (= style :graph.style/area)
+             ;  :on-click #(when (and on-change (not= style :graph.style/area))
+             ;              (on-change (change-graph-style widget :graph.style/area)))}]
+             ;[:label {:for "area-option"}
+             ; [:span.currency-code "Area"]]
              [:input
               {:type     "radio"
                :id       "line-option"
