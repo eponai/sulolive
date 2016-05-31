@@ -30,11 +30,23 @@
       "and")))
 
 (defui DatasetFilterPicker
+  utils/ISyncStateWithProps
+  (props->init-state [this props]
+    (let [{:keys [filters]} props
+          tag-filter-key (if (seq (:filter/exclude-tags filters))
+                           :filter/exclude-tags
+                           :filter/include-tags)]
+      {:tags                          (or (get filters tag-filter-key) [])
+       :tag-filter-key                tag-filter-key
+       :input-filters                 filters
+       :computed/tag-filter-on-change (fn [tags]
+                                        (let [{:keys [tag-filter-key]} (om/get-state this)]
+                                          (om/update-state! this assoc-in [:input-filters tag-filter-key] tags)))}))
+
   Object
   (select-tag-filter-type [this new-tag-filter-key]
     (let [{:keys [tag-filter-key tags input-filters]} (om/get-state this)
-          {:keys [filters]} (om/props this)
-          {:keys [on-change]} (om/get-computed this)]
+          {:keys [filters]} (om/props this)]
       (when-not (= tag-filter-key new-tag-filter-key)
         (let [new-filters (cond (= new-tag-filter-key :filter/include-tags)
                                 (-> input-filters
@@ -49,24 +61,12 @@
                             :tag-filter-key new-tag-filter-key
                             :input-filters new-filters)))))
 
-  (init-state [this props]
-    (let [{:keys [filters]} props
-          tag-filter-key (cond
-                           (seq (:filter/exclude-tags filters))
-                           :filter/exclude-tags
-                           :else
-                           :filter/include-tags)]
-      {:tags (or (get filters tag-filter-key) [])
-       :tag-filter-key tag-filter-key
-       :input-filters filters}))
-
   (initLocalState [this]
-    (merge (.init-state this (om/props this))
-           {:computed/tag-filter-on-change (fn [tags]
-                                             (let [{:keys [tag-filter-key]} (om/get-state this)]
-                                               (om/update-state! this assoc-in [:input-filters tag-filter-key] tags)))}))
+    (utils/props->init-state this (om/props this)))
+
   (componentWillReceiveProps [this new-props]
-    (om/set-state! this (.init-state this new-props)))
+    (utils/sync-with-received-props this new-props))
+
   (render [this]
     (let [{:keys [filters]} (om/props this)
           {:keys [is-showing? new-filter input-filters tags tag-filter-key

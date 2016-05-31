@@ -246,41 +246,33 @@
                          placeholder
                          no-render-tags?
                          input-only?]}]
-  (html
-    [:div
+  (let [input-opts {:type        "text"
+                    :ref         ref
+                    :value       (or (:tag/name input-tag) "")
+                    :on-change   #(on-change {:tag/name (.-value (.-target %))})
+                    :on-key-down (fn [e]
+                                   (when on-key-down (on-key-down e))
+                                   (on-enter-down e #(on-add-tag {:tag/name (clojure.string/trim %)})))
+                    :placeholder (or placeholder "Filter tags...")}]
+    (html
+     [:div
 
-     (if input-only?
-       [:input
-        {:type        "text"
-         :ref         ref
-         :value       (or (:tag/name input-tag) "")
-         :on-change   #(on-change {:tag/name (.-value (.-target %))})
-         :on-key-down (fn [e]
-                        (when on-key-down (on-key-down e))
-                        (on-enter-down e #(on-add-tag {:tag/name %})))
-         :placeholder (or placeholder "Filter tags...")}]
+      (if input-only?
+        [:input input-opts]
 
-       [:div.input-group
-        (opts {:style {:margin-bottom 0}})
-        [:input.input-group-field
-         {:type        "text"
-          :ref         ref
-          :value       (or (:tag/name input-tag) "")
-          :on-change   #(on-change {:tag/name (.-value (.-target %))})
-          :on-key-down (fn [e]
-                         (when on-key-down (on-key-down e))
-                         (on-enter-down e #(on-add-tag {:tag/name (clojure.string/trim %)})))
-          :placeholder (or placeholder "Filter tags...")}]
-        [:span.input-group-label
-         [:i.fa.fa-tag]]])
+        [:div.input-group
+         (opts {:style {:margin-bottom 0}})
+         [:input.input-group-field input-opts]
+         [:span.input-group-label
+          [:i.fa.fa-tag]]])
 
-     (when-not no-render-tags?
-       [:div
-        (map-all
-          selected-tags
-          (fn [t]
-            (tag t
-                 {:on-delete #(on-delete-tag t)})))])]))
+      (when-not no-render-tags?
+        [:div
+         (map-all
+           selected-tags
+           (fn [t]
+             (tag t
+                  {:on-delete #(on-delete-tag t)})))])])))
 
 (defn on-change-in
   "Function that updates state in component c with assoc-in for the specified keys ks.
