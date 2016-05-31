@@ -41,11 +41,17 @@
 (defui SubMenu
   static om/IQuery
   (query [this]
-    (cond-> [{:proxy/add-transaction (om/get-query AddTransaction)}
-             {:query/active-dashboard [:db/id {:widget/_dashboard [:widget/index]}]}]
-            (and (om/component? this)
-                 (some (set (keys (om/get-state this))) [:new-track? :new-goal?]))
-            (conj {:proxy/new-widget (om/get-query NewWidget)})))
+    (let [query [{:proxy/add-transaction (om/get-query AddTransaction)}
+                 {:query/active-dashboard [:db/id {:widget/_dashboard [:widget/index]}]}]]
+      (if (and (om/component? this)
+               (some (set (keys (om/get-state this))) [:new-track? :new-goal?]))
+        (conj query {:proxy/new-widget (om/get-query NewWidget)})
+        (conj query {:proxy/new-widget (utils/query-with-component-meta NewWidget
+                                                                        ;; What key we use here shouldn't really matter
+                                                                        ;; but we're using a subset of NewWidget's
+                                                                        ;; query because we're scared of what might happen
+                                                                        ;; if we don't.
+                                                                        [:query/tags])}))))
   Object
   (initLocalState [this]
     {:computed/share-project-on-save #(let [project (-> (om/get-computed this)

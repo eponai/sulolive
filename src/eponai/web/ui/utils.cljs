@@ -46,6 +46,12 @@
   ;; -> {:child Class or Component}
   (dynamic-params [this next-props] "Return map of param key to class or component (via ref). Values will be replaced with queries."))
 
+(defn query-with-component-meta [x query]
+  (with-meta query
+             {:component (cond
+                           (om/component? x) (type x)
+                           (goog/isFunction x) x)}))
+
 (defn update-dynamic-query! [parser state x]
   {:pre  [(or (om/component? x) (goog/isFunction x))]
    :post [(map? %)]}
@@ -71,11 +77,7 @@
                                                                        " and we don't need it right now. We could copy om.next's"
                                                                        " implementation or something, but that's for future us "
                                                                        " to figure out ;) (HI FUTURE US)."))
-                                                          (assoc p k (with-meta
-                                                                       (:query param-query)
-                                                                       {:component (cond
-                                                                                     (om/component? x) (type x)
-                                                                                     (goog/isFunction x) x)}))))
+                                                          (assoc p k (query-with-component-meta x (:query param-query)))))
                                                       {} params)]
                           bound-params))
           _ (when (seq next-params)
