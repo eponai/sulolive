@@ -65,7 +65,8 @@
                                                                   (merge graph-filter {:filter/exclude-tags tags})
                                                                   (dissoc graph-filter :filter/exclude-tags))]
                                                 (om/update-state! this assoc :graph-filter new-filters)
-                                                (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))})
+                                                (on-change (assoc-in widget [:widget/graph :graph/filter] new-filters) {:update-data? false})))
+     :computed/title-on-change (fn [title])})
   (set-filters [this props]
     (let [{:keys [widget]} (::om/computed props)]
       (om/update-state! this assoc
@@ -105,6 +106,7 @@
                    date-filter
                    amount-filter
                    graph-filter
+                   input-title
                    selected-transactions
                    computed/date-filter-on-change
                    computed/tag-filter-on-change
@@ -165,11 +167,18 @@
                 :include-tags (tag-filter-fn :filter/include-tags)
                 :exclude-tags (tag-filter-fn :filter/exclude-tags)
                 :all-transactions nil))]]
-          [:div.row
-           (filter/->AmountFilter (om/computed {:amount-filter amount-filter}
-                                               {:on-change amount-filter-on-change}))]]
+          (filter/->AmountFilter (om/computed {:amount-filter amount-filter}
+                                              {:on-change amount-filter-on-change}))]
          [:hr]
          [:p.currency-code "Preview"]
+         [:div.row
+          [:div.columns.small-12
+           [:input
+            {:type      "text"
+             :value     (or (get-in widget [:widget/report :report/title]) "")
+             :on-change #(let [{:keys [on-change widget]} (om/get-computed this)]
+                          (when on-change
+                            (on-change (assoc-in widget [:widget/report :report/title] (.-value (.-target %))))))}]]]
          [:div.row
           [:div.columns.small-12
            (->Widget (assoc widget :widget/data (report/generate-data (:widget/report widget) transactions {:data-filter (get-in widget [:widget/graph :graph/filter])})))]]

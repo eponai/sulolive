@@ -112,7 +112,8 @@
                   computed/new-goal-on-change]} (om/get-state this)
           {:keys [dashboard-id widget-type on-save]} (om/get-computed this)]
       (dom/div
-        #js {:style {:padding "1em"}}
+        #js {:className "add-widget"
+             :style {:padding "1em"}}
         (cond
           (= :track widget-type)
           (->NewTrack (om/computed {}
