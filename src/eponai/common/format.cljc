@@ -126,8 +126,7 @@
 (defn filter*
   [input]
   (debug "Doing data filter: " input)
-  (let [format-tags (fn [tags] (mapv tag* tags))
-        remove-empty-vals (fn [i]
+  (let [remove-empty-vals (fn [i]
                             (into {} (filter #(let [v (val %)]
                                                (if (coll? v)
                                                  (seq v)
@@ -172,8 +171,6 @@
         (update :filter/start-date add-tempid)
         (update :filter/include-tags add-tempid)
         (update :filter/exclude-tags add-tempid)
-        (update :filter/include-tags format-tags)
-        (update :filter/exclude-tags format-tags)
         (update :filter/min-amount #(when % (str->number %)))
         (update :filter/max-amount #(when % (str->number %)))
         remove-empty-vals)))
@@ -253,35 +250,54 @@
       (update :widget/graph graph*)
       (update :widget/report report*)))
 
+(defn tag-filter-transactions [filters]
+  {:post [(or (debug "tag-filter-transactions ret: " %) (vector? %))]}
+  (debug "tag-filter-transactions input: " filters)
+  (letfn [(tags->txs [{:keys [tag/status tag/name] :as tag} attr]
+                    (cond (= status :deleted) [[:db/retract (:db/id filters) attr [:tag/name name]]]
+                          (= status :added) (let [new-tag (tag* tag)]
+                                              [(tag* tag)
+                                               [:db/add (:db/id filters) attr (:db/id new-tag)]])
+                          :else nil))]
+    (cond-> []
+            (seq (:filter/exclude-tags filters))
+            (into (comp (mapcat #(tags->txs % :filter/exclude-tags))
+                        (filter some?)) (:filter/exclude-tags filters))
+
+            (seq (:filter/include-tags filters))
+            (into (comp (mapcat #(tags->txs % :filter/include-tags))
+                        (filter some?)) (:filter/include-tags filters)))))
+
 (defn widget-edit [input]
   ;(assert (some? (:widget/dashboard input)) "Widget needs to ba associated to a dashboard.")
   (assert (some? (:widget/uuid input)) "Widget needs a UUID to be saved.")
-  (let [widget (cond-> (-> input
-                           widget*)
+  (let [widget (cond-> (widget* input)
 
                        (some? (:widget/graph input))
                        (update :widget/graph graph*)
 
                        (some? (:widget/report input))
                        (update :widget/report report*))
-        filters (:widget/filter widget)
-        tags->txs (fn [{:keys [tag/status tag/name] :as tag} attr]
-                    (cond (= status :deleted) [[:db/retract (:db/id filters) attr [:tag/name name]]]
-                          (= status :added) (let [new-tag (-> tag (dissoc :tag/status) add-tempid)]
-                                              [new-tag
-                                               [:db/add (:db/id filters) attr (:db/id new-tag)]])
-                          :else nil))]
-    (if filters
-      (cond-> [(update widget :widget/filter dissoc :filter/include-tags :filter/exclude-tags)]
 
-              (seq (:filter/exclude-tags filters))
-              (into (comp (mapcat #(tags->txs % :filter/exclude-tags))
-                          (filter some?)) (:filter/exclude-tags filters))
+        widget-tag-filter-txs (tag-filter-transactions (get-in widget [:widget/filter]))
+        graph-tag-filter-txs (tag-filter-transactions (get-in widget [:widget/graph :graph/filter]))
+        widget (cond-> widget
+                       (contains? widget :widget/filter)
+                       (update-in [:widget/filter] dissoc :filter/include-tags :filter/exclude-tags)
 
-              (seq (:filter/include-tags filters))
-              (into (comp (mapcat #(tags->txs % :filter/include-tags))
-                          (filter some?)) (:filter/include-tags filters)))
-      [widget])))
+                       (some? (get-in widget [:widget/graph :graph/filter]))
+                       (update-in [:widget/graph :graph/filter] dissoc :filter/include-tags :filter/exclude-tags))
+
+        db-id-only? (fn [m] (= #{:db/id} (set (keys m))))
+        widget (cond-> widget
+                       (db-id-only? (get-in widget [:widget/filter]))
+                       (dissoc :widget/filter)
+
+                       (db-id-only? (get-in widget [:widget/graph :graph/filter]))
+                       (update :widget/graph dissoc :graph/filter))]
+    (-> [widget]
+        (into widget-tag-filter-txs)
+        (into graph-tag-filter-txs))))
 
 (defn transaction-edit [{:keys [transaction/tags
                                 transaction/uuid] :as input-transaction}]

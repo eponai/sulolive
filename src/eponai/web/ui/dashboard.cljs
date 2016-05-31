@@ -111,11 +111,14 @@
   (initLocalState [this]
     (let [WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
           grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))]
-      {:cols {:lg 4 :md 4 :sm 2 :xs 1 :xxs 1}
-       :breakpoint :lg
-       :grid-element grid-element
-       :content :dashboard
-       :side-bar-transition-fn #(.update-layout this)}))
+      {:cols                             {:lg 4 :md 4 :sm 2 :xs 1 :xxs 1}
+       :breakpoint                       :lg
+       :grid-element                     grid-element
+       :content                          :dashboard
+       :side-bar-transition-fn           #(.update-layout this)
+       :computed/widget-on-select-widget (fn [widget-props]
+                                           (debug "Selected widget: " (:widget/uuid widget-props))
+                                           (om/update-state! this assoc :active-widget-uuid (:widget/uuid widget-props)))}))
 
   (render [this]
     (let [{:keys [query/dashboard
@@ -124,7 +127,8 @@
                   grid-element
                   is-editing?
                   cols
-                  active-widget-uuid]} (om/get-state this)
+                  active-widget-uuid
+                  computed/widget-on-select-widget]} (om/get-state this)
           widgets (:widget/_dashboard dashboard)
           project-id (:db/id (:dashboard/project dashboard))
           React (.-React js/window)]
@@ -160,9 +164,8 @@
                                   (->Widget
                                     (om/computed widget-props
                                                  {:project-id       project-id
-                                                  :tags tags
-                                                  :on-select-widget #(do (debug "Selected widget: " (:widget/uuid widget-props))
-                                                                         (om/update-state! this assoc :active-widget-uuid (:widget/uuid widget-props)))})))
+                                                  :tags             tags
+                                                  :on-select-widget (widget-on-select-widget widget-props)})))
                                 ;(.createElement React
                                 ;                "div"
                                 ;                #js {:key (str (:widget/uuid widget-props))
