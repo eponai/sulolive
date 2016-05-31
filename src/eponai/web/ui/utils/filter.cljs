@@ -70,7 +70,7 @@
                              (om/update-state! this dissoc :filter/min-amount)))
             :on-key-down #(utils/on-enter-down % (fn [_]
                                                    (on-change filters)))
-            :placeholder "Min"}]]
+            :placeholder "Min Amount"}]]
          ;[:div.columns.small-1.text-right
          ; "Max:"]
          [:div.columns.small-6
@@ -83,7 +83,7 @@
                              (om/update-state! this dissoc :filter/max-amount)))
             :on-key-down #(utils/on-enter-down % (fn [_]
                                                    (on-change filters)))
-            :placeholder "Max"}]]]))))
+            :placeholder "Max Amount"}]]]))))
 
 (def ->AmountFilter (om/factory AmountFilter))
 

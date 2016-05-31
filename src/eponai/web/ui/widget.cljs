@@ -63,7 +63,7 @@
   (initLocalState [this]
     {:computed/dataset-filter-picker-on-change #(.update-data-set-filter this %)
      :computed/tag-filter-picker-on-change     #(.update-tag-filter this %)
-     :computed/date-range-picker-on-change     (fn [{:keys [start-date end-date]}] (.update-date-filter this start-date end-date))
+     :computed/date-range-picker-on-change     (fn [{:keys [start-date end-date selected-range]}] (.update-date-filter this start-date end-date selected-range))
      :computed/goal-settings-on-change #(.update-goal-value this %)
      ;; TODO: Do something on cancel?
      :computed/date-range-picker-on-cancel     #()})

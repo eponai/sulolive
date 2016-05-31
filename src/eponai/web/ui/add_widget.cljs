@@ -105,6 +105,7 @@
 
   (componentWillReceiveProps [this new-props]
     (om/set-state! this (.init-state this new-props)))
+
   (render [this]
     (let [{:keys [query/transactions query/tags]} (om/props this)
           {:keys [input-widget
