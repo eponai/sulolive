@@ -3,6 +3,7 @@
             [eponai.client.route-helper :as route-helper]
             [eponai.web.routes :as routes]
             [eponai.web.routes.ui-handlers :as ui-handlers]
+            [eponai.web.ui.all-transactions :refer [AllTransactions]]
             [eponai.web.ui.utils :as utils]
             [eponai.common.parser :as parser]
             [om.next :as om]
@@ -19,27 +20,37 @@
     (when (fn? (:route-param-fn ui-handler))
       (route-helper/handle-route-params ui-handler reconciler (or route-params {})))))
 
+;; TODO: Evaluate if this is a hack we can do something about.
+;; Using this for initialization logic.
+(def ^:dynamic *starting-history* false)
+
 (defn set-page! [reconciler]
   (fn [{:keys [handler] :as match}]
-    (debug "Setting page with match:"  match)
-    (update-app-state-with-route-match! reconciler match)
+    (debug "Setting page with match:" match)
+    (let [ui-handler (route-handler->ui-handler handler)]
+      (update-app-state-with-route-match! reconciler match)
 
-    ;; Sets the root/App's app content.
-    ;; TODO: Move this in to the route-param logic?
-    (binding [parser/*parser-allow-remote* false]
-      (om/transact! reconciler `[(root/set-app-content ~(select-keys (route-handler->ui-handler handler)
-                                                                     [:factory :component]))]))
-    (binding [parser/*parser-allow-remote* false]
-      (utils/update-dynamic-queries! reconciler))
+      ;; Sets the root/App's app content.
+      ;; TODO: Move this in to the route-param logic?
+      (binding [parser/*parser-allow-remote* false]
+        (om/transact! reconciler `[(root/set-app-content ~(select-keys ui-handler [:factory :component]))]))
 
-    ;; Checking this flag because playground doesn't need
-    ;; to send these reads remote.
-    (when parser/*parser-allow-remote*
-      ;; Transacting the full query of the app root to make sure
-      ;; we get all the data we need.
-      ;; TODO: Optimize this by just reading what we need.
-      (let [app-query (om/full-query (om/app-root reconciler))]
-        (om/transact! reconciler app-query)))))
+      (binding [parser/*parser-allow-remote* false]
+        (utils/update-dynamic-queries! reconciler))
+
+      ;; Checking this flag because playground doesn't need
+      ;; to send these reads remote.
+      (when parser/*parser-allow-remote*
+        ;; Transacting the full query of the app root to make sure
+        ;; we get all the data we need.
+        ;; TODO: Optimize this by just reading what we need.
+        (let [app-query (cond-> (om/full-query (om/app-root reconciler))
+                                ;; When we're initializing the app and the route is not
+                                ;; AllTransactions, include all transactions in the query.
+                                (and (true? *starting-history*)
+                                     (not (ui-handlers/is-transactions-handler? ui-handler)))
+                                (conj {:proxy/init-all-transactions (om/get-query AllTransactions)}))]
+          (om/transact! reconciler app-query))))))
 
 (defn init-history [reconciler]
   (when-let [h @history-atom]
@@ -75,4 +86,5 @@
 ;; When we're done with this, check out App and Project's queries.
 
 (defn start! [history]
-  (pushy/start! history))
+  (binding [*starting-history* true]
+    (pushy/start! history)))

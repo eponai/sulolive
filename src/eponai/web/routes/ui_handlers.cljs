@@ -83,7 +83,12 @@
                         (mutate-route-params! r (-> p
                                                     (assoc :route-param/project->selected-tab :widget)
                                                     (update :route-param/widget-id identity))))))
+
+(defn is-transactions-handler? [handler]
+  (true? (:transactions-handler handler)))
+
 (def transactions-handler (assoc project-handler
+                            :transactions-handler true
                             :route-param-fn
                             (fn [r p]
                               (mutate-route-params! r (-> p (assoc :route-param/project->selected-tab :transactions))))))
