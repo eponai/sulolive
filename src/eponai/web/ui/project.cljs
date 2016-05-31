@@ -179,7 +179,8 @@
                                                               {:dashboard-id (:db/id active-dashboard)
                                                                :widget-type :track
                                                                :index       (.last-widget-index this (:widget/_dashboard active-dashboard))
-                                                               :on-save     new-track-on-save}))
+                                                               :on-save     new-track-on-save
+                                                               :count (count (:widget/_dashboard active-dashboard))}))
                           :on-close new-track-on-save
                           :size     "large"}))
           (when new-goal?
@@ -187,7 +188,8 @@
                                                               {:dashboard-id (:db/id active-dashboard)
                                                                :widget-type  :goal
                                                                :index        (.last-widget-index this (:widget/_dashboard active-dashboard))
-                                                               :on-save      new-goal-on-save}))
+                                                               :on-save      new-goal-on-save
+                                                               :count (count (:widget/_dashboard active-dashboard))}))
                           :on-close new-goal-on-save
                           :size     "medium"}))]]))))
 

@@ -45,12 +45,14 @@
     (om/transact! this `[(widget/delete ~(assoc (select-keys widget [:widget/uuid]) :mutation-uuid (d/squuid)))
                          :query/dashboard]))
 
-  (default-report [_ props]
-    (let [{:keys [widget-type]} (::om/computed props)]
+  (default-report [_ props index]
+    (let [{:keys [widget-type]} (::om/computed props)
+          title (str "Widget-" index)]
       (cond (= widget-type :track)
             {:report/uuid  (d/squuid)
              :report/track {:track/functions [{:track.function/id       :track.function.id/sum
-                                               :track.function/group-by :transaction/tags}]}}
+                                               :track.function/group-by :transaction/tags}]}
+             :report/title title}
 
             (= widget-type :goal)
             {:report/uuid (d/squuid)
@@ -58,7 +60,8 @@
                            :goal/cycle {:cycle/repeat       0
                                         :cycle/period       :cycle.period/month
                                         :cycle/period-count 1
-                                        :cycle/start        (date/date->long (date/first-day-of-this-month))}}})))
+                                        :cycle/start        (date/date->long (date/first-day-of-this-month))}}
+             :report/title title})))
 
   (default-graph [_ props]
     (let [{:keys [widget-type]} (::om/computed props)]
@@ -79,7 +82,7 @@
       (merge (:tag-filter graph-filter)
              (:date-filter graph-filter))))
   (init-state [this props]
-    (let [{:keys [index]} (::om/computed props)]
+    (let [{:keys [index count]} (::om/computed props)]
       (let [g (.default-graph this props)
             dim (widget/dimensions g)]
         {:input-widget {:widget/uuid   (d/squuid)
@@ -87,7 +90,7 @@
                         :widget/width  (:minW dim)
                         :widget/height (:minH dim)
                         :widget/graph  g
-                        :widget/report (.default-report this props)}})))
+                        :widget/report (.default-report this props count)}})))
   (initLocalState [this]
     (merge (.init-state this (om/props this))
            {:computed/new-track-on-change (fn [new-widget & [{:keys [update-data?]}]]

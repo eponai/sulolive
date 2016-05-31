@@ -1,5 +1,6 @@
 (ns eponai.web.ui.widget
   (:require
+    [cljs-time.core :as time]
     [datascript.core :as d]
     [eponai.common.format.date :as date]
     [eponai.web.ui.d3.area-chart :refer [->AreaChart]]
@@ -9,10 +10,11 @@
     [eponai.web.ui.d3.line-chart :refer [->LineChart]]
     [eponai.web.ui.d3.number-chart :refer [->NumberChart]]
     [eponai.web.ui.d3.progress-bar :refer [->ProgressBar]]
-    [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.ui.dataset-filter-picker :refer [->DatasetFilterPicker]]
-    [eponai.web.ui.tagfilterpicker :refer [->TagFilterPicker]]
+    [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.ui.goal-settings :refer [->GoalSettings]]
+    [eponai.web.ui.tagfilterpicker :refer [->TagFilterPicker]]
+    [eponai.web.ui.utils :as utils]
     [om.dom :as dom]
     [om.next :as om :refer-macros [defui]]
     [taoensso.timbre :refer-macros [debug]]))
@@ -108,6 +110,20 @@
           new-widget (assoc-in widget [:widget/report :report/goal :goal/value] new-value)]
       (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/report :db/id :widget/uuid]) :mutation-uuid (d/squuid)))])))
 
+  (update-title [this new-title]
+    (let [widget (om/props this)
+          new-widget (assoc-in widget [:widget/report :report/title] new-title)]
+      (om/update-state! this assoc :input-title nil)
+      (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/report :db/id :widget/uuid]) :mutation-uuid (d/squuid)))])))
+  (date-range [this]
+    (let [{:keys [widget/filter]} (om/props this)]
+      (cond (some? (:filter/last-x-days filter))
+            {:start-date (time/minus (date/today) (time/days (:filter/last-x-days filter)))
+             :end-date (date/today)}
+            :else
+            {:start-date (when (:filter/start-date filter) (date/date-time (:filter/start-date filter)))
+             :end-date   (when (:filter/end-date filter) (date/date-time (:filter/end-date filter)))})))
+
   (render [this]
     (let [{:keys [widget/report
                   widget/graph
@@ -116,7 +132,8 @@
                   computed/tag-filter-picker-on-change
                   computed/date-range-picker-on-change
                   computed/date-range-picker-on-cancel
-                  computed/goal-settings-on-change]} (om/get-state this)
+                  computed/goal-settings-on-change
+                  input-title]} (om/get-state this)
           {:keys [id
                   tags
                   on-select-widget]} (om/get-computed this)]
@@ -129,8 +146,12 @@
           (dom/div
             #js {:className "widget-title"}
             (dom/input
-              #js {:value (or (:report/title report) "")
-                   :type "text"}))
+              #js {:value     (or input-title (:report/title report) "")
+                   :type      "text"
+                   :onChange  #(om/update-state! this assoc :input-title (.-value (.-target %)))
+                   :onKeyDown #(utils/on-enter-down % (fn [text]
+                                                        (.update-title this text)
+                                                        (.blur (.-target %))))}))
 
           ;; Widget menu
           (when  (some? (:db/id widget))
@@ -149,8 +170,9 @@
               (when-not (or (= (:graph/style graph) :graph.style/burndown)
                             (= (:graph/style graph) :graph.style/progress-bar))
 
-                (->DateRangePicker (om/computed {:key   "date-range-picker"
-                                                 :class "nav-link"}
+                (->DateRangePicker (om/computed (merge {:key        "date-range-picker"
+                                                        :class      "nav-link"}
+                                                       (.date-range this))
                                                 {:on-apply  date-range-picker-on-change
                                                  :on-cancel date-range-picker-on-cancel
                                                  :on-open on-select-widget})))
