@@ -237,7 +237,8 @@
      {:query/stripe [:stripe/user
                      {:stripe/subscription [:stripe.subscription/status
                                             :stripe.subscription/period-end]}]}
-     {:query/active-project [:ui.component.project/uuid]}])
+     {:query/active-project [:ui.component.project/uuid]}
+     {:query/sidebar [:ui.component.sidebar/newsletter-subscribe-status]}])
   Object
   (initLocalState [this]
     {:new-project? false
@@ -281,9 +282,18 @@
 
             (cond
               (true? utils/*playground?*)
-              [:a.upgrade-button
-               (opts {:on-click #(om/update-state! this assoc :playground/show-subscribe-modal? true)})
-                 [:strong "I want this!"]]
+              (let [newsletter-status (get-in (om/props this)
+                                             [:query/sidebar :ui.component.sidebar/newsletter-subscribe-status])]
+                [:div {:style {:text-align "center"}}
+                 [:a.upgrade-button
+                  (opts {:on-click #(om/update-state! this assoc :playground/show-subscribe-modal? true)})
+                  [:strong "I want this!"]]
+                 (cond
+                   (= newsletter-status :ui.component.sidebar.newsletter-subscribe-status/success)
+                   [:small.header "You'll get this!"]
+
+                   (= newsletter-status :ui.component.sidebar.newsletter-subscribe-status/failed)
+                   [:small.header "Subscribe error :("])])
 
               (not= subscription-status :active)
               (utils/upgrade-button))]

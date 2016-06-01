@@ -120,7 +120,10 @@
                     {:ui/component                      :ui.component/project
                      :ui.component.project/selected-tab :dashboard}
                     {:ui/component :ui.component/widget}
-                    {:ui/component :ui.component/root}]
+                    {:ui/component :ui.component/root}
+                    {:ui/component :ui.component/sidebar
+                     :ui.component.sidebar/newsletter-subscribe-status
+                                   :ui.component.sidebar.newsletter-subscribe-status/not-sent}]
           conn (d/create-conn (common.datascript/ui-schema))]
       (d/transact! conn ui-state)
       (reset! conn-atom conn))))

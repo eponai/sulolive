@@ -50,3 +50,8 @@
   [{:keys [db query target]} _ _]
   (when-not target
     (read/read-entity-by-key db nil [:ui/component :ui.component/root])))
+
+(defmethod read :query/sidebar
+  [{:keys [db query target]} _ _]
+  (when-not target
+    (read/read-entity-by-key db query [:ui/component :ui.component/sidebar])))

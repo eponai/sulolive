@@ -1,8 +1,14 @@
 (ns eponai.web.parser.mutate
-  (:require [eponai.common.database.transact :as t]
+  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require [cljs.core.async :refer [<!]]
+            [eponai.common.database.transact :as t]
             [eponai.common.parser :refer [mutate]]
             [eponai.client.parser.mutate]
             [datascript.core :as d]
+            [cljs-http.client :as http]
+            [eponai.web.ui.utils :as utils]
+            [eponai.web.homeless :as homeless]
+            [om.next :as om]
             [taoensso.timbre :refer-macros [info debug error trace]]))
 
 ;; ################ Local mutations ####################
@@ -116,6 +122,8 @@
 ;;; ####################### Playground ##############################
 
 (defmethod mutate 'playground/subscribe
-  [{:keys [state]} _ {:keys [email]}]
-  (throw (ex-info "TODO: Actually subscribe. Needs client<->server messages?"
-                  {:email email})))
+  [{:keys [state]} k {:keys [email]}]
+  {:action (fn []
+             (go
+               (let [ret (<! (http/post homeless/email-endpoint-subscribe {:form-params {:email email}}))]
+                 (om/merge! (deref utils/reconciler-atom) {:result {k ret :proxy/app-content {}}}))))})
