@@ -39,7 +39,7 @@
                      ::email/send-verification-fn (partial email/send-verification-email @in-production?)
                      ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
                      ::m/playground-user-uuid-fn  (if (env :playground-user-uuid)
-                                                    (constantly (env :playground-user-uuid))
+                                                    (constantly (java.util.UUID/fromString (env :playground-user-uuid)))
                                                     (when-not @in-production?
                                                       ;; In development we'll just get the first user.
                                                       (fn [] (d/q '{:find  [?uuid .]
