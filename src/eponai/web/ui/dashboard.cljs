@@ -116,9 +116,11 @@
        :grid-element                     grid-element
        :content                          :dashboard
        :side-bar-transition-fn           #(.update-layout this)
-       :computed/widget-on-select-widget (fn [widget-props]
-                                           (debug "Selected widget: " (:widget/uuid widget-props))
-                                           (om/update-state! this assoc :active-widget-uuid (:widget/uuid widget-props)))}))
+       :computed/widget-on-select-widget (memoize
+                                           (fn [widget-props]
+                                             #(do
+                                               (debug "Selected widget: " (:widget/uuid widget-props))
+                                               (om/update-state! this assoc :active-widget-uuid (:widget/uuid widget-props)))))}))
 
   (render [this]
     (let [{:keys [query/dashboard
@@ -159,8 +161,7 @@
                               (fn [widget-props]
                                 (dom/div
                                   #js {:key (str (:widget/uuid widget-props))
-                                       :className (when (= active-widget-uuid (:widget/uuid widget-props)) "selected-widget")
-                                       :style {:z-index (if (= active-widget-uuid (:widget/uuid widget-props)) 1000 0)}}
+                                       :className (when (= active-widget-uuid (:widget/uuid widget-props)) "selected-widget")}
                                   (->Widget
                                     (om/computed widget-props
                                                  {:project-id       project-id
