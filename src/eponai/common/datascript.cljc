@@ -27,6 +27,7 @@
           {}
           datomic-schema))
 
+
 (defn mark-entity-txs
   "Returns transactions which makes the new datascript db contain a datom with e a v in the new db.
 

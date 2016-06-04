@@ -27,6 +27,8 @@
                  [org.clojure/core.memoize "0.5.8"]         ; needed to work around lein+core.async dependency issue.
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.namespace "0.2.11"]
+                 ;; Depending on transit-clj for faster cljs builds
+                 [com.cognitect/transit-clj "0.8.285"]
                  ; ring helpers
                  [amalloy/ring-gzip-middleware "0.1.3"]
                  [ring/ring-core "1.4.0"]
@@ -41,7 +43,7 @@
 
                  ;; CLJS
                  [com.cognitect/transit-cljs "0.8.237"]
-                 [org.clojure/clojurescript "1.8.40"
+                 [org.clojure/clojurescript "1.9.36"
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]

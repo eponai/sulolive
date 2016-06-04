@@ -1,7 +1,7 @@
 (ns eponai.web.routes.ui-handlers
   (:require [bidi.bidi :as bidi]
             [eponai.client.route-helper :refer [map->UiComponentMatch]]
-            [eponai.web.ui.project :as project :refer [Project ->Project]]
+            [eponai.web.ui.project :refer [Project ->Project]]
             [eponai.web.ui.all-transactions :refer [AllTransactions ->AllTransactions]]
             [eponai.web.ui.settings :refer [Settings ->Settings]]
             [eponai.web.ui.stripe :refer [Payment ->Payment]]
