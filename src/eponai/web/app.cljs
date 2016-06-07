@@ -58,16 +58,15 @@
   (when (seq path)
     (reduce conj [path] (path->paths (subvec path 0 (dec (count path)))))))
 
-(defn- find-cached-props [cache c-path c-query c-db]
-  (let [find-props (fn [{:keys [db query props]}]
-                     (when (or (identical? c-db db) (= c-db db))
-                       (let [t-query (traverse-query-memoized query c-path)
-                             ct-query (traverse-query-memoized c-query c-path)]
-                         (when (= ct-query t-query)
-                           (let [c-props (get-in props c-path)]
-                             (when (some? c-props)
-                               (debug "found cached props for c-path: " c-path " c-props: " c-props))
-                             c-props)))))
+(defn- find-cached-props [cache c-path c-query]
+  (let [find-props (fn [{:keys [query props]}]
+                     (let [t-query (traverse-query-memoized query c-path)
+                           ct-query (traverse-query-memoized c-query c-path)]
+                       (when (= ct-query t-query)
+                         (let [c-props (get-in props c-path)]
+                           (when (some? c-props)
+                             (debug "found cached props for c-path: " c-path " c-props: " c-props))
+                           c-props))))
         ret (->> (butlast c-path)
                  (vec)
                  (path->paths)
@@ -81,14 +80,16 @@
     (fn [env query component]
       {:pre [(om/component? component)]}
      (let [path (om/path component)
-           db (d/db (:state env))]
-       (if-let [c-props (find-cached-props @cache path query db)]
+           db (d/db (:state env))
+           cache-db (::db @cache)]
+       (when (not= db cache-db)
+         (reset! cache {::db db}))
+       (if-let [c-props (find-cached-props @cache path query)]
          c-props
          (let [props (parser env query)]
            (swap! cache assoc-in
                   (or (seq path) [::root])
-                  {:db    db
-                   :query query
+                  {:query query
                    :props props})
            props))))))
 
