@@ -335,3 +335,89 @@
     (assert (some? (get-in env [:auth :username]))
             (str "No auth in parser's env: " env))
     (parser env query target)))
+
+;; ---- Parser caching middleware ---------------
+
+(defn- traverse-query
+  "Given a query and a path, traverse the query until the end of the path."
+  [query [p :as path]]
+  (cond
+    (or (empty? path) (= p ::root))
+    query
+
+    ;; Queries doesn't know or care about cardinality.
+    ;; Skip this part of the path and continue with the
+    ;; same query.
+    (number? p)
+    (recur query (rest path))
+
+    ;; No where to traverse here.
+    (keyword? query)
+    nil
+
+    (map? query)
+    (when (contains? query p)
+      (recur (get query p) (rest path)))
+
+    ;; Query is sequential, return the first matching path.
+    (sequential? query)
+    (some #(traverse-query % path) query)
+
+    :else
+    (do (debug "not traversing query: " query)
+        nil)))
+
+(defn path->paths [path]
+  {:pre [(vector? path)]}
+  (when (seq path)
+    (reduce conj [path] (path->paths (subvec path 0 (dec (count path)))))))
+
+(defn- find-cached-props [cache c-path c-query]
+  (let [find-props (fn [{:keys [query props]}]
+                     (let [t-query (traverse-query query c-path)
+                           ct-query (traverse-query c-query c-path)]
+                       (when (= ct-query t-query)
+                         (let [c-props (get-in props c-path)]
+                           (when (some? c-props)
+                             (debug "found cached props for c-path: " c-path " c-props: " c-props))
+                           c-props))))
+        ret (->> (butlast c-path)
+                 (vec)
+                 (path->paths)
+                 (cons [::root])
+                 (map #(get-in cache %))
+                 (some find-props))]
+    ret))
+
+#?(:cljs
+   (defn component-parser
+     "Requires :component in the env. Using the query and the components
+     path, we can re-use already parsed components.
+
+     Example:
+     Let's say we've got components A and B.
+     B is a subquery of A, i.e. query A: [... (om/get-query B) ...]
+     When we parse A, we'll get the props of both A and B.
+     We can get B's props by using (om/path B) in props of A.
+     This is what we're doing with (find-cached-props ...)."
+     [parser]
+     (let [cache (atom {})]
+       (fn self
+         ([env query] (self env query nil))
+         ([{:keys [state component] :as env} query _]
+          {:pre [(om/component? component)]}
+          (let [path (om/path component)
+                db (d/db state)
+                cache-db (::db @cache)]
+            (when (not= db cache-db)
+              (reset! cache {::db db}))
+            (if-let [c-props (find-cached-props @cache path query)]
+              c-props
+              (let [props (parser env query)]
+                (swap! cache assoc-in
+                       (or (seq path) [::root])
+                       {:query query
+                        :props props})
+                props))))))))
+
+;; ---- END Parser caching middleware ------------
