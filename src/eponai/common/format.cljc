@@ -309,7 +309,7 @@
                      :added
                      (let [tempid (d/tempid :db.part/user)]
                        ;; Create new tag and add it to the transaction
-                       [(tag* tag)
+                       [(assoc (tag* tag) :db/id tempid)
                         [:db/add [:transaction/uuid uuid] :transaction/tags tempid]])))
         transaction (-> input-transaction
                         (dissoc :transaction/tags)
