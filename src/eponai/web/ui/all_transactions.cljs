@@ -17,7 +17,8 @@
     [om.dom :as dom]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug warn]]))
+    [taoensso.timbre :refer-macros [debug warn]]
+    [clojure.data :as diff]))
 
 (defn- trim-decimals [n] (int n))
 
@@ -55,7 +56,24 @@
      {:transaction/project [:db/id :project/uuid :project/name]}
      {:transaction/type [:db/ident]}
      :transaction/conversion])
+
+  utils/ISyncStateWithProps
+  (props->init-state [this props]
+    (let [transaction (-> props
+                          (update :transaction/tags (fn [tags] (sort-by :tag/name (map #(select-keys % [:tag/name]) tags))))
+                          (update :transaction/amount two-decimal-string))]
+      {:input-transaction transaction
+       :init-state transaction
+       :computed/date-range-picker-on-apply #(do (om/update-state! this assoc-in [:input-transaction :transaction/date] %)
+                                                 (.save-edit this))}))
+
   Object
+  (initLocalState [this]
+    (utils/props->init-state this (om/props this)))
+
+  (componentWillReceiveProps [this props]
+    (utils/sync-with-received-props this props))
+
   (add-tag [this tag]
     (om/update-state! this (fn [st]
                              (-> st
@@ -70,6 +88,7 @@
                   init-state]} (om/get-state this)
           diff (lib.t/diff-transaction input-transaction init-state)]
       ;; Transact only when we have a diff to avoid unecessary mutations.
+      (debug "Saving edit. Diff: " diff " real diff: " (diff/diff input-transaction init-state))
       (when (seq diff)
         ;(debug "Delete tag Will transacti diff: " diff)
         (om/transact! this `[(transaction/edit ~(-> diff
@@ -83,16 +102,6 @@
                              :query/dashboard
                              :query/all-projects
                              :query/transactions]))))
-
-  (initLocalState [this]
-    (let [props (om/props this)
-          transaction (-> props
-                          (update :transaction/tags (fn [tags] (sort-by :tag/name (map #(select-keys % [:tag/name]) tags))))
-                          (update :transaction/amount two-decimal-string))]
-      {:input-transaction transaction
-       :init-state transaction
-       :computed/date-range-picker-on-apply #(do (om/update-state! this assoc-in [:input-transaction :transaction/date] %)
-                                                 (.save-edit this))}))
 
   (render [this]
     (let [{:keys [input-transaction input-tag]} (om/get-state this)

@@ -225,13 +225,12 @@
     (conj (or tags []) (assoc tag :tag/status :added))))
 
 (defn delete-tag [tags tag]
-  (if-let [found-tag (some #(when (= (:tag/name %) (:tag/name tag))
-                          %) tags)]
+  (if-let [found-tag (some #(when (= (:tag/name %) (:tag/name tag)) %) tags)]
     (if (= (:tag/status found-tag) :added)
-      (do
-        (into [] (remove #(= (:tag/name %) (:tag/name found-tag)) tags)))
+      (into [] (remove #(= (:tag/name %) (:tag/name found-tag))) tags)
       (replace {found-tag (assoc found-tag :tag/status :deleted)} tags))
-    tags))
+    (do (warn "Tag: " tag " not found in tags: " tags)
+        tags)))
 
 (defn on-enter-down [e f]
   (when (and (= 13 (.-keyCode e))

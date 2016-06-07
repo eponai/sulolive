@@ -299,15 +299,17 @@
         (into widget-tag-filter-txs)
         (into graph-tag-filter-txs))))
 
-(defn transaction-edit [{:keys [transaction/tags
-                                transaction/uuid] :as input-transaction}]
-  (let [tag->txs (fn [{:keys [tag/removed tag/name] :as tag}]
-                   {:pre [(some? name)]}
-                   (if removed
+(defn transaction-edit [{:keys [transaction/tags transaction/uuid] :as input-transaction}]
+  (let [tag->txs (fn [{:keys [tag/status tag/name] :as tag}]
+                   {:pre [(some? name) (some? status)]}
+                   (condp = status
+                     :deleted
                      [[:db/retract [:transaction/uuid uuid] :transaction/tags [:tag/name name]]]
+
+                     :added
                      (let [tempid (d/tempid :db.part/user)]
                        ;; Create new tag and add it to the transaction
-                       [(-> tag (dissoc :tag/removed) (assoc :db/id tempid))
+                       [(tag* tag)
                         [:db/add [:transaction/uuid uuid] :transaction/tags tempid]])))
         transaction (-> input-transaction
                         (dissoc :transaction/tags)

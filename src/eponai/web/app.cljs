@@ -60,15 +60,13 @@
 
 (defn- find-cached-props [cache c-path c-query c-db]
   (let [find-props (fn [{:keys [db query props]}]
-                     (when (= c-db db)
+                     (when (or (identical? c-db db) (= c-db db))
                        (let [t-query (traverse-query-memoized query c-path)
                              ct-query (traverse-query-memoized c-query c-path)]
                          (when (= ct-query t-query)
-                           (debug "getting c-path in props. c-path: " c-path " props: " props)
                            (let [c-props (get-in props c-path)]
                              (when (some? c-props)
-                               (debug "found cached props for c-path: " c-path
-                                      " c-props: " c-props))
+                               (debug "found cached props for c-path: " c-path " c-props: " c-props))
                              c-props)))))
         ret (->> (butlast c-path)
                  (vec)
