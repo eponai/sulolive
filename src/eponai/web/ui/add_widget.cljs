@@ -4,7 +4,7 @@
     [eponai.common.format.date :as date]
     [eponai.web.ui.add-widget.add-goal :refer [->NewGoal]]
     [eponai.web.ui.add-widget.add-track :refer [->NewTrack]]
-    [eponai.web.ui.widget :as widget :refer [Widget]]
+    [eponai.web.ui.widget :as w :refer [Widget]]
     [om.dom :as dom]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
@@ -84,7 +84,7 @@
   (init-state [this props]
     (let [{:keys [index count]} (::om/computed props)]
       (let [g (.default-graph this props)
-            dim (widget/dimensions g)]
+            dim (w/dimensions g)]
         {:input-widget {:widget/uuid   (d/squuid)
                         :widget/index  index
                         :widget/width  (:minW dim)
