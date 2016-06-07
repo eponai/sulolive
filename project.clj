@@ -47,6 +47,7 @@
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
+                 [com.google.guava/guava "19.0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-alpha2"]
@@ -251,6 +252,7 @@
                                                              ;;   :parallel-build true
                                                              ;;   :pseudo-names true
                                                              ;;   :pretty-print true
+                                                             ;;   :verbose true
                                                              }}]}}}
 
   ;;;;;;;;;;;;;
