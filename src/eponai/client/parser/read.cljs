@@ -1,5 +1,6 @@
 (ns eponai.client.parser.read
   (:require [datascript.core :as d]
+            [datascript.db :as db]
             [eponai.common.database.pull :as p]
             [eponai.common.prefixlist :as pl]
             [eponai.common.parser :refer [read]]
@@ -15,7 +16,6 @@
   (when-not target
     (let [tags (->> (p/pull-many db '[:db/id :tag/name] (p/all-with db {:where '[[?e :tag/name]]}))
                     (map (fn [tag] (assoc tag :tag/count (count (p/all-with db {:where [['?e :transaction/tags (:db/id tag)]]})))))
-                    (sort-by :tag/name)
                     (pl/prefix-list-by :tag/name))]
       {:value tags})))
 

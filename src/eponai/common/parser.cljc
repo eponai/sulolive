@@ -280,8 +280,9 @@
       ret)))
 
 (defn with-local-read-guard [read]
-  (fn [env k p]
-    (when *parser-allow-local-read*
+  (fn [{:keys [target] :as env} k p]
+    (when (or *parser-allow-local-read*
+              (some? target))
       (read env k p))))
 
 (defn with-elided-paths [read-or-mutate child-parser]
@@ -303,6 +304,7 @@
    (parser parser-opts (default-parser-initial-state)))
   ([parser-opts initial-state]
    (let [p (om/parser (merge {:read   (-> read
+                                          with-times
                                           #?(:clj read-returning-basis-t)
                                           #?(:cljs (with-txs-by-project-atom (:txs-by-project initial-state)))
                                           with-remote-guard

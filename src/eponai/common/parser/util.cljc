@@ -3,10 +3,14 @@
   (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error]]
             [om.next :as om]))
 
+(defn get-time []
+  #?(:clj (. System (currentTimeMillis))
+     :cljs (system-time)))
+
 (defmacro timeit [label & body]
-  `(let [start# (. System (nanoTime))
+  `(let [start# (get-time)
          ret# (do ~@body)]
-     (debug "Elapsed time: " (/ (double (- (. System (nanoTime)) start#)) 1000000.0) " msecs" " <= for: " ~label)
+     (debug "Elapsed time: " (double (- (get-time) start#)) " msecs" " <= for: " ~label)
      ret#))
 
 (defn post-process-parse
