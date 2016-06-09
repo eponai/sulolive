@@ -6,7 +6,8 @@
             [eponai.common.parser :refer [read]]
             [eponai.common.parser.util :as parser.util]
             [taoensso.timbre :refer-macros [debug error]]
-            [eponai.common.format :as f]))
+            [eponai.common.format :as f]
+            [eponai.common.parser.util :as parser]))
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
@@ -14,8 +15,10 @@
 (defmethod read :query/tags
   [{:keys [db target]} _ _]
   (when-not target
-    (let [tags (->> (p/pull-many db '[:db/id :tag/name] (p/all-with db {:where '[[?e :tag/name]]}))
-                    (map (fn [tag] (assoc tag :tag/count (count (p/all-with db {:where [['?e :transaction/tags (:db/id tag)]]})))))
+    (let [tags (->> (p/all-with db '{:find-pattern [?e ?name] :where [[?e :tag/name ?name]]})
+                    (mapv (fn [[id name]] {:db/id     id
+                                           :tag/name  name
+                                           :tag/count (count (p/pull db '[:transaction/tags] id))}))
                     (pl/prefix-list-by :tag/name))]
       {:value tags})))
 

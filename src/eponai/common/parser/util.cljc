@@ -70,15 +70,19 @@
       (let [[[last-env _ last-params] last-ret] @last-call
             equal-key? (fn [k] (= (get env k)
                                   (get last-env k)))]
-        (if (and (= params last-params)
-                 (every? equal-key? [:target :db :query]))
-          (do
-            (debug (str "Returning cached for:" k))
-            last-ret)
-          (let [ret (f (assoc env ::last-db (:db last-env))
-                       k params)]
-            (reset! last-call [args ret])
-            ret))))))
+        (let [ret (if (and (= params last-params)
+                           (every? equal-key? [:db :query :target]))
+                    (do
+                      (debug (str "Returning cached for:" k))
+                      last-ret)
+                    ;; Cache miss, call the function.
+                    (f (assoc env ::last-db (:db last-env))
+                       k params))]
+          ;; Always reset the last call args, to possibly
+          ;; hit true on cljs.core/identical? for the
+          ;; equality checks.
+          (reset! last-call [args ret])
+          ret)))))
 
 (defn put-db-id-in-query [query]
   (cond (map? query)

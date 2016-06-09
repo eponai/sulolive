@@ -304,7 +304,6 @@
    (parser parser-opts (default-parser-initial-state)))
   ([parser-opts initial-state]
    (let [p (om/parser (merge {:read   (-> read
-                                          with-times
                                           #?(:clj read-returning-basis-t)
                                           #?(:cljs (with-txs-by-project-atom (:txs-by-project initial-state)))
                                           with-remote-guard
