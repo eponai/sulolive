@@ -18,7 +18,7 @@
     (let [tags (->> (p/all-with db '{:find-pattern [?e ?name] :where [[?e :tag/name ?name]]})
                     (mapv (fn [[id name]] {:db/id     id
                                            :tag/name  name
-                                           :tag/count (count (p/pull db '[:transaction/tags] id))}))
+                                           :tag/count (count (d/datoms db :avet :transaction/tags id))}))
                     (pl/prefix-list-by :tag/name))]
       {:value tags})))
 
