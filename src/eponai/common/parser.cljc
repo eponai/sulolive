@@ -268,6 +268,7 @@
                  (update :value vary-meta assoc-in path (d/basis-t db)))))))
 
 (def ^:dynamic *parser-allow-remote* true)
+(def ^:dynamic *parser-allow-local-read* true)
 
 (defn with-remote-guard [read-or-mutate]
   (fn [{:keys [target] :as env} k p]
@@ -277,6 +278,11 @@
                       (and (some? target) (false? *parser-allow-remote*))
                       (dissoc target))]
       ret)))
+
+(defn with-local-read-guard [read]
+  (fn [env k p]
+    (when *parser-allow-local-read*
+      (read env k p))))
 
 (defn with-elided-paths [read-or-mutate child-parser]
   {:pre [(delay? child-parser)]}
@@ -300,6 +306,7 @@
                                           #?(:clj read-returning-basis-t)
                                           #?(:cljs (with-txs-by-project-atom (:txs-by-project initial-state)))
                                           with-remote-guard
+                                          with-local-read-guard
                                           read-without-state
                                           read-with-dbid-in-query
                                           wrap-db
@@ -372,14 +379,16 @@
   (when (seq path)
     (reduce conj [path] (path->paths (subvec path 0 (dec (count path)))))))
 
-(defn- find-cached-props [cache c-path c-query]
-  (let [find-props (fn [{:keys [query props]}]
+(defn- find-cached-props
+  "Given a cache with map of path->"
+  [cache c-path c-query]
+  (let [find-props (fn [{:keys [::query ::props]}]
                      (let [t-query (traverse-query query c-path)
                            ct-query (traverse-query c-query c-path)]
                        (when (= ct-query t-query)
                          (let [c-props (get-in props c-path)]
                            (when (some? c-props)
-                             (debug "found cached props for c-path: " c-path " c-props: " c-props))
+                             (debug "found cached props for c-path: " c-path))
                            c-props))))
         ret (->> (butlast c-path)
                  (vec)
@@ -409,15 +418,20 @@
           (let [path (om/path component)
                 db (d/db state)
                 cache-db (::db @cache)]
-            (when (not= db cache-db)
+            (if (= db cache-db)
+              ;; db's are equal, swap to make sure they are identical
+              ;; for future equality checks.
+              (swap! cache assoc ::db db)
+              ;; db's are not equal. Reset the cache.
               (reset! cache {::db db}))
-            (if-let [c-props (find-cached-props @cache path query)]
-              c-props
-              (let [props (parser env query)]
-                (swap! cache assoc-in
-                       (or (seq path) [::root])
-                       {:query query
-                        :props props})
-                props))))))))
+
+            (let [props (or (find-cached-props @cache path query)
+                            (parser env query))]
+              (swap! cache update-in
+                     (or (seq path) [::root])
+                     merge
+                     {::query query
+                      ::props props})
+              props)))))))
 
 ;; ---- END Parser caching middleware ------------

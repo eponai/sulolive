@@ -50,7 +50,10 @@
                                 (and (true? *starting-history*)
                                      (not (ui-handlers/is-transactions-handler? ui-handler)))
                                 (conj {:proxy/init-all-transactions (om/get-query AllTransactions)}))]
-          (om/transact! reconciler app-query))))))
+          ;; There's no point of doing local reads here,
+          ;; just gather and send remote reads.
+          (binding [parser/*parser-allow-local-read* false]
+            (om/transact! reconciler app-query)))))))
 
 (defn init-history [reconciler]
   (when-let [h @history-atom]
