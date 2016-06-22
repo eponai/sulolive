@@ -21,7 +21,7 @@
   [_ k v]
   (trace "no response-handler for key:" k)
   (cond
-    (= "proxy" (namespace k)) :call
+    (#{"proxy" "routing"} (namespace k)) :call
     ;; Check for empty responses
     (keyword? k) (when (empty-coll? v) :dissoc)
 

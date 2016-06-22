@@ -10,7 +10,8 @@
        :cljs [datascript.core :as d])
     #?(:clj
             [eponai.server.datomic.filter :as filter])
-            [clojure.walk :as w]))
+            [clojure.walk :as w]
+            [clojure.data :as diff]))
 
 (defmulti read (fn [_ k _] k))
 (defmulti mutate (fn [_ k _] k))
@@ -349,6 +350,42 @@
 
 ;; ---- Parser caching middleware ---------------
 
+(defn- traverse-query2 [query x]
+  (cond
+    (= x ::root)
+    [query]
+
+    (number? x)
+    [query]
+
+    (keyword? query)
+    nil
+
+    (map? query)
+    (when (contains? query x)
+      (let [query' (get query x)]
+        (if (map? query')
+          ;; Union. Could be any of the values in an union.
+          ;; Hack: Take the first matching value.
+          ;; TODO: Try to match all values, making traverse-query
+          ;;       return multiple values.
+          (vals query')
+          ;; Anything else, just traverse as normal.
+          [query'])))
+
+    (sequential? query)
+    (mapcat #(traverse-query2 % x) query)
+
+    :else
+    (do (debug "not traversing query: " query " path-x: " x)
+        nil)))
+
+(defn do-traverse-query2 [query path]
+  (reduce (fn [q p] (into [] (comp (mapcat #(traverse-query2 % p))
+                                   (filter some?))
+                          q))
+          [query] path))
+
 (defn- traverse-query
   "Given a query and a path, traverse the query until the end of the path."
   [query [p :as path]]
@@ -367,15 +404,23 @@
     nil
 
     (map? query)
-    (when (contains? query p)
-      (recur (get query p) (rest path)))
+    (if (contains? query p)
+      (let [query' (get query p)]
+        (if (map? query')
+          ;; Union. Could be any of the values in an union.
+          ;; Hack: Take the first matching value.
+          ;; TODO: Try to match all values, making traverse-query
+          ;;       return multiple values.
+          (some #(traverse-query (val %) (rest path)) query')
+          ;; Anything else, just traverse as normal.
+          (recur query' (rest path)))))
 
     ;; Query is sequential, return the first matching path.
     (sequential? query)
     (some #(traverse-query % path) query)
 
     :else
-    (do (debug "not traversing query: " query)
+    (do (debug "not traversing query: " query " path: " path)
         nil)))
 
 (defn path->paths [path]
@@ -388,9 +433,13 @@
   "Given a cache with map of path->"
   [cache c-path c-query]
   (let [find-props (fn [{:keys [::query ::props]}]
-                     (let [t-query (traverse-query query c-path)
-                           ct-query (traverse-query c-query c-path)]
-                       (when (= ct-query t-query)
+                     (let [t-query (do-traverse-query2 query c-path)
+                           ct-query (do-traverse-query2 c-query c-path)
+                           exact-ct-query (first ct-query)
+                           t-ct-eq (some #(= % exact-ct-query) t-query)]
+                       (when (<= 2 (count ct-query))
+                         (warn "ct-query has more than one match! Was: " ct-query))
+                       (when t-ct-eq
                          (let [c-props (get-in props c-path)]
                            (when (some? c-props)
                              (debug "found cached props for c-path: " c-path))
@@ -399,6 +448,7 @@
                  (path->paths)
                  (cons [::root])
                  (map #(get-in cache %))
+                 (filter some?)
                  (some find-props))]
     ret))
 
@@ -428,7 +478,7 @@
               (swap! cache assoc ::db db)
               ;; db's are not equal. Reset the cache.
               (reset! cache {::db db}))
-
+            (debug "Finding props for path: " path " cache: " @cache)
             (let [props (or (find-cached-props @cache path query)
                             (parser env query))]
               (swap! cache update-in

@@ -18,7 +18,7 @@
      {:proxy/nav-bar-submenu (or (om/subquery this :nav-bar-submenu nav/NavbarSubmenu)
                                  (om/get-query nav/NavbarSubmenu))}
      {:proxy/side-bar (om/get-query nav/SideBar)}
-     {:routing/app-root (medley/map-vals #(-> % :component om/get-query)
+     {:routing/app-root (medley/map-vals #(->> % :component (u/subq-or-static-q this ::routing-ref))
                                             routes/route-key->root-handler)}])
 
   Object
@@ -57,4 +57,4 @@
                                              :app-content     app-root}))
           [:div#page-content
            (when factory
-             (factory app-root))]]]))))
+             (factory (assoc app-root :ref ::routing-ref)))]]]))))

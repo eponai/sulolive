@@ -15,18 +15,23 @@
 
 ;; -------- Readers for UI components
 
-(defmethod read :routing/project
-  [{:keys [db query] :as env} k p]
-  (let [tab (:ui.component.project/selected-tab (d/entity db [:ui/component :ui.component/project]))
-        route-query (get query tab)]
+(defn union-query [{:keys [query] :as env} k p union-key]
+  (let [route-query (cond-> query
+                            ;; Union. Query can also be passed with the
+                            ;; selected union.
+                            (map? query) (get union-key))]
     (p.util/proxy (assoc env :query route-query) k p)))
 
+(defmethod read :routing/project
+  [{:keys [db] :as env} k p]
+  (let [union-key (:ui.component.project/selected-tab (d/entity db [:ui/component :ui.component/project]))]
+    (union-query env k p union-key)))
+
 (defmethod read :routing/app-root
-  [{:keys [db query] :as env} k p]
+  [{:keys [db] :as env} k p]
   (let [handler (:ui.component.root/route-handler (d/entity db [:ui/component :ui.component/root]))
-        route-key (or (:route-key handler) :route/project)
-        route-query (get query route-key)]
-      (p.util/proxy (assoc env :query route-query) k p)))
+        union-key (or (:route-key handler) :route/project)]
+    (union-query env k p union-key)))
 
 ;; TODO: A lot of target boilerplate here. Macro instead?
 (defmethod read :query/active-project

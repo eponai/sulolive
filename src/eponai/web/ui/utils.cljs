@@ -38,6 +38,17 @@
 
 ;;;;;;; Om dynamic query helpers
 
+(defn subq-or-static-q [x ref-key class]
+  (or (when (om/component? x)
+        (let [ref-component (om/react-ref x (cond-> ref-key (keyword? ref-key) str))
+              type-eq (= (type ref-component) class)]
+          (debug "Type eq: " type-eq " for class: " class " ref-component: " ref-component)
+          (when (true? type-eq)
+            (let [ret (om/subquery x ref-key class)]
+              (debug "Returning subquery for class: " class " query: " ret)
+              ret))))
+      (om/get-query class)))
+
 (defprotocol IDynamicQuery
   (dynamic-query-fragment [this] "Fragment of the query needed to return next query.")
   (next-query [this next-props] "Next query to be set for this component using props returned by parsing dynamic-query-fragment"))
