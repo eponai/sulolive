@@ -3,6 +3,7 @@
             [om.next :as om]
             [eponai.client.parser.read :as read]
             [eponai.common.parser :refer [read]]
+            [eponai.common.parser.util :as p.util]
             [eponai.common.database.pull :as p]
             [taoensso.timbre :refer-macros [debug]]))
 
@@ -13,6 +14,19 @@
 ;;     eponai.client.parser.read
 
 ;; -------- Readers for UI components
+
+(defmethod read :routing/app-root
+  [{:keys [db query target parser] :as env} k p]
+  (debug "routing/app-root with query: " query)
+  (let [handler (:ui.component.root/route-handler (d/entity db [:ui/component :ui.component/root]))
+        route-key (or (:route-key handler) :route/project)
+        route-query (get query route-key)]
+    (debug "Handler: " handler)
+    (debug "route-key: " route-key)
+    (debug "route-query:" route-query)
+    (if target
+      {:remote (om/query->ast [{:proxy/app-root route-query}])
+       :value (parser env route-query)})))
 
 ;; TODO: A lot of target boilerplate here. Macro instead?
 (defmethod read :query/active-project

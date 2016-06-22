@@ -376,9 +376,10 @@
         nil)))
 
 (defn path->paths [path]
-  {:pre [(vector? path)]}
-  (when (seq path)
-    (reduce conj [path] (path->paths (subvec path 0 (dec (count path)))))))
+  (->> path
+       (iterate rest)
+       (take-while seq)
+       (map vec)))
 
 (defn- find-cached-props
   "Given a cache with map of path->"
@@ -392,7 +393,6 @@
                              (debug "found cached props for c-path: " c-path))
                            c-props))))
         ret (->> (butlast c-path)
-                 (vec)
                  (path->paths)
                  (cons [::root])
                  (map #(get-in cache %))

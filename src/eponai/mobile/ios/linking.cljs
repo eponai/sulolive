@@ -28,11 +28,11 @@
   (let [path (url->path (or url url-prefix))
         _ (debug "path: " path)
         {:keys [handler route-params]} (match-route path)
-        ui-handler (get ui-handlers/route-handler->ui-component handler)]
-    (when route-params
-      (route-helper/handle-route-params ui-handler x route-params))
+        ui-handler (get ui-handlers/route-handler->ui-component handler)
+        param-mutations (route-helper/route-params-mutations ui-handler route-params)]
     (debug "Setting route: " handler)
-    (om/transact! x `[(app/set-route ~{:route (or handler routes/default-route)})])))
+    (om/transact! x (vec (cons `(app/set-route ~{:route (or handler routes/default-route)})
+                               param-mutations)))))
 
 (defn start!
   "Gets the initial url and loads the root matching the url's path."

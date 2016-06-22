@@ -24,12 +24,13 @@
 
 
 (defprotocol RouteParamHandler
-  (handle-route-params [this params reconciler]))
+  (route-params-mutations [this params]))
 
 (defrecord UiComponentMatch [component factory route-param-fn]
   RouteParamHandler
-  (handle-route-params [_ reconciler params]
-    (route-param-fn reconciler params))
+  (route-params-mutations [_ params]
+    (when (fn? route-param-fn)
+      (route-param-fn params)))
   bidi/Matched
   (resolve-handler [this m]
     (bidi/succeed this m))

@@ -40,6 +40,7 @@
                  [ring/ring-anti-forgery "1.0.0"]
                  [ring-transit "0.1.4"]
                  [prone "1.0.2"]
+		 [medley "0.8.2"]
 
                  ;; CLJS
                  [com.cognitect/transit-cljs "0.8.237"]
@@ -82,7 +83,7 @@
             [lein-shell "0.5.0"]
             [lein-doo "0.1.6"]
             [lein-cljsbuild "1.1.3"]
-            [lein-figwheel "0.5.0-6"]
+            [lein-figwheel "0.5.4-3"]
             [lein-ring "0.9.7"]
             [lein-test-out "0.3.1"]
             [lein-environ "1.0.1"]]
@@ -161,7 +162,7 @@
 
              :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha32"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
-                                       [figwheel-sidecar "0.5.0-2"]
+                                       [figwheel-sidecar "0.5.4-3"]
                                        [com.cemerick/piggieback "0.2.1"]]
                         :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
                         :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
@@ -203,7 +204,7 @@
                                                                 :output-dir    "target/android"
                                                                 :optimizations :simple}}]}}
 
-             :web-test {:dependencies [[figwheel-sidecar "0.5.0-2"]]
+             :web-test {:dependencies [[figwheel-sidecar "0.5.4-3"]]
                         :cljsbuild {:builds [{:id           "doo-test"
                                               :source-paths ["src/" "src-hacks/web/" "test/"]
                                               :compiler     {:output-to     "resources/public/doo-test/js/out/budget.js"
@@ -215,7 +216,7 @@
              :web      {:cljsbuild {:builds [{:id           "dev"
                                               :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
                                               :figwheel     {:on-jsload "eponai.web.figwheel/reload!"
-                                                             :server-port 3450}
+                                                             }
                                               :compiler     {:main          "env.web.main"
                                                              :asset-path    "/dev/js/out"
                                                              :output-to     "resources/public/dev/js/out/budget.js"
@@ -225,7 +226,7 @@
                                              {:id           "devcards"
                                               :source-paths ["src/" "src-hacks/web/" "test/"]
                                               :figwheel     {:devcards    true  ;; <- note this
-                                                             :server-port 3451}
+                                                             }
                                               :compiler     {:main                 "eponai.devcards.devcards_main"
                                                              :asset-path           "/devcards/js/out"
                                                              :output-to            "resources/public/devcards/js/out/budget.js"

@@ -15,45 +15,15 @@
 (defn route-handler->ui-handler [route-handler]
   (get ui-handlers/route-handler->ui-component route-handler))
 
-(defn update-app-state-with-route-match! [reconciler {:keys [handler route-params]}]
-  (let [ui-handler (route-handler->ui-handler handler)]
-    (when (fn? (:route-param-fn ui-handler))
-      (route-helper/handle-route-params ui-handler reconciler (or route-params {})))))
-
-;; TODO: Evaluate if this is a hack we can do something about.
-;; Using this for initialization logic.
-(def ^:dynamic *starting-history* false)
-
 (defn set-page! [reconciler]
-  (fn [{:keys [handler] :as match}]
+  (fn [{:keys [handler route-params] :as match}]
     (debug "Setting page with match:" match)
-    (let [ui-handler (route-handler->ui-handler handler)]
-      (update-app-state-with-route-match! reconciler match)
+    (let [ui-handler (route-handler->ui-handler handler)
+          param-mutations (route-helper/route-params-mutations ui-handler route-params)]
 
       ;; Sets the root/App's app content.
-      ;; TODO: Move this in to the route-param logic?
-      (binding [parser/*parser-allow-remote* false]
-        (om/transact! reconciler `[(root/set-app-content ~(select-keys ui-handler [:factory :component]))]))
-
-      (binding [parser/*parser-allow-remote* false]
-        (utils/update-dynamic-queries! reconciler))
-
-      ;; Checking this flag because playground doesn't need
-      ;; to send these reads remote.
-      (when parser/*parser-allow-remote*
-        ;; Transacting the full query of the app root to make sure
-        ;; we get all the data we need.
-        ;; TODO: Optimize this by just reading what we need.
-        (let [app-query (cond-> (om/full-query (om/app-root reconciler))
-                                ;; When we're initializing the app and the route is not
-                                ;; AllTransactions, include all transactions in the query.
-                                (and (true? *starting-history*)
-                                     (not (ui-handlers/is-transactions-handler? ui-handler)))
-                                (conj {:proxy/init-all-transactions (om/get-query AllTransactions)}))]
-          ;; There's no point of doing local reads here,
-          ;; just gather and send remote reads.
-          (binding [parser/*parser-allow-local-read* false]
-            (om/transact! reconciler app-query)))))))
+      (om/transact! reconciler (vec (cons `(root/set-app-content {:handler ~ui-handler})
+                                          param-mutations))))))
 
 (defn init-history [reconciler]
   (when-let [h @history-atom]
@@ -89,5 +59,4 @@
 ;; When we're done with this, check out App and Project's queries.
 
 (defn start! [history]
-  (binding [*starting-history* true]
-    (pushy/start! history)))
+  (pushy/start! history))

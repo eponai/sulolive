@@ -28,8 +28,10 @@
   [reconciler]
   (let [history (history/init-history reconciler)]
     (binding [parser/*parser-allow-remote* false]
-      (om/add-root! reconciler root/App (gdom/getElement "my-app")))
-    (history/start! history)))
+      (om/add-root! reconciler root/App (gdom/getElement "my-app"))
+      (history/start! history))
+    (binding [parser/*parser-allow-local-read* false]
+      (om/transact! reconciler (om/full-query (om/app-root reconciler))))))
 
 (defn ui->props-fn [parser]
   (fn [env c]

@@ -12,7 +12,7 @@
   {["/" :route-param/goal-id] {end :route/project->goal+id}})
 
 (def dashboard-routes
-  {end                               :route/project->dashboard})
+  {end :route/project->dashboard})
 
 (def transaction-routes
   {end :route/project->txs})
@@ -25,7 +25,7 @@
                                               "/widget"       widget-routes}}})
 
 (def profile-routes
-  {"/profile" {end           :route/profile
+  {"/profile" {end             :route/profile
                "/transactions" {end :route/profile->txs}}})
 
 (def version-1-routes (merge

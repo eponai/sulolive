@@ -107,13 +107,10 @@
 ;;; ####################### Root component #########################
 
 (defmethod mutate 'root/set-app-content
-  [{:keys [state]} _ {:keys [component factory]}]
-  (assert (and component factory))
+  [{:keys [state]} _ {:keys [handler]}]
   {:action #(t/transact-one state
-                            {:ui/component                  :ui.component/root
-                             :ui.component.root/route-changed true
-                             :ui.component.root/app-content {:component component
-                                                             :factory   factory}})})
+                            {:ui/component                    :ui.component/root
+                             :ui.component.root/route-handler handler})})
 
 (defmethod mutate 'root/ack-route-changed
   [{:keys [state]} _ _]
