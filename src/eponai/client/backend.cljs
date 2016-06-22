@@ -59,7 +59,7 @@
                   (when (seq txs)
                     (<! (timeout 0))
                     (let [[head tail] (split-at 100 txs)]
-                      (cb {:result {:proxy/app-content {:just/transact head}}})
+                      (cb {:result {:routing/app-root {:just/transact head}}})
                       (recur tail))))))
 
             :else

@@ -123,4 +123,4 @@
   {:action (fn []
              (go
                (let [ret (<! (http/post homeless/email-endpoint-subscribe {:form-params {:email email}}))]
-                 (om/merge! (deref utils/reconciler-atom) {:result {k ret :proxy/app-content {}}}))))})
+                 (om/merge! (deref utils/reconciler-atom) {:result {k ret :routing/app-root {}}}))))})

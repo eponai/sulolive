@@ -219,7 +219,6 @@
     (let [{:keys [query/active-project] :as props} (om/props this)
           {:keys [share-project?]} (om/get-state this)
           project (:ui.component.project/active-project active-project)]
-      (debug "Project props: " props)
       ;; TODO: See what reads return.
       (html
         ;[:div]

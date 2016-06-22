@@ -26,6 +26,9 @@
     (= "return" (namespace k))
     (util/return e k p)
 
+    #?@(:clj [(= "routing" (namespace k))
+              (util/proxy e k p)])
+
     :else (warn "Returning nil for parser read key: " k)))
 
 ;; -------- Debug stuff
@@ -128,7 +131,7 @@
   (fn [{:keys [query] :as env} k p]
     (let [env (if-not query
                 env
-                (assoc env :query (if (#{"return" "proxy"} (namespace k))
+                (assoc env :query (if (#{"return" "proxy" "routing"} (namespace k))
                                     query
                                     (util/put-db-id-in-query query))))]
       (read env k p))))

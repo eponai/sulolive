@@ -5,7 +5,7 @@
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[cljsjs/react "15.0.0-rc.2-0"]
                  [cljsjs/react-dom "15.0.0-rc.2-0"]
-                 [org.omcljs/om "1.0.0-alpha32"]
+                 [org.omcljs/om "1.0.0-alpha37"]
                  [clj-http "2.1.0"]
                  [clj-time "0.11.0"]
                  [compojure "1.4.0"]
@@ -160,7 +160,7 @@
                         :aot        :all
                         :prep-tasks ["compile" "prod-build-web"]}
 
-             :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha32"
+             :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha37"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
                                        [figwheel-sidecar "0.5.4-3"]
                                        [com.cemerick/piggieback "0.2.1"]]
@@ -181,7 +181,7 @@
                                                                 :output-dir    "target/android"
                                                                 :optimizations :none}}]}}
 
-             :mob-prod {:dependencies [[org.omcljs/om "1.0.0-alpha32"
+             :mob-prod {:dependencies [[org.omcljs/om "1.0.0-alpha37"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]]
                         :cljsbuild    {:builds [{:id           "ios-release"
                                                  :source-paths ["src" "src-hacks/react-native" "env/client/prod"]

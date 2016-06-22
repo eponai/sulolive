@@ -68,8 +68,8 @@
 (defn transactions-since [db last-db project-eid]
   {:pre [(number? project-eid)]
    :post [(set? %)]}
-  (let [last-basis (:max-tx last-db)
-        _ (debug "Last-basis: " last-basis)
+  (let [last-basis (:max-tx last-db 0)
+        _ (debug "Last-basis: " last-basis " project-eid: " project-eid)
         new-transaction-eids (into #{} (comp (mapcat #(d/datoms db :eavt (.-e %)))
                                              (filter #(> (.-tx %) last-basis))
                                              (map #(.-e %)))
