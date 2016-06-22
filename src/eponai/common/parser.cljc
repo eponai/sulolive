@@ -350,78 +350,46 @@
 
 ;; ---- Parser caching middleware ---------------
 
-(defn- traverse-query2 [query x]
-  (cond
-    (= x ::root)
-    [query]
+(defn traverse-query-path
+  "Takes a query and a path. Returns subqueries matching the path.
 
-    (number? x)
-    [query]
+  Will return a single subquery for queries without unions.
+  A path may match any of the union's branches/values."
+  [query path]
+  (letfn [(step-into-query [query part]
+            (cond
+              (= part ::root)
+              [query]
 
-    (keyword? query)
-    nil
+              (number? part)
+              [query]
 
-    (map? query)
-    (when (contains? query x)
-      (let [query' (get query x)]
-        (if (map? query')
-          ;; Union. Could be any of the values in an union.
-          ;; Hack: Take the first matching value.
-          ;; TODO: Try to match all values, making traverse-query
-          ;;       return multiple values.
-          (vals query')
-          ;; Anything else, just traverse as normal.
-          [query'])))
+              (keyword? query)
+              nil
 
-    (sequential? query)
-    (mapcat #(traverse-query2 % x) query)
+              (map? query)
+              (when (contains? query part)
+                (let [query' (get query part)]
+                  (if (map? query')
+                    ;; Union. Could be any of the values in an union.
+                    ;; Hack: Take the first matching value.
+                    ;; TODO: Try to match all values, making traverse-query
+                    ;;       return multiple values.
+                    (vals query')
+                    ;; Anything else, just traverse as normal.
+                    [query'])))
 
-    :else
-    (do (debug "not traversing query: " query " path-x: " x)
-        nil)))
+              (sequential? query)
+              (mapcat #(step-into-query % part) query)
 
-(defn do-traverse-query2 [query path]
-  (reduce (fn [q p] (into [] (comp (mapcat #(traverse-query2 % p))
-                                   (filter some?))
-                          q))
-          [query] path))
-
-(defn- traverse-query
-  "Given a query and a path, traverse the query until the end of the path."
-  [query [p :as path]]
-  (cond
-    (or (empty? path) (= p ::root))
-    query
-
-    ;; Queries doesn't know or care about cardinality.
-    ;; Skip this part of the path and continue with the
-    ;; same query.
-    (number? p)
-    (recur query (rest path))
-
-    ;; No where to traverse here.
-    (keyword? query)
-    nil
-
-    (map? query)
-    (if (contains? query p)
-      (let [query' (get query p)]
-        (if (map? query')
-          ;; Union. Could be any of the values in an union.
-          ;; Hack: Take the first matching value.
-          ;; TODO: Try to match all values, making traverse-query
-          ;;       return multiple values.
-          (some #(traverse-query (val %) (rest path)) query')
-          ;; Anything else, just traverse as normal.
-          (recur query' (rest path)))))
-
-    ;; Query is sequential, return the first matching path.
-    (sequential? query)
-    (some #(traverse-query % path) query)
-
-    :else
-    (do (debug "not traversing query: " query " path: " path)
-        nil)))
+              :else
+              (do (debug "not traversing query: " query " path-part: " part)
+                  nil)))]
+    (reduce (fn [q p] (into [] (comp (mapcat #(step-into-query % p))
+                                     (filter some?))
+                            q))
+            [query]
+            path)))
 
 (defn path->paths [path]
   (->> path
@@ -432,14 +400,13 @@
 (defn- find-cached-props
   "Given a cache with map of path->"
   [cache c-path c-query]
-  (let [find-props (fn [{:keys [::query ::props]}]
-                     (let [t-query (do-traverse-query2 query c-path)
-                           ct-query (do-traverse-query2 c-query c-path)
-                           exact-ct-query (first ct-query)
-                           t-ct-eq (some #(= % exact-ct-query) t-query)]
-                       (when (<= 2 (count ct-query))
-                         (warn "ct-query has more than one match! Was: " ct-query))
-                       (when t-ct-eq
+  (let [exact-subquery (traverse-query-path c-query c-path)
+        _ (when-not (= 1 (count exact-subquery))
+            (warn "Exact subquery was not an only match! Was: " exact-subquery))
+        exact-subquery (first exact-subquery)
+        find-props (fn [{:keys [::query ::props]}]
+                     (let [subqueries (traverse-query-path query c-path)]
+                       (when (some #(= % exact-subquery) subqueries)
                          (let [c-props (get-in props c-path)]
                            (when (some? c-props)
                              (debug "found cached props for c-path: " c-path))
@@ -478,7 +445,6 @@
               (swap! cache assoc ::db db)
               ;; db's are not equal. Reset the cache.
               (reset! cache {::db db}))
-            (debug "Finding props for path: " path " cache: " @cache)
             (let [props (or (find-cached-props @cache path query)
                             (parser env query))]
               (swap! cache update-in
