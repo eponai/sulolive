@@ -10,7 +10,8 @@
     [eponai.web.ui.utils :as utils]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug error]]))
+    [taoensso.timbre :refer-macros [debug error]]
+    [medley.core :as medley]))
 
 (defui Shareproject
   Object
@@ -200,19 +201,6 @@
                          :widget       {:factory ->NewWidget :component NewWidget}
                          :goal         {:factory ->NewGoal :component NewGoal}})
 
-(defn project-content [x]
-  (let [props (if (om/component? x) (om/props x) x)]
-    (get-in props [:query/active-project :ui.component.project/selected-tab])))
-
-(defn content->query [this content]
-  (let [component (when content (get-in content->component [content :component]))]
-    (cond-> [{:query/active-project [:ui.component.project/selected-tab
-                                     :ui.component.project/active-project]}]
-            (some? component)
-            (conj {:proxy/child-content (or (om/subquery this content component) (om/get-query component))})
-            (= :widget content)
-            (conj {:proxy/dashboard (om/get-query Dashboard)}))))
-
 (comment
   ;; Figure out if we still want to do this
   (componentWillUnmount [this]
@@ -222,24 +210,17 @@
 (defui Project
   static om/IQuery
   (query [this]
-    (let [content (project-content this)]
-      (content->query this content)))
-
-  static utils/IDynamicQuery
-  (dynamic-query-fragment [_]
-    [{:query/active-project [:ui.component.project/selected-tab]}])
-  (next-query [this next-props]
-    (let [content (project-content next-props)]
-      {:query (content->query this content)}))
-
+    [{:query/active-project [:ui.component.project/selected-tab
+                             :ui.component.project/active-project]}
+     {:routing/project (medley/map-vals #(-> % :component om/get-query) content->component)}])
 
   Object
   (render [this]
-    (let [{:keys [query/active-project
-                  proxy/child-content]} (om/props this)
+    (let [{:keys [query/active-project] :as props} (om/props this)
           {:keys [share-project?]} (om/get-state this)
-          project (:ui.component.project/active-project active-project)
-          ]
+          project (:ui.component.project/active-project active-project)]
+      (debug "Project props: " props)
+      ;; TODO: See what reads return.
       (html
         ;[:div]
         ;(when project
@@ -248,9 +229,9 @@
         ;                                                                      {:project project
         ;                                                                       :selected-tab (:ui.component.project/selected-tab active-project)}))})))
         [:div#project-content
-         (let [content (project-content this)
-               factory (get-in content->component [content :factory])
-               props (assoc child-content :ref content)]
+         (let [content (:ui.component.project/selected-tab active-project)
+               factory (-> content->component content :factory)
+               props (:routing/project props)]
            (when factory
              (factory props)))]
 

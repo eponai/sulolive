@@ -23,7 +23,9 @@
 
       ;; Sets the root/App's app content.
       (om/transact! reconciler (vec (cons `(root/set-app-content {:handler ~ui-handler})
-                                          param-mutations))))))
+                                          param-mutations)))
+      (binding [parser/*parser-allow-local-read* false]
+        (om/transact! reconciler (om/full-query (om/app-root reconciler)))))))
 
 (defn init-history [reconciler]
   (when-let [h @history-atom]

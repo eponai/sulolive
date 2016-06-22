@@ -15,18 +15,23 @@
 
 ;; -------- Readers for UI components
 
+(defmethod read :routing/project
+  [{:keys [db query target parser] :as env} _ _]
+  (let [tab (:ui.component.project/selected-tab (d/entity db [:ui/component :ui.component/project]))
+        route-query (get query tab)]
+    (if target
+      {:remote (om/query->ast [{:proxy/project-content route-query}])}
+      {:value (parser env route-query)})))
+
 (defmethod read :routing/app-root
-  [{:keys [db query target parser] :as env} k p]
-  (debug "routing/app-root with query: " query)
+  [{:keys [db query target parser] :as env} _ _]
   (let [handler (:ui.component.root/route-handler (d/entity db [:ui/component :ui.component/root]))
         route-key (or (:route-key handler) :route/project)
-        route-query (get query route-key)]
-    (debug "Handler: " handler)
-    (debug "route-key: " route-key)
-    (debug "route-query:" route-query)
+        route-query (get query route-key)
+        parsed (parser env route-query)]
     (if target
-      {:remote (om/query->ast [{:proxy/app-root route-query}])
-       :value (parser env route-query)})))
+      {:remote (om/query->ast [{:proxy/app-root route-query}])}
+      {:value parsed})))
 
 ;; TODO: A lot of target boilerplate here. Macro instead?
 (defmethod read :query/active-project

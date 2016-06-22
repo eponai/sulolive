@@ -33,7 +33,7 @@
     (let [{:keys [proxy/nav-bar-submenu
                   proxy/nav-bar
                   proxy/side-bar
-                  routing/app-content] :as props} (om/props this)
+                  routing/app-root] :as props} (om/props this)
           {:keys [sidebar-visible?
                   computed/side-bar-on-close
                   computed/navbar-menu-on-sidebar-toggle]} (om/get-state this)
@@ -54,7 +54,7 @@
           (nav/->NavbarMenu (om/computed nav-bar {:on-sidebar-toggle navbar-menu-on-sidebar-toggle}))
           (nav/->NavbarSubmenu (om/computed (assoc nav-bar-submenu :ref :nav-bar-submenu)
                                             {:content-factory factory
-                                             :app-content     app-content}))
+                                             :app-content     app-root}))
           [:div#page-content
            (when factory
-             (factory app-content))]]]))))
+             (factory app-root))]]]))))
