@@ -212,7 +212,7 @@
   (query [this]
     [{:query/active-project [:ui.component.project/selected-tab
                              :ui.component.project/active-project]}
-     {:routing/project (medley/map-vals #(->> % :component (utils/subq-or-static-q this ::routing-ref)) content->component)}])
+     {:routing/project (medley/map-vals #(->> % :component om/get-query) content->component)}])
 
   Object
   (render [this]
@@ -232,7 +232,7 @@
                factory (-> content->component content :factory)
                props (:routing/project props)]
            (when factory
-             (factory (assoc props :ref ::routing-ref))))]
+             (factory props)))]
 
         ;(when share-project?
         ;  (let [on-close #(om/update-state! this assoc :share-project? false)]
