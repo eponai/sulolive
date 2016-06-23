@@ -69,7 +69,10 @@
        (map vec)))
 
 (defn- find-cached-props
-  "Given a cache with map of path->"
+  "Given a cache with map of path->(query, props), a component and a component's full query,
+  check the cache if the component's full query has already been parsed (read).
+
+  Returns nil or props for a component."
   [cache c-path c-query]
   (let [exact-subquery (traverse-query-path c-query c-path)
         _ (when-not (= 1 (count exact-subquery))
@@ -125,14 +128,17 @@
               ::props props})
       props)))
 
-(defn cached-ui->props-fn [parser]
+(defn cached-ui->props-fn
+  "Takes a component and returns its props, just like om.next/default-ui->props.
+  This function will also cache a component's props based on it's path and query
+  to provide fast lookups for subcomponents, skipping a lot of reads."
+  [parser]
   (let [cache (atom {})]
     (fn [env c]
       {:pre [(map? env) (om/component? c)]}
       (let [fq (om/full-query c)]
         (when-not (nil? fq)
           (let [s (system-time)
-                ;; Assoc's :component in env so we can use parser/component-parser.
                 ui (cached-ui->props cache (:state env) c fq #(parser env fq))
                 e (system-time)]
             (when-let [l (:logger env)]
