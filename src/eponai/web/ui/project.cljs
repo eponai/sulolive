@@ -55,8 +55,8 @@
                                                                         [:query/tags])}))))
   Object
   (initLocalState [this]
-    {:computed/share-project-on-save #(let [project (-> (om/get-computed this)
-                                                        (get-in [:app-content :query/active-project :ui.component.project/active-project]))]
+    {:computed/share-project-on-save #(let [project (get-in (om/get-computed this)
+                                                            [:app-content :query/active-project :ui.component.project/active-project])]
                                        (.share-project this (:project/uuid project) %))
      :computed/new-track-on-save     #(do (om/update-state! this assoc :new-track? false)
                                           (.set-query! this))

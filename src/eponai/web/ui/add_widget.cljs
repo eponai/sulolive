@@ -5,6 +5,7 @@
     [eponai.web.ui.add-widget.add-goal :refer [->NewGoal]]
     [eponai.web.ui.add-widget.add-track :refer [->NewTrack]]
     [eponai.web.ui.widget :as w :refer [Widget]]
+    [eponai.web.ui.utils :as u]
     [om.dom :as dom]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
@@ -17,6 +18,34 @@
   (om/update-state! component assoc-in [:input-report :report/title] title))
 
 ;;;;;;;; ########################## Om Next components ########################
+
+(defn default-graph [props]
+  (let [{:keys [widget-type]} (::om/computed props)]
+    (cond (= widget-type :track)
+          {:graph/uuid  (d/squuid)
+           :graph/style :graph.style/bar}
+
+          (= widget-type :goal)
+          {:graph/uuid  (d/squuid)
+           :graph/style :graph.style/burndown})))
+
+(defn default-report [props index]
+  (let [{:keys [widget-type]} (::om/computed props)
+        title (str "Widget-" index)]
+    (cond (= widget-type :track)
+          {:report/uuid  (d/squuid)
+           :report/track {:track/functions [{:track.function/id       :track.function.id/sum
+                                             :track.function/group-by :transaction/tags}]}
+           :report/title title}
+
+          (= widget-type :goal)
+          {:report/uuid  (d/squuid)
+           :report/goal  {:goal/value 1500
+                          :goal/cycle {:cycle/repeat       0
+                                       :cycle/period       :cycle.period/month
+                                       :cycle/period-count 1
+                                       :cycle/start        (date/date->long (date/first-day-of-this-month))}}
+           :report/title title})))
 
 (defui NewWidget
   static om/IQueryParams
@@ -34,65 +63,22 @@
                                                  :date/timestamp]}]}
         {:filter ?filter})
      :query/tags])
-  Object
-  (save-widget [this widget]
-    (if (some? (:db/id widget))
-      (om/transact! this `[(widget/edit ~(assoc widget :mutation-uuid (d/squuid)))
-                           :query/dashboard])
-      (om/transact! this `[(widget/create ~(assoc widget :mutation-uuid (d/squuid)))
-                           :query/dashboard])))
-  (delete-widget [this widget]
-    (om/transact! this `[(widget/delete ~(assoc (select-keys widget [:widget/uuid]) :mutation-uuid (d/squuid)))
-                         :query/dashboard]))
 
-  (default-report [_ props index]
-    (let [{:keys [widget-type]} (::om/computed props)
-          title (str "Widget-" index)]
-      (cond (= widget-type :track)
-            {:report/uuid  (d/squuid)
-             :report/track {:track/functions [{:track.function/id       :track.function.id/sum
-                                               :track.function/group-by :transaction/tags}]}
-             :report/title title}
-
-            (= widget-type :goal)
-            {:report/uuid (d/squuid)
-             :report/goal {:goal/value 1500
-                           :goal/cycle {:cycle/repeat       0
-                                        :cycle/period       :cycle.period/month
-                                        :cycle/period-count 1
-                                        :cycle/start        (date/date->long (date/first-day-of-this-month))}}
-             :report/title title})))
-
-  (default-graph [_ props]
-    (let [{:keys [widget-type]} (::om/computed props)]
-      (cond (= widget-type :track)
-            {:graph/uuid  (d/squuid)
-             :graph/style :graph.style/bar}
-
-            (= widget-type :goal)
-            {:graph/uuid (d/squuid)
-             :graph/style :graph.style/burndown})))
-
-  (data-set [this]
-    (let [{:keys [data-set]} (om/get-state this)]
-      (merge (:tag-filter data-set)
-             (:date-filter data-set))))
-  (graph-filter [this]
-    (let [{:keys [graph-filter]} (om/get-state this)]
-      (merge (:tag-filter graph-filter)
-             (:date-filter graph-filter))))
-  (init-state [this props]
+  u/ISyncStateWithProps
+  (props->init-state [_ props]
     (let [{:keys [index count]} (::om/computed props)]
-      (let [g (.default-graph this props)
+      (let [g (default-graph props)
             dim (w/dimensions g)]
         {:input-widget {:widget/uuid   (d/squuid)
                         :widget/index  index
                         :widget/width  (:minW dim)
                         :widget/height (:minH dim)
                         :widget/graph  g
-                        :widget/report (.default-report this props count)}})))
+                        :widget/report (default-report props count)}})))
+
+  Object
   (initLocalState [this]
-    (merge (.init-state this (om/props this))
+    (merge (u/props->init-state this (om/props this))
            {:computed/new-track-on-change (fn [new-widget & [{:keys [update-data?]}]]
                                             (om/update-state! this assoc :input-widget new-widget)
                                             (when update-data?
@@ -104,7 +90,26 @@
                                             )}))
 
   (componentWillReceiveProps [this new-props]
-    (om/set-state! this (.init-state this new-props)))
+    (u/sync-with-received-props this new-props))
+
+  (save-widget [this widget]
+    (if (some? (:db/id widget))
+      (om/transact! this `[(widget/edit ~(assoc widget :mutation-uuid (d/squuid)))
+                           :query/dashboard])
+      (om/transact! this `[(widget/create ~(assoc widget :mutation-uuid (d/squuid)))
+                           :query/dashboard])))
+  (delete-widget [this widget]
+    (om/transact! this `[(widget/delete ~(assoc (select-keys widget [:widget/uuid]) :mutation-uuid (d/squuid)))
+                         :query/dashboard]))
+
+  (data-set [this]
+    (let [{:keys [data-set]} (om/get-state this)]
+      (merge (:tag-filter data-set)
+             (:date-filter data-set))))
+  (graph-filter [this]
+    (let [{:keys [graph-filter]} (om/get-state this)]
+      (merge (:tag-filter graph-filter)
+             (:date-filter graph-filter))))
 
   (render [this]
     (let [{:keys [query/transactions query/tags]} (om/props this)
