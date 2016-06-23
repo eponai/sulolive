@@ -1,13 +1,15 @@
 (ns eponai.client.parser.read
   (:require [datascript.core :as d]
             [datascript.db :as db]
+            [om.next :as om]
             [eponai.common.database.pull :as p]
             [eponai.common.prefixlist :as pl]
             [eponai.common.parser :refer [read]]
             [eponai.common.parser.util :as parser.util]
-            [taoensso.timbre :refer-macros [debug error]]
             [eponai.common.format :as f]
-            [eponai.common.parser.util :as parser]))
+            [eponai.common.parser.util :as parser]
+            [eponai.web.ui.all-transactions :as at]
+            [taoensso.timbre :refer-macros [debug error]]))
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
@@ -129,7 +131,7 @@
 (defmethod read :query/transactions
   [{:keys [db target ast] :as env} k p]
   (if (= target :remote)
-    ;; Pass the active project uuid to remote reader
+    ;; Pass the active project to remote reader
     {:remote (assoc-in ast [:params :project-eid] (active-project-eid db))}
 
     ;; Local read
@@ -150,8 +152,10 @@
 (defmethod read :query/dashboard
   [{:keys [db ast target] :as env} k p]
   (if (= target :remote)
-    ;; Pass the active project uuid to remote reader
-    {:remote (assoc-in ast [:params :project-eid] (active-project-eid db))}
+    ;; Pass the active project to remote reader
+    (let [query (om/ast->query (assoc-in ast [:params :project-eid] (active-project-eid db)))]
+      ;; Add a transaction's query for the remote, so we can populate the widgets with data.
+      {:remote (om/query->ast [{:proxy/dashboard [query {:query/transactions (om/get-query at/Transaction)}]}])})
 
     ;; Local read
     (cached-query-dashboard env k p)))
