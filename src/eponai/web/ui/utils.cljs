@@ -161,7 +161,7 @@
                          (d/touch)
                          (into {}))))))
 
-;;;;;;; Om dynamic query helpers
+;;;;;;; Om query helpers
 
 (defn subq-or-static-q [x ref-key class]
   (or (when (om/component? x)
@@ -174,63 +174,11 @@
               ret))))
       (om/get-query class)))
 
-(defprotocol IDynamicQuery
-  (dynamic-query-fragment [this] "Fragment of the query needed to return next query.")
-  (next-query [this next-props] "Next query to be set for this component using props returned by parsing dynamic-query-fragment"))
-
-(defprotocol IDynamicQueryParams
-  ;; -> {:child Class or Component}
-  (dynamic-params [this next-props] "Return map of param key to class or component (via ref). Values will be replaced with queries."))
-
 (defn query-with-component-meta [x query]
   (with-meta query
              {:component (cond
                            (om/component? x) (type x)
                            (goog/isFunction x) x)}))
-
-(defn update-dynamic-query! [parser state x]
-  {:pre  [(or (om/component? x) (goog/isFunction x))]
-   :post [(map? %)]}
-  (if-let [c (component-implements IDynamicQuery x)]
-    (let [query (dynamic-query-fragment c)
-          next-props (parser {:state state} query)
-          next-query (next-query c next-props)
-          ;; Checking om/mounted? because statics get elided in advanced mode
-          ;; (and we create components in (component-implements ...))
-          _ (when (om/mounted? c)
-              (when (= next-query (om/get-query c))
-                (warn "Setting the same query. Optimize this by not setting the query?"))
-              (om/set-query! c next-query) [])
-          next-params (when-let [c (component-implements IDynamicQueryParams x)]
-                        (let [params (dynamic-params c next-props)
-                              bound-params (reduce-kv (fn [p k x]
-                                                        (let [param-query (update-dynamic-query! parser state x)]
-                                                          (assert (nil? (:params param-query))
-                                                                  (str "Params in child: " (pr-str x)
-                                                                       " was not nil. Was: " (:params param-query)
-                                                                       ". We currently do not support children with params"
-                                                                       " because we'd have to bind the query to the params,"
-                                                                       " and we don't need it right now. We could copy om.next's"
-                                                                       " implementation or something, but that's for future us "
-                                                                       " to figure out ;) (HI FUTURE US)."))
-                                                          (assoc p k (query-with-component-meta x (:query param-query)))))
-                                                      {} params)]
-                          bound-params))
-          _ (when (seq next-params)
-              (when (om/mounted? c)
-                (om/set-query! c {:params next-params} [])))]
-      (merge next-query next-params))
-    ;; else:
-    (if (om/iquery? x)
-      {:query (om/get-query x)}
-      (throw (ex-info "Unknown parameter in update-dynamic-query!" {:param x :to-str (pr-str x)})))))
-
-(defn update-dynamic-queries! [reconciler]
-  {:pre [(om/reconciler? reconciler)]}
-  (let [parser (-> reconciler :config :parser)
-        state (om/app-state reconciler)]
-    (update-dynamic-query! parser state (om/app-root reconciler))))
-;; Is the problem that we're setting a query for om/app-root? hmm..
 
 (defn component->ref [c]
   (keyword (pr-str c)))
