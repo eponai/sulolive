@@ -5,7 +5,6 @@
     ;; To initialize ReactDOM:
             [cljsjs.react.dom]
             [datascript.core :as d]
-            [goog.log :as glog]
             [eponai.client.backend :as backend]
             [eponai.client.parser.merge :as merge]
             [eponai.web.parser.merge :as web.merge]
@@ -31,27 +30,12 @@
       (om/add-root! reconciler root/App (gdom/getElement "my-app")))
     (history/start! history)))
 
-(defn ui->props-fn [parser]
-  (fn [env c]
-    {:pre [(map? env) (om/component? c)]}
-    (let [fq (om/full-query c)]
-      (when-not (nil? fq)
-        (let [s (system-time)
-              ;; Assoc's :component in env so we can use parser/component-parser.
-              ui (parser (assoc env :component c) fq)
-              e (system-time)]
-          (when-let [l (:logger env)]
-            (let [dt (- e s)]
-              (when (< 16 dt)
-                (glog/warning l (str (pr-str c) " query took " dt " msecs")))))
-          (get-in ui (om/path c)))))))
-
 (defn initialize-app [conn & [reconciler-opts]]
   (debug "Initializing App")
   (let [parser (parser/parser)
         reconciler (om/reconciler (merge
                                     {:state     conn
-                                     :ui->props (ui->props-fn (parser/component-parser parser))
+                                     :ui->props (utils/cached-ui->props-fn parser)
                                      :parser    parser
                                      :remotes   [:remote]
                                      :send      (backend/send! {:remote (-> (backend/post-to-url homeless/om-next-endpoint-user-auth)

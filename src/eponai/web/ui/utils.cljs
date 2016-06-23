@@ -6,6 +6,7 @@
             [om.dom :as dom]
             [cljsjs.react.dom]
             [goog.object]
+            [goog.log :as glog]
             [taoensso.timbre :refer-macros [debug warn]]
             [eponai.common.format :as format]
             [eponai.common.datascript :as common.datascript]
@@ -17,6 +18,130 @@
 (def ^:dynamic *playground?* false)
 
 (defonce reconciler-atom (atom nil))
+
+;; ---- Cached ui->props ---------------
+
+(defn traverse-query-path
+  "Takes a query and a path. Returns subqueries matching the path.
+
+  Will return a single subquery for queries without unions.
+  A path may match any of the union's branches/values."
+  [query path]
+  (letfn [(step-into-query [query part]
+            (cond
+              (= part ::root)
+              [query]
+
+              (number? part)
+              [query]
+
+              (keyword? query)
+              nil
+
+              (map? query)
+              (when (contains? query part)
+                (let [query' (get query part)]
+                  (if (map? query')
+                    ;; Union. Could be any of the values in an union.
+                    ;; Hack: Take the first matching value.
+                    ;; TODO: Try to match all values, making traverse-query
+                    ;;       return multiple values.
+                    (vals query')
+                    ;; Anything else, just traverse as normal.
+                    [query'])))
+
+              (sequential? query)
+              (mapcat #(step-into-query % part) query)
+
+              :else
+              (do (debug "not traversing query: " query " path-part: " part)
+                  nil)))]
+    (reduce (fn [q p] (into [] (comp (mapcat #(step-into-query % p))
+                                     (filter some?))
+                            q))
+            [query]
+            path)))
+
+(defn path->paths [path]
+  (->> path
+       (iterate rest)
+       (take-while seq)
+       (map vec)))
+
+(defn- find-cached-props
+  "Given a cache with map of path->"
+  [cache c-path c-query]
+  (let [exact-subquery (traverse-query-path c-query c-path)
+        _ (when-not (= 1 (count exact-subquery))
+            (warn "Exact subquery was not an only match! Was: " exact-subquery))
+        exact-subquery (first exact-subquery)
+        find-props (fn [{:keys [::query ::props]}]
+                     (let [subqueries (traverse-query-path query c-path)]
+                       (when (some #(= % exact-subquery) subqueries)
+                         (let [c-props (get-in props c-path)]
+                           (when (some? c-props)
+                             (debug "found cached props for c-path: " c-path))
+                           c-props))))
+        ret (->> (butlast c-path)
+                 (path->paths)
+                 (cons [::root])
+                 (map #(get-in cache %))
+                 (filter some?)
+                 (some find-props))]
+    ret))
+
+(defn cached-ui->props
+  "Takes an atom to store queries->props, app-state, component, full query of
+  the component and a thunk for calling the parser for cache misses.
+  Uses the query and the components path to find queries already parsed.
+
+  Example:
+  Let's say we've got components A and B.
+  B is a subquery of A, i.e. query A: [... (om/get-query B) ...]
+  When we parse A, we'll get the props of both A and B.
+  We can get B's props by using (om/path B) in props of A.
+  This is what we're doing with (find-cached-props ...)."
+  [cache state component query parser-thunk]
+  {:pre [(implements? IDeref cache)
+         (implements? IDeref state)
+         (om/component? component)
+         (vector? query)
+         (fn? parser-thunk)]}
+  (let [path (om/path component)
+        db (d/db state)
+        cache-db (::db @cache)]
+    (if (= db cache-db)
+      ;; db's are equal, swap to make sure they are identical
+      ;; for future equality checks.
+      (swap! cache assoc ::db db)
+      ;; db's are not equal. Reset the cache.
+      (reset! cache {::db db}))
+    (let [props (or (find-cached-props @cache path query)
+                    (parser-thunk))]
+      (swap! cache update-in
+             (or (seq path) [::root])
+             merge
+             {::query query
+              ::props props})
+      props)))
+
+(defn cached-ui->props-fn [parser]
+  (let [cache (atom {})]
+    (fn [env c]
+      {:pre [(map? env) (om/component? c)]}
+      (let [fq (om/full-query c)]
+        (when-not (nil? fq)
+          (let [s (system-time)
+                ;; Assoc's :component in env so we can use parser/component-parser.
+                ui (cached-ui->props cache (:state env) c fq #(parser env fq))
+                e (system-time)]
+            (when-let [l (:logger env)]
+              (let [dt (- e s)]
+                (when (< 16 dt)
+                  (glog/warning l (str (pr-str c) " query took " dt " msecs")))))
+            (get-in ui (om/path c))))))))
+
+;; ---- END Cached ui->props ------------
 
 ;;;;;;; Helpers for remote communcation
 
