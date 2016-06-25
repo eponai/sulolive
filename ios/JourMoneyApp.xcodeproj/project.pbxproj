@@ -625,7 +625,10 @@
 				);
 				INFOPLIST_FILE = JourMoneyApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				OTHER_LDFLAGS = "-ObjC";
+				OTHER_LDFLAGS = (
+					"-ObjC",
+					"-lc++",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.eponai.JourMoneyApp;
 				PRODUCT_NAME = JourMoneyApp;
 				PROVISIONING_PROFILE = "";
@@ -646,7 +649,10 @@
 				);
 				INFOPLIST_FILE = JourMoneyApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				OTHER_LDFLAGS = "-ObjC";
+				OTHER_LDFLAGS = (
+					"-ObjC",
+					"-lc++",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.eponai.JourMoneyApp;
 				PRODUCT_NAME = JourMoneyApp;
 				PROVISIONING_PROFILE = "";

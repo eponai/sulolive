@@ -4,9 +4,9 @@
   (:require [om.next :as om :refer-macros [defui]]
             [re-natal.support :as sup]))
 
-(set! js/React (js/require "react-native"))
+(set! js/ReactNative (js/require "react-native"))
 
-(def app-registry (.-AppRegistry js/React))
+(def app-registry (.-AppRegistry js/ReactNative))
 (def logo-img (js/require "./images/cljs.png"))
 
 (defui AppRoot

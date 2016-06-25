@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "react-native": "0.27.2",
-    "react": "^0.14.5",
+    "react": "^15.1.0",
     "pikaday": "1.4.0"
   },
   "devDependencies": {

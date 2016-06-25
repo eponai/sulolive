@@ -10,7 +10,7 @@
     (into (set cl/components) not-yet-included)))
 
 (defn wrap-component-fn [js-name]
-  (let [react-sym (symbol (str "js/React." js-name))]
+  (let [react-sym (symbol (str "js/ReactNative." js-name))]
     `(let [factory# (js/React.createFactory ~react-sym)]
        (defn ~(symbol (to-kebab js-name)) [props# & children#]
          ;; Call str on ref to keep colon in keywords. :foo -> ":foo"

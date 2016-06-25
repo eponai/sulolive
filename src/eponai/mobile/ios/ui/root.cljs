@@ -10,8 +10,8 @@
             [taoensso.timbre :refer-macros [debug]]))
 
 (def route->transition
-  {:route/login {:route/transactions js/React.Navigator.SceneConfigs.FloatFromBottom}
-   :route/transactions {:route/login js/React.Navigator.SceneConfigs.FloatFromBottom}})
+  {:route/login {:route/transactions js/ReactNative.Navigator.SceneConfigs.FloatFromBottom}
+   :route/transactions {:route/login js/ReactNative.Navigator.SceneConfigs.FloatFromBottom}})
 
 (defn props->route [props]
   (or (get-in props [:query/app :ui.component.app/route])
@@ -73,4 +73,4 @@
                 :renderScene    #(.render-scene this %1 %2)
                 :configureScene #(get-in route->transition [(:prev-route (om/get-state this))
                                                             (:route (om/get-state this))]
-                                         js/React.Navigator.SceneConfigs.FloatFromRight)})))
+                                         js/ReactNative.Navigator.SceneConfigs.FloatFromRight)})))

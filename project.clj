@@ -3,8 +3,8 @@
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[cljsjs/react "15.0.0-rc.2-0"]
-                 [cljsjs/react-dom "15.0.0-rc.2-0"]
+  :dependencies [[cljsjs/react "15.1.0-0"]
+                 [cljsjs/react-dom "15.1.0-0"]
                  [org.omcljs/om "1.0.0-alpha37"]
                  [clj-http "2.1.0"]
                  [clj-time "0.11.0"]
@@ -83,7 +83,7 @@
             [lein-shell "0.5.0"]
             [lein-doo "0.1.6"]
             [lein-cljsbuild "1.1.3"]
-            [lein-figwheel "0.5.4-3"]
+            [lein-figwheel "0.5.4-4"]
             [lein-ring "0.9.7"]
             [lein-test-out "0.3.1"]
             [lein-environ "1.0.1"]]
@@ -94,8 +94,9 @@
                                     "resources/public/release/js/out"
                                     "resources/public/test/js/out"
                                     "target/"
-                                    "index.ios.js"
-                                    "index.android.js"]
+                                  ;;  "index.ios.js"
+                                  ;;  "index.android.js"
+                                   ]
 
   :aliases {"all-deps"               ^{:doc "Fetches both clj, cljs and node dependencies."}
                                      ["do" "deps"
@@ -162,7 +163,7 @@
 
              :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha37"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
-                                       [figwheel-sidecar "0.5.4-3"]
+                                       [figwheel-sidecar "0.5.4-4"]
                                        [com.cemerick/piggieback "0.2.1"]]
                         :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
                         :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
@@ -204,7 +205,7 @@
                                                                 :output-dir    "target/android"
                                                                 :optimizations :simple}}]}}
 
-             :web-test {:dependencies [[figwheel-sidecar "0.5.4-3"]]
+             :web-test {:dependencies [[figwheel-sidecar "0.5.4-4"]]
                         :cljsbuild {:builds [{:id           "doo-test"
                                               :source-paths ["src/" "src-hacks/web/" "test/"]
                                               :compiler     {:output-to     "resources/public/doo-test/js/out/budget.js"

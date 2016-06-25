@@ -150,11 +150,11 @@
                           :color "white"})))
 
               (when (seq success)
-                (.alert js/React.AlertIOS "Success!" (s/join ". " (map :tx/message success))
+                (.alert js/ReactNative.AlertIOS "Success!" (s/join ". " (map :tx/message success))
                         #(when on-saved
                           (on-saved))))
               (when (seq error)
-                (.alert js/React.AlertIOS "Failures" (s/join ". " (map :tx/message error))))
+                (.alert js/ReactNative.AlertIOS "Failures" (s/join ". " (map :tx/message error))))
 
               (text (styles :title)
                     (str (get {:edit "Edit" :create "New"} mode) " "

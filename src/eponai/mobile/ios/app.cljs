@@ -18,7 +18,7 @@
             [re-natal.support :as sup]
             [taoensso.timbre :refer-macros [info debug error trace warn]]))
 
-(def app-registry (.-AppRegistry js/React))
+(def app-registry (.-AppRegistry js/ReactNative))
 (def logo-img (js/require "./images/cljs.png"))
 
 (defonce reconciler-atom (atom nil))
