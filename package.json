@@ -6,7 +6,7 @@
     "start": "node_modules/react-native/packager/packager.sh --nonPersistent"
   },
   "dependencies": {
-    "react-native": "0.22.0",
+    "react-native": "0.27.2",
     "react": "^0.14.5",
     "pikaday": "1.4.0"
   },

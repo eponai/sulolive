@@ -6,5 +6,9 @@
   "modules": [],
   "imageDirs": [
     "images"
-  ]
+  ],
+  "envRoots": {
+    "dev": "env/client/dev",
+    "prod": "env/client/prod"
+  }
 }
