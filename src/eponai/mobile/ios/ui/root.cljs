@@ -47,7 +47,10 @@
       (let [props (om/props this)
             route (props->route props)
             factory (get-in ui.routes/route-handler->ui-component [route :factory])]
-        (factory (-> props :proxy/route-data (assoc :ref route))))))
+        (factory (-> props :proxy/route-data
+                     ;; This throws an exception. We can only create refs
+                     ;; within the (render ) method.
+                     (assoc :ref route))))))
   (componentWillUpdate [this next-props _]
     (let [route (props->route (om/props this))
           next-route (props->route next-props)]
