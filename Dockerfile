@@ -1,4 +1,4 @@
-FROM java:8
+FROM java:9-jre
 
 ADD target/uberjar/budget-0.1.0-SNAPSHOT-standalone.jar /srv/production.jar
 
