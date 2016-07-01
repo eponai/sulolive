@@ -27,11 +27,11 @@
   (debug "Loading url: " url)
   (let [path (url->path (or url url-prefix))
         _ (debug "path: " path)
-        {:keys [handler route-params]} (match-route path)
+        {:keys [handler route-params] :or {handler routes/default-route}} (match-route path)
         ui-handler (get ui-handlers/route-handler->ui-component handler)
         param-mutations (route-helper/route-params-mutations ui-handler route-params)]
     (debug "Setting route: " handler)
-    (om/transact! x (vec (cons `(app/set-route ~{:route (or handler routes/default-route)})
+    (om/transact! x (vec (cons `(app/set-route ~{:route handler})
                                param-mutations)))))
 
 (defn start!

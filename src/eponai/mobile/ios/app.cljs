@@ -13,6 +13,7 @@
             [eponai.mobile.ios.linking :as linking]
             [eponai.mobile.ios.remotes :as remotes]
             [eponai.mobile.ios.ui.root :as root]
+            [eponai.mobile.ios.routes :as routes]
             [eponai.mobile.om-helper :as omhelper]
             [om.next :as om :refer-macros [defui]]
             [re-natal.support :as sup]
@@ -35,7 +36,9 @@
       @conn-atom)
     (let [ui-schema (common.datascript/ui-schema)
           ui-state [{:ui/singleton :ui.singleton/auth}
-                    {:ui/component :ui.component/app}
+                    {:ui/component           :ui.component/app
+                     :ui.component.app/route routes/default-route}
+                    {:ui/component :ui.component/root}
                     {:ui/component :ui.component/loading
                      :ui.component.loading/is-logged-in? false}
                     {:ui/singleton :ui.singleton/configuration}]
@@ -71,8 +74,8 @@
                                    :merge        (merge/merge! mobile.merge/mobile-merge)
                                    :root-render  sup/root-render
                                    :root-unmount sup/root-unmount
-                                   :logger nil
-                                   :migrate      nil})]
+                                   :logger  nil
+                                   :migrate nil})]
     (reset! reconciler-atom reconciler)
     (om/add-root! reconciler root/RootView root-node-id)
     (.registerComponent app-registry "JourMoneyApp" (fn [] app-root))

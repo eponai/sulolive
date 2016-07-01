@@ -11,8 +11,7 @@
 
 (defmethod mutate 'app/set-route
   [{:keys [state]} _ {:keys [route]}]
-  {:value  {:keys [:query/app]}
-   :action #(t/transact state [(set-route-tx route)])})
+  {:action #(t/transact state [(set-route-tx route)])})
 
 (defmethod mutate 'login/verify
   [{:keys [state]} k {:keys [verify-uuid]}]

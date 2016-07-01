@@ -111,6 +111,18 @@
                {target (om/query->ast [{k (unwrap-proxies ret)}])}
                {:value ret}))))
 
+
+(defn union-query [{:keys [query] :as env} k p union-key]
+  (let [route-query (cond-> query
+                            ;; Union. Query can also be passed with the
+                            ;; selected union.
+                            (map? query) (get union-key))]
+    (assert (some? route-query)
+            (str "Route-query must not be nil. No union-key: " union-key
+                 " in query: " query
+                 " resulting in route-query: " route-query))
+    (proxy (assoc env :query route-query) k p)))
+
 (defn return
   "Special read key (special like :proxy) that just returns
   whatever it is bound to.

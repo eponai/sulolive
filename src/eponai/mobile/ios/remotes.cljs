@@ -19,15 +19,15 @@
                                       " the response."))
       (assert (:endpoint params) (str "No :endpoint in params of query: " query))
       (debug "http remote call. ast: " ast " query: " query "method: " method)
-      {:method (condp = method
-                 'http/get :get
-                 'http/post :post)
-       :url    (:endpoint params)
-       :opts   (dissoc params :endpoint :mutation)
+      {:method      (condp = method
+                      'http/get :get
+                      'http/post :post)
+       :url         (:endpoint params)
+       :opts        (dissoc params :endpoint :mutation)
        :response-fn (fn [{:keys [status]}]
-                      {:status 200 :body {:proxy/route-data {}
-                                          method {:mutation (:mutation params)
-                                                  :status status}}})})))
+                      {:status 200 :body {:result {:routing/ios-root {}
+                                                   method            {:mutation (:mutation params)
+                                                                      :status   status}}}})})))
 
 (defn switching-remote
   "Remote that sends requests to different endpoints.

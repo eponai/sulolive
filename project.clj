@@ -67,7 +67,7 @@
                   :exclusions [org.clojure/clojure]]
 
                  ;; React-native
-                 [natal-shell "0.1.6"]
+                 [natal-shell "0.3.0"]
 
                  ;; Testing
                  [lein-doo "0.1.6"]

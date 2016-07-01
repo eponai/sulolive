@@ -1,12 +1,16 @@
 (ns eponai.mobile.components
   (:require [natal-shell.components-list :as cl]
+            [natal-shell.components :as c]
             [natal-shell.utils :refer [to-kebab]]
             [om.util]))
 
 (defn components []
   (let [not-yet-included ["Picker"
                           "Picker.Item"
-                          "Navigator.NavigationBar"]]
+                          "Navigator.NavigationBar"
+                          "NavigationExperimental.CardStack"
+                          "NavigationExperimental.Header"
+                          "NavigationExperimental.Header.Title"]]
     (into (set cl/components) not-yet-included)))
 
 (defn wrap-component-fn [js-name]

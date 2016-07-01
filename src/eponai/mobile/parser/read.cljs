@@ -2,8 +2,14 @@
   (:require [datascript.core :as d]
             [eponai.common.database.pull :as p]
             [eponai.common.parser :refer [read]]
-            [taoensso.timbre :as timbre :refer-macros [debug]]
-            [eponai.client.parser.read]))
+            [eponai.common.parser.util :as p.util]
+            [eponai.client.parser.read]
+            [eponai.mobile.ios.routes :as routes]
+            [taoensso.timbre :as timbre :refer-macros [debug]]))
+
+(defmethod read :routing/ios-root
+  [{:keys [db] :as env} k p]
+  (p.util/union-query env k p (:ui.component.app/route (d/entity db [:ui/component :ui.component/app]))))
 
 (defmethod read :query/app
   [{:keys [db query]} _ _]
