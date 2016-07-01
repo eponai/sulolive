@@ -61,8 +61,8 @@
 
   (back [this]
     (om/update-state! this update :nav-state
-                      #(cond-> (pos? (:index %))
-                               %
+                      #(cond-> %
+                               (pos? (:index %))
                                (-> (update :index dec)
                                    (update :children pop)))))
 
@@ -120,8 +120,8 @@
     (navigation-experimental-card-stack
       ;; VERY IMPORTANT: Needs to call .forceUpdate in onDidFocus.
       ;; When we don't update this component, it'll render with stale props.
-      {:onNavigate      #(.back this)
-       :onDidFocus      #(.forceUpdate this)
+      {:onNavigate      #(.back this %)
+       ;; :onDidFocus      #(.forceUpdate this)
        :renderOverlay   #(.render-nav-bar this %)
        :navigationState (-> (:nav-state (om/get-state this))
                             clj->js)
