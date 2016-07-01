@@ -33,7 +33,7 @@
     '[{:query/transactions [:transaction/title
                             :transaction/uuid
                             :transaction/amount
-                            {:transaction/date [:date/ymd]}
+                            {:transaction/date [:date/ymd :date/timestamp]}
                             {:transaction/tags [:tag/name]}
                             {:transaction/currency [:currency/code]}
                             {:transaction/project [:project/uuid]}
