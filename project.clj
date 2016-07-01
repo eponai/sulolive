@@ -62,7 +62,7 @@
                  [cljsjs/stripe "2.0-0"]
                  [bidi "2.0.0"]
                  [kibu/pushy "0.3.6"]
-                 [binaryage/devtools "0.5.2"]
+                 [binaryage/devtools "0.7.2"]
                  [org.clojure/tools.nrepl "0.2.11"
                   :exclusions [org.clojure/clojure]]
 

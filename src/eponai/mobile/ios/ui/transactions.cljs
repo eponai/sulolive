@@ -1,12 +1,17 @@
 (ns eponai.mobile.ios.ui.transactions
   (:require [om.next :as om :refer-macros [defui]]
+            [datascript.core :as d]
             [eponai.mobile.components :refer
-             [view text list-view navigator navigator-navigation-bar
-              list-view-data-source touchable-highlight]]
+             [view text list-view
+              list-view-data-source touchable-highlight
+              navigation-experimental-header
+              navigation-experimental-header-title
+              navigation-experimental-card-stack]]
             [eponai.mobile.ios.ui.add-transaction :as at]
             [eponai.mobile.ios.style :refer [styles]]
-            [eponai.client.ui :as ui :refer-macros [opts camel]]
             [eponai.mobile.om-helper :as om-helper :refer-macros [with-om-vars]]
+            [eponai.web.ui.utils :as web.utils]
+            [eponai.client.ui :as ui :refer-macros [opts camel]]
             [taoensso.timbre :refer-macros [info debug error trace warn]]))
 
 (defn transaction-list-data-source [prev-props props]
@@ -21,7 +26,8 @@
 (defui ^:once Transactions
   static om/IQueryParams
   (params [this]
-    {:edit-transaction (om-helper/subquery-in this [:nav :edit-transaction] at/AddTransaction)})
+    {:edit-transaction (om/get-query at/AddTransaction)})
+
   static om/IQuery
   (query [this]
     '[{:query/transactions [:transaction/title
@@ -33,28 +39,46 @@
                             {:transaction/project [:project/uuid]}
                             {:transaction/type [:db/ident]}]}
       {:proxy/edit-transaction ?edit-transaction}])
+
+  ;; TODO: Move web.utils to client utils.
+  web.utils/ISyncStateWithProps
+  (props->init-state [_ props]
+    {:data-source          (transaction-list-data-source nil props)
+     :selected-transaction nil
+     :nav-state            {:key             "KEY FOO" :index 0 :children [{:key "list" :title "List"}]
+                            ::__nav-state-id (hash props)}})
+
   Object
   (initLocalState [this]
-    {:data-source (transaction-list-data-source nil (om/props this))
-     :selected-transaction nil})
+    (web.utils/props->init-state this (om/props this)))
+
+  (componentWillReceiveProps [this next-props]
+    (web.utils/sync-with-received-props this next-props))
+
   (componentWillUpdate [this next-props _]
     (om/update-state! this assoc :data-source
                       (transaction-list-data-source (om/props this) next-props)))
-  (select-transaction [this transaction]
-    (om/update-state! this assoc
-                      :selected-transaction transaction)
-    (.push (om-helper/react-ref this :nav)
-           (str ::route-selected)))
+
+  (back [this]
+    (om/update-state! this update :nav-state
+                      #(cond-> (pos? (:index %))
+                               %
+                               (-> (update :index dec)
+                                   (update :children pop)))))
 
   (exit-transaction [this]
-    (.pop (om-helper/react-ref this :nav)
-          (str ::route-transactions)))
+    (.back this))
+
+  (select-transaction [this transaction]
+    (om/update-state! this #(-> %
+                                (assoc :selected-transaction transaction)
+                                (update-in [:nav-state :index] inc)
+                                (update-in [:nav-state :children] conj #js {:key "selected" :title "Selected"}))))
 
   (render-transactions [this]
     (with-om-vars
       this
       (let [{:keys [query/transactions]} (om/props this)]
-        (debug "Rendering transactions: " transactions)
         (list-view
           (styles :nav-bar->container
                   {:data-source (:data-source (om/get-state this))
@@ -67,31 +91,13 @@
                                                 title)
                                           (text (opts {:style {:font-size 30 :font-weight "100" :margin-bottom 20}})
                                                 amount))))})))))
-  (render-nav-bar [this]
+  (render-nav-bar [this props]
     (with-om-vars
       this
-      (navigator-navigation-bar
-        (styles :nav-bar
-                {:route-mapper
-                 #js {"LeftButton"
-                      (fn [route nav idx state]
-                        (when (= (kstr->k route) ::route-selected)
-                          (touchable-highlight
-                            (camel {:on-press #(.exit-transaction this)})
-                            (text {:width 50 :height 36 :font-size 17}
-                                  "Back"))))
-                      "RightButton"
-                      (fn [route nav idx state]
-                        )
-                      "Title"
-                      (fn [route nav idx state]
-                        (text {:width 50 :height 36 :font-size 17}
-                              (condp = (kstr->k route)
-                                ::route-transactions "Transactions"
-                                ::route-selected (-> this
-                                                     om/get-state
-                                                     :selected-transaction
-                                                     :transaction/title))))}}))))
+      (navigation-experimental-header
+        (assoc (js->clj props) :renderTitleComponent #(navigation-experimental-header-title
+                                                       {:title "Title" :children "needs to be a string?"})))))
+
   (render-selected [this]
     (with-om-vars
       this
@@ -100,23 +106,27 @@
       (view (styles :nav-bar->container)
         (at/->AddTransaction (-> (om/props this)
                                  (:proxy/edit-transaction)
-                                 (assoc :ref :edit-transaction)
                                  (om/computed
                                    {:on-saved    #(.exit-transaction this)
                                     :mode        :edit
                                     :transaction (:selected-transaction (om/get-state this))}))))))
+
+  (render-scene [this]
+    (if (zero? (get-in (om/get-state this) [:nav-state :index]))
+      (.render-transactions this)
+      (.render-selected this)))
+
   (render [this]
-    (navigator
+    (navigation-experimental-card-stack
       ;; VERY IMPORTANT: Needs to call .forceUpdate in onDidFocus.
       ;; When we don't update this component, it'll render with stale props.
-      (camel {:on-did-focus   #(.forceUpdate this)
-              :navigation-bar (.render-nav-bar this)
-              :ref            :nav
-              :initial-route  (str ::route-transactions)
-              :render-scene   (fn [route _]
-                                (condp = (kstr->k route)
-                                  ::route-transactions (.render-transactions this)
-                                  ::route-selected (.render-selected this)))}))))
+      {:onNavigate      #(.back this)
+       :onDidFocus      #(.forceUpdate this)
+       :renderOverlay   #(.render-nav-bar this %)
+       :navigationState (-> (:nav-state (om/get-state this))
+                            clj->js)
+       :style           {:flex 1}
+       :renderScene     #(.render-scene this)})))
 
 
 (def ->Transactions (om/factory Transactions))

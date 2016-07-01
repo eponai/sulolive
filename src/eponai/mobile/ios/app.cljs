@@ -70,12 +70,12 @@
                                    :parser       parser
                                    :remotes      [:remote :http/call]
                                    :send         (backend/send! {:remote    (remotes/switching-remote conn)
-                                                                 :http/call (remotes/http-call-remote)})
+                                                                 :http/call (remotes/http-call-remote reconciler-atom)})
                                    :merge        (merge/merge! mobile.merge/mobile-merge)
                                    :root-render  sup/root-render
                                    :root-unmount sup/root-unmount
-                                   :logger  nil
-                                   :migrate nil})]
+                                   :logger       nil
+                                   :migrate      nil})]
     (reset! reconciler-atom reconciler)
     (om/add-root! reconciler root/RootView root-node-id)
     (.registerComponent app-registry "JourMoneyApp" (fn [] app-root))

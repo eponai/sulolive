@@ -1,6 +1,7 @@
 (ns eponai.mobile.ios.remotes
   (:require [datascript.core :as d]
             [eponai.client.backend :as backend]
+            [eponai.common.parser :as parser]
             [om.next :as om]
             [taoensso.timbre :refer-macros [debug]]))
 
@@ -8,7 +9,7 @@
 (defn http-call-remote
   "Remote which executes a http call.
   We can use this remote to call api's which are not om.next specific."
-  []
+  [reconciler-atom]
   (fn [query]
     ;; Do something here?`
     (let [ast (om/query->ast query)
@@ -19,15 +20,19 @@
                                       " the response."))
       (assert (:endpoint params) (str "No :endpoint in params of query: " query))
       (debug "http remote call. ast: " ast " query: " query "method: " method)
-      {:method      (condp = method
-                      'http/get :get
-                      'http/post :post)
-       :url         (:endpoint params)
-       :opts        (dissoc params :endpoint :mutation)
-       :response-fn (fn [{:keys [status]}]
-                      {:status 200 :body {:result {:routing/ios-root {}
-                                                   method            {:mutation (:mutation params)
-                                                                      :status   status}}}})})))
+      {:method        (condp = method
+                        'http/get :get
+                        'http/post :post)
+       :url           (:endpoint params)
+       :opts          (dissoc params :endpoint :mutation)
+       :response-fn   (fn [{:keys [status]}]
+                        {:status 200 :body {:result {:routing/app-root {}
+                                                     method            {:mutation (:mutation params)
+                                                                        :status   status}}}})
+       :post-merge-fn (fn []
+                        (let [reconciler @reconciler-atom]
+                          (binding [parser/*parser-allow-local-read* false]
+                            (om/transact! reconciler (om/get-query (om/app-root reconciler))))))})))
 
 (defn switching-remote
   "Remote that sends requests to different endpoints.

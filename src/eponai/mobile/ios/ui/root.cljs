@@ -29,7 +29,7 @@
     [:datascript/schema
      :user/current
      {:query/app [:ui.component.app/route]}
-     {:routing/ios-root (medley/map-vals #(->> % :component om/get-query)
+     {:routing/app-root (medley/map-vals #(->> % :component om/get-query)
                                          ui.routes/route-key->root-handler)}])
   Object
   (initLocalState [this]
@@ -41,12 +41,12 @@
     (.removeEventListener linking/linking "url", (-> this om/get-state :url-handler)))
 
   (render [this]
-    (let [{:keys [ios-root] :as props} (om/props this)
+    (let [{:keys [routing/app-root] :as props} (om/props this)
           route (props->route props)
           factory (get-in ui.routes/route-handler->ui-component [route :factory])]
       (when-not factory
         (debug "No factory found for route: " route " props: " props))
-      (factory ios-root))))
+      (factory app-root))))
 
 (comment
   (render-scene [this scene-props]

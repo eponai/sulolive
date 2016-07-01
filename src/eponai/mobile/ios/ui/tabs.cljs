@@ -9,17 +9,12 @@
             [taoensso.timbre :refer-macros [debug error]]))
 
 (defui ^:once Tabs
-  static om/IQueryParams
-  (params [this]
-    {:transactions    (om-helper/subquery-in this [:transactions] t/Transactions)
-     :add-transaction (om-helper/subquery-in this [:add-transaction] a/AddTransaction)})
-  static
-  om/IQuery
+  static om/IQuery
   (query [this]
     ;;TODO: Optimize this query so that it doesn't query for both all the time.
     ;;     Should only query for the one selected.
-    '[{:proxy/transactions ?transactions}
-      {:proxy/add-transaction ?add-transaction}])
+    [{:proxy/transactions (om/get-query t/Transactions)}
+     {:proxy/add-transaction (om/get-query a/AddTransaction)}])
   Object
   (initLocalState [this]
     {:selected-tab :transactions})
@@ -27,21 +22,17 @@
     (let [{:keys [selected-tab]} (om/get-state this)]
       (tab-bar-ios
        {:ref :tab-bar}
-       (tab-bar-ios-item {:ref :transactions-tab
-                          :selected (= selected-tab :transactions)
+       (tab-bar-ios-item {:selected (= selected-tab :transactions)
                           :onPress #(om/update-state! this assoc :selected-tab :transactions)
                           :title    "Transactions"}
                          (t/->Transactions (-> (om/props this)
-                                               (:proxy/transactions)
-                                               (assoc :ref :transactions))))
-       (tab-bar-ios-item {:ref :add-tab
-                          :selected (= selected-tab :new)
+                                               (:proxy/transactions))))
+       (tab-bar-ios-item {:selected (= selected-tab :new)
                           :onPress  #(om/update-state! this assoc :selected-tab :new)
                           :title    "New"}
                          (view (styles :nav-bar->container)
-                           (a/->AddTransaction (-> (om/props this)
-                                                   (:proxy/add-transaction)
-                                                   (assoc :ref :add-transaction)
-                                                   (om/computed {:mode :create})))))))))
+                               (a/->AddTransaction (om/computed
+                                                     (:proxy/add-transaction (om/props this))
+                                                     {:mode :create}))))))))
 
 (def ->Tabs (om/factory Tabs))

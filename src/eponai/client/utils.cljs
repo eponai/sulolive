@@ -54,6 +54,5 @@
 
 (defn install-app []
   (enable-console-print!)
-  (devtools/enable-feature! :sanity-hints)
   (devtools/install!)
   (logger/install-logger!))

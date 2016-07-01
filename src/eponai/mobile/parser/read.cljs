@@ -7,7 +7,8 @@
             [eponai.mobile.ios.routes :as routes]
             [taoensso.timbre :as timbre :refer-macros [debug]]))
 
-(defmethod read :routing/ios-root
+
+(defmethod read :routing/app-root
   [{:keys [db] :as env} k p]
   (p.util/union-query env k p (:ui.component.app/route (d/entity db [:ui/component :ui.component/app]))))
 

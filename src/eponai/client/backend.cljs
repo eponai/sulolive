@@ -41,7 +41,7 @@
   (let [query (parser.util/unwrap-proxies query)]
     (go
       (try
-        (let [{:keys [method url opts response-fn]} ((get remote->send remote-key) query)
+        (let [{:keys [method url opts response-fn post-merge-fn]} ((get remote->send remote-key) query)
               _ (debug "Sending to " remote-key " query: " query
                        "method: " method " url: " url "opts: " opts)
               {:keys [body status headers]}
@@ -60,7 +60,9 @@
                     (<! (timeout 0))
                     (let [[head tail] (split-at 100 txs)]
                       (cb {:result {:routing/app-root {:just/transact head}}})
-                      (recur tail))))))
+                      (recur tail))))
+                (when post-merge-fn
+                  (post-merge-fn))))
 
             :else
             (throw (ex-info "Not 2xx response remote."

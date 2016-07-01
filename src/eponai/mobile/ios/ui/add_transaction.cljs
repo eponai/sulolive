@@ -129,7 +129,7 @@
                   transaction/project transaction/amount transaction/title
                   transaction/type]} input-transaction
           js-date (date/js-date date)
-          {:keys [mode on-saved]} (om/get-computed this)
+          {:keys [mode on-saved] :as computed} (om/get-computed this)
           {:keys [tx.status/success tx.status/error]} (group-by :tx/status messages)
           all-answered (every? (set (map :tx/mutation-uuid messages))
                                (:mutation-uuids (om/get-params this)))]
@@ -137,7 +137,7 @@
              " params: " (om/get-params this)
              " success: " success)
       (assert (contains? modes mode)
-              (str "Required om/computed key :mode needs to be one of: " modes " was: " mode))
+              (str "Required om/computed key :mode needs to be one of: " modes " was: " mode " computed: " computed))
       (view {}
             (scroll-view
               ;;TODO: How much height do we have to play with?
