@@ -67,6 +67,11 @@
   [_ _ _]
   {:remote true})
 
+(defn sort-transactions-time-decending [transactions]
+  (sort-by #(get-in % [:transaction/date :date/timestamp])
+           >
+           transactions))
+
 (defn transactions-since [db last-db project-eid]
   {:pre [(number? project-eid)]
    :post [(set? %)]}
@@ -114,7 +119,13 @@
               remaining-new (vals @new-by-uuid)
               new-and-old (cond->> old-with-new-inserted
                                    (seq remaining-new)
-                                   (into (vec remaining-new)))]
+                                   (into (vec remaining-new))
+                                   ;; Storing the transactions time-decending because
+                                   ;; it's both mobile and web's default ordering.
+                                   ;; Doing this sort in our read, lets us take advantage
+                                   ;; of our read caching.
+                                   :always
+                                   sort-transactions-time-decending)]
           (swap! txs-by-project assoc project-eid {:db-used db :txs new-and-old})
           new-and-old)))))
 
