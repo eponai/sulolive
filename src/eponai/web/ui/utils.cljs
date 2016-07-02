@@ -7,7 +7,7 @@
             [cljsjs.react.dom]
             [goog.object]
             [goog.log :as glog]
-            [taoensso.timbre :refer-macros [debug warn]]
+            [taoensso.timbre :refer-macros [debug warn error]]
             [eponai.common.format :as format]
             [eponai.common.datascript :as common.datascript]
             [datascript.core :as d]
@@ -113,11 +113,8 @@
   (let [path (om/path component)
         db (d/db state)
         cache-db (::db @cache)]
-    (if (= db cache-db)
-      ;; db's are equal, swap to make sure they are identical
-      ;; for future equality checks.
-      (swap! cache assoc ::db db)
-      ;; db's are not equal. Reset the cache.
+    (when-not (identical? db cache-db)
+      ;; db's are not identical. Reset the cache.
       (reset! cache {::db db}))
     (let [props (or (find-cached-props @cache path query)
                     (parser-thunk))]
@@ -139,13 +136,25 @@
       (let [fq (om/full-query c)]
         (when-not (nil? fq)
           (let [s (system-time)
-                ui (cached-ui->props cache (:state env) c fq #(parser env fq))
+                ui (cached-ui->props cache (:state env) c fq #(-> (parser env fq)
+                                                                  (get-in (om/path c))))
                 e (system-time)]
             (when-let [l (:logger env)]
               (let [dt (- e s)]
                 (when (< 16 dt)
                   (glog/warning l (str (pr-str c) " query took " dt " msecs")))))
-            (get-in ui (om/path c))))))))
+            ui))))))
+
+(defn debug-ui->props-fn
+  "Debug if our function is not acting as om.next's default ui->props function."
+  [parser]
+  (let [eponai-fn (cached-ui->props-fn parser)]
+    (fn [env c]
+      (let [om-ui (om/default-ui->props env c)
+            eponai-ui (eponai-fn env c)]
+        (when (not= om-ui eponai-ui)
+          (warn "Om and eponai UI differ for component: " (pr-str c) " diff: " (diff/diff om-ui eponai-ui)))
+        eponai-ui))))
 
 ;; ---- END Cached ui->props ------------
 

@@ -17,7 +17,8 @@
             [eponai.mobile.om-helper :as omhelper]
             [om.next :as om :refer-macros [defui]]
             [re-natal.support :as sup]
-            [taoensso.timbre :refer-macros [info debug error trace warn]]))
+            [taoensso.timbre :refer-macros [info debug error trace warn]]
+            [eponai.web.ui.utils :as web.utils]))
 
 (def app-registry (.-AppRegistry js/ReactNative))
 (def logo-img (js/require "./images/cljs.png"))
@@ -68,6 +69,8 @@
                               :ui.singleton.configuration.endpoints/verify   (str server "/verify")}])
         reconciler (om/reconciler {:state        conn
                                    :parser       parser
+                                    :ui->props    (web.utils/cached-ui->props-fn parser)
+                                   ;; :ui->props    (web.utils/debug-ui->props-fn parser)
                                    :remotes      [:remote :http/call]
                                    :send         (backend/send! {:remote    (remotes/switching-remote conn)
                                                                  :http/call (remotes/http-call-remote reconciler-atom)})
