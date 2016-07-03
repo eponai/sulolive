@@ -233,14 +233,21 @@
 (defprotocol ISyncStateWithProps
   (props->init-state [this props] "Takes props and returns initial state."))
 
-(defn sync-with-received-props [component new-props]
+(defn sync-with-received-props [component new-props & [{:keys [will-sync did-sync]}]]
   {:pre [(and (om/component? component) (satisfies? ISyncStateWithProps component))]}
   (when (not= new-props (om/props component))
-    (let [next-state (props->init-state component new-props)]
+    (let [this-state (om/get-state component)
+          next-state (props->init-state component new-props)]
       (debug "Reseting initial state for component: " component
              " diff between old and new props:" (diff/diff (om/props component) new-props)
              "next-state: " next-state)
-      (om/set-state! component next-state))))
+      ;; Call a function to unmount stateful state.
+      ;; Called with the old and the next state.
+      (when will-sync
+        (will-sync this-state next-state))
+      (om/set-state! component next-state)
+      (when did-sync
+        (did-sync this-state (om/get-state component))))))
 
 (defn ref-dom-node [component ref-name]
   {:pre [(om/component? component) (string? ref-name)]}

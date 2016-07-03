@@ -23,9 +23,9 @@
 
   Object
   (initLocalState [this]
-    {:sidebar-visible?           false
-     :computed/side-bar-on-close #(when (:sidebar-visible? (om/get-state this))
-                                   (om/update-state! this assoc :sidebar-visible? false))
+    {:sidebar-visible?                       false
+     :computed/side-bar-on-close             #(when (:sidebar-visible? (om/get-state this))
+                                               (om/update-state! this assoc :sidebar-visible? false))
      :computed/navbar-menu-on-sidebar-toggle #(om/update-state! this update :sidebar-visible? not)})
 
   (render
@@ -56,5 +56,6 @@
                                             {:content-factory factory
                                              :app-content     app-root}))
           [:div#page-content
+           {:ref (str ::page-content-ref)}
            (when factory
              (factory app-root))]]]))))

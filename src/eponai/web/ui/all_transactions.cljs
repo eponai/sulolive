@@ -11,6 +11,7 @@
     [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.ui.utils :as utils]
     [eponai.web.ui.utils.filter :as filter]
+    [eponai.web.ui.utils.infinite-scroll :as infinite-scroll]
     [garden.core :refer [css]]
     [goog.string :as gstring]
     [goog.events :as events]
@@ -263,8 +264,7 @@
 
   Object
   (initLocalState [this]
-    {:list-size                           0
-     :computed/transaction-on-tag-click   (fn [tag]
+    {:computed/transaction-on-tag-click   (fn [tag]
                                             (om/update-query! this update-in [:params :filter :filter/include-tags]
                                                               #(utils/add-tag % tag)))
      :computed/tag-filter-on-change       (fn [tags]
@@ -278,7 +278,13 @@
                                             (om/update-query! this update-in [:params :filter]
                                                               #(assoc % :filter/start-date (date/date-map start-date)
                                                                         :filter/end-date (date/date-map end-date))))
-     })
+     :computed/infinite-scroll-node-fn    (fn []
+                                            ;; TODO: Un-hack this.
+                                            ;; HACK: I don't know how we can get the page-content div in any other way.
+                                            (some-> (om/get-reconciler this)
+                                                    (om/app-root)
+                                                    (om/react-ref (str :eponai.web.ui.root/page-content-ref))
+                                                    (js/ReactDOM.findDOMNode)))})
 
   (componentDidMount [this]
     (when (zero? (:list-size (om/get-state this)))
@@ -344,7 +350,8 @@
   (render-transaction-list [this transactions]
     (let [{currencies      :query/all-currencies
            user            :query/current-user} (om/props this)
-          {:keys [computed/transaction-on-tag-click list-size]} (om/get-state this)]
+          {:keys [computed/transaction-on-tag-click
+                  computed/infinite-scroll-node-fn]} (om/get-state this)]
       (html
         [:div
          (.render-filters this)
@@ -354,14 +361,15 @@
              [:div.transaction-list
               (opts {:style {:width "100%"}})
               [:ul.no-bullet
-               (map (fn [props]
-                      (->Transaction
-                        (om/computed props
-                                     {:user         user
-                                      :currencies   currencies
-                                      :on-tag-click transaction-on-tag-click})))
-                    ;; TODO: Implement some way of seeing more than this limit:
-                    (take list-size (sort-by #(get-in % [:transaction/date :date/timestamp]) > transactions)))]]]
+               (infinite-scroll/->InfiniteScroll
+                 (-> {:elements (into [] (map (fn [props]
+                                                (->Transaction
+                                                  (om/computed props
+                                                               {:user         user
+                                                                :currencies   currencies
+                                                                :on-tag-click transaction-on-tag-click}))))
+                                      transactions)}
+                     (om/computed {:dom-node-fn infinite-scroll-node-fn})))]]]
             [:div.empty-message
              [:div.lead
               [:i.fa.fa-search.fa-fw]
