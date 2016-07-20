@@ -86,6 +86,8 @@
 
 (defn run [config]
   (info "Run called in: " (namespace ::foo))
+  (set! js/console.disableYellowBox true)
+  (debug "Disabled yellow box warnings")
   (try (initialize-app config (init-conn))
        (catch :default e
          (error "Initialization error:" e)
@@ -94,6 +96,4 @@
 ;; For figwheel. See env/dev/ios/main.cljs
 (defn reload! []
   (debug "Reload!")
-  (om/add-root! @reconciler-atom root/RootView root-node-id)
-  ;; Has to set the query of the component to it's "runtime" query (with props and stuff).
-  (omhelper/set-runtime-query! (om/class->any @reconciler-atom root/RootView)))
+  (om/add-root! @reconciler-atom root/RootView root-node-id))

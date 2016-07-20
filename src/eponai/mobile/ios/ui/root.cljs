@@ -23,7 +23,7 @@
   (navigation-experimental-header
     {:render-title-component #(navigation-experimental-header-title "Title")}))
 
-(defui ^:once RootView
+(defui RootView
   static om/IQuery
   (query [_]
     [:datascript/schema

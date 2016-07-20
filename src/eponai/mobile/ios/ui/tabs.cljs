@@ -8,7 +8,7 @@
             [om.next :as om :refer-macros [defui]]
             [taoensso.timbre :refer-macros [debug error]]))
 
-(defui ^:once Tabs
+(defui Tabs
   static om/IQuery
   (query [this]
     ;;TODO: Optimize this query so that it doesn't query for both all the time.

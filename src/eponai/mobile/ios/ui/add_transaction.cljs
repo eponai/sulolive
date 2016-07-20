@@ -35,7 +35,7 @@
 
 ;; TODO: Put common code in client or something?
 ;; Query and initLocalState copied from web.ui
-(defui ^:once AddTransaction
+(defui AddTransaction
   static om/IQueryParams
   (params [this]
     {:mutation-uuids []})

@@ -23,7 +23,7 @@
   [kstr]
   (keyword (subs kstr 1)))
 
-(defui ^:once Transactions
+(defui Transactions
   static om/IQueryParams
   (params [this]
     {:edit-transaction (om/get-query at/AddTransaction)})
@@ -53,7 +53,7 @@
     (web.utils/props->init-state this (om/props this)))
 
   (componentWillReceiveProps [this next-props]
-    (web.utils/sync-with-received-props this next-props))
+    (web.utils/sync-with-received-props this next-props {:without-logging true}))
 
   (componentWillUpdate [this next-props _]
     (om/update-state! this assoc :data-source

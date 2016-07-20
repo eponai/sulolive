@@ -20,7 +20,7 @@
   [c k]
   (gobj/get (.-props c) k))
 
-(defui ^:once Login
+(defui Login
   static om/IQuery
   (query [this]
     [{:query/loading [:ui.component.loading/is-logged-in?]}])
