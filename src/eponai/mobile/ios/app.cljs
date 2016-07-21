@@ -15,10 +15,42 @@
             [eponai.mobile.ios.ui.root :as root]
             [eponai.mobile.ios.routes :as routes]
             [eponai.mobile.om-helper :as omhelper]
-            [om.next :as om :refer-macros [defui]]
+            [om.next :as om :refer-macros [defui ui]]
             [re-natal.support :as sup]
             [taoensso.timbre :refer-macros [info debug error trace warn]]
             [eponai.web.ui.utils :as web.utils]))
+
+;(defonce root-nodes (atom {}))
+;
+;(defn root-node!
+;  "A substitute for a real root node (1) for mounting om-next component.
+;  You have to call function :on-render and :on-unmount in reconciler :root-render :root-unmount function."
+;  [id]
+;  (let [content (atom nil)
+;        instance (atom nil)
+;        class (ui Object
+;                  (componentWillMount [this] (reset! instance this))
+;                  (render [_] @content))]
+;    (swap! root-nodes assoc id {:on-render  (fn [el]
+;                                              (reset! content el)
+;                                              (when @instance
+;                                                (.forceUpdate @instance)))
+;                                :on-unmount (fn [])
+;                                :class      class})
+;    class))
+;(defn root-render
+;  "Use this as reconciler :root-render function."
+;  [el id]
+;  (let [node (get @root-nodes id)
+;        on-render (:on-render node)]
+;    (when on-render (on-render el))))
+;
+;(defn root-unmount
+;  "Use this as reconciler :root-unmount function."
+;  [id]
+;  (let [node (get @root-nodes id)
+;        unmount-fn (:on-unmount node)]
+;    (when unmount-fn (unmount-fn))))
 
 (def app-registry (.-AppRegistry js/ReactNative))
 (def logo-img (js/require "./images/cljs.png"))
@@ -50,7 +82,6 @@
 (def root-node-id 1)
 (defonce RootNode (sup/root-node! root-node-id))
 (defonce app-root (om/factory RootNode))
-
 (defn ignore-yellow-box-warnings! []
   (set! (.-ignoredYellowBox js/console) #js [
                                              ;; TODO: This should be fixed in react-native 0.23?
@@ -76,12 +107,12 @@
                                                                  :http/call (remotes/http-call-remote reconciler-atom)})
                                    :merge        (merge/merge! mobile.merge/mobile-merge)
                                    :root-render  sup/root-render
-                                   :root-unmount sup/root-unmount
+                                   :root-unmount sup/root-unmount ;#(.unmountComponentAtNode js/ReactDOM %)
                                    :logger       nil
                                    :migrate      nil})]
     (reset! reconciler-atom reconciler)
     (om/add-root! reconciler root/RootView root-node-id)
-    (.registerComponent app-registry "JourMoneyApp" (fn [] app-root))
+    (.registerComponent app-registry "JourMoney" (fn [] app-root))
     (linking/start! reconciler)))
 
 (defn run [config]

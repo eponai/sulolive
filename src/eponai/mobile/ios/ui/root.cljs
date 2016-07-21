@@ -11,10 +11,10 @@
             [om.next :as om :refer-macros [defui]]
             [taoensso.timbre :refer-macros [debug]]))
 
-(comment
-  (def route->transition
-   {:route/login        {:route/transactions js/ReactNative.Navigator.SceneConfigs.FloatFromBottom}
-    :route/transactions {:route/login js/ReactNative.Navigator.SceneConfigs.FloatFromBottom}}))
+;(comment
+;  (def route->transition
+;   {:route/login        {:route/transactions js/ReactNative.Navigator.SceneConfigs.FloatFromBottom}
+;    :route/transactions {:route/login js/ReactNative.Navigator.SceneConfigs.FloatFromBottom}}))
 
 (defn props->route [props]
   (get-in props [:query/app :ui.component.app/route]))
@@ -48,17 +48,17 @@
         (debug "No factory found for route: " route " props: " props))
       (factory app-root))))
 
-(comment
-  (render-scene [this scene-props]
-                (with-om-vars
-                  this
-                  ))
-  (navigation-experimental-card-stack {
-                                       :onNavigate      #(om/transact! this `[(root/navigate-pop {:value %})])
-                                       :renderOverlay   #(header %)
-                                       :navigationState (-> (om/props this)
-                                                            :query/root
-                                                            :ui.component.root/navigation-state
-                                                            clj->js)
-                                       ;; :on-did-focus     #(.forceUpdate this)
-                                       :renderScene     #(.render-scene this %)}))
+;(comment
+;  (render-scene [this scene-props]
+;                (with-om-vars
+;                  this
+;                  ))
+;  (navigation-experimental-card-stack {
+;                                       :onNavigate      #(om/transact! this `[(root/navigate-pop {:value %})])
+;                                       :renderOverlay   #(header %)
+;                                       :navigationState (-> (om/props this)
+;                                                            :query/root
+;                                                            :ui.component.root/navigation-state
+;                                                            clj->js)
+;                                       ;; :on-did-focus     #(.forceUpdate this)
+;                                       :renderScene     #(.render-scene this %)}))

@@ -13,6 +13,16 @@
           :save               {:style {:background-color "#999" :padding 10 :border-radius 5}}
           :save-text          {:style {:color "white" :text-align "center" :font-weight "bold"}}}))
 
+(def style-sheet
+  {:text-input {:padding 10}
+   :header {:font-size 30 :font-weight "100" :margin-bottom 20 :text-align "center"}})
+
+(defn text-input []
+  (:text-input style-sheet))
+
+(defn header []
+  (:header style-sheet))
+
 (defn mergeduce [xform coll]
   (transduce xform merge {} coll))
 

@@ -153,7 +153,7 @@
           (info "Setting up inmemory db because uri is set to:" uri)
           (add-data-to-connection mem-conn
                                   ;; Use larger dataset:
-                                  (take (* 1 (count txs)) (cycle txs))
+                                  (take 100 (cycle txs))
                                   )
           (debug "Successfully set up inmemory db!")
           mem-conn)

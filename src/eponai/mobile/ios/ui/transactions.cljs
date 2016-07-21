@@ -45,7 +45,12 @@
   (props->init-state [_ props]
     {:data-source          (transaction-list-data-source nil props)
      :selected-transaction nil
-     :nav-state            {:key             "KEY FOO" :index 0 :children [{:key "list" :title "List"}]
+     ;; NavigationExperimental state.
+     ;; Not sure what these settings do. Need to see documentation
+     ;; and source code.
+     :nav-state            {:key             "KEY FOO"
+                            :index 0
+                            :children [{:key "list" :title "List"}]
                             ::__nav-state-id (hash props)}})
 
   Object
@@ -96,7 +101,7 @@
       this
       (navigation-experimental-header
         (assoc (js->clj props) :renderTitleComponent #(navigation-experimental-header-title
-                                                       {:title "Title" :children "needs to be a string?"})))))
+                                                       {:title "Title" :children "needs to be a string-?"})))))
 
   (render-selected [this]
     (with-om-vars
@@ -118,10 +123,7 @@
 
   (render [this]
     (navigation-experimental-card-stack
-      ;; VERY IMPORTANT: Needs to call .forceUpdate in onDidFocus.
-      ;; When we don't update this component, it'll render with stale props.
       {:onNavigate      #(.back this %)
-       ;; :onDidFocus      #(.forceUpdate this)
        :renderOverlay   #(.render-nav-bar this %)
        :navigationState (-> (:nav-state (om/get-state this))
                             clj->js)

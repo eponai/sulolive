@@ -1,6 +1,6 @@
 (ns eponai.mobile.ios.routes.ui-handlers
   (:require [eponai.client.route-helper :refer [map->UiComponentMatch]]
-            [eponai.mobile.ios.ui.landing :refer [Login ->Login]]
+            [eponai.mobile.ios.ui.landing :refer [LoginNavScene ->LoginMenu]]
             [eponai.mobile.ios.ui.transactions :refer [Transactions ->Transactions]]
             [eponai.mobile.ios.ui.tabs :refer [Tabs ->Tabs]]
             [medley.core :as medley]
@@ -8,8 +8,8 @@
 
 (def login-handler
   (map->UiComponentMatch
-    {:component      Login
-     :factory        ->Login
+    {:component      LoginNavScene
+     :factory        ->LoginMenu
      :route-key      :route/login
      :route-param-fn (fn [{:keys [verify-uuid]}]
                        (when (some? verify-uuid)
