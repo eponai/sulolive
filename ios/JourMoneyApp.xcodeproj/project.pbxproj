@@ -21,7 +21,9 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		146834051AC3E58100842450 /* libReact.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 146834041AC3E56700842450 /* libReact.a */; };
+		636E325D60D921458E2C891F /* libPods-JourMoneyAppTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 63E9D5D9EB53602FF91E3D56 /* libPods-JourMoneyAppTests.a */; };
 		832341BD1AAA6AB300B99B32 /* libRCTText.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 832341B51AAA6A8300B99B32 /* libRCTText.a */; };
+		9A1669A6B77BFD1A7DEA625E /* libPods-JourMoneyApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A6728DCBFDBF10D2CE990A97 /* libPods-JourMoneyApp.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -114,6 +116,7 @@
 		00E356EE1AD99517003FC87E /* JourMoneyAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = JourMoneyAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* JourMoneyAppTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JourMoneyAppTests.m; sourceTree = "<group>"; };
+		06CDE12AD85F957A4598BEF6 /* Pods-JourMoneyApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-JourMoneyApp.release.xcconfig"; path = "Pods/Target Support Files/Pods-JourMoneyApp/Pods-JourMoneyApp.release.xcconfig"; sourceTree = "<group>"; };
 		139105B61AF99BAD00B5F7CC /* RCTSettings.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTSettings.xcodeproj; path = "../node_modules/react-native/Libraries/Settings/RCTSettings.xcodeproj"; sourceTree = "<group>"; };
 		139FDEE61B06529A00C62182 /* RCTWebSocket.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTWebSocket.xcodeproj; path = "../node_modules/react-native/Libraries/WebSocket/RCTWebSocket.xcodeproj"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* JourMoneyApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JourMoneyApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -124,8 +127,13 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = JourMoneyApp/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = JourMoneyApp/main.m; sourceTree = "<group>"; };
 		146833FF1AC3E56700842450 /* React.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = React.xcodeproj; path = "../node_modules/react-native/React/React.xcodeproj"; sourceTree = "<group>"; };
+		5F958F2005DAE27AD4EBDF55 /* Pods-JourMoneyAppTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-JourMoneyAppTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-JourMoneyAppTests/Pods-JourMoneyAppTests.release.xcconfig"; sourceTree = "<group>"; };
+		63E9D5D9EB53602FF91E3D56 /* libPods-JourMoneyAppTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-JourMoneyAppTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		78C398B01ACF4ADC00677621 /* RCTLinking.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTLinking.xcodeproj; path = "../node_modules/react-native/Libraries/LinkingIOS/RCTLinking.xcodeproj"; sourceTree = "<group>"; };
 		832341B01AAA6A8300B99B32 /* RCTText.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTText.xcodeproj; path = "../node_modules/react-native/Libraries/Text/RCTText.xcodeproj"; sourceTree = "<group>"; };
+		A6728DCBFDBF10D2CE990A97 /* libPods-JourMoneyApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-JourMoneyApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C7AC94E931E039A1F8B38358 /* Pods-JourMoneyAppTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-JourMoneyAppTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-JourMoneyAppTests/Pods-JourMoneyAppTests.debug.xcconfig"; sourceTree = "<group>"; };
+		EB9F122F54B63B7A4B211D2B /* Pods-JourMoneyApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-JourMoneyApp.debug.xcconfig"; path = "Pods/Target Support Files/Pods-JourMoneyApp/Pods-JourMoneyApp.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -133,6 +141,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				636E325D60D921458E2C891F /* libPods-JourMoneyAppTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -150,6 +159,7 @@
 				832341BD1AAA6AB300B99B32 /* libRCTText.a in Frameworks */,
 				00C302EA1ABCBA2D00DB3ED1 /* libRCTVibration.a in Frameworks */,
 				139FDEF61B0652A700C62182 /* libRCTWebSocket.a in Frameworks */,
+				9A1669A6B77BFD1A7DEA625E /* libPods-JourMoneyApp.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -251,6 +261,15 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		5A20BF4DC4BC999C7D46FE05 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A6728DCBFDBF10D2CE990A97 /* libPods-JourMoneyApp.a */,
+				63E9D5D9EB53602FF91E3D56 /* libPods-JourMoneyAppTests.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		78C398B11ACF4ADC00677621 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -291,6 +310,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* JourMoneyAppTests */,
 				83CBBA001A601CBA00E9B192 /* Products */,
+				862A0B2E65B52F974B20CA14 /* Pods */,
+				5A20BF4DC4BC999C7D46FE05 /* Frameworks */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -305,6 +326,17 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		862A0B2E65B52F974B20CA14 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				EB9F122F54B63B7A4B211D2B /* Pods-JourMoneyApp.debug.xcconfig */,
+				06CDE12AD85F957A4598BEF6 /* Pods-JourMoneyApp.release.xcconfig */,
+				C7AC94E931E039A1F8B38358 /* Pods-JourMoneyAppTests.debug.xcconfig */,
+				5F958F2005DAE27AD4EBDF55 /* Pods-JourMoneyAppTests.release.xcconfig */,
+			);
+			name = Pods;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -312,9 +344,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 00E357021AD99517003FC87E /* Build configuration list for PBXNativeTarget "JourMoneyAppTests" */;
 			buildPhases = (
+				F7E01AC78BB86977264C451E /* [CP] Check Pods Manifest.lock */,
 				00E356EA1AD99517003FC87E /* Sources */,
 				00E356EB1AD99517003FC87E /* Frameworks */,
 				00E356EC1AD99517003FC87E /* Resources */,
+				AD4640661DD0634472E8A0A0 /* [CP] Embed Pods Frameworks */,
+				7DEC88C8D3A108B344602716 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -330,10 +365,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "JourMoneyApp" */;
 			buildPhases = (
+				A42BBDC46B1E6EF2E46A3B67 /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
+				3007426832778FA63C0A70C8 /* [CP] Embed Pods Frameworks */,
+				B52AB7B07B3163A3E37921FD /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -530,6 +568,96 @@
 			shellPath = /bin/sh;
 			shellScript = "export NODE_BINARY='node --max_old_space_size=4092'\n../node_modules/react-native/packager/react-native-xcode.sh";
 		};
+		3007426832778FA63C0A70C8 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-JourMoneyApp/Pods-JourMoneyApp-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		7DEC88C8D3A108B344602716 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-JourMoneyAppTests/Pods-JourMoneyAppTests-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		A42BBDC46B1E6EF2E46A3B67 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+		AD4640661DD0634472E8A0A0 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-JourMoneyAppTests/Pods-JourMoneyAppTests-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		B52AB7B07B3163A3E37921FD /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-JourMoneyApp/Pods-JourMoneyApp-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		F7E01AC78BB86977264C451E /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -575,6 +703,7 @@
 /* Begin XCBuildConfiguration section */
 		00E356F61AD99517003FC87E /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C7AC94E931E039A1F8B38358 /* Pods-JourMoneyAppTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				FRAMEWORK_SEARCH_PATHS = (
@@ -595,6 +724,7 @@
 		};
 		00E356F71AD99517003FC87E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5F958F2005DAE27AD4EBDF55 /* Pods-JourMoneyAppTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
@@ -612,6 +742,7 @@
 		};
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EB9F122F54B63B7A4B211D2B /* Pods-JourMoneyApp.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -638,6 +769,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 06CDE12AD85F957A4598BEF6 /* Pods-JourMoneyApp.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
