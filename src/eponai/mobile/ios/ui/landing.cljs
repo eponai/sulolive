@@ -8,8 +8,8 @@
 (def logo-img (js/require "./images/cljs.png"))
 
 (def style
-  {:scene      {:margin 20 :margin-top 40 :flex 1 :justify-content "space-between"}
-   :text-input {:height 40 :border-color :gray :border-width 1 :margin-bottom 20 :padding 10}
+  {:scene      {:margin 20 :margin-top 60 :flex 1 :justify-content "space-between"}
+   :text-input {:height 40 :border-color :gray :border-width 1 :border-radius 5 :padding 10}
    :header     {:font-size 30 :font-weight "100" :margin-bottom 20 :text-align "center"}})
 
 (defui Loading
@@ -29,20 +29,7 @@
   Object
   (initLocalState [this]
     {:on-change-text #(om/update-state! this assoc :input/email %)})
-  (onForward [this]
-    (let [props (om/props this)
-          nav (.-navigator props)
-          comp ->Login]
-      (debug "Props on forward: " nav " component: " comp)
-      (.push nav #js {:title "Next"
-                      :component comp
-                      :passProps #js {:myProp "foo"}})))
 
-  (onBack [this]
-    (let [props (om/props this)
-          nav (.-navigator props)]
-      (debug "Props on forward: " nav)
-      (.pop nav)))
   (render [this]
     (let [{:keys [:input/email on-change-text]} (om/get-state this)
           {:keys [title on-forward]} (om/props this)]
@@ -57,15 +44,54 @@
                                      :onChangeText   on-change-text
                                      :placeholder    "youremail@example.com"
                                      :value          (or email "")
-                                     :autoCapitalize "none"})))
-            (touchable-highlight (opts {:style   {:background-color "#999" :padding 10 :border-radius 5}
-                                        :onPress #(.onForward this)
-                                        ;:onPress #(om/transact! this `[(signup/email ~{:input-email email
-                                        ;                                               :device      :ios})])
-                                        })
-                                 (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
-                                       "Log in"))))))
+                                     :autoCapitalize "none"}))
+                  (touchable-highlight (opts {:style   {:background-color "#999" :padding 10 :border-radius 5 :height 44 :justify-content "center"}
+                                              :onPress #(om/transact! this `[(signup/email ~{:input-email email})])})
+                                       (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
+                                             "Log in")))
+            (view nil)))))
 (def ->Login (om/factory Login))
+
+(defui LoginMenu
+  Object
+  (onForward [this]
+    (let [props (om/props this)
+          nav (.-navigator props)
+          comp ->Login]
+      (debug "Props on forward: " nav " component: " comp)
+      (.push nav #js {:title "Next"
+                      :component comp
+                      :passProps #js {:myProp "foo"}})))
+  (onBack [this]
+    (let [props (om/props this)
+          nav (.-navigator props)]
+      (debug "Props on forward: " nav)
+      (.pop nav)))
+  (render [this]
+    (view (opts {:style (:scene style)})
+          (view nil
+                (text (opts {:style (:header style)}) "Sign up / Sign in"))
+          (view nil
+                (touchable-highlight (opts {:style   {:background-color "#3b5998" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
+                                            :onPress #(.onForward this)})
+                                     (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
+                                           "Facebook"))
+                ;(touchable-highlight (opts {:style   {:background-color "#4099FF" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
+                ;                            :onPress #(.onForward this)})
+                ;                     (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
+                ;                           "Twitter"))
+                ;(touchable-highlight (opts {:style   {:background-color "#d34836" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
+                ;                            :onPress #(.onForward this)})
+                ;                     (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
+                ;                           "Google+"))
+                (text (opts {:style {:text-align "center" :margin-vertical 10}}) "or")
+                (touchable-highlight (opts {:style   {:background-color "#999" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
+                                            :onPress #(.onForward this)})
+                                     (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
+                                           "Sign up or sign in with Email")))
+          (view nil))))
+
+(def ->LoginMenu (om/factory LoginMenu))
 
 (defui LoginNavScene
   static om/IQuery
@@ -81,12 +107,11 @@
   ;  (->Login {:title  "First scene"
   ;            :on-forward #(.push nav {:title (str "scene " (inc (.-index route))) :index (inc (.-index route))})}))
   (render [this]
-    (navigator-ios {:initialRoute {:title "First" :component ->Login}
+    (navigator-ios {:initialRoute {:title ""
+                                   :component ->LoginMenu}
                     :style {:flex 1}
                     :translucent true
-                    :barTintColor "rgba(0,0,0,0)"
+                    :barTintColor "rgba(255,255,255,0)"
                     :shadowHidden true})))
-
-
-
-(def ->LoginMenu (om/factory LoginNavScene))
+  
+(def ->LoginNavScene (om/factory LoginNavScene))
