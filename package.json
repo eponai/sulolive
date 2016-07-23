@@ -6,9 +6,10 @@
     "start": "node_modules/react-native/packager/packager.sh --nonPersistent"
   },
   "dependencies": {
-    "react-native": "0.27.2",
+    "pikaday": "1.4.0",
     "react": "^15.1.0",
-    "pikaday": "1.4.0"
+    "react-native": "0.27.2",
+    "react-native-fbsdk": "^0.3.0"
   },
   "devDependencies": {
     "source-map-support": "0.3.2",
@@ -18,6 +19,5 @@
     "karma-cljs.test": "git://github.com/circleci/karma-cljs.test#077e0ac53af3506f4d11d8bd157bf9de89761a9e",
     "karma-closure": "0.1.1",
     "phantomjs": "1.9.19"
-
   }
 }

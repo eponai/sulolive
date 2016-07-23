@@ -93,7 +93,7 @@
                                                     :onPress #(.onForward this)})
                                              (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
                                                    "Facebook"))
-                        (fbLoginButton nil)
+                        (.createElement js/React fbLoginButton (clj->js (opts {:style {:height 44} :title "Sign in"})))
                         ;(touchable-highlight (opts {:style   {:background-color "#4099FF" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
                         ;                            :onPress #(.onForward this)})
                         ;                     (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
