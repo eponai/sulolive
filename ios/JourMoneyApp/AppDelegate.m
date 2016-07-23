@@ -12,6 +12,8 @@
 #import "RCTRootView.h"
 #import "RCTLinkingManager.h"
 
+#import <FBSDKCoreKit/FBSDKCoreKit.h>
+
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application openURL:(NSURL *)url
@@ -21,8 +23,13 @@
                       sourceApplication:sourceApplication annotation:annotation];
 }
 
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+  [FBSDKAppEvents activateApp];
+}
+
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+  [[FBSDKApplicationDelegate sharedInstance] application:application didFinishLaunchingWithOptions:launchOptions];
   NSURL *jsCodeLocation;
 
   /**

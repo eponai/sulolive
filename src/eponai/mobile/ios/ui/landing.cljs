@@ -5,6 +5,7 @@
             [goog.object :as gobj]
             [taoensso.timbre :refer-macros [info debug error trace]]))
 
+(def ReactNativeFBSDK (js/require "react-native-fbsdk"))
 (def logo-img (js/require "./images/world-black.png"))
 (def Dimensions (.-Dimensions js/ReactNative))
 (def StatusBarIOS (.-StatusBarIOS js/ReactNative))
@@ -74,7 +75,8 @@
   (componentDidMount [this]
     (.setStyle StatusBarIOS "light-content"))
   (render [this]
-    (let [w (.-width (.get Dimensions "window"))]
+    (let [w (.-width (.get Dimensions "window"))
+          fbLoginButton (.-LoginButton ReactNativeFBSDK)]
       (view (opts {:style {:flex 1 :margin 0 :background-color "#01213d"}})
             (image (opts {:source logo-img
                           :style  {:resizeMode "cover" :position "absolute" :tintColor "rgba(255,255,255,0.1)" :width w :align-self "center" :margin-bottom 0}}))
@@ -91,6 +93,7 @@
                                                     :onPress #(.onForward this)})
                                              (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
                                                    "Facebook"))
+                        (fbLoginButton nil)
                         ;(touchable-highlight (opts {:style   {:background-color "#4099FF" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
                         ;                            :onPress #(.onForward this)})
                         ;                     (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
@@ -104,6 +107,7 @@
                                                     :onPress #(.onForward this)})
                                              (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
                                                    "Sign up or sign in with Email")))
+                  (view nil)
                   (view nil))))))
 
 (def ->LoginMenu (om/factory LoginMenu))

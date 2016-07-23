@@ -2,6 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>fbapi</string>
+		<string>fb-messenger-api</string>
+		<string>fbauth2</string>
+		<string>fbshareextension</string>
+	</array>
+	<key>FacebookDisplayName</key>
+	<string>JourMoney</string>
+	<key>FacebookAppID</key>
+	<string>936364773079066</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
@@ -28,6 +39,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>jourmoney</string>
+				<string>fb936364773079066</string>
 			</array>
 		</dict>
 	</array>

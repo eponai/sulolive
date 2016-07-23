@@ -5,6 +5,10 @@ target 'JourMoneyApp' do
   # use_frameworks!
 
   # Pods for JourMoneyApp
+  pod 'FBSDKCoreKit'
+  pod 'FBSDKShareKit'
+  pod 'FBSDKLoginKit'
+  pod 'FBSDKMessengerShareKit'
 
   target 'JourMoneyAppTests' do
     inherit! :search_paths
