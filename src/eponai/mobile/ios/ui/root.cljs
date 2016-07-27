@@ -2,14 +2,16 @@
   (:require [eponai.client.ui :as ui :refer-macros [opts]]
             [eponai.mobile.components :refer [navigation-experimental-header
                                               navigation-experimental-header-title
-                                              navigation-experimental-card-stack]]
+                                              navigation-experimental-card-stack
+                                              navigator-ios]]
             [eponai.mobile.om-helper :as om-helper :refer-macros [with-om-vars]]
             [eponai.mobile.ios.routes.ui-handlers :as ui.routes]
             [eponai.mobile.ios.linking :as linking]
             [goog.object :as gobj]
             [medley.core :as medley]
             [om.next :as om :refer-macros [defui]]
-            [taoensso.timbre :refer-macros [debug]]))
+            [taoensso.timbre :refer-macros [debug]]
+            [eponai.mobile.ios.ui.landing :refer [->LoginMenu]]))
 
 ;(comment
 ;  (def route->transition
@@ -46,7 +48,13 @@
           factory (get-in ui.routes/route-handler->ui-component [route :factory])]
       (when-not factory
         (debug "No factory found for route: " route " props: " props))
-      (factory app-root))))
+      (navigator-ios {:initialRoute {:title     ""
+                                     :component #(->LoginMenu (om/computed {} {:on-login (fn [res]
+                                                                                           (om/transact! this `[(signin/facebook ~res)]))}))}
+                      :style        {:flex 1}
+                      :translucent  false
+                      :barTintColor "#01213d"
+                      :shadowHidden true}))))
 
 ;(comment
 ;  (render-scene [this scene-props]

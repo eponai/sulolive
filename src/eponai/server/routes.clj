@@ -151,6 +151,8 @@
   (context "/api" []
 
     (POST "/" request
+      (debug "Got request:")
+      (debug request)
       (r/response (call-parser request)))
 
     ;; TODO: We need a test which fails if a request mutates the db.

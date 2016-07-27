@@ -101,6 +101,10 @@
             (debug "Redirecting to Facebook")
             (fb/login-dialog app-id (request-url request))))))))
 
+(defn facebook-app
+  [app-id {:keys [user-id access-token]}]
+  )
+
 (defn create-account
   [send-email-fn]
   (fn [{:keys [body ::friend/auth-config ::stripe/stripe-fn] :as request}]

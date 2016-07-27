@@ -31,12 +31,12 @@
 
 (defn- inspect-token
   "Inspect the access token, will return a map with the matching app id and user id that can be used for validation."
-  [app-id secret token]
+  [access-token input-token]
   (json/read-str
     (:body (client/get
              (-> (url/url "https://graph.facebook.com/debug_token")
-                 (assoc :query {:input_token  (:access_token token)
-                                :access_token (str app-id "|" secret)})
+                 (assoc :query {:input_token  input-token
+                                :access_token access-token})
                  str)))
     :key-fn
     keyword))
@@ -49,6 +49,20 @@
                            str)))
     :key-fn
     keyword))
+
+(defn user-token-validate [app-id user-token user-id]
+  (let [{:keys [data] :as inspected} (inspect-token app-id user-token)]
+    (if (:error inspected)
+      inspected
+      ; Check if the token is valid, and the app id is matching our app id, otherwise return error.
+      (if (and (= (:app_id data)
+                  app-id)
+               (= (:user_id data)
+                  user-id)
+               (:is_valid data))
+        (assoc data :access_token user-token
+                    :fb-info-fn user-info)
+        {:error {:message "Invalid access token."}}))))
 
 (defn validated-token
   "Validate and inspect the code returned from Facebook, and return the data matching the code.
@@ -63,7 +77,7 @@
       ; After receiving the access token, we need to inspect it to find if it's valid and matching a user.
       ; This is how we can verify that the token coming back is actually for our app and matchint the same
       ; person that requested it.
-      (let [{:keys [data] :as inspected} (inspect-token app-id app-secret access-token)]
+      (let [{:keys [data] :as inspected} (inspect-token (str app-id "|" app-secret) (:access-token access-token))]
         ; If we get an error back, return the error map
         (if (:error inspected)
           inspected

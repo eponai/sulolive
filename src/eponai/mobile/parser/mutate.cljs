@@ -23,3 +23,7 @@
      ;; Response can be merged with the parser.merge function.
      {:http/call (om/query->ast `[(http/get ~{:mutation 'login/verify
                                               :endpoint verify-endpoint})])}))
+
+(defmethod mutate 'signin/facebook
+  [_ _ _]
+  {:remote true})

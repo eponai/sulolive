@@ -84,12 +84,11 @@
   (if-let [verification (pull/lookup-entity (d/db conn) [:verification/uuid (common.format/str->uuid verification-uuid)])]
     (let [expiry-time (:verification/expires-at verification)]
       ; If the verification was not used within 15 minutes, it's expired.
-      (if (or true (nil? expiry-time) (>= expiry-time (c/to-long (t/now))))
+      (if (or (nil? expiry-time) (>= expiry-time (c/to-long (t/now))))
         ;If verification status is not pending, we've already verified this or it's expired.
-        (if (or (= (:verification/status verification)
-                   :verification.status/pending)
-                (= (:verification/status verification)
-                   :verification.status/verified))
+        (if (= (:verification/status verification)
+                    :verification.status/pending)
+
           (do
             (debug "Successful verify for uuid: " (:verification/uuid verification))
             (transact-one conn [:db/add (:db/id verification) :verification/status :verification.status/verified])

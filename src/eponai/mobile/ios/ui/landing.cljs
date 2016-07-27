@@ -65,7 +65,7 @@
     (let [props (om/props this)
           nav (.-navigator props)
           comp ->Login]
-      ;(debug "Props on forward: " nav " component: " comp)
+      (debug "Props on forward: " nav)
       (.push nav #js {:title ""
                       :component comp
                       :passProps #js {:myProp "foo"}})))
@@ -77,7 +77,8 @@
   (componentDidMount [this]
     (.setBarStyle StatusBar "light-content"))
   (render [this]
-    (let [w (.-width (.get Dimensions "window"))]
+    (let [{:keys [on-login]} (om/get-computed this)
+          w (.-width (.get Dimensions "window"))]
       (view (opts {:style {:flex 1 :margin 0 :background-color "#01213d"}})
             (image (opts {:source logo-img
                           :style  {:resizeMode "cover" :position "absolute" :tintColor "rgba(255,255,255,0.5)" :width w :align-self "center" :margin-bottom 0}}))
@@ -90,10 +91,18 @@
                   (view nil)
                   (view nil
                         (text (opts {:style (:header style)}) "Sign up / Sign in")
-                        (touchable-highlight (opts {:style   {:background-color "#4267B2" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
-                                                    :onPress #(fb/login (fn [res] (debug "Login res: " res)))})
-                                             (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
-                                                   "Continue with Facebook"))
+
+                        ;; Facebook login button
+                        (touchable-highlight
+                          (opts {:style   {:background-color "#4267B2" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
+                                 :onPress #(fb/login (fn [{:keys [status] :as res}]
+                                                       (debug "Login res: " res)
+                                                       (when (and (= status ::fb/login-success)
+                                                                  (some? on-login))
+                                                         (on-login res))))})
+
+                          (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
+                                "Continue with Facebook"))
                         ;(.createElement js/React
                         ;                fbLoginButton
                         ;                (clj->js (opts {:style {:height 44} :readPermissions ["email"]})))

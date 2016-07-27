@@ -141,3 +141,7 @@
                                      {:stripe/subscription [:stripe.subscription/id]}] eid))]
     {:action (fn []
                (api/stripe-cancel env stripe-account))}))
+
+(defmethod mutate 'signin/facebook
+  [_ _ _]
+  )

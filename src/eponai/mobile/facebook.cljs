@@ -26,10 +26,12 @@
                              (.. access-token
                                  getCurrentAccessToken
                                  (then (fn [d]
-                                         (let [access-token (.. d -accessToken toString)]
+                                         (let [access-token (.. d -accessToken toString)
+                                               user-id (.. d -userID)]
                                            (when f-res
                                              (f-res {:status ::login-success
-                                                     :token  access-token})))))))))
+                                                     :access-token  access-token
+                                                     :user-id user-id})))))))))
         error-handler (fn [e]
                         (debug "Facebook login failed with error: " e)
                         (when f-res
