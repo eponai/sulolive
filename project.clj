@@ -99,7 +99,9 @@
                                    ]
 
   :aliases {"all-deps"               ^{:doc "Fetches both clj, cljs and node dependencies."}
-                                     ["do" "deps"
+                                     ["do" 
+                                      "deps"
+                                      ["shell" "pod" "install" "--project-directory=./ios"]
                                       ["shell" "npm" "install"]]
             "prod-build-ios-local"   ^{:doc "Recompile mobile code with production profile.
                                            The build runs against a local/laptop server."}
