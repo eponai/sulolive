@@ -3,7 +3,9 @@
   "interface": "om-next",
   "androidHost": "localhost",
   "iosHost": "localhost",
-  "modules": [],
+  "modules": [
+    "react-native-fbsdk"
+  ],
   "imageDirs": [
     "images"
   ],
