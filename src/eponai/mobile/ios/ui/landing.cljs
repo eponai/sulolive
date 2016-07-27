@@ -67,6 +67,14 @@
       (.push nav #js {:title ""
                       :component comp
                       :passProps #js {:myProp "foo"}})))
+  (facebookLogin [_]
+    (let [fb-login-manager (.-LoginManager ReactNativeFBSDK)]
+      (.. fb-login-manager
+          (logInWithReadPermissions #js ["public_profile"])
+          (then (fn [res] (if (.-isCancelled res)
+                            (js/alert "Login cancelled")
+                            (js/alert (str "Login successful with permissions: " (.. res -grantedPermissions toString)))))
+                (fn [e] (js/alert (str "Login failed with error: " e)))))))
   (onBack [this]
     (let [props (om/props this)
           nav (.-navigator props)]
@@ -79,7 +87,7 @@
           fbLoginButton (.-LoginButton ReactNativeFBSDK)]
       (view (opts {:style {:flex 1 :margin 0 :background-color "#01213d"}})
             (image (opts {:source logo-img
-                          :style  {:resizeMode "cover" :position "absolute" :tintColor "rgba(255,255,255,0.1)" :width w :align-self "center" :margin-bottom 0}}))
+                          :style  {:resizeMode "cover" :position "absolute" :tintColor "rgba(255,255,255,0.5)" :width w :align-self "center" :margin-bottom 0}}))
             (view (opts {:style (:scene style)})
 
                   ;(view nil
@@ -90,10 +98,12 @@
                   (view nil
                         (text (opts {:style (:header style)}) "Sign up / Sign in")
                         (touchable-highlight (opts {:style   {:background-color "#3b5998" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
-                                                    :onPress #(.onForward this)})
+                                                    :onPress #(.facebookLogin this)})
                                              (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
-                                                   "Facebook"))
-                        (.createElement js/React fbLoginButton (clj->js (opts {:style {:height 44} :title "Sign in"})))
+                                                   "Continue with Facebook"))
+                        ;(.createElement js/React
+                        ;                fbLoginButton
+                        ;                (clj->js (opts {:style {:height 44} :readPermissions ["email"]})))
                         ;(touchable-highlight (opts {:style   {:background-color "#4099FF" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
                         ;                            :onPress #(.onForward this)})
                         ;                     (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})

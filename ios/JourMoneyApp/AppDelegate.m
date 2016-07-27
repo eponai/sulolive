@@ -19,8 +19,10 @@
 - (BOOL)application:(UIApplication *)application openURL:(NSURL *)url
   sourceApplication:(NSString *)sourceApplication annotation:(id)annotation
 {
-  return [RCTLinkingManager application:application openURL:url
-                      sourceApplication:sourceApplication annotation:annotation];
+  BOOL facebookHandled = [[FBSDKApplicationDelegate sharedInstance] application:application openURL:url sourceApplication:sourceApplication annotation:annotation];
+
+  return facebookHandled ?: [RCTLinkingManager application:application openURL:url
+                                         sourceApplication:sourceApplication annotation:annotation];
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
