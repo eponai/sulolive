@@ -1,14 +1,16 @@
 (ns eponai.mobile.ios.ui.landing
-  (:require [om.next :as om :refer-macros [defui]]
-            [eponai.mobile.components :refer [view text text-input image list-view touchable-highlight navigator-ios]]
-            [eponai.client.ui :refer-macros [opts]]
-            [goog.object :as gobj]
-            [taoensso.timbre :refer-macros [info debug error trace]]))
+  (:require
+    [eponai.client.ui :refer-macros [opts]]
+    [eponai.mobile.components :refer [view text text-input image list-view touchable-highlight navigator-ios]]
+    [eponai.mobile.facebook :as fb]
+    [goog.object :as gobj]
+    [om.next :as om :refer-macros [defui]]
+    [taoensso.timbre :refer-macros [info debug error trace]]))
 
-(def ReactNativeFBSDK (js/require "react-native-fbsdk"))
+
 (def logo-img (js/require "./images/world-black.png"))
 (def Dimensions (.-Dimensions js/ReactNative))
-(def StatusBarIOS (.-StatusBarIOS js/ReactNative))
+(def StatusBar (.-StatusBar js/ReactNative))
 (def style
   {:scene      {:margin 20 :justify-content "space-between" :flex 1}
    :text-input {:height 40 :border-color :gray :border-width 1 :border-radius 5 :padding 10 :background-color :white :margin-bottom 20}
@@ -67,24 +69,15 @@
       (.push nav #js {:title ""
                       :component comp
                       :passProps #js {:myProp "foo"}})))
-  (facebookLogin [_]
-    (let [fb-login-manager (.-LoginManager ReactNativeFBSDK)]
-      (.. fb-login-manager
-          (logInWithReadPermissions #js ["public_profile"])
-          (then (fn [res] (if (.-isCancelled res)
-                            (js/alert "Login cancelled")
-                            (js/alert (str "Login successful with permissions: " (.. res -grantedPermissions toString)))))
-                (fn [e] (js/alert (str "Login failed with error: " e)))))))
   (onBack [this]
     (let [props (om/props this)
           nav (.-navigator props)]
       ;(debug "Props on forward: " nav)
       (.pop nav)))
   (componentDidMount [this]
-    (.setStyle StatusBarIOS "light-content"))
+    (.setBarStyle StatusBar "light-content"))
   (render [this]
-    (let [w (.-width (.get Dimensions "window"))
-          fbLoginButton (.-LoginButton ReactNativeFBSDK)]
+    (let [w (.-width (.get Dimensions "window"))]
       (view (opts {:style {:flex 1 :margin 0 :background-color "#01213d"}})
             (image (opts {:source logo-img
                           :style  {:resizeMode "cover" :position "absolute" :tintColor "rgba(255,255,255,0.5)" :width w :align-self "center" :margin-bottom 0}}))
@@ -97,8 +90,8 @@
                   (view nil)
                   (view nil
                         (text (opts {:style (:header style)}) "Sign up / Sign in")
-                        (touchable-highlight (opts {:style   {:background-color "#3b5998" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
-                                                    :onPress #(.facebookLogin this)})
+                        (touchable-highlight (opts {:style   {:background-color "#4267B2" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
+                                                    :onPress #(fb/login (fn [res] (debug "Login res: " res)))})
                                              (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
                                                    "Continue with Facebook"))
                         ;(.createElement js/React
