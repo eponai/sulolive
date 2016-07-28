@@ -108,22 +108,27 @@
 
   Returns an authentication map on successful auth, otherwise nil."
   [app-id app-secret]
-  (fn [{:keys [login-parser ::friend/auth-config body] :as request}]
+  (fn [{:keys [login-parser ::friend/auth-config body facebook-token-validator] :as request}]
     (let [{:keys [login-mutation-uri credential-fn]} auth-config]
+      (debug "Got request: " request)
+
       ;; Check conditions for performing this workflow and skip if not met:
       (when (and
               ; Cond 1) URL path matches the url for authenticating the user, /api
               (= (path-info request)
                  login-mutation-uri)
               ; Cond 2) Login parser has bees assoc'ed in the request to fetch login params from the mutation with.
-              (some? login-parser))
+              (some? login-parser)
+              ; Cond 3) A facebook validator function is assoc'ed to the request to validate the fb token.
+              (some? facebook-token-validator))
         (let [parsed-res (login-parser {} body)
               fb-params (get parsed-res 'signin/facebook)]  ; Get params from the 'signin/facebook mutation result
 
-          ; Cond 3) For facebook login workflow we need the user-id and access-token for the user trying to auth.
+          (debug "Parsed mutation")
+          ; Cond 4) For facebook login workflow we need the user-id and access-token for the user trying to auth.
           ; If nil we're probably doing some other auth type, so skip this workflow.
-          (when (some? fb-params)
-            (let [validated-token (fb/user-token-validate app-id app-secret fb-params)]
+          (when (and (some? fb-params))
+            (let [validated-token (facebook-token-validator app-id app-secret fb-params)]
               (if (:error validated-token)
                 (do
                   (debug "Facebook login Error")

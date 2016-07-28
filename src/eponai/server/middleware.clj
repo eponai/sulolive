@@ -15,6 +15,7 @@
             [eponai.server.auth.workflows :as workflows]
             [taoensso.timbre :refer [debug error trace]]
             [eponai.server.email :as email]
+            [eponai.server.external.facebook :as fb]
             [om.next.server :as om])
 
   (:import (clojure.lang ExceptionInfo)
@@ -122,14 +123,17 @@
 ;;TODO: fix this ffs
 (defn wrap-login-parser [handler]
   (fn [request]
-    ;(let [parser (om/parser
-    ;               {:mutate (fn [_ k p]
-    ;                          (debug "Mutating shit")
-    ;                          (if (= k 'signin/facebook)
-    ;                            {:value p}))
-    ;                :read   (fn [_ _ _])})]
-    ;
-    ;  (handler (assoc request :login-parser parser))
-    ;  )
-    (handler request)
+    (let [parser (om/parser
+                   {:mutate (fn [_ k p]
+                              (debug "Mutating shit")
+                              (if (= k 'signin/facebook)
+                                {:value p}))
+                    :read   (fn [_ _ _])})]
+
+      (handler (assoc request
+                 :login-parser parser
+                 :facebook-token-validator (fn [app-id app-secret fb-params]
+                                             (fb/user-token-validate app-id app-secret fb-params))))
+      )
+    ;(handler request)
     ))
