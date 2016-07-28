@@ -50,19 +50,25 @@
     :key-fn
     keyword))
 
-(defn user-token-validate [app-id user-token user-id]
-  (let [{:keys [data] :as inspected} (inspect-token app-id user-token)]
-    (if (:error inspected)
-      inspected
-      ; Check if the token is valid, and the app id is matching our app id, otherwise return error.
-      (if (and (= (:app_id data)
-                  app-id)
-               (= (:user_id data)
-                  user-id)
-               (:is_valid data))
-        (assoc data :access_token user-token
-                    :fb-info-fn user-info)
-        {:error {:message "Invalid access token."}}))))
+(defn user-token-validate [app-id app-secret {:keys [access-token user-id]}]
+  (if (and (some? access-token) (some? user-id))
+    (let [{:keys [data] :as inspected} (inspect-token (str app-id "|" app-secret) access-token)]
+      (if (:error inspected)
+        inspected
+        ; Check if the token is valid, and the app id is matching our app id, otherwise return error.
+        (if (and
+              ; Cond 1) The app ID for this token matches our app's appID with Facebook.
+              (= (:app_id data)
+                 app-id)
+              ; Cond 2) The user ID for this token matches the user id that requested the auth.
+              (= (:user_id data)
+                 user-id)
+              ; Cond 3) The access token is still valid with Facebook (i.e. not expired or otherwise invalidated)
+              (:is_valid data))
+          (assoc data :access_token access-token
+                      :fb-info-fn user-info)
+          {:error {:message "Invalid access token."}})))
+    {:error {:message "Invalid access token."}}))
 
 (defn validated-token
   "Validate and inspect the code returned from Facebook, and return the data matching the code.

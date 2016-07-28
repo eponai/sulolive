@@ -27,6 +27,7 @@
   (-> (routes api-routes site-routes)
       m/wrap-post-middlewares
       (m/wrap-authenticate conn)
+      m/wrap-login-parser
       (cond-> @in-production? m/wrap-error)
       m/wrap-format
       (m/wrap-state {::m/conn                     conn

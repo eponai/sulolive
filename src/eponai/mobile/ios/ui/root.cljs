@@ -49,8 +49,9 @@
       (when-not factory
         (debug "No factory found for route: " route " props: " props))
       (navigator-ios {:initialRoute {:title     ""
-                                     :component #(->LoginMenu (om/computed {} {:on-login (fn [res]
-                                                                                           (om/transact! this `[(signin/facebook ~res)]))}))}
+                                     :component ->LoginMenu
+                                     :passProps {:on-login (fn [res]
+                                                             (om/transact! this `[(signin/facebook ~res)]))}}
                       :style        {:flex 1}
                       :translucent  false
                       :barTintColor "#01213d"

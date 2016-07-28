@@ -9,7 +9,9 @@
     [eponai.server.api :as api]
     [eponai.common.database.pull :as p]
     [datomic.api :as d]
-    [eponai.common.format :as common.format]))
+    [eponai.common.format :as common.format]
+    [environ.core :refer [env]]
+    [eponai.server.external.facebook :as fb]))
 
 ;; ------------------- Transaction --------------------
 
@@ -143,5 +145,9 @@
                (api/stripe-cancel env stripe-account))}))
 
 (defmethod mutate 'signin/facebook
-  [_ _ _]
-  )
+  [_ _ {:keys [access-token user-id]}]
+  (let [fb-app-id (env :facebook-app-id)
+        fb-app-secret (env :facebook-app-secret)
+        validated-token (fb/user-token-validate fb-app-id fb-app-secret access-token user-id)]
+    (debug "Validated Facebook token:")
+    (debug validated-token)))

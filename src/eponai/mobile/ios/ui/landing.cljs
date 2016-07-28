@@ -65,7 +65,7 @@
     (let [props (om/props this)
           nav (.-navigator props)
           comp ->Login]
-      (debug "Props on forward: " nav)
+      (debug "Props on forward: " props)
       (.push nav #js {:title ""
                       :component comp
                       :passProps #js {:myProp "foo"}})))
@@ -77,7 +77,7 @@
   (componentDidMount [this]
     (.setBarStyle StatusBar "light-content"))
   (render [this]
-    (let [{:keys [on-login]} (om/get-computed this)
+    (let [{:keys [on-login]} (om/props this)
           w (.-width (.get Dimensions "window"))]
       (view (opts {:style {:flex 1 :margin 0 :background-color "#01213d"}})
             (image (opts {:source logo-img

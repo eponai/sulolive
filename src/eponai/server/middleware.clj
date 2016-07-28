@@ -14,7 +14,8 @@
             [eponai.server.auth.credentials :as ac]
             [eponai.server.auth.workflows :as workflows]
             [taoensso.timbre :refer [debug error trace]]
-            [eponai.server.email :as email])
+            [eponai.server.email :as email]
+            [om.next.server :as om])
 
   (:import (clojure.lang ExceptionInfo)
            (datomic.query EntityMap)))
@@ -95,12 +96,16 @@
              :workflows            [(workflows/form)
                                     (workflows/create-account email/send-verification-email)
                                     (workflows/facebook (env :facebook-app-id)
-                                                        (env :facebook-app-secret))]
+                                                        (env :facebook-app-secret))
+                                    (workflows/facebook-mobile (env :facebook-app-id)
+                                                               (env :facebook-app-secret))]
+             ;:uri "/api"
              :login-uri            "/signup"
              :default-landing-uri  "/app"
              :fb-login-uri         "/api/login/fb"
              :email-login-uri      "/api/login/email"
-             :activate-account-uri "/api/login/create"}))
+             :activate-account-uri "/api/login/create"
+             :login-mutation-uri "/api"}))
 
 (defn config []
   {:pre [(contains? env :session-cookie-store-key)
@@ -113,3 +118,18 @@
 
 (defn wrap-defaults [handler]
   (r/wrap-defaults handler (config)))
+
+;;TODO: fix this ffs
+(defn wrap-login-parser [handler]
+  (fn [request]
+    ;(let [parser (om/parser
+    ;               {:mutate (fn [_ k p]
+    ;                          (debug "Mutating shit")
+    ;                          (if (= k 'signin/facebook)
+    ;                            {:value p}))
+    ;                :read   (fn [_ _ _])})]
+    ;
+    ;  (handler (assoc request :login-parser parser))
+    ;  )
+    (handler request)
+    ))

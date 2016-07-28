@@ -25,5 +25,5 @@
                                               :endpoint verify-endpoint})])}))
 
 (defmethod mutate 'signin/facebook
-  [_ _ _]
-  {:remote true})
+  [{:keys [ast]} _ _]
+  {:remote (assoc ast :test :hej)})

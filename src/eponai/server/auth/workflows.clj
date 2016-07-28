@@ -101,9 +101,39 @@
             (debug "Redirecting to Facebook")
             (fb/login-dialog app-id (request-url request))))))))
 
-(defn facebook-app
-  [app-id {:keys [user-id access-token]}]
-  )
+(defn facebook-mobile
+  "Workflow for login with Facebook via the om.next structure.
+  A parser is assoc'ed to the request if the mutation matches a login mutation. The parser is used here to fetch
+  params from the mutation and perform the auth using those params.
+
+  Returns an authentication map on successful auth, otherwise nil."
+  [app-id app-secret]
+  (fn [{:keys [login-parser ::friend/auth-config body] :as request}]
+    (let [{:keys [login-mutation-uri credential-fn]} auth-config]
+      ;; Check conditions for performing this workflow and skip if not met:
+      (when (and
+              ; Cond 1) URL path matches the url for authenticating the user, /api
+              (= (path-info request)
+                 login-mutation-uri)
+              ; Cond 2) Login parser has bees assoc'ed in the request to fetch login params from the mutation with.
+              (some? login-parser))
+        (let [parsed-res (login-parser {} body)
+              fb-params (get parsed-res 'signin/facebook)]  ; Get params from the 'signin/facebook mutation result
+
+          ; Cond 3) For facebook login workflow we need the user-id and access-token for the user trying to auth.
+          ; If nil we're probably doing some other auth type, so skip this workflow.
+          (when (some? fb-params)
+            (let [validated-token (fb/user-token-validate app-id app-secret fb-params)]
+              (if (:error validated-token)
+                (do
+                  (debug "Facebook login Error")
+                  nil)
+                (do
+                  (debug "Facebook Successful login")
+                  ;; Successful login, return authentication map.
+                  (workflows/make-auth (credential-fn
+                                         (with-meta validated-token
+                                                    {::friend/workflow :facebook}))))))))))))
 
 (defn create-account
   [send-email-fn]
