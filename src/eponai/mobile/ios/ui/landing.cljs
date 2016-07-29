@@ -59,25 +59,39 @@
                   (view nil))))))
 (def ->Login (om/factory Login))
 
+(defui LoggedIn
+  Object
+  (render [this]
+    (let [on-logout (.-onLogout (om/props this))]
+      (view nil
+            (text nil "Is logged in")
+
+            (touchable-highlight
+              (opts {:style   {:background-color "#4267B2" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
+                     :onPress on-logout})
+
+              (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
+                    "Sign Out"))))))
+
+(def ->LoggedIn (om/factory LoggedIn))
+
 (defui LoginMenu
   Object
   (onForward [this]
     (let [props (om/props this)
           nav (.-navigator props)
           comp ->Login]
-      (debug "Props on forward: " props)
       (.push nav #js {:title ""
                       :component comp
                       :passProps #js {:myProp "foo"}})))
   (onBack [this]
     (let [props (om/props this)
           nav (.-navigator props)]
-      ;(debug "Props on forward: " nav)
       (.pop nav)))
   (componentDidMount [this]
     (.setBarStyle StatusBar "light-content"))
   (render [this]
-    (let [{:keys [on-login]} (om/props this)
+    (let [on-login (.-onLogin (om/props this))
           w (.-width (.get Dimensions "window"))]
       (view (opts {:style {:flex 1 :margin 0 :background-color "#01213d"}})
             (image (opts {:source logo-img
@@ -88,7 +102,7 @@
                   ;      (text (opts {:style (:header style)}) "Sign up / Sign in"))
 
                   ;(text (opts {:style (:header style)}) "JourMoney")
-                  (view nil)
+                  (view nil (text nil (str "Logged in: ")))
                   (view nil
                         (text (opts {:style (:header style)}) "Sign up / Sign in")
 
@@ -97,6 +111,7 @@
                           (opts {:style   {:background-color "#4267B2" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
                                  :onPress #(fb/login (fn [{:keys [status] :as res}]
                                                        (debug "Login res: " res)
+                                                       (debug "on-login " (om/props this))
                                                        (when (and (= status ::fb/login-success)
                                                                   (some? on-login))
                                                          (on-login res))))})

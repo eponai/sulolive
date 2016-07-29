@@ -11,7 +11,7 @@
             [medley.core :as medley]
             [om.next :as om :refer-macros [defui]]
             [taoensso.timbre :refer-macros [debug]]
-            [eponai.mobile.ios.ui.landing :refer [->LoginMenu]]))
+            [eponai.mobile.ios.ui.landing :refer [->LoginMenu ->LoggedIn]]))
 
 ;(comment
 ;  (def route->transition
@@ -32,7 +32,8 @@
      :user/current
      {:query/app [:ui.component.app/route]}
      {:routing/app-root (medley/map-vals #(->> % :component om/get-query)
-                                         ui.routes/route-key->root-handler)}])
+                                         ui.routes/route-key->root-handler)}
+     {:query/auth [:ui.singleton.auth/user]}])
   Object
   (initLocalState [this]
     ;; Need to pass the identical function to add/removeEventListener.
@@ -43,19 +44,35 @@
     (.removeEventListener linking/linking "url", (-> this om/get-state :url-handler)))
 
   (render [this]
-    (let [{:keys [routing/app-root] :as props} (om/props this)
+    (let [{:keys [routing/app-root
+                  query/auth] :as props} (om/props this)
+          current-user (:ui.singleton.auth/user auth)
           route (props->route props)
           factory (get-in ui.routes/route-handler->ui-component [route :factory])]
       (when-not factory
         (debug "No factory found for route: " route " props: " props))
-      (navigator-ios {:initialRoute {:title     ""
-                                     :component ->LoginMenu
-                                     :passProps {:on-login (fn [res]
-                                                             (om/transact! this `[(signin/facebook ~res)]))}}
-                      :style        {:flex 1}
-                      :translucent  false
-                      :barTintColor "#01213d"
-                      :shadowHidden true}))))
+      (debug "Login menu query: " props)
+      (let [session? (some? current-user)
+            comp (if session?
+                   ->LoggedIn
+                   ->LoginMenu)
+            comp-props (if session?
+                         {:onLogout (fn [res]
+                                      (om/transact! this `[(session/signout)
+                                                           :user/current
+                                                           :query/auth]))}
+                         {:onLogin (fn [res]
+                                     (om/transact! this `[(signin/facebook ~res)
+                                                          :user/current
+                                                          :query/auth]))})]
+        (debug "component: " comp " with props: " comp-props)
+        (navigator-ios {:initialRoute {:title     ""
+                                       :component comp
+                                       :passProps comp-props}
+                        :style        {:flex 1}
+                        :translucent  false
+                        :barTintColor "#01213d"
+                        :shadowHidden true})))))
 
 ;(comment
 ;  (render-scene [this scene-props]

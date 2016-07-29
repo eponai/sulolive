@@ -28,6 +28,7 @@
       m/wrap-post-middlewares
       (m/wrap-authenticate conn)
       m/wrap-login-parser
+      m/wrap-logout
       (cond-> @in-production? m/wrap-error)
       m/wrap-format
       (m/wrap-state {::m/conn                     conn

@@ -22,10 +22,14 @@
 
 (defmethod read :user/current
   [{:keys [db db-since user-uuid]} _ _]
-  {:value (when user-uuid
-            (server.pull/pull-one-since db db-since [:db/id :user/uuid {:user/currency [:db/id :currency/code]}]
+  {:value (if user-uuid
+            (server.pull/pull-one-since db db-since [:db/id
+                                                     :user/uuid
+                                                     :user/status
+                                                     {:user/currency [:db/id :currency/code]}]
                                         {:where   '[[?e :user/uuid ?user-uuid]]
-                                         :symbols {'?user-uuid user-uuid}}))})
+                                         :symbols {'?user-uuid user-uuid}})
+            {:error :user-not-found})})
 
 ;; ############## App ################
 
@@ -112,8 +116,12 @@
                                       {:where '[[?e :currency/code]]})})
 
 (defmethod read :query/current-user
-  [{:keys [db db-since query user-uuid]} _ _]
-  {:value (server.pull/pull-one-since db db-since query {:where [['?e :user/uuid user-uuid]]})})
+  [{:keys [db db-since query user-uuid auth]} _ _]
+  (debug "Auth: " auth)
+  (debug "User uuid " user-uuid)
+  {:value (if user-uuid
+            (server.pull/pull-one-since db db-since query {:where [['?e :user/uuid user-uuid]]})
+            {:error :user-not-found})})
 
 (defmethod read :query/stripe
   [{:keys [db db-since query user-uuid]} _ _]

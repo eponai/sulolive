@@ -121,10 +121,10 @@
               (some? login-parser)
               ; Cond 3) A facebook validator function is assoc'ed to the request to validate the fb token.
               (some? facebook-token-validator))
-        (let [parsed-res (login-parser {} body)
-              fb-params (get parsed-res 'signin/facebook)]  ; Get params from the 'signin/facebook mutation result
+        (let [parsed-res (login-parser {} (:query body))
+              fb-params (:result (get parsed-res 'signin/facebook))] ; Get params from the 'signin/facebook mutation result
 
-          (debug "Parsed mutation")
+          (debug "Parsed mutation: " parsed-res)
           ; Cond 4) For facebook login workflow we need the user-id and access-token for the user trying to auth.
           ; If nil we're probably doing some other auth type, so skip this workflow.
           (when (and (some? fb-params))
@@ -133,12 +133,16 @@
                 (do
                   (debug "Facebook login Error")
                   nil)
-                (do
-                  (debug "Facebook Successful login")
-                  ;; Successful login, return authentication map.
-                  (workflows/make-auth (credential-fn
-                                         (with-meta validated-token
-                                                    {::friend/workflow :facebook}))))))))))))
+                (try
+                  (let [user-record (credential-fn
+                                      (with-meta validated-token
+                                                 {::friend/workflow :facebook}))]
+                    (debug "Facebook Successful login")
+                    ;; Successful login, return authentication map.
+                    (workflows/make-auth user-record {::friend/workflow :facebook
+                                                      ::friend/redirect-on-auth? false}))
+                  (catch ExceptionInfo e
+                    (throw e)))))))))))
 
 (defn create-account
   [send-email-fn]

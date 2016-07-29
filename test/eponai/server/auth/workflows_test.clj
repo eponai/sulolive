@@ -29,11 +29,11 @@
           conn (new-db (vals account))
           credential-fn (fn [input] (a/auth-map conn input))
           workflow (w/facebook-mobile nil nil)
-          res (workflow {:login-parser login-parser
-                         :path-info "/api"
-                         :body [`(signin/facebook ~{:user-id id :access-token access-token})]
-                         ::friend/auth-config {:credential-fn credential-fn
-                                               :login-mutation-uri "/api"}
+          res (workflow {:login-parser             login-parser
+                         :path-info                "/api"
+                         :body                     {:query [`(signin/facebook ~{:user-id id :access-token access-token})]}
+                         ::friend/auth-config      {:credential-fn      credential-fn
+                                                    :login-mutation-uri "/api"}
                          :facebook-token-validator (fn [_ _ p]
                                                      {:user_id id :access_token access-token :fb-info-fn (fn [& args] {:email email})})})
           db-user (p/lookup-entity (d/db conn) [:user/email email])]

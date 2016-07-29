@@ -43,3 +43,11 @@
                     (m/transact db [(mutate/set-route-tx (if login-verified? :route/transactions :route/login))
                                     {:ui/singleton                         :ui.singleton/configuration
                                      :ui.singleton.configuration/logged-in login-verified?}]))))
+
+(defmethod mobile-merge 'signin/facebook
+  [db k params]
+  (debug "Merging " k " with params: " params)
+  db
+  (let [login-verified? (get-in params [:result :auth])]
+    (m/transact db {:ui/singleton :ui.singleton/configuration
+                    :ui.singleton.configuration/logged-in login-verified?})))

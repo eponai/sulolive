@@ -145,9 +145,13 @@
                (api/stripe-cancel env stripe-account))}))
 
 (defmethod mutate 'signin/facebook
-  [_ _ {:keys [access-token user-id]}]
-  (let [fb-app-id (env :facebook-app-id)
-        fb-app-secret (env :facebook-app-secret)
-        validated-token (fb/user-token-validate fb-app-id fb-app-secret access-token user-id)]
-    (debug "Validated Facebook token:")
-    (debug validated-token)))
+  [{:keys [auth]} _ {:keys [access-token user-id] :as p}]
+  (debug "signin/facebook with params: " p)
+  {:action (fn []
+             (debug "signin-facebook returning auth: " auth)
+             {:auth (some? auth)})})
+
+(defmethod mutate 'session/signout
+  [_ _ p]
+  (debug "session/signout with params: " p)
+  {:action (fn [])})

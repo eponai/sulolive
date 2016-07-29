@@ -39,8 +39,11 @@
   Sends to the user-api when the user is logged in, public api otherwise."
   [conn]
   (fn [query]
-    (let [conf (d/entity (d/db conn) [:ui/singleton :ui.singleton/configuration])
-          remote-fn (backend/post-to-url (if (:ui.singleton.configuration/logged-in conf)
+    (let [auth (d/entity (d/db conn) [:ui/singleton :ui.singleton/auth])
+          current-user (:ui.singleton.auth/user auth)
+          conf (d/entity (d/db conn) [:ui/singleton :ui.singleton/configuration])
+          _ (debug "Remote for current-user status: " (:user/status current-user))
+          remote-fn (backend/post-to-url (if (= (:user/status current-user) :user.status/active)
                                            (:ui.singleton.configuration.endpoints/user-api conf)
                                            (:ui.singleton.configuration.endpoints/api conf)))]
       (remote-fn query))))

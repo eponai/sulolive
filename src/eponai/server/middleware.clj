@@ -125,15 +125,37 @@
   (fn [request]
     (let [parser (om/parser
                    {:mutate (fn [_ k p]
-                              (debug "Mutating shit")
-                              (if (= k 'signin/facebook)
-                                {:value p}))
+                              {:action (fn []
+                                         (debug "Mutating shit")
+                                         (cond (= k 'signin/facebook)
+                                               p))})
                     :read   (fn [_ _ _])})]
-
       (handler (assoc request
                  :login-parser parser
                  :facebook-token-validator (fn [app-id app-secret fb-params]
-                                             (fb/user-token-validate app-id app-secret fb-params))))
-      )
-    ;(handler request)
-    ))
+                                             (fb/user-token-validate app-id app-secret fb-params)))))))
+
+(defn wrap-logout [handler]
+  (fn [req]
+    (let [parser (om/parser
+                   {:mutate (fn [_ k p]
+                              {:action (fn []
+                                         (debug "Mutating shit")
+                                         (cond (= k 'session/signout)
+                                               {:signout true}))})
+                    :read   (fn [_ _ _])})
+          parsed-res (parser {} (:query (:body req)))
+          signout? (get-in parsed-res ['session/signout :result :signout])
+
+          use-handler (if signout? (friend/logout handler) handler)]
+      (debug "Use handler for parsed res: " parsed-res)
+      (debug "Use handler for signout: " signout?)
+      (debug "Use handler for modified req: " (->> (:session req)
+                                                   (assoc req :session)
+                                                   friend/logout*))
+      (debug " ")
+      (use-handler (if signout?
+                     (->> (:session req)
+                          (assoc req :session)
+                          friend/logout*)
+                     req)))))

@@ -42,10 +42,12 @@
       ; Else create a new account without an email, the user will provide one when creating an account.
       (transact-map conn (f/user-account-map nil opts)))))
 
-(defn auth-map-for-db-user [user]
+(def user-roles-active #{::user})
+(def user-roles-inactive #{::user-inactive})
+(defn auth-map-for-db-user [user roles]
   {:identity (:db/id user)
    :username (:user/uuid user)
-   :roles    #{::user}})
+   :roles    roles})
 
 (defmulti auth-map
           (fn [_ input] (::friend/workflow (meta input))))
@@ -56,7 +58,7 @@
     (let [user (d/entity (d/db conn) (:db/id (api/verify-email conn uuid)))]
       (if (= (:user/status user)
              :user.status/active)
-        (auth-map-for-db-user user)
+        (auth-map-for-db-user user user-roles-active)
         (throw (user-not-activated-error :default user))))
     (throw (auth-error :default
                        ::h/unprocessable-entity
@@ -76,8 +78,10 @@
         ;; Check that the user is activated, if not throw exception.
         (if (= (:user/status db-user)
                :user.status/active)
-          (auth-map-for-db-user db-user)
-          (throw (user-not-activated-error :facebook db-user))))
+          (auth-map-for-db-user db-user user-roles-active)
+          (auth-map-for-db-user db-user user-roles-inactive)
+          ;(throw (user-not-activated-error :facebook db-user))
+          ))
 
       ; If we don't have a facebook user in the DB, check if there's an accout with a matching email.
       (let [{:keys [email picture]} (fb-info-fn user_id access_token)]
@@ -94,8 +98,10 @@
           ;; Again, check that the linked user is activated, and if not we throw an excaption to do so.
           (if (= (:user/status user)
                  :user.status/active)
-            (auth-map-for-db-user user)
-            (throw (user-not-activated-error :facebook user))))))
+            (auth-map-for-db-user user user-roles-active)
+            (auth-map-for-db-user user user-roles-inactive)
+            ;(throw (user-not-activated-error :facebook user))
+            ))))
     (throw (auth-error :facebook ::h/unprocessable-entity
                        {:code          :missing-required-fields
                         :message       "Missing required keys for authentication."
@@ -108,7 +114,7 @@
   (let [{:keys [user-uuid user-email]} body]
     (if (and user-uuid user-email)
       (let [user (api/activate-account conn user-uuid user-email {:stripe-fn stripe-fn})]
-        (auth-map-for-db-user user))
+        (auth-map-for-db-user user user-roles-active))
       (throw (auth-error :activate-account ::h/unprocessable-entity
                          {:code          :missing-required-fields
                           :message       "Missing required keys for authentication."
