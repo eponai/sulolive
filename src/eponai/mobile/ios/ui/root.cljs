@@ -11,7 +11,7 @@
             [medley.core :as medley]
             [om.next :as om :refer-macros [defui]]
             [taoensso.timbre :refer-macros [debug]]
-            [eponai.mobile.ios.ui.landing :refer [->LoginMenu ->LoggedIn]]))
+            [eponai.mobile.ios.ui.login :refer [->LoginMenu ->LoggedIn ->ActivateAccount ActivateAccount]]))
 
 ;(comment
 ;  (def route->transition
@@ -33,33 +33,46 @@
      {:query/app [:ui.component.app/route]}
      {:routing/app-root (medley/map-vals #(->> % :component om/get-query)
                                          ui.routes/route-key->root-handler)}
-     {:query/auth [:ui.singleton.auth/user]}])
+     {:query/auth [{:ui.singleton.auth/user [{:user/status [:db/ident]}
+                                             :user/email]}]}
+     ;{:proxy/activate (om/get-query ActivateAccount)}
+     ])
   Object
-  (initLocalState [this]
-    ;; Need to pass the identical function to add/removeEventListener.
-    {:url-handler (fn [event] (linking/load-url! this (gobj/get event "url")))})
-  (componentDidMount [this]
-    (.addEventListener linking/linking "url" (-> this om/get-state :url-handler)))
-  (componentWillUnmount [this]
-    (.removeEventListener linking/linking "url", (-> this om/get-state :url-handler)))
-  (componentDidUpdate [this _ _]
+  (navigate [this]
     (let [nav (om/react-ref this "navigator")
-          {:keys [query/auth]} (om/props this)
+          {:keys [query/auth proxy/activate]} (om/props this)
           current-user (:ui.singleton.auth/user auth)]
-      (if (some? current-user)
-        (.replace nav #js {:title     ""
-                           :component ->LoggedIn
-                           :passProps #js {:onLogout (fn []
-                                                       (om/transact! this `[(session/signout)
-                                                                            :user/current
-                                                                            :query/auth]))}})
+      (if-let [user-status (get-in current-user [:user/status :db/ident])]
+        (if (= user-status :user.status/new)
+          (.replace nav #js {:title     ""
+                             :component ->ActivateAccount
+                             :passProps #js {:user current-user
+                                             :onLogout (fn []
+                                                         (om/transact! this `[(session/signout)
+                                                                              :user/current
+                                                                              :query/auth]))}})
+          (.replace nav #js {:title     ""
+                             :component ->LoggedIn
+                             :passProps #js {:onLogout (fn []
+                                                         (om/transact! this `[(session/signout)
+                                                                              :user/current
+                                                                              :query/auth]))}}))
         (.replace nav #js {:title     ""
                            :component ->LoginMenu
                            :passProps #js {:onLogin (fn [res]
                                                       (om/transact! this `[(signin/facebook ~res)
                                                                            :user/current
                                                                            :query/auth]))}}))))
-
+  (initLocalState [this]
+    ;; Need to pass the identical function to add/removeEventListener.
+    {:url-handler (fn [event] (linking/load-url! this (gobj/get event "url")))})
+  (componentDidMount [this]
+    (.addEventListener linking/linking "url" (-> this om/get-state :url-handler))
+    (.navigate this))
+  (componentWillUnmount [this]
+    (.removeEventListener linking/linking "url", (-> this om/get-state :url-handler)))
+  (componentDidUpdate [this _ _]
+    (.navigate this))
   (render [this]
     (let [{:keys [routing/app-root
                   query/auth] :as props} (om/props this)
@@ -80,18 +93,3 @@
                       :translucent  false
                       :barTintColor "#01213d"
                       :shadowHidden true}))))
-
-;(comment
-;  (render-scene [this scene-props]
-;                (with-om-vars
-;                  this
-;                  ))
-;  (navigation-experimental-card-stack {
-;                                       :onNavigate      #(om/transact! this `[(root/navigate-pop {:value %})])
-;                                       :renderOverlay   #(header %)
-;                                       :navigationState (-> (om/props this)
-;                                                            :query/root
-;                                                            :ui.component.root/navigation-state
-;                                                            clj->js)
-;                                       ;; :on-did-focus     #(.forceUpdate this)
-;                                       :renderScene     #(.render-scene this %)}))

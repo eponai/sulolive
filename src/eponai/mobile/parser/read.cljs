@@ -26,7 +26,7 @@
   ;(debug "Read Pulled from state: " (p/pull db ['*] [:ui/singleton :ui.singleton/auth]))
   {:value (let [auth (p/one-with db {:where '[[?e :ui/singleton :ui.singleton/auth]]})]
             (when auth
-              (p/pull db [:ui.singleton.auth/user] auth)))})
+              (p/pull db query auth)))})
 
 (defmethod read :query/messages
   [{:keys [db query]} k {:keys [mutation-uuids]}]

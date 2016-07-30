@@ -25,7 +25,8 @@
   {:value (if user-uuid
             (server.pull/pull-one-since db db-since [:db/id
                                                      :user/uuid
-                                                     :user/status
+                                                     :user/email
+                                                     {:user/status [:db/ident]}
                                                      {:user/currency [:db/id :currency/code]}]
                                         {:where   '[[?e :user/uuid ?user-uuid]]
                                          :symbols {'?user-uuid user-uuid}})
