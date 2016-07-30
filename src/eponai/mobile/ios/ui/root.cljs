@@ -42,6 +42,23 @@
     (.addEventListener linking/linking "url" (-> this om/get-state :url-handler)))
   (componentWillUnmount [this]
     (.removeEventListener linking/linking "url", (-> this om/get-state :url-handler)))
+  (componentDidUpdate [this _ _]
+    (let [nav (om/react-ref this "navigator")
+          {:keys [query/auth]} (om/props this)
+          current-user (:ui.singleton.auth/user auth)]
+      (if (some? current-user)
+        (.replace nav #js {:title     ""
+                           :component ->LoggedIn
+                           :passProps #js {:onLogout (fn []
+                                                       (om/transact! this `[(session/signout)
+                                                                            :user/current
+                                                                            :query/auth]))}})
+        (.replace nav #js {:title     ""
+                           :component ->LoginMenu
+                           :passProps #js {:onLogin (fn [res]
+                                                      (om/transact! this `[(signin/facebook ~res)
+                                                                           :user/current
+                                                                           :query/auth]))}}))))
 
   (render [this]
     (let [{:keys [routing/app-root
@@ -51,28 +68,18 @@
           factory (get-in ui.routes/route-handler->ui-component [route :factory])]
       (when-not factory
         (debug "No factory found for route: " route " props: " props))
-      (debug "Login menu query: " props)
-      (let [session? (some? current-user)
-            comp (if session?
-                   ->LoggedIn
-                   ->LoginMenu)
-            comp-props (if session?
-                         {:onLogout (fn [res]
-                                      (om/transact! this `[(session/signout)
-                                                           :user/current
-                                                           :query/auth]))}
-                         {:onLogin (fn [res]
-                                     (om/transact! this `[(signin/facebook ~res)
-                                                          :user/current
-                                                          :query/auth]))})]
-        (debug "component: " comp " with props: " comp-props)
-        (navigator-ios {:initialRoute {:title     ""
-                                       :component comp
-                                       :passProps comp-props}
-                        :style        {:flex 1}
-                        :translucent  false
-                        :barTintColor "#01213d"
-                        :shadowHidden true})))))
+
+      (navigator-ios {:initialRoute {:title     ""
+                                     :component ->LoginMenu
+                                     :passProps {:onLogin (fn [res]
+                                                            (om/transact! this `[(signin/facebook ~res)
+                                                                                 :user/current
+                                                                                 :query/auth]))}}
+                      :ref          "navigator"
+                      :style        {:flex 1}
+                      :translucent  false
+                      :barTintColor "#01213d"
+                      :shadowHidden true}))))
 
 ;(comment
 ;  (render-scene [this scene-props]

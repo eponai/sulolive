@@ -91,7 +91,7 @@
   (componentDidMount [this]
     (.setBarStyle StatusBar "light-content"))
   (render [this]
-    (let [on-login (.-onLogin (om/props this))
+      (let [on-login (.-onLogin (om/props this))
           w (.-width (.get Dimensions "window"))]
       (view (opts {:style {:flex 1 :margin 0 :background-color "#01213d"}})
             (image (opts {:source logo-img
