@@ -43,25 +43,23 @@
 
   (render [this]
     (let [{:keys [:input/email on-change-text]} (om/get-state this)
-          w (.-width (.get Dimensions "window"))]
-      (view (opts {:style {:flex 1 :margin 0 :background-color "#01213d"}})
-            (image (opts {:source logo-img
-                          :style  {:resizeMode "cover" :position "absolute" :tintColor "rgba(255,255,255,0.1)" :width w :align-self "center" :margin-bottom 0}}))
-            (view (opts {:style {:flex 1 :margin 20 :justify-content "space-between"}})
-                  (view nil)
-                  (view nil
-                        (text (opts {:style (:header style)}) "Sign in with email")
-                        (text-input (opts {:style          (:text-input style)
-                                           :onChangeText   on-change-text
-                                           :placeholder    "youremail@example.com"
-                                           :value          (or email "")
-                                           :autoCapitalize "none"}))
-                        (touchable-highlight (opts {:style   {:background-color "#999" :padding 10 :border-radius 5 :height 44 :justify-content "center"}
-                                                    :onPress #(om/transact! this `[(signup/email ~{:input-email email})])})
-                                             (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
-                                                   "Email me a link to sign in")))
-                  (view nil)
-                  (view nil))))))
+          on-email-login (.-onEmailLogin (om/props this))]
+      (map-cover-screen
+        ;(view (opts {:style {:flex 1 :margin 20 :justify-content "space-between"}}))
+        (view nil
+              (text (opts {:style (:header style)}) "Sign in with email"))
+        (view nil
+              (text-input (opts {:style          (:text-input style)
+                                 :onChangeText   on-change-text
+                                 :placeholder    "youremail@example.com"
+                                 :value          (or email "")
+                                 :autoCapitalize "none"}))
+              (touchable-highlight (opts {:style   {:background-color "#044e8a" :padding 10 :border-radius 5 :height 44 :justify-content "center"}
+                                          :onPress #(on-email-login {:input-email email})})
+                                   (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
+                                         "Email me a link to sign in")))
+        (view nil)
+        (view nil)))))
 (def ->Login (om/factory EmailLogin))
 
 (defui LoggedIn
@@ -95,7 +93,7 @@
           {:keys [on-change-text]} (om/get-state this)]
       (debug "User: " (om/props this))
       (map-cover-screen
-        (view (opts {:style {:flex 1 :margin 20 :margin-bottom 60 :justify-content "space-between"}})
+        (view (opts {:style {:flex 1 :margin-bottom 60 :justify-content "space-between"}})
               (view
                 nil
                 (text (opts {:style (:header style)}) "Create Account"))
@@ -134,7 +132,7 @@
           comp ->Login]
       (.push nav #js {:title ""
                       :component comp
-                      :passProps #js {:myProp "foo"}})))
+                      :passProps props})))
   (onBack [this]
     (let [props (om/props this)
           nav (.-navigator props)]
@@ -142,13 +140,11 @@
   (componentDidMount [this]
     (.setBarStyle StatusBar "light-content"))
   (render [this]
-      (let [on-login (.-onLogin (om/props this))
-          w (.-width (.get Dimensions "window"))]
+      (let [on-facebook-login (.-onFacebookLogin (om/props this))]
         (map-cover-screen
-          (view nil)
           (view nil
-                (text (opts {:style (:header style)}) "Sign up / Sign in")
-
+                (text (opts {:style (:header style)}) "Sign up / Sign in"))
+          (view nil
                 ;; Facebook login button
                 (touchable-highlight
                   (opts {:style   {:background-color "#4267B2" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
@@ -156,8 +152,8 @@
                                                (debug "Login res: " res)
                                                (debug "on-login " (om/props this))
                                                (when (and (= status ::fb/login-success)
-                                                          (some? on-login))
-                                                 (on-login res))))})
+                                                          (some? on-facebook-login))
+                                                 (on-facebook-login res))))})
 
                   (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
                         "Continue with Facebook"))

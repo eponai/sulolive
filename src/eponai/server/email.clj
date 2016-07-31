@@ -62,7 +62,7 @@
   (debug "Will return verify link by device: " device " uuid: " uuid)
   (let [{:keys [schema host]} (url)
         device->link {:web (str schema "://" host "/verify/")
-                      :ios "jourmoney://ios/1/login/verify/"}
+                      :ios "jourmoney://login/verify/"}
         _ (when-not (contains? device->link device)
             (warn "Will create verify link for unknown device: " device
                   " defaulting device to :web"))

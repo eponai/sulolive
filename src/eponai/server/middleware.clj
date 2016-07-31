@@ -99,7 +99,8 @@
                                     (workflows/facebook (env :facebook-app-id)
                                                         (env :facebook-app-secret))
                                     (workflows/facebook-mobile (env :facebook-app-id)
-                                                               (env :facebook-app-secret))]
+                                                               (env :facebook-app-secret))
+                                    (workflows/email-mobile)]
              ;:uri "/api"
              :login-uri            "/signup"
              :default-landing-uri  "/app"
@@ -126,8 +127,9 @@
     (let [parser (om/parser
                    {:mutate (fn [_ k p]
                               {:action (fn []
-                                         (debug "Mutating shit")
                                          (cond (= k 'signin/facebook)
+                                               p
+                                               (= k 'email/verify)
                                                p))})
                     :read   (fn [_ _ _])})]
       (handler (assoc request
@@ -140,7 +142,6 @@
     (let [parser (om/parser
                    {:mutate (fn [_ k p]
                               {:action (fn []
-                                         (debug "Mutating shit")
                                          (cond (= k 'session/signout)
                                                {:signout true}))})
                     :read   (fn [_ _ _])})
@@ -148,12 +149,6 @@
           signout? (get-in parsed-res ['session/signout :result :signout])
 
           use-handler (if signout? (friend/logout handler) handler)]
-      (debug "Use handler for parsed res: " parsed-res)
-      (debug "Use handler for signout: " signout?)
-      (debug "Use handler for modified req: " (->> (:session req)
-                                                   (assoc req :session)
-                                                   friend/logout*))
-      (debug " ")
       (use-handler (if signout?
                      (->> (:session req)
                           (assoc req :session)

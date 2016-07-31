@@ -25,14 +25,13 @@
   {:pre [(or (om/reconciler? x) (om/component? x))
          (or (nil? url) (string? url))]}
   (debug "Loading url: " url)
-  (let [path (url->path (or url url-prefix))
-        _ (debug "path: " path)
-        {:keys [handler route-params] :or {handler routes/default-route}} (match-route path)
-        ui-handler (get ui-handlers/route-handler->ui-component handler)
-        param-mutations (route-helper/route-params-mutations ui-handler route-params)]
-    (debug "Setting route: " handler)
-    (om/transact! x (vec (cons `(app/set-route ~{:route handler})
-                               param-mutations)))))
+  (let [path (url->path (or url url-prefix))]
+    (when (s/starts-with? path "/login/verify/")
+      (let [verification-uuid (last (s/split path "/"))]
+        (debug "Verify email UUID: " verification-uuid)
+        (om/transact! x `[(email/verify ~{:verify-uuid verification-uuid})
+                          :user/current
+                          :query/auth])))))
 
 (defn start!
   "Gets the initial url and loads the root matching the url's path."

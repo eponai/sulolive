@@ -144,12 +144,15 @@
     {:action (fn []
                (api/stripe-cancel env stripe-account))}))
 
+(defmethod mutate 'email/verify
+  [{:keys [auth]} _ {:keys [verify-uuid] :as p}]
+  (debug "email/verify with params: " p)
+  {:action (fn [])})
+
 (defmethod mutate 'signin/facebook
   [{:keys [auth]} _ {:keys [access-token user-id] :as p}]
   (debug "signin/facebook with params: " p)
-  {:action (fn []
-             (debug "signin-facebook returning auth: " auth)
-             {:auth (some? auth)})})
+  {:action (fn [])})
 
 (defmethod mutate 'session/signout
   [_ _ p]

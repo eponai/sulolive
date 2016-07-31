@@ -59,7 +59,7 @@
       (if (= (:user/status user)
              :user.status/active)
         (auth-map-for-db-user user user-roles-active)
-        (throw (user-not-activated-error :default user))))
+        (auth-map-for-db-user user user-roles-inactive)))
     (throw (auth-error :default
                        ::h/unprocessable-entity
                        {:code          :missing-required-fields

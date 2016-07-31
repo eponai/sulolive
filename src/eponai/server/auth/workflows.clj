@@ -52,6 +52,40 @@
           true
           (redirect-login-failed "Not found"))))))
 
+(defn email-mobile
+  "Workflow for login with an email verification link via the om.next structure.
+  A parser is assoc'ed to the request if the mutation matches a login mutation. The parser is used here to fetch
+  params from the mutation and perform the auth using those params.
+
+  Returns an authentication map on successful auth, otherwise nil."
+  []
+  (fn [{:keys [login-parser ::friend/auth-config body] :as request}]
+    (let [{:keys [login-mutation-uri credential-fn]} auth-config]
+      ;; Check conditions for performing this workflow and skip if not met:
+      (when (and
+              ; Cond 1) URL path matches the url for authenticating the user, /api
+              (= (path-info request)
+                 login-mutation-uri)
+              ; Cond 2) Login parser has bees assoc'ed in the request to fetch login params from the mutation with.
+              (some? login-parser))
+        (let [parsed-res (login-parser {} (:query body))
+              email-params (:result (get parsed-res 'email/verify))] ; Get params from the 'email/verify mutation result
+
+           ;Cond 4) For email verification workflow we need the verify-uuid for the user trying to auth.
+           ;If nil we're probably doing some other auth type, so skip this workflow.
+          (when-let [verify-uuid (:verify-uuid email-params)]
+            (try
+              (let [user-record (credential-fn
+                                  (with-meta {:uuid verify-uuid}
+                                             {::friend/workflow :form}))]
+                ; Successful login!
+                (debug "Email login successful for user: " (:username user-record))
+                (workflows/make-auth user-record
+                                     {::friend/workflow          :form
+                                      ::friend/redirect-on-auth? false}))
+              (catch ExceptionInfo e
+                (throw e)))))))))
+
 (defn facebook
   [app-id app-secret]
   (fn [{:keys [params ::friend/auth-config] :as request}]
@@ -70,10 +104,9 @@
           ; Use the returned code and get/validate access token before authenticating.
           (:code params)
           (let [validated-token (fb/validated-token app-id app-secret (:code params) (request-url request))]
-            (debug "Recieved validated token:" validated-token)
             (if (:error validated-token)
               ; Redirect back to the login page on invalid token, something went wrong.
-              (redirect-login-failed "Facebook error")
+              (redirect-login-failed "Facebook error. Access token not valid.")
 
               ; Try to get credentials for the facebook user. If there's no user account an exception
               ; is thrown and we need to prompt the user to create a new account
@@ -110,8 +143,6 @@
   [app-id app-secret]
   (fn [{:keys [login-parser ::friend/auth-config body facebook-token-validator] :as request}]
     (let [{:keys [login-mutation-uri credential-fn]} auth-config]
-      (debug "Got request: " request)
-
       ;; Check conditions for performing this workflow and skip if not met:
       (when (and
               ; Cond 1) URL path matches the url for authenticating the user, /api
@@ -124,7 +155,6 @@
         (let [parsed-res (login-parser {} (:query body))
               fb-params (:result (get parsed-res 'signin/facebook))] ; Get params from the 'signin/facebook mutation result
 
-          (debug "Parsed mutation: " parsed-res)
           ; Cond 4) For facebook login workflow we need the user-id and access-token for the user trying to auth.
           ; If nil we're probably doing some other auth type, so skip this workflow.
           (when (and (some? fb-params))
@@ -137,7 +167,7 @@
                   (let [user-record (credential-fn
                                       (with-meta validated-token
                                                  {::friend/workflow :facebook}))]
-                    (debug "Facebook Successful login")
+                    (debug "Facebook login successful for user: " (:username user-record))
                     ;; Successful login, return authentication map.
                     (workflows/make-auth user-record {::friend/workflow :facebook
                                                       ::friend/redirect-on-auth? false}))

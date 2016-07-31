@@ -24,6 +24,10 @@
      {:http/call (om/query->ast `[(http/get ~{:mutation 'login/verify
                                               :endpoint verify-endpoint})])}))
 
+(defmethod mutate 'email/verify
+  [{:keys [state]} _ {:keys [verify-uuid]}]
+  {:remote true})
+
 (defmethod mutate 'signin/facebook
   [_ _ _]
   {:remote true})

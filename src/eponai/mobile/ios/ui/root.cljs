@@ -34,13 +34,11 @@
      {:routing/app-root (medley/map-vals #(->> % :component om/get-query)
                                          ui.routes/route-key->root-handler)}
      {:query/auth [{:ui.singleton.auth/user [{:user/status [:db/ident]}
-                                             :user/email]}]}
-     ;{:proxy/activate (om/get-query ActivateAccount)}
-     ])
+                                             :user/email]}]}])
   Object
   (navigate [this]
     (let [nav (om/react-ref this "navigator")
-          {:keys [query/auth proxy/activate]} (om/props this)
+          {:keys [query/auth]} (om/props this)
           current-user (:ui.singleton.auth/user auth)]
       (if-let [user-status (get-in current-user [:user/status :db/ident])]
         (if (= user-status :user.status/new)
@@ -59,10 +57,12 @@
                                                                               :query/auth]))}}))
         (.replace nav #js {:title     ""
                            :component ->LoginMenu
-                           :passProps #js {:onLogin (fn [res]
-                                                      (om/transact! this `[(signin/facebook ~res)
-                                                                           :user/current
-                                                                           :query/auth]))}}))))
+                           :passProps #js {:onFacebookLogin (fn [params]
+                                                              (om/transact! this `[(signin/facebook ~params)
+                                                                                   :user/current
+                                                                                   :query/auth]))
+                                           :onEmailLogin    (fn [params]
+                                                              (om/transact! this `[(signup/email ~(assoc params :device :ios))]))}}))))
   (initLocalState [this]
     ;; Need to pass the identical function to add/removeEventListener.
     {:url-handler (fn [event] (linking/load-url! this (gobj/get event "url")))})
