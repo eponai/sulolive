@@ -42,7 +42,7 @@
 
       ; We're authenticated.
       (is (= user-record
-             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email (:user/email user)])))))))
+             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email (:user/email user)]) a/user-roles-active))))))
 
 (deftest fb-user-exists-but-no-user-account-with-matching-email
   (testing "FB account exists, but a matching user account does not. Should prompt user to create an account
@@ -52,12 +52,13 @@
                                                      {:fb-user/id id
                                                       :fb-user/token "access-token"})
           conn (new-db [user fb-user])
-          credential-fn (a/credential-fn conn)]
+          credential-fn (a/credential-fn conn)
+          user-record (credential-fn
+                        (creds-input id))
+          db-user (:fb-user/user (p/lookup-entity (d/db conn) [:fb-user/id id]))]
 
-      (is (thrown-with-msg? ExceptionInfo
-                            (re-pattern (.getMessage (a/user-not-activated-error (::friend/workflow (meta creds-input)) nil)))
-                            (credential-fn
-                              (creds-input id)))))))
+      (is (= user-record
+             (a/auth-map-for-db-user db-user a/user-roles-inactive))))))
 
 (deftest fb-user-not-exist-but-activated-user-account-with-email-does
   (testing "The FB account does not exist, but a user account with the same email does.
@@ -73,7 +74,7 @@
 
       ; We're authenticated
       (is (= user-record
-             (a/auth-map-for-db-user db-user)))
+             (a/auth-map-for-db-user db-user a/user-roles-active)))
       ;The FB user is added to the DB and linked to the db-user
       (is fb-user)
       ; The created FB user is linked to the user account with the same email.
@@ -85,14 +86,13 @@
   create a new FB user and link to a new account."
     (let [{:keys [email id]} (test-fb-info)
           conn (new-db)
-          credential-fn (a/credential-fn conn)]
+          credential-fn (a/credential-fn conn)
+          user-record (credential-fn (creds-input id))]
 
-      ;TODO we might want to automatically create an ccount here and let the user login immediately?
-      (is (thrown-with-msg? ExceptionInfo
-                            (re-pattern (.getMessage (a/user-not-activated-error (::friend/workflow (meta creds-input)) nil)))
-                            (credential-fn (creds-input id))))
-      ; New user account with the Facebook user's email should be created
       (let [{:keys [fb-user/user]} (p/lookup-entity (d/db conn) [:fb-user/id id])]
+        ;TODO we might want to automatically create an ccount here and let the user login immediately?
+        (is (= user-record
+               (a/auth-map-for-db-user (p/lookup-entity (d/db conn) (:db/id user)) a/user-roles-inactive)))
         (is (= (:user/email (d/entity (d/db conn) (:db/id user)))
                email))))))
 
@@ -103,15 +103,14 @@
                        (dissoc (test-fb-info) :email))
           {:keys [id]} (fb-info-fn nil nil)
           conn (new-db)
-          credential-fn (a/credential-fn conn)]
+          credential-fn (a/credential-fn conn)
+          user-record (credential-fn (creds-input id fb-info-fn))]
 
-      (is (thrown-with-msg? ExceptionInfo
-                            (re-pattern (.getMessage (a/user-not-activated-error (::friend/workflow (meta creds-input)) nil)))
-                            (credential-fn (creds-input id fb-info-fn))))
-      ;; A new fb user should be created and link to a new user account
       (let [fb-user (p/lookup-entity (d/db conn) [:fb-user/id id])]
         (is fb-user)
-        (is (:fb-user/user fb-user))))))
+        (is (:fb-user/user fb-user))
+        (is (= user-record
+               (a/auth-map-for-db-user (:fb-user/user fb-user) a/user-roles-inactive)))))))
 
 
 ;; ------ User verify email credential function tests.
@@ -129,7 +128,7 @@
       (is (= (credential-fn
                (with-meta {:uuid (str (:verification/uuid verification))}
                           {::friend/workflow :form}))
-             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email])))))))
+             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]) a/user-roles-active))))))
 
 ; Failure cases
 (deftest user-verifies-account-not-activated
@@ -138,11 +137,12 @@
           conn (new-db (vals account))
           credential-fn (a/credential-fn conn)]
 
-      (is (thrown-with-msg? ExceptionInfo
-                            (re-pattern (.getMessage (a/user-not-activated-error (::friend/workflow (meta creds-input)) nil)))
-                            (credential-fn
-                              (with-meta {:uuid (str (:verification/uuid verification))}
-                                         {::friend/workflow :form})))))))
+      (is (= (credential-fn
+               (with-meta {:uuid (str (:verification/uuid verification))}
+                          {::friend/workflow :form}))
+             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]) a/user-roles-inactive)))
+
+      )))
 
 (deftest user-verifies-nil-uuid
   (testing "User tries to verify a nil UUID. Throw exception"
@@ -173,7 +173,7 @@
                                                    {::friend/workflow :activate-account}))
           stripe-cus (p/lookup-entity (d/db conn) [:stripe/customer "cus-id"])]
       (is (= activated-auth
-             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]))))
+             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]) a/user-roles-active)))
       (is (and (some? stripe-cus)
                (some? (:stripe/subscription stripe-cus)))))))
 
@@ -195,7 +195,7 @@
                                                    {::friend/workflow :activate-account}))
           stripe-cus (p/lookup-entity (d/db conn) [:stripe/customer "cus-id"])]
       (is (= activated-auth
-             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]))))
+             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]) a/user-roles-active)))
       (is (nil? stripe-cus)))))
 
 (deftest user-activates-account-with-invalid-input

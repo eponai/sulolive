@@ -112,9 +112,8 @@
           (when (and (some? fb-params))
             (let [validated-token (facebook-token-validator app-id app-secret fb-params)]
               (if (:error validated-token)
-                (do
-                  (debug "Facebook login Error")
-                  nil)
+                (throw (ex-info "Facebook login error. Validating access token failed."
+                                {}))
                 (try
                   (let [user-record (credential-fn
                                       (with-meta validated-token

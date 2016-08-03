@@ -1,19 +1,19 @@
 (ns eponai.server.auth.workflows-test
-  (:require [cemerick.friend :as friend]
-            [clojure.test :refer :all]
-            [datomic.api :as d]
-            [eponai.server.datomic.format :as f]
-            [eponai.server.auth.credentials :as a]
-            [eponai.server.auth.workflows :as w]
-            [eponai.common.database.pull :as p]
-            [eponai.server.test-util :refer [new-db]]
-            [om.next.server :as om])
-  (:import (clojure.lang ExceptionInfo)))
+  (:require
+    [cemerick.friend :as friend]
+    [clojure.test :refer :all]
+    [datomic.api :as d]
+    [eponai.server.auth.credentials :as a]
+    [eponai.server.auth.workflows :as w]
+    [eponai.common.database.pull :as p]
+    [eponai.server.datomic.format :as f]
+    [eponai.server.test-util :refer [new-db]]
+    [om.next.server :as om]))
 
 (def login-parser (om/parser
                     {:mutate (fn [_ k p]
                                (if (= k 'signin/facebook)
-                                 {:value p}))
+                                 {:action (fn [] p)}))
                      :read   (fn [_ _ _])}))
 
 
@@ -23,8 +23,8 @@
           id "some-id"
           access-token "some-token"
           account (f/user-account-map email
-                                      {:user/status :user.status/active
-                                       :fb-user/id id
+                                      {:user/status   :user.status/active
+                                       :fb-user/id    id
                                        :fb-user/token access-token})
           conn (new-db (vals account))
           credential-fn (fn [input] (a/auth-map conn input))
