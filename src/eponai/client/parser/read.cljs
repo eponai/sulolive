@@ -233,3 +233,10 @@
       {:value  (when eid
                  (p/pull db query eid))
        :remote true})))
+
+(defmethod read :query/auth
+  [{:keys [db query]} k p]
+  (debug "Read " k " with params " p)
+  {:value (let [auth (p/one-with db {:where '[[?e :ui/singleton :ui.singleton/auth]]})]
+            (when auth
+              (p/pull db query auth)))})

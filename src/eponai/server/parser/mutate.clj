@@ -11,7 +11,8 @@
     [datomic.api :as d]
     [eponai.common.format :as common.format]
     [environ.core :refer [env]]
-    [eponai.server.external.facebook :as fb]))
+    [eponai.server.external.facebook :as fb]
+    [eponai.server.auth.credentials :as a]))
 
 ;; ------------------- Transaction --------------------
 
@@ -147,12 +148,14 @@
 (defmethod mutate 'email/verify
   [{:keys [auth]} _ {:keys [verify-uuid] :as p}]
   (debug "email/verify with params: " p)
-  {:action (fn [])})
+  {:action (fn []
+             {:auth (some? auth)})})
 
 (defmethod mutate 'signin/facebook
   [{:keys [auth]} _ {:keys [access-token user-id] :as p}]
   (debug "signin/facebook with params: " p)
-  {:action (fn [])})
+  {:action (fn []
+             {:auth (some? auth)})})
 
 (defmethod mutate 'session/signout
   [_ _ p]

@@ -20,14 +20,6 @@
   [{:keys [db query]} _ _]
   {:value (p/pull db query [:ui/component :ui.component/loading])})
 
-(defmethod read :query/auth
-  [{:keys [db query]} k p]
-  (debug "Read " k " with params " p)
-  ;(debug "Read Pulled from state: " (p/pull db ['*] [:ui/singleton :ui.singleton/auth]))
-  {:value (let [auth (p/one-with db {:where '[[?e :ui/singleton :ui.singleton/auth]]})]
-            (when auth
-              (p/pull db query auth)))})
-
 (defmethod read :query/messages
   [{:keys [db query]} k {:keys [mutation-uuids]}]
   {:value (p/pull-many db query

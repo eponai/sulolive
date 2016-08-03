@@ -87,54 +87,6 @@
                 (throw e)))))))))
 
 (defn facebook
-  [app-id app-secret]
-  (fn [{:keys [params ::friend/auth-config] :as request}]
-
-    ; fb-login-uri /login/fb will be used if the user tries to login with facebook,
-    ; this is just to make it easier to skip any workflows if they're not relevant.
-    (let [fb-login-uri (get auth-config :fb-login-uri)
-          credential-fn (get auth-config :credential-fn)]
-
-      ; Check if we're in /login/fb otherwise skip this flow
-      (when (= (path-info request)
-               fb-login-uri)
-        (debug "Facebook workflow.")
-        (cond
-          ; Facebook login succeeded, Facebook will redirect to /login/fb?code=somecode.
-          ; Use the returned code and get/validate access token before authenticating.
-          (:code params)
-          (let [validated-token (fb/validated-token app-id app-secret (:code params) (request-url request))]
-            (if (:error validated-token)
-              ; Redirect back to the login page on invalid token, something went wrong.
-              (redirect-login-failed "Facebook error. Access token not valid.")
-
-              ; Try to get credentials for the facebook user. If there's no user account an exception
-              ; is thrown and we need to prompt the user to create a new account
-              (try
-                (let [user-record (credential-fn
-                                    (with-meta validated-token
-                                               {::friend/workflow :facebook}))]
-                  ; Successful login!
-                  (debug "Login successful for user:" (:username user-record))
-                  (workflows/make-auth user-record {::friend/workflow          :facebook
-                                                    ::friend/redirect-on-auth? true}))
-                (catch ExceptionInfo e
-                  ; The user is not activated. Redirect to activate account
-                  (let [{:keys [activate-user]} (ex-data e)]
-                    (debug "No activated user account for user:" activate-user "redirecting user to activate account.")
-                    (redirect-activate-account activate-user))))))
-
-          ; User cancelled or denied login, redirect back to the login page.
-          (:error params)
-          (redirect-login-failed "Permission denied")
-
-          ; Redirect to Facebook login dialog
-          true
-          (do
-            (debug "Redirecting to Facebook")
-            (fb/login-dialog app-id (request-url request))))))))
-
-(defn facebook-mobile
   "Workflow for login with Facebook via the om.next structure.
   A parser is assoc'ed to the request if the mutation matches a login mutation. The parser is used here to fetch
   params from the mutation and perform the auth using those params.

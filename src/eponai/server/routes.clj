@@ -13,7 +13,8 @@
             [eponai.server.external.stripe :as stripe]
             [clojure.data.json :as json]
             [eponai.server.email :as email]
-            [eponai.common.parser :as parser])
+            [eponai.common.parser :as parser]
+            [eponai.server.auth.workflows :as w])
   (:import [clojure.lang ExceptionInfo]))
 
 (defn html [& path]
@@ -32,9 +33,10 @@
 (defroutes
   site-routes
   (GET "/" [:as request]
-    (if (friend/current-authentication request)
-      (r/redirect "/app")
-      (html "index.html")))
+    (let [auth (friend/current-authentication request)]
+      (if (contains? (:roles auth) ::a/user)
+        (r/redirect "/app")
+        (html "index.html"))))
   (ANY "/stripe" {:keys [::m/conn body]}
     (try
       (let [result (stripe/webhook conn body {::email/send-payment-reminder-fn email/send-payment-reminder-email})]
@@ -54,11 +56,20 @@
 
   (context "/play" _ playground-routes)
 
+  (GET "/activate" request
+    (let [auth (friend/current-authentication request)]
+      (if (contains? (:roles auth) ::a/user)
+        (r/redirect "/app")
+        (html (::m/cljs-build-id request) "signup.html"))))
+
   (GET "/verify/:uuid" [uuid]
     (r/redirect (str "/api/login/email?uuid=" uuid)))
 
   (GET "/signup" request
-    (html (::m/cljs-build-id request) "signup.html"))
+    (let [auth (friend/current-authentication request)]
+      (if (contains? (:roles auth) ::a/user)
+        (r/redirect "/app")
+        (html (::m/cljs-build-id request) "signup.html"))))
 
   (GET "/devcards" []
     (html "devcards" "app.html"))

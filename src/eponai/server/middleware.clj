@@ -98,16 +98,14 @@
                                     (workflows/create-account email/send-verification-email)
                                     (workflows/facebook (env :facebook-app-id)
                                                         (env :facebook-app-secret))
-                                    (workflows/facebook-mobile (env :facebook-app-id)
-                                                               (env :facebook-app-secret))
                                     (workflows/email-mobile)]
              ;:uri "/api"
              :login-uri            "/signup"
-             :default-landing-uri  "/app"
+             :default-landing-uri  "/activate"
              :fb-login-uri         "/api/login/fb"
              :email-login-uri      "/api/login/email"
              :activate-account-uri "/api/login/create"
-             :login-mutation-uri "/api"}))
+             :login-mutation-uri   "/api"}))
 
 (defn config []
   {:pre [(contains? env :session-cookie-store-key)

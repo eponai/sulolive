@@ -17,7 +17,8 @@
             [eponai.client.backend :as backend]
             [eponai.client.parser.merge :as merge]
             [eponai.web.parser.merge :as web.merge]
-            [eponai.common.parser :as parser]))
+            [eponai.common.parser :as parser]
+            [taoensso.timbre :refer-macros [debug]]))
 
 (enable-console-print!)
 
@@ -28,13 +29,36 @@
   static om/IQuery
   (query [_])
   Object
+  (on-email-login [this]
+    (let [st (om/get-state this)]
+      (om/update-state! this assoc :verification-sent true)
+      (om/transact! this `[(signup/email ~(assoc st :device :web))])))
+
+  (on-facebook-login [this]
+    (.login js/FB
+            (fn [response]
+              (let [status (.-status response)]
+                (cond
+                  (= status "connected")
+                  (let [auth-response (.-authResponse response)
+                        user-id (.-userID auth-response)
+                        access-token (.-accessToken auth-response)]
+                    (om/transact! this `[(signin/facebook ~{:user-id      user-id
+                                                            :access-token access-token})
+                                         :user/current
+                                         :query/auth]))
+                  (= status "not_authorized")
+                  (debug "User logged in on Facebook but not authorized on JourMoney.")
+
+                  :else
+                  (debug "User not authorized on Facebook"))))))
   (initLocalState [this]
     (let [{:keys [email]} (om/props this)]
       {:input-email email
        :verification-sent false}))
   (render [this]
     (let [{:keys [input-email
-                  verification-sent]:as st} (om/get-state this)]
+                  verification-sent]} (om/get-state this)]
       (html
         [:div.row
          [:div
@@ -57,9 +81,7 @@
           [:div
            [:button
             {:class       "button"
-             :on-click    #(do
-                            (om/update-state! this assoc :verification-sent true)
-                            (om/transact! this `[(signup/email ~(assoc st :device :web))]))
+             :on-click    #(.on-email-login this)
              :tab-index   2}
             "Sign In"]]
 
@@ -67,29 +89,27 @@
           ;; --------- Social Buttons
           [:h4 "or"]
           [:hr.intro-divider-landing]
-          [:form
-           {:action "/api/login/fb"
-            :method "POST"}
-           [:button
-            {:class "button btn-facebook"
-             :type  "submit"
-             :tab-index 3}
-            [:i
-             {:class "fa fa-facebook fa-fw"}]
-            [:span
-             {:class "network-text"}
-             "Sign in with Facebook"]]]]]))))
+          [:a.button.btn-facebook
+           {:on-click #(.on-facebook-login this)}
+           [:i
+            {:class "fa fa-facebook fa-fw"}]
+           "Continue with Facebook"]]]))))
 
 (def ->log-in (om/factory LogIn))
 
 (defui CreateAccount
   Object
-  (initLocalState [this]
-    (let [{:keys [full-name email]} (om/props this)]
-      {:input-email email
-       :input-name full-name
-       :status nil
-       :message nil}))
+  ;(initLocalState [this]
+  ;  (let [{:keys [full-name email]} (om/props this)]
+  ;    {:input-email email
+  ;     :input-name full-name
+  ;     :status nil
+  ;     :message nil}))
+  (componentWillReceiveProps [this next-props]
+    (let [{:keys [full-name email]} next-props]
+      (om/update-state! this assoc
+                        :input-email email
+                        :input-name full-name)))
   (render [this]
     (let [{:keys [::fixed-email user-uuid]} (om/props this)
           {:keys [input-name input-email message status]} (om/get-state this)]
@@ -148,40 +168,51 @@
 (def ->create-account (om/factory CreateAccount))
 
 (defui Signup
-  static om/IQueryParams
-  (params [_]
-    (let [url (url/url (-> js/window .-location .-href))]
-      (keywordize-keys (:query url))))
   static om/IQuery
   (query [_]
     '[:datascript/schema
-      {(:query/user {:uuid ?uuid}) [:user/uuid
-                                    :user/email]}])
+      :user/current
+      {:query/auth [{:ui.singleton.auth/user [{:user/status [:db/ident]}
+                                              :user/email
+                                              :user/uuid]}]}])
 
   Object
-  (render [this]
-    (let [{:keys [query/fb-user query/user]} (om/props this)
-          {:keys [fb fail new uuid]} (om/get-params this)]
+  (initLocalState [_]
+    {:signup-path   "/signup"
+     :activate-path "/activate"
+     :app-path      "/app"})
+  (navigate [this props]
+    (let [{:keys [query/auth]} props
+          {:keys [signup-path activate-path app-path]} (om/get-state this)
+          user-status (get-in (:ui.singleton.auth/user auth) [:user/status :db/ident])
+          current-path (:path (url/url (-> js/window .-location .-href)))]
       (cond
-        fail
-        (html [:div "Could not sign in with email."])
+        (and
+          (not= current-path signup-path)
+          (nil? user-status))
+        (set! js/window.location signup-path)
 
-        new
-        (cond
-          fb
-          (->create-account {:type         :fb
-                             :user-uuid    (:user/uuid (:fb-user/user fb-user))
-                             :full-name    (:fb-user/name fb-user)
-                             :email        (:user/email (:fb-user/user fb-user))
-                             ::fixed-email false})
+        (and (not= current-path activate-path)
+             (= user-status :user.status/new))
+        (set! js/window.location activate-path)
 
-          uuid
-          (->create-account {:type         :email
-                             :user-uuid    (:user/uuid user)
-                             :email        (:user/email user)
-                             ::fixed-email true}))
-        true
-        (->log-in)))))
+        (= user-status :user.status/active)
+        (set! js/window.location app-path))))
+  (componentWillReceiveProps [this next-props]
+    (.navigate this next-props))
+  (componentWillUpdate [this next-props _]
+    (.navigate this next-props))
+  (render [this]
+    (let [{:keys [query/auth]} (om/props this)
+          {:keys [signup-path activate-path]} (om/get-state this)
+          current-user (:ui.singleton.auth/user auth)
+          current-path (:path (url/url (-> js/window .-location .-href)))]
+      (cond (= current-path signup-path)
+            (->log-in)
+            (= current-path activate-path)
+            (->create-account {:type      :fb
+                               :user-uuid (:user/uuid current-user)
+                               :email     (:user/email current-user)})))))
 
 (defn run []
  (let [conn       (utils/init-conn)

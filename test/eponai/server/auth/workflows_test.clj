@@ -28,7 +28,7 @@
                                        :fb-user/token access-token})
           conn (new-db (vals account))
           credential-fn (fn [input] (a/auth-map conn input))
-          workflow (w/facebook-mobile nil nil)
+          workflow (w/facebook nil nil)
           res (workflow {:login-parser             login-parser
                          :path-info                "/api"
                          :body                     {:query [`(signin/facebook ~{:user-id id :access-token access-token})]}
