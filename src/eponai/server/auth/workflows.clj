@@ -14,10 +14,6 @@
   (r/status (r/response {:status  :login-failed
                          :message (or message "Oops, something when wrong when creating your account. Try again later.")}) 500))
 
-(defn redirect-activate-account [account-info]
-  (r/redirect (str "/signup?new=Y&"
-                   (url/map->query account-info))))
-
 (defn redirect-verify-email []
   (r/status (r/response {:status :verification-needed
                          :message "Check your inbox for a verification email!"}) 500))
@@ -43,11 +39,7 @@
               (workflows/make-auth user-record {::friend/workflow          :form
                                                 ::friend/redirect-on-auth? true}))
             (catch ExceptionInfo e
-              (let [{:keys [activate-user]} (ex-data e)]
-                (debug "Login failed. " (if activate-user "User not activated." "Invalid UUID."))
-                (if activate-user
-                  (redirect-activate-account {:uuid (:user/uuid activate-user)})
-                  (redirect-login-failed (:uuid params))))))
+              (redirect-login-failed (:uuid params))))
 
           true
           (redirect-login-failed "Not found"))))))

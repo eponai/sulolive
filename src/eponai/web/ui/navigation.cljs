@@ -244,11 +244,11 @@
     {:new-project? false
      :computed/new-project-on-save #(.save-new-project this %)})
   (save-new-project [this name]
-    (om/transact! this `[(project/save ~{:project/uuid (d/squuid)
-                                        :project/name name
-                                        :dashboard/uuid (d/squuid)
-                                        :mutation-uuid (d/squuid)})
-                         :query/all-projects]))
+    (om/transact! this [(list 'project/save {:project/uuid   (d/squuid)
+                                             :project/name   name
+                                             :dashboard/uuid (d/squuid)
+                                             :mutation-uuid  (d/squuid)})
+                        :query/all-projects]))
   (render [this]
     (let [{:keys [query/all-projects
                   query/active-project

@@ -99,12 +99,6 @@
 
 (defui CreateAccount
   Object
-  ;(initLocalState [this]
-  ;  (let [{:keys [full-name email]} (om/props this)]
-  ;    {:input-email email
-  ;     :input-name full-name
-  ;     :status nil
-  ;     :message nil}))
   (componentWillReceiveProps [this next-props]
     (let [{:keys [full-name email]} next-props]
       (om/update-state! this assoc
@@ -121,7 +115,7 @@
           [:label
            "Email:"]
           [:input
-           (opts {:value       input-email
+           (opts {:value       (or input-email "")
                   :on-change   (on-input-change this :input-email)
                   :placeholder "youremail@example.com"
                   :name        "user-email"

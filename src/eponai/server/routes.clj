@@ -52,24 +52,34 @@
         (error e))))
 
   (context "/app" _
-    (friend/wrap-authorize app-routes #{::a/user}))
+    (fn [request]
+      (let [auth (friend/current-authentication request)]
+        (if (contains? (:roles auth) ::a/user-inactive)
+          (r/redirect "/activate")
+          ((friend/wrap-authorize app-routes #{::a/user}) request)))))
 
   (context "/play" _ playground-routes)
 
   (GET "/activate" request
     (let [auth (friend/current-authentication request)]
-      (if (contains? (:roles auth) ::a/user)
-        (r/redirect "/app")
-        (html (::m/cljs-build-id request) "signup.html"))))
+      (cond (contains? (:roles auth) ::a/user)
+            (r/redirect "/app")
+            (contains? (:roles auth) ::a/user-inactive)
+            (html (::m/cljs-build-id request) "signup.html")
+            :else
+            (r/redirect "/signup"))))
 
   (GET "/verify/:uuid" [uuid]
     (r/redirect (str "/api/login/email?uuid=" uuid)))
 
   (GET "/signup" request
     (let [auth (friend/current-authentication request)]
-      (if (contains? (:roles auth) ::a/user)
-        (r/redirect "/app")
-        (html (::m/cljs-build-id request) "signup.html"))))
+      (cond (contains? (:roles auth) ::a/user)
+            (r/redirect "/app")
+            (contains? (:roles auth) ::a/user-inactive)
+            (r/redirect "/activate")
+            :else
+            (html (::m/cljs-build-id request) "signup.html"))))
 
   (GET "/devcards" []
     (html "devcards" "app.html"))

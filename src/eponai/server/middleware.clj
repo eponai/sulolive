@@ -101,8 +101,8 @@
                                     (workflows/email-mobile)]
              ;:uri "/api"
              :login-uri            "/signup"
-             :default-landing-uri  "/activate"
-             :fb-login-uri         "/api/login/fb"
+             :default-landing-uri  "/app"
+             ;:fb-login-uri         "/api/login/fb"
              :email-login-uri      "/api/login/email"
              :activate-account-uri "/api/login/create"
              :login-mutation-uri   "/api"}))
