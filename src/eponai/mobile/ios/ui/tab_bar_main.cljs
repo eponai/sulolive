@@ -1,7 +1,7 @@
 (ns eponai.mobile.ios.ui.tab-bar-main
   (:require
     [eponai.client.ui :refer-macros [opts]]
-    [eponai.mobile.components :refer [tab-bar-ios]]
+    [eponai.mobile.components :refer [tab-bar-ios view text]]
     [eponai.mobile.ios.ui.tab-bar-item.dashboard :refer [Dashboard]]
     [eponai.mobile.ios.ui.tab-bar-item :refer [tab-bar-item]]
     [om.next :as om :refer-macros [defui]]))
@@ -51,6 +51,7 @@
         ;         :selected (= selected-tab :tab-list)
         ;         :onPress  #(om/update-state! this assoc :selected-tab :tab-list)})
         ;  (t/->Transactions))
-        ))))
+        )
+      )))
 
 (def ->LoggedIn (om/factory LoggedIn))

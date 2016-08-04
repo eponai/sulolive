@@ -83,7 +83,7 @@
           current-user (:ui.singleton.auth/user auth)
           ;route (props->route props)
           ;factory (get-in ui.routes/route-handler->ui-component [route :factory])
-          nav (om/react-ref this "navigator")
+          ;nav (om/react-ref this "navigator")
           ;{:keys [query/auth]} (om/props this)
           ;current-user (:ui.singleton.auth/user auth)
           user-status (get-in current-user [:user/status :db/ident])
@@ -95,9 +95,10 @@
       (if (= user-status :user.status/active)
         (->LoggedIn (om/computed logged-in
                                  {:on-logout (fn []
-                                              (om/transact! this `[(session/signout)
-                                                                   :user/current
-                                                                   :query/auth]))}))
+                                               (om/transact! this `[(session/signout)
+                                                                    :user/current
+                                                                    :query/auth]))}))
+
 
         (navigator-ios {:initialRoute {:title     ""
                                        :component ->LoginMenu
