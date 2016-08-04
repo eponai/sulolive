@@ -94,7 +94,7 @@
 (defn wrap-authenticate [handler conn]
   (friend/authenticate
     handler {:credential-fn        (ac/credential-fn conn)
-             :workflows            [(workflows/form)
+             :workflows            [(workflows/email-web)
                                     (workflows/create-account email/send-verification-email)
                                     (workflows/facebook (env :facebook-app-id)
                                                         (env :facebook-app-secret))
@@ -104,7 +104,7 @@
              :default-landing-uri  "/app"
              ;:fb-login-uri         "/api/login/fb"
              :email-login-uri      "/api/login/email"
-             :activate-account-uri "/api/login/create"
+             ;:activate-account-uri "/api/login/create"
              :login-mutation-uri   "/api"}))
 
 (defn config []

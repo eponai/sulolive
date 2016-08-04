@@ -44,7 +44,7 @@
                         user-id (.-userID auth-response)
                         access-token (.-accessToken auth-response)]
                     (om/transact! this `[(session.signin/facebook ~{:user-id      user-id
-                                                            :access-token access-token})
+                                                                    :access-token access-token})
                                          :user/current
                                          :query/auth]))
                   (= status "not_authorized")
@@ -98,6 +98,8 @@
 (def ->log-in (om/factory LogIn))
 
 (defui CreateAccount
+  static om/IQuery
+  (query [_])
   Object
   (componentWillReceiveProps [this next-props]
     (let [{:keys [full-name email]} next-props]
@@ -140,17 +142,11 @@
 
           [:button
            {:class    "button primary"
-            :on-click (fn [e]
-                        (go
-                          (let [response (async/<! (http/post
-                                                     "/api/login/create"
-                                                     {:transit-params {:user-uuid  (str user-uuid)
-                                                                       :user-email input-email}}))
-                                status (get-in response [:body :status])
-                                message (get-in response [:body :message])]
-                            (if-not (= (:status response) 200)
-                              (om/update-state! this assoc :message message :status status)
-                              (set! js/document.location.href (routes/key->route :route/home))))))}
+            :on-click (fn []
+                        (om/transact! this `[(session.signin/activate ~{:user-uuid (str user-uuid)
+                                                                        :user-email input-email})
+                                             :user/current
+                                             :query/auth]))}
            "Create account"]
 
           [:p.small

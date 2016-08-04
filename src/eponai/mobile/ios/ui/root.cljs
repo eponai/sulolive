@@ -31,10 +31,11 @@
     [:datascript/schema
      :user/current
      {:query/app [:ui.component.app/route]}
-     {:routing/app-root (medley/map-vals #(->> % :component om/get-query)
-                                         ui.routes/route-key->root-handler)}
+     ;{:routing/app-root (medley/map-vals #(->> % :component om/get-query)
+     ;                                    ui.routes/route-key->root-handler)}
      {:query/auth [{:ui.singleton.auth/user [{:user/status [:db/ident]}
-                                             :user/email]}]}])
+                                             :user/email
+                                             :user/uuid]}]}])
   Object
   (navigate [this]
     (let [nav (om/react-ref this "navigator")
@@ -45,6 +46,10 @@
           (.replace nav #js {:title     ""
                              :component ->ActivateAccount
                              :passProps #js {:user current-user
+                                             :onActivate (fn [params]
+                                                           (om/transact! this `[(session.signin/activate ~params)
+                                                                                :user/current
+                                                                                :query/auth]))
                                              :onLogout (fn []
                                                          (om/transact! this `[(session/signout)
                                                                               :user/current

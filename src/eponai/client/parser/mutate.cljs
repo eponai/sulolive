@@ -133,3 +133,9 @@
   [_ _ p]
   (debug "session.signin/facebook with params:" p)
   {:remote true})
+
+(defmethod mutate 'session.signin/activate
+  [{:keys [auth]} _ {:keys [user-uuid user-email] :as p}]
+  (assert (and user-uuid user-email) (str "Mutation 'session.signin/activate needs params user-uuid and user-email. Got params: " p))
+  (debug "session.signin/activate with params: " p)
+  {:remote true})

@@ -110,18 +110,17 @@
                         :function-args {'access_token access_token 'user_id user_id 'fb-info-fn fb-info-fn}}))))
 
 (defmethod auth-map :activate-account
-  [conn {:keys [body stripe-fn]}]
+  [conn {:keys [user-uuid user-email stripe-fn] :as p}]
   (debug "Create account with stripe-fn: " stripe-fn)
-  (let [{:keys [user-uuid user-email]} body]
-    (if (and user-uuid user-email)
-      (let [user (api/activate-account conn user-uuid user-email {:stripe-fn stripe-fn})]
-        (auth-map-for-db-user user user-roles-active))
-      (throw (auth-error :activate-account ::h/unprocessable-entity
-                         {:code          :missing-required-fields
-                          :message       "Missing required keys for authentication."
-                          :missing-keys  (into [] (filter #(nil? (get body %))) #{:user-uuid :user-email})
-                          :function-args {'user-uuid  user-uuid
-                                          'user-email user-email}})))))
+  (if (and user-uuid user-email)
+    (let [user (api/activate-account conn user-uuid user-email {:stripe-fn stripe-fn})]
+      (auth-map-for-db-user user user-roles-active))
+    (throw (auth-error :activate-account ::h/unprocessable-entity
+                       {:code          :missing-required-fields
+                        :message       "Missing required keys for authentication."
+                        :missing-keys  (into [] (filter #(nil? (get p %))) #{:user-uuid :user-email})
+                        :function-args {'user-uuid  user-uuid
+                                        'user-email user-email}}))))
 
 (defn credential-fn
   "Create a credential fn with a db to pull user credentials.

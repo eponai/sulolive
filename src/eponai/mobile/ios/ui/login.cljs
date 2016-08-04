@@ -88,6 +88,7 @@
     {:on-change-text #(om/update-state! this assoc :input/email %)})
   (render [this]
     (let [on-logout (.-onLogout (om/props this))
+          on-activate (.-onActivate (om/props this))
           ;email (.. (om/props this) -user -email)
           user (.. (om/props this) -user)
           {:keys [on-change-text]} (om/get-state this)]
@@ -111,7 +112,9 @@
                                    :autoCapitalize "none"}))
                 (touchable-highlight
                   (opts {:style {:background-color "#044e8a" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}})
-                  (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
+                  (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}
+                               :onPress #(on-activate {:user-uuid (str (:user/uuid user))
+                                                       :user-email (:user/email user)})})
                         "Create My Account")))
 
 

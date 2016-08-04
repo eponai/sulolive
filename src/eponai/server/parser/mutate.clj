@@ -160,6 +160,12 @@
   {:action (fn []
              {:auth (some? auth)})})
 
+(defmethod mutate 'session.signin/activate
+  [{:keys [auth]} _ {:keys [user-uuid user-email] :as p}]
+  (debug "session.signin/activate with params: " p)
+  {:action (fn []
+             {:auth (some? auth)})})
+
 (defmethod mutate 'session/signout
   [_ _ p]
   (debug "session/signout with params: " p)

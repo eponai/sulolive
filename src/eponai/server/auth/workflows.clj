@@ -14,11 +14,11 @@
   (r/status (r/response {:status  :login-failed
                          :message (or message "Oops, something when wrong when creating your account. Try again later.")}) 500))
 
-(defn redirect-verify-email []
-  (r/status (r/response {:status :verification-needed
-                         :message "Check your inbox for a verification email!"}) 500))
+;(defn redirect-verify-email []
+;  (r/status (r/response {:status :verification-needed
+;                         :message "Check your inbox for a verification email!"}) 500))
 
-(defn form
+(defn email-web
   []
   (fn [{:keys [params ::friend/auth-config] :as request}]
     (let [credential-fn (get auth-config :credential-fn)
@@ -101,7 +101,7 @@
 
           ; Cond 4) For facebook login workflow we need the user-id and access-token for the user trying to auth.
           ; If nil we're probably doing some other auth type, so skip this workflow.
-          (when (and (some? fb-params))
+          (when (some? fb-params)
             (let [validated-token (facebook-token-validator app-id app-secret fb-params)]
               (if (:error validated-token)
                 (throw (ex-info "Facebook login error. Validating access token failed."
@@ -116,27 +116,28 @@
                                                       ::friend/redirect-on-auth? false}))
                   (catch ExceptionInfo e
                     (throw e)))))))))))
-
 (defn create-account
   [send-email-fn]
-  (fn [{:keys [body ::friend/auth-config ::stripe/stripe-fn] :as request}]
-    (let [credential-fn (get auth-config :credential-fn)
-          login-uri (get auth-config :activate-account-uri)]
-      (when (= (path-info request)
-               login-uri)
-        (try
-          (let [user-record (credential-fn (with-meta {:body body
-                                                       :stripe-fn stripe-fn}
-                                                      {::friend/workflow :activate-account}))]
-            (prn "Successful login")
-            (workflows/make-auth user-record {::friend/workflow :activate-account
-                                              ::friend/redirect-on-auth? true}))
-          (catch ExceptionInfo e
-            (prn e)
-            (let [{:keys [verification]} (ex-data e)]
-              (if verification
-                (do
-                  (go
-                    (send-email-fn verification))
-                  (redirect-verify-email))
-                (redirect-login-failed (.getMessage e))))))))))
+  (fn [{:keys [login-parser body ::friend/auth-config ::stripe/stripe-fn] :as request}]
+    (let [{:keys [login-mutation-uri credential-fn]} auth-config]
+      (debug "CREATE ACCOUNT WORKFLOW: " body)
+      (when (and
+              (= (path-info request)
+                 login-mutation-uri)
+              (some? login-parser))
+        (let [parsed-res (login-parser {} (:query body))
+              params (:result (get parsed-res 'session.signin/activate))]
+          (when (some? params)
+            (try
+              (let [user-record (credential-fn (with-meta (assoc params :stripe-fn stripe-fn)
+                                                          {::friend/workflow :activate-account}))]
+                (prn "Successful login")
+                (workflows/make-auth user-record {::friend/workflow          :activate-account
+                                                  ::friend/redirect-on-auth? false}))
+              (catch ExceptionInfo e
+                ;(prn e)
+                (let [{:keys [verification]} (ex-data e)]
+                  (when verification
+                    (go
+                      (send-email-fn verification)))
+                  (throw e))))))))))
