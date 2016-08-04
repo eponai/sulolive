@@ -101,11 +101,6 @@
              (transact/mutate-one state mutation-uuid [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]]))
    :remote true})
 
-(defmethod mutate 'signup/email
-  [_ _ params]
-  (debug "signup/email with params:" params)
-  {:remote true})
-
 (defmethod mutate 'stripe/subscribe
   [_ _ params]
   (debug "stripe/charge with params:" params)
@@ -124,4 +119,17 @@
 (defmethod mutate 'stripe/trial
   [_ _ p]
   (debug "stripe/trial with params:" p)
+  {:remote true})
+
+
+;; ############# Session mutations #################
+
+(defmethod mutate 'session.signin/email
+  [_ _ params]
+  (debug "session.signin/email with params:" params)
+  {:remote true})
+
+(defmethod mutate 'session.signin/facebook
+  [_ _ p]
+  (debug "session.signin/facebook with params:" p)
   {:remote true})

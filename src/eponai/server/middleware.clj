@@ -123,12 +123,8 @@
 (defn wrap-login-parser [handler]
   (fn [request]
     (let [parser (om/parser
-                   {:mutate (fn [_ k p]
-                              {:action (fn []
-                                         (cond (= k 'signin/facebook)
-                                               p
-                                               (= k 'email/verify)
-                                               p))})
+                   {:mutate (fn [_ _ p]
+                              {:action (fn [] p)})
                     :read   (fn [_ _ _])})]
       (handler (assoc request
                  :login-parser parser

@@ -99,18 +99,6 @@
   {:action (fn []
              (transact/mutate-one state mutation-uuid [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]]))})
 
-(defmethod mutate 'signup/email
-  [{:keys [state]} k {:keys [device] :as params}]
-  (debug "signup/email with params:" params)
-  {:action (fn []
-             ;; TODO: Need a more generic way of specifying required parameters for mutations.
-             (when-not device
-               (throw (ex-info (str "No device specified for " k
-                                    ". Specify :device with either :web, :ios or whatever"
-                                    " send email needs.")
-                               {:mutation k :params params})))
-             (-> (api/signin state (:input-email params))
-                 (assoc :device device)))})
 
 (defmethod mutate 'stripe/subscribe
   [{:keys [state auth stripe-fn]} _ p]
@@ -145,15 +133,30 @@
     {:action (fn []
                (api/stripe-cancel env stripe-account))}))
 
-(defmethod mutate 'email/verify
+;; ############# Session mutations #################
+
+(defmethod mutate 'session.signin/email
+  [{:keys [state]} k {:keys [device] :as params}]
+  (debug "signup/email with params:" params)
+  {:action (fn []
+             ;; TODO: Need a more generic way of specifying required parameters for mutations.
+             (when-not device
+               (throw (ex-info (str "No device specified for " k
+                                    ". Specify :device with either :web, :ios or whatever"
+                                    " send email needs.")
+                               {:mutation k :params params})))
+             (-> (api/signin state (:input-email params))
+                 (assoc :device device)))})
+
+(defmethod mutate 'session.signin.email/verify
   [{:keys [auth]} _ {:keys [verify-uuid] :as p}]
-  (debug "email/verify with params: " p)
+  (debug "session.signin.email/verify with params: " p)
   {:action (fn []
              {:auth (some? auth)})})
 
-(defmethod mutate 'signin/facebook
+(defmethod mutate 'session.signin/facebook
   [{:keys [auth]} _ {:keys [access-token user-id] :as p}]
-  (debug "signin/facebook with params: " p)
+  (debug "session.signin/facebook with params: " p)
   {:action (fn []
              {:auth (some? auth)})})
 

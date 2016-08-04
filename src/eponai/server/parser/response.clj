@@ -43,7 +43,7 @@
               (t/transact state (f/currencies (currencies-fn)))))))))
   (update response :result dissoc :currency-chan))
 
-(defmethod response-handler 'signup/email
+(defmethod response-handler 'session.signin/email
   [{:keys [::email/send-verification-fn state]} _ response]
   (when-let [chan (get-in response [:result :email-chan])]
     (go

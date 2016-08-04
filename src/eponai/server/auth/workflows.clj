@@ -61,7 +61,7 @@
               ; Cond 2) Login parser has bees assoc'ed in the request to fetch login params from the mutation with.
               (some? login-parser))
         (let [parsed-res (login-parser {} (:query body))
-              email-params (:result (get parsed-res 'email/verify))] ; Get params from the 'email/verify mutation result
+              email-params (:result (get parsed-res 'session.signin.email/verify))] ; Get params from the 'email/verify mutation result
 
            ;Cond 4) For email verification workflow we need the verify-uuid for the user trying to auth.
            ;If nil we're probably doing some other auth type, so skip this workflow.
@@ -97,7 +97,7 @@
               ; Cond 3) A facebook validator function is assoc'ed to the request to validate the fb token.
               (some? facebook-token-validator))
         (let [parsed-res (login-parser {} (:query body))
-              fb-params (:result (get parsed-res 'signin/facebook))] ; Get params from the 'signin/facebook mutation result
+              fb-params (:result (get parsed-res 'session.signin/facebook))] ; Get params from the 'signin/facebook mutation result
 
           ; Cond 4) For facebook login workflow we need the user-id and access-token for the user trying to auth.
           ; If nil we're probably doing some other auth type, so skip this workflow.

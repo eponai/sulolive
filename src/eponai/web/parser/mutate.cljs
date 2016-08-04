@@ -125,7 +125,4 @@
                (let [ret (<! (http/post homeless/email-endpoint-subscribe {:form-params {:email email}}))]
                  (om/merge! (deref utils/reconciler-atom) {:result {k ret :routing/app-root {}}}))))})
 
-(defmethod mutate 'signin/facebook
-  [{:keys [ast]} _ _]
-  {:remote true})
 

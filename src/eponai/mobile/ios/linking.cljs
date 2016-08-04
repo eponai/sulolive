@@ -29,7 +29,7 @@
     (when (s/starts-with? path "/login/verify/")
       (let [verification-uuid (last (s/split path "/"))]
         (debug "Verify email UUID: " verification-uuid)
-        (om/transact! x `[(email/verify ~{:verify-uuid verification-uuid})
+        (om/transact! x `[(session.signin.email/verify ~{:verify-uuid verification-uuid})
                           :user/current
                           :query/auth])))))
 

@@ -32,7 +32,7 @@
   (on-email-login [this]
     (let [st (om/get-state this)]
       (om/update-state! this assoc :verification-sent true)
-      (om/transact! this `[(signup/email ~(assoc st :device :web))])))
+      (om/transact! this `[(session.signin/email ~(assoc st :device :web))])))
 
   (on-facebook-login [this]
     (.login js/FB
@@ -43,7 +43,7 @@
                   (let [auth-response (.-authResponse response)
                         user-id (.-userID auth-response)
                         access-token (.-accessToken auth-response)]
-                    (om/transact! this `[(signin/facebook ~{:user-id      user-id
+                    (om/transact! this `[(session.signin/facebook ~{:user-id      user-id
                                                             :access-token access-token})
                                          :user/current
                                          :query/auth]))

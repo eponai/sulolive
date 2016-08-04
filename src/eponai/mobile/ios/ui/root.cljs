@@ -58,11 +58,11 @@
         (.replace nav #js {:title     ""
                            :component ->LoginMenu
                            :passProps #js {:onFacebookLogin (fn [params]
-                                                              (om/transact! this `[(signin/facebook ~params)
+                                                              (om/transact! this `[(session.signin/facebook ~params)
                                                                                    :user/current
                                                                                    :query/auth]))
                                            :onEmailLogin    (fn [params]
-                                                              (om/transact! this `[(signup/email ~(assoc params :device :ios))]))}}))))
+                                                              (om/transact! this `[(session.signin/email ~(assoc params :device :ios))]))}}))))
   (initLocalState [this]
     ;; Need to pass the identical function to add/removeEventListener.
     {:url-handler (fn [event] (linking/load-url! this (gobj/get event "url")))})

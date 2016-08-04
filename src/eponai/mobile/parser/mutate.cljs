@@ -13,23 +13,23 @@
   [{:keys [state]} _ {:keys [route]}]
   {:action #(t/transact state [(set-route-tx route)])})
 
-(defmethod mutate 'login/verify
-  [{:keys [state]} k {:keys [verify-uuid]}]
-   (let [verify-endpoint (-> (d/entity (d/db state) [:ui/singleton :ui.singleton/configuration])
-                             :ui.singleton.configuration.endpoints/verify)
-         verify-endpoint (str verify-endpoint "/" verify-uuid)]
-     (debug "Will verify verify-uuid: " verify-endpoint)
-     ;; Special http remote which uses the query to call some endpoint.
-     ;; Response can be merged with the parser.merge function.
-     {:http/call (om/query->ast `[(http/get ~{:mutation 'login/verify
-                                              :endpoint verify-endpoint})])}))
+;(defmethod mutate 'login/verify
+;  [{:keys [state]} k {:keys [verify-uuid]}]
+;   (let [verify-endpoint (-> (d/entity (d/db state) [:ui/singleton :ui.singleton/configuration])
+;                             :ui.singleton.configuration.endpoints/verify)
+;         verify-endpoint (str verify-endpoint "/" verify-uuid)]
+;     (debug "Will verify verify-uuid: " verify-endpoint)
+;     ;; Special http remote which uses the query to call some endpoint.
+;     ;; Response can be merged with the parser.merge function.
+;     {:http/call (om/query->ast `[(http/get ~{:mutation 'login/verify
+;                                              :endpoint verify-endpoint})])}))
 
-(defmethod mutate 'email/verify
-  [{:keys [state]} _ {:keys [verify-uuid]}]
-  {:remote true})
+;; ############# Session mutations #################
 
-(defmethod mutate 'signin/facebook
-  [_ _ _]
+(defmethod mutate 'session.signin.email/verify
+  [_ _ {:keys [verify-uuid] :as p}]
+  (assert (some? verify-uuid) (str "Mutation 'session.signin.email/verify needs a value for key :verification-uuid. Got params: " p))
+  (debug "session.signin.email/verify with params: " p)
   {:remote true})
 
 (defmethod mutate 'session/signout

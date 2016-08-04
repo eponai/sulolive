@@ -54,6 +54,7 @@
   (context "/app" _
     (fn [request]
       (let [auth (friend/current-authentication request)]
+        (debug "Got request to app: " auth)
         (if (contains? (:roles auth) ::a/user-inactive)
           (r/redirect "/activate")
           ((friend/wrap-authorize app-routes #{::a/user}) request)))))

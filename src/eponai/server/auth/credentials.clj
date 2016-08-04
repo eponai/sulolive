@@ -74,6 +74,7 @@
       (let [db-user (d/entity (d/db conn) (-> fb-user
                                               :fb-user/user
                                               :db/id))]
+        (debug "Facebook user existed: " db-user)
 
         ;; Check that the user is activated, if not throw exception.
         (if (= (:user/status db-user)
