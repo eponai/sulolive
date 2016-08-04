@@ -7,7 +7,7 @@
     [eponai.common.database.pull :as p]
     [eponai.common.parser.util :as parser]
     [eponai.common.report :as report]
-    [taoensso.timbre :refer [debug warn trace]]))
+    [taoensso.timbre :as timbre :refer [debug warn trace]]))
 
 (defn currencies [db]
   (p/q '[:find [(pull ?e [*]) ...]
@@ -181,7 +181,7 @@
 
 (defn path->paths [path]
   (->> path
-       (iterate rest)
+       (iterate #(subvec % 0 (dec (count %))))
        (take-while seq)
        (mapv vec)))
 
@@ -191,7 +191,7 @@
     (x-with db entity-query)
     (combine (x-with db (p/with-db-since entity-query db-since))
              ;; Using delay to be sure we're lazy when its needed.
-             (delay (->> (keep-refs-only pull-pattern)
+             (delay (->> pull-pattern
                          (pull-pattern->paths)
                          ;; Expand to check all possible entities in all paths.
                          ;; To think about: Can we order these in anyway to see if
@@ -223,6 +223,96 @@
 (defn pull-all-since [db db-since pull-pattern entity-query]
   (some->> (all-since db db-since pull-pattern entity-query)
            (p/pull-many db pull-pattern)))
+
+
+;; ######### x-historically
+
+(defn pull-pattern->ref-paths
+  "Takes a pull-pattern and returns paths to all of its refs.
+
+  [{:foo [{:bar [:baz]}
+          {:abc [:def]}]}]
+  => [[:foo :bar :baz]
+      [:foo :bar]
+      [:foo :abc :def]
+      [:foo :abc]]"
+  [pull-pattern]
+  (->> (pull-pattern->paths pull-pattern)
+       (into []
+             (comp (mapcat path->paths)
+                   (filter #(> (count %) 1))
+                   (distinct)))))
+
+(defn vec-last
+  "Using peek for getting the last element in a vector.
+  It'll return the first element of a seq or list, it only
+  gets the last element of vectors. See: (doc peek)"
+  [v]
+  {:pre [(vector? v)]}
+  (peek v))
+
+(defn path-query [path eids]
+  (let [path-syms (sym-seq path)]
+    {:where        (mapv path->where-clause path (partition 2 1 path-syms))
+     :symbols      {[(first path-syms) '...] eids}
+     :find-pattern '[[(vec-last path-syms) ...]]}))
+
+(defn pattern->attr-paths
+  ([pattern] (pattern->attr-paths pattern []))
+  ([pattern path]
+   (let [ks (map #(cond (keyword? %) %
+                        (map? %) (ffirst %))
+                 pattern)
+         joins (filter map? pattern)]
+     (into [{:path path :attrs ks}]
+           (mapcat (fn [m]
+                     {:pre (= 1 (count m))}
+                     (let [[k v] (first m)]
+                       (pattern->attr-paths v (conj path k)))))
+           joins))))
+
+(defn path-from-attr-eid-to-entity-eid [db db-history entity-query {:keys [path attrs]}]
+  (let [path-syms (cons '?e (sym-seq path))
+        where-clauses (map path->where-clause path (partition 2 1 path-syms))
+        path-query (cond-> entity-query
+                           (seq where-clauses)
+                           (p/merge-query {:where (vec where-clauses)}))
+        last-ref (or (last path-syms) '?e)]
+    (->> attrs
+         (into []
+           (mapcat
+             (fn [attr]
+               (let [datoms (d/datoms db-history :aevt (normalize-attribute attr))
+                     datom->eid (if (reverse-lookup-attr? attr) #(.v %) #(.e %))]
+                 (filter (fn [datom]
+                           (some? (p/one-with db (p/merge-query
+                                                   path-query
+                                                   {:symbols {last-ref
+                                                              (datom->eid datom)}}))))
+                         datoms))))))))
+
+(defn datoms-since [db db-history pull-pattern entity-query]
+  (timbre/with-level
+    :trace
+    (let [attr-paths (pattern->attr-paths pull-pattern)
+          datoms (->> attr-paths
+                      (into []
+                            (comp (mapcat (fn [attr-path]
+                                            (path-from-attr-eid-to-entity-eid
+                                              db db-history entity-query attr-path))))))]
+      datoms)))
+
+(defn datom-txs-since [db db-history pull-pattern entity-query]
+  (->> (datoms-since db db-history pull-pattern entity-query)
+       (d/q '{:find  [?e ?attr ?v ?tx ?added]
+              :in    [$ [[?e ?a ?v ?tx ?added] ...]]
+              :where [[?a :db/ident ?attr]]}
+            db)
+       (sort-by #(.tx %) #(compare %2 %1))
+       (mapv (fn [[e a v _ added]]
+               [(if added :db/add :db/retract) e a v]))))
+
+;; ######### All entities
 
 (defn eid->refs [db eid attr]
   (if (reverse-lookup-attr? attr)

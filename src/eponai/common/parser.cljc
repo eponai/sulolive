@@ -262,7 +262,9 @@
              path (reduce conj [:eponai.common.parser/read-basis-t k] param-path)
              basis-t-for-this-key (get-in env path)
              env (assoc env :db-since (when basis-t-for-this-key
-                                        (d/since db basis-t-for-this-key)))
+                                        (d/since db basis-t-for-this-key))
+                            :db-history (when basis-t-for-this-key
+                                          (d/since (d/history db) basis-t-for-this-key)))
              ret (read env k p)]
          (cond-> ret
                  (nil? (:value ret))
