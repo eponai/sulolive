@@ -225,14 +225,14 @@
         (let [ret (mutate env k p)]
           (cond-> ret
                   (fn? (:action ret))
-                  (update ret :action (fn [action]
-                                        (fn []
-                                          (try
-                                            (action)
-                                            (catch #?@(:clj  [Throwable e]
-                                                       :cljs [:default e])
-                                                   (log-error e ":action")
-                                              (throw e))))))))
+                  (update :action (fn [action]
+                                    (fn []
+                                      (try
+                                        (action)
+                                        (catch #?@(:clj  [Throwable e]
+                                                   :cljs [:default e])
+                                               (log-error e ":action")
+                                          (throw e))))))))
         (catch #?@(:clj  [Throwable e]
                    :cljs [:default e])
                (log-error e "body")
