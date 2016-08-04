@@ -70,10 +70,10 @@
     ;; Need to pass the identical function to add/removeEventListener.
     {:url-handler (fn [event] (linking/load-url! this (gobj/get event "url")))})
   (componentDidMount [this]
-    ;(.addEventListener linking/linking "url" (-> this om/get-state :url-handler))
+    (.addEventListener linking/linking "url" (-> this om/get-state :url-handler))
     (.navigate this))
-  ;(componentWillUnmount [this]
-  ;  (.removeEventListener linking/linking "url", (-> this om/get-state :url-handler)))
+  (componentWillUnmount [this]
+    (.removeEventListener linking/linking "url", (-> this om/get-state :url-handler)))
   (componentDidUpdate [this _ _]
     (.navigate this))
   (render [this]
@@ -94,10 +94,10 @@
       (debug "User-status: " user-status)
       (if (= user-status :user.status/active)
         (->LoggedIn (om/computed logged-in
-                                 {:on-logout (fn []
-                                               (om/transact! this `[(session/signout)
-                                                                    :user/current
-                                                                    :query/auth]))}))
+                                 {:onLogout (fn []
+                                              (om/transact! this `[(session/signout)
+                                                                   :user/current
+                                                                   :query/auth]))}))
 
 
         (navigator-ios {:initialRoute {:title     ""

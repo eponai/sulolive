@@ -48,17 +48,18 @@
             e)))
 
 (defn env+params->project-eid [{:keys [db user-uuid]} {:keys [project-eid]}]
-  {:pre [(some? user-uuid)]}
-  (let [project-with-auth (common.pull/project-with-auth user-uuid)]
-    (debug "ENV PROJECT EID: " project-with-auth)
-    (if project-eid
-      (do
-        (debug "Found project eid")
-        (one-with db (merge-query project-with-auth {:symbols {'?e project-eid}})))
-      ;; No project-eid, grabbing the one with the smallest created-at
-      (do
-        (debug "Fetching smallest project eid: " (min-by db :project/created-at project-with-auth))
-        (min-by db :project/created-at project-with-auth)))))
+  ;{:pre [(some? user-uuid)]}
+  (when (some? user-uuid)
+    (let [project-with-auth (common.pull/project-with-auth user-uuid)]
+      (debug "ENV PROJECT EID: " project-with-auth)
+      (if project-eid
+        (do
+          (debug "Found project eid")
+          (one-with db (merge-query project-with-auth {:symbols {'?e project-eid}})))
+        ;; No project-eid, grabbing the one with the smallest created-at
+        (do
+          (debug "Fetching smallest project eid: " (min-by db :project/created-at project-with-auth))
+          (min-by db :project/created-at project-with-auth))))))
 
 (defmethod parser/read-basis-param-path :query/transactions [env _ params] [(env+params->project-eid env params)])
 (defmethod read :query/transactions

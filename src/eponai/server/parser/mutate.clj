@@ -167,6 +167,7 @@
              {:auth (some? auth)})})
 
 (defmethod mutate 'session/signout
-  [_ _ p]
+  [{:keys [auth]} _ p]
   (debug "session/signout with params: " p)
-  {:action (fn [])})
+  {:action (fn []
+             {:auth (some? auth)})})

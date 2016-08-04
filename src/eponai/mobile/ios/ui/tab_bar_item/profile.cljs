@@ -7,7 +7,7 @@
 (defui Profile
   Object
   (render [this]
-    (let [{:keys [on-logout]} (om/props this)]
+    (let [on-logout (.. (om/props this) -computed -onLogout)]
       (view (opts {:style {:flex 1 :margin 20}})
             (text nil "Is logged in")
 

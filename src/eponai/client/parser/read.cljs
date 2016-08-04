@@ -197,9 +197,11 @@
   [{:keys [db query target]} _ _]
   (if target
     {:remote true}
-    (let [{:keys [ui.singleton.auth/user]} (p/pull db [:ui.singleton.auth/user] [:ui/singleton :ui.singleton/auth])]
-      {:value (when (:db/id user)
-                (p/pull db query (:db/id user)))})))
+    (let [auth (p/one-with db {:where '[[?e :ui/singleton :ui.singleton/auth]]})]
+      {:value (when auth
+                (let [{:keys [ui.singleton.auth/user]} (p/pull db [:ui.singleton.auth/user] [:ui/singleton :ui.singleton/auth])]
+                  (when (:db/id user)
+                    (p/pull db query (:db/id user)))))})))
 
 (defmethod read :query/stripe
   [{:keys [db query parser target] :as env} _ _]
