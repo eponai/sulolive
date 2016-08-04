@@ -1,4 +1,4 @@
-(ns eponai.mobile.ios.ui.tab-bar-item.dashboard
+(ns eponai.mobile.ios.ui.dashboard
   (:require
     [eponai.client.ui :refer-macros [opts]]
     [eponai.mobile.components :refer [navigator-ios view text]]

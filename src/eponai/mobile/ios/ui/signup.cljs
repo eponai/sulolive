@@ -5,7 +5,6 @@
     [eponai.mobile.facebook :as fb]
     [eponai.mobile.ios.ui.transactions :as t]
     [goog.object :as gobj]
-    [eponai.mobile.ios.ui.tab-bar-item :as tab-bar-item]
     [om.next :as om :refer-macros [defui]]
     [taoensso.timbre :refer-macros [info debug error trace]]))
 

@@ -97,7 +97,8 @@
                                  {:onLogout (fn []
                                               (om/transact! this `[(session/signout)
                                                                    :user/current
-                                                                   :query/auth]))}))
+                                                                   :query/auth]))
+                                  :user current-user}))
 
 
         (navigator-ios {:initialRoute {:title     ""
