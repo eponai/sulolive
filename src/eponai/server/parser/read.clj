@@ -50,38 +50,45 @@
 (defn env+params->project-eid [{:keys [db user-uuid]} {:keys [project-eid]}]
   {:pre [(some? user-uuid)]}
   (let [project-with-auth (common.pull/project-with-auth user-uuid)]
+    (debug "ENV PROJECT EID: " project-with-auth)
     (if project-eid
-      (one-with db (merge-query project-with-auth {:symbols {'?e project-eid}}))
+      (do
+        (debug "Found project eid")
+        (one-with db (merge-query project-with-auth {:symbols {'?e project-eid}})))
       ;; No project-eid, grabbing the one with the smallest created-at
-      (min-by db :project/created-at project-with-auth))))
+      (do
+        (debug "Fetching smallest project eid: " (min-by db :project/created-at project-with-auth))
+        (min-by db :project/created-at project-with-auth)))))
 
 (defmethod parser/read-basis-param-path :query/transactions [env _ params] [(env+params->project-eid env params)])
 (defmethod read :query/transactions
   [{:keys [db db-since query user-uuid] :as env} _ params]
-  (let [project-eid (env+params->project-eid env params)
-        entity-query (common.pull/transaction-entity-query {:project-eid project-eid :user-uuid user-uuid})
-        tx-ids (server.pull/all-since db db-since query entity-query)
-        tx-entities (mapv #(d/entity db %) tx-ids)
-        conversions (pull/transaction-conversions db user-uuid tx-entities)
+  (when-let [project-eid (env+params->project-eid env params)]
+    (let [
+          _ (debug "ENV RESULT PROJECT: " project-eid)
+          entity-query (common.pull/transaction-entity-query {:project-eid project-eid :user-uuid user-uuid})
+          tx-ids (server.pull/all-since db db-since query entity-query)
+          tx-entities (mapv #(d/entity db %) tx-ids)
+          conversions (pull/transaction-conversions db user-uuid tx-entities)
 
-        conv-ids (into #{} (mapcat (fn [[_ v]]
-                                     {:pre [(:transaction-conversion-id v) (:user-conversion-id v)]}
-                                     (vector (:user-conversion-id v)
-                                             (:transaction-conversion-id v))))
-                       conversions)
-        ref-ids (set/union
-                  (server.pull/all-entities db query tx-ids)
-                  (server.pull/all-entities db pull/conversion-query conv-ids))
-        pull-xf (map #(d/pull db '[*] %))]
-    {:value (cond-> {:transactions (into [] (comp (map #(entity-map->shallow-map %))
-                                                  (map #(update % :transaction/type (fn [t] {:db/ident t})))
-                                                  (map #(if-let [tx-conv (get conversions (:db/id %))]
-                                                         ;; TODO: Do not transfer the whole conversion entity?
-                                                         (assoc % :transaction/conversion tx-conv)
-                                                         %)))
-                                         tx-entities)
-                     :conversions  (into [] pull-xf conv-ids)
-                     :refs         (into [] pull-xf ref-ids)})}))
+          conv-ids (into #{} (mapcat (fn [[_ v]]
+                                       {:pre [(:transaction-conversion-id v) (:user-conversion-id v)]}
+                                       (vector (:user-conversion-id v)
+                                               (:transaction-conversion-id v))))
+                         conversions)
+          ref-ids (set/union
+                    (server.pull/all-entities db query tx-ids)
+                    (server.pull/all-entities db pull/conversion-query conv-ids))
+          pull-xf (map #(d/pull db '[*] %))]
+      {:value (cond-> {:transactions (into [] (comp (map #(entity-map->shallow-map %))
+                                                    (map #(update % :transaction/type (fn [t] {:db/ident t})))
+                                                    (map #(if-let [tx-conv (get conversions (:db/id %))]
+                                                           ;; TODO: Do not transfer the whole conversion entity?
+                                                           (assoc % :transaction/conversion tx-conv)
+                                                           %)))
+                                           tx-entities)
+                       :conversions  (into [] pull-xf conv-ids)
+                       :refs         (into [] pull-xf ref-ids)})})))
 
 (defmethod parser/read-basis-param-path :query/dashboard [env _ params] [(env+params->project-eid env params)])
 (defmethod read :query/dashboard

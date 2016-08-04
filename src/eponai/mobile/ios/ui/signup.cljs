@@ -1,16 +1,18 @@
-(ns eponai.mobile.ios.ui.login
+(ns eponai.mobile.ios.ui.signup
   (:require
     [eponai.client.ui :refer-macros [opts]]
-    [eponai.mobile.components :refer [view text text-input image list-view touchable-highlight navigator-ios]]
+    [eponai.mobile.components :refer [view text text-input image list-view touchable-highlight navigator-ios tab-bar-ios tab-bar-ios-item]]
     [eponai.mobile.facebook :as fb]
+    [eponai.mobile.ios.ui.transactions :as t]
     [goog.object :as gobj]
+    [eponai.mobile.ios.ui.tab-bar-item :as tab-bar-item]
     [om.next :as om :refer-macros [defui]]
     [taoensso.timbre :refer-macros [info debug error trace]]))
 
 
 (def logo-img (js/require "./images/world-black.png"))
 (def Dimensions (.-Dimensions js/ReactNative))
-(def StatusBar (.-StatusBar js/ReactNative))
+
 (def style
   {:scene      {:margin 20 :justify-content "space-between" :flex 1}
    :text-input {:height 40 :border-color :gray :border-width 1 :border-radius 5 :padding 10 :background-color :white :margin-bottom 20}
@@ -61,23 +63,6 @@
         (view nil)
         (view nil)))))
 (def ->Login (om/factory EmailLogin))
-
-(defui LoggedIn
-  Object
-  (render [this]
-    (let [on-logout (.-onLogout (om/props this))]
-      (view nil
-            (text nil "Is logged in")
-
-
-            (touchable-highlight
-              (opts {:style   {:background-color "#4267B2" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
-                     :onPress on-logout})
-
-              (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
-                    "Sign Out"))))))
-
-(def ->LoggedIn (om/factory LoggedIn))
 
 (defui ActivateAccount
   static om/IQuery
@@ -141,7 +126,7 @@
           nav (.-navigator props)]
       (.pop nav)))
   (componentDidMount [this]
-    (.setBarStyle StatusBar "light-content"))
+    (.setBarStyle (.-StatusBar js/ReactNative) "light-content"))
   (render [this]
       (let [on-facebook-login (.-onFacebookLogin (om/props this))]
         (map-cover-screen

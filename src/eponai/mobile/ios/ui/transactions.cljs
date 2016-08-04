@@ -2,7 +2,7 @@
   (:require [om.next :as om :refer-macros [defui]]
             [datascript.core :as d]
             [eponai.mobile.components :refer
-             [view text list-view
+             [view text list-view text-input
               list-view-data-source touchable-highlight
               navigation-experimental-header
               navigation-experimental-header-title
@@ -83,7 +83,9 @@
   (render-transactions [this]
     (with-om-vars
       this
-      (let [{:keys [query/transactions]} (om/props this)]
+      (let [{:keys [query/transactions]} (om/props this)
+            {:keys [input-text]} (om/get-state this)]
+        (text-input (opts {:value (or input-text "")}))
         (list-view
           (styles :nav-bar->container
                   {:data-source (:data-source (om/get-state this))
@@ -128,7 +130,8 @@
        :navigationState (-> (:nav-state (om/get-state this))
                             clj->js)
        :style           {:flex 1}
-       :renderScene     #(.render-scene this)})))
+       :renderScene     #(.render-scene this)})
+    ))
 
 
 (def ->Transactions (om/factory Transactions))
