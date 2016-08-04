@@ -73,15 +73,16 @@
 (defn- x-with [db {:keys [find-pattern where symbols] :as entity-query}]
   {:pre [(db-instance? db)
          (or (vector? where) (seq? where))
-         (or (nil? symbols) (map? symbols))]}
+         (or (nil? symbols) (map? symbols))
+         (vector? find-pattern)]}
   (let [symbol-seq (seq symbols)
         query (where->query where
                             find-pattern
                             (map first symbol-seq))]
     (trace "query: " entity-query)
     (apply q query
-       db
-       (map second symbol-seq))))
+           db
+           (map second symbol-seq))))
 
 (defn lookup-entity
   "Pull full entity with for the specified lookup ref. (Needs to be a unique attribute in lookup ref).
@@ -132,11 +133,13 @@
 
 (defn merge-query
   "Preforms a merge of two query maps with :where and :symbols."
-  [base addition]
+  [base {:keys [find-pattern] :as addition}]
   {:pre [(map? base) (map? addition)]}
   (-> base
       (update :where concat (:where addition))
-      (update :symbols merge (:symbols addition))))
+      (update :symbols merge (:symbols addition))
+      (cond-> (some? find-pattern)
+              (assoc :find-pattern find-pattern))))
 
 (defn with-db-since
   "Adds a where clause for which symbol that should be available in

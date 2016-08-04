@@ -227,37 +227,49 @@
 
 ;; ######### x-historically
 
-(defn pull-pattern->ref-paths
-  "Takes a pull-pattern and returns paths to all of its refs.
+(defn changed-datoms-matching-path
+  "Finds all changed datoms matching the pull-pattern.
 
-  [{:foo [{:bar [:baz]}
-          {:abc [:def]}]}]
-  => [[:foo :bar :baz]
-      [:foo :bar]
-      [:foo :abc :def]
-      [:foo :abc]]"
-  [pull-pattern]
-  (->> (pull-pattern->paths pull-pattern)
-       (into []
-             (comp (mapcat path->paths)
-                   (filter #(> (count %) 1))
-                   (distinct)))))
-
-(defn vec-last
-  "Using peek for getting the last element in a vector.
-  It'll return the first element of a seq or list, it only
-  gets the last element of vectors. See: (doc peek)"
-  [v]
-  {:pre [(vector? v)]}
-  (peek v))
-
-(defn path-query [path eids]
-  (let [path-syms (sym-seq path)]
-    {:where        (mapv path->where-clause path (partition 2 1 path-syms))
-     :symbols      {[(first path-syms) '...] eids}
-     :find-pattern '[[(vec-last path-syms) ...]]}))
+  For all changed datoms in db-history using the attrs in the pull-pattern,
+  find entities "
+  [db db-history entity-query {:keys [path attrs]}]
+  (let [path-syms (cons '?e (sym-seq path))
+        where-clauses (map path->where-clause path (partition 2 1 path-syms))
+        path-query (cond-> entity-query
+                           (seq where-clauses)
+                           (p/merge-query {:where (vec where-clauses)})
+                           :always
+                           (p/merge-query {:where '[[?datom-attr
+                                                     :db/ident
+                                                     ?datom-attr-keyword]]}))
+        last-ref (or (last path-syms) '?e)
+        find-pattern [last-ref
+                      '?datom-attr-keyword
+                      '?datom-value
+                      '?datom-tx
+                      '?datom-added]
+        datom-symbol [(assoc find-pattern 1 '?datom-attr) '...]]
+    (mapcat
+      (fn [attr]
+        (when-let [datoms (seq (d/datoms db-history :aevt (normalize-attribute attr)))]
+          (p/all-with db (p/merge-query path-query
+                                      {:symbols      {datom-symbol datoms}
+                                       :find-pattern find-pattern}))))
+      attrs)))
 
 (defn pattern->attr-paths
+  "Given a pull-pattern, return maps of {:path [] :attrs []} where:
+  :path is the path into the pull pattern
+  :attrs are all the keys at the current path.
+
+  Example:
+  (pattern->attr-paths [:abc {:foo [:bar {:baz [:abc]}]}])
+  Returns:
+  [{:path [], :attrs (:abc :foo)}
+   {:path [:foo], :attrs (:bar :baz)}
+   {:path [:foo :baz], :attrs (:abc)}]
+  Explanation:
+  At path [], including the join, we've got attrs :abc and :foo."
   ([pattern] (pattern->attr-paths pattern []))
   ([pattern path]
    (let [ks (map #(cond (keyword? %) %
@@ -271,44 +283,18 @@
                        (pattern->attr-paths v (conj path k)))))
            joins))))
 
-(defn path-from-attr-eid-to-entity-eid [db db-history entity-query {:keys [path attrs]}]
-  (let [path-syms (cons '?e (sym-seq path))
-        where-clauses (map path->where-clause path (partition 2 1 path-syms))
-        path-query (cond-> entity-query
-                           (seq where-clauses)
-                           (p/merge-query {:where (vec where-clauses)}))
-        last-ref (or (last path-syms) '?e)]
-    (->> attrs
-         (into []
-           (mapcat
-             (fn [attr]
-               (let [datoms (d/datoms db-history :aevt (normalize-attribute attr))
-                     datom->eid (if (reverse-lookup-attr? attr) #(.v %) #(.e %))]
-                 (filter (fn [datom]
-                           (some? (p/one-with db (p/merge-query
-                                                   path-query
-                                                   {:symbols {last-ref
-                                                              (datom->eid datom)}}))))
-                         datoms))))))))
-
 (defn datoms-since [db db-history pull-pattern entity-query]
-  (timbre/with-level
-    :trace
-    (let [attr-paths (pattern->attr-paths pull-pattern)
-          datoms (->> attr-paths
-                      (into []
-                            (comp (mapcat (fn [attr-path]
-                                            (path-from-attr-eid-to-entity-eid
-                                              db db-history entity-query attr-path))))))]
-      datoms)))
+  (->> pull-pattern
+       (pattern->attr-paths)
+       (into [] (mapcat (fn [attr-path]
+                          (changed-datoms-matching-path
+                            db db-history entity-query attr-path))))))
 
 (defn datom-txs-since [db db-history pull-pattern entity-query]
   (->> (datoms-since db db-history pull-pattern entity-query)
-       (d/q '{:find  [?e ?attr ?v ?tx ?added]
-              :in    [$ [[?e ?a ?v ?tx ?added] ...]]
-              :where [[?a :db/ident ?attr]]}
-            db)
-       (sort-by #(.tx %) #(compare %2 %1))
+       ;; Sort them by tx accending.
+       ;; So that older tx's are transacted after the earlier ones.
+       (sort-by #(nth % 3))
        (mapv (fn [[e a v _ added]]
                [(if added :db/add :db/retract) e a v]))))
 
