@@ -131,7 +131,7 @@
 
 (defn x-changed-entities-in-pull-pattern [x-with db db-since path entity-query]
   "Given paths through the pull pattern (paths of refs in the pull pattern (think
-   all nested maps))), check if there's an entity which matches the entity-query
+   all nested maps)), check if there's an entity which matches the entity-query
    that can follow a path (via refs) which hits an entity that's changed in db-since.
 
    Basically: Are there any entities changed in db-since in the pull pattern of the entity-query."
@@ -180,31 +180,33 @@
                          colls))))
 
 (defn path->paths [path]
-  {:pre [(vector? path)]}
-  (when (seq path)
-    (reduce conj [path] (path->paths (subvec path 0 (dec (count path)))))))
+  (->> path
+       (iterate rest)
+       (take-while seq)
+       (mapv vec)))
 
 ;; Testable?
 (defn- x-since [db db-since pull-pattern entity-query {:keys [x-with map-f filter-f combine]}]
   (if (nil? db-since)
     (x-with db entity-query)
     (combine (x-with db (p/with-db-since entity-query db-since))
-             (->> (keep-refs-only pull-pattern)
-                  (pull-pattern->paths)
-                  ;; Expand to check all possible entities in all paths.
-                  ;; To think about: Can we order these in anyway to see if
-                  ;;                 we should check some paths before others?
-                  (mapcat path->paths)
-                  (filter #(> (count %) 1))
-                  (map-f #(x-changed-entities-in-pull-pattern x-with db db-since % entity-query))
-                  (filter-f some?)))))
+             ;; Using delay to be sure we're lazy when its needed.
+             (delay (->> (keep-refs-only pull-pattern)
+                         (pull-pattern->paths)
+                         ;; Expand to check all possible entities in all paths.
+                         ;; To think about: Can we order these in anyway to see if
+                         ;;                 we should check some paths before others?
+                         (mapcat path->paths)
+                         (filter #(> (count %) 1))
+                         (map-f #(x-changed-entities-in-pull-pattern x-with db db-since % entity-query))
+                         (filter-f some?))))))
 
 (defn one-since [db db-since pull-pattern entity-query]
   (x-since db db-since pull-pattern entity-query {:x-with   p/one-with
                                                   :map-f    unchunked-map
                                                   :filter-f unchunked-filter
                                                   :combine  (fn [entity-eid pull-eids]
-                                                              (or entity-eid (first pull-eids)))}))
+                                                              (or entity-eid (first @pull-eids)))}))
 
 (defn pull-one-since [db db-since pull-pattern entity-query]
   (some->> (one-since db db-since pull-pattern entity-query)
@@ -214,7 +216,7 @@
   (x-since db db-since pull-pattern entity-query
            {:x-with  p/all-with
             :combine (fn [entity-eids pull-eidss]
-                       (concat-distinct entity-eids pull-eidss))
+                       (concat-distinct entity-eids @pull-eidss))
             :filter-f filter
             :map-f   map}))
 
@@ -236,16 +238,17 @@
   {:post [(set? %)]}
   (loop [eids eids path path ret #{}]
     (if (and (seq eids) (seq (rest path)))
-      (let [attr (first path)]
-        (let [refs (eids->refs db eids attr)]
-          (recur refs (rest path) (into ret refs))))
+      (let [attr (first path)
+            refs (eids->refs db eids attr)]
+        (recur refs (rest path) (into ret refs)))
       ret)))
 
 (defn all-entities [db pull-pattern eids]
   {:post [(set? %)]}
-  (let [ref-pattern (keep-refs-only pull-pattern)
-        paths (pull-pattern->paths ref-pattern)]
-    (->> (map (fn [path]
-                {:post [(or (nil? %) (set? %))]}
-                (path+eids->refs db eids path)) paths)
-         (apply set/union))))
+  (->> pull-pattern
+       (keep-refs-only)
+       (pull-pattern->paths)
+       (map (fn [path]
+              {:post [(or (nil? %) (set? %))]}
+              (path+eids->refs db eids path)))
+       (apply set/union)))
