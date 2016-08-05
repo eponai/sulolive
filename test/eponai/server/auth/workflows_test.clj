@@ -12,8 +12,7 @@
 
 (def login-parser (om/parser
                     {:mutate (fn [_ k p]
-                               (if (= k 'signin/facebook)
-                                 {:action (fn [] p)}))
+                               {:action (fn [] p)})
                      :read   (fn [_ _ _])}))
 
 
@@ -31,7 +30,7 @@
           workflow (w/facebook nil nil)
           res (workflow {:login-parser             login-parser
                          :path-info                "/api"
-                         :body                     {:query [`(signin/facebook ~{:user-id id :access-token access-token})]}
+                         :body                     {:query [`(session.signin/facebook ~{:user-id id :access-token access-token})]}
                          ::friend/auth-config      {:credential-fn      credential-fn
                                                     :login-mutation-uri "/api"}
                          :facebook-token-validator (fn [_ _ p]

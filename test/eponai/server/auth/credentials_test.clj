@@ -167,8 +167,8 @@
           stripe-fn (fn [_ _]
                       {:stripe/customer     "cus-id"
                        :stripe/subscription {:stripe.subscription/id "sub-id"}})
-          activated-auth (credential-fn (with-meta {:body      {:user-uuid  (str (:user/uuid user))
-                                                                :user-email (:user/email user)}
+          activated-auth (credential-fn (with-meta {:user-uuid  (str (:user/uuid user))
+                                                    :user-email (:user/email user)
                                                     :stripe-fn stripe-fn}
                                                    {::friend/workflow :activate-account}))
           stripe-cus (p/lookup-entity (d/db conn) [:stripe/customer "cus-id"])]
@@ -189,8 +189,8 @@
           stripe-fn (fn [_ _]
                       {:stripe/customer     "cus-id"
                        :stripe/subscription {:stripe.subscription/id "sub-id"}})
-          activated-auth (credential-fn (with-meta {:body      {:user-uuid  (str (:user/uuid user))
-                                                                :user-email (:user/email user)}
+          activated-auth (credential-fn (with-meta {:user-uuid  (str (:user/uuid user))
+                                                    :user-email (:user/email user)
                                                     :stripe-fn stripe-fn}
                                                    {::friend/workflow :activate-account}))
           stripe-cus (p/lookup-entity (d/db conn) [:stripe/customer "cus-id"])]

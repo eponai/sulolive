@@ -113,6 +113,7 @@
   (-> r/site-defaults
       (assoc-in [:session :store] (cookie/cookie-store {:key (env :session-cookie-store-key)}))
       (assoc-in [:session :cookie-name] (env :session-cookie-name))
+      (assoc-in [:session :cookie-attrs :max-age] 86400)
       (assoc-in [:security :anti-forgery] false)
       (assoc-in [:static :resources] false)))
 
