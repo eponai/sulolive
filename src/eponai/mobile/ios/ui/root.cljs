@@ -3,7 +3,8 @@
             [eponai.mobile.components :refer [navigation-experimental-header
                                               navigation-experimental-header-title
                                               navigation-experimental-card-stack
-                                              navigator-ios]]
+                                              navigator-ios
+                                              modal]]
             [eponai.mobile.om-helper :as om-helper :refer-macros [with-om-vars]]
             [eponai.mobile.ios.routes.ui-handlers :as ui.routes]
             [eponai.mobile.ios.ui.tab-bar-main :refer [->LoggedIn LoggedIn]]
@@ -99,16 +100,16 @@
                                                                    :user/current
                                                                    :query/auth]))
                                   :user current-user}))
-
-
-        (navigator-ios {:initialRoute {:title     ""
-                                       :component ->LoginMenu
-                                       :passProps {:onLogin (fn [res]
-                                                              (om/transact! this `[(signin/facebook ~res)
-                                                                                   :user/current
-                                                                                   :query/auth]))}}
-                        :ref          "navigator"
-                        :style        {:flex 1}
-                        :translucent  false
-                        :barTintColor "#01213d"
-                        :shadowHidden true})))))
+        (modal (opts {:animationType "slide"
+                      :visible true})
+               (navigator-ios {:initialRoute {:title     ""
+                                              :component ->LoginMenu
+                                              :passProps {:onLogin (fn [res]
+                                                                     (om/transact! this `[(signin/facebook ~res)
+                                                                                          :user/current
+                                                                                          :query/auth]))}}
+                               :ref          "navigator"
+                               :style        {:flex 1}
+                               :translucent  false
+                               :barTintColor "#01213d"
+                               :shadowHidden true}))))))
