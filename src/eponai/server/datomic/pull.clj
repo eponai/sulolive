@@ -227,6 +227,13 @@
 
 ;; ######### x-historically
 
+(defn vector-swap
+  "Swaps the values for index i1 and i2 in vector v."
+  [v i1 i2]
+  (-> v
+      (assoc i1 (nth v i2))
+      (assoc i2 (nth v i1))))
+
 (defn changed-datoms-matching-path
   "Finds all changed datoms matching the pull-pattern.
 
@@ -234,28 +241,36 @@
   find entities "
   [db db-history entity-query {:keys [path attrs]}]
   (let [path-syms (cons '?e (sym-seq path))
-        where-clauses (map path->where-clause path (partition 2 1 path-syms))
-        path-query (cond-> entity-query
-                           (seq where-clauses)
-                           (p/merge-query {:where (vec where-clauses)})
-                           :always
-                           (p/merge-query {:where '[[?datom-attr
-                                                     :db/ident
-                                                     ?datom-attr-keyword]]}))
-        last-ref (or (last path-syms) '?e)
-        find-pattern [last-ref
+        return-eid (or (last path-syms) '?e)
+        path-where-clauses (map path->where-clause path (partition 2 1 path-syms))
+        find-pattern [return-eid
                       '?datom-attr-keyword
                       '?datom-value
                       '?datom-tx
                       '?datom-added]
-        datom-symbol [(assoc find-pattern 1 '?datom-attr) '...]]
-    (mapcat
-      (fn [attr]
-        (when-let [datoms (seq (d/datoms db-history :aevt (normalize-attribute attr)))]
-          (p/all-with db (p/merge-query path-query
-                                      {:symbols      {datom-symbol datoms}
-                                       :find-pattern find-pattern}))))
-      attrs)))
+        path-query (cond-> entity-query
+                           (seq path-where-clauses)
+                           (p/merge-query {:where (vec path-where-clauses)})
+                           :always
+                           (p/merge-query {:where '[[?datom-attr
+                                                     :db/ident
+                                                     ?datom-attr-keyword]]
+                                           :symbols {'$db-hist db-history}
+                                           :find-pattern find-pattern}))
+        db-hist-datoms ['$db-hist return-eid '?datom-attr '?datom-value '?datom-tx '?datom-added]
+        changed-datoms-by-attrs (fn [attrs where-clause]
+                                  (when (seq attrs)
+                                    (p/all-with db
+                                                (p/merge-query
+                                                  {:where   [where-clause]
+                                                   :symbols {'[?datom-attr-keyword ...] attrs}}
+                                                  path-query))))]
+    (concat (changed-datoms-by-attrs (remove reverse-lookup-attr? attrs)
+                                     db-hist-datoms)
+            (changed-datoms-by-attrs (filter reverse-lookup-attr? attrs)
+                                     (vector-swap db-hist-datoms 1 3)))))
+
+;; TODO: TEST THIS :D
 
 (defn pattern->attr-paths
   "Given a pull-pattern, return maps of {:path [] :attrs []} where:
@@ -272,9 +287,10 @@
   At path [], including the join, we've got attrs :abc and :foo."
   ([pattern] (pattern->attr-paths pattern []))
   ([pattern path]
-   (let [ks (map #(cond (keyword? %) %
-                        (map? %) (ffirst %))
-                 pattern)
+   (let [ks (into [] (comp (map #(cond (keyword? %) %
+                                       (map? %) (ffirst %)))
+                           (remove #(= :db/id %)))
+                  pattern)
          joins (filter map? pattern)]
      (into [{:path path :attrs ks}]
            (mapcat (fn [m]
