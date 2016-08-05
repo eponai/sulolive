@@ -115,10 +115,11 @@
 
 (defmethod read :query/all-projects
   [{:keys [db db-since query auth]} _ _]
-  {:value (server.pull/pull-all-since db db-since query
-                                      {:where   '[[?e :project/users ?u]
-                                                  [?u :user/uuid ?user-uuid]]
-                                       :symbols {'?user-uuid (:username auth)}})})
+  {:value (when auth
+            (server.pull/pull-all-since db db-since query
+                                        {:where   '[[?e :project/users ?u]
+                                                    [?u :user/uuid ?user-uuid]]
+                                         :symbols {'?user-uuid (:username auth)}}))})
 
 (defmethod read :query/all-currencies
   [{:keys [db db-since query]} _ _]

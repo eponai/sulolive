@@ -57,11 +57,9 @@
         (modal
           (opts {:visible add-visible?
                  :animationType "slide"})
-          (view
-            (opts {:style {:margin 20}})
-            (->AddTransaction (om/computed {}
-                                           {:mode :create
-                                            :on-cancel #(om/update-state! this assoc :add-visible? false)}))))
+          (->AddTransaction (om/computed {}
+                                         {:mode :create
+                                          :on-cancel #(om/update-state! this assoc :add-visible? false)})))
         (tab-bar-ios
           (opts {:tintColor "blue" :barTintColor "white" :unselectedTintColor "gray"})
 

@@ -5,6 +5,7 @@
             [eponai.client.lib.transactions :as lib.t]
             [eponai.mobile.components :refer [view text text-input touchable-highlight picker picker-item date-picker-ios scroll-view activity-indicator-ios]]
             [eponai.mobile.components.button :as button]
+            [eponai.mobile.components.nav :as nav]
             [eponai.mobile.ios.style :refer [styles]]
             [eponai.common.format :as f]
             [eponai.common.format.date :as date]
@@ -36,7 +37,7 @@
 
 ;; TODO: Put common code in client or something?
 ;; Query and initLocalState copied from web.ui
-(defui AddTransaction
+(defui AddTransactionContent
   static om/IQueryParams
   (params [this]
     {:mutation-uuids []})
@@ -87,7 +88,7 @@
                          #(into []
                                 (remove (set message-uuids))
                                 %)))))
-
+  
   (update-transaction! [this k v]
     (om/update-state! this assoc-in [:input-transaction k] v))
 
@@ -124,26 +125,31 @@
                 :proxy/route-data]))))
 
   (render [this]
-    (let [{:keys [query/all-currencies query/all-projects query/messages]} (om/props this)
+    (let [{:keys [query/all-currencies query/all-projects query/messages] :as props} (om/props this)
           {:keys [input-tag input-transaction projects-by-uuid currencies-by-code]} (om/get-state this)
           {:keys [transaction/date transaction/tags transaction/currency
                   transaction/project transaction/amount transaction/title
                   transaction/type]} input-transaction
           js-date (date/js-date date)
-          {:keys [mode on-saved on-cancel] :as computed} (om/get-computed this)
+          computed (.-computed props)
+          on-cancel (aget computed "on-cancel")
+          on-saved (aget computed "on-save")
+          mode (keyword (.-mode computed))
           {:keys [tx.status/success tx.status/error]} (group-by :tx/status messages)
           all-answered (every? (set (map :tx/mutation-uuid messages))
                                (:mutation-uuids (om/get-params this)))]
       (debug "render, Messages:" messages
              " params: " (om/get-params this)
              " success: " success)
+      (debug "Add transaction got computed: " computed)
       (assert (contains? modes mode)
               (str "Required om/computed key :mode needs to be one of: " modes " was: " mode " computed: " computed))
-      (view {}
+      (view (opts {:style {:margin 20
+                           :justify-content "space-between"}})
             (scroll-view
               ;;TODO: How much height do we have to play with?
               ;;TODO: Adjust keyboard to the scroll view
-              {:height 400}
+              ;{:height 400}
               ;; When there are messages which haven't been replied to yet, show activity indicator.
               (when-not all-answered
                 (activity-indicator-ios
@@ -238,8 +244,34 @@
             (button/primary {:title "Save"
                              :on-press #(condp = mode
                                          :create (.create-transaction! this)
-                                         :edit (.edit-transaction! this))})
-            (button/secondary {:title "Cancel"
-                               :on-press on-cancel})))))
+                                         :edit (.edit-transaction! this))})))))
+
+(def ->AddTransactionContent (om/factory AddTransactionContent))
+
+(defui AddTransactionForm
+  Object
+  (render [this]
+    (view nil (text nil "This is some new transaction..."))))
+
+(def ->AddTransactionForm (om/factory AddTransactionForm))
+
+(defui AddTransaction
+  static om/IQuery
+  (query [this]
+    '[{:query/all-currencies [:currency/code :currency/name]}
+      {:query/all-projects [:project/uuid :project/name :project/users]}])
+  Object
+  (save [this])
+  (render [this]
+    (let [{:keys [query/all-currencies query/all-projects]} (om/props this)
+          {:keys [on-cancel]} (om/get-computed this)]
+      (nav/navigator
+        {:initial-route {:title              ""
+                         :component          ->AddTransactionForm
+                         :onLeftButtonPress  on-cancel
+                         :leftButtonTitle    "Cancel"
+                         :onRightButtonPress #(.save this)
+                         :rightButtonTitle   "Save"
+                         :passProps          (om/props this)}}))))
 
 (def ->AddTransaction (om/factory AddTransaction))
