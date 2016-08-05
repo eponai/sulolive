@@ -60,10 +60,8 @@
           (view
             (opts {:style {:margin 20}})
             (->AddTransaction (om/computed {}
-                                           {:mode :create}))
-            (button/primary {:on-press #(om/update-state! this assoc :add-visible? false)
-                             :title "Cancel"})
-            ))
+                                           {:mode :create
+                                            :on-cancel #(om/update-state! this assoc :add-visible? false)}))))
         (tab-bar-ios
           (opts {:tintColor "blue" :barTintColor "white" :unselectedTintColor "gray"})
 

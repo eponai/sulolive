@@ -4,6 +4,7 @@
             [eponai.client.ui :as ui :refer-macros [opts camel]]
             [eponai.client.lib.transactions :as lib.t]
             [eponai.mobile.components :refer [view text text-input touchable-highlight picker picker-item date-picker-ios scroll-view activity-indicator-ios]]
+            [eponai.mobile.components.button :as button]
             [eponai.mobile.ios.style :refer [styles]]
             [eponai.common.format :as f]
             [eponai.common.format.date :as date]
@@ -129,7 +130,7 @@
                   transaction/project transaction/amount transaction/title
                   transaction/type]} input-transaction
           js-date (date/js-date date)
-          {:keys [mode on-saved] :as computed} (om/get-computed this)
+          {:keys [mode on-saved on-cancel] :as computed} (om/get-computed this)
           {:keys [tx.status/success tx.status/error]} (group-by :tx/status messages)
           all-answered (every? (set (map :tx/mutation-uuid messages))
                                (:mutation-uuids (om/get-params this)))]
@@ -234,10 +235,11 @@
                            (ui/map-all tags
                                        #(text (camel {:width 30 :font-size 12})
                                               (:tag/name %))))))
-            (touchable-highlight (styles :save
-                                         {:on-press #(condp = mode
-                                                      :create (.create-transaction! this)
-                                                      :edit (.edit-transaction! this))})
-                                 (text (styles [:save-text]) "Save"))))))
+            (button/primary {:title "Save"
+                             :on-press #(condp = mode
+                                         :create (.create-transaction! this)
+                                         :edit (.edit-transaction! this))})
+            (button/secondary {:title "Cancel"
+                               :on-press on-cancel})))))
 
 (def ->AddTransaction (om/factory AddTransaction))

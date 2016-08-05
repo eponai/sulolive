@@ -3,11 +3,21 @@
     [eponai.client.ui :refer-macros [opts]]
     [eponai.mobile.components :refer [touchable-highlight text]]))
 
-(defn primary [{:keys [title on-press]}]
+(defn button [{:keys [title on-press]} style text-style]
   (touchable-highlight
-    (opts {:onPress on-press
-           :style   {:background-color "#044e8a" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}})
+    (opts (update {:onPress on-press
+                   :style {:border-radius 5 :padding 10 :height 44 :justify-content "center"}}
+                  :style merge style))
     (text
-      (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
+      (opts (update {:style {:text-align "center" :font-weight "bold"}}
+                    :style merge text-style))
       (or title ""))))
+(defn primary [params]
+  (button params
+          {:background-color "#044e8a"}
+          {:color "white"}))
 
+(defn secondary [params]
+  (button params
+          {:background-color "#999"}
+          {:color "white"}))
