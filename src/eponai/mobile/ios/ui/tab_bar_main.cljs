@@ -1,8 +1,10 @@
 (ns eponai.mobile.ios.ui.tab-bar-main
   (:require
     [eponai.client.ui :refer-macros [opts]]
-    [eponai.mobile.components :refer [tab-bar-ios tab-bar-ios-item navigator-ios view text modal]]
+    [eponai.mobile.components :refer [tab-bar-ios tab-bar-ios-item navigator-ios view text modal touchable-highlight]]
+    [eponai.mobile.components.button :as button]
     [eponai.mobile.ios.ui.dashboard :refer [Dashboard ->Dashboard]]
+    [eponai.mobile.ios.ui.add-transaction :refer [AddTransaction ->AddTransaction]]
     [eponai.mobile.ios.ui.profile :refer [Profile ->Profile]]
     [om.next :as om :refer-macros [defui]]))
 
@@ -40,16 +42,28 @@
 (defui LoggedIn
   static om/IQuery
   (query [_]
-    [{:proxy/dashboard (om/get-query Dashboard)}])
+    [{:proxy/dashboard (om/get-query Dashboard)}
+     {:proxy/add-transaction (om/get-query AddTransaction)}])
   Object
   (initLocalState [_]
-    {:selected-tab :tab-list})
+    {:selected-tab :tab-list
+     :add-visible? false})
   (componentDidMount [_]
     (.setBarStyle (.-StatusBar js/ReactNative) "default"))
   (render [this]
-    (let [{:keys [selected-tab]} (om/get-state this)]
-      (modal
-        (opts {:visible true})
+    (let [{:keys [selected-tab add-visible?]} (om/get-state this)]
+      (view
+        (opts {:style {:flex 1}})
+        (modal
+          (opts {:visible add-visible?
+                 :animationType "slide"})
+          (view
+            (opts {:style {:margin 20}})
+            (->AddTransaction (om/computed {}
+                                           {:mode :create}))
+            (button/primary {:on-press #(om/update-state! this assoc :add-visible? false)
+                             :title "Cancel"})
+            ))
         (tab-bar-ios
           (opts {:tintColor "blue" :barTintColor "white" :unselectedTintColor "gray"})
 
@@ -60,8 +74,7 @@
 
           (tab-bar-item :tab/add-transaction
                         nil
-                        {:is-selected? (= selected-tab :tab-add)
-                         :on-press     #(om/update-state! this assoc :selected-tab :tab-add)})
+                        {:on-press     #(om/update-state! this assoc :add-visible? true)})
 
           (tab-bar-item :tab/dashboard
                         nil
