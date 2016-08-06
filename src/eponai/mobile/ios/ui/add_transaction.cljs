@@ -251,15 +251,20 @@
 (def ->AddTransactionContent (om/factory AddTransactionContent))
 
 (defui AddTransactionForm
+  ;static om/IQuery
+  ;(query [_]
+  ;  [{:query/all-projects [:project/uuid :project/name :project/users]}])
   Object
-  (initLocalState [_]
-    {:selected-project :one})
+  ;(initLocalState [_]
+  ;  {:selected-project :one})
   (render [this]
     (let [{:keys [selected-project selected-input-field anim]} (om/get-state this)
+          props (om/props this)
+          all-projects (.-projects props)
           PickerItemIOS (.-Item (.-PickerIOS js/ReactNative))
           AnimatedView js/ReactNative.Animated.View
           animation (or anim (js/ReactNative.Animated.Value. 0))]
-      (debug "Add transaction animation: " anim)
+      (debug "Got JS props" all-projects)
       (view
         nil
         ;(if (= :input.selected/projects selected-input-field)
@@ -278,6 +283,10 @@
         ;                                 (.start (.timing js/ReactNative.Animated animation #js {:toValue 1 :duration 2000}))
         ;                                 (om/update-state! this assoc :selected-input-field :input.selected/projects))}))
 
+        (mapv (fn [p]
+               (debug "Mapping over projects: " (.-name p))
+                (debug (.-uuid p)))
+             all-projects)
 
         (if (= :input.selected/projects selected-input-field)
           ;(p/expandable
@@ -288,15 +297,15 @@
           ;   :onValueChange #(om/update-state! this assoc :selected-project (keyword %))})
           (fade-in/->FadeInView {:children
                                  (picker-ios
-                                   (opts {:selectedValue selected-project
-                                          :onValueChange #(om/update-state! this assoc :selected-project (keyword %))})
+                                   (opts {:selectedValue (or selected-project (-> all-projects first .-uuid str))
+                                          :onValueChange #(om/update-state! this assoc :selected-project %)})
 
                                    (map (fn [val]
                                           (c/create-element PickerItemIOS
-                                                            {:key   val
-                                                             :value val
-                                                             :label (name val)}))
-                                        [:one :two :three :four]))})
+                                                            {:key   (str (.-uuid val))
+                                                             :value (str (.-uuid val))
+                                                             :label (.-name val)}))
+                                        all-projects))})
           ;(c/create-element AnimatedView
           ;                  (opts {:style {:opacity animation :flex 1}})
           ;                  (picker-ios
@@ -309,10 +318,16 @@
           ;                                              :value val
           ;                                              :label (name val)}))
           ;                         [:one :two :three :four])))
-          (button/list-item {:title    (name selected-project)
-                             :on-press #(do
-                                         (.start (.timing js/ReactNative.Animated animation #js {:toValue 1 :duration 2000}))
-                                         (om/update-state! this assoc :selected-input-field :input.selected/projects))}))
+          (let [t (if selected-project
+                    (do
+                      (debug "Found selected project: " selected-project)
+                      (get (group-by (fn [p] (str (.-uuid p))) all-projects) selected-project))
+                    (-> all-projects first .-name))]
+            (debug "Got title: " t)
+            (button/list-item {:title    (if selected-project
+                                           (get (group-by (fn [p] (str (.-uuid p))) all-projects) selected-project)
+                                           (-> all-projects first .-name))
+                               :on-press #(om/update-state! this assoc :selected-input-field :input.selected/projects)})))
         (text nil "This is some new transaction...")))))
 
 (def ->AddTransactionForm (om/factory AddTransactionForm))
@@ -327,6 +342,7 @@
   (render [this]
     (let [{:keys [query/all-currencies query/all-projects]} (om/props this)
           {:keys [on-cancel]} (om/get-computed this)]
+      (debug "Got all projects: " all-projects)
       (nav/navigator
         {:initial-route {:title              ""
                          :component          ->AddTransactionForm
@@ -334,6 +350,6 @@
                          :leftButtonTitle    "Cancel"
                          :onRightButtonPress #(.save this)
                          :rightButtonTitle   "Save"
-                         :passProps          (om/props this)}}))))
+                         :passProps          {:projects all-projects}}}))))
 
 (def ->AddTransaction (om/factory AddTransaction))

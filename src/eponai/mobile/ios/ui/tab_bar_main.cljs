@@ -24,12 +24,12 @@
              :itemWrapperStyle {:marginTop 60 :marginBottom 50}}))))
 
 (defmethod tab-bar-item :tab/add-transaction
-  [_ _ & [{:keys [is-selected? on-press]}]]
+  [_ props & [{:keys [is-selected? on-press]}]]
   (tab-bar-ios-item
     (opts {:title    "Add"
            :selected is-selected?
            :onPress  on-press})
-    (->AddTransaction (om/computed {}
+    (->AddTransaction (om/computed props
                                    {:mode :create
                                     :on-cancel #()}))
     ))
@@ -54,7 +54,8 @@
   (componentDidMount [_]
     (.setBarStyle (.-StatusBar js/ReactNative) "default"))
   (render [this]
-    (let [{:keys [selected-tab add-visible?]} (om/get-state this)]
+    (let [{:keys [selected-tab add-visible?]} (om/get-state this)
+          {:keys [proxy/add-transaction]} (om/props this)]
       (view
         (opts {:style {:flex 1}})
         (modal
@@ -71,7 +72,7 @@
                         {:is-selected? (= selected-tab :tab-profile)
                          :on-press     #(om/update-state! this assoc :selected-tab :tab-profile)})
           (tab-bar-item :tab/add-transaction
-                        nil
+                        add-transaction
                         {:is-selected? (= selected-tab :tab-add)
                          :on-press     #(om/update-state! this assoc :selected-tab :tab-add)})
 
