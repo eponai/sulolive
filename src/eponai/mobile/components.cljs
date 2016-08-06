@@ -27,4 +27,10 @@
     (ds/data-source-with-sections prev-data next-data)
     (ds/data-source-sectionless prev-data next-data)))
 
+(defn create-element [element options & children]
+  (apply js/React.createElement
+         element
+         (when options (clj->js options))
+         children))
+
 (create-component-functions)

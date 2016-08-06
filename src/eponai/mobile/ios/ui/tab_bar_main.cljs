@@ -29,7 +29,10 @@
     (opts {:title    "Add"
            :selected is-selected?
            :onPress  on-press})
-    (view nil)))
+    (->AddTransaction (om/computed {}
+                                   {:mode :create
+                                    :on-cancel #()}))
+    ))
 
 (defmethod tab-bar-item :tab/dashboard
   [_ _ & [{:keys [is-selected? on-press]}]]
@@ -46,7 +49,7 @@
      {:proxy/add-transaction (om/get-query AddTransaction)}])
   Object
   (initLocalState [_]
-    {:selected-tab :tab-list
+    {:selected-tab :tab-add
      :add-visible? false})
   (componentDidMount [_]
     (.setBarStyle (.-StatusBar js/ReactNative) "default"))
@@ -67,10 +70,14 @@
                         (om/props this)
                         {:is-selected? (= selected-tab :tab-profile)
                          :on-press     #(om/update-state! this assoc :selected-tab :tab-profile)})
-
           (tab-bar-item :tab/add-transaction
                         nil
-                        {:on-press     #(om/update-state! this assoc :add-visible? true)})
+                        {:is-selected? (= selected-tab :tab-add)
+                         :on-press     #(om/update-state! this assoc :selected-tab :tab-add)})
+
+          ;(tab-bar-item :tab/add-transaction
+          ;              nil
+          ;              {:on-press     #(om/update-state! this assoc :add-visible? true)})
 
           (tab-bar-item :tab/dashboard
                         nil

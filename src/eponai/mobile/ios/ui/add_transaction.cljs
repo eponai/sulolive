@@ -3,7 +3,9 @@
             [datascript.core :as d]
             [eponai.client.ui :as ui :refer-macros [opts camel]]
             [eponai.client.lib.transactions :as lib.t]
-            [eponai.mobile.components :refer [view text text-input touchable-highlight picker picker-item date-picker-ios scroll-view activity-indicator-ios]]
+            [eponai.mobile.components.fade-in-view :as fade-in]
+            [eponai.mobile.components.pick :as p]
+            [eponai.mobile.components :as c :refer [view text text-input touchable-highlight picker picker-item date-picker-ios scroll-view activity-indicator-ios picker-ios]]
             [eponai.mobile.components.button :as button]
             [eponai.mobile.components.nav :as nav]
             [eponai.mobile.ios.style :refer [styles]]
@@ -250,8 +252,68 @@
 
 (defui AddTransactionForm
   Object
+  (initLocalState [_]
+    {:selected-project :one})
   (render [this]
-    (view nil (text nil "This is some new transaction..."))))
+    (let [{:keys [selected-project selected-input-field anim]} (om/get-state this)
+          PickerItemIOS (.-Item (.-PickerIOS js/ReactNative))
+          AnimatedView js/ReactNative.Animated.View
+          animation (or anim (js/ReactNative.Animated.Value. 0))]
+      (debug "Add transaction animation: " anim)
+      (view
+        nil
+        ;(if (= :input.selected/projects selected-input-field)
+        ;  (picker-ios
+        ;    (opts {:selectedValue selected-project
+        ;           :onValueChange #(om/update-state! this assoc :selected-project (keyword %))})
+        ;
+        ;    (map (fn [val]
+        ;           (c/create-element PickerItemIOS
+        ;                             {:key   val
+        ;                              :value val
+        ;                              :label (name val)}))
+        ;         [:one :two :three :four]))
+        ;  (button/list-item {:title    (name selected-project)
+        ;                     :on-press #(do
+        ;                                 (.start (.timing js/ReactNative.Animated animation #js {:toValue 1 :duration 2000}))
+        ;                                 (om/update-state! this assoc :selected-input-field :input.selected/projects))}))
+
+
+        (if (= :input.selected/projects selected-input-field)
+          ;(p/expandable
+          ;  {:data     [:one :two :three :four]
+          ;   :on-press #(om/update-state! this assoc :selected-input-field :input.selected/projects)
+          ;             :is-expanded? (= :input.selected/projects selected-input-field)}
+          ;  {:selectedValue selected-project
+          ;   :onValueChange #(om/update-state! this assoc :selected-project (keyword %))})
+          (fade-in/->FadeInView {:children
+                                 (picker-ios
+                                   (opts {:selectedValue selected-project
+                                          :onValueChange #(om/update-state! this assoc :selected-project (keyword %))})
+
+                                   (map (fn [val]
+                                          (c/create-element PickerItemIOS
+                                                            {:key   val
+                                                             :value val
+                                                             :label (name val)}))
+                                        [:one :two :three :four]))})
+          ;(c/create-element AnimatedView
+          ;                  (opts {:style {:opacity animation :flex 1}})
+          ;                  (picker-ios
+          ;                    (opts {:selectedValue selected-project
+          ;                           :onValueChange #(om/update-state! this assoc :selected-project (keyword %))})
+          ;
+          ;                    (map (fn [val]
+          ;                           (c/create-element PickerItemIOS
+          ;                                             {:key   val
+          ;                                              :value val
+          ;                                              :label (name val)}))
+          ;                         [:one :two :three :four])))
+          (button/list-item {:title    (name selected-project)
+                             :on-press #(do
+                                         (.start (.timing js/ReactNative.Animated animation #js {:toValue 1 :duration 2000}))
+                                         (om/update-state! this assoc :selected-input-field :input.selected/projects))}))
+        (text nil "This is some new transaction...")))))
 
 (def ->AddTransactionForm (om/factory AddTransactionForm))
 
