@@ -22,5 +22,7 @@
   (set! utils/*playground?* true)
   (let [conn (utils/init-conn)]
     (app/initialize-app conn {:parser (parser-without-remote-mutations (parser/parser))
-                              :send   (backend/send! {:remote (-> (backend/post-to-url homeless/om-next-endpoint-playground)
+                              :send   (backend/send!
+                                        utils/reconciler-atom
+                                        {:remote (-> (backend/post-to-url homeless/om-next-endpoint-playground)
                                                                   (utils/read-basis-t-remote-middleware conn))})})))

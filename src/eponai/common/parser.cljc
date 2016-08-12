@@ -146,6 +146,37 @@
             query
             target)))
 
+#?(:cljs
+   (defn mutate-with-db-before-mutation [mutate]
+     (fn [{:keys [target ast reconciler state] :as env} k p]
+       (let [mutation (mutate env k p)
+             target-mutation (get mutation target false)
+             history (-> reconciler :config :history)
+             last-history-id (last (.-arr history))]
+
+         ;; Assertions about om.next's history implementation:
+         (assert (.-arr history)
+                 (str "om.next's history had no property (.-arr h)."
+                      " Check the implementation of om.next.cache."
+                      " history: " history))
+         ;; The state hasn't changed yet if we're receiving target nil
+         ;; in a mutation.
+         (when (and (nil? target)
+                    (not (identical? (d/db state)
+                                     (om/from-history reconciler last-history-id))))
+           (warn (str "Current db and db from history given the last-history-id were"
+                      " not identical."
+                      " Last-history-id: " last-history-id
+                      " mutation: " k
+                      " params: " p)))
+
+
+         (if (or (nil? target) (not target-mutation))
+           mutation
+          (let [ast (if (true? target-mutation) ast target-mutation)]
+            (assoc-in ast [:params :eponai.client.backend/mutation-db-history-id]
+                      last-history-id)))))))
+
 (defn mutate-with-idempotent-invariants  [mutate]
   (fn [{:keys [target ast] :as env} k {:keys [mutation-uuid] :as params}]
     (let [params' (dissoc params :mutation-uuid #?(:clj :remote-sync?))

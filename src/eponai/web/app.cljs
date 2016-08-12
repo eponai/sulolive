@@ -38,8 +38,9 @@
                                      :ui->props (utils/cached-ui->props-fn parser)
                                      :parser    parser
                                      :remotes   [:remote]
-                                     :send      (backend/send! {:remote (-> (backend/post-to-url homeless/om-next-endpoint-user-auth)
-                                                                            (utils/read-basis-t-remote-middleware conn))})
+                                     :send      (backend/send! utils/reconciler-atom
+                                                  {:remote (-> (backend/post-to-url homeless/om-next-endpoint-user-auth)
+                                                               (utils/read-basis-t-remote-middleware conn))})
                                      :merge     (merge/merge! web.merge/web-merge)
                                      :migrate   nil}
                                     reconciler-opts))]

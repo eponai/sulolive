@@ -103,7 +103,9 @@
                                     :ui->props    (web.utils/cached-ui->props-fn parser)
                                    ;; :ui->props    (web.utils/debug-ui->props-fn parser)
                                    :remotes      [:remote :http/call]
-                                   :send         (backend/send! {:remote    (remotes/switching-remote conn)
+                                   :send         (backend/send!
+                                                   reconciler-atom
+                                                   {:remote    (remotes/switching-remote conn)
                                                                  :http/call (remotes/http-call-remote reconciler-atom)})
                                    :merge        (merge/merge! mobile.merge/mobile-merge)
                                    :root-render  sup/root-render

@@ -217,6 +217,8 @@
   (let [basis-t-novelty (:eponai.common.parser/read-basis-t novelty-meta)
         basis-t-entity (->> (d/entity db [:db/ident :eponai.common.parser/read-basis-t])
                             (into {:db/ident :eponai.common.parser/read-basis-t}))]
+    ;; TODO: Only transact if the read-basis-t has changed?
+    ;; (maybe it doesn't matter when there are a lot of users).
     (transact db (merge-with deep-merge-fn basis-t-entity basis-t-novelty))))
 
 (defn merge!
@@ -225,11 +227,23 @@
   arbitrary actions by key.
   Returns merge function for om.next's reconciler's :merge"
   [merge-fn]
-  (fn [reconciler db novelty]
-    (debug "Merge! transacting novelty:" novelty)
-    (let [merged-novelty (merge-novelty-by-key merge-fn db (:result novelty))
-          db-with-meta (merge-meta (:next merged-novelty) (:meta novelty))
-          ks (vec (:keys merged-novelty))]
-      (debug "Merge! returning keys:" (:keys merged-novelty))
-      {:next db-with-meta
-       :keys (cond-> ks (empty? ks) (conj :om.next/skip))})))
+  (fn [reconciler current-db {:keys [db result meta pending-mutations] :as novelty}]
+    (debug "Merge! transacting novelty:" (-> novelty
+                                             ;; print db's max tx, to see which
+                                             ;; version was used, instead of the
+                                             ;; entire db.
+                                             (update :db :max-tx)))
+    (try
+      (if (nil? result)
+        {:next (merge-meta db meta)
+         ;; TODO: What keys can we pass to force re-render?
+         :keys []}
+        (let [merged-novelty (merge-novelty-by-key merge-fn db result)
+              db-with-meta (merge-meta (:next merged-novelty) meta)
+              ks (vec (:keys merged-novelty))]
+          (debug "Merge! returning keys:" (:keys merged-novelty))
+          {:next (or db-with-meta)
+           :keys ks}))
+      (finally
+        (when (seq pending-mutations)
+          (om/transact! reconciler pending-mutations))))))
