@@ -8,7 +8,7 @@
 (def AnimatedView js/ReactNative.Animated.View)
 
 
-(defn expandable [{:keys [title on-press data is-expanded?]} & [picker-options]]
+(defn expandable [{:keys [title on-press data is-expanded? animation]} & [picker-options]]
 
   (c/create-element
     AnimatedView

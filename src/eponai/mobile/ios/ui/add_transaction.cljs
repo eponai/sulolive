@@ -5,7 +5,7 @@
             [eponai.client.lib.transactions :as lib.t]
             [eponai.mobile.components.fade-in-view :as fade-in]
             [eponai.mobile.components.pick :as p]
-            [eponai.mobile.components :as c :refer [view text text-input touchable-highlight picker picker-item date-picker-ios scroll-view activity-indicator-ios picker-ios]]
+            [eponai.mobile.components :as c :refer [view modal text text-input touchable-highlight picker picker-item date-picker-ios scroll-view activity-indicator-ios picker-ios]]
             [eponai.mobile.components.button :as button]
             [eponai.mobile.components.nav :as nav]
             [eponai.mobile.ios.style :refer [styles]]
@@ -250,23 +250,75 @@
 
 (def ->AddTransactionContent (om/factory AddTransactionContent))
 
+(defui SelectProject
+  Object
+  (render [this]
+    (let [props (om/props this)
+          projects (.-projects props)
+          on-select (aget props "on-select")]
+      (debug "Select-proejct: " projects)
+      (view nil
+            (map (fn [p]
+                   (button/list-item {:title    (.-name p)
+                                      :on-press #(on-select p)
+                                      :key [(.-uuid p)]}))
+                   projects)))))
+
+(def ->SelectProject (om/factory SelectProject))
+
+(defui SelectCurrency
+  Object
+  (render [this]
+    (let [props (om/props this)
+          currencies (.-currencies props)
+          on-select (aget props "on-select")]
+      (view nil
+            (map (fn [p]
+                   (button/list-item {:title    (.-name p)
+                                      :on-press #(on-select p)
+                                      :key [(.-code p)]}))
+                 currencies)))))
+
+(def ->SelectCurrency (om/factory SelectCurrency))
+
 (defui AddTransactionForm
   ;static om/IQuery
   ;(query [_]
   ;  [{:query/all-projects [:project/uuid :project/name :project/users]}])
   Object
-  ;(initLocalState [_]
-  ;  {:selected-project :one})
+  (initLocalState [this]
+    (let [all-currencies (.-currencies (om/props this))
+          all-projects (.-projects (om/props this))]
+      {:select-project?   false
+       :select-currency? false
+       :input-transaction {:transaction/date     (date/date-map (date/today))
+                           ;{:date/ymd (-> (js/Date.)
+                           ;                                     (f/js-date->utc-ymd-date)
+                           ;                                     (f/date->ymd-string))
+                           ; }
+                           :transaction/tags     #{}
+                           :transaction/currency {:currency/code (-> all-currencies first :currency/code)}
+                           :transaction/project  {:project/uuid (-> all-projects first :project/uuid)}
+                           :transaction/type     {:db/ident :transaction.type/expense}}}))
+  (update-transaction! [this k v]
+    (debug "Updating transaction: " k " value " v)
+    (om/update-state! this assoc-in [:input-transaction k] v))
   (render [this]
-    (let [{:keys [selected-project selected-input-field anim]} (om/get-state this)
+    (let [{:keys [selected-project selected-input-field anim select-project? select-currency? input-transaction]} (om/get-state this)
           props (om/props this)
           all-projects (.-projects props)
+          all-currencies (.-currencies props)
+          {:keys [transaction/date transaction/tags transaction/currency
+                  transaction/project transaction/amount transaction/title
+                  transaction/type]} input-transaction
           PickerItemIOS (.-Item (.-PickerIOS js/ReactNative))
           AnimatedView js/ReactNative.Animated.View
-          animation (or anim (js/ReactNative.Animated.Value. 0))]
+          animation (or anim (js/ReactNative.Animated.Value. 0))
+          selected-project (or selected-project (first all-projects))]
       (debug "Got JS props" all-projects)
+      (debug "Got amount: " amount)
       (view
-        nil
+        (opts {:style (:justify-content "space-between")})
         ;(if (= :input.selected/projects selected-input-field)
         ;  (picker-ios
         ;    (opts {:selectedValue selected-project
@@ -283,51 +335,63 @@
         ;                                 (.start (.timing js/ReactNative.Animated animation #js {:toValue 1 :duration 2000}))
         ;                                 (om/update-state! this assoc :selected-input-field :input.selected/projects))}))
 
-        (mapv (fn [p]
-               (debug "Mapping over projects: " (.-name p))
-                (debug (.-uuid p)))
-             all-projects)
+        ;; #### View for select expense/income and project ###
+        (view nil
+              (modal
+                (opts {:visible       select-project?
+                       :animationType "slide"})
+                (nav/navigator {:initial-route {:title             "lol"
+                                                :component         ->SelectProject
+                                                :passProps         {:on-select #(om/update-state! this assoc
+                                                                                                  :selected-project %
+                                                                                                  :select-project? false)
+                                                                    :projects  all-projects}
+                                                :leftButtonTitle   "Cancel"
+                                                :onLeftButtonPress #(om/update-state! this assoc
+                                                                                      :select-project? false)}}))
+              (view (opts {:style {:flexDirection :row}})
+                    (button/list-item {:title "New"})
+                    (button/primary-hollow
+                      {:title    "Expense"
+                       :key      ["transaction-type"]
+                       :on-press #(om/update-state! this assoc :transaction-type "Income")})
+                    (button/list-item
+                      {:title "in"
+                       :key   ["in"]})
+                    (button/primary-hollow
+                      {:title    (when selected-project (.-name selected-project))
+                       :on-press #(om/update-state! this assoc :select-project? true)
+                       :key      ["selected-project"]})))
 
-        (if (= :input.selected/projects selected-input-field)
-          ;(p/expandable
-          ;  {:data     [:one :two :three :four]
-          ;   :on-press #(om/update-state! this assoc :selected-input-field :input.selected/projects)
-          ;             :is-expanded? (= :input.selected/projects selected-input-field)}
-          ;  {:selectedValue selected-project
-          ;   :onValueChange #(om/update-state! this assoc :selected-project (keyword %))})
-          (fade-in/->FadeInView {:children
-                                 (picker-ios
-                                   (opts {:selectedValue (or selected-project (-> all-projects first .-uuid str))
-                                          :onValueChange #(om/update-state! this assoc :selected-project %)})
+        (modal
+          (opts {:visible       select-currency?
+                 :animationType "slide"})
+          (nav/navigator {:initial-route {:title             "lol"
+                                          :component         ->SelectCurrency
+                                          :passProps         {:on-select  (fn [cur]
+                                                                            (om/update-state! this (fn [st]
+                                                                                                     (-> st
+                                                                                                         (assoc :select-currency? false)
+                                                                                                         (assoc-in [:input-transaction :transaction/currency] cur)))))
+                                                              :currencies all-currencies}
+                                          :leftButtonTitle   "Cancel"
+                                          :onLeftButtonPress #(om/update-state! this assoc
+                                                                                :select-currency? false)}}))
+        ;; #### View for select amount
+        (view (opts {:style {:flexDirection "row" :marginTop 10}})
+              (text-input (opts {:onChangeText   #(do
+                                                   (debug "Setting amount: " %)
+                                                   (.update-transaction! this :transaction/amount %))
+                                 :keyboardType   "number-pad"
+                                 :value          (str amount)
+                                 :placeholder    "0.00"
+                                 :autoCapitalize "none"
+                                 :style          {:height 40 :border-color :gray :border-width 1 :border-radius 5 :padding 10 :background-color :white :margin-bottom 20 :flex 1}}))
+              (button/secondary
+                {:title (:currency/code currency)
+                 :onPress #(om/update-state! this assoc :select-currency? true)
+                 :params {:style {:flex 1}}}))
 
-                                   (map (fn [val]
-                                          (c/create-element PickerItemIOS
-                                                            {:key   (str (.-uuid val))
-                                                             :value (str (.-uuid val))
-                                                             :label (.-name val)}))
-                                        all-projects))})
-          ;(c/create-element AnimatedView
-          ;                  (opts {:style {:opacity animation :flex 1}})
-          ;                  (picker-ios
-          ;                    (opts {:selectedValue selected-project
-          ;                           :onValueChange #(om/update-state! this assoc :selected-project (keyword %))})
-          ;
-          ;                    (map (fn [val]
-          ;                           (c/create-element PickerItemIOS
-          ;                                             {:key   val
-          ;                                              :value val
-          ;                                              :label (name val)}))
-          ;                         [:one :two :three :four])))
-          (let [t (if selected-project
-                    (do
-                      (debug "Found selected project: " selected-project)
-                      (get (group-by (fn [p] (str (.-uuid p))) all-projects) selected-project))
-                    (-> all-projects first .-name))]
-            (debug "Got title: " t)
-            (button/list-item {:title    (if selected-project
-                                           (get (group-by (fn [p] (str (.-uuid p))) all-projects) selected-project)
-                                           (-> all-projects first .-name))
-                               :on-press #(om/update-state! this assoc :selected-input-field :input.selected/projects)})))
         (text nil "This is some new transaction...")))))
 
 (def ->AddTransactionForm (om/factory AddTransactionForm))
@@ -350,6 +414,7 @@
                          :leftButtonTitle    "Cancel"
                          :onRightButtonPress #(.save this)
                          :rightButtonTitle   "Save"
-                         :passProps          {:projects all-projects}}}))))
+                         :passProps          {:projects all-projects
+                                              :currencies all-currencies}}}))))
 
 (def ->AddTransaction (om/factory AddTransaction))

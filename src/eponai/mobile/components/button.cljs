@@ -3,11 +3,13 @@
     [eponai.client.ui :refer-macros [opts]]
     [eponai.mobile.components :refer [touchable-highlight touchable-opacity text]]))
 
-(defn button [{:keys [title on-press]} style text-style]
+(defn button [{:keys [title on-press key params]} style text-style]
   (touchable-highlight
-    (opts (update {:onPress on-press
-                   :style {:border-radius 5 :padding 10 :height 44 :justify-content "center"}}
-                  :style merge style))
+    (opts (merge (update {:onPress on-press
+                          :key     key
+                          :style   {:border-radius 5 :padding 10 :height 44 :justify-content "center"}}
+                         :style merge (merge style (:style params)))
+                 (dissoc params :style)))
     (text
       (opts (update {:style {:text-align "center" :font-weight "bold"}}
                     :style merge text-style))
@@ -29,3 +31,12 @@
            :border-radius 0}
           {:color "black"
            :font-weight "normal"}))
+
+(defn primary-hollow [params]
+  (button (merge {:params {:underlayColor "#044e8a"}}
+                 params)
+          {:background-color "white"
+           :border-color "#044e8a"
+           :border-width 1}
+          {:color "#044e8a"}
+          ))
