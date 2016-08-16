@@ -38,5 +38,13 @@
           {:background-color "white"
            :border-color "#044e8a"
            :border-width 1}
-          {:color "#044e8a"}
-          ))
+          {:color "#044e8a"}))
+
+(defn inline-selection [params]
+  (button params
+          {:background-color "transparent"
+           :border-color "#999"
+           :border-width 1
+           :padding 5
+           :height 34}
+          {:color "#999"}))

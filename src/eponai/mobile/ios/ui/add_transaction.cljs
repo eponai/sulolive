@@ -349,16 +349,15 @@
                                                 :leftButtonTitle   "Cancel"
                                                 :onLeftButtonPress #(om/update-state! this assoc
                                                                                       :select-project? false)}}))
-              (view (opts {:style {:flexDirection :row}})
-                    (button/list-item {:title "New"})
-                    (button/primary-hollow
+              (view (opts {:style {:flexDirection :row
+                                   :alignItems :center}})
+                    (text {:style {:marginHorizontal 5}} "New")
+                    (button/inline-selection
                       {:title    "Expense"
                        :key      ["transaction-type"]
                        :on-press #(om/update-state! this assoc :transaction-type "Income")})
-                    (button/list-item
-                      {:title "in"
-                       :key   ["in"]})
-                    (button/primary-hollow
+                    (text {:style {:marginHorizontal 5}} "in")
+                    (button/inline-selection
                       {:title    (when selected-project (.-name selected-project))
                        :on-press #(om/update-state! this assoc :select-project? true)
                        :key      ["selected-project"]})))
