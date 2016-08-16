@@ -54,7 +54,8 @@
                                                :onActivate (fn [params]
                                                              (om/transact! this `[(session.signin/activate ~params)
                                                                                   :user/current
-                                                                                  :query/auth]))
+                                                                                  :query/auth
+                                                                                  :proxy/logged-in]))
                                                :onLogout   (fn []
                                                              (om/transact! this `[(session/signout)
                                                                                   :user/current
@@ -64,7 +65,8 @@
                              :passProps #js {:onFacebookLogin (fn [params]
                                                                 (om/transact! this `[(session.signin/facebook ~params)
                                                                                      :user/current
-                                                                                     :query/auth]))
+                                                                                     :query/auth
+                                                                                     :proxy/logged-in]))
                                              :onEmailLogin    (fn [params]
                                                                 (om/transact! this `[(session.signin/email ~(assoc params :device :ios))]))}})))))
   (initLocalState [this]

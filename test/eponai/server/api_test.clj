@@ -105,7 +105,7 @@
           result (api/share-project conn (:project/uuid project) invitee)
           {:keys [project/_users]} (p/pull (d/db conn) [{:project/_users [:project/uuid]}] [:user/email invitee])]
       (is (= (:status result) (:user/status user)))
-      (is (= 1 (count _users)))
+      (is (= 2 (count _users)))
       (is (= (:verification/status (async/<!! (get result :email-chan))) :verification.status/pending)))))
 
 (deftest share-project-new-user-email-invited
@@ -131,7 +131,7 @@
                             #":duplicate-project-shares"
                            (api/share-project conn (:project/uuid project) user-email)))
       (let [{:keys [project/_users]} (p/pull (d/db conn) [{:project/_users [:project/uuid]}] [:user/email user-email])]
-        (is (= 1 (count _users)))))))
+        (is (= 2 (count _users)))))))
 
 
 ;;;;;; ---------------------------- Stripe tests -----------------------------

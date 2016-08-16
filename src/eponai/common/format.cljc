@@ -27,16 +27,16 @@
   * :project/uuid - UUID to assign to this project entity, default will call (d/squuid).
 
   Returns a map representing a project entity"
-  ([user-dbid & [opts]]
-   (cond->
-     {:db/id              (d/tempid :db.part/user)
-      :project/uuid       (or (:project/uuid opts) (d/squuid))
-      :project/created-at (or (:project/created-at opts) (date/date-time->long (date/now)))
-      :project/name       (or (:project/name opts) "untitled")}
-     user-dbid
-     (->
-       (assoc :project/created-by user-dbid)
-       (assoc :project/users [user-dbid])))))
+  [user-dbid & [opts]]
+  (cond->
+    {:db/id              (d/tempid :db.part/user)
+     :project/uuid       (or (:project/uuid opts) (d/squuid))
+     :project/created-at (or (:project/created-at opts) (date/date-time->long (date/now)))
+     :project/name       (or (:project/name opts) "My Project")}
+    user-dbid
+    (->
+      (assoc :project/created-by user-dbid)
+      (assoc :project/users [user-dbid]))))
 
 (defn dashboard [project-ref & [opts]]
   {:db/id (d/tempid :db.part/user)

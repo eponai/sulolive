@@ -185,7 +185,10 @@
   [{:keys [db query target]} _ _]
   (if target
     {:remote true}
-    {:value (sort-by :project/created-at (p/pull-many db query (p/all-with db (p/project))))}))
+    {:value (let [auth (p/one-with db {:where '[[?e :ui/singleton :ui.singleton/auth]]})
+                  {:keys [ui.singleton.auth/user]} (when auth
+                                                     (p/pull db [:ui.singleton.auth/user] [:ui/singleton :ui.singleton/auth]))]
+              (sort-by :project/created-at (p/pull-many db query (p/all-with db {:where [['?e :project/users (:db/id user)]]}))))}))
 
 (defmethod read :query/all-currencies
   [{:keys [db query target]} _ _]

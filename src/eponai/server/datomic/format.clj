@@ -117,9 +117,10 @@
     (assoc v :verification/expires-at expiry-time)))
 
 (defn dashboard [project-eid]
-  {:db/id            (d/tempid :db.part/user)
-   :dashboard/uuid (d/squuid)
-   :dashboard/project project-eid})
+  (cf/dashboard project-eid))
+
+(defn project [user & [opts]]
+  (cf/project (:db/id user) opts))
 
 (defn stripe-account
   "Takes a map with stripe information and formats to be transacted into datomic.
@@ -145,9 +146,12 @@
   #{:user :project :verification(if email not nil) :fb-user(if not nil)}"
   [email & [opts]]
   (let [user (user email opts)
-        fb-user (fb-user user opts)]
+        fb-user (fb-user user opts)
+        pr (project user opts)]
     (cond->
-      {:user   user}
+      {:user   user
+       :project pr
+       :dashboard (dashboard (:db/id pr))}
 
       email
       (assoc :verification (email-verification user opts))
