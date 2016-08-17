@@ -7,8 +7,7 @@
             [datascript.impl.entity :as e]
             [om.next :as om]
             [cognitect.transit :as transit]
-            [medley.core :as medly]
-            [taoensso.timbre :refer-macros [debug error trace]]
+            [taoensso.timbre :refer-macros [debug error trace warn]]
             [datascript.core :as d]))
 
 
@@ -67,16 +66,20 @@
                                         (map (comp ::mutation-db-history-id :result val))
                                         (filter some?)))
                         (first))]
-    (assert (or (some? history-id)
-                (not-any? #(symbol? (key %)) parsed-query))
-            (str "Could not find mutation-db-history-id in"
-                 " any of the query's mutations."
-                 " Query: " query))
+    (when-not (or (some? history-id)
+                  (not-any? #(symbol? (key %)) parsed-query))
+      (warn
+        (str "Could not find mutation-db-history-id in"
+             " any of the query's mutations."
+             " Query: " query)))
     (if history-id
       (om/from-history reconciler history-id)
       (d/db (om/app-state reconciler)))))
 
-(defn take-all! [chan]
+(defn drain-channel
+  "Takes everything pending in the channel.
+  Does not close it when it's been drained."
+  [chan]
   (take-while some? (repeatedly #(async/poll! chan))))
 
 (defn query-transactions->ds-txs [novelty]
@@ -113,7 +116,7 @@
     (while true
       (let [{:keys [remote->send cb remote-key query]} (<! query-chan)
             ;; To be used only after (<! (<send )) has been called.
-            pending-queries (delay (take-all! query-chan))
+            pending-queries (delay (drain-channel query-chan))
             reconciler @reconciler-atom]
         (try
           (let [db (db-before-mutation reconciler query remote-key)
@@ -133,7 +136,7 @@
                      :result result
                      :meta   meta})
                 (let [state (om/app-state reconciler)
-                      chunked-txs (query-transactions->ds-txs result)]
+                      chunked-txs (query-transactions->ds-txs response)]
                   ;; Loop for streaming/chunking large results
                   (when (seq chunked-txs)
                     (loop [db (d/db state) txs chunked-txs]
@@ -146,17 +149,18 @@
                                :result {KEY-TO-RERENDER-UI {:just/transact head}}})
                           (let [new-db (d/db state)]
                             ;; Apply pending mutations locally only.
-                            (binding [parser/*parser-allow-remote* false]
-                              (transact-pending reconciler @pending-queries))
+                            (when (seq @pending-queries)
+                              (binding [parser/*parser-allow-remote* false]
+                                (transact-pending reconciler @pending-queries)))
                             ;; Timeout to allow for re-render.
                             (<! (timeout 0))
                             (recur new-db tail))))))))
+              ;; On error:
               (do
                 (debug "Error after sending query: " query " error: " error
                        ". Resetting state to the state before the optimistic mutation.")
                 ;;  -Failure-> Call cb with db without response.
                 (cb {:db db})))
-
             ;; call post-merge-fn after merge (if there is one).
             (when post-merge-fn
               (post-merge-fn)))

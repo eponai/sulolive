@@ -227,23 +227,12 @@
   arbitrary actions by key.
   Returns merge function for om.next's reconciler's :merge"
   [merge-fn]
-  (fn [reconciler current-db {:keys [db result meta pending-mutations] :as novelty}]
-    (debug "Merge! transacting novelty:" (-> novelty
-                                             ;; print db's max tx, to see which
-                                             ;; version was used, instead of the
-                                             ;; entire db.
-                                             (update :db :max-tx)))
-    (try
-      (if (nil? result)
-        {:next (merge-meta db meta)
-         ;; TODO: What keys can we pass to force re-render?
-         :keys []}
-        (let [merged-novelty (merge-novelty-by-key merge-fn db result)
-              db-with-meta (merge-meta (:next merged-novelty) meta)
-              ks (vec (:keys merged-novelty))]
-          (debug "Merge! returning keys:" (:keys merged-novelty))
-          {:next (or db-with-meta)
-           :keys ks}))
-      (finally
-        (when (seq pending-mutations)
-          (om/transact! reconciler pending-mutations))))))
+  (fn [reconciler current-db {:keys [db result meta] :as novelty}]
+    (debug "Merge! transacting novelty:" (update novelty :db :max-tx))
+    (let [db (merge-meta db meta)
+          ret (if result
+                (merge-novelty-by-key merge-fn db result)
+                ;; TODO: What keys can we pass to force re-render?
+                {:next db :keys []})]
+      (debug "Merge! returning keys:" (:keys ret) " with db: " (-> ret :next :max-tx))
+      ret)))

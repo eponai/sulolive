@@ -205,7 +205,7 @@
                                :email     (:user/email current-user)})))))
 
 (defn run []
- (let [conn       (utils/init-conn)
+ (let [conn (utils/init-conn)
        reconciler (om/reconciler {:state   conn
                                   :parser  (parser/parser)
                                   :remotes [:remote]
@@ -214,5 +214,5 @@
                                              {:remote (backend/post-to-url homeless/om-next-endpoint-public)})
                                   :merge   (merge/merge! web.merge/web-merge)
                                   :migrate nil})]
-
-  (om/add-root! reconciler Signup (gdom/getElement "my-signup"))))
+   (reset! utils/reconciler-atom reconciler)
+   (om/add-root! reconciler Signup (gdom/getElement "my-signup"))))
