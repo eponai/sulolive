@@ -6,7 +6,8 @@
 
 (enable-console-print!)
 
-(def ip (utils/dev-machine-ip))
+;; (def ip (utils/dev-machine-ip))
+(def ip "localhost")
 
 (figwheel/watch-and-reload
   :websocket-url (str "ws://" ip ":3449/figwheel-ws")

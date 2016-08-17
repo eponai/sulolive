@@ -6,7 +6,8 @@
     [eponai.mobile.ios.ui.transactions :as t]
     [goog.object :as gobj]
     [om.next :as om :refer-macros [defui]]
-    [taoensso.timbre :refer-macros [info debug error trace]]))
+    [taoensso.timbre :refer-macros [info debug error trace]]
+    [eponai.mobile.components.button :as button]))
 
 
 (def logo-img (js/require "./images/world-black.png"))
@@ -24,13 +25,13 @@
                         :style  {:resizeMode "cover" :position "absolute" :tintColor "rgba(255,255,255,0.5)" :width w :align-self "center" :margin-bottom 0}}))
 
           (apply (partial view (opts {:style (:scene style)})) body))))
-(defui Loading
-  Object
-  (render [this]
-    (let [{:keys [ui.component.loading/is-logged-in?]} (om/props this)]
-      (view {} (text {} "Loading !")))))
+;(defui Loading
+;  Object
+;  (render [this]
+;    (let [{:keys [ui.component.loading/is-logged-in?]} (om/props this)]
+;      (view {} (text {} "Loading !")))))
 
-(def ->Loading (om/factory Loading))
+;(def ->Loading (om/factory Loading))
 
 (defn- get-prop
   "PRIVATE: Do not use"
@@ -46,7 +47,6 @@
     (let [{:keys [:input/email on-change-text]} (om/get-state this)
           on-email-login (.-onEmailLogin (om/props this))]
       (map-cover-screen
-        ;(view (opts {:style {:flex 1 :margin 20 :justify-content "space-between"}}))
         (view nil
               (text (opts {:style (:header style)}) "Sign in with email"))
         (view nil
@@ -55,10 +55,10 @@
                                  :placeholder    "youremail@example.com"
                                  :value          (or email "")
                                  :autoCapitalize "none"}))
-              (touchable-highlight (opts {:style   {:background-color "#044e8a" :padding 10 :border-radius 5 :height 44 :justify-content "center"}
-                                          :onPress #(on-email-login {:input-email email})})
-                                   (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
-                                         "Email me a link to sign in")))
+              (button/primary
+                {:title "Email me a link to sign in"
+                 :key ["email-link"]
+                 :on-press #(on-email-login {:input-email email})}))
         (view nil)
         (view nil)))))
 (def ->Login (om/factory EmailLogin))
@@ -94,12 +94,11 @@
                                    :placeholder    "Name"
                                    :value          ""
                                    :autoCapitalize "none"}))
-                (touchable-highlight
-                  (opts {:style {:background-color "#044e8a" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}})
-                  (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}
-                               :onPress #(on-activate {:user-uuid (str (:user/uuid user))
-                                                       :user-email (:user/email user)})})
-                        "Create My Account")))
+                (button/primary
+                  {:title "Create My Account"
+                   :key ["create-account"]
+                   :on-press #(on-activate {:user-uuid (str (:user/uuid user))
+                                            :user-email (:user/email user)})}))
 
 
               (touchable-highlight
@@ -133,79 +132,31 @@
                 (text (opts {:style (:header style)}) "Sign up / Sign in"))
           (view nil
                 ;; Facebook login button
-                (touchable-highlight
-                  (opts {:style   {:background-color "#4267B2" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
-                         :onPress #(fb/login (fn [{:keys [status] :as res}]
-                                               (debug "Login res: " res)
-                                               (debug "on-login " (om/props this))
-                                               (when (and (= status ::fb/login-success)
-                                                          (some? on-facebook-login))
-                                                 (on-facebook-login res))))})
+                (button/facebook
+                  {:title    "Continue with Facebook"
+                   :key      ["facebook-signup"]
+                   :on-press #(fb/login (fn [{:keys [status] :as res}]
+                                          (debug "Login res: " res)
+                                          (debug "on-login " (om/props this))
+                                          (when (and (= status ::fb/login-success)
+                                                     (some? on-facebook-login))
+                                            (on-facebook-login res))))})
+                ;(button/twitter
+                ;  {:title "Continue with Twitter"
+                ;   :key ["twitter-signup"]})
+                ;(button/google+
+                ;  {:title "Continue with Google+"
+                ;   :key ["google"]})
 
-                  (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
-                        "Continue with Facebook"))
-                ;(.createElement js/React
-                ;                fbLoginButton
-                ;                (clj->js (opts {:style {:height 44} :readPermissions ["email"]})))
-                ;(touchable-highlight (opts {:style   {:background-color "#4099FF" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
-                ;                            :onPress #(.onForward this)})
-                ;                     (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
-                ;                           "Twitter"))
-                ;(touchable-highlight (opts {:style   {:background-color "#d34836" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
-                ;                            :onPress #(.onForward this)})
-                ;                     (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
-                ;                           "Google+"))
                 (text (opts {:style {:text-align "center" :margin-vertical 10 :color "#e6e6e6"}}) "or")
-                (touchable-highlight (opts {:style   {:background-color "#999" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
-                                            :onPress #(.onForward this)})
-                                     (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
-                                           "Sign up or sign in with Email")))
+
+                ;; Email login button
+                (button/secondary
+                  {:title    "Sign up or sign in with Email"
+                   :key      ["email-signup"]
+                   :on-press #(.onForward this)}))
           (view nil)
-          (view nil))
-      ;(view (opts {:style {:flex 1 :margin 0 :background-color "#01213d"}})
-      ;      (image (opts {:source logo-img
-      ;                    :style  {:resizeMode "cover" :position "absolute" :tintColor "rgba(255,255,255,0.5)" :width w :align-self "center" :margin-bottom 0}}))
-      ;      (view (opts {:style (:scene style)})
-      ;
-      ;            ;(view nil
-      ;            ;      (text (opts {:style (:header style)}) "Sign up / Sign in"))
-      ;
-      ;            ;(text (opts {:style (:header style)}) "JourMoney")
-      ;            (view nil (text nil (str "Logged in: ")))
-      ;            (view nil
-      ;                  (text (opts {:style (:header style)}) "Sign up / Sign in")
-      ;
-      ;                  ;; Facebook login button
-      ;                  (touchable-highlight
-      ;                    (opts {:style   {:background-color "#4267B2" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
-      ;                           :onPress #(fb/login (fn [{:keys [status] :as res}]
-      ;                                                 (debug "Login res: " res)
-      ;                                                 (debug "on-login " (om/props this))
-      ;                                                 (when (and (= status ::fb/login-success)
-      ;                                                            (some? on-login))
-      ;                                                   (on-login res))))})
-      ;
-      ;                    (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
-      ;                          "Continue with Facebook"))
-      ;                  ;(.createElement js/React
-      ;                  ;                fbLoginButton
-      ;                  ;                (clj->js (opts {:style {:height 44} :readPermissions ["email"]})))
-      ;                  ;(touchable-highlight (opts {:style   {:background-color "#4099FF" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
-      ;                  ;                            :onPress #(.onForward this)})
-      ;                  ;                     (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
-      ;                  ;                           "Twitter"))
-      ;                  ;(touchable-highlight (opts {:style   {:background-color "#d34836" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
-      ;                  ;                            :onPress #(.onForward this)})
-      ;                  ;                     (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
-      ;                  ;                           "Google+"))
-      ;                  (text (opts {:style {:text-align "center" :margin-vertical 10 :color "#e6e6e6"}}) "or")
-      ;                  (touchable-highlight (opts {:style   {:background-color "#999" :padding 10 :border-radius 5 :height 44 :justify-content "center" :margin-vertical 5}
-      ;                                              :onPress #(.onForward this)})
-      ;                                       (text (opts {:style {:color "white" :text-align "center" :font-weight "bold"}})
-      ;                                             "Sign up or sign in with Email")))
-      ;            (view nil)
-      ;            (view nil)))
-      )))
+          (view nil)))))
 
 (def ->LoginMenu (om/factory LoginMenu))
 
@@ -214,14 +165,6 @@
   (query [this]
     [{:query/loading [:ui.component.loading/is-logged-in?]}])
   Object
-
-  ;(onForward [this]
-  ;  (let [{:keys [navigator]} (om/props this)]
-  ;    (.push navigator {:title (str "scene " (inc (.-index route))) :index (inc (.-index route))})))
-  ;(renderScene [this route nav]
-  ;  (debug "Render first scene: " route " nav " nav)
-  ;  (->Login {:title  "First scene"
-  ;            :on-forward #(.push nav {:title (str "scene " (inc (.-index route))) :index (inc (.-index route))})}))
   (render [this]
     (navigator-ios {:initialRoute {:title ""
                                    :component ->LoginMenu}

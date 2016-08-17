@@ -7,7 +7,7 @@
   (touchable-highlight
     (opts (merge (update {:onPress on-press
                           :key     key
-                          :style   {:border-radius 5 :padding 10 :height 44 :justify-content "center"}}
+                          :style   {:border-radius 3 :padding 10 :height 44 :justify-content "center"}}
                          :style merge (merge style (:style params)))
                  (dissoc params :style)))
     (text
@@ -48,3 +48,18 @@
            :padding 5
            :height 34}
           {:color "#999"}))
+
+(defn facebook [params]
+  (button params
+          {:background-color "#4267B2"}
+          {:color "white"}))
+
+(defn twitter [params]
+  (button params
+          {:background-color "#4099FF"}
+          {:color "white"}))
+
+(defn google+ [params]
+  (button params
+          {:background-color "#d34836"}
+          {:color "white"}))

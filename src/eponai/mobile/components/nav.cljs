@@ -17,3 +17,16 @@
 
               (some? ref)
               (assoc :ref ref)))))
+
+(defn modal-navigator
+  [])
+
+(defn clean-navigator [{:keys [initial-route]}]
+  (navigator-ios
+    (opts
+      {:initialRoute       initial-route
+       :style               {:flex 1}
+       :itemWrapperStyle    {:flex      1
+                             :margin    10
+                             :marginTop 20}
+       :navigationBarHidden true})))

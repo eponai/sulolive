@@ -6,7 +6,8 @@
     [eponai.mobile.ios.ui.dashboard :refer [Dashboard ->Dashboard]]
     [eponai.mobile.ios.ui.add-transaction :refer [AddTransaction ->AddTransaction]]
     [eponai.mobile.ios.ui.profile :refer [Profile ->Profile]]
-    [om.next :as om :refer-macros [defui]]))
+    [om.next :as om :refer-macros [defui]]
+    [taoensso.timbre :refer-macros [debug]]))
 
 (defmulti tab-bar-item (fn [k _ & _] k))
 
@@ -29,9 +30,9 @@
     (opts {:title    "Add"
            :selected is-selected?
            :onPress  on-press})
-    (->AddTransaction (om/computed props
-                                   {:mode :create
-                                    :on-cancel #()}))
+    ;(->AddTransaction (om/computed props
+    ;                               {:mode :create
+    ;                                :on-cancel #()}))
     ))
 
 (defmethod tab-bar-item :tab/dashboard
@@ -61,29 +62,30 @@
         (modal
           (opts {:visible add-visible?
                  :animationType "slide"})
-          (->AddTransaction (om/computed {}
-                                         {:mode :create
-                                          :on-cancel #(om/update-state! this assoc :add-visible? false)})))
+          (->AddTransaction (om/computed add-transaction
+                                         {:mode      :create
+                                          :on-cancel #(do
+                                                       (debug "Pressed add transaction cancel") (om/update-state! this assoc :add-visible? false))})))
         (tab-bar-ios
           (opts {:tintColor "blue" :barTintColor "white" :unselectedTintColor "gray"})
-
-          (tab-bar-item :tab/profile
-                        (om/props this)
-                        {:is-selected? (= selected-tab :tab-profile)
-                         :on-press     #(om/update-state! this assoc :selected-tab :tab-profile)})
-          (tab-bar-item :tab/add-transaction
-                        add-transaction
-                        {:is-selected? (= selected-tab :tab-add)
-                         :on-press     #(om/update-state! this assoc :selected-tab :tab-add)})
-
-          ;(tab-bar-item :tab/add-transaction
-          ;              nil
-          ;              {:on-press     #(om/update-state! this assoc :add-visible? true)})
 
           (tab-bar-item :tab/dashboard
                         nil
                         {:is-selected? (= selected-tab :tab-list)
                          :on-press     #(om/update-state! this assoc :selected-tab :tab-list)})
+          ;(tab-bar-item :tab/add-transaction
+          ;              add-transaction
+          ;              {:is-selected? (= selected-tab :tab-add)
+          ;               :on-press     #(om/update-state! this assoc :selected-tab :tab-add)})
+
+          (tab-bar-item :tab/add-transaction
+                        add-transaction
+                        {:on-press     #(om/update-state! this assoc :add-visible? true)})
+
+          (tab-bar-item :tab/profile
+                        (om/props this)
+                        {:is-selected? (= selected-tab :tab-profile)
+                         :on-press     #(om/update-state! this assoc :selected-tab :tab-profile)})
           ;(tab-bar-ios-item
           ;  (opts {:title    "Me"
           ;         :selected (= selected-tab :tab-profile)
