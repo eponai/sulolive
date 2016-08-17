@@ -3,7 +3,7 @@
     [eponai.client.ui :refer-macros [opts]]
     [eponai.mobile.components :refer [tab-bar-ios tab-bar-ios-item navigator-ios view text modal touchable-highlight]]
     [eponai.mobile.components.button :as button]
-    [eponai.mobile.ios.ui.dashboard :refer [Dashboard ->Dashboard]]
+    [eponai.mobile.ios.ui.projects :refer [Projects ->Projects]]
     [eponai.mobile.ios.ui.add-transaction :refer [AddTransaction ->AddTransaction]]
     [eponai.mobile.ios.ui.profile :refer [Profile ->Profile]]
     [om.next :as om :refer-macros [defui]]
@@ -35,19 +35,20 @@
     ;                                :on-cancel #()}))
     ))
 
-(defmethod tab-bar-item :tab/dashboard
-  [_ _ & [{:keys [is-selected? on-press]}]]
+(defmethod tab-bar-item :tab/projects
+  [_ props & [{:keys [is-selected? on-press]}]]
   (tab-bar-ios-item
     (opts {:title    "List"
            :selected is-selected?
            :onPress  on-press})
-    (->Dashboard)))
+    (->Projects props)))
 
 (defui LoggedIn
   static om/IQuery
   (query [_]
-    [{:proxy/dashboard (om/get-query Dashboard)}
-     {:proxy/add-transaction (om/get-query AddTransaction)}])
+    [{:proxy/dashboard (om/get-query Projects)}
+     {:proxy/add-transaction (om/get-query AddTransaction)}
+     {:proxy/projects (om/get-query Projects)}])
   Object
   (initLocalState [_]
     {:selected-tab :tab-add
@@ -56,7 +57,8 @@
     (.setBarStyle (.-StatusBar js/ReactNative) "default"))
   (render [this]
     (let [{:keys [selected-tab add-visible?]} (om/get-state this)
-          {:keys [proxy/add-transaction]} (om/props this)]
+          {:keys [proxy/add-transaction
+                  proxy/projects]} (om/props this)]
       (view
         (opts {:style {:flex 1}})
         (modal
@@ -69,8 +71,8 @@
         (tab-bar-ios
           (opts {:tintColor "blue" :barTintColor "white" :unselectedTintColor "gray"})
 
-          (tab-bar-item :tab/dashboard
-                        nil
+          (tab-bar-item :tab/projects
+                        projects
                         {:is-selected? (= selected-tab :tab-list)
                          :on-press     #(om/update-state! this assoc :selected-tab :tab-list)})
           ;(tab-bar-item :tab/add-transaction

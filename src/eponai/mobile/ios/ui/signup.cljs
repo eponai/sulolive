@@ -4,6 +4,7 @@
     [eponai.mobile.components :refer [view text text-input image list-view touchable-highlight navigator-ios tab-bar-ios tab-bar-ios-item]]
     [eponai.mobile.facebook :as fb]
     [eponai.mobile.ios.ui.transactions :as t]
+    [eponai.mobile.ios.ui.utils :as utils]
     [goog.object :as gobj]
     [om.next :as om :refer-macros [defui]]
     [taoensso.timbre :refer-macros [info debug error trace]]
@@ -11,7 +12,6 @@
 
 
 (def logo-img (js/require "./images/world-black.png"))
-(def Dimensions (.-Dimensions js/ReactNative))
 
 (def style
   {:scene      {:margin 20 :justify-content "space-between" :flex 1}
@@ -19,7 +19,7 @@
    :header     {:font-size 30 :font-weight "300" :margin-bottom 20 :text-align "center" :color "#e6e6e6"}})
 
 (defn map-cover-screen [& body]
-  (let [w (.-width (.get Dimensions "window"))]
+  (let [w (:width utils/screen-size)]
     (view (opts {:style {:flex 1 :margin 0 :background-color "#01213d"}})
           (image (opts {:source logo-img
                         :style  {:resizeMode "cover" :position "absolute" :tintColor "rgba(255,255,255,0.5)" :width w :align-self "center" :margin-bottom 0}}))

@@ -27,6 +27,6 @@
       {:initialRoute       initial-route
        :style               {:flex 1}
        :itemWrapperStyle    {:flex      1
-                             :margin    10
+                             ;:margin    10
                              :marginTop 20}
        :navigationBarHidden true})))
