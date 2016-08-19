@@ -51,7 +51,6 @@
   ;{:pre [(some? user-uuid)]}
   (when (some? user-uuid)
     (let [project-with-auth (common.pull/project-with-auth user-uuid)]
-      (debug "ENV PROJECT EID: " project-with-auth)
       (if project-eid
         (do
           (debug "Found project eid")
@@ -66,7 +65,6 @@
   [{:keys [db db-since query user-uuid] :as env} _ params]
   (when-let [project-eid (env+params->project-eid env params)]
     (let [
-          _ (debug "ENV RESULT PROJECT: " project-eid)
           entity-query (common.pull/transaction-entity-query {:project-eid project-eid :user-uuid user-uuid})
           tx-ids (server.pull/all-since db db-since query entity-query)
           tx-entities (mapv #(d/entity db %) tx-ids)

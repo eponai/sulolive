@@ -229,10 +229,11 @@
   static om/IQuery
   (query [_]
     [{:query/all-projects [:project/uuid
-                          :project/name
-                          :project/created-at
-                          {:project/created-by [:user/uuid
-                                               :user/email]}]}
+                           :project/name
+                           :project/created-at
+                           :project/users
+                           {:project/created-by [:user/uuid
+                                                 :user/email]}]}
      {:query/current-user [:user/uuid]}
      {:query/stripe [:stripe/user
                      {:stripe/subscription [:stripe.subscription/status

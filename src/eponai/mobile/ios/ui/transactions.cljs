@@ -15,8 +15,8 @@
             [taoensso.timbre :refer-macros [info debug error trace warn]]))
 
 (defn transaction-list-data-source [prev-props props]
-  (list-view-data-source (:query/transactions prev-props)
-                         (:query/transactions props)))
+  (list-view-data-source (js->clj prev-props {:keywordize-keys true})
+                         (js->clj props {:keywordize-keys true})))
 
 (defn kstr->k
   "key->str->key roundtrip, where (= k (kstr->k (str k)))"
@@ -24,21 +24,21 @@
   (keyword (subs kstr 1)))
 
 (defui Transactions
-  static om/IQueryParams
-  (params [this]
-    {:edit-transaction (om/get-query at/AddTransaction)})
+  ;static om/IQueryParams
+  ;(params [this]
+  ;  {:edit-transaction (om/get-query at/AddTransaction)})
 
-  static om/IQuery
-  (query [this]
-    '[{:query/transactions [:transaction/title
-                            :transaction/uuid
-                            :transaction/amount
-                            {:transaction/date [:date/ymd :date/timestamp]}
-                            {:transaction/tags [:tag/name]}
-                            {:transaction/currency [:currency/code]}
-                            {:transaction/project [:project/uuid]}
-                            {:transaction/type [:db/ident]}]}
-      {:proxy/edit-transaction ?edit-transaction}])
+  ;static om/IQuery
+  ;(query [this]
+  ;  '[{:query/transactions [:transaction/title
+  ;                          :transaction/uuid
+  ;                          :transaction/amount
+  ;                          {:transaction/date [:date/ymd :date/timestamp]}
+  ;                          {:transaction/tags [:tag/name]}
+  ;                          {:transaction/currency [:currency/code]}
+  ;                          {:transaction/project [:project/uuid]}
+  ;                          {:transaction/type [:db/ident]}]}
+  ;    {:proxy/edit-transaction ?edit-transaction}])
 
   ;; TODO: Move web.utils to client utils.
   web.utils/ISyncStateWithProps
@@ -83,21 +83,21 @@
   (render-transactions [this]
     (with-om-vars
       this
-      (let [{:keys [query/transactions]} (om/props this)
-            {:keys [input-text]} (om/get-state this)]
+      (let [{:keys [input-text]} (om/get-state this)]
         (text-input (opts {:value (or input-text "")}))
         (list-view
           (styles :nav-bar->container
                   {:data-source (:data-source (om/get-state this))
-                   :render-row  (fn [{:keys [transaction/title transaction/amount]
-                                      :as   transaction}]
-                                  (touchable-highlight
-                                    (camel {:on-press #(.select-transaction this transaction)})
-                                    (view (camel {:style {:flex-direction "row"}})
-                                          (text (opts {:style {:font-size 30 :font-weight "100" :margin-bottom 20 :margin-right 30}})
-                                                title)
-                                          (text (opts {:style {:font-size 30 :font-weight "100" :margin-bottom 20}})
-                                                amount))))})))))
+                   :render-row  (fn [transaction]
+                                  (let [title (get transaction "title")
+                                        amount (get transaction "amount")]
+                                    (touchable-highlight
+                                      (camel {:on-press #(.select-transaction this transaction)})
+                                      (view (camel {:style {:flex-direction "row"}})
+                                            (text (opts {:style {:font-size 30 :font-weight "100" :margin-bottom 20 :margin-right 30}})
+                                                  title)
+                                            (text (opts {:style {:font-size 30 :font-weight "100" :margin-bottom 20}})
+                                                  amount)))))})))))
   (render-nav-bar [this props]
     (with-om-vars
       this
@@ -124,13 +124,16 @@
       (.render-selected this)))
 
   (render [this]
-    (navigation-experimental-card-stack
-      {:onNavigate      #(.back this %)
-       :renderOverlay   #(.render-nav-bar this %)
-       :navigationState (-> (:nav-state (om/get-state this))
-                            clj->js)
-       :style           {:flex 1}
-       :renderScene     #(.render-scene this)})
+    (debug "Transactions render: " (js->clj (om/props this) {:keywordize-keys true}))
+    (.render-transactions this)
+    ;(.render-scene this)
+    ;(navigation-experimental-card-stack
+    ;  {:onNavigate      #(.back this %)
+    ;   :renderOverlay   #(.render-nav-bar this %)
+    ;   :navigationState (-> (:nav-state (om/get-state this))
+    ;                        clj->js)
+    ;   :style           {:flex 1}
+    ;   :renderScene     #(.render-scene this)})
     ))
 
 

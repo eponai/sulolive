@@ -51,7 +51,7 @@
      {:proxy/projects (om/get-query Projects)}])
   Object
   (initLocalState [_]
-    {:selected-tab :tab-add
+    {:selected-tab :tab-list
      :add-visible? false})
   (componentDidMount [_]
     (.setBarStyle (.-StatusBar js/ReactNative) "default"))

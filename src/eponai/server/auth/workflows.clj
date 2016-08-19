@@ -120,7 +120,6 @@
   [send-email-fn]
   (fn [{:keys [login-parser body ::friend/auth-config ::stripe/stripe-fn] :as request}]
     (let [{:keys [login-mutation-uri credential-fn]} auth-config]
-      (debug "CREATE ACCOUNT WORKFLOW: " body)
       (when (and
               (= (path-info request)
                  login-mutation-uri)
