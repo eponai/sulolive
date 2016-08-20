@@ -9,23 +9,57 @@
     [om.next :as om :refer-macros [defui]]
     [taoensso.timbre :refer-macros [debug]]))
 
+(defui TransactionList
+  Object
+  (initLocalState [this]
+    (let [transactions (om/props this)
+          data-source (js/ReactNative.ListView.DataSource. #js {:rowHasChanged (fn [prev next]
+                                                                                 (debug "Row has changed: " prev)
+                                                                                 (debug "Next " next)
+                                                                                 (not= prev next))})]
+      (debug "Created data-source: " data-source)
+      (debug "Should use tarnsactions: " transactions)
+      {:data-source (if (seq transactions)
+                      (.. data-source (cloneWithRows transactions))
+                      data-source)}))
+  ;(componentWillReceiveProps [this new-props]
+  ;  (let [{:keys [data-source]} (om/get-state this)]
+  ;    (.. data-source
+  ;        (cloneWithRows new-props))))
+  (render [this]
+    (let [transactions (om/props this)
+          {:keys [data-source]} (om/get-state this)]
+      (debug "Transaction list: " transactions)
+      (debug "Got datasource: " data-source)
+      (text nil "Transaction list on the way")
+      (list-view
+        (opts {:dataSource data-source
+               :renderRow  (fn [row-data]
+                             (debug "Row data: " row-data)
+                             (button/custom
+                               {:key [(.-title row-data)]
+                                :on-press (fn [] (debug "Pressed item: " row-data))}
+                               (view (opts {:style {:flexDirection "row"
+                                                    :justifyContent "space-between"}})
+                                     (text nil (.. row-data -date -ymd))
+                                     (text nil (.-title row-data))
+                                     (text nil (.-amount row-data))
+                                     (text nil (.. row-data -currency -code)))))}))
+      )))
+
+(def ->TransactionList (om/factory TransactionList))
+
 (defui ProjectView
   Object
-  ;(initLocalState [this]
-  ;  (let [transactions (.get (om/props this) "_project")]
-  ;    {:data-source (list-view-data-source nil
-  ;                                         transactions)}))
   (render [this]
     (let [project (om/props this)
-          {:keys [data-source]} (om/get-state this)
           transactions (aget project "_project")]
       (debug "Getting project: " transactions)
       (view (opts {:style {:flex 1}})
             (text (opts {:style {:fontSize  24
                                  :textAlign "center"}})
                   (.-name project))
-            (transactions/->Transactions transactions)
-            ))))
+            (->TransactionList transactions)))))
 
 (def ->ProjectView (om/factory ProjectView))
 

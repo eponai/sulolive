@@ -1,7 +1,7 @@
 (ns eponai.mobile.components.button
   (:require
     [eponai.client.ui :refer-macros [opts]]
-    [eponai.mobile.components :refer [touchable-highlight touchable-opacity text]]))
+    [eponai.mobile.components :refer [touchable-highlight touchable-opacity text view]]))
 
 (defn button [{:keys [title on-press key params]} style text-style]
   (touchable-highlight
@@ -31,6 +31,13 @@
            :border-radius 0}
           {:color "black"
            :font-weight "normal"}))
+
+(defn custom [{:keys [on-press k]} content-view]
+  (touchable-highlight
+    (opts {:onPress on-press
+           :key k
+           :style {:border-radius 0 :padding 5 :height 34 :justify-content "space-between"}})
+    content-view))
 
 (defn primary-hollow [params]
   (button (merge {:params {:underlayColor "#044e8a"}}
