@@ -87,23 +87,7 @@
           (tab-bar-item :tab/profile
                         (om/props this)
                         {:is-selected? (= selected-tab :tab-profile)
-                         :on-press     #(om/update-state! this assoc :selected-tab :tab-profile)})
-          ;(tab-bar-ios-item
-          ;  (opts {:title    "Me"
-          ;         :selected (= selected-tab :tab-profile)
-          ;         :onPress  #(om/update-state! this assoc :selected-tab :tab-profile)})
-          ;  (navigator-ios
-          ;    (opts {:style            {:flex 1}
-          ;           :initialRoute     {:title     ""
-          ;                              :component ->Profile
-          ;                              :passProps (om/props this)}
-          ;           :itemWrapperStyle {:marginTop 60 :marginBottom 50}})))
-          ;(tab-bar-ios-item
-          ;  (opts {:title    "List"
-          ;         :selected (= selected-tab :tab-list)
-          ;         :onPress  #(om/update-state! this assoc :selected-tab :tab-list)})
-          ;  (t/->Transactions))
-          ))
+                         :on-press     #(om/update-state! this assoc :selected-tab :tab-profile)})))
       )))
 
 (def ->LoggedIn (om/factory LoggedIn))
