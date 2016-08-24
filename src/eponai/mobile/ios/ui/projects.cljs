@@ -1,13 +1,30 @@
 (ns eponai.mobile.ios.ui.projects
   (:require
     [eponai.client.ui :refer-macros [opts]]
-    [eponai.mobile.components :refer [navigator-ios view text scroll-view list-view list-view-data-source]]
+    [eponai.mobile.components :refer [navigator-ios view text scroll-view list-view list-view-data-source segmented-control-ios]]
     [eponai.mobile.components.nav :as nav]
     [eponai.mobile.ios.ui.transactions :as transactions]
     [eponai.mobile.components.button :as button]
     [eponai.mobile.ios.ui.utils :as utils]
     [om.next :as om :refer-macros [defui]]
     [taoensso.timbre :refer-macros [debug]]))
+
+(defui TransactionListItem
+  Object
+  (render [this]
+    (let [{:keys [transaction]} (om/props this)
+          {:keys [on-press]} (om/get-computed this)]
+      (button/custom
+        {:key [(.-title transaction)]
+         :on-press on-press}
+        (view (opts {:style {:flexDirection "row"
+                             :justifyContent "space-between"}})
+              (text nil (.. transaction -date -ymd))
+              (text nil (.-title transaction))
+              (text nil (.-amount transaction))
+              (text nil (.. transaction -currency -code)))))))
+
+(def ->TransactionListItem (om/factory TransactionListItem {:keyfn #(str TransactionListItem)}))
 
 (defui TransactionList
   Object
@@ -29,39 +46,60 @@
   (render [this]
     (let [transactions (om/props this)
           {:keys [data-source]} (om/get-state this)]
-      (debug "Transaction list: " transactions)
-      (debug "Got datasource: " data-source)
-      (text nil "Transaction list on the way")
-      (list-view
-        (opts {:dataSource data-source
-               :renderRow  (fn [row-data]
-                             (debug "Row data: " row-data)
-                             (button/custom
-                               {:key [(.-title row-data)]
-                                :on-press (fn [] (debug "Pressed item: " row-data))}
-                               (view (opts {:style {:flexDirection "row"
-                                                    :justifyContent "space-between"}})
-                                     (text nil (.. row-data -date -ymd))
-                                     (text nil (.-title row-data))
-                                     (text nil (.-amount row-data))
-                                     (text nil (.. row-data -currency -code)))))}))
-      )))
+      ;(debug "Transaction list: " transactions)
+      ;(debug "Got datasource: " data-source)
+      ;(text nil "Transaction list on the way")
+      (view (opts {:key ["transaction-list"]
+                   :style {:flex 1}})
+            (list-view
+              (opts {:dataSource data-source
+                     :style {:flex 1
+                             :marginVertical 10}
+                     :renderRow  (fn [row-data]
+                                   (->TransactionListItem (om/computed {:transaction row-data}
+                                                                       {:on-press (fn [] (debug "Pressed item: " row-data))})))}))))))
 
-(def ->TransactionList (om/factory TransactionList))
+(def ->TransactionList (om/factory TransactionList {:keyfn #(str TransactionList)}))
+
+(defui ProjectMenu
+  Object
+  (render [this]
+    (let [{:keys [on-change]} (om/get-computed this)
+          {:keys [selected-item]} (om/props this)
+          items [:list :dashboard]]
+      (view
+        nil
+        (segmented-control-ios
+          (opts
+            {:values        ["List" "Dashboard"]
+             :style         {:flex 1}
+             :selectedIndex (utils/position #{selected-item} items)
+             :onChange      #(when on-change
+                              (let [selected-index (.. % -nativeEvent -selectedSegmentIndex)]
+                                (on-change (get items selected-index))))}))))))
+
+(def ->ProjectMenu (om/factory ProjectMenu {:keyfn #(str ProjectMenu)}))
 
 (defui ProjectView
   Object
+  (initLocalState [_]
+    {:selected-item :list})
   (render [this]
     (let [project (om/props this)
-          transactions (aget project "_project")]
-      (debug "Getting project: " transactions)
+          transactions (aget project "_project")
+          {:keys [selected-item]} (om/get-state this)]
       (view (opts {:style {:flex 1}})
             (text (opts {:style {:fontSize  24
-                                 :textAlign "center"}})
+                                 :textAlign "center"
+                                 :padding 10}})
                   (.-name project))
-            (->TransactionList transactions)))))
+            (->ProjectMenu (om/computed
+                             {:selected-item selected-item}
+                             {:on-change #(om/update-state! this assoc :selected-item %)}))
+            (when (= selected-item :list)
+              (->TransactionList transactions))))))
 
-(def ->ProjectView (om/factory ProjectView))
+(def ->ProjectView (om/factory ProjectView {:keyfn #(str ProjectView)}))
 
 (defui Main
   Object
@@ -81,7 +119,7 @@
                      (->ProjectView p)))
              all-projects)))))
 
-(def ->Main (om/factory Main))
+(def ->Main (om/factory Main {:keyfn #(str Main)}))
 
 (defui Projects
   static om/IQuery
