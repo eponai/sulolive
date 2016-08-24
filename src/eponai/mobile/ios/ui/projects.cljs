@@ -4,6 +4,7 @@
     [eponai.mobile.components :refer [navigator-ios view text scroll-view list-view list-view-data-source segmented-control-ios]]
     [eponai.mobile.components.nav :as nav]
     [eponai.mobile.ios.ui.transactions :as transactions]
+    [eponai.mobile.ios.ui.dashboard :as d]
     [eponai.mobile.components.button :as button]
     [eponai.mobile.ios.ui.utils :as utils]
     [om.next :as om :refer-macros [defui]]
@@ -96,8 +97,10 @@
             (->ProjectMenu (om/computed
                              {:selected-item selected-item}
                              {:on-change #(om/update-state! this assoc :selected-item %)}))
-            (when (= selected-item :list)
-              (->TransactionList transactions))))))
+            (cond (= selected-item :list)
+              (->TransactionList transactions)
+                  (= selected-item :dashboard)
+                  (d/->Dashboard))))))
 
 (def ->ProjectView (om/factory ProjectView {:keyfn #(str ProjectView)}))
 
