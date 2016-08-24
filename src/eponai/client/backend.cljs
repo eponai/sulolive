@@ -59,7 +59,7 @@
                               :mutate (fn [_ _ {:keys [::mutation-db-history-id]}]
                                         {:action (constantly mutation-db-history-id)})}))
 
-(defn- db-before-mutation [reconciler query remote-key]
+(defn query-history-id [query remote-key]
   (let [parsed-query (query-parser {} query remote-key)
         history-id (->> parsed-query
                         (sequence (comp (filter #(symbol? (key %)))
@@ -72,9 +72,12 @@
         (str "Could not find mutation-db-history-id in"
              " any of the query's mutations."
              " Query: " query)))
-    (if history-id
-      (om/from-history reconciler history-id)
-      (d/db (om/app-state reconciler)))))
+    history-id))
+
+(defn- db-before-mutation [reconciler history-id]
+  (if history-id
+    (om/from-history reconciler history-id)
+    (d/db (om/app-state reconciler))))
 
 (defn drain-channel
   "Takes everything pending in the channel.
@@ -101,12 +104,51 @@
 
 (defn transact-pending [reconciler pending-queries]
   ;; We could also merge the pending mutation in to a single mutation. Hmm.
-  (doseq [mutation (map :query pending-queries)]
+  (doseq [query (map :query pending-queries)]
     (try
-      (om/transact! reconciler mutation)
+      (om/transact! (om/app-root reconciler) query)
       (catch :default e
-        (error "Error when re-applying mutation: " mutation
+        (error "Error when re-applying mutation: " query
                " error: " e)))))
+
+;; JEEB
+
+(defn flatten-db [db]
+  ;; TODO: Remove optimistic mutations
+  db)
+
+(defn flatten-db-up-to [db history-id]
+  )
+
+(defn jeeb [reconciler-atom query-chan]
+  (go
+    (while true
+      (try
+        (let [reconciler @reconciler-atom
+              {:keys [remote->send cb remote-key query]} (<! query-chan)
+              history-id (query-history-id query remote-key)
+              only-reads? (nil? history-id)
+              stable-db (cond-> (db-before-mutation reconciler history-id)
+                                only-reads?
+                                (flatten-db))
+              received (<! (<send remote->send remote-key query))
+              {:keys [response error post-merge-fn]} received]
+
+          ;; DO SOMETHING WITH RECEIVED
+
+          (loop [stable-db stable-db query query]
+            (let [stable-db (cond-> stable-db
+                                    (not only-reads?)
+                                    (flatten-db-up-to history-id))]
+              (loop [db stable-db]))))
+
+        
+
+        (catch :default e
+          ;; TODO: Moar
+          (error e)
+          )))))
+
 
 ;; TODO: Un-hard-code this. Put it in the app-state or something.
 (def KEY-TO-RERENDER-UI :routing/app-root)
@@ -119,7 +161,8 @@
             pending-queries (delay (drain-channel query-chan))
             reconciler @reconciler-atom]
         (try
-          (let [db (db-before-mutation reconciler query remote-key)
+          (let [history-id (query-history-id query remote-key)
+                db (db-before-mutation reconciler history-id)
                 _ (assert (false? (realized? pending-queries))
                           (str "pending-queries was realized before calling"
                                "(<! (<send ...))"))
