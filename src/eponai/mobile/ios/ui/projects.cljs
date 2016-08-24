@@ -60,13 +60,20 @@
           all-projects (.-projects (om/props this))]
 
       (scroll-view
-        (opts {:horizontal     true
-               :pagingEnabled  true
-               :showsHorizontalScrollIndicator false})
+        (opts {:horizontal                     true
+               :pagingEnabled                  true
+               :showsHorizontalScrollIndicator false
+               ;:style                          {:backgroundColor "yellow"}
+               :contentContainerStyle          {:flex 1}
+               :automaticallyAdjustContentInsets false})
         (map (fn [p]
-               (view (opts {:style {:flex            1
+               (view (opts {:style {:flexDirection "column"
+                                    :flex            1
                                     :margin          10
-                                    :width           (- w 20)}
+                                    ;:padding 10
+                                    :width           (- w 20)
+                                    ;:backgroundColor "orange"
+                                    }
                             :key [(.-name p)]})
                      (->ProjectView p)))
              all-projects)))))
