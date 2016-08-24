@@ -51,7 +51,7 @@
             (list-view
               (opts {:dataSource data-source
                      :style {:flex 1
-                             :marginVertical 10}
+                             :paddingTop 10}
                      :renderRow  (fn [row-data]
                                    (->TransactionListItem (om/computed {:transaction row-data}
                                                                        {:on-press (fn [] (debug "Pressed item: " row-data))})))}))))))

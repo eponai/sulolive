@@ -21,8 +21,7 @@
         (segmented-control-ios
           (opts
             {:values        ["List" "Dashboard"]
-             :style         {:flex 1
-                             :marginVertical 10}
+             :style         {:flex 1}
              :selectedIndex (utils/position #{selected-item} items)
              :onChange      #(when on-change
                               (let [selected-index (.. % -nativeEvent -selectedSegmentIndex)]
