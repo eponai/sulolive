@@ -158,32 +158,54 @@
         ;; so that we keep the queue around for the next remote request.
         db-after (->> (d/db conn)
                       (client.utils/clear-queue)
+                      ;; copy to keep the id's the same.
                       (client.utils/copy-queue mutation-queue))]
-    ;; THINK MORE HERE!
     db-after))
 
-(defn <apply-response [cb stable-db app-state received]
-  (go
-    (let [mutation-queue (d/db app-state)
-          {:keys [response error post-merge-fn]} received
-          {:keys [result meta]} response
-          ;; Reset db and apply response
-          _ (if (nil? error)
-              (do (cb {:db     stable-db
-                       :result result
-                       :meta   meta})
-                  ;; TODO: Add streaming loop
-                  )
-              (do
-                (debug "Error ")
-                (cb {:db stable-db})))
-          _ (when post-merge-fn
-              (post-merge-fn))]
-      ;; app-state has now been changed and is the new stable db.
-      ;; Pending mutations need to be caught before applying response.
-      {:new-stable-db  (d/db app-state)
-       :mutation-queue mutation-queue})))
+(defn merge-response! [cb stable-db received]
+  (let [{:keys [response error post-merge-fn]} received
+        {:keys [result meta]} response]
+    ;; Reset db and apply response
+    (if (nil? error)
+      (do (cb {:db     stable-db
+               :result result
+               :meta   meta}))
+      (do
+        (debug "Error ")
+        (cb {:db stable-db})))
+    (when post-merge-fn
+      (post-merge-fn))))
 
+(defn <stream-chunked-response
+  "Stream chunked responses. Return the new stable-db and the current mutation-queue."
+  [reconciler cb stable-db mutation-queue received history-id]
+  (let [{:keys [response error]} received
+        app-state (om/app-state reconciler)]
+    (go
+      (when (nil? error)
+        (when-let [chunked-txs (seq (query-transactions->ds-txs response))]
+          (loop [stable-db stable-db mutation-queue mutation-queue txs chunked-txs]
+            (if (empty? (seq txs))
+              ;; Returning the new stable-db and mutation queue.
+              ;; The app state is currently one with db and it's mutations.
+              ;; (not that the current state of the app-state matters).
+              {:new-stable-db  stable-db
+               :mutation-queue mutation-queue}
+              (let [[head tail] (split-at 100 txs)]
+                (cb {:db     stable-db
+                     :result {KEY-TO-RERENDER-UI {:just/transact head}}})
+                (let [new-stable-db (d/db app-state)
+                      db-with-mutations (apply-and-queue-mutations reconciler
+                                                                   new-stable-db
+                                                                   mutation-queue
+                                                                   history-id)
+                      _ (cb {:db db-with-mutations})
+                      ;; Apply pending mutations locally only.
+                      ;; Timeout to allow for re-render.
+                      _ (<! (timeout 0))
+                      ;; there may be new mutations in the app state. Get them.
+                      mutation-queue (d/db app-state)]
+                  (recur new-stable-db mutation-queue tail))))))))))
 
 (defn jeeb [reconciler-atom query-chan]
   (go
@@ -224,8 +246,20 @@
                   ;; chunks. So we'll return the next stable-db and the mutations
                   ;; pending. Since it's async, the UI may have been used to apply
                   ;; more mutations.
-                  {:keys [new-stable-db mutation-queue]}
-                  (<! (<apply-response cb stable-db app-state received))
+                  ;; mutation-queue need to be saved before merging response.
+                  mutation-queue (d/db app-state)
+                  _ (merge-response! cb stable-db received)
+                  ;; app-state has now been changed and is the new stable db.
+                  stable-db (d/db app-state)
+
+                  {:keys [new-stable-db mutation-queue]
+                   :or   {new-stable-db stable-db mutation-queue mutation-queue}}
+                  (<! (<stream-chunked-response reconciler
+                                                cb
+                                                stable-db
+                                                mutation-queue
+                                                received
+                                                history-id))
 
                   ;; Reset has been done. Apply mutations after history-id
                   db-with-mutations (apply-and-queue-mutations reconciler
