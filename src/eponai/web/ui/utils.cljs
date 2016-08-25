@@ -220,6 +220,7 @@
                      :ui.component.project/selected-tab :dashboard}
                     {:ui/component :ui.component/widget}
                     {:ui/component :ui.component/root}
+                    {:ui/component :ui.component/mutation-queue}
                     {:ui/component :ui.component/sidebar
                      :ui.component.sidebar/newsletter-subscribe-status
                                    :ui.component.sidebar.newsletter-subscribe-status/not-sent}]

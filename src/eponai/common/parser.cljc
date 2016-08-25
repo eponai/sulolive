@@ -8,6 +8,7 @@
     #?(:clj
             [datomic.api :as d]
        :cljs [datascript.core :as d])
+    #?(:cljs [eponai.client.utils :as client.utils])
     #?(:clj
             [eponai.server.datomic.filter :as filter])
             [clojure.walk :as w]
@@ -171,11 +172,19 @@
                       " params: " p)))
 
 
-         (if (or (nil? target) (not target-mutation))
-           mutation
-          (let [ast (if (true? target-mutation) ast target-mutation)]
-            (assoc-in ast [:params :eponai.client.backend/mutation-db-history-id]
-                      last-history-id)))))))
+         (if (nil? target)
+           (update mutation :action
+                   (fn [f]
+                     (when f
+                       (fn []
+                         (f)
+                         (d/reset-conn! state (client.utils/queue-mutation
+                                                (d/db state)
+                                                last-history-id
+                                                (om/ast->query ast)))))))
+           (let [ast (if (true? target-mutation) ast target-mutation)]
+             (assoc-in ast [:params :eponai.client.backend/mutation-db-history-id]
+                       last-history-id)))))))
 
 (defn mutate-with-idempotent-invariants  [mutate]
   (fn [{:keys [target ast] :as env} k {:keys [mutation-uuid] :as params}]
@@ -357,6 +366,7 @@
                                           mutate-with-idempotent-invariants
                                           mutate-with-error-logging
                                           wrap-db
+                                          #?(:cljs mutate-with-db-before-mutation)
                                           #?(:cljs (cond-> (not (:elide-paths parser-opts))
                                                            (with-elided-paths (delay (parser (merge parser-opts {:elide-paths true})
                                                                                              initial-state))))))}

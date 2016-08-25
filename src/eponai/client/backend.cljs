@@ -3,6 +3,7 @@
   (:require [cljs.core.async :as async :refer [<! >! chan timeout]]
             [eponai.common.parser.util :as parser.util]
             [eponai.common.parser :as parser]
+            [eponai.client.utils :as client.utils]
             [cljs-http.client :as http]
             [datascript.impl.entity :as e]
             [om.next :as om]
@@ -111,14 +112,78 @@
         (error "Error when re-applying mutation: " query
                " error: " e)))))
 
+;; TODO: Un-hard-code this. Put it in the app-state or something.
+(def KEY-TO-RERENDER-UI :routing/app-root)
+
+;; TODO: Copied from om internals
+(defn- to-env [r]
+  {:pre [(om/reconciler? r)]}
+  (select-keys (:config r) [:state :shared :parser :logger :pathopt]))
+
+(defn- get-parser [r]
+  {:pre [(om/reconciler? r)]
+   :post [(fn? %)]}
+  (-> r :config :parser))
+
 ;; JEEB
 
+(defn only-reads? [history-id]
+  (nil? history-id))
+
 (defn flatten-db [db]
-  ;; TODO: Remove optimistic mutations
-  db)
+  (client.utils/clear-queue db))
 
 (defn flatten-db-up-to [db history-id]
-  )
+  (if (only-reads? history-id)
+    db
+    (client.utils/keep-mutations-after db history-id)))`
+
+(defn mutations-after [db history-id]
+  ;; returns all mutations for reads.
+  (if (only-reads? history-id)
+    (client.utils/mutation-queue db)
+    (client.utils/mutations-after db history-id)))
+
+(defn apply-and-queue-mutations [reconciler stable-db mutation-queue history-id]
+  ;; Trim mutation queue to only contain mutations after history-id
+  (let [mutation-queue (client.utils/keep-mutations-after mutation-queue history-id)
+        mutations-after-query (client.utils/mutations mutation-queue)
+        ;; Mutate the stable-db with mutations that have happened after history-id
+        conn (d/conn-from-db stable-db)
+        parser (get-parser reconciler)
+        env (to-env reconciler)
+        target nil
+        _ (parser (assoc env :state conn) mutations-after-query target)
+        ;; Given the mutated db in conn, queue all mutations after history-id
+        ;; so that we keep the queue around for the next remote request.
+        db-after (->> (d/db conn)
+                      (client.utils/clear-queue)
+                      (client.utils/copy-queue mutation-queue))]
+    ;; THINK MORE HERE!
+    db-after))
+
+(defn <apply-response [cb stable-db app-state received]
+  (go
+    (let [mutation-queue (d/db app-state)
+          {:keys [response error post-merge-fn]} received
+          {:keys [result meta]} response
+          ;; Reset db and apply response
+          _ (if (nil? error)
+              (do (cb {:db     stable-db
+                       :result result
+                       :meta   meta})
+                  ;; TODO: Add streaming loop
+                  )
+              (do
+                (debug "Error ")
+                (cb {:db stable-db})))
+          _ (when post-merge-fn
+              (post-merge-fn))]
+      ;; app-state has now been changed and is the new stable db.
+      ;; Pending mutations need to be caught before applying response.
+      {:new-stable-db  (d/db app-state)
+       :mutation-queue mutation-queue})))
+
 
 (defn jeeb [reconciler-atom query-chan]
   (go
@@ -127,31 +192,65 @@
         (let [reconciler @reconciler-atom
               {:keys [remote->send cb remote-key query]} (<! query-chan)
               history-id (query-history-id query remote-key)
-              only-reads? (nil? history-id)
-              stable-db (cond-> (db-before-mutation reconciler history-id)
-                                only-reads?
-                                (flatten-db))
-              received (<! (<send remote->send remote-key query))
-              {:keys [response error post-merge-fn]} received]
+              app-state  (om/app-state reconciler)
+              stable-db  (db-before-mutation reconciler history-id)
+              stable-db  (cond-> stable-db
+                                ;; Initially, we get the latest stable db. Stable db means
+                                ;; that it has no optimistic transactions.
+                                ;; If our query from query-chan is a read, it means there
+                                ;; aren't any optimistic transactions, so we can clear the
+                                ;; pending mutation queue.
+                                ;; TODO: enable this optimization when
+                                ;; we think everything works?
+                                (and false (only-reads? history-id))
+                                (flatten-db))]
 
-          ;; DO SOMETHING WITH RECEIVED
+          (loop [stable-db stable-db
+                 query query
+                 history-id history-id]
+            ;; Make mutations that came before before history-id
+            ;; permanent by removing them from the queue.
+            ;; They have already been applied.
+            (let [stable-db (flatten-db-up-to stable-db history-id)
 
-          (loop [stable-db stable-db query query]
-            (let [stable-db (cond-> stable-db
-                                    (not only-reads?)
-                                    (flatten-db-up-to history-id))]
-              (loop [db stable-db]))))
+                  ;; The stable-db is the db we want to use when we
+                  ;; merge the response. We can get pending mutations
+                  ;; from app-state after this call.
+                  received (<! (<send remote->send remote-key query))
 
-        
+                  ;; Get all pending queries that have happened while
+                  ;; we were waiting for response
+                  ;; Note: Applying response may be async if we're streaming
+                  ;; chunks. So we'll return the next stable-db and the mutations
+                  ;; pending. Since it's async, the UI may have been used to apply
+                  ;; more mutations.
+                  {:keys [new-stable-db mutation-queue]}
+                  (<! (<apply-response cb stable-db app-state received))
+
+                  ;; Reset has been done. Apply mutations after history-id
+                  db-with-mutations (apply-and-queue-mutations reconciler
+                                                               new-stable-db
+                                                               mutation-queue
+                                                               history-id)]
+              ;; Set the current db to the db with mutations.
+              (cb {:db db-with-mutations})
+
+              ;; THIS WAS COMPLICATED LOL. REBASING FTW.
+              ;; Now if there's another query in the query-channel, use the
+              ;; new-stable-db as the "rebase" point.
+              ;; otherwise, exit the loop.
+              (when-let [{:keys [query remote-key]} (async/poll! query-chan)]
+                (recur new-stable-db
+                       query
+                       (query-history-id query remote-key)))))
+
+          ;; End loop
+          ;; End with a final flatten.
+          (cb {:db (flatten-db (d/db app-state))}))
 
         (catch :default e
-          ;; TODO: Moar
-          (error e)
-          )))))
-
-
-;; TODO: Un-hard-code this. Put it in the app-state or something.
-(def KEY-TO-RERENDER-UI :routing/app-root)
+          (debug "Error in query loop: " e ". Will recur with the next query.")
+          (error e))))))
 
 (defn leeb [reconciler-atom query-chan]
   (go
