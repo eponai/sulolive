@@ -231,7 +231,7 @@
   [merge-fn]
   (fn [reconciler current-db {:keys [db result meta] :as novelty}]
     (debug "Merge! transacting novelty:" (update novelty :db :max-tx))
-    (let [db (merge-meta db meta)
+    (let [db (cond-> db (some? meta) (merge-meta meta))
           ret (if result
                 (merge-novelty-by-key merge-fn db result)
                 ;; TODO: What keys can we pass to force re-render?

@@ -59,18 +59,22 @@
      :transaction/conversion])
 
   utils/ISyncStateWithProps
-  (props->init-state [this props]
+  (props->init-state [_ props]
     (let [transaction (-> props
                           (update :transaction/tags (fn [tags] (sort-by :tag/name (map #(select-keys % [:tag/name]) tags))))
                           (update :transaction/amount two-decimal-string))]
       {:input-transaction transaction
-       :init-state transaction
-       :computed/date-range-picker-on-apply #(do (om/update-state! this assoc-in [:input-transaction :transaction/date] %)
-                                                 (.save-edit this))}))
+       :init-state transaction}))
 
   Object
   (initLocalState [this]
-    (utils/props->init-state this (om/props this)))
+    (merge
+      ;; Never change this computed function.
+      {:computed/date-range-picker-on-apply #(do (om/update-state! this assoc-in
+                                                                   [:input-transaction
+                                                                    :transaction/date] %)
+                                                 (.save-edit this))}
+      (utils/props->init-state this (om/props this))))
 
   (componentWillReceiveProps [this props]
     (utils/sync-with-received-props this props))
