@@ -195,6 +195,18 @@
                                   :eponai.client.backend/mutation-db-history-id]
                                  last-history-id)))))))))
 
+#?(:clj
+   (defn mutate-without-history-id-param [mutate]
+     (fn [env k p]
+       (mutate env k (cond-> p
+                             (map? p)
+                             (dissoc p
+                                     :eponai.client.backend/mutation-db-history-id
+                                     ;; TODO: Remove :mutation-uuid from here.
+                                     ;; We need to clean up the rest of the code
+                                     ;; and remove it from everywhere.
+                                     :mutation-uuid))))))
+
 (defn mutate-with-idempotent-invariants  [mutate]
   (fn [{:keys [target ast] :as env} k {:keys [mutation-uuid] :as params}]
     (let [params' (dissoc params :mutation-uuid #?(:clj :remote-sync?))
@@ -372,10 +384,11 @@
                                                                                              initial-state))))))
                               :mutate (-> mutate
                                           with-remote-guard
-                                          mutate-with-idempotent-invariants
+                                          ;; mutate-with-idempotent-invariants
                                           mutate-with-error-logging
                                           wrap-db
-                                          #?(:cljs mutate-with-db-before-mutation)
+                                          #?(:cljs mutate-with-db-before-mutation
+                                             :clj mutate-without-history-id-param)
                                           #?(:cljs (cond-> (not (:elide-paths parser-opts))
                                                            (with-elided-paths (delay (parser (merge parser-opts {:elide-paths true})
                                                                                              initial-state))))))}

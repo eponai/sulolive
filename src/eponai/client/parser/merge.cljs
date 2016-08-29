@@ -129,7 +129,9 @@
     (merge-fn db key val)
 
     (some? (-> val :result :mutation-uuid))
-    (sync-optimistic-tx db key val)
+    (do (warn "Old mutation-uuid merge for key: " key
+              ". Calling merge without mutation-uuid.")
+        (merge-mutation merge-fn db key (update val :result dissoc :mutation-uuid)))
 
     (some? (-> val :om.next/error))
     (merge-error db key val)

@@ -47,14 +47,16 @@
    ;; :tx/reverted refers to if the optimistic changes has been reverted or not.
    #?@(:cljs [:tx/reverted false])})
 
+;; TODO: Warn that these are deprecated.
+
 (defn mutate
   [conn mutation-uuid txs]
-  (transact conn (conj txs (tx-mutation mutation-uuid))))
+  (transact conn txs))
 
 (defn mutate-one
   [conn mutation-uuid value]
-  (transact conn [value (tx-mutation mutation-uuid)]))
+  (transact-one conn value))
 
 (defn mutate-map
   [conn mutation-uuid m]
-  (transact conn (conj (vals m) (tx-mutation mutation-uuid))))
+  (transact-map conn m))
