@@ -56,23 +56,25 @@
         {:error e}))))
 
 
-(def query-parser (om/parser {:read   (constantly nil)
-                              :mutate (fn [_ _ {:keys [::mutation-db-history-id]}]
-                                        {:action (constantly mutation-db-history-id)})}))
+(def history-id-parser
+  (om/parser {:read   (constantly nil)
+              :mutate (fn [_ _ {:keys [::mutation-db-history-id]}]
+                        {:action (constantly mutation-db-history-id)})}))
 
-(defn query-history-id [query remote-key]
-  (let [parsed-query (query-parser {} query remote-key)
+(defn query-history-id [query]
+  (let [parsed-query (history-id-parser {} query nil)
         history-id (->> parsed-query
                         (sequence (comp (filter #(symbol? (key %)))
-                                        (map (comp ::mutation-db-history-id :result val))
+                                        (map (comp :result val))
                                         (filter some?)))
                         (first))]
-    (when-not (or (some? history-id)
-                  (not-any? #(symbol? (key %)) parsed-query))
+    (when (and (nil? history-id)
+               (or (some #(symbol? (key %)) parsed-query)
+                   true))
       (warn
         (str "Could not find mutation-db-history-id in"
              " any of the query's mutations."
-             " Query: " query)))
+             " Query: " query " parsed-query: " parsed-query)))
     history-id))
 
 (defn- db-before-mutation [reconciler history-id]
@@ -99,9 +101,10 @@
              (first))]
     ;; transact conversions before transactions
     ;; because transactions depend on conversions.
-    (concat conversions (cond->> transactions
-                                 (seq transactions)
-                                 (sort-by #(get-in % [:transaction/date :date/timestamp]) >)))))
+    (concat conversions
+            (cond->> transactions
+                     (seq transactions)
+                     (sort-by #(get-in % [:transaction/date :date/timestamp]) >)))))
 
 (defn transact-pending [reconciler pending-queries]
   ;; We could also merge the pending mutation in to a single mutation. Hmm.
@@ -118,7 +121,11 @@
 ;; TODO: Copied from om internals
 (defn- to-env [r]
   {:pre [(om/reconciler? r)]}
-  (select-keys (:config r) [:state :shared :parser :logger :pathopt]))
+  (-> (:config r)
+      (select-keys [:state :shared :parser :logger :pathopt])
+      ;; Adds :reconciler as it is also passed in om.next's
+      ;; environment when parsing in om.next/transact*
+      (assoc :reconciler r)))
 
 (defn- get-parser [r]
   {:pre [(om/reconciler? r)]
@@ -148,6 +155,7 @@
   ;; Trim mutation queue to only contain mutations after history-id
   (let [mutation-queue (client.utils/keep-mutations-after mutation-queue history-id)
         mutations-after-query (client.utils/mutations mutation-queue)
+        _ (debug "Applying mutations: " mutations-after-query)
         ;; Mutate the stable-db with mutations that have happened after history-id
         conn (d/conn-from-db stable-db)
         parser (get-parser reconciler)
@@ -207,13 +215,17 @@
                       mutation-queue (d/db app-state)]
                   (recur new-stable-db mutation-queue tail))))))))))
 
+(defn- current-mutations [mutation-queue history-id]
+  (client.utils/mutations
+    (client.utils/keep-mutations-after mutation-queue history-id)))
+
 (defn jeeb [reconciler-atom query-chan]
   (go
     (while true
       (try
-        (let [reconciler @reconciler-atom
-              {:keys [remote->send cb remote-key query]} (<! query-chan)
-              history-id (query-history-id query remote-key)
+        (let [{:keys [remote->send cb remote-key query]} (<! query-chan)
+              reconciler @reconciler-atom
+              history-id (query-history-id query)
               app-state  (om/app-state reconciler)
               stable-db  (db-before-mutation reconciler history-id)
               stable-db  (cond-> stable-db
@@ -224,11 +236,12 @@
                                 ;; pending mutation queue.
                                 ;; TODO: enable this optimization when
                                 ;; we think everything works?
-                                (and false (only-reads? history-id))
+                                (only-reads? history-id)
                                 (flatten-db))]
 
           (loop [stable-db stable-db
                  query query
+                 remote-key remote-key
                  history-id history-id]
             ;; Make mutations that came before before history-id
             ;; permanent by removing them from the queue.
@@ -248,6 +261,8 @@
                   ;; more mutations.
                   ;; mutation-queue need to be saved before merging response.
                   mutation-queue (d/db app-state)
+                  _ (debug "Mutation-queue before merging response: "
+                           (current-mutations mutation-queue history-id))
                   _ (merge-response! cb stable-db received)
                   ;; app-state has now been changed and is the new stable db.
                   stable-db (d/db app-state)
@@ -276,7 +291,8 @@
               (when-let [{:keys [query remote-key]} (async/poll! query-chan)]
                 (recur new-stable-db
                        query
-                       (query-history-id query remote-key)))))
+                       remote-key
+                       (query-history-id query)))))
 
           ;; End loop
           ;; End with a final flatten.
@@ -296,7 +312,7 @@
             pending-queries (delay (drain-channel query-chan))
             reconciler @reconciler-atom]
         (try
-          (let [history-id (query-history-id query remote-key)
+          (let [history-id (query-history-id query)
                 db (db-before-mutation reconciler history-id)
                 _ (assert (false? (realized? pending-queries))
                           (str "pending-queries was realized before calling"

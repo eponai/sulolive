@@ -5,7 +5,7 @@
             [cljs-time.coerce :as cljs-time]
             [datascript.db :as db]
             [datascript.core :as d]
-            [taoensso.timbre :as timbre :refer-macros [debug]]))
+            [taoensso.timbre :as timbre :refer-macros [debug warn error]]))
 
 (defprotocol IQueueMutations
   (mutations [this])
@@ -20,7 +20,7 @@
   (d/entity db [:ui/component :ui.component/mutation-queue]))
 
 (defn- update-queue [db update-fn]
-  (d/db-with db (vector (-> (mutation-queue-entity db)
+  (d/db-with db (vector (-> (into {} (mutation-queue-entity db))
                             (update :ui.component.mutation-queue/queue update-fn)))))
 
 (defn- mutation-queue [db]
@@ -44,17 +44,29 @@
             (mutation-queue this)))
   (queue-mutation [this id mutation]
     (let [queue (mutation-queue this)]
-      (assert (or (not (queue-contains-id? queue id))
-                  (= id (:id (last queue))))
-        (str "Queue was in an invalid state. Queue should either not contain"
-             " the mutation id, or the last item in the queue should have the"
-             " same mutation id. Queue: " queue " id: " id " mutation: " mutation)))
+      (when (and (queue-contains-id? queue id)
+                 (not= id (:id (last queue))))
+        (error
+          "Queue was in an invalid state. Queue should either not contain"
+          " the mutation id, or the last item in the queue should have the"
+          " same mutation id. Queue: " queue " id: " id " mutation: " mutation)))
+    (warn "Queuing mutation: " mutation " id: " id)
     (update-queue this (fnil (fn [q] (conj q {:id id :mutation mutation}))
                              [])))
   (keep-mutations-after [this id]
-    (cond-> this
-            (queue-contains-id? (mutation-queue this) id)
-            (update-queue (fn [q] (into [] (drop-id-xf id) q)))))
+    (let [queue (mutation-queue this)
+          contains-id? (queue-contains-id? queue id)
+          ret (cond-> this
+                      contains-id?
+                      (update-queue (fn [q] (into [] (drop-id-xf id) q))))]
+      (cond
+        (nil? id) (debug "Won't modify queue: " queue)
+        contains-id? (do (warn "Keeping mutations after id: " id)
+                         (debug "Queue before: " queue)
+                         (debug "Queue after: " (mutation-queue ret))
+                         (warn "Keeping mutations END"))
+        :else nil)
+      ret))
   (clear-queue [this]
     (d/db-with this [[:db.fn/retractAttribute
                       [:ui/component :ui.component/mutation-queue]

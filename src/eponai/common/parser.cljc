@@ -178,15 +178,22 @@
                      (when f
                        (fn []
                          (f)
-                         (d/reset-conn! state (client.utils/queue-mutation
-                                                (d/db state)
-                                                last-history-id
-                                                (om/ast->query ast)))))))
+                         (try
+                           (d/reset-conn! state (client.utils/queue-mutation
+                                                  (d/db state)
+                                                  last-history-id
+                                                  (om/ast->query ast)))
+                           (catch :default e
+                             (error e)
+                             (throw e)))))))
            (let [ret (if (true? target-mutation) ast target-mutation)]
-             (cond-> ret
-                     (map? ret)
-                     (assoc-in [:params :eponai.client.backend/mutation-db-history-id]
-                               last-history-id))))))))
+             (assoc mutation
+               target
+               (cond-> ret
+                       (map? ret)
+                       (assoc-in [:params
+                                  :eponai.client.backend/mutation-db-history-id]
+                                 last-history-id)))))))))
 
 (defn mutate-with-idempotent-invariants  [mutate]
   (fn [{:keys [target ast] :as env} k {:keys [mutation-uuid] :as params}]
