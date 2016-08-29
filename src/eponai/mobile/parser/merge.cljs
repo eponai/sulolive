@@ -11,15 +11,15 @@
 
 (defn sync-optimistic-with-message [messages db k {:keys [om.next/error result] :as params}]
   {:pre [(map? messages)]}
-  (let [{:keys [error-message message]} messages]
+  (let [{:keys [error-message message]} messages
+        db (d/db-with db [{:tx/mutation-uuid (:mutation-uuid result)
+                           :tx/message       (if error error-message message)
+                           :tx/status        (if error :tx.status/error
+                                                       :tx.status/success)}])]
     (debug "merging optimistic update with message: " messages
            "for key: " k
            "params: " params)
-    (-> db
-       (d/db-with [{:tx/mutation-uuid (:mutation-uuid result)
-                    :tx/message       (if error error-message message)
-                    :tx/status        (if error :tx.status/error :tx.status/success)}])
-       (m/sync-optimistic-tx k params))))
+    (m/merge-mutation mobile-merge db k params)))
 
 (defmethod mobile-merge 'transaction/create
   [& args]

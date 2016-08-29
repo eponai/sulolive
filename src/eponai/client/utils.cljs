@@ -51,31 +51,19 @@
     (let [queue (mutation-queue this)]
       (when (and (queue-contains-id? queue id)
                  (not= id (:id (last queue))))
-        (error
+        (warn
           "Queue was in an invalid state. Queue should either not contain"
           " the mutation id, or the last item in the queue should have the"
           " same mutation id. Queue: " queue " id: " id " mutation: " mutation)))
-    (warn "Queuing mutation: " mutation " id: " id)
     (update-queue this (fnil (fn [q] (conj q {:id id :mutation mutation}))
                              [])))
   (keep-mutations-after [this id is-remote-fn]
-    (let [queue (mutation-queue this)
-          contains-id? (queue-contains-id? queue id)
-          ret (cond-> this
-                      contains-id?
-                      (update-queue (fn [q]
-                                      (into (local-mutations-with-id this id
-                                                                     is-remote-fn)
-                                            (drop-id-xf id)
-                                            q))))]
-      (cond
-        (nil? id) (debug "Won't modify queue: " queue)
-        contains-id? (do (warn "Keeping mutations after id: " id)
-                         (debug "Queue before: " queue)
-                         (debug "Queue after: " (mutation-queue ret))
-                         (warn "Keeping mutations END"))
-        :else nil)
-      ret))
+    (cond-> this
+            (queue-contains-id? (mutation-queue this) id)
+            (update-queue (fn [q]
+                            (into (local-mutations-with-id this id is-remote-fn)
+                                  (drop-id-xf id)
+                                  q)))))
   (clear-queue [this]
     (d/db-with this [[:db.fn/retractAttribute
                       [:ui/component :ui.component/mutation-queue]

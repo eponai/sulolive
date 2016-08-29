@@ -100,10 +100,8 @@
                                                     (assoc :transaction/uuid (:transaction/uuid input-transaction))
                                                     (assoc :db/id (:db/id input-transaction))
                                                     (assoc :mutation-uuid (d/squuid))))
-                             (transactions/deselect)
                              ;; TODO: Are all these needed?
                              ;; Copied from AddTransaction.
-                             :query/selected-transaction
                              :query/dashboard
                              :query/all-projects
                              :query/transactions]))))
@@ -294,16 +292,6 @@
     (when (zero? (:list-size (om/get-state this)))
       (debug "Updating list-size!")
       (om/update-state! this assoc :list-size 50)))
-
-  (componentWillUnmount [this]
-    (debug "Unmounting all transactions")
-    (.deselect-transaction this))
-
-  (select-transaction [this transaction]
-    (om/transact! this `[(transactions/select ~{:transaction transaction})]))
-
-  (deselect-transaction [this]
-    (om/transact! this `[(transactions/deselect)]))
 
   (has-filter [this]
     (some #(let [v (val %)] (if (coll? v) (seq v) (some? v)))

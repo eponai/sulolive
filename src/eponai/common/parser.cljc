@@ -160,32 +160,17 @@
                  (str "om.next's history had no property (.-arr h)."
                       " Check the implementation of om.next.cache."
                       " history: " history))
-         ;; The state hasn't changed yet if we're receiving target nil
-         ;; in a mutation.
-         (when (and (nil? target)
-                    (not (identical? (d/db state)
-                                     (om/from-history reconciler last-history-id))))
-           (warn (str "Current db and db from history given the last-history-id were"
-                      " not identical."
-                      " Last-history-id: " last-history-id
-                      " mutation: " k
-                      " params: " p)))
-
-
          (if (nil? target)
-           (update mutation :action
-                   (fn [f]
-                     (when f
-                       (fn []
-                         (f)
-                         (try
-                           (d/reset-conn! state (client.utils/queue-mutation
-                                                  (d/db state)
-                                                  last-history-id
-                                                  (om/ast->query ast)))
-                           (catch :default e
-                             (error e)
-                             (throw e)))))))
+           (cond-> mutation
+                   (fn? (:action mutation))
+                   (update :action
+                           (fn [f]
+                             (fn []
+                               (f)
+                               (d/reset-conn! state (client.utils/queue-mutation
+                                                      (d/db state)
+                                                      last-history-id
+                                                      (om/ast->query ast)))))))
            (let [ret (if (true? target-mutation) ast target-mutation)]
              (assoc mutation
                target
@@ -205,76 +190,10 @@
                                      ;; TODO: Remove :mutation-uuid from here.
                                      ;; We need to clean up the rest of the code
                                      ;; and remove it from everywhere.
+                                     ;; We may want to use something like
+                                     ;; mutation-uuid for messages anyway.
+                                     ;; Think about it.
                                      :mutation-uuid))))))
-
-(defn mutate-with-idempotent-invariants  [mutate]
-  (fn [{:keys [target ast] :as env} k {:keys [mutation-uuid] :as params}]
-    (let [params' (dissoc params :mutation-uuid #?(:clj :remote-sync?))
-          env (assoc env :mutation-uuid mutation-uuid)
-          ret (mutate env k params')
-          remote? (get ret target)
-          ;; Normalize mutation return to ast.
-          #?@(:cljs [;; Remote sync is only needed when there was an optimistic
-                     ;; change on the frontend.
-                     ;; TODO: It's possible that we can have an action that
-                     ;;       do not require remote-sync. What to do?
-                     remote-sync? (and remote? (some? (:action ret)))]
-              :clj  [remote-sync? (:remote-sync? params)])
-          #?@(:cljs [ret (cond-> ret
-                                 remote? (->
-                                           (update target #(if (true? %) ast %))
-                                           (assoc-in [target :params :remote-sync?] remote-sync?)))])]
-      ;; TODO: Turn this into a test instead.
-      (when remote?
-        (assert (map? ret)))
-
-      (when remote-sync?
-        (assert (some? mutation-uuid)
-                (str "No mutation-uuid for remote mutation: " k
-                     ". Remote mutations needs :mutation-uuid in params "
-                     " to synchronize state, params were: " (keys params)))
-        (assert (and (map? ret) (:action ret))
-                (str "Map with :action key was not returned from mutation: " k
-                     " which is remote-symc?: " remote-sync? ". Mutations with"
-                     " remote sync needs to return a map with an :action.")))
-      (if-not remote-sync?
-        ret
-        (-> ret
-          (update :action (fn [action]
-                               (fn []
-                                 (let [action-return (action)]
-                                   (debug "mutation:" k "remote-sync?: " remote-sync?)
-                                   (when remote-sync?
-                                     (assert (map? action-return)
-                                             (str "Return value from a mutation's :action need to be"
-                                                  " a map for remote mutations that requires sync."
-                                                  "Mutation:" k " remote sync?:" remote-sync?
-                                                  " return value: " action-return))
-                                     (assert (contains? action-return :db-after)
-                                             (str ":db-after not in mutation action function's return value."
-                                                  " keys returned: " (keys action-return)
-                                                  ". Need :db-after to validate that mutation-uuid was"
-                                                  " transacted to the database."))
-                                     (assert (= mutation-uuid
-                                                (d/q '{:find  [?uuid .]
-                                                       :in    [$ ?uuid]
-                                                       :where [[_ :tx/mutation-uuid ?uuid]]}
-                                                     (:db-after action-return)
-                                                     mutation-uuid))
-                                             (str ":tx/mutation-uuid was not stored for mutation: " k
-                                                  " mutation-uuid: " mutation-uuid
-                                                  ". Mutation id needs to be stored in datascript/datomic"
-                                                  " to synchronize state.")))
-                                   #?(:cljs action-return
-                                      :clj (let [datoms (d/q '{:find  [?e ?attr ?v ?tx ?added]
-                                                        :in    [$ [[?e ?a ?v ?tx ?added] ...]]
-                                                        :where [[?a :db/ident ?attr]]}
-                                                      (:db-after action-return)
-                                                      (:tx-data action-return))
-                                                 _ (debug "mutation: " k " datoms: " datoms)
-                                                 _ (debug "mutation: " k " tx-report: " action-return)]
-                                      (assoc action-return :mutation-uuid mutation-uuid
-                                                           :datoms datoms))))))))))))
 
 (defn mutate-with-error-logging [mutate]
   (fn [env k p]

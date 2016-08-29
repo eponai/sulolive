@@ -1,10 +1,7 @@
 (ns eponai.client.parser.merge
   (:require [datascript.core :as d]
             [datascript.db :as db]
-            [eponai.web.homeless :as homeless]
-            [eponai.client.utils :as utils]
-            [eponai.common.datascript :as common.datascript]
-            [om.next :as om]
+            [eponai.web.homeless :as homeless] ;; Client shouldn't depend on web!
             [taoensso.timbre :refer-macros [info debug error trace warn]]))
 
 (defn transact [db tx]
@@ -28,72 +25,6 @@
   ;; TODO: Alert the user some how?
   (error "error on key:" key "error:" val ". Doing nothing with it.")
   db)
-
-(defn sync-optimistic-tx
-  [db k {:keys [result]}]
-  (when-let [mutation-uuid (:mutation-uuid result)]
-    (let [[tx-entity tx-time] (first (d/q '{:find  [?e ?tx]
-                                            :in    [$ ?uuid]
-                                            :where [[?e :tx/mutation-uuid ?uuid ?tx]
-                                                    [?e :tx/reverted ?reverted]
-                                                    [(not ?reverted)]]}
-                                          db
-                                          mutation-uuid))
-          _ (when-not tx-time
-              (debug "No tx-time found. Did the datascript transaction actually happen in your optimistic mutation?")
-              (let [tx (d/touch (d/entity db [:tx/mutation-uuid mutation-uuid]))]
-                (if (true? (:tx/reverted tx))
-                  (debug "Had already reverted optimistic transaction: " tx
-                         " will still transact the real transactions, because why not?")
-                  (warn "Optimistic transaction:" tx
-                        " had no tx-time..? What is this."))))
-
-          optimistic-tx-datoms (db/-search db [nil nil nil tx-time])
-
-          optimistic-tx-inverse
-          (when tx-time
-            (->> (into []
-                       (comp (remove (fn [[e]] (= e tx-entity)))
-                             (map #(update % :added not))
-                             (map (fn [[e a v _ added]] [(if added :db/add :db/retract) e a v])))
-                       optimistic-tx-datoms)
-                 (cons {:tx/mutation-uuid mutation-uuid :tx/reverted true})))
-
-          ;; When there's an optimistic edit on a transaction, mark the transaction
-          ;; so we can find it later. (make this generic when there are other entities we need to mark).
-          tx-entity
-          (some (fn [[e]] (let [entity (d/entity db e)]
-                            (when (:transaction/uuid entity)
-                              entity)))
-                (utils/distinct-by :e optimistic-tx-datoms))
-
-          real-tx
-          (into [] (comp
-                     ;; Remove the remote :tx/mutation-uuid datom, since we've got our own
-                     (filter (fn [[_ a]] (not= a :tx/mutation-uuid)))
-                     ;; Does not include the ?tx time because we're not quite sure how
-                     ;; that will affect things.
-                     (map (fn [[e a v _ added]] [(if added :db/add :db/retract) e a v])))
-                (:datoms result))
-
-          tx (concat optimistic-tx-inverse real-tx)]
-      (debug "Syncing optimistic transaction: " k " with transactions:" tx)
-      (cond-> db
-              (seq tx)
-              (d/db-with tx)
-              (some? tx-entity)
-              (as-> $db (let [tx-uuid (:transaction/uuid tx-entity)
-                              ;; This is sort of messed up, but here's the explaination:
-                              ;; When we're creating new transactions, we'll have the uuid
-                              ;; in $db (the new one). When we're editing transactions
-                              ;; we won't get the db/id by transaction/uuid, but we'll
-                              ;; have the correct db/id in the old transaction. Gah.
-                              id (:db/id (or (d/entity $db [:transaction/uuid tx-uuid])
-                                             (d/entity db [:transaction/uuid tx-uuid])))]
-                          (assert (and tx-uuid id)
-                                  (str "No uuid or db/id. Was: " tx-uuid " and " id " for tx-entity " (into {} tx-entity)))
-                          (debug "Marking transaction entity with id: " id " and uuid: " tx-uuid)
-                          (d/db-with $db (common.datascript/mark-entity-txs id :transaction/uuid tx-uuid))))))))
 
 (defn merge-schema [db _ datascript-schema]
   (let [current-schema (:schema db)
@@ -176,15 +107,6 @@
       :else
       (transact db val))))
 
-(defn split-mutations [novelty]
-  (letfn [(mutation? [k] (symbol? k))]
-    (reduce-kv (fn [[mutations reads] k v]
-                 (if (mutation? k)
-                   [(assoc mutations k v) reads]
-                   [mutations (assoc reads k v)]))
-               [{} {}]
-               novelty)))
-
 (defn merge-novelty-by-key
   ;; TODO: Add comment when this has stabilized.
   "Merges server response for each [k v] in novelty. Returns the next db and the keys to re-read."
@@ -194,15 +116,12 @@
   ;; Merge :datascript/schema first if it exists
   (let [keys-to-merge-first (select-keys novelty [:datascript/schema :user/current])
         other-novelty (apply dissoc novelty keys-to-merge-first)
-        [mutations reads] (split-mutations other-novelty)
-        ;; Merge symbols before keywords, but merge some keys first, always..?
-        ordered-novelty (concat keys-to-merge-first mutations reads)]
+        ordered-novelty (concat keys-to-merge-first other-novelty)]
     (reduce
       (fn [{:keys [next] :as m} [key value]]
         (debug "Merging response for key:" key "value:" value)
         (if (symbol? key)
           (assoc m :next (merge-mutation merge-fn next key value))
-          ;; Unwrap keys if they are wrapped in maps with :value
           (-> m
               (assoc :next (merge-read merge-fn next key value))
               (update :keys conj key))))
