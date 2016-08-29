@@ -11,8 +11,8 @@
   (mutations [this])
   (queue-mutation [this id mutation])
   (copy-queue [this other])
-  (mutations-after [this id])
-  (keep-mutations-after [this id])
+  (mutations-after [this id is-remote-fn])
+  (keep-mutations-after [this id is-remote-fn])
   (clear-queue [this]))
 
 (defn- mutation-queue-entity [db]
@@ -26,13 +26,18 @@
 (defn- mutation-queue [db]
   (:ui.component.mutation-queue/queue (mutation-queue-entity db)))
 
-(defn queue-contains-id? [queue id]
+(defn- queue-contains-id? [queue id]
   (and (some? id)
        (some #(= id (:id %)) queue)))
 
-(defn drop-id-xf [id]
+(defn- drop-id-xf [id]
   (comp (drop-while #(not= id (:id %)))
         (drop-while #(= id (:id %)))))
+
+(defn- local-mutations-with-id [db id is-remote-fn]
+  (into [] (comp (filter #(= id (:id %)))
+                 (remove #(is-remote-fn (:mutation %))))
+        (mutation-queue db)))
 
 (extend-protocol IQueueMutations
   db/DB
@@ -53,12 +58,16 @@
     (warn "Queuing mutation: " mutation " id: " id)
     (update-queue this (fnil (fn [q] (conj q {:id id :mutation mutation}))
                              [])))
-  (keep-mutations-after [this id]
+  (keep-mutations-after [this id is-remote-fn]
     (let [queue (mutation-queue this)
           contains-id? (queue-contains-id? queue id)
           ret (cond-> this
                       contains-id?
-                      (update-queue (fn [q] (into [] (drop-id-xf id) q))))]
+                      (update-queue (fn [q]
+                                      (into (local-mutations-with-id this id
+                                                                     is-remote-fn)
+                                            (drop-id-xf id)
+                                            q))))]
       (cond
         (nil? id) (debug "Won't modify queue: " queue)
         contains-id? (do (warn "Keeping mutations after id: " id)
@@ -71,12 +80,13 @@
     (d/db-with this [[:db.fn/retractAttribute
                       [:ui/component :ui.component/mutation-queue]
                       :ui.component.mutation-queue/queue]]))
-  (mutations-after [this id]
+  (mutations-after [this id is-remote-fn]
     (let [queue (mutation-queue this)]
       (cond->> queue
                (queue-contains-id? queue id)
-               (into [] (comp (drop-id-xf id)
-                              (map :mutation)))))))
+               (into (local-mutations-with-id this id is-remote-fn)
+                     (comp (drop-id-xf id)
+                           (map :mutation)))))))
 
 ;; ------ Dates -----------
 ;; Extends equality on goog.date's to speed up shouldComponentUpdate.

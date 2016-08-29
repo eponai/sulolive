@@ -140,20 +140,35 @@
 (defn flatten-db [db]
   (client.utils/clear-queue db))
 
-(defn flatten-db-up-to [db history-id]
+(defn flatten-db-up-to [db history-id is-remote-fn]
   (if (only-reads? history-id)
     db
-    (client.utils/keep-mutations-after db history-id)))`
+    (client.utils/keep-mutations-after db history-id is-remote-fn)))`
 
-(defn mutations-after [db history-id]
+(defn mutations-after [db history-id is-remote-fn]
   ;; returns all mutations for reads.
   (if (only-reads? history-id)
     (client.utils/mutation-queue db)
-    (client.utils/mutations-after db history-id)))
+    (client.utils/mutations-after db history-id is-remote-fn)))
 
-(defn apply-and-queue-mutations [reconciler stable-db mutation-queue history-id]
+(defn make-is-remote-fn [reconciler remote-key]
+  (let [parser (get-parser reconciler)
+        env (to-env reconciler)]
+    (fn [mutation]
+      ;; If the parser returns something
+      ;; with the remote-key as target with the mutation,
+      ;; then the mutation is remote.
+      (let [parsed (parser env [mutation] remote-key)
+            ret (some? (seq parsed))]
+        (debug "is mutation: " mutation " remote: " ret)
+        ret))))
+
+(defn apply-and-queue-mutations
+  [reconciler stable-db mutation-queue is-remote-fn history-id]
   ;; Trim mutation queue to only contain mutations after history-id
-  (let [mutation-queue (client.utils/keep-mutations-after mutation-queue history-id)
+  (let [mutation-queue (client.utils/keep-mutations-after mutation-queue
+                                                          history-id
+                                                          is-remote-fn)
         mutations-after-query (client.utils/mutations mutation-queue)
         _ (debug "Applying mutations: " mutations-after-query)
         ;; Mutate the stable-db with mutations that have happened after history-id
@@ -186,7 +201,13 @@
 
 (defn <stream-chunked-response
   "Stream chunked responses. Return the new stable-db and the current mutation-queue."
-  [reconciler cb stable-db mutation-queue received history-id]
+  [reconciler cb stable-db mutation-queue received is-remote-fn history-id]
+  {:pre [(om/reconciler? reconciler)
+         (fn? cb)
+         (d/db? stable-db)
+         (satisfies? client.utils/IQueueMutations mutation-queue)
+         (map? received)
+         (fn? is-remote-fn)]}
   (let [{:keys [response error]} received
         app-state (om/app-state reconciler)]
     (go
@@ -206,6 +227,7 @@
                       db-with-mutations (apply-and-queue-mutations reconciler
                                                                    new-stable-db
                                                                    mutation-queue
+                                                                   is-remote-fn
                                                                    history-id)
                       _ (cb {:db db-with-mutations})
                       ;; Apply pending mutations locally only.
@@ -214,10 +236,6 @@
                       ;; there may be new mutations in the app state. Get them.
                       mutation-queue (d/db app-state)]
                   (recur new-stable-db mutation-queue tail))))))))))
-
-(defn- current-mutations [mutation-queue history-id]
-  (client.utils/mutations
-    (client.utils/keep-mutations-after mutation-queue history-id)))
 
 (defn jeeb [reconciler-atom query-chan]
   (go
@@ -246,7 +264,8 @@
             ;; Make mutations that came before before history-id
             ;; permanent by removing them from the queue.
             ;; They have already been applied.
-            (let [stable-db (flatten-db-up-to stable-db history-id)
+            (let [is-remote-fn (make-is-remote-fn reconciler remote-key)
+                  stable-db (flatten-db-up-to stable-db history-id is-remote-fn)
 
                   ;; The stable-db is the db we want to use when we
                   ;; merge the response. We can get pending mutations
@@ -261,8 +280,6 @@
                   ;; more mutations.
                   ;; mutation-queue need to be saved before merging response.
                   mutation-queue (d/db app-state)
-                  _ (debug "Mutation-queue before merging response: "
-                           (current-mutations mutation-queue history-id))
                   _ (merge-response! cb stable-db received)
                   ;; app-state has now been changed and is the new stable db.
                   stable-db (d/db app-state)
@@ -274,12 +291,14 @@
                                                 stable-db
                                                 mutation-queue
                                                 received
+                                                is-remote-fn
                                                 history-id))
 
                   ;; Reset has been done. Apply mutations after history-id
                   db-with-mutations (apply-and-queue-mutations reconciler
                                                                new-stable-db
                                                                mutation-queue
+                                                               is-remote-fn
                                                                history-id)]
               ;; Set the current db to the db with mutations.
               (cb {:db db-with-mutations})
