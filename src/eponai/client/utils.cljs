@@ -56,7 +56,8 @@
             (queue-contains-id? (mutation-queue this) id)
             (update-queue (fn [q] (into [] (drop-id-xf id) q)))))
   (clear-queue [this]
-    (d/db-with this [[:db/retract [:ui/component :ui.component/mutation-queue]
+    (d/db-with this [[:db.fn/retractAttribute
+                      [:ui/component :ui.component/mutation-queue]
                       :ui.component.mutation-queue/queue]]))
   (mutations-after [this id]
     (let [queue (mutation-queue this)]

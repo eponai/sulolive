@@ -182,9 +182,11 @@
                                                 (d/db state)
                                                 last-history-id
                                                 (om/ast->query ast)))))))
-           (let [ast (if (true? target-mutation) ast target-mutation)]
-             (assoc-in ast [:params :eponai.client.backend/mutation-db-history-id]
-                       last-history-id)))))))
+           (let [ret (if (true? target-mutation) ast target-mutation)]
+             (cond-> ret
+                     (map? ret)
+                     (assoc-in [:params :eponai.client.backend/mutation-db-history-id]
+                               last-history-id))))))))
 
 (defn mutate-with-idempotent-invariants  [mutate]
   (fn [{:keys [target ast] :as env} k {:keys [mutation-uuid] :as params}]
