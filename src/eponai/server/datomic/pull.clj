@@ -260,8 +260,7 @@
                            (p/merge-query {:where (vec path-where-clauses)})
                            :always
                            (p/merge-query {:where        [attribute-number-to-keyword-clause]
-                                           :symbols      {'$db-history db-history}
-                                           :find-pattern find-pattern}))
+                                           :symbols      {'$db-history db-history}}))
         db-history-clause (-> find-pattern
                               ;; Replace:
                               ;; ?datom-attr-keyword
@@ -279,22 +278,27 @@
     (if (some #(= '* %) attrs)
       ;; For a "star" attribute, just don't specify
       ;; which values the ?datom-attr-keyword can take.
-      (vector (p/merge-query {:where [db-history-clause]}
+      (vector (p/merge-query {:where [db-history-clause]
+                              :find-pattern find-pattern}
                              path-query))
       ;; Else, return queries for normal and reverse attributes.
-      (let [create-query (fn [attrs where-clause]
+      (let [create-query (fn [attrs where-clause find-pattern]
                            (when (seq attrs)
-                             (p/merge-query
-                               {:where   [where-clause]
-                                :symbols {'[?datom-attr-keyword ...] attrs}}
-                               path-query)))
+                             (->> path-query
+                                  (p/merge-query
+                                    {:where        [where-clause]
+                                     :symbols      {'[?datom-attr-keyword ...] attrs}
+                                     :find-pattern find-pattern}))))
             keyword-attrs (filter keyword? attrs)
-            query-attrs (create-query (remove reverse-lookup-attr? keyword-attrs)
-                                      db-history-clause)
-            query-reverse-attrs (create-query
-                                  (filter reverse-lookup-attr? keyword-attrs)
-                                  ;; Swap the e and v:
-                                  (vector-swap db-history-clause 1 3))]
+            query-attrs (create-query (remove reverse-lookup-attr? attrs)
+                                      db-history-clause
+                                      find-pattern)
+            query-reverse-attrs (create-query (->> keyword-attrs
+                                                   (filter reverse-lookup-attr?)
+                                                   (map normalize-attribute))
+                                              ;; Swap the e and v for reverse attrs
+                                              (vector-swap db-history-clause 1 3)
+                                              (vector-swap find-pattern 0 2))]
         (filter some? [query-attrs query-reverse-attrs])))))
 
 ;; TODO: TEST THIS :D
@@ -346,11 +350,11 @@
                   (mapcat (fn [attr-path]
                             (changed-path-queries db-history entity-query attr-path)))
                   (mapcat (fn [query]
-                            (p/all-with db
-                                        (cond-> query
+                            (let [query (cond-> query
                                                 (some? find-pattern)
                                                 (p/merge-query {:find-pattern
-                                                                find-pattern})))))))))
+                                                                find-pattern}))]
+                              (p/find-with db query))))))))
 
 ;; ######## History api
 
@@ -364,14 +368,20 @@
   to get your dataset."
   [db db-history pull-pattern entity-query]
   {:pre [(some? db-history)]}
-  (->> (all-changed db db-history pull-pattern entity-query)
-       ;; Sort them by tx accending.
-       ;; So that older tx's are transacted after the earlier ones.
-       (sort-by #(nth % 3))
-       (mapv (fn [[e a v _ added]]
-               [(if added :db/add :db/retract) e a v]))))
+  (let [datoms (->> (all-changed db db-history pull-pattern entity-query)
+                    ;; Sort them by tx accending.
+                    ;; So that older tx's are transacted after the earlier ones.
+                    (sort-by #(nth % 3))
+                    (mapv (fn [[e a v _ added]]
+                            [(if added :db/add :db/retract) e a v])))]
+    (trace "For entity-query: " entity-query " returning datoms: " datoms)
+    datoms))
 
-(defn one [db db-history pull-pattern entity-query]
+(defn one
+  "Initially gets an entity and uses (pull ...) on it with
+  the pull-pattern. Gets all changed datoms when db-history is
+  available."
+  [db db-history pull-pattern entity-query]
   (if (nil? db-history)
     (p/pull db pull-pattern (p/one-with db entity-query))
     (all-datoms db db-history pull-pattern entity-query)))
@@ -398,9 +408,9 @@
          (some (fn [attr-path]
                  (->> (changed-path-queries db-history entity-query attr-path)
                       (some (fn [query]
-                              (p/one-with db
-                                          (p/merge-query query
-                                                         {:find-pattern '[?e .]}))))))))))
+                              (let [q (p/merge-query query
+                                                     {:find-pattern '[?e .]})]
+                                (p/one-with db q))))))))))
 
 (defn all-changed-entities
   "Returns all entities thas has had something changed or has an attribute

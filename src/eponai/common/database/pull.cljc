@@ -65,24 +65,33 @@
 
 
 (defn- where->query [where-clauses find-pattern symbols]
+  {:pre [(vector? find-pattern)]}
   {:find find-pattern
    :in   (vec (concat '[$]
                       symbols))
    :where where-clauses})
 
-(defn- x-with [db {:keys [find-pattern where symbols] :as entity-query}]
-  {:pre [(db-instance? db)
-         (or (vector? where) (seq? where))
-         (or (nil? symbols) (map? symbols))
-         (vector? find-pattern)]}
-  (let [symbol-seq (seq symbols)
-        query (where->query where
-                            find-pattern
-                            (map first symbol-seq))]
-    (trace "query: " entity-query)
-    (apply q query
-           db
-           (map second symbol-seq))))
+(defn- x-with
+  ([db entity-query] (x-with db entity-query nil))
+  ([db {:keys [find-pattern where symbols] :as entity-query} find]
+   {:pre [(db-instance? db)
+          (or (vector? where) (seq? where))
+          (or (nil? symbols) (map? symbols))
+          (or find-pattern find)]}
+   (when (and (some? find-pattern) (some? find)
+              (not= find find-pattern))
+     (warn "x-with called with both find and find-pattern, and they"
+           " are not equal. :find-pattern: " find-pattern
+           " find: " find))
+   (let [find-pattern (or find-pattern find)
+         symbol-seq (seq symbols)
+         query (where->query where
+                             find-pattern
+                             (map first symbol-seq))]
+     (trace "query: " entity-query)
+     (apply q query
+            db
+            (map second symbol-seq)))))
 
 (defn lookup-entity
   "Pull full entity with for the specified lookup ref. (Needs to be a unique attribute in lookup ref).
@@ -103,13 +112,7 @@
   [db params]
   {:pre [(db-instance? db)
          (map? params)]}
-  (if-not (:find-pattern params)
-    (x-with db (merge {:find-pattern '[?e .]} params))
-    (do
-      ;; TODO: Destructure.
-      (when (not= '[?e .] (:find-pattern params))
-        (warn "Query already had find-pattern. Query: " params))
-      (x-with db params))))
+  (x-with db params '[?e .]))
 
 (defn all-with
   "takes the database and a map with :where and :symbols keys.
@@ -123,12 +126,15 @@
   [db params]
   {:pre [(db-instance? db)
          (map? params)]}
-  (if-not (:find-pattern params)
-    (x-with db (merge {:find-pattern '[[?e ...]]} params))
-    (do
-      (when (not= '[[?e ...]] (:find-pattern params))
-        (warn "Query already had find-pattern. Query: " params))
-      (x-with db params))))
+  (x-with db params '[[?e ...]]))
+
+(defn find-with
+  "Like one-with and all-with but requires to pass
+  it's own find-pattern"
+  [db params]
+  (assert (some? (:find-pattern params))
+          (str "No find-pattern for query: " params))
+  (x-with db params))
 
 (defn all
   [db query values]

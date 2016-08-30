@@ -69,7 +69,6 @@
                       db db-history query
                       (common.pull/transaction-entity-query {:project-eid project-eid
                                                              :user-uuid user-uuid}))]
-      (debug "Returning datom-txs: " datom-txs)
       {:value {:refs datom-txs}})
     (let [project-eid (env+params->project-eid env params)
           entity-query (common.pull/transaction-entity-query {:project-eid project-eid :user-uuid user-uuid})
