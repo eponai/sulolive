@@ -27,7 +27,6 @@
                :automaticallyAdjustContentInsets false
                :renderRow                        (fn [r]
                                                    (when (fn? render-row)
-                                                     (debug "TableView will render row")
                                                      (render-row r)))})))))
 
 (def ->TableView (om/factory TableView))

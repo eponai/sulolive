@@ -1,6 +1,7 @@
 (ns eponai.mobile.ios.ui.projects
   (:require
     [eponai.client.ui :refer-macros [opts]]
+    [eponai.client.ui.color :as color]
     [eponai.mobile.components :refer [navigator-ios view text scroll-view list-view list-view-data-source segmented-control-ios]]
     [eponai.mobile.components.nav :as nav]
     [eponai.mobile.ios.ui.transaction-list :as t]
@@ -56,15 +57,19 @@
           {:keys [on-select]} (om/get-computed this)]
       (button/custom
         {:key [(.-uuid project)]
-         :on-press on-select}
+         :on-press on-select
+         :highlight-color color/lightgray
+         :style {:margin 5}}
         (view
           (opts {:style {:borderWidth 1
+                         :borderColor color/primary-blue
                          :padding 5
                          :borderRadius 3
                          :height      150
                          :backgroundColor "transparent"}})
           (text (opts {:style {:fontSize   24
-                               :fontWeight "bold"}})
+                               :fontWeight "bold"
+                               :color color/primary-blue}})
                 (str (.-name project)))
           (text nil
                 (str "Transactions: " (count (aget project "_project")))))))))
