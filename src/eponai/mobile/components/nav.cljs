@@ -9,7 +9,7 @@
       (cond-> {:initialRoute        initial-route
                :style               (merge {:flex 1} style)
                :itemWrapperStyle    {:flex      1
-                                     :margin    10
+                                     :margin    8
                                      :marginTop (if navigation-bar-hidden 20 64)}
                :navigationBarHidden navigation-bar-hidden
                :barTintColor        "white"
@@ -29,4 +29,5 @@
        :itemWrapperStyle    {:flex      1
                              ;:margin    10
                              :marginTop 20}
-       :navigationBarHidden true})))
+       :navigationBarHidden true
+       :interactivePopGestureEnabled true})))

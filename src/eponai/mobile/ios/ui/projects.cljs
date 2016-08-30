@@ -38,10 +38,13 @@
           transactions (aget project "_project")
           {:keys [selected-item]} (om/get-state this)]
       (view (opts {:style {:flex 1}})
-            (text (opts {:style {:fontSize  24
-                                 :textAlign "center"
-                                 :padding 10}})
-                  (.-name project))
+            ;(view (opts {:flexDirection "row"
+            ;             :justifyContent "space-between"})
+            ;      (view nil)
+            ;      (text (opts {:style {:fontSize  24
+            ;                           :textAlign "center"}})
+            ;            (.-name project))
+            ;      (button/primary-hollow {:title "New"}))
             (->ProjectMenu (om/computed
                              {:selected-item selected-item}
                              {:on-change #(om/update-state! this assoc :selected-item %)}))
@@ -52,30 +55,58 @@
 
 (def ->ProjectView (om/factory ProjectView {:keyfn #(str ProjectView)}))
 
-(defui Main
+(defui ProjectWidget
   Object
   (render [this]
-    (let [w (:width utils/screen-size)
-          all-projects (.-projects (om/props this))]
+    (let [{:keys [project]} (om/props this)
+          {:keys [on-select]} (om/get-computed this)]
+      (debug "Got some project: " project)
+      (button/custom
+        {:key [(.-uuid project)]
+         :on-press on-select}
+        (view
+          (opts {:style {:borderWidth 1
+                         :height      150
+                         :backgroundColor "transparent"}})
+          (text (opts {:style {:fontSize   24
+                               :fontWeight "bold"}})
+                (str (.-name project)))
+          (text nil
+                (str "Transactions: " (count (aget project "_project")))))))))
 
-      (scroll-view
-        (opts {:horizontal                     true
-               :pagingEnabled                  true
-               :showsHorizontalScrollIndicator false
-               ;:style                          {:backgroundColor "yellow"}
-               :contentContainerStyle          {:flex 1}
-               :automaticallyAdjustContentInsets false})
-        (map (fn [p]
-               (view (opts {:style {:flexDirection "column"
-                                    :flex            1
-                                    :margin          10
-                                    ;:padding 10
-                                    :width           (- w 20)
-                                    ;:backgroundColor "orange"
-                                    }
-                            :key [(.-name p)]})
-                     (->ProjectView p)))
-             all-projects)))))
+(def ->ProjectWidget (om/factory ProjectWidget))
+
+(defui Main
+  Object
+  (initLocalState [this]
+    (let [all-projects (.-projects (om/props this))
+          ds (js/ReactNative.ListView.DataSource. #js {:rowHasChanged (fn [prev next]
+                                                                        (debug "Row has changed: " prev)
+                                                                        (debug "Next " next)
+                                                                        (not= prev next))})]
+      {:data-source (if (seq all-projects)
+                      (.cloneWithRows ds all-projects)
+                      ds)}))
+  (render [this]
+    (let [nav (.-navigator (om/props this))
+          {:keys [data-source]} (om/get-state this)]
+
+      (list-view
+        ;(opts {:horizontal                     true
+        ;       :pagingEnabled                  true
+        ;       :showsHorizontalScrollIndicator false
+        ;       ;:style                          {:backgroundColor "yellow"}
+        ;       :contentContainerStyle          {:flex 1}
+        ;       :automaticallyAdjustContentInsets false})
+        (opts {:dataSource data-source
+               :automaticallyAdjustContentInsets false
+               :renderRow  (fn [r]
+                             (->ProjectWidget (om/computed
+                                                {:project r}
+                                                {:on-select (fn []
+                                                              (.push nav #js {:title     (.-name r)
+                                                                              :component ->ProjectView
+                                                                              :passProps r}))})))})))))
 
 (def ->Main (om/factory Main {:keyfn #(str Main)}))
 
@@ -96,8 +127,8 @@
   Object
   (render [this]
     (let [{:keys [query/all-projects]} (om/props this)]
-      (nav/clean-navigator
-        {:initial-route {:title     ""
+      (nav/navigator
+        {:initial-route {:title     "Overview"
                          :component ->Main
                          :passProps {:projects all-projects}}}))))
 

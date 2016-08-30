@@ -3,6 +3,7 @@
     [eponai.client.ui :refer-macros [opts]]
     [eponai.mobile.components :refer [tab-bar-ios tab-bar-ios-item navigator-ios view text modal touchable-highlight]]
     [eponai.mobile.components.button :as button]
+    [eponai.mobile.components.nav :as nav]
     [eponai.mobile.ios.ui.projects :refer [Projects ->Projects]]
     [eponai.mobile.ios.ui.add-transaction :refer [AddTransaction ->AddTransaction]]
     [eponai.mobile.ios.ui.profile :refer [Profile ->Profile]]
@@ -17,12 +18,10 @@
     (opts {:title    "Me"
            :selected is-selected?
            :onPress  on-press})
-    (navigator-ios
-      (opts {:style            {:flex 1}
-             :initialRoute     {:title     ""
-                                :component ->Profile
-                                :passProps props}
-             :itemWrapperStyle {:marginTop 60 :marginBottom 50}}))))
+    (nav/navigator
+      {:initial-route {:title     "My Account"
+                       :component ->Profile
+                       :passProps props}})))
 
 (defmethod tab-bar-item :tab/add-transaction
   [_ props & [{:keys [is-selected? on-press]}]]

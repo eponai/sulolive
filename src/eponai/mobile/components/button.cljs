@@ -32,11 +32,11 @@
           {:color "black"
            :font-weight "normal"}))
 
-(defn custom [{:keys [on-press k]} content-view]
+(defn custom [{:keys [on-press key]} content-view]
   (touchable-highlight
     (opts {:onPress on-press
-           :key k
-           :style {:border-radius 0 :padding 5 :height 34 :justify-content "space-between"}})
+           :key key
+           :style {:border-radius 0 :padding 5 :justify-content "space-between"}})
     content-view))
 
 (defn primary-hollow [params]

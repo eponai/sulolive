@@ -13,7 +13,7 @@
           on-logout (.. props -computed -onLogout)
           user (.. props -computed -user)]
       (debug "Profile user: " user)
-      (view (opts {:style {:flex 1 :margin 20}})
+      (view (opts {:style {:flex 1}})
             (text nil (str (.-email user) " is logged in"))
 
 

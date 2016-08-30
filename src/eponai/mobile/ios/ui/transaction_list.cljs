@@ -41,19 +41,18 @@
   ;    (.. data-source
   ;        (cloneWithRows new-props))))
   (render [this]
-    (let [transactions (om/props this)
-          {:keys [data-source]} (om/get-state this)]
-      ;(debug "Transaction list: " transactions)
-      ;(debug "Got datasource: " data-source)
-      ;(text nil "Transaction list on the way")
-      (view (opts {:key ["transaction-list"]
-                   :style {:flex 1}})
-            (list-view
-              (opts {:dataSource data-source
-                     :style {:flex 1
-                             :paddingTop 10}
-                     :renderRow  (fn [row-data]
-                                   (->TransactionListItem (om/computed {:transaction row-data}
-                                                                       {:on-press (fn [] (debug "Pressed item: " row-data))})))}))))))
+    (let [{:keys [data-source]} (om/get-state this)]
+      (if (< 0 (.getRowCount data-source))
+        (view (opts {:key   ["transaction-list"]
+                     :style {:flex 1}})
+              (list-view
+                (opts {:dataSource                       data-source
+                       :style                            {:flex       1
+                                                          :paddingTop 10}
+                       :automaticallyAdjustContentInsets false
+                       :renderRow                        (fn [row-data]
+                                                           (->TransactionListItem (om/computed {:transaction row-data}
+                                                                                               {:on-press (fn [] (debug "Pressed item: " row-data))})))})))
+        (text nil "No transactions in this project")))))
 
 (def ->TransactionList (om/factory TransactionList {:keyfn #(str TransactionList)}))
