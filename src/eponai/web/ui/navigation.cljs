@@ -272,7 +272,9 @@
             [:strong
              "JourMoney"]
             [:span
-             " App"]]
+             (if utils/*playground?*
+               " Play"
+               " App")]]
 
            [:div.sidebar-submenu
             (when (and (not utils/*playground?*)
