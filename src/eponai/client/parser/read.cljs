@@ -77,8 +77,12 @@
    :post [(set? %)]}
   (let [last-basis (:max-tx last-db 0)
         _ (debug "Last-basis: " last-basis " project-eid: " project-eid)
-        new-transaction-eids (into #{} (comp (mapcat #(d/datoms db :eavt (.-e %)))
-                                             (filter #(> (.-tx %) last-basis))
+        new-transaction-eids (into #{} (comp
+                                         ;; We used to filter e's based on last-basis
+                                         ;; but it doesn't include retractions and
+                                         ;; other things.
+                                         ;;  (mapcat #(d/datoms db :eavt (.-e %)))
+                                         ;;  (filter #(> (.-tx %) last-basis))
                                              (map #(.-e %)))
                                    (d/datoms db :avet :transaction/project project-eid))]
     (debug "new-transaction-eids: " new-transaction-eids)
