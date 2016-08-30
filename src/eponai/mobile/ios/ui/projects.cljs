@@ -4,6 +4,7 @@
     [eponai.mobile.components :refer [navigator-ios view text scroll-view list-view list-view-data-source segmented-control-ios]]
     [eponai.mobile.components.nav :as nav]
     [eponai.mobile.ios.ui.transaction-list :as t]
+    [eponai.mobile.components.table-view :as tv]
     [eponai.mobile.ios.ui.dashboard :as d]
     [eponai.mobile.components.button :as button]
     [eponai.mobile.ios.ui.utils :as utils]
@@ -38,13 +39,6 @@
           transactions (aget project "_project")
           {:keys [selected-item]} (om/get-state this)]
       (view (opts {:style {:flex 1}})
-            ;(view (opts {:flexDirection "row"
-            ;             :justifyContent "space-between"})
-            ;      (view nil)
-            ;      (text (opts {:style {:fontSize  24
-            ;                           :textAlign "center"}})
-            ;            (.-name project))
-            ;      (button/primary-hollow {:title "New"}))
             (->ProjectMenu (om/computed
                              {:selected-item selected-item}
                              {:on-change #(om/update-state! this assoc :selected-item %)}))
@@ -60,12 +54,13 @@
   (render [this]
     (let [{:keys [project]} (om/props this)
           {:keys [on-select]} (om/get-computed this)]
-      (debug "Got some project: " project)
       (button/custom
         {:key [(.-uuid project)]
          :on-press on-select}
         (view
           (opts {:style {:borderWidth 1
+                         :padding 5
+                         :borderRadius 3
                          :height      150
                          :backgroundColor "transparent"}})
           (text (opts {:style {:fontSize   24
@@ -78,35 +73,19 @@
 
 (defui Main
   Object
-  (initLocalState [this]
-    (let [all-projects (.-projects (om/props this))
-          ds (js/ReactNative.ListView.DataSource. #js {:rowHasChanged (fn [prev next]
-                                                                        (debug "Row has changed: " prev)
-                                                                        (debug "Next " next)
-                                                                        (not= prev next))})]
-      {:data-source (if (seq all-projects)
-                      (.cloneWithRows ds all-projects)
-                      ds)}))
   (render [this]
     (let [nav (.-navigator (om/props this))
-          {:keys [data-source]} (om/get-state this)]
-
-      (list-view
-        ;(opts {:horizontal                     true
-        ;       :pagingEnabled                  true
-        ;       :showsHorizontalScrollIndicator false
-        ;       ;:style                          {:backgroundColor "yellow"}
-        ;       :contentContainerStyle          {:flex 1}
-        ;       :automaticallyAdjustContentInsets false})
-        (opts {:dataSource data-source
-               :automaticallyAdjustContentInsets false
-               :renderRow  (fn [r]
-                             (->ProjectWidget (om/computed
-                                                {:project r}
-                                                {:on-select (fn []
-                                                              (.push nav #js {:title     (.-name r)
-                                                                              :component ->ProjectView
-                                                                              :passProps r}))})))})))))
+          all-projects (.-projects (om/props this))]
+      (tv/->TableView
+        (om/computed
+          {:rows all-projects}
+          {:render-row (fn [r]
+                         (->ProjectWidget (om/computed
+                                            {:project r}
+                                            {:on-select (fn []
+                                                          (.push nav #js {:title     (.-name r)
+                                                                          :component ->ProjectView
+                                                                          :passProps r}))})))})))))
 
 (def ->Main (om/factory Main {:keyfn #(str Main)}))
 
