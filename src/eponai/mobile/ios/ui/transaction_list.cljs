@@ -15,8 +15,12 @@
       (button/custom
         {:key [(.-title transaction)]
          :on-press on-press}
-        (view (opts {:style {:flexDirection "row"
-                             :justifyContent "space-between"}})
+        (view
+          (opts {:style {:flexDirection "row"
+                         :justifyContent "space-between"
+                         :alignItems "center"
+                         :padding 5
+                         :height 34}})
               (text nil (.. transaction -date -ymd))
               (text nil (.-title transaction))
               (text nil (.-amount transaction))

@@ -17,12 +17,12 @@
   (render [this]
     (let [{:keys [on-change]} (om/get-computed this)
           {:keys [selected-item]} (om/props this)
-          items [:list :dashboard]]
+          items [:dashboard :list]]
       (view
         nil
         (segmented-control-ios
           (opts
-            {:values        ["List" "Dashboard"]
+            {:values        ["Dashboard" "List"]
              :style         {:flex 1}
              :selectedIndex (utils/position #{selected-item} items)
              :onChange      #(when on-change
@@ -34,7 +34,7 @@
 (defui ProjectView
   Object
   (initLocalState [_]
-    {:selected-item :list})
+    {:selected-item :dashboard})
   (render [this]
     (let [project (om/props this)
           transactions (aget project "_project")

@@ -16,17 +16,19 @@
                                        (row-has-changed prev next)
                                        (not= prev next)))})]
       {:ds (if (seq rows)
-             (.cloneWithRows ds rows)
+             (.cloneWithRows ds (into-array rows))
              ds)}))
 
   (render [this]
     (let [{:keys [ds]} (om/get-state this)
-          {:keys [render-row]} (om/get-computed this)]
+          {:keys [render-row
+                  style]} (om/get-computed this)]
       (list-view
         (opts {:dataSource                       ds
                :automaticallyAdjustContentInsets false
                :renderRow                        (fn [r]
                                                    (when (fn? render-row)
-                                                     (render-row r)))})))))
+                                                     (render-row r)))
+               :style                            style})))))
 
 (def ->TableView (om/factory TableView))
