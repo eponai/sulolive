@@ -1,6 +1,6 @@
 (ns eponai.common.database.pull
   (:require
-    [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug trace info]]
+    [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug trace info warn]]
     [eponai.common.format :as f]
     [clojure.set :as set]
     [clojure.walk :as walk]
@@ -105,7 +105,11 @@
          (map? params)]}
   (if-not (:find-pattern params)
     (x-with db (merge {:find-pattern '[?e .]} params))
-    (x-with db params)))
+    (do
+      ;; TODO: Destructure.
+      (when (not= '[?e .] (:find-pattern params))
+        (warn "Query already had find-pattern. Query: " params))
+      (x-with db params))))
 
 (defn all-with
   "takes the database and a map with :where and :symbols keys.
@@ -121,7 +125,10 @@
          (map? params)]}
   (if-not (:find-pattern params)
     (x-with db (merge {:find-pattern '[[?e ...]]} params))
-    (x-with db params)))
+    (do
+      (when (not= '[[?e ...]] (:find-pattern params))
+        (warn "Query already had find-pattern. Query: " params))
+      (x-with db params))))
 
 (defn all
   [db query values]

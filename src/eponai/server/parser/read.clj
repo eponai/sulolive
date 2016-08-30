@@ -15,21 +15,22 @@
     [eponai.common.parser :as parser]))
 
 (defmethod read :datascript/schema
-  [{:keys [db db-since]} _ _]
-  {:value (-> (server.pull/schema db db-since)
+  [{:keys [db db-history]} _ _]
+  {:value (-> (server.pull/schema db db-history)
               (eponai.datascript/schema-datomic->datascript))})
 
 (defmethod read :user/current
-  [{:keys [db db-since user-uuid auth]} _ _]
+  [{:keys [db db-history user-uuid auth]} _ _]
   (debug "read user/current with auth: " auth " user-uuid " user-uuid)
   {:value (if user-uuid
-            (server.pull/pull-one-since db db-since [:db/id
-                                                     :user/uuid
-                                                     :user/email
-                                                     {:user/status [:db/ident]}
-                                                     {:user/currency [:db/id :currency/code]}]
-                                        {:where   '[[?e :user/uuid ?user-uuid]]
-                                         :symbols {'?user-uuid user-uuid}})
+            (server.pull/one db db-history
+                             [:db/id
+                              :user/uuid
+                              :user/email
+                              {:user/status [:db/ident]}
+                              {:user/currency [:db/id :currency/code]}]
+                             {:where   '[[?e :user/uuid ?user-uuid]]
+                              :symbols {'?user-uuid user-uuid}})
             {:error :user-not-found})})
 
 ;; ############## App ################
@@ -64,8 +65,10 @@
   [{:keys [db db-since db-history query user-uuid] :as env} _ params]
   (if db-history
     (let [project-eid (env+params->project-eid env params)
-          datom-txs (server.pull/datom-txs-since db db-history query
-                                                 (common.pull/transaction-entity-query {:project-eid project-eid :user-uuid user-uuid}))]
+          datom-txs (server.pull/all-datoms
+                      db db-history query
+                      (common.pull/transaction-entity-query {:project-eid project-eid
+                                                             :user-uuid user-uuid}))]
       (debug "Returning datom-txs: " datom-txs)
       {:value {:refs datom-txs}})
     (let [project-eid (env+params->project-eid env params)
@@ -95,74 +98,81 @@
 
 (defmethod parser/read-basis-param-path :query/dashboard [env _ params] [(env+params->project-eid env params)])
 (defmethod read :query/dashboard
-  [{:keys [db db-since query user-uuid] :as env} _ params]
+  [{:keys [db db-history query user-uuid] :as env} _ params]
   {:value (if-let [project-eid (env+params->project-eid env params)]
-            (server.pull/pull-one-since db db-since query
-                                        (-> {:where   '[[?e :dashboard/project ?p]
-                                                        [?p :project/users ?u]]
-                                             :symbols {'?p project-eid}}
-                                            (common.pull/with-auth user-uuid)))
+            (server.pull/one
+              db db-history query
+              (-> {:where   '[[?e :dashboard/project ?p]
+                              [?p :project/users ?u]]
+                   :symbols {'?p project-eid}}
+                  (common.pull/with-auth user-uuid)))
             (debug "No project-eid found for user-uuid: " user-uuid))})
 
 (defmethod parser/read-basis-param-path :query/active-dashboard [env _ params] [(env+params->project-eid env params)])
 (defmethod read :query/active-dashboard
-  [{:keys [db db-since query user-uuid] :as env} _ params]
+  [{:keys [db db-history query user-uuid] :as env} _ params]
   {:value (if-let [project-id (env+params->project-eid env params)]
-            (server.pull/pull-one-since db db-since query
-                                        (-> {:where   '[[?e :dashboard/project ?p]
-                                                        [?p :project/users ?u]]
-                                             :symbols {'?p project-id}}
-                                            (common.pull/with-auth user-uuid)))
+            (server.pull/one db db-history query
+                             (-> {:where   '[[?e :dashboard/project ?p]
+                                             [?p :project/users ?u]]
+                                  :symbols {'?p project-id}}
+                                 (common.pull/with-auth user-uuid)))
             (debug "No project-eid found for user-uuid: " user-uuid))})
 
 (defmethod read :query/all-projects
-  [{:keys [db db-since query auth]} _ _]
+  [{:keys [db db-history query auth]} _ _]
   {:value (when auth
-            (server.pull/pull-all-since db db-since query
-                                        {:where   '[[?e :project/users ?u]
-                                                    [?u :user/uuid ?user-uuid]]
-                                         :symbols {'?user-uuid (:username auth)}}))})
+            (server.pull/all db db-history query
+                             {:where   '[[?e :project/users ?u]
+                                         [?u :user/uuid ?user-uuid]]
+                              :symbols {'?user-uuid (:username auth)}}))})
 
 (defmethod read :query/all-currencies
-  [{:keys [db db-since query]} _ _]
-  {:value (server.pull/pull-all-since db db-since query
-                                      {:where '[[?e :currency/code]]})})
+  [{:keys [db db-history query]} _ _]
+  {:value (server.pull/all db db-history query
+                           {:where '[[?e :currency/code]]})})
 
 (defmethod read :query/current-user
-  [{:keys [db db-since query user-uuid auth]} _ _]
+  [{:keys [db db-history query user-uuid auth]} _ _]
   (debug "Auth: " auth)
   (debug "User uuid " user-uuid)
   {:value (if user-uuid
-            (server.pull/pull-one-since db db-since query {:where [['?e :user/uuid user-uuid]]})
+            (server.pull/one db db-history query
+                             {:where [['?e :user/uuid user-uuid]]})
             {:error :user-not-found})})
 
 (defmethod read :query/stripe
-  [{:keys [db db-since query user-uuid]} _ _]
+  [{:keys [db db-history query user-uuid]} _ _]
   {:value (let [;; TODO: uncomment this when doing settings
                 ;; customer (stripe/customer customer-id)
-                customer {}]
-            (merge {:stripe/info customer}
-                   (server.pull/pull-one-since db db-since query
-                                               {:where   '[[?u :user/uuid ?user-uuid]
-                                                           [?e :stripe/user ?u]]
-                                                :symbols {'?user-uuid user-uuid}})))})
+                customer {}
+                eid (server.pull/one-changed-entity
+                      db db-history query
+                      {:where   '[[?u :user/uuid ?user-uuid]
+                                  [?e :stripe/user ?u]]
+                       :symbols {'?user-uuid user-uuid}})]
+            (when eid
+              (merge {:stripe/info customer}
+                     (pull db query eid))))})
 
 ;; ############### Signup page reader #################
 
 (defmethod read :query/user
-  [{:keys [db query]} _ {:keys [uuid]}]
+  [{:keys [db db-history query]} _ {:keys [uuid]}]
   {:value (when (not (= uuid '?uuid))
-            (pull db query [:user/uuid (f/str->uuid uuid)]))})
+            (server.pull/one db db-history query
+                             {:where [['?e :user/uuid (f/str->uuid uuid)]]}))})
 
 (defmethod read :query/fb-user
-  [{:keys [db db-since query user-uuid]} _ _]
-  (let [eid (server.pull/one-since db db-since query
-                                   (-> {:where   '[[?e :fb-user/user ?u]
-                                                   [?u :user/uuid ?uuid]]
-                                        :symbols {'?uuid user-uuid}}))]
+  [{:keys [db db-history query user-uuid]} _ _]
+  (let [eid (server.pull/one-changed-entity
+              db db-history query
+              (-> {:where   '[[?e :fb-user/user ?u]
+                              [?u :user/uuid ?uuid]]
+                   :symbols {'?uuid user-uuid}}))]
     {:value (when eid
-              (let [{:keys [fb-user/token
-                            fb-user/id]} (pull db [:fb-user/token :fb-user/id] eid)
+              (let [{:keys [fb-user/token fb-user/id]}
+                    (pull db [:fb-user/token :fb-user/id] eid)
                     {:keys [name picture]} (facebook/user-info id token)]
                 (merge (pull db query eid)
                        {:fb-user/name    name

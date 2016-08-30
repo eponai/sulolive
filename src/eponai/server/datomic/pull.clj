@@ -17,13 +17,15 @@
   "Pulls schema from the db. If data is provided includes only the necessary fields for that data.
   (type/ref, cardinality/many or unique/identity)."
   ([db] (schema db nil))
-  ([db db-since]
-   (let [query (-> {:where '[[?e :db/ident ?id]
-                             [:db.part/db :db.install/attribute ?e]
-                             [(namespace ?id) ?ns]
-                             [(.startsWith ^String ?ns "db") ?d]
-                             [(not ?d)]]}
-                   (p/with-db-since db-since))]
+  ([db db-history]
+   (let [query (cond-> {:where '[[?e :db/ident ?id]
+                                 [:db.part/db :db.install/attribute ?e]
+                                 [(namespace ?id) ?ns]
+                                 [(.startsWith ^String ?ns "db") ?d]
+                                 [(not ?d)]]}
+                       (some? db-history)
+                       (p/merge-query {:where   '[[$db-history ?e]]
+                                       :symbols {'$db-history db-history}}))]
      (mapv #(into {} (d/entity db %))
            (p/all-with db query)))))
 
@@ -105,10 +107,11 @@
   (map #(gensym (str "?" (name %) "_")) path))
 
 (defn reverse-lookup-attr? [attr]
-  {:pre [(keyword? attr)]}
+  {:pre [(or (keyword? attr) (= '* attr))]}
   (string/starts-with? (name attr) "_"))
 
 (defn normalize-attribute [attr]
+  {:pre [(or (keyword? attr) (= '* attr))]}
   (if (reverse-lookup-attr? attr)
     (keyword (namespace attr) (subs (name attr) 1))
     attr))
@@ -230,89 +233,184 @@
 (defn vector-swap
   "Swaps the values for index i1 and i2 in vector v."
   [v i1 i2]
+  {:pre [(vector? v)]}
   (-> v
       (assoc i1 (nth v i2))
       (assoc i2 (nth v i1))))
 
-(defn changed-datoms-matching-path
-  "Finds all changed datoms matching the pull-pattern.
-
-  For all changed datoms in db-history using the attrs in the pull-pattern,
-  find entities "
-  [db db-history entity-query {:keys [path attrs]}]
+(defn- changed-path-queries [db-history entity-query {:keys [path attrs]}]
+  {:pre [(some? db-history)]}
   (let [path-syms (cons '?e (sym-seq path))
-        return-eid (or (last path-syms) '?e)
-        path-where-clauses (map path->where-clause path (partition 2 1 path-syms))
+        return-eid (last path-syms)
+        ;; Create a path of where-clauses from entity ?e through
+        ;; the path of the pull-pattern.
+        path-where-clauses (map path->where-clause
+                                path
+                                (partition 2 1 path-syms))
         find-pattern [return-eid
                       '?datom-attr-keyword
                       '?datom-value
                       '?datom-tx
                       '?datom-added]
+        attribute-number-to-keyword-clause '[?datom-attr-number
+                                             :db/ident
+                                             ?datom-attr-keyword]
         path-query (cond-> entity-query
                            (seq path-where-clauses)
                            (p/merge-query {:where (vec path-where-clauses)})
                            :always
-                           (p/merge-query {:where '[[?datom-attr
-                                                     :db/ident
-                                                     ?datom-attr-keyword]]
-                                           :symbols {'$db-hist db-history}
+                           (p/merge-query {:where        [attribute-number-to-keyword-clause]
+                                           :symbols      {'$db-history db-history}
                                            :find-pattern find-pattern}))
-        db-hist-datoms ['$db-hist return-eid '?datom-attr '?datom-value '?datom-tx '?datom-added]
-        changed-datoms-by-attrs (fn [attrs where-clause]
-                                  (when (seq attrs)
-                                    (p/all-with db
-                                                (p/merge-query
-                                                  {:where   [where-clause]
-                                                   :symbols {'[?datom-attr-keyword ...] attrs}}
-                                                  path-query))))]
-    (concat (changed-datoms-by-attrs (remove reverse-lookup-attr? attrs)
-                                     db-hist-datoms)
-            (changed-datoms-by-attrs (filter reverse-lookup-attr? attrs)
-                                     (vector-swap db-hist-datoms 1 3)))))
+        db-history-clause (-> find-pattern
+                              ;; Replace:
+                              ;; ?datom-attr-keyword
+                              ;; with
+                              ;; ?datom-attr-number
+                              (assoc 1 '?datom-attr-number)
+                              ;; Look up in db-history
+                              (->> (cons '$db-history))
+                              (vec))]
+    (assert (every? #(or (keyword? %) (= '* %)) attrs)
+            (str "Attributes in path: " path " were not only"
+                 " keywords or '*, were: " attrs))
+    ;; If we've got a star attribute,
+    ;; just return the query matching everything.
+    (if (some #(= '* %) attrs)
+      ;; For a "star" attribute, just don't specify
+      ;; which values the ?datom-attr-keyword can take.
+      (vector (p/merge-query {:where [db-history-clause]}
+                             path-query))
+      ;; Else, return queries for normal and reverse attributes.
+      (let [create-query (fn [attrs where-clause]
+                           (when (seq attrs)
+                             (p/merge-query
+                               {:where   [where-clause]
+                                :symbols {'[?datom-attr-keyword ...] attrs}}
+                               path-query)))
+            keyword-attrs (filter keyword? attrs)
+            query-attrs (create-query (remove reverse-lookup-attr? keyword-attrs)
+                                      db-history-clause)
+            query-reverse-attrs (create-query
+                                  (filter reverse-lookup-attr? keyword-attrs)
+                                  ;; Swap the e and v:
+                                  (vector-swap db-history-clause 1 3))]
+        (filter some? [query-attrs query-reverse-attrs])))))
 
 ;; TODO: TEST THIS :D
 
-(defn pattern->attr-paths
+(defn- pattern->attr-paths
   "Given a pull-pattern, return maps of {:path [] :attrs []} where:
   :path is the path into the pull pattern
   :attrs are all the keys at the current path.
 
   Example:
-  (pattern->attr-paths [:abc {:foo [:bar {:baz [:abc]}]}])
+  (pattern->attr-paths '[:abc * {:foo [:bar {:baz [:abc]}]}])
   Returns:
-  [{:path [], :attrs (:abc :foo)}
+  [{:path [], :attrs (:abc '* :foo)}
    {:path [:foo], :attrs (:bar :baz)}
    {:path [:foo :baz], :attrs (:abc)}]
   Explanation:
   At path [], including the join, we've got attrs :abc and :foo."
   ([pattern] (pattern->attr-paths pattern []))
   ([pattern path]
-   (let [ks (into [] (comp (map #(cond (keyword? %) %
-                                       (map? %) (ffirst %)))
+   (let [ks (into [] (comp (map (fn [x]
+                                  {:post [(some? %)]}
+                                  (cond (keyword? x) x
+                                        (map? x) (ffirst x)
+                                        (= '* x) x)))
                            (remove #(= :db/id %)))
                   pattern)
          joins (filter map? pattern)]
      (into [{:path path :attrs ks}]
-           (mapcat (fn [m]
-                     {:pre (= 1 (count m))}
-                     (let [[k v] (first m)]
+           (mapcat (fn [join]
+                     {:pre (= 1 (count join))}
+                     (let [[k v] (first join)]
                        (pattern->attr-paths v (conj path k)))))
            joins))))
 
-(defn datoms-since [db db-history pull-pattern entity-query]
+(defn- all-changed
+  "Finds all changed datoms matching the pull-pattern.
+
+  For all changed datoms in db-history using an entity-query and the
+  paths and attrs of a pull-pattern.
+
+  By defaults uses a find-pattern that gets datoms [e a v tx added],
+  but can be customized by passing a find-pattern parameter."
+  [db db-history pull-pattern entity-query & [find-pattern]]
+  {:pre [(or (nil? find-pattern)
+             (vector? find-pattern))]}
   (->> pull-pattern
        (pattern->attr-paths)
-       (into [] (mapcat (fn [attr-path]
-                          (changed-datoms-matching-path
-                            db db-history entity-query attr-path))))))
+       (into [] (comp
+                  (mapcat (fn [attr-path]
+                            (changed-path-queries db-history entity-query attr-path)))
+                  (mapcat (fn [query]
+                            (p/all-with db
+                                        (cond-> query
+                                                (some? find-pattern)
+                                                (p/merge-query {:find-pattern
+                                                                find-pattern})))))))))
 
-(defn datom-txs-since [db db-history pull-pattern entity-query]
-  (->> (datoms-since db db-history pull-pattern entity-query)
+;; ######## History api
+
+(defn all-datoms
+  "Returns all changed datoms in tx order.
+  Param: db-history is required.
+
+  You'll want to use (all-changes ...) instead of
+  this function most of the time. Only use this one
+  when it's too expensive to initially use (pull-many ...)
+  to get your dataset."
+  [db db-history pull-pattern entity-query]
+  {:pre [(some? db-history)]}
+  (->> (all-changed db db-history pull-pattern entity-query)
        ;; Sort them by tx accending.
        ;; So that older tx's are transacted after the earlier ones.
        (sort-by #(nth % 3))
        (mapv (fn [[e a v _ added]]
                [(if added :db/add :db/retract) e a v]))))
+
+(defn one [db db-history pull-pattern entity-query]
+  (if (nil? db-history)
+    (p/pull db pull-pattern (p/one-with db entity-query))
+    (all-datoms db db-history pull-pattern entity-query)))
+
+(defn all
+  "Initially gets everything by using (pull-many ...), then
+  gets all datoms that have been changed, by using the entity
+  query and the pull-pattern."
+  [db db-history pull-pattern entity-query]
+  (if (nil? db-history)
+    (p/pull-many db pull-pattern (p/all-with db entity-query))
+    (all-datoms db db-history pull-pattern entity-query)))
+
+(defn one-changed-entity
+  "Returns an entity id which has been changed or if something has changed
+  that can be reached in the pull pattern."
+  [db db-history pull-pattern entity-query]
+  {:post [(or (nil? %)
+              (number? %))]}
+  (if (nil? db-history)
+    (p/one-with db entity-query)
+    (->> pull-pattern
+         (pattern->attr-paths)
+         (some (fn [attr-path]
+                 (->> (changed-path-queries db-history entity-query attr-path)
+                      (some (fn [query]
+                              (p/one-with db
+                                          (p/merge-query query
+                                                         {:find-pattern '[?e .]}))))))))))
+
+(defn all-changed-entities
+  "Returns all entities thas has had something changed or has an attribute
+  that can be reached with the pull pattern, changed.
+
+  Returns all entities if db-history is nil."
+  [db db-history pull-pattern entity-query]
+  (if (nil? db-history)
+    (p/all-with db entity-query)
+    (all-changed db db-history pull-pattern entity-query '[[?e ...]])))
 
 ;; ######### All entities
 
