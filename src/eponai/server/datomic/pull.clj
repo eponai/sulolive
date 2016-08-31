@@ -45,6 +45,11 @@
     (debug "Found new currencies: " new-currencies)
     new-currencies))
 
+
+;; ######### All entities
+
+(declare reverse-lookup-attr? normalize-attribute)
+
 ;; Pull pattern stuff
 
 (defn keep-refs-only
@@ -101,6 +106,37 @@
                  pattern))
      :else nil)))
 
+(defn eid->refs [db eid attr]
+  (if (reverse-lookup-attr? attr)
+    (map :e (d/datoms db :vaet eid (normalize-attribute attr)))
+    (map :v (d/datoms db :eavt eid attr))))
+
+(defn eids->refs [db eids attr]
+  {:post [(set? %)]}
+  (into #{} (mapcat (fn [e] (eid->refs db e attr)))
+        eids))
+
+(defn path+eids->refs [db eids path]
+  {:post [(set? %)]}
+  (loop [eids eids path path ret #{}]
+    (if (and (seq eids) (seq (rest path)))
+      (let [attr (first path)
+            refs (eids->refs db eids attr)]
+        (recur refs (rest path) (into ret refs)))
+      ret)))
+
+(defn all-entities [db pull-pattern eids]
+  {:post [(set? %)]}
+  (->> pull-pattern
+       (keep-refs-only)
+       (pull-pattern->paths)
+       (map (fn [path]
+              {:post [(or (nil? %) (set? %))]}
+              (path+eids->refs db eids path)))
+       (apply set/union)))
+
+;; ######### x-historically
+
 (defn sym-seq
   "Generates symbols. Is passed around for testability."
   [path]
@@ -122,113 +158,6 @@
     (if (reverse-lookup-attr? attr)
       [next-sym k sym]
       [sym k next-sym])))
-
-(defn query-matching-new-datoms-with-path [path eids path-symbols]
-  {:pre [(> (count path) 1)]}
-  (let [where-clauses (mapv path->where-clause
-                            path
-                            (partition 2 1 (cons '?e path-symbols)))
-        eid-symbol (nth path-symbols (dec (dec (count path))))]
-    {:where where-clauses
-     :symbols {[eid-symbol '...] eids}}))
-
-(defn x-changed-entities-in-pull-pattern [x-with db db-since path entity-query]
-  "Given paths through the pull pattern (paths of refs in the pull pattern (think
-   all nested maps)), check if there's an entity which matches the entity-query
-   that can follow a path (via refs) which hits an entity that's changed in db-since.
-
-   Basically: Are there any entities changed in db-since in the pull pattern of the entity-query."
-  {:pre [#(> (count path) 1)]}
-  (let [attr (last path)
-        datom->eid (if (reverse-lookup-attr? attr) #(.v %) #(.e %))
-        datoms (d/datoms db-since :aevt (normalize-attribute attr))]
-    (when (seq datoms)
-      (x-with db (p/merge-query entity-query
-                                    (query-matching-new-datoms-with-path path (map datom->eid datoms) (sym-seq path)))))))
-
-(defn unchunked-map
-  "This version of map will only return 1 at a time.
-
-  For performance reasons, we may only want to do some operations as
-  lazy as possible. The normal clojure.core/map chunks the results,
-  calculating 32 items or more each time items need to be produced.
-
-  Test in repl:
-  (defn map-test [map-f]
-    (let [a (map-f #(do (prn %) %) (range 1000))]
-      (seq a)
-      nil))
-  (map-test map)
-  (map-test unchunked-map)"
-  [f coll]
-  (lazy-seq
-    (when (seq coll)
-      (cons (f (first coll))
-            (unchunked-map f (rest coll))))))
-
-(defn unchunked-filter
-  [pred coll]
-  (lazy-seq
-    (when (seq coll)
-      (let [f (first coll) r (rest coll)]
-        (if (pred f)
-          (cons f (unchunked-filter pred r))
-          (unchunked-filter pred r))))))
-
-(defn concat-distinct [coll colls]
-  (let [distinct! ((distinct) conj!)
-        unique-first (reduce distinct! (transient []) coll)]
-    (persistent! (reduce (fn [all coll] (reduce distinct! all coll))
-                         unique-first
-                         colls))))
-
-(defn path->paths [path]
-  (->> path
-       (iterate #(subvec % 0 (dec (count %))))
-       (take-while seq)
-       (mapv vec)))
-
-;; Testable?
-(defn- x-since [db db-since pull-pattern entity-query {:keys [x-with map-f filter-f combine]}]
-  (if (nil? db-since)
-    (x-with db entity-query)
-    (combine (x-with db (p/with-db-since entity-query db-since))
-             ;; Using delay to be sure we're lazy when its needed.
-             (delay (->> pull-pattern
-                         (pull-pattern->paths)
-                         ;; Expand to check all possible entities in all paths.
-                         ;; To think about: Can we order these in anyway to see if
-                         ;;                 we should check some paths before others?
-                         (mapcat path->paths)
-                         (filter #(> (count %) 1))
-                         (map-f #(x-changed-entities-in-pull-pattern x-with db db-since % entity-query))
-                         (filter-f some?))))))
-
-(defn one-since [db db-since pull-pattern entity-query]
-  (x-since db db-since pull-pattern entity-query {:x-with   p/one-with
-                                                  :map-f    unchunked-map
-                                                  :filter-f unchunked-filter
-                                                  :combine  (fn [entity-eid pull-eids]
-                                                              (or entity-eid (first @pull-eids)))}))
-
-(defn pull-one-since [db db-since pull-pattern entity-query]
-  (some->> (one-since db db-since pull-pattern entity-query)
-           (p/pull db pull-pattern)))
-
-(defn all-since [db db-since pull-pattern entity-query]
-  (x-since db db-since pull-pattern entity-query
-           {:x-with  p/all-with
-            :combine (fn [entity-eids pull-eidss]
-                       (concat-distinct entity-eids @pull-eidss))
-            :filter-f filter
-            :map-f   map}))
-
-(defn pull-all-since [db db-since pull-pattern entity-query]
-  (some->> (all-since db db-since pull-pattern entity-query)
-           (p/pull-many db pull-pattern)))
-
-
-;; ######### x-historically
 
 (defn vector-swap
   "Swaps the values for index i1 and i2 in vector v."
@@ -421,34 +350,3 @@
   (if (nil? db-history)
     (p/all-with db entity-query)
     (all-changed db db-history pull-pattern entity-query '[[?e ...]])))
-
-;; ######### All entities
-
-(defn eid->refs [db eid attr]
-  (if (reverse-lookup-attr? attr)
-    (map :e (d/datoms db :vaet eid (normalize-attribute attr)))
-    (map :v (d/datoms db :eavt eid attr))))
-
-(defn eids->refs [db eids attr]
-  {:post [(set? %)]}
-  (into #{} (mapcat (fn [e] (eid->refs db e attr)))
-        eids))
-
-(defn path+eids->refs [db eids path]
-  {:post [(set? %)]}
-  (loop [eids eids path path ret #{}]
-    (if (and (seq eids) (seq (rest path)))
-      (let [attr (first path)
-            refs (eids->refs db eids attr)]
-        (recur refs (rest path) (into ret refs)))
-      ret)))
-
-(defn all-entities [db pull-pattern eids]
-  {:post [(set? %)]}
-  (->> pull-pattern
-       (keep-refs-only)
-       (pull-pattern->paths)
-       (map (fn [path]
-              {:post [(or (nil? %) (set? %))]}
-              (path+eids->refs db eids path)))
-       (apply set/union)))
