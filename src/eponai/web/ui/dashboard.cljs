@@ -166,7 +166,8 @@
                                     (om/computed widget-props
                                                  {:project-id       project-id
                                                   :tags             tags
-                                                  :on-select-widget (widget-on-select-widget widget-props)})))
+                                                  :on-select-widget (widget-on-select-widget
+                                                                      widget-props)})))
                                 ;(.createElement React
                                 ;                "div"
                                 ;                #js {:key (str (:widget/uuid widget-props))

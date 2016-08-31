@@ -82,7 +82,8 @@
               (not= find find-pattern))
      (warn "x-with called with both find and find-pattern, and they"
            " are not equal. :find-pattern: " find-pattern
-           " find: " find))
+           " find: " find ". Use (find-with ...) instead of (all-with ...)"
+           "or (one-with ...) when supplying your own :find-pattern."))
    (let [find-pattern (or find-pattern find)
          symbol-seq (seq symbols)
          query (where->query where

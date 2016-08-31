@@ -114,7 +114,7 @@
                                [$since ?e]]
                :symbols      {'$since                 db-since
                               '[?user-entity-key ...] user-entity-keys}}]
-    (pull/all-with db query)))
+    (pull/find-with db query)))
 
 (defn- user-specific-entities-filter [user-id]
   {:props {:user-entities {:init      #{}
