@@ -16,10 +16,15 @@
             [taoensso.timbre :refer [debug error trace]]
             [eponai.server.email :as email]
             [eponai.server.external.facebook :as fb]
+            [eponai.common.parser.util :as parser.util]
             [om.next.server :as om])
 
   (:import (clojure.lang ExceptionInfo)
            (datomic.query EntityMap)))
+
+(defn wrap-timing [handler]
+  (fn [request]
+    (parser.util/timeit "Request timer" (handler request))))
 
 (defn wrap-ssl [handler]
   (-> handler
