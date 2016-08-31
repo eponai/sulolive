@@ -74,7 +74,8 @@
                     {:ui/component :ui.component/root}
                     {:ui/component :ui.component/loading
                      :ui.component.loading/is-logged-in? false}
-                    {:ui/singleton :ui.singleton/configuration}]
+                    {:ui/singleton :ui.singleton/configuration}
+                    {:ui/component :ui.component/mutation-queue}]
           conn (d/create-conn ui-schema)]
       (d/transact! conn ui-state)
       (reset! conn-atom conn))))
