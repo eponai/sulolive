@@ -62,7 +62,7 @@
 
 (defmethod parser/read-basis-param-path :query/transactions [env _ params] [(env+params->project-eid env params)])
 (defmethod read :query/transactions
-  [{:keys [db db-since db-history query user-uuid] :as env} _ params]
+  [{:keys [db db-history query user-uuid] :as env} _ params]
   (if db-history
     (let [project-eid (env+params->project-eid env params)
           datom-txs (server.pull/all-datoms
@@ -72,7 +72,7 @@
       {:value {:refs datom-txs}})
     (let [project-eid (env+params->project-eid env params)
           entity-query (common.pull/transaction-entity-query {:project-eid project-eid :user-uuid user-uuid})
-          tx-ids (server.pull/all-since db db-since query entity-query)
+          tx-ids (pull/all-with db entity-query)
           tx-entities (mapv #(d/entity db %) tx-ids)
           conversions (pull/transaction-conversions db user-uuid tx-entities)
 
