@@ -368,10 +368,11 @@
   to get your dataset."
   [db db-history pull-pattern entity-query]
   {:pre [(some? db-history)]}
-  (let [datoms (->> (all-changed db db-history pull-pattern entity-query)
-                    ;; Sort them by tx accending.
-                    ;; So that older tx's are transacted after the earlier ones.
-                    (sort-by #(nth % 3))
+  (let [tx #(nth % 3)
+        datoms (->> (all-changed db db-history pull-pattern entity-query)
+                    ;; Sort datoms by tx number, so that earlier transactions
+                    ;; get applied first.
+                    (sort #(compare (tx %2) (tx %1)))
                     (mapv (fn [[e a v _ added]]
                             [(if added :db/add :db/retract) e a v])))]
     (trace "For entity-query: " entity-query " returning datoms: " datoms)
