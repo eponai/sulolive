@@ -74,6 +74,13 @@
            >
            transactions))
 
+(defn- datom-e [datom]
+  (.-e datom))
+
+(defn entity-differ [db last-db eid]
+  (not= (into [] (d/datoms db :eavt eid))
+        (into [] (d/datoms last-db :eavt eid))))
+
 (defn transactions-changed [db last-db project-eid]
   {:pre  [(number? project-eid)]
    :post [(set? %)]}
@@ -81,12 +88,9 @@
         changed-transaction-eids
         (->> transaction-datoms
              (into #{}
-                   (cond->> (map #(.-e %))
-                            (some? last-db)
-                            (comp (filter
-                                    #(not=
-                                      (into [] (d/datoms db :eavt (.-e %)))
-                                      (into [] (d/datoms last-db :eavt (.-e %)))))))))]
+                   (cond-> (map datom-e)
+                           (some? last-db)
+                           (comp (filter #(entity-differ db last-db %))))))]
     (debug "changed-transaction-eids: " changed-transaction-eids)
     changed-transaction-eids))
 
@@ -95,8 +99,8 @@
    :post [(or (nil? %) (set? %))]}
   (when-let [last-transactions (when last-db
                                  (seq (d/datoms last-db :avet :transaction/project project-eid)))]
-    (let [last-txs (into #{} (map #(.-e %)) last-transactions)
-          txs (into #{} (map #(.-e %)) (d/datoms db :avet :transaction/project project-eid))]
+    (let [last-txs (into #{} (map datom-e) last-transactions)
+          txs (into #{} (map datom-e) (d/datoms db :avet :transaction/project project-eid))]
       (set/difference last-txs txs))))
 
 (defn all-local-transactions-by-project [{:keys [parser db txs-by-project] :as env} project-eid]
