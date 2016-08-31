@@ -218,7 +218,13 @@
                                     {:where        [where-clause]
                                      :symbols      {'[?datom-attr-keyword ...] attrs}
                                      :find-pattern find-pattern}))))
-            keyword-attrs (filter keyword? attrs)
+            attr-in-db-history? (fn [attr]
+                                  ;; This prevents queries to be run on ALL attributes.
+                                  ;; TODO: Profile this filter, to see if it scales.
+                                  (seq (d/datoms db-history :aevt (normalize-attribute attr))))
+            keyword-attrs (->> attrs
+                               (filter keyword?)
+                               (filter attr-in-db-history?))
             query-attrs (create-query (remove reverse-lookup-attr? attrs)
                                       db-history-clause
                                       find-pattern)
