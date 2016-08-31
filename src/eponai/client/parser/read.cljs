@@ -1,6 +1,7 @@
 (ns eponai.client.parser.read
   (:require [datascript.core :as d]
             [datascript.db :as db]
+            [clojure.set :as set]
             [om.next :as om]
             [eponai.common.database.pull :as p]
             [eponai.common.prefixlist :as pl]
@@ -73,7 +74,7 @@
            >
            transactions))
 
-(defn transactions-since [db last-db project-eid]
+(defn transactions-changed [db last-db project-eid]
   {:pre  [(number? project-eid)]
    :post [(set? %)]}
   (let [transaction-datoms (d/datoms db :avet :transaction/project project-eid)
@@ -89,50 +90,66 @@
     (debug "changed-transaction-eids: " changed-transaction-eids)
     changed-transaction-eids))
 
+(defn transactions-deleted [db last-db project-eid]
+  {:pre  [(number? project-eid)]
+   :post [(or (nil? %) (set? %))]}
+  (when-let [last-transactions (when last-db
+                                 (seq (d/datoms last-db :avet :transaction/project project-eid)))]
+    (let [last-txs (into #{} (map #(.-e %)) last-transactions)
+          txs (into #{} (map #(.-e %)) (d/datoms db :avet :transaction/project project-eid))]
+      (set/difference last-txs txs))))
+
 (defn all-local-transactions-by-project [{:keys [parser db txs-by-project] :as env} project-eid]
   (let [{:keys [db-used txs]} (get @txs-by-project project-eid)
         {:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
     (when (and project-eid current-user)
       (if (identical? db db-used)
         txs
-        (let [user-uuid (:user/uuid current-user)
-              new-txs (transactions-since db db-used project-eid)
-              new-with-convs (p/transactions-with-conversions db user-uuid new-txs)
-              ;; Group by uuid in an atom, so we can pick transactions by id destructively.
-              new-by-uuid (atom (into {} (map #(vector (:transaction/uuid %) %)) new-with-convs))
+        (let [;; Transactions that have been deleted:
+              removed-txs (or (transactions-deleted db db-used project-eid)
+                              #{})
+              new-txs (transactions-changed db db-used project-eid)]
+          (if (and (empty? removed-txs)
+                   (empty? new-txs))
+            txs
+            (let [user-uuid (:user/uuid current-user)
+                  new-with-convs (p/transactions-with-conversions db user-uuid new-txs)
+                  ;; Group by uuid in an atom, so we can pick transactions by id destructively.
+                  new-by-uuid (atom (into {} (map #(vector (:transaction/uuid %) %)) new-with-convs))
 
-              ;; Old txs may have gotten new conversions, get them.
-              ;; TODO: Optimize to only do this if there are new conversions?
-              old-convs (p/transaction-conversions db user-uuid txs)
+                  ;; Old txs may have gotten new conversions, get them.
+                  ;; TODO: Optimize to only do this if there are new conversions?
+                  old-convs (p/transaction-conversions db user-uuid txs)
 
-              ;; Assoc :transaction/conversion in old tx if they need it.
-              ;; Replace new transactions in the same position they had in the cached transactions.
-              old-with-new-inserted (into [] (comp
-                                               (map (fn [{:keys [db/id] :as tx}]
-                                                      {:pre [(some? id)]}
-                                                      (if-let [conv (get old-convs id)]
-                                                        (assoc tx :transaction/conversion conv)
-                                                        tx)))
-                                               (map (fn [{:keys [transaction/uuid] :as old}]
-                                                      (if-let [new (get @new-by-uuid uuid)]
-                                                        (do (swap! new-by-uuid dissoc uuid)
-                                                            new)
-                                                        old))))
-                                          txs)
-              ;; Pour the old into remaining new. We want new to be before old because
-              ;; of sorting (not sure that it is correct to do so).
-              remaining-new (vals @new-by-uuid)
-              new-and-old (cond->> old-with-new-inserted
-                                   (seq remaining-new)
-                                   (into (vec remaining-new))
-                                   ;; Storing the transactions time-decending because
-                                   ;; it's both mobile and web's default ordering.
-                                   ;; Doing this sort in our read, lets us take advantage
-                                   ;; of our read caching.
-                                   :always
-                                   sort-transactions-time-decending)]
-          (swap! txs-by-project assoc project-eid {:db-used db :txs new-and-old})
-          new-and-old)))))
+                  ;; Assoc :transaction/conversion in old tx if they need it.
+                  ;; Replace new transactions in the same position they had in the cached transactions.
+                  old-with-new-inserted (into [] (comp
+                                                   (map (fn [{:keys [db/id] :as tx}]
+                                                          {:pre [(some? id)]}
+                                                          (if-let [conv (get old-convs id)]
+                                                            (assoc tx :transaction/conversion conv)
+                                                            tx)))
+                                                   (map (fn [{:keys [transaction/uuid] :as old}]
+                                                          (if-let [new (get @new-by-uuid uuid)]
+                                                            (do (swap! new-by-uuid dissoc uuid)
+                                                                new)
+                                                            old))))
+                                              txs)
+                  ;; Pour the old into remaining new. We want new to be before old because
+                  ;; of sorting (not sure that it is correct to do so).
+                  remaining-new (vals @new-by-uuid)
+                  new-and-old (cond->> old-with-new-inserted
+                                       (seq remaining-new)
+                                       (into (vec remaining-new)
+                                             (remove #(contains? removed-txs (:db/id %))))
+                                       ;; Storing the transactions time-decending because
+                                       ;; it's both mobile and web's default ordering.
+                                       ;; Doing this sort in our read, lets us take advantage
+                                       ;; of our read caching.
+                                       :always
+                                       (sort-transactions-time-decending))]
+              (swap! txs-by-project assoc project-eid {:db-used db :txs new-and-old})
+              new-and-old)))))))
 
 (defn active-project-eid [db]
   (or (:ui.component.project/eid (d/entity db [:ui/component :ui.component/project]))
