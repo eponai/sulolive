@@ -5,11 +5,12 @@
             [eponai.common.database.pull :as p]
             [eponai.common.prefixlist :as pl]
             [eponai.common.parser :refer [read]]
-            [eponai.common.parser.util :as parser.util]
+            [eponai.common.parser.util :as parser.util :refer-macros [timeit]]
             [eponai.common.format :as f]
             [eponai.common.parser.util :as parser]
             [eponai.web.ui.all-transactions :as at]
-            [taoensso.timbre :refer-macros [debug error]]))
+            [taoensso.timbre :refer-macros [debug error]]
+            [clojure.data :as diff]))
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
@@ -73,26 +74,26 @@
            transactions))
 
 (defn transactions-since [db last-db project-eid]
-  {:pre [(number? project-eid)]
+  {:pre  [(number? project-eid)]
    :post [(set? %)]}
-  (let [last-basis (:max-tx last-db 0)
-        _ (debug "Last-basis: " last-basis " project-eid: " project-eid)
-        new-transaction-eids (into #{} (comp
-                                         ;; We used to filter e's based on last-basis
-                                         ;; but it doesn't include retractions and
-                                         ;; other things.
-                                         ;;  (mapcat #(d/datoms db :eavt (.-e %)))
-                                         ;;  (filter #(> (.-tx %) last-basis))
-                                             (map #(.-e %)))
-                                   (d/datoms db :avet :transaction/project project-eid))]
-    (debug "new-transaction-eids: " new-transaction-eids)
-    new-transaction-eids))
+  (let [transaction-datoms (d/datoms db :avet :transaction/project project-eid)
+        changed-transaction-eids
+        (->> transaction-datoms
+             (into #{}
+                   (cond->> (map #(.-e %))
+                            (some? last-db)
+                            (comp (filter
+                                    #(not=
+                                      (into [] (d/datoms db :eavt (.-e %)))
+                                      (into [] (d/datoms last-db :eavt (.-e %)))))))))]
+    (debug "changed-transaction-eids: " changed-transaction-eids)
+    changed-transaction-eids))
 
 (defn all-local-transactions-by-project [{:keys [parser db txs-by-project] :as env} project-eid]
   (let [{:keys [db-used txs]} (get @txs-by-project project-eid)
         {:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
     (when (and project-eid current-user)
-      (if (= db db-used)
+      (if (identical? db db-used)
         txs
         (let [user-uuid (:user/uuid current-user)
               new-txs (transactions-since db db-used project-eid)

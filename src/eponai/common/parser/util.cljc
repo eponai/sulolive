@@ -7,11 +7,11 @@
   #?(:clj (. System (currentTimeMillis))
      :cljs (system-time)))
 
-(defmacro timeit [label & body]
-  `(let [start# (get-time)
-         ret# (do ~@body)]
-     (debug "Elapsed time: " (double (- (get-time) start#)) " msecs" " <= for: " ~label)
-     ret#))
+#(:clj (defmacro timeit [label & body]
+         `(let [start# (get-time)
+                ret# (do ~@body)]
+            (debug "Elapsed time: " (double (- (get-time) start#)) " msecs" " <= for: " ~label)
+            ret#)))
 
 (defn post-process-parse
   "Calls post-parse-fn for each [k v] in the result of a (parser env query-expr).
