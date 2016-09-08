@@ -1,6 +1,8 @@
 machine:
   node:
     version: 4.2.2
+  ruby:
+    version: rbx-2.2.6
   services:
     - docker
   environment:
