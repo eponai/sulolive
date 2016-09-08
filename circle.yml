@@ -15,6 +15,7 @@ dependencies:
   pre:
     - pip install awscli
     - npm install -g npm
+    - gem install cocoapods --version '1.0.1'
   override:
     - lein all-deps
 
