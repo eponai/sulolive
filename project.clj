@@ -28,7 +28,9 @@
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.namespace "0.2.11"]
                  ;; Depending on transit-clj for faster cljs builds
-                 [com.cognitect/transit-clj "0.8.285"]
+                 [com.cognitect/transit-clj "0.8.288"
+                  :exlusions [com.fasterxml.jackson.core/jackson-core]]
+                 [com.fasterxml.jackson.core/jackson-core "2.5.3"]
                  ; ring helpers
                  [amalloy/ring-gzip-middleware "0.1.3"]
                  [ring/ring-core "1.4.0"]
