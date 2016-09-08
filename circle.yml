@@ -1,8 +1,6 @@
 machine:
   node:
     version: 4.2.2
-  ruby:
-    version: 2.3.1
   services:
     - docker
   environment:
@@ -17,9 +15,9 @@ dependencies:
   pre:
     - pip install awscli
     - npm install -g npm
-    - gem install cocoapods --version '1.0.1'
   override:
-    - lein all-deps
+    - lein deps
+    - lein npm-deps
 
 test:
   override:
