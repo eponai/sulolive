@@ -1,4 +1,4 @@
-FROM openjdk:9-b134-jdk
+FROM openjdk:8u102-jdk
 
 ADD target/uberjar/budget-0.1.0-SNAPSHOT-standalone.jar /srv/production.jar
 
