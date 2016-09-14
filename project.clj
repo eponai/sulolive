@@ -3,12 +3,12 @@
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[cljsjs/react "15.1.0-0"]
-                 [cljsjs/react-dom "15.1.0-0"]
-                 [org.omcljs/om "1.0.0-alpha37"]
+  :dependencies [[cljsjs/react "15.3.1-0"]
+                 [cljsjs/react-dom "15.3.1-0"]
+                 [org.omcljs/om "1.0.0-alpha44"]
                  [clj-http "2.1.0"]
                  [clj-time "0.11.0"]
-                 [compojure "1.4.0"]
+                 [compojure "1.5.1"]
                  [com.cemerick/friend "0.2.1"
                   :exclusions [org.clojure/core.cache]]
                  [com.cemerick/url "0.1.1"]
@@ -16,14 +16,14 @@
                   :exclusions [joda-time]]
                  [com.amazonaws/aws-java-sdk-dynamodb "1.10.56"
                   :exclusions [joda-time org.clojure/test.check]]
-                 [com.draines/postal "1.11.3"]
+                 [com.draines/postal "2.0.1"]
                  [com.stripe/stripe-java "1.45.0"]
-                 [com.taoensso/timbre "4.3.1"]
+                 [com.taoensso/timbre "4.7.4"]
                  [org.clojure/data.xml "0.0.8"]
                  [environ "1.0.1"]
                  [hiccup "1.0.5"]
                  [org.clojure/clojure "1.8.0"]
-                 [org.clojure/core.async "0.2.374"]
+                 [org.clojure/core.async "0.2.391"]
                  [org.clojure/core.memoize "0.5.8"]         ; needed to work around lein+core.async dependency issue.
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.namespace "0.2.11"]
@@ -33,20 +33,20 @@
                  [com.fasterxml.jackson.core/jackson-core "2.5.3"]
                  ; ring helpers
                  [amalloy/ring-gzip-middleware "0.1.3"]
-                 [ring/ring-core "1.4.0"]
-                 [ring/ring-devel "1.4.0"]
-                 [ring/ring-jetty-adapter "1.4.0"]
+                 [ring/ring-core "1.5.0"]
+                 [ring/ring-devel "1.5.0"]
+                 [ring/ring-jetty-adapter "1.5.0"]
                  [ring/ring-json "0.4.0"]
-                 [ring/ring-defaults "0.1.5"]
+                 [ring/ring-defaults "0.2.1"]
                  [ring/ring-ssl "0.2.1"]
-                 [ring/ring-anti-forgery "1.0.0"]
-                 [ring-transit "0.1.4"]
-                 [prone "1.0.2"]
-		 [medley "0.8.2"]
+                 [ring/ring-anti-forgery "1.0.1"]
+                 [ring-transit "0.1.6"]
+                 [prone "1.1.2"]
+		 [medley "0.8.3"]
 
                  ;; CLJS
-                 [com.cognitect/transit-cljs "0.8.237"]
-                 [org.clojure/clojurescript "1.9.36"
+                 [com.cognitect/transit-cljs "0.8.239"]
+                 [org.clojure/clojurescript "1.9.229"
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
@@ -55,16 +55,16 @@
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-alpha2"]
                  [garden "1.3.2"]
-                 [datascript "0.15.0"]
-                 [sablono "0.7.1"]
+                 [datascript "0.15.2"]
+                 [sablono "0.7.4"]
                  [cljsjs/d3 "3.5.7-1"]
                  [cljsjs/pikaday "1.4.0-1"]
                  [cljsjs/moment "2.10.6-4"]
                  [cljsjs/react-grid-layout "0.10.8-0"]
                  [cljsjs/stripe "2.0-0"]
-                 [bidi "2.0.0"]
+                 [bidi "2.0.10"]
                  [kibu/pushy "0.3.6"]
-                 [binaryage/devtools "0.7.2"]
+                 [binaryage/devtools "0.8.1"]
                  [org.clojure/tools.nrepl "0.2.11"
                   :exclusions [org.clojure/clojure]]
 
@@ -84,8 +84,8 @@
            ;; [lein-npm "0.6.1"]
             [lein-shell "0.5.0"]
             [lein-doo "0.1.6"]
-            [lein-cljsbuild "1.1.3"]
-            [lein-figwheel "0.5.4-4"]
+            [lein-cljsbuild "1.1.4"]
+            [lein-figwheel "0.5.7"]
             [lein-ring "0.9.7"]
             [lein-test-out "0.3.1"]
             [lein-environ "1.0.1"]]
@@ -167,9 +167,9 @@
                         :aot        :all
                         :prep-tasks ["compile" "prod-build-web"]}
 
-             :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha37"
+             :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha44"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
-                                       [figwheel-sidecar "0.5.4-4"]
+                                       [figwheel-sidecar "0.5.7"]
                                        [com.cemerick/piggieback "0.2.1"]]
                         :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
                         :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
@@ -188,7 +188,7 @@
                                                                 :output-dir    "target/android"
                                                                 :optimizations :none}}]}}
 
-             :mob-prod {:dependencies [[org.omcljs/om "1.0.0-alpha37"
+             :mob-prod {:dependencies [[org.omcljs/om "1.0.0-alpha44"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]]
                         :cljsbuild    {:builds [{:id           "ios-release"
                                                  :source-paths ["src" "src-hacks/react-native" "env/client/prod"]
@@ -211,7 +211,7 @@
                                                                 :output-dir    "target/android"
                                                                 :optimizations :simple}}]}}
 
-             :web-test {:dependencies [[figwheel-sidecar "0.5.4-4"]]
+             :web-test {:dependencies [[figwheel-sidecar "0.5.7"]]
                         :cljsbuild {:builds [{:id           "doo-test"
                                               :source-paths ["src/" "src-hacks/web/" "test/"]
                                               :compiler     {:output-to     "resources/public/doo-test/js/out/budget.js"
