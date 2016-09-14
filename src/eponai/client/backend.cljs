@@ -182,7 +182,7 @@
                :result result
                :meta   meta}))
       (do
-        (debug "Error ")
+        (debug "Error: " error)
         (cb {:db stable-db})))))
 
 (defn- <stream-chunked-response
@@ -306,8 +306,9 @@
 
               ;; We've now merged everything. Call the post-merge fn.
               ;; It might mutate app-state, but it should be fine.
-              _ (when-let [f (:post-merge-fn received)]
-                  (f))
+              (when-let [f (:post-merge-fn received)]
+                (debug "Calling post-merge-fn for remote key: " remote-key " query: " query)
+                (f))
 
               ;; If there's another query in the query-channel, use the
               ;; new-stable-db as the "rebase" point.
