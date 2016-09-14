@@ -150,35 +150,43 @@
 #?(:cljs
    (defn mutate-with-db-before-mutation [mutate]
      (fn [{:keys [target ast reconciler state] :as env} k p]
-       (let [mutation (mutate env k p)
-             target-mutation (get mutation target false)
-             history (-> reconciler :config :history)
-             last-history-id (last (.-arr history))]
-
-         ;; Assertions about om.next's history implementation:
-         (assert (.-arr history)
-                 (str "om.next's history had no property (.-arr h)."
-                      " Check the implementation of om.next.cache."
-                      " history: " history))
-         (if (nil? target)
-           (cond-> mutation
-                   (fn? (:action mutation))
-                   (update :action
-                           (fn [f]
-                             (fn []
-                               (f)
-                               (d/reset-conn! state (client.utils/queue-mutation
-                                                      (d/db state)
-                                                      last-history-id
-                                                      (om/ast->query ast)))))))
-           (let [ret (if (true? target-mutation) ast target-mutation)]
-             (assoc mutation
-               target
-               (cond-> ret
-                       (map? ret)
-                       (assoc-in [:params
-                                  :eponai.client.backend/mutation-db-history-id]
-                                 last-history-id)))))))))
+       (if (nil? reconciler)
+         (do
+           (assert (:running-tests? env)
+                   (str "Reconciler was nil in and we are not running tests."
+                        " If you are running tests, please use (parser/test-parser)"
+                        " instead of (parser/parser)."
+                        " If that's not possible, some how assoc {:running-tests? true}"
+                        " to parser's env argument."))
+           (mutate env k p))
+         (let [mutation (mutate env k p)
+               target-mutation (get mutation target false)
+               history (-> reconciler :config :history)
+               last-history-id (last (.-arr history))]
+           ;; Assertions about om.next's history implementation:
+           (assert (.-arr history)
+                   (str "om.next's history had no property (.-arr h)."
+                        " Check the implementation of om.next.cache."
+                        " history: " history))
+           (if (nil? target)
+             (cond-> mutation
+                     (fn? (:action mutation))
+                     (update :action
+                             (fn [f]
+                               (fn []
+                                 (f)
+                                 (d/reset-conn! state (client.utils/queue-mutation
+                                                        (d/db state)
+                                                        last-history-id
+                                                        (om/ast->query ast)))))))
+             (let [ret (if (true? target-mutation) ast target-mutation)]
+               (assoc mutation
+                 target
+                 (cond-> ret
+                         (map? ret)
+                         (assoc-in [:params
+                                    :eponai.client.backend/mutation-db-history-id]
+                                   last-history-id))))))))))
 
 #?(:clj
    (defn mutate-without-history-id-param [mutate]
@@ -317,6 +325,15 @@
         :clj  (-> p
                   wrap-parser-state
                   wrap-om-next-error-handler)))))
+
+(defn test-parser
+  "Parser used for tests."
+  []
+  (let [parser (parser)]
+    (fn [env query & [target]]
+      (parser (assoc env :running-tests? true)
+              query
+              target))))
 
 ;; Case by case middleware. Used when appropriate
 

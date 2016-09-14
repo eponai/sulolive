@@ -26,7 +26,7 @@
                       {:user/uuid user-uuid :db/id -1}
                       {:ui/singleton           :ui.singleton/auth
                        :ui.singleton.auth/user -1}])
-    {:parser (parser/parser)
+    {:parser (parser/test-parser)
      :conn   conn
      :user-uuid user-uuid}))
 
@@ -52,7 +52,10 @@
                (error "Parsed: " parsed))
              (is (not (some? error?)))
              (is (= (count transactions) (count rendered-txs)))
-             true)))))
+             true))
+         (catch :default e
+           (error "test error: " e)
+           (throw e)))))
 
 (deftest transaction-create-with-tags-of-the-same-name-throws-exception
   (let [{:keys [parser conn user-uuid]} (init-state)
