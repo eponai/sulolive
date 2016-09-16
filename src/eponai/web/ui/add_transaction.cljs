@@ -50,8 +50,8 @@
                              (assoc :transaction/created-at (.getTime (js/Date.)))
                              ;(update :transaction/date (fn [d] {:date/ymd (f/date->ymd-string d)}))
                              ))
-                      :query/transactions
-                      :query/dashboard])))
+                      :routing/project
+                      ])))
 
   (toggle-input-type [this]
     (let [{:keys [input-transaction]} (om/get-state this)

@@ -71,8 +71,9 @@
       (let [[[last-env _ last-params] last-ret] @last-call
             equal-key? (fn [k] (= (get env k)
                                   (get last-env k)))]
-        (let [ret (if (and (= params last-params)
-                           (every? equal-key? [:db :query :target]))
+        (let [ret (if (and (identical? (:db env) (:db last-env))
+                           (= params last-params)
+                           (every? equal-key? [:query :target]))
                     (do
                       (debug (str "Returning cached for:" k))
                       last-ret)

@@ -118,11 +118,11 @@
       (call-listener this)))
 
   (render [this]
-    (let [{:keys [elements]} (om/props this)]
+    (let [{:keys [elements elements-container]} (om/props this)]
       (assert (counted? elements))
       (html
-       [:div
-        (take (:list-size (om/get-state this))
-              elements)]))))
+        [(or elements-container :div)
+         (take (:list-size (om/get-state this))
+               elements)]))))
 
 (def ->InfiniteScroll (om/factory InfiniteScroll))

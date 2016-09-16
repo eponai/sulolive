@@ -444,7 +444,8 @@
         prn-diff (fn [label [in-first in-second :as diff]]
                    (when (or (some? in-first) (some? in-second))
                      (debug label " diff:" diff)))]
-    (debug "props-not-eq?: " pe
+    (debug "this: " this
+           "props-not-eq?: " pe
            " state-not-eq?:" se
            " children-not-eq?:" ce)
     (prn-diff "props diff" pdiff)

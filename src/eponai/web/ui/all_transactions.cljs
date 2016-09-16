@@ -102,9 +102,7 @@
                                                     (assoc :mutation-uuid (d/squuid))))
                              ;; TODO: Are all these needed?
                              ;; Copied from AddTransaction.
-                             :query/dashboard
-                             :query/all-projects
-                             :query/transactions]))))
+                             :routing/project]))))
 
   (render [this]
     (let [{:keys [input-transaction input-tag]} (om/get-state this)
@@ -352,16 +350,17 @@
             [:div.transactions
              [:div.transaction-list
               (opts {:style {:width "100%"}})
-              [:ul.no-bullet
-               (infinite-scroll/->InfiniteScroll
-                 (-> {:elements (into [] (map (fn [props]
-                                                (->Transaction
-                                                  (om/computed props
-                                                               {:user         user
-                                                                :currencies   currencies
-                                                                :on-tag-click transaction-on-tag-click}))))
-                                      transactions)}
-                     (om/computed {:dom-node-fn infinite-scroll-node-fn})))]]]
+              (infinite-scroll/->InfiniteScroll
+                (om/computed
+                  {:elements-container :ul.no-bullet
+                   :elements           (into [] (map (fn [props]
+                                                       (->Transaction
+                                                         (om/computed props
+                                                                      {:user         user
+                                                                       :currencies   currencies
+                                                                       :on-tag-click transaction-on-tag-click}))))
+                                             transactions)}
+                  {:dom-node-fn infinite-scroll-node-fn}))]]
             [:div.empty-message
              [:div.lead
               [:i.fa.fa-search.fa-fw]

@@ -5,7 +5,7 @@
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[cljsjs/react "15.3.1-0"]
                  [cljsjs/react-dom "15.3.1-0"]
-                 [org.omcljs/om "1.0.0-alpha44"]
+                 [org.omcljs/om "1.0.0-alpha44-anm"]
                  [clj-http "2.1.0"]
                  [clj-time "0.11.0"]
                  [compojure "1.5.1"]
