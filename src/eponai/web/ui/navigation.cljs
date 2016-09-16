@@ -247,8 +247,7 @@
   (save-new-project [this name]
     (om/transact! this [(list 'project/save {:project/uuid   (d/squuid)
                                              :project/name   name
-                                             :dashboard/uuid (d/squuid)
-                                             :mutation-uuid  (d/squuid)})
+                                             :dashboard/uuid (d/squuid)})
                         :query/all-projects]))
   (render [this]
     (let [{:keys [query/all-projects

@@ -191,17 +191,7 @@
 #?(:clj
    (defn mutate-without-history-id-param [mutate]
      (fn [env k p]
-       (mutate env k (cond-> p
-                             (map? p)
-                             (dissoc p
-                                     :eponai.client.backend/mutation-db-history-id
-                                     ;; TODO: Remove :mutation-uuid from here.
-                                     ;; We need to clean up the rest of the code
-                                     ;; and remove it from everywhere.
-                                     ;; We may want to use something like
-                                     ;; mutation-uuid for messages anyway.
-                                     ;; Think about it.
-                                     :mutation-uuid))))))
+       (mutate env k (cond-> p (map? p) (dissoc :eponai.client.backend/mutation-db-history-id))))))
 
 (defn mutate-with-error-logging [mutate]
   (fn [env k p]

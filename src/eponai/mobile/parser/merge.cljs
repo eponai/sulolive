@@ -12,7 +12,8 @@
 (defn sync-optimistic-with-message [messages db k {:keys [om.next/error result] :as params}]
   {:pre [(map? messages)]}
   (let [{:keys [error-message message]} messages
-        db (d/db-with db [{:tx/mutation-uuid (:mutation-uuid result)
+        db (d/db-with db [{
+                           ;; :tx/mutation-uuid (:mutation-uuid result)
                            :tx/message       (if error error-message message)
                            :tx/status        (if error :tx.status/error
                                                        :tx.status/success)}])]

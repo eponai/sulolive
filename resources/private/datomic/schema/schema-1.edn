@@ -200,6 +200,8 @@
 
  ;; ------------------ Datomic transaction metadata
  ;; --- Not to be confused with jourmoney transactions.
+
+ ;; :tx/mutation-uuid is not used anymore.
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :tx/mutation-uuid
   :db/valueType          :db.type/uuid

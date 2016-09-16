@@ -92,8 +92,7 @@
 
            [:a.button.primary.hollow.float-right
             {:on-click #(om/transact! this `[(settings/save ~{:currency      input-currency
-                                                              :user          current-user
-                                                              :mutation-uuid (d/squuid)})
+                                                              :user          current-user})
                                              :query/dashboard
                                              :query/transactions])}
             [:span.small-caps "Save"]]]]
@@ -128,8 +127,7 @@
               [:div.columns.small-10
                [:a.link
                 (opts {:style    {:margin "1em 0"}
-                       :on-click #(om/transact! this `[(stripe/cancel ~{:mutation-uuid (d/squuid)})
-                                                       :query/stripe])})
+                       :on-click #(om/transact! this `[(stripe/cancel) :query/stripe])})
                 [:small
                  "Cancel"]]
                [:a.link

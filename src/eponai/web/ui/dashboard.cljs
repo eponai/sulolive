@@ -92,8 +92,7 @@
     (let [{:keys [cols breakpoint]} (om/get-state this)
           num-cols (get cols breakpoint)
           new-layout (layout->widgets num-cols widgets (js->clj layout))]
-      (om/transact! this `[(dashboard/save ~{:widget-layout new-layout
-                                             :mutation-uuid (d/squuid)})
+      (om/transact! this `[(dashboard/save ~{:widget-layout new-layout})
                            :query/dashboard])))
 
   (layout-changed [this widgets layout]

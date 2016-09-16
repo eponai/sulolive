@@ -45,7 +45,6 @@
       (om/transact! this
                     `[(transaction/create
                         ~(-> (:input-transaction st)
-                             (assoc :mutation-uuid (d/squuid))
                              (assoc :transaction/uuid (d/squuid))
                              (assoc :transaction/created-at (.getTime (js/Date.)))
                              ;(update :transaction/date (fn [d] {:date/ymd (f/date->ymd-string d)}))

@@ -276,7 +276,7 @@
 
 (defn stripe-cancel
   "Cancel the subscription in Stripe for user with uuid."
-  [{:keys [mutation-uuid state stripe-fn]} stripe-account]
+  [{:keys [state stripe-fn]} stripe-account]
   {:pre [(instance? Connection state)
          (fn? stripe-fn)
          (map? stripe-account)]}
@@ -293,7 +293,7 @@
     (let [subscription (stripe-fn :subscription/cancel
                                      {:customer-id     (:stripe/customer stripe-account)
                                       :subscription-id subscription-id})]
-      (transact/mutate state mutation-uuid [[:db.fn/retractEntity [:stripe.subscription/id (:stripe.subscription/id subscription)]]]))
+      (transact/transact state [[:db.fn/retractEntity [:stripe.subscription/id (:stripe.subscription/id subscription)]]]))
     ;; We don't have a subscription ID so we cannot cancel.
     (throw (api-error ::http/unprocessable-entity :missing-required-fields
                       {:message       "Required fields are missing. Cannot transact entities."

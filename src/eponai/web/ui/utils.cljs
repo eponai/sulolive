@@ -417,8 +417,7 @@
   (.preventDefault event)
   (let [t-uuid (.. event -dataTransfer (getData "uuid-str"))]
     (om/transact! component `[(transaction/edit ~{:transaction/uuid   (format/str->uuid t-uuid)
-                                                  :transaction/project {:project/uuid (str project-uuid)}
-                                                  :mutation-uuid      (d/squuid)})])
+                                                  :transaction/project {:project/uuid (str project-uuid)}})])
     (om/update-state! component dissoc :drop-target)))
 
 ;;############# Debugging ############################

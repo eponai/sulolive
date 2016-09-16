@@ -17,19 +17,19 @@
 ;; ------------------- Transaction --------------------
 
 (defmethod mutate 'transaction/create
-  [{:keys [state mutation-uuid auth] :as env} k input-transaction]
+  [{:keys [state auth] :as env} k input-transaction]
   (debug "transaction/create with params:" input-transaction)
   {:action (fn []
              (validate/validate env k {:transaction input-transaction
                                        :user-uuid   (:username auth)})
              (let [transaction (common.format/transaction input-transaction)
                    currency-chan (async/chan 1)
-                   tx-report (transact/mutate-one state mutation-uuid transaction)]
+                   tx-report (transact/transact-one state transaction)]
                (async/go (async/>! currency-chan (:transaction/date transaction)))
                (assoc tx-report :currency-chan currency-chan)))})
 
 (defmethod mutate 'transaction/edit
-  [{:keys [state mutation-uuid auth] :as env} k {:keys [transaction/uuid] :as transaction}]
+  [{:keys [state auth] :as env} k {:keys [transaction/uuid] :as transaction}]
   (debug "transaction/edit with params:" transaction)
   {:action (fn []
              (validate/validate env k {:transaction transaction
@@ -37,18 +37,18 @@
              (debug "validated transaction")
              (let [txs (format/transaction-edit transaction)]
                (debug "editing transaction: " uuid " txs: " txs)
-               (transact/mutate state mutation-uuid txs)))})
+               (transact/transact state txs)))})
 
 ;; ----------------- project --------------------
 
 (defmethod mutate 'project/save
-  [{:keys [state auth mutation-uuid]} _ params]
+  [{:keys [state auth]} _ params]
   (debug "project/save with params: " params)
   {:action (fn []
              (let [user-ref [:user/uuid (:username auth)]
                    project (format/project user-ref params)
                    dashboard (format/dashboard (:db/id project) params)]
-               (transact/mutate state mutation-uuid [project dashboard])))})
+               (transact/transact state [project dashboard])))})
 
 (defmethod mutate 'project/share
   [{:keys [state]} _ {:keys [project/uuid user/email] :as params}]
@@ -59,45 +59,45 @@
 ;; --------------- Widget ----------------
 
 (defmethod mutate 'widget/create
-  [{:keys [state mutation-uuid auth] :as env} k params]
+  [{:keys [state auth] :as env} k params]
   (debug "widget/create with params: " params)
   {:action (fn []
              (validate/validate env k {:widget    params
                                        :user-uuid (:username auth)})
              (let [widget (format/widget-create params)]
-               (transact/mutate-one state mutation-uuid widget)))})
+               (transact/transact-one state widget)))})
 
 (defmethod mutate 'widget/edit
-  [{:keys [state mutation-uuid]} _ params]
+  [{:keys [state]} _ params]
   (debug "widget/edit with params: " params)
   {:action (fn []
              (let [widget (format/widget-edit params)]
-               (transact/mutate state mutation-uuid widget)))
+               (transact/transact state widget)))
    :remote true})
 
 (defmethod mutate 'widget/delete
-  [{:keys [state mutation-uuid]} _ params]
+  [{:keys [state]} _ params]
   (debug "widget/delete with params: " params)
   (let [widget-uuid (:widget/uuid params)]
     {:action (fn []
-               (transact/mutate-one state mutation-uuid [:db.fn/retractEntity [:widget/uuid widget-uuid]]))
+               (transact/transact-one state [:db.fn/retractEntity [:widget/uuid widget-uuid]]))
      :remote true}))
 
 ;; ---------------- Dashboard ----------------
 
 (defmethod mutate 'dashboard/save
-  [{:keys [state mutation-uuid]} _ {:keys [widget-layout] :as params}]
+  [{:keys [state]} _ {:keys [widget-layout] :as params}]
   (debug "dashboard/save with params: " params)
   {:action (fn []
-             (transact/mutate state mutation-uuid (format/add-tempid widget-layout)))})
+             (transact/transact state (format/add-tempid widget-layout)))})
 
 ;; ------------------- User account related ------------------
 
 (defmethod mutate 'settings/save
-  [{:keys [state mutation-uuid]} _ {:keys [currency user] :as params}]
+  [{:keys [state]} _ {:keys [currency user] :as params}]
   (debug "settings/save with params: " params)
   {:action (fn []
-             (transact/mutate-one state mutation-uuid [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]]))})
+             (transact/transact-one state [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]]))})
 
 
 (defmethod mutate 'stripe/subscribe

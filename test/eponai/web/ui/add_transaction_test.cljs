@@ -35,9 +35,7 @@
   10
   (prop/for-all
     [transactions (gen/bind (gen-project) (fn [project] (gen/vector (gen-transaction (gen/return project)))))]
-    (try (let [create-mutations (mapv list (repeatedly (fn [] 'transaction/create))
-                                      (map #(assoc % :mutation-uuid (d/squuid))
-                                           transactions))
+    (try (let [create-mutations (mapv list (repeatedly (fn [] 'transaction/create)) transactions)
                {:keys [parser conn user-uuid]} (init-state)]
            (doseq [tx transactions]
              (d/transact conn [(:transaction/currency tx)
@@ -77,7 +75,6 @@
                                                   :transaction/tags        [{:tag/name ""} {:tag/name ""}]
                                                   :transaction/created-at  0
                                                   :transaction/project     {:project/uuid project-uuid}
-                                                  :transaction/type        :transaction.type/expense
-                                                  :mutation-uuid           (d/squuid)})])
+                                                  :transaction/type        :transaction.type/expense})])
                                     (get-in ['transaction/create :om.next/error])
                                     (throw)))))))

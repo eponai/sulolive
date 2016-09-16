@@ -85,36 +85,36 @@
                                                            (assoc :filter/end-date (date/date-map end))
                                                            (assoc :filter/start-date (date/date-map start))
                                                            (dissoc :filter/last-x-days)))))]
-      (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/filter :db/id :widget/uuid]) :mutation-uuid (d/squuid)))
+      (om/transact! this `[(widget/edit ~(select-keys new-widget [:widget/filter :db/id :widget/uuid]))
                            :query/dashboard])))
 
   (update-data-set-filter [this filter]
     (let [widget (om/props this)
           new-widget (update widget :widget/filter merge filter)]
-      (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/filter :db/id :widget/uuid]) :mutation-uuid (d/squuid)))
+      (om/transact! this `[(widget/edit ~(select-keys new-widget [:widget/filter :db/id :widget/uuid]))
                            :query/dashboard
                            :query/transactions])))
 
   (update-tag-filter [this include-tags]
     (let [widget (om/props this)
           new-widget (assoc-in widget [:widget/graph :graph/filter :filter/include-tags] include-tags)]
-      (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/graph :db/id :widget/uuid]) :mutation-uuid (d/squuid)))
+      (om/transact! this `[(widget/edit ~(select-keys new-widget [:widget/graph :db/id :widget/uuid]))
                            :query/dashboard])))
   (delete-widget [this]
     (let [widget (om/props this)]
-      (om/transact! this `[(widget/delete ~(assoc (select-keys widget [:widget/uuid]) :mutation-uuid (d/squuid)))
+      (om/transact! this `[(widget/delete ~(select-keys widget [:widget/uuid]))
                            :query/dashboard])))
 
   (update-goal-value [this new-value]
     (let [widget (om/props this)
           new-widget (assoc-in widget [:widget/report :report/goal :goal/value] new-value)]
-      (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/report :db/id :widget/uuid]) :mutation-uuid (d/squuid)))])))
+      (om/transact! this `[(widget/edit ~(select-keys new-widget [:widget/report :db/id :widget/uuid]))])))
 
   (update-title [this new-title]
     (let [widget (om/props this)
           new-widget (assoc-in widget [:widget/report :report/title] new-title)]
       (om/update-state! this assoc :input-title nil)
-      (om/transact! this `[(widget/edit ~(assoc (select-keys new-widget [:widget/report :db/id :widget/uuid]) :mutation-uuid (d/squuid)))])))
+      (om/transact! this `[(widget/edit ~(select-keys new-widget [:widget/report :db/id :widget/uuid]))])))
   (date-range [this]
     (let [{:keys [widget/filter]} (om/props this)]
       (cond (some? (:filter/last-x-days filter))

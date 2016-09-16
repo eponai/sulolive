@@ -94,12 +94,12 @@
 
   (save-widget [this widget]
     (if (some? (:db/id widget))
-      (om/transact! this `[(widget/edit ~(assoc widget :mutation-uuid (d/squuid)))
+      (om/transact! this `[(widget/edit ~widget)
                            :query/dashboard])
-      (om/transact! this `[(widget/create ~(assoc widget :mutation-uuid (d/squuid)))
+      (om/transact! this `[(widget/create ~widget)
                            :query/dashboard])))
   (delete-widget [this widget]
-    (om/transact! this `[(widget/delete ~(assoc (select-keys widget [:widget/uuid]) :mutation-uuid (d/squuid)))
+    (om/transact! this `[(widget/delete ~(select-keys widget [:widget/uuid]))
                          :query/dashboard]))
 
   (data-set [this]

@@ -98,8 +98,7 @@
         ;(debug "Delete tag Will transacti diff: " diff)
         (om/transact! this `[(transaction/edit ~(-> diff
                                                     (assoc :transaction/uuid (:transaction/uuid input-transaction))
-                                                    (assoc :db/id (:db/id input-transaction))
-                                                    (assoc :mutation-uuid (d/squuid))))
+                                                    (assoc :db/id (:db/id input-transaction))))
                              ;; TODO: Are all these needed?
                              ;; Copied from AddTransaction.
                              :routing/project]))))

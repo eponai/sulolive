@@ -40,23 +40,3 @@
 (defn transact-schemas [conn schemas]
   (doseq [schema schemas]
     (transact conn schema)))
-
-(defn tx-mutation [mutation-uuid]
-  {:db/id            (d/tempid :db.part/tx)
-   :tx/mutation-uuid mutation-uuid
-   ;; :tx/reverted refers to if the optimistic changes has been reverted or not.
-   #?@(:cljs [:tx/reverted false])})
-
-;; TODO: Warn that these are deprecated.
-
-(defn mutate
-  [conn mutation-uuid txs]
-  (transact conn txs))
-
-(defn mutate-one
-  [conn mutation-uuid value]
-  (transact-one conn value))
-
-(defn mutate-map
-  [conn mutation-uuid m]
-  (transact-map conn m))
