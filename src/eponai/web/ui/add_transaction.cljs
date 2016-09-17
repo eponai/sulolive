@@ -4,6 +4,7 @@
     [cljsjs.pikaday]
     [datascript.core :as d]
     [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
+    [eponai.client.parser.message :as message]
     [eponai.common.format.date :as date]
     [eponai.web.ui.datepicker :refer [->Datepicker]]
     [eponai.web.ui.utils :as utils]
@@ -24,7 +25,8 @@
 (defui AddTransaction
   static om/IQuery
   (query [_]
-    [{:query/all-currencies [:currency/code]}
+    [:query/message-fn
+     {:query/all-currencies [:currency/code]}
      {:query/all-projects [:project/uuid
                           :project/name]}])
   Object
@@ -41,16 +43,16 @@
                                                                     :project/uuid)}
                            :transaction/type     :transaction.type/expense}}))
   (add-transaction [this]
-    (let [st (om/get-state this)]
-      (om/transact! this
-                    `[(transaction/create
-                        ~(-> (:input-transaction st)
-                             (assoc :transaction/uuid (d/squuid))
-                             (assoc :transaction/created-at (.getTime (js/Date.)))
-                             ;(update :transaction/date (fn [d] {:date/ymd (f/date->ymd-string d)}))
-                             ))
-                      :routing/project
-                      ])))
+    (let [st (om/get-state this)
+          message-id (message/om-transact! this
+                                           `[(transaction/create
+                                               ~(-> (:input-transaction st)
+                                                    (assoc :transaction/uuid (d/squuid))
+                                                    (assoc :transaction/created-at (.getTime (js/Date.)))
+                                                    ;(update :transaction/date (fn [d] {:date/ymd (f/date->ymd-string d)}))
+                                                    ))
+                                             :routing/project])]
+      (om/update-state! this assoc :pending-transaction message-id)))
 
   (toggle-input-type [this]
     (let [{:keys [input-transaction]} (om/get-state this)
@@ -76,6 +78,19 @@
             (= type :transaction.type/income)
             {:btn-class "button success small"
              :i-class "fa fa-plus"})))
+
+  (componentDidUpdate [this prev-props prev-state]
+    (when-let [{:keys [pending-transaction]} (om/get-state this)]
+      (let [{:keys [query/message-fn]} (om/props this)
+            messages (message-fn pending-transaction)]
+        (debug "Got messages: " messages)
+        (when-let [m (first messages)]
+          (debug "get-message: " (message/get-message m))
+          (debug "success?: " (message/success? m))
+          (debug "manual success message: " (-> m :message :eponai.common.parser/success-message))
+          (debug "manual error message: " (-> m :message :eponai.common.parser/error-message))
+          (js/alert (message/get-message m))
+          ((:on-close (om/get-computed this)))))))
   (render
     [this]
     (let [{:keys [query/all-currencies
@@ -175,8 +190,7 @@
            "Cancel"]
           [:button.btn.btn-md
            (opts {:class    "button"
-                  :on-click #(do (.add-transaction this)
-                                 (on-close))})
+                  :on-click #(.add-transaction this)})
            "Save"]]]))))
 
 (def ->AddTransaction (om/factory AddTransaction))

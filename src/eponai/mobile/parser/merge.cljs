@@ -20,7 +20,8 @@
     (debug "merging optimistic update with message: " messages
            "for key: " k
            "params: " params)
-    (m/merge-mutation mobile-merge db k params)))
+    (throw (ex-info "NEED TO IMPLEMENT THIS WITH THE NEW MESSAGE STUFF" {:TODO :ASAP}))
+    (m/merge-mutation mobile-merge db nil k params)))
 
 (defmethod mobile-merge 'transaction/create
   [& args]

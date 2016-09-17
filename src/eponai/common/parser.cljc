@@ -39,8 +39,8 @@
 (defmethod message :default
   [e k p]
   (warn "No message implemented for mutation: " k)
-  {:success (str "Action " k " was successful!")
-   :error   (str "Something went wrong for action: " k)})
+  {::success-message (str "Action " k " was successful!")
+   ::error-message   (str "Something went wrong for action: " k)})
 
 ;; -------- Debug stuff
 
@@ -61,10 +61,10 @@
    (defn error->message [err]
      (error err)
      (if-let [data (ex-data err)]
-       (do (assert (::mutation-message)
+       (do (assert (::mutation-message data)
                    (str "ex-data did not have a mutation-message! ex-data: " data
                         " ex-message: " (medley/ex-message err)))
-           (select-keys data ::mutation-message))
+           (select-keys data [::mutation-message]))
        (throw (ex-info (str "Unable to get ex-data from error ")
                        {:error err
                         :where ::wrap-om-next-error-handler})))))
@@ -159,6 +159,17 @@
             target)))
 
 #?(:cljs
+   (defn reconciler->history-id [reconciler]
+     (let [history (-> reconciler :config :history)
+           last-history-id (last (.-arr history))]
+       ;; Assertions about om.next's history implementation:
+       (assert (.-arr history)
+               (str "om.next's history had no property (.-arr h)."
+                    " Check the implementation of om.next.cache."
+                    " history: " history))
+       last-history-id)))
+
+#?(:cljs
    (defn mutate-with-db-before-mutation [mutate]
      (fn [{:keys [target ast reconciler state] :as env} k p]
        (if (nil? reconciler)
@@ -172,13 +183,7 @@
            (mutate env k p))
          (let [mutation (mutate env k p)
                target-mutation (get mutation target false)
-               history (-> reconciler :config :history)
-               last-history-id (last (.-arr history))]
-           ;; Assertions about om.next's history implementation:
-           (assert (.-arr history)
-                   (str "om.next's history had no property (.-arr h)."
-                        " Check the implementation of om.next.cache."
-                        " history: " history))
+               history-id (reconciler->history-id reconciler)]
            (if (nil? target)
              (cond-> mutation
                      (fn? (:action mutation))
@@ -188,7 +193,7 @@
                                  (f)
                                  (d/reset-conn! state (client.utils/queue-mutation
                                                         (d/db state)
-                                                        last-history-id
+                                                        history-id
                                                         (om/ast->query ast)))))))
              (let [ret (if (true? target-mutation) ast target-mutation)]
                (assoc mutation
@@ -197,7 +202,7 @@
                          (map? ret)
                          (assoc-in [:params
                                     :eponai.client.backend/mutation-db-history-id]
-                                   last-history-id))))))))))
+                                   history-id))))))))))
 
 #?(:clj
    (defn mutate-without-history-id-param [mutate]
@@ -267,9 +272,19 @@
    (defn with-mutation-message [mutate]
      (fn [env k p]
        (let [ret (mutate env k p)
-             x->message (fn [x] (let [success? (not (instance? Throwable x))]
-                                  (-> (message (assoc env (if success? :return :exception) x) k p)
-                                      (dissoc (if success? :error :success)))))]
+             x->message (fn [x] (let [success? (not (instance? Throwable x))
+                                      msg (message (assoc env (if success? :return :exception) x) k p)]
+                                  (assert (and (::error-message msg)
+                                               (::success-message msg))
+                                          (str "Message for mutation: " k
+                                               " did not have both " ::error-message
+                                               " and " ::success-message
+                                               " Message was: " msg))
+                                  (assert (= 2 (count (keys msg)))
+                                          (str "Message for mutation: " k
+                                               " had more keys than error and success messages."
+                                               " This is probably a typo. Check it out."))
+                                  (dissoc msg (if success? ::error-message ::success-message))))]
          (cond-> ret
                  (fn? (:action ret))
                  (update :action (fn [action]
@@ -337,6 +352,7 @@
                                           with-remote-guard
                                           ;; mutate-with-idempotent-invariants
                                           mutate-with-error-logging
+                                          #?(:clj with-mutation-message)
                                           wrap-db
                                           #?(:cljs mutate-with-db-before-mutation
                                              :clj mutate-without-history-id-param)

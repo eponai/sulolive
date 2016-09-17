@@ -173,14 +173,15 @@
                       (client.utils/copy-queue mutation-queue))]
     db-after))
 
-(defn- merge-response! [cb stable-db received]
+(defn- merge-response! [cb stable-db received history-id]
   (let [{:keys [response error]} received
         {:keys [result meta]} response]
     ;; Reset db and apply response
     (if (nil? error)
       (do (cb {:db     stable-db
                :result result
-               :meta   meta}))
+               :meta   meta
+               :history-id history-id}))
       (do
         (debug "Error: " error)
         (cb {:db stable-db})))))
@@ -274,7 +275,7 @@
                            "queue: " (client.utils/mutations-after mutation-queue
                                                                    history-id
                                                                    is-remote-fn))
-                  _ (merge-response! cb stable-db received)
+                  _ (merge-response! cb stable-db received history-id)
                   ;; app-state has now been changed and is the new stable db.
                   stable-db (d/db app-state)
 

@@ -1,6 +1,8 @@
 (ns eponai.client.parser.merge
   (:require [datascript.core :as d]
             [datascript.db :as db]
+            [eponai.common.parser :as parser]
+            [eponai.client.parser.message :as message]
             [eponai.web.homeless :as homeless] ;; Client shouldn't depend on web!
             [taoensso.timbre :refer-macros [info debug error trace warn]]))
 
@@ -48,10 +50,22 @@
       ;;(transact transactions)
       ))
 
+(defn merge-mutation-error [db history-id key val]
+  (let [message (get-in val [:om.next/error ::parser/mutation-message])]
+    (warn "Mutation error for : " key " message: " message " result: " val)
+    (message/store-message db history-id (message/->MutationMessage key message false))))
+
+(defn merge-mutation-success [db history-id key val]
+  (let [message (get-in val [:result ::parser/mutation-message])]
+    (debug "Mutation success for : " key " message: " message " result: " val)
+    (message/store-message db history-id (message/->MutationMessage key message true))))
+
 ;;;;;;; API
 
-(defn merge-mutation [merge-fn db key val]
-  {:pre [(methods merge-fn) (db/db? db)]
+(defn merge-mutation [merge-fn db history-id key val]
+  {:pre [(methods merge-fn)
+         (db/db? db)
+         (symbol? key)]
    :post [(db/db? %)]}
   ;; Try to pass it to the merge function first
   ;; Otherwise, just do the default.
@@ -59,11 +73,11 @@
     (contains? (methods merge-fn) key)
     (merge-fn db key val)
 
-    (some? (-> val :om.next/error))
-    (merge-error db key val)
+    (some? (get-in val [:om.next/error ::parser/mutation-message]))
+    (merge-mutation-error db history-id key val)
 
-    (-> val :result seq)
-    (transact db (:result val))
+    (some? (get-in val [:result ::parser/mutation-message]))
+    (merge-mutation-success db history-id key val)
 
     :else
     (do
@@ -105,7 +119,7 @@
 (defn merge-novelty-by-key
   ;; TODO: Add comment when this has stabilized.
   "Merges server response for each [k v] in novelty. Returns the next db and the keys to re-read."
-  [merge-fn db novelty]
+  [merge-fn db novelty history-id]
   {:pre [(methods merge-fn) (db/db? db)]
    :post [(:keys %) (db/db? (:next %))]}
   ;; Merge :datascript/schema first if it exists
@@ -116,7 +130,11 @@
       (fn [{:keys [next] :as m} [key value]]
         (debug "Merging response for key:" key "value:" value)
         (if (symbol? key)
-          (assoc m :next (merge-mutation merge-fn next key value))
+          (do (assert (some? history-id)
+                      (str "No history-id was provided when merging mutations for novelty: " ordered-novelty))
+              (-> m
+                  (assoc :next (merge-mutation merge-fn next history-id key value))
+                  (update :keys conj :query/message-fn)))
           (-> m
               (assoc :next (merge-read merge-fn next key value))
               (update :keys conj key))))
@@ -143,11 +161,11 @@
   arbitrary actions by key.
   Returns merge function for om.next's reconciler's :merge"
   [merge-fn]
-  (fn [reconciler current-db {:keys [db result meta] :as novelty}]
+  (fn [reconciler current-db {:keys [db result meta history-id] :as novelty}]
     (debug "Merge! transacting novelty:" (update novelty :db :max-tx))
     (let [db (cond-> db (some? meta) (merge-meta meta))
           ret (if result
-                (merge-novelty-by-key merge-fn db result)
+                (merge-novelty-by-key merge-fn db result history-id)
                 ;; TODO: What keys can we pass to force re-render?
                 {:next db :keys []})]
       (debug "Merge! returning keys:" (:keys ret) " with db: " (-> ret :next :max-tx))

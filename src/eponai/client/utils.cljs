@@ -7,6 +7,9 @@
             [datascript.core :as d]
             [taoensso.timbre :as timbre :refer-macros [debug warn error]]))
 
+;; --------------------------
+;; -- Mutation queue protocol
+
 (defprotocol IQueueMutations
   (mutations [this])
   (queue-mutation [this id mutation])

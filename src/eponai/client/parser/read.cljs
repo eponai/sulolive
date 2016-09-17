@@ -9,6 +9,7 @@
             [eponai.common.parser.util :as parser.util :refer-macros [timeit]]
             [eponai.common.format :as f]
             [eponai.common.parser.util :as parser]
+            [eponai.client.parser.message :as message]
             [eponai.web.ui.all-transactions :as at]
             [taoensso.timbre :refer-macros [debug error]]
             [clojure.data :as diff]))
@@ -271,3 +272,7 @@
   {:value (let [auth (p/one-with db {:where '[[?e :ui/singleton :ui.singleton/auth]]})]
             (when auth
               (p/pull db query auth)))})
+
+(defmethod read :query/message-fn
+  [{:keys [db]} k p]
+  {:value (message/get-messages-fn db)})
