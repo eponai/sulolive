@@ -3,7 +3,7 @@
     [clojure.core.async :as async]
     [eponai.common.database.transact :as transact]
     [eponai.common.format :as format]
-    [eponai.common.parser :refer [mutate]]
+    [eponai.common.parser :refer [mutate message]]
     [eponai.common.validate :as validate]
     [taoensso.timbre :as timbre :refer [debug]]
     [eponai.server.api :as api]
@@ -15,7 +15,11 @@
     [eponai.server.auth.credentials :as a]))
 
 ;; ------------------- Transaction --------------------
-
+;; TODOD: Create macro (defmutation key params message-body mutate-body)
+(defmethod message 'transaction/create
+  [env k params]
+  {:success "Transaction created!"
+   :error "Error creating transaction :("})
 (defmethod mutate 'transaction/create
   [{:keys [state auth] :as env} k input-transaction]
   (debug "transaction/create with params:" input-transaction)

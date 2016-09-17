@@ -102,14 +102,12 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [::m/conn ::m/parser ::m/make-parser-error-fn ::m/stripe-fn ::playground-auth body] :as request}]
+  [{:keys [::m/conn ::m/parser ::m/stripe-fn ::playground-auth body] :as request}]
   (debug "Handling parser request with body:" body)
   (parser
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
      :state                             conn
      :auth                              (or playground-auth (friend/current-authentication request))
-     :parser-error-fn                   (when make-parser-error-fn
-                                          (make-parser-error-fn request))
      :stripe-fn                         stripe-fn}
     (:query body)))
 

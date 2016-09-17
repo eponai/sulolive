@@ -12,10 +12,13 @@
     #?(:clj
             [eponai.server.datomic.filter :as filter])
             [clojure.walk :as w]
-            [clojure.data :as diff]))
+            [clojure.data :as diff]
+            [medley.core :as medley])
+  #?(:clj (:import (clojure.lang ExceptionInfo))))
 
-(defmulti read (fn [_ k _] k))
-(defmulti mutate (fn [_ k _] k))
+(defmulti read om/dispatch)
+(defmulti mutate om/dispatch)
+(defmulti message om/dispatch)
 
 ;; -------- No matching dispatch
 
@@ -33,6 +36,12 @@
 
     :else (warn "Returning nil for parser read key: " k)))
 
+(defmethod message :default
+  [e k p]
+  (warn "No message implemented for mutation: " k)
+  {:success (str "Action " k " was successful!")
+   :error   (str "Something went wrong for action: " k)})
+
 ;; -------- Debug stuff
 
 (defn debug-read [env k params]
@@ -49,28 +58,30 @@
 ;; ############ middlewares
 
 #?(:clj
-   (defn default-error-fn [err]
+   (defn error->message [err]
      (error err)
-         (if-let [data (ex-data err)]
-           (assoc data ::ex-message (.getMessage ^Throwable err))
-           (throw (ex-info (str "Unable to get ex-data from error " )
-                           {:error err
-                            :where ::wrap-om-next-error-handler})))))
+     (if-let [data (ex-data err)]
+       (do (assert (::mutation-message)
+                   (str "ex-data did not have a mutation-message! ex-data: " data
+                        " ex-message: " (medley/ex-message err)))
+           (select-keys data ::mutation-message))
+       (throw (ex-info (str "Unable to get ex-data from error ")
+                       {:error err
+                        :where ::wrap-om-next-error-handler})))))
 
 #?(:clj
    (defn wrap-om-next-error-handler
      "Wraps the parser and calls every value for :om.next/error in the
-     result of a parse with the :parser-error-fn passed in env.
+     result of a parse.
 
      If parser throws an exception we'll return:
-     {:om.next/error (parser-error-fn e)}"
+     {:om.next/error e}"
      [parser]
      (fn [env query & [target]]
-       (let [parser-error-fn (or (:parser-error-fn env) default-error-fn)
-             map-parser-errors (fn [m k v]
-                                 (if-not (:om.next/error v)
-                                   m
-                                   (update-in m [k :om.next/error] parser-error-fn)))]
+       (let [map-parser-errors (fn [m k v]
+                                 (cond-> m
+                                         (:om.next/error v)
+                                         (update-in [k :om.next/error] error->message)))]
          (try
            (trace "Calling parser with body: " query)
            (let [ret (parser env query target)]
@@ -78,7 +89,7 @@
              (reduce-kv map-parser-errors ret ret))
            (catch Throwable e
              (error e)
-             {:om.next/error (parser-error-fn e)}))))))
+             {:om.next/error (error->message e)}))))))
 
 #?(:clj
    (defn wrap-db
@@ -251,6 +262,28 @@
                  ;; Value has not already been set?
                  (not (contains? (meta (:value ret)) :eponai.common.parser/read-basis-t))
                  (update :value vary-meta assoc-in path (d/basis-t db)))))))
+
+#?(:clj
+   (defn with-mutation-message [mutate]
+     (fn [env k p]
+       (let [ret (mutate env k p)
+             x->message (fn [x] (let [success? (not (instance? Throwable x))]
+                                  (-> (message (assoc env (if success? :return :exception) x) k p)
+                                      (dissoc (if success? :error :success)))))]
+         (cond-> ret
+                 (fn? (:action ret))
+                 (update :action (fn [action]
+                                   (fn []
+                                     (try
+                                       {::mutation-message (x->message (action))}
+                                       (catch ExceptionInfo ex
+                                         (throw (ex-info (medley/ex-message ex)
+                                                         (assoc (ex-data ex)
+                                                           ::mutation-message (x->message ex)))))
+                                       (catch Throwable e
+                                         (throw (ex-info (.getMessage e)
+                                                         {:cause    e
+                                                          ::mutation-message (x->message e)}))))))))))))
 
 (def ^:dynamic *parser-allow-remote* true)
 (def ^:dynamic *parser-allow-local-read* true)
