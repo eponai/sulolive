@@ -159,7 +159,7 @@
   ;;;;;;;;;;;;;
   :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
 
-  :figwheel {:css-dirs    ["resources/public/style/css"]
+  :figwheel {:css-dirs    ["resources/public/style/app/css/"]
              :server-port ~(read-string (or (System/getenv "FIGWHEEL_PORT") "3449"))}
 
   :profiles {:uberjar  {:jvm-opts   ^:replace ["-Dclojure.compiler.direct-linking=true"
