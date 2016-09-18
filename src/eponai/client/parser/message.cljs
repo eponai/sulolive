@@ -87,8 +87,8 @@
     (some->> (pull/find-with this {:find-pattern '[?e ?tx]
                                    :where        '[[?e :mutation-message/history-id _ ?tx]]})
              (into (sorted-set-by #(compare (:tx %1) (:tx %2)))
-                   (comp (map #(into {:tx (second %)}
-                                     (d/entity this (first %))))
+                   (comp (map (fn [[id tx]] (into {:tx tx :db/id id}
+                                                (d/entity this id))))
                          (map entity->MutationMessage))))))
 
 (defn om-transact!
