@@ -14,17 +14,25 @@
     [eponai.server.external.facebook :as fb]
     [eponai.server.auth.credentials :as a]))
 
-;; ------------------- Transaction --------------------
-;; TODOD: Create macro (defmutation key params message-body mutate-body)
-(defmethod message 'transaction/create
-  [env k params]
-  {::parser/success-message (str "Transaction: \"" (:transaction/title params) "\" created!")
-   ::parser/error-message   "Error creating transaction"})
+(defmacro defmutation
+  "Creates a message and mutate defmethod at the same time.
+  The body takes two maps. The first body is the message and the
+  other is the mutate.
+  The :return and :exception key in env is only available in the
+  message body."
+  [sym args message-body mutate-body]
+  `(do
+     (defmethod message (quote ~sym) ~args ~message-body)
+     (defmethod mutate (quote ~sym) ~args ~mutate-body)))
 
-(defmethod mutate 'transaction/create
+;; ------------------- Transaction --------------------
+
+(defmutation transaction/create
   [{:keys [state auth] :as env} k input-transaction]
-  (debug "transaction/create with params:" input-transaction)
+  {::parser/success-message (str "Transaction: \"" (:transaction/title input-transaction) "\" created!")
+   ::parser/error-message   "Error creating transaction"}
   {:action (fn []
+             (debug "transaction/create with params:" input-transaction)
              (validate/validate env k {:transaction input-transaction
                                        :user-uuid   (:username auth)})
              (let [transaction (common.format/transaction input-transaction)
