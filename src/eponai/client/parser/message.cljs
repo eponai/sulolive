@@ -8,11 +8,19 @@
 ;; -----------------------------
 ;; -- Mutation message public api
 
+(defprotocol IStoreMessages
+  (store-message [this id mutation-message]
+                 "Stores a mutation message on the id. Can store multiple messages for each id.")
+  (get-messages [this]
+                "Returns messages in insertion order")
+  (get-message-fn [this]
+                  "Returns a 2-arity function taking id and mutation-key returning mutation message."))
+
 (defprotocol IMutationMessage
-  (message [this])
-  (final? [this])
-  (pending? [this])
-  (success? [this]))
+  (message [this] "Returns the message")
+  (final? [this] "true if the mutation message was returned from the server")
+  (pending? [this] "true if we're still waiting for a server response.")
+  (success? [this] "true if the server mutation was successful."))
 
 (defn mutation-message? [x]
   (satisfies? IMutationMessage x))
@@ -32,13 +40,7 @@
   (->MutationMessage mutation message nil))
 
 ;; ------------------------------------
-;; -- Mutation message storage protocol
-
-(defprotocol IStoreMessages
-  (store-message [this id mutation-message]
-                 "Stores a mutation message on the id. Can store multiple messages for each id.")
-  (get-message-fn [this]
-                   "Returns a 2-arity function taking id and mutation-key returning mutation message."))
+;; -- Datascript mutation message storage implementation
 
 (defn- new-message [db id mutation-message]
   (d/db-with db [{:mutation-message/message      (message mutation-message)
@@ -56,6 +58,7 @@
                   :mutation-message/message-type (:message-type new-mm)}]))
 
 (defn- entity->MutationMessage [entity]
+  {:pre [(:db/id entity)]}
   (-> (->MutationMessage (:mutation-message/mutation-key entity)
                          (:mutation-message/message entity)
                          (:mutation-message/message-type entity))
@@ -70,7 +73,6 @@
     (if-let [existing ((get-message-fn this) history-id (:mutation-key mutation-message))]
       (update-message this existing mutation-message)
       (new-message this history-id mutation-message)))
-
   (get-message-fn [this]
     (fn [history-id mutation-key]
       (assert (some? history-id) (str "Called (get-message-fn ) with history-id nil."
@@ -80,7 +82,14 @@
                                     :symbols {'?history-id   history-id
                                               '?mutation-key mutation-key}})
                (d/entity this)
-               entity->MutationMessage))))
+               entity->MutationMessage)))
+  (get-messages [this]
+    (some->> (pull/find-with this {:find-pattern '[?e ?tx]
+                                   :where        '[[?e :mutation-message/history-id _ ?tx]]})
+             (into (sorted-set-by #(compare (:tx %1) (:tx %2)))
+                   (comp (map #(into {:tx (second %)}
+                                     (d/entity this (first %))))
+                         (map entity->MutationMessage))))))
 
 (defn om-transact!
   "Like om.next/transact! but it returns the history-id generated from the transaction."
