@@ -13,6 +13,7 @@
             [eponai.server.datomic.filter :as filter])
             [clojure.walk :as w]
             [clojure.data :as diff]
+            [clojure.set :as set]
             [medley.core :as medley])
   #?(:clj (:import (clojure.lang ExceptionInfo))))
 
@@ -273,7 +274,13 @@
      (fn [env k p]
        (let [ret (mutate env k p)
              x->message (fn [x] (let [success? (not (instance? Throwable x))
-                                      msg (message (assoc env (if success? :return :exception) x) k p)]
+                                      msg (message (assoc env (if success? :return :exception) x) k p)
+                                      msg (cond-> msg
+                                                  (and (map? msg) (= [:success :error] (keys msg)))
+                                                  (set/rename-keys {:success ::success-message
+                                                                    :error   ::error-message})
+                                                  (and (vector? msg) (= 2 (count msg)))
+                                                  (->> (zipmap [::success-message ::error-message])))]
                                   (assert (and (::error-message msg)
                                                (::success-message msg))
                                           (str "Message for mutation: " k

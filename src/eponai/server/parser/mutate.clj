@@ -29,8 +29,8 @@
 
 (defmutation transaction/create
   [{:keys [state auth] :as env} k input-transaction]
-  {::parser/success-message (str "Transaction: \"" (:transaction/title input-transaction) "\" created!")
-   ::parser/error-message   "Error creating transaction"}
+  {:success (str "Transaction: \"" (:transaction/title input-transaction) "\" created!")
+   :error   "Error creating transaction"}
   {:action (fn []
              (debug "transaction/create with params:" input-transaction)
              (validate/validate env k {:transaction input-transaction
