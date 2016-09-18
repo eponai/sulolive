@@ -50,15 +50,10 @@
       ;;(transact transactions)
       ))
 
-(defn merge-mutation-error [db history-id key val]
-  (let [message (get-in val [:om.next/error ::parser/mutation-message])]
-    (warn "Mutation error for : " key " message: " message " result: " val)
-    (message/store-message db history-id (message/->MutationMessage key message false))))
-
-(defn merge-mutation-success [db history-id key val]
-  (let [message (get-in val [:result ::parser/mutation-message])]
+(defn merge-mutation-message [db history-id key val message-type]
+  (let [message (get-in val [:result ::parser/mutation-message message-type])]
     (debug "Mutation success for : " key " message: " message " result: " val)
-    (message/store-message db history-id (message/->MutationMessage key message true))))
+    (message/store-message db history-id (message/->message-from-server key message message-type))))
 
 ;;;;;;; API
 
@@ -74,10 +69,10 @@
     (merge-fn db key val)
 
     (some? (get-in val [:om.next/error ::parser/mutation-message]))
-    (merge-mutation-error db history-id key val)
+    (merge-mutation-message db history-id key val ::parser/error-message)
 
     (some? (get-in val [:result ::parser/mutation-message]))
-    (merge-mutation-success db history-id key val)
+    (merge-mutation-message db history-id key val ::parser/success-message)
 
     :else
     (do

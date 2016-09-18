@@ -80,16 +80,12 @@
              :i-class "fa fa-plus"})))
 
   (componentDidUpdate [this prev-props prev-state]
-    (when-let [{:keys [pending-transaction]} (om/get-state this)]
+    (when-let [history-id (:pending-transaction (om/get-state this))]
       (let [{:keys [query/message-fn]} (om/props this)
-            messages (message-fn pending-transaction)]
-        (debug "Got messages: " messages)
-        (when-let [m (first messages)]
-          (debug "get-message: " (message/get-message m))
-          (debug "success?: " (message/success? m))
-          (debug "manual success message: " (-> m :message :eponai.common.parser/success-message))
-          (debug "manual error message: " (-> m :message :eponai.common.parser/error-message))
-          (js/alert (message/get-message m))
+            message (message-fn history-id 'transaction/create)]
+        (when message
+          (debug "Got message: " message)
+          (js/alert (message/message message))
           ((:on-close (om/get-computed this)))))))
   (render
     [this]

@@ -347,7 +347,7 @@
                                         {}
                                         transaction-entities))
         transaction-convs (delay
-                            (->> (all-with db {:find-pattern '[?currency ?date ?conv]
+                            (->> (find-with db {:find-pattern '[?currency ?date ?conv]
                                                :symbols      {'[[?currency [?date ...]] ...] @currency-date-pairs}
                                                :where        '[[?conv :conversion/currency ?currency]
                                                                [?conv :conversion/date ?date]]})
@@ -359,7 +359,7 @@
         user-convs (delay
                      (when user-curr
                        (let [convs (into {}
-                                         (all-with db {:find-pattern '[?date ?conv]
+                                         (find-with db {:find-pattern '[?date ?conv]
                                                        :symbols      {'[?date ...] (reduce into #{} (vals @currency-date-pairs))
                                                                       '?user-curr  user-curr}
                                                        :where        '[[?conv :conversion/currency ?user-curr]

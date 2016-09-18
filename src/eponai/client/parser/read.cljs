@@ -275,4 +275,4 @@
 
 (defmethod read :query/message-fn
   [{:keys [db]} k p]
-  {:value (message/get-messages-fn db)})
+  {:value (message/get-message-fn db)})

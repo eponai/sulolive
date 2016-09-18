@@ -18,6 +18,9 @@
   (keep-mutations-after [this id is-remote-fn])
   (clear-queue [this]))
 
+;; TODO: Store the mutation queue as flat entities, instead of
+;;       deep objects with order importance.
+
 (defn- mutation-queue-entity [db]
   {:post [(some? %)]}
   (d/entity db [:ui/component :ui.component/mutation-queue]))
