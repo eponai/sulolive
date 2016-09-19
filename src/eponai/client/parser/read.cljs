@@ -106,7 +106,9 @@
           (do (swap! project-transactions-cache assoc project-eid {:iter iter2 :eids eids})
               eids))))))
 
-(defn identical-transactions? [db last-db]
+(defn identical-transactions?
+  "Fast check whether any transaction attribute has changed in the whole database."
+  [db last-db]
   (if (nil? last-db)
     false
     (->> (schema->transaction-attributes (:schema db))
