@@ -1,4 +1,8 @@
-(ns eponai.common.datascript)
+(ns eponai.common.datascript
+  (:require [datascript.btset :as btset]
+            [datascript.arrays :as da]
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [error debug]]
+            [clojure.data :as diff]))
 
 (defn ui-schema
   "Additional schema we may use for our ui components"
@@ -27,6 +31,7 @@
           datomic-schema))
 
 
+;;TODO: This is now old? Remove this?
 (defn mark-entity-txs
   "Returns transactions which makes the new datascript db contain a datom with e a v in the new db.
 
@@ -39,3 +44,40 @@
   :unique-attr :val will be retracted first and will not be found when doing the :db/add."
   [e a v]
   [[:db/retract e a v] [:db/add e a v]])
+
+;; ----------------------
+;; -- bset/Iter equallity
+
+(defn- bounded-keys [iter]
+  (let [chunk (btset/iter-chunk iter)]
+    (if (= (count chunk)
+           (da/alength (.-keys iter)))
+      (.-keys iter)
+      chunk)))
+
+(defn- keys-eq? [a b]
+  (let [akeys (bounded-keys a)
+        bkeys (bounded-keys b)
+        ret (or (identical? akeys bkeys)
+                (and (= (count akeys) (count bkeys))
+                     (reduce (fn [ret i] (if (not= (nth akeys i)
+                                                   (nth bkeys i))
+                                           (reduced false)
+                                           ret))
+                             true
+                             (range (count akeys)))))]
+    ret))
+
+(defn iter-identical?
+  "Given two btset/Iter, return true if they iterate of the
+  the identical items."
+  [a b]
+  (if (and (nil? a) (nil? b))
+    true
+    (when (and (some? a) (some? b)
+             (== (.-left a) (.-left b))
+             (== (.-right a) (.-right b))
+             (== (.-idx a) (.-idx b))
+             (keys-eq? a b))
+      (recur (btset/iter-chunked-next a)
+             (btset/iter-chunked-next b)))))

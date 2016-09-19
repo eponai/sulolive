@@ -3,6 +3,7 @@
             [datascript.db :as db]
             [clojure.set :as set]
             [om.next :as om]
+            [eponai.common.datascript :as common.datascript]
             [eponai.common.database.pull :as p]
             [eponai.common.prefixlist :as pl]
             [eponai.common.parser :refer [read]]
@@ -78,31 +79,62 @@
 (defn- datom-e [datom]
   (.-e datom))
 
-(defn entity-differ [db last-db eid]
-  (not= (into [] (d/datoms db :eavt eid))
-        (into [] (d/datoms last-db :eavt eid))))
+(defn entity-equal? [db last-db eid]
+  (common.datascript/iter-identical? (d/datoms last-db :eavt eid)
+                                     (d/datoms db :eavt eid)))
+
+(defn schema->transaction-attributes* [schema]
+  (into [] (comp (filter (fn [[k _]] (= "transaction" (namespace k))))
+                 (map first))
+        schema))
+
+(def schema->transaction-attributes (memoize schema->transaction-attributes*))
+
+(defn dechunk [coll]
+  (lazy-seq
+    (when-let [s (seq coll)]
+      (cons (first s) (rest s)))))
+
+(let [project-transactions-cache (atom {})]
+  (defn transaction-eids-by-project [db project-eid]
+    {:post [(or (empty? %) (set? %))]}
+    (let [{:keys [iter eids]} (get @project-transactions-cache project-eid)
+          iter2 (d/datoms db :avet :transaction/project project-eid)]
+      (if (common.datascript/iter-identical? iter iter2)
+        eids
+        (let [eids (into #{} (map datom-e) iter2)]
+          (do (swap! project-transactions-cache assoc project-eid {:iter iter2 :eids eids})
+              eids))))))
+
+(defn identical-transactions? [db last-db]
+  (if (nil? last-db)
+    false
+    (->> (schema->transaction-attributes (:schema db))
+         (dechunk)
+         (map (fn [attr] (vector (d/datoms last-db :aevt attr) (d/datoms db :aevt attr))))
+         (map #(apply common.datascript/iter-identical? %))
+         (every? true?))))
 
 (defn transactions-changed [db last-db project-eid]
   {:pre  [(number? project-eid)]
-   :post [(set? %)]}
-  (let [transaction-datoms (d/datoms db :avet :transaction/project project-eid)
-        changed-transaction-eids
-        (->> transaction-datoms
-             (into #{}
-                   (cond-> (map datom-e)
-                           (some? last-db)
-                           (comp (filter #(entity-differ db last-db %))))))]
-    (debug "changed-transaction-eids: " changed-transaction-eids)
-    changed-transaction-eids))
+   :post [(or (nil? %) (set? %))]}
+  (when-not (identical-transactions? db last-db)
+    (let [transaction-eids (transaction-eids-by-project db project-eid)
+          changed-transaction-eids (cond->> transaction-eids
+                                            (some? last-db)
+                                            (into #{} (remove #(entity-equal? db last-db %))))]
+      changed-transaction-eids)))
 
 (defn transactions-deleted [db last-db project-eid]
   {:pre  [(number? project-eid)]
    :post [(or (nil? %) (set? %))]}
-  (when-let [last-transactions (when last-db
-                                 (seq (d/datoms last-db :avet :transaction/project project-eid)))]
-    (let [last-txs (into #{} (map datom-e) last-transactions)
-          txs (into #{} (map datom-e) (d/datoms db :avet :transaction/project project-eid))]
-      (set/difference last-txs txs))))
+  (let [last-txs (when last-db (d/datoms last-db :avet :transaction/project project-eid))
+        curr-txs (d/datoms db :avet :transaction/project project-eid)]
+    (when (and (seq last-txs)
+               (not (common.datascript/iter-identical? last-txs curr-txs)))
+      (let [last-txs (into #{} (map datom-e) last-txs)
+            txs (transaction-eids-by-project db project-eid)]
+        (set/difference last-txs txs)))))
 
 (defn all-local-transactions-by-project [{:keys [parser db txs-by-project] :as env} project-eid]
   (let [{:keys [db-used txs]} (get @txs-by-project project-eid)
@@ -113,10 +145,12 @@
         (let [;; Transactions that have been deleted:
               removed-txs (or (transactions-deleted db db-used project-eid)
                               #{})
-              new-txs (transactions-changed db db-used project-eid)]
+              new-txs (transactions-changed db db-used project-eid)
+              _ (debug "changed-transaction-eids: " new-txs)]
           (if (and (empty? removed-txs)
                    (empty? new-txs))
-            txs
+            (do (swap! txs-by-project assoc-in [project-eid :db-used] db)
+                txs)
             (let [user-uuid (:user/uuid current-user)
                   new-with-convs (p/transactions-with-conversions db user-uuid new-txs)
                   ;; Group by uuid in an atom, so we can pick transactions by id destructively.
