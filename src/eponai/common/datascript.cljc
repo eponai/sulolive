@@ -60,15 +60,12 @@
         bkeys (bounded-keys b)
         ret (or (identical? akeys bkeys)
                 (and (= (count akeys) (count bkeys))
-                     (reduce (fn [ret i] (if (not= (nth akeys i)
-                                                   (nth bkeys i))
-                                           (reduced false)
-                                           ret))
-                             true
+                     (every? #(= (nth akeys %)
+                                 (nth bkeys %))
                              (range (count akeys)))))]
     ret))
 
-(defn iter-identical?
+(defn iter-equal?
   "Given two btset/Iter, return true if they iterate of the
   the identical items."
   [a b]

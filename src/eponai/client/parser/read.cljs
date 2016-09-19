@@ -80,7 +80,7 @@
   (.-e datom))
 
 (defn entity-equal? [db last-db eid]
-  (common.datascript/iter-identical? (d/datoms last-db :eavt eid)
+  (common.datascript/iter-equal? (d/datoms last-db :eavt eid)
                                      (d/datoms db :eavt eid)))
 
 (defn schema->transaction-attributes* [schema]
@@ -100,7 +100,7 @@
     {:post [(or (empty? %) (set? %))]}
     (let [{:keys [iter eids]} (get @project-transactions-cache project-eid)
           iter2 (d/datoms db :avet :transaction/project project-eid)]
-      (if (common.datascript/iter-identical? iter iter2)
+      (if (common.datascript/iter-equal? iter iter2)
         eids
         (let [eids (into #{} (map datom-e) iter2)]
           (do (swap! project-transactions-cache assoc project-eid {:iter iter2 :eids eids})
@@ -112,7 +112,7 @@
     (->> (schema->transaction-attributes (:schema db))
          (dechunk)
          (map (fn [attr] (vector (d/datoms last-db :aevt attr) (d/datoms db :aevt attr))))
-         (map #(apply common.datascript/iter-identical? %))
+         (map #(apply common.datascript/iter-equal? %))
          (every? true?))))
 
 (defn transactions-changed [db last-db project-eid]
@@ -131,7 +131,7 @@
   (let [last-txs (when last-db (d/datoms last-db :avet :transaction/project project-eid))
         curr-txs (d/datoms db :avet :transaction/project project-eid)]
     (when (and (seq last-txs)
-               (not (common.datascript/iter-identical? last-txs curr-txs)))
+               (not (common.datascript/iter-equal? last-txs curr-txs)))
       (let [last-txs (into #{} (map datom-e) last-txs)
             txs (transaction-eids-by-project db project-eid)]
         (set/difference last-txs txs)))))
