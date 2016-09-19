@@ -46,7 +46,7 @@
   [[:db/retract e a v] [:db/add e a v]])
 
 ;; ----------------------
-;; -- bset/Iter equallity
+;; -- btset/Iter equallity
 
 (defn- bounded-keys [iter]
   (let [chunk (btset/iter-chunk iter)]
@@ -57,24 +57,38 @@
 
 (defn- keys-eq? [a b]
   (let [akeys (bounded-keys a)
-        bkeys (bounded-keys b)
-        ret (or (identical? akeys bkeys)
-                (and (= (count akeys) (count bkeys))
-                     (every? #(= (nth akeys %)
-                                 (nth bkeys %))
-                             (range (count akeys)))))]
-    ret))
+        bkeys (bounded-keys b)]
+    (or (identical? akeys bkeys)
+        (and (= (count akeys) (count bkeys))
+             (every? #(= (nth akeys %)
+                         (nth bkeys %))
+                     (range (count akeys)))))))
 
-(defn iter-equal?
+(defn iter-equals?
   "Given two btset/Iter, return true if they iterate of the
   the identical items."
   [a b]
   (if (and (nil? a) (nil? b))
     true
-    (when (and (some? a) (some? b)
-             (== (.-left a) (.-left b))
-             (== (.-right a) (.-right b))
-             (== (.-idx a) (.-idx b))
-             (keys-eq? a b))
+    (when (and (some? a) (some? b) (keys-eq? a b))
       (recur (btset/iter-chunked-next a)
              (btset/iter-chunked-next b)))))
+
+(comment
+  ;; Usage
+  (require '[datascript.core :as d])
+
+  (let [conn (d/create-conn {})
+        _ (d/transact! conn [{:foo :bar}])
+        db1 (d/db conn)
+        _ (d/transact! conn [{:abc :xyz}])
+        db2 (d/db conn)]
+    ;; Fast check whether datoms are equal.
+    ;; Will hit (identical? (.-keys iter) (.-keys iter2))
+    ;; most of the time, comparing a bunch of items at
+    ;; the same time.
+    (assert (iter-equals? (d/datoms db1 :aevt :foo)
+                          (d/datoms db2 :aevt :foo)))
+
+    (assert (not (iter-equals? (d/datoms db1 :aevt :abc)
+                               (d/datoms db2 :aevt :abc))))))
