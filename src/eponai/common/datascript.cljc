@@ -48,21 +48,14 @@
 ;; ----------------------
 ;; -- btset/Iter equallity
 
-(defn- bounded-keys [iter]
-  (let [chunk (btset/iter-chunk iter)]
-    (if (= (count chunk)
-           (da/alength (.-keys iter)))
-      (.-keys iter)
-      chunk)))
-
 (defn- keys-eq? [a b]
-  (let [akeys (bounded-keys a)
-        bkeys (bounded-keys b)]
-    (or (identical? akeys bkeys)
-        (and (= (count akeys) (count bkeys))
-             (every? #(= (nth akeys %)
-                         (nth bkeys %))
-                     (range (count akeys)))))))
+  (or (identical? (.-keys a) (.-keys b))
+      (let [achunk (btset/iter-chunk a)
+            bchunk (btset/iter-chunk b)]
+        (and (= (count achunk) (count bchunk))
+             (every? #(= (nth achunk %)
+                         (nth bchunk %))
+                     (range (count achunk)))))))
 
 (defn iter-equals?
   "Given two btset/Iter, return true if they iterate of the
