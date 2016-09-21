@@ -174,7 +174,9 @@
    "VND"  {:trim-end 2}
    "MYR"  {:trim-start 2}
    "JPY"  {:trim-start 1}
-   "KRW"  {:trim-start 1}})
+   "KRW"  {:trim-start 1}
+   "CNY"  {:trim-start 1}
+   "EUR"  {:trim-end 2}})
 
 (defn parse-price [currency amount]
   (if-let [{:keys [trim-start trim-end code]
@@ -292,6 +294,8 @@
                               (OutputStreamWriter.))
          parsed (parse (raw-expenses))]
      (pprint/pprint parsed gzip-file-writer)
+     (.flush gzip-file-writer)
+     (.close gzip-file-writer)
      (Files/createSymbolicLink (.toPath (doto (parsed-transactions-file)
                                           (.delete)))
                                (.getFileName (.toPath file))
