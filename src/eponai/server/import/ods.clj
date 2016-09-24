@@ -251,11 +251,11 @@
      (io/input-stream
        (io/resource "private/test/import/ods/expenses.html.gz")))))
 
-(defn- parsed-transactions-file [& [specific-version]]
-  (io/file (str "resources/private/test/import/ods/parsed-expenses"
-                (when specific-version
-                  (str "-" specific-version))
-                ".edn.gz")))
+(defn- parsed-transactions-resource-path [& [specific-version]]
+  (str "private/test/import/ods/parsed-expenses"
+       (when specific-version
+         (str "-" specific-version))
+       ".edn.gz"))
 
 (defn parsed-transactions
   "output parsed expenses by:
@@ -268,7 +268,8 @@
     (slurp
       (GZIPInputStream.
         (io/input-stream
-          (parsed-transactions-file))))))
+          (io/resource
+            (parsed-transactions-resource-path)))))))
 
 (defn -main
   "Takes a path to an .html file with expenses, exported from Open office.
@@ -280,24 +281,33 @@
     (import-expenses (slurp path))))
 
 (comment
-  (require '[clojure.pprint :as pprint])
-  (import '[java.util.zip GZIPOutputStream])
-  (import '[java.io OutputStreamWriter])
-  (import '[java.nio.file Files])
-  (import '[java.nio.file.attribute FileAttribute])
-  (defn update-parsed-expenses [version-name]
-    (let [file (doto (parsed-transactions-file version-name)
-                (.createNewFile))
-         gzip-file-writer (-> file
-                              (io/output-stream)
-                              (GZIPOutputStream.)
-                              (OutputStreamWriter.))
-         parsed (parse (raw-expenses))]
-     (pprint/pprint parsed gzip-file-writer)
-     (.flush gzip-file-writer)
-     (.close gzip-file-writer)
-     (Files/createSymbolicLink (.toPath (doto (parsed-transactions-file)
-                                          (.delete)))
-                               (.getFileName (.toPath file))
-                               (into-array FileAttribute []))))
-  (update-parsed-expenses "20160921"))
+  (do
+    "Creates the parsed-expenses.edn.gz file from the (raw-expenses)
+    call. Run this whole (do ..) block in side a repl which has its ns set
+    to this namespace."
+    (require '[clojure.pprint :as pprint])
+    (import '[java.util.zip GZIPOutputStream])
+    (import '[java.io OutputStreamWriter])
+    (import '[java.nio.file Files])
+    (import '[java.nio.file.attribute FileAttribute])
+
+    (defn path->file [path]
+      (java.io.File. path))
+
+    (defn update-parsed-expenses [version-name]
+      (let [file (doto (path->file (parsed-transactions-resource-path version-name))
+                   (.createNewFile))
+            gzip-file-writer (-> file
+                                 (io/output-stream)
+                                 (GZIPOutputStream.)
+                                 (OutputStreamWriter.))
+            parsed (parse (raw-expenses))]
+        (pprint/pprint parsed gzip-file-writer)
+        (.flush gzip-file-writer)
+        (.close gzip-file-writer)
+        (Files/createSymbolicLink
+          (.toPath (doto (path->file (parsed-transactions-resource-path))
+                     (.delete)))
+          (.getFileName (.toPath file))
+          (into-array FileAttribute []))))
+    (update-parsed-expenses "20160921")))

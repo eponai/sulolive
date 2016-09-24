@@ -4,7 +4,7 @@ HOST=$1
 PORT=$2
 
 echo "Test with forwarding (which in production is done by load balancer)"
-wget -O- --header "x-forwarded-proto: https" --max-redirect 0 --retry-connrefused -t 10 http://$HOST:$PORT
+wget -O- --header "x-forwarded-proto: https" --max-redirect 0 --retry-connrefused -t 30 http://$HOST:$PORT
 
 exit_code=$?
 if [ "$exit_code" = "0" ]; then
