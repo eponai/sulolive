@@ -83,8 +83,7 @@
                            conversions)
             ref-ids (set/union
                       (server.pull/all-entities db query tx-ids)
-                      (server.pull/all-entities db pull/conversion-query conv-ids))
-            pull-xf (map #(d/pull db '[*] %))]
+                      (server.pull/all-entities db pull/conversion-query conv-ids))]
         {:value (cond-> {:transactions (into [] (comp (map #(entity-map->shallow-map %))
                                                       (map #(update % :transaction/type (fn [t] {:db/ident t})))
                                                       (map #(if-let [tx-conv (get conversions (:db/id %))]
@@ -92,8 +91,8 @@
                                                              (assoc % :transaction/conversion tx-conv)
                                                              %)))
                                              tx-entities)
-                         :conversions  (into [] pull-xf conv-ids)
-                         :refs         (into [] pull-xf ref-ids)})}))))
+                         :conversions  (d/pull-many db '[*] (seq conv-ids))
+                         :refs         (d/pull-many db '[*] (seq ref-ids))})}))))
 
 (defmethod parser/read-basis-param-path :query/dashboard [env _ params] [(env+params->project-eid env params)])
 (defmethod read :query/dashboard
