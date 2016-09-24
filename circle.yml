@@ -33,6 +33,7 @@ test:
     - docker ps -l
     - docker ps -l -q | xargs docker logs
     - ./scripts/run-docker-img-test.sh localhost $PORT
+    - docker ps -l -q | xargs docker logs
     
 deployment:
   staging:
