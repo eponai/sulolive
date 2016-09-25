@@ -57,6 +57,39 @@
                      {:pre [(string? s)]}
                      (s/lower-case s)))))))
 
+(def ^:private category->tags
+  {:transportation #{:bicycle :ferry :taxi :uber :train :flight
+                     :transportation}
+   :recreational   #{:tickets :cinema :alcohol :beer :wine :shisha
+                     :bowling :concert :cocktail :club}
+   :accomodation   #{:hotel :airbnb :hostel :apartment :accomodation}
+   :bills          #{:subscription :insurance :bills}
+   :food           #{:groceries :food :lunch :dinner :breakfast
+                     :reasturant :fika :sweets :snacks :refreshment
+                     :coffee}
+   :appearance     #{:clothes :makeup :beauty}
+   :health         #{:pharmacy :shampoo :healthcare :fitness}})
+
+(defn keyword! [x]
+  (cond-> x (string? x) (keyword)))
+
+(def tag-keyword? #(or (string? %) (keyword? %)))
+
+(defn tags->category-keyword [tag-keywords]
+  {:pre [(every? tag-keyword? tag-keywords)]}
+  (some (fn [[category tag-set]]
+          (when (some tag-set (map keyword! tag-keywords))
+            category))
+        (seq category->tags)))
+
+(defn remove-category-tags [category-keyword tag-keywords]
+  {:pre  [(or (nil? category-keyword) (keyword? category-keyword))
+          (every? tag-keyword? tag-keywords)]
+   :post [(every? tag-keyword? tag-keywords)]}
+  (cond->> tag-keywords
+           (some? category-keyword)
+           (into #{} (remove #(= category-keyword (keyword! %))))))
+
 (defn tags->tags [tags]
   {:pre  [(set? tags)]
    :post [(set? tags)]}
@@ -82,7 +115,7 @@
             tags
             tags)))
 
-(defn generate-tags
+(defn generate-tag-keywords
   "Given title, date, amount and currency, generate some tags."
   [{:keys [transaction/title transaction/date]}]
   (let [title-tags (get title->tags title)
@@ -94,11 +127,9 @@
         _ (when (not (some? date-tags))
             (throw (ex-info (str "No tags for date: " date)
                             {:date date})))]
-    (->> (set/union (set title-tags) (set date-tags))
-         tags->tags
-         (into [] (comp (map #(cond-> % (keyword? %) name))
-                        (distinct)
-                        (map (fn [t] {:tag/name t})))))))
+    (into #{}
+          (map keyword!)
+          (tags->tags (set/union (set title-tags) (set date-tags))))))
 
 (def locations [{:country "Croatia" :city "Dubrovnik"
                  :from    (time/date-time 2015 9 9)

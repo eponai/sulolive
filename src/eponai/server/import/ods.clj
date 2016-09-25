@@ -20,7 +20,8 @@
             [clj-time.coerce :as time-coerce]
             [eponai.common.format :as eponai.format]
             [eponai.server.import.ods.tags :as ods.tags]
-            [eponai.common.format.date :as date])
+            [eponai.common.format.date :as date]
+            [clojure.string :as str])
   (:import [java.util.zip GZIPInputStream]
            [java.io InputStreamReader OutputStreamWriter]))
 
@@ -210,11 +211,21 @@
             (let [date (f/parse html-date (get t "Date"))
                   entity (-> (parse-amount currencies t)
                              (assoc :transaction/date (date/date-map date)
-                                    :transaction/title (s/trim (get t "Product"))))]
-
-              (assoc entity :transaction/tags (ods.tags/generate-tags entity)
-                            :transaction/type :transaction.type/expense
-                            :transaction/created-at (time-coerce/to-long date))))]
+                                    :transaction/title (s/trim (get t "Product"))))
+                  tag-keywords (ods.tags/generate-tag-keywords entity)
+                  category (ods.tags/tags->category-keyword tag-keywords)
+                  tags (->> (ods.tags/remove-category-tags category tag-keywords)
+                            (into []
+                                  (comp (map #(cond-> % (keyword? %) name))
+                                        (map #(hash-map :tag/name (name %))))))]
+              (cond-> entity
+                      (some? category)
+                      (assoc :transaction/category {:category/name
+                                                    (str/capitalize (name category))})
+                      :always
+                      (assoc :transaction/tags tags
+                             :transaction/type :transaction.type/expense
+                             :transaction/created-at (time-coerce/to-long date)))))]
     (into [] (comp (map html-t->jourmoney->t)
                    (filter (fn [{:keys [:transaction/amount]}]
                              (pos? amount)))
