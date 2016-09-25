@@ -1,0 +1,17 @@
+[
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :transaction/category
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Transaction's category"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db],
+  :db.install/_attribute :db.part/db,
+  :db/ident              :category/name,
+  :db/unique             :db.unique/identity,
+  :db/valueType          :db.type/string,
+  :db/cardinality        :db.cardinality/one,
+  :db/fulltext           true
+  :db/doc                "Unique category name."}
+ ]
