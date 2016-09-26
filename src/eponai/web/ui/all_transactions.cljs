@@ -47,6 +47,7 @@
      {:transaction/currency [:currency/code
                              :currency/symbol-native
                              :currency/name]}
+     {:transaction/category [:category/name]}
      {:transaction/tags [:tag/name]}
      {:transaction/date [:db/id
                          :date/timestamp
