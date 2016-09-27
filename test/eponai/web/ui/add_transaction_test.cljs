@@ -26,7 +26,7 @@
                       {:user/uuid user-uuid :db/id -1}
                       {:ui/singleton           :ui.singleton/auth
                        :ui.singleton.auth/user -1}])
-    {:parser (parser/test-parser)
+    {:parser (parser/test-client-parser)
      :conn   conn
      :user-uuid user-uuid}))
 
