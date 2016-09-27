@@ -1,5 +1,4 @@
 (ns eponai.web.ui.d3
-  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
     [cljsjs.d3]
     [cljsjs.react.dom]

@@ -77,7 +77,7 @@
                  [org.clojure/test.check "0.9.0"]]
   :exclusions [[org.clojure/test.check]]
 
-  :jvm-opts ^:replace ["-Xmx1g" "-server"
+  :jvm-opts ^:replace ["-Xms512m" "-Xmx2048m" "-server"
                        "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1"
                       ]
   :plugins [
