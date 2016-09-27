@@ -4,8 +4,8 @@
             [goog.dom :as gdom]
     ;; To initialize ReactDOM:
             [cljsjs.react.dom]
-            [datascript.core :as d]
             [eponai.client.backend :as backend]
+            [eponai.client.remotes :as remotes]
             [eponai.client.parser.merge :as merge]
             [eponai.web.parser.merge :as web.merge]
             [eponai.web.history :as history]
@@ -18,7 +18,7 @@
             [eponai.web.ui.root :as root]
             [taoensso.timbre :refer-macros [info debug error trace]]
             [eponai.client.ui :refer-macros [opts]]
-            [eponai.web.ui.utils :as utils]))
+            [eponai.client.utils :as utils]))
 
 (defn mount-app-with-history
   "Putting this in its own function because the order of which these
@@ -39,8 +39,8 @@
                                      :parser    parser
                                      :remotes   [:remote]
                                      :send      (backend/send! utils/reconciler-atom
-                                                  {:remote (-> (backend/post-to-url homeless/om-next-endpoint-user-auth)
-                                                               (utils/read-basis-t-remote-middleware conn))})
+                                                  {:remote (-> (remotes/post-to-url homeless/om-next-endpoint-user-auth)
+                                                               (remotes/read-basis-t-remote-middleware conn))})
                                      :merge     (merge/merge! web.merge/web-merge)
                                      :migrate   nil}
                                     reconciler-opts))]

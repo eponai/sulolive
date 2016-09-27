@@ -4,9 +4,9 @@
             [eponai.common.database.transact :as t]
             [eponai.common.parser :refer [mutate]]
             [eponai.client.parser.mutate]
+            [eponai.client.utils :as utils]
             [datascript.core :as d]
             [cljs-http.client :as http]
-            [eponai.web.ui.utils :as utils]
             [eponai.web.homeless :as homeless]
             [om.next :as om]
             [taoensso.timbre :refer-macros [info debug error trace]]))

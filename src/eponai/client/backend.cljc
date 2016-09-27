@@ -1,14 +1,24 @@
 (ns eponai.client.backend
-  (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [cljs.core.async :as async :refer [<! >! chan timeout]]
-            [eponai.common.parser.util :as parser.util]
+  (:require [eponai.common.parser.util :as parser.util]
             [eponai.client.utils :as client.utils]
-            [cljs-http.client :as http]
             [datascript.impl.entity :as e]
             [om.next :as om]
             [cognitect.transit :as transit]
-            [taoensso.timbre :refer-macros [debug error trace warn]]
-            [datascript.core :as d]))
+            [datascript.core :as d]
+    #?@(:clj
+        [[clojure.core.async :as async :refer [go <! >! chan timeout]]
+         [clj-http.client :as http]
+         [clojure.edn :as reader]
+         [taoensso.timbre :refer [debug error trace warn]]]
+        :cljs
+        [[cljs.core.async :as async :refer [<! >! chan timeout]]
+         [cljs-http.client :as http]
+         [cljs.reader :as reader]
+         [taoensso.timbre :refer-macros [debug error trace warn]]]))
+  #?(:cljs (:require-macros [cljs.core.async.macros :refer [go]]))
+  #?(:clj (:import [datascript.impl.entity Entity]
+                   [java.util UUID]))
+  #?(:clj (:refer-clojure :exclude [send])))
 
 
 (def DatascriptEntityAsMap (transit/write-handler (constantly "map")
@@ -16,15 +26,14 @@
 
 (defn- send [send-fn url opts]
   (let [transit-opts {:transit-opts
-                      {:encoding-opts {:handlers {e/Entity DatascriptEntityAsMap}}
+                      {:encoding-opts {:handlers {#?(:clj Entity :cljs e/Entity) DatascriptEntityAsMap}}
                        :decoding-opts
                        ;; favor ClojureScript UUIDs instead of Transit UUIDs
                        ;; https://github.com/cognitect/transit-cljs/pull/10
-                                      {:handlers {"u" uuid
-                                                  "n" cljs.reader/read-string
-                                                  "f" cljs.reader/read-string}}}}]
+                                      {:handlers {"u" #?(:clj #(UUID/fromString %) :cljs uuid)
+                                                  "n" reader/read-string
+                                                  "f" reader/read-string}}}}]
     (send-fn url (merge opts transit-opts))))
-
 
 (defn- <send [remote->send remote-key query]
   (go
@@ -58,7 +67,7 @@
 
 
 
-(defn query-history-id [query]
+(defn- query-history-id [query]
   (let [id-parser (om/parser {:read   (constantly nil)
                               :mutate (fn [_ _ {:keys [::mutation-db-history-id]}]
                                         {:action (constantly mutation-db-history-id)})})
@@ -100,10 +109,10 @@
              (first))]
     ;; transact conversions before transactions
     ;; because transactions depend on conversions.
-    (concat conversions
-            (cond->> transactions
-                     (seq transactions)
-                     (sort-by #(get-in % [:transaction/date :date/timestamp]) >)))))
+    (into (vec conversions)
+          (cond->> transactions
+                   (seq transactions)
+                   (sort-by #(get-in % [:transaction/date :date/timestamp]) >)))))
 
 ;; TODO: Un-hard-code this. Put it in the app-state or something.
 (def KEY-TO-RERENDER-UI :routing/app-root)
@@ -343,12 +352,3 @@
                                      :query        (parser.util/unwrap-proxies query)
                                      :remote-key   key}))
            queries))))
-
-;; Remote helpers
-
-(defn post-to-url [url]
-  (fn [query]
-    {:method      :post
-     :url         url
-     :opts        {:transit-params {:query query}}
-     :response-fn identity}))

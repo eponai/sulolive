@@ -55,7 +55,7 @@
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-alpha2"]
                  [garden "1.3.2"]
-                 [datascript "0.15.2"]
+                 [datascript "0.15.4"]
                  [sablono "0.7.4"]
                  [cljsjs/d3 "3.5.7-1"]
                  [cljsjs/pikaday "1.4.0-1"]
@@ -117,19 +117,22 @@
                                       ["with-profile" "mob-prod" "cljsbuild" "once" "ios-release"]]
             "prod-build-web"         ^{:doc "Recompile web code with release build."}
                                      ["do"
-                                      ["with-profile" "web" "cljsbuild" "once" "release"]]
+                                      ["with-profile" "web-prod" "cljsbuild" "once" "release"]]
             "prod-build-server"      ^{:doc "Recompile server code with release build."}
                                      ["do" "uberjar"]
             "dev-build-ios"          ^{:doc "Compile mobile code in development mode."}
                                      ["do"
                                       ["with-profile" "mobile" "cljsbuild" "once" "ios"]]
-            "dev-build-web"          ^{:doc "Compile mobile code in development mode."}
+            "dev-build-web"          ^{:doc "Compile web code in development mode."}
                                      ["do"
                                       ["with-profile" "web" "cljsbuild" "once" "dev"]]
+            "dev-build-web-auto"     ^{:doc "Compile web code in development mode continously."}
+                                     ["do"
+                                      ["with-profile" "web" "cljsbuild" "auto" "dev"]]
             "run-tests-web"          ^{:doc "Compile and run web tests"}
                                      ["do"
-                                      ["with-profile" "web-test" "cljsbuild" "once" "doo-test"]
-                                      ["with-profile" "web-test" "doo" "phantom" "doo-test" "once"]]
+                                      ["with-profile" "web" "cljsbuild" "once" "doo-test"]
+                                      ["with-profile" "web" "doo" "phantom" "doo-test" "once"]]
             "figwheel-ios"           ^{:doc "Start figwheel for ios"}
                                      ["do"
                                       ["with-profile" "mobile" "figwheel" "ios"]]
@@ -160,7 +163,8 @@
   :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
 
   :figwheel {:css-dirs    ["resources/public/style/app/css/"]
-             :server-port ~(read-string (or (System/getenv "FIGWHEEL_PORT") "3449"))}
+             :server-port ~(read-string (or (System/getenv "FIGWHEEL_PORT") "3449"))
+             :reload-clj-files {:clj true :cljc false}}
 
   :profiles {:uberjar  {:jvm-opts   ^:replace ["-Dclojure.compiler.direct-linking=true"
                                                "-Xmx1g" "-server"]
@@ -211,16 +215,21 @@
                                                                 :output-dir    "target/android"
                                                                 :optimizations :simple}}]}}
 
-             :web-test {:dependencies [[figwheel-sidecar "0.5.7"]]
-                        :cljsbuild {:builds [{:id           "doo-test"
-                                              :source-paths ["src/" "src-hacks/web/" "test/"]
-                                              :compiler     {:output-to     "resources/public/doo-test/js/out/budget.js"
-                                                             :output-dir    "resources/public/doo-test/js/out"
-                                                             :main          "eponai.client.tests"
-                                                             :optimizations :none
-                                                             :source-map    true
+             :web-prod {:cljsbuild {:builds [{:id           "release"
+                                              :source-paths ["src/" "src-hacks/web/" "env/client/prod"]
+                                              :compiler     {:main          "env.web.main"
+                                                             :asset-path    "/release/js/out"
+                                                             :output-to     "resources/public/release/js/out/budget.js"
+                                                             :output-dir    "resources/public/release/js/out/"
+                                                             :optimizations :advanced
+                                                             :externs ["src-hacks/js/externs/stripe-checkout.js"]
+                                                             ;;   :parallel-build true
+                                                             ;;   :pseudo-names true
+                                                             ;;   :pretty-print true
+                                                             ;;   :verbose true
                                                              }}]}}
-             :web      {:cljsbuild {:builds [{:id           "dev"
+             :web      {:dependencies [[figwheel-sidecar "0.5.7"]]
+                        :cljsbuild {:builds [{:id           "dev"
                                               :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
                                               :figwheel     {:on-jsload "eponai.web.figwheel/reload!"
                                                              }
@@ -249,18 +258,13 @@
                                                              :optimizations :none
                                                              :source-map    true
                                                              }}
-                                             {:id           "release"
-                                              :source-paths ["src/" "src-hacks/web/" "env/client/prod"]
-                                              :compiler     {:main          "env.web.main"
-                                                             :asset-path    "/release/js/out"
-                                                             :output-to     "resources/public/release/js/out/budget.js"
-                                                             :output-dir    "resources/public/release/js/out/"
-                                                             :optimizations :advanced
-                                                             :externs ["src-hacks/js/externs/stripe-checkout.js"]
-                                                             ;;   :parallel-build true
-                                                             ;;   :pseudo-names true
-                                                             ;;   :pretty-print true
-                                                             ;;   :verbose true
+                                             {:id           "doo-test"
+                                              :source-paths ["src/" "src-hacks/web/" "test/"]
+                                              :compiler     {:output-to     "resources/public/doo-test/js/out/budget.js"
+                                                             :output-dir    "resources/public/doo-test/js/out"
+                                                             :main          "eponai.client.tests"
+                                                             :optimizations :none
+                                                             :source-map    true
                                                              }}]}}}
 
   ;;;;;;;;;;;;;

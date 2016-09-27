@@ -5,20 +5,20 @@
             [eponai.mobile.parser.merge :as mobile.merge]
             [eponai.client.parser.mutate]
             [eponai.client.parser.read]
+            [eponai.client.remotes :as remotes]
+            [eponai.client.utils :as utils]
             [eponai.mobile.parser.mutate]
             [eponai.mobile.parser.read]
             [eponai.common.datascript :as common.datascript]
             [eponai.common.parser :as parser]
             [eponai.common.report]
             [eponai.mobile.ios.linking :as linking]
-            [eponai.mobile.ios.remotes :as remotes]
-            [eponai.mobile.ios.ui.root :as root]
             [eponai.mobile.ios.routes :as routes]
+            [eponai.mobile.ios.ui.root :as root]
             [eponai.mobile.om-helper :as omhelper]
             [om.next :as om :refer-macros [defui ui]]
             [re-natal.support :as sup]
-            [taoensso.timbre :refer-macros [info debug error trace warn]]
-            [eponai.web.ui.utils :as web.utils]))
+            [taoensso.timbre :refer-macros [info debug error trace warn]]))
 
 ;(defonce root-nodes (atom {}))
 ;
@@ -101,13 +101,13 @@
                               :ui.singleton.configuration.endpoints/verify   (str server "/verify")}])
         reconciler (om/reconciler {:state        conn
                                    :parser       parser
-                                    :ui->props    (web.utils/cached-ui->props-fn parser)
+                                   :ui->props    (utils/cached-ui->props-fn parser)
                                    ;; :ui->props    (web.utils/debug-ui->props-fn parser)
                                    :remotes      [:remote :http/call]
                                    :send         (backend/send!
                                                    reconciler-atom
                                                    {:remote    (remotes/switching-remote conn)
-                                                                 :http/call (remotes/http-call-remote reconciler-atom)})
+                                                    :http/call (remotes/http-call-remote reconciler-atom)})
                                    :merge        (merge/merge! mobile.merge/mobile-merge)
                                    :root-render  sup/root-render
                                    :root-unmount sup/root-unmount ;#(.unmountComponentAtNode js/ReactDOM %)

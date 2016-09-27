@@ -1,20 +1,17 @@
 (ns eponai.web.signup
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [cljs-http.client :as http]
-            [cljs.core.async :as async]
-            [om.next :as om :refer-macros [defui]]
+  (:require [om.next :as om :refer-macros [defui]]
             [eponai.client.ui :refer-macros [opts]]
-            [eponai.web.routes :as routes]
             [cemerick.url :as url]
             [clojure.walk :refer [keywordize-keys]]
             [sablono.core :refer-macros [html]]
-            [datascript.core :as d]
             [goog.dom :as gdom]
     ;; To initialize ReactDOM:
             [cljsjs.react.dom]
-            [eponai.web.ui.utils :as utils]
             [eponai.web.homeless :as homeless]
             [eponai.client.backend :as backend]
+            [eponai.client.remotes :as remotes]
+            [eponai.client.utils :as utils]
             [eponai.client.parser.merge :as merge]
             [eponai.web.parser.merge :as web.merge]
             [eponai.common.parser :as parser]
@@ -211,7 +208,7 @@
                                   :remotes [:remote]
                                   :send    (backend/send!
                                              utils/reconciler-atom
-                                             {:remote (backend/post-to-url homeless/om-next-endpoint-public)})
+                                             {:remote (remotes/post-to-url homeless/om-next-endpoint-public)})
                                   :merge   (merge/merge! web.merge/web-merge)
                                   :migrate nil})]
    (reset! utils/reconciler-atom reconciler)

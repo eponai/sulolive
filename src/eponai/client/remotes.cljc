@@ -1,18 +1,44 @@
-(ns eponai.mobile.ios.remotes
+(ns eponai.client.remotes
   (:require [datascript.core :as d]
-            [eponai.client.backend :as backend]
             [eponai.common.parser :as parser]
             [om.next :as om]
-            [taoensso.timbre :refer-macros [debug]]
-            [eponai.client.remotes :as remotes]))
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug]]))
 
+;; Basic remote function
+
+(defn post-to-url
+  "Takes a url and returns a remote which can be passed to eponai.client.backend/send! {:remote <here>}.
+  This one will post to the url with transit-params."
+  [url]
+  (fn [query]
+    {:method      :post
+     :url         url
+     :opts        {:transit-params {:query query}}
+     :response-fn identity}))
+
+
+(defn read-basis-t-remote-middleware
+  "Given a remote-fn (that describes what, where and how to send a request to a server),
+  add basis-t for each key to the request. basis-t represents at which basis-t we last
+  read a key from the remote db."
+  [remote-fn conn]
+  (fn [query]
+    (let [ret (remote-fn query)
+          db (d/db conn)]
+      ;; TODO: Create a protocol for the read-basis-t stuff?
+      ;;       This would make it easier to understand what's stored in datascript.
+      (assoc-in ret [:opts :transit-params :eponai.common.parser/read-basis-t]
+                (some->> (d/q '{:find [?e .] :where [[?e :db/ident :eponai.common.parser/read-basis-t]]}
+                              db)
+                         (d/entity db)
+                         (d/touch)
+                         (into {}))))))
 
 (defn http-call-remote
   "Remote which executes a http call.
   We can use this remote to call api's which are not om.next specific."
   [reconciler-atom]
   (fn [query]
-    ;; Do something here?`
     (let [ast (om/query->ast query)
           [[method params]] query]
       (assert (:mutation params) (str "No :mutation in params of query: " query
@@ -44,7 +70,7 @@
           current-user (:ui.singleton.auth/user auth)
           conf (d/entity (d/db conn) [:ui/singleton :ui.singleton/configuration])
           _ (debug "Remote for current-user status: " (:user/status current-user))
-          remote-fn (remotes/post-to-url (if (= (:user/status current-user) :user.status/active)
+          remote-fn (post-to-url (if (= (:user/status current-user) :user.status/active)
                                            (:ui.singleton.configuration.endpoints/user-api conf)
                                            (:ui.singleton.configuration.endpoints/api conf)))]
       (remote-fn query))))

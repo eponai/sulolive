@@ -6,175 +6,13 @@
             [om.dom :as dom]
             [cljsjs.react.dom]
             [goog.object]
-            [goog.log :as glog]
             [taoensso.timbre :refer-macros [debug warn error]]
             [eponai.common.format :as format]
-            [eponai.common.datascript :as common.datascript]
-            [datascript.core :as d]
             [eponai.web.routes :as routes]
             [clojure.string :as string]
             [clojure.data :as diff]))
 
 (def ^:dynamic *playground?* false)
-
-(defonce reconciler-atom (atom nil))
-
-;; ---- Cached ui->props ---------------
-
-(defn traverse-query-path
-  "Takes a query and a path. Returns subqueries matching the path.
-
-  Will return a single subquery for queries without unions.
-  A path may match any of the union's branches/values."
-  [query path]
-  (letfn [(step-into-query [query part]
-            (cond
-              (= part ::root)
-              [query]
-
-              (number? part)
-              [query]
-
-              (keyword? query)
-              nil
-
-              (map? query)
-              (when (contains? query part)
-                (let [query' (get query part)]
-                  (if (map? query')
-                    ;; Union. Could be any of the values in an union.
-                    ;; Hack: Take the first matching value.
-                    ;; TODO: Try to match all values, making traverse-query
-                    ;;       return multiple values.
-                    (vals query')
-                    ;; Anything else, just traverse as normal.
-                    [query'])))
-
-              (sequential? query)
-              (mapcat #(step-into-query % part) query)
-
-              :else
-              (do (debug "not traversing query: " query " path-part: " part)
-                  nil)))]
-    (reduce (fn [q p] (into [] (comp (mapcat #(step-into-query % p))
-                                     (filter some?))
-                            q))
-            [query]
-            path)))
-
-(defn path->paths [path]
-  (->> path
-       (iterate rest)
-       (take-while seq)
-       (map vec)))
-
-(defn- find-cached-props
-  "Given a cache with map of path->(query, props), a component and a component's full query,
-  check the cache if the component's full query has already been parsed (read).
-
-  Returns nil or props for a component."
-  [cache c-path c-query]
-  (let [exact-subquery (traverse-query-path c-query c-path)
-        _ (when-not (= 1 (count exact-subquery))
-            (warn "Exact subquery was not an only match! Was: " exact-subquery))
-        exact-subquery (first exact-subquery)
-        find-props (fn [{:keys [::query ::props]}]
-                     (let [subqueries (traverse-query-path query c-path)]
-                       (when (some #(= % exact-subquery) subqueries)
-                         (let [c-props (get-in props c-path)]
-                           (when (some? c-props)
-                             (debug "found cached props for c-path: " c-path))
-                           c-props))))
-        ret (->> (butlast c-path)
-                 (path->paths)
-                 (cons [::root])
-                 (map #(get-in cache %))
-                 (filter some?)
-                 (some find-props))]
-    ret))
-
-(defn cached-ui->props
-  "Takes an atom to store queries->props, app-state, component, full query of
-  the component and a thunk for calling the parser for cache misses.
-  Uses the query and the components path to find queries already parsed.
-
-  Example:
-  Let's say we've got components A and B.
-  B is a subquery of A, i.e. query A: [... (om/get-query B) ...]
-  When we parse A, we'll get the props of both A and B.
-  We can get B's props by using (om/path B) in props of A.
-  This is what we're doing with (find-cached-props ...)."
-  [cache state component query parser-thunk]
-  {:pre [(implements? IDeref cache)
-         (implements? IDeref state)
-         (om/component? component)
-         (vector? query)
-         (fn? parser-thunk)]}
-  (let [path (om/path component)
-        db (d/db state)
-        cache-db (::db @cache)]
-    (when-not (identical? db cache-db)
-      ;; db's are not identical. Reset the cache.
-      (reset! cache {::db db}))
-    (let [props (or (find-cached-props @cache path query)
-                    (parser-thunk))]
-      (swap! cache update-in
-             (or (seq path) [::root])
-             merge
-             {::query query
-              ::props props})
-      props)))
-
-(defn cached-ui->props-fn
-  "Takes a component and returns its props, just like om.next/default-ui->props.
-  This function will also cache a component's props based on it's path and query
-  to provide fast lookups for subcomponents, skipping a lot of reads."
-  [parser]
-  (let [cache (atom {})]
-    (fn [env c]
-      {:pre [(map? env) (om/component? c)]}
-      (let [fq (om/full-query c)]
-        (when-not (nil? fq)
-          (let [s (system-time)
-                ui (cached-ui->props cache (:state env) c fq #(-> (parser env fq)
-                                                                  (get-in (om/path c))))
-                e (system-time)]
-            (when-let [l (:logger env)]
-              (let [dt (- e s)]
-                (when (< 16 dt)
-                  (glog/warning l (str (pr-str c) " query took " dt " msecs")))))
-            ui))))))
-
-(defn debug-ui->props-fn
-  "Debug if our function is not acting as om.next's default ui->props function."
-  [parser]
-  (let [eponai-fn (cached-ui->props-fn parser)]
-    (fn [env c]
-      (let [om-ui (om/default-ui->props env c)
-            eponai-ui (eponai-fn env c)]
-        (when (not= om-ui eponai-ui)
-          (warn "Om and eponai UI differ for component: " (pr-str c) " diff: " (diff/diff om-ui eponai-ui)))
-        eponai-ui))))
-
-;; ---- END Cached ui->props ------------
-
-;;;;;;; Helpers for remote communcation
-
-;; TODO: Move this function somewhere else?
-(defn read-basis-t-remote-middleware
-  "Given a remote-fn (that describes what, where and how to send a request to a server),
-  add basis-t for each key to the request. basis-t represents at which basis-t we last
-  read a key from the remote db."
-  [remote-fn conn]
-  (fn [query]
-    (let [ret (remote-fn query)
-          db (d/db conn)]
-      (assoc-in ret [:opts :transit-params :eponai.common.parser/read-basis-t]
-                (some->> (d/q '{:find [?e .] :where [[?e :db/ident :eponai.common.parser/read-basis-t]]}
-                              db)
-                         (d/entity db)
-                         (d/touch)
-                         (into {}))))))
 
 ;;;;;;; Om query helpers
 
@@ -201,33 +39,6 @@
 (defn component->query-key [c]
   (let [k (component->ref c)]
     (keyword "proxy" (str (namespace k) "." (name k)))))
-
-;;;;;;; App initialization
-
-(defonce conn-atom (atom nil))
-
-(defn init-conn
-  "Sets up the datascript state. Caches the state so we can keep our app state between
-  figwheel reloads."
-  []
-  (if @conn-atom
-    (do
-      (debug "Reusing old conn. It currently has schema for attributes:" (-> @conn-atom deref :schema keys))
-      @conn-atom)
-    (let [ui-state [{:ui/singleton :ui.singleton/app}
-                    {:ui/singleton :ui.singleton/auth}
-                    {:ui/component                      :ui.component/project
-                     :ui.component.project/selected-tab :dashboard}
-                    {:ui/component :ui.component/widget}
-                    {:ui/component :ui.component/root}
-                    {:ui/component :ui.component/mutation-queue}
-                    {:ui/component :ui.component/sidebar
-                     :ui.component.sidebar/newsletter-subscribe-status
-                                   :ui.component.sidebar.newsletter-subscribe-status/not-sent}]
-          conn (d/create-conn (common.datascript/ui-schema))]
-      (d/transact! conn ui-state)
-      (reset! conn-atom conn))))
-
 
 ;;;;;;; UI component helpers
 
