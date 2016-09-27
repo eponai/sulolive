@@ -105,7 +105,7 @@
                                              (date* d))
                      :transaction/tags     (fn [ts] {:pre [(coll? ts)]}
                                              (map tag* ts))
-                     :transaction/category (fn [c] {:pre [(string? c)]} c)
+                     :transaction/category (fn [c] {:pre [(coll? c)]} c)
                      :transaction/amount   (fn [a]
                                              {:pre [(string? a)]}
                                              #?(:clj  (bigdec a)
