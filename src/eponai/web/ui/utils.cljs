@@ -16,29 +16,11 @@
 
 ;;;;;;; Om query helpers
 
-(defn subq-or-static-q [x ref-key class]
-  (or (when (om/component? x)
-        (let [ref-component (om/react-ref x (cond-> ref-key (keyword? ref-key) str))
-              type-eq (= (type ref-component) class)]
-          (debug "Type eq: " type-eq " for class: " class " ref-component: " ref-component)
-          (when (true? type-eq)
-            (let [ret (om/subquery x ref-key class)]
-              (debug "Returning subquery for class: " class " query: " ret)
-              ret))))
-      (om/get-query class)))
-
 (defn query-with-component-meta [x query]
   (with-meta query
              {:component (cond
                            (om/component? x) (type x)
                            (goog/isFunction x) x)}))
-
-(defn component->ref [c]
-  (keyword (pr-str c)))
-
-(defn component->query-key [c]
-  (let [k (component->ref c)]
-    (keyword "proxy" (str (namespace k) "." (name k)))))
 
 ;;;;;;; UI component helpers
 

@@ -3,7 +3,8 @@
             [datascript.core :as d]
             [om.next :as om]
             [eponai.common.database.pull :as pull]
-            [eponai.common.parser :as parser]))
+            [eponai.common.parser :as parser])
+  #?(:clj (:import [datascript.db DB])))
 
 ;; -----------------------------
 ;; -- Mutation message public api
@@ -65,7 +66,7 @@
       (assoc :db/id (:db/id entity))))
 
 (extend-protocol IStoreMessages
-  db/DB
+  #?(:clj DB :cljs db/DB)
   (store-message [this history-id mutation-message]
     (assert (some? history-id))
     (assert (mutation-message? mutation-message)

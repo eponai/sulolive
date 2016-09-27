@@ -1,8 +1,7 @@
 (ns eponai.client.parser.mutate
   (:require [eponai.common.parser :refer [mutate]]
             [eponai.common.datascript :as datascript]
-            [taoensso.timbre :refer-macros [info debug error trace]]
-            [datascript.core :as d]
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug error trace warn]]
             [eponai.common.format :as format]
             [eponai.common.database.transact :as transact]
             [eponai.common.validate :as validate]))

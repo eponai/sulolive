@@ -1,7 +1,29 @@
 (ns eponai.client.lib.transactions
-  (:require [clojure.set :as set]
-            [cljs.reader :as reader]
-            [taoensso.timbre :refer-macros [debug]]))
+  (:require
+    #?(:clj  [clojure.edn :as reader]
+       :cljs [cljs.reader :as reader])
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug]]))
+
+(def full-transaction-pull-pattern
+  [:db/id
+   :transaction/uuid
+   :transaction/title
+   :transaction/amount
+   :transaction/created-at
+   {:transaction/currency [:currency/code
+                           :currency/symbol-native
+                           :currency/name]}
+   {:transaction/category [:category/name]}
+   {:transaction/tags [:tag/name]}
+   {:transaction/date [:db/id
+                       :date/timestamp
+                       :date/ymd
+                       :date/day
+                       :date/month
+                       :date/year]}
+   {:transaction/project [:db/id :project/uuid :project/name]}
+   {:transaction/type [:db/ident]}
+   :transaction/conversion])
 
 (defn filter-changed-fields
   "Takes an edited transaction and an original transaction and returns a transaction with

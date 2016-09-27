@@ -38,26 +38,7 @@
 
 (defui Transaction
   static om/IQuery
-  (query [_]
-    [:db/id
-     :transaction/uuid
-     :transaction/title
-     :transaction/amount
-     :transaction/created-at
-     {:transaction/currency [:currency/code
-                             :currency/symbol-native
-                             :currency/name]}
-     {:transaction/category [:category/name]}
-     {:transaction/tags [:tag/name]}
-     {:transaction/date [:db/id
-                         :date/timestamp
-                         :date/ymd
-                         :date/day
-                         :date/month
-                         :date/year]}
-     {:transaction/project [:db/id :project/uuid :project/name]}
-     {:transaction/type [:db/ident]}
-     :transaction/conversion])
+  (query [_] lib.t/full-transaction-pull-pattern)
 
   utils/ISyncStateWithProps
   (props->init-state [_ props]

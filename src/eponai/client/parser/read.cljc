@@ -1,4 +1,5 @@
 (ns eponai.client.parser.read
+  #?(:clj (:refer-clojure :exclude [read]))
   (:require [datascript.core :as d]
             [datascript.db :as db]
             [clojure.set :as set]
@@ -11,8 +12,8 @@
             [eponai.common.format :as f]
             [eponai.common.parser.util :as parser]
             [eponai.client.parser.message :as message]
-            [eponai.web.ui.all-transactions :as at]
-            [taoensso.timbre :refer-macros [debug error]]
+            [eponai.client.lib.transactions :as lib.transactions]
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug error trace warn]]
             [clojure.data :as diff]))
 
 ;; ################ Local reads  ####################
@@ -229,7 +230,7 @@
     ;; Pass the active project to remote reader
     (let [query (om/ast->query (assoc-in ast [:params :project-eid] (active-project-eid db)))]
       ;; Add a transaction's query for the remote, so we can populate the widgets with data.
-      {:remote (om/query->ast [{:proxy/dashboard [query {:query/transactions (om/get-query at/Transaction)}]}])})
+      {:remote (om/query->ast [{:proxy/dashboard [query {:query/transactions lib.transactions/full-transaction-pull-pattern}]}])})
 
     ;; Local read
     (cached-query-dashboard env k p)))
@@ -289,8 +290,8 @@
                        (-> db :schema :verification/uuid))
               (try
                 (p/pull db query [:user/uuid (f/str->uuid uuid)])
-                (catch :default e
-                  (error "Error for parser's read key:" k "error:" e)
+                (catch #?@(:clj [Throwable e] :cljs [:default e])
+                       (error "Error for parser's read key:" k "error:" e)
                   {:error {:cause :invalid-verification}})))}))
 
 (defmethod read :query/fb-user

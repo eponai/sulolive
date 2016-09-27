@@ -3,8 +3,7 @@
             [datascript.db :as db]
             [eponai.common.parser :as parser]
             [eponai.client.parser.message :as message]
-            [eponai.web.homeless :as homeless] ;; Client shouldn't depend on web!
-            [taoensso.timbre :refer-macros [info debug error trace warn]]))
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug error trace warn]]))
 
 (defn transact [db tx]
   (if (empty? tx)
@@ -13,18 +12,7 @@
       (debug "transacting: " tx)
       (d/db-with db tx))))
 
-(defn- error-popup-window! [k value]
-  ;; when there's an error and it's of text/html content type,
-  ;; this means we're hopefully in development and we'll
-  ;; show the error in a popup.
-  (when-let [{:keys [body headers]} (or (when (= k :om.next/error) value)
-                                        (:om.next/error value))]
-    (when (and body (homeless/content-type? headers))
-      (homeless/popup-window-with-body body))))
-
 (defn merge-error [db key val]
-  (error-popup-window! key val)
-  ;; TODO: Alert the user some how?
   (error "error on key:" key "error:" val ". Doing nothing with it.")
   db)
 

@@ -12,7 +12,6 @@
          [eponai.client.logger :as logger]
          [devtools.core :as devtools]
          [goog.date]]))
-  #?(:cljs (:require-macros [eponai.client.utils :refer [extend-protocol-on]]))
   #?(:clj (:import [datascript.db DB])))
 
 ;; ---------------------
@@ -81,16 +80,6 @@
   (into [] (comp (filter #(= id (:id %)))
                  (remove #(is-remote-fn (:mutation %))))
         (mutation-queue db)))
-
-#?(:clj
-   (defmacro extend-protocol-on [protocol other-protocol & protocol-sigs]
-     ;;Wrap signatures here with a type check. But actually extend-object.
-     (letfn [(wrap-sigs# [[method [this-var :as args] method-body]]
-               (list method args `(when (satisfies? ~other-protocol ~this-var)
-                                    (do ~method-body))))]
-       `(extend-type Object
-         ~protocol
-          ~@(map wrap-sigs# protocol-sigs)))))
 
 (extend-protocol IQueueMutations
   #?(:clj DB :cljs db/DB)

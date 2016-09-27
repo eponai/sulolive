@@ -159,16 +159,16 @@
             query
             target)))
 
-#?(:cljs
-   (defn reconciler->history-id [reconciler]
-     (let [history (-> reconciler :config :history)
-           last-history-id (last (.-arr history))]
-       ;; Assertions about om.next's history implementation:
-       (assert (.-arr history)
-               (str "om.next's history had no property (.-arr h)."
-                    " Check the implementation of om.next.cache."
-                    " history: " history))
-       last-history-id)))
+
+(defn reconciler->history-id [reconciler]
+  (let [history (-> reconciler :config :history)
+        last-history-id (last (.-arr history))]
+    ;; Assertions about om.next's history implementation:
+    (assert (.-arr history)
+            (str "om.next's history had no property (.-arr h)."
+                 " Check the implementation of om.next.cache."
+                 " history: " history))
+    last-history-id))
 
 #?(:cljs
    (defn mutate-with-db-before-mutation [mutate]
