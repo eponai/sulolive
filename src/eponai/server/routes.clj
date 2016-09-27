@@ -184,7 +184,7 @@
         (if (some? user-uuid)
           (r/response (call-parser (-> request
                                        (assoc ::playground-auth {:username user-uuid})
-                                       (assoc ::m/parser (-> (parser/parser {:mutate (constantly nil)})
+                                       (assoc ::m/parser (-> (parser/server-parser (parser/server-parser-state {:mutate (constantly nil)}))
                                                              ;; Remove mutations from query even though there
                                                              ;; isn't any mutate function, just in case.
                                                              parser/parse-without-mutations

@@ -32,7 +32,7 @@
       (cond-> @in-production? m/wrap-error)
       m/wrap-format
       (m/wrap-state {::m/conn                     conn
-                     ::m/parser                   (parser/parser)
+                     ::m/parser                   (parser/server-parser)
                      ::m/currencies-fn            #(exch/currencies (when @in-production? (env :open-exchange-app-id)))
                      ::m/currency-rates-fn        (exch/currency-rates-fn (when @in-production? (env :open-exchange-app-id)))
                      ;::m/send-email-fn     (e/send-email-fn conn)

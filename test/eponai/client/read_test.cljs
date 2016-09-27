@@ -69,7 +69,7 @@
                                       :ui.singleton.auth/user (:db/id user)}]
                                     convs))
     (transact/transact conn ts)
-    (let [{:keys [query/transactions]} (read-transactions (parser/parser) conn user project)]
+    (let [{:keys [query/transactions]} (read-transactions (parser/client-parser) conn user project)]
       (t/is (count ts) (count transactions))
       ;; Conversion rates are attached to the transactions on the client side, vefiry that all the transactions got conversions.
       (t/is (= (count (filter some? (map :transaction/conversion transactions))) (count ts))))))
@@ -95,7 +95,7 @@
                                       :ui.singleton.auth/user (:db/id user)}]
                                     convs))
     (transact/transact conn ts)
-    (let [{:keys [query/transactions]} (read-transactions (parser/parser) conn user project)]
+    (let [{:keys [query/transactions]} (read-transactions (parser/client-parser) conn user project)]
       (t/is (count ts) (count transactions))
       (t/is (= (count (filter some? (map :transaction/conversion transactions))) (count ts)))
       (t/is (every? true? (map (fn [transaction]

@@ -30,7 +30,7 @@
                                   :roles    #{::a/user}}},
                        :current 1}}
    :body             {:query query}
-   ::m/parser        (parser/parser)
+   ::m/parser        (parser/server-parser)
    ::m/currency-chan (async/chan (async/sliding-buffer 1))
    ::m/conn          conn})
 

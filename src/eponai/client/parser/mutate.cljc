@@ -1,5 +1,5 @@
 (ns eponai.client.parser.mutate
-  (:require [eponai.common.parser :refer [mutate]]
+  (:require [eponai.common.parser :refer [client-mutate]]
             [eponai.common.datascript :as datascript]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug error trace warn]]
             [eponai.common.format :as format]
@@ -14,7 +14,7 @@
 
 ;; --------------------- Transaction ------------
 
-(defmethod mutate 'transaction/create
+(defmethod client-mutate 'transaction/create
   [{:keys [state parser] :as e} k input-transaction]
   (let [user-uuid (-> (parser e '[{:query/current-user [:user/uuid]}])
                       (get-in [:query/current-user :user/uuid]))]
@@ -24,7 +24,7 @@
                  (transact/transact-one state transaction)))
      :remote true}))
 
-(defmethod mutate 'transaction/edit
+(defmethod client-mutate 'transaction/edit
   [{:keys [state]} _ {:keys [transaction/uuid db/id] :as transaction}]
   (debug "transaction/edit with params:" transaction)
   {:action (fn []
@@ -41,7 +41,7 @@
 
 ;; ---------------- project --------------
 
-(defmethod mutate 'project/save
+(defmethod client-mutate 'project/save
   [{:keys [state]} _ params]
   (debug "project/save with params: " params)
   (let [ project (format/project nil params)
@@ -50,14 +50,14 @@
                (transact/transact state [project dashboard]))
      :remote true}))
 
-(defmethod mutate 'project/share
+(defmethod client-mutate 'project/share
   [{:keys [state]} _ params]
   (debug "project/share with params: " params)
   {:remote true})
 
 ;; -------------- Widget ---------------
 
-(defmethod mutate 'widget/create
+(defmethod client-mutate 'widget/create
   [{:keys [state parser] :as e} _ params]
   (debug "widget/save with params: " params)
   {:action (fn []
@@ -65,7 +65,7 @@
                (transact/transact-one state widget)))
    :remote true})
 
-(defmethod mutate 'widget/edit
+(defmethod client-mutate 'widget/edit
   [{:keys [state]} _ params]
   (debug "widget/edit with params: " params)
   (let [widget (format/widget-edit params)]
@@ -73,7 +73,7 @@
                (transact/transact state widget))
      :remote true}))
 
-(defmethod mutate 'widget/delete
+(defmethod client-mutate 'widget/delete
   [{:keys [state]} _ params]
   (debug "widget/delete with params: " params)
   (let [widget-uuid (:widget/uuid params)]
@@ -83,7 +83,7 @@
 
 ;; ---------------------- Dashboard -----------------------
 
-(defmethod mutate 'dashboard/save
+(defmethod client-mutate 'dashboard/save
   [{:keys [state]} _ {:keys [widget-layout] :as params}]
   (debug "dashboard/save with params: " params)
   {:action (fn []
@@ -93,19 +93,19 @@
 
 ;; ------------------- User account related ------------------
 
-(defmethod mutate 'settings/save
+(defmethod client-mutate 'settings/save
   [{:keys [state]} _ {:keys [currency user] :as params}]
   (debug "settings/save with params: " params)
   {:action (fn []
              (transact/transact-one state [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]]))
    :remote true})
 
-(defmethod mutate 'stripe/subscribe
+(defmethod client-mutate 'stripe/subscribe
   [_ _ params]
   (debug "stripe/charge with params:" params)
   {:remote true})
 
-(defmethod mutate 'stripe/cancel
+(defmethod client-mutate 'stripe/cancel
   [{:keys [state]} _ params]
   (debug "stripe/cancel with params:" params)
   {:action (fn []
@@ -115,7 +115,7 @@
 
 
 
-(defmethod mutate 'stripe/trial
+(defmethod client-mutate 'stripe/trial
   [_ _ p]
   (debug "stripe/trial with params:" p)
   {:remote true})
@@ -123,17 +123,17 @@
 
 ;; ############# Session mutations #################
 
-(defmethod mutate 'session.signin/email
+(defmethod client-mutate 'session.signin/email
   [_ _ params]
   (debug "session.signin/email with params:" params)
   {:remote true})
 
-(defmethod mutate 'session.signin/facebook
+(defmethod client-mutate 'session.signin/facebook
   [_ _ p]
   (debug "session.signin/facebook with params:" p)
   {:remote true})
 
-(defmethod mutate 'session.signin/activate
+(defmethod client-mutate 'session.signin/activate
   [{:keys [auth]} _ {:keys [user-uuid user-email] :as p}]
   (assert (and user-uuid user-email) (str "Mutation 'session.signin/activate needs params user-uuid and user-email. Got params: " p))
   (debug "session.signin/activate with params: " p)

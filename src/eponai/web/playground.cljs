@@ -23,7 +23,7 @@
   (reset! routes/app-root "/play")
   (set! web.ui.utils/*playground?* true)
   (let [conn (utils/init-conn)]
-    (app/initialize-app conn {:parser (parser-without-remote-mutations (parser/parser))
+    (app/initialize-app conn {:parser (parser-without-remote-mutations (parser/client-parser))
                               :send   (backend/send!
                                         utils/reconciler-atom
                                         {:remote (-> (remotes/post-to-url homeless/om-next-endpoint-playground)

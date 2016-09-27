@@ -20,7 +20,8 @@
                  :VND "Vietnamese Dollar"
                  :EUR "Euro"
                  :ALL "Albanian Money"
-                 :HRK "Croatian Money"})
+                 :HRK "Croatian Money"
+                 :CNY "Chineese Money"})
 
 (defn transactions []
   [{:transaction/title      "lunch"
@@ -122,7 +123,8 @@
                                                 :EUR 0.89
                                                 :ALL 121.35
                                                 :HRK 6.64
-                                                :KRW 1189.80}})))
+                                                :KRW 1189.80
+                                                :CNY 6.67}})))
 
 (defn add-data-to-connection
   ([conn] (add-data-to-connection conn (transactions)))

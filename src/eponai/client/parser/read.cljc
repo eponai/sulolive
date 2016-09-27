@@ -1,5 +1,4 @@
 (ns eponai.client.parser.read
-  #?(:clj (:refer-clojure :exclude [read]))
   (:require [datascript.core :as d]
             [datascript.db :as db]
             [clojure.set :as set]
@@ -7,7 +6,7 @@
             [eponai.common.datascript :as common.datascript]
             [eponai.common.database.pull :as p]
             [eponai.common.prefixlist :as pl]
-            [eponai.common.parser :refer [read]]
+            [eponai.common.parser :refer [client-read]]
             [eponai.common.parser.util :as parser.util :refer-macros [timeit]]
             [eponai.common.format :as f]
             [eponai.common.parser.util :as parser]
@@ -19,7 +18,7 @@
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
 
-(defmethod read :query/tags
+(defmethod client-read :query/tags
   [{:keys [db target]} _ _]
   (when-not target
     (let [tags (->> (p/find-with db '{:find-pattern [?e ?name] :where [[?e :tag/name ?name]]})
@@ -52,23 +51,23 @@
               query (d/pull db '[*] (:db/id e))
               :else (d/touch e))}))
 
-(defmethod read :ui/component
+(defmethod client-read :ui/component
   [{:keys [db ast query target]} _ _]
   (when-not target
     (read-entity-by-key db query (:key ast))))
 
-(defmethod read :ui/singleton
+(defmethod client-read :ui/singleton
   [{:keys [db ast query target]} _ _]
   (when-not target
     (read-entity-by-key db query (:key ast))))
 
 ;; --------------- Remote readers ---------------
 
-(defmethod read :datascript/schema
+(defmethod client-read :datascript/schema
   [_ _ _]
   {:remote true})
 
-(defmethod read :user/current
+(defmethod client-read :user/current
   [_ _ _]
   {:remote true})
 
@@ -203,7 +202,7 @@
     (fn [{:keys [db] :as env} _ p]
       {:value (p/filter-transactions p (all-local-transactions-by-project env (active-project-eid db)))})))
 
-(defmethod read :query/transactions
+(defmethod client-read :query/transactions
   [{:keys [db target ast] :as env} k p]
   (if (= target :remote)
     ;; Pass the active project to remote reader
@@ -224,7 +223,7 @@
                             :widget/_dashboard (fn [widgets]
                                                  (mapv #(p/widget-with-data db @transactions %) widgets)))))}))))
 
-(defmethod read :query/dashboard
+(defmethod client-read :query/dashboard
   [{:keys [db ast target] :as env} k p]
   (if (= target :remote)
     ;; Pass the active project to remote reader
@@ -235,7 +234,7 @@
     ;; Local read
     (cached-query-dashboard env k p)))
 
-(defmethod read :query/active-dashboard
+(defmethod client-read :query/active-dashboard
   [{:keys [db ast target query]} _ _]
   (let [project-id (active-project-eid db)]
     (if (= target :remote)
@@ -245,7 +244,7 @@
                 (when-let [dashboard-id (p/one-with db {:where [['?e :dashboard/project project-id]]})]
                   (p/pull db query dashboard-id)))})))
 
-(defmethod read :query/all-projects
+(defmethod client-read :query/all-projects
   [{:keys [db query target]} _ _]
   (if target
     {:remote true}
@@ -254,13 +253,13 @@
                                                      (p/pull db [:ui.singleton.auth/user] [:ui/singleton :ui.singleton/auth]))]
               (sort-by :project/created-at (p/pull-many db query (p/all-with db {:where [['?e :project/users (:db/id user)]]}))))}))
 
-(defmethod read :query/all-currencies
+(defmethod client-read :query/all-currencies
   [{:keys [db query target]} _ _]
   (if target
     {:remote true}
     {:value  (p/pull-many db query (p/all-with db {:where '[[?e :currency/code]]}))}))
 
-(defmethod read :query/current-user
+(defmethod client-read :query/current-user
   [{:keys [db query target]} _ _]
   (if target
     {:remote true}
@@ -270,7 +269,7 @@
                   (when (:db/id user)
                     (p/pull db query (:db/id user)))))})))
 
-(defmethod read :query/stripe
+(defmethod client-read :query/stripe
   [{:keys [db query parser target] :as env} _ _]
   (if target
     {:remote true}
@@ -282,7 +281,7 @@
 
 ;; ############ Signup page reader ############
 
-(defmethod read :query/user
+(defmethod client-read :query/user
   [{:keys [db query target]} k {:keys [uuid]}]
   (if target
     {:remote (not (= uuid '?uuid))}
@@ -294,7 +293,7 @@
                        (error "Error for parser's read key:" k "error:" e)
                   {:error {:cause :invalid-verification}})))}))
 
-(defmethod read :query/fb-user
+(defmethod client-read :query/fb-user
   [{:keys [db query target]} _ _]
   (if target
     {:remote true}
@@ -303,13 +302,13 @@
                  (p/pull db query eid))
        :remote true})))
 
-(defmethod read :query/auth
+(defmethod client-read :query/auth
   [{:keys [db query]} k p]
   (debug "Read " k " with params " p)
   {:value (let [auth (p/one-with db {:where '[[?e :ui/singleton :ui.singleton/auth]]})]
             (when auth
               (p/pull db query auth)))})
 
-(defmethod read :query/message-fn
+(defmethod client-read :query/message-fn
   [{:keys [db]} k p]
   {:value (message/get-message-fn db)})

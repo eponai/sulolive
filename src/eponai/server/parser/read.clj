@@ -1,25 +1,25 @@
 (ns eponai.server.parser.read
-  (:refer-clojure :exclude [read])
   (:require
     [eponai.common.database.pull :as common.pull :refer [merge-query one-with min-by pull]]
     [clojure.set :as set]
     [datomic.api :as d]
     [eponai.common.datascript :as eponai.datascript]
     [eponai.common.format :as f]
-    [eponai.common.parser :refer [read]]
+    [eponai.common.parser :refer [server-read]]
     [eponai.server.datomic.pull :as server.pull]
     [eponai.server.external.facebook :as facebook]
     [eponai.server.external.stripe :as stripe]
     [taoensso.timbre :as timbre :refer [debug trace warn]]
     [eponai.common.database.pull :as pull]
-    [eponai.common.parser :as parser]))
+    [eponai.common.parser :as parser]
+    [eponai.common.database.pull :as p]))
 
-(defmethod read :datascript/schema
+(defmethod server-read :datascript/schema
   [{:keys [db db-history]} _ _]
   {:value (-> (server.pull/schema db db-history)
               (eponai.datascript/schema-datomic->datascript))})
 
-(defmethod read :user/current
+(defmethod server-read :user/current
   [{:keys [db db-history user-uuid auth]} _ _]
   (debug "read user/current with auth: " auth " user-uuid " user-uuid)
   {:value (if user-uuid
@@ -49,19 +49,23 @@
 
 (defn env+params->project-eid [{:keys [db user-uuid]} {:keys [project-eid]}]
   ;{:pre [(some? user-uuid)]}
-  (when (some? user-uuid)
+  (if (nil? user-uuid)
+    (do (warn "nil user-uuid for project-eid: " project-eid)
+        nil)
     (let [project-with-auth (common.pull/project-with-auth user-uuid)]
       (if project-eid
-        (do
-          (debug "Found project eid")
-          (one-with db (merge-query project-with-auth {:symbols {'?e project-eid}})))
+        (let [verified-eid (one-with db (merge-query project-with-auth {:symbols {'?e project-eid}}))]
+          (debug "Had project eid, verifying that we have access to it.")
+          (when-not (= project-eid verified-eid)
+            (warn "DID NOT HAVE ACCESS TO PROJECT-EID: " project-eid " returned verified eid: " verified-eid))
+          verified-eid)
         ;; No project-eid, grabbing the one with the smallest created-at
-        (do
-          (debug "Fetching smallest project eid: " (min-by db :project/created-at project-with-auth))
-          (min-by db :project/created-at project-with-auth))))))
+        (let [ret (min-by db :project/created-at project-with-auth)]
+          (debug "fetched smallest project eid: " ret)
+          ret)))))
 
 (defmethod parser/read-basis-param-path :query/transactions [env _ params] [(env+params->project-eid env params)])
-(defmethod read :query/transactions
+(defmethod server-read :query/transactions
   [{:keys [db db-history query user-uuid] :as env} _ params]
   (when-let [project-eid (env+params->project-eid env params)]
     (if db-history
@@ -95,7 +99,7 @@
                          :refs         (d/pull-many db '[*] (seq ref-ids))})}))))
 
 (defmethod parser/read-basis-param-path :query/dashboard [env _ params] [(env+params->project-eid env params)])
-(defmethod read :query/dashboard
+(defmethod server-read :query/dashboard
   [{:keys [db db-history query user-uuid] :as env} _ params]
   {:value (if-let [project-eid (env+params->project-eid env params)]
             (server.pull/one
@@ -107,7 +111,7 @@
             (debug "No project-eid found for user-uuid: " user-uuid))})
 
 (defmethod parser/read-basis-param-path :query/active-dashboard [env _ params] [(env+params->project-eid env params)])
-(defmethod read :query/active-dashboard
+(defmethod server-read :query/active-dashboard
   [{:keys [db db-history query user-uuid] :as env} _ params]
   {:value (if-let [project-id (env+params->project-eid env params)]
             (server.pull/one db db-history query
@@ -117,20 +121,23 @@
                                  (common.pull/with-auth user-uuid)))
             (debug "No project-eid found for user-uuid: " user-uuid))})
 
-(defmethod read :query/all-projects
+(defmethod server-read :query/all-projects
   [{:keys [db db-history query auth]} _ _]
-  {:value (when auth
+  {:value (if auth
             (server.pull/all db db-history query
                              {:where   '[[?e :project/users ?u]
                                          [?u :user/uuid ?user-uuid]]
-                              :symbols {'?user-uuid (:username auth)}}))})
+                              :symbols {'?user-uuid (:username auth)}})
+            (do
+              (warn "No auth for :query/all-projects")
+              nil))})
 
-(defmethod read :query/all-currencies
+(defmethod server-read :query/all-currencies
   [{:keys [db db-history query]} _ _]
   {:value (server.pull/all db db-history query
                            {:where '[[?e :currency/code]]})})
 
-(defmethod read :query/current-user
+(defmethod server-read :query/current-user
   [{:keys [db db-history query user-uuid auth]} _ _]
   (debug "Auth: " auth)
   (debug "User uuid " user-uuid)
@@ -139,7 +146,7 @@
                              {:where [['?e :user/uuid user-uuid]]})
             {:error :user-not-found})})
 
-(defmethod read :query/stripe
+(defmethod server-read :query/stripe
   [{:keys [db db-history query user-uuid]} _ _]
   {:value (let [;; TODO: uncomment this when doing settings
                 ;; customer (stripe/customer customer-id)
@@ -155,13 +162,13 @@
 
 ;; ############### Signup page reader #################
 
-(defmethod read :query/user
+(defmethod server-read :query/user
   [{:keys [db db-history query]} _ {:keys [uuid]}]
   {:value (when (not (= uuid '?uuid))
             (server.pull/one db db-history query
                              {:where [['?e :user/uuid (f/str->uuid uuid)]]}))})
 
-(defmethod read :query/fb-user
+(defmethod server-read :query/fb-user
   [{:keys [db db-history query user-uuid]} _ _]
   (let [eid (server.pull/one-changed-entity
               db db-history query

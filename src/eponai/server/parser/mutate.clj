@@ -3,7 +3,7 @@
     [clojure.core.async :as async]
     [eponai.common.database.transact :as transact]
     [eponai.common.format :as format]
-    [eponai.common.parser :as parser :refer [mutate message]]
+    [eponai.common.parser :as parser :refer [server-mutate server-message]]
     [eponai.common.validate :as validate]
     [taoensso.timbre :as timbre :refer [debug]]
     [eponai.server.api :as api]
@@ -22,8 +22,8 @@
   message body."
   [sym args message-body mutate-body]
   `(do
-     (defmethod message (quote ~sym) ~args ~message-body)
-     (defmethod mutate (quote ~sym) ~args ~mutate-body)))
+     (defmethod server-message (quote ~sym) ~args ~message-body)
+     (defmethod server-mutate (quote ~sym) ~args ~mutate-body)))
 
 ;; ------------------- Transaction --------------------
 

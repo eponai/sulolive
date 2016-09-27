@@ -239,6 +239,10 @@
   #?(:cljs (system-time)
      :clj (System/currentTimeMillis)))
 
+(defn ideref? [x]
+  #?(:clj (instance? clojure.lang.IDeref x)
+     :cljs (satisfies? IDeref x)))
+
 (defn cached-ui->props
   "Takes an atom to store queries->props, app-state, component, full query of
   the component and a thunk for calling the parser for cache misses.
@@ -251,8 +255,8 @@
   We can get B's props by using (om/path B) in props of A.
   This is what we're doing with (find-cached-props ...)."
   [cache state component query parser-thunk]
-  {:pre [(instance? #?(:clj clojure.lang.IDeref :cljs IDeref) cache)
-         (instance? #?(:clj clojure.lang.IDeref :cljs IDeref) state)
+  {:pre [(ideref? cache)
+         (ideref? state)
          (om/component? component)
          (vector? query)
          (fn? parser-thunk)]}

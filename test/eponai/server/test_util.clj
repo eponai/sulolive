@@ -51,4 +51,4 @@
 
 (def user-email "user@email.com")
 
-(def test-parser (parser/parser))
+(def test-parser (parser/server-parser))

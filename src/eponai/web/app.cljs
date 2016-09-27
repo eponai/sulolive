@@ -32,7 +32,7 @@
 
 (defn initialize-app [conn & [reconciler-opts]]
   (debug "Initializing App")
-  (let [parser (parser/parser)
+  (let [parser (parser/client-parser)
         reconciler (om/reconciler (merge
                                     {:state     conn
                                      :ui->props (utils/cached-ui->props-fn parser)

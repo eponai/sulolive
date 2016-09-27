@@ -1,5 +1,5 @@
 (ns eponai.mobile.parser.mutate
-  (:require [eponai.common.parser :refer [mutate]]
+  (:require [eponai.common.parser :refer [client-mutate]]
             [eponai.common.database.transact :as t]
             [om.next :as om]
             [datascript.core :as d]
@@ -9,7 +9,7 @@
   {:ui/component           :ui.component/app
    :ui.component.app/route route})
 
-(defmethod mutate 'app/set-route
+(defmethod client-mutate 'app/set-route
   [{:keys [state]} _ {:keys [route]}]
   {:action #(t/transact state [(set-route-tx route)])})
 
@@ -26,12 +26,12 @@
 
 ;; ############# Session mutations #################
 
-(defmethod mutate 'session.signin.email/verify
+(defmethod client-mutate 'session.signin.email/verify
   [_ _ {:keys [verify-uuid] :as p}]
   (assert (some? verify-uuid) (str "Mutation 'session.signin.email/verify needs a value for key :verification-uuid. Got params: " p))
   (debug "session.signin.email/verify with params: " p)
   {:remote true})
 
-(defmethod mutate 'session/signout
+(defmethod client-mutate 'session/signout
   [_ _ _]
   {:remote true})

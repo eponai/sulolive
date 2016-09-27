@@ -94,7 +94,7 @@
   (debug "Initializing App")
   (ignore-yellow-box-warnings!)
   (let [server (:server-address config)
-        parser (parser/parser)
+        parser (parser/client-parser)
         _ (d/transact! conn [{:ui/singleton                                  :ui.singleton/configuration
                               :ui.singleton.configuration.endpoints/user-api (str server "/api/user")
                               :ui.singleton.configuration.endpoints/api      (str server "/api")

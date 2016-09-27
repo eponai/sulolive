@@ -1,30 +1,27 @@
 (ns eponai.common.parser
-  (:refer-clojure :exclude [read])
   (:require [eponai.common.parser.util :as util #?(:clj :refer :cljs :refer-macros) [timeit]]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn trace]]
-    #?(:clj
-            [om.next.server :as om]
-       :cljs [om.next :as om])
-    #?(:clj
-            [datomic.api :as d]
-       :cljs [datascript.core :as d])
-    #?(:cljs [eponai.client.utils :as client.utils])
-    #?(:clj
-            [eponai.server.datomic.filter :as filter])
+            [om.next :as om]
+            [datascript.core :as datascript]
+    #?(:clj [datomic.api :as datomic])
+    #?(:clj [eponai.server.datomic.filter :as filter])
+            [eponai.client.utils :as client.utils]
             [clojure.walk :as w]
             [clojure.data :as diff]
             [clojure.set :as set]
             [medley.core :as medley])
   #?(:clj (:import (clojure.lang ExceptionInfo))))
 
-(defmulti read om/dispatch)
-(defmulti mutate om/dispatch)
-(defmulti message om/dispatch)
+(defmulti client-read om/dispatch)
+(defmulti client-mutate om/dispatch)
+
+(defmulti server-read om/dispatch)
+(defmulti server-mutate om/dispatch)
+(defmulti server-message om/dispatch)
 
 ;; -------- No matching dispatch
 
-(defmethod read :default
-  [e k p]
+(defn default-read [e k p]
   (cond
     (= "proxy" (namespace k))
     (util/proxy e k p)
@@ -37,7 +34,10 @@
 
     :else (warn "Returning nil for parser read key: " k)))
 
-(defmethod message :default
+(defmethod client-read :default [e k p] (default-read e k p))
+(defmethod server-read :default [e k p] (default-read e k p))
+
+(defmethod server-message :default
   [e k p]
   (warn "No message implemented for mutation: " k)
   {::success-message (str "Action " k " was successful!")
@@ -45,11 +45,12 @@
 
 ;; -------- Debug stuff
 
-(defn debug-read [env k params]
-  (debug "reading key:" k)
-  (let [ret (read env k params)]
-    (debug "read key:" k "returned:" ret)
-    ret))
+(defn wrap-debug-read-or-mutate [read-or-mutate]
+  (fn [env k params]
+    (debug "parsing key:" k)
+    (let [ret (read-or-mutate env k params)]
+      (debug "parsed key:" k "returned:" ret)
+      ret)))
 
 (defn with-times [read-or-mutate]
   (fn [env k p]
@@ -93,13 +94,13 @@
              {:om.next/error (error->message e)}))))))
 
 #?(:clj
-   (defn wrap-db
+   (defn wrap-datomic-db
      "Wraps the key :db to the environment with the latest filter.
      Filters are updated incrementally via the ::filter-atom (which
      is renewed everytime parser is called (see wrap-parser-filter-atom)."
      [read-or-mutate]
      (fn [{:keys [state ::filter-atom] :as env} & args]
-       (let [db (d/db state)
+       (let [db (datomic/db state)
              user-id (get-in env [:auth :username])
              update-filters (fn [old-filters]
                               (let [filters (or old-filters
@@ -114,32 +115,14 @@
          (apply read-or-mutate (assoc env :db db)
                 args)))))
 
-#?(:cljs
-   (defn wrap-db
-     "Wraps a :db in the environment for each read.
-     We currently don't have any filters for the client
-     side, so we're not using ::filter-atom."
-     [read-or-mutate]
-     (fn [{:keys [state] :as env} & args]
-       (apply read-or-mutate (assoc env :db (d/db state))
-              args))))
-
-(defn read-without-state
-  "Removes the state key containing the connection to the database.
-  Doing this because reads should not affect the database...?
-  Use the key :db instead to get a db to do reads from..
-
-  If we decide to add the connection back to the env, we should
-  put it under some obscure key, so developers know that they
-  might be doing something wrong. Obscure key name suggestion:
-  :are-you-sure-you-want-the-connection?
-  :unsafe-connection
-  :this-is-an-antipattern/conn"
-  [read]
-  (fn [env & args]
-    (apply read
-           env
-          args)))
+(defn wrap-datascript-db
+  "Wraps a :db in the environment for each read.
+  We currently don't have any filters for the client
+  side, so we're not using ::filter-atom."
+  [read-or-mutate]
+  (fn [{:keys [state] :as env} & args]
+    (apply read-or-mutate (assoc env :db (datascript/db state))
+           args)))
 
 (defn read-with-dbid-in-query [read]
   (fn [{:keys [query] :as env} k p]
@@ -170,40 +153,39 @@
                  " history: " history))
     last-history-id))
 
-#?(:cljs
-   (defn mutate-with-db-before-mutation [mutate]
-     (fn [{:keys [target ast reconciler state] :as env} k p]
-       (if (nil? reconciler)
-         (do
-           (assert (:running-tests? env)
-                   (str "Reconciler was nil in and we are not running tests."
-                        " If you are running tests, please use (parser/test-parser)"
-                        " instead of (parser/parser)."
-                        " If that's not possible, some how assoc {:running-tests? true}"
-                        " to parser's env argument."))
-           (mutate env k p))
-         (let [mutation (mutate env k p)
-               target-mutation (get mutation target false)
-               history-id (reconciler->history-id reconciler)]
-           (if (nil? target)
-             (cond-> mutation
-                     (fn? (:action mutation))
-                     (update :action
-                             (fn [f]
-                               (fn []
-                                 (f)
-                                 (d/reset-conn! state (client.utils/queue-mutation
-                                                        (d/db state)
-                                                        history-id
-                                                        (om/ast->query ast)))))))
-             (let [ret (if (true? target-mutation) ast target-mutation)]
-               (assoc mutation
-                 target
-                 (cond-> ret
-                         (map? ret)
-                         (assoc-in [:params
-                                    :eponai.client.backend/mutation-db-history-id]
-                                   history-id))))))))))
+(defn mutate-with-db-before-mutation [mutate]
+  (fn [{:keys [target ast reconciler state] :as env} k p]
+    (if (nil? reconciler)
+      (do
+        (assert (:running-tests? env)
+                (str "Reconciler was nil in and we are not running tests."
+                     " If you are running tests, please use (parser/test-parser)"
+                     " instead of (parser/parser)."
+                     " If that's not possible, some how assoc {:running-tests? true}"
+                     " to parser's env argument."))
+        (mutate env k p))
+      (let [mutation (mutate env k p)
+            target-mutation (get mutation target false)
+            history-id (reconciler->history-id reconciler)]
+        (if (nil? target)
+          (cond-> mutation
+                  (fn? (:action mutation))
+                  (update :action
+                          (fn [f]
+                            (fn []
+                              (f)
+                              (datascript/reset-conn! state (client.utils/queue-mutation
+                                                     (datascript/db state)
+                                                     history-id
+                                                     (om/ast->query ast)))))))
+          (let [ret (if (true? target-mutation) ast target-mutation)]
+            (assoc mutation
+              target
+              (cond-> ret
+                      (map? ret)
+                      (assoc-in [:params
+                                 :eponai.client.backend/mutation-db-history-id]
+                                history-id)))))))))
 
 #?(:clj
    (defn mutate-without-history-id-param [mutate]
@@ -257,9 +239,9 @@
              path (reduce conj [:eponai.common.parser/read-basis-t k] param-path)
              basis-t-for-this-key (get-in env path)
              env (assoc env :db-since (when basis-t-for-this-key
-                                        (d/since db basis-t-for-this-key))
+                                        (datomic/since db basis-t-for-this-key))
                             :db-history (when basis-t-for-this-key
-                                          (d/since (d/history db)
+                                          (datomic/since (datomic/history db)
                                                    basis-t-for-this-key)))
              ret (read env k p)]
          (cond-> ret
@@ -267,14 +249,14 @@
                  (assoc :value {})
                  ;; Value has not already been set?
                  (not (contains? (meta (:value ret)) :eponai.common.parser/read-basis-t))
-                 (update :value vary-meta assoc-in path (d/basis-t db)))))))
+                 (update :value vary-meta assoc-in path (datomic/basis-t db)))))))
 
 #?(:clj
    (defn with-mutation-message [mutate]
      (fn [env k p]
        (let [ret (mutate env k p)
              x->message (fn [x] (let [success? (not (instance? Throwable x))
-                                      msg (message (assoc env (if success? :return :exception) x) k p)
+                                      msg (server-message (assoc env (if success? :return :exception) x) k p)
                                       msg (cond-> msg
                                                   (and (map? msg) (= [:success :error] (keys msg)))
                                                   (set/rename-keys {:success ::success-message
@@ -335,47 +317,75 @@
   (fn [env k p]
     (read (assoc env :txs-by-project txs-by-project) k p)))
 
-(defn default-parser-initial-state []
-  #?(:clj {} :cljs {:txs-by-project (atom {})}))
+(defn- make-parser [{:keys [read mutate] :as state} parser-mw read-mw mutate-mw]
+  (let [read (-> read
+                 with-remote-guard
+                 with-local-read-guard
+                 read-with-dbid-in-query
+                 (read-mw state))
+        mutate (-> mutate
+                   with-remote-guard
+                   mutate-with-error-logging
+                   (mutate-mw state))]
+    (-> (om/parser {:read read :mutate mutate :elide-paths (:elide-paths state)})
+        (parser-mw state))))
 
-(defn parser
-  ([] (parser {}))
-  ([parser-opts]
-   (parser parser-opts (default-parser-initial-state)))
-  ([parser-opts initial-state]
-   (let [p (om/parser (merge {:read   (-> read
-                                          #?(:clj read-returning-basis-t)
-                                          #?(:cljs (with-txs-by-project-atom (:txs-by-project initial-state)))
-                                          with-remote-guard
-                                          with-local-read-guard
-                                          read-without-state
-                                          read-with-dbid-in-query
-                                          wrap-db
-                                          ;; This is interesting, since it'll re-create all middlewares.
-                                          #?(:cljs (cond-> (not (:elide-paths parser-opts))
-                                                           (with-elided-paths (delay (parser (merge parser-opts {:elide-paths true})
-                                                                                             initial-state))))))
-                              :mutate (-> mutate
-                                          with-remote-guard
-                                          ;; mutate-with-idempotent-invariants
-                                          mutate-with-error-logging
-                                          #?(:clj with-mutation-message)
-                                          wrap-db
-                                          #?(:cljs mutate-with-db-before-mutation
-                                             :clj mutate-without-history-id-param)
-                                          #?(:cljs (cond-> (not (:elide-paths parser-opts))
-                                                           (with-elided-paths (delay (parser (merge parser-opts {:elide-paths true})
-                                                                                             initial-state))))))}
-                                  parser-opts))]
-     #?(:cljs p
-        :clj  (-> p
-                  wrap-parser-state
-                  wrap-om-next-error-handler)))))
+(defn client-parser-state [& [custom-state]]
+  (merge {:read           client-read
+          :mutate         client-mutate
+          :elide-paths    false
+          :txs-by-project (atom {})}
+         custom-state))
 
-(defn test-parser
-  "Parser used for tests."
+(defn client-parser
+  ([] (client-parser (client-parser-state)))
+  ([state]
+   {:pre [(every? #(contains? state %) (keys (client-parser-state)))]}
+   (make-parser state
+                (fn [parser state] parser)
+                (fn [read {:keys [elide-paths txs-by-project] :as state}]
+                  (-> read
+                      wrap-datascript-db
+                      (with-txs-by-project-atom txs-by-project)
+                      (cond-> (not elide-paths)
+                              (with-elided-paths (delay (client-parser (assoc state :elide-paths true)))))))
+                (fn [mutate {:keys [elide-paths] :as state}]
+                  (-> mutate
+                      mutate-with-db-before-mutation
+                      wrap-datascript-db
+                      (cond-> (not elide-paths)
+                              (with-elided-paths (delay (client-parser (assoc state :elide-paths true))))))))))
+
+(defn server-parser-state [& [custom-state]]
+  (merge {:read         server-read
+          :mutate       server-mutate
+          :elide-paths  true}
+         custom-state))
+
+#?(:clj
+   (defn server-parser
+     ([] (server-parser (server-parser-state)))
+     ([state]
+      {:pre [(every? #(contains? state %) (keys (server-parser-state)))]}
+      (make-parser state
+                   (fn [parser state]
+                     (-> parser
+                         wrap-parser-state
+                         wrap-om-next-error-handler))
+                   (fn [read state]
+                     (-> read
+                         read-returning-basis-t
+                         wrap-datomic-db))
+                   (fn [mutate state]
+                     (-> mutate
+                         with-mutation-message
+                         mutate-without-history-id-param
+                         wrap-datomic-db))))))
+
+(defn test-client-parser
+  "Parser used for client tests."
   []
-  (let [parser (parser)]
+  (let [parser (client-parser)]
     (fn [env query & [target]]
       (parser (assoc env :running-tests? true)
               query
@@ -395,4 +405,3 @@
     (assert (some? (get-in env [:auth :username]))
             (str "No auth in parser's env: " env))
     (parser env query target)))
-

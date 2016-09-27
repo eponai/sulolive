@@ -238,6 +238,7 @@
                                                              :output-to     "resources/public/dev/js/out/budget.js"
                                                              :output-dir    "resources/public/dev/js/out/"
                                                              :optimizations :none
+                                                             :parallel-build true
                                                              :source-map    true}}
                                              {:id           "devcards"
                                               :source-paths ["src/" "src-hacks/web/" "test/"]

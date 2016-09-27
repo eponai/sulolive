@@ -204,7 +204,7 @@
 (defn run []
  (let [conn (utils/init-conn)
        reconciler (om/reconciler {:state   conn
-                                  :parser  (parser/parser)
+                                  :parser  (parser/client-parser)
                                   :remotes [:remote]
                                   :send    (backend/send!
                                              utils/reconciler-atom
