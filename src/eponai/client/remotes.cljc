@@ -71,6 +71,6 @@
           conf (d/entity (d/db conn) [:ui/singleton :ui.singleton/configuration])
           _ (debug "Remote for current-user status: " (:user/status current-user))
           remote-fn (post-to-url (if (= (:user/status current-user) :user.status/active)
-                                           (:ui.singleton.configuration.endpoints/user-api conf)
-                                           (:ui.singleton.configuration.endpoints/api conf)))]
+                                     (:ui.singleton.configuration.endpoints/user-api conf)
+                                     (:ui.singleton.configuration.endpoints/api conf)))]
       (remote-fn query))))

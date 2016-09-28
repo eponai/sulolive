@@ -146,7 +146,7 @@
 
 (defonce connection (atom nil))
 
-(defn create-connection [_]
+(defn create-connection [& _]
   (let [uri (env :db-url)]
     (try
       (if (contains? #{nil "" "test"} uri)

@@ -5,22 +5,49 @@
     [clojure.set :as set]
     [clojure.walk :as walk]
     [datascript.db]
-    #?(:clj
-    [datomic.api :as d]
-       :cljs [datascript.core :as d])
-    #?(:clj
-    [clj-time.core :as time]
+    [datomic.api :as datomic]
+    [datascript.core :as datascript]
+    #?(:clj [clj-time.core :as time]
        :cljs [cljs-time.core :as time])
     [eponai.common.parser.util :as parser]
     [eponai.common.format.date :as date]
     [eponai.common.report :as report])
   #?(:clj
-     (:import (clojure.lang ExceptionInfo)
-              (datomic.db Db))))
+     (:import [clojure.lang ExceptionInfo]
+              [datomic.db Db]
+              [datascript.db DB])))
+
+;; Defines a common api for datascript and datomic
+(defprotocol DatabaseApi
+  (q* [db query args])
+  (entity* [db eid])
+  (pull* [db pattern eid])
+  (pull-many* [db pattern eids]))
+
+(declare do-pull)
+
+#?(:clj
+   (extend-type Db
+     DatabaseApi
+     (q* [db query args] (apply datomic/q query db args))
+     (entity* [db eid] (datomic/entity db eid))
+     (pull* [db pattern eid] (do-pull datomic/pull db pattern eid))
+     (pull-many* [db pattern eids] (do-pull datomic/pull-many db pattern eids))))
+
+(extend-protocol DatabaseApi
+  #?@(:clj  [DB
+             (q* [db query args] (apply datascript/q query db args))
+             (entity* [db eid] (datascript/entity db eid))
+             (pull* [db pattern eid] (do-pull datascript/pull db pattern eid))
+             (pull-many* [db pattern eids] (do-pull datascript/pull-many db pattern eids))]
+      :cljs [datascript.db/DB
+             (q* [db query args] (apply datascript/q query db args))
+             (entity* [db eid] (datascript/entity db eid))
+             (pull* [db pattern eid] (do-pull datascript/pull db pattern eid))
+             (pull-many* [db pattern eids] (do-pull datascript/pull-many db pattern eids))]))
 
 (defn db-instance? [db]
-  #?(:clj (instance? Db db)
-     :cljs (satisfies? datascript.db/IDB db)))
+  (satisfies? DatabaseApi db))
 
 (defn- throw-error [e cause data]
   (let [#?@(:clj  [msg (.getMessage e)]
@@ -47,21 +74,21 @@
       (throw-error e ::pull-error {:pattern pattern
                                    :eid     ents}))))
 
-(defn q [query & inputs]
+(defn q [query db & inputs]
   (try
-    (apply (partial d/q query) inputs)
+    (q* db query inputs)
     (catch #?(:clj Exception :cljs :default) e
       (throw-error e ::query-error {:query  query
                                     :inputs inputs}))))
 
 (defn pull-many [db pattern eids]
-  (do-pull d/pull-many db pattern eids))
+  (pull-many* db pattern eids))
 
 (defn pull [db pattern eid]
   {:pre [(db-instance? db)
          (vector? pattern)
          (or (number? eid) (vector? eid) (keyword? eid))]}
-  (do-pull d/pull db pattern eid))
+  (pull* db pattern eid))
 
 
 (defn- where->query [where-clauses find-pattern symbols]
@@ -102,7 +129,7 @@
   {:pre [(db-instance? db)]}
   (when lookup-ref
     (try
-      (d/entity db (:db/id (pull db [:db/id] lookup-ref)))
+      (entity* db (:db/id (pull db [:db/id] lookup-ref)))
       #?(:cljs
          (catch :default e
            (prn e)
@@ -168,9 +195,10 @@
                          :symbols {'$since db-since}}))))
 
 (defn min-by [db k params]
+  (debug "db: " db)
   (some->> params
            (all-with db)
-           (map #(d/entity db %))
+           (map #(entity* db %))
            seq
            (apply min-key k)
            :db/id))
@@ -315,8 +343,8 @@
        (if (and (some? tx-conv) (some? user-conv))
          (let [;; All rates are relative USD so we need to pull what rates the user currency has,
                ;; so we can convert the rate appropriately for the user's selected currency
-               user-currency-conversion (d/entity db user-conv)
-               transaction-conversion (d/entity db tx-conv)
+               user-currency-conversion (entity* db user-conv)
+               transaction-conversion (entity* db tx-conv)
                #?@(:cljs [rate (/ (:conversion/rate transaction-conversion)
                                   (:conversion/rate user-currency-conversion))]
                    :clj  [rate (with-precision 10 (bigdec (/ (:conversion/rate transaction-conversion)
@@ -355,7 +383,7 @@
                                            (assoc-in m [curr date] conv))
                                          {})))
 
-        user-curr (:db/id (:user/currency (d/entity db (one-with db {:where [['?e :user/uuid user-uuid]]}))))
+        user-curr (:db/id (:user/currency (entity* db (one-with db {:where [['?e :user/uuid user-uuid]]}))))
         user-convs (delay
                      (when user-curr
                        (let [convs (into {}
@@ -367,7 +395,7 @@
                          (if (seq convs)
                            convs
                            ;; When there are no conversions for any of the transaction's dates, just pick any one.
-                           (let [one-conv (d/entity db (one-with db {:where   '[[?e :conversion/currency ?user-curr]]
+                           (let [one-conv (entity* db (one-with db {:where   '[[?e :conversion/currency ?user-curr]]
                                                                      :symbols {'?user-curr user-curr}}))]
                              {(get-in one-conv [:conversion/date :db/id]) (:db/id one-conv)})))))]
     (into {}
@@ -418,7 +446,7 @@
               (comp (date-filter end-date <=))))))
 
 (defn transactions-with-conversions [db user-uuid transaction-eids]
-  (let [tx-entities (into [] (comp (filter some?) (map #(d/entity db %)))
+  (let [tx-entities (into [] (comp (filter some?) (map #(entity* db %)))
                           transaction-eids)
         ;; include filter-excluded-tags in the transducer and use into [] instead of sequence.
         conversions (transaction-conversions db user-uuid tx-entities)
@@ -472,7 +500,7 @@
       {:transaction/date [*]}]))
 
 (defn widget-with-data [db transactions {:keys [widget/uuid] :as widget}]
-  (let [widget-entity (d/entity db [:widget/uuid uuid])
+  (let [widget-entity (entity* db [:widget/uuid uuid])
         filtered-transactions (filter-transactions {:filter (:widget/filter widget-entity)}
                                                    transactions)
         ;;timestamps (map #(:date/timestamp (:transaction/date %)) transactions)

@@ -5,16 +5,16 @@
             [om.next :as om]
             [cognitect.transit :as transit]
             [datascript.core :as d]
+            [clojure.set :as set]
+            [taoensso.timbre :as timbre #?(:clj :refer :cljs :refer-macros) [debug error trace warn]]
     #?@(:clj
         [[clojure.core.async :as async :refer [go <! >! chan timeout]]
          [clj-http.client :as http]
-         [clojure.edn :as reader]
-         [taoensso.timbre :refer [debug error trace warn]]]
+         [clojure.edn :as reader]]
         :cljs
         [[cljs.core.async :as async :refer [<! >! chan timeout]]
          [cljs-http.client :as http]
-         [cljs.reader :as reader]
-         [taoensso.timbre :refer-macros [debug error trace warn]]]))
+         [cljs.reader :as reader]]))
   #?(:cljs (:require-macros [cljs.core.async.macros :refer [go]]))
   #?(:clj (:import [datascript.impl.entity Entity]
                    [java.util UUID]))
@@ -24,16 +24,55 @@
 (def DatascriptEntityAsMap (transit/write-handler (constantly "map")
                                                   (fn [v] (into {} v))))
 
-(defn- send [send-fn url opts]
+#?(:clj
+   (defn to-cljs-http-response
+     "Normalize http responses to match that of cljs-http.
+
+     See implementation of an xhr request:
+     https://github.com/r0man/cljs-http/blob/master/src/cljs_http/core.cljs"
+     [clj-http-request]
+     {:pre [(fn? clj-http-request)]}
+     (try
+       (let [response (clj-http-request)]
+         (assoc response :success (<= 200 (:status response) 299)))
+       (catch java.net.ConnectException e
+         (debug "Unable to connect to host. Exception: " e
+                " Returning offline status.")
+         {:success false
+          :error-code :offline
+          :exception e})
+       (catch Throwable e
+         (warn "Unknown error: " e " message: " (.getMessage e))
+         {:success false
+          :error-code :exception
+          :exception e}))))
+
+(defn send [send-fn url opts]
+  (debug "Opts: " opts)
+  (debug "Url: " url)
   (let [transit-opts {:transit-opts
-                      {:encoding-opts {:handlers {#?(:clj Entity :cljs e/Entity) DatascriptEntityAsMap}}
+                      {:encoding-opts
+                       {:handlers {#?(:clj Entity :cljs e/Entity) DatascriptEntityAsMap}}
                        :decoding-opts
                        ;; favor ClojureScript UUIDs instead of Transit UUIDs
                        ;; https://github.com/cognitect/transit-cljs/pull/10
                                       {:handlers {"u" #?(:clj #(UUID/fromString %) :cljs uuid)
                                                   "n" reader/read-string
-                                                  "f" reader/read-string}}}}]
-    (send-fn url (merge opts transit-opts))))
+                                                  "f" reader/read-string}}}}
+        ;; http-clj/cljs has different apis to their http.client/post method.
+        #?@(:clj  [params (-> transit-opts
+                              (update :transit-opts set/rename-keys {:encoding-opts :encode
+                                                                     :decoding-opts :decode})
+                              ;; TODO: rename transit-params in the remotes to something else?
+                              (assoc :form-params (:transit-params opts)
+                                     :content-type :transit+json))]
+            :cljs [params (merge opts transit-opts)])]
+    (debug  "Sending params: " params " to: " url)
+    ;; http-cljs returns a channel with the response on it.
+    ;; http-clj doesnt.
+    #?(:cljs (send-fn url params)
+       :clj  (go (to-cljs-http-response
+                   #(send-fn url params))))))
 
 (defn- <send [remote->send remote-key query]
   (go
@@ -42,17 +81,19 @@
             ((get remote->send remote-key) query)
             _ (debug "Sending to " remote-key " query: " query
                      "method: " method " url: " url "opts: " opts)
-            {:keys [body status headers]}
+            {:keys [success body status headers error-code] :as response}
             (response-fn (<! (send (condp = method
                                      :get http/get
                                      :post http/post)
                                    url opts)))]
         (cond
-          (<= 200 status 299)
+          (true? success)
           (do
             (debug "Recieved response from remote:" body "status:" status)
             {:response body
              :post-merge-fn post-merge-fn})
+          ;; TODO: Do something about specific error codes?
+          ;; Like, offline?
           :else
           (throw (ex-info "Not 2xx response remote."
                           {:remote remote-key

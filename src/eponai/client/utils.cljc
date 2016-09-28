@@ -17,9 +17,24 @@
 ;; ---------------------
 ;; -- App initialization
 
+;; These atoms must only be used from the repl or in app initialization!
 (defonce reconciler-atom (atom nil))
-
 (defonce conn-atom (atom nil))
+
+(defn create-conn []
+  (let [ui-state [{:ui/singleton :ui.singleton/app}
+                  {:ui/singleton :ui.singleton/auth}
+                  {:ui/component                      :ui.component/project
+                   :ui.component.project/selected-tab :dashboard}
+                  {:ui/component :ui.component/widget}
+                  {:ui/component :ui.component/root}
+                  {:ui/component :ui.component/mutation-queue}
+                  {:ui/component :ui.component/sidebar
+                   :ui.component.sidebar/newsletter-subscribe-status
+                                 :ui.component.sidebar.newsletter-subscribe-status/not-sent}]
+        conn (d/create-conn (common.datascript/ui-schema))]
+    (d/transact! conn ui-state)
+    conn))
 
 (defn init-conn
   "Sets up the datascript state. Caches the state so we can keep our app state between
@@ -29,19 +44,7 @@
     (do
       (debug "Reusing old conn. It currently has schema for attributes:" (-> @conn-atom deref :schema keys))
       @conn-atom)
-    (let [ui-state [{:ui/singleton :ui.singleton/app}
-                    {:ui/singleton :ui.singleton/auth}
-                    {:ui/component                      :ui.component/project
-                     :ui.component.project/selected-tab :dashboard}
-                    {:ui/component :ui.component/widget}
-                    {:ui/component :ui.component/root}
-                    {:ui/component :ui.component/mutation-queue}
-                    {:ui/component :ui.component/sidebar
-                     :ui.component.sidebar/newsletter-subscribe-status
-                                   :ui.component.sidebar.newsletter-subscribe-status/not-sent}]
-          conn (d/create-conn (common.datascript/ui-schema))]
-      (d/transact! conn ui-state)
-      (reset! conn-atom conn))))
+    (reset! conn-atom (create-conn))))
 
 ;; --------------------------
 ;; -- Mutation queue protocol

@@ -8,7 +8,7 @@
             [eponai.common.validate]
             [eponai.server.email :as e]
             [eponai.server.external.openexchangerates :as exch]
-            [eponai.server.datomic-dev :refer [connect!]]
+            [eponai.server.datomic-dev :as datomic_dev]
             [eponai.server.parser.read]
             [eponai.server.parser.mutate]
             [eponai.server.routes :refer [site-routes api-routes]]
@@ -69,40 +69,47 @@
 ;; <--- END Re-def hack.
 
 (defn init
-  []
+  [opts]
   (info "Initializing server...")
-  (let [conn (connect!)]
+  (let [conn (if (::stateless-server opts)
+               (datomic_dev/create-connection)
+               (datomic_dev/connect!))]
     ;; See comments about this where app*args and app is defined.
     (alter-var-root (var app*args) (fn [_] [conn]))
     (alter-var-root (var app) call-app*))
   (info "Done initializing server."))
 
 (defn start-server
-  ([] (start-server (var app) {}))
-  ([handler opts]
-   (init)
+  ([] (start-server {}))
+  ([opts] (start-server opts (var app)))
+  ([opts handler]
+   (init opts)
    (let [default-port 3000
-         port (try
-                (Long/parseLong (env :port))
-                (catch Exception e
-                  default-port))]
+         env-port (try
+                    (Long/parseLong (env :port))
+                    (catch Exception e
+                      nil))
+         port (or (:port opts) env-port default-port)]
      ;; by passing (var app) to run-jetty, it'll be forced to
      ;; evaluate app as code changes.
      (info "Using port: " port)
-     (jetty/run-jetty handler (merge {:port port}
-                                     opts)))))
+     (jetty/run-jetty handler (merge {:port port} (dissoc opts :port))))))
 
 (defn -main [& _]
   (start-server))
 
 (defn main-debug
-  "For repl-debug use.
-  Returns a future with the jetty-server.
-  The jetty-server will block the current thread, so
-  we just wrap it in something dereffable."
-  []
+  "For repl, debug and test usages. Takes an optional map. Returns the jetty-server."
+  [& [opts]]
+  {:pre [(or (nil? opts) (map? opts))]}
   (reset! in-production? false)
-  (start-server (-> (var app)
+  (start-server (merge {:join? false} opts)
+                (-> (var app)
                     (prone/wrap-exceptions {:app-namespaces ["eponai"]})
-                    reload/wrap-reload)
-                {:join? false}))
+                    reload/wrap-reload)))
+
+(defn start-server-for-tests [& [opts]]
+  {:pre [(or (nil? opts) (map? opts))]}
+  (reset! in-production? false)
+  (start-server (merge {:join? false :port 0 ::stateless-server true :daemon? true}
+                       opts)))

@@ -144,7 +144,7 @@
   arbitrary actions by key.
   Returns merge function for om.next's reconciler's :merge"
   [merge-fn]
-  (fn [reconciler current-db {:keys [db result meta history-id] :as novelty}]
+  (fn [reconciler current-db {:keys [db result meta history-id] :as novelty} query]
     (debug "Merge! transacting novelty:" (update novelty :db :max-tx))
     (let [db (cond-> db (some? meta) (merge-meta meta))
           ret (if result

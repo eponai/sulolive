@@ -108,10 +108,12 @@
 ;;; ####################### Playground ##############################
 
 (defmethod client-mutate 'playground/subscribe
-  [{:keys [state]} k {:keys [email]}]
+  [{:keys [state reconciler]} k {:keys [email]}]
+  (assert (some? reconciler) (str "No reconciler passed to the env of " k))
   {:action (fn []
              (go
+               ;; TODO: Turn this into a remote mutation instead!
                (let [ret (<! (http/post homeless/email-endpoint-subscribe {:form-params {:email email}}))]
-                 (om/merge! (deref utils/reconciler-atom) {:result {k ret :routing/app-root {}}}))))})
+                 (om/merge! reconciler {:result {k ret :routing/app-root {}}}))))})
 
 
