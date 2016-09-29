@@ -5,7 +5,7 @@
     [clojure.set :as set]
     [clojure.walk :as walk]
     [datascript.db]
-    [datomic.api :as datomic]
+    #?(:clj [datomic.api :as datomic])
     [datascript.core :as datascript]
     #?(:clj [clj-time.core :as time]
        :cljs [cljs-time.core :as time])
