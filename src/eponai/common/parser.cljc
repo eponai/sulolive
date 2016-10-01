@@ -260,18 +260,24 @@
                  (not (contains? (meta (:value ret)) :eponai.common.parser/read-basis-t))
                  (update :value vary-meta assoc-in path (datomic/basis-t db)))))))
 
+(def tx-report-keys [:db-after :db-before :tx-data :tempids])
+
 #?(:clj
    (defn with-mutation-message [mutate]
      (fn [env k p]
        (let [ret (mutate env k p)
              x->message (fn [x] (let [success? (not (instance? Throwable x))
-                                      msg (server-message (assoc env (if success? :return :exception) x) k p)
+                                      msg (server-message (assoc env (if success?
+                                                                       :return
+                                                                       :exception) x) k p)
+                                      ;; Code for making defining of messages easier.
                                       msg (cond-> msg
                                                   (and (map? msg) (= [:success :error] (keys msg)))
                                                   (set/rename-keys {:success ::success-message
                                                                     :error   ::error-message})
                                                   (and (vector? msg) (= 2 (count msg)))
-                                                  (->> (zipmap [::success-message ::error-message])))]
+                                                  (->> (zipmap [::success-message
+                                                                ::error-message])))]
                                   (assert (and (::error-message msg)
                                                (::success-message msg))
                                           (str "Message for mutation: " k
@@ -288,7 +294,14 @@
                  (update :action (fn [action]
                                    (fn []
                                      (try
-                                       {::mutation-message (x->message (action))}
+                                       (let [ret (action)]
+                                         (cond-> {::mutation-message (x->message ret)}
+                                                 (map? ret)
+                                                 ;; it's common to call a transact at the
+                                                 ;; end of an action. Remove tx-report
+                                                 ;; keys from the return, but keep keys we
+                                                 ;; meant to return.
+                                                 (merge (apply dissoc ret tx-report-keys))))
                                        (catch ExceptionInfo ex
                                          (throw (ex-info (medley/ex-message ex)
                                                          (assoc (ex-data ex)

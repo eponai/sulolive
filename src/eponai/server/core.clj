@@ -1,30 +1,30 @@
 (ns eponai.server.core
   (:gen-class)
-  (:require [clojure.core.async :refer [<! go chan]]
+  (:require [clojure.core.async :as async :refer [<! go chan]]
             [compojure.core :refer :all]
             [environ.core :refer [env]]
             [datomic.api :as d]
             [eponai.common.parser :as parser]
             [eponai.common.validate]
-            [eponai.server.email :as e]
+            [eponai.server.email :as email]
             [eponai.server.external.openexchangerates :as exch]
             [eponai.server.datomic-dev :as datomic_dev]
             [eponai.server.parser.read]
             [eponai.server.parser.mutate]
             [eponai.server.routes :refer [site-routes api-routes]]
             [eponai.server.middleware :as m]
+            [eponai.server.external.stripe :as stripe]
             [ring.adapter.jetty :as jetty]
             [taoensso.timbre :refer [debug error info]]
     ;; Debug/dev requires
             [ring.middleware.reload :as reload]
-            [prone.middleware :as prone]
-            [eponai.server.external.stripe :as stripe]
-            [eponai.server.email :as email]))
+            [prone.middleware :as prone]))
 
 (defonce in-production? (atom true))
 
-(defn app* [conn]
+(defn app* [conn extra-middleware]
   (-> (routes api-routes site-routes)
+      (cond-> (some? extra-middleware) extra-middleware)
       m/wrap-post-middlewares
       (m/wrap-authenticate conn)
       m/wrap-login-parser
@@ -75,7 +75,7 @@
                (datomic_dev/create-connection)
                (datomic_dev/connect!))]
     ;; See comments about this where app*args and app is defined.
-    (alter-var-root (var app*args) (fn [_] [conn]))
+    (alter-var-root (var app*args) (fn [_] [conn (::extra-middleware opts)]))
     (alter-var-root (var app) call-app*))
   (info "Done initializing server."))
 
@@ -103,13 +103,27 @@
   [& [opts]]
   {:pre [(or (nil? opts) (map? opts))]}
   (reset! in-production? false)
-  (start-server (merge {:join? false} opts)
-                (-> (var app)
-                    (prone/wrap-exceptions {:app-namespaces ["eponai"]})
-                    reload/wrap-reload)))
+  (start-server (merge {:join?             false
+                        ::extra-middleware #(-> %
+                                                (prone/wrap-exceptions {:app-namespaces ["eponai"]})
+                                                reload/wrap-reload)}
+                       opts)))
 
-(defn start-server-for-tests [& [opts]]
+(defn start-server-for-tests [& [{:keys [email-chan] :as opts}]]
   {:pre [(or (nil? opts) (map? opts))]}
   (reset! in-production? false)
-  (start-server (merge {:join? false :port 0 ::stateless-server true :daemon? true}
-                       opts)))
+  (start-server
+    (merge {:join?             false
+            :port              0
+            ::stateless-server true
+            :daemon?           true
+            ::extra-middleware #(cond-> %
+                                        (some? email-chan)
+                                        (m/wrap-state {::email/send-verification-fn
+                                                       (fn [verification params]
+                                                         (debug "Putting verification: " verification
+                                                                " on email-chan with params: " params)
+                                                         (async/put! email-chan
+                                                                     {:verification verification
+                                                                      :params       params}))}))}
+           opts)))

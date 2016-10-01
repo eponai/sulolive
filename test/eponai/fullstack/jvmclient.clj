@@ -10,7 +10,9 @@
             [eponai.client.utils :as utils]
             [eponai.client.parser.merge :as merge]
             [eponai.server.core :as core]
+            [eponai.server.datomic-dev :as datomic-dev]
             [clj-http.client :as http]
+            [clj-http.cookies :as cookies]
             [clojure.core.async :as async]
             [taoensso.timbre :refer [debug]]))
 
@@ -27,19 +29,22 @@
 
 (defmulti jvm-client-merge om/dispatch)
 
-(defn create-client [server did-merge-fn]
-  {:pre [(.isRunning server)]}
-  (let [server-url (str "http://localhost:" (.getPort (.getURI server)) "/api")
-        conn (utils/create-conn)
+(defn create-client [endpoint-atom did-merge-fn]
+  (let [conn (utils/create-conn)
         reconciler-atom (atom nil)
+        cookie-store (cookies/cookie-store)
         reconciler (om/reconciler {:state   conn
                                    :parser  (parser/client-parser)
                                    :send    (backend/send! reconciler-atom
-                                                           {:remote (-> (remotes/post-to-url server-url)
-                                                                        (remotes/read-basis-t-remote-middleware conn))}
+                                                           {:remote (-> (remotes/post-to-url nil)
+                                                                        (remotes/wrap-update :url (fn [& _] @endpoint-atom))
+                                                                        (remotes/read-basis-t-remote-middleware conn)
+                                                                        (remotes/wrap-update :opts assoc
+                                                                                             :cookie-store cookie-store))}
                                                            did-merge-fn)
                                    :merge   (merge/merge! jvm-client-merge)
-                                   :migrate nil})
+                                   :migrate nil
+                                   :history 100})
         _ (reset! reconciler-atom reconciler)
         c (om/add-root! reconciler JvmRoot nil)]
     (prn "c: " c)
@@ -72,23 +77,53 @@
                                (debug "App state was equal! :D: " eq?))))
                          (recur online?))))))))
 
-(defn run []
-  (let [server (core/start-server-for-tests)
-        callback-chan (async/chan)
+(defn log-in! [client email-chan callback-chan]
+  (debug "Transacting signin/email")
+  (om/transact! client `[(session.signin/email ~{:input-email datomic-dev/test-user-email
+                                                 :device :jvm})])
+  (debug "Transacted signin/email")
+  (debug "Awaiting email")
+  (let [[v c] (async/alts!! [email-chan (async/timeout 5000)])]
+    (debug "Awaited email")
+    (when (not= c email-chan)
+      (throw (ex-info "client login timed out" {:where "awaiting email"})))
+    (let [_ (debug "client recieved from email chan: " v)
+          {:keys [:verification/uuid :verification/value]} (:verification v)
+          _ (backend/drain-channel callback-chan)
+          _ (om/transact! client `[(session.signin.email/verify ~{:verify-uuid uuid})])
+          [v c] (async/alts!! [callback-chan (async/timeout 5000)])]
+      (when (not= c callback-chan)
+        (throw (ex-info "client login timed out" {:where "awaiting verification"})))
+      (debug "hopefully logged in now?"))))
+
+(defn logged-in-client [server-url email-chan callback-chan]
+  (let [endpoint-atom (atom (str server-url "/api"))
         callback-fn (fn [client] (async/put! callback-chan client))
-        client->callback (let [state (atom {})]
-                           (go
-                             (while true
-                               (let [client (<! callback-chan)]
-                                 (swap! state update client (fnil #(async/>!! % client) (async/chan 1))))))
-                           (fn [client]
-                             (swap! state update client (fnil identity (async/chan 1)))
-                             (get @state client)))
-        client1 (create-client server callback-fn)
-        client2 (create-client server callback-fn)
+        client (create-client endpoint-atom callback-fn)
+        _ (log-in! client email-chan callback-chan)
+        _ (reset! endpoint-atom (str server-url "/api/user"))]
+    client))
+
+(defn run []
+  (let [email-chan (async/chan)
+        server (core/start-server-for-tests {:email-chan email-chan})
+
+        callback-chan (async/chan)
+        server-url (str "http://localhost:" (.getPort (.getURI server)))
+        _ (debug "CREATING USER 1...")
+        client1 (logged-in-client server-url email-chan callback-chan)
+        _ (debug "DONE USER 1.")
+        _ (debug "CREATING USER 2...")
+        client2 (logged-in-client server-url email-chan callback-chan)
+        _ (debug "DONE USER 2.")
         query-chan (async/chan)
         online?-chan (async/chan)
         clients [client1 client2]
+        client->callback (into {} (map #(vector % (async/chan 10))) clients)
+        _ (go
+            (while true
+              (let [client (<! callback-chan)]
+                (>! (client->callback client) client))))
         _ (mutation-state-machine query-chan online?-chan clients client->callback)]
     (async/put! query-chan
                 [client1 `[(transaction/create {:transaction/tags       ({:tag/name "thailand"}),

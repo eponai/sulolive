@@ -16,6 +16,9 @@
      :opts        {:transit-params {:query query}}
      :response-fn identity}))
 
+(defn wrap-update [remote-fn k f & args]
+  (fn [query]
+    (apply update (remote-fn query) k f args)))
 
 (defn read-basis-t-remote-middleware
   "Given a remote-fn (that describes what, where and how to send a request to a server),

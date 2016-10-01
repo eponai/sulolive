@@ -65,7 +65,8 @@
                                                                      :decoding-opts :decode})
                               ;; TODO: rename transit-params in the remotes to something else?
                               (assoc :form-params (:transit-params opts)
-                                     :content-type :transit+json))]
+                                     :content-type :transit+json
+                                     :cookie-store (:cookie-store opts)))]
             :cljs [params (merge opts transit-opts)])]
     (debug  "Sending params: " params " to: " url)
     ;; http-cljs returns a channel with the response on it.

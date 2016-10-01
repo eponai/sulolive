@@ -164,6 +164,7 @@
   {:action (fn []
              (debug "signup/email with params:" params)
              ;; TODO: Need a more generic way of specifying required parameters for mutations.
+             ;; TODO: clojure.spec?
              (when-not device
                (throw (ex-info (str "No device specified for " k
                                     ". Specify :device with either :web, :ios or whatever"
