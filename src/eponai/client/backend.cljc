@@ -294,7 +294,7 @@
 
   Named after Lee Byron who talked about this approach in his talk
   url: https://twitter.com/petterik_/status/735864074659995648"
-  [reconciler-atom query-chan]
+  [reconciler-atom query-chan did-merge-fn]
   (go
     (while true
       (try
@@ -373,19 +373,21 @@
           ;; Outside the loop. No more remote queries right now. Flatten the db
           ;; making all queued mutations permanent.
           (cb {:db (flatten-db (d/db app-state))}))
-
         ;; TODO: Add more try catches.
 
         (catch :default e
           (debug "Error in query loop: " e ". Will recur with the next query.")
-          (error e))))))
+          (error e))
+        (finally
+          (when did-merge-fn
+            (did-merge-fn @reconciler-atom)))))))
 
 (defn send!
-  [reconciler-atom remote->send]
+  [reconciler-atom remote->send & [did-merge-fn]]
   {:pre [(map? remote->send)]}
   (let [query-chan (async/chan 10000)
         ;; Make leeb listen to the query-chan:
-        _ (leeb reconciler-atom query-chan)]
+        _ (leeb reconciler-atom query-chan did-merge-fn)]
     (fn [queries cb]
      (run! (fn [[key query]]
              (async/put! query-chan {:remote->send remote->send

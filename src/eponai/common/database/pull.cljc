@@ -14,8 +14,20 @@
     [eponai.common.report :as report])
   #?(:clj
      (:import [clojure.lang ExceptionInfo]
+              [datomic Connection]
               [datomic.db Db]
               [datascript.db DB])))
+
+(defprotocol ConnectionApi
+  (db* [conn]))
+
+(extend-protocol ConnectionApi
+  #?@(:clj [Connection
+            (db* [conn] (datomic/db conn))
+            clojure.lang.IDeref
+            (db* [conn] (datascript/db conn))]
+      :cljs [IDeref
+             (db* [conn] (datascript/db conn))]))
 
 ;; Defines a common api for datascript and datomic
 (defprotocol DatabaseApi
@@ -26,16 +38,13 @@
 
 (declare do-pull)
 
-#?(:clj
-   (extend-type Db
-     DatabaseApi
-     (q* [db query args] (apply datomic/q query db args))
-     (entity* [db eid] (datomic/entity db eid))
-     (pull* [db pattern eid] (do-pull datomic/pull db pattern eid))
-     (pull-many* [db pattern eids] (do-pull datomic/pull-many db pattern eids))))
-
 (extend-protocol DatabaseApi
-  #?@(:clj  [DB
+  #?@(:clj  [Db
+             (q* [db query args] (apply datomic/q query db args))
+             (entity* [db eid] (datomic/entity db eid))
+             (pull* [db pattern eid] (do-pull datomic/pull db pattern eid))
+             (pull-many* [db pattern eids] (do-pull datomic/pull-many db pattern eids))
+             DB
              (q* [db query args] (apply datascript/q query db args))
              (entity* [db eid] (datascript/entity db eid))
              (pull* [db pattern eid] (do-pull datascript/pull db pattern eid))
@@ -195,7 +204,6 @@
                          :symbols {'$since db-since}}))))
 
 (defn min-by [db k params]
-  (debug "db: " db)
   (some->> params
            (all-with db)
            (map #(entity* db %))

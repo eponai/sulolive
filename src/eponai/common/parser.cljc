@@ -2,6 +2,7 @@
   (:require [eponai.common.parser.util :as util #?(:clj :refer :cljs :refer-macros) [timeit]]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn trace]]
             [om.next :as om]
+            [om.next.cache :as om.cache]
             [datascript.core :as datascript]
     #?(:clj [datomic.api :as datomic])
     #?(:clj [eponai.server.datomic.filter :as filter])
@@ -143,14 +144,22 @@
             target)))
 
 
+(comment
+  "om.next main repo version:"
+  (defn reconciler->history-id [reconciler]
+   (let [history (-> reconciler :config :history)
+         last-history-id (om.cache/get-most-recent-id history)]
+     ;; Assertions about om.next's history implementation:
+     (assert (.-arr history)
+             (str "om.next's history had no property (.-arr h)."
+                  " Check the implementation of om.next.cache."
+                  " history: " history))
+     last-history-id)))
+
+;; org.clojars.petterik/om version:
 (defn reconciler->history-id [reconciler]
   (let [history (-> reconciler :config :history)
-        last-history-id (last (.-arr history))]
-    ;; Assertions about om.next's history implementation:
-    (assert (.-arr history)
-            (str "om.next's history had no property (.-arr h)."
-                 " Check the implementation of om.next.cache."
-                 " history: " history))
+        last-history-id (om.cache/get-most-recent-id history)]
     last-history-id))
 
 (defn mutate-with-db-before-mutation [mutate]

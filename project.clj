@@ -5,7 +5,8 @@
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[cljsjs/react "15.3.1-0"]
                  [cljsjs/react-dom "15.3.1-0"]
-                 [org.omcljs/om "1.0.0-alpha46"]
+                 [org.clojars.petterik/om "1.0.0-alpha47-SNAPSHOT"]
+                 ;;[org.omcljs/om "1.0.0-alpha46"]
                  [clj-http "2.1.0"]
                  [clj-time "0.11.0"]
                  [compojure "1.5.1"]
@@ -171,8 +172,11 @@
                         :aot        :all
                         :prep-tasks ["compile" "prod-build-web"]}
 
-             :mobile   {:dependencies [[org.omcljs/om "1.0.0-alpha46"
+             :mobile   {:dependencies 
+                                      [[org.clojars.petterik/om "1.0.0-alpha47-SNAPSHOT"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
+                                    ;; [[org.omcljs/om "1.0.0-alpha46"
+                                    ;;   :exclusions [cljsjs/react cljsjs/react-dom]]
                                        [figwheel-sidecar "0.5.7"]
                                        [com.cemerick/piggieback "0.2.1"]]
                         :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
@@ -192,8 +196,11 @@
                                                                 :output-dir    "target/android"
                                                                 :optimizations :none}}]}}
 
-             :mob-prod {:dependencies [[org.omcljs/om "1.0.0-alpha46"
+             :mob-prod {:dependencies 
+                                      [[org.clojars.petterik/om "1.0.0-alpha47-SNAPSHOT"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]]
+                                    ;; [[org.omcljs/om "1.0.0-alpha46"
+                                    ;;   :exclusions [cljsjs/react cljsjs/react-dom]]]
                         :cljsbuild    {:builds [{:id           "ios-release"
                                                  :source-paths ["src" "src-hacks/react-native" "env/client/prod"]
                                                  :compiler     {:output-to     "index.ios.js"

@@ -30,7 +30,7 @@
   (debug "Validate transaction with params: " p)
   (let [{:keys [transaction/tags]} transaction
         {project-uuid :project/uuid} (:transaction/project transaction)
-        db-project (p/one-with (d/db state) {:where   '[[?u :user/uuid ?user-uuid]
+        db-project (p/one-with (p/db* state) {:where   '[[?u :user/uuid ?user-uuid]
                                                         [?e :project/users ?u]
                                                         [?e :project/uuid ?project-uuid]]
                                              :symbols {'?user-uuid   user-uuid
@@ -81,7 +81,7 @@
                   :missing-keys missing-keys}))
   (debug "No missing keys")
 
-  (let [db-entry (p/lookup-entity (d/db state) (:db/id transaction))]
+  (let [db-entry (p/lookup-entity (p/db* state) (:db/id transaction))]
     ;; Validate that the transaction that we're trying to edit exists in the db.
     (do-validate k p #(some? db-entry)
                  {:message "Transaction to be edited not found."
@@ -107,7 +107,7 @@
                   :code         :missing-required-fields
                   :missing-keys missing-keys})
     (let [dashboard-id (:widget/dashboard widget)
-          db-project (p/one-with (d/db state) {:where   '[[?d :dashboard/project ?e]
+          db-project (p/one-with (p/db* state) {:where   '[[?d :dashboard/project ?e]
                                                           [?u :user/uuid ?user-uuid]
                                                           [?e :project/users ?u]]
                                                :symbols {'?user-uuid   user-uuid
