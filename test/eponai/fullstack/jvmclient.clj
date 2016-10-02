@@ -77,29 +77,35 @@
                                (debug "App state was equal! :D: " eq?))))
                          (recur online?))))))))
 
+(defn- take-with-timeout [chan label & [timeout-millis]]
+  {:pre [(string? label)]}
+  (let [[v c] (async/alts!! [chan (async/timeout (or timeout-millis 5000))])]
+    (when-not (= c chan)
+      (throw (ex-info "client login timed out" {:where (str "awaiting " label)})))
+    v))
+
 (defn log-in! [client email-chan callback-chan]
   (debug "Transacting signin/email")
   (om/transact! client `[(session.signin/email ~{:input-email datomic-dev/test-user-email
                                                  :device :jvm})])
+  (take-with-timeout callback-chan "email transact!")
   (debug "Transacted signin/email")
   (debug "Awaiting email")
-  (let [[v c] (async/alts!! [email-chan (async/timeout 5000)])]
+  (let [v (take-with-timeout email-chan "email with verification")]
     (debug "Awaited email")
-    (when (not= c email-chan)
-      (throw (ex-info "client login timed out" {:where "awaiting email"})))
     (let [_ (debug "client recieved from email chan: " v)
           {:keys [:verification/uuid :verification/value]} (:verification v)
           _ (backend/drain-channel callback-chan)
-          _ (om/transact! client `[(session.signin.email/verify ~{:verify-uuid uuid})])
-          [v c] (async/alts!! [callback-chan (async/timeout 5000)])]
-      (when (not= c callback-chan)
-        (throw (ex-info "client login timed out" {:where "awaiting verification"})))
+          _ (om/transact! client `[(session.signin.email/verify ~{:verify-uuid (str uuid)})])
+          _ (take-with-timeout callback-chan "verification")]
+      (debug "Awaited verification: " v)
       (debug "hopefully logged in now?"))))
 
 (defn logged-in-client [server-url email-chan callback-chan]
   (let [endpoint-atom (atom (str server-url "/api"))
-        callback-fn (fn [client] (async/put! callback-chan client))
-        client (create-client endpoint-atom callback-fn)
+        did-merge-fn (fn [client] (async/put! callback-chan client))
+        client (create-client endpoint-atom did-merge-fn)
+        _ (take-with-timeout callback-chan "initial merge")
         _ (log-in! client email-chan callback-chan)
         _ (reset! endpoint-atom (str server-url "/api/user"))]
     client))

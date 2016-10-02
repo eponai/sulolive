@@ -72,8 +72,10 @@
     ;; http-cljs returns a channel with the response on it.
     ;; http-clj doesnt.
     #?(:cljs (send-fn url params)
-       :clj  (go (to-cljs-http-response
-                   #(send-fn url params))))))
+       :clj  (go (let [_ (debug "Cookie store before send: " (clj-http.cookies/get-cookies (:cookie-store opts)))
+                       ret (to-cljs-http-response #(send-fn url params))
+                       _ (debug "Cookie store AFTER send: " (clj-http.cookies/get-cookies (:cookie-store opts)))]
+                   ret)))))
 
 (defn- <send [remote->send remote-key query]
   (go
