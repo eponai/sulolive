@@ -18,7 +18,10 @@
 
 (om/defui JvmRoot
   static om/IQuery
-  (query [this] [:datascript/schema {:query/transactions [:transaction/title]}])
+  (query [this] [:datascript/schema {:query/transactions [:transaction/title
+                                                          {:transaction/date [:date/timestamp]}]}
+                 {:query/current-user [:user/uuid]}
+                 {:query/all-projects [:project/created-at]}])
   Object
   (render [this]
     (dom/div nil
@@ -52,7 +55,10 @@
     reconciler))
 
 (defn- app-state [reconciler]
-  @(om/app-state reconciler))
+  (let [parser (backend/get-parser reconciler)
+        env (backend/to-env reconciler)
+        query (om/get-query (or (om/app-root reconciler) JvmRoot))]
+    (parser env query)))
 
 (defn mutation-state-machine [query-chan online?-chan clients client->callback]
   (letfn [(<transact! [client query]
@@ -71,10 +77,11 @@
                                    ;; Sync
                                    callbacks (map #(<transact! % (om/full-query (om/app-root %)))
                                                   other-clients)
-                                   _ (backend/drain-channel (async/merge callbacks))
+                                   _ (run! #(async/<!! %) callbacks)
                                    eq? (apply = (map app-state clients))]
                                (assert eq? "App state was not equal.")
-                               (debug "App state was equal! :D: " eq?))))
+                               (debug "App state was equal! :D: " eq?)
+                               (debug "App states: " (mapv app-state clients)))))
                          (recur online?))))))))
 
 (defn- take-with-timeout [chan label & [timeout-millis]]
@@ -131,13 +138,17 @@
               (let [client (<! callback-chan)]
                 (>! (client->callback client) client))))
         _ (mutation-state-machine query-chan online?-chan clients client->callback)]
-    (async/put! query-chan
-                [client1 `[(transaction/create {:transaction/tags       ({:tag/name "thailand"}),
-                                                :transaction/date       {:date/ymd       "2015-10-10"}
-                                                :transaction/type       {:db/ident :transaction.type/expense},
-                                                :transaction/currency   {:currency/code "THB"},
-                                                :transaction/title      "lunch",
-                                                :transaction/project    [:project/uuid #uuid"57eeb170-4d6f-462c-b1e4-0b70c136924f"],
-                                                :transaction/uuid       #uuid"57eeb170-fc13-4f2d-b0e7-d36a624ab6d1",
-                                                :transaction/amount     180M,
-                                                :transaction/created-at 1})]])))
+    (async/put! query-chan [client1 [(om/get-query JvmRoot)]])
+    (async/put! query-chan [client1 [(om/get-query JvmRoot)]])))
+
+
+
+(comment `[(transaction/create {:transaction/tags       ({:tag/name "thailand"}),
+                                :transaction/date       {:date/ymd "2015-10-10"}
+                                :transaction/type       {:db/ident :transaction.type/expense},
+                                :transaction/currency   {:currency/code "THB"},
+                                :transaction/title      "lunch",
+                                :transaction/project    [:project/uuid #uuid"57eeb170-4d6f-462c-b1e4-0b70c136924f"],
+                                :transaction/uuid       #uuid"57eeb170-fc13-4f2d-b0e7-d36a624ab6d1",
+                                :transaction/amount     180M,
+                                :transaction/created-at 1})])

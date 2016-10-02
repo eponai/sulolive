@@ -4,14 +4,17 @@
             [om.next :as om]
             [om.next.cache :as om.cache]
             [datascript.core :as datascript]
-    #?(:clj [datomic.api :as datomic])
-    #?(:clj [eponai.server.datomic.filter :as filter])
+    #?(:clj
+            [datomic.api :as datomic])
+    #?(:clj
+            [eponai.server.datomic.filter :as filter])
             [eponai.client.utils :as client.utils]
             [clojure.walk :as w]
             [clojure.data :as diff]
             [clojure.set :as set]
             [medley.core :as medley])
-  #?(:clj (:import (clojure.lang ExceptionInfo))))
+  #?(:clj
+     (:import (clojure.lang ExceptionInfo))))
 
 (defmulti client-read om/dispatch)
 (defmulti client-mutate om/dispatch)
@@ -147,14 +150,14 @@
 (comment
   "om.next main repo version:"
   (defn reconciler->history-id [reconciler]
-   (let [history (-> reconciler :config :history)
-         last-history-id (om.cache/get-most-recent-id history)]
-     ;; Assertions about om.next's history implementation:
-     (assert (.-arr history)
-             (str "om.next's history had no property (.-arr h)."
-                  " Check the implementation of om.next.cache."
-                  " history: " history))
-     last-history-id)))
+    (let [history (-> reconciler :config :history)
+          last-history-id (om.cache/get-most-recent-id history)]
+      ;; Assertions about om.next's history implementation:
+      (assert (.-arr history)
+              (str "om.next's history had no property (.-arr h)."
+                   " Check the implementation of om.next.cache."
+                   " history: " history))
+      last-history-id)))
 
 ;; org.clojars.petterik/om version:
 (defn reconciler->history-id [reconciler]
@@ -184,9 +187,9 @@
                             (fn []
                               (f)
                               (datascript/reset-conn! state (client.utils/queue-mutation
-                                                     (datascript/db state)
-                                                     history-id
-                                                     (om/ast->query ast)))))))
+                                                              (datascript/db state)
+                                                              history-id
+                                                              (om/ast->query ast)))))))
           (let [ret (if (true? target-mutation) ast target-mutation)]
             (assoc mutation
               target
@@ -251,16 +254,15 @@
                                         (datomic/since db basis-t-for-this-key))
                             :db-history (when basis-t-for-this-key
                                           (datomic/since (datomic/history db)
-                                                   basis-t-for-this-key)))
-             ret (read env k p)]
-         (cond-> ret
-                 (nil? (:value ret))
-                 (assoc :value {})
-                 ;; Value has not already been set?
-                 (not (contains? (meta (:value ret)) :eponai.common.parser/read-basis-t))
-                 (update :value vary-meta assoc-in path (datomic/basis-t db)))))))
-
-(def tx-report-keys [:db-after :db-before :tx-data :tempids])
+                                                         basis-t-for-this-key)))
+             ret (read env k p)
+             ret (cond-> ret
+                         (nil? (:value ret))
+                         (assoc :value {})
+                         ;; Value has not already been set?
+                         (not (contains? (meta (:value ret)) :eponai.common.parser/read-basis-t))
+                         (update :value vary-meta assoc-in path (datomic/basis-t db)))]
+         ret))))
 
 #?(:clj
    (defn with-mutation-message [mutate]
@@ -295,20 +297,20 @@
                                    (fn []
                                      (try
                                        (let [ret (action)]
+                                         (assert (or (nil? ret) (map? ret))
+                                                 (str "Returned something from action: " k
+                                                      " but it was not a map. Was: " ret
+                                                      " Can only return maps from actions."))
                                          (cond-> {::mutation-message (x->message ret)}
                                                  (map? ret)
-                                                 ;; it's common to call a transact at the
-                                                 ;; end of an action. Remove tx-report
-                                                 ;; keys from the return, but keep keys we
-                                                 ;; meant to return.
-                                                 (merge (apply dissoc ret tx-report-keys))))
+                                                 (merge ret)))
                                        (catch ExceptionInfo ex
                                          (throw (ex-info (medley/ex-message ex)
                                                          (assoc (ex-data ex)
                                                            ::mutation-message (x->message ex)))))
                                        (catch Throwable e
                                          (throw (ex-info (.getMessage e)
-                                                         {:cause    e
+                                                         {:cause             e
                                                           ::mutation-message (x->message e)}))))))))))))
 
 (def ^:dynamic *parser-allow-remote* true)
@@ -367,6 +369,7 @@
                 (fn [parser state] parser)
                 (fn [read {:keys [elide-paths txs-by-project] :as state}]
                   (-> read
+                      wrap-debug-read-or-mutate
                       wrap-datascript-db
                       (with-txs-by-project-atom txs-by-project)
                       (cond-> (not elide-paths)
@@ -379,9 +382,9 @@
                               (with-elided-paths (delay (client-parser (assoc state :elide-paths true))))))))))
 
 (defn server-parser-state [& [custom-state]]
-  (merge {:read         server-read
-          :mutate       server-mutate
-          :elide-paths  true}
+  (merge {:read        server-read
+          :mutate      server-mutate
+          :elide-paths true}
          custom-state))
 
 #?(:clj

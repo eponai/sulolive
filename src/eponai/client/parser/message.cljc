@@ -79,7 +79,7 @@
       (assert (some? history-id) (str "Called (get-message-fn ) with history-id nil."
                                       " Needs history-id to look up messages. mutation-key: " mutation-key))
       (some->> (pull/one-with this {:where   '[[?e :mutation-message/history-id ?history-id]
-                                               ['?e :mutation-message/mutation-key ?mutation-key]]
+                                               [?e :mutation-message/mutation-key ?mutation-key]]
                                     :symbols {'?history-id   history-id
                                               '?mutation-key mutation-key}})
                (d/entity this)

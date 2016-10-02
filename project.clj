@@ -7,7 +7,7 @@
                  [cljsjs/react-dom "15.3.1-0"]
                  [org.clojars.petterik/om "1.0.0-alpha47-SNAPSHOT"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
-                 [clj-http "2.1.0"]
+                 [clj-http "3.3.0"]
                  [clj-time "0.11.0"]
                  [compojure "1.5.1"]
                  [com.cemerick/friend "0.2.1"

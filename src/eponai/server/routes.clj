@@ -155,6 +155,7 @@
 (defn call-parser [{:keys [::m/conn] :as request}]
   (let [ret (handle-parser-request request)
         m (meta-from-keys ret)
+        _ (debug "Meta from keys: " m)
         ret (->> ret
                  (handle-parser-response (assoc request :state conn))
                  (remove-mutation-tx-reports))]

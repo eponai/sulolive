@@ -6,6 +6,7 @@
             [cognitect.transit :as transit]
             [datascript.core :as d]
             [clojure.set :as set]
+            [medley.core :as medley]
             [taoensso.timbre :as timbre #?(:clj :refer :cljs :refer-macros) [debug error trace warn]]
     #?@(:clj
         [[clojure.core.async :as async :refer [go <! >! chan timeout]]
@@ -30,11 +31,16 @@
 
      See implementation of an xhr request:
      https://github.com/r0man/cljs-http/blob/master/src/cljs_http/core.cljs"
-     [clj-http-request]
-     {:pre [(fn? clj-http-request)]}
+     [send-fn url params]
+     {:pre [(fn? send-fn)]}
      (try
-       (let [response (clj-http-request)]
-         (assoc response :success (<= 200 (:status response) 299)))
+       (let [response (send-fn url params)
+             success? (<= 200 (:status response) 299)]
+         (cond-> response
+                 success?
+                 (-> (assoc :success success?)
+                     (update :body #(java.io.ByteArrayInputStream. (.getBytes %)))
+                     (#(http/coerce-transit-body params % :json)))))
        (catch java.net.ConnectException e
          (debug "Unable to connect to host. Exception: " e
                 " Returning offline status.")
@@ -56,11 +62,13 @@
                        :decoding-opts
                        ;; favor ClojureScript UUIDs instead of Transit UUIDs
                        ;; https://github.com/cognitect/transit-cljs/pull/10
-                                      {:handlers {"u" #?(:clj #(UUID/fromString %) :cljs uuid)
-                                                  "n" reader/read-string
-                                                  "f" reader/read-string}}}}
+                       {:handlers {"u" (transit/read-handler #?(:clj  #(UUID/fromString %)
+                                                                :cljs uuid))
+                                   "n" (transit/read-handler reader/read-string)
+                                   "f" (transit/read-handler reader/read-string)}}}}
         ;; http-clj/cljs has different apis to their http.client/post method.
         #?@(:clj  [params (-> transit-opts
+
                               (update :transit-opts set/rename-keys {:encoding-opts :encode
                                                                      :decoding-opts :decode})
                               ;; TODO: rename transit-params in the remotes to something else?
@@ -72,10 +80,7 @@
     ;; http-cljs returns a channel with the response on it.
     ;; http-clj doesnt.
     #?(:cljs (send-fn url params)
-       :clj  (go (let [_ (debug "Cookie store before send: " (clj-http.cookies/get-cookies (:cookie-store opts)))
-                       ret (to-cljs-http-response #(send-fn url params))
-                       _ (debug "Cookie store AFTER send: " (clj-http.cookies/get-cookies (:cookie-store opts)))]
-                   ret)))))
+       :clj  (go (to-cljs-http-response send-fn url params)))))
 
 (defn- <send [remote->send remote-key query]
   (go
@@ -153,16 +158,21 @@
              (first))]
     ;; transact conversions before transactions
     ;; because transactions depend on conversions.
-    (into (vec conversions)
-          (cond->> transactions
-                   (seq transactions)
-                   (sort-by #(get-in % [:transaction/date :date/timestamp]) >)))))
+    (into (vec conversions) transactions)))
+
+;; TODO: Sort transactions by date before transacting. Makes graphs update nicer.
+;; Can't do this yet because we don't transfer transactions with their refs.
+(comment (cond->> transactions
+                  (seq transactions)
+                  (sort-by (fn [tx]
+                             {:pre [(-> tx :transaction/date :date/timestamp)]}
+                             (get-in tx [:transaction/date :date/timestamp])) >)))
 
 ;; TODO: Un-hard-code this. Put it in the app-state or something.
 (def KEY-TO-RERENDER-UI :routing/app-root)
 
 ;; TODO: Copied from om internals
-(defn- to-env [r]
+(defn to-env [r]
   {:pre [(om/reconciler? r)]}
   (-> (:config r)
       (select-keys [:state :shared :parser :logger :pathopt])
@@ -170,7 +180,7 @@
       ;; environment when parsing in om.next/transact*
       (assoc :reconciler r)))
 
-(defn- get-parser [r]
+(defn get-parser [r]
   {:pre [(om/reconciler? r)]
    :post [(fn? %)]}
   (-> r :config :parser))
@@ -229,6 +239,7 @@
 (defn- merge-response! [cb stable-db received history-id]
   (let [{:keys [response error]} received
         {:keys [result meta]} response]
+    (debug "Response keys: " (keys response))
     ;; Reset db and apply response
     (if (nil? error)
       (do (cb {:db     stable-db
