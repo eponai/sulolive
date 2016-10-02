@@ -31,11 +31,8 @@
       ;; TODO: Create a protocol for the read-basis-t stuff?
       ;;       This would make it easier to understand what's stored in datascript.
       (assoc-in ret [:opts :transit-params :eponai.common.parser/read-basis-t]
-                (some->> (d/q '{:find [?e .] :where [[?e :db/ident :eponai.common.parser/read-basis-t]]}
-                              db)
-                         (d/entity db)
-                         (d/touch)
-                         (into {}))))))
+                (:eponai.common.parser.read-basis-t/map
+                  (d/entity db [:db/ident :eponai.common.parser/read-basis-t]))))))
 
 (defn http-call-remote
   "Remote which executes a http call.

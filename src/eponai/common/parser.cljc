@@ -248,7 +248,8 @@
              _ (assert (or (nil? param-path) (sequential? param-path))
                        (str "Path returned from read-basis-param-path for key: " k " params: " p
                             " was not nil or sequential. Was: " param-path))
-             path (reduce conj [:eponai.common.parser/read-basis-t k] param-path)
+             default-path [:eponai.common.parser/read-basis-t (:user-uuid env) k]
+             path (into default-path param-path)
              basis-t-for-this-key (get-in env path)
              env (assoc env :db-since (when basis-t-for-this-key
                                         (datomic/since db basis-t-for-this-key))
@@ -369,7 +370,6 @@
                 (fn [parser state] parser)
                 (fn [read {:keys [elide-paths txs-by-project] :as state}]
                   (-> read
-                      wrap-debug-read-or-mutate
                       wrap-datascript-db
                       (with-txs-by-project-atom txs-by-project)
                       (cond-> (not elide-paths)

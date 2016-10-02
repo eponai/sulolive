@@ -9,7 +9,7 @@
   (if (empty? tx)
     db
     (let [tx (if (sequential? tx) tx [tx])]
-      (debug "transacting: " tx)
+      (debug "transacting: " (cond-> tx (seq? tx) vec))
       (d/db-with db tx))))
 
 (defn merge-error [db key val]
@@ -131,12 +131,14 @@
 
 (defn merge-meta [db novelty-meta]
   {:post [(db/db? %)]}
-  (let [basis-t-novelty (:eponai.common.parser/read-basis-t novelty-meta)
-        basis-t-entity (->> (d/entity db [:db/ident :eponai.common.parser/read-basis-t])
-                            (into {:db/ident :eponai.common.parser/read-basis-t}))]
+  (let [new-map (:eponai.common.parser/read-basis-t novelty-meta)
+        old-map (:eponai.common.parser.read-basis-t/map
+                  (d/entity db [:db/ident :eponai.common.parser/read-basis-t]))
+        merged-map (merge-with deep-merge-fn old-map new-map)]
     ;; TODO: Only transact if the read-basis-t has changed?
     ;; (maybe it doesn't matter when there are a lot of users).
-    (transact db (merge-with deep-merge-fn basis-t-entity basis-t-novelty))))
+    (transact db {:db/ident                              :eponai.common.parser/read-basis-t
+                  :eponai.common.parser.read-basis-t/map merged-map})))
 
 (defn merge!
   "Takes a merge-fn which is passed [db key params] and

@@ -18,10 +18,15 @@
 
 (om/defui JvmRoot
   static om/IQuery
-  (query [this] [:datascript/schema {:query/transactions [:transaction/title
-                                                          {:transaction/date [:date/timestamp]}]}
+  (query [this] [:datascript/schema
                  {:query/current-user [:user/uuid]}
-                 {:query/all-projects [:project/created-at]}])
+                 :user/current
+                 {:query/all-projects [:project/uuid
+                                       :project/created-at
+                                       :project/users]}
+                 {:query/transactions [:transaction/title
+                                       {:transaction/date [:date/timestamp]}]}
+                 ])
   Object
   (render [this]
     (dom/div nil
@@ -80,8 +85,7 @@
                                    _ (run! #(async/<!! %) callbacks)
                                    eq? (apply = (map app-state clients))]
                                (assert eq? "App state was not equal.")
-                               (debug "App state was equal! :D: " eq?)
-                               (debug "App states: " (mapv app-state clients)))))
+                               (debug "App state was equal! :D: " eq?))))
                          (recur online?))))))))
 
 (defn- take-with-timeout [chan label & [timeout-millis]]
