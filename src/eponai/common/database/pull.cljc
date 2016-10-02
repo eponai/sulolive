@@ -24,9 +24,9 @@
 (extend-protocol ConnectionApi
   #?@(:clj [Connection
             (db* [conn] (datomic/db conn))
-            clojure.lang.IDeref
+            clojure.lang.Atom
             (db* [conn] (datascript/db conn))]
-      :cljs [IDeref
+      :cljs [Atom
              (db* [conn] (datascript/db conn))]))
 
 ;; Defines a common api for datascript and datomic
