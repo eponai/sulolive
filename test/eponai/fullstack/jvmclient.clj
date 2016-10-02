@@ -14,7 +14,8 @@
             [clj-http.client :as http]
             [clj-http.cookies :as cookies]
             [clojure.core.async :as async]
-            [taoensso.timbre :refer [debug]]))
+            [taoensso.timbre :refer [debug]]
+            [medley.core :as medley]))
 
 (om/defui JvmRoot
   static om/IQuery
@@ -74,18 +75,17 @@
         (let [[v c] (async/alts! [query-chan online?-chan])]
           (condp = c
             online?-chan (recur v)
-            query-chan (do
-                         (let [[client query] v
-                               _ (<! (<transact! client query))]
-                           (when online?
-                             (let [other-clients (remove (partial = client) clients)
-                                   ;; Sync
-                                   callbacks (map #(<transact! % (om/full-query (om/app-root %)))
-                                                  other-clients)
-                                   _ (run! #(async/<!! %) callbacks)
-                                   eq? (apply = (map app-state clients))]
-                               (assert eq? "App state was not equal.")
-                               (debug "App state was equal! :D: " eq?))))
+            query-chan (when-let [[client query] v]
+                         (<! (<transact! client query))
+                         (when online?
+                           (let [other-clients (remove (partial = client) clients)
+                                 ;; Sync
+                                 callbacks (map #(<transact! % (om/full-query (om/app-root %)))
+                                                other-clients)
+                                 _ (run! #(async/<!! %) callbacks)
+                                 eq? (apply = (map app-state clients))]
+                             (assert eq? "App state was not equal.")
+                             (debug "App state was equal! :D: " eq?)))
                          (recur online?))))))))
 
 (defn- take-with-timeout [chan label & [timeout-millis]]
@@ -121,11 +121,8 @@
         _ (reset! endpoint-atom (str server-url "/api/user"))]
     client))
 
-(defn run []
-  (let [email-chan (async/chan)
-        server (core/start-server-for-tests {:email-chan email-chan})
-
-        callback-chan (async/chan)
+(defn run-with-server [server email-chan]
+  (let [callback-chan (async/chan)
         server-url (str "http://localhost:" (.getPort (.getURI server)))
         _ (debug "CREATING USER 1...")
         client1 (logged-in-client server-url email-chan callback-chan)
@@ -140,12 +137,29 @@
         _ (go
             (while true
               (let [client (<! callback-chan)]
-                (>! (client->callback client) client))))
-        _ (mutation-state-machine query-chan online?-chan clients client->callback)]
+                (if (nil? client)
+                  (medley/map-vals async/close! client->callback)
+                  (>! (client->callback client) client)))))
+        sm (mutation-state-machine query-chan online?-chan clients client->callback)]
     (async/put! query-chan [client1 [(om/get-query JvmRoot)]])
-    (async/put! query-chan [client1 [(om/get-query JvmRoot)]])))
+    (async/put! query-chan [client1 [(om/get-query JvmRoot)]])
+    (async/close! query-chan)
+    (take-with-timeout sm "state-machine" (* 60 1000))
+    (async/close! email-chan)
+    (async/close! callback-chan)
+    ;; Ok to drain because everything is closed at this point.
+    (backend/drain-channel (async/merge (vals client->callback)))
+    ))
 
-
+(defn run []
+  (let [email-chan (async/chan)
+        server (core/start-server-for-tests {:email-chan email-chan})]
+    (try
+      (run-with-server server email-chan)
+      (finally
+        (.stop server)
+        (.join server)
+        (debug "DONE!")))))
 
 (comment `[(transaction/create {:transaction/tags       ({:tag/name "thailand"}),
                                 :transaction/date       {:date/ymd "2015-10-10"}
@@ -156,3 +170,4 @@
                                 :transaction/uuid       #uuid"57eeb170-fc13-4f2d-b0e7-d36a624ab6d1",
                                 :transaction/amount     180M,
                                 :transaction/created-at 1})])
+
