@@ -135,11 +135,11 @@
         clients [client1 client2]
         client->callback (into {} (map #(vector % (async/chan 10))) clients)
         _ (go
-            (while true
-              (let [client (<! callback-chan)]
-                (if (nil? client)
-                  (medley/map-vals async/close! client->callback)
-                  (>! (client->callback client) client)))))
+            (loop [client (<! callback-chan)]
+              (if (nil? client)
+                (medley/map-vals async/close! client->callback)
+                (do (>! (client->callback client) client)
+                    (recur (<! callback-chan))))))
         sm (mutation-state-machine query-chan online?-chan clients client->callback)]
     (async/put! query-chan [client1 [(om/get-query JvmRoot)]])
     (async/put! query-chan [client1 [(om/get-query JvmRoot)]])
@@ -148,8 +148,7 @@
     (async/close! email-chan)
     (async/close! callback-chan)
     ;; Ok to drain because everything is closed at this point.
-    (backend/drain-channel (async/merge (vals client->callback)))
-    ))
+    (backend/drain-channel (async/merge (vals client->callback)))))
 
 (defn run []
   (let [email-chan (async/chan)
