@@ -165,7 +165,8 @@
 
   :figwheel {:css-dirs    ["resources/public/style/app/css/"]
              :server-port ~(read-string (or (System/getenv "FIGWHEEL_PORT") "3449"))
-             :reload-clj-files {:clj true :cljc false}}
+;;             :reload-clj-files {:clj true :cljc false}
+ }
 
   :profiles {:uberjar  {:jvm-opts   ^:replace ["-Dclojure.compiler.direct-linking=true"
                                                "-Xmx1g" "-server"]

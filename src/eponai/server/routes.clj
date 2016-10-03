@@ -130,23 +130,27 @@
 
 (defn meta-from-keys [x]
   {:post [(or (nil? %) (map? %))]}
-  (cond
-    (map? x)
-    (reduce-kv (fn [m k v]
-                 (if (keyword? k)
-                   (merge-with merge
-                               m
-                               (meta v)
-                               (meta-from-keys v))
-                   m))
-               {}
-               x)
-    (sequential? x)
-    (apply merge (mapv meta-from-keys x))
-    :else (reduce-kv (fn [m k v]
-                       (cond-> m (some? v) (assoc k v)))
-                     nil
-                     (meta x))))
+  (letfn [(deep-merge-fn [a b]
+            (if (map? a)
+              (merge-with deep-merge-fn a b)
+              b))]
+    (cond
+     (map? x)
+     (reduce-kv (fn [m k v]
+                  (if (keyword? k)
+                    (merge-with deep-merge-fn
+                                m
+                                (meta v)
+                                (meta-from-keys v))
+                    m))
+                {}
+                x)
+     (sequential? x)
+     (apply merge (mapv meta-from-keys x))
+     :else (reduce-kv (fn [m k v]
+                        (cond-> m (some? v) (assoc k v)))
+                      nil
+                      (meta x)))))
 
 (def handle-parser-response
   "Will call response-handler for each key value in the parsed result."
@@ -155,7 +159,6 @@
 (defn call-parser [{:keys [::m/conn] :as request}]
   (let [ret (handle-parser-request request)
         m (meta-from-keys ret)
-        _ (debug "Meta from keys: " m)
         ret (->> ret
                  (handle-parser-response (assoc request :state conn))
                  (remove-mutation-tx-reports))]

@@ -94,7 +94,7 @@
                                                              ;; TODO: Do not transfer the whole conversion entity?
                                                              (assoc % :transaction/conversion tx-conv)
                                                              %)))
-                                             tx-entities)
+                                             (sort-by (comp :date/timestamp :transaction/date) > tx-entities))
                          :conversions  (d/pull-many db '[*] (seq conv-ids))
                          :refs         (d/pull-many db '[*] (seq ref-ids))})}))))
 

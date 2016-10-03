@@ -248,8 +248,9 @@
              _ (assert (or (nil? param-path) (sequential? param-path))
                        (str "Path returned from read-basis-param-path for key: " k " params: " p
                             " was not nil or sequential. Was: " param-path))
-             default-path [:eponai.common.parser/read-basis-t (:user-uuid env) k]
+             default-path [:eponai.common.parser/read-basis-t (str (:user-uuid env)) k]
              path (into default-path param-path)
+             _ (debug "basis-t path for " k " path: " path)
              basis-t-for-this-key (get-in env path)
              env (assoc env :db-since (when basis-t-for-this-key
                                         (datomic/since db basis-t-for-this-key))
@@ -263,6 +264,7 @@
                          ;; Value has not already been set?
                          (not (contains? (meta (:value ret)) :eponai.common.parser/read-basis-t))
                          (update :value vary-meta assoc-in path (datomic/basis-t db)))]
+         (debug "Setting basis-t meta for " k " meta: " (meta (:value ret)))
          ret))))
 
 #?(:clj

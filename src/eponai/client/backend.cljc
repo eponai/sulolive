@@ -25,6 +25,8 @@
 (def DatascriptEntityAsMap (transit/write-handler (constantly "map")
                                                   (fn [v] (into {} v))))
 
+;; TODO: Create a new namespace for eponai.client.http ?
+
 #?(:clj
    (defn to-cljs-http-response
      "Normalize http responses to match that of cljs-http.
@@ -38,8 +40,10 @@
              success? (<= 200 (:status response) 299)]
          (cond-> response
                  success?
-                 (-> (assoc :success success?)
-                     (update :body #(java.io.ByteArrayInputStream. (.getBytes %)))
+                 (assoc :success success?)
+                 ;; clj-http doesn't parse the body to transit for some reason.
+                 (string? (:body response))
+                 (-> (update :body #(java.io.ByteArrayInputStream. (.getBytes %)))
                      (#(http/coerce-transit-body params % :json)))))
        (catch java.net.ConnectException e
          (debug "Unable to connect to host. Exception: " e
@@ -54,8 +58,6 @@
           :exception e}))))
 
 (defn send [send-fn url opts]
-  (debug "Opts: " opts)
-  (debug "Url: " url)
   (let [transit-opts {:transit-opts
                       {:encoding-opts
                        {:handlers {#?(:clj Entity :cljs e/Entity) DatascriptEntityAsMap}}
@@ -76,7 +78,6 @@
                                      :content-type :transit+json
                                      :cookie-store (:cookie-store opts)))]
             :cljs [params (merge opts transit-opts)])]
-    (debug  "Sending params: " params " to: " url)
     ;; http-cljs returns a channel with the response on it.
     ;; http-clj doesnt.
     #?(:cljs (send-fn url params)
@@ -239,7 +240,6 @@
 (defn- merge-response! [cb stable-db received history-id]
   (let [{:keys [response error]} received
         {:keys [result meta]} response]
-    (debug "Response keys: " (keys response))
     ;; Reset db and apply response
     (if (nil? error)
       (do (cb {:db     stable-db

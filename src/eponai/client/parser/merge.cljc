@@ -3,13 +3,13 @@
             [datascript.db :as db]
             [eponai.common.parser :as parser]
             [eponai.client.parser.message :as message]
-            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug error trace warn]]))
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug error trace warn]]
+            [eponai.client.utils :as utils]))
 
 (defn transact [db tx]
   (if (empty? tx)
     db
     (let [tx (if (sequential? tx) tx [tx])]
-      (debug "transacting: " (cond-> tx (seq? tx) vec))
       (d/db-with db tx))))
 
 (defn merge-error [db key val]
@@ -124,17 +124,12 @@
       {:keys [] :next db}
       ordered-novelty)))
 
-(defn deep-merge-fn [a b]
-  (if (map? a)
-    (merge-with deep-merge-fn a b)
-    b))
-
 (defn merge-meta [db novelty-meta]
   {:post [(db/db? %)]}
   (let [new-map (:eponai.common.parser/read-basis-t novelty-meta)
         old-map (:eponai.common.parser.read-basis-t/map
                   (d/entity db [:db/ident :eponai.common.parser/read-basis-t]))
-        merged-map (merge-with deep-merge-fn old-map new-map)]
+        merged-map (utils/deep-merge old-map new-map)]
     ;; TODO: Only transact if the read-basis-t has changed?
     ;; (maybe it doesn't matter when there are a lot of users).
     (transact db {:db/ident                              :eponai.common.parser/read-basis-t

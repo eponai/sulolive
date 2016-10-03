@@ -162,6 +162,14 @@
   ([f coll]
    (sequence (distinct-by f) coll)))
 
+(defn- deep-merge-fn [a b]
+  (if (map? a)
+    (merge-with deep-merge-fn a b)
+    b))
+
+(defn deep-merge [a b]
+  (merge-with deep-merge-fn a b))
+
 ;; -------------------
 ;; -- Cached ui->props
 
