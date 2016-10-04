@@ -35,7 +35,6 @@
                    txs (into txs (datascript/mark-entity-txs id :transaction/uuid uuid))
                    _ (debug "editing transaction: " uuid " txs: " txs)
                    ret (transact/transact state txs)]
-               (debug "Edit transaction tx-report: " ret)
                ret))
    :remote true})
 
