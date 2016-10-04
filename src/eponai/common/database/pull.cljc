@@ -462,7 +462,7 @@
                                     (cond-> (into {:db/id id} %)
                                             (contains? conversions id)
                                             (assoc :transaction/conversion (get conversions id)))))]
-    (eduction entities->maps-xform tx-entities)))
+    (into [] entities->maps-xform tx-entities)))
 
 (defn filter-transactions [{filters :filter} transactions]
   (let [identity-xf (map identity)

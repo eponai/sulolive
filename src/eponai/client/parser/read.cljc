@@ -138,6 +138,20 @@
             txs (transaction-eids-by-project db project-eid)]
         (set/difference last-txs txs)))))
 
+(defn- tx-compare-key-fn [tx]
+  ((juxt (comp :date/timestamp :transaction/date) :db/id) tx))
+
+(defn- sorted-txs-set []
+  (sorted-set-by #(compare (tx-compare-key-fn %2)
+                           (tx-compare-key-fn %))))
+
+(defn assoc-conversion-xf [conversions-by-id]
+  (fn [{:keys [db/id] :as tx}]
+    {:pre [(some? id)]}
+    (if-let [conv (get conversions-by-id id)]
+      (assoc tx :transaction/conversion conv)
+      tx)))
+
 (defn all-local-transactions-by-project [{:keys [parser db txs-by-project] :as env} project-eid]
   (let [{:keys [db-used txs]} (get @txs-by-project project-eid)
         {:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
@@ -155,43 +169,26 @@
                 txs)
             (let [user-uuid (:user/uuid current-user)
                   new-with-convs (p/transactions-with-conversions db user-uuid new-txs)
+                  ;; TODO: Use pull api again instead of entities + into
                   new-with-convs (->> new-with-convs
                                       (map (fn [{:keys [:db/id] :as tx}]
                                              (into {:db/id id} tx))))
-                  ;; Group by uuid in an atom, so we can pick transactions by id destructively.
-                  new-by-uuid (atom (into {} (map #(vector (:transaction/uuid %) %)) new-with-convs))
-
                   ;; Old txs may have gotten new conversions, get them.
-                  ;; TODO: Optimize to only do this if there are new conversions?
                   old-convs (p/transaction-conversions db user-uuid txs)
 
-                  ;; Assoc :transaction/conversion in old tx if they need it.
-                  ;; Replace new transactions in the same position they had in the cached transactions.
-                  old-with-new-inserted (into [] (comp
-                                                   (map (fn [{:keys [db/id] :as tx}]
-                                                          {:pre [(some? id)]}
-                                                          (if-let [conv (get old-convs id)]
-                                                            (assoc tx :transaction/conversion conv)
-                                                            tx)))
-                                                   (map (fn [{:keys [transaction/uuid] :as old}]
-                                                          (if-let [new (get @new-by-uuid uuid)]
-                                                            (do (swap! new-by-uuid dissoc uuid)
-                                                                new)
-                                                            old))))
-                                              txs)
-                  ;; Pour the old into remaining new. We want new to be before old because
-                  ;; of sorting (not sure that it is correct to do so).
-                  remaining-new (vals @new-by-uuid)
-                  new-and-old (cond->> old-with-new-inserted
-                                       (seq remaining-new)
-                                       (into (vec remaining-new)
-                                             (remove #(contains? removed-txs (:db/id %))))
-                                       ;; Storing the transactions time-decending because
-                                       ;; it's both mobile and web's default ordering.
-                                       ;; Doing this sort in our read, lets us take advantage
-                                       ;; of our read caching.
-                                       :always
-                                       (sort-transactions-time-decending))]
+                  new-and-old (cond-> (or txs (sorted-txs-set))
+                                      (seq removed-txs)
+                                      (#(apply disj % (map (fn [id]
+                                                             (d/entity db id))
+                                                           removed-txs)))
+                                      ;; Make space for the new ones.
+                                      (seq new-with-convs)
+                                      (#(apply disj % new-with-convs))
+                                      (seq old-convs)
+                                      (->> (into (sorted-txs-set)
+                                                 (map (assoc-conversion-xf old-convs))))
+                                      :always
+                                      (into new-with-convs))]
               (swap! txs-by-project assoc project-eid {:db-used db :txs new-and-old})
               new-and-old)))))))
 
