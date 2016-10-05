@@ -109,6 +109,17 @@
 
 ;;;; #################### Om Next components #####################
 
+(defn submenu-icon [h w]
+  [:svg.submenu-icon
+   {:xmlns "http://www.w3.org/2000/svg"
+         :width 40
+         :height 40
+         :viewBox "0 0 40 40"
+         :version "1"}
+   [:g {:style {:fill-rule "evenodd" :fill "none"}}
+    [:path
+     {:d "M18 36L22 36 22 4 18 4 18 36ZM14 40L26 40 26 0 14 0 14 40ZM4 36L8 36 8 12 4 12 4 36ZM0 40L12 40 12 8 0 8 0 40ZM32 36L36 36 36 24 32 24 32 36ZM28 40L40 40 40 20 28 20 28 40Z"
+            :fill "#ED9C40"}]]])
 (defui NavbarSubmenu
   static om/IQuery
   (query [this]
@@ -117,13 +128,18 @@
   Object
   (render [this]
     (let [{:keys [proxy/project-submenu]} (om/props this)
-          {:keys [content-factory app-content]} (om/get-computed this)]
+          {:keys [content-factory app-content]} (om/get-computed this)
+          project (get-in app-content [:query/active-project :ui.component.project/active-project])]
+        (debug "Project: " project)
       (html
-        [:div#sub-nav-bar
-         [:div
-          (when (= content-factory ->Project)
-                (project/->SubMenu (om/computed (assoc project-submenu :ref :submenu)
-                                                {:app-content app-content})))]]))))
+        [:div#subnav
+         [:div.top-bar
+          [:div.top-bar-left
+           [:a.project-name (:project/name project)]]
+          [:div.top-bar-right
+           [:a
+            (submenu-icon 32 32)
+            ]]]]))))
 
 (def ->NavbarSubmenu (om/factory NavbarSubmenu))
 
@@ -154,39 +170,27 @@
           {:keys [stripe/subscription]} stripe
           {subscription-status :stripe.subscription/status} subscription]
       (html
-        [:div#top-nav-bar
+        [:div.top-bar#topnav
 
-         [:div.menu-horizontal
-          [:div.top-bar-link
-           [:a.nav-link.hidden-xlarge-up
-            {:on-click #(do (prn "Did show sidebar")
-                            (on-sidebar-toggle))}
-            [:i.fa.fa-bars]]]
-          ;[:a.nav-link.button.success.tiny
-          ; {:on-click #(do
-          ;              ;(.track js/mixpanel "navigation/NewTransaction" {:user                (:user/uuid current-user)
-          ;              ;                                                 :subscription-status subscription-status})
-          ;              (om/update-state! this assoc :new-transaction? true))}
-          ; [:i.fa.fa-plus]]
-          ]
+         [:div.top-bar-left
+          [:a "Jourmoney"]]
+         [:div.top-bar-right
+          [:div.menu-horizontal
+           ;(when (= subscription-status :trialing)
+           ;  [:small.nav-link
+           ;   (str "Trial: " (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left")])
+           ;(when-not (= subscription-status :active)
+           ;  [:div.nav-link.visible-medium-up
+           ;   (utils/upgrade-button)])
 
-         [:div.menu-horizontal
-          ;(when (= subscription-status :trialing)
-          ;  [:small.nav-link
-          ;   (str "Trial: " (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left")])
-          ;(when-not (= subscription-status :active)
-          ;  [:div.nav-link.visible-medium-up
-          ;   (utils/upgrade-button)])
-
-          (when-not utils/*playground?*
-            [:div.nav-link
-             [:div.top-bar-link
+           (when-not utils/*playground?*
+             [:div
               [:a
                {:on-click #(open-profile-menu this true)}
                [:small (:user/email current-user)]]
 
               (when menu-visible?
-                (profile-menu {:on-close #(open-profile-menu this false)}))]])]
+                (profile-menu {:on-close #(open-profile-menu this false)}))])]]
 
          (when new-transaction?
            (utils/modal {:content  (->AddTransaction

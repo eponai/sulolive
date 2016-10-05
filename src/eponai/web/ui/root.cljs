@@ -46,9 +46,9 @@
       (html
         [:div#jourmoney-ui
          ;[:div#wrapper]
-         (nav/->SideBar (om/computed side-bar
-                                     {:expanded? sidebar-visible?
-                                      :on-close  side-bar-on-close}))
+         ;(nav/->SideBar (om/computed side-bar
+         ;                            {:expanded? sidebar-visible?
+         ;                             :on-close  side-bar-on-close}))
 
          [:div#main-page
           (nav/->NavbarMenu (om/computed nav-bar {:on-sidebar-toggle navbar-menu-on-sidebar-toggle}))
