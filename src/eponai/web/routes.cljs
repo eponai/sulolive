@@ -17,11 +17,15 @@
 (def transaction-routes
   {end :route/project->txs})
 
+(def settings-routes
+  {end :route/project->settings})
+
 (def project-routes
   {"/project" {end                           :route/project-empty
                ["/" :route-param/project-id] {end             :route/project
                                               "/dashboard"    dashboard-routes
                                               "/transactions" transaction-routes
+                                              "/settings"     settings-routes
                                               "/widget"       widget-routes}}})
 
 (def profile-routes

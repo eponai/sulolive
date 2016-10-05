@@ -72,7 +72,7 @@
 
   (share-project [this project-uuid email]
     (om/transact! this `[(project/share ~{:project/uuid project-uuid
-                                          :user/email email})]))
+                                          :user/email   email})]))
 
   (last-widget-index [_ widgets]
     (let [{:keys [widget/index]} (last (sort-by :widget/index widgets))]
@@ -107,7 +107,7 @@
            [:div
             [:a.button
              (opts {:on-click #(om/update-state! this assoc :menu-visible? true)
-                    :style {:padding "0.5em"}})
+                    :style    {:padding "0.5em"}})
              [:i.fa.fa-plus.fa-fw
               (opts {:style {:margin 0}})]
              [:span.small-caps "New... "]]
@@ -149,9 +149,9 @@
 
           [:a.nav-link.tab
            {:class (when (contains? #{:dashboard :widget} selected-tab) "selected")
-            :href (when id
-                    (routes/key->route :route/project->dashboard
-                                       {:route-param/project-id id}))}
+            :href  (when id
+                     (routes/key->route :route/project->dashboard
+                                        {:route-param/project-id id}))}
            [:i.fa.fa-dashboard.fa-fw.hidden-medium-up]
            [:span.small-caps.visible-medium-up "Dashboard"]]]
          ;[:div.top-bar-right]
@@ -166,9 +166,9 @@
              [:i.fa.fa-share-alt]])
           (when share-project?
             (let [on-close #(om/update-state! this assoc :share-project? false)]
-              (utils/modal {:content (->Shareproject (om/computed {}
-                                                                  {:on-close on-close
-                                                                   :on-save share-project-on-save}))
+              (utils/modal {:content  (->Shareproject (om/computed {}
+                                                                   {:on-close on-close
+                                                                    :on-save  share-project-on-save}))
                             :on-close on-close})))
 
           (when new-transaction?
@@ -178,10 +178,10 @@
           (when new-track?
             (utils/modal {:content  (->NewWidget (om/computed new-widget
                                                               {:dashboard-id (:db/id active-dashboard)
-                                                               :widget-type :track
-                                                               :index       (.last-widget-index this (:widget/_dashboard active-dashboard))
-                                                               :on-save     new-track-on-save
-                                                               :count (count (:widget/_dashboard active-dashboard))}))
+                                                               :widget-type  :track
+                                                               :index        (.last-widget-index this (:widget/_dashboard active-dashboard))
+                                                               :on-save      new-track-on-save
+                                                               :count        (count (:widget/_dashboard active-dashboard))}))
                           :on-close new-track-on-save
                           :size     "large"}))
           (when new-goal?
@@ -190,14 +190,24 @@
                                                                :widget-type  :goal
                                                                :index        (.last-widget-index this (:widget/_dashboard active-dashboard))
                                                                :on-save      new-goal-on-save
-                                                               :count (count (:widget/_dashboard active-dashboard))}))
+                                                               :count        (count (:widget/_dashboard active-dashboard))}))
                           :on-close new-goal-on-save
                           :size     "medium"}))]]))))
 
 (def ->SubMenu (om/factory SubMenu))
 
+(defui Settings
+  static om/IQuery
+  (query [_]
+    [{:query/active-project [:ui.component.project/active-project]}])
+  Object
+  (render [this]
+    (html "Project settings")))
+(def ->Settings)
+
 (def content->component {:dashboard    {:factory ->Dashboard :component Dashboard}
                          :transactions {:factory ->AllTransactions :component AllTransactions}
+                         :settings     {:factory ->Settings :component Settings}
                          :widget       {:factory ->NewWidget :component NewWidget}
                          :goal         {:factory ->NewGoal :component NewGoal}})
 

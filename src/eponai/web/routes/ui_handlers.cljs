@@ -62,6 +62,11 @@
                          (fn [p]
                            (route-params->mutations (assoc p :route-param/project->selected-tab :dashboard)))))
 
+(def psettings-handler (assoc project-handler
+                         :route-param-fn
+                         (fn [p]
+                           (route-params->mutations (assoc p :route-param/project->selected-tab :settings)))))
+
 (def goal-handler (assoc project-handler
                     :route-param-fn
                     (fn [p]
@@ -102,6 +107,7 @@
    :route/project                 dashboard-handler
    :route/project-empty           dashboard-handler
    :route/project->dashboard      dashboard-handler
+   :route/project->settings       psettings-handler
    :route/project->widget+type+id widget-handler
    :route/project->txs            transactions-handler
    ;:route/project->txs->tx        transactions-handler
