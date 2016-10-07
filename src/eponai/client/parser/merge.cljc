@@ -142,11 +142,11 @@
   Returns merge function for om.next's reconciler's :merge"
   [merge-fn]
   (fn [reconciler current-db {:keys [db result meta history-id] :as novelty} query]
-    (debug "Merge! transacting novelty:" (update novelty :db :max-tx))
+    #?(:cljs (debug "Merge! transacting novelty:" (update novelty :db :max-tx)))
     (let [db (cond-> db (some? meta) (merge-meta meta))
           ret (if result
                 (merge-novelty-by-key merge-fn db result history-id)
                 ;; TODO: What keys can we pass to force re-render?
                 {:next db :keys []})]
-      (debug "Merge! returning keys:" (:keys ret) " with db: " (-> ret :next :max-tx))
+      #?(:cljs (debug "Merge! returning keys:" (:keys ret) " with db: " (-> ret :next :max-tx)))
       ret)))

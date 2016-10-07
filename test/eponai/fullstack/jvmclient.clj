@@ -14,8 +14,9 @@
             [clj-http.client :as http]
             [clj-http.cookies :as cookies]
             [clojure.core.async :as async]
-            [taoensso.timbre :refer [debug]]
-            [medley.core :as medley]))
+            [taoensso.timbre :refer [debug error]]
+            [medley.core :as medley]
+            [clojure.data :as diff]))
 
 (om/defui JvmRoot
   static om/IQuery
@@ -66,27 +67,43 @@
         query (om/get-query (or (om/app-root reconciler) JvmRoot))]
     (parser env query)))
 
-(defn mutation-state-machine [query-chan online?-chan clients client->callback]
+(defn mutation-state-machine [query-chan clients client->callback]
   (letfn [(<transact! [client query]
             (om/transact! client query)
             (client->callback client))]
     (go
-      (loop [online? true]
-        (let [[v c] (async/alts! [query-chan online?-chan])]
-          (condp = c
-            online?-chan (recur v)
-            query-chan (when-let [[client query] v]
-                         (<! (<transact! client query))
-                         (when online?
-                           (let [other-clients (remove (partial = client) clients)
-                                 ;; Sync
-                                 callbacks (map #(<transact! % (om/full-query (om/app-root %)))
-                                                other-clients)
-                                 _ (run! #(async/<!! %) callbacks)
-                                 eq? (apply = (map app-state clients))]
-                             (assert eq? "App state was not equal.")
-                             (debug "App state was equal! :D: " eq?)))
-                         (recur online?))))))))
+      (try
+        (loop [online? true]
+          (let [{:keys [::action ::act-value]} (<! query-chan)]
+            (debug "Took from query chan: " action)
+            (condp = action
+              nil nil
+              :network (recur (:online? act-value))
+              :query (let [[client query] act-value]
+                       (<! (<transact! client query))
+                       (when online?
+                         (let [other-clients (remove (partial = client) clients)
+                               ;; Sync
+                               callbacks (map #(<transact! % (om/full-query (om/app-root %)))
+                                              other-clients)
+                               _ (run! #(async/<!! %) callbacks)
+                               app-states (map app-state clients)
+                               eq? (apply = app-states)]
+                           (if eq?
+                             (debug "App state was equal! :D: " eq?)
+                             (run! (fn [[a b]]
+                                     (when (not= a b)
+                                       (error "App state NOT eq. diff: " (vec (diff/diff a b)))))
+                                   (partition 2 1 app-states)))))
+                       (recur online?)))))
+        (catch Throwable e
+          (debug "Exception in state-machine: " e))
+        (finally
+          (async/<!! (async/go-loop []
+                       (when (async/<! query-chan)
+                         (recur)))))))))
+
+
 
 (defn- take-with-timeout [chan label & [timeout-millis]]
   {:pre [(string? label)]}
@@ -94,6 +111,13 @@
     (when-not (= c chan)
       (throw (ex-info "client login timed out" {:where (str "awaiting " label)})))
     v))
+
+(defn- multiply-chan [chan n]
+  (let [chan-mult (async/mult chan)
+        readers (repeatedly n #(async/chan))]
+    (doseq [r readers]
+      (async/tap chan-mult r))
+    readers))
 
 (defn log-in! [client email-chan callback-chan]
   (debug "Transacting signin/email")
@@ -105,7 +129,7 @@
   (let [v (take-with-timeout email-chan "email with verification")]
     (debug "Awaited email")
     (let [_ (debug "client recieved from email chan: " v)
-          {:keys [:verification/uuid :verification/value]} (:verification v)
+          {:keys [:verification/uuid]} (:verification v)
           _ (backend/drain-channel callback-chan)
           _ (om/transact! client `[(session.signin.email/verify ~{:verify-uuid (str uuid)})])
           _ (take-with-timeout callback-chan "verification")]
@@ -121,18 +145,14 @@
         _ (reset! endpoint-atom (str server-url "/api/user"))]
     client))
 
-(defn run-with-server [server email-chan]
+(defn create-clients [n server email-chan query-chan done-chan]
   (let [callback-chan (async/chan)
         server-url (str "http://localhost:" (.getPort (.getURI server)))
-        _ (debug "CREATING USER 1...")
-        client1 (logged-in-client server-url email-chan callback-chan)
-        _ (debug "DONE USER 1.")
-        _ (debug "CREATING USER 2...")
-        client2 (logged-in-client server-url email-chan callback-chan)
-        _ (debug "DONE USER 2.")
-        query-chan (async/chan)
-        online?-chan (async/chan)
-        clients [client1 client2]
+        clients (->> (range n)
+                     (map #(let [_ (debug "Logging in client: " %)
+                                 ret (logged-in-client server-url email-chan callback-chan)]
+                            (debug "Logged in client: " %)
+                            ret)))
         client->callback (into {} (map #(vector % (async/chan 10))) clients)
         _ (go
             (loop [client (<! callback-chan)]
@@ -140,21 +160,36 @@
                 (medley/map-vals async/close! client->callback)
                 (do (>! (client->callback client) client)
                     (recur (<! callback-chan))))))
-        sm (mutation-state-machine query-chan online?-chan clients client->callback)]
-    (async/put! query-chan [client1 [(om/get-query JvmRoot)]])
-    (async/put! query-chan [client1 [(om/get-query JvmRoot)]])
-    (async/close! query-chan)
-    (take-with-timeout sm "state-machine" (* 60 1000))
-    (async/close! email-chan)
-    (async/close! callback-chan)
-    ;; Ok to drain because everything is closed at this point.
-    (backend/drain-channel (async/merge (vals client->callback)))))
+        [sm-query-chan teardown-query-chan] (multiply-chan query-chan 2)
+        sm (mutation-state-machine sm-query-chan clients client->callback)
+        _ (async/go
+            (try
+              (loop []
+                (if (async/<! teardown-query-chan)
+                  (recur)
+                  ;; query-chan is closed. Tear down:
+                  (do (take-with-timeout sm "state-machine" (* 60 1000))
+                      (async/close! email-chan)
+                      (async/close! callback-chan)
+                      ;; Ok to drain because everything is closed at this point.
+                      (backend/drain-channel (async/merge (vals client->callback))))))
+              (finally
+                (async/close! done-chan))))]
+    clients))
+
 
 (defn run []
   (let [email-chan (async/chan)
+        query-chan (async/chan)
+        done-chan (async/chan)
         server (core/start-server-for-tests {:email-chan email-chan})]
     (try
-      (run-with-server server email-chan)
+      (let [[client1 :as clients] (create-clients 2 server email-chan query-chan done-chan)]
+        (debug "Created clients! Putting queries on query-chan")
+        (async/put! query-chan {::action    :query
+                                ::act-value [client1 (om/get-query JvmRoot)]})
+        (async/close! query-chan)
+        (async/<!! done-chan))
       (finally
         (.stop server)
         (.join server)

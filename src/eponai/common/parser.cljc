@@ -25,7 +25,7 @@
 
 ;; -------- No matching dispatch
 
-(defn default-read [e k p]
+(defn default-read [e k p type]
   (cond
     (= "proxy" (namespace k))
     (util/read-join e k p)
@@ -33,13 +33,13 @@
     (= "return" (namespace k))
     (util/return e k p)
 
-    #?@(:clj [(= "routing" (namespace k))
-              (util/read-join e k p)])
+    (and (= type :server) (= "routing" (namespace k)))
+    (util/read-join e k p)
 
     :else (warn "Returning nil for parser read key: " k)))
 
-(defmethod client-read :default [e k p] (default-read e k p))
-(defmethod server-read :default [e k p] (default-read e k p))
+(defmethod client-read :default [e k p] (default-read e k p :client))
+(defmethod server-read :default [e k p] (default-read e k p :server))
 
 (defmethod server-message :default
   [e k p]
@@ -250,7 +250,6 @@
                             " was not nil or sequential. Was: " param-path))
              default-path [:eponai.common.parser/read-basis-t (str (:user-uuid env)) k]
              path (into default-path param-path)
-             _ (debug "basis-t path for " k " path: " path)
              basis-t-for-this-key (get-in env path)
              env (assoc env :db-since (when basis-t-for-this-key
                                         (datomic/since db basis-t-for-this-key))
@@ -264,7 +263,6 @@
                          ;; Value has not already been set?
                          (not (contains? (meta (:value ret)) :eponai.common.parser/read-basis-t))
                          (update :value vary-meta assoc-in path (datomic/basis-t db)))]
-         ;(debug "Setting basis-t meta for " k " meta: " (meta (:value ret)))
          ret))))
 
 #?(:clj

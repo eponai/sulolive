@@ -98,7 +98,7 @@
         (cond
           (true? success)
           (do
-            (debug "Recieved response from remote:" body "status:" status)
+            #?(:cljs (debug "Recieved response from remote:" body "status:" status))
             {:response body
              :post-merge-fn post-merge-fn})
           ;; TODO: Do something about specific error codes?
@@ -222,7 +222,8 @@
                                                           history-id
                                                           is-remote-fn)
         mutations-after-query (client.utils/mutations mutation-queue)
-        _ (debug "Applying mutations: " mutations-after-query)
+        _ (when (seq mutations-after-query)
+            (debug "Applying mutations: " mutations-after-query))
         ;; Mutate the stable-db with mutations that have happened after history-id
         conn (d/conn-from-db stable-db)
         parser (get-parser reconciler)
