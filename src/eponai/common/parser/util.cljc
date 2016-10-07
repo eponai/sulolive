@@ -93,7 +93,7 @@
         :else
         query))
 
-(defn proxy [{:keys [parser query target ast] :as env} k _]
+(defn read-join [{:keys [parser query target ast] :as env} k _]
   (let [ret (parser env query target)]
     (if target
       (when (seq ret)
@@ -101,7 +101,7 @@
       {:value ret})))
 
 
-(defn union-query [{:keys [query] :as env} k p union-key]
+(defn read-union [{:keys [query] :as env} k p union-key]
   (let [route-query (cond-> query
                             ;; Union. Query can also be passed with the
                             ;; selected union.
@@ -110,7 +110,7 @@
             (str "Route-query must not be nil. No union-key: " union-key
                  " in query: " query
                  " resulting in route-query: " route-query))
-    (proxy (assoc env :query route-query) k p)))
+    (read-join (assoc env :query route-query) k p)))
 
 (defn return
   "Special read key (special like :proxy) that just returns

@@ -18,13 +18,13 @@
 (defmethod client-read :routing/project
   [{:keys [db] :as env} k p]
   (let [union-key (:ui.component.project/selected-tab (d/entity db [:ui/component :ui.component/project]))]
-    (p.util/union-query env k p union-key)))
+    (p.util/read-union env k p union-key)))
 
 (defmethod client-read :routing/app-root
   [{:keys [db] :as env} k p]
   (let [handler (:ui.component.root/route-handler (d/entity db [:ui/component :ui.component/root]))
         union-key (or (:route-key handler) :route/project)]
-    (p.util/union-query env k p union-key)))
+    (p.util/read-union env k p union-key)))
 
 ;; TODO: A lot of target boilerplate here. Macro instead?
 (defmethod client-read :query/active-project

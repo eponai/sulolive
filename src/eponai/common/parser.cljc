@@ -28,13 +28,13 @@
 (defn default-read [e k p]
   (cond
     (= "proxy" (namespace k))
-    (util/proxy e k p)
+    (util/read-join e k p)
 
     (= "return" (namespace k))
     (util/return e k p)
 
     #?@(:clj [(= "routing" (namespace k))
-              (util/proxy e k p)])
+              (util/read-join e k p)])
 
     :else (warn "Returning nil for parser read key: " k)))
 

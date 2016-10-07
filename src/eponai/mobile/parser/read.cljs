@@ -9,7 +9,7 @@
 
 (defmethod client-read :routing/app-root
   [{:keys [db] :as env} k p]
-  (p.util/union-query env k p (:ui.component.app/route (d/entity db [:ui/component :ui.component/app]))))
+  (p.util/read-union env k p (:ui.component.app/route (d/entity db [:ui/component :ui.component/app]))))
 
 (defmethod client-read :query/app
   [{:keys [db query]} _ _]
