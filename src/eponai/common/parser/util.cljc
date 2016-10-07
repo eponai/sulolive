@@ -1,7 +1,8 @@
 (ns eponai.common.parser.util
   (:refer-clojure :exclude [proxy])
   (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error]]
-            [om.next :as om]))
+            [om.next :as om]
+            [om.next.impl.parser :as om.parser]))
 
 (defn get-time []
   #?(:clj (. System (currentTimeMillis))
@@ -49,17 +50,6 @@
                 [(select-keys parsed-result keys-to-process-first)
                  (apply dissoc parsed-result keys-to-process-first)]))))))
 
-(defn unwrap-proxies
-  "Takes a query that's been wrapped with proxies. Unwraps them here.
-
-  This HOPEFULLY doesn't screw us over in the future."
-  [query]
-  (reduce (fn [q x] (if (vector? x)
-                      (into q x)
-                      (conj q x)))
-          []
-          query))
-
 ;; TODO, make a special function for caching our transactions.
 ;; (That's the only thing we use this for anyway).
 (defn cache-last-read
@@ -103,15 +93,12 @@
         :else
         query))
 
-(defn proxy [{:keys [parser query target] :as env} k _]
+(defn proxy [{:keys [parser query target ast] :as env} k _]
   (let [ret (parser env query target)]
-    #?(:clj  {:value ret}
-       :cljs (if (and target (seq ret))
-               ;; Trial and error led to this solution.
-               ;; For some reason "proxy" keys get nested in one too many vectors
-               ;; and we need to unwrap them here.
-               {target (om/query->ast [{k (unwrap-proxies ret)}])}
-               {:value ret}))))
+    (if target
+      (when (seq ret)
+        {target (assoc ast :query ret)})
+      {:value ret})))
 
 
 (defn union-query [{:keys [query] :as env} k p union-key]

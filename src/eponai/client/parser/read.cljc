@@ -3,6 +3,7 @@
             [datascript.db :as db]
             [clojure.set :as set]
             [om.next :as om]
+            [om.next.impl.parser :as om.parser]
             [eponai.common.datascript :as common.datascript]
             [eponai.common.database.pull :as p]
             [eponai.common.prefixlist :as pl]

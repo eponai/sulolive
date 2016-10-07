@@ -406,6 +406,6 @@
      (run! (fn [[key query]]
              (async/put! query-chan {:remote->send remote->send
                                      :cb           cb
-                                     :query        (parser.util/unwrap-proxies query)
+                                     :query        query
                                      :remote-key   key}))
            queries))))
