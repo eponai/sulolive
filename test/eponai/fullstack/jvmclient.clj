@@ -14,10 +14,11 @@
             [clj-http.client :as http]
             [clj-http.cookies :as cookies]
             [clojure.core.async :as async]
-            [taoensso.timbre :refer [debug error warn]]
+            [taoensso.timbre :refer [debug error warn info]]
             [medley.core :as medley]
             [clojure.data :as diff]
-            [datomic.api :as datomic])
+            [datomic.api :as datomic]
+            [datascript.core :as datascript])
   (:import (org.eclipse.jetty.server Server)))
 
 (om/defui JvmRoot
@@ -77,34 +78,6 @@
   (om/transact! client query)
   (client->callback client))
 
-(defn mutation-state-machine [query-chan clients client->callback]
-  (let [<transact! (partial <transact! client->callback)]
-    (go
-      (try
-        (loop []
-          (let [{:keys [::transaction ::test-fn]} (<! query-chan)]
-            (when transaction
-              (let [[client query] transaction
-                    remote-query? (seq (call-parser client query :remote))]
-                (if-not remote-query?
-                  ;; Just apply query locally to a client:
-                  (om/transact! client query)
-                  ;; Apply and wait for query to be merged with remote response.
-                  (let [client-tx (<transact! client query)
-                        other-clients (->> (remove (partial = client) clients)
-                                           (map #(<transact! % (om/full-query (om/app-root %)))))]
-                    ;; Sync
-                    (run! #(async/<!! %) (cons client-tx other-clients))))
-                (when test-fn
-                  (test-fn))
-                (recur)))))
-        (catch Throwable e
-          (debug "Exception in state-machine: " e))
-        (finally
-          (async/<!! (async/go-loop []
-                       (when (async/<! query-chan)
-                         (recur)))))))))
-
 (defn- take-with-timeout [chan label & [timeout-millis]]
   {:pre [(string? label)]}
   (let [[v c] (async/alts!! [chan (async/timeout (or timeout-millis 5000))])]
@@ -150,10 +123,47 @@
   sequentially?"
   [clients client->callback]
   (->> clients
-       (map #(<transact! client->callback % (om/get-query JvmRoot)))
-       (run! #(async/<!! %))))
+       (mapv #(async/<!! (<transact! client->callback % (om/get-query JvmRoot))))))
 
-(defn create-clients [n {:keys [server email-chan query-chan done-chan]}]
+(defn mutation-state-machine [query-chan clients client->callback]
+  (let [<transact! (partial <transact! client->callback)
+        result (atom {::successes [] ::failures []})]
+    (go
+      (try
+        (loop [id 0]
+          (let [{:keys [::transaction ::asserts]} (<! query-chan)]
+            (when transaction
+              (let [[client query] transaction
+                    remote-query? (seq (call-parser client query :remote))
+                    test-result {::test-id id :query query}]
+                (if-not remote-query?
+                  ;; Just apply query locally to a client:
+                  (om/transact! client query)
+                  ;; Apply and wait for query to be merged with remote response.
+                  (let [client-tx (<transact! client query)
+                        other-clients (->> (remove (partial = client) clients)
+                                           (map #(<transact! % (om/full-query (om/app-root %)))))]
+                    ;; Sync
+                    (run! #(async/<!! %) (cons client-tx other-clients))))
+                (try
+                  (when asserts
+                    (asserts))
+                  (swap! result update ::successes conj test-result)
+                  (catch Throwable e
+                    (swap! result update ::failures conj (assoc test-result :error e))))
+                (recur (inc id))))))
+        (catch Throwable e
+          (error "Exception in state-machine: " e))
+        (finally
+          (async/<!! (async/go-loop []
+                       (when-let [{:keys [::transaction]} (async/<! query-chan)]
+                         (debug "Skipping transaction: " (second transaction)
+                                "because of previous error.")
+                         (recur))))))
+      @result)))
+
+
+(defn create-clients [n {:keys [server email-chan query-chan result-chan]}]
   (let [callback-chan (async/chan)
         server-url (str "http://localhost:" (.getPort (.getURI server)))
         clients (repeatedly n #(logged-in-client server-url email-chan callback-chan))
@@ -174,13 +184,13 @@
                 (if (async/<! teardown-query-chan)
                   (recur)
                   ;; query-chan is closed. Tear down:
-                  (do (take-with-timeout sm "state-machine" (* 60 1000))
-                      (async/close! email-chan)
-                      (async/close! callback-chan)
-                      ;; Ok to drain because everything is closed at this point.
-                      (backend/drain-channel (async/merge (vals client->callback))))))
+                  (let [result (take-with-timeout sm "state-machine" (* 60 1000))]
+                    (async/close! callback-chan)
+                    ;; Ok to drain because everything is closed at this point.
+                    (backend/drain-channel (async/merge (vals client->callback)))
+                    (async/>! result-chan result))))
               (finally
-                (async/close! done-chan))))]
+                (async/close! result-chan))))]
     clients))
 
 (defn test-setup []
@@ -188,48 +198,72 @@
         email-chan (async/chan)]
     {:conn       conn
      :email-chan email-chan
+     :results-atom (atom [])
      :server     (core/start-server-for-tests {:conn       conn
                                                :email-chan email-chan})}))
 
 (defn run-test [{:keys [server] :as system} test-fn]
   ;; TODO: Somehow re-use datomic connections?
   (let [query-chan (async/chan)
-        done-chan  (async/chan)]
+        result-chan  (async/chan)]
     (.start server)
     (try
       (let [clients (create-clients 2 (assoc system :query-chan query-chan
-                                                    :done-chan done-chan))
-            actions (test-fn clients)]
-        (try
-          (doseq [action actions]
-            (async/put! query-chan action))
-          (finally
-            (async/close! query-chan)
-            (async/<!! done-chan))))
+                                                    :result-chan result-chan))
+            {:keys [actions label]} (test-fn server clients)
+            _ (try
+                (doseq [action actions]
+                  (async/put! query-chan action))
+                (finally
+                  (async/close! query-chan)))
+            result (async/<!! result-chan)]
+        (update system :results-atom swap! conj {:label (or label (str (datascript/squuid)))
+                                                 :result result}))
       (finally
         (.stop server)
-        (.join server)
-        (debug "DONE!")))
+        (.join server)))
     system))
 
 (defn equal-app-states? [clients]
   (let [app-states (map app-state clients)
         eq? (apply = app-states)]
     (if eq?
-      (debug "App state was equal! :D: " eq?)
+      eq?
       (run! (fn [[a b]]
               (when (not= a b)
                 (error "App state NOT eq. diff: " (vec (diff/diff a b)))))
             (partition 2 1 app-states)))))
 
+(defn result-summary [results]
+  (->> results
+       (transduce (comp (map :result)
+                        (map (juxt ::successes ::failures))
+                        (map #(map count %)))
+                  (completing #(map + % %2))
+                  [0 0])
+       (zipmap [:successes :failures])))
+
+(defn run-tests [test-fns]
+  (let [system (test-setup)
+        system (reduce run-test system test-fns)
+        end-result (deref (:results-atom system))]
+    (when-let [has-failures (seq (filter (comp seq ::failures :result) end-result))]
+      (error "Test failures: " (->> has-failures
+                                    (into [] (map #(update % :result dissoc ::successes))))))
+    (info "Test results:" (result-summary end-result))))
+
+(defn test-system-setup [server clients]
+  {:label "System setup should always have a running server."
+   :actions [{::transaction [(rand-nth clients) []]
+              ::asserts #(assert (.isRunning ^Server server))}]})
+
+(defn test-root-query-tx [_ [client1 :as clients]]
+  {:label   "Query root of application should result in equal client app states"
+   :actions [{::transaction [client1 (om/get-query JvmRoot)]
+              ::asserts     #(assert (equal-app-states? clients))}]})
+
 (defn run []
-  (let [system (test-setup)]
-    (-> system
-        (run-test
-          (fn [[client1 :as clients]]
-            [{::transaction [client1 (om/get-query JvmRoot)]
-              ::test-fn     #(do (when (.isRunning ^Server (:server system))
-                                   (equal-app-states? clients)))}])))))
+  (run-tests [test-system-setup test-root-query-tx]))
 
 (comment `[(transaction/create {:transaction/tags       ({:tag/name "thailand"}),
                                 :transaction/date       {:date/ymd "2015-10-10"}
