@@ -14,7 +14,7 @@
             [clj-http.client :as http]
             [clj-http.cookies :as cookies]
             [clojure.core.async :as async]
-            [taoensso.timbre :refer [debug error]]
+            [taoensso.timbre :refer [debug error warn]]
             [medley.core :as medley]
             [clojure.data :as diff]
             [datomic.api :as datomic])
@@ -63,27 +63,38 @@
     (prn "app-root: " (om/app-root reconciler))
     reconciler))
 
-(defn- app-state [reconciler]
+(defn- call-parser [reconciler query target]
   (let [parser (backend/get-parser reconciler)
-        env (backend/to-env reconciler)
-        query (om/get-query (or (om/app-root reconciler) JvmRoot))]
-    (parser env query)))
+        env (backend/to-env reconciler)]
+    (parser env query target)))
+
+(defn- app-state [reconciler]
+  (call-parser reconciler
+               (om/get-query (or (om/app-root reconciler) JvmRoot))
+               nil))
+
+(defn- <transact! [client->callback client query]
+  (om/transact! client query)
+  (client->callback client))
 
 (defn mutation-state-machine [query-chan clients client->callback]
-  (letfn [(<transact! [client query]
-            (om/transact! client query)
-            (client->callback client))]
+  (let [<transact! (partial <transact! client->callback)]
     (go
       (try
         (loop []
           (let [{:keys [::transaction ::test-fn]} (<! query-chan)]
             (when transaction
-              (let [[client query] transaction]
-                (<! (<transact! client query))
-                ;; Sync others
-                (->> (remove (partial = client) clients)
-                     (map #(<transact! % (om/full-query (om/app-root %))))
-                     (run! #(async/<!! %)))
+              (let [[client query] transaction
+                    remote-query? (seq (call-parser client query :remote))]
+                (if-not remote-query?
+                  ;; Just apply query locally to a client:
+                  (om/transact! client query)
+                  ;; Apply and wait for query to be merged with remote response.
+                  (let [client-tx (<transact! client query)
+                        other-clients (->> (remove (partial = client) clients)
+                                           (map #(<transact! % (om/full-query (om/app-root %)))))]
+                    ;; Sync
+                    (run! #(async/<!! %) (cons client-tx other-clients))))
                 (when test-fn
                   (test-fn))
                 (recur)))))
@@ -93,8 +104,6 @@
           (async/<!! (async/go-loop []
                        (when (async/<! query-chan)
                          (recur)))))))))
-
-
 
 (defn- take-with-timeout [chan label & [timeout-millis]]
   {:pre [(string? label)]}
@@ -111,41 +120,43 @@
     readers))
 
 (defn log-in! [client email-chan callback-chan]
-  (debug "Transacting signin/email")
   (om/transact! client `[(session.signin/email ~{:input-email datomic-dev/test-user-email
                                                  :device :jvm})])
   (take-with-timeout callback-chan "email transact!")
-  (debug "Transacted signin/email")
-  (debug "Awaiting email")
   (let [{:keys [verification]} (take-with-timeout email-chan "email with verification")
         {:keys [:verification/uuid]} verification]
-    (debug "Awaited email")
-    (debug "client recieved from email chan: " verification)
     (backend/drain-channel callback-chan)
     (om/transact! client `[(session.signin.email/verify ~{:verify-uuid (str uuid)})])
-    (take-with-timeout callback-chan "verification")
-    (debug "Awaited verification: " verification)))
+    (take-with-timeout callback-chan "verification")))
 
 (defn logged-in-client [server-url email-chan callback-chan]
   (let [endpoint-atom (atom (str server-url "/api"))
         did-merge-fn (fn [client] (async/put! callback-chan client))
-        client (create-client endpoint-atom did-merge-fn)
-        _ (take-with-timeout callback-chan "initial merge")
-        _ (log-in! client email-chan callback-chan)
-        _ (reset! endpoint-atom (str server-url "/api/user"))]
-    (om/transact! client (om/get-query JvmRoot))
-    (take-with-timeout callback-chan "initial full query")
-    (debug "Logged in with initial app-state")
+        client (create-client endpoint-atom did-merge-fn)]
+    (take-with-timeout callback-chan "initial merge")
+    (log-in! client email-chan callback-chan)
+    (reset! endpoint-atom (str server-url "/api/user"))
     client))
+
+(defn init-clients-state
+  "Init the state of each client to be the full query of the root component.
+
+  I can think of three ways of doing this:
+  - Sequentially: initiating 1 client at a time.
+  - Parallel: initiating all clients at the same time.
+  - Copying: initiating 1 client and copying its state to the other clients.
+
+  Copying would be the fastest, but is it the same thing as doing it
+  sequentially?"
+  [clients client->callback]
+  (->> clients
+       (map #(<transact! client->callback % (om/get-query JvmRoot)))
+       (run! #(async/<!! %))))
 
 (defn create-clients [n {:keys [server email-chan query-chan done-chan]}]
   (let [callback-chan (async/chan)
         server-url (str "http://localhost:" (.getPort (.getURI server)))
-        clients (->> (range n)
-                     (map #(let [_ (debug "Logging in client: " %)
-                                 ret (logged-in-client server-url email-chan callback-chan)]
-                            (debug "Logged in client: " %)
-                            ret)))
+        clients (repeatedly n #(logged-in-client server-url email-chan callback-chan))
         client->callback (into {} (map #(vector % (async/chan 10))) clients)
         _ (go
             (loop [client (<! callback-chan)]
@@ -153,6 +164,8 @@
                 (medley/map-vals async/close! client->callback)
                 (do (>! (client->callback client) client)
                     (recur (<! callback-chan))))))
+
+        _ (init-clients-state clients client->callback)
         [sm-query-chan teardown-query-chan] (multiply-chan query-chan 2)
         sm (mutation-state-machine sm-query-chan clients client->callback)
         _ (async/go
@@ -227,4 +240,3 @@
                                 :transaction/uuid       #uuid"57eeb170-fc13-4f2d-b0e7-d36a624ab6d1",
                                 :transaction/amount     180M,
                                 :transaction/created-at 1})])
-
