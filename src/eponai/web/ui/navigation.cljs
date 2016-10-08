@@ -54,10 +54,12 @@
   static om/IQuery
   (query [this]
     [{:query/all-projects [:project/name
-                           :project/uuid]}])
+                           :project/uuid]}
+     {:proxy/add-transaction (om/get-query AddTransaction)}])
   Object
   (initLocalState [this]
-    {:on-save-new-project #(.save-new-project this %)})
+    {:on-save-new-project #(.save-new-project this %)
+     :on-close-add-transaction #(om/update-state! this assoc :add-transaction? false)})
   (save-new-project [this name]
     (om/transact! this [(list 'project/save {:project/uuid   (d/squuid)
                                              :project/name   name
@@ -65,67 +67,83 @@
                         :query/all-projects]))
 
   (render [this]
-    (let [{:keys [content-factory app-content]} (om/get-computed this)
-          {:keys [menu-visible? new-project? on-save-new-project]} (om/get-state this)
-          {:keys [query/all-projects]} (om/props this)
+    (let [{:keys [app-content]} (om/get-computed this)
+          {:keys [menu-visible? new-project? on-save-new-project
+                  add-transaction? on-close-add-transaction]} (om/get-state this)
+
+          {:keys [query/all-projects proxy/add-transaction]} (om/props this)
+
           {:keys [ui.component.project/active-project
                   ui.component.project/selected-tab]} (:query/active-project app-content)
           {project-id :db/id} active-project]
         (debug "Project: " project-id)
       (html
         [:div#subnav
-         [:div.top-bar
+         [:div.row.column
+          [:div.top-bar
 
-          ; Project selection and title
-          [:div.top-bar-left
-           [:span.project-name
-            (:project/name active-project)]
-           [:div
-            (opts {:style {:display "inline-block"}})
+           ; Project selection and title
+           [:div.top-bar-left
+            [:span.project-name
+             (:project/name active-project)]
+
+            ; Select project dropdonwn menu
+            [:div
+             (opts {:style {:display "inline-block"}})
+             [:a
+              (opts {:on-click #(om/update-state! this assoc :menu-visible? true)})
+              [:i.fa.fa-caret-down.fa-fw]]
+             (when menu-visible?
+               (let [on-close #(om/update-state! this assoc :menu-visible? false)]
+                 [:div
+                  (utils/click-outside-target on-close)
+                  [:ul.menu.dropdown.vertical
+                   [:li.menu-text.header
+                    "Projects"]
+                   (map (fn [p]
+                          [:li
+                           {:key (str (:project/uuid p))}
+                           [:a
+                            {:on-click #(om/update-state! this assoc :menu-visible? false)
+                             :href     (routes/key->route :route/project->dashboard
+                                                          {:route-param/project-id (:db/id p)})}
+                            (:project/name p)]])
+                        all-projects)
+                   [:li
+                    [:hr]]
+                   [:li
+                    [:a.secondary-action
+                     {:on-click #(om/update-state! this assoc
+                                                   :new-project? true
+                                                   :menu-visible? false)}
+                     [:small "Create new..."]]]]]))]
+            ; Add transaction button
+            [:a.button.tiny
+             {:on-click #(om/update-state! this assoc :add-transaction? true)}
+             [:i.fa.fa-plus.fa-fw]]
+
+            (when add-transaction?
+              (utils/modal {:content  (->AddTransaction
+                                        (om/computed add-transaction
+                                                     {:on-close on-close-add-transaction}))
+                            :on-close on-close-add-transaction}))]
+
+           ; Project menu
+           [:div.top-bar-right
             [:a
-             (opts {:on-click #(om/update-state! this assoc :menu-visible? true)})
-             [:i.fa.fa-caret-down.fa-fw]]
-            (when menu-visible?
-              (let [on-close #(om/update-state! this assoc :menu-visible? false)]
-                [:div
-                 (utils/click-outside-target on-close)
-                 [:ul.menu.dropdown.vertical
-                  [:li.menu-text.header
-                   "Projects"]
-                  (map (fn [p]
-                         [:li
-                          {:key (str (:project/uuid p))}
-                          [:a
-                           {:on-click #(om/update-state! this assoc :menu-visible? false)
-                            :href     (routes/key->route :route/project->dashboard
-                                                         {:route-param/project-id (:db/id p)})}
-                           (:project/name p)]])
-                       all-projects)
-                  [:li
-                   [:hr]]
-                  [:li
-                   [:a.secondary-action
-                    {:on-click #(om/update-state! this assoc
-                                                  :new-project? true
-                                                  :menu-visible? false)}
-                    [:small "Create new..."]]]]]))]]
-
-          ; Project menu
-          [:div.top-bar-right
-           [:a
-            {:href (when project-id
-                     (routes/key->route :route/project->dashboard
-                                        {:route-param/project-id project-id}))}
-            (icon/icon-stats (= selected-tab :dashboard))]
-           [:a
-            {:href (when project-id
-                     (routes/key->route :route/project->txs {:route-param/project-id project-id}))}
-            (icon/icon-list (= selected-tab :transactions))]
-           [:a
-            {:href (when project-id
-                     (routes/key->route :route/project->settings
-                                        {:route-param/project-id project-id}))}
-            (icon/icon-settings (= selected-tab :settings))]]]
+             {:href (when project-id
+                      (routes/key->route :route/project->dashboard
+                                         {:route-param/project-id project-id}))}
+             (icon/icon-stats (= selected-tab :dashboard))]
+            [:a
+             {:href (when project-id
+                      (routes/key->route :route/project->txs {:route-param/project-id project-id}))}
+             (icon/icon-list (= selected-tab :transactions))]
+            [:a
+             {:href (when project-id
+                      (routes/key->route :route/project->settings
+                                         {:route-param/project-id project-id}))}
+             (icon/icon-settings (= selected-tab :settings))]]]]
 
          (when new-project?
            (let [on-close #(om/update-state! this assoc :new-project? false)]
@@ -167,7 +185,7 @@
         [:div.top-bar#topnav
 
          [:div.top-bar-left
-          [:a.navbar-brand "Jourmoney"]]
+          [:a#navbar-brand "Jourmoney"]]
 
          ; Username with user settings menu and sign ut
          [:div.top-bar-right

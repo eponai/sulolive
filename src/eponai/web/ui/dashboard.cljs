@@ -3,8 +3,10 @@
     [datascript.core :as d]
     [eponai.web.ui.all-transactions :refer [Transaction]]
     [eponai.web.ui.widget :as w :refer [Widget ->Widget]]
+    [eponai.web.ui.d3.pie-chart :as pc]
     [om.dom :as dom]
     [om.next :as om :refer-macros [defui]]
+    [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [error debug]]))
 
 (defn min-dimensions [widget num-cols]
@@ -54,140 +56,175 @@
 
 ;;################ Om component #############
 
+
 (defui Dashboard
+  static om/IQueryParams
+  (params [_]
+    {:filter {}
+     :transaction (om/get-query Transaction)})
   static om/IQuery
   (query [_]
-    [{:query/dashboard [:dashboard/uuid
-                        {:widget/_dashboard (om/get-query Widget)}
-                        {:dashboard/project [:db/id
-                                             :project/uuid
-                                             :project/name
-                                             :project/users]}]}
-     :query/tags])
-
+    ['({:query/transactions [:transaction/title]} {:filter ?filter})])
   Object
-  (componentWillReceiveProps [this new-props]
-    (let [{:keys [cols]} (om/get-state this)
-          widgets (:widget/_dashboard (:query/dashboard new-props))]
-      (om/update-state! this assoc
-                        :layout (clj->js (widgets->layout cols widgets)))))
-
-  (update-layout [this]
-    (let [{:keys [cols]} (om/get-state this)
-          widgets (:widget/_dashboard (:query/dashboard (om/props this)))]
-      (om/update-state! this assoc :layout (clj->js (widgets->layout cols widgets)))))
-
-  (componentDidMount [this]
-    (let [sidebar (.getElementById js/document "sidebar")]
-      (when sidebar
-        (.addEventListener sidebar "transitionend" (:side-bar-transition-fn (om/get-state this))))
-      (.update-layout this)))
-
-  (componentWillUnmount [this]
-    (let [sidebar (.getElementById js/document "sidebar")]
-      (when sidebar
-        (.removeEventListener sidebar "transitionend" (:side-bar-transition-fn (om/get-state this))))))
-
-  (save-layout [this widgets layout]
-    (let [{:keys [cols breakpoint]} (om/get-state this)
-          num-cols (get cols breakpoint)
-          new-layout (layout->widgets num-cols widgets (js->clj layout))]
-      (om/transact! this `[(dashboard/save ~{:widget-layout new-layout})
-                           :query/dashboard])))
-
-  (layout-changed [this widgets layout]
-    (.save-layout this widgets layout))
-
-  (edit-start [this]
-    (om/update-state! this assoc :is-editing? true))
-  (edit-stop [this widgets layout]
-    (.save-layout this widgets layout)
-    (om/update-state! this assoc :is-editing? false))
-
-  (on-breakpoint-change [this breakpoint]
-    (om/update-state! this assoc :breakpoint (keyword breakpoint)))
-
-  (initLocalState [this]
-    (let [WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
-          grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))]
-      {:cols                             {:lg 4 :md 4 :sm 2 :xs 1 :xxs 1}
-       :breakpoint                       :lg
-       :grid-element                     grid-element
-       :content                          :dashboard
-       :side-bar-transition-fn           #(.update-layout this)
-       :computed/widget-on-select-widget (memoize
-                                           (fn [widget-props]
-                                             #(do
-                                               (debug "Selected widget: " (:widget/uuid widget-props))
-                                               (om/update-state! this assoc :active-widget-uuid (:widget/uuid widget-props)))))}))
-
   (render [this]
-    (let [{:keys [query/dashboard
-                  query/tags]} (om/props this)
-          {:keys [layout
-                  grid-element
-                  is-editing?
-                  cols
-                  active-widget-uuid
-                  computed/widget-on-select-widget]} (om/get-state this)
-          widgets (:widget/_dashboard dashboard)
-          project-id (:db/id (:dashboard/project dashboard))
-          React (.-React js/window)]
-      ;(debug "Layout: " layout)
-      (dom/div
-        #js {:style {:position "relative"}}
-        (if (and layout
-                 grid-element
-                 (seq widgets))
-          (.createElement React
-                          grid-element
-                          #js {:className          (if is-editing? "layout animate" "layout"),
-                               :draggableHandle    ".widget-move"
-                               :layouts            layout
-                               :rowHeight          100
-                               :margin             #js [20 20]
-                               :cols               (clj->js cols)
-                               :useCSSTransforms   true
-                               :isDraggable        true
-                               :isResizable        true
-                               :onBreakpointChange #(.on-breakpoint-change this %)
-                               :onResizeStart      #(.edit-start this)
-                               :onResizeStop       #(.edit-stop this widgets %)
-                               :onDragStart        #(.edit-start this)
-                               :onDragStop         #(.edit-stop this widgets %)}
-                          (into-array
-                            (map
-                              (fn [widget-props]
-                                (dom/div
-                                  #js {:key (str (:widget/uuid widget-props))
-                                       :className (when (= active-widget-uuid (:widget/uuid widget-props)) "selected-widget")}
-                                  (->Widget
-                                    (om/computed widget-props
-                                                 {:project-id       project-id
-                                                  :tags             tags
-                                                  :on-select-widget (widget-on-select-widget
-                                                                      widget-props)})))
-                                ;(.createElement React
-                                ;                "div"
-                                ;                #js {:key (str (:widget/uuid widget-props))
-                                ;                     :style {:z-index (if (= active-widget-uuid (:widget/uuid widget-props)) 1000 0)}}
-                                ;                (->Widget
-                                ;                  (om/computed widget-props
-                                ;                               {:project-id       project-id
-                                ;                                :transactions     transactions
-                                ;                                :on-select-widget #(do (debug "Selected widget: " (:widget/uuid widget-props))
-                                ;                                                       (om/update-state! this assoc :active-widget-uuid (:widget/uuid widget-props)))})))
-                                )
-                              (sort-by :widget/index widgets))))
-          (dom/div
-            #js {:className "empty-message text-center"}
-            (dom/i
-              #js {:className "fa fa-tachometer fa-5x"})
-            (dom/div
-              #js {:className "lead"}
-              "There's not much happening here, your dashboard is empty."
-              (dom/br nil)
-              (dom/br nil)
-              "Get started with the action and add a new widget.")))))))
+    (let [{:keys [query/transactions]} (om/props this)]
+      (debug "Dashboard Transactions: " (om/props this))
+      (html
+        [:div#dashboard
+         [:div#db-summary
+          [:a.button.black
+           "September"
+           ;[:i.fa.fa-caret-down.fa-fw]
+           ]
+
+          [:div#pie-charts
+           (pc/->PieChart {:id "housing-chart"
+                           :title "Housing"
+                           :value 50
+                           :limit 70})
+           (pc/->PieChart {:id "transport-chart"
+                           :title "Transport"
+                           :value 100
+                           :limit 200})
+           (pc/->PieChart {:id "balance-chart"
+                           :title "Balance"
+                           :value 20 :limit 100})]
+
+          ]]))))
+;(defui Dashboard
+;  static om/IQuery
+;  (query [_]
+;    [{:query/dashboard [:dashboard/uuid
+;                        {:widget/_dashboard (om/get-query Widget)}
+;                        {:dashboard/project [:db/id
+;                                             :project/uuid
+;                                             :project/name
+;                                             :project/users]}]}
+;     :query/tags])
+;
+;  Object
+;  (componentWillReceiveProps [this new-props]
+;    (let [{:keys [cols]} (om/get-state this)
+;          widgets (:widget/_dashboard (:query/dashboard new-props))]
+;      (om/update-state! this assoc
+;                        :layout (clj->js (widgets->layout cols widgets)))))
+;
+;  (update-layout [this]
+;    (let [{:keys [cols]} (om/get-state this)
+;          widgets (:widget/_dashboard (:query/dashboard (om/props this)))]
+;      (om/update-state! this assoc :layout (clj->js (widgets->layout cols widgets)))))
+;
+;  (componentDidMount [this]
+;    (let [sidebar (.getElementById js/document "sidebar")]
+;      (when sidebar
+;        (.addEventListener sidebar "transitionend" (:side-bar-transition-fn (om/get-state this))))
+;      (.update-layout this)))
+;
+;  (componentWillUnmount [this]
+;    (let [sidebar (.getElementById js/document "sidebar")]
+;      (when sidebar
+;        (.removeEventListener sidebar "transitionend" (:side-bar-transition-fn (om/get-state this))))))
+;
+;  (save-layout [this widgets layout]
+;    (let [{:keys [cols breakpoint]} (om/get-state this)
+;          num-cols (get cols breakpoint)
+;          new-layout (layout->widgets num-cols widgets (js->clj layout))]
+;      (om/transact! this `[(dashboard/save ~{:widget-layout new-layout})
+;                           :query/dashboard])))
+;
+;  (layout-changed [this widgets layout]
+;    (.save-layout this widgets layout))
+;
+;  (edit-start [this]
+;    (om/update-state! this assoc :is-editing? true))
+;  (edit-stop [this widgets layout]
+;    (.save-layout this widgets layout)
+;    (om/update-state! this assoc :is-editing? false))
+;
+;  (on-breakpoint-change [this breakpoint]
+;    (om/update-state! this assoc :breakpoint (keyword breakpoint)))
+;
+;  (initLocalState [this]
+;    (let [WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
+;          grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))]
+;      {:cols                             {:lg 4 :md 4 :sm 2 :xs 1 :xxs 1}
+;       :breakpoint                       :lg
+;       :grid-element                     grid-element
+;       :content                          :dashboard
+;       :side-bar-transition-fn           #(.update-layout this)
+;       :computed/widget-on-select-widget (memoize
+;                                           (fn [widget-props]
+;                                             #(do
+;                                               (debug "Selected widget: " (:widget/uuid widget-props))
+;                                               (om/update-state! this assoc :active-widget-uuid (:widget/uuid widget-props)))))}))
+;
+;  (render [this]
+;    (let [{:keys [query/dashboard
+;                  query/tags]} (om/props this)
+;          {:keys [layout
+;                  grid-element
+;                  is-editing?
+;                  cols
+;                  active-widget-uuid
+;                  computed/widget-on-select-widget]} (om/get-state this)
+;          widgets (:widget/_dashboard dashboard)
+;          project-id (:db/id (:dashboard/project dashboard))
+;          React (.-React js/window)]
+;      ;(debug "Layout: " layout)
+;      (dom/div
+;        #js {:style {:position "relative"}}
+;        (if (and layout
+;                 grid-element
+;                 (seq widgets))
+;          (.createElement React
+;                          grid-element
+;                          #js {:className          (if is-editing? "layout animate" "layout"),
+;                               :draggableHandle    ".widget-move"
+;                               :layouts            layout
+;                               :rowHeight          100
+;                               :margin             #js [20 20]
+;                               :cols               (clj->js cols)
+;                               :useCSSTransforms   true
+;                               :isDraggable        true
+;                               :isResizable        true
+;                               :onBreakpointChange #(.on-breakpoint-change this %)
+;                               :onResizeStart      #(.edit-start this)
+;                               :onResizeStop       #(.edit-stop this widgets %)
+;                               :onDragStart        #(.edit-start this)
+;                               :onDragStop         #(.edit-stop this widgets %)}
+;                          (into-array
+;                            (map
+;                              (fn [widget-props]
+;                                (dom/div
+;                                  #js {:key (str (:widget/uuid widget-props))
+;                                       :className (when (= active-widget-uuid (:widget/uuid widget-props)) "selected-widget")}
+;                                  (->Widget
+;                                    (om/computed widget-props
+;                                                 {:project-id       project-id
+;                                                  :tags             tags
+;                                                  :on-select-widget (widget-on-select-widget
+;                                                                      widget-props)})))
+;                                ;(.createElement React
+;                                ;                "div"
+;                                ;                #js {:key (str (:widget/uuid widget-props))
+;                                ;                     :style {:z-index (if (= active-widget-uuid (:widget/uuid widget-props)) 1000 0)}}
+;                                ;                (->Widget
+;                                ;                  (om/computed widget-props
+;                                ;                               {:project-id       project-id
+;                                ;                                :transactions     transactions
+;                                ;                                :on-select-widget #(do (debug "Selected widget: " (:widget/uuid widget-props))
+;                                ;                                                       (om/update-state! this assoc :active-widget-uuid (:widget/uuid widget-props)))})))
+;                                )
+;                              (sort-by :widget/index widgets))))
+;          (dom/div
+;            #js {:className "empty-message text-center"}
+;            (dom/i
+;              #js {:className "fa fa-tachometer fa-5x"})
+;            (dom/div
+;              #js {:className "lead"}
+;              "There's not much happening here, your dashboard is empty."
+;              (dom/br nil)
+;              (dom/br nil)
+;              "Get started with the action and add a new widget.")))))))
 
 (def ->Dashboard (om/factory Dashboard))

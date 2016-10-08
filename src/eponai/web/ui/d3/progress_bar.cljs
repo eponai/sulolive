@@ -17,6 +17,7 @@
       (let [progress (/ v limit)]
         (* 2 js/Math.PI progress))
       0)))
+
 (defui ProgressBar
   Object
   (create [this]
@@ -24,7 +25,7 @@
           svg (d3/build-svg (om/react-ref this (str "progress-bar-" id)) width height)
           {:keys [margin]} (om/get-state this)
           {inner-height :height
-           inner-width :width} (d3/svg-dimensions svg {:margin margin})
+           inner-width :width} (d3/svg-dimensions svg)
 
           cycle (first data)
 
@@ -64,8 +65,7 @@
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
           path-width (/ (min inner-width inner-height) 7)
-          limit (f/str->number (:limit (first data)))
-          ]
+          limit (f/str->number (:limit (first data)))]
       (when-not (or (js/isNaN inner-height) (js/isNaN inner-width))
         (let [progress (.. meter
                            (selectAll ".foreground")

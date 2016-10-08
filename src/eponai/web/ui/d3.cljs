@@ -275,7 +275,8 @@
                                        (om/update-state! component dissoc :resize-timer))
                                      50))))
 
-(defn update-on-resize [component el-id]
+(defn update-on-resize
+  [component el-id]
   (.. js/d3
       (select js/window)
       (on (str "resize." el-id) #(window-resize component))))
