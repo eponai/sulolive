@@ -71,9 +71,10 @@
 (defn init
   [opts]
   (info "Initializing server...")
-  (let [conn (if (::stateless-server opts)
-               (datomic_dev/create-connection)
-               (datomic_dev/connect!))]
+  (let [conn (or (::provided-conn opts)
+                 (if (::stateless-server opts)
+                   (datomic_dev/create-connection)
+                   (datomic_dev/connect!)))]
     ;; See comments about this where app*args and app is defined.
     (alter-var-root (var app*args) (fn [_] [conn (::extra-middleware opts)]))
     (alter-var-root (var app) call-app*))
@@ -109,14 +110,15 @@
                                                 reload/wrap-reload)}
                        opts)))
 
-(defn start-server-for-tests [& [{:keys [email-chan] :as opts}]]
+(defn start-server-for-tests [& [{:keys [email-chan conn] :as opts}]]
   {:pre [(or (nil? opts) (map? opts))]}
   (reset! in-production? false)
   (start-server
     (merge {:join?             false
             :port              0
-            ::stateless-server true
             :daemon?           true
+            ::provided-conn    conn
+            ::stateless-server true
             ::extra-middleware #(cond-> %
                                         (some? email-chan)
                                         (m/wrap-state {::email/send-verification-fn

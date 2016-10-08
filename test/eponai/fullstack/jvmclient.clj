@@ -16,7 +16,9 @@
             [clojure.core.async :as async]
             [taoensso.timbre :refer [debug error]]
             [medley.core :as medley]
-            [clojure.data :as diff]))
+            [clojure.data :as diff]
+            [datomic.api :as datomic])
+  (:import (org.eclipse.jetty.server Server)))
 
 (om/defui JvmRoot
   static om/IQuery
@@ -73,29 +75,18 @@
             (client->callback client))]
     (go
       (try
-        (loop [online? true]
-          (let [{:keys [::action ::act-value]} (<! query-chan)]
-            (debug "Took from query chan: " action)
-            (condp = action
-              nil nil
-              :network (recur (:online? act-value))
-              :query (let [[client query] act-value]
-                       (<! (<transact! client query))
-                       (when online?
-                         (let [other-clients (remove (partial = client) clients)
-                               ;; Sync
-                               callbacks (map #(<transact! % (om/full-query (om/app-root %)))
-                                              other-clients)
-                               _ (run! #(async/<!! %) callbacks)
-                               app-states (map app-state clients)
-                               eq? (apply = app-states)]
-                           (if eq?
-                             (debug "App state was equal! :D: " eq?)
-                             (run! (fn [[a b]]
-                                     (when (not= a b)
-                                       (error "App state NOT eq. diff: " (vec (diff/diff a b)))))
-                                   (partition 2 1 app-states)))))
-                       (recur online?)))))
+        (loop []
+          (let [{:keys [::transaction ::test-fn]} (<! query-chan)]
+            (when transaction
+              (let [[client query] transaction]
+                (<! (<transact! client query))
+                ;; Sync others
+                (->> (remove (partial = client) clients)
+                     (map #(<transact! % (om/full-query (om/app-root %))))
+                     (run! #(async/<!! %)))
+                (when test-fn
+                  (test-fn))
+                (recur)))))
         (catch Throwable e
           (debug "Exception in state-machine: " e))
         (finally
@@ -126,15 +117,14 @@
   (take-with-timeout callback-chan "email transact!")
   (debug "Transacted signin/email")
   (debug "Awaiting email")
-  (let [v (take-with-timeout email-chan "email with verification")]
+  (let [{:keys [verification]} (take-with-timeout email-chan "email with verification")
+        {:keys [:verification/uuid]} verification]
     (debug "Awaited email")
-    (let [_ (debug "client recieved from email chan: " v)
-          {:keys [:verification/uuid]} (:verification v)
-          _ (backend/drain-channel callback-chan)
-          _ (om/transact! client `[(session.signin.email/verify ~{:verify-uuid (str uuid)})])
-          _ (take-with-timeout callback-chan "verification")]
-      (debug "Awaited verification: " v)
-      (debug "hopefully logged in now?"))))
+    (debug "client recieved from email chan: " verification)
+    (backend/drain-channel callback-chan)
+    (om/transact! client `[(session.signin.email/verify ~{:verify-uuid (str uuid)})])
+    (take-with-timeout callback-chan "verification")
+    (debug "Awaited verification: " verification)))
 
 (defn logged-in-client [server-url email-chan callback-chan]
   (let [endpoint-atom (atom (str server-url "/api"))
@@ -143,9 +133,12 @@
         _ (take-with-timeout callback-chan "initial merge")
         _ (log-in! client email-chan callback-chan)
         _ (reset! endpoint-atom (str server-url "/api/user"))]
+    (om/transact! client (om/get-query JvmRoot))
+    (take-with-timeout callback-chan "initial full query")
+    (debug "Logged in with initial app-state")
     client))
 
-(defn create-clients [n server email-chan query-chan done-chan]
+(defn create-clients [n {:keys [server email-chan query-chan done-chan]}]
   (let [callback-chan (async/chan)
         server-url (str "http://localhost:" (.getPort (.getURI server)))
         clients (->> (range n)
@@ -177,23 +170,53 @@
                 (async/close! done-chan))))]
     clients))
 
+(defn test-setup []
+  (let [conn (datomic-dev/create-connection)
+        email-chan (async/chan)]
+    {:conn       conn
+     :email-chan email-chan
+     :server     (core/start-server-for-tests {:conn       conn
+                                               :email-chan email-chan})}))
 
-(defn run []
-  (let [email-chan (async/chan)
-        query-chan (async/chan)
-        done-chan (async/chan)
-        server (core/start-server-for-tests {:email-chan email-chan})]
+(defn run-test [{:keys [server] :as system} test-fn]
+  ;; TODO: Somehow re-use datomic connections?
+  (let [query-chan (async/chan)
+        done-chan  (async/chan)]
+    (.start server)
     (try
-      (let [[client1 :as clients] (create-clients 2 server email-chan query-chan done-chan)]
-        (debug "Created clients! Putting queries on query-chan")
-        (async/put! query-chan {::action    :query
-                                ::act-value [client1 (om/get-query JvmRoot)]})
-        (async/close! query-chan)
-        (async/<!! done-chan))
+      (let [clients (create-clients 2 (assoc system :query-chan query-chan
+                                                    :done-chan done-chan))
+            actions (test-fn clients)]
+        (try
+          (doseq [action actions]
+            (async/put! query-chan action))
+          (finally
+            (async/close! query-chan)
+            (async/<!! done-chan))))
       (finally
         (.stop server)
         (.join server)
-        (debug "DONE!")))))
+        (debug "DONE!")))
+    system))
+
+(defn equal-app-states? [clients]
+  (let [app-states (map app-state clients)
+        eq? (apply = app-states)]
+    (if eq?
+      (debug "App state was equal! :D: " eq?)
+      (run! (fn [[a b]]
+              (when (not= a b)
+                (error "App state NOT eq. diff: " (vec (diff/diff a b)))))
+            (partition 2 1 app-states)))))
+
+(defn run []
+  (let [system (test-setup)]
+    (-> system
+        (run-test
+          (fn [[client1 :as clients]]
+            [{::transaction [client1 (om/get-query JvmRoot)]
+              ::test-fn     #(do (when (.isRunning ^Server (:server system))
+                                   (equal-app-states? clients)))}])))))
 
 (comment `[(transaction/create {:transaction/tags       ({:tag/name "thailand"}),
                                 :transaction/date       {:date/ymd "2015-10-10"}
