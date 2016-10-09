@@ -1,10 +1,21 @@
 (ns eponai.common.format
+  #?(:clj (:refer-clojure :exclude [ref]))
   (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
             [clojure.set :refer [rename-keys]]
-    [eponai.common.format.date :as date]
-    #?(:clj
-            [datomic.api :as d]
-       :cljs [datascript.core :as d])))
+            [eponai.common.format.date :as date]
+            #?(:clj [datomic.api :as datomic])
+            [datascript.core :as datascript]
+            [datascript.db])
+  #?(:clj (:import [datomic Connection]
+                   [clojure.lang Atom])))
+
+(defn tempid [partition & [n]]
+  #?(:clj (apply datomic/tempid (cond-> [partition] (some? n) (conj n)))
+     :cljs (apply datascript/tempid (cond-> [partition] (some? n) (conj n)))))
+
+(defn squuid []
+  ;; Works for both datomic and datascript.
+  (datascript/squuid))
 
 (defn str->uuid [str-uuid]
   #?(:clj  (java.util.UUID/fromString str-uuid)
@@ -28,19 +39,19 @@
 
   Returns a map representing a project entity"
   [user-dbid & [opts]]
-  (cond->
-    {:db/id              (d/tempid :db.part/user)
-     :project/uuid       (or (:project/uuid opts) (d/squuid))
-     :project/created-at (or (:project/created-at opts) (date/date-time->long (date/now)))
-     :project/name       (or (:project/name opts) "My Project")}
-    user-dbid
-    (->
-      (assoc :project/created-by user-dbid)
-      (assoc :project/users [user-dbid]))))
+  (cond-> {:db/id              (tempid :db.part/user)
+           :project/uuid       (or (:project/uuid opts) (squuid))
+           :project/created-at (or (:project/created-at opts) (date/date-time->long (date/now)))
+           :project/name       (or (:project/name opts) "My Project")}
+          (some? user-dbid)
+          (->
+            (assoc :project/created-by user-dbid)
+            (assoc :project/users [user-dbid]))))
+
 
 (defn dashboard [project-ref & [opts]]
-  {:db/id (d/tempid :db.part/user)
-   :dashboard/uuid (or (:dashboard/uuid opts) (d/squuid))
+  {:db/id             (tempid :db.part/user)
+   :dashboard/uuid    (or (:dashboard/uuid opts) (squuid))
    :dashboard/project project-ref})
 
 (defn add-tempid
@@ -50,13 +61,13 @@
   (cond (map? e)
         (if (some? (:db/id e))
           e
-          (assoc e :db/id (d/tempid :db.part/user)))
+          (assoc e :db/id (tempid :db.part/user)))
 
         (coll? e)
         (map (fn [v]
                (if (some? (:db/id v))
                  v
-                 (assoc v :db/id (d/tempid :db.part/user))))
+                 (assoc v :db/id (tempid :db.part/user))))
              e)
         :else
         e))
@@ -120,7 +131,7 @@
         transaction (reduce update-fn input (keys conv-fn-map))]
 
     (assoc transaction
-      :db/id (d/tempid :db.part/user))))
+      :db/id (tempid :db.part/user))))
 
 (defn filter*
   [input]
@@ -306,13 +317,13 @@
                      [[:db/retract [:transaction/uuid uuid] :transaction/tags [:tag/name name]]]
 
                      nil
-                     (let [tempid (d/tempid :db.part/user)]
+                     (let [tempid (tempid :db.part/user)]
                        ;; Create new tag and add it to the transaction
                        [(assoc (tag* tag) :db/id tempid)
                         [:db/add [:transaction/uuid uuid] :transaction/tags tempid]])))
         transaction (-> input-transaction
                         (dissoc :transaction/tags)
-                        (assoc :db/id (d/tempid :db.part/user))
+                        (assoc :db/id (tempid :db.part/user))
                         (->> (reduce-kv (fn [m k v]
                                           (assoc m k (condp = k
                                                        :transaction/amount (str->number v)

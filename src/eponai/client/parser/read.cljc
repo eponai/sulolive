@@ -185,6 +185,15 @@
                                       ;; Make space for the new ones.
                                       (seq new-with-convs)
                                       (#(apply disj % new-with-convs))
+                                      ;; When there are new ones, we may have created
+                                      ;; optimistic ones. Remove them.
+                                      (seq new-with-convs)
+                                      (#(apply disj %
+                                               (filter (fn [{:keys [db/id transaction/uuid]}]
+                                                         (-> db
+                                                             (d/datoms :eavt id :transaction/uuid uuid)
+                                                             (empty?)))
+                                                       %)))
                                       (seq old-convs)
                                       (->> (into (sorted-txs-set)
                                                  (map (assoc-conversion-xf old-convs))))

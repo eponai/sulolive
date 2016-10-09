@@ -1,8 +1,10 @@
 (ns eponai.fullstack.jvmclient
   (:require [om.next :as om]
+            [om.util]
             [om.dom :as dom]
             [clojure.core.async :as async :refer [go <! >!]]
             [eponai.common.parser :as parser]
+            [eponai.common.database.pull :as pull]
             [eponai.client.parser.mutate]
             [eponai.client.parser.read]
             [eponai.client.backend :as backend]
@@ -21,6 +23,13 @@
             [datascript.core :as datascript])
   (:import (org.eclipse.jetty.server Server)))
 
+(def query-transactions {:query/transactions [:transaction/conversion
+                                              :transaction/currency
+                                              :transaction/project
+                                              :transaction/title
+                                              :transaction/uuid
+                                              {:transaction/date [:db/id :date/timestamp]}]})
+
 (om/defui JvmRoot
   static om/IQuery
   (query [this] [:datascript/schema
@@ -29,9 +38,7 @@
                  {:query/all-projects [:project/uuid
                                        :project/created-at
                                        :project/users]}
-                 {:query/transactions [:transaction/title
-                                       {:transaction/date [:date/timestamp]}]}
-                 ])
+                 query-transactions])
   Object
   (render [this]
     (dom/div nil
@@ -138,7 +145,9 @@
                     test-result {::test-id id :query query}]
                 (if-not remote-query?
                   ;; Just apply query locally to a client:
-                  (om/transact! client query)
+                  (do
+                    (warn "non-remote query: " query)
+                    (om/transact! client query))
                   ;; Apply and wait for query to be merged with remote response.
                   (let [client-tx (<transact! client query)
                         other-clients (->> (remove (partial = client) clients)
@@ -153,6 +162,7 @@
                     (swap! result update ::failures conj (assoc test-result :error e))))
                 (recur (inc id))))))
         (catch Throwable e
+          (.printStackTrace e)
           (error "Exception in state-machine: " e))
         (finally
           (async/<!! (async/go-loop []
@@ -231,7 +241,11 @@
       eq?
       (run! (fn [[a b]]
               (when (not= a b)
-                (error "App state NOT eq. diff: " (vec (diff/diff a b)))))
+                (let [[left right both] (vec (diff/diff a b))]
+                  (error "App state NOT eq. diff: ")
+                  (error "in left one: " left)
+                  (error "in right one: " right)
+                  (error "in both: " both))))
             (partition 2 1 app-states)))))
 
 (defn result-summary [results]
@@ -262,15 +276,34 @@
    :actions [{::transaction [client1 (om/get-query JvmRoot)]
               ::asserts     #(assert (equal-app-states? clients))}]})
 
-(defn run []
-  (run-tests [test-system-setup test-root-query-tx]))
+(defn test-create-transaction [_ [client1 :as clients]]
+  (let [project-uuid (pull/find-with (pull/db* (om/app-state client1))
+                                     {:find-pattern '[?uuid .]
+                                      :where        '[[_ :project/uuid ?uuid]]})
+        tx {:transaction/tags       [{:tag/name "thailand"}]
+            :transaction/date       {:date/ymd "2015-10-10"}
+            :transaction/type       :transaction.type/expense
+            :transaction/currency   {:currency/code "THB"}
+            :transaction/title      "lunch"
+            :transaction/project    {:project/uuid project-uuid}
+            :transaction/uuid       (datascript/squuid)
+            :transaction/amount     "180"
+            :transaction/created-at 1}]
+    {:label   "created transactions should sync"
+     :actions [{::transaction [client1 `[(transaction/create ~tx) ~query-transactions]]
+                ::asserts     (fn []
+                                (letfn [(has-new-transaction? [client]
+                                          (-> (om/app-state client)
+                                              (pull/db*)
+                                              (pull/entity* [:transaction/uuid (:transaction/uuid tx)])
+                                              (keys)
+                                              (seq)))]
+                                  (assert (every? has-new-transaction? clients))
+                                  (assert (equal-app-states? clients))))}]}))
 
-(comment `[(transaction/create {:transaction/tags       ({:tag/name "thailand"}),
-                                :transaction/date       {:date/ymd "2015-10-10"}
-                                :transaction/type       {:db/ident :transaction.type/expense},
-                                :transaction/currency   {:currency/code "THB"},
-                                :transaction/title      "lunch",
-                                :transaction/project    [:project/uuid #uuid"57eeb170-4d6f-462c-b1e4-0b70c136924f"],
-                                :transaction/uuid       #uuid"57eeb170-fc13-4f2d-b0e7-d36a624ab6d1",
-                                :transaction/amount     180M,
-                                :transaction/created-at 1})])
+(defn run []
+  (run-tests [
+              ;;test-system-setup
+              ;;test-root-query-tx
+              test-create-transaction
+              ]))
