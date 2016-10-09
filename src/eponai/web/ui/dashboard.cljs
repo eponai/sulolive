@@ -3,6 +3,7 @@
     [datascript.core :as d]
     [eponai.web.ui.all-transactions :refer [Transaction]]
     [eponai.web.ui.widget :as w :refer [Widget ->Widget]]
+    [eponai.web.ui.d3.balance-chart :as bc]
     [eponai.web.ui.d3.pie-chart :as pc]
     [om.dom :as dom]
     [om.next :as om :refer-macros [defui]]
@@ -71,25 +72,36 @@
       (debug "Dashboard Transactions: " (om/props this))
       (html
         [:div#dashboard
-         [:div#db-summary
-          [:a.button.black
-           "September"
-           ;[:i.fa.fa-caret-down.fa-fw]
-           ]
+         [:div.db-section
+          [:div.row.column
+           [:a.button.black
+            "September"
+            ;[:i.fa.fa-caret-down.fa-fw]
+            ]
 
-          [:div#pie-charts
-           (pc/->PieChart {:id "housing-chart"
-                           :title "Housing"
-                           :value 50
-                           :limit 70})
-           (pc/->PieChart {:id "transport-chart"
-                           :title "Transport"
-                           :value 100
-                           :limit 200})
-           (pc/->PieChart {:id "balance-chart"
-                           :title "Balance"
-                           :value 20 :limit 100})]
+           [:div#pie-charts
+            (pc/->PieChart {:id    "housing-chart"
+                            :title "Housing"
+                            :value 50
+                            :limit 70})
+            (pc/->PieChart {:id    "transport-chart"
+                            :title "Transport"
+                            :value 100
+                            :limit 200})
+            (pc/->PieChart {:id    "balance-pie-chart"
+                            :title "Balance"
+                            :value 20 :limit 100})]]
 
+          ]
+
+         [:div.db-section
+          [:div.row.column
+
+           [:div#balance-spent
+            (bc/->BalanceChart {:id "balance-spent-chart"
+                                :values [{:date 1475971200000 :balance 473 :spent 500}
+                                         {:date 1475884800000 :balance 973 :spent 0}
+                                         {:date 1475798400000 :balance 1023 :spent 50}]})]]
           ]]))))
 ;(defui Dashboard
 ;  static om/IQuery

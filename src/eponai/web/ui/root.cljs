@@ -49,7 +49,7 @@
           (nav/->NavbarSubmenu (om/computed (assoc nav-bar-submenu :ref :nav-bar-submenu)
                                             {:content-factory factory
                                              :app-content     app-root}))
-         [:div#page-content.row.column
+         [:div#page-content
           {:ref (str ::page-content-ref)}
           (when factory
             (factory app-root))]]))))

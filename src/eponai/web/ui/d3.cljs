@@ -13,11 +13,10 @@
       -format
       (utc format-str)))
 
-(defn build-svg [ref width height]
+(defn build-svg [ref & args]
   (-> js/d3
       (.select (js/ReactDOM.findDOMNode ref))
-      (.append "svg")
-      (.style #js {:width width :height height})))
+      (.append "svg")))
 
 (defn tooltip-build [id]
   (let [tooltip (.. js/d3

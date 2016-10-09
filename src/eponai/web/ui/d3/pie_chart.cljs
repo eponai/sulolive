@@ -21,8 +21,8 @@
 (defui PieChart
   Object
   (create [this]
-    (let [{:keys [id width height]} (om/props this)
-          svg (d3/build-svg (om/react-ref this (str "pie-" id)) width height)
+    (let [{:keys [id]} (om/props this)
+          svg (d3/build-svg (om/react-ref this (str "pie-" id)))
 
           {inner-height :height
            inner-width :width} (d3/svg-dimensions svg)
@@ -87,9 +87,6 @@
                       (arc d)))
           (attrTween "d"
                      (fn [d]
-                       (debug "Update chart Got value d " d)
-                       (debug "start angle " start-angle)
-                       (debug "end angle" (end-angle (.-value d) limit))
                        (let [interpolate (.. js/d3
                                              (interpolate start-angle (end-angle (.-value d) limit)))]
                          (fn [t]
