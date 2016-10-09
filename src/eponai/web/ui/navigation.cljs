@@ -134,16 +134,16 @@
              {:href (when project-id
                       (routes/key->route :route/project->dashboard
                                          {:route-param/project-id project-id}))}
-             (icon/icon-stats (= selected-tab :dashboard))]
+             (icon/menu-stats (= selected-tab :dashboard))]
             [:a
              {:href (when project-id
                       (routes/key->route :route/project->txs {:route-param/project-id project-id}))}
-             (icon/icon-list (= selected-tab :transactions))]
+             (icon/menu-list (= selected-tab :transactions))]
             [:a
              {:href (when project-id
                       (routes/key->route :route/project->settings
                                          {:route-param/project-id project-id}))}
-             (icon/icon-settings (= selected-tab :settings))]]]]
+             (icon/menu-settings (= selected-tab :settings))]]]]
 
          (when new-project?
            (let [on-close #(om/update-state! this assoc :new-project? false)]

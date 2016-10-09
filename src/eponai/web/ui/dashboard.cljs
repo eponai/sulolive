@@ -5,6 +5,7 @@
     [eponai.web.ui.widget :as w :refer [Widget ->Widget]]
     [eponai.web.ui.d3.balance-chart :as bc]
     [eponai.web.ui.d3.pie-chart :as pc]
+    [eponai.web.ui.icon :as icon]
     [om.dom :as dom]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
@@ -72,7 +73,7 @@
       (debug "Dashboard Transactions: " (om/props this))
       (html
         [:div#dashboard
-         [:div.db-section
+         [:div.dashboard-section
           [:div.row.column
            [:a.button.black
             "September"
@@ -94,8 +95,12 @@
 
           ]
 
-         [:div.db-section
+         [:div.dashboard-section
           [:div.row.column
+
+           [:div.section-title
+            (icon/dashboard-balance)
+            [:span "Balance vs Spent"]]
 
            [:div#balance-spent
             (bc/->BalanceChart {:id "balance-spent-chart"

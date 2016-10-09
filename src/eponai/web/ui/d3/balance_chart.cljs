@@ -101,23 +101,19 @@
 (defui BalanceChart
   Object
   (make-axis [_ width height]
-    (let [x-scale (.. js/d3 scaleTime
-                      (range #js [0 width])
-                      (nice (.. js/d3 -timeMonth)))
+    (let [x-scale (.. js/d3 scaleTime)
 
-          y-scale (.. js/d3 scaleLinear
-                      (range #js [height 0])
-                      (nice))]
+          y-scale (.. js/d3 scaleLinear)]
 
       {:x-axis  (.. js/d3 (axisBottom x-scale)
-                    (ticks 0)
-                    (tickFormat (fn [t]
-                                  (let [time-format (d3/time-formatter "%b %d")]
-                                    (time-format (js/Date. t))))))
+                    ;(tickFormat (fn [t]
+                    ;              (let [time-format (d3/time-formatter "%b %d")]
+                    ;                (time-format (js/Date. t)))))
+                    )
        :y-axis  (.. js/d3 (axisLeft y-scale)
-                    (ticks 0)
-                    (tickFormat (.. js/d3
-                                    (format ",.2f"))))
+                    ;(tickFormat (.. js/d3
+                    ;                (format ",.0f")))
+                    )
        :x-scale x-scale
        :y-scale y-scale}))
 
@@ -153,11 +149,9 @@
           (attr "class" "y axis grid")
           (attr "transform" (str "translate(-1,0)")))
 
-
-      ;(d3/brush-append svg (:left margin) (:top margin))
-
       (d3/update-on-resize this id)
       (om/update-state! this assoc :svg svg :x-scale x-scale :y-scale y-scale :area area :line line :x-axis x-axis :y-axis y-axis :graph graph)))
+
   (update [this]
     (let [{:keys [svg x-scale y-scale margin graph area line]} (om/get-state this)
           {:keys [values]} (om/props this)
@@ -199,10 +193,12 @@
           (append "path")
           (attr "class" "line")
           (attr "d" line))
+
       (.. spent-line
           transition
           (duration 250)
           (attr "d" line))
+
       (.. spent-line
           exit
           remove)
@@ -212,11 +208,9 @@
     (let [{:keys [x-axis y-axis graph]} (om/get-state this)
           {:keys [values]} (om/props this)]
       (.. y-axis
-          (ticks (max (/ height 50) 2))
-          )
+          (ticks (max (/ height 100) 2)))
       (.. x-axis
-          (ticks (min (count values) 31))
-          )
+          (ticks (min (count values) 31)))
       (.. graph
           (selectAll ".x.axis")
           (attr "transform" (str "translate(0, " height ")"))
@@ -241,7 +235,7 @@
       (.update this)))
 
   (initLocalState [_]
-    {:margin {:top 10 :left 50 :bottom 20 :right 10}})
+    {:margin {:top 0 :left 100 :bottom 30 :right 0}})
   (render [this]
     (let [{:keys [id]} (om/props this)]
       (html
