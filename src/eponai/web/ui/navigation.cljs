@@ -252,6 +252,15 @@
 
 (def ->NavbarMenu (om/factory NavbarMenu))
 
+(defui Footer
+  Object
+  (render [this]
+    (html
+      [:div.footer
+       [:small
+        "Copyright © eponai 2016. All Rights Reserved"]])))
+(def ->Footer (om/factory Footer))
+
 (defui SideBar
   static om/IQuery
   (query [_]

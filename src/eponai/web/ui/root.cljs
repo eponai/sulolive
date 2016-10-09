@@ -52,4 +52,5 @@
          [:div#page-content
           {:ref (str ::page-content-ref)}
           (when factory
-            (factory app-root))]]))))
+            (factory app-root))]
+         (nav/->Footer)]))))
