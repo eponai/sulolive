@@ -146,7 +146,7 @@
 
 (defonce connection (atom nil))
 
-(defn create-connection [& _]
+(defn create-connection [& [opts]]
   (let [uri (env :db-url)]
     (try
       (if (contains? #{nil "" "test"} uri)
@@ -154,9 +154,8 @@
               txs (ods/import-parsed (ods/parsed-transactions))]
           (info "Setting up inmemory db because uri is set to:" uri)
           (add-data-to-connection mem-conn
-                                  ;; Use larger dataset:
-                                  (take (count txs) (cycle txs))
-                                  )
+                                  (->> (cycle txs)
+                                       (take (or (::transaction-count opts) (count txs)))))
           (debug "Successfully set up inmemory db!")
           mem-conn)
         (do
@@ -175,4 +174,4 @@
   (if-let [c @connection]
     (do (debug "Already had a connection. Returning the old one: " c)
         c)
-    (swap! connection create-connection)))
+    (reset! connection (create-connection))))

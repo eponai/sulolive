@@ -204,7 +204,7 @@
     clients))
 
 (defn test-setup []
-  (let [conn (datomic-dev/create-connection)
+  (let [conn (datomic-dev/create-connection {::datomic-dev/transaction-count 105})
         email-chan (async/chan)]
     {:conn       conn
      :email-chan email-chan
@@ -302,8 +302,8 @@
                                   (assert (equal-app-states? clients))))}]}))
 
 (defn run []
-  (run-tests [
-              ;;test-system-setup
-              ;;test-root-query-tx
-              test-create-transaction
-              ]))
+  (time (run-tests [
+               test-system-setup
+               test-root-query-tx
+               test-create-transaction
+               ])))
