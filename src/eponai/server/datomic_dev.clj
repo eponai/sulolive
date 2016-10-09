@@ -128,8 +128,8 @@
 
 (defn add-data-to-connection
   ([conn] (add-data-to-connection conn (transactions)))
-  ([conn transactions]
-   (let [schemas (read-schema-files)
+  ([conn transactions & [schema]]
+   (let [schemas (or schema (read-schema-files))
          email test-user-email
          project-uuid (d/squuid)]
      (transact/transact-schemas conn schemas)
@@ -146,16 +146,17 @@
 
 (defonce connection (atom nil))
 
-(defn create-connection [& [opts]]
+(defn transaction-data [& [n]]
+  (let [txs (ods/import-parsed (ods/parsed-transactions))]
+    (->> (cycle txs) (take (or n (count txs))))))
+
+(defn create-connection []
   (let [uri (env :db-url)]
     (try
       (if (contains? #{nil "" "test"} uri)
-        (let [mem-conn (create-new-inmemory-db)
-              txs (ods/import-parsed (ods/parsed-transactions))]
+        (let [mem-conn (create-new-inmemory-db)]
           (info "Setting up inmemory db because uri is set to:" uri)
-          (add-data-to-connection mem-conn
-                                  (->> (cycle txs)
-                                       (take (or (::transaction-count opts) (count txs)))))
+          (add-data-to-connection mem-conn (transaction-data))
           (debug "Successfully set up inmemory db!")
           mem-conn)
         (do

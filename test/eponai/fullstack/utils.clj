@@ -7,10 +7,3 @@
     (when-not (= c chan)
       (throw (ex-info "client login timed out" {:where (str "awaiting " label)})))
     v))
-
-(defn multiply-chan [chan n]
-  (let [chan-mult (async/mult chan)
-        readers (repeatedly n #(async/chan))]
-    (doseq [r readers]
-      (async/tap chan-mult r))
-    readers))

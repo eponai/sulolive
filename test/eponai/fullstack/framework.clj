@@ -2,6 +2,7 @@
   (:require [om.next :as om]
             [om.util]
             [clojure.core.async :as async :refer [go <! >!]]
+            [eponai.common.parser.util :as p.util]
             [eponai.client.parser.mutate]
             [eponai.client.parser.read]
             [eponai.client.backend :as backend]
@@ -12,10 +13,9 @@
             [clojure.core.async :as async]
             [taoensso.timbre :refer [debug error warn info]]
             [medley.core :as medley]
-            [datascript.core :as datascript])
+            [datascript.core :as datascript]
+            [datomic.api :as datomic])
   (:import (org.eclipse.jetty.server Server)))
-
-;; Om utils
 
 (defn call-parser [reconciler query & [target]]
   {:pre [(some? query)]}
@@ -26,6 +26,13 @@
 (defn- <transact! [client->callback client query]
   (om/transact! client query)
   (client->callback client))
+
+(defn multiply-chan [chan n]
+  (let [chan-mult (async/mult chan)
+        readers (repeatedly n #(async/chan))]
+    (doseq [r readers]
+      (async/tap chan-mult r))
+    readers))
 
 (defn init-clients-state
   "Init the state of each client to be the full query of the root component.
@@ -41,20 +48,19 @@
   (->> clients
        (mapv #(async/<!! (<transact! client->callback % (om/get-query JvmRoot))))))
 
-(defn mutation-state-machine [query-chan clients client->callback]
+(defn mutation-state-machine [action-chan clients client->callback]
   (let [<transact! (partial <transact! client->callback)
         result (atom {::successes [] ::failures []})]
     (go
       (try
         (loop [id 0]
-          (let [{:keys [::transaction ::asserts] :as action} (<! query-chan)]
-            (when (some? action)
+          (let [{:keys [::transaction ::asserts] :as action} (<! action-chan)]
+            (when action
               (assert (some? transaction)
                       (str "Got an action, but it did not contain key: " ::transaction
                            (if (map? action)
                              (str " had keys: " (keys action))
-                             (str " action was not a map. Was: " (type action))))))
-            (when transaction
+                             (str " action was not a map. Was: " (type action)))))
               (let [[client query] transaction
                     remote-query? (seq (call-parser client query :remote))
                     test-result {::test-id id :query query}]
@@ -85,14 +91,13 @@
           (error "Exception in state-machine: " e))
         (finally
           (async/<!! (async/go-loop []
-                       (when-let [{:keys [::transaction]} (async/<! query-chan)]
+                       (when-let [{:keys [::transaction]} (async/<! action-chan)]
                          (debug "Skipping transaction: " (second transaction)
                                 "because of previous error.")
                          (recur))))))
       @result)))
 
-
-(defn create-clients [n {:keys [server email-chan query-chan result-chan]}]
+(defn create-clients [n {:keys [server email-chan action-chan result-chan]}]
   (let [callback-chan (async/chan)
         server-url (str "http://localhost:" (.getPort (.getURI ^Server server)))
         clients (repeatedly n #(client/logged-in-client server-url email-chan callback-chan))
@@ -105,7 +110,7 @@
                     (recur (<! callback-chan))))))
 
         _ (init-clients-state clients client->callback)
-        [sm-query-chan teardown-query-chan] (fs.utils/multiply-chan query-chan 2)
+        [sm-query-chan teardown-query-chan] (multiply-chan action-chan 2)
         sm (mutation-state-machine sm-query-chan clients client->callback)
         _ (async/go
             (try
@@ -122,30 +127,42 @@
                 (async/close! result-chan))))]
     clients))
 
-(defn reset-system [system])
+(defn- start-system [{:keys [db-transactions db-schema] :as system}]
+  (let [conn (datomic-dev/create-new-inmemory-db)
+        _ (datomic-dev/add-data-to-connection conn
+                                              db-transactions
+                                              db-schema)
+        email-chan (async/chan)
+        server (core/start-server-for-tests {:conn       conn
+                                             :email-chan email-chan})]
+    (assoc system :conn conn
+                  :email-chan email-chan
+                  :server server)))
+
+(defn- stop-system [system]
+  (async/close! (:email-chan system))
+  (datomic/release (:conn system))
+  (.stop ^Server (:server system))
+  system)
 
 (defn setup-system []
-  (let [conn (datomic-dev/create-connection {::datomic-dev/transaction-count 105})
-        email-chan (async/chan)]
-    {:conn         conn
-     :email-chan   email-chan
-     :results-atom (atom [])
-     :server       (core/start-server-for-tests {:conn       conn
-                                                 :email-chan email-chan})}))
+  {:results-atom    (atom [])
+   :db-schema       (datomic-dev/read-schema-files)
+   :db-transactions (datomic-dev/transaction-data 105)})
 
 (defn run-test [{:keys [server] :as system} test-fn]
-  (let [query-chan (async/chan)
+  (let [action-chan (async/chan)
         result-chan (async/chan)]
     (.start server)
     (try
-      (let [clients (create-clients 2 (assoc system :query-chan query-chan
+      (let [clients (create-clients 2 (assoc system :action-chan action-chan
                                                     :result-chan result-chan))
             {:keys [actions label]} (test-fn server clients)
             _ (try
                 (doseq [action actions]
-                  (async/put! query-chan action))
+                  (async/put! action-chan action))
                 (finally
-                  (async/close! query-chan)))
+                  (async/close! action-chan)))
             result (async/<!! result-chan)]
         (update system :results-atom swap! conj {:label  (or label (str (datascript/squuid)))
                                                  :result result}))
@@ -163,12 +180,22 @@
                   [0 0])
        (zipmap [:successes :failures])))
 
+(defn print-summary [end-result]
+  (when-let [has-failures (seq (filter (comp seq ::failures :result) end-result))]
+    (error "Test failures: "
+           (->> has-failures
+                (into [] (map #(update % :result dissoc ::successes))))))
+  (info "Test results:" (result-summary end-result))
+  (prn "Test results:" (result-summary end-result)))
+
 (defn run-tests [& test-fns]
-  (let [system (setup-system)
-        system (reduce run-test system test-fns)
+  (let [system (reduce (fn [system test]
+                         (-> system
+                             (start-system)
+                             (run-test test)
+                             (stop-system)))
+                       (setup-system)
+                       test-fns)
         end-result (deref (:results-atom system))]
-    (when-let [has-failures (seq (filter (comp seq ::failures :result) end-result))]
-      (error "Test failures: " (->> has-failures
-                                    (into [] (map #(update % :result dissoc ::successes))))))
-    (info "Test results:" (result-summary end-result))
-    (prn "Test results:" (result-summary end-result))))
+    (print-summary end-result)
+    end-result))

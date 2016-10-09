@@ -59,8 +59,5 @@
                                      (assert (equal-app-states? clients))))}]}))
 
 (defn run []
-  (fw/run-tests
-    test-system-setup
-    test-create-transaction
-    ))
-
+  (fw/run-tests test-system-setup
+                test-create-transaction))
