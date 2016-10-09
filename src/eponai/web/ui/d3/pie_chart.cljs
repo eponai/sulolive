@@ -113,12 +113,12 @@
           (attr "class" "val-txt")
           (attr "dy" "1.5em")
           (attr "x" 0)
-          (text (gstring/format "%.2f" value)))
+          (text (gstring/format "%.0f" value)))
 
       (.. val-txt
           transition
           (duration 500)
-          (text (gstring/format "%.2f" value))
+          (text (gstring/format "%.0f" value))
           ;(tween "text" (fn [d]
           ;                (this-as jthis
           ;                  (let [i (.. js/d3

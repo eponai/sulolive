@@ -103,11 +103,27 @@
             [:span "Balance vs Spent"]]
 
            [:div#balance-spent
-            (bc/->BalanceChart {:id "balance-spent-chart"
-                                :values [{:date 1475971200000 :balance 473 :spent 500}
-                                         {:date 1475884800000 :balance 973 :spent 0}
-                                         {:date 1475798400000 :balance 1023 :spent 50}]})]]
-          ]]))))
+            (bc/->BalanceChart {:id     "balance-spent-chart"
+                                :values (if (seq transactions)
+                                          [{:date 1475971200000 :balance 473 :spent 500}
+                                           {:date 1475884800000 :balance 973 :spent 0}
+                                           {:date 1475798400000 :balance 1023 :spent 50}]
+                                          [])})]
+
+           [:div#key-metrics
+            [:div.key-metric
+             [:div.val-txt "473"]
+             [:div.title-txt "Balance"]]
+            [:div.key-metric
+             [:div.val-txt "31.21"]
+             [:div.title-txt "Avg. Spent per day"]]
+            [:div.key-metric
+             [:div.val-txt "53.13"]
+             [:div.title-txt "By Oct 31"]]]]
+          ]
+
+         [:div.dashboard-section
+          [:div.row.column]]]))))
 ;(defui Dashboard
 ;  static om/IQuery
 ;  (query [_]
