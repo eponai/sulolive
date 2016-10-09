@@ -32,7 +32,6 @@
                     (attr "class" "pie")
                     (attr "transform" (str "translate(" (/ inner-width 2) "," (/ inner-height 2) ")")))
           arc (.. js/d3
-                  -svg
                   arc
                   (innerRadius (- (/ (min inner-width inner-height) 2) 5))
                   (outerRadius (/ (min inner-width inner-height) 2))
@@ -41,7 +40,6 @@
                   (append "text")
                   (attr "class" "txt")
                   (attr "text-anchor" "middle")
-                  ;(attr "dy" ".15em")
                   (attr "font-size" 14))]
       (.. graph
           (append "path")
@@ -61,7 +59,7 @@
 
           progress (.. graph
                        (selectAll ".foreground")
-                       (data #js [#js {:value value :endAngle start-angle}]))
+                       (data #js [#js {:value value :endAngle (end-angle value limit)}]))
 
           title-txt (.. txt
                         (selectAll ".title-txt")
@@ -69,6 +67,7 @@
           val-txt (.. txt
                       (selectAll ".val-txt")
                       (data #js [value]))]
+      (debug "Update pie charts: " value)
 
       (.. arc
           (innerRadius (- (/ (min inner-width inner-height) 2) 5))
@@ -77,21 +76,26 @@
       (.. progress
           enter
           (append "path")
-          (attr "class" "foreground"))
+          (attr "class" "foreground")
+          (attr "d" (fn [d]
+                      (debug "update Draw arc: " d)
+                      (arc d))))
 
       (.. progress
-          transition
-          (ease "quad-out")
-          (duration 500)
+          ;transition
+          ;(duration 500)
           (attr "d" (fn [d]
+                      (debug "update Draw arc: " d)
                       (arc d)))
-          (attrTween "d"
-                     (fn [d]
-                       (let [interpolate (.. js/d3
-                                             (interpolate start-angle (end-angle (.-value d) limit)))]
-                         (fn [t]
-                           (set! (.-endAngle d) (interpolate t))
-                           (arc d))))))
+          ;(attrTween "d"
+          ;           (fn [d]
+          ;             (debug "Updating pie got value: " d)
+          ;             (let [interpolate (.. js/d3
+          ;                                   (interpolate start-angle (end-angle (.-value d) limit)))]
+          ;               (fn [t]
+          ;                 (set! (.-endAngle d) (interpolate t))
+          ;                 (arc d)))))
+          )
 
       (.. title-txt
           enter
@@ -109,18 +113,19 @@
           (attr "class" "val-txt")
           (attr "dy" "1.5em")
           (attr "x" 0)
-          (text "0"))
+          (text (gstring/format "%.2f" value)))
 
       (.. val-txt
           transition
-          (ease "qued-out")
           (duration 500)
-          (tween "text" (fn [d]
-                          (this-as jthis
-                            (let [i (.. js/d3
-                                        (interpolate (.-textContent jthis) d))]
-                              (fn [t]
-                                (set! (.-textContent jthis) (gstring/format "%.2f" (i t)))))))) )))
+          (text (gstring/format "%.2f" value))
+          ;(tween "text" (fn [d]
+          ;                (this-as jthis
+          ;                  (let [i (.. js/d3
+          ;                              (interpolate (.-textContent jthis) d))]
+          ;                    (fn [t]
+          ;                      (set! (.-textContent jthis) (gstring/format "%.2f" (i t))))))))
+          )))
 
   (componentDidMount [this]
     (.create this))

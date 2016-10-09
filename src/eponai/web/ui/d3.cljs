@@ -9,9 +9,7 @@
 
 (defn time-formatter [format-str]
   (.. js/d3
-      -time
-      -format
-      (utc format-str)))
+      (utcFormat format-str)))
 
 (defn build-svg [ref & args]
   (-> js/d3

@@ -37,66 +37,85 @@
 
     (.. inset
         (append "feGaussianBlur")
-        (attr #js {:in "SourceAlpha" :stdDeviation "0,3" :result "blur"}))
+        (attr "in" "SourceAlpha")
+        (attr "stdDeviation" "0,3")
+        (attr "result" "inset-blur"))
     (.. inset
         (append "feOffset")
-        (attr #js {:in "blur" :dx 0 :dy 3 :result "offset-blur"}))
+        (attr "in" "inset-blur")
+        (attr "dx" 0)
+        (attr "dy" 3)
+        (attr "result" "inset-offset-blur"))
 
     (.. inset
         (append "feComposite")
-        (attr #js {:operator "out" :in "SourceGraphic" :in2 "offset-blur" :result "inverse"}))
+        (attr "operator" "out")
+        (attr "in" "SourceGraphic")
+        (attr "in2" "inset-offset-blur")
+        (attr "result" "inset-inverse"))
     (.. inset
         (append "feFlood")
-        (attr #js {:flood-color "#57BFBF" :flood-opacity 1 :result "color"}))
+        (attr "flood-color" "#57BFBF")
+        (attr "flood-opacity" 1)
+        (attr "result" "inset-color"))
     (.. inset
         (append "feComposite")
-        (attr #js {:operator "in" :in "color" :in2 "inverse" :result "shadow"}))
+        (attr "operator" "in")
+        (attr "in" "inset-color")
+        (attr "in2" "inset-inverse")
+        (attr "result" "inset-shadow"))
     (.. inset
         (append "feComposite")
-        (attr #js {:operator "over" :in "shadow" :in2 "SourceGraphic"}))
+        (attr "operator" "over")
+        (attr "in" "inset-shadow")
+        (attr "in2" "SourceGraphic"))
 
     (.. drop-shadow
         (append "feGaussianBlur")
-        (attr #js {:in "SourceAlpha" :stdDeviation "0,1" :result "line-blur"}))
+        (attr "in" "SourceAlpha")
+        (attr "stdDeviation" "0,1")
+        (attr "result" "line-blur"))
     (.. drop-shadow
         (append "feOffset")
-        (attr #js {:in "line-blur" :dx 0 :dy 2 :result "line-offset-blur"}))
+        (attr "in" "line-blur")
+        (attr "dx" 0)
+        (attr "dy" 2)
+        (attr "result" "line-offset-blur"))
     (.. drop-shadow
         (append "feFlood")
-        (attr #js {:flood-color "#C77F2C" :flood-opacity 1 :result "line-color"}))
+        (attr "flood-color" "#C77F2C")
+        (attr "flood-opacity" 1)
+        (attr "result" "line-color"))
     (.. drop-shadow
         (append "feComposite")
-        (attr #js {:operator "in" :in "line-color" :in2 "line-offset-blur" :result "drop-shadow"}))
+        (attr "operator" "in")
+        (attr "in" "line-color")
+        (attr "in2" "line-offset-blur")
+        (attr "result" "drop-shadow"))
     (.. drop-shadow
         (append "feBlend")
-        (attr #js {:in "SourceGraphic" :in2 "drop-shadow" :mode "normal"}))
-    ))
+        (attr "in" "SourceGraphic")
+        (attr "in2" "drop-shadow")
+        (attr "mode" "normal"))))
 
 (defui BalanceChart
   Object
   (make-axis [_ width height]
-    (let [x-scale (.. js/d3 -time scale
+    (let [x-scale (.. js/d3 scaleTime
                       (range #js [0 width])
-                      (nice (.. js/d3 -time -month)))
+                      (nice (.. js/d3 -timeMonth)))
 
-          y-scale (.. js/d3 -scale linear
+          y-scale (.. js/d3 scaleLinear
                       (range #js [height 0])
                       (nice))]
 
-        {:x-axis  (.. js/d3 -svg axis
-                    (scale x-scale)
-                    (orient "bottom")
+      {:x-axis  (.. js/d3 (axisBottom x-scale)
                     (ticks 0)
-                    (tickSize 1)
                     (tickFormat (fn [t]
                                   (let [time-format (d3/time-formatter "%b %d")]
-                                    (time-format (js/Date. t)))))
-                    )
-       :y-axis  (.. js/d3 -svg axis
-                    (scale y-scale)
-                    (orient "left")
+                                    (time-format (js/Date. t))))))
+       :y-axis  (.. js/d3 (axisLeft y-scale)
                     (ticks 0)
-                    (tickSize 1)
                     (tickFormat (.. js/d3
                                     (format ",.2f"))))
        :x-scale x-scale
@@ -112,11 +131,11 @@
 
           {:keys [x-axis y-axis x-scale y-scale]} (.make-axis this inner-width inner-height)
 
-          area (.. js/d3 -svg area
+          area (.. js/d3 area
                    (x  #(x-scale (:date %)))
                    (y0 inner-height)
                    (y1 #(y-scale (:balance %))))
-          line (.. js/d3 -svg line
+          line (.. js/d3 line
                    (x #(x-scale (:date %)))
                    (y #(y-scale (:spent %))))
           graph (.. svg
@@ -132,7 +151,8 @@
       (.. graph
           (append "g")
           (attr "class" "y axis grid")
-          (attr "transform" (str "translate(0,0)")))
+          (attr "transform" (str "translate(-1,0)")))
+
 
       ;(d3/brush-append svg (:left margin) (:top margin))
 
@@ -162,7 +182,8 @@
       (.. graph-area
           enter
           (append "path")
-          (attr "class" "area"))
+          (attr "class" "area")
+          (attr "d" area))
 
       (.. graph-area
           transition
@@ -176,7 +197,8 @@
       (.. spent-line
           enter
           (append "path")
-          (attr "class" "line"))
+          (attr "class" "line")
+          (attr "d" line))
       (.. spent-line
           transition
           (duration 250)
@@ -219,7 +241,7 @@
       (.update this)))
 
   (initLocalState [_]
-    {:margin {:top 10 :left 10 :bottom 20 :right 10}})
+    {:margin {:top 10 :left 50 :bottom 20 :right 10}})
   (render [this]
     (let [{:keys [id]} (om/props this)]
       (html
