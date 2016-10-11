@@ -91,9 +91,7 @@
                             :limit 200})
             (pc/->PieChart {:id    "balance-pie-chart"
                             :title "Balance"
-                            :value 20 :limit 100})]]
-
-          ]
+                            :value 20 :limit 100})]]]
 
          [:div.dashboard-section
           [:div.row.column
@@ -119,11 +117,13 @@
              [:div.title-txt "Avg. Spent per day"]]
             [:div.key-metric
              [:div.val-txt "53.13"]
-             [:div.title-txt "By Oct 31"]]]]
-          ]
+             [:div.title-txt "By Oct 31"]]]]]
 
          [:div.dashboard-section
-          [:div.row.column]]]))))
+          [:div.row.column
+           [:div.section-title
+            (icon/dashboard-categories)
+            [:span "Top Categories"]]]]]))))
 ;(defui Dashboard
 ;  static om/IQuery
 ;  (query [_]

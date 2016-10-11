@@ -45,10 +45,11 @@
                       :factory)]
       (html
         [:div#jourmoney-ui
+         [:div.navigation
           (nav/->NavbarMenu (om/computed nav-bar {:on-sidebar-toggle navbar-menu-on-sidebar-toggle}))
           (nav/->NavbarSubmenu (om/computed (assoc nav-bar-submenu :ref :nav-bar-submenu)
                                             {:content-factory factory
-                                             :app-content     app-root}))
+                                             :app-content     app-root}))]
          [:div#page-content
           {:ref (str ::page-content-ref)}
           (when factory
