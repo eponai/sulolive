@@ -155,6 +155,9 @@
                 txs)
             (let [user-uuid (:user/uuid current-user)
                   new-with-convs (p/transactions-with-conversions db user-uuid new-txs)
+                  new-with-convs (->> new-with-convs
+                                      (map (fn [{:keys [:db/id] :as tx}]
+                                             (into {:db/id id} tx))))
                   ;; Group by uuid in an atom, so we can pick transactions by id destructively.
                   new-by-uuid (atom (into {} (map #(vector (:transaction/uuid %) %)) new-with-convs))
 

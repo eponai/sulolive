@@ -28,6 +28,41 @@
                   rate))
       0)))
 
+(defn summary [transactions]
+  (let [
+        txs-by-month (group-by #(date/month->long (:transaction/date %)) transactions)
+        one-month-txs (val (first txs-by-month))
+
+        summary (fn [res tx]
+                  (let [conv-amount (converted-amount tx)]
+                    (cond
+                      (= (get-in tx [:transaction/type :db/ident]) :transaction.type/income)
+                      (update res :limit + conv-amount)
+
+                      (= "Housing" (:transaction/category tx))
+                      (-> res
+                          (update :housing + conv-amount)
+                          (update :spent - conv-amount))
+
+                      (= "Transport" (:transaction/category tx))
+                      (-> res
+                          (update :transport + conv-amount)
+                          (update :spent + conv-amount))
+                      :else
+                      (update res :spent + conv-amount))))]
+
+    (reduce summary
+            {:housing 0 :transport 0 :spent 0 :limit 0}
+            one-month-txs)))
+
+
+
+
+
+
+
+
+
 (defmulti sum (fn [k _ _]
                 k))
 

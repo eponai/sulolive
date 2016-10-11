@@ -9,7 +9,8 @@
     [om.dom :as dom]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [error debug]]))
+    [taoensso.timbre :refer-macros [error debug]]
+    [eponai.common.report :as report]))
 
 (defn min-dimensions [widget num-cols]
   (let [calc-w (fn [min-w]
@@ -58,7 +59,6 @@
 
 ;;################ Om component #############
 
-
 (defui Dashboard
   static om/IQueryParams
   (params [_]
@@ -69,8 +69,9 @@
     ['({:query/transactions [:transaction/title]} {:filter ?filter})])
   Object
   (render [this]
-    (let [{:keys [query/transactions]} (om/props this)]
-      (debug "Dashboard Transactions: " (om/props this))
+    (let [{:keys [query/transactions]} (om/props this)
+          {:keys [housing limit transport spent]} (report/summary transactions)
+          ]
       (html
         [:div#dashboard
          [:div.dashboard-section
@@ -83,15 +84,16 @@
            [:div#pie-charts
             (pc/->PieChart {:id    "housing-chart"
                             :title "Housing"
-                            :value 50
-                            :limit 70})
+                            :value housing
+                            :limit spent})
             (pc/->PieChart {:id    "transport-chart"
                             :title "Transport"
-                            :value 100
-                            :limit 200})
+                            :value transport
+                            :limit spent})
             (pc/->PieChart {:id    "balance-pie-chart"
                             :title "Balance"
-                            :value 20 :limit 100})]]]
+                            :value (- limit spent)
+                            :limit limit})]]]
 
          [:div.dashboard-section
           [:div.row.column

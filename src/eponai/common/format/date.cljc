@@ -83,7 +83,7 @@
     nil
 
     :else
-    (throw (ex-info (str "Trying to format unexpected input to DateTime. Expected map, js/Date or DateTime. Got: " obj)
+    (throw (ex-info (str "Trying to format unexpected input to DateTime. Expected map, js/Date or DateTime. Got: " (into {} obj))
                     {:code :illegal-argument
                      :input obj}))))
 
@@ -143,4 +143,7 @@
 (defn month->long [obj]
   (let [d (date-time obj)]
     (c/to-long (t/date-time (t/year d) (t/month d)))))
+
+;(defn long->month [n]
+;  (let [d ]))
 
