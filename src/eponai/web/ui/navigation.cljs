@@ -49,7 +49,8 @@
 (defui NavbarSubmenu
   static om/IQuery
   (query [this]
-    [{:query/all-projects [:project/name
+    [{:query/all-projects [:project/users
+                           :project/name
                            :project/uuid]}
      {:proxy/add-transaction (om/get-query AddTransaction)}])
   Object
@@ -72,7 +73,6 @@
           {:keys [ui.component.project/active-project
                   ui.component.project/selected-tab]} (:query/active-project app-content)
           {project-id :db/id} active-project]
-        (debug "Project: " project-id)
       (html
         [:div#subnav
          [:div.row.column
@@ -196,7 +196,7 @@
                (let [on-close #(om/update-state! this assoc :menu-visible? false)]
                  [:div
                   (utils/click-outside-target on-close)
-                  [:ul.menu.dropdown
+                  [:ul.menu.dropdown.vertical
                    [:li
                     [:a
                      {:href     (routes/key->route :route/settings)

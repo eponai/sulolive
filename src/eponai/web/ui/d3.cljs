@@ -21,8 +21,11 @@
                     (select "body")
                     (append "div")
                     (attr "id" (str "tooltip-" id))
-                    (attr "class" "d3 tooltip"))]
-    (.. tooltip
+                    (attr "class" "d3 tooltip"))
+        header (.. tooltip
+                   (append "div")
+                   (attr "class" "header"))]
+    (.. header
         (append "text")
         (attr "class" "txt title")
         (attr "x" "50%")
@@ -71,7 +74,7 @@
         (select ".color")
         (style "background" (color-scale (.-name value))))))
 
-(defn tooltip-add-data [id title values color-fn]
+(defn tooltip-add-data [id title values & _]
   (let [tooltip (tooltip-select id)
         values (.. tooltip
                    (selectAll ".values")
@@ -82,7 +85,7 @@
                       (attr "class" "values"))]
     (.. enter-sel
         (append "div")
-        (attr "class" "color"))
+        (attr "class" (fn [d] (str "color circle " (:class d)))))
 
     (.. enter-sel
         (append "text")
@@ -91,15 +94,11 @@
     (.. tooltip
         (select ".txt.title")
         (text title))
-
     (.. values
         (select ".txt.value")
         (text (fn [d]
                 (when d
-                  (gstring/format "%.2f" (.-value d))))))
-    (.. values
-        (select ".color")
-        (style "background" color-fn))))
+                  (gstring/format "%.2f" (:value d))))))))
 
 (defn tooltip-set-pos [id left top]
   (let [tooltip (tooltip-select id)
@@ -158,10 +157,9 @@
 
 (defn focus-append [svg & [{:keys [margin clip-path]}]]
   (let [focus (.. svg
-                  (append "g")
-                  (attr "class" "focus")
-                  (style "display" "none")
-                  (attr "transform" (str "translate(" (or (:left margin) 0) "," (or (:top margin) 0) ")")))]
+                    (append "g")
+                    (attr "class" "focus")
+                    (attr "transform" (str "translate(" (or (:left margin) 0) "," (or (:top margin) 0) ")")))]
     (.. focus
         (append "rect")
         (attr "class" "guide"))
@@ -244,21 +242,19 @@
       (selectAll "text.no-data")
       remove))
 
-(defn mouse-over [mouse x-scale js-data f & [margin]]
-  (let [mouseX (- (first mouse) (or (:left margin) 0))
-        sample-data (.-values (last (sort-by #(.-length %) js-data)))
+(defn mouse-over [mouse x-scale js-values f & [margin]]
+  (let [mouseX (first mouse)
         bisect-date (.. js/d3
-                        (bisector (fn [d]
-                                    (.-name d)))
+                        (bisector #(:date %))
                         -left)
         x0 (.invert x-scale mouseX)
-        i (bisect-date sample-data x0 1)
-        d0 (get sample-data (dec i))
-        d1 (get sample-data i)]
+        i (bisect-date js-values x0 1)
+        d0 (get js-values (dec i))
+        d1 (get js-values i)]
     (when (and d1 d0 f)
-      (let [index (if (> (- x0 (.-name d0)) (- (.-name d1) x0))
+      (let [index (if (> (- x0 (:date d0)) (- (:date d1) x0))
                       i (dec i))]
-        (f (.-name (get sample-data index)) (.map js-data #(get (.-values %) index)))))))
+        (f (get js-values index))))))
 
 ;; Responsive update helpers
 (defn window-resize [component]

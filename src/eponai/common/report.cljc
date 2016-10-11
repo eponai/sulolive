@@ -65,7 +65,7 @@
 
 (defn time-range [start]
   (let [month (c/from-long start)]
-    (map date/date->long (p/periodic-seq month (t/last-day-of-the-month month) (t/days 1)))))
+    (map date/date->long (p/periodic-seq month (t/plus (t/last-day-of-the-month month) (t/days 1)) (t/days 1)))))
 
 (defn balance-vs-spent
   "Calculate what expenses per day by month, and how the balance has evolved in relation to those expenses.
