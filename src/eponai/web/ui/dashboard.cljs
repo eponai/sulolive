@@ -71,7 +71,9 @@
   (render [this]
     (let [{:keys [query/transactions]} (om/props this)
           {:keys [housing limit transport spent]} (report/summary transactions)
+          balance-report (report/balance-vs-spent transactions)
           ]
+      (debug "Balance: " balance-report)
       (html
         [:div#dashboard
          [:div.dashboard-section
@@ -105,9 +107,7 @@
            [:div#balance-spent
             (bc/->BalanceChart {:id     "balance-spent-chart"
                                 :values (if (seq transactions)
-                                          [{:date 1475971200000 :balance 473 :spent 500}
-                                           {:date 1475884800000 :balance 973 :spent 0}
-                                           {:date 1475798400000 :balance 1023 :spent 50}]
+                                          balance-report
                                           [])})]
 
            [:div#key-metrics
