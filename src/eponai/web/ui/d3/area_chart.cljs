@@ -9,6 +9,29 @@
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]))
 
+
+(defui BalanceChart
+  Object
+  (create [this])
+  (update [this])
+
+  (componentDidMount [this]
+    (.create this))
+
+  (componentDidUpdate [this _ _]
+    (.update this))
+
+  (componentWillReceiveProps [this new-props]
+    (if (not= new-props (om/props this))
+      (debug "New props received: " new-props)))
+
+  (render [this]
+    (let [{:keys [id]} (om/props this)]
+      (html
+        [:div.graph
+         (opts {:ref (str "pie-" id)
+                :id id})]))))
+
 (defui AreaChart
   Object
   (make-axis [_ width height]

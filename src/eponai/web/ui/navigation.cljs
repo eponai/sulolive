@@ -1,20 +1,16 @@
 (ns eponai.web.ui.navigation
-  (:require [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
-            [eponai.web.ui.add-transaction :refer [->AddTransaction AddTransaction]]
-            [eponai.web.ui.add-widget :refer [->NewWidget NewWidget]]
-            [eponai.web.ui.widget :refer [->Widget]]
-            [eponai.web.ui.datepicker :refer [->Datepicker]]
-            [eponai.web.ui.format :as f]
-            [eponai.web.ui.icon :as icon]
-            [eponai.web.ui.project :as project :refer [->Project]]
-            [eponai.web.ui.utils :as utils]
-            [eponai.web.routes :as routes]
-            [garden.core :refer [css]]
-            [om.next :as om :refer-macros [defui]]
-            [sablono.core :refer-macros [html]]
-            [datascript.core :as d]
-            [taoensso.timbre :refer-macros [debug]]
-            [goog.format.EmailAddress]))
+  (:require
+    [datascript.core :as d]
+    [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
+    [eponai.web.ui.add-transaction :refer [->AddTransaction AddTransaction]]
+    [eponai.web.ui.icon :as icon]
+    [eponai.web.ui.utils :as utils]
+    [eponai.web.routes :as routes]
+    [garden.core :refer [css]]
+    [goog.format.EmailAddress]
+    [om.next :as om :refer-macros [defui]]
+    [sablono.core :refer-macros [html]]
+    [taoensso.timbre :refer-macros [debug]]))
 
 ;;;; ##################### UI components ####################
 
@@ -254,145 +250,9 @@
 
 (defui Footer
   Object
-  (render [this]
+  (render [_]
     (html
       [:div.footer
        [:small
         "Copyright © eponai 2016. All Rights Reserved"]])))
 (def ->Footer (om/factory Footer))
-
-(defui SideBar
-  static om/IQuery
-  (query [_]
-    [{:query/all-projects [:project/uuid
-                           :project/name
-                           :project/created-at
-                           :project/users
-                           {:project/created-by [:user/uuid
-                                                 :user/email]}]}
-     {:query/current-user [:user/uuid]}
-     {:query/stripe [:stripe/user
-                     {:stripe/subscription [:stripe.subscription/status
-                                            :stripe.subscription/period-end]}]}
-     {:query/active-project [:ui.component.project/uuid]}
-     {:query/sidebar [:ui.component.sidebar/newsletter-subscribe-status]}])
-  Object
-  (initLocalState [this]
-    {:new-project? false
-     :computed/new-project-on-save #(.save-new-project this %)})
-  (save-new-project [this name]
-    (om/transact! this [(list 'project/save {:project/uuid   (d/squuid)
-                                             :project/name   name
-                                             :dashboard/uuid (d/squuid)})
-                        :query/all-projects]))
-  (render [this]
-    (let [{:keys [query/all-projects
-                  query/active-project
-                  query/current-user
-                  query/stripe]} (om/props this)
-          {:keys [on-close expanded?]} (om/get-computed this)
-          {:keys [new-project? drop-target
-                  playground/show-subscribe-modal?
-                  computed/new-project-on-save]} (om/get-state this)
-          {:keys [stripe/subscription]} stripe
-          {subscription-status :stripe.subscription/status} subscription]
-      (html
-        [:div#sidebar
-         (when expanded?
-           {:class "expanded"})
-         [:div.sidebar-menu.map.map-white.map-left
-          [:div
-           [:a#navbar-brand
-            {:href (routes/key->route :route/home)}
-            [:strong
-             "JourMoney"]
-            [:span
-             (if utils/*playground?*
-               " Play"
-               " App")]]
-
-           [:div.sidebar-submenu
-            (when (and (not utils/*playground?*)
-                       (= subscription-status :trialing)
-                       (:stripe.subscription/period-end subscription))
-              [:small.header
-               (str (max 0 (f/days-until (:stripe.subscription/period-end subscription))) " days left on trial")])
-
-            (cond
-              (true? utils/*playground?*)
-              (let [newsletter-status (get-in (om/props this)
-                                             [:query/sidebar :ui.component.sidebar/newsletter-subscribe-status])]
-                [:div {:style {:text-align "center"}}
-                 [:a.upgrade-button
-                  (opts {:on-click #(om/update-state! this assoc :playground/show-subscribe-modal? true)})
-                  [:strong "I want this!"]]
-                 (cond
-                   (= newsletter-status :ui.component.sidebar.newsletter-subscribe-status/success)
-                   [:small.header "You'll get this!"]
-
-                   (= newsletter-status :ui.component.sidebar.newsletter-subscribe-status/failed)
-                   [:small.header "Subscribe error :("])])
-
-              (not= subscription-status :active)
-              (utils/upgrade-button))]
-
-           (when show-subscribe-modal?
-             (show-subscribe-modal this))
-
-           [:div.sidebar-submenu#project-menu
-            [:strong.header "Projects"]
-
-            (map
-              (fn [{project-uuid :project/uuid :as project}]
-                ;[:li
-                ; (opts {:key [project-uuid]})]
-                [:a.nav-link
-                 {:key           (str project-uuid)
-                  :href          (routes/key->route :route/project->dashboard
-                                                    {:route-param/project-id (:db/id project)})
-                  :class         (cond
-                                   (= drop-target project-uuid)
-                                   "highlighted"
-                                   (= (:ui.component.project/uuid active-project) project-uuid)
-                                   "selected")
-                  :on-drag-over  #(utils/on-drag-transaction-over this project-uuid %)
-                  :on-drag-leave #(utils/on-drag-transaction-leave this %)
-                  :on-drop       #(utils/on-drop-transaction this project-uuid %)}
-                 [:span.truncate (or (:project/name project) "Untitled")]
-                 (when (and (:project/created-by project)
-                            (not (= (:user/uuid (:project/created-by project)) (:user/uuid current-user))))
-                   [:small " by " (:user/email (:project/created-by project))])])
-              all-projects)
-
-            ;[:li]
-            [:a.nav-link
-             {:on-click #(om/update-state! this assoc :new-project? true)}
-             [:i.fa.fa-plus.fa-fw
-              (opts {:style {:padding 0}})]
-             [:span.small-caps "New..."]]]]
-
-          (when-not utils/*playground?*
-            [:div.sidebar-submenu.hidden-medium-up
-             [:a.nav-link
-              (opts {:href (routes/key->route :route/settings)})
-              [:i.fa.fa-gear
-               (opts {:style {:display :inline
-                              :padding "0.5em"}})]
-              "Settings"]
-
-             [:a.nav-link
-              (opts {:href (routes/key->route :route/api->logout)})
-              "Sign Out"]])
-          [:footer.footer
-           [:p.copyright.small.text-light
-            "Copyright © eponai 2016. All Rights Reserved"]]]
-
-         (when new-project?
-           (let [on-close #(om/update-state! this assoc :new-project? false)]
-             (utils/modal {:content  (->NewProject (om/computed
-                                                    {}
-                                                    {:on-close on-close
-                                                     :on-save  new-project-on-save}))
-                           :on-close on-close})))]))))
-
-(def ->SideBar (om/factory SideBar))

@@ -214,39 +214,6 @@
     ;; Local read
     (cached-query-transactions env k p)))
 
-(def cached-query-dashboard
-  (parser.util/cache-last-read
-    (fn [{:keys [db query] :as env} _ _]
-      (let [project-eid (active-project-eid db)
-            transactions (delay (all-local-transactions-by-project env project-eid))]
-
-        {:value (when project-eid
-                  (when-let [dashboard-id (p/one-with db {:where [['?e :dashboard/project project-eid]]})]
-                    (update (p/pull db query dashboard-id)
-                            :widget/_dashboard (fn [widgets]
-                                                 (mapv #(p/widget-with-data db @transactions %) widgets)))))}))))
-
-(defmethod client-read :query/dashboard
-  [{:keys [db ast target] :as env} k p]
-  (if (= target :remote)
-    ;; Pass the active project to remote reader
-    (let [query (om/ast->query (assoc-in ast [:params :project-eid] (active-project-eid db)))]
-      ;; Add a transaction's query for the remote, so we can populate the widgets with data.
-      {:remote (om/query->ast [{:proxy/dashboard [query {:query/transactions lib.transactions/full-transaction-pull-pattern}]}])})
-
-    ;; Local read
-    (cached-query-dashboard env k p)))
-
-(defmethod client-read :query/active-dashboard
-  [{:keys [db ast target query]} _ _]
-  (let [project-id (active-project-eid db)]
-    (if (= target :remote)
-      {:remote (assoc-in ast [:params :project-eid] project-id)}
-
-      {:value (when project-id
-                (when-let [dashboard-id (p/one-with db {:where [['?e :dashboard/project project-id]]})]
-                  (p/pull db query dashboard-id)))})))
-
 (defmethod client-read :query/all-projects
   [{:keys [db query target]} _ _]
   (if target
