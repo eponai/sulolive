@@ -61,25 +61,28 @@
                            (if (map? action)
                              (str " had keys: " (keys action))
                              (str " action was not a map. Was: " (type action)))))
-              (let [[client query] transaction
-                    remote-query? (seq (call-parser client query :remote))
-                    test-result {::test-id id :query query}]
-                (if-not remote-query?
-                  ;; Just apply query locally to a client:
-                  (do
-                    (warn "non-remote query: " query)
-                    (om/transact! client query))
-                  ;; Apply and wait for query to be merged with remote response.
-                  ;; Add the full query to read after the mutations have been done
-                  ;; to sync the first client.
-                  (let [query (into (vec query) (om/get-query JvmRoot))
-                        ;; Do the first one synchronously, to make sure it finished.
-                        _ (async/<!! (<transact! client query))
-                        other-clients (->> (remove (partial = client) clients)
-                                           (map #(<transact! % (om/full-query (om/app-root %)))))]
-                    ;; Sync
-                    (run! #(async/<!! %) other-clients)))
+              (let [[client query] (if (fn? transaction) (transaction) transaction)
+                    remote-query? (when client
+                                    (seq (call-parser client query :remote)))
+                    test-result {::test-id id :query query :some-client? (some? client)}]
                 (try
+                  (if-not remote-query?
+                    ;; Just apply query locally to a client:
+                    (when client
+                      (do
+                        (warn "non-remote query: " query)
+                        (om/transact! client query)))
+                    ;; Apply and wait for query to be merged with remote response.
+                    ;; Add the full query to read after the mutations have been done
+                    ;; to sync the first client.
+                    (let [query (into (vec query) (om/get-query JvmRoot))
+                          ;; Do the first one synchronously, to make sure it finished.
+                          _ (async/<!! (<transact! client query))
+                          other-clients (->> (remove (partial = client) clients)
+                                             (map #(<transact! % (om/full-query (om/app-root %)))))]
+                      ;; Sync
+                      (run! #(async/<!! %) other-clients)))
+
                   (when asserts
                     (asserts))
                   (swap! result update ::successes conj test-result)
@@ -100,7 +103,8 @@
 (defn create-clients [n {:keys [server email-chan action-chan result-chan]}]
   (let [callback-chan (async/chan)
         server-url (str "http://localhost:" (.getPort (.getURI ^Server server)))
-        clients (repeatedly n #(client/logged-in-client server-url email-chan callback-chan))
+        clients (map #(client/logged-in-client (inc %) server-url email-chan callback-chan)
+                     (range n))
         client->callback (into {} (map #(vector % (async/chan 10))) clients)
         _ (go
             (loop [client (<! callback-chan)]
