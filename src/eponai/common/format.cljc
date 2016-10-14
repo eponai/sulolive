@@ -99,9 +99,7 @@
 
   Returns a map representing a transaction entity"
   [input]
-  (let [conv-fn-map {:transaction/currency (fn [c] {:pre [(map? c)]}
-                                             (currency* c))
-                     :transaction/date     (fn [d] {:pre [(map? d)]}
+  (let [conv-fn-map {:transaction/date     (fn [d] {:pre [(map? d)]}
                                              (date* d))
                      :transaction/tags     (fn [ts] {:pre [(coll? ts)]}
                                              (map tag* ts))

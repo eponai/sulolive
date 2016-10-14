@@ -7,6 +7,7 @@
     [eponai.client.parser.message :as message]
     [eponai.common.format.date :as date]
     [eponai.web.ui.datepicker :refer [->Datepicker]]
+    [eponai.web.ui.select :as sel]
     [eponai.web.ui.utils :as utils]
     [garden.core :refer [css]]
     [om.next :as om :refer-macros [defui]]
@@ -34,15 +35,18 @@
                                            `[(transaction/create
                                                ~(-> (:input-transaction st)
                                                     (assoc :transaction/uuid (d/squuid))
+                                                    (update :transaction/currency :value)
                                                     (assoc :transaction/created-at (.getTime (js/Date.)))))
                                              :routing/project])]
       (om/update-state! this assoc :pending-transaction message-id)))
   (initLocalState [this]
     (let [{:keys [query/all-currencies]} (om/props this)
-          {:keys [project-id]} (om/get-computed this)]
+          {:keys [project-id]} (om/get-computed this)
+          usd-entity (some #(when (= (:currency/code %) "USD") %) all-currencies)]
       {:input-transaction {:transaction/date     (date/date-map (date/today))
                            :transaction/tags     #{}
-                           :transaction/currency {:currency/code "USD"}
+                           :transaction/currency {:name (:currency/code usd-entity)
+                                                  :value (:db/id usd-entity)}
                            :transaction/project  project-id
                            :transaction/type     :transaction.type/expense}
        :type              :expense}))
@@ -58,7 +62,8 @@
 
   (render [this]
     (let [{:keys [type input-transaction]} (om/get-state this)
-          {:keys [transaction/date]} input-transaction]
+          {:keys [transaction/date transaction/currency]} input-transaction
+          {:keys [query/all-currencies]} (om/props this)]
       (html
         [:div#add-transaction
          [:h4.header "New Transaction"]
@@ -97,11 +102,7 @@
               (opts {:key         [::date-picker]
                      :value       date
                      :on-change   #(om/update-state! this assoc-in [:input-transaction :transaction/date] %)
-                     :input-only? true}))
-            ;[:a.button.black.hollow.expanded
-            ; date
-            ; [:i.fa.fa-caret-down.fa-fw]]
-            ]]
+                     :input-only? true}))]]
 
           [:div.row
            [:div.columns.small-3.text-right
@@ -113,16 +114,12 @@
               :placeholder "0.00"
               :on-change   #(om/update-state! this assoc-in [:input-transaction :transaction/amount] (.. % -target -value))}]]
            [:div.columns.small-3.small-push-1.end
-            [:a.button.black.hollow.expanded
-             "USD"
-             [:i.fa.fa-caret-down.fa-fw]]]]
-          ;[:div.row.small-up-3
-          ; [:div.column.text-right
-          ;  [:label "Currency"]]
-          ; [:div.column.end
-          ;  [:a.button.hollow.expanded
-          ;   "USD"
-          ;   [:i.fa.fa-caret-down.fa-fw]]]]
+            (sel/->Select (om/computed {:items   (map (fn [{:keys [currency/code db/id]}]
+                                                        {:name code
+                                                         :value id})
+                                                      all-currencies)
+                                        :default currency}
+                                       {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/currency] %)}))]]
           [:div.row
            [:div.columns.small-3.text-right
             [:label "Category:"]]

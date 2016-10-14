@@ -67,7 +67,6 @@
           val-txt (.. txt
                       (selectAll ".val-txt")
                       (data #js [value]))]
-      (debug "Update pie charts: " value)
 
       (.. arc
           (innerRadius (- (/ (min inner-width inner-height) 2) 5))
@@ -77,16 +76,12 @@
           enter
           (append "path")
           (attr "class" "foreground")
-          (attr "d" (fn [d]
-                      (debug "update Draw arc: " d)
-                      (arc d))))
+          (attr "d" #(arc %)))
 
       (.. progress
           ;transition
           ;(duration 500)
-          (attr "d" (fn [d]
-                      (debug "update Draw arc: " d)
-                      (arc d)))
+          (attr "d" #(arc %))
           ;(attrTween "d"
           ;           (fn [d]
           ;             (debug "Updating pie got value: " d)
