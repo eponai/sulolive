@@ -33,7 +33,7 @@
                       :factory)]
       (html
         [:div#jourmoney-ui
-         [:div.navigation
+         [:div#nav-container
           (nav/->NavbarMenu nav-bar)
           (nav/->NavbarSubmenu (om/computed (assoc nav-bar-submenu :ref :nav-bar-submenu)
                                             {:content-factory factory

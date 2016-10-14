@@ -105,14 +105,13 @@
                                              (date* d))
                      :transaction/tags     (fn [ts] {:pre [(coll? ts)]}
                                              (map tag* ts))
-                     :transaction/category (fn [c] {:pre [(coll? c)]} c)
+                     :transaction/category (fn [c]
+                                             {:pre [(map? c)]}
+                                             c)
                      :transaction/amount   (fn [a]
                                              {:pre [(string? a)]}
                                              #?(:clj  (bigdec a)
                                                 :cljs (cljs.reader/read-string a)))
-                     :transaction/project  (fn [b] {:pre [(map? b)]}
-                                             (assert (:project/uuid b))
-                                             [:project/uuid (:project/uuid b)])
                      :transaction/type     (fn [t] {:pre [(keyword? t)]}
                                              {:db/ident t})}
         update-fn (fn [m k]

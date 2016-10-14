@@ -88,7 +88,7 @@
               :on-click #(when (= click-outside-target-id (.-id (.-target %)))
                           (on-close))})
        [:div
-        (opts {:class (if size (str size " reveal") "reveal")
+        (opts {:class (str size " reveal")
                :style (cond-> {:display  "block"
                                :position :relative})})
         [:a.close-button

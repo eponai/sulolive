@@ -19,6 +19,7 @@
   (let [user-uuid (-> (parser e '[{:query/current-user [:user/uuid]}])
                       (get-in [:query/current-user :user/uuid]))]
     (validate/validate e k {:transaction input-transaction :user-uuid user-uuid})
+    (debug "Transaction//create: " input-transaction)
     {:action (fn []
                (let [transaction (format/transaction input-transaction)]
                  (transact/transact-one state transaction)))
