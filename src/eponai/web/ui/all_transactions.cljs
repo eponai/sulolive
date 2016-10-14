@@ -13,6 +13,7 @@
     [eponai.web.ui.utils.filter :as filter]
     [eponai.web.ui.utils.infinite-scroll :as infinite-scroll]
     [garden.core :refer [css]]
+    [eponai.web.ui.select :as sel]
     [goog.string :as gstring]
     [goog.events :as events]
     [om.dom :as dom]
@@ -73,12 +74,31 @@
   (save-edit [this]
     (let [{:keys [input-transaction
                   init-state]} (om/get-state this)
-          diff (lib.t/diff-transaction input-transaction init-state)]
+          diff (diff/diff init-state input-transaction)
+          added-tags (or (:transaction/tags (second diff)) [])
+          removed-tags (or (filter some? (:transaction/tags (first diff))) [])
+          ;diff (lib.t/diff-transaction input-transaction init-state)
+          ]
       ;; Transact only when we have a diff to avoid unecessary mutations.
-      (debug "Saving edit. Diff: " diff " real diff: " (diff/diff input-transaction init-state))
+      (debug "Saving edit. Diff: " diff)
+      (debug "Added: " added-tags)
+      (debug "Removed: " removed-tags)
+      (debug "Diff tags: " (vec (concat
+                                  (map (fn [t]
+                                         (assoc t :tag/status :added))
+                                       added-tags)
+                                  (map (fn [t]
+                                         (assoc t :tag/status :deleted))
+                                       removed-tags))))
       (when (seq diff)
         ;(debug "Delete tag Will transacti diff: " diff)
-        (om/transact! this `[(transaction/edit ~(-> diff
+        (om/transact! this `[(transaction/edit ~(-> (second diff)
+                                                    (update :transaction/tags (fn [tags]
+                                                                                (concat
+                                                                                  (filter some? tags)
+                                                                                  (map (fn [t]
+                                                                                         (assoc t :tag/status :deleted))
+                                                                                       removed-tags))))
                                                     (assoc :transaction/uuid (:transaction/uuid input-transaction))
                                                     (assoc :db/id (:db/id input-transaction))))
                              ;; TODO: Are all these needed?
@@ -97,7 +117,7 @@
                   transaction/title]
            :as   transaction} (or input-transaction (om/props this))
           {:keys [computed/date-range-picker-on-apply]} (om/get-state this)
-          {:keys [user on-tag-click currencies]} (om/get-computed this)]
+          {:keys [user on-tag-click currencies all-tags]} (om/get-computed this)]
       (dom/li
         nil
         (dom/div
@@ -193,29 +213,44 @@
 
           ;; Tags
           (dom/div
-            #js {:className "columns small-10 large-5 end"
-                 :id "all-transactions-transaction-tags"}
-            (apply dom/div
-                   nil
-                   (map-all (sort-by :tag/name (:transaction/tags transaction))
-                            (fn [tag]
-                              (utils/tag tag {:on-click  #(do
-                                                           (on-tag-click tag))
-                                              :on-delete (fn []
-                                                           (debug "Delete tag: " tag)
-                                                           (.delete-tag this tag)
-                                                           (.save-edit this))}))))
-            (dom/input
-              #js {:className "tags"
-                   :type        "text"
-                   :value       (or (:tag/name input-tag) "")
-                   :onChange    #(om/update-state! this assoc :input-tag {:tag/name (.-value (.-target %))})
-                   :onKeyDown   (fn [e]
-                                  (utils/on-enter-down e (fn [t]
-                                                           (.add-tag this {:tag/name t})
-                                                           (.blur (.-target e)))))
-                   :onBlur      #(.save-edit this)
-                   :placeholder "Enter to add tag"})))))))
+            #js {:className "columns small-10 large-5 end"}
+            (sel/->SelectTags (om/computed {:value   (map (fn [t]
+                                                            {:label (:tag/name t)
+                                                             :value (:db/id t)})
+                                                          (:transaction/tags transaction))
+                                            :options (map (fn [t]
+                                                            {:label (:tag/name t)
+                                                             :value (:db/id t)})
+                                                          all-tags)}
+                                           {:on-select (fn [selected]
+                                                         (om/update-state! this assoc-in
+                                                                           [:input-transaction :transaction/tags]
+                                                                           (map (fn [t]
+                                                                                  {:tag/name (:label t)})
+                                                                                selected))
+                                                         (.save-edit this))}))
+            ;(apply dom/div
+            ;       nil
+            ;       (map-all (sort-by :tag/name (:transaction/tags transaction))
+            ;                (fn [tag]
+            ;                  (utils/tag tag {:on-click  #(do
+            ;                                               (on-tag-click tag))
+            ;                                  :on-delete (fn []
+            ;                                               (debug "Delete tag: " tag)
+            ;                                               (.delete-tag this tag)
+            ;                                               (.save-edit this))}))))
+            ;(dom/input
+            ;  #js {:className "tags"
+            ;       :type        "text"
+            ;       :value       (or (:tag/name input-tag) "")
+            ;       :onChange    #(om/update-state! this assoc :input-tag {:tag/name (.-value (.-target %))})
+            ;       :onKeyDown   (fn [e]
+            ;                      (utils/on-enter-down e (fn [t]
+            ;                                               (.add-tag this {:tag/name t})
+            ;                                               (.blur (.-target e)))))
+            ;       :onBlur      #(.save-edit this)
+            ;       :placeholder "Enter to add tag"})
+            ))))))
 
 (def ->Transaction (om/factory Transaction {:keyfn :db/id}))
 
@@ -241,6 +276,7 @@
      {:query/all-currencies [:currency/code]}
      {:query/all-projects [:project/uuid
                            :project/name]}
+     {:query/all-tags [:tag/name]}
      {:proxy/add-transaction (om/get-query AddTransaction)}])
 
   Object
@@ -320,28 +356,29 @@
 
   (render-transaction-list [this transactions]
     (let [{currencies      :query/all-currencies
-           user            :query/current-user} (om/props this)
+           user            :query/current-user
+           all-tags :query/all-tags} (om/props this)
           {:keys [computed/transaction-on-tag-click
                   computed/infinite-scroll-node-fn]} (om/get-state this)]
       (html
         [:div
          (.render-filters this)
-         [:div#all-transactions
+         [:div.transactions-container
           (if (seq transactions)
-            [:div.transactions
-             [:div.transaction-list
-              (opts {:style {:width "100%"}})
-              (infinite-scroll/->InfiniteScroll
-                (om/computed
-                  {:elements-container :ul.no-bullet
-                   :elements           (into [] (map (fn [props]
-                                                       (->Transaction
-                                                         (om/computed props
-                                                                      {:user         user
-                                                                       :currencies   currencies
-                                                                       :on-tag-click transaction-on-tag-click}))))
-                                             transactions)}
-                  {:dom-node-fn infinite-scroll-node-fn}))]]
+            [:div.transactions-list
+             (opts {:style {:width "100%"}})
+             (infinite-scroll/->InfiniteScroll
+               (om/computed
+                 {:elements-container :ul.no-bullet
+                  :elements           (into [] (map (fn [props]
+                                                      (->Transaction
+                                                        (om/computed props
+                                                                     {:user         user
+                                                                      :currencies   currencies
+                                                                      :on-tag-click transaction-on-tag-click
+                                                                      :all-tags     all-tags}))))
+                                            transactions)}
+                 {:dom-node-fn infinite-scroll-node-fn}))]
             [:div.empty-message
              [:div.lead
               [:i.fa.fa-search.fa-fw]

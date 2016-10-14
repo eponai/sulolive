@@ -57,7 +57,7 @@
   (initLocalState [this]
     {:on-save-new-project #(.save-new-project this %)
      :on-close-add-transaction #(om/update-state! this assoc :add-transaction? false)
-     :add-transaction? true})
+     :add-transaction? false})
   (save-new-project [this name]
     (om/transact! this [(list 'project/save {:project/uuid   (d/squuid)
                                              :project/name   name

@@ -30,16 +30,17 @@
   (debug "Validate transaction with params: " p)
   (let [{:keys [transaction/tags]} transaction
         project-dbid (:transaction/project transaction)
-        db-project (p/one-with (p/db* state) {:where   '[[?u :user/uuid ?user-uuid]
-                                                        [?e :project/users ?u]]
-                                             :symbols {'?user-uuid   user-uuid
-                                                       '?e project-dbid}})]
+        ;db-project (p/one-with (p/db* state) {:where   '[[?u :user/uuid ?user-uuid]
+        ;                                                [?e :project/users ?u]]
+        ;                                     :symbols {'?user-uuid   user-uuid
+        ;                                               '?e project-dbid}})
+        ]
     ;; Verify that that the transaction is added is accessible by the user adding the transaction.
-    (do-validate k p #(some? db-project)
-                 {:message      "You don't have access to modify the specified project."
-                  :code         :project-unaccessible
-                  :project-dbid project-dbid
-                  :user-uuid    user-uuid})
+    ;(do-validate k p #(some? db-project)
+    ;             {:message      "You don't have access to modify the specified project."
+    ;              :code         :project-unaccessible
+    ;              :project-dbid project-dbid
+    ;              :user-uuid    user-uuid})
     ;; Verify that the collection of tags does not include duplicate tag names.
     (do-validate k p #(= (frequencies (set tags)) (frequencies tags))
                  {:message "Illegal argument :transaction/tags. Each tag must be unique."

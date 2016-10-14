@@ -300,12 +300,12 @@
 
 (defn transaction-edit [{:keys [transaction/tags transaction/uuid] :as input-transaction}]
   (let [tag->txs (fn [{:keys [tag/status tag/name] :as tag}]
-                   {:pre [(some? name) (some? status)]}
+                   {:pre [(some? name)]}
                    (condp = status
                      :deleted
                      [[:db/retract [:transaction/uuid uuid] :transaction/tags [:tag/name name]]]
 
-                     :added
+                     nil
                      (let [tempid (d/tempid :db.part/user)]
                        ;; Create new tag and add it to the transaction
                        [(assoc (tag* tag) :db/id tempid)
