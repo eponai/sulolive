@@ -40,7 +40,7 @@
 
 (defmulti jvm-client-merge om/dispatch)
 
-(defn create-client [idx endpoint-atom did-merge-fn]
+(defn create-client [idx endpoint-atom did-merge-fn teardown-atom]
   (let [conn (utils/create-conn)
         reconciler-atom (atom nil)
         cookie-store (cookies/cookie-store)
@@ -49,7 +49,8 @@
                                          (remotes/wrap-update :url (fn [& _] @endpoint-atom))
                                          (remotes/read-basis-t-remote-middleware conn)
                                          (remotes/wrap-update :opts assoc
-                                                              :cookie-store cookie-store))}
+                                                              :cookie-store cookie-store)
+                                         (remotes/wrap-update :shutting-down? (fn [& _] @teardown-atom)))}
                             did-merge-fn)
         reconciler (om/reconciler {:id-key (str "jvmclient reconciler: " idx)
                                    :state   conn
@@ -72,11 +73,11 @@
     (om/transact! client `[(session.signin.email/verify ~{:verify-uuid (str uuid)})])
     (fs.utils/take-with-timeout callback-chan "verification")))
 
-(defn logged-in-client [idx server-url email-chan callback-chan]
+(defn logged-in-client [idx server-url email-chan callback-chan teardown-atom]
   {:post [(some? (om/app-root %))]}
   (let [endpoint-atom (atom (str server-url "/api"))
         did-merge-fn (fn [client] (async/put! callback-chan client))
-        client (create-client idx endpoint-atom did-merge-fn)]
+        client (create-client idx endpoint-atom did-merge-fn teardown-atom)]
     (fs.utils/take-with-timeout callback-chan "initial merge")
     (log-in! client email-chan callback-chan)
     (reset! endpoint-atom (str server-url "/api/user"))

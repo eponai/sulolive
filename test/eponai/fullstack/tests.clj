@@ -2,7 +2,7 @@
   (:require [om.next :as om]
             [om.util]
             [eponai.common.database.pull :as pull]
-            [taoensso.timbre :refer [debug error]]
+            [taoensso.timbre :refer [info debug error]]
             [clojure.data :as diff]
             [clojure.pprint :as pp]
             [datascript.core :as datascript]
@@ -10,8 +10,8 @@
             [eponai.fullstack.jvmclient :refer [JvmRoot]]
             [clojure.test :as test]
             [eponai.fullstack.utils :as fs.utils]
-            )
-  (:import (org.eclipse.jetty.server Server)))
+            [clj-http.client :as http])
+  (:import (org.eclipse.jetty.server Server ServerConnector Connector)))
 
 (defn- app-state [reconciler]
   (fw/call-parser reconciler (om/get-query (or (om/app-root reconciler) JvmRoot))))
@@ -91,6 +91,7 @@
                 ::fw/asserts     (fn []
                                    (assert (every? has-edit? clients)))}]}))
 
+
 (defn test-create-transaction-offline [server [client1 :as clients]]
   (let [tx (new-transaction client1)]
     {:label   "Creating transaction offline should sync when client/server goes online"
@@ -99,15 +100,19 @@
                 ::fw/asserts     #(assert (test/is (not (.isRunning server))))}
                {::fw/transaction [client1 `[(transaction/create ~tx)]]
                 ::fw/asserts     #(do (assert (test/is (has-transaction? tx client1)))
-                                      (assert (test/is (not-any? (partial has-transaction? tx) (rest clients)))))}]}))
-
+                                      (assert (test/is (not-any? (partial has-transaction? tx)
+                                                                 (rest clients)))))}
+               {::fw/transaction   #(do (.start server))
+                ::fw/await-clients [client1]
+                ::fw/sync-clients! true
+                ::fw/asserts       #(do
+                                     (assert (.isRunning server))
+                                     (every? (partial has-transaction? tx) clients))}]}))
 
 (defn run []
-  (fs.utils/with-less-loud-logger
-    (do (fw/run-tests test-system-setup
-                      test-create-transaction
-                      test-edit-transaction
-                      ;;test-create-transaction-offline
-                      )
-        nil)))
-
+  ;;(fs.utils/with-less-loud-logger)
+  (do (fw/run-tests test-system-setup
+                    test-create-transaction
+                    test-edit-transaction
+                    test-create-transaction-offline)
+      nil))

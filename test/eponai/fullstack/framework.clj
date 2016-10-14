@@ -15,7 +15,7 @@
             [medley.core :as medley]
             [datascript.core :as datascript]
             [datomic.api :as datomic])
-  (:import (org.eclipse.jetty.server Server)))
+  (:import (org.eclipse.jetty.server Server ServerConnector Connector)))
 
 (defn call-parser [reconciler query & [target]]
   {:pre [(some? query)]}
@@ -48,41 +48,65 @@
   (->> clients
        (mapv #(async/<!! (<transact! client->callback % (om/get-query JvmRoot))))))
 
-(defn mutation-state-machine [action-chan clients client->callback]
+(defn mutation-state-machine [server action-chan clients client->callback]
   (let [<transact! (partial <transact! client->callback)
-        result (atom {::successes [] ::failures []})]
+        result (atom {::successes [] ::failures []})
+        with-timeout! (fn [c label] (fs.utils/take-with-timeout c label 3000))]
     (go
       (try
         (loop [id 0]
-          (let [{:keys [::transaction ::asserts] :as action} (<! action-chan)]
+          (let [{:keys [::transaction ::asserts ::await-clients ::sync-clients!] :as action} (<! action-chan)]
             (when action
               (assert (some? transaction)
                       (str "Got an action, but it did not contain key: " ::transaction
                            (if (map? action)
                              (str " had keys: " (keys action))
                              (str " action was not a map. Was: " (type action)))))
-              (let [[client query] (if (fn? transaction) (transaction) transaction)
+              ;; First wait for all previous actions to finish.
+              ;; They might have timed out and now finished.
+              ;; (run! (comp backend/drain-channel client->callback) clients)
+              (let [[client query :as tx] (if (fn? transaction) (transaction) transaction)
                     remote-query? (when client
                                     (seq (call-parser client query :remote)))
+                    remote-sync? (and remote-query? (.isRunning server))
                     test-result {::test-id id :query query :some-client? (some? client)}]
+                (debug "Running test transaction: " tx)
                 (try
-                  (if-not remote-query?
-                    ;; Just apply query locally to a client:
-                    (when client
-                      (do
-                        (warn "non-remote query: " query)
-                        (om/transact! client query)))
-                    ;; Apply and wait for query to be merged with remote response.
-                    ;; Add the full query to read after the mutations have been done
-                    ;; to sync the first client.
-                    (let [query (into (vec query) (om/get-query JvmRoot))
-                          ;; Do the first one synchronously, to make sure it finished.
-                          _ (async/<!! (<transact! client query))
-                          other-clients (->> (remove (partial = client) clients)
-                                             (map #(<transact! % (om/full-query (om/app-root %)))))]
-                      ;; Sync
-                      (run! #(async/<!! %) other-clients)))
+                  ;; Transact query if there is one.
+                  (when client
+                    (let [query (cond-> (vec query)
+                                        ;; Sync all data also if it's a remote query.
+                                        remote-query?
+                                        (into (om/get-query JvmRoot)))]
+                      (debug "Client: " client " transacting query: " query)
+                      (om/transact! client query)))
 
+                  ;; Await current or previous actions.
+                  (let [clients-to-await (cond-> (vec await-clients)
+                                                 (and remote-sync?)
+                                                 (conj client))]
+                    (->> clients-to-await
+                         (map (juxt identity client->callback))
+                         (run! (fn [[client callback]]
+                                 (debug "Awaiting client:" client)
+                                 (with-timeout! callback (str "awaiting client: " client))
+                                 (debug "Awaited client:" client)))))
+
+                  ;; Sync other clients
+                  (when (or remote-sync? sync-clients!)
+                    (let [clients-to-sync (cond->> clients
+                                                   (some? client)
+                                                   (remove (partial = client)))]
+                      (warn "Syncing clients: " (vec clients-to-sync))
+                      (->> clients-to-sync
+                           (map (juxt identity #(<transact! % (om/get-query (or (om/app-root %) JvmRoot)))))
+                           (run! (fn [[client chan]]
+                                   (debug "syncing client: " client)
+                                   (with-timeout! chan (str "syncing client: " client))
+                                   (debug "synced client: " client))))))
+
+                  ;; Run asserts
+                  (debug "Running asserts for " tx)
                   (when asserts
                     (asserts))
                   (swap! result update ::successes conj test-result)
@@ -102,8 +126,9 @@
 
 (defn create-clients [n {:keys [server email-chan action-chan result-chan]}]
   (let [callback-chan (async/chan)
+        teardown-atom (atom false)
         server-url (str "http://localhost:" (.getPort (.getURI ^Server server)))
-        clients (map #(client/logged-in-client (inc %) server-url email-chan callback-chan)
+        clients (map #(client/logged-in-client (inc %) server-url email-chan callback-chan teardown-atom)
                      (range n))
         client->callback (into {} (map #(vector % (async/chan 10))) clients)
         _ (go
@@ -115,14 +140,15 @@
 
         _ (init-clients-state clients client->callback)
         [sm-query-chan teardown-query-chan] (multiply-chan action-chan 2)
-        sm (mutation-state-machine sm-query-chan clients client->callback)
+        sm (mutation-state-machine server sm-query-chan clients client->callback)
         _ (async/go
             (try
               (loop []
                 (if (async/<! teardown-query-chan)
                   (recur)
-                  ;; query-chan is closed. Tear down:
-                  (let [result (fs.utils/take-with-timeout sm "state-machine" (* 60 1000))]
+                  ;; action-chan is closed. Tear down:
+                  (let [result (async/<! sm)]
+                    (reset! teardown-atom true)
                     (async/close! callback-chan)
                     ;; Ok to drain because everything is closed at this point.
                     (backend/drain-channel (async/merge (vals client->callback)))
@@ -138,7 +164,17 @@
                                               db-schema)
         email-chan (async/chan)
         server (core/start-server-for-tests {:conn       conn
-                                             :email-chan email-chan})]
+                                             :email-chan email-chan})
+        ;; The server was started with a random port.
+        ;; Set the selected port to the server so it
+        ;; keeps the same port between restarts
+        connector (doto (ServerConnector. server)
+                    (.setPort (.getPort (.getURI server))))
+        server (doto server
+                 (.stop)
+                 (.join)
+                 (.setConnectors (into-array Connector [connector]))
+                 (.start))]
     (assoc system :conn conn
                   :email-chan email-chan
                   :server server)))
@@ -146,7 +182,9 @@
 (defn- stop-system [system]
   (async/close! (:email-chan system))
   (datomic/release (:conn system))
-  (.stop ^Server (:server system))
+  (doto (:server system)
+    (.stop)
+    (.join))
   system)
 
 (defn setup-system []

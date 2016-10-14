@@ -21,6 +21,7 @@
                    [java.util UUID]))
   #?(:clj (:refer-clojure :exclude [send])))
 
+(def max-retry-time-ms 2000)
 
 (def DatascriptEntityAsMap (transit/write-handler (constantly "map")
                                                   (fn [v] (into {} v))))
@@ -86,30 +87,37 @@
 (defn- <send [remote->send remote-key query]
   (go
     (try
-      (let [{:keys [method url opts response-fn post-merge-fn]}
-            ((get remote->send remote-key) query)
-            _ (debug "Sending to " remote-key " query: " query
-                     "method: " method " url: " url "opts: " opts)
-            {:keys [success body status headers error-code] :as response}
-            (response-fn (<! (send (condp = method
-                                     :get http/get
-                                     :post http/post)
-                                   url opts)))]
-        (cond
-          (true? success)
-          (do
-            #?(:cljs (debug "Recieved response from remote:" body "status:" status))
-            {:response body
-             :post-merge-fn post-merge-fn})
-          ;; TODO: Do something about specific error codes?
-          ;; Like, offline?
-          :else
-          (throw (ex-info "Not 2xx response remote."
-                          {:remote remote-key
-                           :status status
-                           :url    url
-                           :body   body
-                           :query  query}))))
+      (loop [retry-time-ms 500]
+        (let [{:keys [method url opts response-fn post-merge-fn shutting-down?]}
+              ((get remote->send remote-key) query)
+              _ (debug "Sending to " " url: " url " remote: " remote-key " query: " query
+                       "method: " method  "opts: " opts)
+              {:keys [success body status headers error-code] :as response}
+              (response-fn (if shutting-down?
+                             {:success false}
+                             (<! (send (condp = method
+                                         :get http/get
+                                         :post http/post)
+                                       url opts))))]
+          (cond
+            (true? success)
+            (do
+              #?(:cljs (debug "Recieved response from remote:" body "status:" status))
+              {:response      body
+               :post-merge-fn post-merge-fn})
+            (= :offline error-code)
+            (do
+              (<! (timeout retry-time-ms))
+              (recur (min max-retry-time-ms (* 2 retry-time-ms))))
+            ;; TODO: Do something about specific error codes?
+            ;; Like, offline?
+            :else
+            (throw (ex-info "Not 2xx response remote."
+                            {:remote remote-key
+                             :status status
+                             :url    url
+                             :body   body
+                             :query  query})))))
       (catch :default e
         ;; TODO: Do something about errors.
         ;; We'll know what to do once we start with messages?
@@ -331,6 +339,7 @@
                   ;; The stable-db is the db we want to use when we
                   ;; merge the response. We can get pending mutations
                   ;; from app-state after this call.
+                  #?@(:clj [_ (debug "Client: " reconciler " will send query: " query)])
                   received (<! (<send remote->send remote-key query))
 
                   ;; Get all pending queries that has happened while
