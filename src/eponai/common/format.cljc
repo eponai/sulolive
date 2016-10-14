@@ -101,7 +101,8 @@
   [input]
   (let [conv-fn-map {:transaction/date     (fn [d] {:pre [(map? d)]}
                                              (date* d))
-                     :transaction/tags     (fn [ts] {:pre [(coll? ts)]}
+                     :transaction/tags     (fn [ts]
+                                             {:pre [(coll? ts)]}
                                              (map tag* ts))
                      :transaction/category (fn [c]
                                              {:pre [(map? c)]}

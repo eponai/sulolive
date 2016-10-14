@@ -2,6 +2,7 @@
   (:require
     [cljsjs.moment]
     [cljsjs.pikaday]
+    [cljsjs.react-select]
     [datascript.core :as d]
     [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
     [eponai.client.parser.message :as message]
@@ -27,7 +28,8 @@
   static om/IQuery
   (query [_]
     [:query/message-fn
-     {:query/all-currencies [:currency/code]}])
+     {:query/all-currencies [:currency/code]}
+     {:query/all-tags [:tag/name]}])
   Object
   (add-transaction [this]
     (let [st (om/get-state this)
@@ -36,6 +38,9 @@
                                                ~(-> (:input-transaction st)
                                                     (assoc :transaction/uuid (d/squuid))
                                                     (update :transaction/currency :value)
+                                                    (update :transaction/tags (fn [ts]
+                                                                                (map (fn [{:keys [label value]}]
+                                                                                       {:tag/name label}) ts)))
                                                     (assoc :transaction/created-at (.getTime (js/Date.)))))
                                              :routing/project])]
       (om/update-state! this assoc :pending-transaction message-id)))
@@ -45,7 +50,7 @@
           usd-entity (some #(when (= (:currency/code %) "USD") %) all-currencies)]
       {:input-transaction {:transaction/date     (date/date-map (date/today))
                            :transaction/tags     #{}
-                           :transaction/currency {:name (:currency/code usd-entity)
+                           :transaction/currency {:label (:currency/code usd-entity)
                                                   :value (:db/id usd-entity)}
                            :transaction/project  project-id
                            :transaction/type     :transaction.type/expense}
@@ -63,7 +68,8 @@
   (render [this]
     (let [{:keys [type input-transaction]} (om/get-state this)
           {:keys [transaction/date transaction/currency]} input-transaction
-          {:keys [query/all-currencies]} (om/props this)]
+          {:keys [query/all-currencies
+                  query/all-tags]} (om/props this)]
       (html
         [:div#add-transaction
          [:h4.header "New Transaction"]
@@ -72,11 +78,17 @@
            [:div.top-bar-left.type-menu
             [:a
              {:class    (when (= type :expense) "active")
-              :on-click #(om/update-state! this assoc :type :expense)}
+              :on-click #(om/update-state! this (fn [st]
+                                                  (-> st
+                                                      (assoc :type :expense)
+                                                      (assoc-in [:input-transaction :transaction/type] :transaction.type/expense))))}
              "Expense"]
             [:a
              {:class    (when (= type :income) "active")
-              :on-click #(om/update-state! this assoc :type :income)}
+              :on-click #(om/update-state! this (fn [st]
+                                                  (-> st
+                                                      (assoc :type :income)
+                                                      (assoc-in [:input-transaction :transaction/type] :transaction.type/income))))}
              "Income"]
             [:a
              {:class    (when (= type :accomodation) "active")
@@ -113,12 +125,14 @@
               :min         "0"
               :placeholder "0.00"
               :on-change   #(om/update-state! this assoc-in [:input-transaction :transaction/amount] (.. % -target -value))}]]
-           [:div.columns.small-3.small-push-1.end
-            (sel/->Select (om/computed {:items   (map (fn [{:keys [currency/code db/id]}]
-                                                        {:name code
+           [:div.columns.small-2.text-right
+            [:label "Currency:"]]
+           [:div.columns.small-3
+            (sel/->Select (om/computed {:options   (map (fn [{:keys [currency/code db/id]}]
+                                                        {:label code
                                                          :value id})
                                                       all-currencies)
-                                        :default currency}
+                                        :value currency}
                                        {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/currency] %)}))]]
           [:div.row
            [:div.columns.small-3.text-right
@@ -131,8 +145,13 @@
            [:div.columns.small-3.text-right
             [:label "Tags:"]]
            [:div.columns.small-9
-            [:textarea
-             {:type "text"}]]]
+            (sel/->SelectTags (om/computed {:options        (map (fn [{:keys [tag/name db/id]}]
+                                                                    {:label name
+                                                                     :value id})
+                                                                  all-tags)
+                                             :value          #js []}
+                                       {:on-select     #(om/update-state! this assoc-in [:input-transaction :transaction/tags] %)}))
+            ]]
 
           [:div.row
            [:div.columns.small-3.text-right

@@ -68,6 +68,7 @@
                  [binaryage/devtools "0.8.1"]
                  [org.clojure/tools.nrepl "0.2.11"
                   :exclusions [org.clojure/clojure]]
+                 [cljsjs/react-select "1.0.0-rc.1"]
 
                  ;; React-native
                  [natal-shell "0.3.0"]

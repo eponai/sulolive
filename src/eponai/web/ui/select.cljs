@@ -1,50 +1,57 @@
 (ns eponai.web.ui.select
   (:require
+    [cljsjs.react-select]
     [eponai.client.ui :refer-macros [opts]]
+    [om.dom :as dom]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]))
 
+(defn on-select-fn [component]
+  (fn [sel]
+    (let [selected (js->clj sel :keywordize-keys true)
+          {:keys [on-select]} (om/get-computed component)]
+      (om/update-state! component assoc :selected selected)
+      (when on-select
+        (on-select selected)))))
+
 (defui Select
   Object
-  (initLocalState [this]
-    {:is-visible? false
-     :hide-fn #(.hide this)})
-  (select [this item]
-    (let [{:keys [on-select]} (om/get-computed this)]
-      (om/update-state! this assoc :selected item)
-      (when on-select
-        (on-select item))))
-
-  (show [this]
-    (let [{:keys [hide-fn]} (om/get-state this)]
-      (om/update-state! this assoc :is-visible? true)
-      (.. js/document (addEventListener "click" hide-fn))))
-
-  (hide [this]
-    (let [{:keys [hide-fn]} (om/get-state this)]
-      (debug "Hide")
-      (.. js/document (removeEventListener "click" hide-fn))
-      (om/update-state! this assoc :is-visible? false)))
-
   (render [this]
-    (let [{:keys [is-visible? selected]} (om/get-state this)
-          {:keys [items default]} (om/props this)]
-      (html
-        [:div.select-container
-         {:class (when is-visible? "show")}
-         [:div.select-display
-          {:class (str (when is-visible? "clicked"))
-           :on-click #(.show this)}
-          [:span
-           (or (:name selected) (:name default))]
-          [:i.fa.fa-caret-down.fa-fw]
-          ]
-         [:div.select-list
-          (map (fn [item]
-                 [:div.select-item
-                  {:on-click #(.select this item)}
-                  [:span (:name item)]])
-               items)]]))))
+    (let [{:keys [selected]} (om/get-state this)
+          {:keys [options value]} (om/props this)]
+      (js/React.createElement
+        js/Select
+        (clj->js
+          {:value     (or (:value selected) (:value value))
+           :options   (clj->js options)
+           :clearable false
+           :onChange  (on-select-fn this)})))))
 
 (def ->Select (om/factory Select))
+
+(defui SelectTags
+  Object
+  (render [this]
+    (let [{:keys [selected]} (om/get-state this)
+          {:keys [value options]} (om/props this)]
+      (js/React.createElement
+        js/Select.Creatable
+        (clj->js
+          {:value             (clj->js (or selected value))
+           :placeholder       "e.g. food"
+           :options           (clj->js options)
+           :multi             true
+           :clearable         false
+           :noResultsText     ""
+           :onChange          (on-select-fn this)
+           :promptTextCreator (fn [l]
+                                (str "Create new tag '" l "'"))
+           :filterOptions     (fn [options filter-str _]
+                                (if (empty? filter-str)
+                                  #js []
+                                  (clj->js (filter #(clojure.string/starts-with?
+                                                     (.toLowerCase (.-label %))
+                                                     (.toLowerCase filter-str)) options))))})))))
+
+(def ->SelectTags (om/factory SelectTags))
