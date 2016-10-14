@@ -34,19 +34,19 @@
          (when-let [err ?err]
            (str "\n" (timbre/stacktrace err opts))))))))
 
-(defmacro with-less-loud-logger [& body]
+(defn with-less-loud-logger [f]
   (let [config# timbre/*config*
         sync-appender# {:sync      true
-                         :enabled?  true
-                         :output-fn less-loud-output-fn
-                         :fn        (fn [m]
-                                      (print (force (:output_ m)))
-                                      (print \newline)
-                                      (flush))}]
-    `(try
-       (timbre/set-config!
-         (assoc ~config# :appenders {:sync-appender ~sync-appender#}))
-       (timbre/info "Temporarily set logger to less loud logger")
-       (do ~@body)
-       (finally
-         (timbre/set-config! ~config#)))))
+                        :enabled?  true
+                        :output-fn less-loud-output-fn
+                        :fn        (fn [m]
+                                       (print (force (:output_ m)))
+                                       (print \newline)
+                                       (flush))}]
+    (try
+      (timbre/set-config!
+        (assoc config# :appenders {:sync-appender sync-appender#}))
+      (timbre/info "Temporarily set logger to less loud logger")
+      (f)
+      (finally
+        (timbre/set-config! config#)))))

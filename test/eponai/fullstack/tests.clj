@@ -9,9 +9,8 @@
             [eponai.fullstack.framework :as fw]
             [eponai.fullstack.jvmclient :refer [JvmRoot]]
             [clojure.test :as test]
-            [eponai.fullstack.utils :as fs.utils]
-            [clj-http.client :as http])
-  (:import (org.eclipse.jetty.server Server ServerConnector Connector)))
+            [eponai.fullstack.utils :as fs.utils])
+  (:import (org.eclipse.jetty.server Server)))
 
 (defn- app-state [reconciler]
   (fw/call-parser reconciler (om/get-query (or (om/app-root reconciler) JvmRoot))))
@@ -72,26 +71,6 @@
                                    (assert (every? (partial has-transaction? tx) clients))
                                    (assert (equal-app-states? clients)))}]}))
 
-(defn test-edit-transaction [_ [client1 :as clients]]
-  (let [tx (new-transaction client1)
-        inc-str (comp str inc read-string)
-        has-edit? (fn [client]
-                    (test/is
-                      (= (str (:transaction/amount
-                                (entity client [:transaction/uuid (:transaction/uuid tx)])))
-                         (inc-str (:transaction/amount tx)))))]
-    {:label   "edit transaction: Last made edit should persist"
-     :actions [{::fw/transaction [client1 `[(transaction/create ~tx)]]}
-               {::fw/transaction (fn []
-                                   (let [db-id (:db/id (entity client1 [:transaction/uuid (:transaction/uuid tx)]))]
-                                     [client1 `[(transaction/edit ~(-> tx
-                                                                       (select-keys [:transaction/uuid :transaction/amount])
-                                                                       (assoc :db/id db-id)
-                                                                       (update :transaction/amount inc-str)))]]))
-                ::fw/asserts     (fn []
-                                   (assert (every? has-edit? clients)))}]}))
-
-
 (defn test-create-transaction-offline [server [client1 :as clients]]
   (let [tx (new-transaction client1)]
     {:label   "Creating transaction offline should sync when client/server goes online"
@@ -109,10 +88,73 @@
                                      (assert (.isRunning server))
                                      (every? (partial has-transaction? tx) clients))}]}))
 
+(defn update-transaction-amount [client tx update-fn]
+  (let [id (:db/id (entity client [:transaction/uuid (:transaction/uuid tx)]))]
+    (assert (some? id)
+            (str "No id for client: " (pr-str client) " tx:" tx))
+    (-> tx
+        (select-keys [:transaction/uuid :transaction/amount])
+        (assoc :db/id id)
+        (update :transaction/amount update-fn))))
+
+(def inc-str (comp str inc read-string))
+
+(defn has-edit? [tx update-fn client]
+  (= (str (:transaction/amount
+            (entity client [:transaction/uuid (:transaction/uuid tx)])))
+     (update-fn (:transaction/amount tx))))
+
+(defn transaction-edit [client tx update-fn]
+  (fn []
+    [client
+     `[(transaction/edit ~(update-transaction-amount client tx update-fn))]]))
+
+(defn test-edit-transaction [_ [client1 :as clients]]
+  (let [tx (new-transaction client1)]
+    {:label   "edit transaction: Last made edit should persist"
+     :actions [{::fw/transaction [client1 `[(transaction/create ~tx)]]
+                ::fw/asserts     #(assert (every? (partial has-transaction? tx) clients))}
+               {::fw/transaction (transaction-edit client1 tx inc-str)
+                ::fw/asserts     (fn []
+                                   (assert (every? (partial has-edit? tx inc-str) clients)))}]}))
+
+(defn test-edit-transaction-offline [server [client1 client2 :as clients]]
+  (let [tx (new-transaction client1)
+        c1-edit inc-str
+        c2-edit (comp inc-str inc-str)]
+    {:label   "Last edit should persist"
+     :actions [{::fw/transaction [client1 `[(transaction/create ~tx)]]
+                ::fw/asserts     #(assert (every? (partial has-transaction? tx) clients))}
+               {::fw/transaction #(do (.stop server)
+                                      (.join server))
+                ::fw/asserts     #(do (assert (test/is (not (.isRunning server))))
+                                      (every? (partial has-transaction? tx) clients))}
+               {::fw/transaction (transaction-edit client1 tx c1-edit)
+                ::fw/asserts     #(do (assert (has-edit? tx c1-edit client1))
+                                      (assert (not (has-edit? tx c1-edit client2))))}
+               {::fw/transaction (transaction-edit client2 tx c2-edit)
+                ::fw/asserts     #(do (assert (has-edit? tx c2-edit client2))
+                                      (assert (not (has-edit? tx c2-edit client1))))}
+               {::fw/transaction   #(.start server)
+                ::fw/await-clients [client1 client2]
+                ::fw/sync-clients! true
+                ;; TODO: Introduce a conflict, where c1 happens before c2.
+                ;; TODO: Implement conflict resolution.
+                ;; OR: Implement this in such a way where each client has a server each?
+                ::fw/asserts       #(do (not-any? (partial has-edit? tx c1-edit) clients)
+                                        (every? (partial has-edit? tx c2-edit) clients))}]}))
+
 (defn run []
-  ;;(fs.utils/with-less-loud-logger)
-  (do (fw/run-tests test-system-setup
-                    test-create-transaction
-                    test-edit-transaction
-                    test-create-transaction-offline)
-      nil))
+  (fs.utils/with-less-loud-logger
+    #(do (fw/run-tests (->> [
+                            ; test-system-setup
+                            ;test-create-transaction
+                             ;; test-edit-transaction
+                            ;test-create-transaction-offline
+                             test-edit-transaction-offline
+                             ;; test-create+edit-transaction-offline -> sync should see create+edit.
+                            ]
+                            ;;(reverse)
+                            ;;(take 1)
+                           ))
+        nil)))

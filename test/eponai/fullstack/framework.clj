@@ -197,8 +197,9 @@
         result-chan (async/chan)]
     (.start server)
     (try
-      (let [clients (create-clients 2 (assoc system :action-chan action-chan
-                                                    :result-chan result-chan))
+      (let [clients (create-clients 2
+                                    (assoc system :action-chan action-chan
+                                                  :result-chan result-chan))
             {:keys [actions label]} (test-fn server clients)
             _ (try
                 (doseq [action actions]
@@ -230,7 +231,7 @@
   (info "Test results:" (result-summary end-result))
   (prn "Test results:" (result-summary end-result)))
 
-(defn run-tests [& test-fns]
+(defn run-tests [test-fns]
   (let [system (reduce (fn [system test]
                          (-> system
                              (start-system)

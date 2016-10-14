@@ -24,14 +24,22 @@
   (success? [this] "true if the server mutation was successful."))
 
 (defn mutation-message? [x]
-  (satisfies? IMutationMessage x))
+  (and (satisfies? IMutationMessage x)
+       (some? (message x))))
 
 (defrecord MutationMessage [mutation-key message message-type]
   IMutationMessage
   (message [_] message)
   (final? [_] (contains? #{::parser/success-message ::parser/error-message} message-type))
   (pending? [this] (not (final? this)))
-  (success? [_] (::parser/success-message message-type)))
+  (success? [_] (::parser/success-message message-type))
+  Object
+  (toString [x]
+    (str "[MutationMessage " {:message  (message x)
+                              :final?   (final? x)
+                              :pending? (pending? x)
+                              :success? (success? x)
+                              :obj      x} "]")))
 
 (defn ->message-from-server [mutation-key message message-type]
   {:pre [(contains? #{::parser/success-message ::parser/error-message} message-type)]}
