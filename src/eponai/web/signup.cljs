@@ -57,9 +57,8 @@
     (let [{:keys [input-email
                   verification-sent]} (om/get-state this)]
       (html
-        [:div.row
-         [:div
-          {:class "columns small-12 medium-10 medium-offset-1 large-6 large-offset-3"}
+        [:div.row.align-center
+         [:div.column.small-12.medium-10.large-6
           [:h2 "Welcome!"]
           [:p "Sign in with email"]
 
@@ -75,12 +74,11 @@
            (when verification-sent
              [:small.text-success "Check your inbox for a fancy sign in link!"])]
 
-          [:div
-           [:button
-            {:class       "button"
-             :on-click    #(.on-email-login this)
-             :tab-index   2}
-            "Sign In"]]
+
+          [:a.button.action-button
+           {:on-click  #(.on-email-login this)
+            :tab-index 2}
+           "Sign In"]
 
           [:br]
           ;; --------- Social Buttons
@@ -107,9 +105,8 @@
     (let [{:keys [::fixed-email user-uuid]} (om/props this)
           {:keys [input-name input-email message status]} (om/get-state this)]
       (html
-        [:div.row
-         [:div
-          {:class "columns small-12 medium-10 medium-offset-1 large-6 large-offset-3"}
+        [:div.row.align-center
+         [:div.column.small-12.medium-10.large-6
           [:h2 "Welcome!"]
           [:label
            "Email:"]
@@ -137,20 +134,19 @@
            message]
 
 
-          [:button
-           {:class    "button primary"
-            :on-click (fn []
+          [:a.button.action-button
+           {:on-click (fn []
                         (om/transact! this `[(session.signin/activate ~{:user-uuid (str user-uuid)
                                                                         :user-email input-email})
                                              :user/current
                                              :query/auth]))}
            "Create account"]
 
-          [:p.small
+          [:p.accept-terms
            "By creating an account, you accept JourMoney's"
-           [:a {:class "btn btn-link btn-xs"} "Terms of Service"]
+           [:a.link {:class "btn btn-link btn-xs"} "Terms of Service"]
            " and "
-           [:a {:class "btn btn-link btn-xs"} "Privacy Policy"]]]]))))
+           [:a.link {:class "btn btn-link btn-xs"} "Privacy Policy"]]]]))))
 
 (def ->create-account (om/factory CreateAccount))
 

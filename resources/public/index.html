@@ -54,10 +54,10 @@
 <body>
 <!-- Header -->
 <div id="landing-page">
-    <div class="gradient-down-up">
-        <div class="map map-white map-top">
-            <nav class="top-bar clearfix">
-                <div class="menu-horizontal float-left">
+    <div id="header">
+        <!--<div class="map map-white map-top">-->
+            <nav class="top-bar">
+                <div class="top-bar-left">
                     <!--<div class="title-bar-title">-->
                     <a class="navbar-brand" href="">
                         <strong>JourMoney</strong>
@@ -65,10 +65,10 @@
                     </a>
                     <!--</div>-->
                 </div>
-                <div class="menu-horizontal float-right">
-                            <a href="#subscribe">
-                                <strong>Sign In</strong>
-                            </a>
+                <div class="top-bar-right">
+                    <a href="#subscribe">
+                        <strong>Sign In</strong>
+                    </a>
                     <!--<ul class="menu">-->
                         <!--<li>-->
                         <!--</li>-->
@@ -76,76 +76,60 @@
                 </div>
             </nav>
 
-            <div id="header">
-
-                <!--<div class="container clearfix ">-->
-
-                    <div class="row columns small-12 medium-8 large-5">
-                        <!--<div class="small-12 medium-10 medium-offset-1 large-6 large-offset-3 columns">-->
-                            <div class="intro-message">
-                                <h1>Your Money, Your Control</h1>
-                                <!--<h2>-->
-                                    <!--A more visual way to track your money and plan for those cool destinations.-->
-                                <!--</h2>-->
-                                <hr class="intro-divider">
+            <div class="intro">
+                <div class="row align-center column small-12 medium-8 large-5">
+                    <!--<div class="small-12 medium-10 medium-offset-1 large-6 large-offset-3 columns">-->
+                    <div class="intro-message">
+                        <h1>Expense tracking from everywhere</h1>
+                        <!--<h2>-->
+                        <!--A more visual way to track your money and plan for those cool destinations.-->
+                        <!--</h2>-->
+                        <hr class="intro-divider">
 
 
-                                <h2>
-                                    JourMoney is an expense tracker that lets you visualize your financial habits. Explore
-                                    where you can make small changes in your daily life and save more money over time.
-                                    <!--, find where your unnecessary expenses are, explore where you can easily save money.-->
+                        <h2>
+                            Travel in peace and track your money anytime, anywhere, in any currency.
+                            <!--, find where your unnecessary expenses are, explore where you can easily save money.-->
 
-                                    <!--Track as you go and see what your data is telling you by viewing your own easily-->
-                                    <!--created dashboards.-->
-                                    <!--Find hidden opportunities for saving and spending.-->
-                                </h2>
-                                <!--<p id="subscribe">-->
-                                    <!---->
-                                    <!--Traveling and tracking expenses is a great combo.-->
-                                    <!--It's a great way be aware of expenses.-->
-                                    <!--Being a traveler is amazing, however it can also be a little tricky to keep-->
-                                    <!--different currencies in check and be in control of where your money goes.-->
+                            <!--Track as you go and see what your data is telling you by viewing your own easily-->
+                            <!--created dashboards.-->
+                            <!--Find hidden opportunities for saving and spending.-->
+                        </h2>
+                        <!--<p id="subscribe">-->
+                        <!---->
+                        <!--Traveling and tracking expenses is a great combo.-->
+                        <!--It's a great way be aware of expenses.-->
+                        <!--Being a traveler is amazing, however it can also be a little tricky to keep-->
+                        <!--different currencies in check and be in control of where your money goes.-->
 
-                                    <!--What if you could track your expenses in any currency,-->
-                                    <!--and the sit back and watch where your money is going.-->
-                                <!--</p>-->
+                        <!--What if you could track your expenses in any currency,-->
+                        <!--and the sit back and watch where your money is going.-->
+                        <!--</p>-->
                         <!--</div>-->
-                                    <a class="button hollow secondary" style="margin: 2em 0 0 0;" href="/play"> <strong>See In Action</strong></a>
+                        <!--<a class="button hollow secondary" style="margin: 2em 0 0 0;" href="/play"> <strong>See In-->
+                            <!--Action</strong></a>-->
                     </div>
+                </div>
+                <div class="row align-center actions">
+                    <div class="column text-right small-2">
+                        <a class="button action-button primary">Get started</a>
                     </div>
+                    <div class="column small-2">
+                        <a class="button action-button hollow" href="/play"> See in Action</a>
+                    </div>
+
+                </div>
+
 
                 <!--</div>-->
                 <!-- /.container -->
 
-                <div class="banner">
-                    <div class="flex flex-column">
-                        <div class="text-center">
-                            <h2>Be notified when we launch</h2>
-                        </div>
-                        <!--<h2 style="font-size:1em;">Help us build something great for you</h2>-->
-                        <form id="form-intro">
-                            <!--<div class="row small-up-2 small-collapse">-->
-                                <!--<div class="column">-->
-                                    <input type="email" name="email" class="form-control right" placeholder="youremail@example.com" tabindex="1">
-
-                                <!--</div>-->
-                                <!--<div class="column">-->
-                                    <button type="submit" class="button warning" onclick="onSubscribe('subscribe-intro')"
-                                            tabindex="2">
-                                        <strong>Notify me</strong>
-                                    </button>
-                                <!--</div>-->
-                            <!--</div>-->
-                        </form>
-                    </div>
-                </div>
-                <div class="text-center" id="subscribe-intro"></div>
             </div>
             <!-- /.intro-header -->
-        </div>
+        <!--</div>-->
         <!-- /.map -->
     </div>
-    <!-- /.gradient -->
+    <!-- /.header-background -->
 
 
 
@@ -227,70 +211,74 @@
     <!--</div>-->
      <!--/.content-section-a-->
 
-    <div id="at-a-glance" class="content-section row column">
+    <div id="at-a-glance" class="content-section">
         <div class="text-center">
             <h3 class="section-heading">At a glance</h3>
             <hr>
-            <div class="row small-up-2 medium-up-3">
-                <div class="column">
-                    <h4>Dashboards</h4>
+            <div class="row">
+                <div class="glance-item column small-6 medium-4">
+                    <img src="/style/icons/offline.svg">
+                    <h4>
+                        Use Offline
+                    </h4>
                     <span>
-                        Create your personal dashboard with graphs and widgets to see your spending habits in a way that works for you.
+                        No internet access? No problem, just use the mobile app to do what you need to do offline.
+                        We'll sync up with you when you get a connection.
                     </span>
+
                 </div>
-                <div class="column">
+                <div class="glance-item column small-6 medium-4">
+                    <img src="/style/icons/tags.svg">
                     <h4>Tags</h4>
                     <span>
                         Add context to your transactions with tags and use them to filter your dashboards over the data you're interested in.
                     </span>
                 </div>
-                <div class="column">
+                <div class="glance-item column small-6 medium-4">
                     <h4>Currencies</h4>
                     <span>
                         Don't worry about different currencies, choose one that suits you and we'll convert all local currencies to your chosen one.
                     </span>
                 </div>
-                <!--<div class="column">-->
-                    <!--<h4><small>Use Offline</small></h4>-->
-                    <!--<small>-->
-                        <!--No internet access? No problem, just use the mobile app to do what you need to do offline.-->
-                        <!--We'll sync up with you when you get a connection.-->
-                    <!--</small>-->
-                <!--</div>-->
-                <div class="column">
+            </div>
+            <div class="row">
+                <div class="glance-item column small-6 medium-4">
+                    <img src="/style/icons/no-password.svg">
                     <h4>No Passwords</h4>
                     <span>
                         There's already way too many passwords in this world. Sign in using your email or social media account and you're good to go.
                     </span>
                 </div>
-                <!--<div class="column">-->
-                    <!--<h4><small>Projects</small></h4>-->
-                    <!--<small>-->
-                        <!--Create projects to separate different tracking for different use cases, whatever they-->
-                        <!--might be. Maybe you have a shared part with someone, and your own secret one on the side?-->
-                        <!--No judgement, just track away!-->
-                    <!--</small>-->
-                <!--</div>-->
-                <!--<div class="column">-->
-                    <!--<h4 class="subheader">Goals</h4>-->
-                    <!--<small>-->
-                        <!--Setup economic goals and follow your progress in your dashboards.-->
-                    <!--</small>-->
-                <!--</div>-->
-                <div class="column">
-                    <h4>Share</h4>
+                <div class="glance-item column small-6 medium-4">
+                    <h4>Collaborate</h4>
                     <span>
                         Share your dashboards with friends and family and collaborate on your expense tracking.
                     </span>
                 </div>
-                <div class="column">
-                    <h4>Flexible Time periods</h4>
+                <div class="glance-item column small-6 medium-4">
+                    <h4>Collaborate</h4>
                     <span>
-                        Everyone's life is different. View your finances in time
-                        periods that match yours.
+                        Share your dashboards with friends and family and collaborate on your expense tracking.
                     </span>
                 </div>
             </div>
+
+            <!--<div class="row small-up-2 medium-up-3">-->
+                <!--<div class="column">-->
+                    <!--<h4>Dashboards</h4>-->
+                    <!--<span>-->
+                        <!--Create your personal dashboard with graphs and widgets to see your spending habits in a way that works for you.-->
+                    <!--</span>-->
+                <!--</div>-->
+                <!---->
+                <!--<div class="column">-->
+                    <!--<h4>Flexible Time periods</h4>-->
+                    <!--<span>-->
+                        <!--Everyone's life is different. View your finances in time-->
+                        <!--periods that match yours.-->
+                    <!--</span>-->
+                <!--</div>-->
+            <!--</div>-->
             <!-- /.row -->
 
         </div>
@@ -299,29 +287,35 @@
     <!-- /.content-section -->
 
     <!--<a  name="contact"></a>-->
-    <div class="gradient-top-down">
-        <div class="intro-footer map map-white map-bottom">
-            <div class="container clearfix">
-                <!--<div>-->
+    <div id="footer">
+        <!--<div class="intro-footer map map-white map-bottom">-->
+            <!--<div class="row align-middle actions">-->
+                    <!--<h2 style="font-size:1em;">Help us build something great for you</h2>-->
+                    <form id="form-intro" class="row align-middle actions">
+                        <!--<div class="row small-up-2 small-collapse">-->
+                        <!--<div class="column">-->
+                        <div class="text-right column small-4">
+                            <h2>Be notified when we launch:</h2>
+                        </div>
+                        <div class="column small-4">
+                            <input type="email" name="email" class="" placeholder="youremail@example.com" tabindex="1">
+                        </div>
 
-                <!--&lt;!&ndash;<div class="col-sm-4 col-sm-offset-4">&ndash;&gt;-->
 
-                <!--<h4 class="text-center">Subscribe to our newsletter</h4>-->
-                <!--<form id="form-footer" class="form-group row" method="post" action="/newsletter/subscribe" style="display:flex;flex-direction:row;justify-content:flex-start;align-items:center;">-->
-                <!--<div class="col-sm-5 col-sm-offset-3">-->
-                <!--<input type="text" name="email" class="form-control" placeholder="Your E-Mail" tabindex="3">-->
-                <!--</div>-->
-                <!--<div class="col-sm-4" style="float:left;">-->
-                <!--<button class="btn btn-info btn-md" type="submit"-->
-                <!--onclick="onSubscribe('subscribe-footer')" tabindex="4">-->
-                <!--Subscribe-->
-                <!--</button>-->
-                <!--</div>-->
-                <!--</form>-->
-                <!--&lt;!&ndash;</div>&ndash;&gt;-->
-                <!--<div id="subscribe-footer" class="text-center" style="height:1em;"></div>-->
-                <!--</div>-->
-            </div>
+                        <!--</div>-->
+                        <!--<div class="column">-->
+                        <div class="column small-2">
+                            <button type="submit" class="button action-button" onclick="onSubscribe('subscribe-intro')"
+                                    tabindex="2">
+                                <strong>Notify me</strong>
+                            </button>
+                        </div>
+
+                        <!--</div>-->
+                        <!--</div>-->
+                    </form>
+            <!--</div>-->
+            <div class="text-center" id="subscribe-intro"></div>
             <!-- /.container -->
 
             <!-- Footer -->
@@ -333,7 +327,7 @@
                 <!--</div>-->
                 <!-- /.container -->
             </footer>
-        </div>
+        <!--</div>-->
     </div>
 <!-- /.banner -->
 </div>

@@ -120,7 +120,8 @@
           {:keys [user on-tag-click currencies all-tags]} (om/get-computed this)]
       (dom/li
         #js {:className    (str "row collapse align-middle" (if hovered? " is-hovered" " is-disabled"))
-             :onMouseEnter #(om/update-state! this assoc :hovered? true)
+             :onMouseMove  #(when-not hovered?
+                             (om/update-state! this assoc :hovered? true))
              :onMouseLeave #(om/update-state! this assoc :hovered? false)}
         ;; Amount in main currency
         (dom/div
@@ -163,7 +164,7 @@
 
         ;; Tags
         (dom/div
-          #js {:className "tags end"}
+          #js {:className "tags"}
           (sel/->SelectTags (om/computed {:value    (map (fn [t]
                                                            {:label (:tag/name t)
                                                             :value (:db/id t)})
@@ -184,23 +185,10 @@
 
         ;; Amount in local currency
         (dom/div
-          #js {:className "currency"}
-
-          (sel/->Select (om/computed {:value    {:label (:currency/code currency) :value (:db/id currency)}
-                                      :options  (map (fn [c]
-                                                       {:label (:currency/code c)
-                                                        :value (:db/id c)})
-                                                     currencies)
-                                      :disabled (not hovered?)}
-                                     {:on-select (fn [selected]
-                                                   (om/update-state! this assoc-in [:input-transaction :transaction/currency] (:value selected))
-                                                   (.save-edit this))})))
-
-        (dom/div
           #js {:className "local-amount"}
           (dom/input
             #js {:tabIndex  -1
-                 :className "input-amount"
+                 :className "input-amount text-right"
                  :value     (or amount "")
                  :pattern   "[0-9]+([\\.][0-9]+)?"
                  :type      "text"
@@ -221,6 +209,18 @@
                                 (when (not= val (two-decimal-string val))
                                   (om/update-state! this assoc-in [:input-transaction :transaction/amount] (two-decimal-string val))))
                               (.save-edit this))}))
+        (dom/div
+          #js {:className "currency"}
+
+          (sel/->Select (om/computed {:value    {:label (:currency/code currency) :value (:db/id currency)}
+                                      :options  (map (fn [c]
+                                                       {:label (:currency/code c)
+                                                        :value (:db/id c)})
+                                                     currencies)
+                                      :disabled (not hovered?)}
+                                     {:on-select (fn [selected]
+                                                   (om/update-state! this assoc-in [:input-transaction :transaction/currency] (:value selected))
+                                                   (.save-edit this))})))
         ))))
 
 (def ->Transaction (om/factory Transaction {:keyfn :db/id}))
@@ -347,10 +347,10 @@
             "Note"]
            [:div.tags
             "Tags"]
+           [:div.local-amount.text-right
+            "Amount"]
            [:div.currency
-            "Currency"]
-           [:div.local-amount
-            "Amount"]]
+            "Currency"]]
           (if (seq transactions)
             [:div.transactions-list
              (infinite-scroll/->InfiniteScroll
