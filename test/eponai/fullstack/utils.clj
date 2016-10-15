@@ -41,7 +41,7 @@
        [(str/upper-case (name level))
         (str "[" (or ?ns-str "?") ":" (or ?line "?") "] - ")
         (if (#{:debug :trace :warn} level)
-          (force msg_)
+          (str @vargs_)
           @vargs_)]))))
 
 (defn aprint
@@ -64,11 +64,12 @@
                         :enabled?  true
                         :output-fn less-loud-output-fn
                         :fn        (fn [{:keys [output-fn ?err output_] :as data}]
-                                     (if ?err
-                                       (do (print (force output_))
-                                           (print \newline)
-                                           (flush))
-                                       (aprint (output-fn data) *out*)))}]
+                                     (locking *out*
+                                       (if ?err
+                                         (do (print (force output_))
+                                             (print \newline)
+                                             (flush))
+                                         (aprint (output-fn data) *out*))))}]
     (try
       (timbre/set-config!
         (assoc config# :appenders {:sync-appender sync-appender#}))

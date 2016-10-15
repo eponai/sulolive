@@ -345,10 +345,11 @@
                   ;; Get all pending queries that has happened while
                   ;; we were waiting for response
                   mutation-queue (d/db app-state)
-                  _ (debug "Pending mutations for query: " query
-                           "queue: " (client.utils/mutations-after mutation-queue
-                                                                   history-id
-                                                                   is-remote-fn))
+                  _ (when-let [mq (seq (client.utils/mutations-after mutation-queue
+                                                                     history-id
+                                                                     is-remote-fn))]
+                      (debug "Pending mutations for query: " query
+                             "queue: " mq))
                   _ (merge-response! cb stable-db received history-id)
                   ;; app-state has now been changed and is the new stable db.
                   stable-db (d/db app-state)

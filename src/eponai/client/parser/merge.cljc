@@ -39,8 +39,8 @@
       ))
 
 (defn merge-mutation-message [db history-id key val message-type]
-  (let [message (get-in val [:result ::parser/mutation-message message-type])]
-    (debug "Mutation success for : " key " message: " message " result: " val)
+  (let [message (get-in val [::parser/mutation-message message-type])]
+    (debug "Mutation message-type" message-type "for :" key " message: " message)
     (message/store-message db history-id (message/->message-from-server key message message-type))))
 
 ;;;;;;; API
@@ -57,10 +57,10 @@
     (merge-fn db key val)
 
     (some? (get-in val [:om.next/error ::parser/mutation-message]))
-    (merge-mutation-message db history-id key val ::parser/error-message)
+    (merge-mutation-message db history-id key (:om.next/error val) ::parser/error-message)
 
     (some? (get-in val [:result ::parser/mutation-message]))
-    (merge-mutation-message db history-id key val ::parser/success-message)
+    (merge-mutation-message db history-id key (:result val) ::parser/success-message)
 
     :else
     (do

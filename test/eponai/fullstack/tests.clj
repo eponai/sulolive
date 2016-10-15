@@ -89,7 +89,7 @@
                 ::fw/sync-clients! true
                 ::fw/asserts       #(do
                                      (assert (.isRunning server))
-                                     (every? (partial has-transaction? tx) clients))}]}))
+                                     (assert (every? (partial has-transaction? tx) clients)))}]}))
 
 (defn update-transaction-amount [client tx update-fn]
   (let [id (:db/id (entity client [:transaction/uuid (:transaction/uuid tx)]))]
@@ -132,7 +132,7 @@
                {::fw/transaction #(do (.stop server)
                                       (.join server))
                 ::fw/asserts     #(do (assert (test/is (not (.isRunning server))))
-                                      (every? (partial has-transaction? tx) clients))}
+                                      (assert (every? (partial has-transaction? tx) clients)))}
                {::fw/transaction (transaction-edit client1 tx c1-edit {::parser/created-at 3000})
                 ::fw/asserts     #(do (assert (has-edit? tx c1-edit client1))
                                       (assert (not (has-edit? tx c1-edit client2))))}
@@ -145,6 +145,25 @@
                 ::fw/asserts       #(do (assert (not-any? (partial has-edit? tx c1-edit) clients))
                                         (assert (every? (partial has-edit? tx c2-edit) clients)))}]}))
 
+(defn test-create+edit-transaction-offline [server [client1 :as clients]]
+  (let [tx (new-transaction client1)]
+    {:label   "Offline create and edit should persist"
+     :actions [{::fw/transaction #(do (.stop server)
+                                      (.join server))
+                ::fw/asserts     #(assert (not (.isRunning server)))}
+               {::fw/transaction (fn []
+                                   [client1 `[(transaction/create ~tx)]])
+                ::fw/asserts     #(do (assert (test/is (has-transaction? tx client1)))
+                                      (assert (test/is (not-any? (partial has-transaction? tx)
+                                                                 (rest clients)))))}
+               {::fw/transaction (transaction-edit client1 tx inc-str)
+                ::fw/assert      #(do (assert (has-edit? tx inc-str client1))
+                                      (assert (not-any? (partial has-edit? tx inc-str) clients)))}
+               {::fw/transaction #(.start server)
+                ::fw/await-clients [client1]
+                ::fw/sync-clients! true
+                ::fw/asserts #(do (assert (every? (partial has-edit? tx inc-str) clients)))}]}))
+
 (defn run []
   (fs.utils/with-less-loud-logger
     #(do (fw/run-tests (->> [
@@ -152,8 +171,8 @@
                              ;test-create-transaction
                              ;test-edit-transaction
                              ;test-create-transaction-offline
-                             test-edit-transaction-offline
-                             ;; test-create+edit-transaction-offline -> sync should see create+edit.
+                             ;test-edit-transaction-offline
+                              test-create+edit-transaction-offline ;;-> sync should see create+edit.
                             ]
                             ;;(reverse)
                             ;;(take 1)
