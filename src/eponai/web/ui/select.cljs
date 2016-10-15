@@ -19,14 +19,15 @@
   Object
   (render [this]
     (let [{:keys [selected]} (om/get-state this)
-          {:keys [options value]} (om/props this)]
+          {:keys [options value disabled]} (om/props this)]
       (js/React.createElement
         js/Select
         (clj->js
           {:value     (or (:value selected) (:value value))
            :options   (clj->js options)
            :clearable false
-           :onChange  (on-select-fn this)})))))
+           :onChange  (on-select-fn this)
+           :disabled disabled})))))
 
 (def ->Select (om/factory Select))
 

@@ -116,66 +116,91 @@
                   transaction/conversion
                   transaction/title]
            :as   transaction} (or input-transaction (om/props this))
-          {:keys [computed/date-range-picker-on-apply]} (om/get-state this)
+          {:keys [computed/date-range-picker-on-apply hovered?]} (om/get-state this)
           {:keys [user on-tag-click currencies all-tags]} (om/get-computed this)]
       (dom/li
-        #js {:className "row collapse expanded"}
+        #js {:className    (str "row collapse align-middle" (if hovered? " is-hovered" " is-disabled"))
+             :onMouseEnter #(om/update-state! this assoc :hovered? true)
+             :onMouseLeave #(om/update-state! this assoc :hovered? false)}
+        ;; Amount in main currency
+        (dom/div
+          #js {:className "amount"}
+          (if-let [rate (:conversion/rate conversion)]
+            (let [amount (cond-> amount (string? amount) (reader/read-string))]
+              (if (= (:db/ident type) :transaction.type/expense)
+                (dom/strong #js {:className "expense"}
+                            (str "-" (two-decimal-string (/ amount rate))))
+                (dom/strong #js {:className "income"}
+                            (two-decimal-string (/ amount rate)))))
+            (dom/i #js {:className "fa fa-spinner fa-spin"})))
 
         ;; Date
         (dom/div
-          #js {:className "columns small-6 medium-3 large-1"}
+          #js {:className "date"}
 
           (->DateRangePicker (om/computed {:single-calendar? true
                                            :start-date       (date/date-time date)}
                                           {:on-apply date-range-picker-on-apply
                                            :format   "MMM dd"})))
-
-        ;; Amount in main currency
         (dom/div
-          #js {:className "columns small-6 medium-3 large-2"}
-          (if-let [rate (:conversion/rate conversion)]
-            (dom/div
-              nil
-              (dom/span #js {:className "currency-code"}
-                        (str (or (:currency/code (:user/currency user))
-                                 (:currency/symbol-native (:user/currency user))) " "))
-              (let [amount (cond-> amount (string? amount) (reader/read-string))]
-                (if (= (:db/ident type) :transaction.type/expense)
-                  (dom/strong #js {:className "label alert"
-                                   :style     #js {:padding "0.2em 0.3em"}}
-                              (str "-" (two-decimal-string (/ amount rate))))
-                  (dom/strong #js {:className "label success"
-                                   :style     #js {:padding "0.2em 0.3em"}}
-                              (two-decimal-string (/ amount rate))))))
-            (dom/i #js {:className "fa fa-spinner fa-spin"})))
+          #js {:className "category"}
+          (sel/->Select {:value {:label "Housing" :value 1}
+                         :options [{:label "Housing" :value 1}
+                                   {:label "Transport" :value 2}]
+                         :disabled (not hovered?)}))
+
+        ;; Title
+        (dom/div
+          #js {:className "note"}
+          (dom/input
+            #js {:className "title"
+                 :value     (or title "")
+                 :type      "text"
+                 :onChange  #(om/update-state! this assoc-in [:input-transaction :transaction/title] (.-value (.-target %)))
+                 :onKeyDown #(utils/on-enter-down % (fn [_]
+                                                      (.blur (.-target %))))
+                 :onBlur    #(.save-edit this)}))
+
+        ;; Tags
+        (dom/div
+          #js {:className "tags end"}
+          (sel/->SelectTags (om/computed {:value    (map (fn [t]
+                                                           {:label (:tag/name t)
+                                                            :value (:db/id t)})
+                                                         (:transaction/tags transaction))
+                                          :options  (map (fn [t]
+                                                           {:label (:tag/name t)
+                                                            :value (:db/id t)})
+                                                         all-tags)
+                                          :disabled (not hovered?)}
+                                         {:on-select (fn [selected]
+                                                       (om/update-state! this assoc-in
+                                                                         [:input-transaction :transaction/tags]
+                                                                         (map (fn [t]
+                                                                                {:tag/name (:label t)})
+                                                                              selected))
+                                                       (.save-edit this))
+                                          })))
 
         ;; Amount in local currency
         (dom/div
-          #js {:className "columns small-6 medium-3 large-2"}
+          #js {:className "currency"}
 
-          (html
-            [:select.currency-code
-             {:value     (:currency/code currency)
-              :on-change #(do (om/update-state! this assoc-in [:input-transaction :transaction/currency] {:currency/code (.-value (.-target %))})
-                              (.save-edit this))}
-             (map-all
-               currencies
-               (fn [c]
-                 [:option
-                  {:key   (str (:currency/code c))
-                   :value (:currency/code c)}
-                  (str (or (:currency/symbol-native c)
-                           (:currency/code c)) " ")]))])
-          (dom/div #js {:className "whitespace"
-                        :style     #js {:fontFamily "monospace" :whiteSpace "pre"}
-                        :onClick   #(when-let [node (utils/ref-dom-node this (str "amount-" id))]
-                                     (.focus node)
-                                     (select-first-digit node))}
-            (utils/left-padding 10 (trim-decimals amount)))
+          (sel/->Select (om/computed {:value    {:label (:currency/code currency) :value (:db/id currency)}
+                                      :options  (map (fn [c]
+                                                       {:label (:currency/code c)
+                                                        :value (:db/id c)})
+                                                     currencies)
+                                      :disabled (not hovered?)}
+                                     {:on-select (fn [selected]
+                                                   (om/update-state! this assoc-in [:input-transaction :transaction/currency] (:value selected))
+                                                   (.save-edit this))})))
+
+        (dom/div
+          #js {:className "local-amount"}
           (dom/input
-            #js {:style     #js {:fontFamily "monospace"}
-                 :tabIndex  -1
-                 :className "amount"
+            #js {:tabIndex  -1
+                 :className "input-amount"
                  :value     (or amount "")
                  :pattern   "[0-9]+([\\.][0-9]+)?"
                  :type      "text"
@@ -196,41 +221,7 @@
                                 (when (not= val (two-decimal-string val))
                                   (om/update-state! this assoc-in [:input-transaction :transaction/amount] (two-decimal-string val))))
                               (.save-edit this))}))
-
-        ;; Title
-        (dom/div
-          #js {:className "columns small-12 medium-3 large-2"}
-          (dom/input
-            #js {:className "title"
-                 :value     (or title "")
-                 :type      "text"
-                 :onChange  #(om/update-state! this assoc-in [:input-transaction :transaction/title] (.-value (.-target %)))
-                 :onKeyDown #(utils/on-enter-down % (fn [_]
-                                                      (.blur (.-target %))))
-                 :onBlur    #(.save-edit this)}))
-
-        ;; Tags
-        (dom/div
-          #js {:className "columns small-10 large-5 end"}
-          (sel/->SelectTags (om/computed {:value    (map (fn [t]
-                                                           {:label (:tag/name t)
-                                                            :value (:db/id t)})
-                                                         (:transaction/tags transaction))
-                                          :options  (map (fn [t]
-                                                           {:label (:tag/name t)
-                                                            :value (:db/id t)})
-                                                         all-tags)
-                                          :disabled true}
-                                         ;{:on-select (fn [selected]
-                                         ;              (om/update-state! this assoc-in
-                                         ;                                [:input-transaction :transaction/tags]
-                                         ;                                (map (fn [t]
-                                         ;                                       {:tag/name (:label t)})
-                                         ;                                     selected))
-                                         ;              (.save-edit this))
-                                         ; }
-                                         {}
-                                         )))))))
+        ))))
 
 (def ->Transaction (om/factory Transaction {:keyfn :db/id}))
 
@@ -344,9 +335,24 @@
         [:div.row.column
          (.render-filters this)
          [:div.transactions-container
+          [:div.transactions-header.row.align-middle.expanded.collapse
+           ;[] :div.row.collapse.expanded
+           [:div.amount
+            (str "Amount (" (:currency/code (:user/currency user)) ")")]
+           [:div.date
+            "Date"]
+           [:div.category
+            "Category"]
+           [:div.note
+            "Note"]
+           [:div.tags
+            "Tags"]
+           [:div.currency
+            "Currency"]
+           [:div.local-amount
+            "Amount"]]
           (if (seq transactions)
             [:div.transactions-list
-             (opts {:style {:width "100%"}})
              (infinite-scroll/->InfiniteScroll
                (om/computed
                  {:elements-container :ul.no-bullet

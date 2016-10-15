@@ -27,49 +27,50 @@
       (html
         [:div#dashboard
          [:div.dashboard-section
-          [:div.row.column
+          [:div.row
            [:a.button.black
             "September"
             ;[:i.fa.fa-caret-down.fa-fw]
-            ]
+            ]]
 
-           [:div#pie-charts
+          [:div.row#pie-charts
+           [:div.column
             (pc/->PieChart {:id    "housing-chart"
                             :title "Housing"
                             :value (or housing 0)
-                            :limit spent})
+                            :limit spent})]
+           [:div.column
             (pc/->PieChart {:id    "transport-chart"
                             :title "Transport"
                             :value (or transport 0)
-                            :limit spent})
+                            :limit spent})]
+           [:div.column
             (pc/->PieChart {:id    "balance-pie-chart"
                             :title "Balance"
                             :value (- limit spent)
                             :limit limit})]]]
 
          [:div.dashboard-section
-          [:div.row.column
+          [:div.row.section-title
+           (icon/dashboard-balance)
+           [:span "Balance vs Spent"]]
 
-           [:div.section-title
-            (icon/dashboard-balance)
-            [:span "Balance vs Spent"]]
+          [:div.row#balance-spent
+           (bc/->BalanceChart {:id     "balance-spent-chart"
+                               :values (if (seq transactions)
+                                         balance-report
+                                         [])})]
 
-           [:div#balance-spent
-            (bc/->BalanceChart {:id     "balance-spent-chart"
-                                :values (if (seq transactions)
-                                          balance-report
-                                          [])})]
-
-           [:div#key-metrics
-            [:div.key-metric
-             [:div.val-txt "473"]
-             [:div.title-txt "Balance"]]
-            [:div.key-metric
-             [:div.val-txt "31.21"]
-             [:div.title-txt "Avg. Spent per day"]]
-            [:div.key-metric
-             [:div.val-txt "53.13"]
-             [:div.title-txt "By Oct 31"]]]]]
+          [:div#key-metrics
+           [:div.key-metric
+            [:div.val-txt "473"]
+            [:div.title-txt "Balance"]]
+           [:div.key-metric
+            [:div.val-txt "31.21"]
+            [:div.title-txt "Avg. Spent per day"]]
+           [:div.key-metric
+            [:div.val-txt "53.13"]
+            [:div.title-txt "By Oct 31"]]]]
 
          [:div.dashboard-section
           [:div.row.column
