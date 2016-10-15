@@ -63,6 +63,21 @@
 
 ;; ############ middlewares
 
+(defn assoc-ast-param [{:keys [ast target]} mutation-ret k v]
+  (if (nil? target)
+    mutation-ret
+    (let [ret-target (get mutation-ret target false)
+          ast (if (true? ret-target) ast ret-target)]
+      (assoc mutation-ret target
+                 (cond-> ast
+                         (map? ast)
+                         (assoc-in [:params k] v))))))
+
+(defn update-action [mutation-ret update-fn]
+  (cond-> mutation-ret
+          (fn? (:action mutation-ret))
+          (update :action update-fn)))
+
 #?(:clj
    (defn error->message [err]
      (error err)
@@ -177,27 +192,21 @@
                      " to parser's env argument."))
         (mutate env k p))
       (let [mutation (mutate env k p)
-            target-mutation (get mutation target false)
             history-id (reconciler->history-id reconciler)]
         (if (nil? target)
-          (cond-> mutation
-                  (fn? (:action mutation))
-                  (update :action
-                          (fn [f]
-                            (fn []
-                              (f)
-                              (datascript/reset-conn! state (client.utils/queue-mutation
-                                                              (datascript/db state)
-                                                              history-id
-                                                              (om/ast->query ast)))))))
-          (let [ret (if (true? target-mutation) ast target-mutation)]
-            (assoc mutation
-              target
-              (cond-> ret
-                      (map? ret)
-                      (assoc-in [:params
-                                 :eponai.client.backend/mutation-db-history-id]
-                                history-id)))))))))
+          (update-action
+            mutation
+            (fn [action]
+              (fn []
+                (action)
+                (datascript/reset-conn! state (client.utils/queue-mutation
+                                                (datascript/db state)
+                                                history-id
+                                                (om/ast->query ast))))))
+          (assoc-ast-param env
+                           mutation
+                           :eponai.client.backend/mutation-db-history-id
+                           history-id))))))
 
 #?(:clj
    (defn mutate-without-history-id-param [mutate]
@@ -211,17 +220,15 @@
                      " thrown: " e
                      " will re-throw."))]
       (try
-        (let [ret (mutate env k p)]
-          (cond-> ret
-                  (fn? (:action ret))
-                  (update :action (fn [action]
-                                    (fn []
-                                      (try
-                                        (action)
-                                        (catch #?@(:clj  [Throwable e]
-                                                   :cljs [:default e])
-                                               (log-error e ":action")
-                                          (throw e))))))))
+        (update-action (mutate env k p)
+                       (fn [action]
+                         (fn []
+                           (try
+                             (action)
+                             (catch #?@(:clj  [Throwable e]
+                                        :cljs [:default e])
+                                    (log-error e ":action")
+                               (throw e))))))
         (catch #?@(:clj  [Throwable e]
                    :cljs [:default e])
                (log-error e "body")
@@ -268,51 +275,72 @@
 #?(:clj
    (defn with-mutation-message [mutate]
      (fn [env k p]
-       (let [ret (mutate env k p)
-             x->message (fn [x] (let [success? (not (instance? Throwable x))
-                                      msg (server-message (assoc env (if success?
-                                                                       :return
-                                                                       :exception) x) k p)
-                                      ;; Code for making defining of messages easier.
-                                      msg (cond-> msg
-                                                  (and (map? msg) (= [:success :error] (keys msg)))
-                                                  (set/rename-keys {:success ::success-message
-                                                                    :error   ::error-message})
-                                                  (and (vector? msg) (= 2 (count msg)))
-                                                  (->> (zipmap [::success-message
-                                                                ::error-message])))]
-                                  (assert (and (::error-message msg)
-                                               (::success-message msg))
-                                          (str "Message for mutation: " k
-                                               " did not have both " ::error-message
-                                               " and " ::success-message
-                                               " Message was: " msg))
-                                  (assert (= 2 (count (keys msg)))
-                                          (str "Message for mutation: " k
-                                               " had more keys than error and success messages."
-                                               " This is probably a typo. Check it out."))
-                                  (dissoc msg (if success? ::error-message ::success-message))))]
-         (cond-> ret
-                 (fn? (:action ret))
-                 (update :action (fn [action]
-                                   (fn []
-                                     (try
-                                       (let [ret (action)]
-                                         (assert (or (nil? ret) (map? ret))
-                                                 (str "Returned something from action: " k
-                                                      " but it was not a map. Was: " ret
-                                                      " Can only return maps from actions."))
-                                         (cond-> {::mutation-message (x->message ret)}
-                                                 (map? ret)
-                                                 (merge ret)))
-                                       (catch ExceptionInfo ex
-                                         (throw (ex-info (medley/ex-message ex)
-                                                         (assoc (ex-data ex)
-                                                           ::mutation-message (x->message ex)))))
-                                       (catch Throwable e
-                                         (throw (ex-info (.getMessage e)
-                                                         {:cause             e
-                                                          ::mutation-message (x->message e)}))))))))))))
+       (letfn [(x->message [x]
+                 (let [success? (not (instance? Throwable x))
+                       msg (server-message (assoc env (if success?
+                                                        :return
+                                                        :exception) x) k p)
+                       ;; Code for making defining of messages easier.
+                       msg (cond-> msg
+                                   (and (map? msg) (= [:success :error] (keys msg)))
+                                   (set/rename-keys {:success ::success-message
+                                                     :error   ::error-message})
+                                   (and (vector? msg) (= 2 (count msg)))
+                                   (->> (zipmap [::success-message
+                                                 ::error-message])))]
+                   (assert (and (::error-message msg)
+                                (::success-message msg))
+                           (str "Message for mutation: " k
+                                " did not have both " ::error-message
+                                " and " ::success-message
+                                " Message was: " msg))
+                   (assert (= 2 (count (keys msg)))
+                           (str "Message for mutation: " k
+                                " had more keys than error and success messages."
+                                " This is probably a typo. Check it out."))
+                   (dissoc msg (if success? ::error-message ::success-message))))]
+         (update-action
+           (mutate env k p)
+           (fn [action]
+             (fn []
+               (try
+                 (let [ret (action)]
+                   (assert (or (nil? ret) (map? ret))
+                           (str "Returned something from action: " k
+                                " but it was not a map. Was: " ret
+                                " Can only return maps from actions."))
+                   (cond-> {::mutation-message (x->message ret)}
+                           (map? ret)
+                           (merge ret)))
+                 (catch ExceptionInfo ex
+                   (throw (ex-info (medley/ex-message ex)
+                                   (assoc (ex-data ex)
+                                     ::mutation-message (x->message ex)))))
+                 (catch Throwable e
+                   (throw (ex-info (.getMessage e)
+                                   {:cause             e
+                                    ::mutation-message (x->message e)})))))))))))
+
+(defn current-millisecond []
+  #?(:clj (System/currentTimeMillis)
+     :cljs (system-time)))
+
+(defn client-mutate-creation-time [mutate]
+  (fn [env k p]
+    (assoc-ast-param env
+                     (mutate env k p)
+                     ::created-at
+                     (or (::created-at p) (current-millisecond)))))
+
+(defn server-mutate-creation-time-env [mutate]
+  (fn [env k p]
+    (mutate (assoc env ::created-at (::created-at p)) k (dissoc p ::created-at))))
+
+(defn mutate-with-tx-meta [mutate]
+  (fn [env k p]
+    {:pre [(::created-at env)]}
+    (let [tx-meta {::created-at (::created-at env)}]
+      (mutate (assoc env :tx-meta tx-meta) k p))))
 
 (def ^:dynamic *parser-allow-remote* true)
 (def ^:dynamic *parser-allow-local-read* true)
@@ -376,6 +404,7 @@
                               (with-elided-paths (delay (client-parser (assoc state :elide-paths true)))))))
                 (fn [mutate {:keys [elide-paths] :as state}]
                   (-> mutate
+                      client-mutate-creation-time
                       mutate-with-db-before-mutation
                       wrap-datascript-db
                       (cond-> (not elide-paths)
@@ -403,6 +432,8 @@
                          wrap-datomic-db))
                    (fn [mutate state]
                      (-> mutate
+                         mutate-with-tx-meta
+                         server-mutate-creation-time-env
                          with-mutation-message
                          mutate-without-history-id-param
                          wrap-datomic-db))))))

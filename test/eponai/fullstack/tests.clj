@@ -2,14 +2,15 @@
   (:require [om.next :as om]
             [om.util]
             [eponai.common.database.pull :as pull]
+            [eponai.common.parser :as parser]
             [taoensso.timbre :refer [info debug error]]
             [clojure.data :as diff]
-            [clojure.pprint :as pp]
             [datascript.core :as datascript]
             [eponai.fullstack.framework :as fw]
             [eponai.fullstack.jvmclient :refer [JvmRoot]]
             [clojure.test :as test]
-            [eponai.fullstack.utils :as fs.utils])
+            [eponai.fullstack.utils :as fs.utils]
+            [aprint.dispatch :as adispatch])
   (:import (org.eclipse.jetty.server Server)))
 
 (defn- app-state [reconciler]
@@ -56,6 +57,8 @@
 (defmethod print-method om.next.Reconciler [x writer]
   (print-method (str "[Reconciler id=[" (get-in x [:config :id-key]) "]]") writer))
 
+(defmethod adispatch/color-dispatch om.next.Reconciler [x]
+  (adispatch/color-dispatch [(str "Reconciler" :id-key (get-in x [:config :id-key]))]))
 
 (defn test-system-setup [server clients]
   {:label   "System setup should always have a running server."
@@ -104,10 +107,11 @@
             (entity client [:transaction/uuid (:transaction/uuid tx)])))
      (update-fn (:transaction/amount tx))))
 
-(defn transaction-edit [client tx update-fn]
+(defn transaction-edit [client tx update-fn & [extra-params]]
   (fn []
     [client
-     `[(transaction/edit ~(update-transaction-amount client tx update-fn))]]))
+     `[(transaction/edit ~(merge (update-transaction-amount client tx update-fn)
+                                 extra-params))]]))
 
 (defn test-edit-transaction [_ [client1 :as clients]]
   (let [tx (new-transaction client1)]
@@ -129,28 +133,25 @@
                                       (.join server))
                 ::fw/asserts     #(do (assert (test/is (not (.isRunning server))))
                                       (every? (partial has-transaction? tx) clients))}
-               {::fw/transaction (transaction-edit client1 tx c1-edit)
+               {::fw/transaction (transaction-edit client1 tx c1-edit {::parser/created-at 3000})
                 ::fw/asserts     #(do (assert (has-edit? tx c1-edit client1))
                                       (assert (not (has-edit? tx c1-edit client2))))}
-               {::fw/transaction (transaction-edit client2 tx c2-edit)
+               {::fw/transaction (transaction-edit client2 tx c2-edit {::parser/created-at 7000})
                 ::fw/asserts     #(do (assert (has-edit? tx c2-edit client2))
                                       (assert (not (has-edit? tx c2-edit client1))))}
                {::fw/transaction   #(.start server)
                 ::fw/await-clients [client1 client2]
                 ::fw/sync-clients! true
-                ;; TODO: Introduce a conflict, where c1 happens before c2.
-                ;; TODO: Implement conflict resolution.
-                ;; OR: Implement this in such a way where each client has a server each?
-                ::fw/asserts       #(do (not-any? (partial has-edit? tx c1-edit) clients)
-                                        (every? (partial has-edit? tx c2-edit) clients))}]}))
+                ::fw/asserts       #(do (assert (not-any? (partial has-edit? tx c1-edit) clients))
+                                        (assert (every? (partial has-edit? tx c2-edit) clients)))}]}))
 
 (defn run []
   (fs.utils/with-less-loud-logger
     #(do (fw/run-tests (->> [
-                            ; test-system-setup
-                            ;test-create-transaction
-                             ;; test-edit-transaction
-                            ;test-create-transaction-offline
+                             ;test-system-setup
+                             ;test-create-transaction
+                             ;test-edit-transaction
+                             ;test-create-transaction-offline
                              test-edit-transaction-offline
                              ;; test-create+edit-transaction-offline -> sync should see create+edit.
                             ]

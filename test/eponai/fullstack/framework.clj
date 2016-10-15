@@ -228,8 +228,7 @@
     (error "Test failures: "
            (->> has-failures
                 (into [] (map #(update % :result dissoc ::successes))))))
-  (info "Test results:" (result-summary end-result))
-  (prn "Test results:" (result-summary end-result)))
+  (info "Test results:" (result-summary end-result)))
 
 (defn run-tests [test-fns]
   (let [system (reduce (fn [system test]

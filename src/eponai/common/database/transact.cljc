@@ -57,17 +57,17 @@
   (doseq [schema schemas]
     (transact conn schema)))
 
-;; --------------------------------------------
-;; -- Datomic to datascript temp-id conversion
+;; ----------------------------------------------------------
+;; -- Datomic to datascript temp-id conversion for jvmclient
 
 #?(:clj
    (def datomic-tempid-type (type (datomic/tempid :db.part/user))))
 #?(:clj
-   (def datomic-tempid-keys (keys (datomic/tempid :db.part/user))))
+   (def datomic-tempid-keys (set (keys (datomic/tempid :db.part/user)))))
 
 #?(:clj
    (defn datomic-id->datascript-id [tempid]
-     (assert (= [:part :idx] datomic-tempid-keys)
+     (assert (= #{:part :idx} datomic-tempid-keys)
              (str "Implementation of datomic tempid has changed."
                   " Keys are now: " datomic-tempid-type))
      (datascript/tempid (:part tempid))))

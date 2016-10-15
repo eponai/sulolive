@@ -10,6 +10,7 @@
                  [clj-http "3.3.0"]
                  [clj-time "0.11.0"]
                  [compojure "1.5.1"]
+                 [aprint "0.1.3"]
                  [com.cemerick/friend "0.2.1"
                   :exclusions [org.clojure/core.cache]]
                  [com.cemerick/url "0.1.1"]

@@ -28,7 +28,7 @@
 ;; ------------------- Transaction --------------------
 
 (defmutation transaction/create
-  [{:keys [state auth] :as env} k {:keys [transaction/title] :as input-transaction}]
+  [{:keys [state auth tx-meta] :as env} k {:keys [transaction/title] :as input-transaction}]
   {:success (str "Created transaction " title)
    :error   (str "Error creating transaction " title)}
   {:action (fn []
