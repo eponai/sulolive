@@ -34,13 +34,14 @@
   Object
   (render [this]
     (let [{:keys [selected]} (om/get-state this)
-          {:keys [value options]} (om/props this)]
+          {:keys [value options disabled]} (om/props this)]
       (js/React.createElement
         js/Select.Creatable
         (clj->js
           {:value             (clj->js (or selected value))
            :placeholder       "e.g. food"
            :options           (clj->js options)
+           :disabled          disabled
            :multi             true
            :clearable         false
            :noResultsText     ""
