@@ -3,7 +3,7 @@
             [eponai.client.route-helper :as route-helper]
             [eponai.web.routes :as routes]
             [eponai.web.routes.ui-handlers :as ui-handlers]
-            [eponai.web.ui.all-transactions :refer [AllTransactions]]
+            [eponai.web.ui.project.all-transactions :refer [AllTransactions]]
             [eponai.web.ui.utils :as utils]
             [eponai.common.parser :as parser]
             [om.next :as om]

@@ -1,7 +1,7 @@
-(ns eponai.web.ui.dashboard
+(ns eponai.web.ui.project.dashboard
   (:require
     [eponai.common.report :as report]
-    [eponai.web.ui.all-transactions :refer [Transaction]]
+    [eponai.web.ui.project.all-transactions :refer [Transaction]]
     [eponai.web.ui.d3.balance-chart :as bc]
     [eponai.web.ui.d3.pie-chart :as pc]
     [eponai.web.ui.icon :as icon]
@@ -26,9 +26,11 @@
       (debug "Balance: " balance-report)
       (html
         [:div#dashboard
-         [:div.dashboard-section
+         [:div.content-section
+          [:div.row.section-title
+           [:span "Summary"]]
           [:div.row
-           [:a.button.black
+           [:a.button.black.hollow
             "September"
             ;[:i.fa.fa-caret-down.fa-fw]
             ]]
@@ -50,7 +52,7 @@
                             :value (- limit spent)
                             :limit limit})]]]
 
-         [:div.dashboard-section
+         [:div.content-section
           [:div.row.section-title
            (icon/dashboard-balance)
            [:span "Balance vs Spent"]]
@@ -72,7 +74,7 @@
             [:div.val-txt "53.13"]
             [:div.title-txt "By Oct 31"]]]]
 
-         [:div.dashboard-section
+         [:div.content-section
           [:div.row.column
            [:div.section-title
             (icon/dashboard-categories)

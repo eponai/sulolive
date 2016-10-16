@@ -1,4 +1,4 @@
-(ns eponai.web.ui.all-transactions
+(ns eponai.web.ui.project.all-transactions
   (:require
     [cljs-time.core :as time]
     [cljs.reader :as reader]
@@ -7,7 +7,7 @@
     [eponai.client.lib.transactions :as lib.t]
     [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
     [eponai.common.format.date :as date]
-    [eponai.web.ui.add-transaction :refer [->AddTransaction AddTransaction]]
+    [eponai.web.ui.project.add-transaction :refer [->AddTransaction AddTransaction]]
     [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.ui.utils :as utils]
     [eponai.web.ui.utils.filter :as filter]

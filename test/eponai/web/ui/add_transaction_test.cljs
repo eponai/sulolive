@@ -1,5 +1,5 @@
 (ns eponai.web.ui.add-transaction-test
-  (:require [eponai.web.ui.all-transactions :as transactions]
+  (:require [eponai.web.ui.project.all-transactions :as transactions]
             [datascript.core :as d]
             [eponai.common.datascript :as common.datascript]
             [eponai.web.parser.mutate]

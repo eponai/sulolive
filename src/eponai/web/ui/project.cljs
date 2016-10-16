@@ -2,9 +2,10 @@
   (:require
     [eponai.client.ui :refer-macros [opts]]
     [eponai.web.routes :as routes]
-    [eponai.web.ui.add-transaction :refer [->AddTransaction AddTransaction]]
-    [eponai.web.ui.all-transactions :refer [->AllTransactions AllTransactions]]
-    [eponai.web.ui.dashboard :refer [->Dashboard Dashboard]]
+    [eponai.web.ui.project.add-transaction :refer [->AddTransaction AddTransaction]]
+    [eponai.web.ui.project.all-transactions :refer [->AllTransactions AllTransactions]]
+    [eponai.web.ui.project.settings :refer [->ProjectSettings ProjectSettings]]
+    [eponai.web.ui.project.dashboard :refer [->Dashboard Dashboard]]
     [eponai.web.ui.utils :as utils]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
@@ -48,7 +49,7 @@
 
 (def content->component {:dashboard    {:factory ->Dashboard :component Dashboard}
                          :transactions {:factory ->AllTransactions :component AllTransactions}
-                         :settings     {:factory ->Settings :component Settings}})
+                         :settings     {:factory ->ProjectSettings :component ProjectSettings}})
 
 (comment
   ;; Figure out if we still want to do this

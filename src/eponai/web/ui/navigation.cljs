@@ -2,7 +2,7 @@
   (:require
     [datascript.core :as d]
     [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
-    [eponai.web.ui.add-transaction :refer [->AddTransaction AddTransaction]]
+    [eponai.web.ui.project.add-transaction :refer [->AddTransaction AddTransaction]]
     [eponai.web.ui.settings :refer [->Settings Settings]]
     [eponai.web.ui.icon :as icon]
     [eponai.web.ui.utils :as utils]
@@ -172,7 +172,6 @@
     {:menu-visible?                     false
      :new-transaction?                  false
      :add-widget?                       false
-     :settings-open? true
      :computed/add-transaction-on-close #(om/update-state! this assoc :new-transaction? false)})
 
   (render [this]

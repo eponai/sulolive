@@ -1,4 +1,4 @@
-(ns eponai.web.ui.add-transaction
+(ns eponai.web.ui.project.add-transaction
   (:require
     [cljsjs.moment]
     [cljsjs.pikaday]
