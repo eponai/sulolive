@@ -57,27 +57,18 @@
       {:computed/date-range-picker-on-apply #(do (om/update-state! this assoc-in
                                                                    [:input-transaction
                                                                     :transaction/date] %)
-                                                 (.save-edit this))
-       :on-deselect-fn #(.deselect this %)}
+                                                 (.deselect this))
+       :on-deselect-fn #(.on-mouse-event this %)}
       (utils/props->init-state this (om/props this))))
 
   (componentWillReceiveProps [this props]
     (utils/sync-with-received-props this props))
 
-  (add-tag [this tag]
-    (om/update-state! this (fn [st]
-                             (-> st
-                                 (assoc :input-tag ""
-                                        :add-tag? false)
-                                 (update-in [:input-transaction :transaction/tags] #(utils/add-tag % tag))))))
-  (delete-tag [this tag]
-    (om/update-state! this update-in [:input-transaction :transaction/tags] #(utils/delete-tag % tag)))
-
   (save-edit [this]
     (let [{:keys [input-transaction
                   init-state]} (om/get-state this)
           diff (diff/diff init-state input-transaction)
-          added-tags (or (:transaction/tags (second diff)) [])
+          ;added-tags (or (:transaction/tags (second diff)) [])
           removed-tags (or (filter some? (:transaction/tags (first diff))) [])
           ]
       ;; Transact only when we have a diff to avoid unecessary mutations.
@@ -102,29 +93,30 @@
         (om/update-state! this assoc :is-selected? true)
         (.. js/document (addEventListener "click" on-deselect-fn)))))
 
-  (deselect [this event]
+  (on-mouse-event [this event]
     (let [{:keys [input-transaction is-selected? on-deselect-fn]} (om/get-state this)
           transaction-id (str (:db/id input-transaction))
           should-deselect? (not (some #(= (.-id %) transaction-id) (.-path event)))]
-      (debug "Unselect event: " should-deselect?)
       (when should-deselect?
+        (.. js/document (removeEventListener "click" on-deselect-fn))
         (when is-selected?
-          (om/update-state! this assoc :is-selected? false))
-        (.. js/document (removeEventListener "click" on-deselect-fn)))))
+          (.deselect this)))))
 
+  (deselect [this]
+    (.save-edit this)
+    (om/update-state! this assoc :is-selected? false))
   (render [this]
-    (let [{:keys [input-transaction input-tag]} (om/get-state this)
+    (let [{:keys [input-transaction]} (om/get-state this)
           {:keys [db/id
                   transaction/date
                   transaction/currency
                   transaction/amount
-                  transaction/uuid
                   transaction/type
                   transaction/conversion
                   transaction/title]
            :as   transaction} (or input-transaction (om/props this))
           {:keys [computed/date-range-picker-on-apply is-selected?]} (om/get-state this)
-          {:keys [user on-tag-click currencies all-tags]} (om/get-computed this)]
+          {:keys [currencies all-tags]} (om/get-computed this)]
       (dom/li
         #js {:className    (str "row collapse align-middle" (when is-selected? " is-selected"))
              :id (str id)
@@ -165,7 +157,7 @@
                  :onChange  #(om/update-state! this assoc-in [:input-transaction :transaction/title] (.-value (.-target %)))
                  :onKeyDown #(utils/on-enter-down % (fn [_]
                                                       (.blur (.-target %))))
-                 :onBlur    #(.save-edit this)}))
+                 :onBlur    #(.deselect this)}))
 
         ;; Tags
         (dom/div
@@ -184,8 +176,8 @@
                                                                          (map (fn [t]
                                                                                 {:tag/name (:label t)})
                                                                               selected))
-                                                       (.save-edit this))
-                                          })))
+                                                       )
+                                          :onClur #(.deselect this)})))
 
         ;; Amount in local currency
         (dom/div
@@ -212,7 +204,7 @@
                                 ;;       to fix UI issues when there are less than 2 decimals.
                                 (when (not= val (two-decimal-string val))
                                   (om/update-state! this assoc-in [:input-transaction :transaction/amount] (two-decimal-string val))))
-                              (.save-edit this))}))
+                              (.deselect this))}))
         (dom/div
           #js {:className "currency"}
 
@@ -223,7 +215,7 @@
                                                      currencies)}
                                      {:on-select (fn [selected]
                                                    (om/update-state! this assoc-in [:input-transaction :transaction/currency] (:value selected))
-                                                   (.save-edit this))})))
+                                                   (.deselect this))})))
         ))))
 
 (def ->Transaction (om/factory Transaction {:keyfn :db/id}))
