@@ -105,64 +105,66 @@
          [:div.content
 
 
-          [:div.row
-           [:div.columns.small-3.text-right
-            [:label "Date:"]]
+          [:div.content-section
+           [:div.row
+            [:div.columns.small-3.text-right
+             [:label "Date:"]]
 
-           [:div.columns.small-4.end
-            (->Datepicker
-              (opts {:key         [::date-picker]
-                     :value       date
-                     :on-change   #(om/update-state! this assoc-in [:input-transaction :transaction/date] %)
-                     :input-only? true}))]]
+            [:div.columns.small-4.end
+             (->Datepicker
+               (opts {:key         [::date-picker]
+                      :value       date
+                      :on-change   #(om/update-state! this assoc-in [:input-transaction :transaction/date] %)
+                      :input-only? true}))]]
 
-          [:div.row
-           [:div.columns.small-3.text-right
-            [:label "Amount:"]]
-           [:div.columns.small-4
-            [:input
-             {:type        "number"
-              :min         "0"
-              :placeholder "0.00"
-              :on-change   #(om/update-state! this assoc-in [:input-transaction :transaction/amount] (.. % -target -value))}]]
-           [:div.columns.small-2.text-right
-            [:label "Currency:"]]
-           [:div.columns.small-3
-            (sel/->Select (om/computed {:options   (map (fn [{:keys [currency/code db/id]}]
-                                                        {:label code
-                                                         :value id})
-                                                      all-currencies)
-                                        :value currency}
-                                       {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/currency] %)}))]]
-          [:div.row
-           [:div.columns.small-3.text-right
-            [:label "Category:"]]
-           [:div.columns.small-9
-            [:input
-             {:type "text"}]]]
+           [:div.row
+            [:div.columns.small-3.text-right
+             [:label "Amount:"]]
+            [:div.columns.small-4
+             [:input
+              {:type        "number"
+               :min         "0"
+               :placeholder "0.00"
+               :on-change   #(om/update-state! this assoc-in [:input-transaction :transaction/amount] (.. % -target -value))}]]
+            [:div.columns.small-2.text-right
+             [:label "Currency:"]]
+            [:div.columns.small-3
+             (sel/->Select (om/computed {:options (map (fn [{:keys [currency/code db/id]}]
+                                                         {:label code
+                                                          :value id})
+                                                       all-currencies)
+                                         :value   currency}
+                                        {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/currency] %)}))]]
+           [:div.row
+            [:div.columns.small-3.text-right
+             [:label "Category:"]]
+            [:div.columns.small-9
+             [:input
+              {:type "text"}]]]
 
-          [:div.row
-           [:div.columns.small-3.text-right
-            [:label "Tags:"]]
-           [:div.columns.small-9
-            (sel/->SelectTags (om/computed {:options        (map (fn [{:keys [tag/name db/id]}]
-                                                                    {:label name
-                                                                     :value id})
-                                                                  all-tags)
-                                             :value          #js []}
-                                       {:on-select     #(om/update-state! this assoc-in [:input-transaction :transaction/tags] %)}))
-            ]]
+           [:div.row
+            [:div.columns.small-3.text-right
+             [:label "Tags:"]]
+            [:div.columns.small-9
+             (sel/->SelectTags (om/computed {:options (map (fn [{:keys [tag/name db/id]}]
+                                                             {:label name
+                                                              :value id})
+                                                           all-tags)
+                                             :value   #js []}
+                                            {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/tags] %)}))
+             ]]
 
-          [:div.row
-           [:div.columns.small-3.text-right
-            [:label "Note:"]]
-           [:div.columns.small-9
-            [:textarea
-             {:type "text"}]]]
+           [:div.row
+            [:div.columns.small-3.text-right
+             [:label "Note:"]]
+            [:div.columns.small-9
+             [:textarea
+              {:type "text"}]]]]
 
-          [:a.button.float-right
-           {:on-click #(.add-transaction this)}
-           "Save"]]]))))
+          [:div.content-section.clearfix
+           [:a.button.float-right
+            {:on-click #(.add-transaction this)}
+            "Save"]]]]))))
 
 ;(defui AddTransaction
 ;  static om/IQuery

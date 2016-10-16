@@ -35,6 +35,16 @@
       (om/update-state! this assoc :input-currency (-> current-user
                                                        :user/currency
                                                        :currency/code))))
+  (save-settings [this]
+    (let [{:keys [query/current-user]} (om/props this)
+          {:keys [input-currency]} (om/get-state this)
+          {:keys [on-close]} (om/get-computed this)]
+      (om/transact! this `[(settings/save ~{:currency input-currency
+                                            :user     current-user})
+                           :query/dashboard
+                           :query/transactions])
+      (when on-close
+        (on-close))))
   (render [this]
     (let [{:keys [query/current-user
                   query/all-currencies
@@ -67,67 +77,71 @@
             "Payment"]]]
 
          (cond (= tab :general)
-           [:div.content.clearfix
-            [:div.row
-             [:div.column.small-4.text-right
-              [:label "Email:"]]
-             [:div.column.small-6
-              [:strong email]]]
+           [:div.content.general
+            [:div.content-section
+             [:div.row.email
+              [:div.column.small-4
+               [:label "Email"]]
+              [:div.column.small-8.text-right
+               [:strong email]]]]
+            [:div.content-section
+             [:div.row.name
+              [:div.column.small-4
+               [:label "Name"]]
+              [:div.column.small-6.small-offset-2
+               [:input
+                {:value (or user-name "")
+                 :type  "text"}]]]]
 
-            [:div.row
-             [:div.column.small-4.text-right
-              [:label "Name:"]]
-             [:div.column.small-6
-              [:input
-               {:value (or user-name "")
-                :type  "text"}]]]
-
-            [:div.row
-             [:div.column.small-4.text-right
-              [:label "Main Currency:"]]
-             [:div.column.small-3
-              (sel/->Select (om/computed
-                              {:value   {:label (:currency/code (:user/currency current-user))
-                                         :value (:db/id (:user/currency current-user))}
-                               :options (map (fn [{:keys [currency/code db/id]}]
-                                               {:label code
-                                                :value id})
-                                             all-currencies)}
-                              {:on-select #(om/update-state! this assoc :input-currency (:label %))}))]
-             ]
-            [:a.button.float-right
-             {:on-click #(om/transact! this `[(settings/save ~{:currency input-currency
-                                                               :user     current-user})
-                                              :query/dashboard
-                                              :query/transactions])}
-             [:span.small-caps "Save"]]]
+            [:div.content-section
+             [:div.row
+              [:div.column.small-4
+               [:label "Main Currency"]]
+              [:div.column.small-3.small-offset-5.text-right
+               [:div.text-left
+                (sel/->Select (om/computed
+                                {:value   {:label (:currency/code (:user/currency current-user))
+                                           :value (:db/id (:user/currency current-user))}
+                                 :options (map (fn [{:keys [currency/code db/id]}]
+                                                 {:label code
+                                                  :value id})
+                                               all-currencies)}
+                                {:on-select #(om/update-state! this assoc :input-currency (:label %))}))]]
+              ]]
+            [:div.content-section.clearfix
+             [:a.button.float-right
+              {:on-click #(.save-settings this)}
+              [:span.small-caps "Save"]]]]
 
                (= tab :social)
                [:div.content
-                [:div.row
-                 [:div.column.small-4
-                  [:label "Facebook"]]
-                 [:div.column.small-8.text-right
-                  (if (nil? fb-user)
-                    [:a.button.facebook [:i.fa.fa-facebook.fa-fw] "Connect to Facebook"]
-                    [:div.row.collapse.align-middle
-                     [:div.column.small-10.text-right
-                      [:div (:fb-user/name fb-user)]
-                      [:a.link [:small "disconnect"]]]
-                     [:div.column.small-2.text-left
-                      [:img.avatar {:src (:fb-user/picture fb-user)}]]])]]
+                [:div.content-section.facebook
+                 [:div.row
+                  [:div.column.small-4
+                   [:label "Facebook"]]
+                  [:div.column.small-8.text-right
+                   (if (nil? fb-user)
+                     [:a.button.facebook [:i.fa.fa-facebook.fa-fw] "Connect to Facebook"]
+                     [:div.row.collapse.align-middle
+                      [:div.column.small-10.text-right
+                       [:div (:fb-user/name fb-user)]
+                       [:a.link [:small "disconnect"]]]
+                      [:div.column.small-2.text-left
+                       [:img.avatar {:src (:fb-user/picture fb-user)}]]])]]]
 
-                [:div.row.twitter
-                 [:div.column.small-4
-                  [:label "Twitter"]]
-                 [:div.column.small-8.text-right
-                  [:a.button.twitter [:i.fa.fa-twitter.fa-fw] "Connect to Twitter"]]]
+                [:div.content-section.twitter
+                 [:div.row
+                  [:div.column.small-4
+                   [:label "Twitter"]]
+                  [:div.column.small-8.text-right
+                   [:a.button.twitter [:i.fa.fa-twitter.fa-fw] "Connect to Twitter"]]]]
 
-                [:div.row.google
-                 [:div.column.small-4
-                  [:label "Google+"]]
-                 [:div.column.small-8.text-right
-                  [:a.button.google [:i.fa.fa-google.fa-fw] "Connect to Google+"]]]]
+                [:div.content-section.twitter
+                 [:div.row
+                  [:div.column.small-4
+                   [:label "Google+"]]
+                  [:div.column.small-8.text-right
+                   [:a.button.google [:i.fa.fa-google.fa-fw] "Connect to Google+"]]]]]
 
 
                (= tab :payment)

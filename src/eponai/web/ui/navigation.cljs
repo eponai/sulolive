@@ -223,7 +223,8 @@
                        "Sign Out"]]]]]))])]
 
           (when settings-open?
-            (utils/modal {:content (->Settings settings)
+            (utils/modal {:content  (->Settings (om/computed settings
+                                                             {:on-close #(om/update-state! this assoc :settings-open? false)}))
                           :on-close #(om/update-state! this assoc :settings-open? false)}))
           (when new-transaction?
             (utils/modal {:content  (->AddTransaction
