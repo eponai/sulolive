@@ -3,6 +3,7 @@
     [datascript.core :as d]
     [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
     [eponai.web.ui.add-transaction :refer [->AddTransaction AddTransaction]]
+    [eponai.web.ui.settings :refer [->Settings Settings]]
     [eponai.web.ui.icon :as icon]
     [eponai.web.ui.utils :as utils]
     [eponai.web.routes :as routes]
@@ -160,6 +161,7 @@
   static om/IQuery
   (query [_]
     [{:proxy/add-transaction (om/get-query AddTransaction)}
+     {:proxy/settings (om/get-query Settings)}
      {:query/current-user [:user/uuid
                            :user/email]}
      {:query/stripe [:stripe/user
@@ -170,16 +172,18 @@
     {:menu-visible?                     false
      :new-transaction?                  false
      :add-widget?                       false
+     :settings-open? true
      :computed/add-transaction-on-close #(om/update-state! this assoc :new-transaction? false)})
 
   (render [this]
     (let [{:keys [proxy/add-transaction
+                  proxy/settings
                   query/current-user
                   query/stripe]} (om/props this)
           {:keys [menu-visible?
                   new-transaction?
+                  settings-open?
                   computed/add-transaction-on-close]} (om/get-state this)
-          {:keys [on-sidebar-toggle]} (om/get-computed this)
           {:keys [stripe/subscription]} stripe
           {subscription-status :stripe.subscription/status} subscription]
       (html
@@ -205,8 +209,9 @@
                    [:ul.menu.dropdown.vertical
                     [:li
                      [:a
-                      {:href     (routes/key->route :route/settings)
-                       :on-click on-close}
+                      {:on-click #(om/update-state! this assoc
+                                   :settings-open? true
+                                   :menu-visible? false)}
                       [:span "Settings"]]]
                     [:li [:hr]]
                     [:li
@@ -217,6 +222,9 @@
                       [:small
                        "Sign Out"]]]]]))])]
 
+          (when settings-open?
+            (utils/modal {:content (->Settings settings)
+                          :on-close #(om/update-state! this assoc :settings-open? false)}))
           (when new-transaction?
             (utils/modal {:content  (->AddTransaction
                                       (om/computed add-transaction

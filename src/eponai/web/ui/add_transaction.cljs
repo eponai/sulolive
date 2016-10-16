@@ -75,7 +75,7 @@
          [:h4.header "New Transaction"]
          [:div.top-bar-container.subnav
           [:div.top-bar
-           [:div.top-bar-left.type-menu
+           [:div.top-bar-left.menu
             [:a
              {:class    (when (= type :expense) "active")
               :on-click #(om/update-state! this (fn [st]
