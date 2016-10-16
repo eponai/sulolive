@@ -232,10 +232,10 @@
   the new-db."
   [query db-when-query-was-created new-db]
   ;; mutation may have been updated in the mutation queue.
-  (let [unique-attributes (into #{}
-                                (comp (filter #(contains? (val %) :db/unique))
-                                      (map key))
-                                (:schema new-db))
+  (let [unique-attributes (delay (into #{}
+                                       (comp (filter #(contains? (val %) :db/unique))
+                                             (map key))
+                                       (:schema new-db)))
         old-id->new-id (fn [old-db id]
                          (cond
                            ;; Entity hasn't changed between old and new db.
@@ -246,7 +246,7 @@
                            id
                            :else
                            (let [old-entity (d/entity old-db id)
-                                 unique-attrs (into [] (comp (filter unique-attributes)
+                                 unique-attrs (into [] (comp (filter @unique-attributes)
                                                              (map (juxt identity #(get old-entity %))))
                                                     (keys old-entity))
                                  new-eid (pull/one-with new-db
