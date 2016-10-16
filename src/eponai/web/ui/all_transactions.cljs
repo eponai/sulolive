@@ -35,6 +35,7 @@
 (defn two-decimal-string [s]
   (gstring/format "%.2f" (str s)))
 
+
 ;; ################### Om next components ###################
 
 (defui Transaction
@@ -56,7 +57,8 @@
       {:computed/date-range-picker-on-apply #(do (om/update-state! this assoc-in
                                                                    [:input-transaction
                                                                     :transaction/date] %)
-                                                 (.save-edit this))}
+                                                 (.save-edit this))
+       :on-deselect-fn #(.deselect this %)}
       (utils/props->init-state this (om/props this))))
 
   (componentWillReceiveProps [this props]
@@ -77,20 +79,9 @@
           diff (diff/diff init-state input-transaction)
           added-tags (or (:transaction/tags (second diff)) [])
           removed-tags (or (filter some? (:transaction/tags (first diff))) [])
-          ;diff (lib.t/diff-transaction input-transaction init-state)
           ]
       ;; Transact only when we have a diff to avoid unecessary mutations.
-      (debug "Saving edit. Diff: " diff)
-      (debug "Added: " added-tags)
-      (debug "Removed: " removed-tags)
-      (debug "Diff tags: " (vec (concat
-                                  (map (fn [t]
-                                         (assoc t :tag/status :added))
-                                       added-tags)
-                                  (map (fn [t]
-                                         (assoc t :tag/status :deleted))
-                                       removed-tags))))
-      (when (seq diff)
+      (when-not (= diff [nil nil init-state])
         ;(debug "Delete tag Will transacti diff: " diff)
         (om/transact! this `[(transaction/edit ~(-> (second diff)
                                                     (update :transaction/tags (fn [tags]
@@ -104,6 +95,22 @@
                              ;; TODO: Are all these needed?
                              ;; Copied from AddTransaction.
                              :routing/project]))))
+  (select [this]
+    (let [{:keys [is-selected? on-deselect-fn]} (om/get-state this)]
+      (debug "Select: " on-deselect-fn)
+      (when-not is-selected?
+        (om/update-state! this assoc :is-selected? true)
+        (.. js/document (addEventListener "click" on-deselect-fn)))))
+
+  (deselect [this event]
+    (let [{:keys [input-transaction is-selected? on-deselect-fn]} (om/get-state this)
+          transaction-id (str (:db/id input-transaction))
+          should-deselect? (not (some #(= (.-id %) transaction-id) (.-path event)))]
+      (debug "Unselect event: " should-deselect?)
+      (when should-deselect?
+        (when is-selected?
+          (om/update-state! this assoc :is-selected? false))
+        (.. js/document (removeEventListener "click" on-deselect-fn)))))
 
   (render [this]
     (let [{:keys [input-transaction input-tag]} (om/get-state this)
@@ -116,13 +123,12 @@
                   transaction/conversion
                   transaction/title]
            :as   transaction} (or input-transaction (om/props this))
-          {:keys [computed/date-range-picker-on-apply hovered?]} (om/get-state this)
+          {:keys [computed/date-range-picker-on-apply is-selected?]} (om/get-state this)
           {:keys [user on-tag-click currencies all-tags]} (om/get-computed this)]
       (dom/li
-        #js {:className    (str "row collapse align-middle" (if hovered? " is-hovered" " is-disabled"))
-             :onMouseMove  #(when-not hovered?
-                             (om/update-state! this assoc :hovered? true))
-             :onMouseLeave #(om/update-state! this assoc :hovered? false)}
+        #js {:className    (str "row collapse align-middle" (when is-selected? " is-selected"))
+             :id (str id)
+             :onClick #(.select this)}
         ;; Amount in main currency
         (dom/div
           #js {:className "amount"}
@@ -147,8 +153,7 @@
           #js {:className "category"}
           (sel/->Select {:value {:label "Housing" :value 1}
                          :options [{:label "Housing" :value 1}
-                                   {:label "Transport" :value 2}]
-                         :disabled (not hovered?)}))
+                                   {:label "Transport" :value 2}]}))
 
         ;; Title
         (dom/div
@@ -172,8 +177,7 @@
                                           :options  (map (fn [t]
                                                            {:label (:tag/name t)
                                                             :value (:db/id t)})
-                                                         all-tags)
-                                          :disabled (not hovered?)}
+                                                         all-tags)}
                                          {:on-select (fn [selected]
                                                        (om/update-state! this assoc-in
                                                                          [:input-transaction :transaction/tags]
@@ -216,8 +220,7 @@
                                       :options  (map (fn [c]
                                                        {:label (:currency/code c)
                                                         :value (:db/id c)})
-                                                     currencies)
-                                      :disabled (not hovered?)}
+                                                     currencies)}
                                      {:on-select (fn [selected]
                                                    (om/update-state! this assoc-in [:input-transaction :transaction/currency] (:value selected))
                                                    (.save-edit this))})))
