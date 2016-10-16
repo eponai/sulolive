@@ -1,21 +1,25 @@
 (ns eponai.client.backend
   (:require [eponai.common.parser.util :as parser.util]
+            [eponai.common.database.pull :as pull]
             [eponai.client.utils :as client.utils]
             [datascript.impl.entity :as e]
             [om.next :as om]
             [cognitect.transit :as transit]
             [datascript.core :as d]
             [clojure.set :as set]
+            [clojure.walk :as walk]
             [medley.core :as medley]
-            [taoensso.timbre :as timbre #?(:clj :refer :cljs :refer-macros) [debug error trace warn]]
+            [taoensso.timbre :as timbre #?(:clj :refer :cljs :refer-macros) [debug error trace warn info]]
     #?@(:clj
-        [[clojure.core.async :as async :refer [go <! >! chan timeout]]
-         [clj-http.client :as http]
-         [clojure.edn :as reader]]
+        [
+            [clojure.core.async :as async :refer [go <! >! chan timeout]]
+            [clj-http.client :as http]
+            [clojure.edn :as reader]]
         :cljs
         [[cljs.core.async :as async :refer [<! >! chan timeout]]
          [cljs-http.client :as http]
-         [cljs.reader :as reader]]))
+         [cljs.reader :as reader]])
+            [eponai.common.datascript :as common.datascript])
   #?(:cljs (:require-macros [cljs.core.async.macros :refer [go]]))
   #?(:clj (:import [datascript.impl.entity Entity]
                    [java.util UUID]))
@@ -223,12 +227,67 @@
       (let [parsed (parser env [mutation] remote-key)]
         (some? (seq parsed))))))
 
+(defn update-query-ids
+  "Update :db/id's in the query from the db when the query was created to :db/id's in
+  the new-db."
+  [query db-when-query-was-created new-db]
+  ;; mutation may have been updated in the mutation queue.
+  (let [unique-attributes (into #{}
+                                (comp (filter #(contains? (val %) :db/unique))
+                                      (map key))
+                                (:schema new-db))
+        old-id->new-id (fn [old-db id]
+                         (cond
+                           ;; Entity hasn't changed between old and new db.
+                           ;; return the same eid.
+                           (common.datascript/entity-equal? old-db new-db id)
+                           id
+                           (not (common.datascript/has-id? old-db id))
+                           id
+                           :else
+                           (let [old-entity (d/entity old-db id)
+                                 unique-attrs (into [] (comp (filter unique-attributes)
+                                                             (map (juxt identity #(get old-entity %))))
+                                                    (keys old-entity))
+                                 new-eid (pull/one-with new-db
+                                                        {:where   '[[?e ?attr ?val]]
+                                                         :symbols {'[[?attr ?val] ...] unique-attrs}})]
+                             (if (nil? new-eid)
+                               (warn "Unable to find a new eid for id: " id
+                                     " entity: " (into {} old-entity)
+                                     ". Returning the old id")
+                               (debug "Found new id: " new-eid " for id: " id))
+                             (or new-eid id))))
+        target :alter-ids
+        swap-ids (fn [{:keys [ast mutation-db]} k params]
+                   (let [old-id->new-id (partial old-id->new-id mutation-db)]
+                     {target (cond-> ast
+                                     (seq params)
+                                     (assoc :params
+                                            (walk/postwalk (fn [x]
+                                                             (cond-> x
+                                                                     (and (vector? x)
+                                                                          (= 2 (count x))
+                                                                          (= :db/id (first x)))
+                                                                     (update 1 old-id->new-id)))
+                                                           params)))}))
+        parser (om/parser {:read   swap-ids
+                           :mutate swap-ids})
+        ret (parser {:mutation-db db-when-query-was-created} query target)]
+    ret))
+
+(defn update-mutations [mutation-queue new-db]
+  (client.utils/map-mutations mutation-queue
+                              (fn [db mutation]
+                                (first (update-query-ids [mutation] db new-db)))))
+
 (defn- apply-and-queue-mutations
   [reconciler stable-db mutation-queue is-remote-fn history-id]
   ;; Trim mutation queue to only contain mutations after history-id
   (let [mutation-queue (client.utils/keep-mutations-after mutation-queue
                                                           history-id
                                                           is-remote-fn)
+        mutation-queue (update-mutations mutation-queue stable-db)
         mutations-after-query (client.utils/mutations mutation-queue)
         _ (when (seq mutations-after-query)
             (debug "Applying mutations: " mutations-after-query))
@@ -331,6 +390,7 @@
                  remote-key remote-key
                  history-id history-id]
             (let [is-remote-fn (make-is-remote-fn reconciler remote-key)
+
                   ;; Make mutations that came before before history-id
                   ;; permanent by removing them from the queue.
                   ;; They have already been applied.
@@ -389,9 +449,10 @@
               ;; If there's another query in the query-channel, use the
               ;; new-stable-db as the "rebase" point.
               ;; otherwise, exit the loop.
-              (when-let [{:keys [query remote-key]} (async/poll! query-chan)]
+              (when-let [{:keys [query query-db remote-key]} (async/poll! query-chan)]
                 (recur new-stable-db
-                       query
+                       ;; Update query with new db ids.
+                       (update-query-ids query query-db (d/db app-state))
                        remote-key
                        (query-history-id query)))))
 
@@ -418,5 +479,7 @@
              (async/put! query-chan {:remote->send remote->send
                                      :cb           cb
                                      :query        query
-                                     :remote-key   key}))
+                                     :remote-key   key
+                                     :query-db     (db-before-mutation @reconciler-atom
+                                                                       (query-history-id query))}))
            queries))))

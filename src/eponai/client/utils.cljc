@@ -54,6 +54,7 @@
   (queue-mutation [this id mutation])
   (copy-queue [this other])
   (mutations-after [this id is-remote-fn])
+  (map-mutations [this fn])
   (keep-mutations-after [this id is-remote-fn])
   (clear-queue [this]))
 
@@ -100,7 +101,7 @@
           "Queue was in an invalid state. Queue should either not contain"
           " the mutation id, or the last item in the queue should have the"
           " same mutation id. Queue: " queue " id: " id " mutation: " mutation)))
-    (update-queue this (fnil (fn [q] (conj q {:id id :mutation mutation}))
+    (update-queue this (fnil (fn [q] (conj q {:id id :mutation mutation :db this}))
                              [])))
   (keep-mutations-after [this id is-remote-fn]
     (cond-> this
@@ -119,7 +120,12 @@
                (queue-contains-id? queue id)
                (into (local-mutations-with-id this id is-remote-fn)
                      (comp (drop-id-xf id)
-                           (map :mutation)))))))
+                           (map :mutation))))))
+  (map-mutations [this f]
+    (update-queue this (fn [q] (into []
+                                     (map (fn [{:keys [db mutation] :as m}]
+                                            (assoc m :mutation (f db mutation))))
+                                     q)))))
 
 ;; ------ Dates -----------
 ;; Extends equality on goog.date's to speed up shouldComponentUpdate.

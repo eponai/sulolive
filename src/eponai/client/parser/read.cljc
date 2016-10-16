@@ -80,10 +80,6 @@
 (defn- datom-e [datom]
   (.-e datom))
 
-(defn entity-equal? [db last-db eid]
-  (common.datascript/iter-equals? (d/datoms last-db :eavt eid)
-                                     (d/datoms db :eavt eid)))
-
 (defn schema->transaction-attributes* [schema]
   (into [] (comp (filter (fn [[k _]] (= "transaction" (namespace k))))
                  (map first))
@@ -125,7 +121,8 @@
     (let [transaction-eids (transaction-eids-by-project db project-eid)
           changed-transaction-eids (cond->> transaction-eids
                                             (some? last-db)
-                                            (into #{} (remove #(entity-equal? db last-db %))))]
+                                            (into #{} (remove
+                                                        #(common.datascript/entity-equal? db last-db %))))]
       changed-transaction-eids)))
 
 (defn transactions-deleted [db last-db project-eid]

@@ -1,6 +1,7 @@
 (ns eponai.common.datascript
   (:require [datascript.btset :as btset]
             [datascript.arrays :as da]
+            [datascript.core :as d]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [error debug]]
             [clojure.data :as diff]))
 
@@ -66,6 +67,13 @@
     (when (and (some? a) (some? b) (keys-eq? a b))
       (recur (btset/iter-chunked-next a)
              (btset/iter-chunked-next b)))))
+
+(defn entity-equal? [db1 db2 eid]
+  (iter-equals? (d/datoms db1 :eavt eid)
+                (d/datoms db2 :eavt eid)))
+
+(defn has-id? [db id]
+  (some? (first (d/datoms db :eavt id))))
 
 (comment
   ;; Usage

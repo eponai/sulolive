@@ -2,6 +2,7 @@
   (:require [cljs.test]
             [cljsjs.react]
             [eponai.common.datascript_test]
+            [eponai.common.diff-test]
             [eponai.web.ui.add-transaction-test]
             [eponai.client.read-test]
             [eponai.common.format.date-test]
@@ -30,6 +31,7 @@
            'eponai.web.ui.add-transaction-test
            'eponai.web.routes-test
            'eponai.common.format.date-test
+           'eponai.common.diff-test
            ;'eponai.client.read-test
            )
 
