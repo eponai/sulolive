@@ -46,6 +46,7 @@
           {:keys [input-currency tab]} (om/get-state this)
           {:keys [stripe/subscription stripe/info]} stripe
           {subscription-status :stripe.subscription/status} subscription]
+
       (html
         [:div#settings
          [:h4.header "Settings"]
@@ -104,14 +105,29 @@
                (= tab :social)
                [:div.content
                 [:div.row
-                 [:div.column.small-4.text-right
+                 [:div.column.small-4
                   [:label "Facebook"]]
-                 [:div.column.small-6
+                 [:div.column.small-8.text-right
                   (if (nil? fb-user)
                     [:a.button.facebook [:i.fa.fa-facebook.fa-fw] "Connect to Facebook"]
-                    [:div
-                     [:i.fa.fa-facebook.fa-fw]
-                     [:strong (:fb-user/name fb-user)]])]]]
+                    [:div.row.collapse.align-middle
+                     [:div.column.small-10.text-right
+                      [:div (:fb-user/name fb-user)]
+                      [:a.link [:small "disconnect"]]]
+                     [:div.column.small-2.text-left
+                      [:img.avatar {:src (:fb-user/picture fb-user)}]]])]]
+
+                [:div.row.twitter
+                 [:div.column.small-4
+                  [:label "Twitter"]]
+                 [:div.column.small-8.text-right
+                  [:a.button.twitter [:i.fa.fa-twitter.fa-fw] "Connect to Twitter"]]]
+
+                [:div.row.google
+                 [:div.column.small-4
+                  [:label "Google+"]]
+                 [:div.column.small-8.text-right
+                  [:a.button.google [:i.fa.fa-google.fa-fw] "Connect to Google+"]]]]
 
 
                (= tab :payment)

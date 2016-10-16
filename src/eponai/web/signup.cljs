@@ -35,6 +35,8 @@
     (.login js/FB
             (fn [response]
               (let [status (.-status response)]
+                (debug "Facebook login status: " status)
+                (debug "Faceboko respose: " response)
                 (cond
                   (= status "connected")
                   (let [auth-response (.-authResponse response)

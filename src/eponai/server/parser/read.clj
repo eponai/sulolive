@@ -176,8 +176,9 @@
                               [?u :user/uuid ?uuid]]
                    :symbols {'?uuid user-uuid}}))]
     {:value (when eid
-              (let [{:keys [fb-user/token fb-user/id]}
+              (let [{:keys [fb-user/token fb-user/id] :as f-user}
                     (pull db [:fb-user/token :fb-user/id] eid)
+                    _ (debug "Got fb-user: " f-user)
                     {:keys [name picture]} (facebook/user-info id token)]
                 (merge (pull db query eid)
                        {:fb-user/name    name

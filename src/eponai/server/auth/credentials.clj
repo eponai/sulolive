@@ -3,7 +3,7 @@
             [datomic.api :as d]
             [eponai.common.database.pull :as p]
             [eponai.server.http :as h]
-            [eponai.common.database.transact :refer [transact transact-map]]
+            [eponai.common.database.transact :refer [transact transact-map transact-one]]
             [eponai.server.datomic.format :as f]
             [eponai.server.api :as api]
             [taoensso.timbre :refer [debug error info]]))
@@ -75,6 +75,11 @@
                                               :fb-user/user
                                               :db/id))]
         (debug "Facebook user existed: " db-user)
+
+        ; If Facebook has returned a new access token, we need to renew that in the db as well
+        (when-not (= (:fb-user/token fb-user) access_token)
+          (debug "Updating new access token for Facebook user.")
+          (transact-one conn [:db/add (:db/id fb-user) :fb-user/token access_token]))
 
         ;; Check that the user is activated, if not throw exception.
         (if (= (:user/status db-user)
