@@ -143,70 +143,79 @@
 
          (cond (= tab :general)
                [:div.content.general
-            [:div.content-section
-             [:div.row.email
-              [:div.column.small-4
-               [:label "Email"]]
-              [:div.column.small-8.text-right
-               [:strong email]]]]
-            [:div.content-section
-             [:div.row.name
-              [:div.column.small-4
-               [:label "Name"]]
-              [:div.column.small-6.small-offset-2
-               [:input
-                {:value (or user-name "")
-                 :type  "text"}]]]]
+                [:div.content-section
+                 [:div.row.email
+                  [:div.column.small-4
+                   [:label "Email"]]
+                  [:div.column.small-8.text-right
+                   [:strong email]]]]
+                [:div.content-section
+                 [:div.row.name
+                  [:div.column.small-4
+                   [:label "Name"]]
+                  [:div.column.small-6.small-offset-2
+                   [:input
+                    {:value (or user-name "")
+                     :type  "text"}]]]]
 
-            [:div.content-section
-             [:div.row
-              [:div.column.small-4
-               [:label "Main Currency"]]
-              [:div.column.small-3.small-offset-5.text-right
-               [:div.text-left
-                (sel/->Select (om/computed
-                                {:value   {:label (:currency/code (:user/currency current-user))
-                                           :value (:db/id (:user/currency current-user))}
-                                 :options (map (fn [{:keys [currency/code db/id]}]
-                                                 {:label code
-                                                  :value id})
-                                               all-currencies)}
-                                {:on-select #(om/update-state! this assoc :input-currency (:label %))}))]]
-              ]]
-            [:div.content-section.clearfix
-             [:a.button.hollow.float-right
-              {:on-click #(.save-settings this)}
-              [:span.small-caps "Save"]]]]
+                [:div.content-section
+                 [:div.row
+                  [:div.column.small-6
+                   [:label "Main Currency"]
+                   [:small "Your preferred currency to see in the dashboard."]]
+                  [:div.column.small-3.small-offset-3.text-right
+                   [:div.text-left
+                    (sel/->Select (om/computed
+                                    {:value   {:label (:currency/code (:user/currency current-user))
+                                               :value (:db/id (:user/currency current-user))}
+                                     :options (map (fn [{:keys [currency/code db/id]}]
+                                                     {:label code
+                                                      :value id})
+                                                   all-currencies)}
+                                    {:on-select #(om/update-state! this assoc :input-currency (:label %))}))]]
+                  ]]
+                [:div.content-section
+                 [:div.row
+                  [:div.column.small-6
+                   [:label "Pay What You Want"]
+                   [:small "Your selected price for your JourMoney subscription."]]]]
+
+                [:div.content-section.clearfix
+                 [:a.button.hollow.float-right
+                  {:on-click #(.save-settings this)}
+                  [:span.small-caps "Save"]]]]
 
                (= tab :social)
                [:div.content
                 [:div.content-section.facebook
                  [:div.row
-                  [:div.column.small-4
+                  [:div.column
                    [:label "Facebook"]]
-                  [:div.column.small-8.text-right
-                   (if (nil? fb-user)
-                     [:a.button.facebook [:i.fa.fa-facebook.fa-fw] "Connect to Facebook"]
+                  (if (nil? fb-user)
+                    [:div.column.small-6
+                     [:a.button.expanded.facebook [:i.fa.fa-facebook.fa-fw] "Connect to Facebook"]]
+                    [:div.column.small-8
                      [:div.row.collapse.align-middle
-                      [:div.column.small-10.text-right
+                      [:div.column.small-10.text-right.facebook-user
                        [:div (:fb-user/name fb-user)]
                        [:a.link [:small "disconnect"]]]
                       [:div.column.small-2.text-left
-                       [:img.avatar {:src (:fb-user/picture fb-user)}]]])]]]
+                       [:img.avatar {:src (:fb-user/picture fb-user)}]]]])]]
 
                 [:div.content-section.twitter
                  [:div.row
-                  [:div.column.small-4
+                  [:div.column
                    [:label "Twitter"]]
-                  [:div.column.small-8.text-right
-                   [:a.button.twitter [:i.fa.fa-twitter.fa-fw] "Connect to Twitter"]]]]
+                  [:div.column.small-5.text-right
+                   [:a.button.twitter.expanded [:i.fa.fa-twitter.fa-fw] "Connect to Twitter"]]]]
 
                 [:div.content-section.twitter
                  [:div.row
-                  [:div.column.small-4
+                  [:div.column
                    [:label "Google+"]]
-                  [:div.column.small-8.text-right
-                   [:a.button.google [:i.fa.fa-google.fa-fw] "Connect to Google+"]]]]]
+                  [:div.column.small-5.text-right
+                   [:a.button.google.expanded [:i.fa.fa-google.fa-fw] "Connect to Google+"]]]]
+                [:div.content-section]]
 
 
                (= tab :payment)
@@ -215,7 +224,7 @@
                  [:div.row.column
                   [:label "Pay what you want"]]
                  [:div.row
-                  [:div.column.small-8"$1.00"]]]
+                  [:div.column.small-8 "$1.00"]]]
                 [:div.content-section
                  [:div.row.align-middle
                   ; Left column of payment method
@@ -254,7 +263,8 @@
                       {:on-click #(.update-payment this "Add Card")}
                       (if is-stripe-loading?
                         [:i.fa.fa-spinner.fa-spin.fa-fw]
-                        [:span "+ Add Card"])]])]]])]
+                        [:span "+ Add Card"])]])]]
+                [:div.content-section]])]
         ;[:div
         ; [:div#settings-general.row.column.small-12.medium-6
         ;  [:div.callout.clearfix
