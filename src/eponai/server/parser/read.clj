@@ -161,9 +161,9 @@
                     customer (stripe-fn :customer/get
                                         {:customer-id customer-id})]
                 (debug "Read stripe customer: " customer)
-
-                (merge {:stripe/info customer}
-                       (pull db query eid)))))})
+                (cond->> (pull db query eid)
+                         (some? customer)
+                         (merge {:stripe/info customer})))))})
 
 ;; ############### Signup page reader #################
 
