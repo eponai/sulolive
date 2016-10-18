@@ -264,7 +264,7 @@
                          ;; Value has not already been set?
                          (not (contains? (meta (:value ret)) :eponai.common.parser/read-basis-t))
                          (update :value vary-meta assoc-in path (datomic/basis-t db)))]
-         (debug "Setting basis-t meta for " k " meta: " (meta (:value ret)))
+         ;(debug "Setting basis-t meta for " k " meta: " (meta (:value ret)))
          ret))))
 
 #?(:clj

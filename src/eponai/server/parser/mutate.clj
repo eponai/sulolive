@@ -125,7 +125,7 @@
   ["Subscribed!" "Error subscribing"]
   (let [db (d/db state)
         _ (debug "stripe/subscribe with params:" p)
-        stripe-eid (p/one-with db {:where '[[?u :user/uuid ?useruuid]
+        stripe-eid (p/one-with db {:where '[[?u :user/uuid ?user-uuid]
                                             [?e :stripe/user ?u]]
                                    :symbols {'?user-uuid (:username auth)}})
         stripe-account (when stripe-eid
@@ -133,6 +133,9 @@
                                      {:stripe/subscription [:stripe.subscription/id]}]
                                  stripe-eid))]
     {:action (fn []
+               (debug "Stripe information: " stripe-account)
+               (when stripe-eid
+                 (debug "User: " (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])))
                (api/stripe-subscribe state stripe-fn stripe-account p))}))
 
 (defmutation stripe/trial

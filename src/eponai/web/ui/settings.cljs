@@ -1,10 +1,39 @@
 (ns eponai.web.ui.settings
   (:require
+    [cljs.core.async :refer [chan <! put!]]
+    [clojure.walk :refer [keywordize-keys]]
     [eponai.client.ui :refer [map-all] :refer-macros [opts]]
     [eponai.web.ui.select :as sel]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]))
+    [taoensso.timbre :refer-macros [debug trace]]
+    [eponai.web.ui.format :as f])
+  (:require-macros [cljs.core.async.macros :refer [go]]))
+
+; Stripe helpers
+
+(defn load-checkout [channel]
+  (-> (goog.net.jsloader.load "https://checkout.stripe.com/v2/checkout.js")
+      (.addCallback #(put! channel [:stripe-checkout-loaded :success]))))
+
+(defn checkout-loaded? []
+  (boolean (aget js/window "StripeCheckout")))
+
+(defn stripe-token-recieved-cb [component plan-id]
+  (fn [token]
+    (let [clj-token (keywordize-keys (js->clj token))]
+      (debug "Recieved token from Stripe.")
+      (trace "Recieved token from Stripe: " clj-token)
+      (om/transact! component `[(stripe/subscribe ~{:token clj-token
+                                                    :plan plan-id})
+                                :query/stripe]))))
+
+(defn open-checkout [component plan-id args]
+  (let [checkout (.configure js/StripeCheckout
+                             (clj->js {:key    "pk_test_KHyU4tNjwX7R0lkxDmPxvbT9"
+                                       :locale "auto"
+                                       :token  (stripe-token-recieved-cb component plan-id)}))]
+    (.open checkout (clj->js args))))
 
 (defn get-loader [props]
   (get props [:ui/singleton :ui.singleton/loader]))
@@ -27,9 +56,24 @@
                       :fb-user/id
                       :fb-user/picture]}
      ])
+
+
   Object
   (initLocalState [_]
-    {:tab :general})
+    (let [checkout-loaded (checkout-loaded?)]
+      {:checkout-loaded?   checkout-loaded
+       :load-checkout-chan (chan)
+       :is-loading?        (not checkout-loaded)
+       :tab                :payment}))
+  (componentWillMount [this]
+    (let [{:keys [load-checkout-chan
+                  checkout-loaded?]} (om/get-state this)]
+      (when-not checkout-loaded?
+        (go (<! load-checkout-chan)
+            (om/set-state! this {:checkout-loaded? true
+                                 :is-loading? false}))
+        (load-checkout load-checkout-chan))))
+
   (componentDidMount [this]
     (let [{:keys [query/current-user]} (om/props this)]
       (om/update-state! this assoc :input-currency (-> current-user
@@ -45,6 +89,21 @@
                            :query/transactions])
       (when on-close
         (on-close))))
+  (add-payment [this]
+    (let [{:keys [query/current-user]} (om/props this)]
+      (open-checkout this
+                     "paywhatyouwant"
+                     {:name            "JourMoney"
+                      ;:description     "JourMoney Subscription"
+                      ;:currency        "usd"
+                      :email           (:user/email current-user)
+                      ;:amount          0
+                      :locale          "auto"
+                      :allowRememberMe false
+                      :opened          #(debug "StripeCheckout did open.") ; #(.show-loading component false)
+                      :closed          #(debug "StripeCheckout did close.")
+                      :panelLabel      "Subscribe"
+                      })))
   (render [this]
     (let [{:keys [query/current-user
                   query/all-currencies
@@ -53,10 +112,11 @@
           loader (get-loader props)
           {user-name :user/name
            :keys [user/email]} current-user
-          {:keys [input-currency tab]} (om/get-state this)
+          {:keys [input-currency tab checkout-loaded?]} (om/get-state this)
           {:keys [stripe/subscription stripe/info]} stripe
           {subscription-status :stripe.subscription/status} subscription]
-
+      (debug "StripeCheckout loaded: " checkout-loaded?)
+      (debug "Stripe information: " info)
       (html
         [:div#settings
          [:h4.header "Settings"]
@@ -77,7 +137,7 @@
             "Payment"]]]
 
          (cond (= tab :general)
-           [:div.content.general
+               [:div.content.general
             [:div.content-section
              [:div.row.email
               [:div.column.small-4
@@ -109,7 +169,7 @@
                                 {:on-select #(om/update-state! this assoc :input-currency (:label %))}))]]
               ]]
             [:div.content-section.clearfix
-             [:a.button.float-right
+             [:a.button.hollow.float-right
               {:on-click #(.save-settings this)}
               [:span.small-caps "Save"]]]]
 
@@ -145,8 +205,37 @@
 
 
                (= tab :payment)
-               [:div.content
-                [:div "Payment"]])]
+               [:div.content#payment
+                [:div.content-section
+                 [:div.row.column
+                  [:label "Pay what you want"]]
+                 [:div.row
+                  [:div.column.small-8"$1.00"]]]
+                [:div.content-section
+                 [:div.row.align-middle
+                  [:div.column.small-4
+                   [:label "Payment Method"]]
+                  (if (:card info)
+                    [:div.column.small-8
+                     [:div.row.align-middle
+                      [:div.column.small-9.text-right
+                       [:div.row
+                        [:div.column.small-12.text-right
+                         [:span (get-in info [:card :brand])]]
+                        [:div.column.small-12.text-right
+                         [:span (str "**** **** ****" (get-in info [:card :last4]))]]]]
+                      [:div.column.small-3
+                       [:a.button.hollow
+                        "Edit"]]]]
+                    [:div.column
+                     [:div.row.align-middle
+                      [:div.column.small-3
+                       [:a.button
+                        {:on-click #(.add-payment this)}
+                        "+ Add Card"]]
+                      [:div.column
+                       (when (= subscription-status :trialing)
+                         [:small.trial-label (str "You have " (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial.")])]]])]]])]
         ;[:div
         ; [:div#settings-general.row.column.small-12.medium-6
         ;  [:div.callout.clearfix

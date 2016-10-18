@@ -49,9 +49,10 @@
                                      project]
                                     convs))
           ;; Total 4 conversions should be fetched for the following transactions.
-          ts [(transaction project "1000-01-01" "SEK")      ;; One conversions fetched SEK
-              (transaction project "1000-01-02" "USD")      ;; Two conversions fetched SEK+USD (user's + transactions's)
-              (transaction project "1000-01-03" "SEK")]]    ;; One conversions fetched SEK
+          ts [(transaction [:project/uuid (:project/uuid project)] "1000-01-01" "SEK")      ;; One conversions fetched SEK
+              (transaction [:project/uuid (:project/uuid project)] "1000-01-02" "USD")      ;; Two conversions fetched SEK+USD (user's + transactions's)
+              (transaction [:project/uuid (:project/uuid project)] "1000-01-03" "SEK")]]    ;; One conversions fetched SEK
+      (debug "Transactions: " ts)
       (transact/transact conn ts)
       (let [{result :query/transactions} (read-transactions conn user project)
             {:keys [transactions conversions]} result]
@@ -74,9 +75,9 @@
                                      project]
                                     convs))
           ;; Total 3 conversions should be fetched for the following transactions.
-          ts [(transaction project "1000-01-01" "SEK")       ;; One conversions fetched SEK
-              (transaction project "1000-01-02" "USD")       ;; Two conversions fetched SEK+USD (user's + transactions's)
-              (transaction project "1000-01-04" "SEK")]]     ;; Zero conversions fetched SEK (no conversion for date)
+          ts [(transaction [:project/uuid (:project/uuid project)] "1000-01-01" "SEK")       ;; One conversions fetched SEK
+              (transaction [:project/uuid (:project/uuid project)] "1000-01-02" "USD")       ;; Two conversions fetched SEK+USD (user's + transactions's)
+              (transaction [:project/uuid (:project/uuid project)] "1000-01-04" "SEK")]]     ;; Zero conversions fetched SEK (no conversion for date)
       (transact/transact conn ts)
       (let [{result :query/transactions} (read-transactions conn user project)
             {:keys [transactions conversions] :as r} result]

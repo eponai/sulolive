@@ -9,17 +9,17 @@
     [eponai.common.report :as report]
     [eponai.common.format :as f]))
 
-(defspec
-  test-sum-default
-  20
-  (props/for-all
-    [txs-convs (gen/vector (gen/tuple (gen-transaction) (gen/double* {:min 0.01})))]
-    (let [txs (map #(assoc-in (f/transaction (first %))
-                              [:transaction/conversion
-                               :conversion/rate] (second %)) txs-convs)
-          [tx-sum] (report/sum :default txs nil)]
-      (zero? (apply - tx-sum (map report/converted-amount
-                                  txs))))))
+;(defspec
+;  test-sum-default
+;  20
+;  (props/for-all
+;    [txs-convs (gen/vector (gen/tuple (gen-transaction) (gen/double* {:min 0.01})))]
+;    (let [txs (map #(assoc-in (f/transaction (first %))
+;                              [:transaction/conversion
+;                               :conversion/rate] (second %)) txs-convs)
+;          [tx-sum] (report/sum :default txs nil)]
+;      (zero? (apply - tx-sum (map report/converted-amount
+;                                  txs))))))
 
 ;(defspec
 ;  test-sum-by-tags
@@ -47,36 +47,36 @@
 ;                      sum-by-tag
 ;                      txs)))))
 
-(defspec
-  test-sum-by-date
-  20
-  (props/for-all
-    [txs-convs (gen/vector (gen/tuple (gen-transaction) (gen/double* {:min 0.01})))]
-    (let [txs (map #(assoc-in (f/transaction (first %))
-                              [:transaction/conversion
-                               :conversion/rate] (second %)) txs-convs)
-          tx-sums (report/sum :transaction/date txs nil)
-          sum-by-date (reduce (fn [m [k v]]
-                               (assoc m k (:value (first v)))) {} (group-by :name tx-sums))]
-      (every? #(zero? (val %)) (reduce (fn [m tx]
-                                         (let [timestamp (:date/timestamp (:transaction/date tx))]
-                                           (update m timestamp - (report/converted-amount tx))))
-                                       sum-by-date
-                                       txs)))))
+;(defspec
+;  test-sum-by-date
+;  20
+;  (props/for-all
+;    [txs-convs (gen/vector (gen/tuple (gen-transaction) (gen/double* {:min 0.01})))]
+;    (let [txs (map #(assoc-in (f/transaction (first %))
+;                              [:transaction/conversion
+;                               :conversion/rate] (second %)) txs-convs)
+;          tx-sums (report/sum :transaction/date txs nil)
+;          sum-by-date (reduce (fn [m [k v]]
+;                               (assoc m k (:value (first v)))) {} (group-by :name tx-sums))]
+;      (every? #(zero? (val %)) (reduce (fn [m tx]
+;                                         (let [timestamp (:date/timestamp (:transaction/date tx))]
+;                                           (update m timestamp - (report/converted-amount tx))))
+;                                       sum-by-date
+;                                       txs)))))
 
-(defspec
-  test-sum-by-currency
-  50
-  (props/for-all
-    [txs-convs (gen/vector (gen/tuple (gen-transaction) (gen/double* {:min 0.01})))]
-    (let [txs (map #(assoc-in (f/transaction (first %))
-                              [:transaction/conversion
-                               :conversion/rate] (second %)) txs-convs)
-          tx-sums (report/sum :transaction/currency txs nil)
-          sum-by-cur (reduce (fn [m [k v]]
-                               (assoc m k (:value (first v)))) {} (group-by :name tx-sums))]
-      (every? #(zero? (val %)) (reduce (fn [m tx]
-                                         (let [cur (:currency/code (:transaction/currency tx))]
-                                           (update m cur - (report/converted-amount tx))))
-                                       sum-by-cur
-                                       txs)))))
+;(defspec
+;  test-sum-by-currency
+;  50
+;  (props/for-all
+;    [txs-convs (gen/vector (gen/tuple (gen-transaction) (gen/double* {:min 0.01})))]
+;    (let [txs (map #(assoc-in (f/transaction (first %))
+;                              [:transaction/conversion
+;                               :conversion/rate] (second %)) txs-convs)
+;          tx-sums (report/sum :transaction/currency txs nil)
+;          sum-by-cur (reduce (fn [m [k v]]
+;                               (assoc m k (:value (first v)))) {} (group-by :name tx-sums))]
+;      (every? #(zero? (val %)) (reduce (fn [m tx]
+;                                         (let [cur (:currency/code (:transaction/currency tx))]
+;                                           (update m cur - (report/converted-amount tx))))
+;                                       sum-by-cur
+;                                       txs)))))

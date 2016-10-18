@@ -16,15 +16,24 @@
 ;; ########### Stripe objects ################
 
 (defn customer [customer-id]
-  (let [^Customer customer (Customer/retrieve customer-id)
-        ^Card card (.retrieve (.getSources customer) (.getDefaultSource customer))]
-    {:id    (.getId customer)
-     :email (.getEmail customer)
-     :card  {:exp-month (.getExpMonth card)
-             :exp-year  (.getExpYear card)
-             :name (.getName card)
-             :last4 (.getLast4 card)
-             :brand (.getBrand card)}}))
+  (when customer-id
+    (let [^Customer customer (Customer/retrieve customer-id)
+          _ (debug "Customer object: " customer)
+          default-source (.getDefaultSource customer)
+          ^Card card (when default-source
+                       (.retrieve (.getSources customer) (.getDefaultSource customer)))
+          ]
+      {:id    (.getId customer)
+       :email (.getEmail customer)
+       :card  (when card
+                {:exp-month (.getExpMonth card)
+                 :exp-year  (.getExpYear card)
+                 :name      (.getName card)
+                 :last4     (.getLast4 card)
+                 :brand     (.getBrand card)
+                 })
+       }
+      )))
 ;; ######################################
 
 (defn obj->subscription-map [^Subscription stripe-obj]
@@ -75,6 +84,8 @@
                          (.getData)
                          first)]
     (debug "Created customer: " customer)
+    (debug "Customer map: " {:stripe/customer     (.getId customer)
+                             :stripe/subscription (obj->subscription-map subscription)})
     {:stripe/customer     (.getId customer)
      :stripe/subscription (obj->subscription-map subscription)}))
 
@@ -196,6 +207,23 @@
     (if db-customer
       (let [db-sub (f/add-tempid (json->subscription-map subscription))]
         (debug "Customer subscription created: " (:id subscription))
+        (transact/transact conn [db-sub
+                                 [:db/add (:db/id db-customer) :stripe/subscription (:db/id db-sub)]]))
+      (throw (webhook-ex event
+                         (str ":stripe/customer not found: " customer)
+                         {:customer customer
+                          :cause    ::h/unprocessable-entity
+                          :code     :entity-not-found})))))
+
+(defmethod webhook "customer.subscription.updated"
+  ;; Receiving a Subscription object in event.
+  ;; Reference: https://stripe.com/docs/api#subscription_object
+  [conn event & _]
+  (let [{:keys [customer] :as subscription} (get-in event [:data :object])
+        db-customer (p/lookup-entity (d/db conn) [:stripe/customer customer])]
+    (if db-customer
+      (let [db-sub (f/add-tempid (json->subscription-map subscription))]
+        (debug "Customer subscription updated: " (:id subscription))
         (transact/transact conn [db-sub
                                  [:db/add (:db/id db-customer) :stripe/subscription (:db/id db-sub)]]))
       (throw (webhook-ex event

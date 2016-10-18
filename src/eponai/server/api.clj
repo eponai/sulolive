@@ -225,10 +225,11 @@
   [conn stripe-fn {:keys [stripe/customer
                           stripe/subscription]} {:keys [token plan] :as p}]
   {:pre [(instance? Connection conn) (fn? stripe-fn) (map? p)]}
-  (let [{:keys [id email]} token
+  (let [{:keys [id email quantity]} token
         params {"source"    id
                 "plan"      plan
-                "trial_end" "now"}]
+                "trial_end" "now"
+                "quantity" 0}]
     (if (some? customer)
       (if-let [subscription-id (:stripe.subscription/id subscription)]
         ;; We have a subscription saved in datomic, so just update that.
@@ -269,8 +270,10 @@
                                        'user      user}})))
   (let [{user-id :db/id} (pull/pull (d/db conn) [:db/id] [:user/email email])
         stripe (stripe-fn :customer/create
-                          {:params {"plan"  "monthly"
+                          {:params {"plan"  "paywhatyouwant"
                                     "email" email}})]
+    (debug "Starting trial for user: " email " with stripe info: " stripe)
+    (debug "Formatted: " (datomic.format/stripe-account user-id stripe))
     (assert (some? user-id))
     (transact-one conn (datomic.format/stripe-account user-id stripe))))
 

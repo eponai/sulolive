@@ -149,16 +149,20 @@
 (defmethod server-read :query/stripe
   [{:keys [db db-history query user-uuid]} _ _]
   {:value (let [;; TODO: uncomment this when doing settings
-                ;; customer (stripe/customer customer-id)
-                customer {}
+                ;customer (stripe/customer customer-id)
                 eid (server.pull/one-changed-entity
                       db db-history query
                       {:where   '[[?u :user/uuid ?user-uuid]
                                   [?e :stripe/user ?u]]
                        :symbols {'?user-uuid user-uuid}})]
+
             (when eid
-              (merge {:stripe/info customer}
-                     (pull db query eid))))})
+              (let [customer-id (:stripe/customer (d/entity db eid))
+                    customer (stripe/customer customer-id)]
+                (debug "Read stripe customer: " customer)
+
+                (merge {:stripe/info customer}
+                       (pull db query eid)))))})
 
 ;; ############### Signup page reader #################
 
