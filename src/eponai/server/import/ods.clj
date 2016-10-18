@@ -224,7 +224,8 @@
                                                     (str/capitalize (name category))})
                       :always
                       (assoc :transaction/tags tags
-                             :transaction/type :transaction.type/expense
+                             :transaction/type (or (:transaction/type t)
+                                                   :transaction.type/expense)
                              :transaction/created-at (time-coerce/to-long date)))))]
     (into [] (comp (map html-t->jourmoney->t)
                    (filter (fn [{:keys [:transaction/amount]}]
@@ -244,7 +245,7 @@
       html->transaction-pages
       transaction-pages->parsed-pages
       (as-> pages
-            (let [all-currencies (apply clojure.set/union (map :currencies pages))
+            (let [all-currencies (apply clojure.set/union (into #{} (map :currencies) pages))
                   left-side (page->jourmoney-entities {:currencies   all-currencies
                                                        :transactions (ods.tags/left-side-of-expenses)})]
               (into left-side (mapcat page->jourmoney-entities) pages)))))
@@ -302,12 +303,19 @@
     (import '[java.nio.file Files])
     (import '[java.nio.file.attribute FileAttribute])
 
-    (defn path->file [path]
-      (java.io.File. path))
+    (defn resource-path->file [path]
+      (java.io.File. (str "resources/" path)))
+
+    (defn delete-quietly [file]
+      (try
+        (.delete file)
+        (catch Throwable e))
+      file)
 
     (defn update-parsed-expenses [version-name]
-      (let [file (doto (path->file (parsed-transactions-resource-path version-name))
+      (let [file (doto (resource-path->file (parsed-transactions-resource-path version-name))
                    (.createNewFile))
+            file (delete-quietly file)
             gzip-file-writer (-> file
                                  (io/output-stream)
                                  (GZIPOutputStream.)
@@ -317,8 +325,8 @@
         (.flush gzip-file-writer)
         (.close gzip-file-writer)
         (Files/createSymbolicLink
-          (.toPath (doto (path->file (parsed-transactions-resource-path))
+          (.toPath (doto (resource-path->file (parsed-transactions-resource-path))
                      (.delete)))
           (.getFileName (.toPath file))
           (into-array FileAttribute []))))
-    (update-parsed-expenses "20160921")))
+    (update-parsed-expenses "20161018")))

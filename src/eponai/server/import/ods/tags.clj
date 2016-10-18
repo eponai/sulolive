@@ -561,7 +561,32 @@
    "Wedding house"                   [:accomodation :wedding]
    "Tandläkare"                      [:dentist :healthcare]
    "Wedding"                         [:wedding]
-   "Doctor"                          [:healthcare :doctor]})
+   "Doctor"                          [:healthcare :doctor]
+   "Income September 2015"           [:income]
+   "Income October 2015"             [:income]
+   "Income November 2015"            [:income]
+   "Income December 2015"            [:income]
+   "Income January 2016"             [:income]
+   "Income February 2016"            [:income]
+   "Income March 2016"               [:income]
+   "Income April 2016"               [:income]
+   "Income May 2016"                 [:income]
+   "Income June 2016"                [:income]
+   "Income July 2016"                [:income]
+   "Income August 2016"              [:income]
+   "Income September 2016"           [:income]
+   "Income October 2016"             [:income]
+   "Second Apartment Seville"        [:airbnb]
+   "Coffemaker"                      [:coffee]
+   "Beans"                           [:coffee]
+   "Espresso"                        [:coffee]
+   "Mas"                             [:groceries]
+   "Ugglan"                          [:beer]
+   "Ugglan inträde"                  [:cover]
+   "Kungshallen"                     [:food]
+   "Makeup"                          [:beauty]
+   "Asian groceries"                 [:groceries]
+   })
 
 (def ^:dynamic *default-currency* nil)
 
@@ -583,9 +608,13 @@
                    (if (= "USD" curr)
                      (assoc transaction "USD" (str "$" amount))
                      (assoc transaction "USD" "$0.00"
-                                        curr amount)))))]
+                                        curr amount)))))
+          (income [date title amount]
+            (assoc (tx date title amount)
+              :transaction/type :transaction.type/income))]
     (let [september2015 (let [first "09/09/15"]
-                          [(tx first "Flight ARN to Dubrovnik" 500)
+                          [(income first "Income September 2015" 2000)
+                           (tx first "Flight ARN to Dubrovnik" 500)
                            (tx "09/13/15" "Appartment Durres" 187)
                            (tx first "Hotel Croatia" 100)
                            (tx "09/25/15" "Hotel Chiang Mai" 112.14M)
@@ -598,7 +627,8 @@
                            (tx first "T-Mobile" 118)])
 
           october2015 (let [first "10/01/15"]
-                        [(tx first "Hotel Chiang Mai" 367.75M)
+                        [(income first "Income October 2015" 2000)
+                         (tx first "Hotel Chiang Mai" 367.75M)
                          (tx "10/22/15" "Flight BKK to ARN" 540)
                          (tx first "T-Mobile" 118)
                          (tx "10/22/15" "Flight Chiang Mai to BKK" 85)
@@ -610,7 +640,8 @@
                          (tx "10/26/15" "Hälinlägg" 15.54M)
                          (tx first "Netflix" 7.99M)])
           november2015 (let [first "11/01/15"]
-                         [(tx first "Domain" 30.32M)
+                         [(income first "Income November 2015" 2000)
+                          (tx first "Domain" 30.32M)
                           (tx first "T-Mobile" 118)
                           (tx first "SL-kort" "1,570.00 kr" "SEK")
                           (tx first "Fitness24seven" "569.00 kr" "SEK")
@@ -622,7 +653,8 @@
           december2015 (let [first "12/01/15"
                              thailand "12/06/15"
                              cm "12/22/15"]
-                         [(tx first "Thai visum" 36)
+                         [(income first "Income December 2015" 2000)
+                          (tx first "Thai visum" 36)
                           (tx first "Fitness24seven" 11.88M)
                           (tx thailand "Flight ARN to BKK" 900)
                           (tx thailand "Kohub apartment" "฿27,699.00" "THB")
@@ -641,7 +673,8 @@
                           (tx cm "Internet Chiang Mai" "฿375.00" "THB")])
           january2016 (let [first "01/01/16"
                             vietnam "01/26/16"]
-                        [(tx first "Thai visum" 36)
+                        [(income first "Income January 2016" 2000)
+                         (tx first "Thai visum" 36)
                          (tx first "Fitness24seven" "33.00 kr" "SEK")
                          (tx first "T-Mobile" 118)
                          (tx vietnam "Flight DMK to SGN" "฿4,260.00" "THB")
@@ -657,7 +690,8 @@
 
           february2016 (let [first "02/01/16"
                              malaysia "02/08/16"]
-                         [(tx first "Netflix" 7.99M)
+                         [(income first "Income February 2016" 2000)
+                          (tx first "Netflix" 7.99M)
                           (tx first "T-Mobile" 118)
                           (tx first "Github" 25)
                           (tx first "Hotel Vietnam" 92)
@@ -670,7 +704,8 @@
                           (tx malaysia "Pants Diana" "RM140.00" "MYR")])
 
           march2016 (let [first "03/01/16"]
-                      [(tx first "Netflix" 7.99M)
+                      [(income first "Income March 2016" 2000)
+                       (tx first "Netflix" 7.99M)
                        (tx first "T-Mobile" 118)
                        (tx first "Github" 25)
                        (tx first "Airbnb Malaysia" 877.29M)
@@ -679,7 +714,8 @@
 
           april2016 (let [first "04/01/16"
                           osaka "04/05/16"]
-                      [(tx first "Netflix" 7.99M)
+                      [(income first "Income April 2016" 3000)
+                       (tx first "Netflix" 7.99M)
                        (tx first "T-Mobile" 118)
                        (tx first "Github" 25)
                        (tx first "Apartment Malaysia" 168.71M)
@@ -690,7 +726,8 @@
           may2016 (let [first "05/01/16"
                         seoul "05/05/16"
                         nyc "05/27/16"]
-                    [(tx first "Netflix" 7.99M)
+                    [(income first "Income May 2016" 4500)
+                     (tx first "Netflix" 7.99M)
                      (tx first "T-Mobile" 118)
                      (tx first "Github" 25)
                      (tx seoul "Flight Osaka to Seoul" 190)
@@ -709,7 +746,8 @@
           june2016 (let [first "06/01/16"
                          nyc "06/01/16"
                          swe "06/27/16"]
-                     [(tx first "Netflix" 9.99M)
+                     [(income first "Income June 2016" 5000)
+                      (tx first "Netflix" 9.99M)
                       (tx first "T-Mobile" 118)
                       (tx first "Github" 25)
                       ;; Got refund 225 refund:
@@ -730,7 +768,8 @@
                       (tx nyc "Shirt petter" 16)
                       (tx nyc "Shampoos" 38)])
           july2016 (let [first "07/01/16"]
-                     [(tx first "Netflix" 9.99M)
+                     [(income first "Income July 2016" 1500)
+                      (tx first "Netflix" 9.99M)
                       (tx first "T-Mobile" 118)
                       (tx first "Github" 25)
                       (tx first "SL-kort" 72.29M)
@@ -744,7 +783,8 @@
                       (tx first "Tandhygienist" 177.11M)
                       (tx first "SL refill" 24.10M)])
           august2016 (let [first "08/01/16"]
-                       [(tx first "Netflix" 9.99M)
+                       [(income first "Income August 2016" 1500)
+                        (tx first "Netflix" 9.99M)
                         (tx first "T-Mobile" 118)
                         (tx first "Github" 25)
                         (tx first "Vegan Reset" 19)
@@ -754,13 +794,24 @@
                         (tx first "Doctor" 42.17M)])
           september2016 (let [first "09/01/16"
                               spain "09/07/16"]
-                          [(tx first "Netflix" 9.99M)
+                          [(income first "Income September 2016" 2500)
+                           (tx first "Netflix" 9.99M)
                            (tx first "T-Mobile" 118)
                            (tx first "Github" 25)
                            (tx spain "Flight" 281.88M)
                            (tx spain "Apartment" 828)
                            (tx spain "Hotel" 73)
-                           (tx first "Insurance" 147.06M)])]
+                           (tx first "Insurance" 147.06M)])
+          october2016 (let [first "10/01/16"
+                            sthlm-first "10/04/16"]
+                        [(income first "Income October 2016" 2500)
+                         (tx first "Netflix" 9.99M)
+                         (tx first "T-Mobile" 118)
+                         (tx first "Github" 25)
+                         (tx first "Insurance" 147.06M)
+                         (tx sthlm-first "Flight" 308M)
+                         (tx first "Apartment" 216)
+                         (tx "10/06/16" "Second Apartment Seville" 957)])]
       (vec (concat
              september2015
              october2015
@@ -774,4 +825,5 @@
              june2016
              july2016
              august2016
-             september2016)))))
+             september2016
+             october2016)))))
