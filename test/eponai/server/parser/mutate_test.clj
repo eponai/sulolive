@@ -49,7 +49,7 @@
                          :project/uuid  (:project/uuid (:transaction/project transaction))
                          :project/users (:db/id user)}])
           parsed (routes/handle-parser-request
-                   (session-request conn user `[(transaction/create ~transaction)]))
+                   (session-request conn user `[(transaction/create ~(assoc transaction ::parser/created-at 1))]))
           _ (debug "Parsed: " parsed)
           result (get-in parsed ['transaction/create :result])
           db (d/db conn)]
