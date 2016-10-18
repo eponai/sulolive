@@ -76,6 +76,26 @@
 
 (defmulti stripe-action (fn [k _] k))
 
+(defmethod stripe-action :customer/get
+  [_ {:keys [customer-id]}]
+  (when customer-id
+    (let [^Customer customer (Customer/retrieve customer-id)
+          _ (debug "Customer object: " customer)
+          default-source (.getDefaultSource customer)
+          ^Card card (when default-source
+                       (.retrieve (.getSources customer) (.getDefaultSource customer)))
+          ]
+      {:id    (.getId customer)
+       :email (.getEmail customer)
+       :card  (when card
+                {:exp-month (.getExpMonth card)
+                 :exp-year  (.getExpYear card)
+                 :name      (.getName card)
+                 :last4     (.getLast4 card)
+                 :brand     (.getBrand card)
+                 :id        (.getId card)
+                 })})))
+
 (defmethod stripe-action :customer/create
   [_ {:keys [params]}]
   {:post [(map? %)]}

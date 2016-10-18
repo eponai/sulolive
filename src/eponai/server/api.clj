@@ -295,9 +295,10 @@
                           {:params {"plan"  "paywhatyouwant"
                                     "email" email}})]
     (debug "Starting trial for user: " email " with stripe info: " stripe)
-    (debug "Formatted: " (datomic.format/stripe-account user-id stripe))
+    ;(debug "Formatted: " (datomic.format/stripe-account user-id stripe))
     (assert (some? user-id))
-    (transact-one conn (datomic.format/stripe-account user-id stripe))))
+    (when stripe
+      (transact-one conn (datomic.format/stripe-account user-id stripe)))))
 
 (defn stripe-cancel
   "Cancel the subscription in Stripe for user with uuid."

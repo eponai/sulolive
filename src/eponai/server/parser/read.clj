@@ -147,7 +147,7 @@
             {:error :user-not-found})})
 
 (defmethod server-read :query/stripe
-  [{:keys [db db-history query user-uuid]} _ _]
+  [{:keys [db db-history query user-uuid stripe-fn]} _ _]
   {:value (let [;; TODO: uncomment this when doing settings
                 ;customer (stripe/customer customer-id)
                 eid (server.pull/one-changed-entity
@@ -158,7 +158,8 @@
 
             (when eid
               (let [customer-id (:stripe/customer (d/entity db eid))
-                    customer (stripe/customer customer-id)]
+                    customer (stripe-fn :customer/get
+                                        {:customer-id customer-id})]
                 (debug "Read stripe customer: " customer)
 
                 (merge {:stripe/info customer}
