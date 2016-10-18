@@ -6,6 +6,8 @@
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [trace debug error]])
   #?(:clj (:import [datomic Connection])))
 
+(def ^:dynamic *tx-meta* nil)
+
 (defprotocol ITransact
   (transact* [conn txs]))
 
@@ -21,25 +23,34 @@
       :cljs [Atom
              (transact* [conn txs] (datascript/transact conn txs))]))
 
+(defn- tempid [part]
+  #?(:clj (datomic/tempid part)
+     :cljs (datascript/tempid part)))
+
 (defn transact
   "Transact a collecion of entites into datomic.
   Throws ExceptionInfo if transaction failed."
   [conn txs]
-  (try
-    (trace "Transacting: " txs)
-    (let [ret @(transact* conn txs)]
-      ret)
-    (catch #?@(:clj [Exception e] :cljs [:default e])
-           (let [#?@(:clj  [msg (.getMessage e)]
-                     :cljs [msg (.-message e)])]
-             (error "Transaction error: " e)
-             (throw (ex-info msg
-                             {:cause     ::transaction-error
-                              :data      {:conn conn
-                                          :txs  txs}
-                              :message   msg
-                              :exception e
-                              #?@(:clj [:status :eponai.server.http/service-unavailable])}))))))
+  (let [txs (cond-> txs
+                    (some? *tx-meta*)
+                    (conj (do (assert (map? *tx-meta*)
+                                      (str "*tx-meta* was not a map. was: " *tx-meta*))
+                              (assoc *tx-meta* :db/id (tempid :db.part/tx)))))]
+    (try
+      (trace "Transacting: " txs)
+      (let [ret @(transact* conn txs)]
+        ret)
+      (catch #?@(:clj [Exception e] :cljs [:default e])
+             (let [#?@(:clj  [msg (.getMessage e)]
+                       :cljs [msg (.-message e)])]
+               (error "Transaction error: " e)
+               (throw (ex-info msg
+                               {:cause     ::transaction-error
+                                :data      {:conn conn
+                                            :txs  txs}
+                                :message   msg
+                                :exception e
+                                #?@(:clj [:status :eponai.server.http/service-unavailable])})))))))
 
 (defn transact-map
   "Transact a map into datomic, where the keys names the entities to be transacted for developer convenience.

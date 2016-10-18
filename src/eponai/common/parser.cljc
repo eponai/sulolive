@@ -3,6 +3,7 @@
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn trace]]
             [om.next :as om]
             [om.next.cache :as om.cache]
+            [eponai.common.database.transact :as transact]
             [datascript.core :as datascript]
     #?(:clj
             [datomic.api :as datomic])
@@ -118,7 +119,7 @@
      Filters are updated incrementally via the ::filter-atom (which
      is renewed everytime parser is called (see wrap-parser-filter-atom)."
      [read-or-mutate]
-     (fn [{:keys [state ::filter-atom] :as env} & args]
+     (fn [{:keys [state ::filter-atom] :as env} k p]
        (let [db (datomic/db state)
              user-id (get-in env [:auth :username])
              update-filters (fn [old-filters]
@@ -131,8 +132,7 @@
                                 (filter/update-filters db filters)))
              filters (swap! filter-atom update-filters)
              db (filter/apply-filters db filters)]
-         (apply read-or-mutate (assoc env :db db)
-                args)))))
+         (read-or-mutate (assoc env :db db) k p)))))
 
 (defn wrap-datascript-db
   "Wraps a :db in the environment for each read.
@@ -339,8 +339,16 @@
 (defn mutate-with-tx-meta [mutate]
   (fn [env k p]
     {:pre [(::created-at env)]}
-    (let [tx-meta {::created-at (::created-at env)}]
-      (mutate (assoc env :tx-meta tx-meta) k p))))
+    (let [tx-meta (cond-> {}
+                          (number? (::created-at env))
+                          (assoc :tx/mutation-created-at (::created-at env))
+                          (some? (:user-uuid env))
+                          (assoc :tx/mutation-created-by [:user/uuid (:user-uuid env)]))]
+      (update-action (mutate env k p)
+                     (fn [action]
+                       (fn []
+                         (binding [transact/*tx-meta* tx-meta]
+                           (action))))))))
 
 (def ^:dynamic *parser-allow-remote* true)
 (def ^:dynamic *parser-allow-local-read* true)

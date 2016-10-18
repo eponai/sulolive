@@ -167,15 +167,15 @@
 (defn run []
   (fs.utils/with-less-loud-logger
     #(do (fw/run-tests (->> [
-                             ;test-system-setup
-                             ;test-create-transaction
-                             ;test-edit-transaction
-                             ;test-create-transaction-offline
-                             ;test-edit-transaction-offline
-                              test-create+edit-transaction-offline ;;-> sync should see create+edit.
+                             test-system-setup
+                             test-create-transaction
+                             test-edit-transaction
+                             test-create-transaction-offline
+                             test-create+edit-transaction-offline ;;-> sync should see create+edit.
+                             test-edit-transaction-offline
                             ]
-                            ;;(reverse)
-                            ;;(take 1)
+                            (reverse)
+                            (take 1)
                            ))
         nil)))
 
