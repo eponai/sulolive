@@ -126,6 +126,11 @@
   (debug "stripe/update-card with params: " p)
   {:remote true})
 
+(defmethod client-mutate 'stripe/delete-card
+  [_ _ p]
+  (debug "stripe/delete-card with params: " p)
+  {:remote true})
+
 
 ;; ############# Session mutations #################
 

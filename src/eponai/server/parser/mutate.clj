@@ -154,9 +154,25 @@
                (debug "Stripe information: " stripe-account)
                (when stripe-eid
                  (debug "User: " (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])))
-               (api/stripe-update-card state stripe-fn stripe-account p)
-               ;(api/stripe-update-card state stripe-fn stripe-account p)
-               )}))
+               (api/stripe-update-card state stripe-fn stripe-account p))}))
+
+(defmutation stripe/delete-card
+  [{:keys [state auth stripe-fn]} _ p]
+  ["Card deleted" "Could not delete card"]
+  (let [db (d/db state)
+        _ (debug "stripe/delete-card with params:" p)
+        stripe-eid (p/one-with db {:where '[[?u :user/uuid ?user-uuid]
+                                            [?e :stripe/user ?u]]
+                                   :symbols {'?user-uuid (:username auth)}})
+        stripe-account (when stripe-eid
+                         (p/pull db [:stripe/customer
+                                     {:stripe/subscription [:stripe.subscription/id]}]
+                                 stripe-eid))]
+    {:action (fn []
+               (debug "Stripe information: " stripe-account)
+               (when stripe-eid
+                 (debug "User: " (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])))
+               (api/stripe-delete-card state stripe-fn stripe-account p))}))
 
 (defmutation stripe/trial
   [{:keys [state auth stripe-fn]} _ _]

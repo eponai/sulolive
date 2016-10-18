@@ -267,6 +267,17 @@
       (throw (ex-info (str "Could not find customer for user with email: " email)
                       {:data {:token token}})))))
 
+(defn stripe-delete-card
+  [_ stripe-fn {:keys [stripe/customer]} {:keys [card] :as p}]
+  (if (some? customer)
+    (let [deleted (stripe-fn :card/delete
+                             {:customer-id customer
+                              :card card})]
+      (debug "Deleted card from customer: " customer " response: " deleted))
+    (throw (ex-info (str "Could not find customer")
+                    {:data p})))
+  )
+
 (defn stripe-trial
   "Subscribe user to trial, without requesting credit carg."
   [conn stripe-fn {:keys [user/email stripe/_user] :as user}]

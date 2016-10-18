@@ -31,6 +31,7 @@
                  :name      (.getName card)
                  :last4     (.getLast4 card)
                  :brand     (.getBrand card)
+                 :id        (.getId card)
                  })
        }
       )))
@@ -94,6 +95,14 @@
   (let [customer (Customer/retrieve customer-id)
         updated-customer (.update customer params)]
     (debug "Updated customer: " updated-customer)
+    {:stripe/customer customer-id}))
+
+(defmethod stripe-action :card/delete
+  [_ {:keys [customer-id card]}]
+  (let [customer (Customer/retrieve customer-id)
+        card (.retrieve (.getSources customer) (:id card))
+        deleted (.delete card)]
+    (debug "Deleted card from customer: " customer " " deleted)
     {:stripe/customer customer-id}))
 
 

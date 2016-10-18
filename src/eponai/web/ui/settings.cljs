@@ -100,6 +100,11 @@
     (let [{:keys [query/current-user]} (om/props this)]
       (.show-stripe-loading this true)
       (open-checkout this (:user/email current-user) label)))
+  (remove-payment [this]
+    (let [{:keys [query/stripe]} (om/props this)
+          {:keys [stripe/info]} stripe]
+      (om/transact! this `[(stripe/delete-card ~{:card (:card info)})
+                           :query/stripe])))
 
   (show-stripe-loading [this is-loading?]
     (om/update-state! this assoc :is-stripe-loading? is-loading?))
@@ -213,33 +218,43 @@
                   [:div.column.small-8"$1.00"]]]
                 [:div.content-section
                  [:div.row.align-middle
-                  [:div.column.small-4
-                   [:label "Payment Method"]]
+                  ; Left column of payment method
+                  [:div.column
+                   [:div
+                    [:label "Payment Method"]]
+                   (cond (= subscription-status :trialing)
+                         [:small (str "You have " (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial. " [:a "What happens then?"])]
+                         (nil? (:card info))
+                         [:small "You haven't added a card yet. Enable all functionality in the app by adding one. " [:a "Why?"]]
+                         (some? (:card info))
+                         [:div
+                          [:div
+                           [:span (get-in info [:card :brand])]]
+                          [:div
+                           [:span (str "**** **** ****" (get-in info [:card :last4]))]]])]
+
+
                   (if (:card info)
-                    [:div.column.small-8
-                     [:div.row.align-middle
-                      [:div.column.small-8.text-right
-                       [:div.row
-                        [:div.column.small-12.text-right
-                         [:span (get-in info [:card :brand])]]
-                        [:div.column.small-12.text-right
-                         [:span (str "**** **** ****" (get-in info [:card :last4]))]]]]
-                      [:div.column.small-4
-                       [:a.button.hollow.expanded
-                        {:on-click #(.update-payment this "Update Card")}
-                        (if is-stripe-loading?
-                          [:i.fa.fa-spinner.fa-spin.fa-fw]
-                          [:span "Update"])
-                        ]]]]
-                    [:div.column
-                     [:div.row.align-middle
-                      [:div.column.small-3
-                       [:a.button
-                        {:on-click #(.update-payment this "Add Card")}
-                        "+ Add Card"]]
-                      [:div.column
-                       (when (= subscription-status :trialing)
-                         [:small.trial-label (str "You have " (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial.")])]]])]]])]
+                    ; Card info div
+                    [:div.column.small-4.align-bottom
+                     [:div.update-buttons
+                      [:a.button.hollow.expanded
+                       {:on-click #(.update-payment this "Update Card")}
+                       (if is-stripe-loading?
+                         [:i.fa.fa-spinner.fa-spin.fa-fw]
+                         [:span "Update"])
+                       ]
+                      [:a
+                       {:on-click #(.remove-payment this)}
+                       [:small "Delete"]]]]
+
+                    ; Add a new card situation
+                    [:div.column.small-4.text-right
+                     [:a.button.expanded
+                      {:on-click #(.update-payment this "Add Card")}
+                      (if is-stripe-loading?
+                        [:i.fa.fa-spinner.fa-spin.fa-fw]
+                        [:span "+ Add Card"])]])]]])]
         ;[:div
         ; [:div#settings-general.row.column.small-12.medium-6
         ;  [:div.callout.clearfix
