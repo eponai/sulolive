@@ -172,7 +172,6 @@
     {:menu-visible?                     false
      :new-transaction?                  false
      :add-widget?                       false
-     :settings-open? true
      :computed/add-transaction-on-close #(om/update-state! this assoc :new-transaction? false)})
 
   (render [this]
