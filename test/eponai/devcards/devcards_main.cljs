@@ -2,8 +2,7 @@
   (:require
     [cljsjs.react.dom]
     [devcards.core :as dc]
-    [sablono.core :as html :refer-macros [html]]
-    [eponai.devcards.ui.widget-dc])
+    [sablono.core :as html :refer-macros [html]])
   (:require-macros
     [devcards.core :refer [defcard]]))
 
