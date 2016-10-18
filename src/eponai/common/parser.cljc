@@ -4,6 +4,7 @@
             [om.next :as om]
             [om.next.cache :as om.cache]
             [eponai.common.database.transact :as transact]
+            [eponai.common.format.date :as date]
             [datascript.core :as datascript]
     #?(:clj
             [datomic.api :as datomic])
@@ -321,16 +322,12 @@
                                    {:cause             e
                                     ::mutation-message (x->message e)})))))))))))
 
-(defn current-millisecond []
-  #?(:clj (System/currentTimeMillis)
-     :cljs (system-time)))
-
 (defn client-mutate-creation-time [mutate]
   (fn [env k p]
     (assoc-ast-param env
                      (mutate env k p)
                      ::created-at
-                     (or (::created-at p) (current-millisecond)))))
+                     (or (::created-at p) (date/current-millis)))))
 
 (defn server-mutate-creation-time-env [mutate]
   (fn [env k p]

@@ -348,18 +348,15 @@
             "Currency"]]
           (if (seq transactions)
             [:div.transactions-list
-             (infinite-scroll/->InfiniteScroll
-               (om/computed
-                 {:elements-container :ul.no-bullet
-                  :elements           (into [] (map (fn [props]
-                                                      (->Transaction
-                                                        (om/computed props
-                                                                     {:user         user
-                                                                      :currencies   currencies
-                                                                      :on-tag-click transaction-on-tag-click
-                                                                      :all-tags     all-tags}))))
-                                            transactions)}
-                 {:dom-node-fn infinite-scroll-node-fn}))]
+             (into [] (comp (map (fn [props]
+                              (->Transaction
+                                (om/computed props
+                                             {:user         user
+                                              :currencies   currencies
+                                              :on-tag-click transaction-on-tag-click
+                                              :all-tags     all-tags}))))
+                            (take 50))
+                   transactions)]
             [:div.empty-message
              [:div.lead
               [:i.fa.fa-search.fa-fw]

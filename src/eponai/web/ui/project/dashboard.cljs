@@ -16,7 +16,7 @@
      :transaction (om/get-query Transaction)})
   static om/IQuery
   (query [_]
-    ['({:query/transactions [:transaction/title]} {:filter ?filter})])
+    ['({:query/transactions ?transaction} {:filter ?filter})])
   Object
   (render [this]
     (let [{:keys [query/transactions]} (om/props this)

@@ -147,3 +147,5 @@
 ;(defn long->month [n]
 ;  (let [d ]))
 
+(defn current-millis []
+  (c/to-long (now)))

@@ -172,10 +172,10 @@
                              test-edit-transaction
                              test-create-transaction-offline
                              test-create+edit-transaction-offline ;;-> sync should see create+edit.
-                             test-edit-transaction-offline
+                             ;;test-edit-transaction-offline
                             ]
-                            (reverse)
-                            (take 1)
+                            ;;(reverse)
+                            ;;(take 1)
                            ))
         nil)))
 

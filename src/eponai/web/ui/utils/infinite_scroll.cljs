@@ -5,7 +5,7 @@
             [taoensso.timbre :refer-macros [trace debug error warn]]))
 
 (def default-list-size-increment 10)
-(def default-initial-list-size 5)
+(def default-initial-list-size 50)
 (def default-list-increment-threshold-px 700)
 
 (defprotocol IContainerChild
@@ -58,7 +58,7 @@
               threshold (or (:list-increment-threshold-px (om/props this))
                             default-list-increment-threshold-px)]
           (when (> threshold distance-between-list-and-container-bottom)
-            (om/update-state! this update :list-size + (or list-size-increment default-list-size-increment))
+            ;; (om/update-state! this update :list-size + (or list-size-increment default-list-size-increment))
             (debug "Increased infinite scroll list size to: " (:list-size (om/get-state this)))))))))
 
 (defui InfiniteScroll
