@@ -19,21 +19,28 @@
 (defn checkout-loaded? []
   (boolean (aget js/window "StripeCheckout")))
 
-(defn stripe-token-recieved-cb [component plan-id]
+(defn stripe-token-recieved-cb [component]
   (fn [token]
     (let [clj-token (keywordize-keys (js->clj token))]
       (debug "Recieved token from Stripe.")
       (trace "Recieved token from Stripe: " clj-token)
-      (om/transact! component `[(stripe/subscribe ~{:token clj-token
-                                                    :plan plan-id})
+      (om/transact! component `[(stripe/update-card ~{:token clj-token})
                                 :query/stripe]))))
 
-(defn open-checkout [component plan-id args]
+(defn open-checkout [component email panel-label]
   (let [checkout (.configure js/StripeCheckout
                              (clj->js {:key    "pk_test_KHyU4tNjwX7R0lkxDmPxvbT9"
                                        :locale "auto"
-                                       :token  (stripe-token-recieved-cb component plan-id)}))]
-    (.open checkout (clj->js args))))
+                                       :token  (stripe-token-recieved-cb component)}))]
+    (.open checkout
+           #js {:name            "JourMoney"
+                :email           email
+                :locale          "auto"
+                :allowRememberMe false
+                :opened          #(.show-stripe-loading component false) ; #(.show-loading component false)
+                :closed          #(debug "StripeCheckout did close.")
+                :panelLabel      panel-label
+                })))
 
 (defn get-loader [props]
   (get props [:ui/singleton :ui.singleton/loader]))
@@ -63,7 +70,7 @@
     (let [checkout-loaded (checkout-loaded?)]
       {:checkout-loaded?   checkout-loaded
        :load-checkout-chan (chan)
-       :is-loading?        (not checkout-loaded)
+       :is-stripe-loading?        (not checkout-loaded)
        :tab                :payment}))
   (componentWillMount [this]
     (let [{:keys [load-checkout-chan
@@ -71,7 +78,7 @@
       (when-not checkout-loaded?
         (go (<! load-checkout-chan)
             (om/set-state! this {:checkout-loaded? true
-                                 :is-loading? false}))
+                                 :is-stripe-loading? false}))
         (load-checkout load-checkout-chan))))
 
   (componentDidMount [this]
@@ -89,21 +96,14 @@
                            :query/transactions])
       (when on-close
         (on-close))))
-  (add-payment [this]
+  (update-payment [this label]
     (let [{:keys [query/current-user]} (om/props this)]
-      (open-checkout this
-                     "paywhatyouwant"
-                     {:name            "JourMoney"
-                      ;:description     "JourMoney Subscription"
-                      ;:currency        "usd"
-                      :email           (:user/email current-user)
-                      ;:amount          0
-                      :locale          "auto"
-                      :allowRememberMe false
-                      :opened          #(debug "StripeCheckout did open.") ; #(.show-loading component false)
-                      :closed          #(debug "StripeCheckout did close.")
-                      :panelLabel      "Subscribe"
-                      })))
+      (.show-stripe-loading this true)
+      (open-checkout this (:user/email current-user) label)))
+
+  (show-stripe-loading [this is-loading?]
+    (om/update-state! this assoc :is-stripe-loading? is-loading?))
+
   (render [this]
     (let [{:keys [query/current-user
                   query/all-currencies
@@ -112,7 +112,7 @@
           loader (get-loader props)
           {user-name :user/name
            :keys [user/email]} current-user
-          {:keys [input-currency tab checkout-loaded?]} (om/get-state this)
+          {:keys [input-currency tab checkout-loaded? is-stripe-loading?]} (om/get-state this)
           {:keys [stripe/subscription stripe/info]} stripe
           {subscription-status :stripe.subscription/status} subscription]
       (debug "StripeCheckout loaded: " checkout-loaded?)
@@ -218,20 +218,24 @@
                   (if (:card info)
                     [:div.column.small-8
                      [:div.row.align-middle
-                      [:div.column.small-9.text-right
+                      [:div.column.small-8.text-right
                        [:div.row
                         [:div.column.small-12.text-right
                          [:span (get-in info [:card :brand])]]
                         [:div.column.small-12.text-right
                          [:span (str "**** **** ****" (get-in info [:card :last4]))]]]]
-                      [:div.column.small-3
-                       [:a.button.hollow
-                        "Edit"]]]]
+                      [:div.column.small-4
+                       [:a.button.hollow.expanded
+                        {:on-click #(.update-payment this "Update Card")}
+                        (if is-stripe-loading?
+                          [:i.fa.fa-spinner.fa-spin.fa-fw]
+                          [:span "Update"])
+                        ]]]]
                     [:div.column
                      [:div.row.align-middle
                       [:div.column.small-3
                        [:a.button
-                        {:on-click #(.add-payment this)}
+                        {:on-click #(.update-payment this "Add Card")}
                         "+ Add Card"]]
                       [:div.column
                        (when (= subscription-status :trialing)

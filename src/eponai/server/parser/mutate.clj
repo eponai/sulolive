@@ -74,41 +74,41 @@
 
 ;; --------------- Widget ----------------
 
-(defmutation widget/create
-  [{:keys [state auth] :as env} k params]
-  ["Created widget" "Error creating widget"]
-  {:action (fn []
-             (debug "widget/create with params: " params)
-             (validate/validate env k {:widget    params
-                                       :user-uuid (:username auth)})
-             (let [widget (format/widget-create params)]
-               (transact/transact-one state widget)))})
-
-(defmutation widget/edit
-  [{:keys [state]} _ params]
-  ["Edited widget" "Error editing widget"]
-  {:action (fn []
-             (debug "widget/edit with params: " params)
-             (let [widget (format/widget-edit params)]
-               (transact/transact state widget)))
-   :remote true})
-
-(defmutation widget/delete
-  [{:keys [state]} _ {:keys [widget/uuid] :as params}]
-  ["Deleted widget" "Error deleting widget"]
-  {:action (fn []
-             (debug "widget/delete with params: " params)
-             (transact/transact-one state [:db.fn/retractEntity [:widget/uuid uuid]]))
-   :remote true})
+;(defmutation widget/create
+;  [{:keys [state auth] :as env} k params]
+;  ["Created widget" "Error creating widget"]
+;  {:action (fn []
+;             (debug "widget/create with params: " params)
+;             (validate/validate env k {:widget    params
+;                                       :user-uuid (:username auth)})
+;             (let [widget (format/widget-create params)]
+;               (transact/transact-one state widget)))})
+;
+;(defmutation widget/edit
+;  [{:keys [state]} _ params]
+;  ["Edited widget" "Error editing widget"]
+;  {:action (fn []
+;             (debug "widget/edit with params: " params)
+;             (let [widget (format/widget-edit params)]
+;               (transact/transact state widget)))
+;   :remote true})
+;
+;(defmutation widget/delete
+;  [{:keys [state]} _ {:keys [widget/uuid] :as params}]
+;  ["Deleted widget" "Error deleting widget"]
+;  {:action (fn []
+;             (debug "widget/delete with params: " params)
+;             (transact/transact-one state [:db.fn/retractEntity [:widget/uuid uuid]]))
+;   :remote true})
 
 ;; ---------------- Dashboard ----------------
 
-(defmutation dashboard/save
-  [{:keys [state]} _ {:keys [widget-layout] :as params}]
-  ["Saved dashboard" "Error saving dashboard"]
-  {:action (fn []
-             (debug "dashboard/save with params: " params)
-             (transact/transact state (format/add-tempid widget-layout)))})
+;(defmutation dashboard/save
+;  [{:keys [state]} _ {:keys [widget-layout] :as params}]
+;  ["Saved dashboard" "Error saving dashboard"]
+;  {:action (fn []
+;             (debug "dashboard/save with params: " params)
+;             (transact/transact state (format/add-tempid widget-layout)))})
 
 ;; ------------------- User account related ------------------
 
@@ -137,6 +137,26 @@
                (when stripe-eid
                  (debug "User: " (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])))
                (api/stripe-subscribe state stripe-fn stripe-account p))}))
+
+(defmutation stripe/update-card
+  [{:keys [state auth stripe-fn]} _ p]
+  ["Card details updated!" "Could not update card details"]
+  (let [db (d/db state)
+        _ (debug "stripe/card-update with params:" p)
+        stripe-eid (p/one-with db {:where '[[?u :user/uuid ?user-uuid]
+                                            [?e :stripe/user ?u]]
+                                   :symbols {'?user-uuid (:username auth)}})
+        stripe-account (when stripe-eid
+                         (p/pull db [:stripe/customer
+                                     {:stripe/subscription [:stripe.subscription/id]}]
+                                 stripe-eid))]
+    {:action (fn []
+               (debug "Stripe information: " stripe-account)
+               (when stripe-eid
+                 (debug "User: " (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])))
+               (api/stripe-update-card state stripe-fn stripe-account p)
+               ;(api/stripe-update-card state stripe-fn stripe-account p)
+               )}))
 
 (defmutation stripe/trial
   [{:keys [state auth stripe-fn]} _ _]

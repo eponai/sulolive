@@ -89,6 +89,13 @@
     {:stripe/customer     (.getId customer)
      :stripe/subscription (obj->subscription-map subscription)}))
 
+(defmethod stripe-action :customer/update
+  [_ {:keys [customer-id params]}]
+  (let [customer (Customer/retrieve customer-id)
+        updated-customer (.update customer params)]
+    (debug "Updated customer: " updated-customer)
+    {:stripe/customer customer-id}))
+
 
 (defmethod stripe-action :subscription/create
   [_ {:keys [customer-id params]}]

@@ -256,6 +256,17 @@
         (assert (some? user-id))
         (transact-one conn account)))))
 
+(defn stripe-update-card
+  [_ stripe-fn {:keys [stripe/customer]} {:keys [token] :as p}]
+  (let [{:keys [id email]} token]
+    (if (some? customer)
+      (let [updated (stripe-fn :customer/update
+                               {:customer-id customer
+                                :params      {"source" id}})]
+        (debug "Did update stripe customer: " updated))
+      (throw (ex-info (str "Could not find customer for user with email: " email)
+                      {:data {:token token}})))))
+
 (defn stripe-trial
   "Subscribe user to trial, without requesting credit carg."
   [conn stripe-fn {:keys [user/email stripe/_user] :as user}]

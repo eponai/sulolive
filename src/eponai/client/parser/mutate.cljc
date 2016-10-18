@@ -121,6 +121,11 @@
   (debug "stripe/trial with params:" p)
   {:remote true})
 
+(defmethod client-mutate 'stripe/update-card
+  [_ _ p]
+  (debug "stripe/update-card with params: " p)
+  {:remote true})
+
 
 ;; ############# Session mutations #################
 
