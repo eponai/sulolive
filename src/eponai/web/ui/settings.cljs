@@ -71,7 +71,7 @@
       {:checkout-loaded?   checkout-loaded
        :load-checkout-chan (chan)
        :is-stripe-loading?        (not checkout-loaded)
-       :tab                :payment}))
+       :tab                :general}))
   (componentWillMount [this]
     (let [{:keys [load-checkout-chan
                   checkout-loaded?]} (om/get-state this)]
@@ -82,16 +82,16 @@
         (load-checkout load-checkout-chan))))
 
   (componentDidMount [this]
-    (let [{:keys [query/current-user]} (om/props this)]
-      (om/update-state! this assoc :input-currency (-> current-user
-                                                       :user/currency
-                                                       :currency/code))))
+    (let [{:keys [query/current-user]} (om/props this)
+          currency (:user/currency current-user)]
+      (om/update-state! this assoc :input-currency {:label (:currency/code currency)
+                                                    :value (:db/id currency)})))
   (save-settings [this]
     (let [{:keys [query/current-user]} (om/props this)
           {:keys [input-currency]} (om/get-state this)
           {:keys [on-close]} (om/get-computed this)]
-      (om/transact! this `[(settings/save ~{:currency input-currency
-                                            :user     current-user})
+      (om/transact! this `[(settings/save ~{:currency (:label input-currency)
+                                            :user current-user})
                            :query/dashboard
                            :query/transactions])
       (when on-close
@@ -166,13 +166,14 @@
                   [:div.column.small-3.small-offset-3.text-right
                    [:div.text-left
                     (sel/->Select (om/computed
-                                    {:value   {:label (:currency/code (:user/currency current-user))
-                                               :value (:db/id (:user/currency current-user))}
+                                    {:value   (or input-currency
+                                                  {:label (:currency/code (:user/currency current-user))
+                                                   :value (:db/id (:user/currency current-user))})
                                      :options (map (fn [{:keys [currency/code db/id]}]
                                                      {:label code
                                                       :value id})
                                                    all-currencies)}
-                                    {:on-select #(om/update-state! this assoc :input-currency (:label %))}))]]
+                                    {:on-select #(om/update-state! this assoc :input-currency %)}))]]
                   ]]
                 [:div.content-section
                  [:div.row
