@@ -350,42 +350,24 @@
             (seq tags)
             (into (mapcat tag->txs) tags))))
 
-(defn edit [{:keys [db/id] :as old} new conform-fn]
+(defn edit
+  [env k {:keys [old new] :as p} conform-fn]
   {:pre [(= (:db/id old) (:db/id new))]}
-  (letfn [(conform-ref-val [x]
-            (if-not (map? x)
-              x
-              (let [id (:db/id x)
-                    no-id (dissoc x :db/id)]
-                (cond
-                  (not (tempid? id))
-                  id
-                  (and (map? x) (= 1 (count no-id)))
-                  ;; lookup-ref:
-                  (first no-id)
-                  :else
-                  (throw (ex-info (str "Could not conform ref-val: " x
-                                       ". Was not real db-id nor map of 1 unique value.")
-                                  {:ref-val x}))))))
-          (retracts []
-            (fn [[k v]]
-              (when-not (= :db/id k)
-                (let [retract [:db/retract id k]]
-                  (cond
-                    (map? v)
-                    [(conj retract (conform-ref-val v))]
-                    (coll? v)
-                    (->> v (into [] (comp (filter some?)
-                                           (map #(conj retract (conform-ref-val %))))))
-                    :else [(conj retract v)])))))
-          (remove-diff-nils [x]
-            (cond->> x
-                     (coll? x)
-                     (into #{} (filter some?))))]
-    (let [[in-old in-new] (diff/diff old new)
-          adds (-> (conform-fn in-new)
-                   (assoc :db/id id)
-                   (->> (medley/map-vals remove-diff-nils)))]
-      (cond-> (into [] (mapcat (retracts)) (conform-fn in-old))
-              (seq (dissoc adds :db/id))
-              (conj adds)))))
+  (let [id (:db/id old)]
+    (letfn [(db-fn->txs [db-fn]
+              (fn [[k v]]
+                (when-not (= :db/id k)
+                  (let [tx [db-fn id k]]
+                    (if (or (sequential? v) (set? v))
+                      (into [] (comp (filter some?) (map #(conj tx %))) v)
+                      [(conj tx v)])))))]
+      (let [[in-old in-new] (diff/diff old new)
+            adds (if (:eponai.common.parser/server? env)
+                   (let [created-at (some :eponai.common.parser/created-at [p env])]
+                     (fn [[k v]]
+                       (when-not (= :db/id k)
+                         [[:db.fn/edit-add created-at id k v]])))
+                   (db-fn->txs :db/add))]
+        (-> []
+            (into (mapcat (db-fn->txs :db/retract)) (conform-fn in-old))
+            (into (mapcat adds) (conform-fn in-new)))))))

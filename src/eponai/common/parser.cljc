@@ -153,12 +153,13 @@
                                     (util/put-db-id-in-query query))))]
       (read env k p))))
 
-(defn wrap-parser-state
+(defn wrap-server-parser-state
   "Returns a parser with a filter-atom assoc'ed in the env."
   [parser]
   (fn [env query & [target]]
     (parser (assoc env ::filter-atom (atom nil)
-                       :user-uuid (get-in env [:auth :username]))
+                       :user-uuid (get-in env [:auth :username])
+                       ::server? true)
             query
             target)))
 
@@ -430,7 +431,7 @@
       (make-parser state
                    (fn [parser state]
                      (-> parser
-                         wrap-parser-state
+                         wrap-server-parser-state
                          wrap-om-next-error-handler))
                    (fn [read state]
                      (-> read

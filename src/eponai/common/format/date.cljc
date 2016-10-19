@@ -134,6 +134,10 @@
   (let [t (today)]
     (t/minus t (t/days n))))
 
+(defn days-from-now [n]
+  (let [t (today)]
+    (t/plus t (t/days n))))
+
 (defn date-time->long [obj]
   (let [d (date-time obj)]
     (c/to-long d)))
@@ -157,3 +161,4 @@
 
 (defn current-millis []
   (c/to-long (now)))
+

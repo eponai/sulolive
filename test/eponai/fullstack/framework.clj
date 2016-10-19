@@ -17,6 +17,50 @@
             [datomic.api :as datomic])
   (:import (org.eclipse.jetty.server Server ServerConnector Connector)))
 
+(comment (throw (ex-info "Entity has been modified since this transaction"
+                         {:created-at created-at
+                          :entity-id  entity
+                          :attribute  attr
+                          :value      value
+                          :last-edit  last-edit})))
+
+
+(def db-fn-edit-add
+  #db/fn{:lang     :clojure
+         :requires [[datomic.api :as d]]
+         :params   [db created-at entity attr value]
+         :code     (let [last-edit (some->> (d/datoms db :eavt entity attr)
+                                            (sort-by :tx #(compare %2 %1))
+                                            (first)
+                                            :tx
+                                            (d/q {:where '[[?tx :tx/mutation-created-at ?last-edit]]
+                                                  :find  '[?last-edit .]
+                                                  :in    '[$ ?tx]}
+                                                 db))
+                         not-editable? (and last-edit (> last-edit created-at))
+                         _ (when not-editable?
+                             nil)
+                         map->txs (fn [m]
+                                    (cond-> [[:db/add entity attr (:db/id m)]]
+                                            (not (number? (:db/id m)))
+                                            (conj m)))
+                         txs (cond
+                               (map? value)
+                               (map->txs value)
+                               (coll? value)
+                               (->> value
+                                    (into [] (comp (filter some?)
+                                                   (mapcat (fn [x]
+                                                             {:pre [(or (map? x) (not (coll? x)))]}
+                                                             (if (map? x)
+                                                               (map->txs x)
+                                                               [[:db/add entity attr x]]))))))
+                               :else
+                               [[:db/add entity attr value]])]
+                     (if not-editable?
+                       []
+                       txs))})
+
 (defn call-parser [reconciler query & [target]]
   {:pre [(some? query)]}
   (let [parser (backend/get-parser reconciler)
@@ -189,7 +233,10 @@
 
 (defn setup-system []
   {:results-atom    (atom [])
-   :db-schema       (datomic-dev/read-schema-files)
+   :db-schema       (conj (datomic-dev/read-schema-files)
+                          [{:db/id    #db/id [:db.part/user]
+                            :db/ident :db.fn/edit-add
+                            :db/fn     db-fn-edit-add}])
    :db-transactions (datomic-dev/transaction-data 105)})
 
 (defn run-test [{:keys [server] :as system} test-fn]

@@ -54,7 +54,7 @@
   {:action (fn []
              (validate/edit env k p)
              (debug "validated transaction")
-             (let [txs (format/edit old new format/transaction)]
+             (let [txs (format/edit env k p format/transaction)]
                (debug "editing transaction: " (:db/id old) " txs: " txs)
                (transact/transact state txs)))})
 

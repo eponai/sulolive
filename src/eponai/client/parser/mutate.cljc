@@ -29,7 +29,7 @@
   [{:keys [state] :as env} k {:keys [old new] :as p}]
   {:action (fn []
              (validate/edit env k p)
-             (let [txs (format/edit old new format/transaction)
+             (let [txs (format/edit env k p format/transaction)
                    ;;_ (assert (vector? txs))
                    ;; txs (into txs (datascript/mark-entity-txs id :transaction/uuid uuid))
                    _ (debug "editing transaction: " (:db/id old)

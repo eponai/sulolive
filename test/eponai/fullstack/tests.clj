@@ -3,6 +3,7 @@
             [om.util]
             [eponai.common.database.pull :as pull]
             [eponai.common.parser :as parser]
+            [eponai.common.format.date :as date]
             [taoensso.timbre :refer [info debug error]]
             [clojure.data :as diff]
             [datascript.core :as datascript]
@@ -92,9 +93,9 @@
                                      (assert (every? (partial has-transaction? tx) clients)))}]}))
 
 (defn has-edit? [tx update-fn client]
-  (= (:transaction/amount
-       (entity client [:transaction/uuid (:transaction/uuid tx)]))
-     (update-fn (read-string (:transaction/amount tx)))))
+  (= (bigdec (:transaction/amount
+               (entity client [:transaction/uuid (:transaction/uuid tx)])))
+     (bigdec (update-fn (read-string (:transaction/amount tx))))))
 
 (defn transaction-edit [client tx update-fn & [extra-params]]
   (fn []
@@ -104,10 +105,9 @@
       (assert (some? (:db/id tx))
               (str "client: " client " did not have tx: " tx))
       [client `[(transaction/edit
-                  ~{:old tx
-                    :new (-> tx
-                             (update :transaction/amount update-fn)
-                             (merge extra-params))})]])))
+                  ~(merge {:old tx
+                           :new (update tx :transaction/amount update-fn)}
+                          extra-params))]])))
 
 (defn test-edit-transaction [_ [client1 :as clients]]
   (let [tx (new-transaction client1)]
@@ -121,7 +121,8 @@
 (defn test-edit-transaction-offline [server [client1 client2 :as clients]]
   (let [tx (new-transaction client1)
         c1-edit inc
-        c2-edit (comp inc inc)]
+        c2-edit (comp inc inc)
+        days-from-now (comp date/date->long date/days-from-now)]
     {:label   "Last edit should persist"
      :actions [{::fw/transaction [client1 `[(transaction/create ~tx)]]
                 ::fw/asserts     #(assert (every? (partial has-transaction? tx) clients))}
@@ -129,10 +130,12 @@
                                       (.join server))
                 ::fw/asserts     #(do (assert (test/is (not (.isRunning server))))
                                       (assert (every? (partial has-transaction? tx) clients)))}
-               {::fw/transaction (transaction-edit client1 tx c1-edit {::parser/created-at 3000})
+               {::fw/transaction (transaction-edit client1 tx c1-edit
+                                                   {::parser/created-at (days-from-now 2)})
                 ::fw/asserts     #(do (assert (has-edit? tx c1-edit client1))
                                       (assert (not (has-edit? tx c1-edit client2))))}
-               {::fw/transaction (transaction-edit client2 tx c2-edit {::parser/created-at 7000})
+               {::fw/transaction (transaction-edit client2 tx c2-edit
+                                                   {::parser/created-at (days-from-now 3)})
                 ::fw/asserts     #(do (assert (has-edit? tx c2-edit client2))
                                       (assert (not (has-edit? tx c2-edit client1))))}
                {::fw/transaction   #(.start server)
@@ -163,12 +166,12 @@
 (defn run []
   (fs.utils/with-less-loud-logger
     #(do (fw/run-tests (->> [
-                             test-system-setup
-                             test-create-transaction
-                             test-edit-transaction
-                             test-create-transaction-offline
-                             test-create+edit-transaction-offline ;;-> sync should see create+edit.
-                             ;;test-edit-transaction-offline
+                             ;test-system-setup
+                             ;test-create-transaction
+                             ;test-edit-transaction
+                             ;test-create-transaction-offline
+                             test-edit-transaction-offline
+                             ;test-create+edit-transaction-offline ;;-> sync should see create+edit.
                              ;;test-edit-transaction-offline-to-new-offline-project
                             ]
                             ;;(reverse)
