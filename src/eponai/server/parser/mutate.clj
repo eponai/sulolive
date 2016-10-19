@@ -72,6 +72,13 @@
              (debug "project/save with params: " params)
              (api/share-project state uuid email))})
 
+(defmutation project/delete
+  [{:keys [state]} _ {:keys [project-dbid] :as params}]
+  ["Deleted project" "Unable to delete project"]
+  {:action (fn []
+             (debug "project/delete with params: " params)
+             (transact/transact-one state [:db.fn/retractEntity project-dbid]))})
+
 ;; --------------- Widget ----------------
 
 ;(defmutation widget/create

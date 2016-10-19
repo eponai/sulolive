@@ -86,18 +86,20 @@
                        (.retrieve (.getSources customer) (.getDefaultSource customer)))
           ^Subscription subscription (when subscription-id
                                        (.retrieve (.getSubscriptions customer) subscription-id))]
-      {:id    (.getId customer)
-       :email (.getEmail customer)
-       :card  (when card
-                {:exp-month (.getExpMonth card)
-                 :exp-year  (.getExpYear card)
-                 :name      (.getName card)
-                 :last4     (.getLast4 card)
-                 :brand     (.getBrand card)
-                 :id        (.getId card)
-                 })
+      {:id           (.getId customer)
+       :email        (.getEmail customer)
+       :card         (when card
+                       {:exp-month (.getExpMonth card)
+                        :exp-year  (.getExpYear card)
+                        :name      (.getName card)
+                        :last4     (.getLast4 card)
+                        :brand     (.getBrand card)
+                        :id        (.getId card)
+                        })
        :subscription (when subscription
-                       {:quantity (.getQuantity subscription)})})))
+                       {:quantity   (.getQuantity subscription)
+                        :period-end (* 1000 (.getCurrentPeriodEnd subscription))
+                        :period-start (* 1000 (.getCurrentPeriodStart subscription))})})))
 
 (defmethod stripe-action :customer/create
   [_ {:keys [params]}]

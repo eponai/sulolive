@@ -144,6 +144,10 @@
   (let [d (date-time obj)]
     (c/to-long (t/date-time (t/year d) (t/month d)))))
 
+(defn date->string [obj & [format-str]]
+  (let [d (date-time obj)]
+    (debug "Got date: " d)
+    (f/unparse (f/formatter (or format-str "MM/dd/yyyy")) d)))
 ;(defn long->month [n]
 ;  (let [d ]))
 

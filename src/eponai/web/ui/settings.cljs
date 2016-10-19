@@ -8,7 +8,8 @@
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug trace]]
-    [eponai.web.ui.format :as f])
+    [eponai.web.ui.format :as f]
+    [eponai.common.format.date :as date])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 ; Stripe helpers
@@ -71,15 +72,14 @@
     (let [checkout-loaded (checkout-loaded?)]
       {:checkout-loaded?   checkout-loaded
        :load-checkout-chan (chan)
-       :is-stripe-loading?        (not checkout-loaded)
+       :is-stripe-loading? (not checkout-loaded)
        :tab                :general}))
   (componentWillMount [this]
     (let [{:keys [load-checkout-chan
                   checkout-loaded?]} (om/get-state this)]
       (when-not checkout-loaded?
         (go (<! load-checkout-chan)
-            (om/set-state! this {:checkout-loaded? true
-                                 :is-stripe-loading? false}))
+            (om/update-state! this assoc :checkout-loaded? true :is-stripe-loading? false))
         (load-checkout load-checkout-chan))))
 
   (componentDidMount [this]
@@ -127,7 +127,7 @@
           {:keys [input-currency tab is-stripe-loading? paywhatyouwant]} (om/get-state this)
           {:keys [stripe/subscription stripe/info]} stripe
           {subscription-status :stripe.subscription/status} subscription]
-      ;(debug "Stripe info: " info)
+      (debug "Stripe info: " info)
       (html
         [:div#settings
          [:h4.header "Settings"]
@@ -243,6 +243,19 @@
                 ; [:div.row
                 ;  [:div.column.small-8
                 ;   [:span (str "You're currently paying: $" (or (get-in info [:subscription :quantity]) 0) ".00")]]]]
+
+                [:div.content-section
+                 [:div.row
+                  [:div.column
+                   [:label "Current Period"]
+                   ]
+                  [:div.column.text-right
+                   [:div
+                    (date/date->string (get-in info [:subscription :period-start]))
+                    " - "
+                    (date/date->string (get-in info [:subscription :period-end]))]
+                   [:div
+                    [:span "Billed $" (get-in info [:subscription :quantity]) ".00"]]]]]
                 [:div.content-section
                  [:div.row
                   ; Left column of payment method
@@ -253,17 +266,22 @@
                          [:small (str "You have " (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial. " ) [:a "What happens then?"]]
                          (nil? (:card info))
                          [:small "You haven't added a card yet. Enable all functionality in the app by adding one. " [:a "Why?"]]
-                         (some? (:card info))
-                         [:div
-                          [:div
-                           [:span (get-in info [:card :brand])]]
-                          [:div
-                           [:span (str "**** **** ****" (get-in info [:card :last4]))]]])]
+                         ;(some? (:card info))
+                         ;[:div
+                         ; [:span
+                         ;  [:strong (get-in info [:card :brand])]
+                         ;  " **** **** **** " (get-in info [:card :last4])]]
+                         )]
 
 
                   (if (:card info)
                     ; Card info div
                     [:div.column.small-4.align-bottom
+                     (when (some? (:card info))
+                       [:div
+                        [:span
+                         [:strong (get-in info [:card :brand])]
+                         " **** **** **** " (get-in info [:card :last4])]])
                      [:div.update-buttons
                       [:a.button.hollow.expanded
                        {:on-click #(.update-payment this "Update Card")}
@@ -282,7 +300,13 @@
                       (if is-stripe-loading?
                         [:i.fa.fa-spinner.fa-spin.fa-fw]
                         [:span "+ Add Card"])]])]]
-                [:div.content-section]])]
+                [:div.content-section
+                 [:div.row.column
+                  [:small [:strong "Note: "] "Your card will be charged only if you have selected a monthly price above $0.00."]]]
+                [:div.content-section]]
+
+               :else
+               [:div (str "No matching clause: tab " tab)])]
         ;[:div
         ; [:div#settings-general.row.column.small-12.medium-6
         ;  [:div.callout.clearfix

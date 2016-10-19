@@ -31,10 +31,11 @@
   [{:keys [db _ target]} _ _]
   (when-not target
     {:value
-     (let [project-eid (read/active-project-eid db)]
+     (let [project-eid (read/active-project-eid db)
+           project-entity (when project-eid (d/entity db project-eid))]
        (cond-> (into {} (d/entity db [:ui/component :ui.component/project]))
-               (some? project-eid)
-               (assoc :ui.component.project/active-project (d/entity db project-eid))))}))
+               (seq project-entity)
+               (assoc :ui.component.project/active-project project-entity)))}))
 
 (defmethod client-read :query/selected-transaction
   [{:keys [db query target]} _ _]

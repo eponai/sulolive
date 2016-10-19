@@ -54,41 +54,47 @@
   (debug "project/share with params: " params)
   {:remote true})
 
+(defmethod client-mutate 'project/delete
+  [{:keys [state]} _ {:keys [project-dbid] :as params}]
+  (debug "project/delete with params: " project-dbid)
+  {:action (fn []
+             (transact/transact-one state [:db.fn/retractEntity project-dbid]))
+   :remote true})
 ;; -------------- Widget ---------------
 
-(defmethod client-mutate 'widget/create
-  [{:keys [state parser] :as e} _ params]
-  (debug "widget/save with params: " params)
-  {:action (fn []
-             (let [widget (format/widget-create params)]
-               (transact/transact-one state widget)))
-   :remote true})
-
-(defmethod client-mutate 'widget/edit
-  [{:keys [state]} _ params]
-  (debug "widget/edit with params: " params)
-  (let [widget (format/widget-edit params)]
-    {:action (fn []
-               (transact/transact state widget))
-     :remote true}))
-
-(defmethod client-mutate 'widget/delete
-  [{:keys [state]} _ params]
-  (debug "widget/delete with params: " params)
-  (let [widget-uuid (:widget/uuid params)]
-    {:action (fn []
-               (transact/transact-one state [:db.fn/retractEntity [:widget/uuid widget-uuid]]))
-     :remote true}))
+;(defmethod client-mutate 'widget/create
+;  [{:keys [state parser] :as e} _ params]
+;  (debug "widget/save with params: " params)
+;  {:action (fn []
+;             (let [widget (format/widget-create params)]
+;               (transact/transact-one state widget)))
+;   :remote true})
+;
+;(defmethod client-mutate 'widget/edit
+;  [{:keys [state]} _ params]
+;  (debug "widget/edit with params: " params)
+;  (let [widget (format/widget-edit params)]
+;    {:action (fn []
+;               (transact/transact state widget))
+;     :remote true}))
+;
+;(defmethod client-mutate 'widget/delete
+;  [{:keys [state]} _ params]
+;  (debug "widget/delete with params: " params)
+;  (let [widget-uuid (:widget/uuid params)]
+;    {:action (fn []
+;               (transact/transact-one state [:db.fn/retractEntity [:widget/uuid widget-uuid]]))
+;     :remote true}))
 
 ;; ---------------------- Dashboard -----------------------
 
-(defmethod client-mutate 'dashboard/save
-  [{:keys [state]} _ {:keys [widget-layout] :as params}]
-  (debug "dashboard/save with params: " params)
-  {:action (fn []
-             (when widget-layout
-               (transact/transact state (format/add-tempid widget-layout))))
-   :remote (some? widget-layout)})
+;(defmethod client-mutate 'dashboard/save
+;  [{:keys [state]} _ {:keys [widget-layout] :as params}]
+;  (debug "dashboard/save with params: " params)
+;  {:action (fn []
+;             (when widget-layout
+;               (transact/transact state (format/add-tempid widget-layout))))
+;   :remote (some? widget-layout)})
 
 ;; ------------------- User account related ------------------
 

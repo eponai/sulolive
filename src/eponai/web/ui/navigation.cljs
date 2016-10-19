@@ -2,6 +2,7 @@
   (:require
     [datascript.core :as d]
     [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
+    [eponai.web.ui.project.add-project :refer [->NewProject]]
     [eponai.web.ui.project.add-transaction :refer [->AddTransaction AddTransaction]]
     [eponai.web.ui.settings :refer [->Settings Settings]]
     [eponai.web.ui.icon :as icon]
@@ -12,38 +13,6 @@
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]))
-
-;;;; ##################### UI components ####################
-
-(defui NewProject
-  Object
-  (render [this]
-    (let [{:keys [on-close on-save]} (om/get-computed this)
-          {:keys [input-name]} (om/get-state this)]
-      (html
-        [:div
-         [:h3
-          "Add project"]
-         [:input
-          (opts
-            {:value       (or input-name "")
-             :placeholder "Untitled"
-             :type        "text"
-             :on-change   #(om/update-state! this assoc :input-name (.-value (.-target %)))
-             :style       {:width "100%"}})]
-         ;[:br]
-         [:div.inline-block
-          (opts {:style {:float :right}})
-          [:a.button.secondary
-           {:on-click on-close}
-           "Cancel"]
-          [:a.button
-           {:on-click #(do
-                        (on-save input-name)
-                        (on-close))}
-           "Save"]]]))))
-
-(def ->NewProject (om/factory NewProject))
 
 ;;;; #################### Om Next components #####################
 
@@ -118,7 +87,8 @@
                       [:small "Create new..."]]]]]))]
              ; Add transaction button
              [:a.button.tiny
-              {:on-click #(om/update-state! this assoc :add-transaction? true)}
+              {:class (when-not (seq all-projects) "disabled")
+               :on-click #(om/update-state! this assoc :add-transaction? true)}
               [:i.fa.fa-plus.fa-fw]]
 
              ]
