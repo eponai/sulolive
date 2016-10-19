@@ -20,7 +20,7 @@
        [:div.content-section
         [:div.row
          [:div.column.small-4.small-offset-4
-          [:a.button.alert.expanded
+          [:a.button.alert.expanded.hollow
            "Delete Project"]]]]])))
 
 (def ->ProjectSettings (om/factory ProjectSettings))

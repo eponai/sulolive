@@ -42,7 +42,7 @@
                   (attr "font-size" 14))
           x-scale (.. js/d3 scaleLinear
                       (range #js [0 inner-width])
-                      (domain #js [1 100]))
+                      (domain #js [0 100]))
           dispatch (.. js/d3 (dispatch "sliderChange" "sliderSet"))
           slider-track (.. slider
                            (append "div")
@@ -76,10 +76,10 @@
                                       (.. slider-handle
                                           (style "left" (str mouseX "px")))
                                       (when on-change-value
-                                        (on-change-value (.invert x-scale mouseX)))))
+                                        (on-change-value (js/Math.round (.invert x-scale mouseX))))))
           (on "sliderSet.slider" (fn [value]
                                    (when on-select-value
-                                     (on-select-value value)))))
+                                     (on-select-value (js/Math.round value))))))
       ;(.. graph
       ;    (append "path")
       ;    (attr "class" "background")

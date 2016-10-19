@@ -113,11 +113,21 @@
 ;; ------------------- User account related ------------------
 
 (defmutation settings/save
-  [{:keys [state]} _ {:keys [currency user] :as params}]
+  [{:keys [state auth stripe-fn]} _ {:keys [currency user paywhatyouwant] :as params}]
   ["Saved settings" "Error saving settings"]
   {:action (fn []
-             (debug "settings/save with params: " params)
-             (transact/transact-one state [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]]))})
+             (let [db (d/db state)
+                   stripe-eid (p/one-with db {:where   '[[?u :user/uuid ?user-uuid]
+                                                         [?e :stripe/user ?u]]
+                                              :symbols {'?user-uuid (:username auth)}})
+                   stripe-account (when stripe-eid
+                                    (p/pull db [:stripe/customer
+                                                {:stripe/subscription [:stripe.subscription/id]}]
+                                            stripe-eid))]
+               (debug "settings/save with params: " params)
+               (api/stripe-update-subscription state stripe-fn stripe-account {:quantity paywhatyouwant}))
+             (when currency
+               (transact/transact-one state [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]])))})
 
 
 ;(defmutation stripe/subscribe

@@ -256,6 +256,15 @@
 ;        (assert (some? user-id))
 ;        (transact-one conn account)))))
 
+(defn stripe-update-subscription
+  [_ stripe-fn {:keys [stripe/customer
+                          stripe/subscription]} {:keys [quantity]}]
+  (when (some? customer)
+    (let [updated (stripe-fn :subscription/update
+                             {:customer-id customer
+                              :subscription-id (:stripe.subscription/id subscription)
+                              :params {"quantity" quantity}})]
+      (debug "Updated customer subscription: " updated))))
 (defn stripe-update-card
   [conn stripe-fn {:keys [stripe/customer
                           stripe/subscription]} {:keys [token]}]

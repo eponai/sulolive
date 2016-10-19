@@ -88,13 +88,20 @@
       (om/update-state! this assoc :input-currency {:label (:currency/code currency)
                                                     :value (:db/id currency)})))
   (save-settings [this]
-    (let [{:keys [query/current-user]} (om/props this)
-          {:keys [input-currency]} (om/get-state this)
+    (let [{:keys [query/current-user query/stripe]} (om/props this)
+          {:keys [input-currency paywhatyouwant]} (om/get-state this)
           {:keys [on-close]} (om/get-computed this)]
-      (om/transact! this `[(settings/save ~{:currency (:label input-currency)
-                                            :user current-user})
+      (om/transact! this `[(settings/save ~{:currency       (when input-currency
+                                                              (:label input-currency))
+                                            :user           current-user
+                                            :paywhatyouwant (when (and
+                                                                    paywhatyouwant
+                                                                    (not= paywhatyouwant
+                                                                          (get-in stripe [:stripe/info :subscription :quantity])))
+                                                              paywhatyouwant)})
                            :query/dashboard
-                           :query/transactions])
+                           :query/transactions
+                           :query/stripe])
       (when on-close
         (on-close))))
   (update-payment [this label]
@@ -117,9 +124,10 @@
                   query/stripe] :as props} (om/props this)
           {user-name :user/name
            :keys [user/email]} current-user
-          {:keys [input-currency tab checkout-loaded? is-stripe-loading? paywhatyouwant]} (om/get-state this)
+          {:keys [input-currency tab is-stripe-loading? paywhatyouwant]} (om/get-state this)
           {:keys [stripe/subscription stripe/info]} stripe
           {subscription-status :stripe.subscription/status} subscription]
+      ;(debug "Stripe info: " info)
       (html
         [:div#settings
          [:h4.header "Settings"]
@@ -177,7 +185,7 @@
                  [:div.row
                   [:div.column
                    [:label "Pay What You Want"]
-                   [:small "The JourMoney subscription is " [:a "Pay what you want"] ". You choose what you think it is worth and select your own monthly price."]]
+                   [:small "The JourMoney subscription is " [:a "Pay what you want"] ". You set your own monthly price at what you think your subscription is worth."]]
                   ]
                  [:div.row.column
                   (pay/->PayWhatYouWant (om/computed {:value (or paywhatyouwant (get-in info [:subscription :quantity]))}
@@ -185,16 +193,9 @@
                                                       :on-select-value #(om/update-state! this assoc :paywhatyouwant %)}))]
                  [:div.row
                   [:div.column
-                   [:span (str "I want to pay: $" (or paywhatyouwant (get-in info [:subscription :quantity]) 0) " per month")]]
-                  [:div.column
-
-                   ;(pay/->PayWhatYouWant {:value 0})
-                   ;[:div.slider {:value 0}]
-                   ;(->PayWhatYouWantControl {:value 0})
-                   [:input
-                    {:defaultValue (or paywhatyouwant (get-in info [:subscription :quantity]) 0)
-                     :onBlur #(om/update-state! this assoc :paywhatyouwant (cljs.reader/read-string (.. % -target -value)))
-                     :type "number"}]]]]
+                   [:span "I want to pay: $"
+                    [:strong (or paywhatyouwant (get-in info [:subscription :quantity]) 0)] " per month"]]
+                  ]]
 
                 [:div.content-section.clearfix
                  [:a.button.hollow.float-right
