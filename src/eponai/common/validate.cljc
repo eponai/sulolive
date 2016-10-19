@@ -26,10 +26,9 @@
   [_ k _]
   (info "Validator not implemented: " {:key k}))
 
-(defn validate-transaction [{:keys [state]} k {:keys [transaction user-uuid] :as p}]
+(defn validate-transaction [{:keys [db]} k {:keys [transaction] :as p}]
   (debug "Validate transaction with params: " p)
   (let [{:keys [transaction/tags]} transaction
-        project-dbid (:transaction/project transaction)
         ;db-project (p/one-with (p/db* state) {:where   '[[?u :user/uuid ?user-uuid]
         ;                                                [?e :project/users ?u]]
         ;                                     :symbols {'?user-uuid   user-uuid
@@ -70,30 +69,33 @@
     (validate-transaction env k p)))
 
 (defmethod validate 'transaction/edit
-  [{:keys [state] :as env} k {:keys [transaction] :as p}]
-  (let [required-fields #{:db/id
-                          :transaction/uuid}
-        missing-keys (into [] (filter #(nil? (get transaction %))) required-fields)]
-    ;; Verify that all required fields are included in the transaction.
-    (do-validate k p #(empty? missing-keys)
-                 {:message      "Required fields are missing."
-                  :code         :missing-required-fields
-                  :missing-keys missing-keys}))
-  (debug "No missing keys")
+  [{:keys [db] :as env} k {:keys [old new] :as p}]
+  (letfn [(validate-tx [transaction]
+            (let [required-fields #{:db/id}
+                  missing-keys (into [] (filter #(nil? (get transaction %)))
+                                     required-fields)]
+              ;; Verify that all required fields are included in the transaction.
+              (do-validate k p #(empty? missing-keys)
+                           {:message      "Required fields are missing."
+                            :code         :missing-required-fields
+                            :missing-keys missing-keys}))
+            (debug "No missing keys")
 
-  (let [db-entry (p/lookup-entity (p/db* state) (:db/id transaction))]
-    ;; Validate that the transaction that we're trying to edit exists in the db.
-    (do-validate k p #(some? db-entry)
-                 {:message "Transaction to be edited not found."
-                  :code    :entity-not-found
-                  :db/id   (:db/id transaction)})
-    (debug "Did find transaction in db")
+            (let [db-entry (p/lookup-entity db (:db/id transaction))]
+              ;; Validate that the transaction that we're trying to edit exists in the db.
+              (do-validate k p #(some? db-entry)
+                           {:message "Transaction to be edited not found."
+                            :code    :entity-not-found
+                            :db/id   (:db/id transaction)})
+              (debug "Did find transaction in db")
 
-    ;; Validate rest of transaction
-    (validate-transaction env k (assoc p :transaction db-entry))))
+              ;; Validate rest of transaction
+              (validate-transaction env k (assoc p :transaction db-entry))))]
+    (validate-tx old)
+    (validate-tx new)))
 
 (defmethod validate 'widget/create
-  [{:keys [state]} k {:keys [widget user-uuid] :as p}]
+  [{:keys [db]} k {:keys [widget user-uuid] :as p}]
   (let [required-fields #{:widget/uuid
                           :widget/width
                           :widget/height
@@ -107,14 +109,42 @@
                   :code         :missing-required-fields
                   :missing-keys missing-keys})
     (let [dashboard-id (:widget/dashboard widget)
-          db-project (p/one-with (p/db* state) {:where   '[[?d :dashboard/project ?e]
-                                                          [?u :user/uuid ?user-uuid]
-                                                          [?e :project/users ?u]]
-                                               :symbols {'?user-uuid   user-uuid
-                                                         '?d dashboard-id}})]
+          db-project (p/one-with db
+                                 {:where   '[[?d :dashboard/project ?e]
+                                             [?u :user/uuid ?user-uuid]
+                                             [?e :project/users ?u]]
+                                  :symbols {'?user-uuid user-uuid
+                                            '?d         dashboard-id}})]
       ;; Verify that that the transaction is added is accessible by the user adding the transaction.
       (do-validate k p #(some? db-project)
                    {:message      "You don't have access to modify the specified project."
                     :code         :project-unaccessible
                     :dashboard-id dashboard-id
                     :user-uuid    user-uuid}))))
+
+(defn edit [{:keys [db user-uuid]} k {:keys [old new] :as p}]
+  (letfn [(validate-entity [e label]
+            (let [required-keys #{:db/id}]
+              (do-validate
+                k p #(every? (partial contains? e) required-keys)
+                {:message       (str "Entity " e " in " [k label]
+                                     " did not have all required keys: " required-keys)
+                 :code          :missing-required-fields
+                 :required-keys required-keys
+                 :user          user-uuid})))]
+
+    (validate-entity old "old")
+    (validate-entity new "new")
+
+    (let [old-id (:db/id old)
+          new-id (:db/id new)]
+      (do-validate k p #(= old-id new-id)
+                   {:message (str "edit " k " did not have equal :db/id")
+                    :old-id  old-id
+                    :new-id  new-id
+                    :user    user-uuid})
+
+      (do-validate k p #(some? (p/lookup-entity db old-id))
+                   {:message (str "Could not lookup entity: " old-id
+                                  " for user: " user-uuid)
+                    :user    user-uuid}))))

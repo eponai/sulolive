@@ -14,7 +14,7 @@
                            :currency/symbol-native
                            :currency/name]}
    {:transaction/category [:category/name]}
-   {:transaction/tags [:tag/name]}
+   {:transaction/tags [:db/id :tag/name]}
    {:transaction/date [:db/id
                        :date/timestamp
                        :date/ymd

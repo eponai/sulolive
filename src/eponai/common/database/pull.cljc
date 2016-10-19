@@ -139,10 +139,8 @@
   (when lookup-ref
     (try
       (entity* db (:db/id (pull db [:db/id] lookup-ref)))
-      #?(:cljs
-         (catch :default e
-           (prn e)
-           nil)))))
+      (catch #?@(:clj [Throwable e] :cljs [:default e])
+             nil))))
 
 (defn one-with
   "Used the same way as all-with. Returns one entity id."

@@ -16,10 +16,11 @@
 (defn- app-state [reconciler]
   (fw/call-parser reconciler (om/get-query (or (om/app-root reconciler) JvmRoot))))
 
+(defn db [client]
+  (pull/db* (om/app-state client)))
+
 (defn entity [client lookup-ref]
-  (-> (om/app-state client)
-      (pull/db*)
-      (pull/entity* lookup-ref)))
+  (pull/entity* (db client) lookup-ref))
 
 (defn equal-app-states? [clients]
   (let [app-states (map app-state clients)
@@ -50,9 +51,8 @@
      :transaction/created-at 1}))
 
 (defn has-transaction? [tx client]
-  (-> (entity client [:transaction/uuid (:transaction/uuid tx)])
-      (keys)
-      (seq)))
+  (pull/lookup-entity (db client)
+                      [:transaction/uuid (:transaction/uuid tx)]))
 
 (defmethod print-method om.next.Reconciler [x writer]
   (print-method (str "[Reconciler id=[" (get-in x [:config :id-key]) "]]") writer))
@@ -91,41 +91,37 @@
                                      (assert (.isRunning server))
                                      (assert (every? (partial has-transaction? tx) clients)))}]}))
 
-(defn update-transaction-amount [client tx update-fn]
-  (let [id (:db/id (entity client [:transaction/uuid (:transaction/uuid tx)]))]
-    (assert (some? id)
-            (str "No id for client: " (pr-str client) " tx:" tx))
-    (-> tx
-        (select-keys [:transaction/uuid :transaction/amount])
-        (assoc :db/id id)
-        (update :transaction/amount update-fn))))
-
-(def inc-str (comp str inc read-string))
-
 (defn has-edit? [tx update-fn client]
-  (= (str (:transaction/amount
-            (entity client [:transaction/uuid (:transaction/uuid tx)])))
-     (update-fn (:transaction/amount tx))))
+  (= (:transaction/amount
+       (entity client [:transaction/uuid (:transaction/uuid tx)]))
+     (update-fn (read-string (:transaction/amount tx)))))
 
 (defn transaction-edit [client tx update-fn & [extra-params]]
   (fn []
-    [client
-     `[(transaction/edit ~(merge (update-transaction-amount client tx update-fn)
-                                 extra-params))]]))
+    (let [tx (pull/pull (db client)
+                        [:db/id :transaction/amount]
+                        [:transaction/uuid (:transaction/uuid tx)])]
+      (assert (some? (:db/id tx))
+              (str "client: " client " did not have tx: " tx))
+      [client `[(transaction/edit
+                  ~{:old tx
+                    :new (-> tx
+                             (update :transaction/amount update-fn)
+                             (merge extra-params))})]])))
 
 (defn test-edit-transaction [_ [client1 :as clients]]
   (let [tx (new-transaction client1)]
     {:label   "edit transaction: Last made edit should persist"
      :actions [{::fw/transaction [client1 `[(transaction/create ~tx)]]
                 ::fw/asserts     #(assert (every? (partial has-transaction? tx) clients))}
-               {::fw/transaction (transaction-edit client1 tx inc-str)
+               {::fw/transaction (transaction-edit client1 tx inc)
                 ::fw/asserts     (fn []
-                                   (assert (every? (partial has-edit? tx inc-str) clients)))}]}))
+                                   (assert (every? (partial has-edit? tx inc) clients)))}]}))
 
 (defn test-edit-transaction-offline [server [client1 client2 :as clients]]
   (let [tx (new-transaction client1)
-        c1-edit inc-str
-        c2-edit (comp inc-str inc-str)]
+        c1-edit inc
+        c2-edit (comp inc inc)]
     {:label   "Last edit should persist"
      :actions [{::fw/transaction [client1 `[(transaction/create ~tx)]]
                 ::fw/asserts     #(assert (every? (partial has-transaction? tx) clients))}
@@ -156,13 +152,13 @@
                 ::fw/asserts     #(do (assert (test/is (has-transaction? tx client1)))
                                       (assert (test/is (not-any? (partial has-transaction? tx)
                                                                  (rest clients)))))}
-               {::fw/transaction (transaction-edit client1 tx inc-str)
-                ::fw/assert      #(do (assert (has-edit? tx inc-str client1))
-                                      (assert (not-any? (partial has-edit? tx inc-str) clients)))}
+               {::fw/transaction (transaction-edit client1 tx inc)
+                ::fw/assert      #(do (assert (has-edit? tx inc client1))
+                                      (assert (not-any? (partial has-edit? tx inc) clients)))}
                {::fw/transaction #(.start server)
                 ::fw/await-clients [client1]
                 ::fw/sync-clients! true
-                ::fw/asserts #(do (assert (every? (partial has-edit? tx inc-str) clients)))}]}))
+                ::fw/asserts #(do (assert (every? (partial has-edit? tx inc) clients)))}]}))
 
 (defn run []
   (fs.utils/with-less-loud-logger
@@ -173,9 +169,9 @@
                              test-create-transaction-offline
                              test-create+edit-transaction-offline ;;-> sync should see create+edit.
                              ;;test-edit-transaction-offline
+                             ;;test-edit-transaction-offline-to-new-offline-project
                             ]
                             ;;(reverse)
                             ;;(take 1)
                            ))
         nil)))
-

@@ -2,16 +2,29 @@
   #?(:clj (:refer-clojure :exclude [ref]))
   (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
             [clojure.set :refer [rename-keys]]
+            [clojure.data :as diff]
             [eponai.common.format.date :as date]
             #?(:clj [datomic.api :as datomic])
             [datascript.core :as datascript]
-            [datascript.db])
+            [datascript.db]
+            [medley.core :as medley])
   #?(:clj (:import [datomic Connection]
                    [clojure.lang Atom])))
 
 (defn tempid [partition & [n]]
   #?(:clj (apply datomic/tempid (cond-> [partition] (some? n) (conj n)))
      :cljs (apply datascript/tempid (cond-> [partition] (some? n) (conj n)))))
+
+#?(:clj
+   (def tempid-type (type (tempid :db.part/user))))
+
+(defn tempid? [x]
+  #?(:clj (= tempid-type (type x))
+     :cljs (and (number? x) (neg? x))))
+
+(defn dbid? [x]
+  #?(:clj  (or (tempid? x) (number? x))
+     :cljs (number? x)))
 
 (defn squuid []
   ;; Works for both datomic and datascript.
@@ -114,14 +127,16 @@
                                              (date* d))
                      :transaction/tags     (fn [ts]
                                              {:pre [(coll? ts)]}
-                                             (map tag* ts))
+                                             (into #{} (comp (filter some?) (map tag*)) ts))
                      :transaction/category (fn [c]
                                              {:pre [(map? c)]}
                                              c)
                      :transaction/amount   (fn [a]
-                                             {:pre [(string? a)]}
+                                             {:pre [(or (string? a) (number? a))]}
                                              #?(:clj  (bigdec a)
-                                                :cljs (cljs.reader/read-string a)))
+                                                :cljs (cond-> a
+                                                              (string? a)
+                                                              (cljs.reader/read-string))))
                      :transaction/type     (fn [t] {:pre [(keyword? t)]}
                                              {:db/ident t})}
         update-fn (fn [m k]
@@ -129,9 +144,7 @@
                       (update m k (get conv-fn-map k))
                       m))
         transaction (reduce update-fn input (keys conv-fn-map))]
-
-    (assoc transaction
-      :db/id (tempid :db.part/user))))
+    (add-tempid transaction)))
 
 (defn filter*
   [input]
@@ -336,3 +349,43 @@
     (cond-> [transaction]
             (seq tags)
             (into (mapcat tag->txs) tags))))
+
+(defn edit [{:keys [db/id] :as old} new conform-fn]
+  {:pre [(= (:db/id old) (:db/id new))]}
+  (letfn [(conform-ref-val [x]
+            (if-not (map? x)
+              x
+              (let [id (:db/id x)
+                    no-id (dissoc x :db/id)]
+                (cond
+                  (not (tempid? id))
+                  id
+                  (and (map? x) (= 1 (count no-id)))
+                  ;; lookup-ref:
+                  (first no-id)
+                  :else
+                  (throw (ex-info (str "Could not conform ref-val: " x
+                                       ". Was not real db-id nor map of 1 unique value.")
+                                  {:ref-val x}))))))
+          (retracts []
+            (fn [[k v]]
+              (when-not (= :db/id k)
+                (let [retract [:db/retract id k]]
+                  (cond
+                    (map? v)
+                    [(conj retract (conform-ref-val v))]
+                    (coll? v)
+                    (->> v (into [] (comp (filter some?)
+                                           (map #(conj retract (conform-ref-val %))))))
+                    :else [(conj retract v)])))))
+          (remove-diff-nils [x]
+            (cond->> x
+                     (coll? x)
+                     (into #{} (filter some?))))]
+    (let [[in-old in-new] (diff/diff old new)
+          adds (-> (conform-fn in-new)
+                   (assoc :db/id id)
+                   (->> (medley/map-vals remove-diff-nils)))]
+      (cond-> (into [] (mapcat (retracts)) (conform-fn in-old))
+              (seq (dissoc adds :db/id))
+              (conj adds)))))

@@ -194,8 +194,8 @@
 
 ;;############## Drag-drop transactions #############
 
-(defn on-drag-transaction-start [_ tx-uuid event]
-  (.. event -dataTransfer (setData "uuid-str" (str tx-uuid))))
+(defn on-drag-transaction-start [_ tx-dbid event]
+  (.. event -dataTransfer (setData "tx-dbid-str" (str tx-dbid))))
 
 (defn on-drag-transaction-over [component project-uuid event]
   (let [{:keys [drop-target]} (om/get-state component)]
@@ -208,9 +208,13 @@
 
 (defn on-drop-transaction [component project-uuid event]
   (.preventDefault event)
-  (let [t-uuid (.. event -dataTransfer (getData "uuid-str"))]
-    (om/transact! component `[(transaction/edit ~{:transaction/uuid   (format/str->uuid t-uuid)
-                                                  :transaction/project {:project/uuid (str project-uuid)}})])
+  (let [tx-dbid-str (.. event -dataTransfer (getData "tx-dbid-str"))
+        dbid (cljs.reader/read-string tx-dbid-str)]
+    (om/transact! component
+                  `[(transaction/edit
+                      ~{:old {:db/id dbid}
+                        :new {:db/id dbid
+                              :transaction/project {:project/uuid project-uuid}}})])
     (om/update-state! component dissoc :drop-target)))
 
 ;;############# Debugging ############################

@@ -9,32 +9,6 @@
   [_ _ _]
   nil)
 
-(defn sync-optimistic-with-message [messages db k {:keys [om.next/error result] :as params}]
-  {:pre [(map? messages)]}
-  (let [{:keys [error-message message]} messages
-        db (d/db-with db [{
-                           ;; :tx/mutation-uuid (:mutation-uuid result)
-                           :tx/message       (if error error-message message)
-                           :tx/status        (if error :tx.status/error
-                                                       :tx.status/success)}])]
-    (debug "merging optimistic update with message: " messages
-           "for key: " k
-           "params: " params)
-    (throw (ex-info "NEED TO IMPLEMENT THIS WITH THE NEW MESSAGE STUFF" {:TODO :ASAP}))
-    (m/merge-mutation mobile-merge db nil k params)))
-
-(defmethod mobile-merge 'transaction/create
-  [& args]
-  (apply sync-optimistic-with-message {:message "Created transaction"
-                                       :error-message "Error creating transaction"}
-         args))
-
-(defmethod mobile-merge 'transaction/edit
-  [& args]
-  (apply sync-optimistic-with-message {:message "Edited transaction"
-                                       :error-message "Error editing transaction"}
-         args))
-
 (defmethod mobile-merge 'http/get
   [db k params]
   (debug "Merging: " k " with params: " params)

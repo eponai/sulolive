@@ -26,13 +26,14 @@
      :remote true}))
 
 (defmethod client-mutate 'transaction/edit
-  [{:keys [state]} _ {:keys [transaction/uuid db/id] :as transaction}]
+  [{:keys [state] :as env} k {:keys [old new] :as p}]
   {:action (fn []
-             {:pre [(some? uuid) (some? id)]}
-             (let [txs (format/transaction-edit transaction)
+             (validate/edit env k p)
+             (let [txs (format/edit old new format/transaction)
                    ;;_ (assert (vector? txs))
                    ;; txs (into txs (datascript/mark-entity-txs id :transaction/uuid uuid))
-                   _ (debug "editing transaction: " uuid " txs: " txs)
+                   _ (debug "editing transaction: " (:db/id old)
+                            " txs: " txs)
                    ret (transact/transact state txs)]
                ret))
    :remote true})

@@ -278,9 +278,10 @@
      (fn [env k p]
        (letfn [(x->message [x]
                  (let [success? (not (instance? Throwable x))
-                       msg (server-message (assoc env (if success?
-                                                        :return
-                                                        :exception) x) k p)
+                       msg-env (assoc env
+                                 ::success? success?
+                                 (if success? ::return ::exception) x)
+                       msg (server-message msg-env k p)
                        ;; Code for making defining of messages easier.
                        msg (cond-> msg
                                    (and (map? msg) (= [:success :error] (keys msg)))

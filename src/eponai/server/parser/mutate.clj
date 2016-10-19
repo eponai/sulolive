@@ -42,15 +42,20 @@
                (assoc tx-report :currency-chan currency-chan)))})
 
 (defmutation transaction/edit
-  [{:keys [state auth] :as env} k {:keys [transaction/uuid transaction/title] :as transaction}]
-  {:success (str "Edited transaction " title)
-   :error   (str "Error editing transaction " title)}
+  [{:keys [state auth] :as env} k {:keys [old new] :as p}]
+  (let [title (when-let [return (::parser/return env)]
+                (-> return
+                    :db-after
+                    (p/entity* (:db/id old))
+                    :transaction/title))]
+    {:success (str "Edited transaction " title)
+     :error   (str "Error editing transaction ")})
+
   {:action (fn []
-             (validate/validate env k {:transaction transaction
-                                       :user-uuid (:username auth)})
+             (validate/edit env k p)
              (debug "validated transaction")
-             (let [txs (format/transaction-edit transaction)]
-               (debug "editing transaction: " uuid " txs: " txs)
+             (let [txs (format/edit old new format/transaction)]
+               (debug "editing transaction: " (:db/id old) " txs: " txs)
                (transact/transact state txs)))})
 
 ;; ----------------- project --------------------
