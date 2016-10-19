@@ -14,7 +14,7 @@
 (def default-subscription-id "default-subscription-id")
 (def default-period-end 0)
 
-(defn subscription [id status]
+(defn new-db-subscription [id status]
   {:stripe.subscription/id      id
    :stripe.subscription/period-end default-period-end
    :stripe.subscription/status  status})
@@ -24,19 +24,23 @@
 (defmethod test-stripe-action :customer/create
   [status _ _]
   {:stripe/customer     default-customer-id
-   :stripe/subscription (subscription default-subscription-id status)})
+   :stripe/subscription (new-db-subscription default-subscription-id status)})
+
+(defmethod test-stripe-action :customer/update
+  [status _ _]
+  {:stripe/customer default-customer-id})
 
 (defmethod test-stripe-action :subscription/update
   [status _ {:keys [subscription-id]}]
-  (subscription subscription-id status))
+  (new-db-subscription subscription-id status))
 
 (defmethod test-stripe-action :subscription/create
   [status _ _]
-  (subscription default-subscription-id status))
+  (new-db-subscription default-subscription-id status))
 
 (defmethod test-stripe-action :subscription/cancel
   [status _ {:keys [subscription-id]}]
-  (subscription subscription-id status))
+  (new-db-subscription subscription-id status))
 
 (defn test-stripe [status k params]
   (test-stripe-action status k params))
@@ -60,7 +64,7 @@
   (testing "Customer deleted event, stripe account should be removed from datomic."
     (let [{:keys [user]} (f/user-account-map user-email)
           stripe (f/stripe-account (:db/id user) {:stripe/customer default-customer-id
-                                                  :stripe/subscription (subscription default-subscription-id :active)})
+                                                  :stripe/subscription (new-db-subscription default-subscription-id :active)})
           conn (new-db [user
                         stripe])
           _ (assert (some? (p/lookup-entity (d/db conn) [:stripe/customer default-customer-id])))
@@ -95,7 +99,7 @@
   (testing "Subscription was deleted, delete subscription in datomic."
     (let [{:keys [user]} (f/user-account-map user-email)
           stripe (f/stripe-account (:db/id user) {:stripe/customer default-customer-id
-                                                  :stripe/subscription (subscription default-subscription-id :active)})
+                                                  :stripe/subscription (new-db-subscription default-subscription-id :active)})
           conn (new-db [user
                         stripe])
           _ (assert (some? (p/lookup-entity (d/db conn) [:stripe.subscription/id default-subscription-id])))

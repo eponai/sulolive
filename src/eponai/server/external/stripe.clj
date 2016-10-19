@@ -77,14 +77,15 @@
 (defmulti stripe-action (fn [k _] k))
 
 (defmethod stripe-action :customer/get
-  [_ {:keys [customer-id]}]
+  [_ {:keys [customer-id subscription-id]}]
   (when customer-id
     (let [^Customer customer (Customer/retrieve customer-id)
           _ (debug "Customer object: " customer)
           default-source (.getDefaultSource customer)
           ^Card card (when default-source
                        (.retrieve (.getSources customer) (.getDefaultSource customer)))
-          ]
+          ^Subscription subscription (when subscription-id
+                                       (.retrieve (.getSubscriptions customer) subscription-id))]
       {:id    (.getId customer)
        :email (.getEmail customer)
        :card  (when card
@@ -94,7 +95,9 @@
                  :last4     (.getLast4 card)
                  :brand     (.getBrand card)
                  :id        (.getId card)
-                 })})))
+                 })
+       :subscription (when subscription
+                       {:quantity (.getQuantity subscription)})})))
 
 (defmethod stripe-action :customer/create
   [_ {:keys [params]}]

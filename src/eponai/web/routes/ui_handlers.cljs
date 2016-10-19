@@ -4,7 +4,7 @@
             [eponai.web.ui.project :refer [Project ->Project]]
             [eponai.web.ui.project.all-transactions :refer [AllTransactions ->AllTransactions]]
             [eponai.web.ui.settings :refer [Settings ->Settings]]
-            [eponai.web.ui.stripe :refer [Payment ->Payment]]
+            ;[eponai.web.ui.stripe :refer [Payment ->Payment]]
             [eponai.web.ui.profile :refer [Profile ->Profile]]
             [medley.core :as medley]
             [om.next :as om]
@@ -94,9 +94,9 @@
                                               :component Settings
                                               :factory   ->Settings}))
 
-(def payment-handler (map->UiComponentMatch {:route-key :route/payment
-                                             :component Payment
-                                             :factory   ->Payment}))
+;(def payment-handler (map->UiComponentMatch {:route-key :route/payment
+;                                             :component Payment
+;                                             :factory   ->Payment}))
 
 (def profile-handler (map->UiComponentMatch {:route-key :route/profile
                                              :component Profile
@@ -113,10 +113,10 @@
    ;:route/project->txs->tx        transactions-handler
    ;:route/project->txs->tx+mode   transactions-handler
    :route/settings                settings-handler
-   :route/subscribe               payment-handler
+   ;:route/subscribe               payment-handler
    :route/profile                 profile-handler})
 
-(def root-handlers [project-handler settings-handler payment-handler profile-handler])
+(def root-handlers [project-handler settings-handler profile-handler])
 
 (def route-key->root-handler (->> (group-by :route-key root-handlers)
                                   (medley/map-vals first)))

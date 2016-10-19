@@ -120,23 +120,23 @@
              (transact/transact-one state [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]]))})
 
 
-(defmutation stripe/subscribe
-  [{:keys [state auth stripe-fn]} _ p]
-  ["Subscribed!" "Error subscribing"]
-  (let [db (d/db state)
-        _ (debug "stripe/subscribe with params:" p)
-        stripe-eid (p/one-with db {:where '[[?u :user/uuid ?user-uuid]
-                                            [?e :stripe/user ?u]]
-                                   :symbols {'?user-uuid (:username auth)}})
-        stripe-account (when stripe-eid
-                         (p/pull db [:stripe/customer
-                                     {:stripe/subscription [:stripe.subscription/id]}]
-                                 stripe-eid))]
-    {:action (fn []
-               (debug "Stripe information: " stripe-account)
-               (when stripe-eid
-                 (debug "User: " (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])))
-               (api/stripe-subscribe state stripe-fn stripe-account p))}))
+;(defmutation stripe/subscribe
+;  [{:keys [state auth stripe-fn]} _ p]
+;  ["Subscribed!" "Error subscribing"]
+;  (let [db (d/db state)
+;        _ (debug "stripe/subscribe with params:" p)
+;        stripe-eid (p/one-with db {:where '[[?u :user/uuid ?user-uuid]
+;                                            [?e :stripe/user ?u]]
+;                                   :symbols {'?user-uuid (:username auth)}})
+;        stripe-account (when stripe-eid
+;                         (p/pull db [:stripe/customer
+;                                     {:stripe/subscription [:stripe.subscription/id]}]
+;                                 stripe-eid))]
+;    {:action (fn []
+;               (debug "Stripe information: " stripe-account)
+;               (when stripe-eid
+;                 (debug "User: " (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])))
+;               (api/stripe-subscribe state stripe-fn stripe-account p))}))
 
 (defmutation stripe/update-card
   [{:keys [state auth stripe-fn]} _ p]
@@ -181,19 +181,19 @@
     {:action (fn []
                (api/stripe-trial state stripe-fn user))}))
 
-(defmutation stripe/cancel
-  [{:keys [state auth] :as env} _ p]
-  ["Subscription cancelled" "Error cancelling subscription"]
-  (let [db (d/db state)
-        _ (debug "stripe/cancel with params:" p)
-        eid (p/one-with db {:where   '[[?u :user/uuid ?user-uuid]
-                                       [?e :stripe/user ?u]]
-                            :symbols {'?user-uuid (:username auth)}})
-        stripe-account (when eid
-                         (p/pull db [:stripe/customer
-                                     {:stripe/subscription [:stripe.subscription/id]}] eid))]
-    {:action (fn []
-               (api/stripe-cancel env stripe-account))}))
+;(defmutation stripe/cancel
+;  [{:keys [state auth] :as env} _ p]
+;  ["Subscription cancelled" "Error cancelling subscription"]
+;  (let [db (d/db state)
+;        _ (debug "stripe/cancel with params:" p)
+;        eid (p/one-with db {:where   '[[?u :user/uuid ?user-uuid]
+;                                       [?e :stripe/user ?u]]
+;                            :symbols {'?user-uuid (:username auth)}})
+;        stripe-account (when eid
+;                         (p/pull db [:stripe/customer
+;                                     {:stripe/subscription [:stripe.subscription/id]}] eid))]
+;    {:action (fn []
+;               (api/stripe-cancel env stripe-account))}))
 
 ;; ############# Session mutations #################
 

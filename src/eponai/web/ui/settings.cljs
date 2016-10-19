@@ -3,6 +3,7 @@
     [cljs.core.async :refer [chan <! put!]]
     [clojure.walk :refer [keywordize-keys]]
     [eponai.client.ui :refer [map-all] :refer-macros [opts]]
+    [eponai.web.ui.d3.paywhatyouwant :as pay]
     [eponai.web.ui.select :as sel]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
@@ -114,14 +115,11 @@
                   query/all-currencies
                   query/fb-user
                   query/stripe] :as props} (om/props this)
-          loader (get-loader props)
           {user-name :user/name
            :keys [user/email]} current-user
-          {:keys [input-currency tab checkout-loaded? is-stripe-loading?]} (om/get-state this)
+          {:keys [input-currency tab checkout-loaded? is-stripe-loading? paywhatyouwant]} (om/get-state this)
           {:keys [stripe/subscription stripe/info]} stripe
           {subscription-status :stripe.subscription/status} subscription]
-      (debug "StripeCheckout loaded: " checkout-loaded?)
-      (debug "Stripe information: " info)
       (html
         [:div#settings
          [:h4.header "Settings"]
@@ -175,11 +173,28 @@
                                                    all-currencies)}
                                     {:on-select #(om/update-state! this assoc :input-currency %)}))]]
                   ]]
-                [:div.content-section
+                [:div.content-section#paywhatyouwant
                  [:div.row
-                  [:div.column.small-6
+                  [:div.column
                    [:label "Pay What You Want"]
-                   [:small "Your selected price for your JourMoney subscription."]]]]
+                   [:small "The JourMoney subscription is " [:a "Pay what you want"] ". You choose what you think it is worth and select your own monthly price."]]
+                  ]
+                 [:div.row.column
+                  (pay/->PayWhatYouWant (om/computed {:value (or paywhatyouwant (get-in info [:subscription :quantity]))}
+                                                     {:on-change-value #(om/update-state! this assoc :paywhatyouwant %)
+                                                      :on-select-value #(om/update-state! this assoc :paywhatyouwant %)}))]
+                 [:div.row
+                  [:div.column
+                   [:span (str "I want to pay: $" (or paywhatyouwant (get-in info [:subscription :quantity]) 0) " per month")]]
+                  [:div.column
+
+                   ;(pay/->PayWhatYouWant {:value 0})
+                   ;[:div.slider {:value 0}]
+                   ;(->PayWhatYouWantControl {:value 0})
+                   [:input
+                    {:defaultValue (or paywhatyouwant (get-in info [:subscription :quantity]) 0)
+                     :onBlur #(om/update-state! this assoc :paywhatyouwant (cljs.reader/read-string (.. % -target -value)))
+                     :type "number"}]]]]
 
                 [:div.content-section.clearfix
                  [:a.button.hollow.float-right
@@ -221,19 +236,20 @@
 
                (= tab :payment)
                [:div.content#payment
+                ;[:div.content-section
+                ; [:div.row.column
+                ;  [:label "Pay what you want"]]
+                ; [:div.row
+                ;  [:div.column.small-8
+                ;   [:span (str "You're currently paying: $" (or (get-in info [:subscription :quantity]) 0) ".00")]]]]
                 [:div.content-section
-                 [:div.row.column
-                  [:label "Pay what you want"]]
                  [:div.row
-                  [:div.column.small-8 "$1.00"]]]
-                [:div.content-section
-                 [:div.row.align-middle
                   ; Left column of payment method
                   [:div.column
                    [:div
                     [:label "Payment Method"]]
                    (cond (= subscription-status :trialing)
-                         [:small (str "You have " (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial. " [:a "What happens then?"])]
+                         [:small (str "You have " (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial. " ) [:a "What happens then?"]]
                          (nil? (:card info))
                          [:small "You haven't added a card yet. Enable all functionality in the app by adding one. " [:a "Why?"]]
                          (some? (:card info))

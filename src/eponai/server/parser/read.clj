@@ -159,7 +159,8 @@
             (when eid
               (let [customer-id (:stripe/customer (d/entity db eid))
                     customer (stripe-fn :customer/get
-                                        {:customer-id customer-id})]
+                                        {:customer-id customer-id
+                                         :subscription-id (get-in (d/entity db eid) [:stripe/subscription :stripe.subscription/id])})]
                 (debug "Read stripe customer: " customer)
                 (cond->> (pull db query eid)
                          (some? customer)

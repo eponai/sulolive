@@ -99,18 +99,18 @@
              (transact/transact-one state [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]]))
    :remote true})
 
-(defmethod client-mutate 'stripe/subscribe
-  [_ _ params]
-  (debug "stripe/charge with params:" params)
-  {:remote true})
+;(defmethod client-mutate 'stripe/subscribe
+;  [_ _ params]
+;  (debug "stripe/charge with params:" params)
+;  {:remote true})
 
-(defmethod client-mutate 'stripe/cancel
-  [{:keys [state]} _ params]
-  (debug "stripe/cancel with params:" params)
-  {:action (fn []
-             (transact/transact-one state {:ui/singleton                :ui.singleton/loader
-                                                       :ui.singleton.loader/visible true}))
-   :remote true})
+;(defmethod client-mutate 'stripe/cancel
+;  [{:keys [state]} _ params]
+;  (debug "stripe/cancel with params:" params)
+;  {:action (fn []
+;             (transact/transact-one state {:ui/singleton                :ui.singleton/loader
+;                                                       :ui.singleton.loader/visible true}))
+;   :remote true})
 
 
 

@@ -158,65 +158,83 @@
         (is (= (:stripe.subscription/status sub) :trialing))
         (is (= (get-in customer [:stripe/user :user/email]) user-email))))))
 
-(deftest trial-user-updates-subscription
-  (testing "A user with a trial upgrades their subscription. Should update existing subscription."
+(deftest trialing-user-adds-card
+  (testing "A user on trial adds card. Should activate subscription."
     (let [{:keys [user] :as account} (f/user-account-map user-email)
           {:keys [customer-id
                   subscription-id]} stripe-params
-          subscription (stripe-test/subscription subscription-id :trialing)
+          ; Create stripe entity for the user account
           stripe (f/stripe-account (:db/id user) {:stripe/customer customer-id
-                                                  :stripe/subscription subscription})
+                                                  :stripe/subscription (stripe-test/new-db-subscription subscription-id :trialing)})
+          ; Setup DB with the user and their trial Stripe account
           conn (new-db (conj (vals account)
                              stripe))
-          _ (api/stripe-subscribe conn (test-stripe-read :active) stripe stripe-params)
-          customer (p/pull (d/db conn) [{:stripe/user [:user/email]} {:stripe/subscription '[*]}] [:stripe/customer customer-id])]
-      (is (some? customer))
-      (let [sub (:stripe/subscription customer)]
-        (is (= (:stripe.subscription/id sub) subscription-id))
-        (is (= (:stripe.subscription/status sub) :active))
-        (is (= (get-in customer [:stripe/user :user/email]) user-email))))))
+          ; Call the API entry point for updating the user's card on file.
+          _ (api/stripe-update-card conn (test-stripe-read :active) stripe {:token (:token stripe-params)})
 
-(deftest user-cancels-subscription
-  (testing "A user with subscription cancels, subscription should be removed from db."
-    (let [{:keys [user] :as account} (f/user-account-map user-email)
-          {:keys [customer-id
-                  subscription-id]} stripe-params
-          subscription (stripe-test/subscription subscription-id :active)
-          stripe (f/stripe-account (:db/id user) {:stripe/customer customer-id
-                                                  :stripe/subscription subscription})
-          conn (new-db (conj (vals account)
-                             stripe))
-          _ (api/stripe-cancel {:state         conn
-                                :stripe-fn     (test-stripe-read :active)} stripe)
-          customer (p/pull (d/db conn) [{:stripe/user [:user/email]} {:stripe/subscription '[*]}] [:stripe/customer customer-id])]
-      (is (some? customer))
-      (is (nil? (:stripe/subscription customer))))))
+          ; Get new customer entity from DB after having update the customer card. Status should have been set to active at this point.
+          customer (p/pull (d/db conn) [{:stripe/subscription '[*]}] [:stripe/customer customer-id])]
+      (is (= (get-in customer [:stripe/subscription :stripe.subscription/status]) :active)))))
 
-(deftest user-subscribes-after-having-previously-canceled
-  (testing "User that has previously canceled subscribes. Has existing stripe customer and should create a new subscription"
-    (let [{:keys [user] :as account} (f/user-account-map user-email)
-          {:keys [customer-id]} stripe-params
-          stripe (f/stripe-account (:db/id user) {:stripe/customer customer-id})
-          _ (prn "Got stripe account: " stripe)
-          conn (new-db (conj (vals account)
-                             stripe))
-          _ (api/stripe-subscribe conn (test-stripe-read :active) stripe stripe-params)
-          customer (p/pull (d/db conn) [{:stripe/user [:user/email]} {:stripe/subscription '[*]}] [:stripe/customer customer-id])]
-      (is (some? customer))
-      (is (= (get-in customer [:stripe/subscription :stripe.subscription/id]) stripe-test/default-subscription-id)))))
+;(deftest trial-user-updates-subscription
+;  (testing "A user with a trial upgrades their subscription. Should update existing subscription."
+;    (let [{:keys [user] :as account} (f/user-account-map user-email)
+;          {:keys [customer-id
+;                  subscription-id]} stripe-params
+;          subscription (stripe-test/subscription subscription-id :trialing)
+;          stripe (f/stripe-account (:db/id user) {:stripe/customer customer-id
+;                                                  :stripe/subscription subscription})
+;          conn (new-db (conj (vals account)
+;                             stripe))
+;          _ (api/stripe-subscribe conn (test-stripe-read :active) stripe stripe-params)
+;          customer (p/pull (d/db conn) [{:stripe/user [:user/email]} {:stripe/subscription '[*]}] [:stripe/customer customer-id])]
+;      (is (some? customer))
+;      (let [sub (:stripe/subscription customer)]
+;        (is (= (:stripe.subscription/id sub) subscription-id))
+;        (is (= (:stripe.subscription/status sub) :active))
+;        (is (= (get-in customer [:stripe/user :user/email]) user-email))))))
 
-(deftest user-cancels-after-having-canceled
-  (testing "User tries to cancel again after already having canceled. Should throw exception."
-    (let [{:keys [user] :as account} (f/user-account-map user-email)
-          {:keys [customer-id]} stripe-params
-          stripe (f/stripe-account (:db/id user) {:stripe/customer customer-id})
-          _ (prn "Got stripe account: " stripe)
-          conn (new-db (conj (vals account)
-                             stripe))]
-      (is (thrown-with-msg? ExceptionInfo
-                            #"missing-required-fields"
-                            (api/stripe-cancel {:state         conn
-                                                :stripe-fn     (test-stripe-read :active)} stripe))))))
+;(deftest user-cancels-subscription
+;  (testing "A user with subscription cancels, subscription should be removed from db."
+;    (let [{:keys [user] :as account} (f/user-account-map user-email)
+;          {:keys [customer-id
+;                  subscription-id]} stripe-params
+;          subscription (stripe-test/subscription subscription-id :active)
+;          stripe (f/stripe-account (:db/id user) {:stripe/customer customer-id
+;                                                  :stripe/subscription subscription})
+;          conn (new-db (conj (vals account)
+;                             stripe))
+;          _ (api/stripe-cancel {:state         conn
+;                                :stripe-fn     (test-stripe-read :active)} stripe)
+;          customer (p/pull (d/db conn) [{:stripe/user [:user/email]} {:stripe/subscription '[*]}] [:stripe/customer customer-id])]
+;      (is (some? customer))
+;      (is (nil? (:stripe/subscription customer))))))
+
+;(deftest user-subscribes-after-having-previously-canceled
+;  (testing "User that has previously canceled subscribes. Has existing stripe customer and should create a new subscription"
+;    (let [{:keys [user] :as account} (f/user-account-map user-email)
+;          {:keys [customer-id]} stripe-params
+;          stripe (f/stripe-account (:db/id user) {:stripe/customer customer-id})
+;          _ (prn "Got stripe account: " stripe)
+;          conn (new-db (conj (vals account)
+;                             stripe))
+;          _ (api/stripe-subscribe conn (test-stripe-read :active) stripe stripe-params)
+;          customer (p/pull (d/db conn) [{:stripe/user [:user/email]} {:stripe/subscription '[*]}] [:stripe/customer customer-id])]
+;      (is (some? customer))
+;      (is (= (get-in customer [:stripe/subscription :stripe.subscription/id]) stripe-test/default-subscription-id)))))
+
+;(deftest user-cancels-after-having-canceled
+;  (testing "User tries to cancel again after already having canceled. Should throw exception."
+;    (let [{:keys [user] :as account} (f/user-account-map user-email)
+;          {:keys [customer-id]} stripe-params
+;          stripe (f/stripe-account (:db/id user) {:stripe/customer customer-id})
+;          _ (prn "Got stripe account: " stripe)
+;          conn (new-db (conj (vals account)
+;                             stripe))]
+;      (is (thrown-with-msg? ExceptionInfo
+;                            #"missing-required-fields"
+;                            (api/stripe-cancel {:state         conn
+;                                                :stripe-fn     (test-stripe-read :active)} stripe))))))
 
 (deftest user-starts-trial-after-already-having-a-customer-account
   (testing "User starts a trial when they already have been subscribed. Throw exception."
@@ -231,14 +249,14 @@
                             #":illegal-argument"
                             (api/stripe-trial conn (test-stripe-read :trialing) db-user))))))
 
-(deftest user-subscribes-without-trial
-  (testing "User subscribes without doing a trial first. Create customer and subscription."
-    (let [{:keys [user] :as a} (f/user-account-map user-email)
-          conn (new-db (vals a))
-          _ (api/stripe-subscribe conn (test-stripe-read :active) nil stripe-params)
-          customer (p/pull (d/db conn) [{:stripe/user [:user/email]} {:stripe/subscription '[*]}] [:stripe/customer stripe-test/default-customer-id])]
-      (is (some? customer))
-      (let [sub (:stripe/subscription customer)]
-        (is (= (:stripe.subscription/id sub) stripe-test/default-subscription-id))
-        (is (= (:stripe.subscription/status sub) :active))
-        (is (= (get-in customer [:stripe/user :user/email]) user-email))))))
+;(deftest user-subscribes-without-trial
+;  (testing "User subscribes without doing a trial first. Create customer and subscription."
+;    (let [{:keys [user] :as a} (f/user-account-map user-email)
+;          conn (new-db (vals a))
+;          _ (api/stripe-subscribe conn (test-stripe-read :active) nil stripe-params)
+;          customer (p/pull (d/db conn) [{:stripe/user [:user/email]} {:stripe/subscription '[*]}] [:stripe/customer stripe-test/default-customer-id])]
+;      (is (some? customer))
+;      (let [sub (:stripe/subscription customer)]
+;        (is (= (:stripe.subscription/id sub) stripe-test/default-subscription-id))
+;        (is (= (:stripe.subscription/status sub) :active))
+;        (is (= (get-in customer [:stripe/user :user/email]) user-email))))))
