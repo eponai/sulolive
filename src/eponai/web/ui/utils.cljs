@@ -40,7 +40,7 @@
       ;; Called with the old and the next state.
       (when will-sync
         (will-sync this-state next-state))
-      (om/set-state! component next-state)
+      (om/update-state! component merge next-state)
       (when did-sync
         (did-sync this-state (om/get-state component))))))
 

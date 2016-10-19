@@ -7,7 +7,7 @@
     [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
     [eponai.client.parser.message :as message]
     [eponai.common.format.date :as date]
-    [eponai.web.ui.datepicker :refer [->Datepicker]]
+    [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.ui.select :as sel]
     [eponai.web.ui.utils :as utils]
     [garden.core :refer [css]]
@@ -111,11 +111,10 @@
              [:label "Date:"]]
 
             [:div.columns.small-4.end
-             (->Datepicker
-               (opts {:key         [::date-picker]
-                      :value       date
-                      :on-change   #(om/update-state! this assoc-in [:input-transaction :transaction/date] %)
-                      :input-only? true}))]]
+             (->DateRangePicker (om/computed {:single-calendar? true
+                                              :start-date       (date/date-time date)}
+                                             {:on-apply #(om/update-state! this assoc-in [:input-transaction :transaction/date] %)
+                                              :format   "MMM dd"}))]]
 
            [:div.row
             [:div.columns.small-3.text-right
@@ -162,7 +161,7 @@
               {:type "text"}]]]]
 
           [:div.content-section.clearfix
-           [:a.button.float-right
+           [:a.button.hollow.float-right
             {:on-click #(.add-transaction this)}
             "Save"]]]]))))
 

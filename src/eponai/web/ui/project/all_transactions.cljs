@@ -103,8 +103,8 @@
           (.deselect this)))))
 
   (deselect [this]
-    (.save-edit this)
-    (om/update-state! this assoc :is-selected? false))
+    (om/update-state! this assoc :is-selected? false)
+    (.save-edit this))
   (render [this]
     (let [{:keys [input-transaction]} (om/get-state this)
           {:keys [db/id
@@ -136,7 +136,6 @@
         ;; Date
         (dom/div
           #js {:className "date"}
-
           (->DateRangePicker (om/computed {:single-calendar? true
                                            :start-date       (date/date-time date)}
                                           {:on-apply date-range-picker-on-apply
