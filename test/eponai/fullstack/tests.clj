@@ -23,6 +23,10 @@
 (defn entity [client lookup-ref]
   (pull/entity* (db client) lookup-ref))
 
+(defn entity-map [client lookup-ref]
+  (let [e (entity client lookup-ref)]
+    (into {:db/id (:db/id e)} e)))
+
 (defn equal-app-states? [clients]
   (let [app-states (map app-state clients)
         eq? (apply = app-states)]
@@ -55,10 +59,10 @@
   (pull/lookup-entity (db client)
                       [:transaction/uuid (:transaction/uuid tx)]))
 
-(defn has-edit? [tx update-fn client]
-  (= (bigdec (:transaction/amount
-               (entity client [:transaction/uuid (:transaction/uuid tx)])))
-     (bigdec (update-fn (read-string (:transaction/amount tx))))))
+(defn has-edit? [tx edit-fn key-fn client]
+  {:pre [(map? tx) (fn? edit-fn) (fn? key-fn) (om/reconciler? client)]}
+  (= (key-fn (entity-map client [:transaction/uuid (:transaction/uuid tx)]))
+     (key-fn (edit-fn tx))))
 
 (defn is-running? [^Server server]
   (.isRunning server))
@@ -89,31 +93,27 @@
                       (assert (test/is (has-transaction? tx client)))
                       (assert (test/is (not-any? (partial has-transaction? tx)
                                                  (remove #(= client %) clients))))))]
-      {::fw/transaction (fn []
-                          (info "Creating transaction: " tx " for client: " client)
-                          [client `[(transaction/create ~tx)]])
+      {::fw/transaction (fn [] [client `[(transaction/create ~tx)]])
        ::fw/asserts     asserts})))
 
-(defn transaction-edit [client tx update-fn & [extra-params]]
+(defn transaction-edit [client tx edit-fn & [extra-params]]
   (fn []
     (let [tx (pull/pull (db client)
                         [:db/id :transaction/amount]
                         [:transaction/uuid (:transaction/uuid tx)])]
       (assert (some? (:db/id tx))
               (str "client: " client " did not have tx: " tx))
-      [client `[(transaction/edit
-                  ~(merge {:old tx
-                           :new (update tx :transaction/amount update-fn)}
-                          extra-params))]])))
+      [client `[(transaction/edit ~(merge {:old tx :new (edit-fn tx)}
+                                          extra-params))]])))
 
-(defn edit-transaction! [server clients client tx edit-fn]
+(defn edit-transaction! [server clients client tx edit-fn key-fn]
   (fn []
     (let [asserts (if (is-running? server)
                     (fn []
-                      (assert (every? (partial has-edit? tx edit-fn) clients)))
+                      (assert (every? (partial has-edit? tx edit-fn key-fn) clients)))
                     (fn []
-                      (assert (has-edit? tx edit-fn client))
-                      (assert (not-any? (partial has-edit? tx edit-fn)
+                      (assert (has-edit? tx edit-fn key-fn client))
+                      (assert (not-any? (partial has-edit? tx edit-fn key-fn)
                                         (remove #(= client %) clients)))))]
       {::fw/transaction (transaction-edit client tx edit-fn)
        ::fw/assert      asserts})))
@@ -155,19 +155,23 @@
                                      (assert (.isRunning server))
                                      (assert (every? (partial has-transaction? tx) clients)))}]}))
 
+(def inc-amount #(update % :transaction/amount (comp str inc bigdec)))
+(def get-amount #(-> % :transaction/amount bigdec))
+
 (defn test-edit-transaction [_ [client1 :as clients]]
   (let [tx (new-transaction client1)]
     {:label   "edit transaction: Last made edit should persist"
      :actions [{::fw/transaction [client1 `[(transaction/create ~tx)]]
                 ::fw/asserts     #(assert (every? (partial has-transaction? tx) clients))}
-               {::fw/transaction (transaction-edit client1 tx inc)
+               {::fw/transaction (transaction-edit client1 tx inc-amount)
                 ::fw/asserts     (fn []
-                                   (assert (every? (partial has-edit? tx inc) clients)))}]}))
+                                   (assert (every? (partial has-edit? tx inc-amount get-amount)
+                                                   clients)))}]}))
 
 (defn test-edit-transaction-offline [server [client1 client2 :as clients]]
   (let [tx (new-transaction client1)
-        c1-edit inc
-        c2-edit (comp inc inc)
+        c1-edit inc-amount
+        c2-edit (comp inc-amount inc-amount)
         days-from-now (comp date/date->long date/days-from-now)]
     {:label   "Last edit should persist"
      :actions [{::fw/transaction [client1 `[(transaction/create ~tx)]]
@@ -178,27 +182,28 @@
                                       (assert (every? (partial has-transaction? tx) clients)))}
                {::fw/transaction (transaction-edit client1 tx c1-edit
                                                    {::parser/created-at (days-from-now 2)})
-                ::fw/asserts     #(do (assert (has-edit? tx c1-edit client1))
-                                      (assert (not (has-edit? tx c1-edit client2))))}
+                ::fw/asserts     #(do (assert (has-edit? tx c1-edit get-amount client1))
+                                      (assert (not (has-edit? tx c1-edit get-amount client2))))}
                {::fw/transaction (transaction-edit client2 tx c2-edit
                                                    {::parser/created-at (days-from-now 3)})
-                ::fw/asserts     #(do (assert (has-edit? tx c2-edit client2))
-                                      (assert (not (has-edit? tx c2-edit client1))))}
+                ::fw/asserts     #(do (assert (has-edit? tx c2-edit get-amount client2))
+                                      (assert (not (has-edit? tx c2-edit get-amount client1))))}
                {::fw/transaction   #(.start server)
                 ::fw/await-clients [client1 client2]
                 ::fw/sync-clients! true
-                ::fw/asserts       #(do (assert (not-any? (partial has-edit? tx c1-edit) clients))
-                                        (assert (every? (partial has-edit? tx c2-edit) clients)))}]}))
+                ::fw/asserts       #(do (assert (not-any? (partial has-edit? tx c1-edit get-amount) clients))
+                                        (assert (every? (partial has-edit? tx c2-edit get-amount) clients)))}]}))
 
 (defn test-create+edit-transaction-offline [server [client1 :as clients]]
   (let [tx (new-transaction client1)]
     {:label   "Offline create and edit should persist"
      :actions [(stop-server! server)
                (create-transaction! server clients client1 tx)
-               (edit-transaction! server clients client1 tx inc)
+               (edit-transaction! server clients client1 tx inc-amount get-amount)
                (start-server! server
                               :await [client1]
-                              :asserts #(do (assert (every? (partial has-edit? tx inc) clients))))]}))
+                              :asserts #(do (assert (every? (partial has-edit? tx inc-amount get-amount)
+                                                            clients))))]}))
 
 (defn new-project [client]
   (throw (ex-info "TODO" {})))
@@ -220,7 +225,9 @@
                              test-create+edit-transaction-offline ;;-> sync should see create+edit.
                              ;;test-edit-transaction-offline-to-new-offline-project
                             ]
+                            ;; (filter (partial = test-edit-transaction))
                             ;;(reverse)
                             ;;(take 1)
                            ))
         nil)))
+
