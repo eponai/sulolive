@@ -75,10 +75,12 @@
 (defn is-running? [^Server server]
   (.isRunning server))
 
-(defn stop-server! [server]
+(defn stop-server! [server & {:keys [asserts]}]
+  {:pre [(or (nil? asserts) (fn? asserts))]}
   {::fw/transaction #(do (.stop server)
                          (.join server))
-   ::fw/asserts     #(assert (not (is-running? server)))})
+   ::fw/asserts     #(do (assert (not (is-running? server)))
+                         (when asserts (asserts)))})
 
 (defn start-server! [server & {:keys [await asserts]}]
   {:pre [(vector? await) (fn? asserts)]}
@@ -103,27 +105,29 @@
                           (assert (test/is (not-any? (partial has-transaction? tx)
                                                      (remove #(= client %) clients))))))}))
 
-(defn transaction-edit [client tx edit-fn & [extra-params]]
+(defn edit-transaction! [server clients client tx edit-fn key-fn & [mutation-params]]
+  {:pre [(om/reconciler? client)
+         (map? tx)
+         (fn? edit-fn)
+         (fn? key-fn)
+         (or (nil? mutation-params) (map? mutation-params))]}
   (fn []
     (let [tx (entity-map client [:transaction/uuid (:transaction/uuid tx)])]
-      (assert (some? (:db/id tx)) (str "client: " client " did not have tx: " tx))
-      [client `[(transaction/edit ~(merge {:old tx :new (edit-fn tx)}
-                                          extra-params))]])))
-
-(defn edit-transaction! [server clients client tx edit-fn key-fn]
-  (fn []
-    {::fw/transaction (transaction-edit client tx edit-fn)
-     ::fw/assert      (if (is-running? server)
-                        #(assert (every? (partial has-edit? tx edit-fn key-fn) clients))
-                        #(do (assert (has-edit? tx edit-fn key-fn client))
-                             (assert (not-any? (partial has-edit? tx edit-fn key-fn)
-                                               (remove (partial = client) clients)))))}))
+      {::fw/transaction [client `[(transaction/edit ~(merge {:old tx :new (edit-fn tx)} mutation-params))]]
+       ::fw/assert      (if (is-running? server)
+                          #(assert (every? (partial has-edit? tx edit-fn key-fn) clients))
+                          #(do (assert (has-edit? tx edit-fn key-fn client))
+                               (assert (not-any? (partial has-edit? tx edit-fn key-fn)
+                                                 (remove (partial = client) clients)))))})))
 
 (defmethod print-method om.next.Reconciler [x writer]
   (print-method (str "[Reconciler id=[" (get-in x [:config :id-key]) "]]") writer))
 
 (defmethod adispatch/color-dispatch om.next.Reconciler [x]
   (adispatch/color-dispatch [(str "Reconciler" :id-key (get-in x [:config :id-key]))]))
+
+(def inc-amount #(update % :transaction/amount (comp str inc bigdec)))
+(def get-amount #(-> % :transaction/amount bigdec))
 
 (defn test-system-setup [server clients]
   {:label   "System setup should always have a running server."
@@ -143,32 +147,16 @@
 (defn test-create-transaction-offline [server [client1 :as clients]]
   (let [tx (new-transaction client1)]
     {:label   "Creating transaction offline should sync when client/server goes online"
-     :actions [{::fw/transaction #(do (.stop server)
-                                      (.join server))
-                ::fw/asserts     #(assert (test/is (not (.isRunning server))))}
-               {::fw/transaction [client1 `[(transaction/create ~tx)]]
-                ::fw/asserts     #(do (assert (test/is (has-transaction? tx client1)))
-                                      (assert (test/is (not-any? (partial has-transaction? tx)
-                                                                 (rest clients)))))}
-               {::fw/transaction   #(do (.start server))
-                ::fw/await-clients [client1]
-                ::fw/sync-clients! true
-                ::fw/asserts       #(do
-                                     (assert (.isRunning server))
-                                     (assert (every? (partial has-transaction? tx) clients)))}]}))
+     :actions [(stop-server! server)
+               (create-transaction! server clients client1 tx)
+               (start-server! server :await [client1]
+                              :asserts #(assert (every? (partial has-transaction? tx) clients)) )]}))
 
-(def inc-amount #(update % :transaction/amount (comp str inc bigdec)))
-(def get-amount #(-> % :transaction/amount bigdec))
-
-(defn test-edit-transaction [_ [client1 :as clients]]
+(defn test-edit-transaction [server [client1 :as clients]]
   (let [tx (new-transaction client1)]
     {:label   "edit transaction: Last made edit should persist"
-     :actions [{::fw/transaction [client1 `[(transaction/create ~tx)]]
-                ::fw/asserts     #(assert (every? (partial has-transaction? tx) clients))}
-               {::fw/transaction (transaction-edit client1 tx inc-amount)
-                ::fw/asserts     (fn []
-                                   (assert (every? (partial has-edit? tx inc-amount get-amount)
-                                                   clients)))}]}))
+     :actions [(create-transaction! server clients client1 tx)
+               (edit-transaction! server clients client1 tx inc-amount get-amount)]}))
 
 (defn test-edit-transaction-offline [server [client1 client2 :as clients]]
   (let [tx (new-transaction client1)
@@ -176,25 +164,17 @@
         c2-edit (comp inc-amount inc-amount)
         days-from-now (comp date/date->long date/days-from-now)]
     {:label   "Last edit should persist"
-     :actions [{::fw/transaction [client1 `[(transaction/create ~tx)]]
-                ::fw/asserts     #(assert (every? (partial has-transaction? tx) clients))}
-               {::fw/transaction #(do (.stop server)
-                                      (.join server))
-                ::fw/asserts     #(do (assert (test/is (not (.isRunning server))))
-                                      (assert (every? (partial has-transaction? tx) clients)))}
-               {::fw/transaction (transaction-edit client1 tx c1-edit
-                                                   {::parser/created-at (days-from-now 2)})
-                ::fw/asserts     #(do (assert (has-edit? tx c1-edit get-amount client1))
-                                      (assert (not (has-edit? tx c1-edit get-amount client2))))}
-               {::fw/transaction (transaction-edit client2 tx c2-edit
-                                                   {::parser/created-at (days-from-now 3)})
-                ::fw/asserts     #(do (assert (has-edit? tx c2-edit get-amount client2))
-                                      (assert (not (has-edit? tx c2-edit get-amount client1))))}
-               {::fw/transaction   #(.start server)
-                ::fw/await-clients [client1 client2]
-                ::fw/sync-clients! true
-                ::fw/asserts       #(do (assert (not-any? (partial has-edit? tx c1-edit get-amount) clients))
-                                        (assert (every? (partial has-edit? tx c2-edit get-amount) clients)))}]}))
+     :actions [(create-transaction! server clients client1 tx)
+               (stop-server! server :asserts #(assert (every? (partial has-transaction? tx) clients)))
+               (edit-transaction! server clients client1 tx c1-edit get-amount
+                                  {::parser/created-at (days-from-now 2)})
+               (edit-transaction! server clients client2 tx c2-edit get-amount
+                                  {::parser/created-at (days-from-now 3)})
+               (start-server! server
+                              :await [client1 client2]
+                              :asserts
+                              #(do (assert (not-any? (partial has-edit? tx c1-edit get-amount) clients))
+                                   (assert (every? (partial has-edit? tx c2-edit get-amount) clients))))]}))
 
 (defn test-create+edit-transaction-offline [server [client1 :as clients]]
   (let [tx (new-transaction client1)]
