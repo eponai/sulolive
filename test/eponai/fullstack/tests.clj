@@ -11,8 +11,11 @@
             [eponai.fullstack.jvmclient :refer [JvmRoot]]
             [clojure.test :as test]
             [eponai.fullstack.utils :as fs.utils]
+            [clojure.walk :as walk]
             [aprint.dispatch :as adispatch])
-  (:import (org.eclipse.jetty.server Server)))
+  (:import (org.eclipse.jetty.server Server)
+           (datomic.Entity)
+           (datascript.impl.entity.Entity)))
 
 (defn- app-state [reconciler]
   (fw/call-parser reconciler (om/get-query (or (om/app-root reconciler) JvmRoot))))
@@ -20,12 +23,17 @@
 (defn db [client]
   (pull/db* (om/app-state client)))
 
-(defn entity [client lookup-ref]
-  (pull/entity* (db client) lookup-ref))
+(defn entity? [x]
+  (or
+    (instance? datascript.impl.entity.Entity x)
+    (instance? datomic.Entity x)))
 
-(defn entity-map [client lookup-ref]
-  (let [e (entity client lookup-ref)]
-    (into {:db/id (:db/id e)} e)))
+(defn entity-map
+  [client lookup-ref]
+  (->> (pull/entity* (db client) lookup-ref)
+       (walk/prewalk #(cond->> %
+                               (entity? %)
+                               (into {:db/id (:db/id %)})))))
 
 (defn equal-app-states? [clients]
   (let [app-states (map app-state clients)
@@ -82,41 +90,34 @@
 
 (defn create-transaction! [server clients client tx]
   (fn []
-    (let [asserts (if (is-running? server)
-                    ;; Server is running before creation, assert everyone
-                    ;; gets the transaction.
-                    (fn []
-                      (assert (every? (partial has-transaction? tx) clients))
-                      (assert (equal-app-states? clients)))
-                    ;; Server was not running. Only the client gets the transaction.
-                    (fn []
-                      (assert (test/is (has-transaction? tx client)))
-                      (assert (test/is (not-any? (partial has-transaction? tx)
-                                                 (remove #(= client %) clients))))))]
-      {::fw/transaction (fn [] [client `[(transaction/create ~tx)]])
-       ::fw/asserts     asserts})))
+    {::fw/transaction (fn [] [client `[(transaction/create ~tx)]])
+     ::fw/asserts     (if (is-running? server)
+                        ;; Server is running before creation, assert everyone
+                        ;; gets the transaction.
+                        (fn []
+                          (assert (every? (partial has-transaction? tx) clients))
+                          (assert (equal-app-states? clients)))
+                        ;; Server was not running. Only the client gets the transaction.
+                        (fn []
+                          (assert (test/is (has-transaction? tx client)))
+                          (assert (test/is (not-any? (partial has-transaction? tx)
+                                                     (remove #(= client %) clients))))))}))
 
 (defn transaction-edit [client tx edit-fn & [extra-params]]
   (fn []
-    (let [tx (pull/pull (db client)
-                        [:db/id :transaction/amount]
-                        [:transaction/uuid (:transaction/uuid tx)])]
-      (assert (some? (:db/id tx))
-              (str "client: " client " did not have tx: " tx))
+    (let [tx (entity-map client [:transaction/uuid (:transaction/uuid tx)])]
+      (assert (some? (:db/id tx)) (str "client: " client " did not have tx: " tx))
       [client `[(transaction/edit ~(merge {:old tx :new (edit-fn tx)}
                                           extra-params))]])))
 
 (defn edit-transaction! [server clients client tx edit-fn key-fn]
   (fn []
-    (let [asserts (if (is-running? server)
-                    (fn []
-                      (assert (every? (partial has-edit? tx edit-fn key-fn) clients)))
-                    (fn []
-                      (assert (has-edit? tx edit-fn key-fn client))
-                      (assert (not-any? (partial has-edit? tx edit-fn key-fn)
-                                        (remove #(= client %) clients)))))]
-      {::fw/transaction (transaction-edit client tx edit-fn)
-       ::fw/assert      asserts})))
+    {::fw/transaction (transaction-edit client tx edit-fn)
+     ::fw/assert      (if (is-running? server)
+                        #(assert (every? (partial has-edit? tx edit-fn key-fn) clients))
+                        #(do (assert (has-edit? tx edit-fn key-fn client))
+                             (assert (not-any? (partial has-edit? tx edit-fn key-fn)
+                                               (remove (partial = client) clients)))))}))
 
 (defmethod print-method om.next.Reconciler [x writer]
   (print-method (str "[Reconciler id=[" (get-in x [:config :id-key]) "]]") writer))
@@ -130,10 +131,11 @@
               ::fw/asserts     #(do (assert (.isRunning ^Server server))
                                     (assert (equal-app-states? clients)))}]})
 
-(defn test-create-transaction [_ [client1 :as clients]]
+(defn test-create-transaction [server [client1 :as clients]]
   (let [tx (new-transaction client1)]
     {:label   "created transactions should sync"
-     :actions [{::fw/transaction [client1 `[(transaction/create ~tx)]]
+     :actions [(create-transaction! server clients client1 tx)
+               {::fw/transaction [client1 `[(transaction/create ~tx)]]
                 ::fw/asserts     (fn []
                                    (assert (every? (partial has-transaction? tx) clients))
                                    (assert (equal-app-states? clients)))}]}))

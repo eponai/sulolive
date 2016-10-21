@@ -72,7 +72,9 @@
                                          (aprint (output-fn data) *out*))))}]
     (try
       (timbre/set-config!
-        (assoc config# :appenders {:sync-appender sync-appender#}))
+        (assoc config#
+          :appenders {:sync-appender sync-appender#}
+          :level :info))
       (timbre/info "Temporarily set logger to less loud logger")
       (f)
       (finally
