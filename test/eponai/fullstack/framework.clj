@@ -94,12 +94,14 @@
 
 (defn mutation-state-machine [server action-chan clients client->callback]
   (let [<transact! (partial <transact! client->callback)
-        result (atom {::successes [] ::failures []})
+        result (atom {::successes [] ::failures [] ::skips []})
         with-timeout! (fn [c label] (fs.utils/take-with-timeout c label 3000))]
     (go
       (try
         (loop [id 0]
-          (let [{:keys [::transaction ::asserts ::await-clients ::sync-clients!] :as action} (<! action-chan)]
+          (let [action (<! action-chan)
+                action (if (fn? action) (action) action)
+                {:keys [::transaction ::asserts ::await-clients ::sync-clients!]} action]
             (when action
               (assert (some? transaction)
                       (str "Got an action, but it did not contain key: " ::transaction
@@ -162,9 +164,14 @@
           (error "Exception in state-machine: " e))
         (finally
           (async/<!! (async/go-loop []
-                       (when-let [{:keys [::transaction]} (async/<! action-chan)]
-                         (debug "Skipping transaction: " (second transaction)
-                                "because of previous error.")
+                       (when-let [action (async/<! action-chan)]
+                         (try
+                           (let [{:keys [::transaction]} (if (fn? action) (action) action)]
+                             (debug "Skipping transaction: " (second transaction)
+                                    "because of previous error."))
+                           (catch Throwable e
+                             (debug "Exception " e " while skipping action: " action)))
+                         (swap! result update ::skips (fnil conj []) action)
                          (recur))))))
       @result)))
 
@@ -264,25 +271,31 @@
 (defn result-summary [results]
   (->> results
        (transduce (comp (map :result)
-                        (map (juxt ::successes ::failures))
+                        (map (juxt ::successes ::failures ::skips))
                         (map #(map count %)))
                   (completing #(map + % %2))
-                  [0 0])
-       (zipmap [:successes :failures])))
+                  [0 0 0])
+       (zipmap [:successes :failures :skips])))
 
 (defn print-summary [end-result]
-  (when-let [has-failures (seq (filter (comp seq ::failures :result) end-result))]
-    (error "Test failures: "
+  (when-let [has-failures (seq (concat (filter (comp seq ::failures :result) end-result)
+                                       (filter (comp seq ::skips :result) end-result)))]
+    (error "Test failures and skips: "
            (->> has-failures
                 (into [] (map #(update % :result dissoc ::successes))))))
   (info "Test results:" (result-summary end-result)))
 
 (defn run-tests [test-fns]
   (let [system (reduce (fn [system test]
-                         (-> system
-                             (start-system)
-                             (run-test test)
-                             (stop-system)))
+                         (try
+                           (-> system
+                               (start-system)
+                               (run-test test)
+                               (stop-system))
+                           (catch Throwable e
+                             (error "Uncaught error when running test: " test " error: " e
+                                    " Stopping test.")
+                             (reduced (stop-system system)))))
                        (setup-system)
                        test-fns)
         end-result (deref (:results-atom system))]

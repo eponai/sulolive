@@ -55,6 +55,69 @@
   (pull/lookup-entity (db client)
                       [:transaction/uuid (:transaction/uuid tx)]))
 
+(defn has-edit? [tx update-fn client]
+  (= (bigdec (:transaction/amount
+               (entity client [:transaction/uuid (:transaction/uuid tx)])))
+     (bigdec (update-fn (read-string (:transaction/amount tx))))))
+
+(defn is-running? [^Server server]
+  (.isRunning server))
+
+(defn stop-server! [server]
+  {::fw/transaction #(do (.stop server)
+                         (.join server))
+   ::fw/asserts     #(assert (not (is-running? server)))})
+
+(defn start-server! [server & {:keys [await asserts]}]
+  {:pre [(vector? await) (fn? asserts)]}
+  {::fw/transaction   #(.start server)
+   ::fw/await-clients await
+   ::fw/sync-clients! true
+   ::fw/asserts       #(do (assert (is-running? server))
+                           (asserts))})
+
+(defn create-transaction! [server clients client tx]
+  (fn []
+    (let [asserts (if (is-running? server)
+                    ;; Server is running before creation, assert everyone
+                    ;; gets the transaction.
+                    (fn []
+                      (assert (every? (partial has-transaction? tx) clients))
+                      (assert (equal-app-states? clients)))
+                    ;; Server was not running. Only the client gets the transaction.
+                    (fn []
+                      (assert (test/is (has-transaction? tx client)))
+                      (assert (test/is (not-any? (partial has-transaction? tx)
+                                                 (remove #(= client %) clients))))))]
+      {::fw/transaction (fn []
+                          (info "Creating transaction: " tx " for client: " client)
+                          [client `[(transaction/create ~tx)]])
+       ::fw/asserts     asserts})))
+
+(defn transaction-edit [client tx update-fn & [extra-params]]
+  (fn []
+    (let [tx (pull/pull (db client)
+                        [:db/id :transaction/amount]
+                        [:transaction/uuid (:transaction/uuid tx)])]
+      (assert (some? (:db/id tx))
+              (str "client: " client " did not have tx: " tx))
+      [client `[(transaction/edit
+                  ~(merge {:old tx
+                           :new (update tx :transaction/amount update-fn)}
+                          extra-params))]])))
+
+(defn edit-transaction! [server clients client tx edit-fn]
+  (fn []
+    (let [asserts (if (is-running? server)
+                    (fn []
+                      (assert (every? (partial has-edit? tx edit-fn) clients)))
+                    (fn []
+                      (assert (has-edit? tx edit-fn client))
+                      (assert (not-any? (partial has-edit? tx edit-fn)
+                                        (remove #(= client %) clients)))))]
+      {::fw/transaction (transaction-edit client tx edit-fn)
+       ::fw/assert      asserts})))
+
 (defmethod print-method om.next.Reconciler [x writer]
   (print-method (str "[Reconciler id=[" (get-in x [:config :id-key]) "]]") writer))
 
@@ -91,23 +154,6 @@
                 ::fw/asserts       #(do
                                      (assert (.isRunning server))
                                      (assert (every? (partial has-transaction? tx) clients)))}]}))
-
-(defn has-edit? [tx update-fn client]
-  (= (bigdec (:transaction/amount
-               (entity client [:transaction/uuid (:transaction/uuid tx)])))
-     (bigdec (update-fn (read-string (:transaction/amount tx))))))
-
-(defn transaction-edit [client tx update-fn & [extra-params]]
-  (fn []
-    (let [tx (pull/pull (db client)
-                        [:db/id :transaction/amount]
-                        [:transaction/uuid (:transaction/uuid tx)])]
-      (assert (some? (:db/id tx))
-              (str "client: " client " did not have tx: " tx))
-      [client `[(transaction/edit
-                  ~(merge {:old tx
-                           :new (update tx :transaction/amount update-fn)}
-                          extra-params))]])))
 
 (defn test-edit-transaction [_ [client1 :as clients]]
   (let [tx (new-transaction client1)]
@@ -147,31 +193,31 @@
 (defn test-create+edit-transaction-offline [server [client1 :as clients]]
   (let [tx (new-transaction client1)]
     {:label   "Offline create and edit should persist"
-     :actions [{::fw/transaction #(do (.stop server)
-                                      (.join server))
-                ::fw/asserts     #(assert (not (.isRunning server)))}
-               {::fw/transaction (fn []
-                                   [client1 `[(transaction/create ~tx)]])
-                ::fw/asserts     #(do (assert (test/is (has-transaction? tx client1)))
-                                      (assert (test/is (not-any? (partial has-transaction? tx)
-                                                                 (rest clients)))))}
-               {::fw/transaction (transaction-edit client1 tx inc)
-                ::fw/assert      #(do (assert (has-edit? tx inc client1))
-                                      (assert (not-any? (partial has-edit? tx inc) clients)))}
-               {::fw/transaction #(.start server)
-                ::fw/await-clients [client1]
-                ::fw/sync-clients! true
-                ::fw/asserts #(do (assert (every? (partial has-edit? tx inc) clients)))}]}))
+     :actions [(stop-server! server)
+               (create-transaction! server clients client1 tx)
+               (edit-transaction! server clients client1 tx inc)
+               (start-server! server
+                              :await [client1]
+                              :asserts #(do (assert (every? (partial has-edit? tx inc) clients))))]}))
+
+(defn new-project [client]
+  (throw (ex-info "TODO" {})))
+
+(defn test-edit-transaction-offline-to-new-offline-project
+  [server [client1 :as clients]]
+  (let [tx (new-transaction client1)
+        proj (new-project client1)]
+    {:label "Creation of project "}))
 
 (defn run []
   (fs.utils/with-less-loud-logger
     #(do (fw/run-tests (->> [
-                             ;test-system-setup
-                             ;test-create-transaction
-                             ;test-edit-transaction
-                             ;test-create-transaction-offline
+                             test-system-setup
+                             test-create-transaction
+                             test-edit-transaction
+                             test-create-transaction-offline
                              test-edit-transaction-offline
-                             ;test-create+edit-transaction-offline ;;-> sync should see create+edit.
+                             test-create+edit-transaction-offline ;;-> sync should see create+edit.
                              ;;test-edit-transaction-offline-to-new-offline-project
                             ]
                             ;;(reverse)
