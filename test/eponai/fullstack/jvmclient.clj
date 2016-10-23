@@ -25,6 +25,7 @@
                                        :project/users]}
                  {:query/transactions [:transaction/conversion
                                        :transaction/currency
+                                       {:transaction/category [:category/name]}
                                        :transaction/project
                                        :transaction/title
                                        :transaction/uuid

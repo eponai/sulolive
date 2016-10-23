@@ -85,6 +85,11 @@
         :else
         e))
 
+(defn category*
+  [input]
+  {:pre [(map? input)]}
+  (add-tempid (select-keys input [:db/id :category/name])))
+
 (defn tag*
   [input]
   {:pre [(map? input)]}
@@ -364,10 +369,15 @@
       (let [[in-old in-new] (diff/diff old new)
             adds (if (:eponai.common.parser/server? env)
                    (let [created-at (some :eponai.common.parser/created-at [p env])]
-                     (fn [[k v]]
-                       (when-not (= :db/id k)
-                         [[:db.fn/edit-add created-at id k v]])))
-                   (db-fn->txs :db/add))]
+                     (fn [txs in-new]
+                       (->> in-new (into txs (mapcat (fn [[k v]]
+                                                       (when-not (= :db/id k)
+                                                         [[:db.fn/edit-add created-at id k v]])))))))
+                   (fn [txs in-new]
+                     (let [tx-adds (into {:db/id id} in-new)]
+                       (cond-> txs
+                               (seq (dissoc tx-adds :db/id))
+                               (conj tx-adds)))))]
         (-> []
             (into (mapcat (db-fn->txs :db/retract)) (conform-fn in-old))
-            (into (mapcat adds) (conform-fn in-new)))))))
+            (adds (conform-fn in-new)))))))
