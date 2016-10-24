@@ -355,29 +355,172 @@
             (seq tags)
             (into (mapcat tag->txs) tags))))
 
+#?(:clj
+   (defn cardinality-many? [db attr]
+     (some? (datomic/q '{:find  [?e .]
+                         :in    [$ ?attr]
+                         :where [[?e :db/ident ?attr]
+                                 [?e :db/cardinality :db.cardinality/many]]}
+                       db
+                       attr))))
+
+#?(:clj
+   (defmacro def-dbfn
+     "Defines a database function and a function
+     so that code can be both used in db functions
+     and other contexts, such as cljs."
+     [name requires-map params body]
+     `(defn ~name {:dbfn (datomic/function {:code     (quote ~body)
+                                            :params   (quote ~params)
+                                            :lang     :clojure
+                                            :requires (quote ~(:requires requires-map))})}
+        ~params
+        ~body)))
+
+;; TODO: This is now a db.fn.
+;; TODO: Use the dbfn as in a transaction
+;; TODO: Use this fn when we format/edit client side.
+;; TODO: Use the dbfn when we should edit-attr
+;; TODO: Some how skip should-edit-attr on the client side.
+
+#?(:clj
+   (def-dbfn old-new->txs
+     {:requires [[datomic.api :as datomic]]}
+     [db entity attr value]
+     (let [{:keys [old new]} value]
+       (letfn [(unique-attr [db attrs]
+                 (datomic/q '{:find  [?attr .]
+                              :in    [$ [?attr ...]]
+                              :where [[?e :db/ident ?attr]
+                                      [?e :db/unique _]]}
+                            db
+                            attrs))
+               (cardinality-many? [db attr]
+                 (some? (datomic/q '{:find  [?e .]
+                                     :in    [$ ?attr]
+                                     :where [[?e :db/ident ?attr]
+                                             [?e :db/cardinality :db.cardinality/many]]}
+                                   db
+                                   attr)))]
+         (condp = [(some? old) (some? new)]
+           [false false] []
+           [false true] (letfn [(x->txs [x]
+                                  (if (map? x)
+                                    (if (:db/id x)
+                                      (cond-> [[:db/add entity attr (:db/id x)]]
+                                              (seq (dissoc x :db/id))
+                                              (->> (cons x) (vec)))
+                                      (if (some? (unique-attr db (keys (dissoc x :db/id))))
+                                        (let [id (datomic/tempid :db.part/user)]
+                                          [(assoc x :db/id id)
+                                           [:db/add entity attr id]])
+                                        (throw (ex-info (str "Transaction value did not contain"
+                                                             " :db/id or a unique attribute")
+                                                        {:failing-value x
+                                                         :entity        entity
+                                                         :attr          attr}))))
+                                    (do (assert (not (coll? x)))
+                                        [[:db/add entity attr x]])))]
+                          (if (or (sequential? new) (set? new))
+                            (into [] (mapcat x->txs) new)
+                            (x->txs new)))
+           [true false] (letfn [(x->txs [x]
+                                  (if (map? x)
+                                    (let [id (:db/id x)]
+                                      (if (number? id)
+                                        [[:db/retract entity attr id]]
+                                        (if-let [uniq (unique-attr db (keys (dissoc x :db/id)))]
+                                          [[:db/retract entity attr [uniq (get x uniq)]]]
+                                          (throw (ex-info (str "Retraction value does not contain"
+                                                               " :db/id or a unique attribute")
+                                                          {:retract-value x
+                                                           :entity        entity
+                                                           :attr          attr})))))
+                                    (do (assert (not (coll? x)))
+                                        [[:db/retract entity attr x]])))]
+                          (if (or (sequential? old) (set? old))
+                            (into [] (mapcat x->txs) new)
+                            (x->txs new)))
+           [true true] (if (cardinality-many? db attr)
+                         (-> []
+                             (into (old-new->txs db entity attr {:old old}))
+                             (into (old-new->txs db entity attr {:new new})))
+                         (old-new->txs db entity attr {:new new})))))))
+
+#?(:clj
+   (defn edit-attr? [db created-at entity attr]
+     (if (cardinality-many? db attr)
+       ;; TODO: Implement cardinality-many
+       true
+       (let [last-edit (some->> (datomic/datoms db :eavt entity attr)
+                                (sort-by :tx #(compare %2 %1))
+                                (first)
+                                :tx
+                                (datomic/q '{:find  [?last-edit .]
+                                             :in    [$ ?tx]
+                                             :where [[?tx :tx/mutation-created-at ?last-edit]]}
+                                           db))
+             editable? (or (nil? last-edit)
+                           (<= last-edit created-at))]
+         editable?))))
+
+(defn db.fn-edit [db created-at eid attr value]
+  (let [{:keys [old new]} value]
+    ))
+
+(defn client-edit [env k {:keys [old new] :as p} conform-fn])
+
+(defn server-edit [env k {:keys [old new] :as p} conform-fn]
+  {:pre [(= (:db/id old) (:db/id new))]}
+  (let [created-at (some :eponai.common.parser/created-at [p env])
+        diff (diff/diff old new)
+        edits-by-attr (->> (take 2 diff)
+                           (zipmap [:old :new])
+                           (mapcat (fn [[id m]]
+                                     (map #(hash-map :id id :kv %) m)))
+                           (group-by (comp first :kv)))]
+    (mapv (fn [attr changes]
+            (let [{:keys [old new]} (reduce (fn [m {:keys [id kv]}]
+                                              (assoc-in m [id (first kv)] (second kv)))
+                                            {}
+                                            changes)]
+              [:db.fn/edit-attr created-at (:db/id old) attr {:old old :new new}]))
+          edits-by-attr)))
+
 (defn edit
   [env k {:keys [old new] :as p} conform-fn]
   {:pre [(= (:db/id old) (:db/id new))]}
+  (if (:eponai.common.parser/server? env)
+    (server-edit env k p conform-fn)
+    (client-edit env k p conform-fn))
   (let [id (:db/id old)]
-    (letfn [(db-fn->txs [db-fn]
-              (fn [[k v]]
-                (when-not (= :db/id k)
-                  (let [tx [db-fn id k]]
-                    (if (or (sequential? v) (set? v))
-                      (into [] (comp (filter some?) (map #(conj tx %))) v)
-                      [(conj tx v)])))))]
-      (let [[in-old in-new] (diff/diff old new)
-            adds (if (:eponai.common.parser/server? env)
-                   (let [created-at (some :eponai.common.parser/created-at [p env])]
-                     (fn [txs in-new]
-                       (->> in-new (into txs (mapcat (fn [[k v]]
-                                                       (when-not (= :db/id k)
-                                                         [[:db.fn/edit-add created-at id k v]])))))))
-                   (fn [txs in-new]
-                     (let [tx-adds (into {:db/id id} in-new)]
-                       (cond-> txs
-                               (seq (dissoc tx-adds :db/id))
-                               (conj tx-adds)))))]
+    (letfn [(retracts [[k v]]
+              (when-not (= :db/id k)
+                (let [tx [:db/retract id k]]
+
+                  (if (or (sequential? v) (set? v))
+                    (into [] (comp (filter some?) (map #(conj tx %))) v)
+                    [(conj tx v)]))))]
+      (let [{:keys [adds retracts]}
+            (if (:eponai.common.parser/server? env)
+              (let [created-at (some :eponai.common.parser/created-at [p env])]
+                {:retracts (fn [txs in-old]
+                             (into txs (mapcat (fn [[k v]]
+                                                 (when-not (= :db/id k)
+                                                   [[:db.fn/edit-retract created-at id k v]])))
+                                   in-old))
+                 :adds     (fn [txs in-new]
+                             (into txs (mapcat (fn [[k v]]
+                                                 (when-not (= :db/id k)
+                                                   [[:db.fn/edit-add created-at id k v]])))
+                                   in-new))})
+              {:retracts (fn [txs in-old])
+               :adds (fn [txs in-new]
+                       (let [tx-adds (into {:db/id id} in-new)]
+                         (cond-> txs
+                                 (seq (dissoc tx-adds :db/id))
+                                 (conj tx-adds))))})
+            [in-old in-new] (diff/diff old new)]
         (-> []
-            (into (mapcat (db-fn->txs :db/retract)) (conform-fn in-old))
+            (retracts (conform-fn in-old))
             (adds (conform-fn in-new)))))))

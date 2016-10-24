@@ -14,7 +14,8 @@
             [clojure.test :as test]
             [eponai.fullstack.utils :as fs.utils]
             [clojure.walk :as walk]
-            [aprint.dispatch :as adispatch])
+            [aprint.dispatch :as adispatch]
+            [datomic.api :as d])
   (:import (org.eclipse.jetty.server Server)
            (datomic.Entity)
            (datascript.impl.entity.Entity)))
@@ -219,32 +220,54 @@
                             (comp :category/name :transaction/category)
                             (partial = "category")))
 
+(def test-create+edit-category-lookup-ref-offline
+  (create+edit-offline-test "create+edit category offline with lookup-ref"
+                            #(assoc % :transaction/category [:category/name "category"])
+                            (comp :category/name :transaction/category)
+                            (partial = "category")))
 
 (defn new-project [client]
-  (throw (ex-info "TODO" {})))
+  {:project/uuid (d/squuid)
+   :project/name "fullstack test project"})
+
+(defn has-project? [project client]
+  (pull/lookup-entity (db client) [:project/uuid (:project/uuid project)]))
 
 (defn test-edit-transaction-offline-to-new-offline-project
   [server [client1 :as clients]]
   (let [tx (new-transaction client1)
-        proj (new-project client1)]
-    {:label "Creation of project "}))
+        proj (new-project client1)
+        uuid (:project/uuid proj)]
+    {:label   "Creation of project "
+     :actions [(stop-server! server)
+               (create-transaction! server clients client1 tx)
+               {::fw/transaction [client1 `[(project/save ~proj)]]
+                ::fw/asserts     #(do (assert (has-project? proj client1))
+                                      (assert (not-any? (partial has-project? proj)
+                                                        (remove (partial = client1) clients))))}
+               (edit-transaction! server clients client1 tx
+                                  {:edit-fn #(assoc % :transaction/project {:project/uuid uuid})
+                                   :key-fn #(-> % :transaction/project :project/uuid)
+                                   :compare-fn (partial = uuid)})
+               (start-server! server
+                              :await [client1]
+                              :asserts #(do (assert (every? (partial has-project? proj) clients))))]}))
 
 (defn run []
   (fs.utils/with-less-loud-logger
     #(do (fw/run-tests (->> [
-                             test-system-setup
-                             test-create-transaction
-                             test-edit-transaction
-                             test-create-transaction-offline
-                             test-edit-transaction-offline
-                             test-create+edit-amount-offline
-                             test-create+edit-title-offline
-                             test-create+edit-category-offline
-                             ;;test-edit-transaction-offline-to-new-offline-project
+                             ;test-system-setup
+                             ;test-create-transaction
+                             ;test-edit-transaction
+                             ;test-create-transaction-offline
+                             ;test-edit-transaction-offline
+                             ;test-create+edit-amount-offline
+                             ;test-create+edit-title-offline
+                             ;test-create+edit-category-offline
+                             test-edit-transaction-offline-to-new-offline-project
                             ]
                             ;; (filter (partial = test-edit-transaction))
                             ;; (reverse)
                             ;; (take 1)
                            ))
         nil)))
-
