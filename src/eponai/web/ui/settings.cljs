@@ -160,7 +160,7 @@
                   [:div.column.small-4
                    [:label "Name"]]
                   [:div.column.small-6.small-offset-2
-                   [:input
+                   [:input.float-right
                     {:value (or user-name "")
                      :type  "text"}]]]]
 

@@ -13,68 +13,77 @@
 
     <!-- Bootstrap Core CSS -->
     <!--<link href="/style/css/bootstrap.min.css" rel="stylesheet">-->
-    <link href="/style/app/css/app.css" rel="stylesheet">
+    <link href="/lookandfeel/jourmoney-style/css/app.css" rel="stylesheet">
 
     <!-- Social Buttons CSS -->
-    <link href="/style/css/bootstrap-social.css" rel="stylesheet">
+    <!--<link href="/lookandfeel/css/bootstrap-social.css" rel="stylesheet">-->
 
     <!-- Custom CSS -->
     <!--<link href="/style/css/landing-page.css" rel="stylesheet">-->
 
     <!-- Custom Fonts -->
+    <!--<link href="/lookandfeel/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">-->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
-
-    <!--<link href="/style/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">-->
 
 </head>
 
 <body>
-<div class="gradient-down-up">
-    <!--<div id="content">-->
-        <div class="map map-white map-top">
-            <!-- Navigation -->
+<script>
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId      : '936364773079066',
+      xfbml      : true,
+      version    : 'v2.7'
+    });
+  };
 
-            <nav class="top-bar" id="landing-page">
-                <div class="top-bar-left">
-                    <!--<div class="title-bar-title">-->
-                    <a class="navbar-brand" href="/">
-                        <strong>JourMoney</strong>
-                        <span class="small">by eponai</span>
-                    </a>
-                    <!--</div>-->
-                </div>
-            </nav>
-            <div id="header" style="min-height:50em;">
-                <div class="container">
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) {return;}
+     js = d.createElement(s); js.id = id;
+     js.src = "//connect.facebook.net/en_US/sdk.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
+</script>
+<div id="signup-page">
+    <div id="header">
+        <!--<div id="content">-->
+        <!--<div class="map map-white map-top">-->
+        <!-- Navigation -->
 
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <div class="intro-message">
-                                <div id="my-signup"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-                <!-- /.container -->
+        <nav class="top-bar">
+            <div class="top-bar-left">
+                <!--<div class="title-bar-title">-->
+                <a class="navbar-brand" href="/">
+                    <strong>JourMoney</strong>
+                    <!-- <span class="small">by eponai</span> -->
+                </a>
+                <!--</div>-->
             </div>
+        </nav>
+
+        <div class="intro-message">
+            <div id="my-signup"></div>
         </div>
-    <!--</div>-->
-</div>
-<!-- /.intro-header -->
-<!-- Footer -->
-<footer>
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-12">
-                <p class="copyright text-light small">
+
+
+    </div>
+    <!-- /.intro-header -->
+    <!-- Footer -->
+    <div class="intro-footer">
+        <footer>
+            <!--<div class="container">-->
+            <div class="row column">
+                <!--<div class="col-lg-12">-->
+                <p class="copyright small">
                     Copyright &copy; eponai 2016. All Rights Reserved
                 </p>
+                <!--</div>-->
             </div>
-        </div>
+            <!--</div>-->
+        </footer>
     </div>
-</footer>
-
+</div>
 <script src="/release/js/out/budget.js" type="text/javascript"></script>
 <script type="text/javascript">env.web.main.runsignup();</script>
 

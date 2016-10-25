@@ -118,7 +118,7 @@
           {:keys [computed/date-range-picker-on-apply is-selected?]} (om/get-state this)
           {:keys [currencies all-tags]} (om/get-computed this)]
       (dom/li
-        #js {:className    (str "row collapse align-middle" (when is-selected? " is-selected"))
+        #js {:className    (str "row collapse align-middle is-collapse-child" (when is-selected? " is-selected"))
              :id (str id)
              :onClick #(.select this)}
         ;; Amount in main currency
@@ -326,10 +326,10 @@
           {:keys [computed/transaction-on-tag-click
                   computed/infinite-scroll-node-fn]} (om/get-state this)]
       (html
-        [:div.row.column
+        [:div.row.column.collapse
          (.render-filters this)
          [:div.transactions-container
-          [:div.transactions-header.row.align-middle.expanded.collapse
+          [:div.transactions-header.row.align-middle.collapse.is-collapse-child
            ;[] :div.row.collapse.expanded
            [:div.amount
             (str "Amount (" (:currency/code (:user/currency user)) ")")]
@@ -346,7 +346,7 @@
            [:div.currency
             "Currency"]]
           (if (seq transactions)
-            [:div.transactions-list
+            [:ul.transactions-list
              (into [] (comp (map (fn [props]
                               (->Transaction
                                 (om/computed props

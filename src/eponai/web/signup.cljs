@@ -77,7 +77,7 @@
              [:small.text-success "Check your inbox for a fancy sign in link!"])]
 
 
-          [:a.button.action-button
+          [:a.button
            {:on-click  #(.on-email-login this)
             :tab-index 2}
            "Sign In"]
@@ -86,7 +86,7 @@
           ;; --------- Social Buttons
           [:h4 "or"]
           [:hr.intro-divider-landing]
-          [:a.button.btn-facebook
+          [:a.button.facebook
            {:on-click #(.on-facebook-login this)}
            [:i
             {:class "fa fa-facebook fa-fw"}]
