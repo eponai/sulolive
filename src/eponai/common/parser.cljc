@@ -402,7 +402,9 @@
   ([state]
    {:pre [(every? #(contains? state %) (keys (client-parser-state)))]}
    (make-parser state
-                (fn [parser state] parser)
+                (fn [parser state]
+                  (fn [env query & [target]]
+                    (parser (assoc env ::server? false) query target)))
                 (fn [read {:keys [elide-paths txs-by-project] :as state}]
                   (-> read
                       wrap-datascript-db

@@ -3,6 +3,7 @@
             [om.util]
             [clojure.core.async :as async :refer [go <! >!]]
             [eponai.common.parser.util :as p.util]
+            [eponai.common.database.function :as dbfn]
             [eponai.client.parser.mutate]
             [eponai.client.parser.read]
             [eponai.client.backend :as backend]
@@ -24,7 +25,6 @@
                           :attribute  attr
                           :value      value
                           :last-edit  last-edit})))
-
 
 (def db-fn-edit-add
   #db/fn{:lang     :clojure
@@ -272,8 +272,8 @@
   {:results-atom    (atom [])
    :db-schema       (conj (datomic-dev/read-schema-files)
                           [{:db/id    #db/id [:db.part/user]
-                            :db/ident :db.fn/edit-add
-                            :db/fn     db-fn-edit-add}])
+                            :db/ident :db.fn/edit-attr
+                            :db/fn    (dbfn/dbfn dbfn/edit-attr)}])
    :db-transactions (datomic-dev/transaction-data 105)})
 
 (defn run-test [{:keys [server] :as system} test-fn]
