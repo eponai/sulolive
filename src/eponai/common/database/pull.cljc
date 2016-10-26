@@ -451,16 +451,13 @@
               (some? end-date)
               (comp (date-filter end-date <=))))))
 
-(defn transactions-with-conversions [db user-uuid transaction-eids]
-  (let [tx-entities (into [] (comp (filter some?) (map #(entity* db %)))
-                          transaction-eids)
-        ;; include filter-excluded-tags in the transducer and use into [] instead of sequence.
-        conversions (transaction-conversions db user-uuid tx-entities)
-        entities->maps-xform (map #(let [id (:db/id %)]
-                                    (cond-> (into {:db/id id} %)
-                                            (contains? conversions id)
-                                            (assoc :transaction/conversion (get conversions id)))))]
-    (into [] entities->maps-xform tx-entities)))
+(defn transactions-with-conversions [db user-uuid tx-entities]
+  (let [conversions (transaction-conversions db user-uuid tx-entities)]
+    (into [] (map #(let [id (:db/id %)]
+                    (cond-> %
+                            (contains? conversions id)
+                            (assoc :transaction/conversion (get conversions id)))))
+          tx-entities)))
 
 (defn filter-transactions [{filters :filter} transactions]
   (let [identity-xf (map identity)

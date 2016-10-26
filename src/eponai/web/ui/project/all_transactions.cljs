@@ -63,8 +63,8 @@
     (merge
       ;; Never change this computed function.
       {:computed/date-range-picker-on-apply #(do (om/update-state! this assoc-in
-                                                                   [:input-transaction
-                                                                    :transaction/date] %)
+                                                                   [:input-transaction :transaction/date]
+                                                                   %)
                                                  (.deselect this))
        :on-deselect-fn #(.on-mouse-event this %)}
       (utils/props->init-state this (om/props this))))

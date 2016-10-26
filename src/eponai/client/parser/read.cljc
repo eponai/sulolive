@@ -150,7 +150,7 @@
       (assoc tx :transaction/conversion conv)
       tx)))
 
-(defn all-local-transactions-by-project [{:keys [parser db txs-by-project] :as env} project-eid]
+(defn all-local-transactions-by-project [{:keys [parser db txs-by-project query] :as env} project-eid]
   (let [{:keys [db-used txs]} (get @txs-by-project project-eid)
         {:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
     (when (and project-eid current-user)
@@ -166,19 +166,15 @@
             (do (swap! txs-by-project assoc-in [project-eid :db-used] db)
                 txs)
             (let [user-uuid (:user/uuid current-user)
-                  new-with-convs (p/transactions-with-conversions db user-uuid new-txs)
-                  ;; TODO: Use pull api again instead of entities + into
-                  new-with-convs (->> new-with-convs
-                                      (map (fn [{:keys [:db/id] :as tx}]
-                                             (into {:db/id id} tx))))
+                  tx-entities (d/pull-many db query new-txs)
+                  new-with-convs (p/transactions-with-conversions db user-uuid tx-entities)
+
                   ;; Old txs may have gotten new conversions, get them.
                   old-convs (p/transaction-conversions db user-uuid txs)
 
                   new-and-old (cond-> (or txs (sorted-txs-set))
                                       (seq removed-txs)
-                                      (#(apply disj % (map (fn [id]
-                                                             (d/entity db id))
-                                                           removed-txs)))
+                                      (#(apply disj % (map (fn [id] (d/entity db id)) removed-txs)))
                                       ;; Make space for the new ones.
                                       (seq new-with-convs)
                                       (#(apply disj % new-with-convs))
@@ -187,9 +183,8 @@
                                       (seq new-with-convs)
                                       (#(apply disj %
                                                (filter (fn [{:keys [db/id transaction/uuid]}]
-                                                         (-> db
-                                                             (d/datoms :eavt id :transaction/uuid uuid)
-                                                             (empty?)))
+                                                         (empty?
+                                                           (d/datoms db :eavt id :transaction/uuid uuid)))
                                                        %)))
                                       (seq old-convs)
                                       (->> (into (sorted-txs-set)
