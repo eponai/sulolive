@@ -379,17 +379,17 @@
                                                                    :new new-by-attr}]))))))
 
 (defn client-edit [env k params conform-fn]
-  (into []
-        (mapcat (fn [[_ created-at eid attr old-new]]
-                  (assert (number? eid) (str "entity id was not number for client edit: " [k eid attr old-new]))
-                  (binding [dbfn/q datascript/q
-                            dbfn/tempid datascript/tempid
-                            dbfn/datoms datascript/datoms
-                            dbfn/cardinality-many? dbfn/cardinality-many?-datascript
-                            dbfn/ref? dbfn/ref?-datascript
-                            dbfn/unique-datom dbfn/unique-datom-datascript]
-                    (dbfn/edit-attr (datascript/db (:state env)) created-at eid attr old-new))))
-        (edit-txs params conform-fn ::client-edit)))
+  (->> (edit-txs params conform-fn ::client-edit)
+       (mapcat (fn [[_ created-at eid attr old-new]]
+                 (assert (number? eid) (str "entity id was not number for client edit: " [k eid attr old-new]))
+                 (binding [dbfn/q datascript/q
+                           dbfn/tempid datascript/tempid
+                           dbfn/datoms datascript/datoms
+                           dbfn/cardinality-many? dbfn/cardinality-many?-datascript
+                           dbfn/ref? dbfn/ref?-datascript
+                           dbfn/unique-datom dbfn/unique-datom-datascript]
+                   (dbfn/edit-attr (datascript/db (:state env)) created-at eid attr old-new))))
+       (vec)))
 
 (defn server-edit [env k params conform-fn]
   (let [created-at (some :eponai.common.parser/created-at [params env])]
