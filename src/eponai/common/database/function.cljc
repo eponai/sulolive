@@ -1,7 +1,10 @@
 (ns eponai.common.database.function
   #?(:cljs
      (:require-macros [eponai.common.database.function :refer [def-dbfn]]))
-  (:require #?(:clj [datomic.api :as datomic])))
+  (:require
+    [datascript.core :as datascript]
+    [taoensso.timbre :as timbre #?(:clj :refer :cljs :refer-macros) [debug info]]
+    #?(:clj [datomic.api :as datomic])))
 
 (defn comp-dbfn [f1 f2 f2-name f2-memoized?]
   (assert (symbol? f2-name)
@@ -65,6 +68,11 @@
 (def ^:dynamic tempid nil)
 (def ^:dynamic cardinality-many? nil)
 (def ^:dynamic ref? nil)
+(def ^:dynamic unique-datom nil)
+
+(defn cardinality-many?-datascript [db attr]
+  (= :db.cardinality/many
+     (get-in (:schema db) [attr :db/cardinality])))
 
 (def-dbfn cardinality-many?-datomic {:requires ['[datomic.api :refer [q]]]}
   [db attr]
@@ -75,6 +83,10 @@
             db
             attr)))
 
+(defn ref?-datascript [db attr]
+  (= :db.type/ref
+     (get-in (:schema db) [attr :db/valueType])))
+
 (def-dbfn ref?-datomic {:requires ['[datomic.api :refer [q]]]}
   [db attr]
   (some? (q '{:find  [?e .]
@@ -84,36 +96,37 @@
             db
             attr)))
 
+(defn unique-datom-datascript [db kv-pairs]
+  (let [schema (:schema db)
+        unique-keys (filter (fn [[k _]] (some? (:db/unique (get schema k))))
+                            kv-pairs)]
+    (->> (datascript/q '{:find  [?entity ?attr ?val]
+                         :in    [$ [[?attr ?val] ...]]
+                         :where [[?entity ?attr ?val]]}
+                       db
+                       unique-keys)
+         (zipmap [:e :a :v]))))
+
+(def-dbfn unique-datom-datomic {:requires ['[datomic.api :refer [q]]]}
+  [db kv-pairs]
+  (->> (q '{:find  [?entity ?attr ?val]
+            :in    [$ [[?attr ?val] ...]]
+            :where [[?e :db/ident ?attr]
+                    [?e :db/unique _]
+                    [?entity ?attr ?val]]}
+          db
+          kv-pairs)
+       (zipmap [:e :a :v])))
+
 (def-dbfn edit-attr
   {:requires ['[datomic.api :as datomic :refer [q datoms tempid]]]
    :deps     [{:dbfn cardinality-many?-datomic :provides 'cardinality-many? :memoized? true}
-              {:dbfn ref?-datomic :provides 'ref? :memoized? true}]}
+              {:dbfn ref?-datomic :provides 'ref? :memoized? true}
+              {:dbfn unique-datom-datomic :provides 'datom-unique}]}
   [db created-at entity attr value]
-  (let [{:keys [old new]} value
-        cardinality-many? (memoize
-                            (fn [db attr]
-                              (some? (q '{:find  [?e .]
-                                          :in    [$ ?attr]
-                                          :where [[?e :db/ident ?attr]
-                                                  [?e :db/cardinality :db.cardinality/many]]}
-                                        db
-                                        attr))))
-        ref? (memoize
-               (fn [db attr]
-                 (some? (q '{:find  [?e .]
-                             :in    [$ ?attr]
-                             :where [[?e :db/ident ?attr]
-                                     [?e :db/valueType :db.type/ref]]}
-                           db
-                           attr))))]
-    (letfn [(unique-datom [db kv-pairs]
-              (q '{:find  [?entity ?attr ?val]
-                   :in    [$ [[?attr ?val] ...]]
-                   :where [[?e :db/ident ?attr]
-                           [?e :db/unique _]
-                           [?entity ?attr ?val]]}
-                 db
-                 kv-pairs))
+  (let [{:keys [old new]} value]
+    (letfn [(tempid? [id]
+              (not (number? id)))
             (has-been-edited-since? [db created-at entity attr & [value]]
               (if (= ::client-edit created-at)
                 ;; Escape for client edits where edits should always happen.
@@ -152,12 +165,14 @@
                                  (if (map? x)
                                    (do (assert (ref? db attr)
                                                (str "Attribute was not a ref but it got a map as value."
-                                                    " Attr was: " attr))
-                                       (let [id (or
-                                                  (:db/id x)
-                                                  (:e (unique-datom db (seq (dissoc x :db/id))))
-                                                  (tempid :db.part/user))]
-                                         (when (edit-val? id)
+                                                    " Attr was: " attr " ref fn: " ref?))
+                                       (let [dbid (or (:db/id x)
+                                                      (tempid :db.part/user))
+                                             id (if (tempid? dbid)
+                                                  (-> (unique-datom db (seq (dissoc x :db/id)))
+                                                      (:e dbid))
+                                                  dbid)]
+                                         (when (or (tempid? id) (edit-val? id))
                                            (cond-> []
                                                    (seq (dissoc x :db/id))
                                                    (conj (assoc x :db/id id))

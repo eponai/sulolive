@@ -269,12 +269,13 @@
   system)
 
 (defn setup-system []
-  {:results-atom    (atom [])
-   :db-schema       (conj (datomic-dev/read-schema-files)
-                          [{:db/id    #db/id [:db.part/user]
-                            :db/ident :db.fn/edit-attr
-                            :db/fn    (dbfn/dbfn dbfn/edit-attr)}])
-   :db-transactions (datomic-dev/transaction-data 105)})
+  (let [dbfn (dbfn/dbfn dbfn/edit-attr)]
+    {:results-atom    (atom [])
+     :db-schema       (conj (datomic-dev/read-schema-files)
+                            [{:db/id    #db/id [:db.part/user]
+                              :db/ident :db.fn/edit-attr
+                              :db/fn    dbfn}])
+     :db-transactions (datomic-dev/transaction-data 105)}))
 
 (defn run-test [{:keys [server] :as system} test-fn]
   (let [action-chan (async/chan)

@@ -356,30 +356,39 @@
             (into (mapcat tag->txs) tags))))
 
 (defn edit-txs [{:keys [old new]} conform-fn created-at]
-  {:pre [(= (:db/id old) (:db/id new))
+  {:pre [(some? (:db/id old))
+         (= (:db/id old) (:db/id new))
          (or (number? created-at)
              (= ::client-edit created-at))]}
   (let [diff (mapv conform-fn (diff/diff old new))
         edits-by-attr (->> (take 2 diff)
-                           (zipmap [:old :new])
+                           (zipmap [:old-by-attr :new-by-attr])
                            (mapcat (fn [[id m]]
                                      (map #(hash-map :id id :kv %) m)))
                            (group-by (comp first :kv)))]
-    (mapv (fn [[attr changes]]
-            (let [{:keys [old new]} (reduce (fn [m {:keys [id kv]}]
-                                              (assoc-in m [id (first kv)] (second kv)))
-                                            {}
-                                            changes)]
-              [:db.fn/edit-attr created-at (:db/id old) attr {:old old :new new}]))
-          edits-by-attr)))
+    (->> edits-by-attr
+         (remove (fn [[attr]] (= :db/id attr)))
+         (mapv (fn [[attr changes]]
+                 (let [{:keys [old-by-attr new-by-attr]} (reduce (fn [m {:keys [id kv]}]
+                                                                   (assert (= (first kv) attr))
+                                                                   (assoc m id (second kv)))
+                                                                 {}
+                                                                 changes)]
+                   (info "Changes-by attr: " [(:db/id old) attr old-by-attr new-by-attr])
+                   [:db.fn/edit-attr created-at (:db/id old) attr {:old old-by-attr
+                                                                   :new new-by-attr}]))))))
 
 (defn client-edit [env k params conform-fn]
   (into []
-        (map (fn [[_ created-at eid attr old-new]]
-               (binding [dbfn/q datascript/q
-                         dbfn/tempid datascript/tempid
-                         dbfn/datoms datascript/datoms]
-                 (dbfn/edit-attr (datascript/db (:state env)) created-at eid attr old-new))))
+        (mapcat (fn [[_ created-at eid attr old-new]]
+                  (assert (number? eid) (str "entity id was not number for client edit: " [k eid attr old-new]))
+                  (binding [dbfn/q datascript/q
+                            dbfn/tempid datascript/tempid
+                            dbfn/datoms datascript/datoms
+                            dbfn/cardinality-many? dbfn/cardinality-many?-datascript
+                            dbfn/ref? dbfn/ref?-datascript
+                            dbfn/unique-datom dbfn/unique-datom-datascript]
+                    (dbfn/edit-attr (datascript/db (:state env)) created-at eid attr old-new))))
         (edit-txs params conform-fn ::client-edit)))
 
 (defn server-edit [env k params conform-fn]
