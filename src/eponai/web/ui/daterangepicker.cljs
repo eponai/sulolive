@@ -69,6 +69,7 @@
                                 :old-start-date date
                                 :end-date date
                                 :old-end-date date
+                                :show-calendars? false
                                 :is-showing? false)
               (when on-apply
                 (on-apply (date/date-map date))))
@@ -116,8 +117,10 @@
                 #js {:className "prev available"
                      :onClick   #(do
                                   (.clickPrev this %))}
-                (dom/i
-                  #js {:className "fa fa-chevron-left"}))
+                (dom/a
+                  nil
+                  (dom/i
+                    #js {:className "fa fa-chevron-left"})))
               (dom/th nil))
             (dom/th
               #js {:className "month"
@@ -128,8 +131,10 @@
                 #js {:className "next available"
                      :onClick   #(do
                                   (.clickNext this %))}
-                (dom/i
-                  #js {:className "fa fa-chevron-right"}))
+                (dom/a
+                  nil
+                  (dom/i
+                    #js {:className "fa fa-chevron-right"})))
               (dom/th nil)))
 
           (apply dom/tr
@@ -226,43 +231,48 @@
                                                     :show-calendars? true
                                                     :selected-range :custom-range))}]]
       (dom/div
-        #js {:className (str "daterangepicker menu-horizontal dropdown " (when show-calendars? " show-calendar"))}
+        #js {:className (str "daterangepicker dropdown ")}
 
+        ;(dom/a
+        ;  #js {:className "close"}
+        ;  "x")
         ; Calendar select from date.
         (dom/div
-          #js {:className "calendar left"}
+          #js {:className (str "calendar-container" (when show-calendars? " show"))}
           (dom/div
-            #js {:className "daterangepicker_input"}
-            (dom/input
-              #js {:className "input-mini"
-                   :type      "text"
-                   :name      "daterangepicker_start"
-                   :value     (if start-date
-                                (t.format/unparse (t.format/formatter "MM/dd/yyyy") start-date)
-                                "")})
-            (dom/i
-              #js {:className "fa fa-calendar"}))
-          (dom/div
-            #js {:className "calendar-table"}
-            (.renderCalendar this :left-calendar)))
+            #js {:className "calendar left"}
+            (dom/div
+              #js {:className "date_input"}
+              (dom/input
+                #js {:className "input-mini"
+                     :type      "text"
+                     :name      "date_start"
+                     :value     (if start-date
+                                  (t.format/unparse (t.format/formatter "MM/dd/yyyy") start-date)
+                                  "")})
+              (dom/i
+                #js {:className "fa fa-calendar"}))
+            (dom/div
+              #js {:className "calendar-table"}
+              (.renderCalendar this :left-calendar)))
 
-        ; Calendar select to date.
-        (dom/div
-          #js {:className "calendar right"}
+          ; Calendar select to date.
           (dom/div
-            #js {:className "daterangepicker_input"}
-            (dom/input
-              #js {:className "input-mini"
-                   :type      "text"
-                   :name      "daterangepicker_end"
-                   :value     (if end-date
-                                (t.format/unparse (t.format/formatter "MM/dd/yyyy") end-date)
-                                "")})
-            (dom/i
-              #js {:className "fa fa-calendar"}))
-          (dom/div
-            #js {:className "calendar-table"}
-            (.renderCalendar this :right-calendar)))
+            #js {:className "calendar right"}
+            (dom/div
+              #js {:className "date_input"}
+              (dom/input
+                #js {:className "input-mini"
+                     ;:type      "text"
+                     :name      "date_end"
+                     :value     (if end-date
+                                  (t.format/unparse (t.format/formatter "MM/dd/yyyy") end-date)
+                                  "")})
+              (dom/i
+                #js {:className "fa fa-calendar"}))
+            (dom/div
+              #js {:className "calendar-table"}
+              (.renderCalendar this :right-calendar))))
 
         (dom/div
           #js {:className "ranges"}
@@ -272,15 +282,15 @@
                    (fn [range]
                      (dom/li
                        #js {:className (when (= (:key range) selected-range) "active")
-                            :onClick #(when-let [action-fn (:action range)]
-                                       (action-fn))}
+                            :onClick   #(when-let [action-fn (:action range)]
+                                         (action-fn))}
                        (:name range)))
                    ranges))
           (dom/div
-            #js {:className "range_inputs float-right"}
+            #js {:className "action_bar float-right"}
             (dom/a
-              #js {:className (str "apply button small success show")
-                   :disabled  "disabled"
+              #js {:className (str "apply button hollow show")
+                   ;:disabled  "disabled"
                    :type      "button"
                    :onClick   #(do
                                 (om/update-state! this assoc
@@ -293,8 +303,8 @@
                                              :selected-range selected-range})))}
               "Apply")
             (dom/a
-              #js {:className "cancel button small secondary"
-                   :type      "button"
+              #js {:className "close"
+                   ;:type      "button"
                    :onClick   #(do
                                 (om/update-state! this assoc
                                                   :start-date old-start-date
@@ -306,23 +316,25 @@
   (renderSingleCalendar [this]
     (let [{:keys [start-date]} (om/get-state this)]
       (dom/div
-        #js {:className (str "daterangepicker menu-horizontal single dropdown show-calendar")}
+        #js {:className (str "daterangepicker menu-horizontal single dropdown")}
         (dom/div
-          #js {:className "calendar"}
+          #js {:className "calendar-container show"}
           (dom/div
-            #js {:className "daterangepicker_input"}
-            (dom/input
-              #js {:className "input-mini"
-                   :type      "text"
-                   :name      "daterangepicker_start"
-                   :value     (if start-date
-                                (t.format/unparse (t.format/formatter "MM/dd/yyyy") start-date)
-                                "")})
-            (dom/i
-              #js {:className "fa fa-calendar"}))
-          (dom/div
-            #js {:className "calendar-table"}
-            (.renderCalendar this :left-calendar))))))
+            #js {:className "calendar"}
+            (dom/div
+              #js {:className "date_input"}
+              (dom/input
+                #js {:className "input-mini"
+                     :type      "text"
+                     :name      "date_start"
+                     :value     (if start-date
+                                  (t.format/unparse (t.format/formatter "MM/dd/yyyy") start-date)
+                                  "")})
+              (dom/i
+                #js {:className "fa fa-calendar"}))
+            (dom/div
+              #js {:className "calendar-table"}
+              (.renderCalendar this :left-calendar)))))))
   (render [this]
     (let [{:keys [old-start-date old-end-date is-showing?]} (om/get-state this)
           {:keys [class single-calendar?]} (om/props this)
@@ -345,7 +357,7 @@
           (when is-showing?
             (dom/div
               nil
-              (utils/click-outside-target #(om/update-state! this assoc :is-showing? false))
+              (utils/click-outside-target #(om/update-state! this assoc :is-showing? false :show-calendars? false))
               (if single-calendar?
                 (.renderSingleCalendar this)
                 (.renderDateRangeSelection this)))))))))
