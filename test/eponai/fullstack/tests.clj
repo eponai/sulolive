@@ -256,14 +256,14 @@
 (defn run []
   (fs.utils/with-less-loud-logger
     #(do (fw/run-tests (->> [
-                             ;test-system-setup
-                             ;test-create-transaction
-                             ;test-edit-transaction
-                             ;test-create-transaction-offline
-                             ;test-edit-transaction-offline
-                             ;test-create+edit-amount-offline
-                             ;test-create+edit-title-offline
-                             ;test-create+edit-category-offline
+                             test-system-setup
+                             test-create-transaction
+                             test-edit-transaction
+                             test-create-transaction-offline
+                             test-edit-transaction-offline
+                             test-create+edit-amount-offline
+                             test-create+edit-title-offline
+                             test-create+edit-category-offline
                              test-edit-transaction-offline-to-new-offline-project
                             ]
                             ;; (filter (partial = test-edit-transaction))
@@ -271,4 +271,3 @@
                             ;; (take 1)
                            ))
         nil)))
-

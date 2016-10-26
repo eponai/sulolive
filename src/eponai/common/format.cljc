@@ -3,7 +3,7 @@
   (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
             [clojure.set :refer [rename-keys]]
             [clojure.data :as diff]
-            [eponai.common.database.function :as dbfn]
+            [eponai.common.database.functions :as dbfn]
             [eponai.common.format.date :as date]
             #?(:clj [datomic.api :as datomic])
             [datascript.core :as datascript]
@@ -374,9 +374,8 @@
                                                                    (assoc m id (second kv)))
                                                                  {}
                                                                  changes)]
-                   (info "Changes-by attr: " [(:db/id old) attr old-by-attr new-by-attr])
-                   [:db.fn/edit-attr created-at (:db/id old) attr {:old old-by-attr
-                                                                   :new new-by-attr}]))))))
+                   [:db.fn/edit-attr created-at (:db/id old) attr {:old-value old-by-attr
+                                                                   :new-value new-by-attr}]))))))
 
 (defn client-edit [env k params conform-fn]
   (->> (edit-txs params conform-fn ::client-edit)
@@ -398,7 +397,7 @@
     (edit-txs params conform-fn created-at)))
 
 (defn edit
-  [env k {:keys [old new] :as p} conform-fn]
+  [env k p conform-fn]
   {:pre [(some? (:eponai.common.parser/server? env))]}
   (if (:eponai.common.parser/server? env)
     (server-edit env k p conform-fn)

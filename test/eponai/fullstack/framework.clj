@@ -3,7 +3,7 @@
             [om.util]
             [clojure.core.async :as async :refer [go <! >!]]
             [eponai.common.parser.util :as p.util]
-            [eponai.common.database.function :as dbfn]
+            [eponai.common.database.functions :as dbfn]
             [eponai.client.parser.mutate]
             [eponai.client.parser.read]
             [eponai.client.backend :as backend]
