@@ -26,10 +26,11 @@
                  {:query/transactions [:transaction/conversion
                                        :transaction/currency
                                        {:transaction/category [:category/name]}
-                                       :transaction/project
+                                       {:transaction/project [:project/uuid]}
                                        :transaction/title
                                        :transaction/uuid
                                        :transaction/amount
+                                       {:transaction/tags [:tag/name]}
                                        {:transaction/date [:db/id :date/timestamp]}]}])
   Object
   (render [this]

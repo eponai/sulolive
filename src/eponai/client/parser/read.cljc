@@ -213,7 +213,7 @@
   [{:keys [db target ast] :as env} k p]
   (if (= target :remote)
     ;; Pass the active project to remote reader
-    {:remote (assoc-in ast [:params :project-eid] (active-project-eid db))}
+    {:remote (assoc-in ast [:params :project :db/id] (active-project-eid db))}
 
     ;; Local read
     (cached-query-transactions env k p)))

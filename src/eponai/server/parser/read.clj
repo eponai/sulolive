@@ -47,22 +47,23 @@
             (transient {:db/id (:db/id e)})
             e)))
 
-(defn env+params->project-eid [{:keys [db user-uuid]} {:keys [project-eid]}]
+(defn env+params->project-eid [{:keys [db user-uuid]} {:keys [project]}]
   ;{:pre [(some? user-uuid)]}
-  (if (nil? user-uuid)
-    (do (warn "nil user-uuid for project-eid: " project-eid)
-        nil)
-    (let [project-with-auth (common.pull/project-with-auth user-uuid)]
-      (if project-eid
-        (let [verified-eid (one-with db (merge-query project-with-auth {:symbols {'?e project-eid}}))]
-          (debug "Had project eid, verifying that we have access to it.")
-          (when-not (= project-eid verified-eid)
-            (warn "DID NOT HAVE ACCESS TO PROJECT-EID: " project-eid " returned verified eid: " verified-eid))
-          verified-eid)
-        ;; No project-eid, grabbing the one with the smallest created-at
-        (let [ret (min-by db :project/created-at project-with-auth)]
-          (debug "fetched smallest project eid: " ret)
-          ret)))))
+  (let [project-eid (:db/id project)]
+    (if (nil? user-uuid)
+      (do (warn "nil user-uuid for project-eid: " project-eid)
+          nil)
+      (let [project-with-auth (common.pull/project-with-auth user-uuid)]
+        (if project-eid
+          (let [verified-eid (one-with db (merge-query project-with-auth {:symbols {'?e project-eid}}))]
+            (debug "Had project eid, verifying that we have access to it.")
+            (when-not (= project-eid verified-eid)
+              (warn "DID NOT HAVE ACCESS TO PROJECT-EID: " project-eid " returned verified eid: " verified-eid))
+            verified-eid)
+          ;; No project-eid, grabbing the one with the smallest created-at
+          (let [ret (min-by db :project/created-at project-with-auth)]
+            (debug "fetched smallest project eid: " ret)
+            ret))))))
 
 (defmethod parser/read-basis-param-path :query/transactions [env _ params] [(env+params->project-eid env params)])
 (defmethod server-read :query/transactions

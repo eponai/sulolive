@@ -38,12 +38,6 @@
                                (entity? %)
                                (into {:db/id (:db/id %)})))))
 
-(defn datomic-tempids->datascript [x]
-  [{:pre [(coll? x)]}]
-  (if (map? x)
-    (first (transact/convert-datomic-ids [x]))
-    (transact/convert-datomic-ids x)))
-
 (defn equal-app-states? [clients]
   (let [app-states (map app-state clients)
         eq? (apply = app-states)]
@@ -77,9 +71,8 @@
                       [:transaction/uuid (:transaction/uuid tx)]))
 
 (defn has-edit?
-  ([tx edit-fn key-fn client] (has-edit? tx edit-fn key-fn nil client))
-  ([tx edit-fn key-fn compare-fn client]
-   {:pre [(map? tx) (some? edit-fn) (some? key-fn) (om/reconciler? client)]}
+  ([tx {:keys [edit-fn key-fn compare-fn] :as edit} client]
+   {:pre [(map? tx) (map? edit) (some? edit-fn) (some? key-fn) (om/reconciler? client)]}
    ((or compare-fn =)
      (key-fn (entity-map client [:transaction/uuid (:transaction/uuid tx)]))
      (key-fn (edit-fn tx)))))
@@ -117,19 +110,18 @@
                           (assert (test/is (not-any? (partial has-transaction? tx)
                                                      (remove #(= client %) clients))))))}))
 
-(defn edit-transaction! [server clients client tx {:keys [edit-fn key-fn compare-fn]} & [mutation-params]]
+(defn edit-transaction! [server clients client tx edit & [mutation-params]]
   {:pre [(om/reconciler? client)
          (map? tx)
-         (some? edit-fn)
-         (some? key-fn)
+         (and (map? edit) (some? (:edit-fn edit)))
          (or (nil? mutation-params) (map? mutation-params))]}
   (fn []
     (let [tx (entity-map client [:transaction/uuid (:transaction/uuid tx)])]
-      {::fw/transaction [client `[(transaction/edit ~(merge {:old tx :new (edit-fn tx)} mutation-params))]]
+      {::fw/transaction [client `[(transaction/edit ~(merge {:old tx :new ((:edit-fn edit) tx)} mutation-params))]]
        ::fw/assert      (if (is-running? server)
-                          #(assert (every? (partial has-edit? tx edit-fn key-fn compare-fn) clients))
-                          #(do (assert (has-edit? tx edit-fn key-fn compare-fn client))
-                               (assert (not-any? (partial has-edit? tx edit-fn key-fn compare-fn)
+                          #(assert (every? (partial has-edit? tx edit) clients))
+                          #(do (assert (has-edit? tx edit client))
+                               (assert (not-any? (partial has-edit? tx edit)
                                                  (remove (partial = client) clients)))))})))
 
 (defmethod print-method om.next.Reconciler [x writer]
@@ -172,36 +164,32 @@
 
 (defn test-edit-transaction-offline [server [client1 client2 :as clients]]
   (let [tx (new-transaction client1)
-        c1-edit inc-amount
-        c2-edit (comp inc-amount inc-amount)
+        c1-edit {:key-fn get-amount :edit-fn inc-amount }
+        c2-edit {:key-fn get-amount :edit-fn (comp inc-amount inc-amount)}
         days-from-now (comp date/date->long date/days-from-now)]
     {:label   "Last edit should persist"
      :actions [(create-transaction! server clients client1 tx)
                (stop-server! server :asserts #(assert (every? (partial has-transaction? tx) clients)))
-               (edit-transaction! server clients client1 tx {:edit-fn c1-edit :key-fn get-amount}
-                                  {::parser/created-at (days-from-now 2)})
-               (edit-transaction! server clients client2 tx {:edit-fn c2-edit :key-fn get-amount}
-                                  {::parser/created-at (days-from-now 3)})
+               (edit-transaction! server clients client1 tx c1-edit {::parser/created-at (days-from-now 2)})
+               (edit-transaction! server clients client2 tx c2-edit {::parser/created-at (days-from-now 3)})
                (start-server! server
                               :await [client1 client2]
                               :asserts
-                              #(do (assert (not-any? (partial has-edit? tx c1-edit get-amount) clients))
-                                   (assert (every? (partial has-edit? tx c2-edit get-amount) clients))))]}))
+                              #(do (assert (not-any? (partial has-edit? tx c1-edit) clients))
+                                   (assert (every? (partial has-edit? tx c2-edit) clients))))]}))
 
-(defn- create+edit-offline-test [label edit-fn key-fn & [compare-fn]]
+(defn- create+edit-offline-test [label & edit-params]
   {:pre [(some? label)]}
   (fn [server [client1 :as clients]]
-    (let [tx (new-transaction client1)]
+    (let [tx (new-transaction client1)
+          edit (zipmap [:edit-fn :key-fn :compare-fn] edit-params)]
       {:label   label
        :actions [(stop-server! server)
                  (create-transaction! server clients client1 tx)
-                 (edit-transaction! server clients client1 tx {:edit-fn edit-fn
-                                                               :key-fn key-fn
-                                                               :compare-fn compare-fn})
+                 (edit-transaction! server clients client1 tx edit)
                  (start-server! server
                                 :await [client1]
-                                :asserts #(do (assert (every? (partial has-edit? tx edit-fn key-fn compare-fn)
-                                                              clients))))]})))
+                                :asserts #(do (assert (every? (partial has-edit? tx edit) clients))))]})))
 
 (def test-create+edit-amount-offline
   (create+edit-offline-test "create+edit amount offline"
@@ -220,13 +208,7 @@
                             (comp :category/name :transaction/category)
                             (partial = "category")))
 
-(def test-create+edit-category-lookup-ref-offline
-  (create+edit-offline-test "create+edit category offline with lookup-ref"
-                            #(assoc % :transaction/category [:category/name "category"])
-                            (comp :category/name :transaction/category)
-                            (partial = "category")))
-
-(defn new-project [client]
+(defn new-project []
   {:project/uuid (d/squuid)
    :project/name "fullstack test project"})
 
@@ -236,8 +218,11 @@
 (defn test-edit-transaction-offline-to-new-offline-project
   [server [client1 :as clients]]
   (let [tx (new-transaction client1)
-        proj (new-project client1)
-        uuid (:project/uuid proj)]
+        proj (new-project)
+        uuid (:project/uuid proj)
+        edit {:edit-fn    #(assoc % :transaction/project {:project/uuid uuid})
+              :key-fn     #(-> % :transaction/project :project/uuid)
+              :compare-fn (partial = uuid)}]
     {:label   "Creation of project "
      :actions [(stop-server! server)
                (create-transaction! server clients client1 tx)
@@ -245,13 +230,12 @@
                 ::fw/asserts     #(do (assert (has-project? proj client1))
                                       (assert (not-any? (partial has-project? proj)
                                                         (remove (partial = client1) clients))))}
-               (edit-transaction! server clients client1 tx
-                                  {:edit-fn #(assoc % :transaction/project {:project/uuid uuid})
-                                   :key-fn #(-> % :transaction/project :project/uuid)
-                                   :compare-fn (partial = uuid)})
+               (edit-transaction! server clients client1 tx edit)
                (start-server! server
                               :await [client1]
-                              :asserts #(do (assert (every? (partial has-project? proj) clients))))]}))
+                              :asserts #(do (assert (every? (partial has-transaction? tx) clients))
+                                            (assert (every? (partial has-project? proj) clients))
+                                            (assert (every? (partial has-edit? tx edit) clients))))]}))
 
 (defn run []
   (fs.utils/with-less-loud-logger
@@ -265,9 +249,11 @@
                              test-create+edit-title-offline
                              test-create+edit-category-offline
                              test-edit-transaction-offline-to-new-offline-project
+                             ;; test-edit-tags with retracts and adds on different clients.
                             ]
                             ;; (filter (partial = test-edit-transaction))
                             ;; (reverse)
                             ;; (take 1)
                            ))
         nil)))
+

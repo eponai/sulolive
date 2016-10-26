@@ -55,27 +55,13 @@
             (fn ~params
               ~body)))))))
 
-;; TODO: This is now a db.fn.
-;; TODO: Use the dbfn as in a transaction
-;; TODO: Use this fn when we format/edit client side.
-;; TODO: Use the dbfn when we should edit-attr
-;; TODO: Some how skip should-edit-attr on the client side.
-
-;; TODO: Possibly specify dependency fns in def-dbfn, where you
-;;       can depend on other functions created by def-dbfn.
-
-
-;; TODO: Build this in to the macro instead. DONE.
-;; TODO: What to do about client though?
-;; TODO: Write cardinality-many?-datascript and ref?-datascript
-;; TODO: Bind them to cardinality-many? and ref? vars. Run. AWAY!
-
-(def ^:dynamic q nil)
-(def ^:dynamic datoms nil)
-(def ^:dynamic tempid nil)
-(def ^:dynamic cardinality-many? nil)
-(def ^:dynamic ref? nil)
-(def ^:dynamic unique-datom nil)
+(def ^:dynamic q)
+(def ^:dynamic datoms)
+(def ^:dynamic tempid)
+(def ^:dynamic cardinality-many?)
+(def ^:dynamic ref?)
+(def ^:dynamic unique-datom)
+(def ^:dynamic tempid?)
 
 (defn cardinality-many?-datascript [db attr]
   (= :db.cardinality/many
@@ -130,15 +116,24 @@
           (first)
           (zipmap [:e :a :v]))))
 
+#?(:clj
+   (def-dbfn tempid?-datomic {:requires ['[datomic.api :refer [tempid]]]}
+     [x]
+     (let [tempid-type (type (tempid :db.part/user))]
+       (= (type x) tempid-type))))
+
+(defn tempid?-datascript [x]
+  (and (number? x)
+       (neg? x)))
+
 (def-dbfn edit-attr
   {:requires ['[datomic.api :as datomic :refer [q datoms tempid]]]
    :deps     [{:dbfn cardinality-many?-datomic :provides 'cardinality-many? :memoized? true}
               {:dbfn ref?-datomic :provides 'ref? :memoized? true}
-              {:dbfn unique-datom-datomic :provides 'unique-datom}]}
+              {:dbfn unique-datom-datomic :provides 'unique-datom}
+              {:dbfn tempid?-datomic :provides 'tempid?}]}
   [db created-at entity attr value]
-  (letfn [(tempid? [id]
-            (not (number? id)))
-          (has-been-edited-since? [db created-at entity attr & [value]]
+  (letfn [(has-been-edited-since? [db created-at entity attr & [value]]
             (if (= ::client-edit created-at)
               ;; Escape for client edits where edits should always happen.
               false
@@ -169,7 +164,19 @@
           (edit-val? [x]
             (edit-value? db created-at entity attr x))
 
-          (something-new [new-value]
+          (to-txs [db-fn value]
+            (if (or (sequential? value) (set? value))
+              (do
+                (assert (cardinality-many? db attr)
+                        (str "Value was sequential or set for a non-cardinality/many attr: " attr
+                             " Can only set sequential values for cardinality/many attr. Value was: " value))
+                (into [] (mapcat db-fn) value))
+              (do (assert (not (cardinality-many? db attr))
+                          (str "Value was ref or atomic but for a :db.cardinality/many attr: " attr
+                               " value: " value))
+                  (db-fn value))))
+
+          (db-add [new-value]
             (letfn [(x->txs [x]
                       (if (map? x)
                         (do (assert (ref? db attr)
@@ -183,17 +190,18 @@
                                        dbid)]
                               (when (or (tempid? id) (edit-val? id))
                                 (cond-> []
-                                        (seq (dissoc x :db/id))
+                                        ;; It's a new ref, non-empty ref.
+                                        ;; Add the whole ref to the transaction.
+                                        (and (tempid? id) (seq (dissoc x :db/id)))
                                         (conj (assoc x :db/id id))
                                         :always
                                         (conj [:db/add entity attr id])))))
                         (do (assert (not (coll? x)))
                             (when (edit-val? x)
                               [[:db/add entity attr x]]))))]
-              (if (or (sequential? new-value) (set? new-value))
-                (into [] (mapcat x->txs) new-value)
-                (x->txs new-value))))
-          (something-old [old-value]
+              (to-txs x->txs new-value)))
+
+          (db-retract [old-value]
             (letfn [(x->txs [x]
                       (if (map? x)
                         (do (assert (ref? db attr)
@@ -211,21 +219,19 @@
                                                  :attr   attr})))))
                         (do (assert (not (coll? x)))
                             [[:db/retract entity attr x]])))]
-              (if (or (sequential? old-value) (set? old-value))
-                (into [] (mapcat x->txs) old-value)
-                (x->txs old-value))))]
+              (to-txs x->txs old-value)))]
 
     (when (edit-attr? db created-at entity attr)
       (let [{:keys [old-value new-value]} value
             ret (condp = [(some? old-value) (some? new-value)]
                   [false false] []
-                  [false true] (something-new new-value)
-                  [true false] (something-old old-value)
+                  [false true] (db-add new-value)
+                  [true false] (db-retract old-value)
                   [true true] (if (cardinality-many? db attr)
                                 (-> []
-                                    (into (something-old old-value))
-                                    (into (something-new new-value)))
+                                    (into (db-retract old-value))
+                                    (into (db-add new-value)))
                                 ;; cardinality-one. New value would just replace the old.
                                 ;; ..right?
-                                (something-new new-value)))]
+                                (db-add new-value)))]
         ret))))
