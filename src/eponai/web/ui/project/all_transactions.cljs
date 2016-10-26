@@ -326,40 +326,43 @@
           {:keys [computed/transaction-on-tag-click
                   computed/infinite-scroll-node-fn]} (om/get-state this)]
       (html
-        [:div.row.column.collapse
-         (.render-filters this)
-         [:div.transactions-container
-          [:div.transactions-header.row.align-middle.collapse.is-collapse-child
-           ;[] :div.row.collapse.expanded
-           [:div.amount
-            (str "Amount (" (:currency/code (:user/currency user)) ")")]
-           [:div.date
-            "Date"]
-           [:div.category
-            "Category"]
-           [:div.note
-            "Note"]
-           [:div.tags
-            "Tags"]
-           [:div.local-amount.text-right
-            "Amount"]
-           [:div.currency
-            "Currency"]]
-          (if (seq transactions)
-            [:ul.transactions-list
-             (into [] (comp (map (fn [props]
-                              (->Transaction
-                                (om/computed props
-                                             {:user         user
-                                              :currencies   currencies
-                                              :on-tag-click transaction-on-tag-click
-                                              :all-tags     all-tags}))))
-                            (take 50))
-                   transactions)]
-            [:div.empty-message
-             [:div.lead
-              [:i.fa.fa-search.fa-fw]
-              "No transactions found with filters."]])]])))
+        [:div
+
+         ;(.render-filters this)
+         [:div.content-section
+          [:div.row.column.collapse
+           [:div.transactions-container
+            [:div.transactions-header.row.align-middle.collapse.is-collapse-child
+             ;[] :div.row.collapse.expanded
+             [:div.amount
+              (str "Amount (" (:currency/code (:user/currency user)) ")")]
+             [:div.date
+              "Date"]
+             [:div.category
+              "Category"]
+             [:div.note
+              "Note"]
+             [:div.tags
+              "Tags"]
+             [:div.local-amount.text-right
+              "Amount"]
+             [:div.currency
+              "Currency"]]
+            (if (seq transactions)
+              [:ul.transactions-list
+               (into [] (comp (map (fn [props]
+                                     (->Transaction
+                                       (om/computed props
+                                                    {:user         user
+                                                     :currencies   currencies
+                                                     :on-tag-click transaction-on-tag-click
+                                                     :all-tags     all-tags}))))
+                              (take 50))
+                     transactions)]
+              [:div.empty-message
+               [:div.lead
+                [:i.fa.fa-search.fa-fw]
+                "No transactions found with filters."]])]]]])))
 
   (render [this]
     (let [{transactions    :query/transactions

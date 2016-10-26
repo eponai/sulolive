@@ -8,6 +8,7 @@
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]
+    [eponai.web.ui.select :as sel]
     [eponai.common.format :as f]
     [goog.events :as events]))
 
@@ -265,18 +266,26 @@
                   :style {:display        :flex
                           :flex-direction :column}})
 
-           (utils/tag-input {:input-tag     input-tag
-                             :selected-tags tags
-                             :ref           (tag-idx->ref -1)
-                             :on-change     #(om/update-state! this assoc :input-tag %)
-                             :on-add-tag    #(do (om/update-state! this assoc :input-tag "")
-                                                 (.add-tag this %))
-                             :on-delete-tag #(.delete-tag this %)
-                             :on-key-down   (fn [e]
-                                              (when (= events/KeyCodes.DOWN (.-keyCode e))
-                                                (.preventDefault e)
-                                                (utils/focus-ref this (tag-idx->ref 0))))
-                             :input-only?   input-only?
-                             :placeholder   (or placeholder "Enter to add tag...")})])))))
+
+           (sel/->SelectTags {:value {:label (:tag/name input-tag)
+                                      :value (:tag/name input-tag)}
+                              :options (map (fn [t]
+                                              {:label (:tag/name t)
+                                               :value (:tag/name t)})
+                                            tags)})
+           ;(utils/tag-input {:input-tag     input-tag
+           ;                  :selected-tags tags
+           ;                  :ref           (tag-idx->ref -1)
+           ;                  :on-change     #(om/update-state! this assoc :input-tag %)
+           ;                  :on-add-tag    #(do (om/update-state! this assoc :input-tag "")
+           ;                                      (.add-tag this %))
+           ;                  :on-delete-tag #(.delete-tag this %)
+           ;                  :on-key-down   (fn [e]
+           ;                                   (when (= events/KeyCodes.DOWN (.-keyCode e))
+           ;                                     (.preventDefault e)
+           ;                                     (utils/focus-ref this (tag-idx->ref 0))))
+           ;                  :input-only?   input-only?
+           ;                  :placeholder   (or placeholder "Enter to add tag...")})
+           ])))))
 
 (def ->TagFilter (om/factory TagFilter))
