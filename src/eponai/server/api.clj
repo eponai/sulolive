@@ -151,7 +151,8 @@
         ; Create a new verification and throw exception
         (when-not (seq verifications)
           (debug "User not verified for email:" email "will create new verification for user: " user-db-id)
-          (let [verification (datomic.format/email-verification user)]
+          (let [user-with-new-email (p/lookup-entity (d/db conn) [:user/email email])
+                verification (datomic.format/email-verification user-with-new-email)]
             (transact-one conn verification)
             (throw (api-error ::http/unathorized :unverified-email
                               {:type          :authentication-error

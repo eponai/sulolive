@@ -43,7 +43,8 @@
       (catch #?@(:clj [Exception e] :cljs [:default e])
              (let [#?@(:clj  [msg (.getMessage e)]
                        :cljs [msg (.-message e)])]
-               (error "Transaction error: " e)
+               (error "Transaction error: ")
+               (error e)
                (throw (ex-info msg
                                {:cause     ::transaction-error
                                 :data      {:conn conn

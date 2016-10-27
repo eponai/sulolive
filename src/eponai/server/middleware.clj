@@ -96,21 +96,21 @@
 (defn wrap-gzip [handler]
   (gzip/wrap-gzip handler))
 
-(defn wrap-authenticate [handler conn]
+(defn wrap-authenticate [handler conn in-prod?]
   (friend/authenticate
-    handler {:credential-fn        (ac/credential-fn conn)
-             :workflows            [(workflows/email-web)
-                                    (workflows/create-account email/send-verification-email)
-                                    (workflows/facebook (env :facebook-app-id)
-                                                        (env :facebook-app-secret))
-                                    (workflows/email-mobile)]
+    handler {:credential-fn       (ac/credential-fn conn)
+             :workflows           [(workflows/email-web)
+                                   (workflows/create-account (partial email/send-verification-email in-prod?))
+                                   (workflows/facebook (env :facebook-app-id)
+                                                       (env :facebook-app-secret))
+                                   (workflows/email-mobile)]
              ;:uri "/api"
-             :login-uri            "/signup"
-             :default-landing-uri  "/app"
+             :login-uri           "/signup"
+             :default-landing-uri "/app"
              ;:fb-login-uri         "/api/login/fb"
-             :email-login-uri      "/api/login/email"
+             :email-login-uri     "/api/login/email"
              ;:activate-account-uri "/api/login/create"
-             :login-mutation-uri   "/api"}))
+             :login-mutation-uri  "/api"}))
 
 (defn config []
   {:pre [(contains? env :session-cookie-store-key)

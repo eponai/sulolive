@@ -79,3 +79,21 @@
                        :facebook-token-validator (test-facebook-token-validator {:email   "email"
                                                                                  :user-id "other-id"
                                                                                  :token   "long token"})}))))))
+
+
+(deftest testing-failed-facebook-authentication
+  (testing "Failed login returns auth map for auth'ed user, user id doesn't match the inspected tokens user id."
+    (let [email "email"
+          {:keys [user] :as account} (f/user-account-map nil)
+          conn (new-db (vals account))
+          credential-fn (fn [input] (a/auth-map conn input))
+          workflow (w/create-account (fn [verification _]
+                                       (assert (= (:verification/value verification) email))))]
+      (is (thrown-with-msg?
+            ExceptionInfo
+            #":unverified-email"
+            (workflow {:login-parser             login-parser
+                       :path-info                "/api"
+                       :body                     {:query [`(session.signin/activate ~{:user-uuid (str (:user/uuid user)) :user-email email})]}
+                       ::friend/auth-config      {:credential-fn      credential-fn
+                                                  :login-mutation-uri "/api"}}))))))

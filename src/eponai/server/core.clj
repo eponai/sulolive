@@ -26,7 +26,7 @@
   (-> (routes api-routes site-routes)
       (cond-> (some? extra-middleware) extra-middleware)
       m/wrap-post-middlewares
-      (m/wrap-authenticate conn)
+      (m/wrap-authenticate conn @in-production?)
       m/wrap-login-parser
       m/wrap-logout
       (cond-> @in-production? m/wrap-error)

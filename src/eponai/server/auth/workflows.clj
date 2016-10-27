@@ -116,6 +116,7 @@
                                                       ::friend/redirect-on-auth? false}))
                   (catch ExceptionInfo e
                     (throw e)))))))))))
+
 (defn create-account
   [send-email-fn]
   (fn [{:keys [login-parser body ::friend/auth-config ::stripe/stripe-fn] :as request}]
@@ -134,9 +135,10 @@
                 (workflows/make-auth user-record {::friend/workflow          :activate-account
                                                   ::friend/redirect-on-auth? false}))
               (catch ExceptionInfo e
-                ;(prn e)
-                (let [{:keys [verification]} (ex-data e)]
+                (let [{:keys [data]} (ex-data e)
+                      {:keys [verification]} data]
                   (when verification
                     (go
-                      (send-email-fn verification)))
+                      (send-email-fn verification {:user/status :user.status/new
+                                                   :device :web})))
                   (throw e))))))))))

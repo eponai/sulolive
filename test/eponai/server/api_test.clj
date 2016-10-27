@@ -91,6 +91,16 @@
                             #":duplicate-email"
                             (api/activate-account conn (str (:user/uuid new-user)) (:user/email existing-user)))))))
 
+(deftest activate-account-no-previous-email
+  (testing "User had no email when signin up with Facebook, no trying to activate their account and add one."
+    (let [{:keys [user] :as account} (f/user-account-map nil)
+          conn (new-db (vals account))]
+
+      (is (thrown-with-msg? ExceptionInfo
+                            #":unverified-email"
+                            (api/activate-account conn (str (:user/uuid user)) "email")))
+      (is (some? (p/lookup-entity (d/db conn) [:user/email "email"]))))))
+
 ;;;; --------- Share project tests -----------------------
 
 (deftest share-project-existing-user-invited

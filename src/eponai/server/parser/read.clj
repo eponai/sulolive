@@ -176,11 +176,12 @@
 
 (defmethod server-read :query/fb-user
   [{:keys [db db-history query user-uuid]} _ _]
-  (let [eid (server.pull/one-changed-entity
-              db db-history query
-              (-> {:where   '[[?e :fb-user/user ?u]
-                              [?u :user/uuid ?uuid]]
-                   :symbols {'?uuid user-uuid}}))]
+  (let [eid (when user-uuid
+              (server.pull/one-changed-entity
+                db db-history query
+                (-> {:where   '[[?e :fb-user/user ?u]
+                                [?u :user/uuid ?uuid]]
+                     :symbols {'?uuid user-uuid}})))]
     {:value (when eid
               (let [{:keys [fb-user/token fb-user/id] :as f-user}
                     (pull db [:fb-user/token :fb-user/id] eid)

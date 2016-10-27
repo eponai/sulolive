@@ -132,18 +132,20 @@
 
   (fb-firstname [_ fb-user]
     (let [full-name (:fb-user/name fb-user)]
-      (first (clojure.string/split full-name #" "))))
+      (when full-name
+        (first (clojure.string/split full-name #" ")))))
 
-  (create-account [this user-uuid input-email]
+  (create-account [this user input-email]
     (om/update-state! this assoc :status :pending-verification)
-    (om/transact! this `[(session.signin/activate ~{:user-uuid  (str user-uuid)
+    (om/transact! this `[(session.signin/activate ~{:user-uuid  (str (:user/uuid user))
                                                     :user-email input-email})
                          :user/current
                          :query/auth]))
 
   (render [this]
-    (let [{:keys [::fixed-email user-uuid query/fb-user]} (om/props this)
-          {:keys [input-name input-email message status]} (om/get-state this)
+    (let [{:keys [query/fb-user]} (om/props this)
+          {:keys [input-email status]} (om/get-state this)
+          {:keys [user]} (om/get-computed this)
           fb-name (.fb-firstname this fb-user)]
 
       (html
@@ -193,12 +195,12 @@
 
          [:a.button.action-button
           {:on-click (fn []
-                       (cond (nil? user-uuid)
+                       (cond (nil? (:user/uuid user))
                              (om/update-state! this assoc :status :invalid-user)
                              (nil? input-email)
                              (om/update-state! this assoc :status :invalid-email)
                              :else
-                             (.create-account this user-uuid input-email)))}
+                             (.create-account this user input-email)))}
           "Create account"]
          ;<form action="your_url" method="post">
          ;<button type="submit" name="your_name" value="your_value" class="btn-link">Go</button>
