@@ -359,7 +359,7 @@
   {:pre [(some? (:db/id old))
          (= (:db/id old) (:db/id new))
          (or (number? created-at)
-             (= ::client-edit created-at))]}
+             (= ::dbfn/client-edit created-at))]}
   (let [diff (mapv conform-fn (diff/diff old new))
         edits-by-attr (->> (take 2 diff)
                            (zipmap [:old-by-attr :new-by-attr])
@@ -378,7 +378,7 @@
                                                                    :new-value new-by-attr}]))))))
 
 (defn client-edit [env k params conform-fn]
-  (->> (edit-txs params conform-fn ::client-edit)
+  (->> (edit-txs params conform-fn ::dbfn/client-edit)
        (mapcat (fn [[_ created-at eid attr old-new]]
                  (assert (number? eid) (str "entity id was not number for client edit: " [k eid attr old-new]))
                  (binding [dbfn/q datascript/q
