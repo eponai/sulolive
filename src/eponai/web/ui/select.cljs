@@ -19,13 +19,13 @@
   Object
   (render [this]
     (let [{:keys [selected]} (om/get-state this)
-          {:keys [options value disabled]} (om/props this)]
+          {:keys [options value disabled clearable]} (om/props this)]
       (js/React.createElement
         js/Select
         (clj->js
           {:value     (or (:value selected) (:value value))
            :options   (clj->js options)
-           :clearable false
+           :clearable (boolean clearable)
            :onChange  (on-select-fn this)
            :disabled disabled})))))
 
@@ -35,7 +35,7 @@
   Object
   (render [this]
     (let [{:keys [selected]} (om/get-state this)
-          {:keys [value options disabled]} (om/props this)]
+          {:keys [value options disabled clearable]} (om/props this)]
       (js/React.createElement
         js/Select.Creatable
         (clj->js
@@ -44,7 +44,7 @@
            :options           (clj->js options)
            :disabled          disabled
            :multi             true
-           :clearable         false
+           :clearable         (boolean clearable)
            :noResultsText     ""
            :onChange          (on-select-fn this)
            :promptTextCreator (fn [l]

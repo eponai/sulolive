@@ -113,6 +113,7 @@
                   transaction/amount
                   transaction/type
                   transaction/conversion
+                  transaction/category
                   transaction/title]
            :as   transaction} (or input-transaction (om/props this))
           {:keys [computed/date-range-picker-on-apply is-selected?]} (om/get-state this)
@@ -142,9 +143,8 @@
                                            :format   "MMM dd"})))
         (dom/div
           #js {:className "category"}
-          (sel/->Select {:value {:label "Housing" :value 1}
-                         :options [{:label "Housing" :value 1}
-                                   {:label "Transport" :value 2}]}))
+          (sel/->Select {:value {:label (:category/name category) :value (:db/id category)}
+                         :options [{:label (:category/name category) :value (:db/id category)}]}))
 
         ;; Title
         (dom/div

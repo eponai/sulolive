@@ -29,29 +29,42 @@
   (query [_]
     [:query/message-fn
      {:query/all-currencies [:currency/code]}
-     {:query/all-tags [:tag/name]}])
+     {:query/all-tags [:tag/name]}
+     {:query/all-categories [:category/name]}])
   Object
   (add-transaction [this]
     (let [st (om/get-state this)
+          update-category (fn [tx]
+                               (let [{:keys [transaction/category]} tx]
+                                 (if (nil? category)
+                                   (dissoc tx :transaction/category)
+                                   (update tx :transaction/category (fn [{:keys [label _]}]
+                                                                      {:category/name label})))))
           message-id (message/om-transact! this
                                            `[(transaction/create
                                                ~(-> (:input-transaction st)
                                                     (assoc :transaction/uuid (d/squuid))
                                                     (update :transaction/currency :value)
+                                                    update-category
                                                     (update :transaction/tags (fn [ts]
-                                                                                (map (fn [{:keys [label value]}]
+                                                                                (map (fn [{:keys [label _]}]
                                                                                        {:tag/name label}) ts)))
+                                                    ;(update :transaction/category (fn [{:keys [label _]}]
+                                                    ;                                {:category/name label}))
                                                     (assoc :transaction/created-at (.getTime (js/Date.)))))
                                              :routing/project])]
       (om/update-state! this assoc :pending-transaction message-id)))
   (initLocalState [this]
-    (let [{:keys [query/all-currencies]} (om/props this)
+    (let [{:keys [query/all-currencies query/all-categories]} (om/props this)
           {:keys [project-id]} (om/get-computed this)
-          usd-entity (some #(when (= (:currency/code %) "USD") %) all-currencies)]
+          usd-entity (some #(when (= (:currency/code %) "USD") %) all-currencies)
+          category-entity (first all-categories)]
       {:input-transaction {:transaction/date     (date/date-map (date/today))
                            :transaction/tags     #{}
                            :transaction/currency {:label (:currency/code usd-entity)
                                                   :value (:db/id usd-entity)}
+                           ;:transaction/category {:label (:category/name category-entity)
+                           ;                       :value (:db/id category-entity)}
                            :transaction/project  project-id
                            :transaction/type     :transaction.type/expense}
        :type              :expense}))
@@ -67,9 +80,11 @@
 
   (render [this]
     (let [{:keys [type input-transaction]} (om/get-state this)
-          {:keys [transaction/date transaction/currency]} input-transaction
+          {:keys [transaction/date transaction/currency transaction/category]} input-transaction
           {:keys [query/all-currencies
-                  query/all-tags]} (om/props this)]
+                  query/all-tags
+                  query/all-categories]} (om/props this)]
+      ;(debug "Input transaction: " input-transaction)
       (html
         [:div#add-transaction
          [:h4.header "New Transaction"]
@@ -129,17 +144,26 @@
              [:label "Currency:"]]
             [:div.columns.small-3
              (sel/->Select (om/computed {:options (map (fn [{:keys [currency/code db/id]}]
-                                                         {:label code
-                                                          :value id})
-                                                       all-currencies)
-                                         :value   currency}
+                                                                {:label code
+                                                                 :value id})
+                                                              all-currencies)
+                                         :value currency}
                                         {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/currency] %)}))]]
            [:div.row
             [:div.columns.small-3.text-right
              [:label "Category:"]]
             [:div.columns.small-9
+             (sel/->Select (om/computed {:options (map (fn [c]
+                                                         {:label (:category/name c)
+                                                          :value (:db/id c)})
+                                                       all-categories)
+                                         :value   category
+                                         :clearable true}
+                                        {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/category] %)}))
              [:input
-              {:type "text"}]]]
+
+              {:type "text"
+               :on-change #(om/update-state! this assoc-in [:input-transaction :transaction/category :category/name] (.. % -target -value))}]]]
 
            [:div.row
             [:div.columns.small-3.text-right

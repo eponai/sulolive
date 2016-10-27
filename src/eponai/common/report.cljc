@@ -60,7 +60,7 @@
                       (= (get-in tx [:transaction/type :db/ident]) :transaction.type/income)
                       (update res :limit + conv-amount)
 
-                      (= "Housing" (:transaction/category tx))
+                      (= "Housing" (get-in tx [:transaction/category :category/name]))
                       (-> res
                           (update :housing + conv-amount)
                           (update :spent - conv-amount))
