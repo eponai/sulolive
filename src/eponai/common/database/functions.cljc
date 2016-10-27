@@ -207,7 +207,8 @@
                         (do (assert (ref? db attr)
                                     (str "Attribute was not a ref but it got a map as value."
                                          " Attr was: " attr))
-                            (let [id (or (:db/id x)
+                            (let [id (or (as-> (:db/id x) id
+                                               (when (and id (not (tempid? id))) id))
                                          (:e (unique-datom db (seq (dissoc x :db/id)))))]
                               (if (number? id)
                                 (when (edit-val? id)

@@ -6,6 +6,7 @@
             [clojure.tools.reader.edn :as edn]
             [clojure.java.io :as io]
             [eponai.common.database.transact :as transact]
+            [eponai.common.database.functions :as dbfn]
             [taoensso.timbre :refer [debug error info]]
             [eponai.server.datomic.format :as f]
             [clj-time.coerce :as c]
@@ -66,6 +67,11 @@
      (d/create-database uri)
      (d/connect uri))))
 
+(defn database-functions-schema []
+  [{:db/id    #db/id [:db.part/user]
+    :db/ident :db.fn/edit-attr
+    :db/fn    (dbfn/dbfn dbfn/edit-attr)}])
+
 (defn list-schema-files []
   (for [i (range)
         :let [schema (io/resource (str "private/datomic/schema/schema-" i ".edn"))]
@@ -79,7 +85,8 @@
                             slurp
                             (edn/read-string {:readers *data-readers*}))
                       schema-files)]
-     schemas)))
+     (conj schemas
+           (database-functions-schema)))))
 
 (defn add-verified-user-account [conn email project-uuid]
   (let [{:keys [user] :as account} (f/user-account-map email {:verification/status :verification.status/verified

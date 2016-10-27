@@ -30,7 +30,7 @@
 (defn sync-with-received-props [component new-props & [{:keys [will-sync did-sync without-logging]}]]
   {:pre [(and (om/component? component) (satisfies? ISyncStateWithProps component))]}
   (when (not= new-props (om/props component))
-    (let [this-state (om/get-state component)
+      (let [this-state (om/get-state component)
           next-state (props->init-state component new-props)]
       (when-not without-logging
         (debug "Reseting initial state for component: " component
