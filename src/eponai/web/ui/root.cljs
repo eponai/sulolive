@@ -42,4 +42,5 @@
           {:ref (str ::page-content-ref)}
           (when factory
             (factory app-root))]
-         (nav/->Footer)]))))
+         [:div#footer-container
+          (nav/->Footer)]]))))
