@@ -28,6 +28,25 @@
                   rate))
       0)))
 
+(defn time-range [start & [end]]
+  (let [month (c/from-long start)
+        end-date (if end (c/from-long end) (t/earliest (date/today) (date/last-day-of-month (t/month month))))]
+    (map date/date->long (p/periodic-seq month (t/plus end-date (t/days 1)) (t/days 1)))))
+
+(defn avg-by-day [value]
+  (let [days (count (time-range (date/month->long (date/today))))]
+    (when (pos? days) (/ value days))))
+
+(defn left-by-end-of-month [limit avg-spent]
+  (let [days-left (count (time-range (date/month->long (date/tomorrow)) (date/date->long (date/last-day-of-this-month))))]
+    (- limit (* (t/number-of-days-in-the-month (date/today)) avg-spent))))
+
+(defn summary-info [limit spent]
+  (let [avg (avg-by-day spent)
+        ]
+    {:avg-spent avg
+     :left-by-end (left-by-end-of-month limit avg)}))
+
 (defn summary
   "Calculate how much has been spent on housing and transport, as well as what the current balance is relative to the user's income."
   [transactions]
@@ -55,18 +74,17 @@
 
         res-by-month (reduce
                        (fn [res [mo txs]]
-                         (assoc res mo (reduce summary
-                                               {:housing 0 :transport 0 :spent 0 :limit 0}
-                                               txs)))
+                         (let [{:keys [limit spent] :as month-res}
+                               (reduce summary
+                                       {:housing 0 :transport 0 :spent 0 :limit 0}
+                                       txs)]
+                           (assoc res mo (merge month-res
+                                                (summary-info limit spent)))))
                        {}
-                       txs-by-month)]
+                       txs-by-month)
+        values (second (first res-by-month))]
 
-    (second (first res-by-month))))
-
-(defn time-range [start]
-  (let [month (c/from-long start)
-        end (t/earliest (date/today) (date/last-day-of-month (t/month month)))]
-    (map date/date->long (p/periodic-seq month (t/plus end (t/days 1)) (t/days 1)))))
+    values))
 
 (defn value-range [values]
   (let [[low high] (cond (empty? values)

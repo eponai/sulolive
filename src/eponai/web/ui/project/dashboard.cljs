@@ -6,6 +6,7 @@
     [eponai.web.ui.d3.pie-chart :as pc]
     [eponai.web.ui.icon :as icon]
     [om.next :as om :refer-macros [defui]]
+    [goog.string :as gstring]
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [error debug]]))
 
@@ -20,7 +21,7 @@
   Object
   (render [this]
     (let [{:keys [query/transactions]} (om/props this)
-          {:keys [housing limit transport spent]} (report/summary transactions)
+          {:keys [housing limit transport spent avg-spent left-by-end]} (report/summary transactions)
           balance-report (report/balance-vs-spent transactions)
           ]
       (debug "Balance: " balance-report)
@@ -42,13 +43,13 @@
 
           [:div#key-metrics
            [:div.key-metric
-            [:div.val-txt "473"]
+            [:div.val-txt (- limit spent)]
             [:div.title-txt "Balance"]]
            [:div.key-metric
-            [:div.val-txt "31.21"]
+            [:div.val-txt (gstring/format "%.2f" avg-spent)]
             [:div.title-txt "Avg. Spent per day"]]
            [:div.key-metric
-            [:div.val-txt "53.13"]
+            [:div.val-txt (gstring/format "%.2f" left-by-end)]
             [:div.title-txt "By Oct 31"]]]]
          [:div.content-section
 

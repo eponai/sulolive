@@ -109,6 +109,10 @@
   (let [t (t/today)]
     (t/date-time (t/year t) (t/month t) (t/day t))))
 
+(defn tomorrow []
+  (let [t (today)]
+    (t/plus t (t/days 1))))
+
 (defn first-day-of-this-month []
   (c/to-date-time (t/first-day-of-the-month (today))))
 
