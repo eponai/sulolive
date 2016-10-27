@@ -332,7 +332,7 @@
           {:keys [balance-visible? spent-visible?]} (om/get-state this)]
       (html
         [:div.graph-container
-         [:div
+         [:div.clearfix
           [:ul.menu.legend
            [:li
             [:a

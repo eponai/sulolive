@@ -41,14 +41,14 @@
            (bc/->BalanceChart {:id     "balance-spent-chart"
                                :report balance-report})]
 
-          [:div#key-metrics
-           [:div.key-metric
+          [:div.row#key-metrics
+           [:div.column.key-metric
             [:div.val-txt (- limit spent)]
             [:div.title-txt "Balance"]]
-           [:div.key-metric
+           [:div.column.key-metric
             [:div.val-txt (gstring/format "%.2f" avg-daily-spent)]
             [:div.title-txt "Avg. Spent per day"]]
-           [:div.key-metric
+           [:div.column.key-metric
             [:div.val-txt (gstring/format "%.2f" left-by-end)]
             [:div.title-txt "By Oct 31"]]]]
          [:div.content-section
