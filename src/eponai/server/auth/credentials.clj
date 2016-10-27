@@ -53,13 +53,16 @@
           (fn [_ input] (::friend/workflow (meta input))))
 
 (defmethod auth-map :default
-  [conn {:keys [uuid]}]
+  [conn {:keys [uuid stripe-fn]}]
   (if uuid
     (let [user (d/entity (d/db conn) (:db/id (api/verify-email conn uuid)))]
-      (if (= (:user/status user)
-             :user.status/active)
+
+      ; If user is not activated when verifying their email, this means it's probably their first time logging in.
+      ; Let's activate their account.
+      (if (= (:user/status user) :user.status/active)
         (auth-map-for-db-user user user-roles-active)
-        (auth-map-for-db-user user user-roles-inactive)))
+        (let [activated-user (api/activate-account conn (str (:user/uuid user)) (:user/email user) {:stripe-fn stripe-fn})]
+          (auth-map-for-db-user activated-user user-roles-active))))
     (throw (auth-error :default
                        ::h/unprocessable-entity
                        {:code          :missing-required-fields

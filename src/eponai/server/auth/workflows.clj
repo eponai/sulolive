@@ -20,7 +20,7 @@
 
 (defn email-web
   []
-  (fn [{:keys [params ::friend/auth-config] :as request}]
+  (fn [{:keys [params ::friend/auth-config ::stripe/stripe-fn] :as request}]
     (let [credential-fn (get auth-config :credential-fn)
             login-uri (get auth-config :email-login-uri)]
 
@@ -32,7 +32,7 @@
           (:uuid params)
           (try
             (let [user-record (credential-fn
-                                (with-meta params
+                                (with-meta (assoc params :stripe-fn stripe-fn)
                                            {::friend/workflow :form}))]
               ; Successful login!
               (debug "Login successful: " (:username user-record))
