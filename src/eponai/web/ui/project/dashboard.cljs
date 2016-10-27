@@ -28,6 +28,25 @@
         [:div#dashboard
          [:div.content-section
           [:div.row.section-title
+           (icon/dashboard-balance)
+           [:span "Balance vs Spent"]]
+
+          [:div.row#balance-spent
+           (bc/->BalanceChart {:id     "balance-spent-chart"
+                               :values balance-report})]
+
+          [:div#key-metrics
+           [:div.key-metric
+            [:div.val-txt "473"]
+            [:div.title-txt "Balance"]]
+           [:div.key-metric
+            [:div.val-txt "31.21"]
+            [:div.title-txt "Avg. Spent per day"]]
+           [:div.key-metric
+            [:div.val-txt "53.13"]
+            [:div.title-txt "By Oct 31"]]]]
+         [:div.content-section
+          [:div.row.section-title
            [:span "Summary"]]
           [:div.row
            [:a.button.black.hollow
@@ -51,28 +70,6 @@
                             :title "Balance"
                             :value (- limit spent)
                             :limit limit})]]]
-
-         [:div.content-section
-          [:div.row.section-title
-           (icon/dashboard-balance)
-           [:span "Balance vs Spent"]]
-
-          [:div.row#balance-spent
-           (bc/->BalanceChart {:id     "balance-spent-chart"
-                               :values (if (seq transactions)
-                                         balance-report
-                                         [])})]
-
-          [:div#key-metrics
-           [:div.key-metric
-            [:div.val-txt "473"]
-            [:div.title-txt "Balance"]]
-           [:div.key-metric
-            [:div.val-txt "31.21"]
-            [:div.title-txt "Avg. Spent per day"]]
-           [:div.key-metric
-            [:div.val-txt "53.13"]
-            [:div.title-txt "By Oct 31"]]]]
 
          [:div.content-section
           [:div.row.column

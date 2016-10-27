@@ -161,10 +161,11 @@
   (update [this]
     (let [{:keys [svg x-scale y-scale margin graph area line balance-visible? spent-visible?]} (om/get-state this)
           {:keys [values id]} (om/props this)
+          _ (debug "Balance chart values: " values)
           js-values (into-array values)
-          max-y (if balance-visible?
-                  (apply max (map :balance values))
-                  (apply max (map :spent values)))
+          [min-y max-y] (if balance-visible?
+                         [(apply min (map #(min (:balance %) (:spent %)) values))
+                          (apply max (map #(max (:balance %) (:spent %)) values))])
 
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
@@ -180,7 +181,7 @@
                       (extent js-values (fn [d] (:date d))))))
       (.. y-scale
           (range #js [inner-height 0])
-          (domain #js [0 max-y]))
+          (domain #js [min-y max-y]))
 
       (.. graph-area
           enter
