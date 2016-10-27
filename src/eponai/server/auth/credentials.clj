@@ -71,7 +71,7 @@
                         :function-args {'uuid uuid}}))))
 
 (defmethod auth-map :facebook
-  [conn {:keys [access_token user_id fb-info-fn] :as params}]
+  [conn {:keys [access_token user_id fb-info-fn stripe-fn] :as params}]
   (if (and user_id access_token fb-info-fn)
     (if-let [fb-user (p/lookup-entity (d/db conn) [:fb-user/id user_id])]
       (let [db-user (d/entity (d/db conn) (-> fb-user
@@ -105,9 +105,17 @@
                                                :fb-user/user
                                                :db/id))]
           ;; Again, check that the linked user is activated, and if not we throw an excaption to do so.
-          (if (= (:user/status user)
-                 :user.status/active)
+          (cond
+            (= (:user/status user)
+               :user.status/active)
             (auth-map-for-db-user user user-roles-active)
+
+            ; If the Facebook account has an email associated with it, we can activate the account right away, for the user to avoid the extra step.
+            (some? email)
+            (let [activated-user (api/activate-account conn (str (:user/uuid user)) (:user/email user) {:stripe-fn stripe-fn})]
+              (auth-map-for-db-user activated-user user-roles-active))
+
+            :else
             (auth-map-for-db-user user user-roles-inactive)
             ;(throw (user-not-activated-error :facebook user))
             ))))

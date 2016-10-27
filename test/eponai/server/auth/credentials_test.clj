@@ -5,7 +5,8 @@
             [eponai.server.datomic.format :as f]
             [eponai.server.auth.credentials :as a]
             [eponai.common.database.pull :as p]
-            [eponai.server.test-util :refer [new-db]])
+            [eponai.server.test-util :refer [new-db]]
+            [eponai.server.api :as api])
   (:import (clojure.lang ExceptionInfo)))
 
 (defn test-fb-info
@@ -81,7 +82,7 @@
       (is (= (:db/id (:fb-user/user fb-user))
              (:db/id db-user))))))
 
-(deftest new-fb-user-has-email-email-and-user-account-does-not-exist
+(deftest new-fb-user-has-email-and-user-account-does-not-exist
   (testing "Neither FB user (with email) or user account with the mathing email exists,
   create a new FB user and link to a new account."
     (let [{:keys [email id]} (test-fb-info)
@@ -92,7 +93,7 @@
       (let [{:keys [fb-user/user]} (p/lookup-entity (d/db conn) [:fb-user/id id])]
         ;TODO we might want to automatically create an ccount here and let the user login immediately?
         (is (= user-record
-               (a/auth-map-for-db-user (p/lookup-entity (d/db conn) (:db/id user)) a/user-roles-inactive)))
+               (a/auth-map-for-db-user (p/lookup-entity (d/db conn) (:db/id user)) a/user-roles-active)))
         (is (= (:user/email (d/entity (d/db conn) (:db/id user)))
                email))))))
 
@@ -117,7 +118,7 @@
 ;; Covering everything relevat for :form credential-fn.
 ;; More detailed cases are covered for api/verify-email in api-test.clj
 
-(deftest user-verifies-and-is-activated
+(deftest user-verifies-email-with-already-activated-account
   (testing "User verifies their email and is already activated, return auth map"
     (let [{:keys [verification] :as account} (f/user-account-map email
                                                                  {:user/status :user.status/active
@@ -131,18 +132,24 @@
              (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]) a/user-roles-active))))))
 
 ; Failure cases
-(deftest user-verifies-account-not-activated
-  (testing "User is verified but not activated, should throw exception new user."
+(deftest user-verifies-email-with-account-not-activated
+  (testing "User is verified but not activated, should activate the user, since we already have an email from the email verification flow. Should be subscribed to Stripe trial as well."
     (let [{:keys [verification] :as account} (f/user-account-map email)
           conn (new-db (vals account))
-          credential-fn (a/credential-fn conn)]
+          credential-fn (a/credential-fn conn)
+          stripe-fn (fn [_ _]
+                      {:stripe/customer     "cus-id"
+                       :stripe/subscription {:stripe.subscription/id "sub-id"}})
+          user-record (credential-fn
+                        (with-meta {:uuid (str (:verification/uuid verification))
+                                    :stripe-fn stripe-fn}
+                                   {::friend/workflow :form}))
+          stripe-cus (p/lookup-entity (d/db conn) [:stripe/customer "cus-id"])]
 
-      (is (= (credential-fn
-               (with-meta {:uuid (str (:verification/uuid verification))}
-                          {::friend/workflow :form}))
-             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]) a/user-roles-inactive)))
-
-      )))
+      (is (= user-record
+             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]) a/user-roles-active)))
+      (is (and (some? stripe-cus)
+               (some? (:stripe/subscription stripe-cus)))))))
 
 (deftest user-verifies-nil-uuid
   (testing "User tries to verify a nil UUID. Throw exception"
@@ -158,24 +165,24 @@
 ;; Covering everything relevat for :form credential-fn.
 ;; More detailed cases are covered for api/activate-account in api-test.clj
 
-(deftest user-activates-account-with-verified-email
-  (testing "User activates account with their email verified."
-    (let [{:keys [user] :as account} (f/user-account-map email
-                                                          {:verification/status :verification.status/verified})
-          conn (new-db (vals account))
-          credential-fn (a/credential-fn conn)
-          stripe-fn (fn [_ _]
-                      {:stripe/customer     "cus-id"
-                       :stripe/subscription {:stripe.subscription/id "sub-id"}})
-          activated-auth (credential-fn (with-meta {:user-uuid  (str (:user/uuid user))
-                                                    :user-email (:user/email user)
-                                                    :stripe-fn stripe-fn}
-                                                   {::friend/workflow :activate-account}))
-          stripe-cus (p/lookup-entity (d/db conn) [:stripe/customer "cus-id"])]
-      (is (= activated-auth
-             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]) a/user-roles-active)))
-      (is (and (some? stripe-cus)
-               (some? (:stripe/subscription stripe-cus)))))))
+;(deftest user-activates-account-with-verified-email
+;  (testing "User activates account with their email verified."
+;    (let [{:keys [user] :as account} (f/user-account-map email
+;                                                          {:verification/status :verification.status/verified})
+;          conn (new-db (vals account))
+;          credential-fn (a/credential-fn conn)
+;          stripe-fn (fn [_ _]
+;                      {:stripe/customer     "cus-id"
+;                       :stripe/subscription {:stripe.subscription/id "sub-id"}})
+;          activated-auth (credential-fn (with-meta {:user-uuid  (str (:user/uuid user))
+;                                                    :user-email (:user/email user)
+;                                                    :stripe-fn stripe-fn}
+;                                                   {::friend/workflow :activate-account}))
+;          stripe-cus (p/lookup-entity (d/db conn) [:stripe/customer "cus-id"])]
+;      (is (= activated-auth
+;             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]) a/user-roles-active)))
+;      (is (and (some? stripe-cus)
+;               (some? (:stripe/subscription stripe-cus)))))))
 
 (deftest user-activates-account-already-activated
   (testing "User activates account which as already activated (could bypass trial period).

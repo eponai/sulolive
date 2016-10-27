@@ -85,7 +85,7 @@
 
   Returns an authentication map on successful auth, otherwise nil."
   [app-id app-secret]
-  (fn [{:keys [login-parser ::friend/auth-config body facebook-token-validator] :as request}]
+  (fn [{:keys [login-parser ::friend/auth-config ::stripe/stripe-fn body facebook-token-validator] :as request}]
     (let [{:keys [login-mutation-uri credential-fn]} auth-config]
       ;; Check conditions for performing this workflow and skip if not met:
       (when (and
@@ -108,7 +108,7 @@
                                 {}))
                 (try
                   (let [user-record (credential-fn
-                                      (with-meta validated-token
+                                      (with-meta (assoc validated-token :stripe-fn stripe-fn)
                                                  {::friend/workflow :facebook}))]
                     (debug "Facebook login successful for user: " (:username user-record))
                     ;; Successful login, return authentication map.
