@@ -274,13 +274,12 @@
                   {:error {:cause :invalid-verification}})))}))
 
 (defmethod client-read :query/fb-user
-  [{:keys [db query target]} _ _]
+  [{:keys [db query target user-uuid]} _ _]
   (if target
-    {:remote true}
+    {:remote (some? user-uuid)}
     (let [eid (p/one-with db {:where '[[?e :fb-user/id]]})]
       {:value  (when eid
-                 (p/pull db query eid))
-       :remote true})))
+                 (p/pull db query eid))})))
 
 (defmethod client-read :query/auth
   [{:keys [db query]} k p]

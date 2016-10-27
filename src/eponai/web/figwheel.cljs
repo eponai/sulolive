@@ -12,12 +12,15 @@
     (debug "Url is:" url)
     (cond
       (bidi/match-route (routes/routes) url)
-      (let [run-fn (if utils/*playground?*
-                     (with-meta playground/run {:name "playground/run"})
-                     (with-meta app/run {:name "app/run"}))]
+      (let [run-fn (cond utils/*playground?*
+                         (with-meta playground/run {:name "playground/run"})
+
+                         :else
+                         (with-meta app/run {:name "app/run"}))]
         (debug "Matched an app route. Calling run-fn: " (:name (meta run-fn)))
         (run-fn))
       (or (= url "/signup") (= url "/activate"))
-      (with-meta signup/run {:name "signup/run"})
+      ((with-meta signup/run {:name "signup/run"}))
+
       :else
       (warn "Url did not match an app route. Figwheel will not call (app/run)"))))
