@@ -43,13 +43,13 @@
 
           [:div.row#key-metrics
            [:div.column.key-metric
-            [:div.val-txt (- limit spent)]
+            [:div.val-txt (gstring/format "%.2f" (- limit spent))]
             [:div.title-txt "Balance"]]
            [:div.column.key-metric
-            [:div.val-txt (gstring/format "%.2f" avg-daily-spent)]
+            [:div.val-txt (gstring/format "%.2f" (or avg-daily-spent 0))]
             [:div.title-txt "Avg. Spent per day"]]
            [:div.column.key-metric
-            [:div.val-txt (gstring/format "%.2f" left-by-end)]
+            [:div.val-txt (gstring/format "%.2f" (or left-by-end 0))]
             [:div.title-txt "By Oct 31"]]]]
          [:div.content-section
 

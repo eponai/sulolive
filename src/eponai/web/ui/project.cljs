@@ -93,7 +93,8 @@
                   factory (-> content->component content :factory)
                   props (:routing/project props)]
               (when factory
-                (factory props)))
+                (factory (om/computed props
+                                      {:project project}))))
             [:div.content-section
              ;[:a.button
              ; (opts {:style {:visibility :hidden}})

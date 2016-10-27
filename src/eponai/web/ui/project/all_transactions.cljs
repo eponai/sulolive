@@ -7,7 +7,7 @@
     [eponai.client.lib.transactions :as lib.t]
     [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
     [eponai.common.format.date :as date]
-    [eponai.web.ui.project.add-transaction :refer [->AddTransaction AddTransaction]]
+    [eponai.web.ui.project.add-transaction :as at :refer [->AddTransaction AddTransaction]]
     [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.ui.utils :as utils]
     [eponai.web.ui.utils.filter :as filter]
@@ -236,8 +236,10 @@
      {:query/all-currencies [:currency/code]}
      {:query/all-projects [:project/uuid
                            :project/name]}
+     {:query/all-categories [:category/name]}
      {:query/all-tags [:tag/name]}
-     {:proxy/add-transaction (om/get-query AddTransaction)}])
+     {:proxy/add-transaction (om/get-query AddTransaction)}
+     {:proxy/quick-add-transaction (om/get-query at/QuickAddTransaction)}])
 
   Object
   (initLocalState [this]
@@ -329,6 +331,7 @@
          [:div.content-section
           [:div.row.column.collapse
            [:div.transactions-container
+
             [:div.transactions-header.row.align-middle.collapse.is-collapse-child
              ;[] :div.row.collapse.expanded
              [:div.amount
@@ -362,11 +365,13 @@
                 "No transactions found with filters."]])]]]])))
 
   (render [this]
-    (let [{transactions    :query/transactions
-           add-transaction :proxy/add-transaction} (om/props this)
+    (let [{:keys [query/transactions proxy/add-transaction proxy/quick-add-transaction]} (om/props this)
+          {:keys [project]} (om/get-computed this)
           {:keys [add-transaction?]} (om/get-state this)]
       (html
         [:div#txs
+         (at/->QuickAddTransaction (om/computed quick-add-transaction
+                                                {:project project}))
          (if (or (seq transactions)
                  (.has-filter this))
            (.render-transaction-list this transactions)

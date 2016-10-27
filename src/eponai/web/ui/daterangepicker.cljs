@@ -337,7 +337,7 @@
               (.renderCalendar this :left-calendar)))))))
   (render [this]
     (let [{:keys [old-start-date old-end-date is-showing?]} (om/get-state this)
-          {:keys [class single-calendar?]} (om/props this)
+          {:keys [class single-calendar? tabindex]} (om/props this)
           {:keys [format on-open]} (om/get-computed this)]
       (dom/div
         #js {:className class}
@@ -352,7 +352,11 @@
                                    (when old-end-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-end-date))))
                  :onClick   #(do (om/update-state! this assoc :is-showing? true)
                                  (when on-open
-                                   (on-open)))})
+                                   (on-open)))
+                 :onFocus #(do (om/update-state! this assoc :is-showing? true)
+                               (when on-open
+                                 (on-open)))
+                 :onBlur #(om/update-state! this assoc :is-showing? false)})
 
           (when is-showing?
             (dom/div

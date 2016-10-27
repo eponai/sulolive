@@ -357,3 +357,156 @@
 ;           "Save"]]]))))
 
 (def ->AddTransaction (om/factory AddTransaction))
+
+(defui QuickAddTransaction
+  static om/IQuery
+  (query [_]
+    [:query/message-fn
+     {:query/all-categories [:category/name]}
+     {:query/all-currencies [:currency/code]}
+     {:query/all-tags [:tag/name]}])
+  Object
+  (new-transaction [this]
+    (let [{:keys [query/all-currencies]} (om/props this)
+          {:keys [project]} (om/get-computed this)
+          usd-entity (some #(when (= (:currency/code %) "USD") %) all-currencies)]
+      (debug "Add transaction to project: " project)
+      {:transaction/date     (date/date-map (date/today))
+       :transaction/tags     #{}
+       :transaction/currency {:label (:currency/code usd-entity)
+                              :value (:db/id usd-entity)}
+       :transaction/project  (:db/id project)
+       :transaction/type     :transaction.type/expense}))
+  (initLocalState [this]
+    {:is-open?          false
+     :on-close-fn       #(.close this %)
+     :on-keydown-fn     #(do
+                          (debug "KEYDOWN: " %)
+                          (when (= 13 (or (.-which %) (.-keyCode %)))
+                            (.save this)))
+     :input-transaction (.new-transaction this)})
+
+  (open [this]
+    (let [{:keys [is-open? on-close-fn on-keydown-fn]} (om/get-state this)]
+      (when-not is-open?
+        (om/update-state! this assoc :is-open? true)
+        (.. js/document (addEventListener "click" on-close-fn)))))
+
+  (mouse-event-outside [_ event]
+    (let [includes-class-fn (fn [class-name class-names-str]
+                              (let [class-array (clojure.string/split class-names-str #" ")]
+                                (some #(when (= % class-name) %) class-array)))]
+      (debug "Includes quick-add-input-section: " (some #(includes-class-fn "quick-add-input-section" (.-className %))
+                                                        (.-path event)))
+      (not (some #(includes-class-fn "quick-add-input-section" (.-className %))
+                 (.-path event)))))
+
+  (close [this event]
+    (let [{:keys [on-close-fn is-open?]} (om/get-state this)
+          should-close? (.mouse-event-outside this event)]
+      (when (and is-open? should-close?)
+        (om/update-state! this assoc :is-open? false)
+        (.. js/document (removeEventListener "click" on-close-fn)))))
+
+  (save [this]
+    (let [st (om/get-state this)
+          update-category (fn [tx]
+                            (let [{:keys [transaction/category]} tx]
+                              (if (nil? category)
+                                (dissoc tx :transaction/category)
+                                (update tx :transaction/category (fn [{:keys [label _]}]
+                                                                   {:category/name label})))))
+          message-id (message/om-transact! this
+                                           `[(transaction/create
+                                               ~(-> (:input-transaction st)
+                                                    (assoc :transaction/uuid (d/squuid))
+                                                    (update :transaction/currency :value)
+                                                    update-category
+                                                    (update :transaction/tags (fn [ts]
+                                                                                (map (fn [{:keys [label _]}]
+                                                                                       {:tag/name label}) ts)))
+                                                    ;(update :transaction/category (fn [{:keys [label _]}]
+                                                    ;                                {:category/name label}))
+                                                    (assoc :transaction/created-at (.getTime (js/Date.)))))
+                                             :routing/project])
+          ]
+      (debug "Save new transaction: " (:input-transaction st) " input " (:input-amount st))
+      (om/update-state! this assoc :is-open? false :pending-transaction message-id :input-transaction (.new-transaction this))
+      ))
+
+  (componentDidUpdate [this _ _]
+    (when-let [history-id (:pending-transaction (om/get-state this))]
+      (let [{:keys [query/message-fn]} (om/props this)
+            {:keys [on-close]} (om/get-computed this)
+            message (message-fn history-id 'transaction/create)]
+        (when message
+          (js/alert (message/message message))
+          (om/update-state! this dissoc :pending-transaction)))))
+
+  (render [this]
+    (let [{:keys [query/all-categories query/all-currencies query/all-tags]} (om/props this)
+          {:keys [is-open? input-amount input-transaction on-keydown-fn]} (om/get-state this)]
+      (debug "input-amount: '" input-amount "'")
+      (html
+        [:div.quick-add-container
+         {:on-key-down on-keydown-fn}
+         [:div.row.column.quick-add
+          [:ul.menu.quick-add-input-section
+           {:class    (when is-open? "is-open")
+            :on-click #(.open this)}
+           [:li.attribute.note
+            [:input {:value       (if is-open? (or (:transaction/amount input-transaction) "") "")
+                     :type        "number"
+                     :placeholder (if is-open? "0.00" "Quick add expense for today...")
+                     :tabIndex    0
+                     :on-key-down #(do
+                                    (debug "keycode: " (.-keyCode %) " which: " (.-which %))
+                                    (when (= 13 (or (.-which %) (.-keyCode %)))
+                                      (debug "Blurring yes: ")
+                                      (.blur (.-target %))
+                                      ))
+                     ;:on-change     #(om/update-state! this assoc :input-amount (.. % -target -value))
+                     :on-change   #(om/update-state! this assoc-in [:input-transaction :transaction/amount] (.. % -target -value))
+                     }]]
+           [:li.attribute.currency
+            (sel/->Select (om/computed {:value       (:transaction/currency input-transaction)
+                                        :options     (map (fn [c]
+                                                            {:label (:currency/code c)
+                                                             :value (:db/id c)})
+                                                          all-currencies)
+                                        :placeholder "USD"}
+                                       {:on-select #(do
+                                                     (debug "Got new value: " %)
+                                                     (om/update-state! this assoc-in [:input-transaction :transaction/currency] %))}))]
+           [:li.attribute.category
+            (sel/->Select (om/computed {:value       (:transaction/category input-transaction)
+                                        :options     (map (fn [c]
+                                                            {:label (:category/name c)
+                                                             :value (:db/id c)})
+                                                          all-categories)
+                                        :placeholder "Category..."}
+                                       {:on-change #(om/update-state! this assoc-in [:input-transaction :transaction/category] %)}))]
+           [:li.attribute.tags
+            (sel/->SelectTags (om/computed {:value             (map (fn [t]
+                                                                      {:label (:tag/name t)
+                                                                       :value (:tag/name t)})
+                                                                    (:transaction/tags input-transaction))
+                                            :options           (map (fn [t]
+                                                                      {:label (:tag/name t)
+                                                                       :value (:db/id t)})
+                                                                    all-tags)
+                                            :on-input-key-down #(do
+                                                                 (debug "Selec tags input key event: " %)
+                                                                 (.startPropagation %))}
+                                           {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/tags] %)}))]]
+
+          [:div.actions
+           {:class (when is-open? "show")}
+           [:a.cancel-button
+            {:on-click #(om/update-state! this assoc :input-transaction (.new-transaction this))}
+            [:i.fa.fa-times.fa-fw]]
+           [:a.save-button
+            {:on-click #(.save this)}
+            [:i.fa.fa-check.fa-fw]]]]]))))
+
+(def ->QuickAddTransaction (om/factory QuickAddTransaction))

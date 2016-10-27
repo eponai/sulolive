@@ -19,15 +19,18 @@
   Object
   (render [this]
     (let [{:keys [selected]} (om/get-state this)
-          {:keys [options value disabled clearable]} (om/props this)]
+          {:keys [options value disabled clearable placeholder]} (om/props this)]
       (js/React.createElement
         js/Select
         (clj->js
-          {:value     (or (:value selected) (:value value))
-           :options   (clj->js options)
-           :clearable (boolean clearable)
-           :onChange  (on-select-fn this)
-           :disabled disabled})))))
+          (cond->
+            {:value       (or (:value selected) (:value value))
+             :options     (clj->js options)
+             :clearable   (boolean clearable)
+             :onChange    (on-select-fn this)
+             :disabled    disabled}
+            (some? placeholder)
+            (assoc :placeholder placeholder)))))))
 
 (def ->Select (om/factory Select))
 
@@ -35,7 +38,7 @@
   Object
   (render [this]
     (let [{:keys [selected]} (om/get-state this)
-          {:keys [value options disabled clearable]} (om/props this)]
+          {:keys [value options disabled clearable on-input-key-down]} (om/props this)]
       (js/React.createElement
         js/Select.Creatable
         (clj->js
@@ -49,6 +52,7 @@
            :onChange          (on-select-fn this)
            :promptTextCreator (fn [l]
                                 (str "Create new tag '" l "'"))
+           :onInputKeyDown    #(do (debug "Got input key down event: " %) (on-input-key-down))
            :filterOptions     (fn [options filter-str _]
                                 (if (empty? filter-str)
                                   #js []
