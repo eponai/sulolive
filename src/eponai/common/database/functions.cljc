@@ -135,10 +135,10 @@
               {:dbfn unique-datom-datomic :provides 'unique-datom}
               {:dbfn tempid?-datomic :provides 'tempid?}]}
   [db created-at entity attr value]
-  (letfn [(has-been-edited-since? [db created-at entity attr & [value]]
+  (letfn [(allow-edit? [db created-at entity attr & [value]]
             (if (= ::client-edit created-at)
               ;; Escape for client edits where edits should always happen.
-              false
+              true
               (do
                 (if (cardinality-many? db attr)
                   (assert (some? value) (str "value was not passed for :db.cardinality/many attr: " attr))
@@ -157,10 +157,10 @@
           (edit-attr? [db created-at entity attr]
             (if (cardinality-many? db attr)
               true
-              (has-been-edited-since? db created-at entity attr)))
+              (allow-edit? db created-at entity attr)))
           (edit-value? [db created-at entity attr value]
             (if (cardinality-many? db attr)
-              (has-been-edited-since? db created-at entity attr value)
+              (allow-edit? db created-at entity attr value)
               true))
           ;; Version with shorter param list, looks better in code.
           (edit-val? [x]

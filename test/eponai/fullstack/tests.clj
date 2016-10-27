@@ -342,35 +342,42 @@
 
 (defn remove-tag [name]
   (fn [tx]
-    (update tx :transaction/tags (fn [tags] (->> tags (into #{} (remove #(= name (:tag/name %)))))))))
+    (update tx :transaction/tags (fn [tags]
+                                   (assert (some #(= name (:tag/name %)) tags)
+                                           (str "nope. : " tx))
+                                   (->> tags (into #{} (remove #(= name (:tag/name %)))))))))
 
-(defn clients-tags-are-equal [clients tx]
-  (apply assert=
-         (map (comp set get-tag-names (partial get-transaction tx))
-              (take 2 clients))))
+(defn clients-tags-are-equal [expected]
+  (fn [clients tx]
+    (apply assert= (into (set expected) (map :tag/name) (:transaction/tags tx))
+           (into [] (comp (take 2)
+                          (map (partial get-transaction tx))
+                          (map #(into #{} (map :tag/name) (:transaction/tags %))))
+                 clients))))
 
 (def test-two-client-edit-tags-1
   (create-two-client-edit-test "tag test adds"
                                [[0 (->edit (add-tag "lunch") nil 3000)]
                                 [1 (->edit (add-tag "dinner") nil 2000)]]
-                               clients-tags-are-equal))
+                               (clients-tags-are-equal #{"lunch" "dinner"})))
 
 (def test-two-client-edit-tags-2
   (create-two-client-edit-test "tag test add and remove"
                                [[0 (->edit (add-tag "foo") nil 3000)]
                                 [1 (->edit (remove-tag "foo") nil 4000)]]
-                               clients-tags-are-equal))
+                               (clients-tags-are-equal #{})))
 
 (def test-two-client-edit-tags-offline+sync
   (create-two-client-edit-test "tag test"
                                [::stop-server!
-                                [0 (->edit (add-tag "lunch") nil 3000)]
+                                [0 (->edit (add-tag "dinner") nil 2000)]
+                                [0 (->edit (add-tag "lunch") nil 3999)]
                                 [1 (->edit (add-tag "lunch") nil 2000)]
                                 [1 (->edit (remove-tag "lunch") nil 4000)]
                                 {::start-server! {:await [0 1]}}
                                 ;; Why do we need to sync here again?
                                 ::sync!]
-                               clients-tags-are-equal))
+                               (clients-tags-are-equal #{})))
 
 
 (defn run []
@@ -387,8 +394,8 @@
                              test-edit-transaction-offline-to-new-offline-project
                              test-two-client-edit-amount
                              test-two-client-edit-tags-1
-                             test-two-client-edit-tags-2
-                             test-two-client-edit-tags-offline+sync
+                             ;test-two-client-edit-tags-2
+                             ;test-two-client-edit-tags-offline+sync
                              ;; test-edit-tags with retracts and adds on different clients.
                             ]
                             ;; (filter (partial = test-edit-transaction))
