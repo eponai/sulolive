@@ -123,8 +123,10 @@
        (= (type x) tempid-type))))
 
 (defn tempid?-datascript [x]
-  (and (number? x)
-       (neg? x)))
+  (or (and (number? x) (neg? x))
+      #?(:clj
+         (binding [tempid datomic/tempid]
+           (tempid?-datomic x)))))
 
 (def-dbfn edit-attr
   {:requires ['[datomic.api :as datomic :refer [q datoms tempid]]]
@@ -184,10 +186,9 @@
                                          " Attr was: " attr " ref fn: " ref?))
                             (let [dbid (or (:db/id x)
                                            (tempid :db.part/user))
-                                  id (if (tempid? dbid)
-                                       (-> (unique-datom db (seq (dissoc x :db/id)))
-                                           (:e dbid))
-                                       dbid)]
+                                  id (or (when (tempid? dbid)
+                                           (:e (unique-datom db (seq (dissoc x :db/id)))))
+                                         dbid)]
                               (when (or (tempid? id) (edit-val? id))
                                 (cond-> []
                                         ;; It's a new ref, non-empty ref.
