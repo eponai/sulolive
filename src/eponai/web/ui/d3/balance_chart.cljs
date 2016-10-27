@@ -9,7 +9,8 @@
     [cljs-time.coerce :as c]))
 
 (defn create-style-defs [svg]
-  (let [defs (.. svg
+  (let [{inner-height :height} (d3/svg-dimensions svg)
+        defs (.. svg
                  (append "defs"))
         gradient (.. defs
                      (append "linearGradient")
@@ -25,6 +26,7 @@
 
         drop-shadow (.. defs
                         (append "filter")
+                        (attr "height" (str inner-height "px"))
                         (attr "id" "drop-shadow"))]
 
     (.. gradient
@@ -97,13 +99,14 @@
         (append "feBlend")
         (attr "in" "SourceGraphic")
         (attr "in2" "drop-shadow")
-        (attr "mode" "normal"))))
+        (attr "mode" "normal"))
+    ))
 
 (defui BalanceChart
   Object
   (make-axis [_]
     (let [x-scale (.. js/d3 scaleTime)
-          y-scale (.. js/d3 scaleLinear)]
+          y-scale (.. js/d3 scaleLinear nice)]
 
       {:x-axis  (.. js/d3 (axisBottom x-scale))
        :y-axis  (.. js/d3 (axisLeft y-scale))
@@ -126,9 +129,11 @@
                    (y0 inner-height)
                    (y1 #(y-scale (:balance %))))
           line (.. js/d3 line
-                   (curve (.. js/d3 -curveMonotoneX) )
+                   ;(curve (.. js/d3 -curveMonotoneX) )
                    (x #(x-scale (:date %)))
-                   (y #(y-scale (:spent %))))
+                   (y #(if (= 0 %2)
+                        (y-scale (+ 0.01 (:spent %)))
+                        (y-scale (:spent %)))))
           graph (.. svg
                     (append "g")
                     (attr "class" "chart")
@@ -158,14 +163,32 @@
       (d3/update-on-resize this id)
       (om/update-state! this assoc :svg svg :x-scale x-scale :y-scale y-scale :area area :line line :x-axis x-axis :y-axis y-axis :graph graph)))
 
+  (value-range [_ values]
+    (let [[low high] (cond (empty? values)
+                           [0 10]
+                           (= 1 (count values))
+                           (let [value (first values)
+                                 max-val (max (:balance value) (:spent value))]
+                             (if (neg? max-val)
+                               [max-val 0]
+                               [0 max-val]))
+
+                           (< 1 (count values))
+                           [(apply min (map #(min (:balance %) (:spent %)) values))
+                            (apply max (map #(max (:balance %) (:spent %)) values))])]
+      (if (= low high)
+        [low (+ high 10)]
+        [low high])))
+
   (update [this]
     (let [{:keys [svg x-scale y-scale margin graph area line balance-visible? spent-visible?]} (om/get-state this)
-          {:keys [values id]} (om/props this)
-          _ (debug "Balance chart values: " values)
-          js-values (into-array values)
-          [min-y max-y] (if balance-visible?
-                         [(apply min (map #(min (:balance %) (:spent %)) values))
-                          (apply max (map #(max (:balance %) (:spent %)) values))])
+          {:keys [report id]} (om/props this)
+          {:keys [data-points x-domain y-domain]} report
+          _ (debug "Balance chart values: " data-points)
+          js-values (into-array data-points)
+          ;[min-y max-y] (.value-range this data-points)
+          ;_ (debug "min: " min-y " max " max-y)
+          _ (debug "Balance Report: " report)
 
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
@@ -177,11 +200,10 @@
                          (data #js [js-values]))]
       (.. x-scale
           (range #js [0 inner-width])
-          (domain (.. js/d3
-                      (extent js-values (fn [d] (:date d))))))
+          (domain (clj->js x-domain)))
       (.. y-scale
           (range #js [inner-height 0])
-          (domain #js [min-y max-y]))
+          (domain (clj->js y-domain)))
 
       (.. graph-area
           enter
@@ -224,8 +246,9 @@
 
   (update-interactive-focus [this inner-height]
     (let [{:keys [svg x-scale y-scale margin spent-visible? balance-visible?]} (om/get-state this)
-          {:keys [id values]} (om/props this)
-          js-values (into-array values)
+          {:keys [id report]} (om/props this)
+          {:keys [data-points]} report
+          js-values (into-array data-points)
           focus-overlay (.. svg (select ".focus-overlay"))
           focus (.. svg (select ".focus"))]
 

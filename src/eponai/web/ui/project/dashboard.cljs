@@ -26,14 +26,19 @@
       (debug "Balance: " balance-report)
       (html
         [:div#dashboard
+         [:div.row.align-center
+          [:a.button.black.hollow.month
+           "September"
+           ;[:i.fa.fa-caret-down.fa-fw]
+           ]]
          [:div.content-section
           [:div.row.section-title
            (icon/dashboard-balance)
-           [:span "Balance vs Spent"]]
+           [:span "Overview"]]
 
           [:div.row#balance-spent
            (bc/->BalanceChart {:id     "balance-spent-chart"
-                               :values balance-report})]
+                               :report balance-report})]
 
           [:div#key-metrics
            [:div.key-metric
@@ -46,13 +51,7 @@
             [:div.val-txt "53.13"]
             [:div.title-txt "By Oct 31"]]]]
          [:div.content-section
-          [:div.row.section-title
-           [:span "Summary"]]
-          [:div.row
-           [:a.button.black.hollow
-            "September"
-            ;[:i.fa.fa-caret-down.fa-fw]
-            ]]
+
 
           [:div.row#pie-charts
            [:div.column

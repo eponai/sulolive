@@ -64,8 +64,26 @@
     (second (first res-by-month))))
 
 (defn time-range [start]
-  (let [month (c/from-long start)]
-    (map date/date->long (p/periodic-seq month (t/plus (t/last-day-of-the-month month) (t/days 1)) (t/days 1)))))
+  (let [month (c/from-long start)
+        end (t/earliest (date/today) (date/last-day-of-month (t/month month)))]
+    (map date/date->long (p/periodic-seq month (t/plus end (t/days 1)) (t/days 1)))))
+
+(defn value-range [values]
+  (let [[low high] (cond (empty? values)
+                         [0 10]
+                         (= 1 (count values))
+                         (let [value (first values)
+                               max-val (max (:balance value) (:spent value))]
+                           (if (neg? max-val)
+                             [max-val 0]
+                             [0 max-val]))
+
+                         (< 1 (count values))
+                         [(apply min (map #(min (:balance %) (:spent %)) values))
+                          (apply max (map #(max (:balance %) (:spent %)) values))])]
+    (if (= low high)
+      [low (+ high 10)]
+      [low  high])))
 
 (defn balance-vs-spent
   "Calculate what expenses per day by month, and how the balance has evolved in relation to those expenses.
@@ -100,7 +118,21 @@
                               (assoc-in [:values timestamp] {:spent   expenses
                                                              :balance new-balance})))) ; Set the balance for this day, and how much was spent.
 
-        this-month-timestamp (date/month->long (date/first-day-of-this-month))
+        ;res-by-month (map
+        ;               ; Spent vs balance by month, given a month timestamp and a list of transactions for that month.
+        ;               (fn [[mo txs]]
+        ;                 (let [time-span (time-range mo)    ; Create a timespan for the entire month, 1st to last day of month.
+        ;                       by-timestamp (group-by #(:date/timestamp (:transaction/date %)) txs)] ; Group transactions by date within month for easy access later
+        ;
+        ;                   ; Calculate spent vs balance for each month and assoc to a month timestamp in the resulting map.
+        ;                   (reduce spent-balance
+        ;                           {:balance      0
+        ;                            :by-timestamp by-timestamp
+        ;                            :values       {}}
+        ;                           time-span)))
+        ;               txs-by-month)
+
+        this-month-timestamp (date/month->long (date/today))
         txs-this-month (get txs-by-month (date/month->long (date/first-day-of-this-month)))
         report-this-month (let [time-span (time-range this-month-timestamp)
                                 by-timestamp (group-by #(:date/timestamp (:transaction/date %)) txs-this-month)]
@@ -110,32 +142,20 @@
                                            :by-timestamp by-timestamp
                                            :values       {}}
                                           time-span))
-        ]
+
+        values (sort-by :date
+                        (map
+                          (fn [[k v]]
+                            (assoc v :date k))
+                          (:values report-this-month)))]
 
     (debug "report this month: " (sort-by :date
                                           (map
                                             (fn [[k v]]
                                               (assoc v :date k))
                                             (:values report-this-month))))
-     (sort-by :date
-             (map
-               (fn [[k v]]
-                 (assoc v :date k))
-               (:values report-this-month)))))
+    {:data-points values
+     :x-domain    [this-month-timestamp (date/date->long (date/last-day-of-this-month))]
+     :y-domain    (value-range values)}))
 
 
-;res-by-month (reduce
-;  ; Spent vs balance by month, given a month timestamp and a list of transactions for that month.
-;  (fn [m [mo txs]]
-;    (let [time-span (time-range mo)    ; Create a timespan for the entire month, 1st to last day of month.
-;          by-timestamp (group-by #(:date/timestamp (:transaction/date %)) txs)] ; Group transactions by date within month for easy access later
-;
-;      ; Calculate spent vs balance for each month and assoc to a month timestamp in the resulting map.
-;      (assoc m mo
-;               (reduce spent-balance
-;                       {:balance      0
-;                        :by-timestamp by-timestamp
-;                        :values       {}}
-;                       time-span))))
-;  {}
-;  (select-keys txs-by-month (date/month->long (date/first-day-of-this-month))))
