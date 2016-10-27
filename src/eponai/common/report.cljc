@@ -41,11 +41,11 @@
   (let [days-left (count (time-range (date/month->long (date/tomorrow)) (date/date->long (date/last-day-of-this-month))))]
     (- limit (* (t/number-of-days-in-the-month (date/today)) avg-spent))))
 
-(defn summary-info [limit spent]
-  (let [avg (avg-by-day spent)
-        ]
-    {:avg-spent avg
-     :left-by-end (left-by-end-of-month limit avg)}))
+(defn summary-info [{:keys [limit spent housing transport daily-spent]}]
+  (let [budget (- limit housing transport)]
+    {:avg-daily-spent (avg-by-day daily-spent)
+     :budget          budget
+     :left-by-end     (left-by-end-of-month limit (avg-by-day spent))}))
 
 (defn summary
   "Calculate how much has been spent on housing and transport, as well as what the current balance is relative to the user's income."
@@ -63,27 +63,32 @@
                       (= "Housing" (get-in tx [:transaction/category :category/name]))
                       (-> res
                           (update :housing + conv-amount)
-                          (update :spent - conv-amount))
+                          (update :spent + conv-amount)
+                          )
 
                       (= "Transport" (:transaction/category tx))
                       (-> res
                           (update :transport + conv-amount)
-                          (update :spent + conv-amount))
+                          (update :spent + conv-amount)
+                          )
                       :else
-                      (update res :spent + conv-amount))))
+                      (-> res
+                          (update :spent + conv-amount)
+                          (update :daily-spent + conv-amount)))))
 
         res-by-month (reduce
                        (fn [res [mo txs]]
-                         (let [{:keys [limit spent] :as month-res}
+                         (let [month-res
                                (reduce summary
                                        {:housing 0 :transport 0 :spent 0 :limit 0}
                                        txs)]
                            (assoc res mo (merge month-res
-                                                (summary-info limit spent)))))
+                                                (summary-info month-res)))))
                        {}
                        txs-by-month)
-        values (second (first res-by-month))]
 
+        values (second (first res-by-month))]
+    (debug "Report stuff: " values)
     values))
 
 (defn value-range [values]

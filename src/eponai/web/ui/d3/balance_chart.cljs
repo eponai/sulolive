@@ -331,21 +331,23 @@
     (let [{:keys [id]} (om/props this)
           {:keys [balance-visible? spent-visible?]} (om/get-state this)]
       (html
-        [:div.graph
-         (opts {:ref (str "balance-" id)
-                :id id})
-         [:ul.menu.legend
-          [:li
-           [:a
-            {:on-click #(om/update-state! this update :balance-visible? not)
-             :class (when balance-visible? "visible")}
-            [:i.circle#legend-balance]
-            [:span "Balance"]]]
-          [:li
-           [:a
-            {:on-click #(om/update-state! this update :spent-visible? not)
-             :class    (when spent-visible? "visible")}
-            [:i.circle#legend-spent]
-            [:span "Spent by day"]]]]]))))
+        [:div.graph-container
+         [:div
+          [:ul.menu.legend
+           [:li
+            [:a
+             {:on-click #(om/update-state! this update :balance-visible? not)
+              :class    (when balance-visible? "visible")}
+             [:i.circle#legend-balance]
+             [:span "Balance"]]]
+           [:li
+            [:a
+             {:on-click #(om/update-state! this update :spent-visible? not)
+              :class    (when spent-visible? "visible")}
+             [:i.circle#legend-spent]
+             [:span "Spent by day"]]]]]
+         [:div.graph
+          (opts {:ref (str "balance-" id)
+                 :id  id})]]))))
 
 (def ->BalanceChart (om/factory BalanceChart))

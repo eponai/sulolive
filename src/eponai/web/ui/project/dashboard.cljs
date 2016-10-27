@@ -21,7 +21,7 @@
   Object
   (render [this]
     (let [{:keys [query/transactions]} (om/props this)
-          {:keys [housing limit transport spent avg-spent left-by-end]} (report/summary transactions)
+          {:keys [housing limit transport spent avg-daily-spent left-by-end budget]} (report/summary transactions)
           balance-report (report/balance-vs-spent transactions)
           ]
       (debug "Balance: " balance-report)
@@ -46,7 +46,7 @@
             [:div.val-txt (- limit spent)]
             [:div.title-txt "Balance"]]
            [:div.key-metric
-            [:div.val-txt (gstring/format "%.2f" avg-spent)]
+            [:div.val-txt (gstring/format "%.2f" avg-daily-spent)]
             [:div.title-txt "Avg. Spent per day"]]
            [:div.key-metric
             [:div.val-txt (gstring/format "%.2f" left-by-end)]
@@ -66,9 +66,9 @@
                             :value (or transport 0)
                             :limit spent})]
            [:div.column
-            (pc/->PieChart {:id    "balance-pie-chart"
-                            :title "Balance"
-                            :value (- limit spent)
+            (pc/->PieChart {:id    "budget-pie-chart"
+                            :title "Budget"
+                            :value (or budget 0)
                             :limit limit})]]]
 
          [:div.content-section
