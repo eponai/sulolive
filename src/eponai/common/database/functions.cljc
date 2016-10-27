@@ -62,6 +62,7 @@
 (def ^:dynamic ref?)
 (def ^:dynamic unique-datom)
 (def ^:dynamic tempid?)
+(def ^:dynamic allow-edit?)
 
 (defn cardinality-many?-datascript [db attr]
   (= :db.cardinality/many
@@ -128,36 +129,36 @@
          (binding [tempid datomic/tempid]
            (tempid?-datomic x)))))
 
+#?(:clj
+   (def-dbfn allow-edit?-datomic {:requires ['[datomic.api :refer [datoms]]]}
+     [db created-at entity attr value]
+     (let [last-edit (some->> (apply datoms (datomic.api/history db)
+                                     :eavt entity attr (when value [value]))
+                              (sort-by :tx #(compare %2 %1))
+                              (first)
+                              :tx
+                              (q '{:find  [?last-edit .]
+                                   :in    [$ ?tx]
+                                   :where [[?tx :tx/mutation-created-at ?last-edit]]}
+                                 db))]
+       (or (nil? last-edit)
+           (<= last-edit created-at)))))
+
+(defn allow-edit?-datascript [db created-at entity attr value]
+  true)
+
 (def-dbfn edit-attr
   {:requires ['[datomic.api :as datomic :refer [q datoms tempid]]]
    :deps     [{:dbfn cardinality-many?-datomic :provides 'cardinality-many? :memoized? true}
               {:dbfn ref?-datomic :provides 'ref? :memoized? true}
               {:dbfn unique-datom-datomic :provides 'unique-datom}
-              {:dbfn tempid?-datomic :provides 'tempid?}]}
+              {:dbfn tempid?-datomic :provides 'tempid?}
+              {:dbfn allow-edit?-datomic :provides 'allow-edit?}]}
   [db created-at entity attr value]
-  (letfn [(allow-edit? [db created-at entity attr & [value]]
-            (if (= ::client-edit created-at)
-              ;; Escape for client edits where edits should always happen.
-              true
-              (do
-                (if (cardinality-many? db attr)
-                  (assert (some? value) (str "value was not passed for :db.cardinality/many attr: " attr))
-                  (assert (nil? value) (str "value as passed for non :db.cardinality/many attr: " attr
-                                            "value: " value)))
-                (let [last-edit (some->> (apply datoms db :eavt entity attr (when value [value]))
-                                         (sort-by :tx #(compare %2 %1))
-                                         (first)
-                                         :tx
-                                         (q '{:find  [?last-edit .]
-                                              :in    [$ ?tx]
-                                              :where [[?tx :tx/mutation-created-at ?last-edit]]}
-                                            db))]
-                  (or (nil? last-edit)
-                      (<= last-edit created-at))))))
-          (edit-attr? [db created-at entity attr]
+  (letfn [(edit-attr? [db created-at entity attr]
             (if (cardinality-many? db attr)
               true
-              (allow-edit? db created-at entity attr)))
+              (allow-edit? db created-at entity attr nil)))
           (edit-value? [db created-at entity attr value]
             (if (cardinality-many? db attr)
               (allow-edit? db created-at entity attr value)
@@ -193,7 +194,8 @@
                                 (cond-> []
                                         ;; It's a new ref, non-empty ref.
                                         ;; Add the whole ref to the transaction.
-                                        (and (tempid? id) (seq (dissoc x :db/id)))
+                                        (and (tempid? id)
+                                             (seq (dissoc x :db/id)))
                                         (conj (assoc x :db/id id))
                                         :always
                                         (conj [:db/add entity attr id])))))
@@ -220,20 +222,22 @@
                                                  :entity entity
                                                  :attr   attr})))))
                         (do (assert (not (coll? x)))
-                            [[:db/retract entity attr x]])))]
+                            (when (edit-val? x)
+                              [[:db/retract entity attr x]]))))]
               (to-txs x->txs old-value)))]
 
-    (when (edit-attr? db created-at entity attr)
-      (let [{:keys [old-value new-value]} value
-            ret (condp = [(some? old-value) (some? new-value)]
-                  [false false] []
-                  [false true] (db-add new-value)
-                  [true false] (db-retract old-value)
-                  [true true] (if (cardinality-many? db attr)
-                                (-> []
-                                    (into (db-retract old-value))
-                                    (into (db-add new-value)))
-                                ;; cardinality-one. New value would just replace the old.
-                                ;; ..right?
-                                (db-add new-value)))]
-        ret))))
+    (let [ret (when (edit-attr? db created-at entity attr)
+                (let [{:keys [old-value new-value]} value]
+                  (condp = [(some? old-value) (some? new-value)]
+                    [false false] []
+                    [false true] (db-add new-value)
+                    [true false] (db-retract old-value)
+                    [true true] (if (cardinality-many? db attr)
+                                  (-> []
+                                      (into (db-retract old-value))
+                                      (into (db-add new-value)))
+                                  ;; cardinality-one. New value would just replace the old.
+                                  ;; ..right?
+                                  (db-add new-value)))))]
+
+      ret)))

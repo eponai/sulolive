@@ -387,7 +387,9 @@
                            dbfn/cardinality-many? dbfn/cardinality-many?-datascript
                            dbfn/ref? dbfn/ref?-datascript
                            dbfn/unique-datom dbfn/unique-datom-datascript
-                           dbfn/tempid? dbfn/tempid?-datascript]
+                           dbfn/tempid? dbfn/tempid?-datascript
+                           dbfn/allow-edit? dbfn/allow-edit?-datascript]
+                   (debug [:eid eid :attr attr :old-new old-new])
                    (dbfn/edit-attr (datascript/db (:state env)) created-at eid attr old-new))))
        (vec)))
 

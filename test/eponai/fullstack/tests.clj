@@ -70,23 +70,20 @@
      :transaction/created-at 1}))
 
 (defn has-transaction? [tx client]
-  (pull/lookup-entity (db client)
-                      [:transaction/uuid (:transaction/uuid tx)]))
+  (pull/lookup-entity (db client) [:transaction/uuid (:transaction/uuid tx)]))
 
 (def get-transaction has-transaction?)
 
 (defn has-edit?
-  ([tx {:keys [edit-fn key-fn compare-fn] :as edit} client]
-   {:pre [(map? tx) (map? edit) (some? edit-fn) (om/reconciler? client)]}
+  ([tx {:keys [edit-fn remove-fn key-fn compare-fn] :as edit} client]
+   {:pre [(map? tx) (map? edit) (om/reconciler? client)]}
    ((or compare-fn =)
-     (key-fn (entity-map client [:transaction/uuid (:transaction/uuid tx)]))
-     (key-fn (edit-fn tx)))))
-
-(defn ->edit [& args]
-  (let [edit (zipmap [:edit-fn :key-fn ::parser/created-at :compare-fn] args)]
-    (cond-> edit
-            (::parser/created-at edit)
-            (update ::parser/created-at + (days-from-now 1)))))
+     (key-fn (cond-> (entity-map client [:transaction/uuid (:transaction/uuid tx)])
+                     remove-fn
+                     remove-fn))
+     (key-fn (cond-> tx
+                     edit-fn
+                     edit-fn)))))
 
 (defn is-running? [^Server server]
   (.isRunning server))
@@ -121,13 +118,15 @@
                           (assert (test/is (not-any? (partial has-transaction? tx)
                                                      (remove #(= client %) clients))))))}))
 
-(defn edit-transaction! [server clients client tx {:keys [edit-fn ::parser/created-at] :as edit}]
+(defn edit-transaction! [server clients client tx edit]
   {:pre [(om/reconciler? client)
-         (map? tx)
-         (and (map? edit) (some? (:edit-fn edit)))]}
+         (map? tx)]}
   (fn []
-    (let [tx (entity-map client [:transaction/uuid (:transaction/uuid tx)])]
-      {::fw/transaction [client `[(transaction/edit ~(assoc {:old tx :new (edit-fn tx)}
+    (let [{:keys [edit-fn remove-fn ::parser/created-at]} edit
+          _ (assert (or edit-fn remove-fn))
+          tx (entity-map client [:transaction/uuid (:transaction/uuid tx)])]
+      {::fw/transaction [client `[(transaction/edit ~(assoc {:old (cond-> tx remove-fn remove-fn)
+                                                             :new (cond-> tx edit-fn edit-fn)}
                                                        ::parser/created-at created-at))]]
        ::fw/assert      (if (is-running? server)
                           #(assert (every? (partial has-edit? tx edit) clients))
@@ -228,6 +227,8 @@
 (defn has-project? [project client]
   (pull/lookup-entity (db client) [:project/uuid (:project/uuid project)]))
 
+(def get-project has-project?)
+
 (defn test-edit-transaction-offline-to-new-offline-project
   [server [client1 :as clients]]
   (let [tx (new-transaction client1)
@@ -238,18 +239,25 @@
               :compare-fn (partial = uuid)}]
     {:label   (str "Can create a transaction and project offline, edit the transaction"
                    " to belong to the new project, then sync.")
-     :actions [(stop-server! server)
-               (create-transaction! server clients client1 tx)
-               {::fw/transaction [client1 `[(project/save ~proj)]]
-                ::fw/asserts     #(do (assert (has-project? proj client1))
-                                      (assert (not-any? (partial has-project? proj)
-                                                        (remove (partial = client1) clients))))}
-               (edit-transaction! server clients client1 tx edit)
-               (start-server! server
-                              :await [client1]
-                              :asserts #(do (assert (every? (partial has-transaction? tx) clients))
-                                            (assert (every? (partial has-project? proj) clients))
-                                            (assert (every? (partial has-edit? tx edit) clients))))]}))
+     :actions (-> [(stop-server! server)
+                   (create-transaction! server clients client1 tx)
+                   {::fw/transaction [client1 `[(project/save ~proj)]]
+                    ::fw/asserts     #(do (assert (has-project? proj client1))
+                                          (assert (not-any? (partial has-project? proj)
+                                                            (remove (partial = client1) clients))))}
+                   (edit-transaction! server clients client1 tx edit)
+                   (start-server! server :await [client1])]
+                  (into (map (fn [client]
+                               (fn []
+                                 {::fw/transaction
+                                  [client `[(project/set-active-uuid
+                                              {:project-dbid ~(:db/id (get-project proj client1))})]]}))
+                             clients))
+                  (conj {::fw/transaction   (constantly nil)
+                         ::fw/sync-clients! true
+                         ::fw/asserts       #(do (assert (every? (partial has-transaction? tx) clients))
+                                                 (assert (every? (partial has-project? proj) clients))
+                                                 (assert (every? (partial has-edit? tx edit) clients)))}))}))
 
 (defn assert=
   ([a b] (assert= nil a b))
@@ -267,11 +275,13 @@
    true))
 
 (defn compose-edits [edits]
-  (let [edit-maps (sort-by ::parser/created-at edits)]
-    {:edit-fn    (fn [x]
-                   (let [all-edits (apply juxt (map :edit-fn edit-maps))
-                         edit-res (all-edits x)]
-                     (reduce utils/deep-merge x edit-res)))
+  (let [edit-maps (sort-by ::parser/created-at edits)
+        comp-edits (fn [k]
+                     (fn [x]
+                       (->> ((apply juxt (map #(get % k identity) edit-maps)) x)
+                            (reduce utils/deep-merge x))))]
+    {:edit-fn    (comp-edits :edit-fn)
+     :remove-fn  (comp-edits :remove-fn)
      :key-fn     (or (some->> edit-maps
                               (map :key-fn)
                               (filter some?)
@@ -316,9 +326,15 @@
                                    ;; Edit:
                                    (vector? action)
                                    (fn []
-                                     (let [[client-idx edit] action
+                                     (let [[client-idx created-at edit] action
                                            client (nth clients client-idx)]
-                                       (dissoc ((edit-transaction! server clients client tx edit))
+                                       (assert (number? client-idx))
+                                       (assert (number? created-at))
+                                       (assert (map? edit))
+                                       (dissoc ((edit-transaction!
+                                                  server clients client tx
+                                                  (assoc edit ::parser/created-at
+                                                              (+ (days-from-now 1) created-at))))
                                                ::fw/asserts)))
                                    :else
                                    (throw (ex-info (str "Unknown action: " action)
@@ -331,8 +347,9 @@
 
 (def test-two-client-edit-amount
   (create-two-client-edit-test "amount test"
-                               [[0 (->edit (set-amount 10) get-amount 3000)]
-                                [1 (->edit (set-amount 20) get-amount 2000)]]
+                               [[0 3000 {:edit-fn (set-amount 10) :key-fn get-amount}]
+                                [1 2000 {:edit-fn (set-amount 20) :key-fn get-amount}]
+                                ::sync!]
                                (fn [clients tx]
                                  (every? #(assert= (bigdec 10) (get-amount (get-transaction tx %)))
                                          clients))))
@@ -357,27 +374,39 @@
 
 (def test-two-client-edit-tags-1
   (create-two-client-edit-test "tag test adds"
-                               [[0 (->edit (add-tag "lunch") nil 3000)]
-                                [1 (->edit (add-tag "dinner") nil 2000)]]
+                               [[0 3000 {:edit-fn (add-tag "lunch")}]
+                                [1 2000 {:edit-fn (add-tag "dinner")}]]
                                (clients-tags-are-equal #{"lunch" "dinner"})))
 
 (def test-two-client-edit-tags-2
   (create-two-client-edit-test "tag test add and remove"
-                               [[0 (->edit (add-tag "foo") nil 3000)]
-                                [1 (->edit (remove-tag "foo") nil 4000)]]
+                               [[0 3000 {:edit-fn (add-tag "foo")}]
+                                [1 4000 {:remove-fn (add-tag "foo")}]]
                                (clients-tags-are-equal #{})))
 
-(def test-two-client-edit-tags-offline+sync
+(def test-two-client-edit-tags-offline+sync-FAILURE
   (create-two-client-edit-test "tag test"
                                [::stop-server!
-                                [0 (->edit (add-tag "dinner") nil 2000)]
-                                [0 (->edit (add-tag "lunch") nil 3999)]
-                                [1 (->edit (add-tag "lunch") nil 2000)]
-                                [1 (->edit (remove-tag "lunch") nil 4000)]
+                                [0 2000 {:edit-fn (add-tag "dinner")}]
+                                [0 4001 {:edit-fn (add-tag "lunch")}]
+                                [1 2000 {:edit-fn (add-tag "lunch")}]
+                                [1 4000 {:remove-fn (add-tag "lunch")}]
                                 {::start-server! {:await [0 1]}}
                                 ;; Why do we need to sync here again?
+                                ;; Because concurrent requests doens't
+                                ;; return all retractions needed?
                                 ::sync!]
-                               (clients-tags-are-equal #{})))
+                               (clients-tags-are-equal #{"dinner" "lunch"})))
+
+(def test-two-client-edit-tags-offline+sync-2
+  (create-two-client-edit-test "tag test"
+                               [::stop-server!
+                                [0 2000 {:edit-fn (add-tag "dinner")}]
+                                [0 8000 {:edit-fn (add-tag "lunch")}]
+                                {::start-server! {:await [0]}}
+                                ::sync!
+                                [1 4000 {:remove-fn (add-tag "lunch")}]]
+                               (clients-tags-are-equal #{"dinner" "lunch"})))
 
 
 (defn run []
@@ -394,13 +423,14 @@
                              test-edit-transaction-offline-to-new-offline-project
                              test-two-client-edit-amount
                              test-two-client-edit-tags-1
-                             ;test-two-client-edit-tags-2
-                             ;test-two-client-edit-tags-offline+sync
-                             ;; test-edit-tags with retracts and adds on different clients.
+                             test-two-client-edit-tags-2
+                             ;;test-two-client-edit-tags-offline+sync-FAILURE
+                             test-two-client-edit-tags-offline+sync-2
                             ]
                             ;; (filter (partial = test-edit-transaction))
                             ; (reverse)
                             ; (take 1)
                            ))
         nil)))
+
 

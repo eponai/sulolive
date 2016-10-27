@@ -5,7 +5,7 @@
     [eponai.common.format :as format]
     [eponai.common.parser :as parser :refer [server-mutate server-message]]
     [eponai.common.validate :as validate]
-    [taoensso.timbre :as timbre :refer [debug]]
+    [taoensso.timbre :as timbre :refer [debug info]]
     [eponai.server.api :as api]
     [eponai.common.database.pull :as p]
     [datomic.api :as d]
@@ -54,9 +54,10 @@
   {:action (fn []
              (validate/edit env k p)
              (debug "validated transaction")
-             (let [txs (format/edit env k p format/transaction)]
-               (debug "editing transaction: " (:db/id old) " txs: " txs)
-               (transact/transact state txs)))})
+             (let [txs (format/edit env k p format/transaction)
+                   _ (debug "editing transaction: " (:db/id old) " txs: " txs)
+                   ret (transact/transact state txs)]
+               ret))})
 
 ;; ----------------- project --------------------
 

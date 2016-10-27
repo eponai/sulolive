@@ -16,7 +16,8 @@
             [medley.core :as medley]
             [datascript.core :as datascript]
             [datomic.api :as datomic]
-            [datascript.core :as d])
+            [datascript.core :as d]
+            [taoensso.timbre :as timbre])
   (:import (org.eclipse.jetty.server Server ServerConnector Connector)))
 
 (comment (throw (ex-info "Entity has been modified since this transaction"
