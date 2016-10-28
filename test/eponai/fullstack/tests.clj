@@ -9,6 +9,7 @@
             [eponai.client.utils :as utils]
             [taoensso.timbre :refer [info debug error]]
             [clojure.data :as diff]
+            [clojure.test :as test]
             [datascript.core :as datascript]
             [eponai.fullstack.framework :as fw]
             [eponai.fullstack.jvmclient :refer [JvmRoot]]
@@ -411,26 +412,30 @@
 
 (defn run []
   (fs.utils/with-less-loud-logger
-    #(do (fw/run-tests (->> [
-                             test-system-setup
-                             test-create-transaction
-                             test-edit-transaction
-                             test-create-transaction-offline
-                             test-edit-transaction-offline
-                             test-create+edit-amount-offline
-                             test-create+edit-title-offline
-                             test-create+edit-category-offline
-                             test-edit-transaction-offline-to-new-offline-project
-                             test-two-client-edit-amount
-                             test-two-client-edit-tags-1
-                             test-two-client-edit-tags-2
-                             test-two-client-edit-tags-offline+sync-1
-                             test-two-client-edit-tags-offline+sync-2
-                            ]
-                            ;; (filter (partial = test-edit-transaction))
-                            ; (reverse)
-                            ; (take 1)
-                           ))
-        nil)))
+    #(-> (fw/run-tests (->> [
+                         test-system-setup
+                         test-create-transaction
+                         test-edit-transaction
+                         test-create-transaction-offline
+                         test-edit-transaction-offline
+                         test-create+edit-amount-offline
+                         test-create+edit-title-offline
+                         test-create+edit-category-offline
+                         test-edit-transaction-offline-to-new-offline-project
+                         test-two-client-edit-amount
+                         test-two-client-edit-tags-1
+                         test-two-client-edit-tags-2
+                         test-two-client-edit-tags-offline+sync-1
+                         test-two-client-edit-tags-offline+sync-2
+                         ]
+                        ;; (filter (partial = test-edit-transaction))
+                        ; (reverse)
+                        ; (take 1)
+                        ))
+         (fw/result-summary))))
 
-
+(test/deftest run-fullstack-tests
+  (let [ret (run)]
+    (test/is (zero? (:failures ret)))
+    (test/is (zero? (:skips ret)))
+    (test/is (pos? (:successes ret)))))

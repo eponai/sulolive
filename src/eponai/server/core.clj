@@ -110,12 +110,12 @@
                                                 reload/wrap-reload)}
                        opts)))
 
-(defn start-server-for-tests [& [{:keys [email-chan conn] :as opts}]]
+(defn start-server-for-tests [& [{:keys [email-chan conn port] :as opts}]]
   {:pre [(or (nil? opts) (map? opts))]}
   (reset! in-production? false)
   (start-server
     (merge {:join?             false
-            :port              0
+            :port              (or port 0)
             :daemon?           true
             ::provided-conn    conn
             ::stateless-server true

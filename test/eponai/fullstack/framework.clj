@@ -246,8 +246,11 @@
                                               db-schema)
         email-chan (async/chan)
         server (core/start-server-for-tests {:conn       conn
+                                             ;; Re-use the server's port
+                                             ;; to be more kind to the test system.
+                                             :port (:server-port system)
                                              :email-chan email-chan})
-        ;; The server was started with a random port.
+        ;; The server could be started with a random port.
         ;; Set the selected port to the server so it
         ;; keeps the same port between restarts
         connector (doto (ServerConnector. server)
@@ -259,7 +262,8 @@
                  (.start))]
     (assoc system :conn conn
                   :email-chan email-chan
-                  :server server)))
+                  :server server
+                  :server-port (.getPort (.getURI server)))))
 
 (defn- stop-system [system]
   (async/close! (:email-chan system))
