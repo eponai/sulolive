@@ -55,9 +55,6 @@
             (fn ~params
               ~body)))))))
 
-(def ^:dynamic q)
-(def ^:dynamic datoms)
-(def ^:dynamic tempid)
 (def ^:dynamic cardinality-many?)
 (def ^:dynamic ref?)
 (def ^:dynamic unique-datom)
@@ -69,9 +66,9 @@
      (get-in (:schema db) [attr :db/cardinality])))
 
 #?(:clj
-   (def-dbfn cardinality-many?-datomic {:requires ['[datomic.api :refer [q]]]}
+   (def-dbfn cardinality-many?-datomic {:requires ['[datomic.api]]}
      [db attr]
-     (some? (q '{:find  [?e .]
+     (some? (datomic.api/q '{:find  [?e .]
                  :in    [$ ?attr]
                  :where [[?e :db/ident ?attr]
                          [?e :db/cardinality :db.cardinality/many]]}
@@ -83,9 +80,9 @@
      (get-in (:schema db) [attr :db/valueType])))
 
 #?(:clj
-   (def-dbfn ref?-datomic {:requires ['[datomic.api :refer [q]]]}
+   (def-dbfn ref?-datomic {:requires ['[datomic.api]]}
      [db attr]
-     (some? (q '{:find  [?e .]
+     (some? (datomic.api/q '{:find  [?e .]
                  :in    [$ ?attr]
                  :where [[?e :db/ident ?attr]
                          [?e :db/valueType :db.type/ref]]}
@@ -105,9 +102,9 @@
          (zipmap [:e :a :v]))))
 
 #?(:clj
-   (def-dbfn unique-datom-datomic {:requires ['[datomic.api :refer [q]]]}
+   (def-dbfn unique-datom-datomic {:requires ['[datomic.api]]}
      [db kv-pairs]
-     (->> (q '{:find  [?entity ?attr ?val]
+     (->> (datomic.api/q '{:find  [?entity ?attr ?val]
                :in    [$ [[?attr ?val] ...]]
                :where [[?e :db/ident ?attr]
                        [?e :db/unique _]
@@ -118,21 +115,19 @@
           (zipmap [:e :a :v]))))
 
 #?(:clj
-   (def-dbfn tempid?-datomic {:requires ['[datomic.api :refer [tempid]]]}
+   (def-dbfn tempid?-datomic {:requires ['[datomic.api]]}
      [x]
-     (let [tempid-type (type (tempid :db.part/user))]
+     (let [tempid-type (type (datomic.api/tempid :db.part/user))]
        (= (type x) tempid-type))))
 
 (defn tempid?-datascript [x]
   (or (and (number? x) (neg? x))
-      #?(:clj
-         (binding [tempid datomic/tempid]
-           (tempid?-datomic x)))))
+      #?(:clj (tempid?-datomic x))))
 
 #?(:clj
-   (def-dbfn update-edit-datomic {:requires ['[datomic.api :refer [datoms]]]}
+   (def-dbfn update-edit-datomic {:requires ['[datomic.api]]}
      [db created-at entity attr value]
-     (let [latest-datom (some->> (apply datoms (datomic.api/history db)
+     (let [latest-datom (some->> (apply datomic.api/datoms (datomic.api/history db)
                                         :eavt entity attr (when value [value]))
                                  (sort-by :tx #(compare %2 %1))
                                  (first))
@@ -151,7 +146,7 @@
   true)
 
 (def-dbfn edit-attr
-  {:requires ['[datomic.api :as datomic :refer [q datoms tempid]]]
+  {:requires ['[datomic.api]]
    :deps     [{:dbfn cardinality-many?-datomic :provides 'cardinality-many? :memoized? true}
               {:dbfn ref?-datomic :provides 'ref? :memoized? true}
               {:dbfn unique-datom-datomic :provides 'unique-datom}
@@ -185,7 +180,8 @@
                                     (str "Attribute was not a ref but it got a map as value."
                                          " Attr was: " attr " ref fn: " ref?))
                             (let [dbid (or (:db/id x)
-                                           (tempid :db.part/user))
+                                           #?(:clj (datomic.api/tempid :db.part/user)
+                                              :cljs (datascript/tempid :db.part/user)))
                                   id (or (when (tempid? dbid)
                                            (:e (unique-datom db (seq (dissoc x :db/id)))))
                                          dbid)]
