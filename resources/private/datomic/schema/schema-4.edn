@@ -24,6 +24,13 @@
 
  {:db/id                 #db/id[:db.part/db],
   :db.install/_attribute :db.part/db,
+  :db/ident              :tx/mutation-updated-at,
+  :db/valueType          :db.type/long,
+  :db/cardinality        :db.cardinality/one,
+  :db/doc                "Timestamp of when the mutation was updated, if the same mutation happened again."}
+
+ {:db/id                 #db/id[:db.part/db],
+  :db.install/_attribute :db.part/db,
   :db/ident              :tx/mutation-created-by,
   :db/valueType          :db.type/ref,
   :db/cardinality        :db.cardinality/one,

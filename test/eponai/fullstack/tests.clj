@@ -384,7 +384,7 @@
                                 [1 4000 {:remove-fn (add-tag "foo")}]]
                                (clients-tags-are-equal #{})))
 
-(def test-two-client-edit-tags-offline+sync-FAILURE
+(def test-two-client-edit-tags-offline+sync-1
   (create-two-client-edit-test "tag test"
                                [::stop-server!
                                 [0 2000 {:edit-fn (add-tag "dinner")}]
@@ -424,7 +424,7 @@
                              test-two-client-edit-amount
                              test-two-client-edit-tags-1
                              test-two-client-edit-tags-2
-                             ;;test-two-client-edit-tags-offline+sync-FAILURE
+                             test-two-client-edit-tags-offline+sync-1
                              test-two-client-edit-tags-offline+sync-2
                             ]
                             ;; (filter (partial = test-edit-transaction))

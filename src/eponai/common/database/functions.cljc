@@ -62,7 +62,7 @@
 (def ^:dynamic ref?)
 (def ^:dynamic unique-datom)
 (def ^:dynamic tempid?)
-(def ^:dynamic allow-edit?)
+(def ^:dynamic update-edit)
 
 (defn cardinality-many?-datascript [db attr]
   (= :db.cardinality/many
@@ -130,21 +130,24 @@
            (tempid?-datomic x)))))
 
 #?(:clj
-   (def-dbfn allow-edit?-datomic {:requires ['[datomic.api :refer [datoms]]]}
+   (def-dbfn update-edit-datomic {:requires ['[datomic.api :refer [datoms]]]}
      [db created-at entity attr value]
-     (let [last-edit (some->> (apply datoms (datomic.api/history db)
-                                     :eavt entity attr (when value [value]))
-                              (sort-by :tx #(compare %2 %1))
-                              (first)
-                              :tx
-                              (q '{:find  [?last-edit .]
-                                   :in    [$ ?tx]
-                                   :where [[?tx :tx/mutation-created-at ?last-edit]]}
-                                 db))]
-       (or (nil? last-edit)
-           (<= last-edit created-at)))))
+     (let [latest-datom (some->> (apply datoms (datomic.api/history db)
+                                        :eavt entity attr (when value [value]))
+                                 (sort-by :tx #(compare %2 %1))
+                                 (first))
+           tx-entity (some->> (:tx latest-datom)
+                              (datomic.api/entity db))]
+       (if-let [last-edit (or (:tx/mutation-updated-at tx-entity)
+                              (:tx/mutation-created-at tx-entity))]
+         (when (<= last-edit created-at)
+           (if (and value (= value (:v latest-datom)))
+             [:db/add (:db/id tx-entity) :tx/mutation-updated-at created-at]
+             true))
+         ;; There's no last edit, we should update this attr or value.
+         true))))
 
-(defn allow-edit?-datascript [db created-at entity attr value]
+(defn update-edit-datascript [db created-at entity attr value]
   true)
 
 (def-dbfn edit-attr
@@ -153,19 +156,15 @@
               {:dbfn ref?-datomic :provides 'ref? :memoized? true}
               {:dbfn unique-datom-datomic :provides 'unique-datom}
               {:dbfn tempid?-datomic :provides 'tempid?}
-              {:dbfn allow-edit?-datomic :provides 'allow-edit?}]}
+              {:dbfn update-edit-datomic :provides 'update-edit}]}
   [db created-at entity attr value]
   (letfn [(edit-attr? [db created-at entity attr]
             (if (cardinality-many? db attr)
+              ;; cardinality many updates need to be validated by value.
               true
-              (allow-edit? db created-at entity attr nil)))
-          (edit-value? [db created-at entity attr value]
-            (if (cardinality-many? db attr)
-              (allow-edit? db created-at entity attr value)
-              true))
-          ;; Version with shorter param list, looks better in code.
-          (edit-val? [x]
-            (edit-value? db created-at entity attr x))
+              (update-edit db created-at entity attr nil)))
+          (update-value? [x]
+            (update-edit db created-at entity attr x))
 
           (to-txs [db-fn value]
             (if (or (sequential? value) (set? value))
@@ -190,18 +189,24 @@
                                   id (or (when (tempid? dbid)
                                            (:e (unique-datom db (seq (dissoc x :db/id)))))
                                          dbid)]
-                              (when (or (tempid? id) (edit-val? id))
+                              (when-let [updated (or (tempid? id) (update-value? id))]
                                 (cond-> []
+                                        ;; update-value? can return a transaction
+                                        ;; which updates the :tx entity assoc'ed
+                                        ;; with the latest value with a new created-at.
+                                        (vector? updated)
+                                        (conj updated)
                                         ;; It's a new ref, non-empty ref.
                                         ;; Add the whole ref to the transaction.
-                                        (and (tempid? id)
-                                             (seq (dissoc x :db/id)))
+                                        (and (tempid? id) (seq (dissoc x :db/id)))
                                         (conj (assoc x :db/id id))
                                         :always
                                         (conj [:db/add entity attr id])))))
                         (do (assert (not (coll? x)))
-                            (when (edit-val? x)
-                              [[:db/add entity attr x]]))))]
+                            (when-let [updated (update-value? x)]
+                              (cond-> [[:db/add entity attr x]]
+                                      (vector? updated)
+                                      (conj updated))))))]
               (to-txs x->txs new-value)))
 
           (db-retract [old-value]
@@ -214,16 +219,20 @@
                                                (when (and id (not (tempid? id))) id))
                                          (:e (unique-datom db (seq (dissoc x :db/id)))))]
                               (if (number? id)
-                                (when (edit-val? id)
-                                  [[:db/retract entity attr id]])
+                                (when-let [updated (update-value? id)]
+                                  (cond-> [[:db/retract entity attr id]]
+                                          (vector? updated)
+                                          (conj updated)))
                                 (throw (ex-info (str "Could not find a number id for attr"
                                                      " of valueType ref with value: " x)
                                                 {:value  x
                                                  :entity entity
                                                  :attr   attr})))))
                         (do (assert (not (coll? x)))
-                            (when (edit-val? x)
-                              [[:db/retract entity attr x]]))))]
+                            (when-let [updated (update-value? x)]
+                              (cond-> [[:db/retract entity attr x]]
+                                      (vector? updated)
+                                      (conj updated))))))]
               (to-txs x->txs old-value)))]
 
     (let [ret (when (edit-attr? db created-at entity attr)
