@@ -337,26 +337,28 @@
               (.renderCalendar this :left-calendar)))))))
   (render [this]
     (let [{:keys [old-start-date old-end-date is-showing?]} (om/get-state this)
-          {:keys [class single-calendar? tabindex]} (om/props this)
+          {:keys [class single-calendar? tab-index]} (om/props this)
           {:keys [format on-open]} (om/get-computed this)]
       (dom/div
         #js {:className class}
         (dom/div
           nil
           (dom/input
-            #js {:className "daterange"
-                 :type      "text"
-                 :value     (if single-calendar?
-                              (when old-start-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-start-date))
-                              (str (when old-start-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-start-date)) "-"
-                                   (when old-end-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-end-date))))
-                 :onClick   #(do (om/update-state! this assoc :is-showing? true)
-                                 (when on-open
-                                   (on-open)))
-                 :onFocus #(do (om/update-state! this assoc :is-showing? true)
-                               (when on-open
-                                 (on-open)))
-                 :onBlur #(om/update-state! this assoc :is-showing? false)})
+            (clj->js
+              (cond-> {:className "daterange"
+                       :type      "text"
+                       :value     (if single-calendar?
+                                    (when old-start-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-start-date))
+                                    (str (when old-start-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-start-date)) "-"
+                                         (when old-end-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-end-date))))
+                       :onClick   #(do (om/update-state! this assoc :is-showing? true)
+                                       (when on-open
+                                         (on-open)))
+                       :onFocus   #(do (om/update-state! this assoc :is-showing? true)
+                                       (when on-open
+                                         (on-open)))}
+                      (some? tab-index)
+                      (assoc :tabIndex tab-index))))
 
           (when is-showing?
             (dom/div

@@ -52,7 +52,7 @@
   [transactions]
   (let [
         ; Group transactions by month to make calculations on monthly basis.
-        txs-by-month (group-by #(date/month->long (:transaction/date %)) transactions)
+        txs-by-month (group-by #(do (debug "Transaction date: " (:transaction/date %)) (date/month->long (:transaction/date %))) transactions)
         ; Reduce function to calculate how much is spent on housing and transport, and how much money user has left.
         summary (fn [res tx]
                   (let [conv-amount (converted-amount tx)]

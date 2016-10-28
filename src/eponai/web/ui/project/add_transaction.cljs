@@ -173,7 +173,7 @@
                                                              {:label name
                                                               :value id})
                                                            all-tags)
-                                             :value   #js []}
+                                             :value   (:transaction/tags input-transaction)}
                                             {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/tags] %)}))
              ]]
 
@@ -429,9 +429,13 @@
                                                     ;                                {:category/name label}))
                                                     (assoc :transaction/created-at (.getTime (js/Date.)))))
                                              :routing/project])
+          new-transaction (.new-transaction this)
           ]
       (debug "Save new transaction: " (:input-transaction st) " input " (:input-amount st))
-      (om/update-state! this assoc :is-open? false :pending-transaction message-id :input-transaction (.new-transaction this))
+      (debug "Set new transaction: " new-transaction)
+      (om/update-state! this assoc :is-open? false
+                        :pending-transaction message-id
+                        :input-transaction new-transaction)
       ))
 
   (componentDidUpdate [this _ _]
@@ -447,6 +451,7 @@
     (let [{:keys [query/all-categories query/all-currencies query/all-tags]} (om/props this)
           {:keys [is-open? input-amount input-transaction on-keydown-fn]} (om/get-state this)]
       (debug "input-amount: '" input-amount "'")
+      (debug "Input Transaction: " input-transaction)
       (html
         [:div.quick-add-container
          {:on-key-down on-keydown-fn}
@@ -474,7 +479,8 @@
                                                             {:label (:currency/code c)
                                                              :value (:db/id c)})
                                                           all-currencies)
-                                        :placeholder "USD"}
+                                        :placeholder "USD"
+                                        :tab-index 0}
                                        {:on-select #(do
                                                      (debug "Got new value: " %)
                                                      (om/update-state! this assoc-in [:input-transaction :transaction/currency] %))}))]
@@ -484,29 +490,30 @@
                                                             {:label (:category/name c)
                                                              :value (:db/id c)})
                                                           all-categories)
-                                        :placeholder "Category..."}
+                                        :placeholder "Category..."
+                                        :tab-index 0}
                                        {:on-change #(om/update-state! this assoc-in [:input-transaction :transaction/category] %)}))]
            [:li.attribute.tags
-            (sel/->SelectTags (om/computed {:value             (map (fn [t]
-                                                                      {:label (:tag/name t)
-                                                                       :value (:tag/name t)})
-                                                                    (:transaction/tags input-transaction))
+            (sel/->SelectTags (om/computed {:value             (:transaction/tags input-transaction)
                                             :options           (map (fn [t]
                                                                       {:label (:tag/name t)
                                                                        :value (:db/id t)})
                                                                     all-tags)
                                             :on-input-key-down #(do
                                                                  (debug "Selec tags input key event: " %)
-                                                                 (.startPropagation %))}
+                                                                 (.startPropagation %))
+                                            :tab-index 0}
                                            {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/tags] %)}))]]
 
           [:div.actions
            {:class (when is-open? "show")}
            [:a.cancel-button
-            {:on-click #(om/update-state! this assoc :input-transaction (.new-transaction this))}
+            {:on-click #(om/update-state! this assoc :input-transaction (.new-transaction this))
+             :tabIndex 0}
             [:i.fa.fa-times.fa-fw]]
            [:a.save-button
-            {:on-click #(.save this)}
+            {:on-click #(.save this)
+             :tabIndex 0}
             [:i.fa.fa-check.fa-fw]]]]]))))
 
 (def ->QuickAddTransaction (om/factory QuickAddTransaction))

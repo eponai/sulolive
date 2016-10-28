@@ -1,6 +1,7 @@
 (ns eponai.web.ui.project.dashboard
   (:require
     [eponai.common.report :as report]
+    [eponai.web.ui.project.add-transaction :as at]
     [eponai.web.ui.project.all-transactions :refer [Transaction]]
     [eponai.web.ui.d3.balance-chart :as bc]
     [eponai.web.ui.d3.pie-chart :as pc]
@@ -17,16 +18,21 @@
      :transaction (om/get-query Transaction)})
   static om/IQuery
   (query [_]
-    ['({:query/transactions ?transaction} {:filter ?filter})])
+    ['({:query/transactions ?transaction} {:filter ?filter})
+     {:proxy/quick-add-transaction (om/get-query at/QuickAddTransaction)}])
   Object
   (render [this]
-    (let [{:keys [query/transactions]} (om/props this)
+    (let [{:keys [query/transactions proxy/quick-add-transaction]} (om/props this)
+          {:keys [project]} (om/get-computed this)
+          _ (debug "Transactions dashboard: " transactions)
           {:keys [housing limit transport spent avg-daily-spent left-by-end budget]} (report/summary transactions)
           balance-report (report/balance-vs-spent transactions)
           ]
       (debug "Balance: " balance-report)
       (html
         [:div#dashboard
+         (at/->QuickAddTransaction (om/computed quick-add-transaction
+                                                {:project project}))
          [:div.row.align-center
           [:a.button.black.hollow.month
            "September"

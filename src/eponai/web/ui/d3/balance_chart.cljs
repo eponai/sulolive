@@ -131,7 +131,7 @@
                          (y-scale (+ 0.01 (:balance %)))
                          (y-scale (:balance %)))))
           line (.. js/d3 line
-                   ;(curve (.. js/d3 -curveMonotoneX) )
+                   (curve (.. js/d3 -curveMonotoneX) )
                    (x #(x-scale (:date %)))
                    (y #(if (= 0 %2)
                         (y-scale (+ 0.01 (:spent %)))

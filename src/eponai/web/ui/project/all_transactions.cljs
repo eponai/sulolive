@@ -136,13 +136,15 @@
         (dom/div
           #js {:className "date"}
           (->DateRangePicker (om/computed {:single-calendar? true
-                                           :start-date       (date/date-time date)}
+                                           :start-date       (date/date-time date)
+                                           :tab-index        (if is-selected? 1 -1)}
                                           {:on-apply date-range-picker-on-apply
                                            :format   "MMM dd"})))
         (dom/div
           #js {:className "category"}
-          (sel/->Select {:value {:label (:category/name category) :value (:db/id category)}
-                         :options [{:label (:category/name category) :value (:db/id category)}]}))
+          (sel/->Select {:value    {:label (:category/name category) :value (:db/id category)}
+                         :options  [{:label (:category/name category) :value (:db/id category)}]
+                         :tab-index (if is-selected? 1 -1)}))
 
         ;; Title
         (dom/div
@@ -154,7 +156,8 @@
                  :onChange  #(om/update-state! this assoc-in [:input-transaction :transaction/title] (.-value (.-target %)))
                  :onKeyDown #(utils/on-enter-down % (fn [_]
                                                       (.blur (.-target %))))
-                 :onBlur    #(.deselect this)}))
+                 :onBlur    #(.deselect this)
+                 :tabIndex (if is-selected? 1 -1)}))
 
         ;; Tags
         (dom/div
@@ -162,7 +165,8 @@
           (sel/->SelectTags (om/computed (cond-> {:value (map (fn [t]
                                                                 {:label (:tag/name t)
                                                                  :value (:db/id t)})
-                                                              (:transaction/tags transaction))}
+                                                              (:transaction/tags transaction))
+                                                  :tab-index (if is-selected? 1 -1)}
                                                  is-selected?
                                                  (assoc :options (select-tags-options-fn)))
                                          {:on-select (fn [selected]
@@ -172,14 +176,13 @@
                                                                                (map (fn [t]
                                                                                       {:tag/name (:label t)}))
                                                                                selected)))
-                                          :onClur    #(.deselect this)})))
+                                          :onBlur    #(.deselect this)})))
 
         ;; Amount in local currency
         (dom/div
           #js {:className "local-amount"}
           (dom/input
-            #js {:tabIndex  -1
-                 :className "input-amount text-right"
+            #js {:className "input-amount text-right"
                  :value     (or amount "")
                  :pattern   "[0-9]+([\\.][0-9]+)?"
                  :type      "text"
@@ -199,7 +202,8 @@
                                 ;;       to fix UI issues when there are less than 2 decimals.
                                 (when (not= val (two-decimal-string val))
                                   (om/update-state! this assoc-in [:input-transaction :transaction/amount] (two-decimal-string val))))
-                              (.deselect this))}))
+                              (.deselect this))
+                 :tabIndex (if is-selected? 1 -1)}))
         (dom/div
           #js {:className "currency"}
 
@@ -207,7 +211,8 @@
                                       :options  (map (fn [c]
                                                        {:label (:currency/code c)
                                                         :value (:db/id c)})
-                                                     currencies)}
+                                                     currencies)
+                                      :tab-index (if is-selected? 1 -1)}
                                      {:on-select (fn [selected]
                                                    (om/update-state! this assoc-in [:input-transaction :transaction/currency] (:value selected))
                                                    (.deselect this))})))
@@ -372,6 +377,7 @@
         [:div#txs
          (at/->QuickAddTransaction (om/computed quick-add-transaction
                                                 {:project project}))
+         ;(.render-filters this)
          (if (or (seq transactions)
                  (.has-filter this))
            (.render-transaction-list this transactions)
