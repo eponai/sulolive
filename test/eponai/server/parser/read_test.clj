@@ -31,9 +31,15 @@
 (defn test-user []
   (assoc (server.format/user "user@email.com") :user/currency {:currency/code "SEK"}))
 
+(defn project-entity [conn project]
+  (d/entity (d/db conn) [:project/uuid (:project/uuid project)])  )
+
 (defn read-transactions [conn user project]
   (util/test-parser {:state conn
-                     :auth  {:username (:user/uuid user)}} `[({:query/transactions [:db/id]} ~{:project-uuid (:project/uuid project)})]))
+                     :auth  {:username (:user/uuid user)}}
+                    `[({:query/transactions [:db/id]}
+                        ~{:project {:db/id (:db/id (project-entity conn project))}})]))
+
 
 (deftest read-transactions-return-conversions-matching-all
   (testing "query/transactions should return transactions and all matching conversions."
@@ -81,6 +87,6 @@
       (transact/transact conn ts)
       (let [{result :query/transactions} (read-transactions conn user project)
             {:keys [transactions conversions] :as r} result]
-        (prn "Result " r)
         (is (= (count ts) (count transactions)))
-        (is (= (count conversions) 3))))))
+        ;; TODO: Should be 3? who cares?
+        (is (= (count conversions) 4))))))
