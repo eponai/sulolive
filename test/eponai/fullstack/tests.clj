@@ -355,8 +355,9 @@
                                  (every? #(assert= (bigdec 10) (get-amount (get-transaction tx %)))
                                          clients))))
 
-(defn add-tag [name]
-  #(update % :transaction/tags (fnil conj #{}) {:tag/name name}))
+(defn add-tag [& names]
+  (fn [tx]
+    (update tx :transaction/tags (fnil into #{}) (map #(hash-map :tag/name %)) names)))
 
 (defn remove-tag [name]
   (fn [tx]
@@ -390,9 +391,10 @@
                                [::stop-server!
                                 [0 2000 {:edit-fn (add-tag "dinner")}]
                                 [0 4001 {:edit-fn (add-tag "lunch")}]
-                                [1 2000 {:edit-fn (add-tag "lunch")}]
+                                [1 2000 {:edit-fn (add-tag "lunch" "food")}]
                                 [1 4000 {:remove-fn (add-tag "lunch")}]
                                 {::start-server! {:await [0 1]}}
+                                [1 3000 {:remove-fn (add-tag "food")}]
                                 ;; Why do we need to sync here again?
                                 ;; Because concurrent requests doens't
                                 ;; return all retractions needed?
@@ -400,7 +402,7 @@
                                (clients-tags-are-equal #{"dinner" "lunch"})))
 
 (def test-two-client-edit-tags-offline+sync-2
-  (create-two-client-edit-test "tag test"
+  (create-two-client-edit-test "tag test 2"
                                [::stop-server!
                                 [0 2000 {:edit-fn (add-tag "dinner")}]
                                 [0 8000 {:edit-fn (add-tag "lunch")}]
@@ -409,25 +411,44 @@
                                 [1 4000 {:remove-fn (add-tag "lunch")}]]
                                (clients-tags-are-equal #{"dinner" "lunch"})))
 
+(defn set-title [title]
+  (fn [tx]
+    (assoc tx :transaction/title title)))
+
+(def test-two-client-edit-titles-offline+sync
+  (create-two-client-edit-test (str "Edge case where we set the same value twice at different times"
+                                    " and we shouldn't get the retract.")
+                               [::stop-server!
+                                [0 2000 {:edit-fn #(-> % ((set-title "cafe")) ((set-amount 10)))}]
+                                {::start-server! {:await [0 1]}}
+                                [1 3000 {:remove-fn #(dissoc % :transaction/title)
+                                         :edit-fn (set-title "cafe")}]
+                                [0 2500 {:edit-fn #(dissoc % :transaction/title)}]]
+                               (fn [clients tx]
+                                 (apply assert= "cafe" (into [] (comp (map #(get-transaction tx %))
+                                                                      (map :transaction/title))
+                                                             clients)))))
+
 
 (defn run []
   (fs.utils/with-less-loud-logger
     #(-> (fw/run-tests (->> [
-                         test-system-setup
-                         test-create-transaction
-                         test-edit-transaction
-                         test-create-transaction-offline
-                         test-edit-transaction-offline
-                         test-create+edit-amount-offline
-                         test-create+edit-title-offline
-                         test-create+edit-category-offline
-                         test-edit-transaction-offline-to-new-offline-project
-                         test-two-client-edit-amount
-                         test-two-client-edit-tags-1
-                         test-two-client-edit-tags-2
-                         test-two-client-edit-tags-offline+sync-1
-                         test-two-client-edit-tags-offline+sync-2
-                         ]
+                             test-system-setup
+                             test-create-transaction
+                             test-edit-transaction
+                             test-create-transaction-offline
+                             test-edit-transaction-offline
+                             test-create+edit-amount-offline
+                             test-create+edit-title-offline
+                             test-create+edit-category-offline
+                             test-edit-transaction-offline-to-new-offline-project
+                             test-two-client-edit-amount
+                             test-two-client-edit-tags-1
+                             test-two-client-edit-tags-2
+                             test-two-client-edit-tags-offline+sync-1
+                             test-two-client-edit-tags-offline+sync-2
+                             test-two-client-edit-titles-offline+sync
+                             ]
                         ;; (filter (partial = test-edit-transaction))
                         ; (reverse)
                         ; (take 1)

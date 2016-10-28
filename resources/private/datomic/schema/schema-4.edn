@@ -24,15 +24,46 @@
 
  {:db/id                 #db/id[:db.part/db],
   :db.install/_attribute :db.part/db,
-  :db/ident              :tx/mutation-updated-at,
-  :db/valueType          :db.type/long,
-  :db/cardinality        :db.cardinality/one,
-  :db/doc                "Timestamp of when the mutation was updated, if the same mutation happened again."}
-
- {:db/id                 #db/id[:db.part/db],
-  :db.install/_attribute :db.part/db,
   :db/ident              :tx/mutation-created-by,
   :db/valueType          :db.type/ref,
   :db/cardinality        :db.cardinality/one,
   :db/doc                "User the mutation was created by"}
+
+ ;; Mutation Update
+
+ {:db/id                 #db/id[:db.part/db],
+  :db.install/_attribute :db.part/db,
+  :db/ident              :mutation-update/created-at,
+  :db/valueType          :db.type/long,
+  :db/cardinality        :db.cardinality/many,
+  :db/doc                "Timestamp of when the mutation was updated, if the same mutation happened again."}
+
+ {:db/id                 #db/id[:db.part/db],
+  :db.install/_attribute :db.part/db,
+  :db/ident              :mutation-update/entity,
+  :db/valueType          :db.type/ref,
+  :db/cardinality        :db.cardinality/one,
+  :db/doc                "Entity updated"}
+
+ {:db/id                 #db/id[:db.part/db],
+  :db.install/_attribute :db.part/db,
+  :db/ident              :mutation-update/attribute,
+  :db/valueType          :db.type/ref,
+  :db/cardinality        :db.cardinality/one,
+  :db/doc                "Attribute updated"}
+
+ {:db/id                 #db/id[:db.part/db],
+  :db.install/_attribute :db.part/db,
+  :db/ident              :mutation-update/value,
+  :db/valueType          :db.type/bytes,
+  :db/cardinality        :db.cardinality/one,
+  :db/doc                "Value updated"}
+
+ {:db/id                 #db/id[:db.part/db],
+  :db.install/_attribute :db.part/db,
+  :db/ident              :mutation-update/tx,
+  :db/valueType          :db.type/ref,
+  :db/cardinality        :db.cardinality/one,
+  :db/doc                "Transaction which had the same entity attribute value."}
+
  ]

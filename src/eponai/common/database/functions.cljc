@@ -104,15 +104,15 @@
 #?(:clj
    (def-dbfn unique-datom-datomic {:requires ['[datomic.api]]}
      [db kv-pairs]
-     (->> (datomic.api/q '{:find  [?entity ?attr ?val]
-               :in    [$ [[?attr ?val] ...]]
-               :where [[?e :db/ident ?attr]
-                       [?e :db/unique _]
-                       [?entity ?attr ?val]]}
-             db
-             kv-pairs)
-          (first)
-          (zipmap [:e :a :v]))))
+     (some->> (datomic.api/q '{:find  [?entity ?attr ?val]
+                               :in    [$ [[?attr ?val] ...]]
+                               :where [[?e :db/ident ?attr]
+                                       [?e :db/unique _]
+                                       [?entity ?e ?val]]}
+                             db
+                             kv-pairs)
+              (first)
+              (zipmap [:e :a :v]))))
 
 #?(:clj
    (def-dbfn tempid?-datomic {:requires ['[datomic.api]]}
@@ -126,23 +126,72 @@
 
 #?(:clj
    (def-dbfn update-edit-datomic {:requires ['[datomic.api]]}
-     [db created-at entity attr value]
+     [db created-at entity attr value cardinality-many?]
      (let [latest-datom (some->> (apply datomic.api/datoms (datomic.api/history db)
                                         :eavt entity attr (when value [value]))
                                  (sort-by :tx #(compare %2 %1))
                                  (first))
-           tx-entity (some->> (:tx latest-datom)
-                              (datomic.api/entity db))]
-       (if-let [last-edit (or (:tx/mutation-updated-at tx-entity)
-                              (:tx/mutation-created-at tx-entity))]
-         (when (<= last-edit created-at)
-           (if (and value (= value (:v latest-datom)))
-             [:db/add (:db/id tx-entity) :tx/mutation-updated-at created-at]
-             true))
-         ;; There's no last edit, we should update this attr or value.
-         true))))
+           tx-entity (some->> (:tx latest-datom) (datomic.api/entity db))
+           last-edit (:tx/mutation-created-at tx-entity)]
+       (cond
+         ;; No edit for this eav, go update it.
+         (nil? last-edit)
+         true
+         ;; last-edit is greater than created-at. Give up.
+         (> last-edit created-at)
+         false
+         ;; Else, check if there has been an update to this
+         ;; tx's exact entity attr and value with a later edit-time.
+         :else
+         (let [as-updated-value (delay
+                                  (cond-> value
+                                          ;; Keep as much data from the dates as possible
+                                          (instance? java.util.Date value)
+                                          (-> (.toInstant) (.toEpochMilli))
+                                          ;; If not byte-array already, create one.
+                                          (not= (type value) (type (byte-array 0)))
+                                          (-> str (.getBytes))))
+               ;; TODO: Really only need the updated-value for cardinality/many.
+               ;;       There can only be one value change per attribute per tx for cardinality/one.
+               latest-update (if cardinality-many?
+                               (->> (datomic.api/q '{:find  [?updated-at ?updated-val]
+                                                     :in    [$ ?tx ?entity ?attr]
+                                                     :where [[?e :mutation-update/tx ?tx]
+                                                             [?e :mutation-update/entity ?entity]
+                                                             [?e :mutation-update/attribute ?attr]
+                                                             [?e :mutation-update/created-at ?updated-at]
+                                                             [?e :mutation-update/value ?updated-val]]}
+                                                   db (:db/id tx-entity) entity attr)
+                                    (filter (fn [[_ updated-val]]
+                                              (= (seq updated-val)
+                                                 (seq @as-updated-value))))
+                                    (max-key first)
+                                    (ffirst))
+                               (datomic.api/q '{:find  [(max ?updated-at) .]
+                                                   :in    [$ ?tx ?entity ?attr]
+                                                   :where [[?e :mutation-update/tx ?tx]
+                                                           [?e :mutation-update/entity ?entity]
+                                                           [?e :mutation-update/attribute ?attr]
+                                                           [?e :mutation-update/created-at ?updated-at]]}
+                                                 db (:db/id tx-entity) entity attr))]
+           (when (or (nil? latest-update)
+                     (> created-at latest-update))
+             ;; You're the greatest! You'll edit.
+             (if (and value (= value (:v latest-datom)))
+               ;; Value is the same as for this tx, create an update.
+               (cond-> {:db/id                      (datomic.api/tempid :db.part/user)
+                        :mutation-update/tx         (:db/id tx-entity)
+                        :mutation-update/entity     entity
+                        :mutation-update/attribute  (:a latest-datom)
+                        :mutation-update/created-at created-at}
+                       ;; We only put the value in when it's a cardinalty many
+                       ;; because there can only be one value set per attribute
+                       ;; per tx.
+                       cardinality-many?
+                       (assoc :mutation-update/value @as-updated-value))
+               true)))))))
 
-(defn update-edit-datascript [db created-at entity attr value]
+(defn update-edit-datascript [db created-at entity attr value cardinality-many?]
   true)
 
 (def-dbfn edit-attr
@@ -157,9 +206,10 @@
             (if (cardinality-many? db attr)
               ;; cardinality many updates need to be validated by value.
               true
-              (update-edit db created-at entity attr nil)))
+              (update-edit db created-at entity attr nil
+                           (cardinality-many? db attr))))
           (update-value? [x]
-            (update-edit db created-at entity attr x))
+            (update-edit db created-at entity attr x (cardinality-many? db attr)))
 
           (to-txs [db-fn value]
             (if (or (sequential? value) (set? value))
@@ -190,7 +240,7 @@
                                         ;; update-value? can return a transaction
                                         ;; which updates the :tx entity assoc'ed
                                         ;; with the latest value with a new created-at.
-                                        (vector? updated)
+                                        (map? updated)
                                         (conj updated)
                                         ;; It's a new ref, non-empty ref.
                                         ;; Add the whole ref to the transaction.
@@ -201,7 +251,7 @@
                         (do (assert (not (coll? x)))
                             (when-let [updated (update-value? x)]
                               (cond-> [[:db/add entity attr x]]
-                                      (vector? updated)
+                                      (map? updated)
                                       (conj updated))))))]
               (to-txs x->txs new-value)))
 
@@ -217,7 +267,7 @@
                               (if (number? id)
                                 (when-let [updated (update-value? id)]
                                   (cond-> [[:db/retract entity attr id]]
-                                          (vector? updated)
+                                          (map? updated)
                                           (conj updated)))
                                 (throw (ex-info (str "Could not find a number id for attr"
                                                      " of valueType ref with value: " x)
@@ -227,7 +277,7 @@
                         (do (assert (not (coll? x)))
                             (when-let [updated (update-value? x)]
                               (cond-> [[:db/retract entity attr x]]
-                                      (vector? updated)
+                                      (map? updated)
                                       (conj updated))))))]
               (to-txs x->txs old-value)))]
 
@@ -244,5 +294,4 @@
                                   ;; cardinality-one. New value would just replace the old.
                                   ;; ..right?
                                   (db-add new-value)))))]
-
       ret)))
