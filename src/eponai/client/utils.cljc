@@ -239,10 +239,9 @@
         find-props (fn [{:keys [::query ::props]}]
                      (let [subqueries (traverse-query-path query c-path)]
                        (when (some #(= % exact-subquery) subqueries)
-                         (let [c-props (get-in props c-path)]
-                           (when (some? c-props)
-                             (debug "found cached props for c-path: " c-path))
-                           c-props))))
+                         (when-let [c-props (get-in props c-path)]
+                           (debug "found cached props for c-path: " c-path)
+                           props))))
         ret (->> (butlast c-path)
                  (path->paths)
                  (cons [::root])
@@ -286,11 +285,11 @@
     (let [props (or (find-cached-props @cache path query)
                     (parser-thunk))]
       (swap! cache update-in
-             (or (seq path) [::root])
+             (or (seq (remove number? path)) [::root])
              merge
              {::query query
               ::props props})
-      props)))
+      (get-in props path))))
 
 (defn cached-ui->props-fn
   "Takes a component and returns its props, just like om.next/default-ui->props.
@@ -303,13 +302,18 @@
       (let [fq (om/full-query c)]
         (when-not (nil? fq)
           (let [s (current-time)
-                ui (cached-ui->props cache (:state env) c fq #(-> (parser env fq)
-                                                                  (get-in (om-path c))))
+                path (om-path c)
+                _ (when (nil? path)
+                    (warn "No path found for component: " (pr-str c)))
+                ui (cached-ui->props cache (:state env) c fq #(parser env fq))
                 e (current-time)]
             (when-let [l (:logger env)]
-              (let [dt (- e s)]
+              (let [dt (- e s)
+                    component-name (.. c -constructor -displayName)]
                 (when (< 16 dt)
-                  (#?(:cljs glog/warning :clj prn) l (str (pr-str c) " query took " dt " msecs")))))
+                  (warn component-name " query took " dt " msecs"
+                        " path: " path
+                        " props: " ui))))
             ui))))))
 
 (defn debug-ui->props-fn

@@ -115,7 +115,7 @@
                   transaction/title]
            :as   transaction} (or input-transaction (om/props this))
           {:keys [computed/date-range-picker-on-apply is-selected?]} (om/get-state this)
-          {:keys [currencies all-tags]} (om/get-computed this)]
+          {:keys [currencies select-tags-options-fn]} (om/get-computed this)]
       (dom/li
         #js {:className    (str "row collapse align-middle is-collapse-child" (when is-selected? " is-selected"))
              :id (str id)
@@ -159,14 +159,12 @@
         ;; Tags
         (dom/div
           #js {:className "tags"}
-          (sel/->SelectTags (om/computed {:value    (map (fn [t]
-                                                           {:label (:tag/name t)
-                                                            :value (:db/id t)})
-                                                         (:transaction/tags transaction))
-                                          :options  (map (fn [t]
-                                                           {:label (:tag/name t)
-                                                            :value (:db/id t)})
-                                                         all-tags)}
+          (sel/->SelectTags (om/computed (cond-> {:value (map (fn [t]
+                                                                {:label (:tag/name t)
+                                                                 :value (:db/id t)})
+                                                              (:transaction/tags transaction))}
+                                                 is-selected?
+                                                 (assoc :options (select-tags-options-fn)))
                                          {:on-select (fn [selected]
                                                        (om/update-state! this assoc-in
                                                                          [:input-transaction :transaction/tags]
@@ -228,11 +226,10 @@
 (defui AllTransactions
   static om/IQueryParams
   (params [_]
-    {:filter {}
-     :transaction (om/get-query Transaction)})
+    {:filter {}})
   static om/IQuery
   (query [_]
-    ['({:query/transactions ?transaction} {:filter ?filter})
+    [`({:query/transactions ~(om/get-query Transaction)} {:filter ~'?filter})
      {:query/current-user [:user/uuid
                            {:user/currency [:currency/code
                                             :currency/symbol-native]}]}
@@ -264,7 +261,9 @@
                                             (some-> (om/get-reconciler this)
                                                     (om/app-root)
                                                     (om/react-ref (str :eponai.web.ui.root/page-content-ref))
-                                                    (js/ReactDOM.findDOMNode)))})
+                                                    (js/ReactDOM.findDOMNode)))
+     :computed/select-tags-options-fn     (fn []
+                                            (sel/tags->options (:query/all-tags (om/props this))))})
 
   (componentDidMount [this]
     (when (zero? (:list-size (om/get-state this)))
@@ -319,10 +318,10 @@
 
   (render-transaction-list [this transactions]
     (let [{currencies      :query/all-currencies
-           user            :query/current-user
-           all-tags :query/all-tags} (om/props this)
+           user            :query/current-user} (om/props this)
           {:keys [computed/transaction-on-tag-click
-                  computed/infinite-scroll-node-fn]} (om/get-state this)]
+                  computed/infinite-scroll-node-fn
+                  computed/select-tags-options-fn]} (om/get-state this)]
       (html
         [:div
 
@@ -351,11 +350,11 @@
                (into [] (comp (map (fn [props]
                                      (->Transaction
                                        (om/computed props
-                                                    {:user         user
-                                                     :currencies   currencies
-                                                     :on-tag-click transaction-on-tag-click
-                                                     :all-tags     all-tags}))))
-                              (take 50))
+                                                    {:user                   user
+                                                     :currencies             currencies
+                                                     :on-tag-click           transaction-on-tag-click
+                                                     :select-tags-options-fn select-tags-options-fn}))))
+                              (take 25))
                      transactions)]
               [:div.empty-message
                [:div.lead

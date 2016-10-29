@@ -26,7 +26,8 @@
                     (mapv (fn [[id name]] {:db/id     id
                                            :tag/name  name
                                            :tag/count (count (d/datoms db :avet :transaction/tags id))}))
-                    (pl/prefix-list-by :tag/name))]
+                    ;;(pl/prefix-list-by :tag/name)
+                    )]
       {:value tags})))
 
 ;; ################ Remote reads ####################
@@ -153,46 +154,47 @@
 (defn all-local-transactions-by-project [{:keys [parser db txs-by-project query] :as env} project-eid]
   (let [{:keys [db-used txs]} (get @txs-by-project project-eid)
         {:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
-    (when (and project-eid current-user)
-      (if (identical? db db-used)
-        txs
-        (let [;; Transactions that have been deleted:
-              removed-txs (or (transactions-deleted db db-used project-eid)
-                              #{})
-              new-txs (transactions-changed db db-used project-eid)
-              _ (debug "changed-transaction-eids: " new-txs)]
-          (if (and (empty? removed-txs)
-                   (empty? new-txs))
-            (do (swap! txs-by-project assoc-in [project-eid :db-used] db)
-                txs)
-            (let [user-uuid (:user/uuid current-user)
-                  tx-entities (d/pull-many db query new-txs)
-                  new-with-convs (p/transactions-with-conversions db user-uuid tx-entities)
+    (seq
+      (when (and project-eid current-user)
+        (if (identical? db db-used)
+          txs
+          (let [;; Transactions that have been deleted:
+                removed-txs (or (transactions-deleted db db-used project-eid)
+                                #{})
+                new-txs (transactions-changed db db-used project-eid)
+                _ (debug "changed-transaction-eids: " new-txs)]
+            (if (and (empty? removed-txs)
+                     (empty? new-txs))
+              (do (swap! txs-by-project assoc-in [project-eid :db-used] db)
+                  txs)
+              (let [user-uuid (:user/uuid current-user)
+                    tx-entities (d/pull-many db query new-txs)
+                    new-with-convs (p/transactions-with-conversions db user-uuid tx-entities)
 
-                  ;; Old txs may have gotten new conversions, get them.
-                  old-convs (p/transaction-conversions db user-uuid txs)
+                    ;; Old txs may have gotten new conversions, get them.
+                    old-convs (p/transaction-conversions db user-uuid txs)
 
-                  new-and-old (cond-> (or txs (sorted-txs-set))
-                                      (seq removed-txs)
-                                      (#(apply disj % (map (fn [id] (d/entity db id)) removed-txs)))
-                                      ;; Make space for the new ones.
-                                      (seq new-with-convs)
-                                      (#(apply disj % new-with-convs))
-                                      ;; When there are new ones, we may have created
-                                      ;; optimistic ones. Remove them.
-                                      (seq new-with-convs)
-                                      (#(apply disj %
-                                               (filter (fn [{:keys [db/id transaction/uuid]}]
-                                                         (empty?
-                                                           (d/datoms db :eavt id :transaction/uuid uuid)))
-                                                       %)))
-                                      (seq old-convs)
-                                      (->> (into (sorted-txs-set)
-                                                 (map (assoc-conversion-xf old-convs))))
-                                      :always
-                                      (into new-with-convs))]
-              (swap! txs-by-project assoc project-eid {:db-used db :txs new-and-old})
-              new-and-old)))))))
+                    new-and-old (cond-> (or txs (sorted-txs-set))
+                                        (seq removed-txs)
+                                        (#(apply disj % (map (fn [id] (d/entity db id)) removed-txs)))
+                                        ;; Make space for the new ones.
+                                        (seq new-with-convs)
+                                        (#(apply disj % new-with-convs))
+                                        ;; When there are new ones, we may have created
+                                        ;; optimistic ones. Remove them.
+                                        (seq new-with-convs)
+                                        (#(apply disj %
+                                                 (filter (fn [{:keys [db/id transaction/uuid]}]
+                                                           (empty?
+                                                             (d/datoms db :eavt id :transaction/uuid uuid)))
+                                                         %)))
+                                        (seq old-convs)
+                                        (->> (into (sorted-txs-set)
+                                                   (map (assoc-conversion-xf old-convs))))
+                                        :always
+                                        (into new-with-convs))]
+                (swap! txs-by-project assoc project-eid {:db-used db :txs new-and-old})
+                new-and-old))))))))
 
 (defn active-project-eid [db]
   (or (:ui.component.project/eid (d/entity db [:ui/component :ui.component/project]))

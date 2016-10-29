@@ -5,7 +5,7 @@
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[cljsjs/react "15.3.1-0"]
                  [cljsjs/react-dom "15.3.1-0"]
-                 [org.clojars.petterik/om "1.0.0-alpha47-SNAPSHOT"]
+                 [org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
                  [clj-http "3.3.0"]
                  [clj-time "0.11.0"]
@@ -48,7 +48,7 @@
 
                  ;; CLJS
                  [com.cognitect/transit-cljs "0.8.239"]
-                 [org.clojure/clojurescript "1.9.229"
+                 [org.clojure/clojurescript "1.9.293"
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
@@ -176,7 +176,7 @@
                         :prep-tasks ["compile" "prod-build-web"]}
 
              :mobile   {:dependencies 
-                                      [[org.clojars.petterik/om "1.0.0-alpha47-SNAPSHOT"
+                                      [[org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
                                     ;; [[org.omcljs/om "1.0.0-alpha46"
                                     ;;   :exclusions [cljsjs/react cljsjs/react-dom]]
@@ -200,7 +200,7 @@
                                                                 :optimizations :none}}]}}
 
              :mob-prod {:dependencies 
-                                      [[org.clojars.petterik/om "1.0.0-alpha47-SNAPSHOT"
+                                      [[org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]]
                                     ;; [[org.omcljs/om "1.0.0-alpha46"
                                     ;;   :exclusions [cljsjs/react cljsjs/react-dom]]]

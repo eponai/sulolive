@@ -57,3 +57,10 @@
                                                      (.toLowerCase filter-str)) options))))})))))
 
 (def ->SelectTags (om/factory SelectTags))
+
+(defn tags->options [all-tags]
+  (->> all-tags
+       (map (fn [t]
+              {:label (:tag/name t)
+               :value (:db/id t)}))
+       (clj->js)))
