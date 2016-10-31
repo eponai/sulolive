@@ -312,8 +312,7 @@
                     component-name (.. c -constructor -displayName)]
                 (when (< 16 dt)
                   (warn component-name " query took " dt " msecs"
-                        " path: " path
-                        " props: " ui))))
+                        " path: " path))))
             ui))))))
 
 (defn debug-ui->props-fn

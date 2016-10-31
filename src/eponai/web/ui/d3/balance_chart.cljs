@@ -186,11 +186,11 @@
     (let [{:keys [svg x-scale y-scale margin graph area line balance-visible? spent-visible?]} (om/get-state this)
           {:keys [report id]} (om/props this)
           {:keys [data-points x-domain y-domain]} report
-          _ (debug "Balance chart values: " data-points)
+          ;_ (debug "Balance chart values: " data-points)
           js-values (into-array data-points)
           ;[min-y max-y] (.value-range this data-points)
           ;_ (debug "min: " min-y " max " max-y)
-          _ (debug "Balance Report: " report)
+          ;_ (debug "Balance Report: " report)
 
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})

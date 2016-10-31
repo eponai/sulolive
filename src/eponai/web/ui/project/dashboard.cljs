@@ -24,11 +24,9 @@
   (render [this]
     (let [{:keys [query/transactions proxy/quick-add-transaction]} (om/props this)
           {:keys [project]} (om/get-computed this)
-          _ (debug "Transactions dashboard: " transactions)
           {:keys [housing limit transport spent avg-daily-spent left-by-end budget]} (report/summary transactions)
           balance-report (report/balance-vs-spent transactions)
           ]
-      (debug "Balance: " balance-report)
       (html
         [:div#dashboard
          (at/->QuickAddTransaction (om/computed quick-add-transaction

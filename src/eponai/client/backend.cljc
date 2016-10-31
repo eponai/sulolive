@@ -409,7 +409,7 @@
                                                                      history-id
                                                                      is-remote-fn))]
                       (debug "Pending mutations for query: " query
-                             "queue: " mq))
+                             "queue: " (map #(dissoc % :db) mq)))
                   _ (merge-response! cb stable-db received history-id)
                   ;; app-state has now been changed and is the new stable db.
                   stable-db (d/db app-state)
