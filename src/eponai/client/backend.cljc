@@ -473,6 +473,7 @@
   {:pre [(map? remote->send)]}
   (let [query-chan (async/chan 10000)
         ;; Make leeb listen to the query-chan:
+        ;; TODO: Make it possible to exit the leeb go block (by closing query-chan?)
         _ (leeb reconciler-atom query-chan did-merge-fn)]
     (fn [queries cb]
      (run! (fn [[key query]]
