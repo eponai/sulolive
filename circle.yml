@@ -18,9 +18,11 @@ dependencies:
   pre:
     - pip install awscli
     - npm install -g npm
+    - npm install -g foundation-cli
   override:
     - lein deps
     - lein npm-deps
+    - lein css
 
 test:
   override:
