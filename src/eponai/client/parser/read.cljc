@@ -8,7 +8,7 @@
             [eponai.common.database.pull :as p]
             [eponai.common.prefixlist :as pl]
             [eponai.common.parser :refer [client-read]]
-            [eponai.common.parser.util :as parser.util :refer-macros [timeit]]
+            [eponai.common.parser.util :as parser.util #?(:clj :refer :cljs :refer-macros) [timeit]]
             [eponai.common.format :as f]
             [eponai.common.parser.util :as parser]
             [eponai.client.parser.message :as message]
@@ -151,6 +151,42 @@
       (assoc tx :transaction/conversion conv)
       tx)))
 
+(defn pull-many [db query eids]
+  (let [parse-query (memoize
+                      (fn [query]
+                        (let [{refs true others false} (group-by map? query)
+                              ref-attrs (into #{} (map ffirst) refs)
+                              ref-queries (into {} (map seq) refs)
+                              other-attrs (set others)
+                              ret {:ref-attrs   ref-attrs
+                                   :ref-queries ref-queries
+                                   :other-attrs other-attrs}]
+                          ret)))
+        cardinality-many? (memoize
+                            (fn [attr] (= :db.cardinality/many (get-in (:schema db) [attr :db/cardinality]))))
+        seen (atom {})
+        eid->map (fn self [query eid]
+                   (let [{:keys [ref-attrs ref-queries other-attrs]} (parse-query query)
+                         m (reduce (fn [m [_ a v]]
+                                     (let [v (cond
+                                               (contains? ref-attrs a)
+                                               (or (get @seen v)
+                                                   (self (get ref-queries a) v))
+                                               (contains? other-attrs a)
+                                               v
+                                               :else nil)]
+                                       (if (nil? v)
+                                         m
+                                         (if (cardinality-many? a)
+                                           (update m a (fnil conj []) v)
+                                           (assoc m a v)))))
+                                   {:db/id eid}
+                                   (d/datoms db :eavt eid))]
+                     (swap! seen assoc eid m)
+                     m))
+        ret (into [] (map #(eid->map query %)) eids)]
+    ret))
+
 (defn all-local-transactions-by-project [{:keys [parser db txs-by-project query] :as env} project-eid]
   (let [{:keys [db-used txs]} (get @txs-by-project project-eid)
         {:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
@@ -168,7 +204,7 @@
               (do (swap! txs-by-project assoc-in [project-eid :db-used] db)
                   txs)
               (let [user-uuid (:user/uuid current-user)
-                    tx-entities (d/pull-many db query new-txs)
+                    tx-entities (pull-many db query new-txs)
                     new-with-convs (p/transactions-with-conversions db user-uuid tx-entities)
 
                     ;; Old txs may have gotten new conversions, get them.
