@@ -69,7 +69,7 @@
           [:i
            {:class "fa fa-facebook fa-fw"}]
           "Continue with Facebook"]
-         [:h2.divider "or"]
+         [:p.divider "or"]
          ;[:h2 "Sign in with email"]
 
          [:div.input-section
