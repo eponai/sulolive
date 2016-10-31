@@ -339,7 +339,7 @@
               ;; (not that the current state of the app-state matters).
               {:new-stable-db  stable-db
                :mutation-queue mutation-queue}
-              (let [[head tail] (split-at 100 txs)]
+              (let [[head tail] (split-at 50 txs)]
                 (cb {:db     stable-db
                      :result {KEY-TO-RERENDER-UI {:just/transact head}}})
                 (let [new-stable-db (d/db app-state)
