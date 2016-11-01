@@ -13,7 +13,7 @@
     [garden.core :refer [css]]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]))
+    [taoensso.timbre :refer-macros [warn debug]]))
 
 (defn- delete-tag-fn [component tag]
   (om/update-state! component update-in [:input-transaction :transaction/tags] disj tag))
@@ -36,7 +36,7 @@
     (let [st (om/get-state this)
           update-category (fn [tx]
                                (let [{:keys [transaction/category]} tx]
-                                 (if (nil? (:category/name category))
+                                 (if (nil? (:label category))
                                    (dissoc tx :transaction/category)
                                    (update tx :transaction/category (fn [{:keys [label _]}]
                                                                       {:category/name label})))))
@@ -413,7 +413,7 @@
     (let [st (om/get-state this)
           update-category (fn [tx]
                             (let [{:keys [transaction/category]} tx]
-                              (if (nil? (:category/name category))
+                              (if (nil? (:label category))
                                 (dissoc tx :transaction/category)
                                 (update tx :transaction/category (fn [{:keys [label _]}]
                                                                    {:category/name label})))))
@@ -493,7 +493,7 @@
                                                           all-categories)
                                         :placeholder "Category..."
                                         :tab-index 0}
-                                       {:on-change #(do
+                                       {:on-select #(do
                                                      (debug "category event: " %)
                                                      (om/update-state! this assoc-in [:input-transaction :transaction/category] %))}))]
            [:li.attribute.tags
