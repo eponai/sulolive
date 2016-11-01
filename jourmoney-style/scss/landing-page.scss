@@ -270,6 +270,7 @@
 
 #nomadic-living {
   $background-url: "/lookandfeel/img/plane.jpg";
+  @include background-overlay(0.15, $background-url, bottom center);
   > .row {
     display: flex;
   }
