@@ -30,22 +30,26 @@
 
 (defn time-range [start & [end]]
   (let [month (c/from-long start)
-        end-date (if end (c/from-long end) (t/earliest (date/today) (date/last-day-of-month (t/month month))))]
+        end-date (if end (c/from-long end) (date/last-day-of-month (t/month month)))
+        ;end-date (if end (c/from-long end) (t/earliest (date/today) (date/last-day-of-month (t/month month))))
+        ]
     (map date/date->long (p/periodic-seq month (t/plus end-date (t/days 1)) (t/days 1)))))
 
-(defn avg-by-day [value]
-  (let [days (count (time-range (date/month->long (date/today))))]
+(defn last-day-of-today-and-transactions [txs]
+  (max (apply max (map #(get-in % [:transaction/date :date/timestamp]) txs)) (date/date->long (date/today))))
+
+(defn avg-by-day [value txs]
+  (let [days (count (time-range (date/first-day-of-this-month) (last-day-of-today-and-transactions txs)))]
     (when (pos? days) (/ value days))))
 
 (defn left-by-end-of-month [limit avg-spent]
-  (let [days-left (count (time-range (date/month->long (date/tomorrow)) (date/date->long (date/last-day-of-this-month))))]
-    (- limit (* (t/number-of-days-in-the-month (date/today)) avg-spent))))
+  (- limit (* (t/number-of-days-in-the-month (date/today)) avg-spent)))
 
-(defn summary-info [{:keys [limit spent housing transport daily-spent]}]
+(defn summary-info [{:keys [limit spent housing transport daily-spent]} txs]
   (let [budget (- limit housing transport)]
-    {:avg-daily-spent (avg-by-day daily-spent)
+    {:avg-daily-spent (avg-by-day daily-spent txs)
      :budget          budget
-     :left-by-end     (left-by-end-of-month limit (avg-by-day spent))}))
+     :left-by-end     (left-by-end-of-month limit (avg-by-day spent txs))}))
 
 (defn summary
   "Calculate how much has been spent on housing and transport, as well as what the current balance is relative to the user's income."
@@ -83,11 +87,11 @@
                                        {:housing 0 :transport 0 :spent 0 :limit 0}
                                        txs)]
                            (assoc res mo (merge month-res
-                                                (summary-info month-res)))))
+                                                (summary-info month-res txs)))))
                        {}
                        txs-by-month)
 
-        values (second (first res-by-month))]
+        values (get res-by-month (date/month->long (date/today)))]
     (debug "Report stuff: " values)
     values))
 
@@ -96,10 +100,9 @@
                          [0 10]
                          (= 1 (count values))
                          (let [value (first values)
-                               max-val (max (:balance value) (:spent value))]
-                           (if (neg? max-val)
-                             [max-val 0]
-                             [0 max-val]))
+                               max-val (max (:balance value) (:spent value))
+                               min-val (min (:balance value) (:spent value) 0)]
+                           [min-val max-val])
 
                          (< 1 (count values))
                          [(apply min (map #(min (:balance %) (:spent %)) values))
@@ -157,7 +160,8 @@
 
         this-month-timestamp (date/month->long (date/today))
         txs-this-month (get txs-by-month (date/month->long (date/first-day-of-this-month)))
-        report-this-month (let [time-span (time-range this-month-timestamp)
+        end-date (min (last-day-of-today-and-transactions txs-this-month) (date/date->long (date/last-day-of-this-month)))
+        report-this-month (let [time-span (time-range this-month-timestamp end-date)
                                 by-timestamp (group-by #(:date/timestamp (:transaction/date %)) txs-this-month)]
                                   ; Calculate spent vs balance for each month and assoc to a month timestamp in the resulting map.
                                   (reduce spent-balance

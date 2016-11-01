@@ -251,10 +251,13 @@
         i (bisect-date js-values x0 1)
         d0 (get js-values (dec i))
         d1 (get js-values i)]
-    (when (and d1 d0 f)
-      (let [index (if (> (- x0 (:date d0)) (- (:date d1) x0))
+    (cond (and d1 d0 f)
+          (let [index (if (> (- x0 (:date d0)) (- (:date d1) x0))
                       i (dec i))]
-        (f (get js-values index))))))
+            (f (get js-values index)))
+
+          (and d0 f)
+          (f d0))))
 
 ;; Responsive update helpers
 (defn window-resize [component]

@@ -9,7 +9,8 @@
     [om.next :as om :refer-macros [defui]]
     [goog.string :as gstring]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [error debug]]))
+    [taoensso.timbre :refer-macros [error debug]]
+    [eponai.common.format.date :as date]))
 
 (defui Dashboard
   static om/IQueryParams
@@ -33,7 +34,7 @@
                                                 {:project project}))
          [:div.row.align-center
           [:a.button.black.hollow.month
-           "September"
+           (date/date->string (date/today) "MMMM")
            ;[:i.fa.fa-caret-down.fa-fw]
            ]]
          [:div.content-section
@@ -54,7 +55,7 @@
             [:div.title-txt "Avg. Spent per day"]]
            [:div.column.key-metric
             [:div.val-txt (gstring/format "%.2f" (or left-by-end 0))]
-            [:div.title-txt "By Oct 31"]]]]
+            [:div.title-txt "By " (date/date->string (date/last-day-of-this-month) "MMM dd")]]]]
          [:div.content-section
 
 
