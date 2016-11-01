@@ -88,15 +88,6 @@
         ;                                                                       :selected-tab (:ui.component.project/selected-tab active-project)}))})))
         [:div
          [:div#project-content
-          (when utils/*playground?*
-            [:div.callout.small.primary.text-center
-             "Welcome to JourMoney playground, where you can check out the full app. "
-             [:strong
-              [:a
-               {:on-click #(om/update-state! this assoc :playground/show-subscribe-modal? true)}
-               "Sign up"]]
-             " to save your progress."])
-          (utils/subscribe-modal this)
           (if (some? (:ui.component.project/active-project active-project))
             (let [content (:ui.component.project/selected-tab active-project)
                   factory (-> content->component content :factory)
@@ -122,6 +113,15 @@
                 {:on-click #(om/update-state! this assoc :add-project? true)}
                 "create a new project"]
                "."]]])]
+         (when utils/*playground?*
+           [:div.callout.small.primary.text-center
+            "Welcome to JourMoney playground, where you can check out the full app. "
+            [:strong
+             [:a
+              {:on-click #(om/update-state! this assoc :playground/show-subscribe-modal? true)}
+              "Sign up"]]
+            " to save your progress."])
+         (utils/subscribe-modal this)
          (when add-project?
            (let [on-close #(om/update-state! this assoc :add-project? false)]
              (utils/modal {:content  (->NewProject (om/computed
