@@ -49,6 +49,19 @@ $callout-height: 2.7rem;
     }
     border-color: rgba($darkblue, 0.1);
   }
+
+  #subscribe {
+    .subscribe-input {
+      display: flex;
+      a.button {
+        flex: 1;
+        margin-left: 1rem; 
+      }
+    }
+    a.mail-link {
+      color: $orange;
+    }
+  }
 }
 
 @import "dashboard";

@@ -244,7 +244,12 @@
 @mixin background-overlay(
   $opacity: 0.5, 
   $url: "", 
+<<<<<<< e2e434e2a192cb34eb51e35485a94bd67a99ce79
   $position: center center) {
+=======
+  $position: center center,
+  $child-display: block) {
+>>>>>>> Subscribe modal styling.
   position: relative;
   &:before {
     content: "";
