@@ -283,4 +283,4 @@
                                   :merge   (merge/merge! web.merge/web-merge)
                                   :migrate nil})]
    (reset! utils/reconciler-atom reconciler)
-   (om/add-root! reconciler Signup (gdom/getElement "my-signup"))))
+   (om/add-root! reconciler Signup (gdom/getElement "jm-signup"))))

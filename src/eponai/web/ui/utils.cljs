@@ -9,6 +9,7 @@
             [taoensso.timbre :refer-macros [debug warn error]]
             [eponai.common.format :as format]
             [eponai.web.routes :as routes]
+            [goog.format.EmailAddress]
             [clojure.string :as string]
             [clojure.data :as diff]))
 
@@ -191,6 +192,36 @@
 (defn on-change [c k]
   {:pre [(keyword? k)]}
   (on-change-in c [k]))
+
+(defn subscribe-modal [component]
+  (when (:playground/show-subscribe-modal? (om/get-state component))
+    (modal {:on-close #(om/update-state! component assoc :playground/show-subscribe-modal? false)
+            :content  (html
+                        [:div.subscribe-modal
+                         [:h4 "Coming soon"]
+                         [:p "We're working hard to make this available to you as soon as possible. In the meantime, subscribe to our newsletter to be notified when we launch."]
+                         [:div.subscribe-input
+                          [:input
+                           (opts {:value       (or (:playground/modal-input (om/get-state component)) "")
+                                  :type        "email"
+                                  :placeholder "youremail@example.com"
+                                  :on-change   #(om/update-state! component assoc :playground/modal-input (.. % -target -value))
+                                  :on-key-down #(on-enter-down % (fn [text]
+                                                                   (when (goog.format.EmailAddress/isValidAddress text)
+                                                                     (om/update-state! component assoc
+                                                                                       :playground/modal-input ""
+                                                                                       :playground/show-subscribe-modal? false)
+                                                                     (om/transact! component `[(playground/subscribe ~{:email text})]))))})]
+                          [:a.button.warning
+                           {:on-click (fn []
+                                        (let [text (:playground/modal-input (om/get-state component))]
+                                          (when (goog.format.EmailAddress/isValidAddress text)
+                                            (om/update-state! component assoc
+                                                              :playground/modal-input ""
+                                                              :playground/show-subscribe-modal? false)
+                                            (om/transact! component `[(playground/subscribe ~{:email text})]))))}
+                           "Subscribe"]]
+                         [:small "Got feedback? We'd love to hear it! Shoot us an email at " [:a.mail-link "info@jourmoney.com"] " and let us know what you'd like to see in the product."]])})))
 
 ;;############## Drag-drop transactions #############
 

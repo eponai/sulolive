@@ -13,6 +13,8 @@
             [eponai.common.parser.util :as parser]
             [eponai.client.parser.message :as message]
             [eponai.client.lib.transactions :as lib.transactions]
+            #?(:cljs
+               [eponai.web.ui.utils :as web-utils])
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug error trace warn]]
             [clojure.data :as diff]))
 
@@ -291,7 +293,7 @@
 (defmethod client-read :query/stripe
   [{:keys [db query parser target] :as env} _ _]
   (if target
-    {:remote true}
+    {:remote #?(:cljs (false? web-utils/*playground?*) :clj true)}
     (let [{:keys [query/current-user]} (parser env `[{:query/current-user [:db/id]}])
           stripe (when (:db/id current-user)
                    (p/all-with db {:where [['?e :stripe/user (:db/id current-user)]]}))]

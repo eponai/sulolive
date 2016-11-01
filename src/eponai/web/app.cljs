@@ -27,7 +27,7 @@
   [reconciler]
   (let [history (history/init-history reconciler)]
     (binding [parser/*parser-allow-remote* false]
-      (om/add-root! reconciler root/App (gdom/getElement "my-app")))
+      (om/add-root! reconciler root/App (gdom/getElement "jm-app")))
     (history/start! history)))
 
 (defn initialize-app [conn & [reconciler-opts]]
