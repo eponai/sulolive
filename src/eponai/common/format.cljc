@@ -360,8 +360,9 @@
          (= (:db/id old) (:db/id new))
          (or (number? created-at)
              (= ::dbfn/client-edit created-at))]}
-  (let [diff (mapv conform-fn (diff/diff old new))
-        edits-by-attr (->> (take 2 diff)
+  (let [edits-by-attr (->> (diff/diff old new)
+                           (take 2)
+                           (mapv conform-fn)
                            (zipmap [:old-by-attr :new-by-attr])
                            (mapcat (fn [[id m]]
                                      (map #(hash-map :id id :kv %) m)))
