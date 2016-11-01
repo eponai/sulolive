@@ -2,6 +2,7 @@
   (:require
     [eponai.web.ui.navigation :as nav]
     [eponai.web.routes.ui-handlers :as routes]
+    [eponai.web.ui.utils :as utils]
     [medley.core :as medley]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
@@ -32,7 +33,7 @@
                       routes/route-key->root-handler
                       :factory)]
       (html
-        [:div#jourmoney-ui
+        [:div#jm-ui
          [:div#nav-container
           (nav/->NavbarMenu nav-bar)
           (nav/->NavbarSubmenu (om/computed (assoc nav-bar-submenu :ref :nav-bar-submenu)

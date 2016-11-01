@@ -160,7 +160,7 @@
          [:div.top-bar
 
           [:div.top-bar-left
-           [:a#navbar-brand "Jourmoney"]]
+           [:a.navbar-brand "Jourmoney"]]
 
           ; Username with user settings menu and sign ut
           [:div.top-bar-right
