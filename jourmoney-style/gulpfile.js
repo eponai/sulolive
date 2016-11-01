@@ -16,7 +16,7 @@ gulp.task('sass', function() {
     .pipe($.autoprefixer({
       browsers: ['last 2 versions', 'ie >= 9']
     }))
-    .pipe(gulp.dest('../resources/public/lookandfeel/jourmoney-style/css'));
+    .pipe(gulp.dest('../resources/public/assets/css'));
 });
 
 gulp.task('default', ['sass'], function() {

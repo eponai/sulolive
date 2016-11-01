@@ -205,7 +205,15 @@
           (domain (clj->js x-domain)))
       (.. y-scale
           (range #js [inner-height 0])
-          (domain (clj->js y-domain)))
+          (domain (cond (and balance-visible? spent-visible?)
+                        (clj->js y-domain)
+                        balance-visible?
+                        (let [min-balance (apply min (map #(:balance %) data-points))]
+                          (if (neg? min-balance)
+                            (.. js/d3 (extent js-values (fn [d] (:balance d))))
+                            #js [0 (.. js/d3 (max js-values (fn [d] (:balance d))))]))
+                        spent-visible?
+                        #js [0 (.. js/d3 (max js-values (fn [d] (:spent d))))])))
 
       (.. graph-area
           enter

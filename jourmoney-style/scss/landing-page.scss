@@ -244,12 +244,7 @@
 @mixin background-overlay(
   $opacity: 0.5, 
   $url: "", 
-<<<<<<< e2e434e2a192cb34eb51e35485a94bd67a99ce79
   $position: center center) {
-=======
-  $position: center center,
-  $child-display: block) {
->>>>>>> Subscribe modal styling.
   position: relative;
   &:before {
     content: "";
@@ -263,22 +258,11 @@
     background-size: cover;
     background-position: $position; 
   }
-  > * {
-    display: block;
-    position: relative;
-  }
-}
-
-#header {
-  $background-url: "/lookandfeel/img/sea.jpg";
 }
 
 #nomadic-living {
-  $background-url: "/lookandfeel/img/plane.jpg";
+  $background-url: "/assets/img/plane.jpg";
   @include background-overlay(0.15, $background-url, bottom center);
-  > .row {
-    display: flex;
-  }
 }
 
 .content-section {
