@@ -191,7 +191,7 @@
           ;[min-y max-y] (.value-range this data-points)
           ;_ (debug "min: " min-y " max " max-y)
           ;_ (debug "Balance Report: " report)
-          _ (debug "js-values: " js-values)
+          ;_ (debug "js-values: " js-values)
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
           graph-area (.. graph

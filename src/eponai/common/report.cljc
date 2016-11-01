@@ -92,7 +92,6 @@
                        txs-by-month)
 
         values (get res-by-month (date/month->long (date/today)))]
-    (debug "Report stuff: " values)
     values))
 
 (defn value-range [values]
