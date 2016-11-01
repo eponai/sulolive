@@ -103,11 +103,12 @@
               {:href (when project-id
                        (routes/key->route :route/project->txs {:route-param/project-id project-id}))}
               (icon/menu-list (= selected-tab :transactions))]
-             [:a
-              {:href (when project-id
-                       (routes/key->route :route/project->settings
-                                          {:route-param/project-id project-id}))}
-              (icon/menu-settings (= selected-tab :settings))]]]]]
+             (when-not utils/*playground?*
+               [:a
+               {:href (when project-id
+                        (routes/key->route :route/project->settings
+                                           {:route-param/project-id project-id}))}
+               (icon/menu-settings (= selected-tab :settings))])]]]]
 
          (when add-transaction?
            (utils/modal {:content  (->AddTransaction
