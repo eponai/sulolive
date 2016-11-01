@@ -38,7 +38,16 @@
           (nav/->NavbarMenu nav-bar)
           (nav/->NavbarSubmenu (om/computed (assoc nav-bar-submenu :ref :nav-bar-submenu)
                                             {:content-factory factory
-                                             :app-content     app-root}))]
+                                             :app-content     app-root}))
+          (when utils/*playground?*
+            [:div.callout.small.primary.text-center
+             "Welcome to the playground, where you can check out the full app. "
+             [:strong
+              [:a
+               {:on-click #(om/update-state! this assoc :playground/show-subscribe-modal? true)}
+               "Sign up"]]
+             " to save your progress."])
+          (utils/subscribe-modal this)]
          [:div#page-content
           {:ref (str ::page-content-ref)}
           (when factory
