@@ -255,6 +255,9 @@
                        :values (apply concat (mapv :guide data))}]]
       (d3/update-chart-data this chart-data)))
 
+  (componentWillUnmount [this]
+    (d3/unmount-chart this))
+
   (render [this]
     (let [{:keys [id]} (om/props this)]
       (html

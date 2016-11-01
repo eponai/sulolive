@@ -264,8 +264,11 @@
     (om/update-state! component assoc
                       :resize-timer
                       (js/setTimeout (fn []
-                                       (.update component)
-                                       (om/update-state! component dissoc :resize-timer))
+                                       (let [will-unmount-called? (true? (.-_calledComponentWillUnmount component))]
+                                         (when-not will-unmount-called?
+                                           (debug "unmount had been called. Will not update component " component)
+                                           (.update component)
+                                           (om/update-state! component dissoc :resize-timer))))
                                      50))))
 
 (defn update-on-resize
@@ -273,6 +276,16 @@
   (.. js/d3
       (select js/window)
       (on (str "resize." el-id) #(window-resize component))))
+
+(defn remove-resize-listener [component el-id]
+  (.. js/d3
+      (select js/window)
+      (on (str "resize." el-id) nil)))
+
+(defn unmount-chart [component]
+  (let [{:keys [id]} (om/props component)]
+    (assert (some? id) (str "Component did not have :id in props. Component: " component))
+    (remove-resize-listener component id)))
 
 (defn create-chart [component]
   (.create component))

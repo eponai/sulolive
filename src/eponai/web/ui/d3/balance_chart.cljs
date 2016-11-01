@@ -325,6 +325,9 @@
     (if (not= new-props (om/props this))
       (.update this)))
 
+  (componentWillUnmount [this]
+    (d3/unmount-chart this))
+
   (initLocalState [_]
     {:margin {:top 20 :left 100 :bottom 30 :right 20}
      :balance-visible? true

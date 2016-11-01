@@ -135,6 +135,9 @@
       (if (not= new-props (om/props this))
         (om/update-state! this assoc :start-angle new-start-angle))))
 
+  (componentWillUnmount [this]
+    (d3/unmount-chart this))
+
   (initLocalState [_]
     {:start-angle 0})
 

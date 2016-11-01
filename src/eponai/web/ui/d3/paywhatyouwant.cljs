@@ -100,6 +100,9 @@
   (componentDidUpdate [this _ _]
     (.update this))
 
+  (componentWillUnmount [this]
+    (d3/unmount-chart this))
+
   (render [_]
     (html
       [:div.paywhatyouwant

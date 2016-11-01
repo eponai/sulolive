@@ -48,6 +48,10 @@
                                           (interpolate (.-textContent jthis) d))]
                                 (fn [t]
                                   (set! (.-textContent jthis) (gstring/format "%.2f" (i t))))))))))))
+
+  (componentWillUnmount [this]
+    (d3/unmount-chart this))
+
   (render [this]
     (let [{:keys [id]} (om/props this)]
       (html

@@ -184,6 +184,9 @@
   (componentWillReceiveProps [this next-props]
     (d3/update-chart-data this (:data next-props)))
 
+  (componentWillUnmount [this]
+    (d3/unmount-chart this))
+
   (render [this]
     (let [{:keys [id]} (om/props this)]
       (html
