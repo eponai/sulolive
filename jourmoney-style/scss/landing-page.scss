@@ -4,7 +4,6 @@
     @if $expanded {
       @include button-expand;
     } 
-    font-weight: bold;
     margin: 0;
     &:not(.hollow) {
       @each $name, $color in $foundation-palette {
