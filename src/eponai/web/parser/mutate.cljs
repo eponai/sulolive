@@ -110,6 +110,8 @@
              (go
                ;; TODO: Turn this into a remote mutation instead!
                (let [ret (<! (http/post homeless/email-endpoint-subscribe {:form-params {:email email}}))]
-                 (om/merge! reconciler {:result {k ret :routing/app-root {}}}))))})
+                 (om/merge! reconciler {:db (d/db (om/app-state reconciler))
+                                        :history-id "THIS IS HOPEFULLY NEVER USED :D"
+                                        :result {k ret :routing/app-root {}}}))))})
 
 
