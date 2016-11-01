@@ -1,0 +1,171 @@
+
+@import "d3";
+
+#dashboard {
+  .month {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 500
+  }
+
+  // Section on the dashboard with title, and graphs
+  .content-section {
+    padding: 2.5rem 0;
+    margin-bottom: 0.5rem;
+    border: 1px solid $secondary-color;
+
+    .section-title {
+      display: flex;
+      flex-direction: row;
+      margin-bottom: 0.25rem;
+      > * {
+        margin-right: 1.5rem;
+        text-transform: uppercase;
+        font-weight: bold;
+        color: $darkblue-a50;
+      }
+    }
+  }
+  .dashboard-icon {
+    height: 24px;
+    width: 24px;
+  }
+}
+
+// SVG elements in general
+svg {
+  width: 100%;
+  height: 100%;
+}
+
+.graph-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  .graph {
+    flex: 1;
+  }
+}
+
+// Axis styles on all graphs
+.axis {
+  path, line {
+    stroke: $darkblue-a50;
+  }
+  text {
+    fill: $darkblue-a50;
+    font-size: 0.9rem;
+  }
+}
+
+
+// Balance vs Spent grapch with gradient area and a line.
+#balance-spent {
+  height: 18rem;
+
+  linearGradient {
+    .stop-top {
+      stop-color: #B4EAE5;
+    }
+    .stop-bottom {
+      stop-color: #EAF9F8;
+    }
+  }
+
+  .area {
+    fill: url(#balance-chart-gradient);
+    filter: url(#inset-shadow);
+  }
+  .line {
+    fill: none;
+    stroke: $orange;
+    stroke-width: 3;
+    filter: url(#drop-shadow);
+    min-height: 3px;
+  }
+
+  .legend {
+    float: right;
+
+    a {
+      margin-right: 1.2rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: $darkblue-a25;
+      padding: 0.1rem;
+      #legend-balance {
+        @include balance-indicator(false);
+      }
+      #legend-spent  {
+        @include spent-indicator(false);
+       }
+      &.visible {
+        color: $darkblue-a50;
+        #legend-balance {
+          @include balance-indicator(true);
+        }
+        #legend-spent {
+          @include spent-indicator(true);
+        }
+      }
+    }
+  }
+}
+
+#key-metrics {
+  display: flex;
+  flex-direction: row;
+  max-width: 50rem;
+  margin: 1.5rem auto;
+
+  .key-metric {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+// Pie chart horizontal summary on dashboard.
+#pie-charts {
+  height: 10rem;
+
+  display: flex;
+  flex-direction: row;
+
+// Use blue color on the balance chart.
+  #budget-pie-chart {
+    .background {
+      fill: $light-blue-a15;
+    }
+    .foreground {
+      fill: $light-blue;
+    }
+  }
+}
+
+
+// Single pie chart style
+.pie {
+  .background {
+    fill: $orange-a15;
+  }
+  .foreground {
+    fill: $orange;
+  }
+}
+
+.title-txt {
+  text-transform: uppercase;
+  fill: $darkblue-a50;
+  color: $darkblue-a50;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.val-txt {
+  font-weight: 200;
+  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
+}

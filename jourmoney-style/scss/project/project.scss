@@ -1,0 +1,55 @@
+#project-content {
+  .content-section {
+    padding: 2.5rem 0;
+    margin: 0;
+    margin-bottom: 0.5rem;
+    border: 1px solid $secondary-color;
+
+    .section-title {
+      display: flex;
+      flex-direction: row;
+      margin-bottom: 2.5rem;
+      > * {
+        margin-right: 1.5rem;
+        text-transform: uppercase;
+        font-weight: bold;
+        color: $darkblue-a50;
+      }
+    }
+  }
+}
+
+#add-transaction {
+  .daterangepicker {
+    margin-top: -1rem;
+  }
+}
+
+$callout-height: 2.7rem;
+.jm-playground {
+  #page-content{
+    margin-top: $topnav-height + $subnav-height + $callout-height;
+  }
+  .callout {
+    margin-bottom: 0;
+    height: $callout-height;
+    position:fixed;
+    top: $topnav-height + $subnav-height;
+    left:0;
+    right:0;
+    z-index: $callout-zindex;
+    a {
+      color: $orange;
+      &.navbar-brand {
+        color: $darkblue;
+        padding: 0 1rem;
+        // position: absolute;
+        // left: 0;
+      }
+    }
+    border-color: rgba($darkblue, 0.1);
+  }
+}
+
+@import "dashboard";
+@import "all-transactions";

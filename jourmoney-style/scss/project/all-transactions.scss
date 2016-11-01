@@ -1,0 +1,232 @@
+$edit-transaction-form-width: 25em;
+$row-padding: 0.5rem;
+$row-border: 1px solid $darkblue-a10;
+
+@mixin row-style {
+  .date {
+    @include flex-grid-column(1);
+  }
+  .amount { 
+    @include flex-grid-column(1);
+  }
+  .currency {
+    @include flex-grid-column(1);
+  }
+  .category {
+    @include flex-grid-column(2);
+  }
+  .local-amount {
+    @include flex-grid-column(2);
+  }
+  .note {
+    @include flex-grid-column(2);
+  }
+  .tags {
+    @include flex-grid-column(3);
+  }
+}
+
+@mixin transaction-disabled {
+  border: $row-border;
+  border-top: 1px solid transparent;
+
+  input {
+    border: 1px solid transparent;
+    box-shadow: none;
+  }
+  .Select {
+    @include select-disabled;
+  }
+}
+
+@mixin transaction {
+  @include row-style;
+  background: $white;
+  padding: $row-padding;
+  &:not(:hover):not(.is-selected) {
+    @include transaction-disabled;
+  }
+
+  &:hover {
+    color: $darkblue-a50;
+    background: $hover-bg;
+    border: $hover-border;
+  }
+  &.is-selected {
+    background: $selected-bg;
+    border: $selected-border;
+  }
+  input {
+    transition: none;
+  }
+
+  input,
+  .Select {
+    margin: 0;
+    color: $darkblue-a50;
+  }
+  .currency .Select {
+    font-size: 0.8rem;
+    font-weight: 500;
+    .Select-value-label {
+      color: $darkblue-a50;
+    }
+  }
+  .category .Select .Select-value-label {
+    font-weight: 500;
+    color: $darkblue-a50;
+  }
+
+  .Select.Select--multi .Select-arrow {
+    display:  none;
+  }
+  .amount {
+    span,strong {
+      font-size: 1.1rem;
+      font-weight: 500;
+      &.expense {
+        color: $alert-color;
+      }
+      &.income {
+        color: $success-color;
+      }
+    }
+  }
+}
+
+.quick-add-container {
+  // padding: 1rem 0;
+  border: 1px solid $darkblue-a10;
+  box-shadow: none;
+  input {
+    border: 1px solid transparent;
+    margin: 0;
+    &:focus {
+      // border: 1p;
+      &:placeholder {
+        color: transparent;
+      }
+    }
+  }
+  .Select {
+    margin: 0;
+    .Select-control {
+      border: 1px solid transparent;
+    }
+    .Select-input:focus {
+      box-shadow: $input-shadow-focus;
+    }
+
+    &.is-focused:not(.is-open) {
+      .Select-control{
+        border: $input-border-focus;
+      }
+    }
+  }
+  .quick-add {
+      position: relative;
+  }
+  .quick-add-input-section {
+    border: 1px solid transparent;
+    border-radius: $global-radius;
+    // padding: 0.1rem;
+    display: flex;
+    flex-direction: row;
+    // transform: scale(0.5,1);
+    // align-items: center;
+    .relative {
+      position: relative;
+    }
+
+    .attribute {
+      transition: opacity 0.25s ease-in;//, flex 0.25s ease-in-out;
+      // margin: 0 0.5rem;
+    }
+    .attribute {
+      flex: 1 0 auto;
+      &.note {
+        flex: 1;
+      }
+      &:not(.note) {
+        flex: 0.0001;
+        opacity: 0;
+        max-width: 0;
+        &.tags {
+          display: none;
+        }
+      }
+    }
+    &.is-open {
+      border: 1px solid $darkblue-a10;
+      .attribute {
+        flex: 1;
+        opacity: 1;
+        max-width: 100%;
+        &.tags {
+          display: flex;
+        }
+      }
+    }
+  }
+  .actions {
+      // padding: 0.5rem;
+      display: flex;
+      position:absolute;
+      opacity: 0;
+      transition: opacity 0.25s ease-in;
+      &.show {
+        opacity: 1;
+      }
+      left: 100%;
+      top: 25%;
+      a {
+        line-height: 1;
+        margin-right: 1rem;
+        color: rgba($darkblue, 0.5);
+      }
+      .close-button {
+        // position: relative;
+        // top: auto;
+        // right: auto;
+      }
+    }
+}
+
+
+/* Transaction list styles */
+.transactions-container {
+  width: 100%;
+  -webkit-box-shadow: 0 3px 9px $darkblue-a10;
+  box-shadow: 0 3px 9px $darkblue-a10;
+
+  .transactions-header {
+    @include row-style
+    padding: $row-padding;
+    border: $row-border; 
+    color: $darkblue-a50;
+    font-weight: bold;
+    letter-spacing: 1px;
+    background: $lightblue-a5;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    box-shadow: 0 1px 3px $darkblue-a10;
+    margin-bottom: 3px;
+  }
+
+  .transactions-list {
+    width: 100%;
+    margin: 0;
+
+    li {
+      @include transaction;
+    }
+  }
+}
+
+/* Transaction filter styles */
+.transaction-filters {
+  padding-bottom: 0;
+  .daterange {
+    margin-bottom: 0;
+  }
+}

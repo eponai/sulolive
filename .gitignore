@@ -81,3 +81,5 @@ local.properties
 /target/
 /env/dev/
 
+# Generated css
+/resources/public/lookandfeel/jourmoney-style/css/

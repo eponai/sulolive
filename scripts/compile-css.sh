@@ -1,7 +1,7 @@
 #!/bin/bash -eu
 
 script_dir=$(dirname $0)
-foundation_dir="$script_dir/../resources/public/lookandfeel/jourmoney-style"
+foundation_dir="$script_dir/../jourmoney-style"
 
 foundation_install=$(which foundation)
 exit_code=$?

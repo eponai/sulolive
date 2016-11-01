@@ -1,0 +1,93 @@
+#settings {
+	.facebook-user {
+		font-weight: 500;
+	}
+	.button {
+		transition-property: background;
+		margin: 0 0.25rem;
+	}
+	a {
+		small {
+			color: $darkblue-a50;
+		}
+		&:hover {
+			small {
+				color: $orange;
+			}
+		}
+	}
+	.link {
+		margin: 0;
+	}
+
+	.general {
+		.row.email {
+			margin: 0 0 1rem;
+		}
+	}
+	.avatar {
+		height: 40px;
+		width: 40px;
+		margin: 0 1rem;
+		border-radius: $global-radius;
+	}
+	input {
+		margin: 0;
+	}
+
+	small {
+		// color: $darkblue-a50;
+		a {
+			color: $orange;
+		}
+	}
+	#paywhatyouwant {
+		small a {
+			margin: 0;
+		}
+	}
+	#payment {
+
+		a {
+			margin: 0 0.25rem;
+		}
+
+		.update-buttons {
+			margin-top: 1rem;
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+		}
+	}
+}
+
+.paywhatyouwant {
+	padding: 0 1rem;
+	width: 100%;
+	.slider .slider-handle {
+		transform: translateY(-50%) translateX(-50%);
+		transition: none;
+	}
+	.circum  {
+  		fill: $white;
+  		stroke: $darkblue-a10;
+  		stroke-width: 5px;
+	}
+	.dot circle {
+		 fill: $orange;
+	}
+	.dot circle:hover {
+ 		 cursor: pointer;
+ 		 fill: darken($orange, 10%);
+	}
+
+// .dot circle {
+//   fill: lightsteelblue;
+//   stroke: steelblue;
+//   stroke-width: 1.5px;
+// }
+
+	.dot circle.dragging {
+  		fill: $orange;
+	}
+}
