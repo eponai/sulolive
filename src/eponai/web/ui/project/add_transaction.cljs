@@ -36,7 +36,7 @@
     (let [st (om/get-state this)
           update-category (fn [tx]
                                (let [{:keys [transaction/category]} tx]
-                                 (if (nil? category)
+                                 (if (nil? (:category/name category))
                                    (dissoc tx :transaction/category)
                                    (update tx :transaction/category (fn [{:keys [label _]}]
                                                                       {:category/name label})))))
@@ -67,19 +67,22 @@
                            ;                       :value (:db/id category-entity)}
                            :transaction/project  project-id
                            :transaction/type     :transaction.type/expense}
-       :type              :expense}))
+       :type              :expense
+       :computed/date-range-picker-on-apply #(om/update-state! this assoc-in [:input-transaction :transaction/date] %)}))
   (componentDidUpdate [this _ _]
-  (when-let [history-id (:pending-transaction (om/get-state this))]
-    (let [{:keys [query/message-fn]} (om/props this)
-          {:keys [on-close]} (om/get-computed this)
-          message (message-fn history-id 'transaction/create)]
-      (when message
-        (js/alert (message/message message))
-        (when on-close
-          (on-close))))))
+    (when-let [history-id (:pending-transaction (om/get-state this))]
+      (let [{:keys [query/message-fn]} (om/props this)
+            {:keys [on-close]} (om/get-computed this)
+            message (message-fn history-id 'transaction/create)]
+        (comment
+          "Here's something we could do with the message if we want"
+          " it to be syncronous."
+          (when message
+            (when on-close
+              (on-close)))))))
 
   (render [this]
-    (let [{:keys [type input-transaction]} (om/get-state this)
+    (let [{:keys [type input-transaction computed/date-range-picker-on-apply]} (om/get-state this)
           {:keys [transaction/date transaction/currency transaction/category]} input-transaction
           {:keys [query/all-currencies
                   query/all-tags
@@ -128,7 +131,7 @@
             [:div.columns.small-4.end
              (->DateRangePicker (om/computed {:single-calendar? true
                                               :start-date       (date/date-time date)}
-                                             {:on-apply #(om/update-state! this assoc-in [:input-transaction :transaction/date] %)
+                                             {:on-apply date-range-picker-on-apply
                                               :format   "MMM dd"}))]]
 
            [:div.row
@@ -159,11 +162,7 @@
                                                        all-categories)
                                          :value   category
                                          :clearable true}
-                                        {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/category] %)}))
-             [:input
-
-              {:type "text"
-               :on-change #(om/update-state! this assoc-in [:input-transaction :transaction/category :category/name] (.. % -target -value))}]]]
+                                        {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/category] %)}))]]
 
            [:div.row
             [:div.columns.small-3.text-right
@@ -174,19 +173,22 @@
                                                               :value id})
                                                            all-tags)
                                              :value   (:transaction/tags input-transaction)}
-                                            {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/tags] %)}))
-             ]]
+                                            {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/tags] %)}))]]
 
            [:div.row
             [:div.columns.small-3.text-right
              [:label "Note:"]]
             [:div.columns.small-9
              [:textarea
-              {:type "text"}]]]]
+              {:type      "text"
+               :value     (:transaction/title input-transaction "")
+               :on-change #(om/update-state! this assoc-in [:input-transaction :transaction/title] (.. % -target -value))}]]]]
 
           [:div.content-section.clearfix
            [:a.button.hollow.float-right
-            {:on-click #(.add-transaction this)}
+            {:on-click #(do (.add-transaction this)
+                            (let [on-close (:on-close (om/get-computed this))]
+                              (on-close)))}
             "Save"]]]]))))
 
 ;(defui AddTransaction
@@ -381,7 +383,6 @@
     {:is-open?          false
      :on-close-fn       #(.close this %)
      :on-keydown-fn     #(do
-                          (debug "KEYDOWN: " %)
                           (when (= 13 (or (.-which %) (.-keyCode %)))
                             (.save this)))
      :input-transaction (.new-transaction this)})
@@ -412,7 +413,7 @@
     (let [st (om/get-state this)
           update-category (fn [tx]
                             (let [{:keys [transaction/category]} tx]
-                              (if (nil? category)
+                              (if (nil? (:category/name category))
                                 (dissoc tx :transaction/category)
                                 (update tx :transaction/category (fn [{:keys [label _]}]
                                                                    {:category/name label})))))
@@ -492,7 +493,9 @@
                                                           all-categories)
                                         :placeholder "Category..."
                                         :tab-index 0}
-                                       {:on-change #(om/update-state! this assoc-in [:input-transaction :transaction/category] %)}))]
+                                       {:on-change #(do
+                                                     (debug "category event: " %)
+                                                     (om/update-state! this assoc-in [:input-transaction :transaction/category] %))}))]
            [:li.attribute.tags
             (sel/->SelectTags (om/computed {:value             (:transaction/tags input-transaction)
                                             :options           (map (fn [t]
@@ -507,13 +510,13 @@
 
           [:div.actions
            {:class (when is-open? "show")}
-           [:a.cancel-button
-            {:on-click #(om/update-state! this assoc :input-transaction (.new-transaction this))
-             :tabIndex 0}
-            [:i.fa.fa-times.fa-fw]]
            [:a.save-button
             {:on-click #(.save this)
              :tabIndex 0}
-            [:i.fa.fa-check.fa-fw]]]]]))))
+            [:i.fa.fa-check.fa-fw]]
+           [:a.cancel-button
+            {:on-click #(om/update-state! this assoc :input-transaction (.new-transaction this))
+             :tabIndex 0}
+            [:i.fa.fa-times.fa-fw]]]]]))))
 
 (def ->QuickAddTransaction (om/factory QuickAddTransaction))
