@@ -64,6 +64,7 @@
                  [cljsjs/moment "2.10.6-4"]
                  [cljsjs/react-grid-layout "0.10.8-0"]
                  [cljsjs/stripe "2.0-0"]
+                 [cljsjs/facebook "v20150729-0"]
                  [bidi "2.0.10"]
                  [kibu/pushy "0.3.6"]
                  [binaryage/devtools "0.8.1"]

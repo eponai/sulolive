@@ -5,6 +5,7 @@
             [cemerick.url :as url]
             [clojure.walk :refer [keywordize-keys]]
             [sablono.core :refer-macros [html]]
+            [goog.object :as gobj]
             [goog.dom :as gdom]
     ;; To initialize ReactDOM:
             [cljsjs.react.dom]
@@ -37,14 +38,14 @@
   (on-facebook-login [this]
     (.login js/FB
             (fn [response]
-              (let [status (.-status response)]
+              (let [status (gobj/get response "status")]
                 (debug "Facebook login status: " status)
                 (debug "Faceboko respose: " response)
                 (cond
                   (= status "connected")
-                  (let [auth-response (.-authResponse response)
-                        user-id (.-userID auth-response)
-                        access-token (.-accessToken auth-response)]
+                  (let [auth-response (gobj/get response "authResponse")
+                        user-id (gobj/get auth-response "userID")
+                        access-token (gobj/get auth-response "accessToken")]
                     (om/transact! this `[(session.signin/facebook ~{:user-id      user-id
                                                                     :access-token access-token})
                                          :user/current
