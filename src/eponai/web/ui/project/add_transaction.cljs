@@ -444,9 +444,12 @@
       (let [{:keys [query/message-fn]} (om/props this)
             {:keys [on-close]} (om/get-computed this)
             message (message-fn history-id 'transaction/create)]
-        (when message
-          (js/alert (message/message message))
-          (om/update-state! this dissoc :pending-transaction)))))
+        (comment
+          "Here's something we could do with the message if we want"
+          " it to be syncronous."
+          (when message
+            (when on-close
+              (on-close)))))))
 
   (render [this]
     (let [{:keys [query/all-categories query/all-currencies query/all-tags]} (om/props this)

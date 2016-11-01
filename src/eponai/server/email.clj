@@ -68,7 +68,7 @@
                   " defaulting device to :web"))
         device (or device :web)
         verify-link (str (get device->link device) uuid)]
-    (debug "Returning verify link: " verify-link)
+    (info "Returning verify link: " verify-link)
     verify-link))
 
 (defn- send-email [address subject body]
