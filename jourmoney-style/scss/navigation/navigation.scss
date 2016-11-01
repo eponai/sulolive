@@ -90,6 +90,9 @@ $subnav-height: 3rem;
   padding: 1rem;
   font-weight: bold;
   color: $black;
+  &:hover {
+    color: $black;
+  }
 }
 
 .footer {
