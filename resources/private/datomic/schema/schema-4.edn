@@ -43,21 +43,21 @@
   :db/ident              :mutation-update/entity,
   :db/valueType          :db.type/ref,
   :db/cardinality        :db.cardinality/one,
-  :db/doc                "Entity updated"}
+  :db/doc                "Entity updated with the same value"}
 
  {:db/id                 #db/id[:db.part/db],
   :db.install/_attribute :db.part/db,
   :db/ident              :mutation-update/attribute,
   :db/valueType          :db.type/ref,
   :db/cardinality        :db.cardinality/one,
-  :db/doc                "Attribute updated"}
+  :db/doc                "Attribute updated with the same value"}
 
  {:db/id                 #db/id[:db.part/db],
   :db.install/_attribute :db.part/db,
   :db/ident              :mutation-update/value,
   :db/valueType          :db.type/bytes,
   :db/cardinality        :db.cardinality/one,
-  :db/doc                "Value updated"}
+  :db/doc                "Value updated with the same value"}
 
  {:db/id                 #db/id[:db.part/db],
   :db.install/_attribute :db.part/db,
@@ -65,5 +65,4 @@
   :db/valueType          :db.type/ref,
   :db/cardinality        :db.cardinality/one,
   :db/doc                "Transaction which had the same entity attribute value."}
-
  ]
