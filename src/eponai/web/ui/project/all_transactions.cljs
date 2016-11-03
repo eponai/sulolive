@@ -248,7 +248,8 @@
 
   Object
   (initLocalState [this]
-    {:computed/transaction-on-tag-click   (fn [tag]
+    {:list-size 0
+     :computed/transaction-on-tag-click   (fn [tag]
                                             (om/update-query! this update-in [:params :filter :filter/include-tags]
                                                               #(utils/add-tag % tag)))
      :computed/tag-filter-on-change       (fn [tags]
@@ -272,10 +273,16 @@
      :computed/select-tags-options-fn     (fn []
                                             (sel/tags->options (:query/all-tags (om/props this))))})
 
-  (componentDidMount [this]
-    (when (zero? (:list-size (om/get-state this)))
-      (debug "Updating list-size!")
-      (om/update-state! this assoc :list-size 50)))
+  (ensure-list-size [this]
+    (when (> 20 (:list-size (om/get-state this)))
+      (warn "Updating list-size!")
+      (om/update-state! this update :list-size + 10)))
+
+  (componentDidMount [this _ _]
+    (.ensure-list-size this))
+
+  (componentDidUpdate [this _ _]
+    (.ensure-list-size this))
 
   (has-filter [this]
     (some #(let [v (val %)] (if (coll? v) (seq v) (some? v)))
@@ -328,7 +335,8 @@
            user            :query/current-user} (om/props this)
           {:keys [computed/transaction-on-tag-click
                   computed/infinite-scroll-node-fn
-                  computed/select-tags-options-fn]} (om/get-state this)]
+                  computed/select-tags-options-fn
+                  list-size]} (om/get-state this)]
       (html
         [:div
 
@@ -355,15 +363,26 @@
               "Currency"]]
             (if (seq transactions)
               [:ul.transactions-list
-               (into [] (comp (map (fn [props]
+               (into [] (comp (take list-size)
+                              (map (fn [props]
                                      (->Transaction
                                        (om/computed props
                                                     {:user                   user
                                                      :currencies             currencies
                                                      :on-tag-click           transaction-on-tag-click
-                                                     :select-tags-options-fn select-tags-options-fn}))))
-                              (take 25))
-                     transactions)]
+                                                     :select-tags-options-fn select-tags-options-fn})))))
+                     transactions)
+               ;; List footer:
+               (if (zero? list-size)
+                 (dom/li #js {:className (str "row collapse align-middle is-collapse-child"
+                                              " transactions-load-more")}
+                   (dom/span #js {:key "loading-more-transactions"}
+                             "Loading..."))
+                 (dom/li #js {:className (str "row collapse align-middle is-collapse-child"
+                                              " transactions-load-more")}
+                   (dom/a #js {:key     "load-more-button"
+                               :onClick #(om/update-state! this update :list-size + 25)}
+                          "Load more")))]
               [:div.empty-message
                [:div.lead
                 [:i.fa.fa-search.fa-fw]
