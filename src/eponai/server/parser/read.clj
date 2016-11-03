@@ -133,17 +133,17 @@
               (warn "No auth for :query/all-projects")
               nil))})
 
-(defmethod server-read :query/all-categories
+(defmethod server-read :query/all-currencies
   [{:keys [db db-history query]} _ _]
   {:value (server.pull/all db db-history query
                            {:where '[[?e :currency/code]]})})
 
 (defmethod server-read :query/all-categories
-  [{:keys [db db-history query auth]} _ {:keys [project-dbid]}]
-  {:value (if auth
+  [{:keys [db db-history query] :as env} _ params]
+  {:value (if-let [project-id (env+params->project-eid env params)]
             (server.pull/all db db-history query
                              {:where '[[?e :category/project ?p]]
-                              :symbols {'?p project-dbid}})
+                              :symbols {'?p project-id}})
             (do
               (warn "No auth for :query/all-categories")))})
 

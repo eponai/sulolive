@@ -279,7 +279,7 @@
 (defmethod client-read :query/all-categories
   [{:keys [db query target ast]} _ _]
   (if target
-    {:remote (assoc-in ast [:params :project-dbid] (active-project-eid db))}
+    {:remote (assoc-in ast [:params :project :db/id] (active-project-eid db))}
     {:value (p/pull-many db query (p/all-with db {:where '[[?e :category/name]]}))}))
 
 (defmethod client-read :query/current-user

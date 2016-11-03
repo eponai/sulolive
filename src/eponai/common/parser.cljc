@@ -38,7 +38,8 @@
     (and (= type :server) (= "routing" (namespace k)))
     (util/read-join e k p)
 
-    :else (warn "Returning nil for parser read key: " k)))
+    :else
+    (throw (ex-info (str "Read not implemented for key " k) {:key k :params p}))))
 
 (defmethod client-read :default [e k p] (default-read e k p :client))
 (defmethod server-read :default [e k p] (default-read e k p :server))
