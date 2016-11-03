@@ -168,7 +168,7 @@
   ;;;;;;;;;;;;;
   :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
 
-  :figwheel {:css-dirs    ["resources/public/lookandfeel/jourmoney-style/css/"]
+  :figwheel {:css-dirs    ["resources/public/assets/css/"]
              :server-port ~(read-string (or (System/getenv "FIGWHEEL_PORT") "3449"))
 ;;             :reload-clj-files {:clj true :cljc false}
  }
