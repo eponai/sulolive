@@ -17,6 +17,13 @@
 
  {:db/id                 #db/id[:db.part/db],
   :db.install/_attribute :db.part/db,
+  :db/ident              :category/project,
+  :db/valueType          :db.type/ref,
+  :db/cardinality        :db.cardinality/one,
+  :db/doc                "Project this category belongs to."}
+
+ {:db/id                 #db/id[:db.part/db],
+  :db.install/_attribute :db.part/db,
   :db/ident              :tx/mutation-created-at,
   :db/valueType          :db.type/long,
   :db/cardinality        :db.cardinality/one,

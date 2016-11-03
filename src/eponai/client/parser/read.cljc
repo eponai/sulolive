@@ -277,9 +277,9 @@
     {:value (pull-many db query (p/all-with db {:where '[[?e :tag/name]]}))}))
 
 (defmethod client-read :query/all-categories
-  [{:keys [db query target]} _ _]
+  [{:keys [db query target ast]} _ _]
   (if target
-    {:remote false}
+    {:remote (assoc-in ast [:params :project-dbid] (active-project-eid db))}
     {:value (p/pull-many db query (p/all-with db {:where '[[?e :category/name]]}))}))
 
 (defmethod client-read :query/current-user

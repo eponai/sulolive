@@ -88,7 +88,7 @@
 (defn category*
   [input]
   {:pre [(map? input)]}
-  (add-tempid (select-keys input [:db/id :category/name])))
+  (add-tempid (select-keys input [:db/id :category/name :category/project])))
 
 (defn tag*
   [input]
@@ -326,6 +326,9 @@
     (-> [widget]
         (into widget-tag-filter-txs)
         (into graph-tag-filter-txs))))
+
+(defn category [category-name]
+  (category* {:category/name category-name}))
 
 (defn transaction-edit [{:keys [transaction/tags transaction/uuid] :as input-transaction}]
   (let [tag->txs (fn [{:keys [tag/status tag/name] :as tag}]

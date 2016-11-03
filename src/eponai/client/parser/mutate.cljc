@@ -60,6 +60,12 @@
   {:action (fn []
              (transact/transact-one state [:db.fn/retractEntity project-dbid]))
    :remote true})
+
+(defmethod client-mutate 'project.category/save
+  [{:keys [state]} _ {:keys [category]}]
+  {:action (fn []
+             (transact/transact-one state (format/add-tempid category)))
+   :remote true})
 ;; -------------- Widget ---------------
 
 ;(defmethod client-mutate 'widget/create

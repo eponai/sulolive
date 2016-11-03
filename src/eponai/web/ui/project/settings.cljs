@@ -8,7 +8,8 @@
 (defui ProjectSettings
   static om/IQuery
   (query [_]
-    [{:query/active-project [:ui.component.project/active-project]}])
+    [{:query/active-project [:ui.component.project/active-project]}
+     {:query/all-categories [:category/name]}])
   Object
   (delete-project [this]
     (let [{:keys [query/active-project]} (om/props this)
@@ -28,20 +29,68 @@
           (js/alert (message/message message))
           (when on-close
             (on-close))))))
+  (save-category [this]
+    (let [{:keys [input-category]} (om/get-state this)
+          {:keys [project]} (om/get-computed this)
+          category-name (clojure.string/trim input-category)]
+      (debug "Save category: " {:category/name input-category
+                                :category/project (:db/id project)})
+      (when-not (empty? category-name)
+        (om/transact! this `[(project.category/save ~{:category {:category/name    category-name
+                                                                 :category/project (:db/id project)}})
+                             :query/all-categories])
+        (om/update-state! this assoc :add-category? false))))
   (render [this]
-    (html
-      [:div#project-settings
-       [:div.content-section
-        [:div.row.section-title
-         [:span "Users"]]]
-       [:div.content-section
-        [:div.row.section-title
-         [:span "Categories"]]]
-       [:div.content-section
-        [:div.row
-         [:div.column.small-4.small-offset-4
-          [:a.button.alert.expanded.hollow
-           {:on-click #(.delete-project this)}
-           "Delete Project"]]]]])))
+    (let [{:keys [query/all-categories]} (om/props this)
+          {:keys [add-category? input-category]} (om/get-state this)]
+      (html
+        [:div#project-settings
+         [:div.content-section
+          [:div.row.section-title
+           [:span "Categories"]]
+          [:div.row
+           (if (empty? all-categories)
+             [:p "You have no categories yet"]
+             (map (fn [c]
+                    [:a.button.success.hollow
+                     {:key (:category/name c)}
+                     (:category/name c)]) all-categories))]
+          [:div.row.align-bottom
+           [:div.column.medium-6.add-category-section
+            [:div.add-category-option.add-new
+             {:class (if-not add-category? "show" "disabled")}
+             [:a.button.hollow.secondary
+              {:on-click #(om/update-state! this assoc :add-category? true)}
+              "+ Add New Category"]]
+            [:div.add-category-option
+             {:class (when add-category? "show")}
+             [:input
+              {:value (or input-category "")
+               :placeholder "Category name..."
+               :type        "text"
+               :on-change #(om/update-state! this assoc :input-category (.. % -target -value))}]
+             [:a.button.hollow
+              {:on-click #(.save-category this)}
+              "Save"]
+             [:a.secondary.button.hollow
+              {:on-click #(om/update-state! this assoc :add-category? false)}
+              "Cancel"]]]]]
+
+         [:div.content-section
+          [:div.row.section-title
+           [:span "Users"]]]
+
+
+         [:div.content-section
+          ;[:div.row.section-title
+          ; [:span "Delete Project"]]
+          [:div.row
+           [:div.column
+            [:span
+             "Delete this project with all its data for all users. Recorded expenses/incomes will be deleted as well as any created categories."]]
+           [:div.column.small-4
+            [:a.button.secondary.expanded.hollow.delete-button
+             {:on-click #(.delete-project this)}
+             "Delete Project"]]]]]))))
 
 (def ->ProjectSettings (om/factory ProjectSettings))

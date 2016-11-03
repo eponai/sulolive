@@ -85,6 +85,13 @@
              (debug "project/delete with params: " params)
              (api/delete-project state project-dbid))})
 
+(defmutation project.category/save
+  [{:keys [state]} _ {:keys [category]}]
+  [(str "Created new category '" (:category/name category) "'.")
+   (str "Couldn't create category '" (:category/name category) "'.")]
+  {:action (fn []
+             (transact/transact-one state (format/category* category)))})
+
 ;; --------------- Widget ----------------
 
 ;(defmutation widget/create

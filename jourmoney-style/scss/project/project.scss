@@ -3,7 +3,7 @@
     padding: 2.5rem 0;
     margin: 0;
     margin-bottom: 0.5rem;
-    border: 1px solid $secondary-color;
+    border: $default-border;
 
     .section-title {
       display: flex;
@@ -60,6 +60,43 @@ $callout-height: 2.7rem;
     }
     a.mail-link {
       color: $orange;
+    }
+  }
+}
+
+.delete-button {
+  &:hover {
+    border-color: map-get($foundation-palette, alert) !important;
+    color: map-get($foundation-palette, alert) !important;
+  }
+}
+#project-settings {
+  .button, input {
+    // margin: 0;
+  }
+
+  .add-category-section {
+      display: flex;
+      align-items: center;
+      position: relative;
+    .button.secondary {
+      border: none;
+    }
+    .add-new {
+      position: absolute;
+      left: 0;
+    }
+    .add-category-option {
+      display: flex;
+      flex: 1;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease-in-out, visibility 0.25s ease-in-out;
+
+      &.show {
+        opacity: 1;
+        visibility: visible;
+      }
     }
   }
 }

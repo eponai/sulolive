@@ -55,7 +55,7 @@ $black: $darkblue; //#0a0a0a;
 $white: #fefefe;
 $foundation-palette: (
   primary: $orange, //#2199e8,
-  secondary: darken($white, 10%), //#777,
+  secondary: $medium-gray, //#777,
   success: $light-blue, //#2EC4B6, //#3adb76,
   warning: #ffae00,
   alert: #D33144, //#ec5840,
@@ -76,6 +76,7 @@ $global-radius: 5px;
 $global-text-direction: ltr;
 $global-flexbox: false;
 $print-transparent-backgrounds: true;
+$default-border: 1px solid $light-gray;
 
 @include add-foundation-colors;
 
