@@ -295,7 +295,7 @@
 (defmethod client-read :query/stripe
   [{:keys [db query parser target] :as env} _ _]
   (if target
-    {:remote #?(:cljs (when-not web-utils/*playground?*) :clj true)}
+    {:remote #?(:cljs (not web-utils/*playground?*) :clj true)}
     (let [{:keys [query/current-user]} (parser env `[{:query/current-user [:db/id]}])
           stripe (when (:db/id current-user)
                    (p/all-with db {:where [['?e :stripe/user (:db/id current-user)]]}))]
@@ -319,7 +319,7 @@
 (defmethod client-read :query/fb-user
   [{:keys [db query target user-uuid]} _ _]
   (if target
-    {:remote #?(:cljs (when-not web-utils/*playground?*) :clj true)}
+    {:remote #?(:cljs (not web-utils/*playground?*) :clj true)}
     (let [eid (p/one-with db {:where '[[?e :fb-user/id]]})]
       {:value  (when eid
                  (p/pull db query eid))})))

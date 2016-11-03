@@ -188,7 +188,8 @@
                    [:small "The JourMoney subscription is " [:a "Pay what you want"] ". You set your own monthly price at what you think your subscription is worth."]]
                   ]
                  [:div.row.column
-                  (pay/->PayWhatYouWant (om/computed {:value (or paywhatyouwant (get-in info [:subscription :quantity]))}
+                  (pay/->PayWhatYouWant (om/computed {:id "paywhatyouwant-slider"
+                                                      :value (or paywhatyouwant (get-in info [:subscription :quantity]))}
                                                      {:on-change-value #(om/update-state! this assoc :paywhatyouwant %)
                                                       :on-select-value #(om/update-state! this assoc :paywhatyouwant %)}))]
                  [:div.row

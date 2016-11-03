@@ -133,10 +133,7 @@
     [{:proxy/add-transaction (om/get-query AddTransaction)}
      {:proxy/settings (om/get-query Settings)}
      {:query/current-user [:user/uuid
-                           :user/email]}
-     {:query/stripe [:stripe/user
-                     {:stripe/subscription [:stripe.subscription/status
-                                            :stripe.subscription/period-end]}]}])
+                           :user/email]}])
   Object
   (initLocalState [this]
     {:menu-visible?                     false
@@ -148,14 +145,11 @@
   (render [this]
     (let [{:keys [proxy/add-transaction
                   proxy/settings
-                  query/current-user
-                  query/stripe]} (om/props this)
+                  query/current-user]} (om/props this)
           {:keys [menu-visible?
                   new-transaction?
                   settings-open?
-                  computed/add-transaction-on-close]} (om/get-state this)
-          {:keys [stripe/subscription]} stripe
-          {subscription-status :stripe.subscription/status} subscription]
+                  computed/add-transaction-on-close]} (om/get-state this)]
       (html
         [:div.top-bar-container#topnav
          [:div.top-bar

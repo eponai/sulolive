@@ -19,7 +19,7 @@
                  [com.amazonaws/aws-java-sdk-dynamodb "1.10.56"
                   :exclusions [joda-time org.clojure/test.check]]
                  [com.draines/postal "2.0.1"]
-                 [com.stripe/stripe-java "1.45.0"]
+                 [com.stripe/stripe-java "3.2.0"]
                  [com.taoensso/timbre "4.7.4"]
                  [org.clojure/data.xml "0.0.8"]
                  [environ "1.0.1"]
