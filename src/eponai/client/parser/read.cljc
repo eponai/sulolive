@@ -154,44 +154,42 @@
       tx)))
 
 (defn pull-many [db query eids]
-  (comment
-    "Something is wrong. Find out with fullstack tests."
-
-    (let [parse-query (memoize
-                        (fn [query]
-                          (let [{refs true others false} (group-by map? query)
-                                ref-attrs (into #{} (map ffirst) refs)
-                                ref-queries (into {} (map seq) refs)
-                                other-attrs (set others)
-                                ret {:ref-attrs   ref-attrs
-                                     :ref-queries ref-queries
-                                     :other-attrs other-attrs}]
-                            ret)))
-          cardinality-many? (memoize
-                              (fn [attr] (= :db.cardinality/many (get-in (:schema db) [attr :db/cardinality]))))
-          seen (atom {})
-          eid->map (fn self [query eid]
-                     (let [{:keys [ref-attrs ref-queries other-attrs]} (parse-query query)
-                           m (reduce (fn [m [_ a v]]
-                                       (let [v (cond
-                                                 (contains? ref-attrs a)
-                                                 (or (get @seen v)
-                                                     (self (get ref-queries a) v))
-                                                 (contains? other-attrs a)
-                                                 v
-                                                 :else nil)]
-                                         (if (nil? v)
-                                           m
-                                           (if (cardinality-many? a)
-                                             (update m a (fnil conj []) v)
-                                             (assoc m a v)))))
-                                     {:db/id eid}
-                                     (d/datoms db :eavt eid))]
-                       (swap! seen assoc eid m)
-                       m))
-          ret (into [] (map #(eid->map query %)) eids)]
-      ret))
-  (d/pull-many db query eids))
+  (let [is-ref? (memoize (fn [k] (and (keyword? k) (= :db.type/ref (get-in (:schema db) [k :db/valueType])))))
+        parse-query (memoize
+                      (fn [query]
+                        (let [query (mapv #(if (is-ref? %) {% [:db/id]} %) query)
+                              {refs true others false} (group-by map? query)
+                              ref-attrs (into #{} (map ffirst) refs)
+                              ref-queries (into {} (map seq) refs)
+                              other-attrs (set others)
+                              ret {:ref-attrs   ref-attrs
+                                   :ref-queries ref-queries
+                                   :other-attrs other-attrs}]
+                          ret)))
+        cardinality-many? (memoize
+                            (fn [attr] (= :db.cardinality/many (get-in (:schema db) [attr :db/cardinality]))))
+        seen (atom {})
+        eid->map (fn self [query eid]
+                   (let [{:keys [ref-attrs ref-queries other-attrs]} (parse-query query)
+                         m (reduce (fn [m [_ a v]]
+                                     (let [v (cond
+                                               (contains? ref-attrs a)
+                                               (or (get @seen v)
+                                                   (self (get ref-queries a) v))
+                                               (contains? other-attrs a)
+                                               v
+                                               :else nil)]
+                                       (if (nil? v)
+                                         m
+                                         (if (cardinality-many? a)
+                                           (update m a (fnil conj []) v)
+                                           (assoc m a v)))))
+                                   {:db/id eid}
+                                   (d/datoms db :eavt eid))]
+                     (swap! seen assoc eid m)
+                     m))
+        ret (into [] (map #(eid->map query %)) eids)]
+    ret))
 
 (defn all-local-transactions-by-project [{:keys [parser db txs-by-project query] :as env} project-eid]
   (let [{:keys [db-used txs]} (get @txs-by-project project-eid)
