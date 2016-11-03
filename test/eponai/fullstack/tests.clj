@@ -240,25 +240,20 @@
               :compare-fn (partial = uuid)}]
     {:label   (str "Can create a transaction and project offline, edit the transaction"
                    " to belong to the new project, then sync.")
-     :actions (-> [(stop-server! server)
-                   (create-transaction! server clients client1 tx)
-                   {::fw/transaction [client1 `[(project/save ~proj)]]
-                    ::fw/asserts     #(do (assert (has-project? proj client1))
-                                          (assert (not-any? (partial has-project? proj)
-                                                            (remove (partial = client1) clients))))}
-                   (edit-transaction! server clients client1 tx edit)
-                   (start-server! server :await [client1])]
-                  (into (map (fn [client]
-                               (fn []
-                                 {::fw/transaction
-                                  [client `[(project/set-active-uuid
-                                              {:project-dbid ~(:db/id (get-project proj client1))})]]}))
-                             clients))
-                  (conj {::fw/transaction   (constantly nil)
-                         ::fw/sync-clients! true
-                         ::fw/asserts       #(do (assert (every? (partial has-transaction? tx) clients))
-                                                 (assert (every? (partial has-project? proj) clients))
-                                                 (assert (every? (partial has-edit? tx edit) clients)))}))}))
+     :actions [(stop-server! server)
+               (create-transaction! server clients client1 tx)
+               {::fw/transaction [client1 `[(project/save ~proj)]]
+                ::fw/asserts     #(do (assert (has-project? proj client1))
+                                      (assert (not-any? (partial has-project? proj)
+                                                        (remove (partial = client1) clients))))}
+               (edit-transaction! server clients client1 tx edit)
+               (start-server! server :await [client1])
+               {::fw/transaction   (constantly nil)
+                ::fw/sync-clients! true
+                ::fw/asserts       #(do (assert (every? (partial has-transaction? tx) clients))
+                                        (assert (every? (partial has-project? proj) clients))
+                                        (assert (every? (partial has-edit? tx edit) clients)))}]}))
+
 
 (defn assert=
   ([a b] (assert= nil a b))
@@ -449,7 +444,7 @@
                              test-two-client-edit-tags-offline+sync-2
                              test-two-client-edit-titles-offline+sync
                              ]
-                        ;; (filter (partial = test-edit-transaction))
+                            ;(filter (partial = test-edit-transaction-offline-to-new-offline-project))
                         ; (reverse)
                         ; (take 1)
                         ))

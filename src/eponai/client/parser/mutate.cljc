@@ -40,11 +40,6 @@
 
 ;; ---------------- project --------------
 
-(defmethod client-mutate 'project/set-active-uuid
-  [{:keys [state]} _ {:keys [project-dbid]}]
-  {:action #(transact/transact state [{:ui/component             :ui.component/project
-                                       :ui.component.project/eid project-dbid}])})
-
 (defmethod client-mutate 'project/save
   [{:keys [state]} _ params]
   (debug "project/save with params: " params)

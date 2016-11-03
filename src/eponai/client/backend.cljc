@@ -113,8 +113,6 @@
             (do
               (<! (timeout retry-time-ms))
               (recur (min max-retry-time-ms (* 2 retry-time-ms))))
-            ;; TODO: Do something about specific error codes?
-            ;; Like, offline?
             :else
             (throw (ex-info "Not 2xx response remote."
                             {:remote remote-key
