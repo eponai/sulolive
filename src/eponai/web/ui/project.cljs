@@ -40,15 +40,6 @@
 
 (def ->Shareproject (om/factory Shareproject))
 
-(defui Settings
-  static om/IQuery
-  (query [_]
-    [{:query/active-project [:ui.component.project/active-project]}])
-  Object
-  (render [this]
-    (html "Project settings")))
-(def ->Settings)
-
 (def content->component {:dashboard    {:factory ->Dashboard :component Dashboard}
                          :transactions {:factory ->AllTransactions :component AllTransactions}
                          :settings     {:factory ->ProjectSettings :component ProjectSettings}})

@@ -26,6 +26,13 @@
         union-key (or (:route-key handler) :route/project)]
     (p.util/read-union env k p union-key)))
 
+(defmethod client-read :routing/navbar-settings
+  [{:keys [db] :as env} k p]
+  (p.util/read-union env k p (if (:ui.component.navbar/settings-open?
+                                   (d/entity db [:ui/component :ui.component/navbar]))
+                               :settings
+                               :nothing)))
+
 ;; TODO: A lot of target boilerplate here. Macro instead?
 (defmethod client-read :query/active-project
   [{:keys [db _ target]} _ _]
@@ -68,3 +75,8 @@
   [{:keys [db query target]} _ _]
   (when-not target
     (read/read-entity-by-key db query [:ui/component :ui.component/sidebar])))
+
+(defmethod client-read :query/navbar
+  [{:keys [db query target]} _ _]
+  (when-not target
+    (read/read-entity-by-key db query [:ui/component :ui.component/navbar])))

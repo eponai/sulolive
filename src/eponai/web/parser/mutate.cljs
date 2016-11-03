@@ -49,6 +49,18 @@
   {:action #(t/transact state [{:ui/singleton                :ui.singleton/loader
                                  :ui.singleton.loader/visible false}])})
 
+;; ################## Navbar ################################
+
+(defmethod client-mutate 'navbar/settings-show
+  [{:keys [state]} _ _]
+  {:action #(t/transact state [{:ui/component                :ui.component/navbar
+                                :ui.component.navbar/settings-open? true}])})
+
+(defmethod client-mutate 'navbar/settings-hide
+  [{:keys [state]} _ _]
+  {:action #(t/transact state [{:ui/component                       :ui.component/navbar
+                                :ui.component.navbar/settings-open? false}])})
+
 ;; ################## Project ###############################
 
 (defmethod client-mutate 'project/set-active-uuid
@@ -105,6 +117,7 @@
   [{:keys [state]} _ _]
   {:action #(t/transact-one state {:ui/component :ui.component/root
                                    :ui.component.root/route-changed false})})
+
 ;;; ####################### Playground ##############################
 
 (defmethod client-mutate 'playground/subscribe

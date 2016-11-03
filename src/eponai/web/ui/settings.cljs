@@ -44,8 +44,6 @@
                 :panelLabel      panel-label
                 })))
 
-(defn get-loader [props]
-  (get props [:ui/singleton :ui.singleton/loader]))
 (defui Settings
   static om/IQuery
   (query [_]
@@ -54,7 +52,6 @@
                            :user/name
                            {:user/currency [:currency/code
                                             :currency/name]}]}
-     {[:ui/singleton :ui.singleton/loader] [:ui.singleton.loader/visible]}
      {:query/all-currencies [:currency/code
                              :currency/name]}
      {:query/stripe [:stripe/user
@@ -63,8 +60,7 @@
                                             :stripe.subscription/status]}]}
      {:query/fb-user [:fb-user/name
                       :fb-user/id
-                      :fb-user/picture]}
-     ])
+                      :fb-user/picture]}])
 
 
   Object
@@ -250,13 +246,16 @@
                   [:div.column
                    [:label "Current Period"]
                    ]
-                  [:div.column.text-right
-                   [:div
-                    (date/date->string (get-in info [:subscription :period-start]))
-                    " - "
-                    (date/date->string (get-in info [:subscription :period-end]))]
-                   [:div
-                    [:span "Billed $" (get-in info [:subscription :quantity]) ".00"]]]]]
+                  (if info
+                    [:div.column.text-right
+                     [:div
+                      (date/date->string (get-in info [:subscription :period-start]))
+                      " - "
+                      (date/date->string (get-in info [:subscription :period-end]))]
+                     [:div
+                      [:span "Billed $" (get-in info [:subscription :quantity]) ".00"]]]
+                    [:div.column.text-right
+                     [:span "Could not retrieve customer info :("]])]]
                 [:div.content-section
                  [:div.row
                   ; Left column of payment method

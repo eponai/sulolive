@@ -275,7 +275,7 @@
 
   (ensure-list-size [this]
     (when (> 20 (:list-size (om/get-state this)))
-      (warn "Updating list-size!")
+      (debug "Updating list-size!")
       (om/update-state! this update :list-size + 10)))
 
   (componentDidMount [this _ _]

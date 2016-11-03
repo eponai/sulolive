@@ -304,7 +304,9 @@
           (let [s (current-time)
                 path (om-path c)
                 _ (when (nil? path)
-                    (warn "No path found for component: " (pr-str c)))
+                    (warn "No path found for component: " (pr-str c)
+                          " Make sure that the props sent to " (pr-str c) "'s factory"
+                          " has some metadata (meta props) on it."))
                 ui (cached-ui->props cache (:state env) c fq #(parser env fq))
                 e (current-time)]
             (when-let [l (:logger env)]

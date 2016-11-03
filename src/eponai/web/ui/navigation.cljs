@@ -131,7 +131,9 @@
   static om/IQuery
   (query [_]
     [{:proxy/add-transaction (om/get-query AddTransaction)}
-     {:proxy/settings (om/get-query Settings)}
+     {:routing/navbar-settings {:settings (om/get-query Settings)
+                                :nothing  []}}
+     :query/navbar
      {:query/current-user [:user/uuid
                            :user/email]}])
   Object
@@ -139,16 +141,16 @@
     {:menu-visible?                     false
      :new-transaction?                  false
      :add-widget?                       false
-     ;:settings-open? true
      :computed/add-transaction-on-close #(om/update-state! this assoc :new-transaction? false)})
 
   (render [this]
     (let [{:keys [proxy/add-transaction
-                  proxy/settings
-                  query/current-user]} (om/props this)
+                  query/current-user]
+           :as props} (om/props this)
+          {:keys [ui.component.navbar/settings-open?]} (:query/navbar props)
+          settings-props (get-in props [:routing/navbar-settings])
           {:keys [menu-visible?
                   new-transaction?
-                  settings-open?
                   computed/add-transaction-on-close]} (om/get-state this)]
       (html
         [:div.top-bar-container#topnav
@@ -173,9 +175,8 @@
                    [:ul.menu.dropdown.vertical
                     [:li
                      [:a
-                      {:on-click #(om/update-state! this assoc
-                                   :settings-open? true
-                                   :menu-visible? false)}
+                      {:on-click #(do (om/update-state! this assoc :menu-visible? false)
+                                      (om/transact! this `[(navbar/settings-show) :routing/navbar-settings]))}
                       [:span "Settings"]]]
                     [:li [:hr]]
                     [:li
@@ -187,9 +188,11 @@
                        "Sign Out"]]]]]))])]
 
           (when settings-open?
-            (utils/modal {:content  (->Settings (om/computed settings
-                                                             {:on-close #(om/update-state! this assoc :settings-open? false)}))
-                          :on-close #(om/update-state! this assoc :settings-open? false)}))
+            (utils/modal
+              {:content  (->Settings
+                           (om/computed settings-props
+                                        {:on-close #(om/transact! this `[(navbar/settings-hide)])}))
+               :on-close #(om/transact! this `[(navbar/settings-hide)])}))
           (when new-transaction?
             (utils/modal {:content  (->AddTransaction
                                       (om/computed add-transaction
