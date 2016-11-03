@@ -12,7 +12,14 @@ else
   echo "Using foundation: $foundation_install"
 fi
 
-(cd $foundation_dir && \
- npm install && \
- foundation build)
+cd "$foundation_dir"
+npm install
+
+if [[ $# -ge 1 ]]; then
+  echo "Calling: foundation $@"
+  foundation $@
+else
+  echo "Calling: foundation build"
+  foundation build
+fi
 
