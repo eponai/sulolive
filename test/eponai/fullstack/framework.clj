@@ -248,13 +248,13 @@
         server (core/start-server-for-tests {:conn       conn
                                              ;; Re-use the server's port
                                              ;; to be more kind to the test system.
-                                             :port (:server-port system)
+                                             :port (:server-port system 0)
                                              :email-chan email-chan})
         ;; The server could be started with a random port.
         ;; Set the selected port to the server so it
         ;; keeps the same port between restarts
-        connector (doto (ServerConnector. server)
-                    (.setPort (.getPort (.getURI server))))
+        port (.getPort (.getURI server))
+        connector (doto (ServerConnector. server) (.setPort port))
         server (doto server
                  (.stop)
                  (.join)
@@ -263,7 +263,7 @@
     (assoc system :conn conn
                   :email-chan email-chan
                   :server server
-                  :server-port (.getPort (.getURI server)))))
+                  :server-port port)))
 
 (defn- stop-system [system]
   (async/close! (:email-chan system))

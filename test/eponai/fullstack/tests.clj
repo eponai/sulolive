@@ -445,8 +445,8 @@
                              test-two-client-edit-titles-offline+sync
                              ]
                             ;(filter (partial = test-edit-transaction-offline-to-new-offline-project))
-                        ; (reverse)
-                        ; (take 1)
+                            ;(reverse)
+                            ;(take 1)
                         ))
          (fw/result-summary))))
 
