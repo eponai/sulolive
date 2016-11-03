@@ -359,10 +359,11 @@
            ;; (e.g. user is using SEK, so the new rate will be
            ;; conversion-of-transaction-currency / conversion-of-user-currency
            [(:db/id transaction)
-            {:user-conversion-id user-conv
+            {:user-conversion-id        user-conv
              :transaction-conversion-id tx-conv
-             :conversion/rate rate
-             :conversion/date (:conversion/date transaction-conversion)}])
+             :conversion/currency       {:db/id tx-curr}
+             :conversion/rate           rate
+             :conversion/date           (:conversion/date transaction-conversion)}])
          (debug "No tx-conv or user-conv. Tx-conv: " tx-conv
                 " user-conv: " user-conv
                 " for transaction: " (into {} transaction)))))))
@@ -389,25 +390,28 @@
                                            (assoc-in m [curr date] conv))
                                          {})))
 
-        user-curr (:db/id (:user/currency (entity* db (one-with db {:where [['?e :user/uuid user-uuid]]}))))
         user-convs (delay
-                     (when user-curr
+                     (when-let [user-curr (one-with db {:where   '[[?u :user/uuid ?user-uuid]
+                                                                   [?u :user/currency ?e]]
+                                                        :symbols {'?user-uuid user-uuid}})]
                        (let [convs (into {}
                                          (find-with db {:find-pattern '[?date ?conv]
-                                                       :symbols      {'[?date ...] (reduce into #{} (vals @currency-date-pairs))
-                                                                      '?user-curr  user-curr}
-                                                       :where        '[[?conv :conversion/currency ?user-curr]
-                                                                       [?conv :conversion/date ?date]]}))]
+                                                        :symbols      {'[?date ...] (reduce into #{} (vals @currency-date-pairs))
+                                                                       '?user-curr  user-curr}
+                                                        :where        '[[?conv :conversion/currency ?user-curr]
+                                                                        [?conv :conversion/date ?date]]}))]
                          (if (seq convs)
                            convs
                            ;; When there are no conversions for any of the transaction's dates, just pick any one.
                            (let [one-conv (entity* db (one-with db {:where   '[[?e :conversion/currency ?user-curr]]
-                                                                     :symbols {'?user-curr user-curr}}))]
+                                                                    :symbols {'?user-curr user-curr}}))]
                              {(get-in one-conv [:conversion/date :db/id]) (:db/id one-conv)})))))]
     (into {}
-      (comp (remove #(contains? % :transaction/conversion))
-            (map (transaction-with-conversion-fn db transaction-convs user-convs))
-            (filter some?))
+          ;; Skip transactions that has a conversion with the same currency.
+          (comp (remove #(= (get-in % [:transaction/conversion :conversion/currency :db/id])
+                            (get-in % [:transaction/currency :db/id])))
+                (map (transaction-with-conversion-fn db transaction-convs user-convs))
+                (filter some?))
           transaction-entities)))
 
 (defn xf-with-tag-filters
