@@ -79,6 +79,14 @@
      (opts {:on-click #(when (= "click-outside-target" (.-className (.-target %)))
                         (on-click))})]))
 
+(defn popup [{:keys [on-close]} content]
+  (html
+    [:div
+     (click-outside-target on-close)
+     [:div.popup
+      [:div.popup-content
+       content]]]))
+
 (defn modal [{:keys [content on-close size]}]
   (let [click-outside-target-id (name :click-outside-target)]
     (html

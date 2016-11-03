@@ -1,0 +1,29 @@
+.popup {
+	position: relative;
+	z-index: $dropdown-zindex;
+	.popup-content {
+		background: $white;
+		border: $default-border;
+		border-radius: $global-radius;
+		padding: 1rem;
+		position: absolute;
+		box-shadow: $center-shadow;
+		margin-top: 9px;
+		&:after {
+			position: absolute;
+			top: -16px;
+			left: 8px;
+			content: '';
+			border: 8px solid transparent;
+			border-bottom: 8px solid $white;
+		}
+		&:before {
+			position: absolute;
+			top: -18px;
+			left: 7px;
+			content: '';
+			border: 9px solid transparent;
+			border-bottom: 9px solid $light-gray;
+		}
+	}
+}

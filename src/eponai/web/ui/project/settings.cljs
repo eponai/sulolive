@@ -3,7 +3,8 @@
     [eponai.client.parser.message :as message]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]))
+    [taoensso.timbre :refer-macros [debug]]
+    [eponai.web.ui.utils :as utils]))
 
 (defui ProjectSettings
   static om/IQuery
@@ -49,32 +50,31 @@
           [:div.row.section-title
            [:span "Categories"]]
           [:div.row
-           (if (empty? all-categories)
-             [:p "You have no categories yet"]
-             (map (fn [c]
-                    [:a.button.success.hollow
-                     {:key (:category/name c)}
-                     (:category/name c)]) all-categories))]
-          [:div.row.align-bottom
-           [:div.column.medium-6.add-category-section
-            [:div.add-category-option.add-new
-             {:class (if-not add-category? "show" "disabled")}
-             [:a.button.hollow.secondary
-              {:on-click #(om/update-state! this assoc :add-category? true)}
-              "+ Add New Category"]]
-            [:div.add-category-option
-             {:class (when add-category? "show")}
-             [:input
-              {:value (or input-category "")
-               :placeholder "Category name..."
-               :type        "text"
-               :on-change #(om/update-state! this assoc :input-category (.. % -target -value))}]
-             [:a.button.hollow
-              {:on-click #(.save-category this)}
-              "Save"]
-             [:a.secondary.button.hollow
-              {:on-click #(om/update-state! this assoc :add-category? false)}
-              "Cancel"]]]]]
+           [:ul.menu.all-categories
+            (if (empty? all-categories)
+              [:p "You have no categories yet"]
+              (map (fn [c]
+                     [:li
+                      [:a.button.black
+                       {:key (:category/name c)}
+                       (:category/name c)]]) all-categories))]]
+          [:div.row
+           [:div.add-category-section
+            [:a.button.hollow.secondary
+             {:on-click #(om/update-state! this assoc :add-category? true)}
+             "+ Add New Category"]
+            (when add-category?
+              (utils/popup
+                {:on-close #(om/update-state! this assoc :add-category? false)}
+                [:div.add-category-input
+                 [:input
+                  {:value       (or input-category "")
+                   :placeholder "Category name..."
+                   :type        "text"
+                   :on-change   #(om/update-state! this assoc :input-category (.. % -target -value))}]
+                 [:a.button.hollow
+                  {:on-click #(.save-category this)}
+                  "Save"]]))]]]
 
          [:div.content-section
           [:div.row.section-title
