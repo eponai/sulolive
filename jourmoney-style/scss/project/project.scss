@@ -8,7 +8,7 @@
     .section-title {
       display: flex;
       flex-direction: row;
-      margin-bottom: 0.25rem;
+      margin-bottom: 1rem;
       > * {
         margin-right: 1.5rem;
         text-transform: uppercase;
@@ -71,14 +71,15 @@ $callout-height: 2.7rem;
   }
 }
 #project-settings {
-  .button, input {
-    // margin: 0;
-  }
 
-  .add-category-section {
-    .button {
-      margin: 0;
+  .all-categories {
+    li {
+      padding: 0.25rem;
     }
+  }
+  .add-category-section {
+    margin-top: 2rem;
+    padding: 0 0.5rem;
     .add-category-input {
       display: flex;
       flex: 1;

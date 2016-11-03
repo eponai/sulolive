@@ -282,6 +282,15 @@
     {:remote (assoc-in ast [:params :project :db/id] (active-project-eid db))}
     {:value (p/pull-many db query (p/all-with db {:where '[[?e :category/name]]}))}))
 
+(defmethod client-read :query/project-users
+  [{:keys [db query target ast]} _ _]
+  (let [active-project-eid (active-project-eid db)]
+    (if target
+      {:remote (assoc-in ast [:params :project :db/id] active-project-eid)}
+      {:value (when active-project-eid
+                (p/pull-many db query (p/all-with db {:where   '[[?p :project/users ?e]]
+                                                      :symbols {'?p active-project-eid}})))})))
+
 (defmethod client-read :query/current-user
   [{:keys [db query target]} _ _]
   (if target

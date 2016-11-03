@@ -3,11 +3,11 @@
 	z-index: $dropdown-zindex;
 	.popup-content {
 		background: $white;
-		border: $default-border;
+		border: 1px solid rgba($darkblue, 0.25);
 		border-radius: $global-radius;
 		padding: 1rem;
 		position: absolute;
-		box-shadow: $center-shadow;
+		box-shadow: 0 0 4px 0 rgba($darkblue, 0.25);
 		margin-top: 9px;
 		&:after {
 			position: absolute;
@@ -23,7 +23,7 @@
 			left: 7px;
 			content: '';
 			border: 9px solid transparent;
-			border-bottom: 9px solid $light-gray;
+			border-bottom: 9px solid rgba($darkblue, 0.4);
 		}
 	}
 }

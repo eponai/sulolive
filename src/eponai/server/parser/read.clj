@@ -147,6 +147,15 @@
             (do
               (warn "No auth for :query/all-categories")))})
 
+(defmethod server-read :query/project-users
+  [{:keys [db db-history query] :as env} _ params]
+  {:value (if-let [project-dbid (env+params->project-eid env params)]
+            (server.pull/all db db-history query
+                             {:where '[[?p :project/users ?e]]
+                              :symbols {'?p project-dbid}})
+            (do
+              (warn "No auth for :query/all-categories")))})
+
 (defmethod server-read :query/current-user
   [{:keys [db db-history query user-uuid auth]} _ _]
   (debug "Auth: " auth)

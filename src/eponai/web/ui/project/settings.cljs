@@ -10,7 +10,8 @@
   static om/IQuery
   (query [_]
     [{:query/active-project [:ui.component.project/active-project]}
-     {:query/all-categories [:category/name]}])
+     {:query/all-categories [:category/name]}
+     {:query/project-users [:user/email]}])
   Object
   (delete-project [this]
     (let [{:keys [query/active-project]} (om/props this)
@@ -42,7 +43,8 @@
                              :query/all-categories])
         (om/update-state! this assoc :add-category? false))))
   (render [this]
-    (let [{:keys [query/all-categories]} (om/props this)
+    (let [{:keys [query/all-categories
+                  query/project-users]} (om/props this)
           {:keys [add-category? input-category]} (om/get-state this)]
       (html
         [:div#project-settings
@@ -57,28 +59,32 @@
                      [:li
                       [:a.button.black
                        {:key (:category/name c)}
-                       (:category/name c)]]) all-categories))]]
-          [:div.row
-           [:div.add-category-section
-            [:a.button.hollow.secondary
-             {:on-click #(om/update-state! this assoc :add-category? true)}
-             "+ Add New Category"]
-            (when add-category?
-              (utils/popup
-                {:on-close #(om/update-state! this assoc :add-category? false)}
-                [:div.add-category-input
-                 [:input
-                  {:value       (or input-category "")
-                   :placeholder "Category name..."
-                   :type        "text"
-                   :on-change   #(om/update-state! this assoc :input-category (.. % -target -value))}]
-                 [:a.button.hollow
-                  {:on-click #(.save-category this)}
-                  "Save"]]))]]]
+                       (:category/name c)]])
+                   all-categories))
+            [:li.add-category-section
+             [:a.button.hollow.secondary
+              {:on-click #(om/update-state! this assoc :add-category? true)}
+              "+ Create"]
+             (when add-category?
+               (utils/popup
+                 {:on-close #(om/update-state! this assoc :add-category? false)}
+                 [:div.add-category-input
+                  [:input
+                   {:value       (or input-category "")
+                    :placeholder "Category name..."
+                    :type        "text"
+                    :on-change   #(om/update-state! this assoc :input-category (.. % -target -value))}]
+                  [:a.button.hollow.black
+                   {:on-click #(.save-category this)}
+                   "Save"]]))]]]]
 
          [:div.content-section
           [:div.row.section-title
-           [:span "Users"]]]
+           [:span "Users"]]
+          [:div.row
+           (map (fn [u]
+                  [:a.button.hollow.black (:user/email u)])
+                project-users)]]
 
 
          [:div.content-section
@@ -87,7 +93,7 @@
           [:div.row
            [:div.column
             [:span
-             "Delete this project with all its data for all users. Recorded expenses/incomes will be deleted as well as any created categories."]]
+             "Delete this project with all its data for all users. Recorded expenses and incomes will be deleted as well as any created categories."]]
            [:div.column.small-4
             [:a.button.secondary.expanded.hollow.delete-button
              {:on-click #(.delete-project this)}
