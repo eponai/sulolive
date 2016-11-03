@@ -83,7 +83,7 @@
   ["Deleted project" "Unable to delete project"]
   {:action (fn []
              (debug "project/delete with params: " params)
-             (transact/transact-one state [:db.fn/retractEntity project-dbid]))})
+             (api/delete-project state project-dbid))})
 
 ;; --------------- Widget ----------------
 

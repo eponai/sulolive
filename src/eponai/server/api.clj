@@ -221,6 +221,19 @@
         {:email-chan email-chan
          :status     (:user/status new-user)}))))
 
+(defn delete-project
+  "Delete a project entity with its transactions from the DB."
+  [conn project-dbid]
+  ; Find transactions that are referring to the project to be deleted. We need to make sure these are also deleted from the DB
+  (let [transactions (p/all-with (d/db conn) {:where   '[[?e :transaction/project ?p]]
+                                              :symbols {'?p project-dbid}})
+        delete-transactions-txs (map (fn [dbid]
+                                       [:db.fn/retractEntity dbid])
+                                     transactions)]
+    (transact/transact conn (conj
+                              delete-transactions-txs
+                              [:db.fn/retractEntity project-dbid]))))
+
 ;(defn stripe-subscribe
 ;  "Subscribe user to a plan in Stripe. Basically create a Stripe customer for this user and subscribe to a plan."
 ;  [conn stripe-fn {:keys [stripe/customer

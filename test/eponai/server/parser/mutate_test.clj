@@ -14,7 +14,9 @@
             [taoensso.timbre :refer [debug]]
             [eponai.common.parser :as parser]
             [eponai.server.datomic.format :as f]
-            [taoensso.timbre :as timbre]))
+            [eponai.common.format :as cf]
+            [taoensso.timbre :as timbre]
+            [eponai.common.database.pull :as p]))
 
 (defn- new-db [txs]
   (let [conn (util/new-db txs)]
@@ -59,3 +61,21 @@
                                 :date/ymd [:transaction/date :date/ymd])
       ;(is (= (async/<!! (get result :currency-chan)) (:input/date transaction)))
       )))
+
+
+(deftest project-deleted-associated-transactions-are-deleted
+  (testing "User deletes a project, should delete all related transactions"
+    (let [{:keys [user] :as account} (f/user-account-map "test-email")
+          project (f/project user)
+          transactions (map #(cf/transaction (assoc % :transaction/project (:db/id project))) (eponai.server.datomic-dev/transactions))
+          conn (new-db (concat (conj (vals account)
+                                     project)
+                               transactions))
+          pre-delete-transactions (p/all-with (d/db conn) {:where   '[[?p :project/uuid ?uuid]
+                                                                    [?e :transaction/project ?p]]
+                                                         :symbols {'?uuid (:project/uuid project)}})
+          db-project (p/lookup-entity (d/db conn) [:project/uuid (:project/uuid project)])]
+      (routes/handle-parser-request
+        (session-request conn user `[(project/delete ~{:project-dbid (:db/id db-project) ::parser/created-at 1})]))
+      (is (= (count transactions) (count pre-delete-transactions)))
+      (is (= (count (p/all-with (d/db conn) {:where '[[?e :transaction/title]]})) 0)))))
