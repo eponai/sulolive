@@ -29,6 +29,14 @@ $subnav-height: 3rem;
     }
     .secondary-action {
       font-weight: bold;
+
+      &.disabled {
+        pointer-events: none;
+
+        > * {
+          color: $medium-gray;
+        }
+      }
     }
   }
 }

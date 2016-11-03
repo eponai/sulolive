@@ -79,7 +79,9 @@
                     [:li
                      [:hr]]
                     [:li
-                     [:a.secondary-action
+                     [(if utils/*playground?*
+                        :a.secondary-action.disabled
+                        :a.secondary-action)
                       {:on-click #(om/update-state! this assoc
                                                     :new-project? true
                                                     :menu-visible? false)}
