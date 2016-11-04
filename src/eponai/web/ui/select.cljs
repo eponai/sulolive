@@ -73,3 +73,30 @@
               {:label (:tag/name t)
                :value (:db/id t)}))
        (clj->js)))
+
+(defui SegmentedOption
+  Object
+  (render [this]
+    (let [{:keys [options value]
+           option-name :name} (om/props this)
+          {:keys [selected]} (om/get-state this)]
+      (html
+        [:ul.segmented-container
+         (map (fn [opt i]
+                (let [id (str option-name "-" i)]
+                  [:li.segmented-option
+                   {:key id}
+                   [:input
+                    (cond-> {:id id :type "radio"
+                             :name option-name
+                             :on-click #(om/update-state! this assoc :selected opt)}
+
+                            (= (or (:value selected) (:value value)) (:value opt))
+                            (assoc :checked :checked))]
+                   [:label {:for id}
+                    [:span (:label opt)]]
+                   ]))
+              options
+              (range))]))))
+
+(def ->SegmentedOption (om/factory SegmentedOption))

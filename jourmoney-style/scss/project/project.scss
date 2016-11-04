@@ -23,6 +23,11 @@
   .daterangepicker {
     margin-top: -1rem;
   }
+
+  .add-new-transaction-fee {
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 $callout-height: 2.7rem;

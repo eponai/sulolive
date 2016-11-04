@@ -1,0 +1,43 @@
+
+$segmented-color:		 			$medium-gray;
+$segmented-highlight-color: 		$darkblue;
+$segmented-text-color: 				$darkblue;
+$segmented-highlight-text-color: 	$white;
+$segmented-radius:					$button-radius;
+
+.segmented-container {
+	margin-left: 0;
+	list-style-type: none;
+	display: flex;
+	input[type=radio] {
+		display: none;
+	}
+
+	input[type=radio] + label {
+		text-align: center;
+		padding: 0.25rem;
+		width: 100%;
+		margin: 0;
+		border: 1px solid $segmented-highlight-color;
+		color: $segmented-text-color;
+	}
+
+	input:checked + label {
+		border-color: $segmented-highlight-color;
+		background: $segmented-highlight-color;
+		color: $segmented-highlight-text-color;
+	}
+
+	li {
+		// border: 1px solid $white;
+		margin: 0;
+		overflow: hidden;
+		flex: 1;
+		&:first-child label {
+			border-radius: $segmented-radius 0 0 $segmented-radius;
+		}
+		&:last-child label {
+			border-radius: 0 $segmented-radius $segmented-radius 0;
+		}
+	}
+}

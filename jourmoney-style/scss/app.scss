@@ -63,5 +63,7 @@
 @import "select/default";
 
 @import "project/project";
+@import "option-selector";
+@import "segmented";
 
 @include navbar;

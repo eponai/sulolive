@@ -72,4 +72,30 @@
   :db/valueType          :db.type/ref,
   :db/cardinality        :db.cardinality/one,
   :db/doc                "Transaction which had the same entity attribute value."}
+
+
+
+ ; Bank fees
+
+ {:db/id                 #db/id[:db.part/db],
+  :db.install/_attribute :db.part/db,
+  :db/ident              :transaction/fee,
+  :db/valueType          :db.type/ref,
+  :db/cardinality        :db.cardinality/many,
+  :db/isComponent        true
+  :db/doc                "Any potential fees added to this transaction."}
+
+ {:db/id                 #db/id[:db.part/db],
+  :db.install/_attribute :db.part/db,
+  :db/ident              :transaction.fee/type,
+  :db/valueType          :db.type/keyword,
+  :db/cardinality        :db.cardinality/one,
+  :db/doc                "Type of transaction fee, absolute amount or relative percentage value. Values #{:transaction.fee.type/absolute :transaction.fee.type/relative}"}
+
+ {:db/id                 #db/id[:db.part/db],
+  :db.install/_attribute :db.part/db,
+  :db/ident              :transaction.fee/value,
+  :db/valueType          :db.type/bigdec,
+  :db/cardinality        :db.cardinality/one,
+  :db/doc                "Value of transaction fee. If type relative value is in range 0-100, otherwise the fee amount."}
  ]

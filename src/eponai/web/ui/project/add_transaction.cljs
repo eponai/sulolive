@@ -24,6 +24,25 @@
                          (assoc :input-tag "")
                          (update-in [:input-transaction :transaction/tags] conj tag))))
 
+(defui OptionSelector
+  Object
+  (render [this]
+    (let [{:keys [options]
+           option-name :name} (om/props this)]
+      (html
+        [:div.option-selector
+         (map (fn [opt i]
+                (let [id (str option-name "-" i)]
+                  [:div.option
+                   [:input {:id id :type "radio" :name option-name}]
+                   [:label {:for id}
+                    [:span (:label opt)]]
+                   ]))
+              options
+              (range))]))))
+
+(def ->OptionSelector (om/factory OptionSelector))
+
 (defui AddTransaction
   static om/IQuery
   (query [_]
@@ -82,8 +101,8 @@
               (on-close)))))))
 
   (render [this]
-    (let [{:keys [type input-transaction computed/date-range-picker-on-apply]} (om/get-state this)
-          {:keys [transaction/date transaction/currency transaction/category]} input-transaction
+    (let [{:keys [type input-transaction computed/date-range-picker-on-apply add-fee?]} (om/get-state this)
+          {:keys [transaction/date transaction/currency transaction/category transaction/fee]} input-transaction
           {:keys [query/all-currencies
                   query/all-tags
                   query/all-categories]} (om/props this)]
@@ -182,7 +201,42 @@
              [:textarea
               {:type      "text"
                :value     (:transaction/title input-transaction "")
-               :on-change #(om/update-state! this assoc-in [:input-transaction :transaction/title] (.. % -target -value))}]]]]
+               :on-change #(om/update-state! this assoc-in [:input-transaction :transaction/title] (.. % -target -value))}]]]
+
+           [:div.row
+            [:div.columns.small-3.text-right
+             [:label "Fees:"]]
+            [:div.columns.small-9.transaction-fee
+             [:div.row
+              (when-not (empty? fee)
+                (map (fn [f]
+                       [:div
+                        "Fee: " (:transaction.fee/type f) " value " (:transaction.fee/value f)])))]
+             [:div.row
+              [:a
+               {:on-click #(om/update-state! this assoc :add-fee? true)}
+               "+ Add new fee"]]
+             (when add-fee?
+               (utils/popup {:on-close #(om/update-state! this assoc :add-fee? false)}
+                            [:div.add-new-transaction-fee
+                             [:div
+                              (sel/->SegmentedOption (om/computed {:options [{:label "$" :value :absolute}
+                                                                             {:label "%" :value :relative}]
+                                                                   :name    "fee-selector"
+                                                                   :value {:label "$" :value :absolute}}
+                                                                  {:on-select #(om/update-state! this assoc-in [:input-transaction])}))]
+                             [:div
+                              [:input {:type "number" :placeholder "Value"}]]
+                             [:div
+                              (sel/->Select {:options (map (fn [{:keys [currency/code db/id]}]
+                                                             {:label code
+                                                              :value id})
+                                                           all-currencies)
+                                             :value   currency})]
+                             [:a.button.small "Add"]]))
+             ]]]
+
+
 
           [:div.content-section.clearfix
            [:a.button.hollow.float-right
