@@ -79,6 +79,7 @@
   (render [this]
     (let [{:keys [options value]
            option-name :name} (om/props this)
+          {:keys [on-select]} (om/get-computed this)
           {:keys [selected]} (om/get-state this)]
       (html
         [:ul.segmented-container
@@ -87,9 +88,12 @@
                   [:li.segmented-option
                    {:key id}
                    [:input
-                    (cond-> {:id id :type "radio"
-                             :name option-name
-                             :on-click #(om/update-state! this assoc :selected opt)}
+                    (cond-> {:id       id :type "radio"
+                             :name     option-name
+                             :on-click #(do
+                                         (om/update-state! this assoc :selected opt)
+                                         (when on-select
+                                           (on-select opt)))}
 
                             (= (or (:value selected) (:value value)) (:value opt))
                             (assoc :checked :checked))]

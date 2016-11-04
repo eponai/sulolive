@@ -20,6 +20,7 @@ $segmented-radius:					$button-radius;
 		margin: 0;
 		border: 1px solid $segmented-highlight-color;
 		color: $segmented-text-color;
+		transition: background 0.25s, color 0.25s;
 	}
 
 	input:checked + label {

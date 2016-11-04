@@ -43,6 +43,46 @@
 
 (def ->OptionSelector (om/factory OptionSelector))
 
+(defui AddTransactionFee
+  Object
+  (save [this]
+    (let [{:keys [on-save]} (om/get-computed this)
+          {:keys [transaction-fee]} (om/get-state this)]
+      (when on-save
+        (on-save (-> transaction-fee
+                     (update :transaction.fee/type #(:value %)))))))
+  (initLocalState [_]
+    {:transaction-fee {:transaction.fee/type {:label "$" :value :transaction.fee.type/absolute}}})
+  (render [this]
+    (let [{:keys [all-currencies default]} (om/get-computed this)
+          {:keys [transaction-fee]} (om/get-state this)]
+      (debug "Will add transaction fee: " transaction-fee)
+      (html
+        [:div.add-new-transaction-fee
+         [:div
+          (sel/->SegmentedOption (om/computed {:options [{:label "$" :value :transaction.fee.type/absolute}
+                                                         {:label "%" :value :transaction.fee.type/relative}]
+                                               :name    "fee-selector"
+                                               :value   (:transaction.fee/type transaction-fee)}
+                                              {:on-select #(om/update-state! this assoc-in [:transaction-fee :transaction.fee/type] %)}))]
+         [:div
+          [:input {:type "number"
+                   :placeholder "Value"
+                   :on-change #(om/update-state! this assoc-in [:transaction-fee :transaction.fee/value] (.. % -target -value))}]]
+         [:div
+          (sel/->Select {:options (map (fn [{:keys [currency/code db/id]}]
+                                         {:label code
+                                          :value id})
+                                       all-currencies)
+                         :disabled (not= (get-in transaction-fee [:transaction.fee/type :value]) :transaction.fee.type/absolute)
+                         :value   (or (:transaction.fee/currency transaction-fee) default)})]
+         [:a.button.small
+          {:on-click
+           #(.save this)}
+          "Add"]]))))
+
+(def ->AddTransactionFee (om/factory AddTransactionFee))
+
 (defui AddTransaction
   static om/IQuery
   (query [_]
@@ -106,7 +146,7 @@
           {:keys [query/all-currencies
                   query/all-tags
                   query/all-categories]} (om/props this)]
-      ;(debug "Input transaction: " input-transaction)
+      (debug "Input transaction: " input-transaction)
       (html
         [:div#add-transaction
          [:h4.header "New Transaction"]
@@ -209,31 +249,25 @@
             [:div.columns.small-9.transaction-fee
              [:div.row
               (when-not (empty? fee)
-                (map (fn [f]
+                (map (fn [f i]
                        [:div
-                        "Fee: " (:transaction.fee/type f) " value " (:transaction.fee/value f)])))]
+                        {:key (str "fee " i)}
+                        (str "Fee: " (:transaction.fee/type f) " value " (:transaction.fee/value f))])
+                     fee
+                     (range)))]
              [:div.row
               [:a
                {:on-click #(om/update-state! this assoc :add-fee? true)}
                "+ Add new fee"]]
              (when add-fee?
                (utils/popup {:on-close #(om/update-state! this assoc :add-fee? false)}
-                            [:div.add-new-transaction-fee
-                             [:div
-                              (sel/->SegmentedOption (om/computed {:options [{:label "$" :value :absolute}
-                                                                             {:label "%" :value :relative}]
-                                                                   :name    "fee-selector"
-                                                                   :value {:label "$" :value :absolute}}
-                                                                  {:on-select #(om/update-state! this assoc-in [:input-transaction])}))]
-                             [:div
-                              [:input {:type "number" :placeholder "Value"}]]
-                             [:div
-                              (sel/->Select {:options (map (fn [{:keys [currency/code db/id]}]
-                                                             {:label code
-                                                              :value id})
-                                                           all-currencies)
-                                             :value   currency})]
-                             [:a.button.small "Add"]]))
+                            (->AddTransactionFee (om/computed {}
+                                                              {:all-currencies all-currencies
+                                                               :default        currency
+                                                               :on-save        #(om/update-state! this (fn [st]
+                                                                                                         (-> st
+                                                                                                             (update-in [:input-transaction :transaction/fee] conj %)
+                                                                                                             (assoc :add-fee? false))))}))))
              ]]]
 
 
@@ -244,173 +278,6 @@
                             (let [on-close (:on-close (om/get-computed this))]
                               (on-close)))}
             "Save"]]]]))))
-
-;(defui AddTransaction
-;  static om/IQuery
-;  (query [_]
-;    [:query/message-fn
-;     {:query/all-currencies [:currency/code]}
-;     {:query/all-projects [:project/uuid
-;                          :project/name]}])
-;  Object
-;  (initLocalState [this]
-;    (let [{:keys [query/all-currencies
-;                  query/all-projects]} (om/props this)]
-;      {:input-transaction {:transaction/date     (date/date-map (date/today))
-;                           :transaction/tags     #{}
-;                           :transaction/currency {:currency/code (-> all-currencies
-;                                                                     first
-;                                                                     :currency/code)}
-;                           :transaction/project  {:project/uuid (-> all-projects
-;                                                                    first
-;                                                                    :project/uuid)}
-;                           :transaction/type     :transaction.type/expense}}))
-;  (add-transaction [this]
-;    (let [st (om/get-state this)
-;          message-id (message/om-transact! this
-;                                           `[(transaction/create
-;                                               ~(-> (:input-transaction st)
-;                                                    (assoc :transaction/uuid (d/squuid))
-;                                                    (assoc :transaction/created-at (.getTime (js/Date.)))
-;                                                    ;(update :transaction/date (fn [d] {:date/ymd (f/date->ymd-string d)}))
-;                                                    ))
-;                                             :routing/project])]
-;      (om/update-state! this assoc :pending-transaction message-id)))
-;
-;  (toggle-input-type [this]
-;    (let [{:keys [input-transaction]} (om/get-state this)
-;          type (:transaction/type input-transaction)]
-;      (cond (= type :transaction.type/expense)
-;            (om/update-state! this assoc-in [:input-transaction :transaction/type] :transaction.type/income)
-;
-;            (= type :transaction.type/income)
-;            (om/update-state! this assoc-in [:input-transaction :transaction/type] :transaction.type/expense))))
-;
-;  (select-date [this date]
-;    (om/update-state! this assoc-in [:input-transaction :transaction/date] date))
-;  (select-project [this project-uuid]
-;    (om/update-state! this assoc-in [:input-transaction :transaction/project :project/uuid] (uuid project-uuid)))
-;
-;  (ui-config [this]
-;    (let [{:keys [input-transaction]} (om/get-state this)
-;          type (:transaction/type input-transaction)]
-;      (cond (= type :transaction.type/expense)
-;            {:btn-class "button alert small"
-;             :i-class "fa fa-minus"}
-;
-;            (= type :transaction.type/income)
-;            {:btn-class "button success small"
-;             :i-class "fa fa-plus"})))
-;
-;  (componentDidUpdate [this prev-props prev-state]
-;    (when-let [history-id (:pending-transaction (om/get-state this))]
-;      (let [{:keys [query/message-fn]} (om/props this)
-;            message (message-fn history-id 'transaction/create)]
-;        (when message
-;          (debug "Got message: " message)
-;          (js/alert (message/message message))
-;          ((:on-close (om/get-computed this)))))))
-;  (render
-;    [this]
-;    (let [{:keys [query/all-currencies
-;                  query/all-projects]} (om/props this)
-;          {:keys [input-tag
-;                  input-transaction]} (om/get-state this)
-;          {:keys [transaction/date transaction/tags transaction/currency
-;                  transaction/project transaction/amount transaction/title
-;                  transaction/type]} input-transaction
-;          {:keys [on-close]} (om/get-computed this)
-;          {:keys [btn-class
-;                  i-class] :as conf} (.ui-config this)]
-;      (html
-;        [:div
-;
-;         [:div
-;          {:class (if (= type :transaction.type/expense) "alert" "success")}
-;          [:h3
-;           (if (= type :transaction.type/expense)
-;             "New expense"
-;             "New income")]]
-;
-;         [:div
-;          [:label
-;           "Project:"]
-;          [:select
-;           {:on-change     #(.select-project this (.-value (.-target %)))
-;            :type          "text"
-;            :default-value project}
-;           (map-all all-projects
-;                    (fn [project]
-;                      [:option
-;                       (opts {:value (:project/uuid project)
-;                              :key   [(:db/id project)]})
-;                       (or (:project/name project) "Untitled")]))]
-;
-;          [:label
-;           "Amount:"]
-;          ;; Input amount with currency
-;          [:div.input-group
-;           [:a.input-group-button
-;            (opts {:on-click #(.toggle-input-type this)
-;                   :class    btn-class})
-;            [:i
-;             {:class i-class}]]
-;           [:input.input-group-field
-;            (opts {:type        "number"
-;                   :placeholder "0.00"
-;                   :min         "0"
-;                   :value       (or amount "")
-;                   :on-change   (utils/on-change-in this [:input-transaction :transaction/amount])})]
-;
-;           [:select.input-group-field
-;            (opts {:on-change     (utils/on-change-in this [:input-transaction :transaction/currency :currency/code])
-;                   :default-value currency})
-;            (map-all all-currencies
-;                     (fn [{:keys [currency/code]}]
-;                       [:option
-;                        (opts {:value (name code)
-;                               :key   [code]})
-;                        (name code)]))]]
-;
-;          [:label.form
-;           "Title:"]
-;
-;          [:input
-;           {:on-change (utils/on-change-in this [:input-transaction :transaction/title])
-;            :type      "text"
-;            :value     (or title "")}]
-;
-;          [:label
-;           "Date:"]
-;
-;          ; Input date with datepicker
-;
-;          (->Datepicker
-;            (opts {:key       [::date-picker]
-;                   :value     date
-;                   :on-change #(.select-date this %)}))
-;
-;          [:label
-;           "Tags:"]
-;
-;          (utils/tag-input
-;            {:input-tag     input-tag
-;             :selected-tags tags
-;             :on-change     #(om/update-state! this assoc :input-tag %)
-;             :on-add-tag    #(add-tag this %)
-;             :on-delete-tag #(delete-tag-fn this %)
-;             :placeholder   "Select tags..."})]
-;
-;         [:div
-;          (opts {:style {:float :right}})
-;          [:a
-;           (opts {:class    "button secondary"
-;                  :on-click on-close})
-;           "Cancel"]
-;          [:button.btn.btn-md
-;           (opts {:class    "button"
-;                  :on-click #(.add-transaction this)})
-;           "Save"]]]))))
 
 (def ->AddTransaction (om/factory AddTransaction))
 

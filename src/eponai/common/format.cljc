@@ -136,6 +136,12 @@
                      :transaction/category (fn [c]
                                              {:pre [(map? c)]}
                                              c)
+                     :transaction/fee      (fn [fee]
+                                             {:pre [(map? fee)]}
+                                             (update fee :transaction.fee/amount (fn [a] #?(:clj  (bigdec a)
+                                                                                            :cljs (cond-> a
+                                                                                                          (string? a)
+                                                                                                          (cljs.reader/read-string))))))
                      :transaction/amount   (fn [a]
                                              {:pre [(or (string? a) (number? a))]}
                                              #?(:clj  (bigdec a)
