@@ -221,7 +221,7 @@
 
 (defn path->paths [path]
   (->> path
-       (iterate rest)
+       (iterate butlast)
        (take-while seq)
        (map vec)))
 
