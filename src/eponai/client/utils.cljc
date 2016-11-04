@@ -4,8 +4,7 @@
             [clojure.data :as diff]
             [eponai.common.datascript :as common.datascript]
             [om.next :as om]
-    #?(:cljs [taoensso.timbre :as timbre :refer-macros [debug warn error]]
-       :clj  [taoensso.timbre :as timbre :refer [debug warn error]])
+            [taoensso.timbre :as timbre #?(:clj :refer :cljs :refer-macros) [trace debug warn error]]
     #?@(:cljs
         [[goog.log :as glog]
          [cljs-time.coerce :as cljs-time]
@@ -242,12 +241,18 @@
                          (when-let [c-props (get-in props c-path)]
                            (debug "found cached props for c-path: " c-path)
                            props))))
-        ret (->> (butlast c-path)
+        ret (->> c-path
                  (path->paths)
                  (cons [::root])
                  (map #(get-in cache %))
                  (filter some?)
                  (some find-props))]
+    (when-not ret
+      (trace "no cached props for " {:cache          cache
+                                     :c-path         c-path
+                                     :c-query        c-query
+                                     :exact-subquery exact-subquery
+                                     :paths          (path->paths c-path)}))
     ret))
 
 (def om-path #'om/path)
@@ -282,10 +287,12 @@
     (when-not (identical? db cache-db)
       ;; db's are not identical. Reset the cache.
       (reset! cache {::db db}))
-    (let [props (or (find-cached-props @cache path query)
+    (let [path-without-indexes (remove number? path)
+          props (or (when-let [cache (not-empty (dissoc @cache ::db))]
+                      (find-cached-props cache path-without-indexes query))
                     (parser-thunk))]
       (swap! cache update-in
-             (or (seq (remove number? path)) [::root])
+             (or (seq path-without-indexes) [::root])
              merge
              {::query query
               ::props props})
