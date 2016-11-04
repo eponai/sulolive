@@ -331,28 +331,32 @@
       (when (nil? error)
         (when-let [chunked-txs (seq (query-transactions->ds-txs response))]
           (loop [stable-db stable-db mutation-queue mutation-queue txs chunked-txs]
-            (if (empty? (seq txs))
-              ;; Returning the new stable-db and mutation queue.
-              ;; The app state is currently one with db and it's mutations.
-              ;; (not that the current state of the app-state matters).
-              {:new-stable-db  stable-db
-               :mutation-queue mutation-queue}
-              (let [[head tail] (split-at 50 txs)]
-                (cb {:db     stable-db
-                     :result {KEY-TO-RERENDER-UI {:just/transact head}}})
-                (let [new-stable-db (d/db app-state)
-                      db-with-mutations (apply-and-queue-mutations reconciler
-                                                                   new-stable-db
-                                                                   mutation-queue
-                                                                   is-remote-fn
-                                                                   history-id)
-                      _ (cb {:db db-with-mutations})
-                      ;; Apply pending mutations locally only.
-                      ;; Timeout to allow for re-render.
-                      _ (<! (timeout 0))
-                      ;; there may be new mutations in the app state. Get them.
-                      mutation-queue (d/db app-state)]
-                  (recur new-stable-db mutation-queue tail))))))))))
+            (let [[head tail] (split-at 50 txs)]
+              ;; Merge the head.
+              (cb {:db     stable-db
+                   :result {KEY-TO-RERENDER-UI {:just/transact head}}})
+              ;; Get the new stable app-state.
+              (let [new-stable-db (d/db app-state)]
+                (if (empty? (seq tail))
+                  ;; There's nothing more to stream, so we can exit the loop
+                  ;; in an app state where we need to merge the mutation queue
+                  ;; (which was the state we entered this go-block in).
+                  {:new-stable-db  stable-db
+                   :mutation-queue mutation-queue}
+                  ;; There's more to stream:
+                  ;; Apply mutation queue and stream the rest.
+                  (let [db-with-mutations (apply-and-queue-mutations reconciler
+                                                                     new-stable-db
+                                                                     mutation-queue
+                                                                     is-remote-fn
+                                                                     history-id)
+                        _ (cb {:db db-with-mutations})
+                        ;; Apply pending mutations locally only.
+                        ;; Timeout to allow for re-render.
+                        _ (<! (timeout 0))
+                        ;; there may be new mutations in the app state. Get them.
+                        mutation-queue (d/db app-state)]
+                    (recur new-stable-db mutation-queue tail)))))))))))
 
 (defn leeb
   "Takes a channel with remote queries and handles the resetting of
