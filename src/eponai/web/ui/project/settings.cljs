@@ -57,8 +57,8 @@
               [:p "You have no categories yet"]
               (map (fn [c]
                      [:li
+                      {:key (:category/name c)}
                       [:a.button.black
-                       {:key (:category/name c)}
                        (:category/name c)]])
                    all-categories))
             [:li.add-category-section
@@ -83,7 +83,9 @@
            [:span "Users"]]
           [:div.row
            (map (fn [u]
-                  [:a.button.hollow.black (:user/email u)])
+                  [:a.button.hollow.black
+                   {:key (str (:db/id u))}
+                   (:user/email u)])
                 project-users)]]
 
 
