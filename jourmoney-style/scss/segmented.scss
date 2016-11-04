@@ -33,7 +33,7 @@ $segmented-radius:					$button-radius;
 		// border: 1px solid $white;
 		margin: 0;
 		overflow: hidden;
-		flex: 1;
+		flex: 1 0 auto;
 		&:first-child label {
 			border-radius: $segmented-radius 0 0 $segmented-radius;
 		}

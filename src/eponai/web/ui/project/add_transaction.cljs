@@ -11,6 +11,8 @@
     [eponai.web.ui.select :as sel]
     [eponai.web.ui.utils :as utils]
     [garden.core :refer [css]]
+    [om.dom :as dom]
+    [goog.string :as gstring]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [warn debug]]))
@@ -23,6 +25,19 @@
                     #(-> %
                          (assoc :input-tag "")
                          (update-in [:input-transaction :transaction/tags] conj tag))))
+
+(defn transaction-fee-element [fee on-delete]
+  (let [fee-type (:transaction.fee/type fee)
+        fee-value (gstring/format "%.2f" (:transaction.fee/value fee))
+        title (if (= fee-type :transaction.fee.type/absolute) "Fixed value" "Relative value")
+        value (if (= fee-type :transaction.fee.type/absolute) (str "$ " fee-value) (str fee-value " %"))]
+    [:div.transaction-fee
+     ;[:div.content]
+     [:strong value]
+     [:span title]
+     [:a.float-right
+      {:on-click on-delete}
+      "x"]]))
 
 (defui OptionSelector
   Object
@@ -53,6 +68,9 @@
                      (update :transaction.fee/type #(:value %)))))))
   (initLocalState [_]
     {:transaction-fee {:transaction.fee/type {:label "$" :value :transaction.fee.type/absolute}}})
+  (componentDidMount [this]
+    (let [value-input (js/ReactDOM.findDOMNode (om/react-ref this "fee-value-input"))]
+      (.focus value-input)))
   (render [this]
     (let [{:keys [all-currencies default]} (om/get-computed this)
           {:keys [transaction-fee]} (om/get-state this)]
@@ -66,16 +84,17 @@
                                                :value   (:transaction.fee/type transaction-fee)}
                                               {:on-select #(om/update-state! this assoc-in [:transaction-fee :transaction.fee/type] %)}))]
          [:div
-          [:input {:type "number"
+          [:input {:type        "number"
                    :placeholder "Value"
-                   :on-change #(om/update-state! this assoc-in [:transaction-fee :transaction.fee/value] (.. % -target -value))}]]
-         [:div
-          (sel/->Select {:options (map (fn [{:keys [currency/code db/id]}]
-                                         {:label code
-                                          :value id})
-                                       all-currencies)
-                         :disabled (not= (get-in transaction-fee [:transaction.fee/type :value]) :transaction.fee.type/absolute)
-                         :value   (or (:transaction.fee/currency transaction-fee) default)})]
+                   :ref         "fee-value-input"
+                   :on-change   #(om/update-state! this assoc-in [:transaction-fee :transaction.fee/value] (.. % -target -value))}]]
+         (when (= (get-in transaction-fee [:transaction.fee/type :value]) :transaction.fee.type/absolute)
+           [:div
+            (sel/->Select {:options (map (fn [{:keys [currency/code db/id]}]
+                                           {:label code
+                                            :value id})
+                                         all-currencies)
+                           :value   (or (:transaction.fee/currency transaction-fee) default)})])
          [:a.button.small
           {:on-click
            #(.save this)}
@@ -125,7 +144,8 @@
                            ;:transaction/category {:label (:category/name category-entity)
                            ;                       :value (:db/id category-entity)}
                            :transaction/project  project-id
-                           :transaction/type     :transaction.type/expense}
+                           :transaction/type     :transaction.type/expense
+                           :transaction/fee []}
        :type              :expense
        :computed/date-range-picker-on-apply #(om/update-state! this assoc-in [:input-transaction :transaction/date] %)}))
   (componentDidUpdate [this _ _]
@@ -247,15 +267,19 @@
             [:div.columns.small-3.text-right
              [:label "Fees:"]]
             [:div.columns.small-9.transaction-fee
-             [:div.row
+             [:div
               (when-not (empty? fee)
                 (map (fn [f i]
-                       [:div
+                       [:div.transaction-fee-container
                         {:key (str "fee " i)}
-                        (str "Fee: " (:transaction.fee/type f) " value " (:transaction.fee/value f))])
+                        (transaction-fee-element f
+                                                 #(om/update-state! this update-in [:input-transaction :transaction/fee] (fn [fees]
+                                                                                                                           (vec (concat
+                                                                                                                                  (subvec fees 0 i)
+                                                                                                                                  (subvec fees (inc i) (count fees)))))))])
                      fee
                      (range)))]
-             [:div.row
+             [:div
               [:a
                {:on-click #(om/update-state! this assoc :add-fee? true)}
                "+ Add new fee"]]
