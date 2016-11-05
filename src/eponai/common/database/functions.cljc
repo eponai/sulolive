@@ -126,7 +126,7 @@
 
 #?(:clj
    (def-dbfn update-edit-datomic {:requires ['[datomic.api]]}
-     [db created-at entity attr value cardinality-many?]
+     [db created-at entity attr value added? cardinality-many?]
      (let [latest-datom (some->> (apply datomic.api/datoms (datomic.api/history db)
                                         :eavt entity attr (when value [value]))
                                  (sort-by :tx #(compare %2 %1))
@@ -140,6 +140,10 @@
          ;; last-edit is greater than created-at. Give up.
          (> last-edit created-at)
          false
+         ;; We're just checking if it's even possible to edit this attr.
+         ;; Return true for now.
+         (nil? value)
+         true
          ;; Else, check if there has been an update to this
          ;; tx's exact entity attr and value with a later edit-time.
          :else
@@ -177,7 +181,10 @@
            (when (or (nil? latest-update)
                      (> created-at latest-update))
              ;; You're the greatest! You'll edit.
-             (if (and value (= value (:v latest-datom)))
+             (assert (:added latest-datom)
+                     (str "Datom did not have :added. Datom keys: " (keys latest-datom)))
+             (if (and (= value (:v latest-datom))
+                      (= added? (:added latest-datom)))
                ;; Value is the same as for this tx, create an update.
                (cond-> {:db/id                      (datomic.api/tempid :db.part/user)
                         :mutation-update/tx         (:db/id tx-entity)
@@ -191,7 +198,7 @@
                        (assoc :mutation-update/value @as-updated-value))
                true)))))))
 
-(defn update-edit-datascript [db created-at entity attr value cardinality-many?]
+(defn update-edit-datascript [db created-at entity attr value added? cardinality-many?]
   true)
 
 (def-dbfn edit-attr
@@ -203,13 +210,13 @@
               {:dbfn update-edit-datomic :provides 'update-edit}]}
   [db created-at entity attr value]
   (letfn [(edit-attr? [db created-at entity attr]
-            (if (cardinality-many? db attr)
-              ;; cardinality many updates need to be validated by value.
-              true
-              (update-edit db created-at entity attr nil
-                           (cardinality-many? db attr))))
-          (update-value? [x]
-            (update-edit db created-at entity attr x (cardinality-many? db attr)))
+            (let [many? (cardinality-many? db attr)]
+              (if many?
+                ;; cardinality many updates need to be validated by value.
+                true
+                (update-edit db created-at entity attr nil nil many?))))
+          (update-val? [added? x]
+            (update-edit db created-at entity attr x added? (cardinality-many? db attr)))
 
           (to-txs [db-fn value]
             (if (or (sequential? value) (set? value))
@@ -224,7 +231,8 @@
                   (db-fn value))))
 
           (db-add [new-value]
-            (letfn [(x->txs [x]
+            (letfn [(update-value? [x] (update-val? true x))
+                    (x->txs [x]
                       (if (map? x)
                         (do (assert (ref? db attr)
                                     (str "Attribute was not a ref but it got a map as value."
@@ -256,7 +264,8 @@
               (to-txs x->txs new-value)))
 
           (db-retract [old-value]
-            (letfn [(x->txs [x]
+            (letfn [(update-value? [x] (update-val? false x))
+                    (x->txs [x]
                       (if (map? x)
                         (do (assert (ref? db attr)
                                     (str "Attribute was not a ref but it got a map as value."
@@ -287,11 +296,10 @@
                     [false false] []
                     [false true] (db-add new-value)
                     [true false] (db-retract old-value)
-                    [true true] (if (cardinality-many? db attr)
-                                  (-> []
-                                      (into (db-retract old-value))
-                                      (into (db-add new-value)))
-                                  ;; cardinality-one. New value would just replace the old.
-                                  ;; ..right?
-                                  (db-add new-value)))))]
+                    [true true]
+                    (-> []
+                        (into (db-retract old-value))
+                        (into (db-add new-value))))))]
+      (when (number? created-at)
+        (prn [created-at entity attr ret]))
       ret)))

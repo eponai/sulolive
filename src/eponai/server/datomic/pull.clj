@@ -7,7 +7,7 @@
     [eponai.common.database.pull :as p]
     [eponai.common.parser.util :as parser]
     [eponai.common.report :as report]
-    [taoensso.timbre :as timbre :refer [debug warn trace]]))
+    [taoensso.timbre :as timbre :refer [info debug warn trace]]))
 
 (defn currencies [db]
   (p/q '[:find [(pull ?e [*]) ...]
@@ -287,9 +287,10 @@
                   (mapcat (fn [query]
                             (let [query (cond-> query
                                                 (some? find-pattern)
-                                                (p/merge-query {:find-pattern
-                                                                find-pattern}))]
-                              (p/find-with db query))))))))
+                                                (p/merge-query {:find-pattern find-pattern}))
+                                  ret (p/find-with (d/history db) query)]
+                              ret)))))))
+
 
 ;; ######## History api
 
