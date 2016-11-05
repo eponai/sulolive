@@ -24,6 +24,18 @@
 (defn on-input-change [this k]
   #(om/update-state! this assoc k (.-value (.-target %))))
 
+(defn privacy-policy-link []
+  [:a.link
+   {:href "//www.iubenda.com/privacy-policy/7944779"
+    :class "iubenda-nostyle no-brand iubenda-embed"
+    :title "Privacy Policy"} "Privacy Policy"])
+
+(defn terms-of-service-link []
+  [:a.link
+   {:href "http://www.websitepolicies.com/policies/view/o5bTzU"
+    :target "_blank"}
+   "Terms of Service"])
+
 (defui LogIn
   static om/IQuery
   (query [_])
@@ -105,10 +117,11 @@
          ;[:hr.intro-divider-landing]
 
          [:p.accept-terms
-          "By signing in, you accept JourMoney's"
-          [:a.link {:class "btn btn-link btn-xs"} "Terms of Service"]
-          " and "
-          [:a.link {:class "btn btn-link btn-xs"} "Privacy Policy"]]
+          "By signing in, you accept JourMoney's "
+          ;(terms-of-service-link)
+          ;[:a.link {:class "btn btn-link btn-xs"} "Terms of Service"]
+          ;" and "
+          (privacy-policy-link)]
          ]))))
 
 (def ->log-in (om/factory LogIn))
