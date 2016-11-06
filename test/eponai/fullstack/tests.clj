@@ -12,7 +12,7 @@
             [clojure.test :as test]
             [datascript.core :as datascript]
             [eponai.fullstack.framework :as fw]
-            [eponai.fullstack.jvmclient :refer [JvmRoot]]
+            [eponai.fullstack.jvmclient :as jvmclient :refer [JvmRoot]]
             [clojure.test :as test]
             [eponai.fullstack.utils :as fs.utils]
             [clojure.walk :as walk]
@@ -427,6 +427,22 @@
                                                                       (map :transaction/title))
                                                              clients)))))
 
+(defn get-email [client]
+  (let [emails (pull/all-with (db client) {:where '[[?user :user/email ?e]]})]
+    (assert= 1 (count emails))
+    (first emails)))
+
+(defn test-create-new-user-with-email [server clients]
+  (let [new-email "foo@bar.com"]
+    {:label   "Log out and create a new user with email"
+     :actions [{::fw/asserts #(assert (every? (fn [client] (not= new-email (get-email client))) clients))}
+               {::fw/transaction #(run! jvmclient/log-out! clients)}
+               {::fw/transaction #(run! (fn [c]
+                                          (jvmclient/log-in! c (jvmclient/log-in-with-email new-email)))
+                                        clients)}
+               {::fw/sync-clients! true
+                ::fw/asserts       #(assert (every? (fn [client]
+                                                      (assert= new-email (get-email client))) clients))}]}))
 
 (defn run []
   (fs.utils/with-less-loud-logger
@@ -446,8 +462,9 @@
                              test-two-client-edit-tags-offline+sync-1
                              test-two-client-edit-tags-offline+sync-2
                              test-two-client-edit-titles-offline+sync
+                             test-create-new-user-with-email
                              ]
-                            ;(filter (partial = test-edit-transaction-offline-to-new-offline-project))
+                            ;(filter (partial = test-create-new-user-with-email))
                             ;(reverse)
                             ;(take 1)
                         ))

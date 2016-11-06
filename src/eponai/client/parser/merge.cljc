@@ -43,29 +43,38 @@
     (debug "Mutation message-type" message-type "for :" key " message: " message)
     (message/store-message db history-id (message/->message-from-server key message message-type))))
 
+(defn merge-signout [db key val]
+  ;;TODO: We probably need to do more retracting.
+  (letfn [(all-entities-with-attr [attr]
+            (into [] (map :e) (d/datoms db :aevt attr)))]
+    (transact db (into [] (comp (mapcat all-entities-with-attr)
+                                (map #(vector :db.fn/retractEntity %)))
+                       [:user/uuid
+                        :transaction/uuid
+                        :project/uuid]))))
+
 ;;;;;;; API
 
 (defn merge-mutation [merge-fn db history-id key val]
-  {:pre [(methods merge-fn)
-         (db/db? db)
-         (symbol? key)]
+  {:pre  [(methods merge-fn)
+          (db/db? db)
+          (symbol? key)]
    :post [(db/db? %)]}
-  ;; Try to pass it to the merge function first
-  ;; Otherwise, just do the default.
-  (cond
-    (contains? (methods merge-fn) key)
-    (merge-fn db key val)
 
-    (some? (get-in val [:om.next/error ::parser/mutation-message]))
-    (merge-mutation-message db history-id key (:om.next/error val) ::parser/error-message)
+  ;; Passing db to all functions for mutate.
+  ;; We may want to do this for merge-read also.
+  (cond-> db
+          (contains? (methods merge-fn) key)
+          (merge-fn key val)
 
-    (some? (get-in val [:result ::parser/mutation-message]))
-    (merge-mutation-message db history-id key (:result val) ::parser/success-message)
+          (some? (get-in val [:om.next/error ::parser/mutation-message]))
+          (merge-mutation-message history-id key (:om.next/error val) ::parser/error-message)
 
-    :else
-    (do
-      (debug "Nothing to merge for key: " key " value: " val)
-      db)))
+          (some? (get-in val [:result ::parser/mutation-message]))
+          (merge-mutation-message history-id key (:result val) ::parser/success-message)
+
+          (= key 'session/signout)
+          (merge-signout key val)))
 
 ;; TODO: Fix comments in this namespace.
 ;; TODO: Clean up merge-read and merge-mutate now that we have a merge-fn.
@@ -80,6 +89,7 @@
                db
                val)
     (cond
+
       (contains? (methods merge-fn) key)
       (merge-fn db key val)
 

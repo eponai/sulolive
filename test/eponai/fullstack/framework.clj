@@ -61,11 +61,9 @@
                 action (if (fn? action) (action) action)
                 {:keys [::transaction ::asserts ::await-clients ::sync-clients!]} action]
             (when action
-              (assert (some? transaction)
-                      (str "Got an action, but it did not contain key: " ::transaction
-                           (if (map? action)
-                             (str " had keys: " (keys action))
-                             (str " action was not a map. Was: " (type action)))))
+              (assert (every? #(= (namespace %) (namespace ::this-ns)) (keys action))
+                      (str "Every key must be one of this namespace, otherwise there's a typo?"
+                           " Keys in action: " (keys action)))
               ;; First wait for all previous actions to finish.
               ;; They might have timed out and now finished.
               ;; (run! (comp backend/drain-channel client->callback) clients)
@@ -146,6 +144,8 @@
                 (medley/map-vals async/close! client->callback)
                 (do (>! (client->callback client) client)
                     (recur (<! callback-chan))))))
+
+        clients (mapv #(client/update-callback-chan % (client->callback %)) clients)
 
         _ (init-clients-state clients client->callback)
         [sm-query-chan teardown-query-chan] (multiply-chan action-chan 2)

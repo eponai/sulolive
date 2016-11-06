@@ -41,13 +41,13 @@
      [send-fn url params]
      {:pre [(fn? send-fn)]}
      (try
-       (let [response (send-fn url params)
-             success? (<= 200 (:status response) 299)]
+       (let [{:keys [status body] :as response} (send-fn url params)
+             success? (<= 200 status 299)]
          (cond-> response
                  success?
                  (assoc :success success?)
                  ;; clj-http doesn't parse the body to transit for some reason.
-                 (string? (:body response))
+                 (and (string? body) (not (empty? body)))
                  (-> (update :body #(java.io.ByteArrayInputStream. (.getBytes %)))
                      (#(http/coerce-transit-body params % :json)))))
        (catch java.net.ConnectException e
@@ -113,6 +113,13 @@
             (do
               (<! (timeout retry-time-ms))
               (recur (min max-retry-time-ms (* 2 retry-time-ms))))
+
+            ;; Redirect
+            (<= 300 status 399)
+            (do
+              (debug "Redirect. What to do?")
+              {:response nil
+               :post-merge-fn post-merge-fn})
             :else
             (throw (ex-info "Not 2xx response remote."
                             {:remote remote-key

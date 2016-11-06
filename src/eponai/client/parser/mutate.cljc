@@ -165,3 +165,7 @@
   (assert (some? verify-uuid) (str "Mutation 'session.signin.email/verify needs a value for key :verification-uuid. Got params: " p))
   (debug "session.signin.email/verify with params: " p)
   {:remote true})
+
+(defmethod client-mutate 'session/signout
+  [_ _ _]
+  {:remote true})

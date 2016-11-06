@@ -150,7 +150,6 @@
 
           use-handler (if signout? (friend/logout handler) handler)]
       (use-handler (if signout?
-                     (->> (:session req)
-                          (assoc req :session)
+                     (->> (assoc req :session (:session req))
                           friend/logout*)
                      req)))))

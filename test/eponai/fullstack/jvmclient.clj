@@ -18,7 +18,7 @@
 (om/defui JvmRoot
   static om/IQuery
   (query [this] [:datascript/schema
-                 {:query/current-user [:user/uuid]}
+                 {:query/current-user [:user/uuid :user/email]}
                  :user/current
                  {:query/all-projects [:project/uuid
                                        :project/created-at
@@ -66,15 +66,16 @@
     (om/add-root! reconciler JvmRoot nil)
     reconciler))
 
-(defn log-in-with-email [client email-chan callback-chan]
-  (let [_ (om/transact! client `[(session.signin/email ~{:input-email datomic-dev/test-user-email
-                                                         :device      :jvm})])
-        _ (fs.utils/take-with-timeout callback-chan "email transact!")
-        {:keys [verification]} (fs.utils/take-with-timeout email-chan "email with verification")
-        {:keys [:verification/uuid]} verification]
-    (backend/drain-channel callback-chan)
-    (om/transact! client `[(session.signin.email/verify ~{:verify-uuid (str uuid)})])
-    (fs.utils/take-with-timeout callback-chan "verification")))
+(defn log-in-with-email [email]
+  (fn [client email-chan callback-chan]
+    (let [_ (om/transact! client `[(session.signin/email ~{:input-email email
+                                                           :device      :jvm})])
+          _ (fs.utils/take-with-timeout callback-chan "email transact!")
+          {:keys [verification]} (fs.utils/take-with-timeout email-chan "email with verification")
+          {:keys [:verification/uuid]} verification]
+      (backend/drain-channel callback-chan)
+      (om/transact! client `[(session.signin.email/verify ~{:verify-uuid (str uuid)})])
+      (fs.utils/take-with-timeout callback-chan "verification"))))
 
 (defn log-in! [client log-in-fn]
   (let [{:keys [::set-logged-in! ::email-chan ::callback-chan]} (meta client)]
@@ -87,9 +88,10 @@
 
 (defn log-out! [client]
   (let [{:keys [::set-logged-out! ::callback-chan]} (meta client)]
+    (set-logged-out!)
     (om/transact! client `[(session/signout)])
     (fs.utils/take-with-timeout callback-chan "logging out")
-    (set-logged-out!)))
+    ))
 
 (defn logged-in-client [idx server-url email-chan callback-chan teardown-atom]
   {:post [(some? (om/app-root %))]}
@@ -101,6 +103,9 @@
                                   ::email-chan      email-chan
                                   ::callback-chan   callback-chan})]
     (fs.utils/take-with-timeout callback-chan "initial merge")
-    (log-in! client log-in-with-email)
+    (log-in! client (log-in-with-email datomic-dev/test-user-email))
     (om/force-root-render! client)
     client))
+
+(defn update-callback-chan [client callback-chan]
+  (vary-meta client assoc ::callback-chan callback-chan))
