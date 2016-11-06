@@ -28,7 +28,7 @@
 
 (defn transaction-fee-element [fee on-delete]
   (let [fee-type (:transaction.fee/type fee)
-        fee-value (gstring/format "%.2f" (:transaction.fee/value fee))
+        fee-value (gstring/format "%.2f" (:transaction.fee/amount fee))
         title (if (= fee-type :transaction.fee.type/absolute) "Fixed value" "Relative value")
         value (if (= fee-type :transaction.fee.type/absolute) (str "$ " fee-value) (str fee-value " %"))]
     [:div.transaction-fee
@@ -87,7 +87,7 @@
           [:input {:type        "number"
                    :placeholder "Value"
                    :ref         "fee-value-input"
-                   :on-change   #(om/update-state! this assoc-in [:transaction-fee :transaction.fee/value] (.. % -target -value))}]]
+                   :on-change   #(om/update-state! this assoc-in [:transaction-fee :transaction.fee/amount] (.. % -target -value))}]]
          (when (= (get-in transaction-fee [:transaction.fee/type :value]) :transaction.fee.type/absolute)
            [:div
             (sel/->Select {:options (map (fn [{:keys [currency/code db/id]}]
@@ -120,7 +120,7 @@
                                                                       {:category/name label})))))
           message-id (message/om-transact! this
                                            `[(transaction/create
-                                               ~(-> (:input-transaction st)
+                                               ~(-> (::input-transaction st)
                                                     (assoc :transaction/uuid (d/squuid))
                                                     (update :transaction/currency :value)
                                                     update-category
@@ -137,17 +137,22 @@
           {:keys [project-id]} (om/get-computed this)
           usd-entity (some #(when (= (:currency/code %) "USD") %) all-currencies)
           category-entity (first all-categories)]
-      {:input-transaction {:transaction/date     (date/date-map (date/today))
-                           :transaction/tags     #{}
-                           :transaction/currency {:label (:currency/code usd-entity)
-                                                  :value (:db/id usd-entity)}
-                           ;:transaction/category {:label (:category/name category-entity)
-                           ;                       :value (:db/id category-entity)}
-                           :transaction/project  project-id
-                           :transaction/type     :transaction.type/expense
-                           :transaction/fee []}
-       :type              :expense
-       :computed/date-range-picker-on-apply #(om/update-state! this assoc-in [:input-transaction :transaction/date] %)}))
+      {::input-transaction                  {:transaction/date     (date/date-map (date/today))
+                                             :transaction/tags     #{}
+                                             :transaction/currency {:label (:currency/code usd-entity)
+                                                                    :value (:db/id usd-entity)}
+                                             ;:transaction/category {:label (:category/name category-entity)
+                                             ;                       :value (:db/id category-entity)}
+                                             :transaction/project  project-id
+                                             :transaction/type     :transaction.type/expense
+                                             :transaction/fee      []}
+       ::type                               :expense
+       :computed/date-range-picker-on-apply #(om/update-state! this assoc-in [::input-transaction :transaction/date] %)
+       ::is-longterm?                       false
+       ::add-fee?                           false
+       ::show-bank-fee-section?             false
+       ::show-tags-input?                   false}))
+
   (componentDidUpdate [this _ _]
     (when-let [history-id (:pending-transaction (om/get-state this))]
       (let [{:keys [query/message-fn]} (om/props this)
@@ -160,9 +165,59 @@
             (when on-close
               (on-close)))))))
 
+  (render-bank-fee-section [this]
+    (let [{:keys [query/all-currencies]} (om/props this)
+          {:keys [::input-transaction ::add-fee?]} (om/get-state this)
+          {:keys [transaction/fee transaction/currency]} input-transaction]
+      (html
+        [:div.row
+         [:div.column.transaction-fee
+          [:div
+           (when-not (empty? fee)
+             (map (fn [f i]
+                    [:div.transaction-fee-container
+                     {:key (str "fee " i)}
+                     (transaction-fee-element f
+                                              #(om/update-state! this update-in [::input-transaction :transaction/fee] (fn [fees]
+                                                                                                                        (vec (concat
+                                                                                                                               (subvec fees 0 i)
+                                                                                                                               (subvec fees (inc i) (count fees)))))))])
+                  fee
+                  (range)))]
+          [:div
+           [:a
+            {:on-click #(om/update-state! this assoc ::add-fee? true)}
+            "+ Add new fee"]]
+          (when add-fee?
+            (utils/popup {:on-close #(om/update-state! this assoc ::add-fee? false)}
+                         (->AddTransactionFee (om/computed {}
+                                                           {:all-currencies all-currencies
+                                                            :default        currency
+                                                            :on-save        #(om/update-state! this (fn [st]
+                                                                                                      (-> st
+                                                                                                          (update-in [::input-transaction :transaction/fee] conj %)
+                                                                                                          (assoc ::add-fee? false))))}))))]])))
+
+  (render-tags-section [this]
+    (let [{:keys [query/all-tags]} (om/props this)
+          {:keys [::input-transaction]} (om/get-state this)]
+      (html
+        [:div.row.column
+         (sel/->SelectTags (om/computed {:options (map (fn [{:keys [tag/name db/id]}]
+                                                         {:label name
+                                                          :value id})
+                                                       all-tags)
+                                         :value   (:transaction/tags input-transaction)}
+                                        {:on-select #(om/update-state! this assoc-in [::input-transaction :transaction/tags] %)}))])))
+
   (render [this]
-    (let [{:keys [type input-transaction computed/date-range-picker-on-apply add-fee?]} (om/get-state this)
-          {:keys [transaction/date transaction/currency transaction/category transaction/fee]} input-transaction
+    (let [{:keys [::type
+                  ::input-transaction
+                  computed/date-range-picker-on-apply
+                  ::is-longterm?
+                  ::show-tags-input?
+                  ::show-bank-fee-section?]} (om/get-state this)
+          {:keys [transaction/date transaction/currency transaction/category]} input-transaction
           {:keys [query/all-currencies
                   query/all-tags
                   query/all-categories]} (om/props this)]
@@ -181,21 +236,21 @@
              {:class    (when (= type :expense) "active")
               :on-click #(om/update-state! this (fn [st]
                                                   (-> st
-                                                      (assoc :type :expense)
-                                                      (assoc-in [:input-transaction :transaction/type] :transaction.type/expense))))}
+                                                      (assoc ::type :expense)
+                                                      (assoc-in [::input-transaction :transaction/type] :transaction.type/expense))))}
              "Expense"]]
            [:li
             [:a
              {:class    (when (= type :income) "active")
               :on-click #(om/update-state! this (fn [st]
                                                   (-> st
-                                                      (assoc :type :income)
-                                                      (assoc-in [:input-transaction :transaction/type] :transaction.type/income))))}
+                                                      (assoc ::type :income)
+                                                      (assoc-in [::input-transaction :transaction/type] :transaction.type/income))))}
              "Income"]]
            [:li
             [:a
              {:class    (when (= type :atm) "active")
-              :on-click #(om/update-state! this assoc :type :atm)}
+              :on-click #(om/update-state! this assoc ::type :atm)}
              "ATM"]]]]
          [:div.content
 
@@ -207,14 +262,14 @@
               {:type        "number"
                :min         "0"
                :placeholder "Amount"
-               :on-change   #(om/update-state! this assoc-in [:input-transaction :transaction/amount] (.. % -target -value))}]]
+               :on-change   #(om/update-state! this assoc-in [::input-transaction :transaction/amount] (.. % -target -value))}]]
             [:div.column
              (sel/->Select (om/computed {:options (map (fn [{:keys [currency/code db/id]}]
                                                          {:label code
                                                           :value id})
                                                        all-currencies)
                                          :value currency}
-                                        {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/currency] %)}))]]
+                                        {:on-select #(om/update-state! this assoc-in [::input-transaction :transaction/currency] %)}))]]
 
            [:div.row
             [:div.column
@@ -222,7 +277,7 @@
               {:type      "text"
                :placeholder "Title"
                :value     (:transaction/title input-transaction "")
-               :on-change #(om/update-state! this assoc-in [:input-transaction :transaction/title] (.. % -target -value))}]]]
+               :on-change #(om/update-state! this assoc-in [::input-transaction :transaction/title] (.. % -target -value))}]]]
 
            [:div.row.column
             (sel/->Select (om/computed {:options     (map (fn [c]
@@ -232,7 +287,7 @@
                                         :value       category
                                         :clearable   true
                                         :placeholder "Category"}
-                                       {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/category] %)}))]
+                                       {:on-select #(om/update-state! this assoc-in [::input-transaction :transaction/category] %)}))]
 
            [:div.row
             [:div.column
@@ -243,71 +298,44 @@
 
             [:div.column
             ; End date input field here
+             (when is-longterm?
+               [:div "Show end date thingy"])
              ]]
-
            [:div.row.column
             [:div.long-term
              [:div.switch.tiny
               [:input.switch-input
                {:id   "long-term-switch"
                 :type "checkbox"
-                :name "long-term-switch"}]
-              [:label.switch-paddle {:for "long-term-switch"}]
-              [:span "Long term"]]
+                :name "long-term-switch"
+                :on-click #(om/update-state! this assoc ::is-longterm? (.. % -target -checked))}]
+              [:label.switch-paddle {:for "long-term-switch"}]]
              [:span "Long term"]]]
 
-           [:div.row
-            [:div.columns.small-3.text-right
-             [:label "Tags:"]]
-            [:div.columns.small-9
-             (sel/->SelectTags (om/computed {:options (map (fn [{:keys [tag/name db/id]}]
-                                                             {:label name
-                                                              :value id})
-                                                           all-tags)
-                                             :value   (:transaction/tags input-transaction)}
-                                            {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/tags] %)}))]]
+           (cond-> []
+                   show-tags-input?
+                   (conj (.render-tags-section this))
+
+                   show-bank-fee-section?
+                   (conj (.render-bank-fee-section this)))
 
 
-           [:div.row
-            [:div.columns.small-3.text-right
-             [:label "Fees:"]]
-            [:div.columns.small-9.transaction-fee
-             [:div
-              (when-not (empty? fee)
-                (map (fn [f i]
-                       [:div.transaction-fee-container
-                        {:key (str "fee " i)}
-                        (transaction-fee-element f
-                                                 #(om/update-state! this update-in [:input-transaction :transaction/fee] (fn [fees]
-                                                                                                                           (vec (concat
-                                                                                                                                  (subvec fees 0 i)
-                                                                                                                                  (subvec fees (inc i) (count fees)))))))])
-                     fee
-                     (range)))]
-             [:div
-              [:a
-               {:on-click #(om/update-state! this assoc :add-fee? true)}
-               "+ Add new fee"]]
-             (when add-fee?
-               (utils/popup {:on-close #(om/update-state! this assoc :add-fee? false)}
-                            (->AddTransactionFee (om/computed {}
-                                                              {:all-currencies all-currencies
-                                                               :default        currency
-                                                               :on-save        #(om/update-state! this (fn [st]
-                                                                                                         (-> st
-                                                                                                             (update-in [:input-transaction :transaction/fee] conj %)
-                                                                                                             (assoc :add-fee? false))))}))))
-             ]]]
+           ]
 
 
 
           [:div.content-section.clearfix
-           (el/button
-             {:classes  (css/classes css/hollow css/black css/float-right)
-              :on-click #(do (.add-transaction this)
-                             (let [on-close (:on-close (om/get-computed this))]
-                               (on-close)))}
-             "Save")]]]))))
+           [:div.float-left
+            [:ul.menu
+             [:li [:a {:on-click #(om/update-state! this update ::show-tags-input? not)} "Tags"]]
+             [:li [:a {:on-click #(om/update-state! this update ::show-bank-fee-section? not)} "Bank fees"]]
+             ;[:li [:a "Location"]]
+             ]]
+           [:a.button.hollow.black.float-right
+            {:on-click #(do (.add-transaction this)
+                            (let [on-close (:on-close (om/get-computed this))]
+                              (on-close)))}
+            "Save"]]]]))))
 
 (def ->AddTransaction (om/factory AddTransaction))
 
@@ -323,7 +351,6 @@
     (let [{:keys [query/all-currencies]} (om/props this)
           {:keys [project]} (om/get-computed this)
           usd-entity (some #(when (= (:currency/code %) "USD") %) all-currencies)]
-      (debug "Add transaction to project: " project)
       {:transaction/date     (date/date-map (date/today))
        :transaction/tags     #{}
        :transaction/currency {:label (:currency/code usd-entity)

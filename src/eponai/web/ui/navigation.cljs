@@ -112,7 +112,7 @@
                                            {:route-param/project-id project-id}))}
                (icon/menu-settings (= selected-tab :settings))])]]]]
 
-         (when true                                         ;add-transaction?
+         (when add-transaction?
            (utils/modal {:content  (->AddTransaction
                                      (om/computed add-transaction
                                                   {:on-close on-close-add-transaction

@@ -137,11 +137,13 @@
                                              {:pre [(map? c)]}
                                              c)
                      :transaction/fee      (fn [fee]
-                                             {:pre [(map? fee)]}
-                                             (update fee :transaction.fee/amount (fn [a] #?(:clj  (bigdec a)
-                                                                                            :cljs (cond-> a
-                                                                                                          (string? a)
-                                                                                                          (cljs.reader/read-string))))))
+                                             {:pre [(coll? fee)]}
+                                             (map
+                                               #(update % :transaction.fee/amount (fn [a] #?(:clj  (bigdec a)
+                                                                                              :cljs (cond-> a
+                                                                                                            (string? a)
+                                                                                                            (cljs.reader/read-string)))))
+                                               fee))
                      :transaction/amount   (fn [a]
                                              {:pre [(or (string? a) (number? a))]}
                                              #?(:clj  (bigdec a)
@@ -276,8 +278,8 @@
     (update :widget/filter filter*)))
 
 (defn widget-create [input]
-  (assert (some? (:widget/dashboard input)) "Widget needs to ba associated to a dashboard.")
-  (assert (some? (:widget/uuid input)) "Widget needs a UUID to be saved.")
+  ;(assert (some? (:widget/dashboard input)) "Widget needs to ba associated to a dashboard.")
+  ;(assert (some? (:widget/uuid input)) "Widget needs a UUID to be saved.")
 
   (-> input
       widget*
