@@ -1,6 +1,7 @@
 (ns eponai.web.ui.utils
   (:require [eponai.client.ui :refer-macros [opts component-implements] :refer [map-all update-query-params!]]
             [eponai.web.ui.datepicker :refer [->Datepicker]]
+            [eponai.web.ui.utils.css-classes :as css]
             [sablono.core :refer-macros [html]]
             [om.next :as om]
             [om.dom :as dom]
@@ -9,7 +10,6 @@
             [taoensso.timbre :refer-macros [debug warn error]]
             [eponai.common.format :as format]
             [eponai.web.routes :as routes]
-            [goog.format.EmailAddress]
             [clojure.string :as string]
             [clojure.data :as diff]))
 
@@ -105,12 +105,12 @@
          "x"]
         content]])))
 
-(defn upgrade-button [& [options]]
+(defn dropdown [{:keys [on-close]} & content]
   (html
-    [:a.upgrade-button
-     (opts (merge {:href (routes/key->route :route/subscribe)}
-                  options))
-     [:strong "Upgrade"]]))
+    [:div
+     (click-outside-target on-close)
+     [:ul.menu.dropdown.vertical
+      content]]))
 
 (defn tag [{tag-name :tag/name} {:keys [on-delete
                                         on-click]}]
@@ -200,64 +200,6 @@
 (defn on-change [c k]
   {:pre [(keyword? k)]}
   (on-change-in c [k]))
-
-(defn subscribe-modal [component]
-  (when (:playground/show-subscribe-modal? (om/get-state component))
-    (modal {:on-close #(om/update-state! component assoc :playground/show-subscribe-modal? false)
-            :content  (html
-                        [:div#subscribe
-                         [:h4.header "Coming soon"]
-                         [:div.content
-                          [:div.content-section.clearfix
-                           [:p "We're working hard to make this available to you as soon as possible. In the meantime, subscribe to our newsletter to be notified when we launch."]
-                           [:div.subscribe-input
-                            [:input
-                             (opts {:value       (or (:playground/modal-input (om/get-state component)) "")
-                                    :type        "email"
-                                    :placeholder "youremail@example.com"
-                                    :on-change   #(om/update-state! component assoc :playground/modal-input (.. % -target -value))
-                                    :on-key-down #(on-enter-down % (fn [text]
-                                                                     (when (goog.format.EmailAddress/isValidAddress text)
-                                                                       (om/update-state! component assoc
-                                                                                         :playground/modal-input ""
-                                                                                         :playground/show-subscribe-modal? false)
-                                                                       (om/transact! component `[(playground/subscribe ~{:email text})]))))})]
-                            [:a.button.hollow.float-right
-                             {:on-click (fn []
-                                          (let [text (:playground/modal-input (om/get-state component))]
-                                            (when (goog.format.EmailAddress/isValidAddress text)
-                                              (om/update-state! component assoc
-                                                                :playground/modal-input ""
-                                                                :playground/show-subscribe-modal? false)
-                                              (om/transact! component `[(playground/subscribe ~{:email text})]))))}
-                             "Subscribe"]]]
-                          [:div.content-section
-                           [:small "Got feedback? We'd love to hear it! Shoot us an email at " [:a.mail-link "info@jourmoney.com"] " and let us know what you'd like to see in the product."]]]])})))
-
-;;############## Drag-drop transactions #############
-
-(defn on-drag-transaction-start [_ tx-dbid event]
-  (.. event -dataTransfer (setData "tx-dbid-str" (str tx-dbid))))
-
-(defn on-drag-transaction-over [component project-uuid event]
-  (let [{:keys [drop-target]} (om/get-state component)]
-    (.preventDefault event)
-    (when-not (= drop-target project-uuid)
-      (om/update-state! component assoc :drop-target project-uuid))))
-
-(defn on-drag-transaction-leave [component _]
-  (om/update-state! component dissoc :drop-target))
-
-(defn on-drop-transaction [component project-uuid event]
-  (.preventDefault event)
-  (let [tx-dbid-str (.. event -dataTransfer (getData "tx-dbid-str"))
-        dbid (cljs.reader/read-string tx-dbid-str)]
-    (om/transact! component
-                  `[(transaction/edit
-                      ~{:old {:db/id dbid}
-                        :new {:db/id dbid
-                              :transaction/project {:project/uuid project-uuid}}})])
-    (om/update-state! component dissoc :drop-target)))
 
 ;;############# Debugging ############################
 

@@ -1,4 +1,4 @@
-(ns eponai.web.ui.elements.css-classes
+(ns eponai.web.ui.utils.css-classes
   (:require
     [clojure.string :as s]))
 
@@ -36,22 +36,33 @@
    })
 
 (defn classes
-  "Create an array of class keywords given the functions in the input.
+  "Create an  array of class keywords given the functions in the input.
   fs is an array of functions where each f takes a collection of class keywords and returns the modified collection."
   [& fs]
   (let [all-classes-fn (apply comp fs)]
     (all-classes-fn)))
 
-(defn class-names [classes]
-  (let [classname (fn [ck]
-                    (let [cn (get all-classnames ck)]
-                      (or cn (name ck))))]
-    (s/join " " (map classname classes))))
+(defn class-names
+  ([classes]
+    (class-names classes ""))
+  ([classes class-str]
+   (let [classname (fn [ck]
+                     (let [cn (get all-classnames ck)]
+                       (or cn (name ck))))]
+     (s/join " " (conj (map classname classes) class-str)))))
 
+(defn create [element-fn options & children]
+  (element-fn
+    options
+    children))
+
+(defn add-class [options ck]
+  (update options :classes conj ck))
 
 ; ###########Floats ##################
-(defn float-right [& [classes]]
-  (conj classes ::float-right))
+(defn float-right [f]
+  (fn [options & children]
+    (f (add-class options ::float-right) children)))
 
 (defn float-left [& [classes]]
   (conj classes ::float-left))

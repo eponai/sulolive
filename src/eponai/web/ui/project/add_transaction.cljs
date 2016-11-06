@@ -7,15 +7,15 @@
     [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
     [eponai.client.parser.message :as message]
     [eponai.common.format.date :as date]
-    [eponai.web.ui.elements :as el]
-    [eponai.web.ui.elements.css-classes :as css]
     [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.ui.select :as sel]
     [eponai.web.ui.utils :as utils]
+    [eponai.web.ui.utils.button :as button]
     [goog.string :as gstring]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [warn debug]]))
+    [taoensso.timbre :refer-macros [warn debug]]
+    [eponai.web.ui.utils.css-classes :as css]))
 
 (defn- delete-tag-fn [component tag]
   (om/update-state! component update-in [:input-transaction :transaction/tags] disj tag))
@@ -331,11 +331,11 @@
              [:li [:a {:on-click #(om/update-state! this update ::show-bank-fee-section? not)} "Bank fees"]]
              ;[:li [:a "Location"]]
              ]]
-           [:a.button.hollow.black.float-right
-            {:on-click #(do (.add-transaction this)
-                            (let [on-close (:on-close (om/get-computed this))]
-                              (on-close)))}
-            "Save"]]]]))))
+           ((-> button/button button/hollow button/black css/float-right)
+             {:on-click #(do (.add-transaction this)
+                             (let [on-close (:on-close (om/get-computed this))]
+                               (on-close)))}
+             "Save")]]]))))
 
 (def ->AddTransaction (om/factory AddTransaction))
 

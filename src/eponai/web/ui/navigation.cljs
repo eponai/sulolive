@@ -5,6 +5,7 @@
     [eponai.web.ui.project.add-project :refer [->NewProject]]
     [eponai.web.ui.project.add-transaction :refer [->AddTransaction AddTransaction]]
     [eponai.web.ui.settings :refer [->Settings Settings]]
+    [eponai.web.ui.utils.button :as button]
     [eponai.web.ui.icon :as icon]
     [eponai.web.ui.utils :as utils]
     [eponai.web.routes :as routes]
@@ -61,38 +62,34 @@
                (opts {:on-click #(om/update-state! this assoc :menu-visible? true)})
                [:i.fa.fa-caret-down.fa-fw]]
               (when menu-visible?
-                (let [on-close #(om/update-state! this assoc :menu-visible? false)]
-                  [:div
-                   (utils/click-outside-target on-close)
-                   [:ul.menu.dropdown.vertical
-                    [:li.menu-text.header
-                     "Projects"]
-                    (map (fn [p]
-                           [:li
-                            {:key (str (:project/uuid p))}
-                            [:a
-                             {:on-click #(om/update-state! this assoc :menu-visible? false)
-                              :href     (routes/key->route :route/project->dashboard
-                                                           {:route-param/project-id (:db/id p)})}
-                             (:project/name p)]])
-                         all-projects)
-                    [:li
-                     [:hr]]
-                    [:li
-                     [(if utils/*playground?*
-                        :a.secondary-action.disabled
-                        :a.secondary-action)
-                      {:on-click #(om/update-state! this assoc
-                                                    :new-project? true
-                                                    :menu-visible? false)}
-                      [:small "Create new..."]]]]]))]
+                (utils/dropdown
+                  {:on-close #(om/update-state! this assoc :menu-visible? false)}
+                  [:li.menu-text.header
+                   "Projects"]
+                  (map (fn [p]
+                         [:li
+                          {:key (str (:project/uuid p))}
+                          [:a
+                           {:on-click #(om/update-state! this assoc :menu-visible? false)
+                            :href     (routes/key->route :route/project->dashboard
+                                                         {:route-param/project-id (:db/id p)})}
+                           (:project/name p)]])
+                       all-projects)
+                  [:li
+                   [:hr]]
+                  [:li
+                   [(if utils/*playground?*
+                      :a.secondary-action.disabled
+                      :a.secondary-action)
+                    {:on-click #(om/update-state! this assoc
+                                                  :new-project? true
+                                                  :menu-visible? false)}
+                    [:small "Create new..."]]]))]
              ; Add transaction button
-             [:a.button.tiny
-              {:class (when-not (seq all-projects) "disabled")
-               :on-click #(om/update-state! this assoc :add-transaction? true)}
-              [:i.fa.fa-plus.fa-fw]]
-
-             ]
+             ((-> button/button button/tiny)
+               {:on-click #(om/update-state! this assoc :add-transaction? true)
+                :class (when-not (seq all-projects) "disabled")}
+               [:i.fa.fa-plus.fa-fw])]
 
             ; Project menu
             [:div.top-bar-right
