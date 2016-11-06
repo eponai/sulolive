@@ -16,81 +16,8 @@
             [medley.core :as medley]
             [datascript.core :as datascript]
             [datomic.api :as datomic]
-            [datascript.core :as d]
             [taoensso.timbre :as timbre])
   (:import (org.eclipse.jetty.server Server ServerConnector Connector)))
-
-(comment (throw (ex-info "Entity has been modified since this transaction"
-                         {:created-at created-at
-                          :entity-id  entity
-                          :attribute  attr
-                          :value      value
-                          :last-edit  last-edit})))
-
-(def db-fn-edit-add
-  #db/fn{:lang     :clojure
-         :requires [[datomic.api :as d]
-                    ;; [taoensso.timbre :as timbre]
-                    ]
-         :params   [db created-at entity attr value]
-         :code     (let [last-edit (some->> (d/datoms db :eavt entity attr)
-                                            (sort-by :tx #(compare %2 %1))
-                                            (first)
-                                            :tx
-                                            (d/q '{:find  [?last-edit .]
-                                                   :in    [$ ?tx]
-                                                   :where [[?tx :tx/mutation-created-at ?last-edit]]}
-                                                 db))
-                         unique-attr (fn [attrs]
-                                       (d/q '{:find  [?attr .]
-                                              :in    [$ [?attr ...]]
-                                              :where [[?e :db/ident ?attr]
-                                                      [?e :db/unique _]]}
-                                            db
-                                            attrs))
-                         ;; _ (timbre/debug "db.fn/edit-add got args: " [created-at entity attr value])
-                         not-editable? (and last-edit (> last-edit created-at))
-                         _ (when not-editable?
-                             nil)
-                         map->txs (fn [m]
-                                    (if (:db/id m)
-                                      (cond-> [[:db/add entity attr (:db/id m)]]
-                                              (seq (dissoc m :db/id))
-                                              (->> (cons m) (vec)))
-                                      (if (some? (unique-attr (keys (dissoc m :db/id))))
-                                        ;; If there's a unique attr in the map we'll allow
-                                        ;; the transaction. This may not be correct
-                                        ;; but until we change it, we'll not create a bunch
-                                        ;; of entities in datomic by mistake. You can get
-                                        ;; around this branch by passing an id to the edit..?
-                                        (let [id (d/tempid :db.part/user)]
-                                          [(assoc m :db/id id)
-                                           [:db/add entity attr id]])
-                                        (throw (ex-info (str "Transaction value did not contain"
-                                                             " :db/id or a unique attribute")
-                                                        {:failing-value m
-                                                         :entity        entity
-                                                         :attr          attr
-                                                         :value         value
-                                                         :created-at    created-at})))))
-                         txs (cond
-                               (map? value)
-                               (map->txs value)
-                               (coll? value)
-                               (->> value
-                                    (into [] (comp (filter some?)
-                                                   (mapcat (fn [x]
-                                                             {:pre [(or (map? x) (not (coll? x)))]}
-                                                             (if (map? x)
-                                                               (map->txs x)
-                                                               [[:db/add entity attr x]]))))))
-                               :else
-                               [[:db/add entity attr value]])]
-                     ;; (timbre/debug "db.fn/edit-add returning: " txs)
-                     (if not-editable?
-                       []
-                       txs))})
-
 
 (defn call-parser [reconciler query & [target]]
   {:pre [(some? query)]}

@@ -300,6 +300,4 @@
                     (-> []
                         (into (db-retract old-value))
                         (into (db-add new-value))))))]
-      (when (number? created-at)
-        (prn [created-at entity attr ret]))
       ret)))

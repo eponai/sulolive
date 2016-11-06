@@ -26,7 +26,9 @@
                  {:query/transactions [:transaction/conversion
                                        :transaction/currency
                                        {:transaction/category [:category/name]}
-                                       {:transaction/project [:project/uuid]}
+                                       {:transaction/project [:db/id
+                                                              :project/uuid
+                                                              :project/created-at]}
                                        :transaction/title
                                        :transaction/uuid
                                        :transaction/amount
@@ -50,8 +52,7 @@
                             {:remote (-> (remotes/post-to-url nil)
                                          (remotes/wrap-update :url (fn [& _] @endpoint-atom))
                                          (remotes/read-basis-t-remote-middleware conn)
-                                         (remotes/wrap-update :opts assoc
-                                                              :cookie-store cookie-store)
+                                         (remotes/wrap-update :opts assoc :cookie-store cookie-store)
                                          (remotes/wrap-update :shutting-down? (fn [& _] @teardown-atom)))}
                             did-merge-fn)
         reconciler (om/reconciler {:id-key (str "jvmclient reconciler: " idx)
@@ -65,23 +66,41 @@
     (om/add-root! reconciler JvmRoot nil)
     reconciler))
 
-(defn- log-in! [client email-chan callback-chan]
-  (om/transact! client `[(session.signin/email ~{:input-email datomic-dev/test-user-email
-                                                 :device      :jvm})])
-  (fs.utils/take-with-timeout callback-chan "email transact!")
-  (let [{:keys [verification]} (fs.utils/take-with-timeout email-chan "email with verification")
+(defn log-in-with-email [client email-chan callback-chan]
+  (let [_ (om/transact! client `[(session.signin/email ~{:input-email datomic-dev/test-user-email
+                                                         :device      :jvm})])
+        _ (fs.utils/take-with-timeout callback-chan "email transact!")
+        {:keys [verification]} (fs.utils/take-with-timeout email-chan "email with verification")
         {:keys [:verification/uuid]} verification]
     (backend/drain-channel callback-chan)
     (om/transact! client `[(session.signin.email/verify ~{:verify-uuid (str uuid)})])
     (fs.utils/take-with-timeout callback-chan "verification")))
 
+(defn log-in! [client log-in-fn]
+  (let [{:keys [::set-logged-in! ::email-chan ::callback-chan]} (meta client)]
+    (assert (fn? set-logged-in!))
+    (assert (some? email-chan))
+    (assert (some? callback-chan))
+    (log-in-fn client email-chan callback-chan)
+    (set-logged-in!)))
+
+
+(defn log-out! [client]
+  (let [{:keys [::set-logged-out! ::callback-chan]} (meta client)]
+    (om/transact! client `[(session/signout)])
+    (fs.utils/take-with-timeout callback-chan "logging out")
+    (set-logged-out!)))
+
 (defn logged-in-client [idx server-url email-chan callback-chan teardown-atom]
   {:post [(some? (om/app-root %))]}
   (let [endpoint-atom (atom (str server-url "/api"))
         did-merge-fn (fn [client] (async/put! callback-chan client))
-        client (create-client idx endpoint-atom did-merge-fn teardown-atom)]
+        client (create-client idx endpoint-atom did-merge-fn teardown-atom)
+        client (with-meta client {::set-logged-in!  #(reset! endpoint-atom (str server-url "/api/user"))
+                                  ::set-logged-out! #(reset! endpoint-atom (str server-url "/api"))
+                                  ::email-chan      email-chan
+                                  ::callback-chan   callback-chan})]
     (fs.utils/take-with-timeout callback-chan "initial merge")
-    (log-in! client email-chan callback-chan)
-    (reset! endpoint-atom (str server-url "/api/user"))
+    (log-in! client log-in-with-email)
     (om/force-root-render! client)
     client))

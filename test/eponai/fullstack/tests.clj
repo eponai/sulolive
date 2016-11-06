@@ -230,31 +230,6 @@
 
 (def get-project has-project?)
 
-(defn test-edit-transaction-offline-to-new-offline-project
-  [server [client1 :as clients]]
-  (let [tx (new-transaction client1)
-        proj (new-project)
-        uuid (:project/uuid proj)
-        edit {:edit-fn    #(assoc % :transaction/project {:project/uuid uuid})
-              :key-fn     #(-> % :transaction/project :project/uuid)
-              :compare-fn (partial = uuid)}]
-    {:label   (str "Can create a transaction and project offline, edit the transaction"
-                   " to belong to the new project, then sync.")
-     :actions [(stop-server! server)
-               (create-transaction! server clients client1 tx)
-               {::fw/transaction [client1 `[(project/save ~proj)]]
-                ::fw/asserts     #(do (assert (has-project? proj client1))
-                                      (assert (not-any? (partial has-project? proj)
-                                                        (remove (partial = client1) clients))))}
-               (edit-transaction! server clients client1 tx edit)
-               (start-server! server :await [client1])
-               {::fw/transaction   (constantly nil)
-                ::fw/sync-clients! true
-                ::fw/asserts       #(do (assert (every? (partial has-transaction? tx) clients))
-                                        (assert (every? (partial has-project? proj) clients))
-                                        (assert (every? (partial has-edit? tx edit) clients)))}]}))
-
-
 (defn assert=
   ([a b] (assert= nil a b))
   ([expected a b]
@@ -269,6 +244,34 @@
                     (diff-str "(a expected)" a expected)
                     (diff-str "(b expected)" b expected)))))
    true))
+
+(defn test-edit-transaction-offline-to-new-offline-project
+  [server [client1 :as clients]]
+  (let [tx (new-transaction client1)
+        proj (new-project)
+        uuid (:project/uuid proj)
+        edit {:edit-fn    #(assoc % :transaction/project {:project/uuid uuid})
+              :key-fn     #(-> % :transaction/project :project/uuid)
+              :compare-fn (partial assert= uuid)}]
+    {:label   (str "Can create a transaction and project offline, edit the transaction"
+                   " to belong to the new project, then sync.")
+     :actions [(stop-server! server)
+               (create-transaction! server clients client1 tx)
+               {::fw/transaction [client1 `[(project/save ~proj)]]
+                ::fw/asserts     #(do (assert (has-project? proj client1))
+                                      (assert (not-any? (partial has-project? proj)
+                                                        (remove (partial = client1) clients))))}
+               (edit-transaction! server clients client1 tx edit)
+               (start-server! server :await [client1])
+               {::fw/transaction   (constantly nil)
+                ::fw/sync-clients! true
+                ::fw/asserts       #(do (assert (every? (partial has-transaction? tx) clients))
+                                        (assert (every? (partial has-project? proj) clients))
+                                        (assert (every? (fn [client]
+                                                          (do
+                                                            (info "has edit? : " client)
+                                                            (has-edit? tx edit client)))
+                                                        clients)))}]}))
 
 (defn compose-edits [edits]
   (let [edit-maps (sort-by ::parser/created-at edits)

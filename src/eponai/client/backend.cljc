@@ -341,7 +341,7 @@
                   ;; There's nothing more to stream, so we can exit the loop
                   ;; in an app state where we need to merge the mutation queue
                   ;; (which was the state we entered this go-block in).
-                  {:new-stable-db  stable-db
+                  {:new-stable-db  new-stable-db
                    :mutation-queue mutation-queue}
                   ;; There's more to stream:
                   ;; Apply mutation queue and stream the rest.
@@ -439,6 +439,7 @@
                                                                mutation-queue
                                                                is-remote-fn
                                                                history-id)]
+
               ;; Set the current db to the db with mutations.
               (cb {:db db-with-mutations})
 
