@@ -171,30 +171,28 @@
         [:div#add-transaction
          [:h4.header "New Transaction"]
          [:div.top-bar-container.subnav
-          [:div.top-bar
-           [:div.top-bar-left.menu
+          {:class (condp = type
+                         :expense "alert"
+                         :income "success"
+                         :atm "black")}
+          [:ul.menu
+           [:li
             [:a
              {:class    (when (= type :expense) "active")
               :on-click #(om/update-state! this (fn [st]
                                                   (-> st
                                                       (assoc :type :expense)
                                                       (assoc-in [:input-transaction :transaction/type] :transaction.type/expense))))}
-             "Expense"]
+             "Expense"]]
+           [:li
             [:a
              {:class    (when (= type :income) "active")
               :on-click #(om/update-state! this (fn [st]
                                                   (-> st
                                                       (assoc :type :income)
                                                       (assoc-in [:input-transaction :transaction/type] :transaction.type/income))))}
-             "Income"]
-            [:a
-             {:class    (when (= type :accomodation) "active")
-              :on-click #(om/update-state! this assoc :type :accomodation)}
-             "Accomodation"]
-            [:a
-             {:class    (when (= type :transport) "active")
-              :on-click #(om/update-state! this assoc :type :transport)}
-             "Transport"]
+             "Income"]]
+           [:li
             [:a
              {:class    (when (= type :atm) "active")
               :on-click #(om/update-state! this assoc :type :atm)}
@@ -204,44 +202,59 @@
 
           [:div.content-section
            [:div.row
-            [:div.columns.small-3.text-right
-             [:label "Date:"]]
-
-            [:div.columns.small-4.end
-             (->DateRangePicker (om/computed {:single-calendar? true
-                                              :start-date       (date/date-time date)}
-                                             {:on-apply date-range-picker-on-apply
-                                              :format   "MMM dd"}))]]
-
-           [:div.row
-            [:div.columns.small-3.text-right
-             [:label "Amount:"]]
-            [:div.columns.small-4
+            [:div.column.small-7
              [:input
               {:type        "number"
                :min         "0"
-               :placeholder "0.00"
+               :placeholder "Amount"
                :on-change   #(om/update-state! this assoc-in [:input-transaction :transaction/amount] (.. % -target -value))}]]
-            [:div.columns.small-2.text-right
-             [:label "Currency:"]]
-            [:div.columns.small-3
+            [:div.column
              (sel/->Select (om/computed {:options (map (fn [{:keys [currency/code db/id]}]
-                                                                {:label code
-                                                                 :value id})
-                                                              all-currencies)
+                                                         {:label code
+                                                          :value id})
+                                                       all-currencies)
                                          :value currency}
                                         {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/currency] %)}))]]
+
            [:div.row
-            [:div.columns.small-3.text-right
-             [:label "Category:"]]
-            [:div.columns.small-9
-             (sel/->Select (om/computed {:options (map (fn [c]
-                                                         {:label (:category/name c)
-                                                          :value (:db/id c)})
-                                                       all-categories)
-                                         :value   category
-                                         :clearable true}
-                                        {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/category] %)}))]]
+            [:div.column
+             [:input
+              {:type      "text"
+               :placeholder "Title"
+               :value     (:transaction/title input-transaction "")
+               :on-change #(om/update-state! this assoc-in [:input-transaction :transaction/title] (.. % -target -value))}]]]
+
+           [:div.row.column
+            (sel/->Select (om/computed {:options     (map (fn [c]
+                                                            {:label (:category/name c)
+                                                             :value (:db/id c)})
+                                                          all-categories)
+                                        :value       category
+                                        :clearable   true
+                                        :placeholder "Category"}
+                                       {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/category] %)}))]
+
+           [:div.row
+            [:div.column
+             (->DateRangePicker (om/computed {:single-calendar? true
+                                              :start-date       (date/date-time date)}
+                                             {:on-apply date-range-picker-on-apply
+                                              :format   "MMM dd"}))]
+
+            [:div.column
+            ; End date input field here
+             ]]
+
+           [:div.row.column
+            [:div.long-term
+             [:div.switch.tiny
+              [:input.switch-input
+               {:id   "long-term-switch"
+                :type "checkbox"
+                :name "long-term-switch"}]
+              [:label.switch-paddle {:for "long-term-switch"}]
+              [:span "Long term"]]
+             [:span "Long term"]]]
 
            [:div.row
             [:div.columns.small-3.text-right
@@ -254,14 +267,6 @@
                                              :value   (:transaction/tags input-transaction)}
                                             {:on-select #(om/update-state! this assoc-in [:input-transaction :transaction/tags] %)}))]]
 
-           [:div.row
-            [:div.columns.small-3.text-right
-             [:label "Note:"]]
-            [:div.columns.small-9
-             [:textarea
-              {:type      "text"
-               :value     (:transaction/title input-transaction "")
-               :on-change #(om/update-state! this assoc-in [:input-transaction :transaction/title] (.. % -target -value))}]]]
 
            [:div.row
             [:div.columns.small-3.text-right
