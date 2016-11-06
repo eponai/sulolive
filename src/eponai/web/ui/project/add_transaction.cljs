@@ -7,11 +7,11 @@
     [eponai.client.ui :refer [map-all] :refer-macros [style opts]]
     [eponai.client.parser.message :as message]
     [eponai.common.format.date :as date]
+    [eponai.web.ui.elements :as el]
+    [eponai.web.ui.elements.css-classes :as css]
     [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.ui.select :as sel]
     [eponai.web.ui.utils :as utils]
-    [garden.core :refer [css]]
-    [om.dom :as dom]
     [goog.string :as gstring]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
@@ -302,11 +302,12 @@
 
 
           [:div.content-section.clearfix
-           [:a.button.hollow.float-right
-            {:on-click #(do (.add-transaction this)
-                            (let [on-close (:on-close (om/get-computed this))]
-                              (on-close)))}
-            "Save"]]]]))))
+           (el/button
+             {:classes  (css/classes css/hollow css/black css/float-right)
+              :on-click #(do (.add-transaction this)
+                             (let [on-close (:on-close (om/get-computed this))]
+                               (on-close)))}
+             "Save")]]]))))
 
 (def ->AddTransaction (om/factory AddTransaction))
 
