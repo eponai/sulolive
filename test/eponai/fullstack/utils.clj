@@ -58,7 +58,7 @@
         (if (not (= 0 (#'pprint/get-column *out*)))
           (prn))))))
 
-(defn with-less-loud-logger [f]
+(defn with-less-loud-logger [level f]
   (let [config# timbre/*config*
         sync-appender# {:sync      true
                         :enabled?  true
@@ -74,7 +74,7 @@
       (timbre/set-config!
         (assoc config#
           :appenders {:sync-appender sync-appender#}
-          :level :info))
+          :level level))
       (timbre/info "Temporarily set logger to less loud logger")
       (f)
       (finally

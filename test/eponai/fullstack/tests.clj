@@ -5,8 +5,10 @@
             [eponai.common.parser :as parser]
             [eponai.common.format.date :as date]
             [eponai.common.format :as format]
-            [eponai.common.database.transact :as transact]
             [eponai.client.utils :as utils]
+            [eponai.server.auth.workflows :as wf]
+            [eponai.server.auth.workflows-test :as wf.test]
+            [eponai.server.middleware]
             [taoensso.timbre :refer [info debug error]]
             [clojure.data :as diff]
             [clojure.test :as test]
@@ -441,11 +443,38 @@
                                           (jvmclient/log-in! c (jvmclient/log-in-with-email new-email)))
                                         clients)}
                {::fw/sync-clients! true
-                ::fw/asserts       #(assert (every? (fn [client]
-                                                      (assert= new-email (get-email client))) clients))}]}))
+                ::fw/asserts       #(assert (every? (fn [client] (assert= new-email (get-email client)))
+                                                    clients))}]}))
+
+(defn test-create-new-user-with-facebook [email user-id access-token]
+  ^{:system {:server {:wrap-state
+                      {::wf/create-account-without-throwing true
+                       :facebook-token-validator            (wf.test/test-facebook-token-validator
+                                                              {:email    email
+                                                               :user-id  user-id
+                                                               :token    access-token
+                                                               :is-valid true})}}}}
+  (fn [server clients]
+    ;; This test only works for 1 client. Why? Because facebook login is complicated?
+    ;; TODO: Write a test for two clients interacting with facebook.
+    (let [clients (take 1 clients)
+          default-email "some@email.com"]
+      {:label   "Log out and create a new user with facebook"
+       :actions [{::fw/transaction #(run! jvmclient/log-out! clients)}
+                 {::fw/transaction #(run! (fn [c]
+                                            (jvmclient/log-in!
+                                              c
+                                              (jvmclient/log-in-with-facebook
+                                                user-id access-token email default-email)))
+                                          clients)}
+                 {::fw/sync-clients! true
+                  ::fw/asserts       #(assert (every? (fn [client]
+                                                        (assert= (if email email default-email)
+                                                                 (get-email client)))
+                                                      clients))}]})))
 
 (defn run []
-  (fs.utils/with-less-loud-logger
+  (fs.utils/with-less-loud-logger :debug
     #(-> (fw/run-tests (->> [
                              test-system-setup
                              test-create-transaction
@@ -463,8 +492,10 @@
                              test-two-client-edit-tags-offline+sync-2
                              test-two-client-edit-titles-offline+sync
                              test-create-new-user-with-email
+                             (test-create-new-user-with-facebook "facebook@test.com" "user-id" "long-lived-token")
+                             (test-create-new-user-with-facebook nil "user-id" "long-lived-token")
                              ]
-                            ;(filter (partial = test-create-new-user-with-email))
+                            ;(filter (partial = test-create+edit-amount-offline))
                             ;(reverse)
                             ;(take 1)
                         ))

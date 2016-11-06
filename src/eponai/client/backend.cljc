@@ -115,7 +115,7 @@
               (recur (min max-retry-time-ms (* 2 retry-time-ms))))
 
             ;; Redirect
-            (<= 300 status 399)
+            (and (number? status) (<= 300 status 399))
             (do
               (debug "Redirect. What to do?")
               {:response nil
@@ -418,7 +418,7 @@
                                                                      history-id
                                                                      is-remote-fn))]
                       (debug "Pending mutations for query: " query
-                             "queue: " (map #(dissoc % :db) mq)))
+                             "queue: " mq))
                   _ (merge-response! cb stable-db received history-id)
                   ;; app-state has now been changed and is the new stable db.
                   stable-db (d/db app-state)

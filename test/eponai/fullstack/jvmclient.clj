@@ -13,7 +13,8 @@
             [eponai.server.datomic-dev :as datomic-dev]
             [clj-http.cookies :as cookies]
             [clojure.core.async :as async]
-            [taoensso.timbre :refer [debug error]]))
+            [datascript.core :as d]
+            [taoensso.timbre :refer [info debug error]]))
 
 (om/defui JvmRoot
   static om/IQuery
@@ -66,16 +67,38 @@
     (om/add-root! reconciler JvmRoot nil)
     reconciler))
 
+(defn verify-email [client email-chan callback-chan]
+  (let [{:keys [verification]} (fs.utils/take-with-timeout email-chan "email with verification")
+        {:keys [:verification/uuid]} verification]
+    (backend/drain-channel callback-chan)
+    (om/transact! client `[(session.signin.email/verify ~{:verify-uuid (str uuid)})])
+    (fs.utils/take-with-timeout callback-chan "email verification")))
+
 (defn log-in-with-email [email]
   (fn [client email-chan callback-chan]
-    (let [_ (om/transact! client `[(session.signin/email ~{:input-email email
-                                                           :device      :jvm})])
-          _ (fs.utils/take-with-timeout callback-chan "email transact!")
-          {:keys [verification]} (fs.utils/take-with-timeout email-chan "email with verification")
-          {:keys [:verification/uuid]} verification]
-      (backend/drain-channel callback-chan)
-      (om/transact! client `[(session.signin.email/verify ~{:verify-uuid (str uuid)})])
-      (fs.utils/take-with-timeout callback-chan "verification"))))
+    (om/transact! client `[(session.signin/email ~{:input-email email
+                                                     :device      :jvm})])
+    (fs.utils/take-with-timeout callback-chan "email signin transact!")
+    (verify-email client email-chan callback-chan)))
+
+(defn log-in-with-facebook [user-id access-token email default-email]
+  (fn [client email-chan callback-chan]
+    (om/transact! client `[(session.signin/facebook ~{:user-id      user-id
+                                                      :access-token access-token})
+                           {:query/current-user [:db/id :user/uuid]}])
+    (fs.utils/take-with-timeout callback-chan "facebook signin transact!")
+    ;; If there's an email, we're done here.
+    ;; Otherwise, we need to activate the user with an email.
+    (when (nil? email)
+      (let [db (d/db (om/app-state client))
+           user-uuids (d/q '{:find [?uuid] :where [[_ :user/uuid ?uuid]]} db)
+           user-uuid (do (assert (= 1 (count user-uuids)) (str "Had more than one user-uuids: " user-uuids))
+                         (ffirst user-uuids))]
+       (om/transact! client `[(session.signin/activate ~{:user-uuid  (str user-uuid)
+                                                         :user-email default-email})])
+       (fs.utils/take-with-timeout callback-chan "Facebook activation")
+       ;; Activate sends an email and we need to verify it.
+       (verify-email client email-chan callback-chan)))))
 
 (defn log-in! [client log-in-fn]
   (let [{:keys [::set-logged-in! ::email-chan ::callback-chan]} (meta client)]

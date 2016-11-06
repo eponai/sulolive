@@ -4,7 +4,7 @@
     [clj-http.client :as client]
     [clojure.data.json :as json]
     [ring.util.response :refer [redirect]]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [info debug error]]))
 
 ;(defn login-dialog
 ;  ([app-id]
@@ -104,7 +104,7 @@
        :else
        (or (:error inspected)
            {:error {:message "Invalid access token."
-                    :data data}})))))
+                    :data    data}})))))
 
 ;(defn validated-token
 ;  "Validate and inspect the code returned from Facebook, and return the data matching the code.

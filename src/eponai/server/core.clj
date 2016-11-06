@@ -24,9 +24,9 @@
 
 (defn app* [conn extra-middleware]
   (-> (routes api-routes site-routes)
-      (cond-> (some? extra-middleware) extra-middleware)
       m/wrap-post-middlewares
       (m/wrap-authenticate conn @in-production?)
+      (cond-> (some? extra-middleware) extra-middleware)
       m/wrap-login-parser
       m/wrap-logout
       (cond-> @in-production? m/wrap-error)
@@ -110,7 +110,7 @@
                                                 reload/wrap-reload)}
                        opts)))
 
-(defn start-server-for-tests [& [{:keys [email-chan conn port] :as opts}]]
+(defn start-server-for-tests [& [{:keys [email-chan conn port wrap-state] :as opts}]]
   {:pre [(or (nil? opts) (map? opts))]}
   (reset! in-production? false)
   (start-server
@@ -120,6 +120,8 @@
             ::provided-conn    conn
             ::stateless-server true
             ::extra-middleware #(cond-> %
+                                        (some? wrap-state)
+                                        (m/wrap-state wrap-state)
                                         (some? email-chan)
                                         (m/wrap-state {::email/send-verification-fn
                                                        (fn [verification params]

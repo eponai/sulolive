@@ -50,7 +50,6 @@
 (declare stripe-action)
 
 (defn stripe [api-key k params]
-  (info "Stripe action: " {:action k :params params})
   (when api-key
     (try
       (debug "Api key set, try connect to Stripe.")

@@ -166,17 +166,25 @@
                 (async/close! result-chan))))]
     clients))
 
-(defn- start-system [{:keys [db-transactions db-schema] :as system}]
+(defn- start-system [{:keys [db-transactions db-schema] :as system}
+                     test-fn-meta]
   (let [conn (datomic-dev/create-new-inmemory-db)
         _ (datomic-dev/add-data-to-connection conn
                                               db-transactions
                                               db-schema)
+        test-specific-server-config (:server test-fn-meta)
         email-chan (async/chan)
-        server (core/start-server-for-tests {:conn       conn
-                                             ;; Re-use the server's port
-                                             ;; to be more kind to the test system.
-                                             :port (:server-port system 0)
-                                             :email-chan email-chan})
+        server (core/start-server-for-tests
+                 (cond-> {:conn                     conn
+                         ;; Re-use the server's port
+                         ;; to be more kind to the test system.
+                         :port                     (:server-port system 0)
+                         :email-chan               email-chan}
+                         (when (some? test-specific-server-config)
+                           (info "Running with test-specific-server-config: "
+                                 test-specific-server-config)
+                           true)
+                         (merge test-specific-server-config)))
         ;; The server could be started with a random port.
         ;; Set the selected port to the server so it
         ;; keeps the same port between restarts
@@ -248,7 +256,7 @@
   (let [system (reduce (fn [system test]
                          (try
                            (-> system
-                               (start-system)
+                               (start-system (:system (meta test)))
                                (run-test test)
                                (stop-system))
                            (catch Throwable e

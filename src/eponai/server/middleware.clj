@@ -100,9 +100,11 @@
   (friend/authenticate
     handler {:credential-fn       (ac/credential-fn conn)
              :workflows           [(workflows/email-web)
-                                   (workflows/create-account (partial email/send-verification-email in-prod?))
-                                   (workflows/facebook (env :facebook-app-id)
-                                                       (env :facebook-app-secret))
+                                   (workflows/create-account)
+                                   (apply workflows/facebook
+                                          (if in-prod?
+                                            [(env :facebook-app-id) (env :facebook-app-secret)]
+                                            ["not-in-prod-app-id" "not-in-prod-app-secret"]))
                                    (workflows/email-mobile)]
              ;:uri "/api"
              :login-uri           "/signup"

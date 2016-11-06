@@ -3,6 +3,7 @@
     [cemerick.friend :as friend]
     [clojure.test :refer :all]
     [datomic.api :as d]
+    [eponai.server.email :as email]
     [eponai.server.auth.credentials :as a]
     [eponai.server.auth.workflows :as w]
     [eponai.common.database.pull :as p]
@@ -19,16 +20,17 @@
 
 (defn test-facebook-token-validator [{:keys [user-id token email error is-valid]}]
   (fn [app-id secret params]
-    (facebook/user-token-validate app-id secret params {:to-long-lived-token-fn (fn [& _] {:access_token token})
-                                                        :inspect-token-fn       (fn [& _]
-                                                                                  (cond-> {:data {:user_id      user-id
-                                                                                                  :access_token token
-                                                                                                  :is_valid     is-valid
-                                                                                                  :app_id       app-id}}
-                                                                                          (some? error)
-                                                                                          (assoc :error error)))
-                                                        :user-info-fn           (fn [& _]
-                                                                                  {:email email})})))
+    (facebook/user-token-validate app-id secret params
+                                  {:to-long-lived-token-fn (fn [& _] {:access_token token})
+                                   :inspect-token-fn       (fn [& _]
+                                                             (cond-> {:data {:user_id      user-id
+                                                                             :access_token token
+                                                                             :is_valid     is-valid
+                                                                             :app_id       app-id}}
+                                                                     (some? error)
+                                                                     (assoc :error error)))
+                                   :user-info-fn           (fn [& _]
+                                                             {:email email})})))
 
 
 (deftest testing-successful-facebook-authentication-new-user
@@ -87,13 +89,14 @@
           {:keys [user] :as account} (f/user-account-map nil)
           conn (new-db (vals account))
           credential-fn (fn [input] (a/auth-map conn input))
-          workflow (w/create-account (fn [verification _]
-                                       (assert (= (:verification/value verification) email))))]
+          workflow (w/create-account)]
       (is (thrown-with-msg?
             ExceptionInfo
             #":unverified-email"
-            (workflow {:login-parser             login-parser
-                       :path-info                "/api"
-                       :body                     {:query [`(session.signin/activate ~{:user-uuid (str (:user/uuid user)) :user-email email})]}
-                       ::friend/auth-config      {:credential-fn      credential-fn
-                                                  :login-mutation-uri "/api"}}))))))
+            (workflow {::email/send-verification-fn (fn [verification _]
+                                                      (assert (= (:verification/value verification) email)))
+                       :login-parser                login-parser
+                       :path-info                   "/api"
+                       :body                        {:query [`(session.signin/activate ~{:user-uuid (str (:user/uuid user)) :user-email email})]}
+                       ::friend/auth-config         {:credential-fn      credential-fn
+                                                     :login-mutation-uri "/api"}}))))))

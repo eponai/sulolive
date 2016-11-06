@@ -118,7 +118,7 @@
                     (throw e)))))))))))
 
 (defn create-account
-  [send-email-fn]
+  []
   (fn [{:keys [login-parser body ::friend/auth-config ::stripe/stripe-fn] :as request}]
     (let [{:keys [login-mutation-uri credential-fn]} auth-config]
       (when (and
@@ -131,7 +131,7 @@
             (try
               (let [user-record (credential-fn (with-meta (assoc params :stripe-fn stripe-fn)
                                                           {::friend/workflow :activate-account}))]
-                (prn "Successful login")
+                (debug "Successful login")
                 (workflows/make-auth user-record {::friend/workflow          :activate-account
                                                   ::friend/redirect-on-auth? false}))
               (catch ExceptionInfo e
@@ -139,6 +139,8 @@
                       {:keys [verification]} data]
                   (when verification
                     (go
-                      (send-email-fn verification {:user/status :user.status/new
-                                                   :device :web})))
-                  (throw e))))))))))
+                      ((:eponai.server.email/send-verification-fn request)
+                        verification {:user/status :user.status/new
+                                      :device      :web})))
+                  (when-not (::create-account-without-throwing request)
+                    (throw e)))))))))))

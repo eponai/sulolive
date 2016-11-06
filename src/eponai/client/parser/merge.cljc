@@ -51,7 +51,8 @@
                                 (map #(vector :db.fn/retractEntity %)))
                        [:user/uuid
                         :transaction/uuid
-                        :project/uuid]))))
+                        :project/uuid
+                        :eponai.common.parser.read-basis-t/map]))))
 
 ;;;;;;; API
 
@@ -142,8 +143,10 @@
         merged-map (utils/deep-merge old-map new-map)]
     ;; TODO: Only transact if the read-basis-t has changed?
     ;; (maybe it doesn't matter when there are a lot of users).
-    (transact db {:db/ident                              :eponai.common.parser/read-basis-t
-                  :eponai.common.parser.read-basis-t/map merged-map})))
+    (cond-> db
+            (some? merged-map)
+            (transact {:db/ident                              :eponai.common.parser/read-basis-t
+                       :eponai.common.parser.read-basis-t/map merged-map}))))
 
 (defn merge!
   "Takes a merge-fn which is passed [db key params] and
