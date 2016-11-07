@@ -149,12 +149,14 @@
                                              :transaction/type     :transaction.type/expense
                                              :transaction/fees      []}
        ::type                               :type/expense
-       ::on-date-apply-fn                   #(om/update-state! this assoc-in [::input-transaction :transaction/date] %)
-       ::on-end-date-apply-fn               #(om/update-state! this assoc-in [::input-transaction :transaction/end-date] %)
+
        ::is-longterm?                       false
        ::add-fee?                           false
        ::show-bank-fee-section?             false
-       ::show-tags-input?                   false}))
+       ::show-tags-input?                   false
+
+       ::on-date-apply-fn                   #(om/update-state! this assoc-in [::input-transaction :transaction/date] %)
+       ::on-end-date-apply-fn               #(om/update-state! this assoc-in [::input-transaction :transaction/end-date] %)}))
 
   (componentDidUpdate [this _ _]
     (when-let [history-id (:pending-transaction (om/get-state this))]
@@ -241,19 +243,51 @@
                                                             (assoc-in [::input-transaction :transaction/type] v))))}
                    label]])
                types)]])))
-  
+
+  (render-date-selection [this]
+    (let [{:keys [::on-date-apply-fn
+                  ::on-end-date-apply-fn
+
+                  ::input-transaction
+                  ::is-longterm?]} (om/get-state this)
+          {:keys [transaction/end-date transaction/date]} input-transaction]
+      (html
+        [:div
+         [:div.row
+          [:div.column
+           (->DateRangePicker (om/computed {:single-calendar? true
+                                            :start-date       (date/date-time date)}
+                                           {:on-apply on-date-apply-fn
+                                            :format   "MMM dd"}))]
+
+          [:div.column
+           ; End date input field here
+           (when is-longterm?
+             (->DateRangePicker (om/computed {:single-calendar? true
+                                              :start-date       (date/date-time end-date)}
+                                             {:on-apply on-end-date-apply-fn
+                                              :format   "MMM dd"})))]]
+
+         [:div.row.column
+          [:div.long-term
+           [:div.switch.tiny
+            [:input.switch-input
+             {:id       "long-term-switch"
+              :type     "checkbox"
+              :name     "long-term-switch"
+              :on-click #(om/update-state! this (fn [st]
+                                                  (cond-> (assoc st ::is-longterm? (.. % -target -checked))
+                                                          (nil? (get-in st [::input-transaction :transaction/end-date]))
+                                                          (assoc-in [::input-transaction :transaction/end-date] (date/date-map (t/plus (date/date-time date) (t/days 30)))))))}]
+            [:label.switch-paddle {:for "long-term-switch"}]]
+           [:span "Long term"]]]])))
+
   (render [this]
     (let [{:keys [::input-transaction
-                  ::is-longterm?
                   ::show-tags-input?
-                  ::show-bank-fee-section?
+                  ::show-bank-fee-section?]} (om/get-state this)
 
-                  ::on-date-apply-fn
-                  ::on-end-date-apply-fn]} (om/get-state this)
-
-          {:keys [transaction/date
-                  transaction/end-date
-                  transaction/currency
+          {:keys [transaction/currency
                   transaction/category]} input-transaction
 
           {:keys [query/all-currencies
@@ -298,44 +332,14 @@
                                         :placeholder "Category"}
                                        {:on-select #(om/update-state! this assoc-in [::input-transaction :transaction/category] %)}))]
 
-           [:div.row
-            [:div.column
-             (->DateRangePicker (om/computed {:single-calendar? true
-                                              :start-date       (date/date-time date)}
-                                             {:on-apply on-date-apply-fn
-                                              :format   "MMM dd"}))]
-
-            [:div.column
-            ; End date input field here
-             (when is-longterm?
-               (->DateRangePicker (om/computed {:single-calendar? true
-                                                :start-date       (date/date-time end-date)}
-                                               {:on-apply on-end-date-apply-fn
-                                                :format   "MMM dd"})))
-             ]]
-           [:div.row.column
-            [:div.long-term
-             [:div.switch.tiny
-              [:input.switch-input
-               {:id       "long-term-switch"
-                :type     "checkbox"
-                :name     "long-term-switch"
-                :on-click #(om/update-state! this (fn [st]
-                                                    (cond-> (assoc st ::is-longterm? (.. % -target -checked))
-                                                            (nil? (get-in st [::input-transaction :transaction/end-date]))
-                                                            (assoc-in [::input-transaction :transaction/end-date] (date/date-map (t/plus (date/date-time date) (t/days 30)))))))}]
-              [:label.switch-paddle {:for "long-term-switch"}]]
-             [:span "Long term"]]]
+           (.render-date-selection this)
 
            (cond-> []
                    show-tags-input?
                    (conj (.render-tags-section this))
 
                    show-bank-fee-section?
-                   (conj (.render-bank-fee-section this)))
-
-
-           ]
+                   (conj (.render-bank-fee-section this)))]
 
 
 
@@ -344,7 +348,6 @@
             [:ul.menu
              [:li [:a {:on-click #(om/update-state! this update ::show-tags-input? not)} "Tags"]]
              [:li [:a {:on-click #(om/update-state! this update ::show-bank-fee-section? not)} "Bank fees"]]
-             ;[:li [:a "Location"]]
              ]]
            ((-> button/button button/hollow button/black css/float-right)
              {:on-click #(do (.add-transaction this)
