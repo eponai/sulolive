@@ -148,7 +148,7 @@
                                              :transaction/project  project-id
                                              :transaction/type     :transaction.type/expense
                                              :transaction/fees      []}
-       ::type                               :expense
+       ::type                               :type/expense
        ::on-date-apply-fn                   #(om/update-state! this assoc-in [::input-transaction :transaction/date] %)
        ::on-end-date-apply-fn               #(om/update-state! this assoc-in [::input-transaction :transaction/end-date] %)
        ::is-longterm?                       false
@@ -213,51 +213,57 @@
                                          :value   (:transaction/tags input-transaction)}
                                         {:on-select #(om/update-state! this assoc-in [::input-transaction :transaction/tags] %)}))])))
 
+  (render-menu [this]
+    (let [{:keys [::type]} (om/get-state this)
+          css-class {:type/expense ::css/alert
+                     :type/income ::css/success
+                     :type/atm ::css/black}
+          types [{:k :type/expense
+                  :v :transaction.type/expense
+                  :label "Expense"}
+                 {:k :type/income
+                  :v :transaction.type/income
+                  :label "Income"}
+                 {:k :type/atm
+                  :v :transaction.type/expense
+                  :label "ATM"}]]
+      (html
+        [:div.top-bar-container.subnav
+         {:class (css/class-names [(get css-class type)])}
+         [:ul.menu
+          (map (fn [{:keys [k v label]}]
+                 [:li
+                  [:a
+                   {:class    (when (= type k) "active")
+                    :on-click #(om/update-state! this (fn [st]
+                                                        (-> st
+                                                            (assoc ::type k)
+                                                            (assoc-in [::input-transaction :transaction/type] v))))}
+                   label]])
+               types)]])))
+  
   (render [this]
-    (let [{:keys [::type
-                  ::input-transaction
+    (let [{:keys [::input-transaction
                   ::is-longterm?
                   ::show-tags-input?
                   ::show-bank-fee-section?
 
                   ::on-date-apply-fn
                   ::on-end-date-apply-fn]} (om/get-state this)
-          {:keys [transaction/date transaction/end-date transaction/currency transaction/category]} input-transaction
+
+          {:keys [transaction/date
+                  transaction/end-date
+                  transaction/currency
+                  transaction/category]} input-transaction
+
           {:keys [query/all-currencies
                   query/all-categories]} (om/props this)]
+      (debug "Input transaction: " input-transaction)
       (html
         [:div#add-transaction
          [:h4.header "New Transaction"]
-         [:div.top-bar-container.subnav
-          {:class (condp = type
-                    :expense "alert"
-                    :income "success"
-                    :atm "black")}
-          [:ul.menu
-           [:li
-            [:a
-             {:class    (when (= type :expense) "active")
-              :on-click #(om/update-state! this (fn [st]
-                                                  (-> st
-                                                      (assoc ::type :expense)
-                                                      (assoc-in [::input-transaction :transaction/type] :transaction.type/expense))))}
-             "Expense"]]
-           [:li
-            [:a
-             {:class    (when (= type :income) "active")
-              :on-click #(om/update-state! this (fn [st]
-                                                  (-> st
-                                                      (assoc ::type :income)
-                                                      (assoc-in [::input-transaction :transaction/type] :transaction.type/income))))}
-             "Income"]]
-           [:li
-            [:a
-             {:class    (when (= type :atm) "active")
-              :on-click #(om/update-state! this assoc ::type :atm)}
-             "ATM"]]]]
+         (.render-menu this)
          [:div.content
-
-
           [:div.content-section
            [:div.row
             [:div.column.small-7
@@ -441,8 +447,6 @@
   (render [this]
     (let [{:keys [query/all-categories query/all-currencies query/all-tags]} (om/props this)
           {:keys [is-open? input-amount input-transaction on-keydown-fn]} (om/get-state this)]
-      (debug "input-amount: '" input-amount "'")
-      (debug "Input Transaction: " input-transaction)
       (html
         [:div.quick-add-container
          {:on-key-down on-keydown-fn}
