@@ -63,7 +63,7 @@
                                          :user/current
                                          :query/auth]))
                   (= status "not_authorized")
-                  (debug "User logged in on Facebook but not authorized on JourMoney.")
+                  (debug "User logged in on Facebook but not authorized on Jourmoney.")
 
                   :else
                   (debug "User not authorized on Facebook"))))))
@@ -117,7 +117,7 @@
          ;[:hr.intro-divider-landing]
 
          [:p.accept-terms
-          "By signing in, you accept JourMoney's "
+          "By signing in, you accept Jourmoney's "
           ;(terms-of-service-link)
           ;[:a.link {:class "btn btn-link btn-xs"} "Terms of Service"]
           ;" and "
@@ -165,7 +165,7 @@
       (html
         [:div.content-section
          [:h1 (str "Hi there" (when fb-name (str ", " fb-name)) "!")]
-         [:p "We didn't find a verified email for your Facebook account, and we kinda need it to log you in. Please provide an email to associate with your JourMoney account."]
+         [:p "We didn't find a verified email for your Facebook account, and we kinda need it to log you in. Please provide an email to associate with your Jourmoney account."]
 
          [:p
           "You'll also be able to sign in with your email after it's been verified."]

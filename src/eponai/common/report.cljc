@@ -59,18 +59,20 @@
         txs-by-month (group-by #(date/month->long (:transaction/date %)) transactions)
         ; Reduce function to calculate how much is spent on housing and transport, and how much money user has left.
         summary (fn [res tx]
-                  (let [conv-amount (converted-amount tx)]
+                  (let [conv-amount (converted-amount tx)
+                        transaction-type (or (get-in tx [:transaction/type :db/ident]) (:transaction/type tx))
+                        category-name (get-in tx [:transaction/category :category/name])]
                     (cond
-                      (= (get-in tx [:transaction/type :db/ident]) :transaction.type/income)
+                      (= transaction-type :transaction.type/income)
                       (update res :limit + conv-amount)
 
-                      (= "Housing" (get-in tx [:transaction/category :category/name]))
+                      (= "Housing" category-name)
                       (-> res
                           (update :housing + conv-amount)
                           (update :spent + conv-amount)
                           )
 
-                      (= "Transport" (:transaction/category tx))
+                      (= "Transport" category-name)
                       (-> res
                           (update :transport + conv-amount)
                           (update :spent + conv-amount)

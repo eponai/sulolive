@@ -15,7 +15,8 @@
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [warn debug]]
-    [eponai.web.ui.utils.css-classes :as css]))
+    [eponai.web.ui.utils.css-classes :as css]
+    [cljs-time.core :as t]))
 
 (defn- delete-tag-fn [component tag]
   (om/update-state! component update-in [:input-transaction :transaction/tags] disj tag))
@@ -28,7 +29,7 @@
 
 (defn transaction-fee-element [fee on-delete]
   (let [fee-type (:transaction.fee/type fee)
-        fee-value (gstring/format "%.2f" (:transaction.fee/amount fee))
+        fee-value (gstring/format "%.2f" (:transaction.fee/value fee))
         title (if (= fee-type :transaction.fee.type/absolute) "Fixed value" "Relative value")
         value (if (= fee-type :transaction.fee.type/absolute) (str "$ " fee-value) (str fee-value " %"))]
     [:div.transaction-fee
@@ -87,7 +88,7 @@
           [:input {:type        "number"
                    :placeholder "Value"
                    :ref         "fee-value-input"
-                   :on-change   #(om/update-state! this assoc-in [:transaction-fee :transaction.fee/amount] (.. % -target -value))}]]
+                   :on-change   #(om/update-state! this assoc-in [:transaction-fee :transaction.fee/value] (.. % -target -value))}]]
          (when (= (get-in transaction-fee [:transaction.fee/type :value]) :transaction.fee.type/absolute)
            [:div
             (sel/->Select {:options (map (fn [{:keys [currency/code db/id]}]
@@ -111,7 +112,7 @@
      {:query/all-categories [:category/name]}])
   Object
   (add-transaction [this]
-    (let [st (om/get-state this)
+    (let [{:keys [::is-longterm?] :as st} (om/get-state this)
           update-category (fn [tx]
                                (let [{:keys [transaction/category]} tx]
                                  (if (nil? (:label category))
@@ -129,7 +130,8 @@
                                                                                        {:tag/name label}) ts)))
                                                     ;(update :transaction/category (fn [{:keys [label _]}]
                                                     ;                                {:category/name label}))
-                                                    (assoc :transaction/created-at (.getTime (js/Date.)))))
+                                                    (assoc :transaction/created-at (.getTime (js/Date.)))
+                                                    (cond-> (not is-longterm?) (dissoc :transaction/end-date))))
                                              :routing/project])]
       (om/update-state! this assoc :pending-transaction message-id)))
   (initLocalState [this]
@@ -145,9 +147,10 @@
                                              ;                       :value (:db/id category-entity)}
                                              :transaction/project  project-id
                                              :transaction/type     :transaction.type/expense
-                                             :transaction/fee      []}
+                                             :transaction/fees      []}
        ::type                               :expense
-       :computed/date-range-picker-on-apply #(om/update-state! this assoc-in [::input-transaction :transaction/date] %)
+       ::on-date-apply-fn                   #(om/update-state! this assoc-in [::input-transaction :transaction/date] %)
+       ::on-end-date-apply-fn               #(om/update-state! this assoc-in [::input-transaction :transaction/end-date] %)
        ::is-longterm?                       false
        ::add-fee?                           false
        ::show-bank-fee-section?             false
@@ -168,21 +171,21 @@
   (render-bank-fee-section [this]
     (let [{:keys [query/all-currencies]} (om/props this)
           {:keys [::input-transaction ::add-fee?]} (om/get-state this)
-          {:keys [transaction/fee transaction/currency]} input-transaction]
+          {:keys [transaction/fees transaction/currency]} input-transaction]
       (html
         [:div.row
          [:div.column.transaction-fee
           [:div
-           (when-not (empty? fee)
+           (when-not (empty? fees)
              (map (fn [f i]
                     [:div.transaction-fee-container
                      {:key (str "fee " i)}
                      (transaction-fee-element f
-                                              #(om/update-state! this update-in [::input-transaction :transaction/fee] (fn [fees]
+                                              #(om/update-state! this update-in [::input-transaction :transaction/fees] (fn [fees]
                                                                                                                         (vec (concat
                                                                                                                                (subvec fees 0 i)
                                                                                                                                (subvec fees (inc i) (count fees)))))))])
-                  fee
+                  fees
                   (range)))]
           [:div
            [:a
@@ -195,7 +198,7 @@
                                                             :default        currency
                                                             :on-save        #(om/update-state! this (fn [st]
                                                                                                       (-> st
-                                                                                                          (update-in [::input-transaction :transaction/fee] conj %)
+                                                                                                          (update-in [::input-transaction :transaction/fees] conj %)
                                                                                                           (assoc ::add-fee? false))))}))))]])))
 
   (render-tags-section [this]
@@ -213,23 +216,23 @@
   (render [this]
     (let [{:keys [::type
                   ::input-transaction
-                  computed/date-range-picker-on-apply
                   ::is-longterm?
                   ::show-tags-input?
-                  ::show-bank-fee-section?]} (om/get-state this)
-          {:keys [transaction/date transaction/currency transaction/category]} input-transaction
+                  ::show-bank-fee-section?
+
+                  ::on-date-apply-fn
+                  ::on-end-date-apply-fn]} (om/get-state this)
+          {:keys [transaction/date transaction/end-date transaction/currency transaction/category]} input-transaction
           {:keys [query/all-currencies
-                  query/all-tags
                   query/all-categories]} (om/props this)]
-      (debug "Input transaction: " input-transaction)
       (html
         [:div#add-transaction
          [:h4.header "New Transaction"]
          [:div.top-bar-container.subnav
           {:class (condp = type
-                         :expense "alert"
-                         :income "success"
-                         :atm "black")}
+                    :expense "alert"
+                    :income "success"
+                    :atm "black")}
           [:ul.menu
            [:li
             [:a
@@ -293,22 +296,28 @@
             [:div.column
              (->DateRangePicker (om/computed {:single-calendar? true
                                               :start-date       (date/date-time date)}
-                                             {:on-apply date-range-picker-on-apply
+                                             {:on-apply on-date-apply-fn
                                               :format   "MMM dd"}))]
 
             [:div.column
             ; End date input field here
              (when is-longterm?
-               [:div "Show end date thingy"])
+               (->DateRangePicker (om/computed {:single-calendar? true
+                                                :start-date       (date/date-time end-date)}
+                                               {:on-apply on-end-date-apply-fn
+                                                :format   "MMM dd"})))
              ]]
            [:div.row.column
             [:div.long-term
              [:div.switch.tiny
               [:input.switch-input
-               {:id   "long-term-switch"
-                :type "checkbox"
-                :name "long-term-switch"
-                :on-click #(om/update-state! this assoc ::is-longterm? (.. % -target -checked))}]
+               {:id       "long-term-switch"
+                :type     "checkbox"
+                :name     "long-term-switch"
+                :on-click #(om/update-state! this (fn [st]
+                                                    (cond-> (assoc st ::is-longterm? (.. % -target -checked))
+                                                            (nil? (get-in st [::input-transaction :transaction/end-date]))
+                                                            (assoc-in [::input-transaction :transaction/end-date] (date/date-map (t/plus (date/date-time date) (t/days 30)))))))}]
               [:label.switch-paddle {:for "long-term-switch"}]]
              [:span "Long term"]]]
 
