@@ -12,7 +12,7 @@
     [garden.core :refer [css]]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug]]))
+    [taoensso.timbre :refer-macros [error debug]]))
 
 ;;;; #################### Om Next components #####################
 
@@ -180,7 +180,7 @@
                     [:li [:hr]]
                     [:li
                      [:a.secondary-action
-                      {:href     "/api/logout"
+                      {:href     (routes/key->route :route/api->logout)
                        :on-click on-close}
                       [:i.fa.fa-sign-out]
                       [:small

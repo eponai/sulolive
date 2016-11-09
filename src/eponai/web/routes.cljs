@@ -46,6 +46,14 @@
   ([] (routes @app-root))
   ([app-root] ["" (app-routes app-root)]))
 
+(defn with-logout
+  "The logout route should not be handled by our app (for now),
+  so we don't include it right into the (routes) function.
+
+  Make this more generic if we need more routes like this."
+  [[empty-str route-map]]
+  [empty-str (assoc route-map "/api/logout" :route/api->logout)])
+
 (defn key->route
   "Takes a route handler (keyword) and route-params if they are needed,
    and returns a route as a string. Returns nil when there's no match."
@@ -53,5 +61,8 @@
   ([route-handler route-params]
    {:pre [(keyword? route-handler)
           (and (map? route-params) (every? #(some? (val %)) route-params))]}
-   (apply bidi/path-for (routes) route-handler (apply concat route-params))))
+   (apply bidi/path-for
+          (with-logout (routes))
+          route-handler
+          (apply concat route-params))))
 

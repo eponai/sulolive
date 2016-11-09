@@ -17,7 +17,8 @@
             [eponai.client.parser.merge :as merge]
             [eponai.web.parser.merge :as web.merge]
             [eponai.common.parser :as parser]
-            [taoensso.timbre :refer-macros [debug]]))
+            [taoensso.timbre :refer-macros [debug]]
+            [eponai.web.routes :as routes]))
 
 (enable-console-print!)
 
@@ -229,7 +230,7 @@
          ;  :method "post"}]
          [:a.button.hollow
           {:type "submit"
-           :href "/api/logout"}
+           :href (routes/key->route :route/api->logout)}
           "Sign Out"]
 
          ;[:p.accept-terms
