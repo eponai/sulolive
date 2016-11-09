@@ -521,8 +521,12 @@
         ;; associated with our facebook acount.
         (repeat (fn [default-email]
                   (jvmclient/log-in-with-facebook user-id access-token
-                                                  (if (nil? email) default-email email)
-                                                  default-email)))))
+                                                  (if (nil? email)
+                                                    (do (assert (some? default-email)) default-email)
+                                                    email)
+                                                  ;; The "default-email" should never be used
+                                                  ;; after the first login.
+                                                  nil)))))
 
 (defn test-facebook-user-never-gets-duplicate-projects [email]
   (with-fb-meta
