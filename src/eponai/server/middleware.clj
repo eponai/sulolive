@@ -117,19 +117,22 @@
      ;:activate-account-uri "/api/login/create"
      :login-mutation-uri   "/api"}))
 
-(defn config []
+(defn config [in-prod?]
   {:pre [(contains? env :session-cookie-store-key)
          (contains? env :session-cookie-name)]}
-  (-> r/site-defaults
-      (assoc-in [:session :store] (cookie/cookie-store {:key (env :session-cookie-store-key)}))
-      (assoc-in [:session :cookie-name] (env :session-cookie-name))
-      (assoc-in [:session :cookie-attrs :max-age] 7776000)
-      (assoc-in [:session :cookie-attrs :secure] true)
-      (assoc-in [:security :anti-forgery] false)
-      (assoc-in [:static :resources] false)))
+  (let [conf (-> r/site-defaults
+                 (assoc-in [:session :store] (cookie/cookie-store {:key (env :session-cookie-store-key)}))
+                 (assoc-in [:session :cookie-name] (env :session-cookie-name))
+                 (assoc-in [:session :cookie-attrs :max-age] 7776000)
 
-(defn wrap-defaults [handler]
-  (r/wrap-defaults handler (config)))
+                 (assoc-in [:security :anti-forgery] false)
+                 (assoc-in [:static :resources] false))]
+    (cond-> conf
+            in-prod?
+            (assoc-in [:session :cookie-attrs :secure] true))))
+
+(defn wrap-defaults [handler in-prod?]
+  (r/wrap-defaults handler (config in-prod?)))
 
 ;;TODO: fix this ffs
 (defn wrap-login-parser [handler]

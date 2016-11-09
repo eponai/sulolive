@@ -24,9 +24,9 @@
 
 (defn app* [conn extra-middleware]
   (-> (routes api-routes site-routes)
+      m/wrap-post-middlewares
       (m/wrap-authenticate conn @in-production?)
       (cond-> (some? extra-middleware) extra-middleware)
-      m/wrap-post-middlewares
       m/wrap-login-parser
       m/wrap-logout
       (cond-> @in-production? m/wrap-error)
@@ -49,7 +49,7 @@
                                                                   (d/db conn)))))
                      ;; either "dev" or "release"
                      ::m/cljs-build-id            (or (env :cljs-build-id) "dev")})
-      m/wrap-defaults
+      (m/wrap-defaults @in-production?)
       m/wrap-trace-request
       (cond-> @in-production? m/wrap-ssl)
       m/wrap-gzip))
