@@ -27,16 +27,12 @@
   (GET "/*" request (html (::m/cljs-build-id request) "app.html")))
 
 (defroutes
-  playground-routes
-  (GET "/*" request (html (::m/cljs-build-id request) "playground.html")))
-
-(defroutes
   site-routes
   (GET "/" [:as request]
-    (let [auth (friend/current-authentication request)]
-      (if (contains? (:roles auth) ::a/user)
-        (r/redirect "/app")
-        (html "index.html"))))
+    (if (friend/authorized? #{::a/user} request)
+      (r/redirect "/app")
+      (html "index.html")))
+
   (ANY "/stripe" {:keys [::m/conn body]}
     (try
       (let [result (stripe/webhook conn body {::email/send-payment-reminder-fn email/send-payment-reminder-email})]
@@ -52,35 +48,26 @@
         (error e))))
 
   (context "/app" _
-    (fn [request]
-      (let [auth (friend/current-authentication request)]
-        (debug "Got request to app: " auth)
-        (if (contains? (:roles auth) ::a/user-inactive)
-          (r/redirect "/activate")
-          ((friend/wrap-authorize app-routes #{::a/user}) request)))))
+    (friend/wrap-authorize app-routes #{::a/user}))
 
-  (context "/play" _ playground-routes)
+  (context "/play" _
+    (GET "/*" request (html (::m/cljs-build-id request) "playground.html")))
 
   (GET "/activate" request
-    (let [auth (friend/current-authentication request)]
-      (cond (contains? (:roles auth) ::a/user)
-            (r/redirect "/app")
-            (contains? (:roles auth) ::a/user-inactive)
-            (html (::m/cljs-build-id request) "signup.html")
-            :else
-            (r/redirect "/signup"))))
+    (friend/authorize #{::a/user-inactive} (html (::m/cljs-build-id request) "signup.html")))
 
   (GET "/verify/:uuid" [uuid]
     (r/redirect (str "/api/login/email?uuid=" uuid)))
 
   (GET "/signup" request
-    (let [auth (friend/current-authentication request)]
-      (cond (contains? (:roles auth) ::a/user)
-            (r/redirect "/app")
-            (contains? (:roles auth) ::a/user-inactive)
-            (r/redirect "/activate")
-            :else
-            (html (::m/cljs-build-id request) "signup.html"))))
+    (cond (friend/authorized? #{::a/user} request)
+          (r/redirect "/app")
+
+          (friend/authorized? #{::a/user-inactive} request)
+          (r/redirect "/activate")
+
+          :else
+          (html (::m/cljs-build-id request) "signup.html")))
 
   (GET "/devcards" []
     (html "devcards" "app.html"))

@@ -180,7 +180,7 @@
                     [:li [:hr]]
                     [:li
                      [:a.secondary-action
-                      {:href     (routes/key->route :route/api->logout)
+                      {:href     "/api/logout"
                        :on-click on-close}
                       [:i.fa.fa-sign-out]
                       [:small

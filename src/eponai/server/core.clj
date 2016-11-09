@@ -24,9 +24,9 @@
 
 (defn app* [conn extra-middleware]
   (-> (routes api-routes site-routes)
-      m/wrap-post-middlewares
       (m/wrap-authenticate conn @in-production?)
       (cond-> (some? extra-middleware) extra-middleware)
+      m/wrap-post-middlewares
       m/wrap-login-parser
       m/wrap-logout
       (cond-> @in-production? m/wrap-error)

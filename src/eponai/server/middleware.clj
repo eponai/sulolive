@@ -98,21 +98,22 @@
 
 (defn wrap-authenticate [handler conn in-prod?]
   (friend/authenticate
-    handler {:credential-fn       (ac/credential-fn conn)
-             :workflows           [(workflows/email-web)
-                                   (workflows/create-account)
-                                   (apply workflows/facebook
-                                          (if in-prod?
-                                            [(env :facebook-app-id) (env :facebook-app-secret)]
-                                            ["not-in-prod-app-id" "not-in-prod-app-secret"]))
-                                   (workflows/email-mobile)]
-             ;:uri "/api"
-             :login-uri           "/signup"
-             :default-landing-uri "/app"
-             ;:fb-login-uri         "/api/login/fb"
-             :email-login-uri     "/api/login/email"
-             ;:activate-account-uri "/api/login/create"
-             :login-mutation-uri  "/api"}))
+    handler
+    {:allow-anon?          true
+     :credential-fn        (ac/credential-fn conn)
+     :workflows            [(workflows/email-web)
+                            (workflows/create-account)
+                            (workflows/facebook (env :facebook-app-id) (env :facebook-app-secret))
+                            (workflows/email-mobile)]
+     :unauthorized-handler (workflows/unauthorized)
+     :unauthenticated-handler (workflows/unauthenticated)
+     ;:uri "/api"
+     :login-uri            "/signup"
+     :default-landing-uri  "/app"
+     ;:fb-login-uri         "/api/login/fb"
+     :email-login-uri      "/api/login/email"
+     ;:activate-account-uri "/api/login/create"
+     :login-mutation-uri   "/api"}))
 
 (defn config []
   {:pre [(contains? env :session-cookie-store-key)
@@ -148,10 +149,7 @@
                                                {:signout true}))})
                     :read   (fn [_ _ _])})
           parsed-res (parser {} (:query (:body req)))
-          signout? (get-in parsed-res ['session/signout :result :signout])
-
-          use-handler (if signout? (friend/logout handler) handler)]
-      (use-handler (if signout?
-                     (->> (assoc req :session (:session req))
-                          friend/logout*)
-                     req)))))
+          signout? (get-in parsed-res ['session/signout :result :signout])]
+      (if signout?
+        ((friend/logout handler) req)
+        (handler req)))))

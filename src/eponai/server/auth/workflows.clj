@@ -18,6 +18,18 @@
 ;  (r/status (r/response {:status :verification-needed
 ;                         :message "Check your inbox for a verification email!"}) 500))
 
+(defn unauthenticated []
+  (fn [req]
+    (let [auth (friend/current-authentication req)]
+      (debug "Workflow unauthenticated: " auth))
+    (r/redirect "/signup")))
+
+(defn unauthorized []
+  (fn [req]
+    (let [auth (friend/current-authentication req)]
+      (debug "Workflow unauthorized: " auth)
+      (r/redirect "/signup"))))
+
 (defn email-web
   []
   (fn [{:keys [params ::friend/auth-config ::stripe/stripe-fn] :as request}]

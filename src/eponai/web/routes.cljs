@@ -42,11 +42,9 @@
   {app-root {end  :route/home
              "/1" version-1-routes}})
 
-(def api-routes {"/api/logout" :route/api->logout})
-
 (defn routes
   ([] (routes @app-root))
-  ([app-root] ["" (merge (app-routes app-root) api-routes)]))
+  ([app-root] ["" (app-routes app-root)]))
 
 (defn key->route
   "Takes a route handler (keyword) and route-params if they are needed,
