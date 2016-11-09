@@ -446,35 +446,113 @@
                 ::fw/asserts       #(assert (every? (fn [client] (assert= new-email (get-email client)))
                                                     clients))}]}))
 
-(defn test-create-new-user-with-facebook [email user-id access-token]
-  ^{:system {:server {:wrap-state
-                      {::wf/create-account-without-throwing true
-                       :facebook-token-validator            (wf.test/test-facebook-token-validator
-                                                              {:email    email
-                                                               :user-id  user-id
-                                                               :token    access-token
-                                                               :is-valid true})}}}}
-  (fn [server clients]
-    ;; This test only works for 1 client. Why? Because facebook login is complicated?
-    ;; TODO: Write a test for two clients interacting with facebook.
-    (let [clients (take 1 clients)
-          default-email "some@email.com"]
-      {:label   "Log out and create a new user with facebook"
-       :actions [{::fw/transaction #(run! jvmclient/log-out! clients)}
-                 {::fw/transaction #(run! (fn [c]
-                                            (jvmclient/log-in!
-                                              c
-                                              (jvmclient/log-in-with-facebook
-                                                user-id access-token email default-email)))
-                                          clients)}
-                 {::fw/sync-clients! true
-                  ::fw/asserts       #(assert (every? (fn [client]
-                                                        (assert= (if email email default-email)
-                                                                 (get-email client)))
-                                                      clients))}]})))
+;; Facebook login params
+(def user-id "user-id")
+(def access-token "long-lived-token")
+
+(defn with-fb-meta [email f]
+  (with-meta f {:system {:server {:wrap-state
+                                  {::wf/create-account-without-throwing true
+                                   :facebook-token-validator            (wf.test/test-facebook-token-validator
+                                                                          {:email    email
+                                                                           :user-id  user-id
+                                                                           :token    access-token
+                                                                           :is-valid true})}}}}))
+
+(defn returning-nil
+  "Wraps a function in a new function that returns nil"
+  [f]
+  (fn [& args]
+    (apply f args)
+    nil))
+
+(defn test-create-new-user-with-facebook [email]
+  (with-fb-meta
+    email
+    (fn [server [client1]]
+      ;; This test only works for 1 client. Why? Because facebook login is complicated?
+      ;; TODO: Write a test for two clients interacting with facebook.
+      (let [default-email "some@email.com"]
+        {:label   "Log out and create a new user with facebook"
+         :actions [{::fw/transaction (returning-nil #(jvmclient/log-out! client1))}
+                   {::fw/transaction (returning-nil #(jvmclient/log-in! client1
+                                                                        (jvmclient/log-in-with-facebook
+                                                                          user-id access-token email default-email)))}
+                   {::fw/sync-clients! true
+                    ::fw/asserts       #(assert (assert= (if email email default-email) (get-email client1)))}]}))))
+
+(defn create-log-out-log-in-test
+  "Takes a number of runs, a client and a seq (maybe infinite) of login functions and verifies that we never
+  create duplicate projects."
+  [n client login-fns & [email]]
+  (let [project-atom (atom nil)
+        email (or email "email@tests.cljs")
+        log-out-log-in-verify-project
+        (fn [login-fn]
+          [{::fw/transaction (returning-nil #(jvmclient/log-out! client))
+            ::fw/asserts     #(do (when @project-atom
+                                    (assert= nil (pull/lookup-entity (db client) (first @project-atom))))
+                                  (assert= nil (seq (pull/all-with (db client) {:where '[[?e :user/uuid]]}))))
+            ;; TODO: Make sure we can't access /api/user ?
+            }
+           {::fw/transaction   (returning-nil #(jvmclient/log-in! client (login-fn email)))
+            ::fw/sync-clients! true
+            ::fw/asserts       #(let [projects (pull/find-with (db client)
+                                                               {:find-pattern '[?e ?uuid]
+                                                                :where        '[[?e :project/uuid ?uuid]]})
+                                      _ (assert= 1 (count projects))
+                                      [project-eid project-uuid :as project] (first projects)]
+                                 (if-let [[last-eid last-uuid] @project-atom]
+                                   (do (assert= project-eid last-eid)
+                                       (assert= project-uuid last-uuid))
+                                   (do (reset! project-atom project))))}])]
+    {:actions (into []
+                    (comp (take n) (mapcat log-out-log-in-verify-project))
+                    login-fns)}))
+
+(defn test-new-user-with-email-never-gets-duplicate-projects [server [client1]]
+  (create-log-out-log-in-test 5 client1 (repeat #(jvmclient/log-in-with-email %))))
+
+(defn facebook-login-fns [email]
+  ;; The first run we use the email associated with the facebook account.
+  (cons (fn [default-email]
+          (jvmclient/log-in-with-facebook user-id access-token email default-email))
+        ;; The rest of the runs we use the default-email if we had no email
+        ;; associated with our facebook acount.
+        (repeat (fn [default-email]
+                  (jvmclient/log-in-with-facebook user-id access-token
+                                                  (if (nil? email) default-email email)
+                                                  default-email)))))
+
+(defn test-facebook-user-never-gets-duplicate-projects [email]
+  (with-fb-meta
+    email
+    (fn [server [client1]]
+      (create-log-out-log-in-test 5 client1 (facebook-login-fns email)))))
+
+(defn test-alternating-facebook-and-email-login-never-get-dups [email]
+  (with-fb-meta
+    email
+    (fn [server [client]]
+      (create-log-out-log-in-test
+        10 client
+        (interleave (facebook-login-fns email)
+                    (repeat #(jvmclient/log-in-with-email (or email %))))))))
+
+(defn test-alternating-email-and-facebook-login-never-get-dups []
+  (let [email "email-then-facebook@test.clj"]
+    (with-fb-meta
+      email
+      (fn [server [client]]
+        (create-log-out-log-in-test
+          10 client
+          (interleave (repeat #(do (assert (= email %))
+                                   (jvmclient/log-in-with-email %)))
+                      (repeat #(jvmclient/log-in-with-facebook user-id access-token % nil)))
+          email)))))
 
 (defn run []
-  (fs.utils/with-less-loud-logger :debug
+  (fs.utils/with-less-loud-logger :info
     #(-> (fw/run-tests (->> [
                              test-system-setup
                              test-create-transaction
@@ -492,12 +570,19 @@
                              test-two-client-edit-tags-offline+sync-2
                              test-two-client-edit-titles-offline+sync
                              test-create-new-user-with-email
-                             (test-create-new-user-with-facebook "facebook@test.com" "user-id" "long-lived-token")
-                             (test-create-new-user-with-facebook nil "user-id" "long-lived-token")
+                             (test-create-new-user-with-facebook "facebook@test.com")
+                             (test-create-new-user-with-facebook nil)
+                             test-new-user-with-email-never-gets-duplicate-projects
+                             (test-facebook-user-never-gets-duplicate-projects "facebook@test.com")
+                             (test-facebook-user-never-gets-duplicate-projects nil)
+                             (test-alternating-facebook-and-email-login-never-get-dups nil)
+                             (test-alternating-facebook-and-email-login-never-get-dups "facebook@test.com")
+                             (test-alternating-email-and-facebook-login-never-get-dups)
+                             (test-alternating-email-and-facebook-login-never-get-dups)
                              ]
-                            ;(filter (partial = test-create+edit-amount-offline))
+                            ;(filter (partial = test-new-user-with-email-never-gets-duplicate-projects))
                             ;(reverse)
-                            ;(take 1)
+                            ;(take 6)
                         ))
          (fw/result-summary))))
 
