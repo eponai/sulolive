@@ -103,7 +103,9 @@
      :credential-fn        (ac/credential-fn conn)
      :workflows            [(workflows/email-web)
                             (workflows/create-account)
-                            (workflows/facebook (env :facebook-app-id) (env :facebook-app-secret))
+                            (workflows/facebook
+                              (env :facebook-app-id "no-facebook-app-id")
+                              (env :facebook-app-secret "no-facebook-app-secret"))
                             (workflows/email-mobile)]
      :unauthorized-handler (workflows/unauthorized)
      :unauthenticated-handler (workflows/unauthenticated)
