@@ -10,7 +10,8 @@
          [cljs-time.coerce :as cljs-time]
          [eponai.client.logger :as logger]
          [devtools.core :as devtools]
-         [goog.date]]))
+         [goog.date]
+         [goog.format.EmailAddress]]))
   #?(:clj (:import [datascript.db DB])))
 
 ;; ---------------------
@@ -149,6 +150,10 @@
      (-equiv [this other] (date-eq this other))))
 
 ;; ------ Util functions -----------
+
+#?(:cljs
+   (defn valid-email? [email]
+     (and (string? email) (goog.format.EmailAddress/isValidAddress email))))
 
 (defn distinct-by
   "Distinct by (f input). See clojure.core/distinct."

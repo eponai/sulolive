@@ -19,4 +19,5 @@
 (def om-next-endpoint-public "/api")
 (def om-next-endpoint-user-auth "/api/user")
 (def om-next-endpoint-playground "/api/playground")
+(def om-next-endpoint-playground-subscribe "/api/playground/subscribe")
 (def email-endpoint-subscribe "/newsletter/subscribe")

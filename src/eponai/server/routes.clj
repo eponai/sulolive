@@ -14,7 +14,8 @@
             [clojure.data.json :as json]
             [eponai.server.email :as email]
             [eponai.common.parser :as parser]
-            [eponai.server.auth.workflows :as w])
+            [eponai.server.auth.workflows :as w]
+            [om.next :as om])
   (:import [clojure.lang ExceptionInfo]))
 
 (defn html [& path]
@@ -157,6 +158,20 @@
   (POST "/" request
     (r/response (call-parser request))))
 
+(defn playground-handler [request parser]
+  (let [user-uuid-fn (::m/playground-user-uuid-fn request)
+        user-uuid (if (fn? user-uuid-fn)
+                    (user-uuid-fn)
+                    (warn "user-uuid-fn was not a function. Was: " user-uuid-fn))]
+    (if (some? user-uuid)
+      (r/response (call-parser (-> request
+                                   (assoc ::playground-auth {:username user-uuid})
+                                   (assoc ::m/parser parser))))
+      (let [msg "No playground user-uuid with request. Will not call parser."]
+        (throw (ex-info msg
+                        {:message          msg
+                         :keys-of-interest [::m/playground-user-uuid-fn]}))))))
+
 (defroutes
   api-routes
   (context "/api" []
@@ -167,23 +182,26 @@
       (r/response (call-parser request)))
 
     ;; TODO: We need a test which fails if a request mutates the db.
-    (POST "/playground" request
-      (let [user-uuid-fn (::m/playground-user-uuid-fn request)
-            user-uuid (if (fn? user-uuid-fn)
-                        (user-uuid-fn)
-                        (warn "user-uuid-fn was not a function. Was: " user-uuid-fn))]
-        (if (some? user-uuid)
-          (r/response (call-parser (-> request
-                                       (assoc ::playground-auth {:username user-uuid})
-                                       (assoc ::m/parser (-> (parser/server-parser (parser/server-parser-state {:mutate (constantly nil)}))
-                                                             ;; Remove mutations from query even though there
-                                                             ;; isn't any mutate function, just in case.
-                                                             parser/parse-without-mutations
-                                                             parser/parser-require-auth)))))
-          (let [msg "No playground user-uuid with request. Will not call parser."]
-            (throw (ex-info msg
-                            {:message          msg
-                             :keys-of-interest [::m/playground-user-uuid-fn]}))))))
+    (context "/playground" []
+
+      ;; This is an endpoint where we can only subscribe to our newsletter from the playground.
+      (POST "/subscribe" request
+        (playground-handler
+          request
+          (om/parser {:read   (constantly nil)
+                      :mutate (fn [_ k p]
+                                (if-not (= k 'playground/subscribe)
+                                  (throw (ex-info (str "Mutation not allowed: " k) {:mutation k :params p}))
+                                  (do (assert (string? (:email p)))
+                                      (api/newsletter-subscribe (::m/conn request) (:email p)))))})))
+      (POST "/" request
+        (playground-handler
+          request
+          (-> (parser/server-parser (parser/server-parser-state {:mutate (constantly nil)}))
+              ;; Remove mutations from query even though there
+              ;; isn't any mutate function, just in case.
+              parser/parse-without-mutations
+              parser/parser-require-auth))))
 
     ; Requires user login
     (context "/user" _

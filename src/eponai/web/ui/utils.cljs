@@ -13,7 +13,7 @@
             [clojure.string :as string]
             [clojure.data :as diff]))
 
-(def ^:dynamic *playground?* false)
+(defonce ^:dynamic *playground?* false)
 
 ;;;;;;; Om query helpers
 

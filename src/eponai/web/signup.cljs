@@ -7,7 +7,6 @@
             [sablono.core :refer-macros [html]]
             [goog.object :as gobj]
             [goog.dom :as gdom]
-            [goog.format.EmailAddress]
     ;; To initialize ReactDOM:
             [cljsjs.react.dom]
             [eponai.web.homeless :as homeless]
@@ -74,7 +73,7 @@
        :verification-sent false}))
   (render [this]
     (let [{:keys [input-email status]} (om/get-state this)
-          valid-email? (goog.format.EmailAddress/isValidAddress (or input-email ""))]
+          valid-email? (utils/valid-email? input-email)]
       (html
         [:div.content-section
          [:h1.title "Start tracking today!"]

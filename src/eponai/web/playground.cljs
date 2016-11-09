@@ -13,9 +13,16 @@
   (let [parse-without-mutations (parser/parse-without-mutations parser)]
     (fn p
       [env query & [target]]
-      (if (some? target)
+      (cond
+        (= :remote target)
         (parse-without-mutations env query target)
-        (parser env query target)))))
+
+        (or (= :remote/playground-subscribe target)
+            (= nil target))
+        (parser env query target)
+
+        :else
+        (throw (ex-info "Unknown target for playground parser." {:target target :query query}))))))
 
 (defn run []
   (debug "Running playground/run")
@@ -24,7 +31,11 @@
   (set! web.ui.utils/*playground?* true)
   (let [conn (utils/init-conn)]
     (app/initialize-app conn {:parser (parser-without-remote-mutations (parser/client-parser))
+                              :remotes [:remote :remote/playground-subscribe]
                               :send   (backend/send!
                                         utils/reconciler-atom
                                         {:remote (-> (remotes/post-to-url homeless/om-next-endpoint-playground)
-                                                     (remotes/read-basis-t-remote-middleware conn))})})))
+                                                     (remotes/read-basis-t-remote-middleware conn))
+                                         :remote/playground-subscribe
+                                                 (remotes/post-to-url
+                                                   homeless/om-next-endpoint-playground-subscribe)})})))
