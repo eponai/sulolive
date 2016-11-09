@@ -28,9 +28,7 @@ dependencies:
 
 test:
   override:
-    - mkdir -p "$CLJ_TEST_REPORT_FILE"
-    - rmdir "$CLJ_TEST_REPORT_FILE"
-    - lein trampoline test-out junit "$CLJ_TEST_REPORT_FILE"
+    - lein test
     - ./scripts/run-cljs-tests.sh
   post:
     - lein clean
