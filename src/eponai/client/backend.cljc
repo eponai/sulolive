@@ -92,7 +92,8 @@
   (go
     (try
       (loop [retry-time-ms 500]
-        (let [{:keys [method url opts response-fn post-merge-fn shutting-down?]}
+        (let [{:keys [method url opts response-fn post-merge-fn shutting-down?
+                      redirect-fn]}
               ((get remote->send remote-key) query)
               _ (debug "Sending to " " url: " url " remote: " remote-key " query: " query
                        "method: " method  "opts: " opts)
@@ -118,8 +119,16 @@
             (and (number? status) (<= 300 status 399))
             (do
               (debug "Redirect. What to do?")
-              {:response nil
-               :post-merge-fn post-merge-fn})
+              (if redirect-fn
+                (do
+                  (debug "Calling redirect function: " redirect-fn
+                         " with response: " response)
+                  (redirect-fn response))
+                (do
+                  (debug "No redirect-fn to handle redirect: " response
+                         ". Doing nothing.")
+                  {:response      nil
+                   :post-merge-fn post-merge-fn})))
             :else
             (throw (ex-info "Not 2xx response remote."
                             {:remote remote-key

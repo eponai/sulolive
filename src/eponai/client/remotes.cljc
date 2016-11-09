@@ -4,6 +4,19 @@
             [om.next :as om]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug]]))
 
+
+#?(:cljs
+   (defn load-url-on-redirect [remote]
+     (letfn [(redirect [{:keys [status headers] :as response}]
+               (assert (and (number? status) (<= 300 status 399))
+                       (str "Status was a number in the 300 to 399 range. Was: " status))
+               (assert (map? headers) (str "headers was not a map in response: " response))
+               (let [location (some #(get headers %) ["location" "Location"])]
+                 (assert (string? location) (str "Value for location was not a string, was: " location))
+                 ;;TODO: This doesn't work for mobile? react-native?
+                 (set! js/window.location location)))]
+       (assoc remote :redirect-fn redirect))))
+
 ;; Basic remote function
 
 (defn post-to-url
@@ -11,10 +24,11 @@
   This one will post to the url with transit-params."
   [url]
   (fn [query]
-    {:method      :post
-     :url         url
-     :opts        {:transit-params {:query query}}
-     :response-fn identity}))
+    (-> {:method      :post
+         :url         url
+         :opts        {:transit-params {:query query}}
+         :response-fn identity}
+        #?(:cljs load-url-on-redirect))))
 
 (defn wrap-update [remote-fn k f & args]
   (fn [query]
