@@ -7,6 +7,7 @@
             [sablono.core :refer-macros [html]]
             [goog.object :as gobj]
             [goog.dom :as gdom]
+            [goog.format.EmailAddress]
     ;; To initialize ReactDOM:
             [cljsjs.react.dom]
             [eponai.web.homeless :as homeless]
@@ -72,7 +73,8 @@
       {:input-email email
        :verification-sent false}))
   (render [this]
-    (let [{:keys [input-email status]} (om/get-state this)]
+    (let [{:keys [input-email status]} (om/get-state this)
+          valid-email? (goog.format.EmailAddress/isValidAddress (or input-email ""))]
       (html
         [:div.content-section
          [:h1.title "Start tracking today!"]
@@ -96,6 +98,8 @@
           [:input
            (opts {:value       (or input-email "")
                   :on-change   (on-input-change this :input-email)
+                  :on-key-down #(when (and (web-utils/enter-down? %) valid-email?)
+                                 (.on-email-login this))
                   :type        :email
                   :placeholder "youremail@example.com"
                   :tab-index   1})]
@@ -107,10 +111,12 @@
           ]
 
 
-         [:a.button
-          {:on-click  #(.on-email-login this)
-           :tab-index 2}
-          "Sign in with Email"]
+         [:input.button
+          {:type      :submit
+           :disabled  (not valid-email?)
+           :value     "Sign in with Email"
+           :on-click  #(.on-email-login this)
+           :tab-index 2}]
 
          ;[:br]
          ;; --------- Social Buttons

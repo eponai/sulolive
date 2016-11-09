@@ -33,14 +33,15 @@
 (defn initialize-app [conn & [reconciler-opts]]
   (debug "Initializing App")
   (let [parser (parser/client-parser)
+        remote (-> (remotes/post-to-url homeless/om-next-endpoint-user-auth)
+                   (remotes/read-basis-t-remote-middleware conn))
         reconciler (om/reconciler (merge
                                     {:state     conn
                                      :ui->props (utils/cached-ui->props-fn parser)
                                      :parser    parser
                                      :remotes   [:remote]
                                      :send      (backend/send! utils/reconciler-atom
-                                                  {:remote (-> (remotes/post-to-url homeless/om-next-endpoint-user-auth)
-                                                               (remotes/read-basis-t-remote-middleware conn))})
+                                                  {:remote remote})
                                      :merge     (merge/merge! web.merge/web-merge)
                                      :migrate   nil}
                                     reconciler-opts))]

@@ -142,8 +142,11 @@
     (do (warn "Tag: " tag " not found in tags: " tags)
         tags)))
 
+(defn enter-down? [e]
+  (= 13 (.-keyCode e)))
+
 (defn on-enter-down [e f]
-  (when (and (= 13 (.-keyCode e))
+  (when (and (enter-down? e)
              (seq (.. e -target -value)))
     (.preventDefault e)
     (f (.. e -target -value))))
