@@ -1,6 +1,29 @@
 (ns eponai.client.logger
   (:require [clojure.string :as str]
+            [goog.debug]
+            [goog.log :as glog]
             [taoensso.timbre :as timbre]))
+
+(def goog-root-logger
+  (glog/getLogger goog.debug.Logger.ROOT_LOGGER_NAME))
+
+(def levels {:severe  goog.debug.Logger.Level.SEVERE
+             :warning goog.debug.Logger.Level.WARNING
+             :info    goog.debug.Logger.Level.INFO
+             :config  goog.debug.Logger.Level.CONFIG
+             :fine    goog.debug.Logger.Level.FINE
+             :finer   goog.debug.Logger.Level.FINER
+             :finest  goog.debug.Logger.Level.FINEST})
+
+(defn log-to-console! []
+  (.setCapturing (goog.debug.Console.) true))
+
+(defn set-goog-level! [level]
+  (.setLevel goog-root-logger (get levels level (:info levels))))
+
+;; Adjust this level to debug goog library.
+;; (set-goog-level! :fine)
+
 
 ;; Both the appender and output fun is copied and tweaked form github:
 ;; https://github.com/ptaoussanis/timbre/blob/a26ecc6a96475cb80026f55d1467fb490658ab8d/src/taoensso/timbre/appenders/core.cljx#L137
