@@ -24,6 +24,10 @@
   }  
 }
 
+#responsive-menu {
+  display: none;
+}
+
 #landing-page {
   @include landing-button(true);
 }
@@ -51,7 +55,7 @@
   background: $darkblue;
   color: $white;
   .actions {
-    padding: 0.5rem 0;
+    padding: 1.5rem 0;
   }
   @include breakpoint(medium) {
     h1 {
@@ -72,7 +76,7 @@
 }
 
 .intro {
-  padding-top: 1rem;
+  padding-top: 2rem;
   @include breakpoint(medium) {
     padding-top: 7rem;
   }
@@ -149,7 +153,7 @@
 
 .content-section {
   margin: 0;  
-  padding: 1rem 0;
+  padding: 2.5rem 0;
   @include breakpoint(medium) {
     padding: 5rem 0;
   }
@@ -181,32 +185,3 @@
 
 
 }
-
-// .content-section {
-//   display: flex;
-//   flex-direction: row;
-//   align-items: center;
-//   flex: 0 0 auto;
-//   flex-wrap: wrap;
-//   margin: 5rem auto;
-
-//   @include breakpoint(medium) {
-//     flex-wrap: nowrap;
-//   }
-
-//   h3 {
-//     font-size: 1.5em;
-//   }
-//   h4 {
-//     @extend .small-caps;
-//     color: $dark-gray;
-//     font-size: 1.1em;
-//     font-weight: bold;
-//     margin: 1em 0 0 0;
-//   }
-// }
-
-// .navbar-brand {
-//   font-weight: 400;
-//   color: $white;
-// }

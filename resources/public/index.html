@@ -10,8 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1 maximum-scale=1 user-scalable=no"/>
     <meta name="author" content="eponai hb"/>
     <!--<meta name="keywords" content="expense tracker,track expenses,tracking expenses,expense trackers,expense tracker app,budget app,budget">-->
-    <meta name="description" content="JourMoney is an expense tracker that lets you see your financial habits and explore
-                                    where you can do small changes to save more money over time.">
+    <meta name="description" content="Jourmoney is an expense tracker for nomads, making it easy to track different housing arrangements, transports and international bank fees.">
 
     <title>Tracking Expenses for Nomads - jourmoney</title>
 
@@ -64,15 +63,19 @@ mixpanel.init("0980865aa734b3f18be4d92d0b612ee5");</script>
 <div id="landing-page">
     <div id="header">
         <nav class="top-bar">
-            <div class="top-bar-left">
+            <div class="top-bar-title">
                 <a class="navbar-brand" href="">
                     <strong>jourmoney</strong>
                 </a>
             </div>
-            <div class="top-bar-right">
+                <span data-responsive-toggle="responsive-menu" data-hide-for="medium"
+                      class="top-bar-title float-right show-for-small-only">
+                    <button class="menu-icon" type="button" data-toggle></button>
+                </span>
+            <div class="top-bar-right" id="responsive-menu">
                 <ul class="menu">
                     <!--<li>-->
-                        <!--<a>About Us</a>-->
+                    <!--<a>About Us</a>-->
                     <!--</li>-->
                     <!--<li><a>Blog</a></li>-->
                     <li>
@@ -277,7 +280,10 @@ mixpanel.init("0980865aa734b3f18be4d92d0b612ee5");</script>
 </div>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/foundation/6.2.4/foundation.min.js"></script>
+
 <script type="text/javascript">
+$(document).foundation();
     function onSubscribe(elementId) {
           <!--mixpanel.track("Newsletter Subscribe", {"element-id": elementId})-->
           document.getElementById('subscribe-intro').innerHTML = "<small><i class='fa fa-spinner fa-spin'></small>";
