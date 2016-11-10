@@ -9,9 +9,9 @@
 (defn facebook-async-init-code []
   ["window.fbAsyncInit = function() {"
    "  FB.init({"
-   "    appId      : '936364773079066',"
-   "    xfbml      : true,"
-   "    version    : 'v2.7'"
+   "    appId: '936364773079066',"
+   "    xfbml: true,"
+   "    version: 'v2.7'"
    "  });"
    "};"
    ""

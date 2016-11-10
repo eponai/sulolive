@@ -29,8 +29,7 @@
                              "/release/js/out/budget.js"
                              "/dev/js/out/budget.js")
                       :type text-javascript})
-         (dom/script {:type text-javascript}
-                     "env.web.main.run();")
+         (common/inline-javascript ["env.web.main.run();"])
          (dom/script {:type text-javascript
                       ;; Should we run stripe in non-release?
                       :src "https://js.stripe.com/v2/"}))))))

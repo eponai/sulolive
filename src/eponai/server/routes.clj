@@ -27,17 +27,20 @@
 (defn release? [request]
   (= "release" (::m/cljs-build-id request)))
 
+(defn request->props [request]
+  {:release? (release? request)})
+
 (defroutes
   app-routes
   (GET "/*" request
-    (server.ui/app-html {:release? (release? request)})))
+    (server.ui/app-html (request->props request))))
 
 (defroutes
   site-routes
   (GET "/" [:as request]
     (if (friend/authorized? #{::a/user} request)
       (r/redirect "/app")
-      (server.ui/index-html {:release? (release? request)})))
+      (server.ui/index-html (request->props request))))
 
   (ANY "/stripe" {:keys [::m/conn body]}
     (try
@@ -60,7 +63,8 @@
     (GET "/*" request (html (::m/cljs-build-id request) "playground.html")))
 
   (GET "/activate" request
-    (friend/authorize #{::a/user-inactive} (html (::m/cljs-build-id request) "signup.html")))
+    (friend/authorize #{::a/user-inactive}
+                      (server.ui/signup-html (request->props request))))
 
   (GET "/verify/:uuid" [uuid]
     (r/redirect (str "/api/login/email?uuid=" uuid)))
@@ -73,7 +77,7 @@
           (r/redirect "/activate")
 
           :else
-          (html (::m/cljs-build-id request) "signup.html")))
+          (server.ui/signup-html (request->props request))))
 
   (GET "/devcards" []
     (html "devcards" "app.html"))
