@@ -11,6 +11,7 @@
             [taoensso.timbre :refer [debug error trace warn]]
             [eponai.server.api :as api]
             [eponai.server.external.stripe :as stripe]
+            [eponai.server.ui :as server.ui]
             [clojure.data.json :as json]
             [eponai.server.email :as email]
             [eponai.common.parser :as parser]
@@ -25,7 +26,13 @@
 
 (defroutes
   app-routes
-  (GET "/*" request (html (::m/cljs-build-id request) "app.html")))
+  (GET "/*" request
+    (let [cljs-build-id (::m/cljs-build-id request)
+          release? (= "release" cljs-build-id)
+          app-html (cond-> server.ui/app-html
+                           release?
+                           memoize)]
+      (app-html {:release? release?}))))
 
 (defroutes
   site-routes
