@@ -1,39 +1,40 @@
 (ns eponai.server.ui.index
   (:require [om.next :as om :refer [defui]]
             [om.dom :as dom]
+            [clojure.string :as str]
             [eponai.server.ui.common :as common :refer [text-javascript]]))
 
 (defn iubenda-script-code []
-  (str "var _iub = _iub || [];"
-       "_iub.csConfiguration = {"
-       "  cookiePolicyId: 7944779,"
-       "  siteId: 640904,"
-       "  lang: \"en\","
-       "  priorConsent: false"
-       "};"))
+  ["var _iub = _iub || [];"
+      "_iub.csConfiguration = {"
+      "  cookiePolicyId: 7944779,"
+      "  siteId: 640904,"
+      "  lang: \"en\","
+      "  priorConsent: false"
+      "};"])
 
 (defn document-ready-code []
-  (str "function onSubscribe(elementId) {"
-       "  document.getElementById('subscribe-intro').innerHTML = '<small><i class='fa fa-spinner fa-spin'></small>';"
-       "}"
-       ""
-       "$(document).ready(function() {"
-       "  $('#subscribe-form').submit(function(e) {"
-       "    e.preventDefault();"
-       "    var dataString = $(this).serialize();"
-       "    $.ajax({"
-       "      type: 'POST',"
-       "      url: '/newsletter/subscribe',"
-       "      data: dataString,"
-       "      error: function(response) {"
-       "        document.getElementById('subscribe-intro').innerHTML = '<small>' + JSON.parse(response.responseText).message + '</small>';"
-       "      },"
-       "      success: function(response) {"
-       "        document.getElementById('subscribe-intro').innerHTML = '<small>' + JSON.parse(response).message + '</small>';"
-       "      }"
-       "    });"
-       "  });"
-       "});"))
+  ["function onSubscribe(elementId) {"
+   "  document.getElementById('subscribe-intro').innerHTML = \"<small><i class='fa fa-spinner fa-spin'></small>\";"
+   "}"
+   ""
+   "$(document).ready(function() {"
+   "  $('#subscribe-form').submit(function(e) {"
+   "    e.preventDefault();"
+   "    var dataString = $(this).serialize();"
+   "    $.ajax({"
+   "      type: 'POST',"
+   "      url: '/newsletter/subscribe',"
+   "      data: dataString,"
+   "      error: function(response) {"
+   "        document.getElementById('subscribe-intro').innerHTML = \"<small>\" + JSON.parse(response.responseText).message + \"</small>\";"
+   "      },"
+   "      success: function(response) {"
+   "        document.getElementById('subscribe-intro').innerHTML = \"<small>\" + JSON.parse(response).message + \"</small>\";"
+   "      }"
+   "    });"
+   "  });"
+   "});"])
 
 (def intro-message-text
   "When your lifestyle is not following traditional patterns, there's no reason you shouldn't be able to track your money comfortably. Live your nomadic life and travel in peace while tracking your money anytime, anywhere, in any currency.")
@@ -46,7 +47,6 @@
         {:lang "en"}
         (apply dom/head nil
                (-> (common/head-content release?)
-                   (conj (common/inline-javascript (str "alert('FOO')")))
                    (conj (common/inline-javascript (iubenda-script-code)))
                    (conj (dom/script {:type    text-javascript
                                       :src     "//cdn.iubenda.com/cookie_solution/safemode/iubenda_cs.js"
