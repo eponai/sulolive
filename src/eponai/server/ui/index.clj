@@ -14,7 +14,8 @@
       "};"])
 
 (defn document-ready-code []
-  ["function onSubscribe(elementId) {"
+  ["$(document).foundation();"
+   "function onSubscribe(elementId) {"
    "  document.getElementById('subscribe-intro').innerHTML = \"<small><i class='fa fa-spinner fa-spin'></small>\";"
    "}"
    ""
@@ -57,11 +58,15 @@
           (dom/div {:id "landing-page"}
             (dom/div {:id "header"}
               (dom/nav {:className "top-bar"}
-                       (dom/div {:className "top-bar-left"}
+                       (dom/div {:className "top-bar-title"}
                          (dom/a {:className "navbar-brand"
                                  :href      ""}
                                 (dom/strong nil "jourmoney")))
-                       (dom/div {:className "top-bar-right"}
+                       (dom/span {:data-responsive-toggle "responsive-menu"
+                                  :data-hide-for "medium"
+                                  :className "top-bar-title float-right show-for-small-only"})
+                       (dom/div {:className "top-bar-right"
+                                 :id "responsive-menu"}
                          (dom/ul {:className "menu"}
                            (map (fn [[href text strong?]]
                                   (dom/li nil
@@ -177,4 +182,6 @@
 
           (dom/script {:src "https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"
                        :type text-javascript})
+          (dom/script {:type text-javascript
+                       :src "https://cdn.jsdelivr.net/foundation/6.2.4/foundation.min.js"})
           (common/inline-javascript (document-ready-code)))))))
