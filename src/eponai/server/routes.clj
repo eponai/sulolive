@@ -24,22 +24,20 @@
       (r/resource-response {:root "public"})
       (r/content-type "text/html")))
 
+(defn release? [request]
+  (= "release" (::m/cljs-build-id request)))
+
 (defroutes
   app-routes
   (GET "/*" request
-    (let [cljs-build-id (::m/cljs-build-id request)
-          release? (= "release" cljs-build-id)
-          app-html (cond-> server.ui/app-html
-                           release?
-                           memoize)]
-      (app-html {:release? release?}))))
+    (server.ui/app-html {:release? (release? request)})))
 
 (defroutes
   site-routes
   (GET "/" [:as request]
     (if (friend/authorized? #{::a/user} request)
       (r/redirect "/app")
-      (html "index.html")))
+      (server.ui/index-html {:release? (release? request)})))
 
   (ANY "/stripe" {:keys [::m/conn body]}
     (try
