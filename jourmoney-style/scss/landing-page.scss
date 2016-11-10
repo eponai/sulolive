@@ -4,7 +4,7 @@
     @if $expanded {
       @include button-expand;
     } 
-    margin: 0;
+    margin: 1rem 0;
     &:not(.hollow) {
       @each $name, $color in $foundation-palette {
         &.#{$name} {
@@ -37,7 +37,7 @@
   .top-bar {
     .top-bar-left, .top-bar-right {
       // width: auto;
-      margin: 0 1rem;
+      // margin: 0 1rem;
     }
   }
 
@@ -50,92 +50,48 @@
 #header, #footer {
   background: $darkblue;
   color: $white;
-  h1 {
-    font-size: 2.2rem;
-  }
-  span {
-    font-size: 1.1rem;
-    margin: 0;
-    line-height: 2rem;    
-  }
   .actions {
-    padding: 2.5rem 0;
+    padding: 0.5rem 0;
   }
-  .column {
-    margin-bottom: 0.5rem;
+  @include breakpoint(medium) {
+    h1 {
+      font-size: 2.2rem;
+    }
+    span {
+      font-size: 1.1rem;
+      margin: 0;
+      line-height: 2rem;    
+    }
+    .actions {
+      padding: 2.5rem 0;
+    }
+    .column {
+      margin-bottom: 0.5rem;
+    }
   }
 }
-
-// #landing-page {
-//   nav {
-//     a{
-//       color: $white;
-//       &:hover {
-//         color: darken($white, 10%);
-//       }
-//     }
-//   }
-// }
-
-// .intro {
-//   color: $white;
-//   text-shadow: $text-shadow;
-//   width: 100%;
-// }
-
-// #header {
-//   @extend .intro;
-//   padding-top: 2em;
-//   // padding-bottom: 4em;
-  
-//   h1 {
-//     font-size: 2em;
-//   }
-//   h2 {
-//     font-size: 1.1em;
-//     @include breakpoint(medium) {
-//       font-size:1.25em;
-//     }
-//   }
-
-//   p {10%
-//     padding: 1em;
-//     margin: 0;
-//   }
-// }
 
 .intro {
-  padding-top: 7rem;
+  padding-top: 1rem;
+  @include breakpoint(medium) {
+    padding-top: 7rem;
+  }
 }
 .intro-message {
-  // margin: 1em 0;
-  // padding: 10% 0;
   text-align: center;
 
   h1 {
-    font-size: 2em;
+    font-size: 1.5em;
     @include breakpoint(large) {
       font-size: 3em;
     }
   }
 }
 
-// .intro-divider {
-//   width: 100%;
-//   max-width: 400px;
-//   border-top: 1px solid $white;
-//   border-bottom: $text-shadow;
-// }
-
-// .intro-footer {
-//   @extend .intro;
-//   padding: 3em 0;
-// }
-
 @media(max-width:767px) {
-  .intro-message {
-    padding-bottom: 15%;
-  }
+  // .intro-message {
+  //   padding-bottom: 15%;
+  // }
 }
 
 .lead {
@@ -143,82 +99,9 @@
   font-weight: 400;
 }
 
-// /* Begin - World map background classes */
-
-// .map {
-//   background-color: transparent;
-//   background-repeat: no-repeat;
-//   background-size: cover;
-//   width:100%;
-//   height:100%;
+// .content-section {
+//   margin: 5rem auto;
 // }
-// .map-white {
-//   background-image: url('/style/img/world-white.png');
-// }
-
-// .map-top {
-//   background-position: center top;
-// }
-
-// .map-bottom {
-//   background-position: center bottom;
-// }
-
-// .map-left {
-//     background-position: left center;
-// }
-
-// /* End - World map background classes */
-
-// .network-name {
-//   text-transform: uppercase;
-//   font-size: 14px;
-//   font-weight: 400;
-//   letter-spacing: 2px;
-// }
-
-// .network-text {
-//   font-size: 14px;
-//   font-weight: 400;
-//   letter-spacing: 2px;
-// }
-
-// .banner {
-//   padding: 1.5em 0;
-//   width: 100%;
-//   // background:rgba(236,147,24,0.8);
-//   background:rgba(229,229,229,0.2);
-//   // margin-bottom: 2em;
-//   text-shadow: 0px 1px 3px rgba(0,0,0,0.6);
-// }
-
-// #form-intro {
-//   display: flex;
-//   flex-direction: row;
-//   flex-wrap: nowrap;
-//   width: 100%;
-//   max-width: 30em;
-//   // margin-top: 1.5em;
-
-//   > input {
-//     margin: 0 0.5em;
-//   }
-//   > button {
-//     flex: 0 0 auto;
-//     margin: 0 0.5em;
-//     text-shadow: 0px 1px 1px rgba(0,0,0,0.6)
-//   }
-// }
-
-// #subscribe-intro {
-//   height: 3em;
-//   > p {
-//     padding: 0;
-//   }
-// }
-.content-section {
-  margin: 5rem auto;
-}
 
 .nomad-section {
   margin: 1rem 0;
@@ -265,8 +148,11 @@
 }
 
 .content-section {
+  margin: 0;  
+  padding: 1rem 0;
+  @include breakpoint(medium) {
     padding: 5rem 0;
-    margin: 0;  
+  }
 }
 #at-a-glance {
   background: $darkblue;
@@ -275,21 +161,25 @@
     height: 50px;
     width: 50px;
   }
-  h4 {
-    font-size: 1.25rem;
-    // font-weight: bold;
-    color: $white;
-    margin: 1rem 0;
-  }
-  font-size: 1rem;
   .glance-item {
-    padding: 2rem;
+    padding: 0.5rem;
     color: rgba($white, 0.7);
+    h4 {
+      color: $white;
+    }
+    @include breakpoint(medium) {
+      padding: 2rem;
+
+      h4 {
+        font-size: 1.25rem;
+        // font-weight: bold;
+        margin: 1rem 0;
+      }
+      font-size: 1rem;
+    }
   }
 
-  @include breakpoint(large) {
-      padding: 5rem;
-  }
+
 }
 
 // .content-section {
