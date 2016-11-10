@@ -46,7 +46,7 @@
       (dom/html
         {:lang "en"}
         (apply dom/head nil
-               (-> (common/head-content release?)
+               (-> (common/head release?)
                    (conj (common/inline-javascript (iubenda-script-code)))
                    (conj (dom/script {:type    text-javascript
                                       :src     "//cdn.iubenda.com/cookie_solution/safemode/iubenda_cs.js"

@@ -22,44 +22,56 @@
 
 ;; End mix panel.
 
-(defn head-content [release?]
+(defn icons []
   (letfn [(icon [size rel href-without-size]
             (let [sxs (str size "x" size)]
               (dom/link {:rel   rel
                          :sizes sxs
                          :href  (str href-without-size sxs ".png")
-                         :type "image/png"})))]
-    [(dom/meta {:name    "google-site-verification"
-               :content "eWC2ZsxC6JcZzOWYczeVin6E0cvP4u6PE3insn9p76U"})
-    (dom/meta {:charset "utf-8"})
-    (dom/meta {:http-equiv "X-UA-Compatible"
-               :content    "IE=edge"})
-    (dom/meta {:name    "viewport"
-               :content "width=device-width, initial-scale=1 maximum-scale=1 user-scalable=no"})
-    (dom/meta {:name "author" :content "eponai hb"})
-    (comment (dom/meta {:http-equiv "Content-Type"
-                        :content    "text/html; charset=utf-8"}))
-    (dom/title nil "Tracking Expenses for Nomads - jourmoney")
-    (dom/link {:href "/assets/css/app.css"
-               :rel  "stylesheet"})
+                         :type  "image/png"})))]
+    (concat
+      (map #(icon % "apple-touch-icon" "/assets/img/favicon/apple-icon-")
+           [57 60 72 76 114 120 144 152 180])
+      (map #(icon % "icon" "/assets/img/favicon/favicon-")
+           [16 32 96]))))
 
-    ;; Custom fonts
-    (dom/link {:href (if release?
-                       "https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css"
-                       "/assets/font-awesome/css/font-awesome.min.css")
-               :rel  "stylesheet"
-               :type "text/css"})
+(defn head [release? & [exclude-icons?]]
+  [(dom/meta {:name    "google-site-verification"
+              :content "eWC2ZsxC6JcZzOWYczeVin6E0cvP4u6PE3insn9p76U"})
+   (dom/meta {:charset "utf-8"})
+   (dom/meta {:http-equiv "X-UA-Compatible"
+              :content    "IE=edge"})
+   (dom/meta {:name    "viewport"
+              :content "width=device-width, initial-scale=1 maximum-scale=1 user-scalable=no"})
+   (dom/meta {:name "author" :content "eponai hb"})
+   (comment (dom/meta {:http-equiv "Content-Type"
+                       :content    "text/html; charset=utf-8"}))
+   (dom/title nil "Tracking Expenses for Nomads - jourmoney")
+   (dom/link {:href "/assets/css/app.css"
+              :rel  "stylesheet"})
 
-    (when release?
-      (mixpanel))
+   ;; Custom fonts
+   (dom/link {:href (if release?
+                      "https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css"
+                      "/assets/font-awesome/css/font-awesome.min.css")
+              :rel  "stylesheet"
+              :type "text/css"})
 
-    ;; Favicon
-    (map #(icon % "apple-touch-icon" "/assets/img/favicon/apple-icon-")
-         [57 60 72 76 114 120 144 152 180])
-    (map #(icon % "icon" "/assets/img/favicon/favicon-")
-         [16 32 96])
-    (dom/link {:rel "manifest" :href "/assets/img/favicon/manifest.json"})
-    (dom/meta {:name "msapplication-TileColor" :content "#ffffff"})
-    (dom/meta {:name    "msapplication-TileImage"
-               :content "/assets/img/favicon/ms-icon-144x144.png"})
-    (dom/meta {:name "theme-color" :content "#ffffff"})]))
+   (when release?
+     (mixpanel))
+
+   ;; Favicon
+   (when (not exclude-icons?)
+     (icons))
+
+   (dom/link {:rel "manifest" :href "/assets/img/favicon/manifest.json"})
+   (dom/meta {:name "msapplication-TileColor" :content "#ffffff"})
+   (dom/meta {:name    "msapplication-TileImage"
+              :content "/assets/img/favicon/ms-icon-144x144.png"})
+   (dom/meta {:name "theme-color" :content "#ffffff"})])
+
+
+(defn footer []
+  (dom/div {:id "footer-container"}
+    (dom/div {:className "footer"}
+      (dom/small nil "Copyright &copy; eponai 2016. All Rights Reserved"))))

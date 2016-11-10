@@ -9,7 +9,7 @@
     (let [{:keys [release?]} (om/props this)]
       (dom/html
        nil
-       (apply dom/head nil (common/head-content release?))
+       (apply dom/head nil (common/head release?))
 
        (dom/body
          nil
@@ -24,9 +24,7 @@
                  (dom/div {:className "row column"}
                    (dom/div {:className "top-bar"}))))
              (dom/div {:id "page-content"})
-             (dom/div {:id "footer-container"}
-               (dom/div {:className "footer"}
-                 (dom/small nil "Copyright &copy; eponai 2016. All Rights Reserved")))))
+             (common/footer)))
          (dom/script {:src (if release?
                              "/release/js/out/budget.js"
                              "/dev/js/out/budget.js")

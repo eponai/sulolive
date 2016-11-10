@@ -24,7 +24,8 @@
          (render-fn# props#)))))
 
 ;; These will be defined by the defsite macro.
-(declare app-html index-html)
+(declare app-html index-html signup-html)
 
 (defsite app-html app/App)
 (defsite index-html index/Index)
+(defsite signup-html signup/Signup)
