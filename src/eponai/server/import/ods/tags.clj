@@ -62,7 +62,7 @@
                      :transportation}
    :recreational   #{:tickets :cinema :alcohol :beer :wine :shisha
                      :bowling :concert :cocktail :club}
-   :accomodation   #{:hotel :airbnb :hostel :apartment :accomodation}
+   :housing        #{:hotel :airbnb :hostel :apartment :accomodation}
    :bills          #{:subscription :insurance :bills}
    :food           #{:groceries :food :lunch :dinner :breakfast
                      :reasturant :fika :sweets :snacks :refreshment
@@ -576,6 +576,7 @@
    "Income August 2016"              [:income]
    "Income September 2016"           [:income]
    "Income October 2016"             [:income]
+   "Income November 2016"            [:income]
    "Second Apartment Seville"        [:airbnb]
    "Coffemaker"                      [:coffee]
    "Beans"                           [:coffee]
@@ -595,6 +596,10 @@
    "Asian Groceries"                 [:groceries]
    "Mas groceries"                   [:groceries]
    "Torch"                           [:coffee]
+   "Flight SVQ->LPA"                 [:flight]
+   "Flight SVQ->FRA"                 [:flight]
+   "Apartment Seville"               [:airbnb]
+   "Apartment Las Palmas"            [:airbnb]
    })
 
 (def ^:dynamic *default-currency* nil)
@@ -820,7 +825,20 @@
                          (tx first "Insurance" 147.06M)
                          (tx sthlm-first "Flight" 308M)
                          (tx first "Apartment" 216)
-                         (tx "10/06/16" "Second Apartment Seville" 957)])]
+                         (tx "10/06/16" "Second Apartment Seville" 957)])
+          november2016 (let [first "11/01/16"
+                             las-palmas "11/15/16"
+                             fra "11/27/16"
+                             mexico "11/28/16"]
+                         [(income first "Income November 2016" 2500)
+                          (tx first "Netflix" 9.99M)
+                          (tx first "T-Mobile" 118)
+                          (tx first "Github" 25)
+                          (tx first "Insurance" 147.06M)
+                          (tx las-palmas "Flight SVQ->LPA" 134)
+                          (tx fra "Flight SVQ->FRA" 150)
+                          (tx first "Apartment Seville" 1068)
+                          (tx las-palmas "Apartment Las Palmas" 191)])]
       (vec (concat
              september2015
              october2015
@@ -835,4 +853,5 @@
              july2016
              august2016
              september2016
-             october2016)))))
+             october2016
+             november2016)))))
