@@ -145,7 +145,7 @@
 
 (defn text-content [link user-status]
   (if (= user-status :user.status/new)
-    (str "Click and confirm that you want to create an account on JourMoney. This link will expire in 15 minutes and can only be used once.\n" link)
+    (str "Click and confirm that you want to create an account on Jourmoney. This link will expire in 15 minutes and can only be used once.\n" link)
     (str "Sign in to JourMoney. This link will expire in 15 minutes and can only be used once" link)))
 
 (defn html-content [link subject message button-title link-message]
@@ -160,7 +160,7 @@
       subject]]
     [:body
      {:style "margin: 0; padding: 0;"
-      :bgcolor "#FDFFFC"}
+      :bgcolor "white"}
      [:table
       {:align   "center",
        :style   "color:01213d;"}
@@ -184,7 +184,7 @@
             [:a
                 {:href link
                  :style
-                       "text-decoration:none;display:inline-block; border-radius:3px; padding:16px 20px;font-size:16px;border:1px solid transparent;background-color:#044e8a;color:#fff;font-weight:bold;"}
+                       "text-decoration:none;display:inline-block; border-radius:3px; padding:16px 20px;font-size:16px;border:1px solid transparent;border-radius:100px;background-color:#ED9C40;color:#fff;font-weight:500;"}
                 button-title]]]]
          [:tr
           [:td
