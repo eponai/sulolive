@@ -15,18 +15,18 @@
   (str inviter
        " has invited you to share project. "
        (if (= user-status :user.status/new)
-         "Create your account on JourMoney"
-         "Sign in to JourMoney")))
+         "Create your account on Jourmoney"
+         "Sign in to Jourmoney")))
 
 (defn subject [user-status]
   (if (= user-status :user.status/new)
-    "Create your account on JourMoney"
-    "Sign in to JourMoney"))
+    "Create your account on Jourmoney"
+    "Sign in to Jourmoney"))
 
 (defn message [user-status]
   (if (= user-status :user.status/new)
-    "Click and confirm that you want to create an account on JourMoney."
-    "Sign in to JourMoney."))
+    "Click and confirm that you want to create an account on Jourmoney."
+    "Sign in to Jourmoney."))
 
 (defn link-message [user-status]
   (if (= user-status :user.status/new)
@@ -146,7 +146,7 @@
 (defn text-content [link user-status]
   (if (= user-status :user.status/new)
     (str "Click and confirm that you want to create an account on Jourmoney. This link will expire in 15 minutes and can only be used once.\n" link)
-    (str "Sign in to JourMoney. This link will expire in 15 minutes and can only be used once" link)))
+    (str "Sign in to Jourmoney. This link will expire in 15 minutes and can only be used once" link)))
 
 (defn html-content [link subject message button-title link-message]
   (xhtml
@@ -197,7 +197,7 @@
           [:td
            {:align  "center"}
            [:p {:style "color:#b3b3b1;border-top:1px solid #e5e5e5;padding:1em;"}
-            "This email was sent by JourMoney."
+            "This email was sent by Jourmoney."
             [:br]
             "eponai hb"
             [:br]
