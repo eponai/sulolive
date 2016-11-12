@@ -74,7 +74,7 @@
             [:div.title-txt "Avg. Spent per day"]]
            [:div.column.key-metric
             [:div.val-txt (gstring/format "%.2f" (or left-by-end 0))]
-            [:div.title-txt "By " (date/date->string (date/last-day-of-this-month) "MMM dd")]]]]
+            [:div.title-txt "By " (date/date->string end-date "MMM dd")]]]]
          [:div.content-section
 
 

@@ -59,7 +59,7 @@
                       (-> res
                           (update :spent + conv-amount)
                           (update :daily-spent + conv-amount)))))
-        {:keys [housing transport limit daily-spent] :as report-summary}
+        {:keys [housing transport spent limit daily-spent] :as report-summary}
         (reduce summary
                 {:housing 0 :transport 0 :spent 0 :limit 0 :daily-spent 0}
                 transactions)
@@ -68,7 +68,7 @@
                      (/ daily-spent days-in-period))]
     (assoc report-summary
       :budget (- limit housing transport)
-      :left-by-end (- limit (* days-in-period avg-by-day))
+      :left-by-end (- limit (* days-in-period (/ spent days-in-period)))
       :avg-daily-spent avg-by-day)))
 
 (defn value-range [values]
