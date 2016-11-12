@@ -58,17 +58,17 @@
                      (s/lower-case s)))))))
 
 (def ^:private category->tags
-  {:transportation #{:bicycle :ferry :taxi :uber :train :flight
-                     :transportation}
-   :recreational   #{:tickets :cinema :alcohol :beer :wine :shisha
-                     :bowling :concert :cocktail :club}
-   :housing        #{:hotel :airbnb :hostel :apartment :accomodation}
-   :bills          #{:subscription :insurance :bills}
-   :food           #{:groceries :food :lunch :dinner :breakfast
-                     :reasturant :fika :sweets :snacks :refreshment
-                     :coffee}
-   :appearance     #{:clothes :makeup :beauty}
-   :health         #{:pharmacy :shampoo :healthcare :fitness}})
+  {:transport    #{:bicycle :ferry :taxi :uber :train :flight
+                   :transport :transportation}
+   :recreational #{:tickets :cinema :alcohol :beer :wine :shisha
+                   :bowling :concert :cocktail :club}
+   :housing      #{:hotel :airbnb :hostel :apartment :accomodation}
+   :bills        #{:subscription :insurance :bills}
+   :food         #{:groceries :food :lunch :dinner :breakfast
+                   :reasturant :fika :sweets :snacks :refreshment
+                   :coffee}
+   :appearance   #{:clothes :makeup :beauty}
+   :health       #{:pharmacy :shampoo :healthcare :fitness}})
 
 (defn keyword! [x]
   (cond-> x (string? x) (keyword)))
