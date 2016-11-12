@@ -64,7 +64,8 @@
                                 (dom/strong nil "jourmoney")))
                        (dom/span {:data-responsive-toggle "responsive-menu"
                                   :data-hide-for "medium"
-                                  :className "top-bar-title float-right show-for-small-only"})
+                                  :className "top-bar-title float-right show-for-small-only"}
+                                 (dom/button {:className "menu-icon" :type "button" :data-toggle true}))
                        (dom/div {:className "top-bar-right"
                                  :id "responsive-menu"}
                          (dom/ul {:className "menu"}
@@ -143,7 +144,7 @@
               (dom/h3 {:className "section-heading"}
                       "Pay What You Want")
               (dom/h4 nil
-                      "set your own price for a monthly subscription starting at"
+                      "set your own price for a monthly subscription starting at "
                       (dom/strong nil "$0"))
               (dom/div {:className "row column"}
                 (dom/div {:className "column pricing-section"}
