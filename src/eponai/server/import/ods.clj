@@ -329,4 +329,4 @@
                      (.delete)))
           (.getFileName (.toPath file))
           (into-array FileAttribute []))))
-    (update-parsed-expenses "20161018")))
+    (update-parsed-expenses "20161112")))

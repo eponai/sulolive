@@ -586,6 +586,15 @@
    "Kungshallen"                     [:food]
    "Makeup"                          [:beauty]
    "Asian groceries"                 [:groceries]
+   "Aquarium"                        [:tourism]
+   "Pub crawl"                       [:alcohol]
+   "McDoncals"                       [:food]
+   "Mcdonalds"                       [:food]
+   "Real Alcazar entrance"           [:cover :tourism]
+   "Audio guide"                     [:tourism]
+   "Asian Groceries"                 [:groceries]
+   "Mas groceries"                   [:groceries]
+   "Torch"                           [:coffee]
    })
 
 (def ^:dynamic *default-currency* nil)
