@@ -60,7 +60,8 @@
     (friend/wrap-authorize app-routes #{::a/user}))
 
   (context "/play" _
-    (GET "/*" request (html (::m/cljs-build-id request) "playground.html")))
+    (GET "/*" request
+         (server.ui/app-html (assoc (request->props request) :playground? true))))
 
   (GET "/activate" request
     (friend/authorize #{::a/user-inactive}

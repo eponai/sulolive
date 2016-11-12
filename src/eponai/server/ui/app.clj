@@ -7,7 +7,7 @@
 (defui App
   Object
   (render [this]
-    (let [{:keys [release?]} (om/props this)]
+    (let [{:keys [release? playground?]} (om/props this)]
       (dom/html
        nil
        (apply dom/head nil (common/head release?))
@@ -15,7 +15,9 @@
        (dom/body
          nil
          (common/anti-forgery-field)
-         (dom/div {:id "jm-app"}
+         (dom/div (cond-> {:id "jm-app"}
+                          playground?
+                          (assoc :className "jm-playground"))
            (dom/div {:id "jm-ui"}
              (dom/div {:id "nav-container"}
                (dom/div {:id "topnav" :className "top-bar-container"}
@@ -31,8 +33,12 @@
                              "/release/js/out/budget.js"
                              "/dev/js/out/budget.js")
                       :type text-javascript})
-         (common/inline-javascript ["env.web.main.run();"])
-         (dom/script {:type text-javascript
-                      ;; Should we run stripe in non-release?
-                      :src "https://js.stripe.com/v2/"}))))))
+         (if playground?
+           (common/inline-javascript ["env.web.main.runplayground()"])
+           (common/inline-javascript ["env.web.main.run();"]))
+
+         (when-not playground?
+           (dom/script {:type text-javascript
+                        ;; Should we run stripe in non-release?
+                        :src  "https://js.stripe.com/v2/"})))))))
 
