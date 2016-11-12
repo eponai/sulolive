@@ -82,7 +82,8 @@
                               (assoc :form-params (:transit-params opts)
                                      :content-type :transit+json
                                      :cookie-store (:cookie-store opts)))]
-            :cljs [params (merge opts transit-opts)])]
+            :cljs [params (-> (merge opts transit-opts)
+                              (assoc-in [:headers "X-CSRF-Token"] (.. js/document (getElementById "__anti-forgery-token") -value)))])]
     ;; http-cljs returns a channel with the response on it.
     ;; http-clj doesnt.
     #?(:cljs (send-fn url params)

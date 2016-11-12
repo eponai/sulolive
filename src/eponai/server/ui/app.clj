@@ -1,7 +1,8 @@
 (ns eponai.server.ui.app
-  (:require [om.next :as om :refer [defui]]
-            [om.dom :as dom]
-            [eponai.server.ui.common :as common :refer [text-javascript]]))
+  (:require
+    [eponai.server.ui.common :as common :refer [text-javascript]]
+    [om.dom :as dom]
+    [om.next :as om :refer [defui]]))
 
 (defui App
   Object
@@ -13,6 +14,7 @@
 
        (dom/body
          nil
+         (common/anti-forgery-field)
          (dom/div {:id "jm-app"}
            (dom/div {:id "jm-ui"}
              (dom/div {:id "nav-container"}

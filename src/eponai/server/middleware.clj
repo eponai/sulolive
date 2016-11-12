@@ -125,7 +125,6 @@
                  (assoc-in [:session :cookie-name] (env :session-cookie-name))
                  (assoc-in [:session :cookie-attrs :max-age] 7776000)
 
-                 (assoc-in [:security :anti-forgery] false)
                  (assoc-in [:static :resources] false))]
     (cond-> conf
             in-prod?

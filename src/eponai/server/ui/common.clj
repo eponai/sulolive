@@ -1,6 +1,7 @@
 (ns eponai.server.ui.common
   (:require [om.dom :as dom]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]))
 
 ;; Utils
 
@@ -13,6 +14,13 @@
                   (apply str))]
     (dom/script {:type                    text-javascript
                  :dangerouslySetInnerHTML {:__html code}})))
+
+(defn anti-forgery-field []
+  (dom/input
+    {:id "__anti-forgery-token"
+     :name "__anti-forgery-token"
+     :type "hidden"
+     :value *anti-forgery-token*}))
 
 ;; Mix panel inline code
 
