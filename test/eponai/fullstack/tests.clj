@@ -9,6 +9,7 @@
             [eponai.server.auth.workflows :as wf]
             [eponai.server.auth.workflows-test :as wf.test]
             [eponai.server.middleware]
+            [eponai.server.external.facebook :as facebook]
             [taoensso.timbre :refer [info debug error]]
             [clojure.data :as diff]
             [clojure.test :as test]
@@ -451,13 +452,14 @@
 (def access-token "long-lived-token")
 
 (defn with-fb-meta [email f]
-  (with-meta f {:system {:server {:wrap-state
-                                  {::wf/create-account-without-throwing true
-                                   :facebook-token-validator            (wf.test/test-facebook-token-validator
-                                                                          {:email    email
-                                                                           :user-id  user-id
-                                                                           :token    access-token
-                                                                           :is-valid true})}}}}))
+  (let [validator (wf.test/test-facebook-token-validator
+                    {:email    email
+                     :user-id  user-id
+                     :token    access-token
+                     :is-valid true})
+        state {::wf/create-account-without-throwing true
+               ::facebook/facebook-token-validator  validator}]
+    (with-meta f {:system {:server {:wrap-state state}}})))
 
 (defn returning-nil
   "Wraps a function in a new function that returns nil"
@@ -586,7 +588,7 @@
                              ]
                             ;(filter (partial = test-new-user-with-email-never-gets-duplicate-projects))
                             ;(reverse)
-                            ;(take 6)
+                            ;(take 1)
                         ))
          (fw/result-summary))))
 
