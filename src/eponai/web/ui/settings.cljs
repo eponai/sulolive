@@ -9,7 +9,8 @@
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug trace]]
     [eponai.web.ui.format :as f]
-    [eponai.common.format.date :as date])
+    [eponai.common.format.date :as date]
+    [eponai.web.ui.utils :as utils])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 ; Stripe helpers
@@ -120,7 +121,7 @@
                   query/stripe] :as props} (om/props this)
           {user-name :user/name
            :keys [user/email]} current-user
-          {:keys [input-currency tab is-stripe-loading? paywhatyouwant]} (om/get-state this)
+          {:keys [input-currency tab is-stripe-loading? paywhatyouwant why-open?]} (om/get-state this)
           {:keys [stripe/subscription stripe/info]} stripe
           {subscription-status :stripe.subscription/status} subscription]
       (debug "Stripe info: " info)
@@ -183,7 +184,7 @@
                    [:label "Pay What You Want"]
                    [:small "The JourMoney subscription is " [:a "Pay what you want"] ". You set your own monthly price at what you think your subscription is worth."]]
                   ]
-                 [:div.row.column
+                 [:div.row.columng
                   (pay/->PayWhatYouWant (om/computed {:id "paywhatyouwant-slider"
                                                       :value (or paywhatyouwant (get-in info [:subscription :quantity]))}
                                                      {:on-change-value #(om/update-state! this assoc :paywhatyouwant %)
@@ -206,7 +207,7 @@
                   [:div.column
                    [:label "Facebook"]]
                   (if (nil? fb-user)
-                    [:div.column.small-6
+                    [:div.column.small-5.text-right
                      [:a.button.expanded.facebook [:i.fa.fa-facebook.fa-fw] "Connect to Facebook"]]
                     [:div.column.small-8
                      [:div.row.collapse.align-middle
@@ -216,19 +217,19 @@
                       [:div.column.small-2.text-left
                        [:img.avatar {:src (:fb-user/picture fb-user)}]]]])]]
 
-                [:div.content-section.twitter
-                 [:div.row
-                  [:div.column
-                   [:label "Twitter"]]
-                  [:div.column.small-5.text-right
-                   [:a.button.twitter.expanded [:i.fa.fa-twitter.fa-fw] "Connect to Twitter"]]]]
+                ;[:div.content-section.twitter
+                ; [:div.row
+                ;  [:div.column
+                ;   [:label "Twitter"]]
+                ;  [:div.column.small-5.text-right
+                ;   [:a.button.twitter.expanded [:i.fa.fa-twitter.fa-fw] "Connect to Twitter"]]]]
 
-                [:div.content-section.twitter
-                 [:div.row
-                  [:div.column
-                   [:label "Google+"]]
-                  [:div.column.small-5.text-right
-                   [:a.button.google.expanded [:i.fa.fa-google.fa-fw] "Connect to Google+"]]]]
+                ;[:div.content-section.twitter
+                ; [:div.row
+                ;  [:div.column
+                ;   [:label "Google+"]]
+                ;  [:div.column.small-5.text-right
+                ;   [:a.button.google.expanded [:i.fa.fa-google.fa-fw] "Connect to Google+"]]]]
                 [:div.content-section]]
 
 
@@ -265,7 +266,15 @@
                    (cond (= subscription-status :trialing)
                          [:small (str "You have " (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial. " ) [:a "What happens then?"]]
                          (nil? (:card info))
-                         [:small "You haven't added a card yet. Enable all functionality in the app by adding one. " [:a "Why?"]]
+                         [:small "You haven't added a card yet. Enable all functionality in the app by adding one. "
+                          [:span
+                           [:a {:on-click #(om/update-state! this assoc :why-open? true)} "Why?"]
+                           (when why-open?
+                             (utils/popup {:on-close #(om/update-state! this assoc :why-open? false)}
+                                          [:div
+                                           [:span "Our users must be on a monthly subscription to use the app, and we allow you to set your own price on that. We do require that our users add a payment option beforehand, to make price updates as easy as possible in the moment."
+                                            [:br]
+                                            [:span "All information is secure, and" [:strong " your card will not be charged "] "unless you select a monthly price above $0."]]]))]]
                          ;(some? (:card info))
                          ;[:div
                          ; [:span
