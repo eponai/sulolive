@@ -122,6 +122,9 @@
 	    	}
 			&.today, &.today:hover {
 				color: $daterange-calendar-date-today-color;
+				&.active {
+					color: $daterange-calendar-date-active-color
+				}
 			}
 	  	}
 	}
