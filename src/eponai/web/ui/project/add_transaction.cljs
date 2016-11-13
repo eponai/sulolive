@@ -169,6 +169,7 @@
           {:keys [::input-transaction]} (om/get-state this)]
       (html
         [:div.row.column
+         {:key (str "add-transaction-tags-" (:transaction/uuid input-transaction))}
          [:label "Tags"]
          (sel/->SelectTags (om/computed {:options (map (fn [t]
                                                          {:label (:tag/name t)
@@ -200,10 +201,12 @@
                   :label "ATM"}]]
       (html
         [:div.top-bar-container.subnav
-         {:class (css/class-names [(get css-class type)])}
+         {:key "add-transaction-menu"
+          :class (css/class-names [(get css-class type)])}
          [:ul.menu
           (map (fn [{:keys [k v label]}]
                  [:li
+                  {:key (str "menu-item-" (name k))}
                   [:a
                    {:class    (when (= type k) "active")
                     :on-click #(om/update-state! this (fn [st]
@@ -223,6 +226,7 @@
           {:keys [transaction/end-date transaction/date]} input-transaction]
       (html
         [:div
+         {:key (str "add-transaction-date-selection-" (:transaction/uuid input-transaction))}
          [:div.row
           [:div.column
            [:label "Date"]
@@ -262,6 +266,7 @@
           {:keys [transaction/fees transaction/currency]} input-transaction]
       (html
         [:div.row
+         {:key (str "add-transaction-fees-" (:transaction/uuid input-transaction))}
          [:div.column.transaction-fee
           [:div
            (when-not (empty? fees)
@@ -300,7 +305,9 @@
     (let [{:keys [::input-transaction
                   ::show-tags-input?
                   ::show-bank-fee-section?
-                  ::type]} (om/get-state this)
+                  ::type
+                  ::init-state]} (om/get-state this)
+          edit-mode? (some? init-state)
 
           {:keys [transaction/currency
                   transaction/category]} input-transaction
@@ -310,7 +317,7 @@
       (debug "Input transaction: " input-transaction)
       (html
         [:div#add-transaction
-         [:h4.header "New Transaction"]
+         [:h4.header (if edit-mode? "Edit Transaction" "New Transaction")]
          (.render-menu this)
          [:div.content
           [:div.content-section

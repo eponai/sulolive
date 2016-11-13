@@ -140,10 +140,14 @@
                 (utils/dropdown {:on-close #(do
                                              (close-dropdown)
                                              (.stopPropagation %))}
-                                [:li [:a {:on-click #(do
+                                [:li
+                                 {:key (str "transaction-edit-" (:db/id input-transaction))}
+                                 [:a {:on-click #(do
                                                       (close-dropdown)
                                                       (edit-transaction-fn input-transaction))} "Edit"]]
-                                [:li [:a {:on-click #(do
+                                [:li
+                                 {:key (str "transaction-delete-" (:db/id input-transaction))}
+                                 [:a {:on-click #(do
                                                       (close-dropdown)
                                                       (delete-transaction-fn input-transaction))} "Delete"]])))))))))
 

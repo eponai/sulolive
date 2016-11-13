@@ -16,10 +16,11 @@
 	.content {
 		// padding: 1rem;
 		.content-section {
-			margin: 0;
-			margin-top: 3px;
+			margin: 0 !important;
+			margin-top: 3px !important;
 			padding: 1rem 1rem !important;
-			box-shadow: 0 1px 3px 0 $darkblue-a10;
+			box-shadow: 0 1px 3px 0 $darkblue-a10 !important;
+			border: none !important;
 		}
 	}
 
