@@ -87,8 +87,7 @@
                                                     :value (:db/id currency)})))
   (save-settings [this]
     (let [{:keys [query/current-user query/stripe]} (om/props this)
-          {:keys [input-currency paywhatyouwant]} (om/get-state this)
-          {:keys [on-close]} (om/get-computed this)]
+          {:keys [input-currency paywhatyouwant]} (om/get-state this)]
       (om/transact! this `[(settings/save ~(cond-> {:user current-user}
                                                    (some? input-currency)
                                                    (assoc :currency (:label input-currency))
@@ -96,9 +95,7 @@
                                                         (not= paywhatyouwant (get-in stripe [:stripe/info :subscription :quantity])))
                                                    (assoc :paywhatyouwant paywhatyouwant)))
                            :query/transactions
-                           :query/stripe])
-      (when on-close
-        (on-close))))
+                           :query/stripe])))
   (update-payment [this label]
     (let [{:keys [query/current-user]} (om/props this)]
       (.show-stripe-loading this true)
