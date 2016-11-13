@@ -202,10 +202,15 @@
                                 [?u :user/uuid ?uuid]]
                      :symbols {'?uuid user-uuid}})))]
     {:value (when eid
-              (let [{:keys [fb-user/token fb-user/id] :as f-user}
-                    (pull db [:fb-user/token :fb-user/id] eid)
+              (let [ret (if db-history
+                          (server.pull/adds-retracts-for-eid db-history eid)
+                          [(pull db query eid)])
+                    {:keys [fb-user/token fb-user/id] :as f-user} (pull db [:fb-user/token :fb-user/id] eid)
                     _ (debug "Got fb-user: " f-user)
-                    {:keys [name picture]} (facebook/user-info id token)]
-                (merge (pull db query eid)
-                       {:fb-user/name    name
-                        :fb-user/picture (:url (:data picture))})))}))
+                    fb-ret (if (and id token)
+                             (let [{:keys [name picture]} (facebook/user-info id token)]
+                               [{:fb-user/name    name
+                                 :fb-user/picture (:url (:data picture))}])
+                             [[:db.fn/retractAttribute eid :fb-user/name]
+                              [:db.fn/retractAttribute eid :fb-user/picture]])]
+                (into ret fb-ret)))}))

@@ -294,6 +294,14 @@
 
 ;; ######## History api
 
+(defn- datoms->txs [datoms]
+  (->> datoms
+       ;; Sort datoms by tx number, so that earlier transactions
+       ;; get applied first.
+       (sort-by #(nth % 3))
+       (mapv (fn [[e a v _ added]]
+               [(if added :db/add :db/retract) e a v]))))
+
 (defn all-datoms
   "Returns all changed datoms in tx order.
   Param: db-history is required.
@@ -305,11 +313,7 @@
   [db db-history pull-pattern entity-query]
   {:pre [(some? db-history)]}
   (let [datoms (->> (all-changed db db-history pull-pattern entity-query)
-                    ;; Sort datoms by tx number, so that earlier transactions
-                    ;; get applied first.
-                    (sort-by #(nth % 3))
-                    (mapv (fn [[e a v _ added]]
-                            [(if added :db/add :db/retract) e a v])))]
+                    (datoms->txs))]
     (trace "For entity-query: " entity-query " returning datoms: " datoms)
     datoms))
 
@@ -357,3 +361,7 @@
   (if (nil? db-history)
     (p/all-with db entity-query)
     (all-changed db db-history pull-pattern entity-query '[[?e ...]])))
+
+(defn adds-retracts-for-eid [db-history eid]
+  (->> (d/datoms db-history :eavt eid)
+       (datoms->txs)))
