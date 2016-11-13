@@ -173,18 +173,22 @@
                                               db-transactions
                                               db-schema)
         test-specific-server-config (:server test-fn-meta)
+        _ (when (seq test-specific-server-config)
+            (info "Running with test-specific-server-config: "
+                  test-specific-server-config)
+            true)
         email-chan (async/chan)
         server (core/start-server-for-tests
-                 (cond-> {:conn                     conn
-                         ;; Re-use the server's port
-                         ;; to be more kind to the test system.
-                         :port                     (:server-port system 0)
-                         :email-chan               email-chan}
-                         (when (some? test-specific-server-config)
-                           (info "Running with test-specific-server-config: "
-                                 test-specific-server-config)
-                           true)
-                         (merge test-specific-server-config)))
+                 (-> {:conn                       conn
+                      ;; Re-use the server's port
+                      ;; to be more kind to the test system.
+                      :port                       (:server-port system 0)
+                      :email-chan                 email-chan
+                      ;; Don't run anti-forgery checks for fullstack tests
+                      ;; as it's hard to fake this? (we don't have html available
+                      ;; during our tests).
+                      ::core/disable-anti-forgery true}
+                     (#(merge-with merge % test-specific-server-config))))
         ;; The server could be started with a random port.
         ;; Set the selected port to the server so it
         ;; keeps the same port between restarts

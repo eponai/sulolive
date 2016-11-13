@@ -22,7 +22,7 @@
 
 (defonce in-production? (atom true))
 
-(defn app* [conn extra-middleware]
+(defn app* [conn {:keys [::extra-middleware ::disable-anti-forgery] :as options}]
   (-> (routes api-routes site-routes)
       m/wrap-post-middlewares
       (m/wrap-authenticate conn @in-production?)
@@ -49,7 +49,7 @@
                                                                   (d/db conn)))))
                      ;; either "dev" or "release"
                      ::m/cljs-build-id            (or (env :cljs-build-id) "dev")})
-      (m/wrap-defaults @in-production?)
+      (m/wrap-defaults @in-production? disable-anti-forgery)
       m/wrap-trace-request
       (cond-> @in-production? m/wrap-ssl)
       m/wrap-gzip))
@@ -76,7 +76,7 @@
                    (datomic_dev/create-connection)
                    (datomic_dev/connect!)))]
     ;; See comments about this where app*args and app is defined.
-    (alter-var-root (var app*args) (fn [_] [conn (::extra-middleware opts)]))
+    (alter-var-root (var app*args) (fn [_] [conn (select-keys opts [::extra-middleware ::disable-anti-forgery])]))
     (alter-var-root (var app) call-app*))
   (info "Done initializing server."))
 
