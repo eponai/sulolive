@@ -9,7 +9,7 @@
 
 (deftest regression
   (let [txs (time (e/import-parsed (e/parsed-transactions)))]
-    (is (= 1131 (count txs)))
+    (is (= 1173 (count txs)))
     ;; Type checks
     (is (true? (every? (fn [{:keys [transaction/amount
                                     transaction/currency
