@@ -105,7 +105,8 @@
 
 (defn footer []
   (dom/div {:id "footer-container"}
-    (dom/div {:className "footer"}
+    (dom/div {:className "footer"
+              :id "footer"}
       (dom/ul {:className "menu"}
 
               (dom/li nil

@@ -179,7 +179,7 @@
               (dom/footer
                 {:className "footer"}
                 (dom/p {:className "copyright small"}
-                       "Copyright &copy; eponai 2016. All Rights Reserved"))))
+                       "Copyright © eponai 2016. All Rights Reserved"))))
 
           (dom/script {:src "https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"
                        :type text-javascript})

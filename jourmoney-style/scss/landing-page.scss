@@ -48,32 +48,37 @@
   input {
     margin: 0;
   }
-}
 
-
-#header, #footer {
-  background: $darkblue;
-  color: $white;
-  .actions {
-    padding: 1.5rem 0;
-  }
-  @include breakpoint(medium) {
-    h1 {
-      font-size: 2.2rem;
-    }
-    span {
-      font-size: 1.1rem;
-      margin: 0;
-      line-height: 2rem;    
-    }
+  #header, #footer {
+    background: $darkblue;
+    color: $white;
     .actions {
-      padding: 2.5rem 0;
+      padding: 1.5rem 0;
     }
-    .column {
-      margin-bottom: 0.5rem;
+    @include breakpoint(medium) {
+      h1 {
+        font-size: 2.2rem;
+      }
+      span {
+        font-size: 1.1rem;
+        margin: 0;
+        line-height: 2rem;    
+      }
+      .actions {
+        padding: 2.5rem 0;
+      }
+      .column {
+        margin-bottom: 0.5rem;
+      }
+    }
+  }
+  #footer {
+    .iubenda-embed {
+      display: none;
     }
   }
 }
+
 
 .intro {
   padding-top: 2rem;

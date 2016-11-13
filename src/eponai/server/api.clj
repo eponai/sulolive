@@ -56,14 +56,17 @@
       (throw (ex-info "Facebook login error. Validating access token failed."
                       {}))
       (if-let [fb-user (p/lookup-entity (d/db conn) [:fb-user/id user_id])]
-        (let [db-user (d/entity (d/db conn) (-> fb-user
-                                                :fb-user/user
-                                                :db/id))]
-          (debug "Facebook user existed: " db-user)
-          ; If Facebook has returned a new access token, we need to renew that in the db as well
-          (when-not (= (:fb-user/token fb-user) access-token)
-            (debug "Updating new access token for Facebook user.")
-            (transact-one conn [:db/add (:db/id fb-user) :fb-user/token access_token])))
+        (let [db-user (p/lookup-entity (d/db conn) [:user/uuid user-uuid])]
+          (debug "Facebook user existed: " db-user " will change connected user ")
+          (when-let [txs (not-empty
+                           (cond-> []
+                                   (not= (get-in fb-user [:fb-user/user :db/id]) (:db/id db-user))
+                                   (conj [:db/add (:db/id fb-user) :fb-user/user (:db/id db-user)])
+                                   ; If Facebook has returned a new access token, we need to renew that in the db as well
+                                   (not= (:fb-user/token fb-user) access-token)
+                                   (conj [:db/add (:db/id fb-user) :fb-user/token access_token])))]
+            (debug "Updating Facebook user with transactions: " txs)
+            (transact conn txs)))
 
         ; If we don't have a facebook user in the DB, check if there's an accout with a matching email.
         (do
