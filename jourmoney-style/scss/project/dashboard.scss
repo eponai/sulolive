@@ -89,6 +89,19 @@ svg {
 #balance-spent {
   height: 18rem;
 
+  rect.today {
+    width: 1px;
+    fill: rgba($darkblue, 0.25);
+  }
+  .today {
+    text {
+      text-transform: lowercase;
+      font-weight: 500;
+      font-size: 0.8rem;
+      fill: rgba($darkblue, 0.5);
+    }
+  }
+
   linearGradient {
     &.past {
       .stop-top {

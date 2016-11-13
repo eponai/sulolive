@@ -151,6 +151,7 @@
                     (attr "transform" (str "translate(" (:left margin) "," (:top margin) ")"))
                     (attr "width" inner-width))]
       (d3/focus-append svg {:margin margin} )
+
       (.. svg
           (append "rect")
           (attr "class" "focus-overlay")
@@ -183,6 +184,23 @@
       (.. graph
           (append "path")
           (attr "class" "line future"))
+
+      (.. graph
+          (append "g")
+          (attr "class" "today")
+          (append "rect")
+          (attr "class" "today")
+          ;(attr "width" "1px")
+          (attr "height" inner-height))
+
+      
+      (.. graph
+          (select "g.today")
+          (append "text")
+          (attr "text-anchor" "middle")
+          (attr "dy" "-0.5rem")
+          (attr "x" 0)
+          (text "Today"))
       (d3/clip-path-append svg id)
 
 
@@ -210,20 +228,9 @@
     (let [{:keys [svg x-scale y-scale margin graph area line balance-visible? spent-visible?]} (om/get-state this)
           {:keys [report id]} (om/props this)
           {:keys [data-points x-domain y-domain]} report
-          ;_ (debug "Balance chart values: " data-points)
           js-values (into-array data-points)
-          ;[min-y max-y] (.value-range this data-points)
-          ;_ (debug "min: " min-y " max " max-y)
-          ;_ (debug "Balance Report: " report)
-          ;_ (debug "js-values: " js-values)
           {inner-width :width
-           inner-height :height} (d3/svg-dimensions svg {:margin margin})
-          graph-area (.. graph
-                         (selectAll ".area.past")
-                         (data #js [js-values]))
-          spent-line (.. graph
-                         (selectAll ".line.past")
-                         (data #js [js-values]))]
+           inner-height :height} (d3/svg-dimensions svg {:margin margin})]
       (.. x-scale
           (range #js [0 inner-width])
           (domain (clj->js x-domain)))
@@ -239,12 +246,6 @@
                         spent-visible?
                         #js [0 (.. js/d3 (max js-values (fn [d] (:spent d))))])))
 
-      ;(.. graph-area
-      ;    enter
-      ;    (append "path")
-      ;    (attr "class" "area")
-      ;    (attr "d" area))
-
       (.. graph
           (select ".area.past")
           transition
@@ -259,16 +260,6 @@
           (style "opacity" (if balance-visible? 1 0))
           (attr "d" (area (.filter js-values (fn [d]
                                                (>= (:date d) (date/date->long (date/today))))))))
-
-      ;(.. graph-area
-      ;    exit
-      ;    remove)
-
-      ;(.. spent-line
-      ;    enter
-      ;    (append "path")
-      ;    (attr "class" "line")
-      ;    (attr "d" (line js-values)))
 
       (.. graph
           (select ".line.past")
@@ -287,22 +278,11 @@
           (delay 100)
           (attr "d" (line (.filter js-values (fn [d]
                                                (>= (:date d) (date/date->long (date/today))))))))
-      ;(.. spent-line
-      ;    transition
-      ;    (duration 250)
-      ;    (delay 100)
-      ;    (attr "d" (line (.filter js-values (fn [d]
-      ;                                         (<= (:date d) (date/date->long (date/today))))))))
-      ;(.. spent-line
-      ;    transition
-      ;    (duration 250)
-      ;    (delay 100)
-      ;    (attr "d" (line (.filter js-values (fn [d]
-      ;                                         (> (:date d) (date/date->long (date/today))))))))
+      (.. graph
+          (select "g.today")
+          (attr "height" inner-height)
+          (attr "transform" (str "translate(" (x-scale (date/date->long (date/today))) "," (:top margin) ")")))
 
-      (.. spent-line
-          exit
-          remove)
       (d3/clip-path-set-dimensions id inner-width inner-height)
       (.update-axis this inner-width inner-height)
       (.update-interactive-focus this inner-height)))
