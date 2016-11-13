@@ -14,6 +14,11 @@ $text-shadow: 2px 2px 3px $darkblue-a50;
   color: $dark-gray;
 }
 
+.has-tip {
+	cursor: inherit;
+	border-bottom: none;
+}
+
 .button {
 	// border-radius: 100px;
 	font-weight: 500;

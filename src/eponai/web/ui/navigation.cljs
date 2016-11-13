@@ -89,7 +89,11 @@
              ((-> button/button button/tiny)
                {:on-click #(om/update-state! this assoc :add-transaction? true)
                 :class (when-not (seq all-projects) "disabled")}
-               [:i.fa.fa-plus.fa-fw])]
+               [:div.has-tip
+                {:data-tooltip  true
+                 :aria-haspopup true
+                 :title         "New Transaction"}
+                [:i.fa.fa-plus.fa-fw]])]
 
             ; Project menu
             [:div.top-bar-right
@@ -97,17 +101,30 @@
               {:href (when project-id
                        (routes/key->route :route/project->dashboard
                                           {:route-param/project-id project-id}))}
-              (icon/menu-stats (= selected-tab :dashboard))]
+
+              [:div.has-tip
+               {:data-tooltip  true
+                :aria-haspopup true
+                :title "Dashboard"}
+               (icon/menu-stats (= selected-tab :dashboard))]]
              [:a
               {:href (when project-id
                        (routes/key->route :route/project->txs {:route-param/project-id project-id}))}
-              (icon/menu-list (= selected-tab :transactions))]
+              [:div.has-tip
+               {:data-tooltip  true
+                :aria-haspopup true
+                :title "All Transactions"}
+               (icon/menu-list (= selected-tab :transactions))]]
              (when-not utils/*playground?*
                [:a
                {:href (when project-id
                         (routes/key->route :route/project->settings
                                            {:route-param/project-id project-id}))}
-               (icon/menu-settings (= selected-tab :settings))])]]]]
+                [:div.has-tip
+                 {:data-tooltip  true
+                  :aria-haspopup true
+                  :title "Settings"}
+                 (icon/menu-settings (= selected-tab :settings))]])]]]]
 
          (when add-transaction?
            (utils/modal {:content  (->AddTransaction

@@ -78,15 +78,15 @@
                    {:on-click #(.save-category this)}
                    "Save"]]))]]]]
 
-         [:div.content-section
-          [:div.row.section-title
-           [:span "Users"]]
-          [:div.row
-           (map (fn [u]
-                  [:a.button.hollow.black
-                   {:key (str (:db/id u))}
-                   (:user/email u)])
-                project-users)]]
+         ;[:div.content-section
+         ; [:div.row.section-title
+         ;  [:span "Users"]]
+         ; [:div.row
+         ;  (map (fn [u]
+         ;         [:a.button.hollow.black
+         ;          {:key (str (:db/id u))}
+         ;          (:user/email u)])
+         ;       project-users)]]
 
 
          [:div.content-section
@@ -95,7 +95,7 @@
           [:div.row
            [:div.column
             [:span
-             "Delete this project with all its data for all users. Recorded expenses and incomes will be deleted as well as any created categories."]]
+             "Delete this project with all its data. Recorded expenses and incomes will be deleted as well as any created categories."]]
            [:div.column.small-4
             [:a.button.secondary.expanded.hollow.delete-button
              {:on-click #(.delete-project this)}
