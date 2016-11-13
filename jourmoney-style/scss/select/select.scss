@@ -61,8 +61,8 @@ $select-item-gutter:                5px !default;
 $select-item-padding-vertical:      2px !default;
 $select-item-padding-horizontal:    5px !default;
 $select-item-font-size:             .9em !default;
-$select-item-color:                 darken($light-blue, 10%) !default;//#08c !default; // pale blue
-$select-item-bg:                    lighten($light-blue, 40%) !default; //#f2f9fc !default;
+$select-item-color:                 $white;//darken($orange, 10%) !default;//#08c !default; // pale blue
+$select-item-bg:                    $darkblue;//lighten($orange, 40%) !default; //#f2f9fc !default;
 $select-item-border-color:          darken($select-item-bg, 10%) !default;
 $select-item-hover-color:           darken($select-item-color, 5%) !default; // pale blue
 $select-item-hover-bg:              darken($select-item-bg, 5%) !default;

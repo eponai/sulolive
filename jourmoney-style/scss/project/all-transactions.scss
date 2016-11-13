@@ -11,9 +11,11 @@ $row-border: 1px solid $darkblue-a10;
   }
   .currency {
     @include flex-grid-column(1);
+    font-size: 0.8rem
   }
   .category {
     @include flex-grid-column(2);
+    font-weight: 500;
   }
   .local-amount {
     @include flex-grid-column(2);
@@ -43,38 +45,27 @@ $row-border: 1px solid $darkblue-a10;
   @include row-style;
   background: $white;
   padding: $row-padding;
-  &:not(:hover):not(.is-selected) {
+  color: $darkblue-a50;
+
+  &:not(:hover) {
     @include transaction-disabled;
   }
 
   &:hover {
-    color: $darkblue-a50;
+    color: $black;
     background: $hover-bg;
     border: $hover-border;
   }
-  &.is-selected {
-    background: $selected-bg;
-    border: $selected-border;
-  }
-  input {
-    transition: none;
-  }
 
-  input,
   .Select {
     margin: 0;
-    color: $darkblue-a50;
+    // color: $darkblue-a50;
   }
-  .currency .Select {
-    font-size: 0.8rem;
-    font-weight: 500;
-    .Select-value-label {
-      color: $darkblue-a50;
-    }
+  .Select-value-label {
+    color: inherit !important;
   }
-  .category .Select .Select-value-label {
-    font-weight: 500;
-    color: $darkblue-a50;
+  .Select-control {
+    background: transparent;
   }
 
   .Select.Select--multi .Select-arrow {
@@ -82,7 +73,6 @@ $row-border: 1px solid $darkblue-a10;
   }
   .amount {
     span,strong {
-      font-size: 1.1rem;
       font-weight: 500;
       &.expense {
         color: $alert-color;
@@ -203,10 +193,10 @@ $row-border: 1px solid $darkblue-a10;
     @include row-style
     padding: $row-padding;
     border: $row-border; 
-    color: $darkblue-a50;
+    color: rgba($white, 0.7);
     font-weight: bold;
     letter-spacing: 1px;
-    background: $lightblue-a5;
+    background: $darkblue;
     text-transform: uppercase;
     font-size: 0.8rem;
     box-shadow: 0 1px 3px $darkblue-a10;

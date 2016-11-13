@@ -11,7 +11,7 @@ $orange: #ED9C40;
 $orange-a15: rgba(237,156,64,0.15);
 
 
-$hover-bg: 			lighten($light-blue-a15, 30%);
+$hover-bg: 			rgba($orange, 0.1);//lighten($light-blue-a15, 30%);
 $hover-color: 		$light-blue;
 $hover-border: 		1px solid darken($hover-bg,10%);
 

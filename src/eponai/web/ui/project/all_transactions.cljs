@@ -60,49 +60,42 @@
 
   Object
   (initLocalState [this]
-    (merge
-      ;; Never change this computed function.
-      {:computed/date-range-picker-on-apply #(do (om/update-state! this assoc-in
-                                                                   [:input-transaction :transaction/date]
-                                                                   %)
-                                                 (.deselect this))
-       :on-deselect-fn #(.on-mouse-event this %)}
-      (utils/props->init-state this (om/props this))))
+    (utils/props->init-state this (om/props this)))
 
   (componentWillReceiveProps [this props]
     (utils/sync-with-received-props this props))
 
-  (save-edit [this]
-    (let [{:keys [input-transaction
-                  init-state]} (om/get-state this)
-          diff (diff/diff init-state input-transaction)
-          ;added-tags (or (:transaction/tags (second diff)) [])
-          removed-tags (or (filter some? (:transaction/tags (first diff))) [])
-          ]
-      ;; Transact only when we have a diff to avoid unecessary mutations.
-      (when-not (= diff [nil nil init-state])
-        ;(debug "Delete tag Will transacti diff: " diff)
-        (om/transact! this `[(transaction/edit ~{:old init-state :new input-transaction})
-                             :query/transactions]))))
-  (select [this]
-    (let [{:keys [is-selected? on-deselect-fn]} (om/get-state this)]
-      (debug "Select: " on-deselect-fn)
-      (when-not is-selected?
-        (om/update-state! this assoc :is-selected? true)
-        (.. js/document (addEventListener "click" on-deselect-fn)))))
+  ;(save-edit [this]
+  ;  (let [{:keys [input-transaction
+  ;                init-state]} (om/get-state this)
+  ;        diff (diff/diff init-state input-transaction)
+  ;        ;added-tags (or (:transaction/tags (second diff)) [])
+  ;        removed-tags (or (filter some? (:transaction/tags (first diff))) [])
+  ;        ]
+  ;    ;; Transact only when we have a diff to avoid unecessary mutations.
+  ;    (when-not (= diff [nil nil init-state])
+  ;      ;(debug "Delete tag Will transacti diff: " diff)
+  ;      (om/transact! this `[(transaction/edit ~{:old init-state :new input-transaction})
+  ;                           :query/transactions]))))
+  ;(select [this]
+  ;  (let [{:keys [is-selected? on-deselect-fn]} (om/get-state this)]
+  ;    (debug "Select: " on-deselect-fn)
+  ;    (when-not is-selected?
+  ;      (om/update-state! this assoc :is-selected? true)
+  ;      (.. js/document (addEventListener "click" on-deselect-fn)))))
 
-  (on-mouse-event [this event]
-    (let [{:keys [input-transaction is-selected? on-deselect-fn]} (om/get-state this)
-          transaction-id (str (:db/id input-transaction))
-          should-deselect? (not (some #(= (.-id %) transaction-id) (.-path event)))]
-      (when should-deselect?
-        (.. js/document (removeEventListener "click" on-deselect-fn))
-        (when is-selected?
-          (.deselect this)))))
+  ;(on-mouse-event [this event]
+  ;  (let [{:keys [input-transaction is-selected? on-deselect-fn]} (om/get-state this)
+  ;        transaction-id (str (:db/id input-transaction))
+  ;        should-deselect? (not (some #(= (.-id %) transaction-id) (.-path event)))]
+  ;    (when should-deselect?
+  ;      (.. js/document (removeEventListener "click" on-deselect-fn))
+  ;      (when is-selected?
+  ;        (.deselect this)))))
 
-  (deselect [this]
-    (om/update-state! this assoc :is-selected? false)
-    (.save-edit this))
+  ;(deselect [this]
+  ;  (om/update-state! this assoc :is-selected? false)
+  ;  (.save-edit this))
   (render [this]
     (let [{:keys [input-transaction]} (om/get-state this)
           {:keys [db/id
@@ -114,12 +107,11 @@
                   transaction/category
                   transaction/title]
            :as   transaction} (or input-transaction (om/props this))
-          {:keys [computed/date-range-picker-on-apply is-selected?]} (om/get-state this)
+          ;{:keys [computed/date-range-picker-on-apply is-selected?]} (om/get-state this)
           {:keys [currencies select-tags-options-fn]} (om/get-computed this)]
       (dom/li
-        #js {:className    (str "row collapse align-middle is-collapse-child" (when is-selected? " is-selected"))
-             :id (str id)
-             :onClick #(.select this)}
+        #js {:className "row collapse align-middle is-collapse-child"
+             :id        id}
         ;; Amount in main currency
         (dom/div
           #js {:className "amount"}
@@ -135,87 +127,55 @@
         ;; Date
         (dom/div
           #js {:className "date"}
-          (->DateRangePicker (om/computed {:single-calendar? true
-                                           :start-date       (date/date-time date)
-                                           :tab-index        (if is-selected? 1 -1)}
-                                          {:on-apply date-range-picker-on-apply
-                                           :format   "MMM dd"})))
+          (date/date->string date "MMM dd")
+
+          ;(->DateRangePicker (om/computed {:single-calendar? true
+          ;                                 :start-date       (date/date-time date)
+          ;                                 :tab-index        (if is-selected? 1 -1)}
+          ;                                {:on-apply date-range-picker-on-apply
+          ;                                 :format   "MMM dd"}))
+          )
         (dom/div
           #js {:className "category"}
-          (sel/->Select {:value    {:label (:category/name category) :value (:db/id category)}
-                         :options  [{:label (:category/name category) :value (:db/id category)}]
-                         :tab-index (if is-selected? 1 -1)}))
+          (:category/name category))
 
         ;; Title
         (dom/div
           #js {:className "note"}
-          (dom/input
-            #js {:className "title"
-                 :value     (or title "")
-                 :type      "text"
-                 :onChange  #(om/update-state! this assoc-in [:input-transaction :transaction/title] (.-value (.-target %)))
-                 :onKeyDown #(utils/on-enter-down % (fn [_]
-                                                      (.blur (.-target %))))
-                 :onBlur    #(.deselect this)
-                 :tabIndex (if is-selected? 1 -1)}))
+          title)
 
         ;; Tags
         (dom/div
           #js {:className "tags"}
-          (sel/->SelectTags (om/computed (cond-> {:value (map (fn [t]
-                                                                {:label (:tag/name t)
-                                                                 :value (:db/id t)})
-                                                              (:transaction/tags transaction))
-                                                  :tab-index (if is-selected? 1 -1)}
-                                                 is-selected?
-                                                 (assoc :options (select-tags-options-fn)))
+          (sel/->SelectTags (om/computed {:value    (map (fn [t]
+                                                           {:label (:tag/name t)
+                                                            :value (:db/id t)})
+                                                         (:transaction/tags transaction))
+                                          :disabled true}
+
+
                                          {:on-select (fn [selected]
                                                        (om/update-state! this assoc-in
                                                                          [:input-transaction :transaction/tags]
                                                                          (into (empty-sorted-tag-set)
                                                                                (map (fn [t]
                                                                                       {:tag/name (:label t)}))
-                                                                               selected)))
-                                          :onBlur    #(.deselect this)})))
+                                                                               selected)))})))
 
         ;; Amount in local currency
         (dom/div
-          #js {:className "local-amount"}
-          (dom/input
-            #js {:className "input-amount text-right"
-                 :value     (or amount "")
-                 :pattern   "[0-9]+([\\.][0-9]+)?"
-                 :type      "text"
-                 :onChange  #(om/update-state! this assoc-in [:input-transaction :transaction/amount] (.-value (.-target %)))
-                 :onKeyDown #(condp = (.-keyCode %)
-                              ;; Prevent default on comma and period/dot.
-                              events/KeyCodes.COMMA (.preventDefault %)
-                              events/KeyCodes.PERIOD (when (string/includes? (str amount) ".") (.preventDefault %))
-                              ;; Save edit on enter.
-                              events/KeyCodes.ENTER (utils/on-enter-down % (fn [_] (.blur (.-target %))))
-                              true)
-                 :ref       (str "amount-" id)
-                 :onBlur    #(do
-                              (let [val (.-value (.-target %))]
-                                ;; When the value entered doesn't have 2 decimals, set it to be 2 decimals.
-                                ;; TODO: What if we need more decimals? What happens? This change was made
-                                ;;       to fix UI issues when there are less than 2 decimals.
-                                (when (not= val (two-decimal-string val))
-                                  (om/update-state! this assoc-in [:input-transaction :transaction/amount] (two-decimal-string val))))
-                              (.deselect this))
-                 :tabIndex (if is-selected? 1 -1)}))
+          #js {:className "local-amount text-right"}
+          amount)
         (dom/div
           #js {:className "currency"}
-
           (sel/->Select (om/computed {:value    {:label (:currency/code currency) :value (:db/id currency)}
                                       :options  (map (fn [c]
                                                        {:label (:currency/code c)
                                                         :value (:db/id c)})
                                                      currencies)
-                                      :tab-index (if is-selected? 1 -1)}
+                                      :disabled true}
                                      {:on-select (fn [selected]
-                                                   (om/update-state! this assoc-in [:input-transaction :transaction/currency] (:value selected))
-                                                   (.deselect this))})))
+                                                   (om/update-state! this assoc-in [:input-transaction :transaction/currency] (:value selected)))})))
         ))))
 
 (def ->Transaction (om/factory Transaction {:keyfn :db/id}))
