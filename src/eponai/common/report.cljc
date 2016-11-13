@@ -64,11 +64,12 @@
                 {:housing 0 :transport 0 :spent 0 :limit 0 :daily-spent 0}
                 transactions)
         days-in-period (count (date-range start-date end-date))
+        days-left (count (date-range (date/today) end-date))
         avg-by-day (when (pos? days-in-period)
                      (/ daily-spent days-in-period))]
     (assoc report-summary
       :budget (- limit housing transport)
-      :left-by-end (- limit (* days-in-period (/ spent days-in-period)))
+      :left-by-end (- limit spent (* avg-by-day days-left))
       :avg-daily-spent avg-by-day)))
 
 (defn value-range [values]
