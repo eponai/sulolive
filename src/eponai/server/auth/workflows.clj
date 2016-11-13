@@ -96,8 +96,8 @@
   params from the mutation and perform the auth using those params.
 
   Returns an authentication map on successful auth, otherwise nil."
-  [app-id app-secret]
-  (fn [{:keys [login-parser ::friend/auth-config ::stripe/stripe-fn body facebook-token-validator] :as request}]
+  []
+  (fn [{:keys [login-parser ::friend/auth-config ::stripe/stripe-fn body ::fb/facebook-token-validator] :as request}]
     (let [{:keys [login-mutation-uri credential-fn]} auth-config]
       ;; Check conditions for performing this workflow and skip if not met:
       (when (and
@@ -114,7 +114,7 @@
           ; Cond 4) For facebook login workflow we need the user-id and access-token for the user trying to auth.
           ; If nil we're probably doing some other auth type, so skip this workflow.
           (when (some? fb-params)
-            (let [validated-token (facebook-token-validator app-id app-secret fb-params)]
+            (let [validated-token (facebook-token-validator fb-params)]
               (if (:error validated-token)
                 (throw (ex-info "Facebook login error. Validating access token failed."
                                 {}))

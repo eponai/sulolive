@@ -10,6 +10,7 @@
     [taoensso.timbre :refer-macros [debug trace]]
     [eponai.web.ui.format :as f]
     [eponai.common.format.date :as date]
+    [goog.object :as gobj]
     [eponai.web.ui.utils :as utils])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
@@ -114,6 +115,37 @@
   (show-stripe-loading [this is-loading?]
     (om/update-state! this assoc :is-stripe-loading? is-loading?))
 
+  (on-facebook-connect [this]
+    (let [on-connected (fn [response]
+                         (let [auth-response (gobj/get response "authResponse")
+                               user-id (gobj/get auth-response "userID")
+                               access-token (gobj/get auth-response "accessToken")]
+                           (om/transact! this `[(session.connect/facebook ~{:user-id      user-id
+                                                                            :access-token access-token})
+                                                :user/current
+                                                :query/fb-user])))
+          on-login #(.login js/FB (fn [response]
+                                    (let [status (gobj/get response "status")]
+                                      (cond (= status "connected")
+                                            (on-connected response)
+                                            (= status "not_authorized")
+                                            (on-connected response)
+                                            :else
+                                            (debug "User not authorized on Facebook")))))]
+      (.getLoginStatus
+        js/FB
+        (fn [response]
+          (let [status (gobj/get response "status")]
+            (cond (= status "connected")
+                  (on-connected response)
+                  (= status "not_authorized")
+                  (on-connected response)
+                  :else
+                  (on-login)))))))
+  (on-facebook-disconnect [this]
+    (om/transact! this `[(session.disconnect/facebook)
+                         :query/fb-user]))
+
   (render [this]
     (let [{:keys [query/current-user
                   query/all-currencies
@@ -182,18 +214,29 @@
                  [:div.row
                   [:div.column
                    [:label "Pay What You Want"]
-                   [:small "The JourMoney subscription is " [:a "Pay what you want"] ". You set your own monthly price at what you think your subscription is worth."]]
-                  ]
-                 [:div.row.columng
-                  (pay/->PayWhatYouWant (om/computed {:id "paywhatyouwant-slider"
-                                                      :value (or paywhatyouwant (get-in info [:subscription :quantity]))}
-                                                     {:on-change-value #(om/update-state! this assoc :paywhatyouwant %)
-                                                      :on-select-value #(om/update-state! this assoc :paywhatyouwant %)}))]
-                 [:div.row
+                   [:small "The price of Jourmoney subscription is up to you. You set your own monthly price at what you think your subscription is worth."]]
                   [:div.column
-                   [:span "I want to pay: $"
-                    [:strong (or paywhatyouwant (get-in info [:subscription :quantity]) 0)] " per month"]]
-                  ]]
+                   [:div.text-right
+                    [:span "I want to pay "]]
+
+                   [:div.clearfix
+                    [:input.float-right
+                     {:key "paywhatyouwant"
+                      :value     (or paywhatyouwant (get-in info [:subscription :quantity]) "0")
+                      :type      "number"
+                      :min       "0"
+                      :step      "1"
+                      :placeholder "0"
+                      :on-change #(om/update-state! this assoc :paywhatyouwant (cljs.reader/read-string (.. % -target -value)))}]]
+                   [:div.text-right
+                    [:span " per month"]]]
+                  ]
+                 ;[:div.row
+                 ; [:div.column
+                 ;  [:span "I want to pay: $"
+                 ;   [:strong (or paywhatyouwant (get-in info [:subscription :quantity]) 0)] " per month"]]
+                 ; ]
+                 ]
 
                 [:div.content-section.clearfix
                  [:a.button.hollow.float-right
@@ -208,12 +251,16 @@
                    [:label "Facebook"]]
                   (if (nil? fb-user)
                     [:div.column.small-5.text-right
-                     [:a.button.expanded.facebook [:i.fa.fa-facebook.fa-fw] "Connect to Facebook"]]
+                     [:a.button.expanded.facebook
+                      {:on-click #(.on-facebook-connect this)}
+                      [:i.fa.fa-facebook.fa-fw] "Connect to Facebook"]]
                     [:div.column.small-8
                      [:div.row.collapse.align-middle
                       [:div.column.small-10.text-right.facebook-user
                        [:div (:fb-user/name fb-user)]
-                       [:a.link [:small "disconnect"]]]
+                       [:a.link
+                        {:on-click #(.on-facebook-disconnect this)}
+                        [:small "disconnect"]]]
                       [:div.column.small-2.text-left
                        [:img.avatar {:src (:fb-user/picture fb-user)}]]]])]]
 

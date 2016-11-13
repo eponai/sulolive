@@ -11,6 +11,7 @@
             [taoensso.timbre :refer [debug error trace warn]]
             [eponai.server.api :as api]
             [eponai.server.external.stripe :as stripe]
+            [eponai.server.external.facebook :as fb]
             [eponai.server.ui :as server.ui]
             [clojure.data.json :as json]
             [eponai.server.email :as email]
@@ -100,13 +101,15 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [::m/conn ::m/parser ::stripe/stripe-fn ::playground-auth body] :as request}]
+  [{:keys [::m/conn ::m/parser ::stripe/stripe-fn ::playground-auth body ::fb/facebook-token-validator] :as request}]
   (debug "Handling parser request with body:" body)
+  (debug "Facebook validator: " facebook-token-validator)
   (parser
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
      :state                             conn
      :auth                              (or playground-auth (friend/current-authentication request))
-     :stripe-fn                         stripe-fn}
+     :stripe-fn                         stripe-fn
+     :fb-validate-fn                    facebook-token-validator}
     (:query body)))
 
 (defn trace-parser-response-handlers

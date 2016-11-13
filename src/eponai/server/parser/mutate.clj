@@ -235,6 +235,20 @@
 
 ;; ############# Session mutations #################
 
+(defmutation session.connect/facebook
+  [{:keys [state fb-validate-fn auth]} _ {:keys [access-token user-id] :as p}]
+  ["Connected to Facebook" "Error connecting to facebook"]
+  {:action (fn []
+             (debug "session.connect/facebook with params: " p)
+             (api/facebook-connect state (assoc p :user-uuid (:username auth)) fb-validate-fn))})
+
+(defmutation session.disconnect/facebook
+  [{:keys [state auth]} _ _]
+  ["Connected to Facebook" "Error connecting to facebook"]
+  {:action (fn []
+             (debug "session.disconnect/facebook")
+             (api/facebook-disconnect state {:user-uuid (:username auth)}))})
+
 (defmutation session.signin/email
   [{:keys [state]} k {:keys [device] :as params}]
   ["Signed in via email" "Error signing in via email"]

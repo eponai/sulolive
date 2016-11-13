@@ -103,9 +103,7 @@
      :credential-fn        (ac/credential-fn conn)
      :workflows            [(workflows/email-web)
                             (workflows/create-account)
-                            (workflows/facebook
-                              (env :facebook-app-id "no-facebook-app-id")
-                              (env :facebook-app-secret "no-facebook-app-secret"))
+                            (workflows/facebook)
                             (workflows/email-mobile)]
      :unauthorized-handler (workflows/unauthorized)
      :unauthenticated-handler (workflows/unauthenticated)
@@ -141,9 +139,7 @@
                               {:action (fn [] p)})
                     :read   (fn [_ _ _])})]
       (handler (assoc request
-                 :login-parser parser
-                 :facebook-token-validator (fn [app-id app-secret fb-params]
-                                             (fb/user-token-validate app-id app-secret fb-params)))))))
+                 :login-parser parser)))))
 
 (defn wrap-logout [handler]
   (fn [req]

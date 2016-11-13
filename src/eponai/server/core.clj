@@ -18,7 +18,8 @@
             [taoensso.timbre :refer [debug error info]]
     ;; Debug/dev requires
             [ring.middleware.reload :as reload]
-            [prone.middleware :as prone]))
+            [prone.middleware :as prone]
+            [eponai.server.external.facebook :as fb]))
 
 (defonce in-production? (atom true))
 
@@ -47,6 +48,10 @@
                                                       (fn [] (d/q '{:find  [?uuid .]
                                                                     :where [[_ :user/uuid ?uuid]]}
                                                                   (d/db conn)))))
+                     ::fb/facebook-token-validator   (fn [fb-params]
+                                                    (let [app-id (env :facebook-app-id "no-facebook-app-id")
+                                                          app-secret (env :facebook-app-secret "no-facebook-app-secret")]
+                                                      (fb/user-token-validate app-id app-secret fb-params)))
                      ;; either "dev" or "release"
                      ::m/cljs-build-id            (or (env :cljs-build-id) "dev")})
       (m/wrap-defaults @in-production? disable-anti-forgery)

@@ -323,7 +323,8 @@
                   {:error {:cause :invalid-verification}})))}))
 
 (defmethod client-read :query/fb-user
-  [{:keys [db query target user-uuid]} _ _]
+  [{:keys [db query target user-uuid]} k p]
+  (debug "Read " k " with params " p)
   (if target
     {:remote #?(:cljs (not web-utils/*playground?*) :clj true)}
     (let [eid (p/one-with db {:where '[[?e :fb-user/id]]})]

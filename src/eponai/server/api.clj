@@ -31,11 +31,48 @@
 
 ; Actions
 
+(defn link-fb-user-to-current-account [conn {:keys [user-uuid fb-user]}]
+  (let [user (p/lookup-entity (d/db conn) [:user/uuid user-uuid])
+        formatted-fb-user (datomic.format/fb-user user fb-user)]
+    (debug "Transacting formatted fb-user: " formatted-fb-user)
+    (transact-one conn formatted-fb-user)))
+
 (defn api-error [status code ex-data]
   (ex-info (str "API error code " code)
            (merge {:status status
                    :code code}
                   ex-data)))
+
+(defn facebook-disconnect [conn {:keys [user-uuid]}]
+  (when-let [fb-user (p/one-with (d/db conn) {:where   '[[?u :user/uuid ?uuid]
+                                                         [?e :fb-user/user ?u]]
+                                              :symbols {'?uuid user-uuid}})]
+    (transact/transact-one conn [:db.fn/retractEntity fb-user])))
+
+(defn facebook-connect [conn {:keys [user-uuid user-id access-token]} fb-validate-fn]
+  (assert (and fb-validate-fn) "Needs a Facebook validator function.")
+  (let [{:keys [user_id access_token err]} (fb-validate-fn {:user-id user-id :access-token access-token})]
+    (if err
+      (throw (ex-info "Facebook login error. Validating access token failed."
+                      {}))
+      (if-let [fb-user (p/lookup-entity (d/db conn) [:fb-user/id user_id])]
+        (let [db-user (d/entity (d/db conn) (-> fb-user
+                                                :fb-user/user
+                                                :db/id))]
+          (debug "Facebook user existed: " db-user)
+          ; If Facebook has returned a new access token, we need to renew that in the db as well
+          (when-not (= (:fb-user/token fb-user) access-token)
+            (debug "Updating new access token for Facebook user.")
+            (transact-one conn [:db/add (:db/id fb-user) :fb-user/token access_token])))
+
+        ; If we don't have a facebook user in the DB, check if there's an accout with a matching email.
+        (do
+          (debug "Creating new fb-user: " user_id)
+          ;; Linking the FB user to u user account. If a user accunt with the same email exists,
+          ;; it will be linked. Otherwise, a new user is created.
+          (link-fb-user-to-current-account conn {:user-uuid user-uuid
+                                                 :fb-user   {:fb-user/id    user_id
+                                                             :fb-user/token access_token}}))))))
 
 (defn signin
   "Create a new user and transact into datomic.

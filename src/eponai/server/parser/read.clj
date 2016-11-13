@@ -12,7 +12,8 @@
     [taoensso.timbre :as timbre :refer [debug trace warn]]
     [eponai.common.database.pull :as pull]
     [eponai.common.parser :as parser]
-    [eponai.common.database.pull :as p]))
+    [eponai.common.database.pull :as p])
+  (:import (clojure.lang ExceptionInfo)))
 
 (defmethod server-read :datascript/schema
   [{:keys [db db-history]} _ _]
@@ -177,9 +178,12 @@
 
             (when eid
               (let [customer-id (:stripe/customer (d/entity db eid))
-                    customer (stripe-fn :customer/get
-                                        {:customer-id customer-id
-                                         :subscription-id (get-in (d/entity db eid) [:stripe/subscription :stripe.subscription/id])})]
+                    customer (try
+                               (stripe-fn :customer/get
+                                          {:customer-id     customer-id
+                                           :subscription-id (get-in (d/entity db eid) [:stripe/subscription :stripe.subscription/id])})
+                               (catch ExceptionInfo e
+                                 nil))]
                 (debug "Read stripe customer: " customer)
                 (cond->> (pull db query eid)
                          (some? customer)
@@ -195,6 +199,7 @@
 
 (defmethod server-read :query/fb-user
   [{:keys [db db-history query user-uuid]} _ _]
+  (debug "Read query/fb-user")
   (let [eid (when user-uuid
               (server.pull/one-changed-entity
                 db db-history query

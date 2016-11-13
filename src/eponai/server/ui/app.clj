@@ -14,6 +14,7 @@
 
        (dom/body
          nil
+         (common/inline-javascript (common/facebook-async-init-code))
          (common/anti-forgery-field)
          (dom/div (cond-> {:id "jm-app"}
                           playground?
