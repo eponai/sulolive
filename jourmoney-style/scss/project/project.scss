@@ -48,7 +48,10 @@
     }
   }
 }
-
+a.mail-link {
+  color: $orange;
+  font-weight: bold;
+}
 $callout-height: 2.7rem;
 .jm-playground {
   #page-content{

@@ -80,12 +80,13 @@
                                              :app-content     app-root}))
           (when web-utils/*playground?*
             [:div.callout.small.primary.text-center
-             "Welcome to the playground, where you can check out the full app. "
+             "Welcome to the playground! You can play with the app here but nothing will be saved. "
              [:strong
               [:a
-               {:on-click #(om/update-state! this assoc :playground/show-subscribe-modal? true)}
+               {:href   "/signup"
+                :target "_blank"}
                "Sign up"]]
-             " to save your progress."])
+             " to create an account."])
           (subscribe-modal this)]
          [:div#page-content
           {:ref (str ::page-content-ref)}

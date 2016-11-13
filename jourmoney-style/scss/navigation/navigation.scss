@@ -72,6 +72,7 @@ $subnav-height: 3rem;
   position: absolute;
   height: 3rem;
   bottom: 0;
+  width: 100%;
 }
 
 #topnav {
@@ -107,8 +108,12 @@ $subnav-height: 3rem;
 }
 
 .footer {
+  width: 100%;
   padding: 0.5rem 1rem;
   color: $black;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
   li {
     padding-right: 1rem;
   }
