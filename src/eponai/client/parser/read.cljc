@@ -98,13 +98,15 @@
 (let [project-transactions-cache (atom {})]
   (defn transaction-eids-by-project [db project-eid]
     {:post [(or (empty? %) (set? %))]}
-    (let [{:keys [iter eids]} (get @project-transactions-cache project-eid)
-          iter2 (d/datoms db :avet :transaction/project project-eid)]
-      (if (common.datascript/iter-equals? iter iter2)
+    (let [{:keys [old-db eids]} (get @project-transactions-cache project-eid)
+          old-iter (delay (when old-db (d/datoms old-db :avet :transaction/project project-eid)))
+          new-iter (delay (d/datoms db :avet :transaction/project project-eid))]
+      (if (or (identical? old-db db)
+              (common.datascript/iter-equals? @old-iter @new-iter))
         eids
-        (let [eids (into #{} (map datom-e) iter2)]
-          (do (swap! project-transactions-cache assoc project-eid {:iter iter2 :eids eids})
-              eids))))))
+        (let [eids (into #{} (map datom-e) @new-iter)]
+          (swap! project-transactions-cache assoc project-eid {:old-db db :eids eids})
+          eids)))))
 
 (defn identical-transactions?
   "Fast check whether any transaction attribute has changed in the whole database."
@@ -131,13 +133,9 @@
 (defn transactions-deleted [db last-db project-eid]
   {:pre  [(number? project-eid)]
    :post [(or (nil? %) (set? %))]}
-  (let [last-txs (when last-db (d/datoms last-db :avet :transaction/project project-eid))
-        curr-txs (d/datoms db :avet :transaction/project project-eid)]
-    (when (and (seq last-txs)
-               (not (common.datascript/iter-equals? last-txs curr-txs)))
-      (let [last-txs (into #{} (map datom-e) last-txs)
-            txs (transaction-eids-by-project db project-eid)]
-        (set/difference last-txs txs)))))
+  (let [last-txs (when last-db (d/datoms last-db :avet :transaction/project project-eid))]
+    (set/difference (into #{} (map datom-e) last-txs)
+                    (transaction-eids-by-project db project-eid))))
 
 (defn- tx-compare-key-fn [tx]
   ((juxt (comp :date/timestamp :transaction/date) :db/id) tx))
@@ -199,10 +197,9 @@
         (if (identical? db db-used)
           txs
           (let [;; Transactions that have been deleted:
-                removed-txs (or (transactions-deleted db db-used project-eid)
-                                #{})
+                removed-txs (or (transactions-deleted db db-used project-eid) #{})
                 new-txs (transactions-changed db db-used project-eid)
-                _ (debug "changed-transaction-eids: " new-txs)]
+                _ (debug [:removed-txs removed-txs :new-or-changed-txs new-txs])]
             (if (and (empty? removed-txs)
                      (empty? new-txs))
               (do (swap! txs-by-project assoc-in [project-eid :db-used] db)
@@ -216,7 +213,7 @@
 
                     new-and-old (cond-> (or txs (sorted-txs-set))
                                         (seq removed-txs)
-                                        (#(apply disj % (map (fn [id] (d/entity db id)) removed-txs)))
+                                        (#(apply disj % (map (fn [id] (d/entity db-used id)) removed-txs)))
                                         ;; Make space for the new ones.
                                         (seq new-with-convs)
                                         (#(apply disj % new-with-convs))
