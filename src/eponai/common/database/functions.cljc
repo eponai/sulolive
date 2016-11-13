@@ -181,8 +181,8 @@
            (when (or (nil? latest-update)
                      (> created-at latest-update))
              ;; You're the greatest! You'll edit.
-             (assert (:added latest-datom)
-                     (str "Datom did not have :added. Datom: " latest-datom))
+             (assert (some? (:added latest-datom))
+                     (str "Datom did not have :added. Datom: " ((juxt [:e :a :v :tx :added]) latest-datom)))
              (if (and (= value (:v latest-datom))
                       (= added? (:added latest-datom)))
                ;; Value is the same as for this tx, create an update.
