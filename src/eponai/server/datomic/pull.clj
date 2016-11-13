@@ -362,6 +362,8 @@
     (p/all-with db entity-query)
     (all-changed db db-history pull-pattern entity-query '[[?e ...]])))
 
-(defn adds-retracts-for-eid [db-history eid]
-  (->> (d/datoms db-history :eavt eid)
-       (datoms->txs)))
+(defn adds-retracts-for-eid [db db-history eid]
+  (let [attr-id->keyword (memoize #(:db/ident (d/entity db %)))]
+    (->> (d/datoms db-history :eavt eid)
+         (map (fn [[e a v t added]] [e (attr-id->keyword a) v t added]))
+         (datoms->txs))))

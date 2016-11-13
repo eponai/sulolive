@@ -208,7 +208,7 @@
                      :symbols {'?uuid user-uuid}})))]
     {:value (when eid
               (let [ret (if db-history
-                          (server.pull/adds-retracts-for-eid db-history eid)
+                          (server.pull/adds-retracts-for-eid db db-history eid)
                           [(pull db query eid)])
                     {:keys [fb-user/token fb-user/id] :as f-user} (pull db [:fb-user/token :fb-user/id] eid)
                     _ (debug "Got fb-user: " f-user)
