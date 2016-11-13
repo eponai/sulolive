@@ -137,11 +137,11 @@ svg {
     min-height: 3px;
     &.past {
       stroke: $orange;
-      filter: url(#drop-shadow);
+      // filter: url(#drop-shadow);
     }
     &.future {
       stroke: $medium-gray;
-      filter: url(#drop-shadow-future);
+      // filter: url(#drop-shadow-future);
     }
   }
 

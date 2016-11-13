@@ -127,6 +127,14 @@
   (let [t (today)]
     (c/to-date-time (t/last-day-of-the-month (t/year t) n))))
 
+(defn first-day-of-this-year []
+  (let [t (today)]
+    (t/date-time (t/year t) 1 1)))
+
+(defn last-day-of-this-year []
+  (let [t (today)]
+    (t/date-time (t/year t) 12 31)))
+
 (defn now []
   (t/now))
 

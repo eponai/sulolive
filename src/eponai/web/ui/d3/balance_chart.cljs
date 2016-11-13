@@ -207,30 +207,36 @@
       (d3/update-on-resize this id)
       (om/update-state! this assoc :svg svg :x-scale x-scale :y-scale y-scale :area area :line line :x-axis x-axis :y-axis y-axis :graph graph)))
 
-  (value-range [_ values]
-    (let [[low high] (cond (empty? values)
-                           [0 10]
-                           (= 1 (count values))
-                           (let [value (first values)
-                                 max-val (max (:balance value) (:spent value))]
-                             (if (neg? max-val)
-                               [max-val 0]
-                               [0 max-val]))
-
-                           (< 1 (count values))
-                           [(apply min (map #(min (:balance %) (:spent %)) values))
-                            (apply max (map #(max (:balance %) (:spent %)) values))])]
-      (if (= low high)
-        [low (+ high 10)]
-        [low high])))
+  ;(value-range [_ values]
+  ;  (let [[low high] (cond (empty? values)
+  ;                         [0 10]
+  ;                         (= 1 (count values))
+  ;                         (let [value (first values)
+  ;                               max-val (max (:balance value) (:spent value))]
+  ;                           (if (neg? max-val)
+  ;                             [max-val 0]
+  ;                             [0 max-val]))
+  ;
+  ;                         (< 1 (count values))
+  ;                         [(apply min (map #(min (:balance %) (:spent %)) values))
+  ;                          (apply max (map #(max (:balance %) (:spent %)) values))])]
+  ;    (if (= low high)
+  ;      [low (+ high 10)]
+  ;      [low high])))
 
   (update [this]
     (let [{:keys [svg x-scale y-scale margin graph area line balance-visible? spent-visible?]} (om/get-state this)
           {:keys [report id]} (om/props this)
           {:keys [data-points x-domain y-domain]} report
+          _ (debug "Got data-points: " data-points)
           js-values (into-array data-points)
           {inner-width :width
-           inner-height :height} (d3/svg-dimensions svg {:margin margin})]
+           inner-height :height} (d3/svg-dimensions svg {:margin margin})
+
+          past-values (.filter js-values (fn [d]
+                                           (<= (:date d) (date/date->long (date/today)))))
+          future-values (.filter js-values (fn [d]
+                                             (>= (:date d) (date/date->long (date/today)))))]
       (.. x-scale
           (range #js [0 inner-width])
           (domain (clj->js x-domain)))
@@ -242,45 +248,49 @@
                         (let [min-balance (apply min (map #(:balance %) data-points))]
                           (if (neg? min-balance)
                             (.. js/d3 (extent js-values (fn [d] (:balance d))))
-                            #js [0 (.. js/d3 (max js-values (fn [d] (:balance d))))]))
+                            #js [0 (max 10 (.. js/d3 (max js-values (fn [d] (:balance d)))))]))
                         spent-visible?
-                        #js [0 (.. js/d3 (max js-values (fn [d] (:spent d))))])))
+                        #js [0 (max 10 (.. js/d3 (max js-values (fn [d] (:spent d)))))])))
 
       (.. graph
           (select ".area.past")
           transition
           (duration 250)
           (style "opacity" (if balance-visible? 1 0))
-          (attr "d" (area (.filter js-values (fn [d]
-                                               (<= (:date d) (date/date->long (date/today))))))))
+          (attr "d" (area past-values)))
       (.. graph
           (select ".area.future")
           transition
           (duration 250)
           (style "opacity" (if balance-visible? 1 0))
-          (attr "d" (area (.filter js-values (fn [d]
-                                               (>= (:date d) (date/date->long (date/today))))))))
+          (attr "d" (area future-values)))
 
       (.. graph
           (select ".line.past")
           transition
           (duration 100)
           (style "opacity" (if spent-visible? 1 0))
+          (style "filter" (if-not (apply = (map :spent data-points))
+                            "url(#drop-shadow)"
+                            "none"))
           (delay 100)
-          (attr "d" (line (.filter js-values (fn [d]
-                                               (<= (:date d) (date/date->long (date/today))))))))
+          (attr "d" (line past-values)))
 
       (.. graph
           (select ".line.future")
           transition
           (duration 100)
           (style "opacity" (if spent-visible? 1 0))
+          (style "filter" (if-not (apply = (map :spent data-points))
+                            "url(#drop-shadow-future)"
+                            "none"))
           (delay 100)
-          (attr "d" (line (.filter js-values (fn [d]
-                                               (>= (:date d) (date/date->long (date/today))))))))
+          (attr "d" (line future-values)))
       (.. graph
           (select "g.today")
           (attr "height" inner-height)
+          transition
+          (duration 250)
           (attr "transform" (str "translate(" (x-scale (date/date->long (date/today))) "," (:top margin) ")")))
 
       (d3/clip-path-set-dimensions id inner-width inner-height)

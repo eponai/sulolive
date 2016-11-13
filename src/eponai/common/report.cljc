@@ -86,7 +86,7 @@
                           (apply max (map #(max (:balance %) (:spent %)) values))])]
     (if (= low high)
       [low (+ high 10)]
-      [low  high])))
+      [low high])))
 
 (defn balance-vs-spent
   "Calculate what expenses per day by month, and how the balance has evolved in relation to those expenses.

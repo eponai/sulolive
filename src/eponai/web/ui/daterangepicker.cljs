@@ -195,26 +195,27 @@
     (let [{:keys [ranges]} (om/props this)
           {:keys [on-apply on-cancel]} (om/get-computed this)
           {:keys [start-date end-date show-calendars? old-start-date old-end-date selected-range]} (om/get-state this)
-          ranges [{:name   "Today"
-                   :key    :today
-                   :action (fn []
-                             (let [t (date/today)]
-                               (.update-dates this t t :today)))}
-                  {:name   "Yesterday"
-                   :key    :yesterday
-                   :action (fn []
-                             (let [yt (time/minus (date/today) (time/days 1))]
-                               (.update-dates this yt yt :yesterday)))}
-                  {:name   "Last 7 Days"
-                   :key    :last-7-days
-                   :action (fn []
-                             (let [t (date/today)]
-                               (.update-dates this (time/minus t (time/days 7)) t :last-7-days)))}
-                  {:name   "Last 30 Days"
-                   :key    :last-30-days
-                   :action (fn []
-                             (let [t (date/today)]
-                               (.update-dates this (time/minus t (time/days 30)) t :last-30-days)))}
+          ranges [
+                  ;{:name   "Today"
+                  ; :key    :today
+                  ; :action (fn []
+                  ;           (let [t (date/today)]
+                  ;             (.update-dates this t t :today)))}
+                  ;{:name   "Yesterday"
+                  ; :key    :yesterday
+                  ; :action (fn []
+                  ;           (let [yt (time/minus (date/today) (time/days 1))]
+                  ;             (.update-dates this yt yt :yesterday)))}
+                  ;{:name   "Last 7 Days"
+                  ; :key    :last-7-days
+                  ; :action (fn []
+                  ;           (let [t (date/today)]
+                  ;             (.update-dates this (time/minus t (time/days 7)) t :last-7-days)))}
+                  ;{:name   "Last 30 Days"
+                  ; :key    :last-30-days
+                  ; :action (fn []
+                  ;           (let [t (date/today)]
+                  ;             (.update-dates this (time/minus t (time/days 30)) t :last-30-days)))}
                   {:name   "This Month"
                    :key    :this-month
                    :action (fn []
@@ -225,6 +226,16 @@
                    :action (fn []
                              (let [t (time/minus (date/today) (time/months 1))]
                                (.update-dates this (time/first-day-of-the-month t) (time/last-day-of-the-month t) :last-month)))}
+                  {:name   "This Quarter"
+                   :key    :this-quarter
+                   :action (fn []
+                             (let [t (date/today)]
+                               (.update-dates this (time/minus (time/first-day-of-the-month t) (time/months 2)) (time/last-day-of-the-month t) :this-quarter)))}
+                  {:name   "This Year"
+                   :key    :this-year
+                   :action (fn []
+                             (let [t (date/today)]
+                               (.update-dates this (date/first-day-of-this-year) (date/last-day-of-this-year) :this-year)))}
                   {:name   "Custom Range"
                    :key    :custom-range
                    :action (fn [] (om/update-state! this assoc
