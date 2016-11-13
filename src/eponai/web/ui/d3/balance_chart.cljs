@@ -193,7 +193,7 @@
           ;(attr "width" "1px")
           (attr "height" inner-height))
 
-      
+
       (.. graph
           (select "g.today")
           (append "text")

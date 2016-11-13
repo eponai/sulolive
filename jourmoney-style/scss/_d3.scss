@@ -93,20 +93,20 @@
   color: $black;
   border: 1px solid $secondary-color;
   box-shadow: 0 1px 3px 0 $darkblue-a25;
-  font-size: 1rem;
+  font-size: 0.9rem;
 
   &::before {
     content: none;
   }
   .header {
-    padding-bottom: 0.5rem;
+    // padding-bottom: 0.1rem;
   }
   .title {
-    font-size: 85%;
-    font-weight: bold;
+    font-size: 0.9rem;
+    font-weight: 500;
   }
   .values {
-    padding: 0.5rem 1rem;
+    padding: 0.25rem 0.2rem;
     display: flex;
     flex-direction: row;
     align-items: center;
