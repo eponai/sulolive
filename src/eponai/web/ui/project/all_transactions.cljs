@@ -65,39 +65,6 @@
   (componentWillReceiveProps [this props]
     (utils/sync-with-received-props this props))
 
-  ;(save-edit [this]
-  ;  (let [{:keys [input-transaction
-  ;                init-state]} (om/get-state this)
-  ;        diff (diff/diff init-state input-transaction)
-  ;        ;added-tags (or (:transaction/tags (second diff)) [])
-  ;        removed-tags (or (filter some? (:transaction/tags (first diff))) [])
-  ;        ]
-  ;    ;; Transact only when we have a diff to avoid unecessary mutations.
-  ;    (when-not (= diff [nil nil init-state])
-  ;      ;(debug "Delete tag Will transacti diff: " diff)
-  ;      (om/transact! this `[(transaction/edit ~{:old init-state :new input-transaction})
-  ;                           :query/transactions]))))
-  ;(select [this]
-  ;  (let [{:keys [is-selected? on-deselect-fn]} (om/get-state this)]
-  ;    (debug "Select: " on-deselect-fn)
-  ;    (when-not is-selected?
-  ;      (om/update-state! this assoc :is-selected? true)
-  ;      (.. js/document (addEventListener "click" on-deselect-fn)))))
-
-  ;(on-mouse-event [this event]
-  ;  (let [{:keys [input-transaction is-selected? on-deselect-fn]} (om/get-state this)
-  ;        transaction-id (str (:db/id input-transaction))
-  ;        should-deselect? (not (some #(= (.-id %) transaction-id) (.-path event)))]
-  ;    (when should-deselect?
-  ;      (.. js/document (removeEventListener "click" on-deselect-fn))
-  ;      (when is-selected?
-  ;        (.deselect this)))))
-
-  ;(deselect [this]
-  ;  (om/update-state! this assoc :is-selected? false)
-  ;  (.save-edit this))
-  (delete [this]
-    )
   (render [this]
     (let [{:keys [input-transaction]} (om/get-state this)
           {:keys [db/id
@@ -109,8 +76,8 @@
                   transaction/category
                   transaction/title]
            :as   transaction} (or input-transaction (om/props this))
-          {:keys [menu-open? edit-open?]} (om/get-state this)
-          {:keys [currencies select-tags-options-fn project edit-transaction-fn]} (om/get-computed this)]
+          {:keys [menu-open?]} (om/get-state this)
+          {:keys [currencies edit-transaction-fn delete-transaction-fn]} (om/get-computed this)]
       (dom/li
         #js {:className "row collapse align-middle is-collapse-child"
              :id        id}
@@ -129,14 +96,7 @@
         ;; Date
         (dom/div
           #js {:className "date"}
-          (date/date->string date "MMM dd")
-
-          ;(->DateRangePicker (om/computed {:single-calendar? true
-          ;                                 :start-date       (date/date-time date)
-          ;                                 :tab-index        (if is-selected? 1 -1)}
-          ;                                {:on-apply date-range-picker-on-apply
-          ;                                 :format   "MMM dd"}))
-          )
+          (date/date->string date "MMM dd"))
         (dom/div
           #js {:className "category"}
           (:category/name category))
@@ -149,20 +109,11 @@
         ;; Tags
         (dom/div
           #js {:className "tags"}
-          (sel/->SelectTags (om/computed {:value    (map (fn [t]
-                                                           {:label (:tag/name t)
-                                                            :value (:db/id t)})
-                                                         (:transaction/tags transaction))
-                                          :disabled true}
-
-
-                                         {:on-select (fn [selected]
-                                                       (om/update-state! this assoc-in
-                                                                         [:input-transaction :transaction/tags]
-                                                                         (into (empty-sorted-tag-set)
-                                                                               (map (fn [t]
-                                                                                      {:tag/name (:label t)}))
-                                                                               selected)))})))
+          (sel/->SelectTags {:value    (map (fn [t]
+                                              {:label (:tag/name t)
+                                               :value (:db/id t)})
+                                            (:transaction/tags transaction))
+                             :disabled true}))
 
         ;; Amount in local currency
         (dom/div
@@ -170,14 +121,12 @@
           amount)
         (dom/div
           #js {:className "currency"}
-          (sel/->Select (om/computed {:value    {:label (:currency/code currency) :value (:db/id currency)}
-                                      :options  (map (fn [c]
-                                                       {:label (:currency/code c)
-                                                        :value (:db/id c)})
-                                                     currencies)
-                                      :disabled true}
-                                     {:on-select (fn [selected]
-                                                   (om/update-state! this assoc-in [:input-transaction :transaction/currency] (:value selected)))})))
+          (sel/->Select {:value    {:label (:currency/code currency) :value (:db/id currency)}
+                         :options  (map (fn [c]
+                                          {:label (:currency/code c)
+                                           :value (:db/id c)})
+                                        currencies)
+                         :disabled true}))
         (dom/div
           #js {:className "more-menu text-right"}
           (dom/a
@@ -187,11 +136,16 @@
               #js {:className "fa fa-ellipsis-v fa-fw"}))
           (when menu-open?
             (dom/div #js {:className "text-left"}
-              (utils/dropdown {:on-close #(do
-                                           (om/update-state! this assoc :menu-open? false)
-                                           (.stopPropagation %))}
-                              [:li [:a {:on-click #(edit-transaction-fn input-transaction)} "Edit"]]
-                              [:li [:a "Delete"]]))))))))
+              (let [close-dropdown #(om/update-state! this assoc :menu-open? false)]
+                (utils/dropdown {:on-close #(do
+                                             (close-dropdown)
+                                             (.stopPropagation %))}
+                                [:li [:a {:on-click #(do
+                                                      (close-dropdown)
+                                                      (edit-transaction-fn input-transaction))} "Edit"]]
+                                [:li [:a {:on-click #(do
+                                                      (close-dropdown)
+                                                      (delete-transaction-fn input-transaction))} "Delete"]])))))))))
 
 (def ->Transaction (om/factory Transaction {:keyfn :db/id}))
 
@@ -223,7 +177,7 @@
 
   Object
   (initLocalState [this]
-    {:list-size 0
+    {:list-size                           0
      :computed/transaction-on-tag-click   (fn [tag]
                                             (om/update-query! this update-in [:params :filter :filter/include-tags]
                                                               #(utils/add-tag % tag)))
@@ -247,8 +201,11 @@
                                                     (js/ReactDOM.findDOMNode)))
      :computed/select-tags-options-fn     (fn []
                                             (sel/tags->options (:query/all-tags (om/props this))))
-     :computed/edit-transaction-fn (fn [t]
-                                     (om/update-state! this assoc :edit-transaction t))})
+     :computed/edit-transaction-fn        (fn [t]
+                                            (om/update-state! this assoc :edit-transaction t))
+     :computed/delete-transaction-fn      (fn [t]
+                                            (om/transact! this `[(transaction/delete ~{:transaction t})
+                                                                 :query/transactions]))})
 
   (ensure-list-size [this]
     (when (> 20 (:list-size (om/get-state this)))
@@ -314,6 +271,7 @@
                   computed/infinite-scroll-node-fn
                   computed/select-tags-options-fn
                   computed/edit-transaction-fn
+                  computed/delete-transaction-fn
                   list-size]} (om/get-state this)]
       (html
         [:div
@@ -345,12 +303,9 @@
                               (map (fn [props]
                                      (->Transaction
                                        (om/computed props
-                                                    {:user                   user
-                                                     :currencies             currencies
-                                                     :on-tag-click           transaction-on-tag-click
-                                                     :select-tags-options-fn select-tags-options-fn
-                                                     :edit-transaction-fn edit-transaction-fn
-                                                     :project (:project (om/get-computed this))})))))
+                                                    {:currencies             currencies
+                                                     :edit-transaction-fn    edit-transaction-fn
+                                                     :delete-transaction-fn  delete-transaction-fn})))))
                      transactions)
                ;; List footer:
                (if (zero? list-size)

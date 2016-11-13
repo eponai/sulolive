@@ -37,6 +37,13 @@
                ret))
    :remote true})
 
+(defmethod client-mutate 'transaction/delete
+  [{:keys [state] :as env} k {:keys [transaction] :as p}]
+  {:action (fn []
+             (when-let [transaction-id (:db/id transaction)]
+               (transact/transact-one state [:db.fn/retractEntity transaction-id])))
+   :remote true})
+
 
 ;; ---------------- project --------------
 

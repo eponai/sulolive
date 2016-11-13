@@ -59,6 +59,14 @@
                    ret (transact/transact state txs)]
                ret))})
 
+(defmutation transaction/delete
+  [{:keys [state] :as env} k {:keys [transaction] :as p}]
+  {:success (str "Deleted transaction " (:db/id transaction))
+   :error   (str "Error deleting transaction " (:db/id transaction))}
+  {:action (fn []
+             (when-let [transaction-id (:db/id transaction)]
+               (transact/transact-one state [:db.fn/retractEntity transaction-id])))})
+
 ;; ----------------- project --------------------
 
 (defmutation project/save

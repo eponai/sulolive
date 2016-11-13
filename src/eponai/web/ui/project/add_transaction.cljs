@@ -98,17 +98,6 @@
          ::show-bank-fee-section? (not-empty (:transaction/fees input-transaction))
          ::show-tags-input?       (not-empty (:transaction/tags input-transaction))})))
   Object
-  ;(create-new-transaction [this props]
-  ;  (let [{:keys [query/all-currencies]} (om/props this)
-  ;        usd-entity (some #(when (= (:currency/code %) "USD") %) all-currencies)
-  ;        {:keys [project-id]} (::om/computed props)]
-  ;    {:transaction/date     (date/date-map (date/today))
-  ;     :transaction/tags     #{}
-  ;     :transaction/currency {:label (:currency/code usd-entity)
-  ;                            :value (:db/id usd-entity)}
-  ;     :transaction/project  project-id
-  ;     :transaction/type     :transaction.type/expense
-  ;     :transaction/fees     []}))
   (initLocalState [this]
     (let [{:keys [query/all-currencies]} (om/props this)
           {:keys [project-id]} (om/get-computed this)
@@ -156,13 +145,7 @@
                                            `[(transaction/create
                                                ~(-> (::input-transaction st)
                                                     (assoc :transaction/uuid (d/squuid))
-                                                    ;(update :transaction/currency :value)
                                                     update-category
-                                                    ;(update :transaction/tags (fn [ts]
-                                                    ;                            (map (fn [{:keys [label _]}]
-                                                    ;                                   {:tag/name label}) ts)))
-                                                    ;(update :transaction/category (fn [{:keys [label _]}]
-                                                    ;                                {:category/name label}))
                                                     (assoc :transaction/created-at (.getTime (js/Date.)))
                                                     (cond-> (or (not is-longterm?) (= type :type/atm)) (dissoc :transaction/end-date))
                                                     (cond-> (= type :type/atm) (assoc :transaction/amount "0"))))
@@ -461,11 +444,7 @@
                                            `[(transaction/create
                                                ~(-> (:input-transaction st)
                                                     (assoc :transaction/uuid (d/squuid))
-                                                    ;(update :transaction/currency :value)
                                                     update-category
-                                                    ;(update :transaction/tags (fn [ts]
-                                                    ;                            (map (fn [{:keys [label _]}]
-                                                    ;                                   {:tag/name label}) ts)))
                                                     (assoc :transaction/created-at (.getTime (js/Date.)))))
                                              :routing/project])
           new-transaction (.new-transaction this)
@@ -510,7 +489,6 @@
                                       (debug "Blurring yes: ")
                                       (.blur (.-target %))
                                       ))
-                     ;:on-change     #(om/update-state! this assoc :input-amount (.. % -target -value))
                      :on-change   #(om/update-state! this assoc-in [:input-transaction :transaction/amount] (.. % -target -value))
                      }]]
            [:li.attribute.currency
