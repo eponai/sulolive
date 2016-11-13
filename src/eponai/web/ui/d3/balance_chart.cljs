@@ -6,38 +6,13 @@
     [sablono.core :refer-macros [html]]
     [taoensso.timbre :refer-macros [debug]]
     [cljs-time.core :as t]
-    [cljs-time.coerce :as c]))
+    [cljs-time.coerce :as c]
+    [eponai.common.format.date :as date]))
 
-(defn create-style-defs [svg]
-  (let [{inner-height :height} (d3/svg-dimensions svg)
-        defs (.. svg
-                 (append "defs"))
-        gradient (.. defs
-                     (append "linearGradient")
-                     (attr "class" "blue-gradient")
-                     (attr "id" "balance-chart-gradient")
-                     (attr "x1" "0%")
-                     (attr "y1" "0%")
-                     (attr "y2" "100%")
-                     (attr "x2" "0%"))
-        inset (.. defs
+(defn inset-shadow [defs id color]
+  (let [inset (.. defs
                   (append "filter")
-                  (attr "id" "inset-shadow"))
-
-        drop-shadow (.. defs
-                        (append "filter")
-                        (attr "height" (str inner-height "px"))
-                        (attr "id" "drop-shadow"))]
-
-    (.. gradient
-        (append "stop")
-        (attr "class" "stop-top")
-        (attr "offset" "0%"))
-    (.. gradient
-        (append "stop")
-        (attr "class" "stop-bottom")
-        (attr "offset" "100%"))
-
+                  (attr "id" id))]
     (.. inset
         (append "feGaussianBlur")
         (attr "in" "SourceAlpha")
@@ -58,7 +33,7 @@
         (attr "result" "inset-inverse"))
     (.. inset
         (append "feFlood")
-        (attr "flood-color" "#57BFBF")
+        (attr "flood-color" color)
         (attr "flood-opacity" 1)
         (attr "result" "inset-color"))
     (.. inset
@@ -72,7 +47,31 @@
         (attr "operator" "over")
         (attr "in" "inset-shadow")
         (attr "in2" "SourceGraphic"))
+    inset))
 
+(defn add-gradient [defs id class]
+  (let [gradient (.. defs
+                     (append "linearGradient")
+                     (attr "class" class)
+                     (attr "id" id)
+                     (attr "x1" "0%")
+                     (attr "y1" "0%")
+                     (attr "y2" "100%")
+                     (attr "x2" "0%"))]
+    (.. gradient
+        (append "stop")
+        (attr "class" "stop-top")
+        (attr "offset" "0%"))
+    (.. gradient
+        (append "stop")
+        (attr "class" "stop-bottom")
+        (attr "offset" "100%"))))
+
+(defn add-drop-shadow [defs id height color]
+  (let [drop-shadow (.. defs
+                        (append "filter")
+                        (attr "height" (str height "px"))
+                        (attr "id" id))]
     (.. drop-shadow
         (append "feGaussianBlur")
         (attr "in" "SourceAlpha")
@@ -86,7 +85,7 @@
         (attr "result" "line-offset-blur"))
     (.. drop-shadow
         (append "feFlood")
-        (attr "flood-color" "#C77F2C")
+        (attr "flood-color" color)
         (attr "flood-opacity" 1)
         (attr "result" "line-color"))
     (.. drop-shadow
@@ -99,8 +98,18 @@
         (append "feBlend")
         (attr "in" "SourceGraphic")
         (attr "in2" "drop-shadow")
-        (attr "mode" "normal"))
-    ))
+        (attr "mode" "normal"))))
+
+(defn create-style-defs [svg]
+  (let [{inner-height :height} (d3/svg-dimensions svg)
+        defs (.. svg
+                 (append "defs"))]
+    (add-gradient defs "balance-chart-gradient" "past")
+    (add-gradient defs "balance-chart-gradient-future" "future")
+    (inset-shadow defs "inset-shadow" "#57BFBF")
+    (inset-shadow defs "inset-shadow-future" "#cacaca")
+    (add-drop-shadow defs "drop-shadow" inner-height "#C77F2C")
+    (add-drop-shadow defs "drop-shadow-future" inner-height "#cacaca")))
 
 (defui BalanceChart
   Object
@@ -159,6 +168,21 @@
           (append "g")
           (attr "class" "y axis grid")
           (attr "transform" (str "translate(-1,0)")))
+
+      (.. graph
+          (append "path")
+          (attr "class" "area past"))
+
+      (.. graph
+          (append "path")
+          (attr "class" "area future"))
+
+      (.. graph
+          (append "path")
+          (attr "class" "line past"))
+      (.. graph
+          (append "path")
+          (attr "class" "line future"))
       (d3/clip-path-append svg id)
 
 
@@ -195,10 +219,10 @@
           {inner-width :width
            inner-height :height} (d3/svg-dimensions svg {:margin margin})
           graph-area (.. graph
-                         (selectAll ".area")
+                         (selectAll ".area.past")
                          (data #js [js-values]))
           spent-line (.. graph
-                         (selectAll ".line")
+                         (selectAll ".line.past")
                          (data #js [js-values]))]
       (.. x-scale
           (range #js [0 inner-width])
@@ -215,37 +239,66 @@
                         spent-visible?
                         #js [0 (.. js/d3 (max js-values (fn [d] (:spent d))))])))
 
-      (.. graph-area
-          enter
-          (append "path")
-          (attr "class" "area")
-          (attr "d" area))
+      ;(.. graph-area
+      ;    enter
+      ;    (append "path")
+      ;    (attr "class" "area")
+      ;    (attr "d" area))
 
-      (.. graph-area
+      (.. graph
+          (select ".area.past")
           transition
           (duration 250)
           (style "opacity" (if balance-visible? 1 0))
-          (attr "d" area))
-
-      (.. graph-area
-          exit
-          remove)
-
-      (.. spent-line
-          enter
-          (append "path")
-          (attr "class" "line")
-          (attr "d" line))
-
-      (.. spent-line
-          transition
-          (duration 100)
-          (style "opacity" (if spent-visible? 1 0)))
-      (.. spent-line
+          (attr "d" (area (.filter js-values (fn [d]
+                                               (<= (:date d) (date/date->long (date/today))))))))
+      (.. graph
+          (select ".area.future")
           transition
           (duration 250)
+          (style "opacity" (if balance-visible? 1 0))
+          (attr "d" (area (.filter js-values (fn [d]
+                                               (>= (:date d) (date/date->long (date/today))))))))
+
+      ;(.. graph-area
+      ;    exit
+      ;    remove)
+
+      ;(.. spent-line
+      ;    enter
+      ;    (append "path")
+      ;    (attr "class" "line")
+      ;    (attr "d" (line js-values)))
+
+      (.. graph
+          (select ".line.past")
+          transition
+          (duration 100)
+          (style "opacity" (if spent-visible? 1 0))
           (delay 100)
-          (attr "d" line))
+          (attr "d" (line (.filter js-values (fn [d]
+                                               (<= (:date d) (date/date->long (date/today))))))))
+
+      (.. graph
+          (select ".line.future")
+          transition
+          (duration 100)
+          (style "opacity" (if spent-visible? 1 0))
+          (delay 100)
+          (attr "d" (line (.filter js-values (fn [d]
+                                               (>= (:date d) (date/date->long (date/today))))))))
+      ;(.. spent-line
+      ;    transition
+      ;    (duration 250)
+      ;    (delay 100)
+      ;    (attr "d" (line (.filter js-values (fn [d]
+      ;                                         (<= (:date d) (date/date->long (date/today))))))))
+      ;(.. spent-line
+      ;    transition
+      ;    (duration 250)
+      ;    (delay 100)
+      ;    (attr "d" (line (.filter js-values (fn [d]
+      ;                                         (> (:date d) (date/date->long (date/today))))))))
 
       (.. spent-line
           exit

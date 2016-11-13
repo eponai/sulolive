@@ -90,24 +90,46 @@ svg {
   height: 18rem;
 
   linearGradient {
-    .stop-top {
-      stop-color: #B4EAE5;
+    &.past {
+      .stop-top {
+        stop-color: #B4EAE5;
+      }
+      .stop-bottom {
+        stop-color: #EAF9F8;
+      }
     }
-    .stop-bottom {
-      stop-color: #EAF9F8;
+    &.future {
+      .stop-top {
+        stop-color: $light-gray;
+      }
+      .stop-bottom {
+        stop-color: $white;
+      }
     }
   }
 
   .area {
-    fill: url(#balance-chart-gradient);
-    filter: url(#inset-shadow);
+    &.past {
+      fill: url(#balance-chart-gradient);
+      filter: url(#inset-shadow);
+    }
+    &.future {
+      fill: url(#balance-chart-gradient-future);
+      filter: url(#inset-shadow-future);
+    }
   }
   .line {
     fill: none;
-    stroke: $orange;
     stroke-width: 3;
-    filter: url(#drop-shadow);
     min-height: 3px;
+    &.past {
+      stroke: $orange;
+      filter: url(#drop-shadow);
+    }
+    &.future {
+      stroke: $medium-gray;
+      filter: url(#drop-shadow-future);
+    }
   }
 
   .legend {
