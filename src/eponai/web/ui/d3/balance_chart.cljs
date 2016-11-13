@@ -311,7 +311,7 @@
                                                   (data focus-data))
 
                                         time-format (d3/time-formatter "%A %b %d")]
-                                    (d3/tooltip-add-data id (time-format (js/Date. date)) focus-data)
+                                    (d3/tooltip-add-data id (time-format (js/Date. date)) (.filter focus-data #(:visible %)))
                                     (d3/tooltip-set-pos id (+ 10 (.. js/d3 -event -pageX))
                                                         (+ 10 (.. js/d3 -event -pageY)))
 
