@@ -190,7 +190,7 @@
               (utils/dropdown {:on-close #(do
                                            (om/update-state! this assoc :menu-open? false)
                                            (.stopPropagation %))}
-                              [:li [:a {:on-click edit-transaction-fn} "Edit"]]
+                              [:li [:a {:on-click #(edit-transaction-fn input-transaction)} "Edit"]]
                               [:li [:a "Delete"]]))))))))
 
 (def ->Transaction (om/factory Transaction {:keyfn :db/id}))
@@ -376,9 +376,11 @@
         [:div#txs
          (at/->QuickAddTransaction (om/computed quick-add-transaction
                                                 {:project project}))
-         (when edit-transaction
+         (when (some? edit-transaction)
            (utils/modal {:content (->AddTransaction (om/computed add-transaction
-                                                                 {:on-close #(om/update-state! this dissoc :edit-transaction)}))}))
+                                                                 {:on-close #(om/update-state! this dissoc :edit-transaction)
+                                                                  :input-transaction edit-transaction}))
+                         :on-close #(om/update-state! this dissoc :edit-transaction)}))
          ;(.render-filters this)
          (if (or (seq transactions)
                  (.has-filter this))
