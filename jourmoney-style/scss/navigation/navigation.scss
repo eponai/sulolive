@@ -7,6 +7,9 @@ $text-shadow: 2px 2px 3px $darkblue-a50;
 $topnav-height: 2.5rem;
 $subnav-height: 3rem;
 
+.dropdown-container {
+  position:relative;
+}
 .menu {
   .menu-text.header {
     color: $darkblue-a50;
@@ -18,7 +21,7 @@ $subnav-height: 3rem;
   &.dropdown {
     @include shadow-bottom();
     background: $white;
-    position: fixed;
+    position: absolute;
     border: 1px solid $darkblue-a10;
     box-shadow: $bottom-shadow $darkblue-a10;
     z-index: $dropdown-zindex;

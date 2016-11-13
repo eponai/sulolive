@@ -107,7 +107,7 @@
 
 (defn dropdown [{:keys [on-close]} & content]
   (html
-    [:div
+    [:div.dropdown-container
      (click-outside-target on-close)
      [:ul.menu.dropdown.vertical
       content]]))

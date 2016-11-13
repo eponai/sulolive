@@ -96,6 +96,8 @@
   ;(deselect [this]
   ;  (om/update-state! this assoc :is-selected? false)
   ;  (.save-edit this))
+  (delete [this]
+    )
   (render [this]
     (let [{:keys [input-transaction]} (om/get-state this)
           {:keys [db/id
@@ -107,8 +109,8 @@
                   transaction/category
                   transaction/title]
            :as   transaction} (or input-transaction (om/props this))
-          {:keys [edit-open?]} (om/get-state this)
-          {:keys [currencies select-tags-options-fn]} (om/get-computed this)]
+          {:keys [menu-open? edit-open?]} (om/get-state this)
+          {:keys [currencies select-tags-options-fn project edit-transaction-fn]} (om/get-computed this)]
       (dom/li
         #js {:className "row collapse align-middle is-collapse-child"
              :id        id}
@@ -180,15 +182,15 @@
           #js {:className "more-menu text-right"}
           (dom/a
             #js {:className ""
-                 :onClick #(om/update-state! this assoc :edit-open? true)}
+                 :onClick #(om/update-state! this assoc :menu-open? true)}
             (dom/i
               #js {:className "fa fa-ellipsis-v fa-fw"}))
-          (when edit-open?
+          (when menu-open?
             (dom/div #js {:className "text-left"}
               (utils/dropdown {:on-close #(do
-                                           (om/update-state! this assoc :edit-open? false)
+                                           (om/update-state! this assoc :menu-open? false)
                                            (.stopPropagation %))}
-                              [:li [:a "Edit"]]
+                              [:li [:a {:on-click edit-transaction-fn} "Edit"]]
                               [:li [:a "Delete"]]))))))))
 
 (def ->Transaction (om/factory Transaction {:keyfn :db/id}))
@@ -244,7 +246,9 @@
                                                     (om/react-ref (str :eponai.web.ui.root/page-content-ref))
                                                     (js/ReactDOM.findDOMNode)))
      :computed/select-tags-options-fn     (fn []
-                                            (sel/tags->options (:query/all-tags (om/props this))))})
+                                            (sel/tags->options (:query/all-tags (om/props this))))
+     :computed/edit-transaction-fn (fn [t]
+                                     (om/update-state! this assoc :edit-transaction t))})
 
   (ensure-list-size [this]
     (when (> 20 (:list-size (om/get-state this)))
@@ -309,6 +313,7 @@
           {:keys [computed/transaction-on-tag-click
                   computed/infinite-scroll-node-fn
                   computed/select-tags-options-fn
+                  computed/edit-transaction-fn
                   list-size]} (om/get-state this)]
       (html
         [:div
@@ -343,7 +348,9 @@
                                                     {:user                   user
                                                      :currencies             currencies
                                                      :on-tag-click           transaction-on-tag-click
-                                                     :select-tags-options-fn select-tags-options-fn})))))
+                                                     :select-tags-options-fn select-tags-options-fn
+                                                     :edit-transaction-fn edit-transaction-fn
+                                                     :project (:project (om/get-computed this))})))))
                      transactions)
                ;; List footer:
                (if (zero? list-size)
@@ -364,11 +371,14 @@
   (render [this]
     (let [{:keys [query/transactions proxy/add-transaction proxy/quick-add-transaction]} (om/props this)
           {:keys [project]} (om/get-computed this)
-          {:keys [add-transaction?]} (om/get-state this)]
+          {:keys [add-transaction? edit-transaction]} (om/get-state this)]
       (html
         [:div#txs
          (at/->QuickAddTransaction (om/computed quick-add-transaction
                                                 {:project project}))
+         (when edit-transaction
+           (utils/modal {:content (->AddTransaction (om/computed add-transaction
+                                                                 {:on-close #(om/update-state! this dissoc :edit-transaction)}))}))
          ;(.render-filters this)
          (if (or (seq transactions)
                  (.has-filter this))
