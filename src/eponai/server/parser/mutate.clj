@@ -238,11 +238,12 @@
 ;; ############# Session mutations #################
 
 (defmutation session.connect/facebook
-  [{:keys [state fb-validate-fn auth]} _ {:keys [access-token user-id] :as p}]
+  [{:keys [state fb-validate-fn auth ::parser/force-read-without-history]} _ {:keys [access-token user-id] :as p}]
   ["Connected to Facebook" "Error connecting to facebook"]
   {:action (fn []
              (debug "session.connect/facebook with params: " p)
-             (api/facebook-connect state (assoc p :user-uuid (:username auth)) fb-validate-fn))})
+             (api/facebook-connect state (assoc p :user-uuid (:username auth)) fb-validate-fn)
+             (swap! force-read-without-history conj :query/fb-user))})
 
 (defmutation session.disconnect/facebook
   [{:keys [state auth]} _ _]
