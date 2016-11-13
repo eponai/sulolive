@@ -362,8 +362,34 @@
     (p/all-with db entity-query)
     (all-changed db db-history pull-pattern entity-query '[[?e ...]])))
 
-(defn adds-retracts-for-eid [db db-history eid]
+(defn- adds-and-retracts-for-eid
+  "returns all adds and retracts for an eid bounded by db-history."
+  [db db-history eid]
   (let [attr-id->keyword (memoize #(:db/ident (d/entity db %)))]
     (->> (d/datoms db-history :eavt eid)
          (map (fn [[e a v t added]] [e (attr-id->keyword a) v t added]))
          (datoms->txs))))
+
+(defn one-external
+  "Takes the usual db, db-history, pull pattern and entity-query
+  to make sure we only return what's changed since the last read.
+
+  In addition, it takes a 1-arity function that returns transaction
+  data for datascript on the client. It's only called when something has
+  changed, which means we'll only call the external service if something
+  has changed on our end."
+  [db db-history query entity-query eid->client-txs]
+  {:pre (fn? eid->client-txs)}
+  (when-let [eid (one-changed-entity db db-history query entity-query)]
+    (let [in-datomic (if (nil? db-history)
+                       [(p/pull db query eid)]
+                       (adds-and-retracts-for-eid db db-history eid))
+          external-data (eid->client-txs eid)]
+      (assert (or (nil? external-data)
+                  (sequential? external-data))
+              (str "Return value of eid->client-txs needs to be nil or sequential."
+                   " Was: " external-data
+                   " for eid: " eid))
+      {:value (-> []
+                  (into in-datomic)
+                  (into external-data))})))

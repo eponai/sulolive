@@ -158,12 +158,16 @@
   "Returns a parser with a filter-atom assoc'ed in the env."
   [parser]
   (fn [env query & [target]]
-    (parser (assoc env ::filter-atom (atom nil)
-                       :user-uuid (get-in env [:auth :username])
-                       ::server? true)
-            query
-            target)))
-
+    (let [env (assoc env ::filter-atom (atom nil)
+                         :user-uuid (get-in env [:auth :username])
+                         ::server? true
+                         ::force-read-without-history (atom #{}))
+          ret (parser env query target)]
+      (when-let [keys-to-force-read (not-empty @(::force-read-without-history env))]
+        (warn "Did not force read all keys during parse. "
+              " Keys left to force read: " keys-to-force-read
+              " query: " query))
+      ret)))
 
 (comment
   "om.next main repo version:"
@@ -252,7 +256,7 @@
 
 #?(:clj
    (defn read-returning-basis-t [read]
-     (fn [{:keys [db] :as env} k p]
+     (fn [{:keys [db ::force-read-without-history] :as env} k p]
        {:pre [(some? db)]}
        (let [param-path (read-basis-param-path env k p)
              _ (assert (or (nil? param-path) (sequential? param-path))
@@ -262,10 +266,16 @@
              path (into default-path param-path)
              basis-t-for-this-key (get-in env path)
              env (assoc env :db-since (when basis-t-for-this-key
-                                        (datomic/since db basis-t-for-this-key))
-                            :db-history (when basis-t-for-this-key
-                                          (datomic/since (datomic/history db)
-                                                         basis-t-for-this-key)))
+                                        (datomic/since db basis-t-for-this-key)))
+             env (if (contains? @force-read-without-history k)
+                   (do
+                     ;; read the key without the db-history
+                     (debug "Force reading key: " k)
+                     (swap! force-read-without-history disj k)
+                     (dissoc env :db-history))
+                   (assoc env :db-history (when basis-t-for-this-key
+                                            (datomic/since (datomic/history db)
+                                                           basis-t-for-this-key))))
              ret (read env k p)
              ret (cond-> ret
                          (nil? (:value ret))

@@ -95,10 +95,9 @@
                                                :project/uuid project-uuid})
         dashboard (format/dashboard (:db/id project))
         stripe-user (format/add-tempid {:stripe/user (:db/id user)
-                                        :stripe/customer     "cus-test"
-                                        :stripe/subscription (format/add-tempid {:stripe.subscription/id         "sub-test"
-                                                                                 :stripe.subscription/status     :trialing
-                                                                                 :stripe.subscription/period-end (c/to-long (t/last-day-of-the-month (t/today)))})})
+                                        :stripe/customer     "cus_9YcNWTiUBc4Jpm"
+                                        :stripe/subscription (format/add-tempid {:stripe.subscription/id         "sub_9YcN9rluT5azTj"
+                                                                                 :stripe.subscription/status     :active})})
         ret (transact/transact-map conn (-> account
                                             (assoc :project project :dashboard dashboard)
                                             (update :user assoc :user/currency [:currency/code "USD"])

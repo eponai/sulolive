@@ -9,7 +9,7 @@
     [eponai.server.datomic.pull :as server.pull]
     [eponai.server.external.facebook :as facebook]
     [eponai.server.external.stripe :as stripe]
-    [taoensso.timbre :as timbre :refer [debug trace warn]]
+    [taoensso.timbre :as timbre :refer [error debug trace warn]]
     [eponai.common.database.pull :as pull]
     [eponai.common.parser :as parser]
     [eponai.common.database.pull :as p])
@@ -168,26 +168,24 @@
 
 (defmethod server-read :query/stripe
   [{:keys [db db-history query user-uuid stripe-fn]} _ _]
-  {:value (let [;; TODO: uncomment this when doing settings
-                ;customer (stripe/customer customer-id)
-                eid (server.pull/one-changed-entity
-                      db db-history query
-                      {:where   '[[?u :user/uuid ?user-uuid]
-                                  [?e :stripe/user ?u]]
-                       :symbols {'?user-uuid user-uuid}})]
-
-            (when eid
-              (let [customer-id (:stripe/customer (d/entity db eid))
-                    customer (try
-                               (stripe-fn :customer/get
-                                          {:customer-id     customer-id
-                                           :subscription-id (get-in (d/entity db eid) [:stripe/subscription :stripe.subscription/id])})
-                               (catch ExceptionInfo e
-                                 nil))]
-                (debug "Read stripe customer: " customer)
-                (cond->> (pull db query eid)
-                         (some? customer)
-                         (merge {:stripe/info customer})))))})
+  (server.pull/one-external
+    db db-history query
+    {:where   '[[?u :user/uuid ?user-uuid]
+                [?e :stripe/user ?u]]
+     :symbols {'?user-uuid user-uuid}}
+    (fn [eid]
+      (if-let [customer-id (:stripe/customer (d/entity db eid))]
+        (when-let [customer (try
+                              (stripe-fn :customer/get
+                                         {:customer-id     customer-id
+                                          :subscription-id (get-in (d/entity db eid) [:stripe/subscription :stripe.subscription/id])})
+                              (catch ExceptionInfo e
+                                (error "Got exception from stripe call: " e)
+                                nil))]
+          (trace "Read stripe customer: " customer)
+          [{:stripe/info customer
+            :db/id       eid}])
+        [[:db.fn/retractAttribute eid :stripe/info]]))))
 
 ;; ############### Signup page reader #################
 
@@ -198,28 +196,19 @@
                              {:where [['?e :user/uuid (f/str->uuid uuid)]]}))})
 
 (defmethod server-read :query/fb-user
-  [{:keys [db db-history query user-uuid]} k _]
-  (let [eid (when user-uuid
-              (server.pull/one-changed-entity
-                db db-history query
-                (-> {:where   '[[?e :fb-user/user ?u]
-                                [?u :user/uuid ?uuid]]
-                     :symbols {'?uuid user-uuid}})))
-        _ (debug "Read query/fb-user. Eid:" eid)
-        ret {:value (when eid
-                      (let [ret (if db-history
-                                  (server.pull/adds-retracts-for-eid db db-history eid)
-                                  [(pull db query eid)])
-                            _ (debug [k :ret ret :hist? (some? db-history)])
-                            {:keys [fb-user/token fb-user/id] :as f-user} (pull db [:fb-user/token :fb-user/id] eid)
-                            _ (debug "Got fb-user: " f-user)
-                            fb-ret (if (and id token)
-                                     (let [{:keys [name picture]} (facebook/user-info id token)]
-                                       [{:db/id           eid
-                                         :fb-user/name    name
-                                         :fb-user/picture (:url (:data picture))}])
-                                     [[:db.fn/retractAttribute eid :fb-user/name]
-                                      [:db.fn/retractAttribute eid :fb-user/picture]])]
-                        (into ret fb-ret)))}]
-    (debug [k :returning ret])
-    ret))
+  [{:keys [db db-history query user-uuid]} _ _]
+  (when user-uuid
+    (server.pull/one-external
+      db db-history query
+      {:where   '[[?u :user/uuid ?uuid]
+                  [?e :fb-user/user ?u]]
+       :symbols {'?uuid user-uuid}}
+      (fn [eid]
+        (let [{:keys [fb-user/token fb-user/id]} (pull db [:fb-user/token :fb-user/id] eid)]
+          (if (and id token)
+            (let [{:keys [name picture]} (facebook/user-info id token)]
+              [{:db/id           eid
+                :fb-user/name    name
+                :fb-user/picture (:url (:data picture))}])
+            [[:db.fn/retractAttribute eid :fb-user/name]
+             [:db.fn/retractAttribute eid :fb-user/picture]]))))))

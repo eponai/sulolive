@@ -141,7 +141,7 @@
 ;; ------------------- User account related ------------------
 
 (defmutation settings/save
-  [{:keys [state auth stripe-fn]} _ {:keys [currency user paywhatyouwant] :as params}]
+  [{:keys [state auth stripe-fn ::parser/force-read-without-history]} _ {:keys [currency user paywhatyouwant] :as params}]
   ["Saved settings" "Error saving settings"]
   {:action (fn []
              (let [db (d/db state)
@@ -153,7 +153,9 @@
                                                 {:stripe/subscription [:stripe.subscription/id]}]
                                             stripe-eid))]
                (debug "settings/save with params: " params)
-               (api/stripe-update-subscription state stripe-fn stripe-account {:quantity paywhatyouwant}))
+               (when (number? paywhatyouwant)
+                 (api/stripe-update-subscription state stripe-fn stripe-account {:quantity paywhatyouwant})
+                 (swap! force-read-without-history conj :query/stripe)))
              (when currency
                (transact/transact-one state [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]])))})
 

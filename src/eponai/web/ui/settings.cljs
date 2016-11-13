@@ -89,15 +89,12 @@
     (let [{:keys [query/current-user query/stripe]} (om/props this)
           {:keys [input-currency paywhatyouwant]} (om/get-state this)
           {:keys [on-close]} (om/get-computed this)]
-      (om/transact! this `[(settings/save ~{:currency       (when input-currency
-                                                              (:label input-currency))
-                                            :user           current-user
-                                            :paywhatyouwant (when (and
-                                                                    paywhatyouwant
-                                                                    (not= paywhatyouwant
-                                                                          (get-in stripe [:stripe/info :subscription :quantity])))
-                                                              paywhatyouwant)})
-                           :query/dashboard
+      (om/transact! this `[(settings/save ~(cond-> {:user current-user}
+                                                   (some? input-currency)
+                                                   (assoc :currency (:label input-currency))
+                                                   (and (number? paywhatyouwant)
+                                                        (not= paywhatyouwant (get-in stripe [:stripe/info :subscription :quantity])))
+                                                   (assoc :paywhatyouwant paywhatyouwant)))
                            :query/transactions
                            :query/stripe])
       (when on-close
@@ -156,7 +153,6 @@
           {:keys [input-currency tab is-stripe-loading? paywhatyouwant why-open? what-happens-open?]} (om/get-state this)
           {:keys [stripe/subscription stripe/info]} stripe
           {subscription-status :stripe.subscription/status} subscription]
-      (debug "Stripe info: " info)
       (html
         [:div#settings
          [:h4.header "Settings"]
