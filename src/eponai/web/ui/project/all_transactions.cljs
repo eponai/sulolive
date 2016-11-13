@@ -107,7 +107,7 @@
                   transaction/category
                   transaction/title]
            :as   transaction} (or input-transaction (om/props this))
-          ;{:keys [computed/date-range-picker-on-apply is-selected?]} (om/get-state this)
+          {:keys [edit-open?]} (om/get-state this)
           {:keys [currencies select-tags-options-fn]} (om/get-computed this)]
       (dom/li
         #js {:className "row collapse align-middle is-collapse-child"
@@ -176,7 +176,20 @@
                                       :disabled true}
                                      {:on-select (fn [selected]
                                                    (om/update-state! this assoc-in [:input-transaction :transaction/currency] (:value selected)))})))
-        ))))
+        (dom/div
+          #js {:className "more-menu text-right"}
+          (dom/a
+            #js {:className ""
+                 :onClick #(om/update-state! this assoc :edit-open? true)}
+            (dom/i
+              #js {:className "fa fa-ellipsis-v fa-fw"}))
+          (when edit-open?
+            (dom/div #js {:className "text-left"}
+              (utils/dropdown {:on-close #(do
+                                           (om/update-state! this assoc :edit-open? false)
+                                           (.stopPropagation %))}
+                              [:li [:a "Edit"]]
+                              [:li [:a "Delete"]]))))))))
 
 (def ->Transaction (om/factory Transaction {:keyfn :db/id}))
 

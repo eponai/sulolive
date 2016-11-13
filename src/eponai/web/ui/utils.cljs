@@ -77,7 +77,7 @@
   (html
     [:div.click-outside-target
      (opts {:on-click #(when (= "click-outside-target" (.-className (.-target %)))
-                        (on-click))})]))
+                        (on-click %))})]))
 
 (defn popup [{:keys [on-close]} content]
   (html

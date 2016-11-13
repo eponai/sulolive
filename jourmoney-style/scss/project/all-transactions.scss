@@ -4,27 +4,30 @@ $row-border: 1px solid $darkblue-a10;
 
 @mixin row-style {
   .date {
-    @include flex-grid-column(1);
+    @include flex-grid-column(1, 8);
   }
   .amount { 
-    @include flex-grid-column(1);
+    @include flex-grid-column(1, 8);
   }
   .currency {
-    @include flex-grid-column(1);
+    @include flex-grid-column(1, 8);
     font-size: 0.8rem
   }
   .category {
-    @include flex-grid-column(2);
+    @include flex-grid-column(2, 8);
     font-weight: 500;
   }
   .local-amount {
-    @include flex-grid-column(2);
+    @include flex-grid-column(1, 8);
   }
   .note {
-    @include flex-grid-column(2);
+    @include flex-grid-column(2, 8);
   }
   .tags {
-    @include flex-grid-column(3);
+    @include flex-grid-column(3, 8);
+  }
+  .more-menu {
+    @include flex-grid-column(1, 8);
   }
 }
 
@@ -55,6 +58,9 @@ $row-border: 1px solid $darkblue-a10;
     color: $black;
     background: $hover-bg;
     border: $hover-border;
+    .more-menu {
+      opacity: 1;
+    }
   }
 
   .Select {
@@ -70,6 +76,9 @@ $row-border: 1px solid $darkblue-a10;
 
   .Select.Select--multi .Select-arrow {
     display:  none;
+  }
+  .more-menu {
+    opacity: 0;
   }
   .amount {
     span,strong {
