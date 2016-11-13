@@ -109,6 +109,9 @@ $subnav-height: 3rem;
 .footer {
   padding: 0.5rem 1rem;
   color: $black;
+  li {
+    padding-right: 1rem;
+  }
 }
 
 @mixin navbar-style(

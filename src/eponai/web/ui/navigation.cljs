@@ -205,6 +205,14 @@
   (render [_]
     (html
       [:div.footer
-       [:small
-        "Copyright © eponai 2016. All Rights Reserved"]])))
+       [:ul.menu
+        [:li
+         [:small
+          "Copyright © eponai 2016. All Rights Reserved"]]
+        [:li
+         [:small
+          [:a {:href  "//www.iubenda.com/privacy-policy/7944779"
+               :class "iubenda-nostyle no-brand iubenda-embed"
+               :title "Privacy Policy"}
+           "Privacy Policy"]]]]])))
 (def ->Footer (om/factory Footer))

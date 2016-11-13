@@ -4,9 +4,6 @@
     [om.dom :as dom]
     [om.next :as om :refer [defui]]))
 
-(defn iubenda-code []
-  ["(function (w,d) {var loader = function () {var s = d.createElement(\"script\"), tag = d.getElementsByTagName(\"script\")[0]; s.src = \"//cdn.iubenda.com/iubenda.js\"; tag.parentNode.insertBefore(s,tag);}; if(w.addEventListener){w.addEventListener(\"load\", loader, false);}else if(w.attachEvent){w.attachEvent(\"onload\", loader);}else{w.onload = loader;}})(window, document);"])
-
 (defui Signup
   Object
   (render [this]
@@ -18,7 +15,7 @@
           (common/head release? true))
         (dom/body
           nil
-          (common/inline-javascript (iubenda-code))
+          (common/inline-javascript (common/iubenda-code))
           (common/inline-javascript (common/facebook-async-init-code))
 
           (common/anti-forgery-field)

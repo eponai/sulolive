@@ -22,6 +22,9 @@
      :type "hidden"
      :value *anti-forgery-token*}))
 
+(defn iubenda-code []
+  ["(function (w,d) {var loader = function () {var s = d.createElement(\"script\"), tag = d.getElementsByTagName(\"script\")[0]; s.src = \"//cdn.iubenda.com/iubenda.js\"; tag.parentNode.insertBefore(s,tag);}; if(w.addEventListener){w.addEventListener(\"load\", loader, false);}else if(w.attachEvent){w.attachEvent(\"onload\", loader);}else{w.onload = loader;}})(window, document);"])
+
 ;; Facebook login init code
 
 (defn facebook-async-init-code []
@@ -103,4 +106,11 @@
 (defn footer []
   (dom/div {:id "footer-container"}
     (dom/div {:className "footer"}
-      (dom/small nil "Copyright &copy; eponai 2016. All Rights Reserved"))))
+      (dom/ul {:className "menu"}
+              (dom/li nil
+                      (dom/small nil "Copyright © eponai 2016. All Rights Reserved"))
+              (dom/li nil
+                (dom/small nil
+                  (dom/a {:href  "//www.iubenda.com/privacy-policy/7944779"
+                          :class "iubenda-nostyle no-brand iubenda-embed"
+                          :title "Privacy Policy"} "Privacy Policy")))))))
