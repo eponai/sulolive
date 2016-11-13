@@ -153,7 +153,7 @@
                   query/stripe] :as props} (om/props this)
           {user-name :user/name
            :keys [user/email]} current-user
-          {:keys [input-currency tab is-stripe-loading? paywhatyouwant why-open?]} (om/get-state this)
+          {:keys [input-currency tab is-stripe-loading? paywhatyouwant why-open? what-happens-open?]} (om/get-state this)
           {:keys [stripe/subscription stripe/info]} stripe
           {subscription-status :stripe.subscription/status} subscription]
       (debug "Stripe info: " info)
@@ -311,7 +311,16 @@
                    [:div
                     [:label "Payment Method"]]
                    (cond (= subscription-status :trialing)
-                         [:small (str "You have " (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial. " ) [:a "What happens then?"]]
+                         [:small (str "You have " (f/days-until (:stripe.subscription/period-end subscription)) " days left on your trial. " )
+                          [:a
+                           {:on-click #(om/update-state! this assoc :what-happens-open? true)}
+                           "What happens then?"]
+                          (when what-happens-open?
+                            (utils/popup {:on-close #(om/update-state! this assoc :what-happens-open? false)}
+                                         [:div
+                                          [:span "Our users must be on a monthly subscription to use the app, and we allow you to set your own price on that. We do require that our users add a payment option beforehand, to make price updates as easy as possible in the moment."
+                                           [:br]
+                                           [:span "All information is secure, and" [:strong " your card will not be charged "] "unless you select a monthly price above $0."]]]))]
                          (nil? (:card info))
                          [:small "You haven't added a card yet. Enable all functionality in the app by adding one. "
                           [:span
