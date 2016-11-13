@@ -9,11 +9,11 @@ $daterange-ranges-width: 				160px;
 
 
 $daterange-primary-color:				#0B2941;
-$daterange-highlight-color: 			#57BFBF;
+$daterange-highlight-color: 			$orange;//#57BFBF;
 $daterange-white:						#fefefe;
 
 // Common colors
-$daterange-border-color: 				rgba($daterange-primary-color, 0.1);
+$daterange-border-color: 				rgba($daterange-primary-color, 0.2);
 $daterange-input-border-color:			$daterange-border-color;
 $daterange-input-focus-border-color:	rgba($daterange-input-border-color, 0.25);
 $daterange-shadow-color:				rgba($daterange-primary-color, 0.1);
@@ -28,8 +28,8 @@ $daterange-option-active-color: 		$daterange-option-bg;
 $daterange-option-hover-color:			darken($daterange-option-color, 10%);
 
 // Element colors in the calendars
-$daterange-calendar-month-bg: 			rgba($daterange-highlight-color, 0.05);
-$daterange-calendar-month-color: 		rgba($daterange-primary-color, 0.5);
+$daterange-calendar-month-bg: 			$daterange-primary-color;//rgba($daterange-highlight-color, 0.05);
+$daterange-calendar-month-color: 		rgba($daterange-white, 0.7);
 $daterange-calendar-week-bg: 			$daterange-calendar-month-bg;
 $daterange-calendar-week-color: 		$daterange-calendar-month-color;
 

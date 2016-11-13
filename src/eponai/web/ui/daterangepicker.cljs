@@ -340,32 +340,29 @@
           {:keys [class single-calendar? tab-index]} (om/props this)
           {:keys [format on-open]} (om/get-computed this)]
       (dom/div
-        #js {:className class}
-        (dom/div
-          nil
-          (dom/input
-            (clj->js
-              (cond-> {:className "daterange"
-                       :type      "text"
-                       :value     (if single-calendar?
-                                    (when old-start-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-start-date))
-                                    (str (when old-start-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-start-date)) "-"
-                                         (when old-end-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-end-date))))
-                       :onClick   #(do (om/update-state! this assoc :is-showing? true)
-                                       (when on-open
-                                         (on-open)))
-                       :onFocus   #(do (om/update-state! this assoc :is-showing? true)
-                                       (when on-open
-                                         (on-open)))}
-                      (some? tab-index)
-                      (assoc :tabIndex tab-index))))
+        #js {:className (str "daterange-container " class)}
+        (dom/input
+          (clj->js
+            (cond-> {:className "daterange"
+                     :type      "text"
+                     :value     (if single-calendar?
+                                  (when old-start-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-start-date))
+                                  (str (when old-start-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-start-date)) "-"
+                                       (when old-end-date (t.format/unparse (t.format/formatter (or format "MM/dd/yyyy")) old-end-date))))
+                     :onClick   #(do (om/update-state! this assoc :is-showing? true)
+                                     (when on-open
+                                       (on-open)))
+                     :onFocus   #(do (om/update-state! this assoc :is-showing? true)
+                                     (when on-open
+                                       (on-open)))}
+                    (some? tab-index)
+                    (assoc :tabIndex tab-index))))
 
-          (when is-showing?
-            (dom/div
-              nil
-              (utils/click-outside-target #(om/update-state! this assoc :is-showing? false :show-calendars? false))
-              (if single-calendar?
-                (.renderSingleCalendar this)
-                (.renderDateRangeSelection this)))))))))
+        (when is-showing?
+          (utils/click-outside-target #(om/update-state! this assoc :is-showing? false :show-calendars? false)))
+        (when is-showing?
+          (if single-calendar?
+            (.renderSingleCalendar this)
+            (.renderDateRangeSelection this)))))))
 
 (def ->DateRangePicker (om/factory DateRangePicker {:keyfn :key}))

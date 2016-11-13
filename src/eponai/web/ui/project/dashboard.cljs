@@ -50,7 +50,7 @@
         [:div#dashboard
          (at/->QuickAddTransaction (om/computed quick-add-transaction
                                                 {:project project}))
-         [:div.row.align-center
+         [:div.row.align-center#time-period
           (->DateRangePicker (om/computed {:single-calendar? false
                                            :start-date       start-date
                                            :end-date         end-date}
