@@ -184,14 +184,14 @@
                    [:label "Email"]]
                   [:div.column.small-8.text-right
                    [:strong email]]]]
-                [:div.content-section
-                 [:div.row.name
-                  [:div.column.small-4
-                   [:label "Name"]]
-                  [:div.column.small-6.small-offset-2
-                   [:input.float-right
-                    {:value (or user-name "")
-                     :type  "text"}]]]]
+                ;[:div.content-section
+                ; [:div.row.name
+                ;  [:div.column.small-4
+                ;   [:label "Name"]]
+                ;  [:div.column.small-6.small-offset-2
+                ;   [:input.float-right
+                ;    {:value (or user-name "")
+                ;     :type  "text"}]]]]
 
                 [:div.content-section
                  [:div.row
