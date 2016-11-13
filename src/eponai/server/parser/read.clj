@@ -198,24 +198,28 @@
                              {:where [['?e :user/uuid (f/str->uuid uuid)]]}))})
 
 (defmethod server-read :query/fb-user
-  [{:keys [db db-history query user-uuid]} _ _]
-  (debug "Read query/fb-user")
+  [{:keys [db db-history query user-uuid]} k _]
   (let [eid (when user-uuid
               (server.pull/one-changed-entity
                 db db-history query
                 (-> {:where   '[[?e :fb-user/user ?u]
                                 [?u :user/uuid ?uuid]]
-                     :symbols {'?uuid user-uuid}})))]
-    {:value (when eid
-              (let [ret (if db-history
-                          (server.pull/adds-retracts-for-eid db db-history eid)
-                          [(pull db query eid)])
-                    {:keys [fb-user/token fb-user/id] :as f-user} (pull db [:fb-user/token :fb-user/id] eid)
-                    _ (debug "Got fb-user: " f-user)
-                    fb-ret (if (and id token)
-                             (let [{:keys [name picture]} (facebook/user-info id token)]
-                               [{:fb-user/name    name
-                                 :fb-user/picture (:url (:data picture))}])
-                             [[:db.fn/retractAttribute eid :fb-user/name]
-                              [:db.fn/retractAttribute eid :fb-user/picture]])]
-                (into ret fb-ret)))}))
+                     :symbols {'?uuid user-uuid}})))
+        _ (debug "Read query/fb-user. Eid:" eid)
+        ret {:value (when eid
+                      (let [ret (if db-history
+                                  (server.pull/adds-retracts-for-eid db db-history eid)
+                                  [(pull db query eid)])
+                            _ (debug [k :ret ret :hist? (some? db-history)])
+                            {:keys [fb-user/token fb-user/id] :as f-user} (pull db [:fb-user/token :fb-user/id] eid)
+                            _ (debug "Got fb-user: " f-user)
+                            fb-ret (if (and id token)
+                                     (let [{:keys [name picture]} (facebook/user-info id token)]
+                                       [{:db/id           eid
+                                         :fb-user/name    name
+                                         :fb-user/picture (:url (:data picture))}])
+                                     [[:db.fn/retractAttribute eid :fb-user/name]
+                                      [:db.fn/retractAttribute eid :fb-user/picture]])]
+                        (into ret fb-ret)))}]
+    (debug [k :returning ret])
+    ret))

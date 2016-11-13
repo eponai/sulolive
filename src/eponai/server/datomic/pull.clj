@@ -350,7 +350,7 @@
                       (some (fn [query]
                               (let [q (p/merge-query query
                                                      {:find-pattern '[?e .]})]
-                                (p/one-with db q))))))))))
+                                (p/one-with (d/history db) q))))))))))
 
 (defn all-changed-entities
   "Returns all entities thas has had something changed or has an attribute

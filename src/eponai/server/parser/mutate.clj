@@ -244,7 +244,7 @@
 
 (defmutation session.disconnect/facebook
   [{:keys [state auth]} _ _]
-  ["Connected to Facebook" "Error connecting to facebook"]
+  ["Disconnected from Facebook" "Error disconnecting from facebook"]
   {:action (fn []
              (debug "session.disconnect/facebook")
              (api/facebook-disconnect state {:user-uuid (:username auth)}))})
