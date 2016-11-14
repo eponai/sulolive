@@ -70,11 +70,14 @@
             [:div.val-txt (cond->> limit (not= (int limit) limit) (gstring/format "%.2f"))]
             [:div.title-txt "Income"]]
            [:div.column.key-metric
+            [:div.val-txt (cond->> spent (not= (int spent) spent) (gstring/format "%.2f"))]
+            [:div.title-txt "Spent"]]
+           [:div.column.key-metric
             [:div.val-txt (gstring/format "%.2f" (- limit spent))]
             [:div.title-txt "Balance"]]
            [:div.column.key-metric
             [:div.val-txt (gstring/format "%.2f" (or avg-daily-spent 0))]
-            [:div.title-txt "Avg. Spent per day"]]
+            [:div.title-txt "Avg. daily cost"]]
            [:div.column.key-metric
             [:div.val-txt (gstring/format "%.2f" (or left-by-end 0))]
             [:div.title-txt "By " (date/date->string end-date "MMM dd")]]]]
