@@ -78,12 +78,17 @@
         (dom/div
           #js {:className "amount"}
           (if-let [rate (:conversion/rate conversion)]
-            (let [amount (cond-> amount (string? amount) (reader/read-string))]
+            (let [amount (cond-> amount (string? amount) (reader/read-string))
+                  fee-amount (transduce (map (fn [fee]
+                                               (/ (:transaction.fee/value fee)
+                                                  (get-in fee [:transaction.fee/conversion :conversion/rate] 1))))
+                                        + 0 (:transaction/fees transaction))
+                  converted-amount (+ (/ amount rate) fee-amount)]
               (if (= (:db/ident type) :transaction.type/expense)
                 (dom/strong #js {:className "expense"}
-                            (str "-" (two-decimal-string (/ amount rate))))
+                            (str "-" (two-decimal-string converted-amount)))
                 (dom/strong #js {:className "income"}
-                            (two-decimal-string (/ amount rate)))))
+                            (two-decimal-string converted-amount))))
             (dom/i #js {:className "fa fa-spinner fa-spin"})))
 
         ;; Date

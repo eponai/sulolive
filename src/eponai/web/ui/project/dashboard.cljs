@@ -17,9 +17,10 @@
   (let [start-time (date/date-time->long start-date)
         end-time (date/date-time->long end-date)
         get-time (comp :date/timestamp :transaction/date)
-        _ (when-not (apply >= (mapv get-time transactions))
-            (warn (str "Transactions not in timestamp order!: " (mapv get-time transactions))))
-        transactions (sort-by get-time #(compare %2 %1) transactions)
+        transactions (cond->> transactions
+                              (and (seq transactions)
+                                   (not (apply >= (mapv get-time transactions))))
+                              (sort-by get-time #(compare %2 %1)))
         ret (into [] (comp (drop-while #(> (get-time %) end-time))
                            (take-while #(<= start-time (get-time %))))
                   transactions)]

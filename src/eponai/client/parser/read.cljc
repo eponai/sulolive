@@ -144,13 +144,6 @@
   (sorted-set-by #(compare (tx-compare-key-fn %2)
                            (tx-compare-key-fn %))))
 
-(defn assoc-conversion-xf [conversions-by-id]
-  (fn [{:keys [db/id] :as tx}]
-    {:pre [(some? id)]}
-    (if-let [conv (get conversions-by-id id)]
-      (assoc tx :transaction/conversion conv)
-      tx)))
-
 (defn pull-many [db query eids]
   (let [is-ref? (memoize (fn [k] (and (keyword? k) (= :db.type/ref (get-in (:schema db) [k :db/valueType])))))
         parse-query (memoize
@@ -227,7 +220,7 @@
                                                          %)))
                                         (seq old-convs)
                                         (->> (into (sorted-txs-set)
-                                                   (map (assoc-conversion-xf old-convs))))
+                                                   (map (p/assoc-conversion-xf old-convs))))
                                         :always
                                         (into new-with-convs))]
                 (swap! txs-by-project assoc project-eid {:db-used db :txs new-and-old})

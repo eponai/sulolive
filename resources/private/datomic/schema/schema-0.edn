@@ -322,6 +322,13 @@
   :db/cardinality        :db.cardinality/one,
   :db/doc                "Value of transaction fee. If type relative value is in range 0-100, otherwise the fee amount."}
 
+ {:db/id                 #db/id[:db.part/db],
+  :db.install/_attribute :db.part/db,
+  :db/ident              :transaction.fee/currency,
+  :db/valueType          :db.type/ref,
+  :db/cardinality        :db.cardinality/one,
+  :db/doc                "Currency of a transaction fee."}
+
   ;; Category
 
  {:db/id                 #db/id[:db.part/db],

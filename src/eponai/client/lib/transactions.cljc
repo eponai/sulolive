@@ -10,11 +10,13 @@
    :transaction/title
    :transaction/amount
    :transaction/created-at
-   {:transaction/currency [:currency/code
+   {:transaction/currency [:db/id
+                           :currency/code
                            :currency/symbol-native
                            :currency/name]}
    {:transaction/category [:category/name]}
    {:transaction/fees [:db/id
+                       :transaction.fee/conversion
                        :transaction.fee/currency
                        :transaction.fee/value
                        :transaction.fee/type]}

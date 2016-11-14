@@ -92,10 +92,7 @@
                       (server.pull/all-entities db pull/conversion-query conv-ids))]
         {:value (cond-> {:transactions (into [] (comp (map #(entity-map->shallow-map %))
                                                       (map #(update % :transaction/type (fn [t] {:db/ident t})))
-                                                      (map #(if-let [tx-conv (get conversions (:db/id %))]
-                                                             ;; TODO: Do not transfer the whole conversion entity?
-                                                             (assoc % :transaction/conversion tx-conv)
-                                                             %)))
+                                                      (pull/assoc-conversion-xf conversions))
                                              (sort-by (comp :date/timestamp :transaction/date) > tx-entities))
                          :conversions  (d/pull-many db '[*] (seq conv-ids))
                          :refs         (d/pull-many db '[*] (seq ref-ids))})}))))
