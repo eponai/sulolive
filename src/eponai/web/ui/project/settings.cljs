@@ -38,8 +38,8 @@
       (debug "Save category: " {:category/name input-category
                                 :category/project (:db/id project)})
       (when-not (empty? category-name)
-        (om/transact! this `[(project.category/save ~{:category {:category/name    category-name
-                                                                 :category/project (:db/id project)}})
+        (om/transact! this `[(project.category/save ~{:category {:category/name    category-name}
+                                                      :project {:db/id (:db/id project)}})
                              :query/all-categories])
         (om/update-state! this assoc :add-category? false))))
   (render [this]

@@ -5,14 +5,12 @@
     [eponai.common.format :as format]
     [eponai.common.parser :as parser :refer [server-mutate server-message]]
     [eponai.common.validate :as validate]
-    [taoensso.timbre :as timbre :refer [debug info]]
+    [taoensso.timbre :refer [debug info]]
     [eponai.server.api :as api]
     [eponai.common.database.pull :as p]
     [datomic.api :as d]
     [eponai.common.format :as common.format]
-    [environ.core :refer [env]]
-    [eponai.server.external.facebook :as fb]
-    [eponai.server.auth.credentials :as a]))
+    [environ.core :refer [env]]))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -74,10 +72,8 @@
   ["Project saved" "Unable to save project"]
   {:action (fn []
              (debug "project/save with params: " params)
-             (let [user-ref [:user/uuid (:username auth)]
-                   project (format/project user-ref params)
-                   dashboard (format/dashboard (:db/id project) params)]
-               (transact/transact state [project dashboard])))})
+             (let [user-ref [:user/uuid (:username auth)]]
+               (transact/transact-one state (format/project user-ref params))))})
 
 (defmutation project/share
   [{:keys [state]} _ {:keys [project/uuid user/email] :as params}]
@@ -94,49 +90,13 @@
              (api/delete-project state project-dbid))})
 
 (defmutation project.category/save
-  [{:keys [state]} _ {:keys [category]}]
+  [{:keys [state]} _ {:keys [category project]}]
   [(str "Created new category '" (:category/name category) "'.")
    (str "Couldn't create category '" (:category/name category) "'.")]
   {:action (fn []
-             (transact/transact-one state (format/category* category)))})
-
-;; --------------- Widget ----------------
-
-;(defmutation widget/create
-;  [{:keys [state auth] :as env} k params]
-;  ["Created widget" "Error creating widget"]
-;  {:action (fn []
-;             (debug "widget/create with params: " params)
-;             (validate/validate env k {:widget    params
-;                                       :user-uuid (:username auth)})
-;             (let [widget (format/widget-create params)]
-;               (transact/transact-one state widget)))})
-;
-;(defmutation widget/edit
-;  [{:keys [state]} _ params]
-;  ["Edited widget" "Error editing widget"]
-;  {:action (fn []
-;             (debug "widget/edit with params: " params)
-;             (let [widget (format/widget-edit params)]
-;               (transact/transact state widget)))
-;   :remote true})
-;
-;(defmutation widget/delete
-;  [{:keys [state]} _ {:keys [widget/uuid] :as params}]
-;  ["Deleted widget" "Error deleting widget"]
-;  {:action (fn []
-;             (debug "widget/delete with params: " params)
-;             (transact/transact-one state [:db.fn/retractEntity [:widget/uuid uuid]]))
-;   :remote true})
-
-;; ---------------- Dashboard ----------------
-
-;(defmutation dashboard/save
-;  [{:keys [state]} _ {:keys [widget-layout] :as params}]
-;  ["Saved dashboard" "Error saving dashboard"]
-;  {:action (fn []
-;             (debug "dashboard/save with params: " params)
-;             (transact/transact state (format/add-tempid widget-layout)))})
+             (let [c (format/category* category)]
+               (transact/transact state [c
+                                         [:db/add (:db/id project) :project/categories (:db/id c)]])))})
 
 ;; ------------------- User account related ------------------
 
@@ -158,25 +118,6 @@
                  (swap! force-read-without-history conj :query/stripe)))
              (when currency
                (transact/transact-one state [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]])))})
-
-
-;(defmutation stripe/subscribe
-;  [{:keys [state auth stripe-fn]} _ p]
-;  ["Subscribed!" "Error subscribing"]
-;  (let [db (d/db state)
-;        _ (debug "stripe/subscribe with params:" p)
-;        stripe-eid (p/one-with db {:where '[[?u :user/uuid ?user-uuid]
-;                                            [?e :stripe/user ?u]]
-;                                   :symbols {'?user-uuid (:username auth)}})
-;        stripe-account (when stripe-eid
-;                         (p/pull db [:stripe/customer
-;                                     {:stripe/subscription [:stripe.subscription/id]}]
-;                                 stripe-eid))]
-;    {:action (fn []
-;               (debug "Stripe information: " stripe-account)
-;               (when stripe-eid
-;                 (debug "User: " (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])))
-;               (api/stripe-subscribe state stripe-fn stripe-account p))}))
 
 (defmutation stripe/update-card
   [{:keys [state auth stripe-fn]} _ p]
@@ -220,20 +161,6 @@
   (let [user (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])]
     {:action (fn []
                (api/stripe-trial state stripe-fn user))}))
-
-;(defmutation stripe/cancel
-;  [{:keys [state auth] :as env} _ p]
-;  ["Subscription cancelled" "Error cancelling subscription"]
-;  (let [db (d/db state)
-;        _ (debug "stripe/cancel with params:" p)
-;        eid (p/one-with db {:where   '[[?u :user/uuid ?user-uuid]
-;                                       [?e :stripe/user ?u]]
-;                            :symbols {'?user-uuid (:username auth)}})
-;        stripe-account (when eid
-;                         (p/pull db [:stripe/customer
-;                                     {:stripe/subscription [:stripe.subscription/id]}] eid))]
-;    {:action (fn []
-;               (api/stripe-cancel env stripe-account))}))
 
 ;; ############# Session mutations #################
 

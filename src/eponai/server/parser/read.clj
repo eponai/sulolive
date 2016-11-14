@@ -143,7 +143,7 @@
   [{:keys [db db-history query] :as env} _ params]
   {:value (if-let [project-id (env+params->project-eid env params)]
             (server.pull/all db db-history query
-                             {:where '[[?e :category/project ?p]]
+                             {:where '[[?p :project/categories ?e]]
                               :symbols {'?p project-id}})
             (do
               (warn "No auth for :query/all-categories")))})

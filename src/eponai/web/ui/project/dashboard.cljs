@@ -10,15 +10,16 @@
     [om.next :as om :refer-macros [defui]]
     [goog.string :as gstring]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [error debug]]
+    [taoensso.timbre :refer-macros [warn error debug]]
     [eponai.common.format.date :as date]))
 
 (defn keep-this-period [transactions start-date end-date]
   (let [start-time (date/date-time->long start-date)
         end-time (date/date-time->long end-date)
         get-time (comp :date/timestamp :transaction/date)
-        _ (assert (apply >= (mapv get-time transactions))
-                  (str "Transactions not in timestamp order!: " (mapv get-time transactions)))
+        _ (when-not (apply >= (mapv get-time transactions))
+            (warn (str "Transactions not in timestamp order!: " (mapv get-time transactions))))
+        transactions (sort-by get-time #(compare %2 %1) transactions)
         ret (into [] (comp (drop-while #(> (get-time %) end-time))
                            (take-while #(<= start-time (get-time %))))
                   transactions)]

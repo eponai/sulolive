@@ -62,11 +62,6 @@
             (assoc :project/users [user-dbid]))))
 
 
-(defn dashboard [project-ref & [opts]]
-  {:db/id             (tempid :db.part/user)
-   :dashboard/uuid    (or (:dashboard/uuid opts) (squuid))
-   :dashboard/project project-ref})
-
 (defn add-tempid
   "Add tempid to provided entity or collection of entities. If e is a map, assocs :db/id.
   If it's list, set or vector, maps over that collection and assoc's :db/id in each element."
@@ -88,7 +83,7 @@
 (defn category*
   [input]
   {:pre [(map? input)]}
-  (add-tempid (select-keys input [:db/id :category/name :category/project])))
+  (add-tempid (select-keys input [:db/id :category/name])))
 
 (defn tag*
   [input]

@@ -116,9 +116,6 @@
         expiry-time (c/to-long (t/plus (c/from-long (:verification/created-at v)) (t/minutes 15)))]
     (assoc v :verification/expires-at expiry-time)))
 
-(defn dashboard [project-eid]
-  (cf/dashboard project-eid))
-
 (defn project [user & [opts]]
   (cf/project (:db/id user) opts))
 
@@ -150,8 +147,7 @@
         pr (project user opts)]
     (cond->
       {:user   user
-       :project pr
-       :dashboard (dashboard (:db/id pr))}
+       :project pr}
 
       email
       (assoc :verification (email-verification user opts))

@@ -93,13 +93,12 @@
                                                               :user/status         :user.status/active})
         project (format/project (:db/id user) {:project/name "Project-1"
                                                :project/uuid project-uuid})
-        dashboard (format/dashboard (:db/id project))
         stripe-user (format/add-tempid {:stripe/user (:db/id user)
                                         :stripe/customer     "cus_9YcNWTiUBc4Jpm"
                                         :stripe/subscription (format/add-tempid {:stripe.subscription/id         "sub_9YcN9rluT5azTj"
                                                                                  :stripe.subscription/status     :active})})
         ret (transact/transact-map conn (-> account
-                                            (assoc :project project :dashboard dashboard)
+                                            (assoc :project project)
                                             (update :user assoc :user/currency [:currency/code "USD"])
                                             (assoc :stripe stripe-user)))]
     (debug "New user created with email:" email)

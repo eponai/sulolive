@@ -50,11 +50,9 @@
 (defmethod client-mutate 'project/save
   [{:keys [state]} _ params]
   (debug "project/save with params: " params)
-  (let [ project (format/project nil params)
-        dashboard (format/dashboard (:db/id project) params)]
-    {:action (fn []
-               (transact/transact state [project dashboard]))
-     :remote true}))
+  {:action (fn []
+             (transact/transact-one state (format/project nil params)))
+   :remote true})
 
 (defmethod client-mutate 'project/share
   [{:keys [state]} _ params]
@@ -69,45 +67,12 @@
    :remote true})
 
 (defmethod client-mutate 'project.category/save
-  [{:keys [state]} _ {:keys [category]}]
+  [{:keys [state]} _ {:keys [category project]}]
   {:action (fn []
-             (transact/transact-one state (format/add-tempid category)))
+             (let [db-entity (format/add-tempid category)]
+               (transact/transact state [db-entity
+                                         [:db/add (:db/id project) :project/categories (:db/id db-entity)]])))
    :remote true})
-;; -------------- Widget ---------------
-
-;(defmethod client-mutate 'widget/create
-;  [{:keys [state parser] :as e} _ params]
-;  (debug "widget/save with params: " params)
-;  {:action (fn []
-;             (let [widget (format/widget-create params)]
-;               (transact/transact-one state widget)))
-;   :remote true})
-;
-;(defmethod client-mutate 'widget/edit
-;  [{:keys [state]} _ params]
-;  (debug "widget/edit with params: " params)
-;  (let [widget (format/widget-edit params)]
-;    {:action (fn []
-;               (transact/transact state widget))
-;     :remote true}))
-;
-;(defmethod client-mutate 'widget/delete
-;  [{:keys [state]} _ params]
-;  (debug "widget/delete with params: " params)
-;  (let [widget-uuid (:widget/uuid params)]
-;    {:action (fn []
-;               (transact/transact-one state [:db.fn/retractEntity [:widget/uuid widget-uuid]]))
-;     :remote true}))
-
-;; ---------------------- Dashboard -----------------------
-
-;(defmethod client-mutate 'dashboard/save
-;  [{:keys [state]} _ {:keys [widget-layout] :as params}]
-;  (debug "dashboard/save with params: " params)
-;  {:action (fn []
-;             (when widget-layout
-;               (transact/transact state (format/add-tempid widget-layout))))
-;   :remote (some? widget-layout)})
 
 ;; ------------------- User account related ------------------
 
@@ -118,20 +83,7 @@
              (transact/transact-one state [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]]))
    :remote true})
 
-;(defmethod client-mutate 'stripe/subscribe
-;  [_ _ params]
-;  (debug "stripe/charge with params:" params)
-;  {:remote true})
-
-;(defmethod client-mutate 'stripe/cancel
-;  [{:keys [state]} _ params]
-;  (debug "stripe/cancel with params:" params)
-;  {:action (fn []
-;             (transact/transact-one state {:ui/singleton                :ui.singleton/loader
-;                                                       :ui.singleton.loader/visible true}))
-;   :remote true})
-
-
+;; ----------- Stripe mutations ---------------
 
 (defmethod client-mutate 'stripe/trial
   [_ _ p]

@@ -88,5 +88,4 @@
       (let [{result :query/transactions} (read-transactions conn user project)
             {:keys [transactions conversions] :as r} result]
         (is (= (count ts) (count transactions)))
-        ;; TODO: Should be 3? who cares?
-        (is (= (count conversions) 4))))))
+        (is (= (count conversions) 3))))))
