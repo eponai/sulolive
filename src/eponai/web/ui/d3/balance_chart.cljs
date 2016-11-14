@@ -270,7 +270,7 @@
           transition
           (duration 100)
           (style "opacity" (if spent-visible? 1 0))
-          (style "filter" (if-not (apply = (map :spent data-points))
+          (style "filter" (if-not (apply = (map :spent past-values))
                             "url(#drop-shadow)"
                             "none"))
           (delay 100)
@@ -281,7 +281,7 @@
           transition
           (duration 100)
           (style "opacity" (if spent-visible? 1 0))
-          (style "filter" (if-not (apply = (map :spent data-points))
+          (style "filter" (if-not (apply = (.map future-values #(:spent %)))
                             "url(#drop-shadow-future)"
                             "none"))
           (delay 100)
