@@ -241,7 +241,7 @@
 (def cached-query-transactions
   (parser.util/cache-last-read
     (fn [{:keys [db] :as env} _ p]
-      {:value (p/filter-transactions p (all-local-transactions-by-project env (active-project-eid db)))})))
+      {:value (all-local-transactions-by-project env (active-project-eid db))})))
 
 (defmethod client-read :query/transactions
   [{:keys [db target ast] :as env} k p]

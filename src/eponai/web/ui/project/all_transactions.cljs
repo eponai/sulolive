@@ -1,26 +1,19 @@
 (ns eponai.web.ui.project.all-transactions
   (:require
-    [cljs-time.core :as time]
     [cljs.reader :as reader]
-    [clojure.string :as string]
-    [datascript.core :as d]
     [eponai.client.lib.transactions :as lib.t]
     [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
     [eponai.common.format.date :as date]
     [eponai.web.ui.project.add-transaction :as at :refer [->AddTransaction AddTransaction]]
     [eponai.web.ui.daterangepicker :refer [->DateRangePicker]]
     [eponai.web.ui.utils :as utils]
-    [eponai.web.ui.utils.filter :as filter]
-    [eponai.web.ui.utils.infinite-scroll :as infinite-scroll]
     [garden.core :refer [css]]
     [eponai.web.ui.select :as sel]
     [goog.string :as gstring]
-    [goog.events :as events]
     [om.dom :as dom]
     [om.next :as om :refer-macros [defui]]
     [sablono.core :refer-macros [html]]
-    [taoensso.timbre :refer-macros [debug warn]]
-    [clojure.data :as diff]))
+    [taoensso.timbre :refer-macros [debug warn]]))
 
 (defn- trim-decimals [n] (int n))
 
@@ -153,14 +146,6 @@
 
 (def ->Transaction (om/factory Transaction {:keyfn :db/id}))
 
-(defn date-range-from-filter [{:keys [filter/last-x-days filter/start-date filter/end-date]}]
-  (if (some? last-x-days)
-    (let [t (date/today)]
-      {:start-date (time/minus t (time/days last-x-days))
-       :end-date   t})
-    {:start-date (date/date-time start-date)
-     :end-date   (date/date-time end-date)}))
-
 (defui AllTransactions
   static om/IQueryParams
   (params [_]
@@ -182,20 +167,7 @@
   Object
   (initLocalState [this]
     {:list-size                           0
-     :computed/transaction-on-tag-click   (fn [tag]
-                                            (om/update-query! this update-in [:params :filter :filter/include-tags]
-                                                              #(utils/add-tag % tag)))
-     :computed/tag-filter-on-change       (fn [tags]
-                                            (om/update-query! this update-in [:params :filter]
-                                                              #(assoc % :filter/include-tags tags)))
-     :computed/amount-filter-on-change    (fn [{:keys [filter/min-amount filter/max-amount]}]
-                                            (om/update-query! this update-in [:params :filter]
-                                                              #(assoc % :filter/min-amount min-amount
-                                                                        :filter/max-amount max-amount)))
-     :computed/date-range-picker-on-apply (fn [{:keys [start-date end-date selected-range]}]
-                                            (om/update-query! this update-in [:params :filter]
-                                                              #(assoc % :filter/start-date (date/date-map start-date)
-                                                                        :filter/end-date (date/date-map end-date))))
+
      :computed/infinite-scroll-node-fn    (fn []
                                             ;; TODO: Un-hack this.
                                             ;; HACK: I don't know how we can get the page-content div in any other way.
@@ -247,40 +219,15 @@
           "add a transaction"]
          "."]]]))
 
-  (render-filters [this]
-    (let [{:keys [computed/tag-filter-on-change
-                  computed/amount-filter-on-change
-                  computed/date-range-picker-on-apply]} (om/get-state this)
-          {:keys [filter/include-tags] :as filters} (:filter (om/get-params this))]
-      (debug "render-filters, params: " (om/get-params this))
-      (html
-        [:div.transaction-filters
-         (opts {:style {:padding "1em 0"}})
-         [:div.row.expanded
-          [:div.columns.small-3
-           (filter/->TagFilter (om/computed {:tags include-tags}
-                                            {:on-change tag-filter-on-change}))]
-          [:div.columns.small-3
-           (let [range (date-range-from-filter filters)]
-             (->DateRangePicker (om/computed range
-                                             {:on-apply date-range-picker-on-apply})))]
-          [:div.columns.small-6
-           (filter/->AmountFilter (om/computed {:amount-filter (select-keys filters [:filter/min-amount :filter/max-amount])}
-                                               {:on-change amount-filter-on-change}))]]])))
-
   (render-transaction-list [this transactions]
     (let [{currencies      :query/all-currencies
            user            :query/current-user} (om/props this)
-          {:keys [computed/transaction-on-tag-click
-                  computed/infinite-scroll-node-fn
-                  computed/select-tags-options-fn
-                  computed/edit-transaction-fn
+          {:keys [computed/edit-transaction-fn
                   computed/delete-transaction-fn
                   list-size]} (om/get-state this)]
       (html
         [:div
 
-         ;(.render-filters this)
          [:div.content-section
           [:div.row.column.collapse
            [:div.transactions-container
@@ -340,9 +287,7 @@
                                                                  {:on-close #(om/update-state! this dissoc :edit-transaction)
                                                                   :input-transaction edit-transaction}))
                          :on-close #(om/update-state! this dissoc :edit-transaction)}))
-         ;(.render-filters this)
-         (if (or (seq transactions)
-                 (.has-filter this))
+         (if (seq transactions)
            (.render-transaction-list this transactions)
            (.render-empty-message this))
          (when add-transaction?

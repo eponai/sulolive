@@ -235,45 +235,6 @@
 (defn project-with-auth [user-uuid]
   (with-auth {:where '[[?e :project/users ?u]]} user-uuid))
 
-(defn transaction-date-filter
-  "Takes a query-map, date and a compare function symbol. Merges the query-map
-  with a filter on a transaction's date.
-
-  Examples for the compare symbol: '= '> '< '>= '>="
-  [date compare]
-  {:pre [(symbol? compare)]}
-
-  (let [date-time (date/date->long date)
-        filter-sym (gensym "?time-filter")]
-    (debug "Transaction-date-filter: " date-time " symbol: " compare)
-    {:where   ['[?e :transaction/date ?date]
-               '[?date :date/timestamp ?timestamp]
-               `[(~compare ~'?timestamp ~filter-sym)]]
-     :symbols {filter-sym date-time}}))
-
-(defn transactions
-  [{:keys [filter/start-date
-           filter/end-date
-           filter/include-tags
-           filter/last-x-days] :as filter}]
-  {:pre [(map? filter)]}
-  (cond->
-    {}
-    (seq include-tags)
-    (merge-query {:where   '[[?e :transaction/tags ?tag]
-                             [?tag :tag/name ?include-tag]]
-                  :symbols {'[?include-tag ...] (mapv :tag/name include-tags)}})
-
-    (some? last-x-days)
-    (merge-query (transaction-date-filter (date/days-ago last-x-days) '>=))
-
-    (nil? last-x-days)
-    (cond->
-      (some? start-date)
-      (merge-query (transaction-date-filter start-date '>=))
-
-      (some? end-date)
-      (merge-query (transaction-date-filter end-date '<=)))))
 
 (defn verifications
   [db user-db-id status]
@@ -414,46 +375,6 @@
                 (filter some?))
           transaction-entities)))
 
-(defn xf-with-tag-filters
-  [xf {:keys [filter/include-tags filter/exclude-tags]}]
-  (let [to-set #(into #{} (map :tag/name) %)
-        include-tags (to-set include-tags)
-        exclude-tags (to-set exclude-tags)]
-    (cond-> xf
-            (seq include-tags)
-            (comp (filter (fn [tx] (some include-tags (map :tag/name (:transaction/tags tx))))))
-            (seq exclude-tags)
-            (comp (filter (fn [tx] (not-any? exclude-tags (map :tag/name (:transaction/tags tx)))))))))
-
-(defn xf-with-amount-filter
-  "Takes a transducer and applies min/max amount filters on its elements."
-  [xf {:keys [filter/min-amount filter/max-amount]}]
-  {:pre [(fn? xf)]}
-  (let [parse-amount #(cond-> % (some? %) (f/str->number))
-        min-amount (parse-amount min-amount)
-        max-amount (parse-amount max-amount)]
-    (cond-> xf
-            (some? min-amount)
-            (comp (filter (fn [tx] (<= min-amount (report/converted-amount tx)))))
-            (some? max-amount)
-            (comp (filter (fn [tx] (>= max-amount (report/converted-amount tx))))))))
-
-(defn xf-with-date-filter
-  [xf {:keys [filter/start-date filter/end-date filter/last-x-days] :as f}]
-  (let [date->long #(when % (date/date->long %))
-        start-date (date->long start-date)
-        end-date (date->long end-date)
-        last-x-days (date->long (when last-x-days (date/days-ago last-x-days)))
-        date-filter (fn [timestamp cmp]
-                      (filter (fn [tx]
-                                (cmp (get-in tx [:transaction/date :date/timestamp]) timestamp))))]
-    (if (some? last-x-days)
-      (comp xf (date-filter last-x-days >=))
-      (cond-> xf
-              (some? start-date)
-              (comp (date-filter start-date >=))
-              (some? end-date)
-              (comp (date-filter end-date <=))))))
 
 (defn transactions-with-conversions [db user-uuid tx-entities]
   (let [conversions (transaction-conversions db user-uuid tx-entities)]
@@ -463,15 +384,6 @@
                             (assoc :transaction/conversion (get conversions id)))))
           tx-entities)))
 
-(defn filter-transactions [{filters :filter} transactions]
-  (let [identity-xf (map identity)
-        filter-xf (-> identity-xf
-                      (xf-with-amount-filter filters)
-                      (xf-with-tag-filters filters)
-                      (xf-with-date-filter filters))]
-    (if (identical? identity-xf filter-xf)
-      transactions
-      (into [] filter-xf transactions))))
 
 ;; ############################# Widgets #############################
 
