@@ -84,6 +84,16 @@ svg {
   }
 }
 
+#summary-metrics {
+  margin-bottom: 2rem;
+  .column:first-child {
+    border-left: 1px solid rgba($darkblue, 0.1);
+  }
+  .column {
+    border-right: 1px solid rgba($darkblue, 0.1);
+  }
+}
+
 
 // Balance vs Spent grapch with gradient area and a line.
 #balance-spent {
@@ -177,7 +187,7 @@ svg {
   display: flex;
   flex-direction: row;
   max-width: 50rem;
-  margin: 1.5rem auto;
+  margin-top: 2rem;
 
   .key-metric {
     width: 100%;
@@ -185,6 +195,13 @@ svg {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+  }
+
+  .column:first-child {
+    border-left: 1px solid rgba($darkblue, 0.1);
+  }
+  .column {
+    border-right: 1px solid rgba($darkblue, 0.1);
   }
 }
 

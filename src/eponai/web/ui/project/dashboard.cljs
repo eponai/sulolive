@@ -57,6 +57,7 @@
                                            :end-date         end-date}
                                           {:on-apply on-date-apply-fn
                                            :format   "MMM dd"}))]
+
          [:div.content-section
           [:div.row.section-title
            (icon/dashboard-balance)
@@ -68,12 +69,6 @@
 
           [:div.row#key-metrics
            [:div.column.key-metric
-            [:div.val-txt (cond->> limit (not= (int limit) limit) (gstring/format "%.2f"))]
-            [:div.title-txt "Income"]]
-           [:div.column.key-metric
-            [:div.val-txt (cond->> spent (not= (int spent) spent) (gstring/format "%.2f"))]
-            [:div.title-txt "Spent"]]
-           [:div.column.key-metric
             [:div.val-txt (gstring/format "%.2f" (- limit spent))]
             [:div.title-txt "Balance"]]
            [:div.column.key-metric
@@ -84,6 +79,13 @@
             [:div.title-txt "By " (date/date->string end-date "MMM dd")]]]]
          [:div.content-section
 
+          [:div.row.align-center.text-center#summary-metrics
+           [:div.column.key-metric.small-4
+            [:div.val-txt (cond->> limit (not= (int limit) limit) (gstring/format "%.2f"))]
+            [:div.title-txt "Total Income"]]
+           [:div.column.key-metric.small-4
+            [:div.val-txt (cond->> spent (not= (int spent) spent) (gstring/format "%.2f"))]
+            [:div.title-txt "Total Spent"]]]
 
           [:div.row#pie-charts
            [:div.column
