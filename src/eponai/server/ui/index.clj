@@ -68,16 +68,12 @@
                                  (dom/button {:className "menu-icon" :type "button" :data-toggle true}))
                        (dom/div {:className "top-bar-right"
                                  :id "responsive-menu"}
-                         (dom/ul {:className "menu"}
-                           (map (fn [[href text strong?]]
-                                  (dom/li nil
-                                    (dom/a {:href href}
-                                           (cond->> text
-                                                    strong?
-                                                    (dom/strong nil)))))
-                                [["#at-a-glance" "Features"]
-                                 ["#pay-what-you-want" "Pricing"]
-                                 ["#subscribe-form" "Sign In / Sign Up" true]]))))
+                         (dom/ul
+                           {:className "menu"}
+                           (dom/li nil
+                                   (dom/a {:href "#at-a-glance"} "Features"))
+                           (dom/li nil (dom/a {:href "#pay-what-you-want"} "Pricing"))
+                           (dom/li nil (dom/a {:href "/signup"} (dom/strong nil "Sign In / Sign Up"))))))
               (dom/div {:className "intro"}
                 (dom/div {:className "row align-center column small-12 medium-8 large-5"}
                   (dom/div {:className "intro-message"}
@@ -89,7 +85,7 @@
                   (map (fn [[classes text href]]
                          (dom/div {:className "column small-5 medium-3 large-2 text-center"}
                            (dom/a {:className classes :href href} text)))
-                       [["button hollow" "Get Started" ""]
+                       [["button hollow" "Get Started" "/signup"]
                         ["button" "Demo" "/play"]]))))
 
             (dom/div {:id "nomadic-living" :className "content-section"}
@@ -159,27 +155,28 @@
                           ["We are interested in how you value Jourmoney, so we can keep improving and make it better!"]])))))
 
             (dom/div {:id "footer"}
-              (dom/form {:id "subscribe-form"
-                         :className "row actions medium-unstack align-center align-middle"}
-                        (dom/div {:className "text-center column small-12 medium-6 large-3"}
-                          (dom/span nil "Subscribe to our newsletter to be notified when we launch:"))
-                        (dom/div {:className "column small-10 medium-6 large-3"}
-                          (dom/input {:type "email"
-                                      :name "email"
-                                      :placeholder "youremail@example.com"
-                                      :tabIndex 1}))
-                        (dom/div {:className "column small-5 medium-3 large-2 text-center"}
-                          (dom/button {:type "submit"
-                                       :className "button hollow"
-                                       :onClick "onSubscribe('subscribe-intro')"
-                                       :tabIndex 2}
-                                      (dom/strong nil "Notify Me"))))
-              (dom/div {:id "subscribe-intro" :className "text-center"})
+              (dom/div {:className "row align-center"}
+                (dom/span nil "Start tracking your money today"))
+              (dom/div {:className "row align-center"}
+                (map (fn [[classes text href]]
+                       (dom/div {:className "column small-5 medium-3 large-2 text-center"}
+                         (dom/a {:className classes :href href} text)))
+                     [["button hollow" "Get Started" "/signup"]
+                      ["button" "Demo" "/play"]]))
 
               (dom/footer
                 {:className "footer"}
-                (dom/p {:className "copyright small"}
-                       "Copyright © eponai 2016. All Rights Reserved"))))
+                (dom/ul {:className "menu"}
+                        (dom/li nil
+                                (dom/p {:className "small copyright"}
+                                           "Say hi to us anytime at "
+                                           (dom/a {:className "mail-link"
+                                                   :href      "mailto:info@jourmoney.com"}
+                                                  "info@jourmoney.com"))))
+                (dom/ul {:className "menu"}
+                        (dom/li nil
+                                (dom/p {:className "copyright small"}
+                                       "Copyright © eponai 2016. All Rights Reserved"))))))
 
           (dom/script {:src "https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"
                        :type text-javascript})

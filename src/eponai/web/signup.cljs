@@ -87,14 +87,6 @@
          [:p.divider "or"]
          ;[:h2 "Sign in with email"]
 
-         [:p.accept-terms
-          "By signing in, you accept Jourmoney's "
-          (privacy-policy-link)
-          " and "
-          (terms-of-service-link)
-          ;[:a.link {:class "btn btn-link btn-xs"} "Terms of Service"]
-          ]
-
 
          [:div.input-section
           (cond (= status :pending-verification)
@@ -129,6 +121,14 @@
            :value     "Sign in with Email"
            :on-click  #(.on-email-login this)
            :tab-index 2}]
+
+         [:p.accept-terms
+          "By signing in, you accept Jourmoney's "
+          (privacy-policy-link)
+          " and "
+          (terms-of-service-link)
+          ;[:a.link {:class "btn btn-link btn-xs"} "Terms of Service"]
+          ]
          ]))))
 
 (def ->log-in (om/factory LogIn))
