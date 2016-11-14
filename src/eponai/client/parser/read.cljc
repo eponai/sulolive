@@ -182,9 +182,14 @@
         ret (into [] (map #(eid->map query %)) eids)]
     ret))
 
+(defn same-user-currency? [db db-used user]
+  (apply = (map #(p/pull % [{:user/currency [:db/id]}]
+                         (:db/id user))
+                [db db-used])))
+
 (defn all-local-transactions-by-project [{:keys [parser db txs-by-project query] :as env} project-eid]
   (let [{:keys [db-used txs]} (get @txs-by-project project-eid)
-        {:keys [query/current-user]} (parser env '[{:query/current-user [:user/uuid]}])]
+        {:keys [query/current-user]} (parser env '[{:query/current-user [:db/id :user/uuid]}])]
     (seq
       (when (and project-eid current-user)
         (if (identical? db db-used)
@@ -193,8 +198,8 @@
                 removed-txs (or (transactions-deleted db db-used project-eid) #{})
                 new-txs (transactions-changed db db-used project-eid)
                 _ (debug [:removed-txs removed-txs :new-or-changed-txs new-txs])]
-            (if (and (empty? removed-txs)
-                     (empty? new-txs))
+            (if (and (empty? removed-txs) (empty? new-txs)
+                     (same-user-currency? db db-used current-user))
               (do (swap! txs-by-project assoc-in [project-eid :db-used] db)
                   txs)
               (let [user-uuid (:user/uuid current-user)
