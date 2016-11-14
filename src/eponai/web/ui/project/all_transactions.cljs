@@ -2,6 +2,7 @@
   (:require
     [cljs.reader :as reader]
     [eponai.client.lib.transactions :as lib.t]
+    [eponai.common.report :as report]
     [eponai.client.ui :refer [map-all update-query-params!] :refer-macros [style opts]]
     [eponai.common.format.date :as date]
     [eponai.web.ui.project.add-transaction :as at :refer [->AddTransaction AddTransaction]]
@@ -31,14 +32,9 @@
 (defn empty-sorted-tag-set []
   (sorted-set-by #(compare (:tag/name %) (:tag/name %2))))
 
-(defn total-amount [{:keys [transaction/amount transaction/conversion transaction/fees]}]
-  (when-let [rate (:conversion/rate conversion)]
-    (let [amount (cond-> amount (string? amount) (reader/read-string))
-          fee-amount (transduce (map (fn [fee]
-                                       (/ (:transaction.fee/value fee)
-                                          (get-in fee [:transaction.fee/conversion :conversion/rate] 1))))
-                                + 0 fees)]
-      (+ (/ amount rate) fee-amount))))
+(defn total-amount [tx]
+  (report/amount-with-fees (update tx :transaction/amount
+                                   #(cond-> % (string? %) (reader/read-string)))))
 
 ;; ################### Om next components ###################
 

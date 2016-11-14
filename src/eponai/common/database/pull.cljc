@@ -340,6 +340,9 @@
                 " user-conv: " user-conv
                 " for transaction: " (into {} transaction)))))))
 
+(defn absolute-fee? [fee]
+  #(= :transaction.fee.type/absolute (:transaction.fee/type fee)))
+
 (defn same-conversions? [tx]
   (letfn [(same-conversion? [currency conversion]
             (= (get-in currency [:db/id])
@@ -347,8 +350,9 @@
     (every? (fn [[curr conv]] (same-conversion? curr conv))
             (cons [(:transaction/currency tx)
                    (:transaction/conversion tx)]
-                  (map (juxt :transaction.fee/currency :transaction.fee/conversion)
-                       (:transaction/fees tx))))))
+                  (->> (:transaction/fees tx)
+                       (filter absolute-fee?)
+                       (map (juxt :transaction.fee/currency :transaction.fee/conversion)))))))
 
 (defn transaction-conversions [db user-uuid transaction-entities]
   ;; user currency is always the same
@@ -405,10 +409,12 @@
          {:pre [(:db/id tx)]}
          (let [tx-conversion (get conversions (:db/id tx))
                fee-with-conv (fn [fee]
-                               (let [curr->conv (::currency-to-conversion-map-fn tx-conversion)
-                                     _ (assert (fn? curr->conv))
-                                     fee-conv (curr->conv (get-in fee [:transaction.fee/currency :db/id]))]
-                                 (cond-> fee (some? fee-conv) (assoc :transaction.fee/conversion fee-conv))))]
+                               (if-not (absolute-fee? fee)
+                                 fee
+                                 (let [curr->conv (::currency-to-conversion-map-fn tx-conversion)
+                                       _ (assert (fn? curr->conv))
+                                       fee-conv (curr->conv (get-in fee [:transaction.fee/currency :db/id]))]
+                                   (cond-> fee (some? fee-conv) (assoc :transaction.fee/conversion fee-conv)))))]
            (cond-> tx
                    (some? tx-conversion)
                    (-> (assoc :transaction/conversion (dissoc tx-conversion ::currency-to-conversion-map-fn))
