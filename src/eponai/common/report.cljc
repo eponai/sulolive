@@ -88,21 +88,41 @@
       [low (+ high 10)]
       [low high])))
 
+(defn transaction-type= [t] (comp #{t} :db/ident :transaction/type))
+(def income? (transaction-type= :transaction.type/income))
+(def expense? (transaction-type= :transaction.type/expense))
+(def housing-or-transport? (comp some? #{"Housing" "Transport"} :category/name :transaction/category))
+
+(defn sum-large-expenses [transactions]
+  (transduce (comp (filter expense?)
+                   (filter housing-or-transport?)
+                   (map converted-amount))
+             + 0 transactions))
+
+(defn adjusted-income
+  "Assoc's ::adjusted-amount to incomes, where large expenses
+   for that 'period' has been removed."
+  [txs]
+  {:pre [(every? #(or (income? %) (expense? %)) txs)]}
+  (lazy-seq
+    (when (seq txs)
+      (let [[expenses txs2] (split-with expense? txs)
+            [incomes txs3] (split-with income? txs2)
+            sum-to-adjust (/ (sum-large-expenses expenses) (count incomes))]
+        (concat expenses
+                (map #(assoc % ::adjusted-amount (- (converted-amount %) sum-to-adjust)) incomes)
+                (adjusted-income txs3))))))
+
 (defn balance-vs-spent
   "Calculate what expenses per day by month, and how the balance has evolved in relation to those expenses.
 
   Balance will be calculated based on income transactions."
   [transactions start-date end-date]
-  (let [{large-txs true daily-txs false} (group-by (comp some? #{"Housing" "Transport"} :category/name :transaction/category)
-                                                   transactions)
-        sum-large-transactions (transduce (comp (filter (comp #{:transaction.type/expense} :db/ident :transaction/type))
-                                                (map :transaction/amount))
-                                          + 0 large-txs)
-        ; Reduce function for sum of expenses and incomes.
+  (let [; Reduce function for sum of expenses and incomes.
         sum-daily-transactions (fn [res tx]
                                  (if (= (get-in tx [:transaction/type :db/ident]) :transaction.type/expense)
                                    (update res :expenses + (converted-amount tx))
-                                   (update res :income + (converted-amount tx))))
+                                   (update res :income + (::adjusted-amount tx))))
 
         ; Reduce function to calculate spent amount per day, and balance for each day.
         spent-balance (fn [{:keys [balance by-timestamp] :as res} timestamp]
@@ -122,11 +142,14 @@
                               (assoc-in [:values timestamp] {:spent   expenses
                                                              :balance new-balance})))) ; Set the balance for this day, and how much was spent.
 
-        report-this-month (let [by-timestamp (group-by #(:date/timestamp (:transaction/date %)) daily-txs)]
+        report-this-month (let [daily-txs-by-timestamp (->> transactions
+                                                           (adjusted-income)
+                                                            (remove housing-or-transport?)
+                                                            (group-by #(:date/timestamp (:transaction/date %))))]
                                   ; Calculate spent vs balance for each month and assoc to a month timestamp in the resulting map.
                                   (reduce spent-balance
-                                          {:balance      (- sum-large-transactions)
-                                           :by-timestamp by-timestamp
+                                          {:balance      0
+                                           :by-timestamp daily-txs-by-timestamp
                                            :values       {}}
                                           (map date/date->long (date-range start-date end-date))))
 

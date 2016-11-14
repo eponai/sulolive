@@ -67,6 +67,9 @@
 
           [:div.row#key-metrics
            [:div.column.key-metric
+            [:div.val-txt (cond->> limit (not= (int limit) limit) (gstring/format "%.2f"))]
+            [:div.title-txt "Income"]]
+           [:div.column.key-metric
             [:div.val-txt (gstring/format "%.2f" (- limit spent))]
             [:div.title-txt "Balance"]]
            [:div.column.key-metric
