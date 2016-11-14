@@ -220,7 +220,7 @@
                                                          %)))
                                         (seq old-convs)
                                         (->> (into (sorted-txs-set)
-                                                   (map (p/assoc-conversion-xf old-convs))))
+                                                   (p/assoc-conversion-xf old-convs)))
                                         :always
                                         (into new-with-convs))]
                 (swap! txs-by-project assoc project-eid {:db-used db :txs new-and-old})

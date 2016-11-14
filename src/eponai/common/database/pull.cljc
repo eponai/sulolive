@@ -301,7 +301,7 @@
                            (fn []
                              (some-> @user-convs (first) (val))))]
     (fn [transaction]
-      #?(:cljs (debug "executing transaction-with-conversion on tx: " transaction))
+      ;;#?(:cljs (debug "executing transaction-with-conversion on tx: " (:db/id transaction)))
      (let [tx-date (get-in transaction [:transaction/date :db/id])
            curr->conv (fn [curr]
                         (or (get-in @transaction-convs [curr tx-date])
@@ -343,16 +343,18 @@
 (defn absolute-fee? [fee]
   #(= :transaction.fee.type/absolute (:transaction.fee/type fee)))
 
-(defn same-conversions? [tx]
-  (letfn [(same-conversion? [currency conversion]
-            (= (get-in currency [:db/id])
-               (get-in conversion [:conversion/currency :db/id])))]
-    (every? (fn [[curr conv]] (same-conversion? curr conv))
-            (cons [(:transaction/currency tx)
-                   (:transaction/conversion tx)]
-                  (->> (:transaction/fees tx)
-                       (filter absolute-fee?)
-                       (map (juxt :transaction.fee/currency :transaction.fee/conversion)))))))
+(defn same-conversions? [user-curr]
+  (fn [tx]
+    (letfn [(same-conversion? [currency conversion]
+              (and (= user-curr (:user-conversion-id conversion))
+                   (= (get-in currency [:db/id])
+                      (get-in conversion [:conversion/currency :db/id]))))]
+      (every? (fn [[curr conv]] (same-conversion? curr conv))
+              (cons [(:transaction/currency tx)
+                     (:transaction/conversion tx)]
+                    (->> (:transaction/fees tx)
+                         (filter absolute-fee?)
+                         (map (juxt :transaction.fee/currency :transaction.fee/conversion))))))))
 
 (defn transaction-conversions [db user-uuid transaction-entities]
   ;; user currency is always the same
@@ -380,26 +382,25 @@
                                  (reduce (fn [m [curr date conv]]
                                            (assoc-in m [curr date] conv))
                                          {})))
-
+        user-curr (one-with db {:where   '[[?u :user/uuid ?user-uuid]
+                                           [?u :user/currency ?e]]
+                                :symbols {'?user-uuid user-uuid}})
         user-convs (delay
-                     (when-let [user-curr (one-with db {:where   '[[?u :user/uuid ?user-uuid]
-                                                                   [?u :user/currency ?e]]
-                                                        :symbols {'?user-uuid user-uuid}})]
-                       (let [convs (into {}
-                                         (find-with db {:find-pattern '[?date ?conv]
-                                                        :symbols      {'[?date ...] (reduce into #{} (vals @currency-date-pairs))
-                                                                       '?user-curr  user-curr}
-                                                        :where        '[[?conv :conversion/currency ?user-curr]
-                                                                        [?conv :conversion/date ?date]]}))]
-                         (if (seq convs)
-                           convs
-                           ;; When there are no conversions for any of the transaction's dates, just pick any one.
-                           (let [one-conv (entity* db (one-with db {:where   '[[?e :conversion/currency ?user-curr]]
-                                                                    :symbols {'?user-curr user-curr}}))]
-                             {(get-in one-conv [:conversion/date :db/id]) (:db/id one-conv)})))))]
+                     (let [convs (into {}
+                                       (find-with db {:find-pattern '[?date ?conv]
+                                                      :symbols      {'[?date ...] (reduce into #{} (vals @currency-date-pairs))
+                                                                     '?user-curr  user-curr}
+                                                      :where        '[[?conv :conversion/currency ?user-curr]
+                                                                      [?conv :conversion/date ?date]]}))]
+                       (if (seq convs)
+                         convs
+                         ;; When there are no conversions for any of the transaction's dates, just pick any one.
+                         (let [one-conv (entity* db (one-with db {:where   '[[?e :conversion/currency ?user-curr]]
+                                                                  :symbols {'?user-curr user-curr}}))]
+                           {(get-in one-conv [:conversion/date :db/id]) (:db/id one-conv)}))))]
     (into {}
           ;; Skip transactions that has a conversion with the same currency.
-          (comp (remove same-conversions?)
+          (comp (remove (same-conversions? user-curr))
                 (map (transaction-with-conversion-fn db transaction-convs user-convs))
                 (filter some?))
           transaction-entities)))
