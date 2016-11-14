@@ -41,14 +41,16 @@
     (let [value-input (js/ReactDOM.findDOMNode (om/react-ref this "fee-value-input"))]
       (.focus value-input)))
   (render [this]
-    (let [{:keys [all-currencies]} (om/get-computed this)
+    (let [{:keys [all-currencies is-atm?]} (om/get-computed this)
           {:keys [transaction-fee]} (om/get-state this)]
       (debug "Will add transaction fee: " transaction-fee)
       (html
         [:div.add-new-transaction-fee
          [:div
-          (let [type->select-value (->> [[:transaction.fee.type/absolute "$"]
-                                         [:transaction.fee.type/relative "%"]]
+          (let [type->select-value (->> (if is-atm?
+                                          [[:transaction.fee.type/absolute "$"]]
+                                          [[:transaction.fee.type/absolute "$"]
+                                           [:transaction.fee.type/relative "%"]])
                                         (map #(zipmap [:value :label] %))
                                         (group-by :value)
                                         (medley/map-vals first))]
@@ -281,7 +283,7 @@
 
   (render-bank-fee-section [this]
     (let [{:keys [query/all-currencies]} (om/props this)
-          {:keys [::input-transaction ::add-fee?]} (om/get-state this)
+          {:keys [::input-transaction ::add-fee? ::type]} (om/get-state this)
           {:keys [transaction/fees transaction/currency]} input-transaction
           currencies-by-id (delay (->> all-currencies (group-by :db/id) (medley/map-vals first)))
           find-currency (fn [curr-id] (get @currencies-by-id curr-id))]
@@ -321,7 +323,8 @@
           (when add-fee?
             (utils/popup {:on-close #(om/update-state! this assoc ::add-fee? false)}
                          (->AddTransactionFee (om/computed {}
-                                                           {:all-currencies all-currencies
+                                                           {:is-atm?        (= type :type/atm)
+                                                            :all-currencies all-currencies
                                                             :default-currency currency
                                                             :on-save        #(om/update-state! this (fn [st]
                                                                                                       (-> st
