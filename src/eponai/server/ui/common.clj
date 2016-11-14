@@ -104,22 +104,25 @@
 
 
 (defn footer []
-  (dom/div {:id "footer-container"}
-    (dom/div {:className "footer"
-              :id "footer"}
-      (dom/ul {:className "menu"}
+  (dom/div {:className "footer"
+            :id        "footer"}
+    (dom/ul {:className "menu"}
 
-              (dom/li nil
-                      (dom/small nil
-                                 "Say hi to us anytime at "
-                                 (dom/a {:className "mail-link"
-                                         :href "mailto:info@jourmoney.com"}
-                                        "info@jourmoney.com"))))
-      (dom/ul {:className "menu"}
-              (dom/li nil
-                      (dom/small nil
-                                 (dom/a {:href  "//www.iubenda.com/privacy-policy/7944779"
-                                         :class "iubenda-nostyle no-brand iubenda-embed"
-                                         :title "Privacy Policy"} "Privacy Policy")))
-              (dom/li nil
-                      (dom/small nil "Copyright © eponai 2016. All Rights Reserved"))))))
+            (dom/li nil
+                    (dom/small nil
+                               "Say hi to us anytime at "
+                               (dom/a {:className "mail-link"
+                                       :href      "mailto:info@jourmoney.com"}
+                                      "info@jourmoney.com"))))
+    (dom/ul {:className "menu"}
+            (dom/li nil
+                    (dom/small nil
+                               (dom/a {:href  "//www.iubenda.com/privacy-policy/7944779"
+                                       :class "iubenda-nostyle no-brand iubenda-embed"
+                                       :title "Privacy Policy"} "Privacy Policy")))
+            (dom/li nil
+                    (dom/small nil
+                               (dom/a {:href  "/terms"
+                                       :target "_blank"} "Terms of Service")))
+            (dom/li nil
+                    (dom/small nil "Copyright © eponai 2016. All Rights Reserved")))))

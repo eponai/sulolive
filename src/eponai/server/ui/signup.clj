@@ -28,7 +28,8 @@
                                   (dom/strong nil "jourmoney"))))
                 (dom/div {:className "intro intro-message"}
                   (dom/div {:id "jm-signup"})))
-              (common/footer))))
+              (dom/div {:id "footer-container"}
+                (common/footer)))))
         (dom/script {:src "/dev/js/out/budget.js"
                      :type text-javascript})
         (common/inline-javascript ["env.web.main.runsignup()"])))))

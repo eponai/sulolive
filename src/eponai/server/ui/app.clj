@@ -30,7 +30,8 @@
                  (dom/div {:className "row column"}
                    (dom/div {:className "top-bar"}))))
              (dom/div {:id "page-content"})
-             (common/footer)))
+             (dom/div {:id "footer-container"}
+               (common/footer))))
          (dom/script {:src (if release?
                              "/release/js/out/budget.js"
                              "/dev/js/out/budget.js")

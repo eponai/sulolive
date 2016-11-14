@@ -3,7 +3,8 @@
             [om.dom :as dom]
             [eponai.server.ui.app :as app]
             [eponai.server.ui.index :as index]
-            [eponai.server.ui.signup :as signup]))
+            [eponai.server.ui.signup :as signup]
+            [eponai.server.ui.terms :as terms]))
 
 (defn with-doctype [html-str]
   (str "<!DOCTYPE html>" html-str))
@@ -24,8 +25,9 @@
          (render-fn# props#)))))
 
 ;; These will be defined by the defsite macro.
-(declare app-html index-html signup-html)
+(declare app-html index-html signup-html terms-html)
 
 (defsite app-html app/App)
 (defsite index-html index/Index)
 (defsite signup-html signup/Signup)
+(defsite terms-html terms/Terms)

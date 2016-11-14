@@ -34,7 +34,7 @@
 #signup-page {
   @include landing-button (false);
 }
-#landing-page, #signup-page {
+#landing-page, #signup-page, #jm-terms {
   nav a {
     color: $white;
   }
@@ -73,9 +73,26 @@
     }
   }
   #footer {
-    .iubenda-embed {
-      display: none;
+    a:not(.mail-link) {
+      color: $white;
     }
+  }
+}
+
+#jm-terms {
+  height: 100%;
+  #footer {
+    color: $darkblue;
+    background: $white;
+  }
+  h1 {
+    font-size: 2.2rem;
+  }
+  h2 {
+    font-size: 1.9rem;
+  }
+  h3 {
+    font-size: 1.5rem;
   }
 }
 

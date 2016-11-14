@@ -42,6 +42,8 @@
     (if (friend/authorized? #{::a/user} request)
       (r/redirect "/app")
       (server.ui/index-html (request->props request))))
+  (GET "/terms" request
+       (server.ui/terms-html (request->props request)))
 
   (ANY "/stripe" {:keys [::m/conn body]}
     (try

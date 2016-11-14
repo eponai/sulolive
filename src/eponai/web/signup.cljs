@@ -33,7 +33,7 @@
 
 (defn terms-of-service-link []
   [:a.link
-   {:href "http://www.websitepolicies.com/policies/view/o5bTzU"
+   {:href "/terms"
     :target "_blank"}
    "Terms of Service"])
 
@@ -87,6 +87,15 @@
          [:p.divider "or"]
          ;[:h2 "Sign in with email"]
 
+         [:p.accept-terms
+          "By signing in, you accept Jourmoney's "
+          (privacy-policy-link)
+          " and "
+          (terms-of-service-link)
+          ;[:a.link {:class "btn btn-link btn-xs"} "Terms of Service"]
+          ]
+
+
          [:div.input-section
           (cond (= status :pending-verification)
                 [:small.message
@@ -110,6 +119,9 @@
           ;   [:small.text-success "Check your inbox for a fancy sign in link!"])]
           ]
 
+         ;[:br]
+         ;; --------- Social Buttons
+         ;[:hr.intro-divider-landing]
 
          [:input.button
           {:type      :submit
@@ -117,17 +129,6 @@
            :value     "Sign in with Email"
            :on-click  #(.on-email-login this)
            :tab-index 2}]
-
-         ;[:br]
-         ;; --------- Social Buttons
-         ;[:hr.intro-divider-landing]
-
-         [:p.accept-terms
-          "By signing in, you accept Jourmoney's "
-          ;(terms-of-service-link)
-          ;[:a.link {:class "btn btn-link btn-xs"} "Terms of Service"]
-          ;" and "
-          (privacy-policy-link)]
          ]))))
 
 (def ->log-in (om/factory LogIn))

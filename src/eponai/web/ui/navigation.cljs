@@ -237,5 +237,10 @@
            "Privacy Policy"]]]
         [:li
          [:small
+          [:a {:href  "/terms"
+               :target "_blank"}
+           "Terms of Service"]]]
+        [:li
+         [:small
           "Copyright © eponai 2016. All Rights Reserved"]]]])))
 (def ->Footer (om/factory Footer))
