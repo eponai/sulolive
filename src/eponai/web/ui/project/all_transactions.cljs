@@ -31,6 +31,15 @@
 (defn empty-sorted-tag-set []
   (sorted-set-by #(compare (:tag/name %) (:tag/name %2))))
 
+(defn total-amount [{:keys [transaction/amount transaction/conversion transaction/fees]}]
+  (when-let [rate (:conversion/rate conversion)]
+    (let [amount (cond-> amount (string? amount) (reader/read-string))
+          fee-amount (transduce (map (fn [fee]
+                                       (/ (:transaction.fee/value fee)
+                                          (get-in fee [:transaction.fee/conversion :conversion/rate] 1))))
+                                + 0 fees)]
+      (+ (/ amount rate) fee-amount))))
+
 ;; ################### Om next components ###################
 
 (defui Transaction
@@ -77,18 +86,12 @@
         ;; Amount in main currency
         (dom/div
           #js {:className "amount"}
-          (if-let [rate (:conversion/rate conversion)]
-            (let [amount (cond-> amount (string? amount) (reader/read-string))
-                  fee-amount (transduce (map (fn [fee]
-                                               (/ (:transaction.fee/value fee)
-                                                  (get-in fee [:transaction.fee/conversion :conversion/rate] 1))))
-                                        + 0 (:transaction/fees transaction))
-                  converted-amount (+ (/ amount rate) fee-amount)]
-              (if (= (:db/ident type) :transaction.type/expense)
-                (dom/strong #js {:className "expense"}
-                            (str "-" (two-decimal-string converted-amount)))
-                (dom/strong #js {:className "income"}
-                            (two-decimal-string converted-amount))))
+          (if-let [converted-amount (total-amount transaction)]
+            (if (= (:db/ident type) :transaction.type/expense)
+              (dom/strong #js {:className "expense"}
+                          (str "-" (two-decimal-string converted-amount)))
+              (dom/strong #js {:className "income"}
+                          (two-decimal-string converted-amount)))
             (dom/i #js {:className "fa fa-spinner fa-spin"})))
 
         ;; Date

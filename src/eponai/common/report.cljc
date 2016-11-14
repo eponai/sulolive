@@ -13,19 +13,21 @@
             [clj-time.periodic :as p]
        :cljs [cljs-time.periodic :as p])))
 
-(defn converted-amount [{:keys [transaction/conversion
-                                transaction/amount]}]
+(defn nan? [x]
+  #?(:clj  (Double/isNaN x)
+     :cljs (js/isNaN x)))
+
+;;TODO: Sort of copied from all_transactions.cljs, but not really :/
+;;TODO: Assoc this converted amount onto the transaction?
+(defn converted-amount [{:keys [transaction/amount transaction/conversion transaction/fees]}]
   (let [rate (:conversion/rate conversion)]
-    (if (and conversion
-             (number? rate)
-             (not #?(:clj  (Double/isNaN rate)
-                     :cljs (js/isNaN rate))))
-      #?(:clj  (let [ret (with-precision 10 (bigdec (/ amount
-                                                       rate)))]
-                 ;(prn "Conversion: " ret " amount " amount "rate " rate)
-                 ret)
-         :cljs (/ amount
-                  rate))
+    (if (and (and conversion (number? rate) (not (nan? rate))))
+      (let [fee-amount (transduce (map (fn [fee]
+                                         (/ (:transaction.fee/value fee)
+                                            (get-in fee [:transaction.fee/conversion :conversion/rate] 1))))
+                                  + 0 fees)]
+        (+ fee-amount #?(:clj  (with-precision 10 (bigdec (/ amount rate)))
+                         :cljs (/ amount rate))))
       0)))
 
 (defn date-range [start-date end-date]
