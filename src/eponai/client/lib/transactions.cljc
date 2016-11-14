@@ -14,6 +14,10 @@
                            :currency/symbol-native
                            :currency/name]}
    {:transaction/category [:category/name]}
+   {:transaction/fees [:db/id
+                       :transaction.fee/currency
+                       :transaction.fee/value
+                       :transaction.fee/type]}
    {:transaction/tags [:db/id :tag/name]}
    {:transaction/date [:db/id
                        :date/timestamp

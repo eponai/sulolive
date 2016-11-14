@@ -17,52 +17,67 @@
     [taoensso.timbre :refer-macros [warn debug]]
     [eponai.web.ui.utils.css-classes :as css]
     [cljs-time.core :as t]
-    [clojure.data :as diff]))
+    [clojure.data :as diff]
+    [medley.core :as medley]))
 
 
 (defui AddTransactionFee
+  utils/ISyncStateWithProps
+  (props->init-state [_ props]
+    (let [{:keys [default-currency]} (::om/computed props)]
+      {:transaction-fee {:transaction.fee/type :transaction.fee.type/absolute
+                         :transaction.fee/currency default-currency}}))
   Object
   (save [this]
     (let [{:keys [on-save]} (om/get-computed this)
           {:keys [transaction-fee]} (om/get-state this)]
       (when on-save
-        (on-save (-> transaction-fee
-                     (update :transaction.fee/type #(:value %)))))))
-  (initLocalState [_]
-    {:transaction-fee {:transaction.fee/type {:label "$" :value :transaction.fee.type/absolute}}})
+        (on-save transaction-fee))))
+  (initLocalState [this]
+    (utils/props->init-state this (om/props this)))
+  (componentWillReceiveProps [this next-props]
+    (utils/sync-with-received-props this next-props))
   (componentDidMount [this]
     (let [value-input (js/ReactDOM.findDOMNode (om/react-ref this "fee-value-input"))]
       (.focus value-input)))
   (render [this]
-    (let [{:keys [all-currencies default]} (om/get-computed this)
+    (let [{:keys [all-currencies]} (om/get-computed this)
           {:keys [transaction-fee]} (om/get-state this)]
       (debug "Will add transaction fee: " transaction-fee)
       (html
         [:div.add-new-transaction-fee
          [:div
-          (sel/->SegmentedOption (om/computed {:options [{:label "$" :value :transaction.fee.type/absolute}
-                                                         {:label "%" :value :transaction.fee.type/relative}]
-                                               :name    "fee-selector"
-                                               :value   (:transaction.fee/type transaction-fee)}
-                                              {:on-select #(om/update-state! this assoc-in [:transaction-fee :transaction.fee/type] %)}))]
+          (let [type->select-value (->> [[:transaction.fee.type/absolute "$"]
+                                         [:transaction.fee.type/relative "%"]]
+                                        (map #(zipmap [:value :label] %))
+                                        (group-by :value)
+                                        (medley/map-vals first))]
+            (sel/->SegmentedOption (om/computed {:options (vals type->select-value)
+                                                 :name    "fee-selector"
+                                                 :value   (type->select-value (:transaction.fee/type transaction-fee))}
+                                               {:on-select #(om/update-state! this assoc-in [:transaction-fee :transaction.fee/type]
+                                                                              (:value %))})))]
          [:div
           [:input {:type        "number"
                    :placeholder "Value"
                    :ref         "fee-value-input"
-                   :on-change   #(om/update-state! this assoc-in [:transaction-fee :transaction.fee/value] (.. % -target -value))}]]
-         (when (= (get-in transaction-fee [:transaction.fee/type :value]) :transaction.fee.type/absolute)
+                   :on-change   #(om/update-state! this assoc-in [:transaction-fee :transaction.fee/value]
+                                                   (.. % -target -value))}]]
+         (when (= :transaction.fee.type/absolute (:transaction.fee/type transaction-fee))
            [:div
-            (sel/->Select {:options (map (fn [{:keys [currency/code db/id]}]
-                                           {:label code
-                                            :value id})
-                                         all-currencies)
-                           :value   (or (:transaction.fee/currency transaction-fee) default)})])
+            (sel/->Select (om/computed {:options (map (fn [{:keys [currency/code]}]
+                                                        {:label code :value code})
+                                                      all-currencies)
+                                        :value   (zipmap [:label :value]
+                                                         (repeat (get-in transaction-fee [:transaction.fee/currency :currency/code])))}
+                                       {:on-select #(om/update-state! this assoc-in [:transaction-fee :transaction.fee/currency]
+                                                                      {:currency/code (:label %)})}))])
          [:a.button.small
-          {:on-click
-           #(.save this)}
+          {:on-click #(when (seq (:transaction.fee/value transaction-fee))
+                       (.save this))}
           "Add"]]))))
 
-(def ->AddTransactionFee (om/factory AddTransactionFee))
+(def  ->AddTransactionFee (om/factory AddTransactionFee))
 
 (defn two-decimal-string [s]
   (gstring/format "%.2f" (str s)))
@@ -74,7 +89,7 @@
   static om/IQuery
   (query [_]
     [:query/message-fn
-     {:query/all-currencies [:currency/code]}
+     {:query/all-currencies [:db/id :currency/code]}
      {:query/all-tags [:tag/name]}
      {:query/all-categories [:category/name]}])
   utils/ISyncStateWithProps
@@ -83,6 +98,7 @@
       (debug "Setting input transaction: " transaction)
       (let [input-transaction (-> transaction
                                   (update :transaction/amount two-decimal-string)
+                                  (update :transaction/fees set)
                                   (update :transaction/tags
                                           (fn [tags]
                                             (into (empty-sorted-tag-set)
@@ -108,7 +124,7 @@
                                    :transaction/currency {:currency/code (:currency/code usd-entity)}
                                    :transaction/project  project-id
                                    :transaction/type     :transaction.type/expense
-                                   :transaction/fees     []}
+                                   :transaction/fees     #{}}
 
          ::type                   :type/expense
          ::is-longterm?           false
@@ -124,6 +140,9 @@
   (save-edit [this]
     (let [{:keys [::input-transaction
                   ::init-state]} (om/get-state this)
+          ;update-fees #(cond-> % (:transaction/fees %) (update :transaction/fees set))
+          ;init-state (update-fees init-state)
+          ;input-transaction (update-fees input-transaction)
           diff (diff/diff init-state input-transaction)
           ;added-tags (or (:transaction/tags (second diff)) [])
           removed-tags (or (filter some? (:transaction/tags (first diff))) [])
@@ -263,30 +282,38 @@
   (render-bank-fee-section [this]
     (let [{:keys [query/all-currencies]} (om/props this)
           {:keys [::input-transaction ::add-fee?]} (om/get-state this)
-          {:keys [transaction/fees transaction/currency]} input-transaction]
+          {:keys [transaction/fees transaction/currency]} input-transaction
+          currencies-by-id (delay (->> all-currencies (group-by :db/id) (medley/map-vals first)))
+          find-currency (fn [curr-id] (get @currencies-by-id curr-id))]
       (html
         [:div.row
          {:key (str "add-transaction-fees-" (:transaction/uuid input-transaction))}
          [:div.column.transaction-fee
           [:div
            (when-not (empty? fees)
-             (map (fn [fee i]
-                    [:div.transaction-fee-container
-                     {:key (str "fee " i)}
-                     (let [fee-type (:transaction.fee/type fee)
-                           fee-value (gstring/format "%.2f" (:transaction.fee/value fee))
-                           title (if (= fee-type :transaction.fee.type/absolute) "Fixed value" "Relative value")
-                           value (if (= fee-type :transaction.fee.type/absolute) (str "$ " fee-value) (str fee-value " %"))]
-                       [:div.transaction-fee
-                        [:strong value]
-                        [:span title]
-                        [:a.float-right
-                         {:on-click #(om/update-state! this update-in [::input-transaction :transaction/fees] (fn [fees]
-                                                                                                                (apply (partial conj (subvec fees 0 i))
-                                                                                                                       (subvec fees (inc i) (count fees)))))}
-                         "x"]])])
-                  fees
-                  (range)))]
+             (map-indexed
+               (fn [i fee]
+                 [:div.transaction-fee-container
+                  {:key (str "fee " i)}
+                  (let [fee-type (:transaction.fee/type fee)
+                        fee-value (gstring/format "%.2f" (:transaction.fee/value fee))
+                        title (if (= fee-type :transaction.fee.type/absolute) "Fixed value" "Relative value")
+                        value (if (= fee-type :transaction.fee.type/absolute)
+                                (let [curr (:transaction.fee/currency fee)
+                                      currency-code (or (:currency/code curr)
+                                                        (:currency/code (find-currency (:db/id curr))))]
+                                  (str fee-value " " currency-code))
+                                (str fee-value " %"))]
+                    [:div.transaction-fee
+                     [:strong value]
+                     [:span title]
+                     [:a.float-right
+                      {:on-click #(om/update-state! this update-in [::input-transaction :transaction/fees] disj fee)}
+                      "x"]])])
+               ;; This sorting sorts by largest :db/id first
+               ;; If the fee doesn't have a :db/id it'll be placed
+               ;; on the bottom.
+               (sort-by :db/id #(compare %2 %1) fees)))]
           [:div
            [:a
             {:on-click #(om/update-state! this assoc ::add-fee? true)}
@@ -295,7 +322,7 @@
             (utils/popup {:on-close #(om/update-state! this assoc ::add-fee? false)}
                          (->AddTransactionFee (om/computed {}
                                                            {:all-currencies all-currencies
-                                                            :default        currency
+                                                            :default-currency currency
                                                             :on-save        #(om/update-state! this (fn [st]
                                                                                                       (-> st
                                                                                                           (update-in [::input-transaction :transaction/fees] conj %)

@@ -108,6 +108,25 @@
   {:pre [(map? input)]}
   (add-tempid (select-keys input [:db/id :currency/code])))
 
+(defn bigdec! [x]
+  #?(:clj  (bigdec x)
+     :cljs (cond-> x
+                   (string? x)
+                   (cljs.reader/read-string))))
+
+(defn lookup-ref? [x]
+  (and (sequential? x)
+       (count (= 2 x))))
+
+(defn fee* [fee]
+  (letfn [(curr [c]
+            (currency* (cond->> c (lookup-ref? c) (apply hash-map))))]
+    (cond-> (add-tempid fee)
+            (:transaction.fee/value fee)
+            (update :transaction.fee/value bigdec!)
+            (:transaction.fee/currency fee)
+            (update :transaction.fee/currency curr))))
+
 (defn transaction
   "Create a transaction entity for the given input. Will replace the name space of the keys to the :transaction/ namespace
 
@@ -131,20 +150,12 @@
                      :transaction/category (fn [c]
                                              {:pre [(map? c)]}
                                              c)
-                     :transaction/fees      (fn [fee]
-                                             {:pre [(coll? fee)]}
-                                             (map
-                                               #(update % :transaction.fee/value (fn [a] #?(:clj  (bigdec a)
-                                                                                              :cljs (cond-> a
-                                                                                                            (string? a)
-                                                                                                            (cljs.reader/read-string)))))
-                                               fee))
+                     :transaction/fees     (fn [fees]
+                                             {:pre [(every? map? fees)]}
+                                             (into #{} (map fee*) fees))
                      :transaction/amount   (fn [a]
                                              {:pre [(or (string? a) (number? a))]}
-                                             #?(:clj  (bigdec a)
-                                                :cljs (cond-> a
-                                                              (string? a)
-                                                              (cljs.reader/read-string))))
+                                             (bigdec! a))
                      :transaction/type     (fn [t] {:pre [(or (keyword? (:db/ident t t)))]}
                                              {:db/ident t})}
         update-fn (fn [m k]
