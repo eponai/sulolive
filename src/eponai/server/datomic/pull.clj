@@ -390,6 +390,6 @@
               (str "Return value of eid->client-txs needs to be nil or sequential."
                    " Was: " external-data
                    " for eid: " eid))
-      {:value (-> []
-                  (into in-datomic)
-                  (into external-data))})))
+      (-> []
+          (into in-datomic)
+          (into external-data)))))

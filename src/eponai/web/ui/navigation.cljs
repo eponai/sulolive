@@ -205,10 +205,9 @@
 
           (when settings-open?
             (utils/modal
-              {:content  (->Settings
-                           (om/computed settings-props
-                                        {:on-close #(om/transact! this `[(navbar/settings-hide)])}))
-               :on-close #(om/transact! this `[(navbar/settings-hide)])}))
+              (let [on-close #(om/transact! this `[(navbar/settings-hide) :routing/app-root])]
+                {:content  (->Settings (om/computed settings-props {:on-close on-close}))
+                 :on-close on-close})))
           (when new-transaction?
             (utils/modal {:content  (->AddTransaction
                                       (om/computed add-transaction

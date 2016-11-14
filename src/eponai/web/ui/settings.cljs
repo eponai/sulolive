@@ -21,7 +21,7 @@
       (.addCallback #(put! channel [:stripe-checkout-loaded :success]))))
 
 (defn checkout-loaded? []
-  (boolean (aget js/window "StripeCheckout")))
+  (boolean (gobj/get js/window "StripeCheckout")))
 
 (defn stripe-token-recieved-cb [component]
   (fn [token]
@@ -64,14 +64,24 @@
                       :fb-user/id
                       :fb-user/picture]}])
 
+  utils/ISyncStateWithProps
+  (props->init-state [this props]
+    {:paywhatyouwant (or
+                       (:paywhatyouwant (om/get-state this))
+                       (get-in props [:query/stripe :stripe/info :subscription :quantity]))})
 
   Object
-  (initLocalState [_]
-    (let [checkout-loaded (checkout-loaded?)]
-      {:checkout-loaded?   checkout-loaded
-       :load-checkout-chan (chan)
-       :is-stripe-loading? (not checkout-loaded)
-       :tab                :general}))
+  (initLocalState [this]
+    (merge (utils/props->init-state this (om/props this))
+           (let [checkout-loaded (checkout-loaded?)]
+             {:checkout-loaded?   checkout-loaded
+              :load-checkout-chan (chan)
+              :is-stripe-loading? (not checkout-loaded)
+              :tab                :general})))
+
+  (componentWillReceiveProps [this props]
+    (utils/sync-with-received-props this props))
+
   (componentWillMount [this]
     (let [{:keys [load-checkout-chan
                   checkout-loaded?]} (om/get-state this)]
@@ -215,7 +225,7 @@
                    [:div.clearfix
                     [:input.float-right
                      {:key "paywhatyouwant"
-                      :value     (or paywhatyouwant (get-in info [:subscription :quantity]) "0")
+                      :value     (or paywhatyouwant "0")
                       :type      "number"
                       :min       "0"
                       :step      "1"

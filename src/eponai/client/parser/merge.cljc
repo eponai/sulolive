@@ -24,12 +24,12 @@
     (d/transact new-conn current-entities)
     (d/db new-conn)))
 
-(defn merge-current-user [db _ current-user]
-  (debug "IS MERGING CURRENT_USER: " current-user)
-  (if (:error current-user)
-    (d/db-with db [[:db.fn/retractEntity [:ui/singleton :ui.singleton/auth]]])
-    (d/db-with db [{:ui/singleton           :ui.singleton/auth
-                    :ui.singleton.auth/user current-user}])))
+;(defn merge-current-user [db _ current-user]
+;  (debug "IS MERGING CURRENT_USER: " current-user)
+;  (if (:error current-user)
+;    (d/db-with db [[:db.fn/retractEntity [:ui/singleton :ui.singleton/auth]]])
+;    (d/db-with db [{:ui/singleton           :ui.singleton/auth
+;                    :ui.singleton.auth/user current-user}])))
 
 (defn merge-transactions [db _ {:keys [transactions conversions refs]}]
   (-> db
@@ -104,8 +104,8 @@
       (= :query/transactions key)
       (merge-transactions db key val)
 
-      (= :user/current key)
-      (merge-current-user db key val)
+      ;;(= :user/current key)
+      ;;(merge-current-user db key val)
 
       :else
       (transact db val))))

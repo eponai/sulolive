@@ -32,9 +32,7 @@
              (dom/div {:id "page-content"})
              (dom/div {:id "footer-container"}
                (common/footer))))
-         (dom/script {:src (if release?
-                             "/release/js/out/budget.js"
-                             "/dev/js/out/budget.js")
+         (dom/script {:src  (common/budget-js-path release?)
                       :type text-javascript})
          (if playground?
            (common/inline-javascript ["env.web.main.runplayground()"])

@@ -126,3 +126,8 @@
                                        :target "_blank"} "Terms of Service")))
             (dom/li nil
                     (dom/small nil "Copyright © eponai 2016. All Rights Reserved")))))
+
+(defn budget-js-path [release?]
+  (str "/"
+       (if release? "release" "dev")
+       "/js/out/budget.js"))

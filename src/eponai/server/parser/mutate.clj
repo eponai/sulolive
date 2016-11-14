@@ -170,7 +170,8 @@
   {:action (fn []
              (debug "session.connect/facebook with params: " p)
              (api/facebook-connect state (assoc p :user-uuid (:username auth)) fb-validate-fn)
-             (swap! force-read-without-history conj :query/fb-user))})
+             (swap! force-read-without-history conj :query/fb-user)
+             nil)})
 
 (defmutation session.disconnect/facebook
   [{:keys [state auth]} _ _]

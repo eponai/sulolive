@@ -30,6 +30,6 @@
                   (dom/div {:id "jm-signup"})))
               (dom/div {:id "footer-container"}
                 (common/footer)))))
-        (dom/script {:src "/dev/js/out/budget.js"
+        (dom/script {:src (common/budget-js-path release?)
                      :type text-javascript})
         (common/inline-javascript ["env.web.main.runsignup()"])))))
