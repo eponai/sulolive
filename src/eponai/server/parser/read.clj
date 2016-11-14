@@ -100,29 +100,6 @@
                          :conversions  (d/pull-many db '[*] (seq conv-ids))
                          :refs         (d/pull-many db '[*] (seq ref-ids))})}))))
 
-(defmethod parser/read-basis-param-path :query/dashboard [env _ params] [(env+params->project-eid env params)])
-(defmethod server-read :query/dashboard
-  [{:keys [db db-history query user-uuid] :as env} _ params]
-  {:value (if-let [project-eid (env+params->project-eid env params)]
-            (server.pull/one
-              db db-history query
-              (-> {:where   '[[?e :dashboard/project ?p]
-                              [?p :project/users ?u]]
-                   :symbols {'?p project-eid}}
-                  (common.pull/with-auth user-uuid)))
-            (debug "No project-eid found for user-uuid: " user-uuid))})
-
-(defmethod parser/read-basis-param-path :query/active-dashboard [env _ params] [(env+params->project-eid env params)])
-(defmethod server-read :query/active-dashboard
-  [{:keys [db db-history query user-uuid] :as env} _ params]
-  {:value (if-let [project-id (env+params->project-eid env params)]
-            (server.pull/one db db-history query
-                             (-> {:where   '[[?e :dashboard/project ?p]
-                                             [?p :project/users ?u]]
-                                  :symbols {'?p project-id}}
-                                 (common.pull/with-auth user-uuid)))
-            (debug "No project-eid found for user-uuid: " user-uuid))})
-
 (defmethod server-read :query/all-projects
   [{:keys [db db-history query auth]} _ _]
   {:value (if auth

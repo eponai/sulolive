@@ -49,32 +49,11 @@
   (when-not target
     (read/read-entity-by-key db query [:ui/component :ui.component/transactions])))
 
-(defmethod client-read :query/active-widget-open
-  [{:keys [db query target]} _ _]
-  (when-not target
-    {:value (p/pull db query [:ui/component :ui.component/widget])}))
-
-(defmethod client-read :query/active-widget
-  [{:keys [db query target]} _ _]
-  (when-not target
-    (let [{:keys [ui.component.widget/id]} (p/lookup-entity db [:ui/component :ui.component/widget])]
-     {:value (when (number? id)
-               (p/pull db query id))})))
-
-(defmethod client-read :query/widget-type
-  [{:keys [db query target]} _ _]
-  (when-not target
-    {:value (p/pull db query [:ui/component :ui.component/widget])}))
 
 (defmethod client-read :query/root-component
   [{:keys [db query target]} _ _]
   (when-not target
     (read/read-entity-by-key db nil [:ui/component :ui.component/root])))
-
-(defmethod client-read :query/sidebar
-  [{:keys [db query target]} _ _]
-  (when-not target
-    (read/read-entity-by-key db query [:ui/component :ui.component/sidebar])))
 
 (defmethod client-read :query/navbar
   [{:keys [db query target]} _ _]
