@@ -343,18 +343,24 @@
 (defn absolute-fee? [fee]
   #(= :transaction.fee.type/absolute (:transaction.fee/type fee)))
 
-(defn same-conversions? [user-curr]
-  (fn [tx]
-    (letfn [(same-conversion? [currency conversion]
-              (and (= user-curr (:user-conversion-id conversion))
-                   (= (get-in currency [:db/id])
-                      (get-in conversion [:conversion/currency :db/id]))))]
-      (every? (fn [[curr conv]] (same-conversion? curr conv))
-              (cons [(:transaction/currency tx)
-                     (:transaction/conversion tx)]
-                    (->> (:transaction/fees tx)
-                         (filter absolute-fee?)
-                         (map (juxt :transaction.fee/currency :transaction.fee/conversion))))))))
+(defn same-conversions? [db user-curr]
+  (let [user-conv->user-curr (memoize
+                               (fn [user-conv]
+                                 (let [ret (get-in (entity* db user-conv) [:conversion/currency :db/id])]
+                                   #?(:cljs (assert (number? ret)))
+                                   ret)))]
+    (fn [tx]
+      (letfn [(same-conversion? [currency conversion]
+                (and (= user-curr
+                        (user-conv->user-curr (:user-conversion-id conversion)))
+                     (= (get-in currency [:db/id])
+                        (get-in conversion [:conversion/currency :db/id]))))]
+        (every? (fn [[curr conv]] (same-conversion? curr conv))
+                (cons [(:transaction/currency tx)
+                       (:transaction/conversion tx)]
+                      (->> (:transaction/fees tx)
+                           (filter absolute-fee?)
+                           (map (juxt :transaction.fee/currency :transaction.fee/conversion)))))))))
 
 (defn transaction-conversions [db user-uuid transaction-entities]
   ;; user currency is always the same
@@ -400,7 +406,7 @@
                            {(get-in one-conv [:conversion/date :db/id]) (:db/id one-conv)}))))]
     (into {}
           ;; Skip transactions that has a conversion with the same currency.
-          (comp (remove (same-conversions? user-curr))
+          (comp (remove (same-conversions? db user-curr))
                 (map (transaction-with-conversion-fn db transaction-convs user-convs))
                 (filter some?))
           transaction-entities)))
