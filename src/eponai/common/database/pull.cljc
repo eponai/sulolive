@@ -390,18 +390,19 @@
                                            [?u :user/currency ?e]]
                                 :symbols {'?user-uuid user-uuid}})
         user-convs (delay
-                     (let [convs (into {}
-                                       (find-with db {:find-pattern '[?date ?conv]
-                                                      :symbols      {'[?date ...] (reduce into #{} (vals @currency-date-pairs))
-                                                                     '?user-curr  user-curr}
-                                                      :where        '[[?conv :conversion/currency ?user-curr]
-                                                                      [?conv :conversion/date ?date]]}))]
-                       (if (seq convs)
-                         convs
-                         ;; When there are no conversions for any of the transaction's dates, just pick any one.
-                         (let [one-conv (entity* db (one-with db {:where   '[[?e :conversion/currency ?user-curr]]
-                                                                  :symbols {'?user-curr user-curr}}))]
-                           {(get-in one-conv [:conversion/date :db/id]) (:db/id one-conv)}))))]
+                     (when user-curr
+                       (let [convs (into {}
+                                         (find-with db {:find-pattern '[?date ?conv]
+                                                        :symbols      {'[?date ...] (reduce into #{} (vals @currency-date-pairs))
+                                                                       '?user-curr  user-curr}
+                                                        :where        '[[?conv :conversion/currency ?user-curr]
+                                                                        [?conv :conversion/date ?date]]}))]
+                         (if (seq convs)
+                           convs
+                           ;; When there are no conversions for any of the transaction's dates, just pick any one.
+                           (let [one-conv (entity* db (one-with db {:where   '[[?e :conversion/currency ?user-curr]]
+                                                                    :symbols {'?user-curr user-curr}}))]
+                             {(get-in one-conv [:conversion/date :db/id]) (:db/id one-conv)})))))]
     (into {}
           ;; Skip transactions that has a conversion with the same currency.
           (comp (remove (same-conversions? db user-curr))
