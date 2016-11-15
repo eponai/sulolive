@@ -183,8 +183,7 @@
     ret))
 
 (defn same-user-currency? [db db-used user]
-  (apply = (map #(p/pull % [{:user/currency [:db/id]}]
-                         (:db/id user))
+  (apply = (map #(some-> % (p/pull [{:user/currency [:db/id]}] (:db/id user)))
                 [db db-used])))
 
 (defn all-local-transactions-by-project [{:keys [parser db txs-by-project query] :as env} project-eid]
