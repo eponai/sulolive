@@ -346,9 +346,7 @@
 (defn same-conversions? [db user-curr]
   (let [user-conv->user-curr (memoize
                                (fn [user-conv]
-                                 (let [ret (get-in (entity* db user-conv) [:conversion/currency :db/id])]
-                                   #?(:cljs (assert (number? ret)))
-                                   ret)))]
+                                 (get-in (entity* db user-conv) [:conversion/currency :db/id])))]
     (fn [tx]
       (letfn [(same-conversion? [currency conversion]
                 (and (= user-curr
