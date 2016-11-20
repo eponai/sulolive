@@ -94,7 +94,8 @@
       [low (+ high 10)]
       [low high])))
 
-(defn transaction-type= [t] (comp #{t} :db/ident :transaction/type))
+(defn transaction-type= [type] (fn [t]
+                                 (= type (or (get-in t [:transaction/type :db/ident]) (:transaction/type t)))))
 (def income? (transaction-type= :transaction.type/income))
 (def expense? (transaction-type= :transaction.type/expense))
 (def housing-or-transport? (comp some? #{"Housing" "Transport"} :category/name :transaction/category))

@@ -159,7 +159,7 @@
     (let [{:keys [::is-longterm? ::type] :as st} (om/get-state this)
           update-category (fn [tx]
                                (let [{:keys [transaction/category]} tx]
-                                 (if (nil? (:label category))
+                                 (if (nil? (:category/name category))
                                    (dissoc tx :transaction/category)
                                    tx)))
           message-id (message/om-transact! this
