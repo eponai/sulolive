@@ -88,20 +88,25 @@
        content]]]))
 
 (defn modal [{:keys [content on-close size]}]
-  (let [click-outside-target-id (name :click-outside-target)]
+  (let [click-outside-target-id (name :click-outside-target)
+        body (aget (.. js/document (getElementsByTagName "body")) 0)]
+    (set! (.-className body) "modal-open")
     (html
       [:div.reveal-overlay
        (opts {:id       click-outside-target-id
               :style    {:z-index  2050
                          :display  "block"}
               :on-click #(when (= click-outside-target-id (.-id (.-target %)))
+                          (set! (.-className body) "")
                           (on-close))})
        [:div
         (opts {:class (str size " reveal")
                :style (cond-> {:display  "block"
                                :position :relative})})
         [:a.close-button
-         {:on-click on-close}
+         {:on-click #(do
+                      (set! (.-className body) "")
+                      (on-close))}
          "x"]
         content]])))
 
