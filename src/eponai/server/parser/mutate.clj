@@ -100,8 +100,12 @@
 
 ;; ------------------- User account related ------------------
 
+(defn force-read-keys! [{:keys [::parser/force-read-without-history] :as env} k & ks]
+  (apply swap! force-read-without-history conj k ks)
+  nil)
+
 (defmutation settings/save
-  [{:keys [state auth stripe-fn ::parser/force-read-without-history]} _ {:keys [currency user paywhatyouwant] :as params}]
+  [{:keys [state auth stripe-fn] :as env} _ {:keys [currency user paywhatyouwant] :as params}]
   ["Saved settings" "Error saving settings"]
   {:action (fn []
              (let [db (d/db state)
@@ -115,12 +119,12 @@
                (debug "settings/save with params: " params)
                (when (number? paywhatyouwant)
                  (api/stripe-update-subscription state stripe-fn stripe-account {:quantity paywhatyouwant})
-                 (swap! force-read-without-history conj :query/stripe)))
+                 (force-read-keys! env :query/stripe)))
              (when currency
                (transact/transact-one state [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]])))})
 
 (defmutation stripe/update-card
-  [{:keys [state auth stripe-fn]} _ p]
+  [{:keys [state auth stripe-fn] :as env} _ p]
   ["Card details updated!" "Could not update card details"]
   (let [db (d/db state)
         _ (debug "stripe/card-update with params:" p)
@@ -135,32 +139,35 @@
                (debug "Stripe information: " stripe-account)
                (when stripe-eid
                  (debug "User: " (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])))
-               (api/stripe-update-card state stripe-fn stripe-account p))}))
+               (api/stripe-update-card state stripe-fn stripe-account p)
+               (force-read-keys! env :query/stripe))}))
 
 (defmutation stripe/delete-card
-  [{:keys [state auth stripe-fn]} _ p]
+  [{:keys [state auth stripe-fn] :as env} _ p]
   ["Card deleted" "Could not delete card"]
-  (let [db (d/db state)
-        _ (debug "stripe/delete-card with params:" p)
-        stripe-eid (p/one-with db {:where '[[?u :user/uuid ?user-uuid]
-                                            [?e :stripe/user ?u]]
-                                   :symbols {'?user-uuid (:username auth)}})
-        stripe-account (when stripe-eid
-                         (p/pull db [:stripe/customer
-                                     {:stripe/subscription [:stripe.subscription/id]}]
-                                 stripe-eid))]
-    {:action (fn []
+  {:action (fn []
+             (let [db (d/db state)
+                   _ (debug "stripe/delete-card with params:" p)
+                   stripe-eid (p/one-with db {:where   '[[?u :user/uuid ?user-uuid]
+                                                         [?e :stripe/user ?u]]
+                                              :symbols {'?user-uuid (:username auth)}})
+                   stripe-account (when stripe-eid
+                                    (p/pull db [:stripe/customer
+                                                {:stripe/subscription [:stripe.subscription/id]}]
+                                            stripe-eid))]
                (debug "Stripe information: " stripe-account)
                (when stripe-eid
                  (debug "User: " (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])))
-               (api/stripe-delete-card state stripe-fn stripe-account p))}))
+               (api/stripe-delete-card state stripe-fn stripe-account p)
+               (force-read-keys! env :query/stripe)))})
 
 (defmutation stripe/trial
   [{:keys [state auth stripe-fn]} _ _]
   ["Started trial" "Error starting trial"]
   (let [user (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])]
     {:action (fn []
-               (api/stripe-trial state stripe-fn user))}))
+               (api/stripe-trial state stripe-fn user)
+               (force-read-keys! env :query/stripe))}))
 
 ;; ############# Session mutations #################
 
