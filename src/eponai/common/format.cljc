@@ -42,26 +42,6 @@
 
 ;; -------------------------- Database entities -----------------------------
 
-(defn project
-  "Create project db entity belonging to user with :db/id user-eid.
-
-  Provide opts including keys that should be specifically set. Will consider keys:
-  * :project/name - name of this project, default value is 'Default'.
-  * :project/created-at - timestamp if when project was created, default value is now.
-  * :project/uuid - UUID to assign to this project entity, default will call (d/squuid).
-
-  Returns a map representing a project entity"
-  [user-dbid & [opts]]
-  (cond-> {:db/id              (tempid :db.part/user)
-           :project/uuid       (or (:project/uuid opts) (squuid))
-           :project/created-at (or (:project/created-at opts) (date/date-time->long (date/now)))
-           :project/name       (or (:project/name opts) "My Project")}
-          (some? user-dbid)
-          (->
-            (assoc :project/created-by user-dbid)
-            (assoc :project/users [user-dbid]))))
-
-
 (defn add-tempid
   "Add tempid to provided entity or collection of entities. If e is a map, assocs :db/id.
   If it's list, set or vector, maps over that collection and assoc's :db/id in each element."
@@ -79,6 +59,28 @@
              e)
         :else
         e))
+
+(defn project
+  "Create project db entity belonging to user with :db/id user-eid.
+
+  Provide opts including keys that should be specifically set. Will consider keys:
+  * :project/name - name of this project, default value is 'Default'.
+  * :project/created-at - timestamp if when project was created, default value is now.
+  * :project/uuid - UUID to assign to this project entity, default will call (d/squuid).
+
+  Returns a map representing a project entity"
+  [user-dbid & [opts]]
+  (cond-> {:db/id              (tempid :db.part/user)
+           :project/uuid       (or (:project/uuid opts) (squuid))
+           :project/created-at (or (:project/created-at opts) (date/date-time->long (date/now)))
+           :project/name       (or (:project/name opts) "My Project")
+           :project/categories #{(add-tempid {:category/name "Housing"})
+                                 (add-tempid {:category/name "Transport"})}}
+          (some? user-dbid)
+          (->
+            (assoc :project/created-by user-dbid)
+            (assoc :project/users [user-dbid]))))
+
 
 (defn category*
   [input]
