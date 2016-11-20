@@ -217,9 +217,11 @@
                  {:k :type/income
                   :v :transaction.type/income
                   :label "Income"}
-                 {:k :type/atm
-                  :v :transaction.type/expense
-                  :label "ATM"}]]
+                 ; TODO uncomment when fully ready
+                 ;{:k :type/atm
+                 ; :v :transaction.type/expense
+                 ; :label "ATM"}
+                 ]]
       (html
         [:div.top-bar-container.subnav
          {:key "add-transaction-menu"
@@ -265,21 +267,22 @@
                                                :start-date       (date/date-time end-date)}
                                               {:on-apply on-end-date-apply-fn
                                                :format   "MMM dd"}))])]]
-
-         (when-not (= type :type/atm)
-           [:div.row.column
-            [:div.long-term
-             [:div.switch.tiny
-              [:input.switch-input
-               {:id       "long-term-switch"
-                :type     "checkbox"
-                :name     "long-term-switch"
-                :on-click #(om/update-state! this (fn [st]
-                                                    (cond-> (assoc st ::is-longterm? (.. % -target -checked))
-                                                            (nil? (get-in st [::input-transaction :transaction/end-date]))
-                                                            (assoc-in [::input-transaction :transaction/end-date] (date/date-map (t/plus (date/date-time date) (t/days 30)))))))}]
-              [:label.switch-paddle {:for "long-term-switch"}]]
-             [:span "Long term"]]])])))
+         (comment
+           ; TODO: uncomment this when feature is ready
+           (when-not (= type :type/atm)
+             [:div.row.column
+              [:div.long-term
+               [:div.switch.tiny
+                [:input.switch-input
+                 {:id       "long-term-switch"
+                  :type     "checkbox"
+                  :name     "long-term-switch"
+                  :on-click #(om/update-state! this (fn [st]
+                                                      (cond-> (assoc st ::is-longterm? (.. % -target -checked))
+                                                              (nil? (get-in st [::input-transaction :transaction/end-date]))
+                                                              (assoc-in [::input-transaction :transaction/end-date] (date/date-map (t/plus (date/date-time date) (t/days 30)))))))}]
+                [:label.switch-paddle {:for "long-term-switch"}]]
+               [:span "Long term"]]]))])))
 
   (render-bank-fee-section [this]
     (let [{:keys [query/all-currencies]} (om/props this)
@@ -400,18 +403,25 @@
                    (and show-tags-input? (not= type :type/atm))
                    (conj (.render-tags-section this))
 
-                   (or show-bank-fee-section? (= type :type/atm))
-                   (conj (.render-bank-fee-section this)))]
+                   ; TODO uncomment when bank fees feature is ready
+                   ;(or show-bank-fee-section? (= type :type/atm))
+                   ;(conj (.render-bank-fee-section this))
+                   )]
 
 
 
           [:div.content-section.clearfix
            (when-not (= type :type/atm)
              [:div.float-left
-              [:ul.menu
-               [:li [:a {:on-click #(om/update-state! this update ::show-tags-input? not)} "Tags"]]
-               [:li [:a {:on-click #(om/update-state! this update ::show-bank-fee-section? not)} "Bank fees"]]
-               ]])
+              (cond->
+                [:ul.menu]
+                (not show-tags-input?)
+                (conj [:li [:a {:on-click #(om/update-state! this update ::show-tags-input? not)} "Tags"]])
+
+                ; TODO uncomment when bank fees feature is ready
+                ;(not show-bank-fee-section?)
+                ;(conj [:li [:a {:on-click #(om/update-state! this update ::show-bank-fee-section? not)} "Bank fees"]])
+                )])
            ((-> button/button button/hollow button/black css/float-right)
              {:on-click #(do
                           (if (some? (::init-state (om/get-state this)))
