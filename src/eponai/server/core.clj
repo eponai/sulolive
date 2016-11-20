@@ -38,7 +38,7 @@
                      ::m/currency-rates-fn        (exch/currency-rates-fn (when @in-production? (env :open-exchange-app-id)))
                      ;::m/send-email-fn     (e/send-email-fn conn)
                      ::stripe/stripe-fn           (fn [k p]
-                                                    (stripe/stripe (env :stripe-secret-key-test) k p))
+                                                    (stripe/stripe (env :stripe-secret-key) k p))
                      ::email/send-verification-fn (partial email/send-verification-email @in-production?)
                      ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
                      ::m/playground-user-uuid-fn  (if (env :playground-user-uuid)
