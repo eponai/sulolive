@@ -142,6 +142,7 @@
   (save-edit [this]
     (let [{:keys [::input-transaction
                   ::init-state]} (om/get-state this)
+          {:keys [on-close]} (om/get-computed this)
           ;update-fees #(cond-> % (:transaction/fees %) (update :transaction/fees set))
           ;init-state (update-fees init-state)
           ;input-transaction (update-fees input-transaction)
@@ -149,29 +150,37 @@
           ;added-tags (or (:transaction/tags (second diff)) [])
           removed-tags (or (filter some? (:transaction/tags (first diff))) [])
           ]
-      ;; Transact only when we have a diff to avoid unecessary mutations.
-      (when-not (= diff [nil nil init-state])
-        ;(debug "Delete tag Will transacti diff: " diff)
-        (om/transact! this `[(transaction/edit ~{:old init-state :new input-transaction})
-                             :query/transactions]))))
+      (if (not-empty (:transaction/amount input-transaction))
+        (do
+          ;; Transact only when we have a diff to avoid unecessary mutations.
+          (when-not (= diff [nil nil init-state])
+            ;(debug "Delete tag Will transacti diff: " diff)
+            (om/transact! this `[(transaction/edit ~{:old init-state :new input-transaction})
+                                 :query/transactions]))
+          (on-close))
+        (om/update-state! this assoc ::input-error :transaction/amount))))
 
   (add-transaction [this]
-    (let [{:keys [::is-longterm? ::type] :as st} (om/get-state this)
-          update-category (fn [tx]
-                               (let [{:keys [transaction/category]} tx]
-                                 (if (nil? (:category/name category))
-                                   (dissoc tx :transaction/category)
-                                   tx)))
-          message-id (message/om-transact! this
-                                           `[(transaction/create
-                                               ~(-> (::input-transaction st)
-                                                    (assoc :transaction/uuid (d/squuid))
-                                                    update-category
-                                                    (assoc :transaction/created-at (.getTime (js/Date.)))
-                                                    (cond-> (or (not is-longterm?) (= type :type/atm)) (dissoc :transaction/end-date))
-                                                    (cond-> (= type :type/atm) (assoc :transaction/amount "0"))))
-                                             :routing/project])]
-      (om/update-state! this assoc :pending-transaction message-id)))
+    (let [{:keys [::input-transaction ::is-longterm?]} (om/get-state this)
+          on-close (:on-close (om/get-computed this))]
+      (if (not-empty (:transaction/amount input-transaction))
+        (let [update-category (fn [tx]
+                                (let [{:keys [transaction/category]} tx]
+                                  (if (nil? (:category/name category))
+                                    (dissoc tx :transaction/category)
+                                    tx)))
+              message-id (message/om-transact! this
+                                               `[(transaction/create
+                                                   ~(-> input-transaction
+                                                        (assoc :transaction/uuid (d/squuid))
+                                                        update-category
+                                                        (assoc :transaction/created-at (.getTime (js/Date.)))
+                                                        (cond-> (or (not is-longterm?) (= type :type/atm)) (dissoc :transaction/end-date))
+                                                        (cond-> (= type :type/atm) (assoc :transaction/amount "0"))))
+                                                 :routing/project])]
+          (om/update-state! this assoc :pending-transaction message-id)
+          (on-close))
+        (om/update-state! this assoc ::input-error :transaction/amount))))
 
   (componentDidUpdate [this _ _]
     (when-let [history-id (:pending-transaction (om/get-state this))]
@@ -181,6 +190,7 @@
         (comment
           "Here's something we could do with the message if we want"
           " it to be syncronous."
+
           (when message
             (when on-close
               (on-close)))))))
@@ -339,7 +349,8 @@
                   ::show-tags-input?
                   ::show-bank-fee-section?
                   ::type
-                  ::init-state]} (om/get-state this)
+                  ::init-state
+                  ::input-error]} (om/get-state this)
           edit-mode? (some? init-state)
 
           {:keys [transaction/currency
@@ -360,11 +371,13 @@
               [:div.column.small-7
                [:label "Amount"]
                [:input
-                {:value (or (:transaction/amount input-transaction) "")
+                {:class       (when (= input-error :transaction/amount) "invalid")
+                 :value       (or (:transaction/amount input-transaction) "")
                  :type        "number"
                  :min         "0"
                  :placeholder "Amount"
-                 :on-change   #(om/update-state! this assoc-in [::input-transaction :transaction/amount] (.. % -target -value))}]]
+                 :on-change   #(om/update-state! this assoc-in [::input-transaction :transaction/amount] (.. % -target -value))
+                 :on-focus #(om/update-state! this dissoc ::input-error)}]]
               [:div.column
                [:label "Currency"]
                (sel/->Select (om/computed {:options (map (fn [{:keys [currency/code]}]
@@ -426,9 +439,7 @@
              {:on-click #(do
                           (if (some? (::init-state (om/get-state this)))
                             (.save-edit this)
-                            (do (.add-transaction this)))
-                          (let [on-close (:on-close (om/get-computed this))]
-                            (on-close)))}
+                            (.add-transaction this)))}
              "Save")]]]))))
 
 (def ->AddTransaction (om/factory AddTransaction))
