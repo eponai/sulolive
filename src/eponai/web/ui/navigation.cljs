@@ -52,14 +52,15 @@
 
             ; Project selection and title
             [:div.top-bar-left
-             [:span.header.project-name
-              (:project/name active-project)]
+             ;[:span.header.project-name
+             ; (:project/name active-project)]
 
              ; Select project dropdonwn menu
              [:div
               (opts {:style {:display "inline-block"}})
               [:a.navbar-menu-item
                (opts {:on-click #(om/update-state! this assoc :menu-visible? true)})
+               [:span.header.project-name (:project/name active-project)]
                [:i.fa.fa-caret-down.fa-fw]]
               (when menu-visible?
                 (utils/dropdown
