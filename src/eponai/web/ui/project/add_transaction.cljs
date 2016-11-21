@@ -38,8 +38,7 @@
   (componentWillReceiveProps [this next-props]
     (utils/sync-with-received-props this next-props))
   (componentDidMount [this]
-    (let [value-input (js/ReactDOM.findDOMNode (om/react-ref this "fee-value-input"))]
-      (.focus value-input)))
+    (utils/focus-ref this "fee-value-input"))
   (render [this]
     (let [{:keys [all-currencies is-atm?]} (om/get-computed this)
           {:keys [transaction-fee]} (om/get-state this)]
@@ -137,8 +136,25 @@
          ::on-date-apply-fn       #(om/update-state! this assoc-in [::input-transaction :transaction/date] %)
          ::on-end-date-apply-fn   #(om/update-state! this assoc-in [::input-transaction :transaction/end-date] %)}
         (utils/props->init-state this (om/props this)))))
+
+  (componentDidMount [this]
+    (utils/focus-ref this "amount-value-input"))
   (componentWillReceiveProps [this props]
     (utils/sync-with-received-props this props))
+
+  (componentDidUpdate [this _ _]
+    (when-let [history-id (:pending-transaction (om/get-state this))]
+      (let [{:keys [query/message-fn]} (om/props this)
+            {:keys [on-close]} (om/get-computed this)
+            message (message-fn history-id 'transaction/create)]
+        (comment
+          "Here's something we could do with the message if we want"
+          " it to be syncronous."
+
+          (when message
+            (when on-close
+              (on-close)))))))
+
   (save-edit [this]
     (let [{:keys [::input-transaction
                   ::init-state]} (om/get-state this)
@@ -182,18 +198,6 @@
           (on-close))
         (om/update-state! this assoc ::input-error :transaction/amount))))
 
-  (componentDidUpdate [this _ _]
-    (when-let [history-id (:pending-transaction (om/get-state this))]
-      (let [{:keys [query/message-fn]} (om/props this)
-            {:keys [on-close]} (om/get-computed this)
-            message (message-fn history-id 'transaction/create)]
-        (comment
-          "Here's something we could do with the message if we want"
-          " it to be syncronous."
-
-          (when message
-            (when on-close
-              (on-close)))))))
 
   (render-tags-section [this]
     (let [{:keys [query/all-tags]} (om/props this)
@@ -374,10 +378,11 @@
                 {:class       (when (= input-error :transaction/amount) "invalid")
                  :value       (or (:transaction/amount input-transaction) "")
                  :type        "number"
+                 :ref         "amount-value-input"
                  :min         "0"
                  :placeholder "Amount"
                  :on-change   #(om/update-state! this assoc-in [::input-transaction :transaction/amount] (.. % -target -value))
-                 :on-focus #(om/update-state! this dissoc ::input-error)}]]
+                 :on-focus    #(om/update-state! this dissoc ::input-error)}]]
               [:div.column
                [:label "Currency"]
                (sel/->Select (om/computed {:options (map (fn [{:keys [currency/code]}]
