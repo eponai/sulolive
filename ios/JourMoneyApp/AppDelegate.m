@@ -9,6 +9,7 @@
 
 #import "AppDelegate.h"
 
+#import "RCTBundleURLProvider.h"
 #import "RCTRootView.h"
 #import "RCTLinkingManager.h"
 
@@ -58,12 +59,15 @@
 
 //   jsCodeLocation = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
 
+// OPTION 3, React Native 0.36:
+//   jsCodeLocation = [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:@"index.ios" fallbackResource:nil];
+
   RCTRootView *rootView = [[RCTRootView alloc] initWithBundleURL:jsCodeLocation
                                                       moduleName:@"JourMoneyApp"
                                                initialProperties:nil
                                                    launchOptions:launchOptions];
-
-  self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+  rootView.backgroundColor = [[UIColor alloc] initWithRed:1.0f green:1.0f blue:1.0f alpha:1];
+  seof.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   UIViewController *rootViewController = [UIViewController new];
   rootViewController.view = rootView;
   self.window.rootViewController = rootViewController;

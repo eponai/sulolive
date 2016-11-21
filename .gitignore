@@ -70,6 +70,7 @@ ios/Pods/
 
 # Android/IJ
 #
+*.iml
 .idea
 .gradle
 local.properties
@@ -83,3 +84,9 @@ local.properties
 
 # Generated css
 /resources/public/assets/css/
+
+# BUCK
+buck-out/
+\.buckd/
+android/app/libs
+android/keystores/debug.keystore
