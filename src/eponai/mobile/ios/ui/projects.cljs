@@ -2,7 +2,10 @@
   (:require
     [eponai.client.ui :refer-macros [opts]]
     [eponai.client.ui.color :as color]
-    [eponai.mobile.components :refer [navigator-ios view text scroll-view list-view list-view-data-source segmented-control-ios]]
+    [eponai.client.lib.transactions :as lib.t]
+    [eponai.client.utils :as client.utils]
+    [eponai.web.ui.utils :as web.utils]
+    [eponai.mobile.components :as c :refer [navigator-ios view text scroll-view list-view list-view-data-source segmented-control-ios]]
     [eponai.mobile.components.nav :as nav]
     [eponai.mobile.ios.ui.transaction-list :as t]
     [eponai.mobile.components.table-view :as tv]
@@ -11,6 +14,14 @@
     [eponai.mobile.ios.ui.utils :as utils]
     [om.next :as om :refer-macros [defui]]
     [taoensso.timbre :refer-macros [debug]]))
+
+(defn wrap-props [x]
+  {:propsWrapper (constantly x)})
+
+(defn unwrap-props [x]
+  (if (map? x)
+    x
+    ((.-propsWrapper x))))
 
 (defui ProjectMenu
   Object
@@ -34,11 +45,11 @@
 (defui ProjectView
   Object
   (initLocalState [_]
-    {:selected-item :dashboard})
+    {:selected-item :list})
   (render [this]
-    (let [project (om/props this)
-          transactions (aget project "_project")
+    (let [{:keys [project transactions]} (unwrap-props (om/props this))
           {:keys [selected-item]} (om/get-state this)]
+      (debug "Rendering transactions: " transactions)
       (view (opts {:style {:flex 1}})
             (->ProjectMenu (om/computed
                              {:selected-item selected-item}
@@ -48,18 +59,19 @@
                   (= selected-item :dashboard)
                   (d/->Dashboard))))))
 
+
 (def ->ProjectView (om/factory ProjectView {:keyfn #(str ProjectView)}))
 
 (defui ProjectWidget
   Object
   (render [this]
-    (let [{:keys [project]} (om/props this)
+    (let [{:keys [project transactions]} (unwrap-props (om/props this))
           {:keys [on-select]} (om/get-computed this)]
       (button/custom
-        {:key [(.-uuid project)]
-         :on-press on-select
+        {:key             [(:project/uuid project)]
+         :on-press        on-select
          :highlight-color color/lightgray
-         :style {:margin 5}}
+         :style           {:margin 5}}
         (view
           (opts {:style {:borderWidth 1
                          :borderColor color/primary-blue
@@ -70,50 +82,59 @@
           (text (opts {:style {:fontSize   24
                                :fontWeight "bold"
                                :color color/primary-blue}})
-                (str (.-name project)))
+                (str (:project/name project)))
           (text nil
-                (str "Transactions: " (count (aget project "_project")))))))))
+                (str "Transactions: " (count transactions))))))))
 
 (def ->ProjectWidget (om/factory ProjectWidget))
 
 (defui Main
   Object
   (render [this]
-    (let [nav (.-navigator (om/props this))
-          all-projects (.-projects (om/props this))]
+    (let [props (om/props this)
+          nav (.-navigator props)
+          {:keys [all-projects transactions-by-project]} (unwrap-props props)]
+      (debug "ALL PROJECTS: " [all-projects nav])
+      (debug "Main's props: " (om/props this))
       (tv/->TableView
         (om/computed
           {:rows all-projects}
-          {:render-row (fn [r]
-                         (->ProjectWidget (om/computed
-                                            {:project r}
-                                            {:on-select (fn []
-                                                          (.push nav #js {:title     (.-name r)
-                                                                          :component ->ProjectView
-                                                                          :passProps r}))})))})))))
+          {:render-row (fn [project]
+                         (let [props {:project      project
+                                      :transactions (get transactions-by-project (:project/uuid project))}]
+                           (->ProjectWidget
+                             (om/computed
+                               props
+                               {:on-select (fn []
+                                             (.push nav #js {:title     (:project/name project)
+                                                             :component ->ProjectView
+                                                             :passProps (wrap-props props)}))}))))})))))
 
 (def ->Main (om/factory Main {:keyfn #(str Main)}))
 
 (defui Projects
   static om/IQuery
   (query [this]
-    [{:query/transactions [:transaction/uuid]}
-     {:query/all-projects [:project/uuid
-                           :project/name
-                           {:transaction/_project [:transaction/title
-                                                   :transaction/uuid
-                                                   :transaction/amount
-                                                   {:transaction/date [:date/ymd :date/timestamp]}
-                                                   {:transaction/tags [:tag/name]}
-                                                   {:transaction/currency [:currency/code]}
-                                                   {:transaction/project [:project/uuid]}
-                                                   {:transaction/type [:db/ident]}]}]}])
+    [{:query/transactions lib.t/full-transaction-pull-pattern}
+     {:query/all-projects [:project/uuid :project/name :project/created-at]}])
+  web.utils/ISyncStateWithProps
+  (props->init-state [_ props]
+    {:transactions-by-project
+     (group-by (comp :project/uuid :transaction/project) (:query/transactions props))})
+
   Object
+  (initLocalState [this]
+    (web.utils/props->init-state this (om/props this)))
+  (componentWillReceiveProps [this next-props]
+    (web.utils/sync-with-received-props this next-props))
   (render [this]
-    (let [{:keys [query/all-projects]} (om/props this)]
+    (let [{:keys [query/all-projects]} (om/props this)
+          {:keys [transactions-by-project]} (om/get-state this)]
+      (debug "RENDERING STUFF: " transactions-by-project)
       (nav/navigator
         {:initial-route {:title     "Overview"
                          :component ->Main
-                         :passProps {:projects all-projects}}}))))
+                         :passProps (wrap-props {:all-projects            all-projects
+                                                 :transactions-by-project transactions-by-project})}}))))
 
 (def ->Projects (om/factory Projects))

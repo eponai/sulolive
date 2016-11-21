@@ -6,6 +6,7 @@
             [taoensso.timbre :refer-macros [debug]]
             [eponai.client.remotes :as remotes]))
 
+;; TODO: Remove this because we're using eponai.client.remotes instead.
 
 (defn http-call-remote
   "Remote which executes a http call.

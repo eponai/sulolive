@@ -1,6 +1,8 @@
 (ns eponai.mobile.components
   (:require-macros [eponai.mobile.components :refer [create-component-functions]])
   (:require [eponai.mobile.components.listview-datasource :as ds]
+            [goog.object :as goog.object]
+            [om.next]
             [om.util]))
 
 (defn list-view-data-source
@@ -32,5 +34,8 @@
          element
          (when options (clj->js options))
          children))
+
+(defn element-props [element]
+  (goog.object/get element "eponai$props"))
 
 (create-component-functions)

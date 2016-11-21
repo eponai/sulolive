@@ -83,11 +83,15 @@
                                      :content-type :transit+json
                                      :cookie-store (:cookie-store opts)))]
             :cljs [params (-> (merge opts transit-opts)
-                              (assoc-in [:headers "X-CSRF-Token"] (.. js/document (getElementById "__anti-forgery-token") -value)))])]
+                              )])]
     ;; http-cljs returns a channel with the response on it.
     ;; http-clj doesnt.
     #?(:cljs (send-fn url params)
        :clj  (go (to-cljs-http-response send-fn url params)))))
+
+(comment
+  ;;TODO: Put in production, later.
+  (assoc-in [:headers "X-CSRF-Token"] (.. js/document (getElementById "__anti-forgery-token") -value)))
 
 (defn- <send [remote->send remote-key query]
   (go

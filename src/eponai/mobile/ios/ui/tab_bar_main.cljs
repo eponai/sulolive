@@ -45,9 +45,9 @@
 (defui LoggedIn
   static om/IQuery
   (query [_]
-    [{:proxy/dashboard (om/get-query Projects)}
+    [{:proxy/projects (om/get-query Projects)}
      {:proxy/add-transaction (om/get-query AddTransaction)}
-     {:proxy/projects (om/get-query Projects)}])
+     {:proxy/profile []}])
   Object
   (initLocalState [_]
     {:selected-tab :tab-list

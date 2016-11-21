@@ -38,8 +38,8 @@
      {:query/auth [{:ui.singleton.auth/user [{:user/status [:db/ident]}
                                              :user/email
                                              :user/uuid]}]}
-     {:proxy/logged-in (om/get-query LoggedIn)}
-     ])
+     {:routing/app-root {:logged-in     (om/get-query LoggedIn)
+                         :not-logged-in []}}])
   Object
   (navigate [this]
     (let [nav (om/react-ref this "navigator")
@@ -81,8 +81,7 @@
     (.navigate this))
   (render [this]
     (let [{:keys [routing/app-root
-                  query/auth
-                  proxy/logged-in] :as props} (om/props this)
+                  query/auth] :as props} (om/props this)
           current-user (:ui.singleton.auth/user auth)
           ;route (props->route props)
           ;factory (get-in ui.routes/route-handler->ui-component [route :factory])
@@ -96,7 +95,7 @@
 
       (debug "User-status: " user-status)
       (if (= user-status :user.status/active)
-        (->LoggedIn (om/computed logged-in
+        (->LoggedIn (om/computed app-root
                                  {:onLogout (fn []
                                               (om/transact! this `[(session/signout)
                                                                    :user/current

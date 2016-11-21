@@ -13,7 +13,7 @@
     (let [{:keys [transaction]} (om/props this)
           {:keys [on-press]} (om/get-computed this)]
       (button/custom
-        {:key [(.-title transaction)]
+        {:key [(:transaction/title transaction)]
          :on-press on-press}
         (view
           (opts {:style {:flexDirection "row"
@@ -21,12 +21,12 @@
                          :alignItems "center"
                          :padding 5
                          :height 34}})
-              (text nil (.. transaction -date -ymd))
-              (text nil (.-title transaction))
-              (text nil (.-amount transaction))
-              (text nil (.. transaction -currency -code)))))))
+              (text nil (get-in transaction [:transaction/date :date/ymd]))
+              (text nil (:transaction/title transaction))
+              (text nil (:transaction/amount transaction))
+              (text nil (get-in transaction [:transaction/currency :currency/code])))))))
 
-(def ->TransactionListItem (om/factory TransactionListItem {:keyfn #(str TransactionListItem)}))
+(def ->TransactionListItem (om/factory TransactionListItem))
 
 (defui TransactionList
   Object
@@ -35,8 +35,9 @@
 
       (tv/->TableView
         (om/computed {:rows transactions}
-                     {:render-row (fn [row-data]
-                                    (->TransactionListItem (om/computed {:transaction row-data}
-                                                                        {:on-press (fn [] (debug "Pressed item: " row-data))})))})))))
+                     {:render-row (fn [transaction]
+                                    (->TransactionListItem (om/computed {:transaction transaction}
+                                                                        {:on-press
+                                                                         (fn [] (debug "Pressed item: " transaction))})))})))))
 
-(def ->TransactionList (om/factory TransactionList {:keyfn #(str TransactionList)}))
+(def ->TransactionList (om/factory TransactionList))

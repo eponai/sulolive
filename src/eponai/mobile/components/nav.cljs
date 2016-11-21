@@ -17,7 +17,6 @@
                :navigationBarHidden navigation-bar-hidden
                :barTintColor        "white"
                :shadowHidden        true}
-
               (some? ref)
               (assoc :ref ref)))))
 

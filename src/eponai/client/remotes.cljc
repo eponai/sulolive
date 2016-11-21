@@ -1,8 +1,9 @@
 (ns eponai.client.remotes
   (:require [datascript.core :as d]
             [eponai.common.parser :as parser]
+            [eponai.client.auth :as auth]
             [om.next :as om]
-            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug]]))
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug]]))
 
 
 #?(:cljs
@@ -48,6 +49,10 @@
                 (:eponai.common.parser.read-basis-t/map
                   (d/entity db [:db/ident :eponai.common.parser/read-basis-t]))))))
 
+(defn- force-remote-read! [reconciler]
+  (binding [parser/*parser-allow-local-read* false]
+    (om/transact! reconciler (om/get-query (om/app-root reconciler)))))
+
 (defn http-call-remote
   "Remote which executes a http call.
   We can use this remote to call api's which are not om.next specific."
@@ -70,21 +75,33 @@
                         {:status 200 :body {:result {:routing/app-root {}
                                                      method            {:mutation (:mutation params)
                                                                         :status   status}}}})
-       :post-merge-fn (fn []
-                        (let [reconciler @reconciler-atom]
-                          (binding [parser/*parser-allow-local-read* false]
-                            (om/transact! reconciler (om/get-query (om/app-root reconciler))))))})))
+       :post-merge-fn #(force-remote-read! @reconciler-atom)})))
 
 (defn switching-remote
   "Remote that sends requests to different endpoints.
   Sends to the user-api when the user is logged in, public api otherwise."
   [conn]
   (fn [query]
-    (let [auth (d/entity (d/db conn) [:ui/singleton :ui.singleton/auth])
-          current-user (:ui.singleton.auth/user auth)
-          conf (d/entity (d/db conn) [:ui/singleton :ui.singleton/configuration])
-          _ (debug "Remote for current-user status: " (:user/status current-user))
-          remote-fn (post-to-url (if (= (:user/status current-user) :user.status/active)
+    (let [db (d/db conn)
+          conf (d/entity db [:ui/singleton :ui.singleton/configuration])
+          remote-fn (post-to-url (if (auth/has-active-user? db)
                                      (:ui.singleton.configuration.endpoints/user-api conf)
                                      (:ui.singleton.configuration.endpoints/api conf)))]
       (remote-fn query))))
+
+(defn read-remote-on-auth-change [remote-fn reconciler-atom]
+  (fn [query]
+    (let [logged-in? (auth/has-active-user? (d/db (om/app-state @reconciler-atom)))
+          remote (remote-fn query)]
+      (update remote :post-merge-fn
+              (fn [post-merge-fn]
+                (fn []
+                  (when post-merge-fn
+                    (post-merge-fn))
+                  (let [reconciler @reconciler-atom
+                        logged-in-after-merge? (auth/has-active-user? (d/db (om/app-state reconciler)))]
+                    (if (not= logged-in? logged-in-after-merge?)
+                      (do (info "LOGGED IN STATUS CHANGED IN POST MERGE: "
+                                [:pre logged-in? :post logged-in-after-merge?])
+                          (force-remote-read! reconciler))
+                      (debug "Logged in status hasn't change in post merge. Is still: " logged-in?)))))))))

@@ -122,7 +122,10 @@
                  (assoc-in [:session :store] (cookie/cookie-store {:key (env :session-cookie-store-key)}))
                  (assoc-in [:session :cookie-name] (env :session-cookie-name))
                  (assoc-in [:session :cookie-attrs :max-age] 7776000)
-                 (assoc-in [:security :anti-forgery] (if in-prod? true (not disable-anti-forgery)))
+                 (assoc-in [:security :anti-forgery] (and false
+                                                          (if in-prod?
+                                                            true
+                                                            (not disable-anti-forgery))))
                  (assoc-in [:static :resources] false))]
     (cond-> conf
             in-prod?

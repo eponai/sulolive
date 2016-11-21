@@ -99,6 +99,9 @@
                               :ui.singleton.configuration.endpoints/user-api (str server "/api/user")
                               :ui.singleton.configuration.endpoints/api      (str server "/api")
                               :ui.singleton.configuration.endpoints/verify   (str server "/verify")}])
+        remote (-> (remotes/switching-remote conn)
+                   (remotes/read-remote-on-auth-change reconciler-atom)
+                   (remotes/read-basis-t-remote-middleware conn))
         reconciler (om/reconciler {:state        conn
                                    :parser       parser
                                    :ui->props    (utils/cached-ui->props-fn parser)
@@ -106,7 +109,7 @@
                                    :remotes      [:remote :http/call]
                                    :send         (backend/send!
                                                    reconciler-atom
-                                                   {:remote    (remotes/switching-remote conn)
+                                                   {:remote    remote
                                                     :http/call (remotes/http-call-remote reconciler-atom)})
                                    :merge        (merge/merge! mobile.merge/mobile-merge)
                                    :root-render  sup/root-render

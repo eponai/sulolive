@@ -4,12 +4,15 @@
             [eponai.common.parser :refer [client-read]]
             [eponai.common.parser.util :as p.util]
             [eponai.client.parser.read]
+            [eponai.client.auth :as auth]
             [eponai.mobile.ios.routes :as routes]
             [taoensso.timbre :as timbre :refer-macros [debug]]))
 
 (defmethod client-read :routing/app-root
   [{:keys [db] :as env} k p]
-  (p.util/read-union env k p (:ui.component.app/route (d/entity db [:ui/component :ui.component/app]))))
+  (p.util/read-union env k p (if (auth/has-active-user? db)
+                               :logged-in
+                               :not-logged-in)))
 
 (defmethod client-read :query/app
   [{:keys [db query]} _ _]
