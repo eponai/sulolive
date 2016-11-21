@@ -151,7 +151,7 @@
                                              (into #{} (comp (filter some?) (map tag*)) ts))
                      :transaction/category (fn [c]
                                              {:pre [(map? c)]}
-                                             c)
+                                             (category* c))
                      :transaction/fees     (fn [fees]
                                              {:pre [(every? map? fees)]}
                                              (into #{} (map fee*) fees))
@@ -159,7 +159,10 @@
                                              {:pre [(or (string? a) (number? a))]}
                                              (bigdec! a))
                      :transaction/type     (fn [t] {:pre [(or (keyword? (:db/ident t t)))]}
-                                             {:db/ident t})}
+                                             (let [type (if (keyword? t)
+                                                          {:db/ident t}
+                                                          t)]
+                                               (add-tempid type)))}
         update-fn (fn [m k]
                     (if (get m k)
                       (update m k (get conv-fn-map k))

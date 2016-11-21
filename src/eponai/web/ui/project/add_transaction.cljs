@@ -125,7 +125,7 @@
                                    :transaction/tags     #{}
                                    :transaction/currency {:currency/code (:currency/code usd-entity)}
                                    :transaction/project  project-id
-                                   :transaction/type     :transaction.type/expense
+                                   :transaction/type     {:db/ident :transaction.type/expense}
                                    :transaction/fees     #{}}
 
          ::type                   :type/expense
@@ -235,7 +235,7 @@
                     :on-click #(om/update-state! this (fn [st]
                                                         (-> st
                                                             (assoc ::type k)
-                                                            (assoc-in [::input-transaction :transaction/type] v))))}
+                                                            (assoc-in [::input-transaction :transaction/type] {:db/ident v}))))}
                    label]])
                types)]])))
 
