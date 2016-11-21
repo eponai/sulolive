@@ -87,8 +87,16 @@
       [:div.popup-content
        content]]]))
 
+(defn modal-on-close [f]
+  (fn []
+    (let [body (aget (.. js/document (getElementsByTagName "body")) 0)]
+      (set! (.-className body) "")
+      (f))))
+
 (defn modal [{:keys [content on-close size]}]
-  (let [click-outside-target-id (name :click-outside-target)]
+  (let [click-outside-target-id (name :click-outside-target)
+        body (aget (.. js/document (getElementsByTagName "body")) 0)]
+    (set! (.-className body) "modal-open")
     (html
       [:div.reveal-overlay
        (opts {:id       click-outside-target-id

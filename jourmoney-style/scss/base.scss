@@ -5,9 +5,9 @@ $click-outside-target-zindex: 4;
 $dropdown-zindex: 5;
 $text-shadow: 2px 2px 3px $darkblue-a50;
 
-// body {
-//   min-width: 75rem;
-// }
+body.modal-open {
+  overflow: hidden;
+}
 
 .empty-message {
   margin: 1em;

@@ -129,16 +129,16 @@
          (when add-transaction?
            (utils/modal {:content  (->AddTransaction
                                      (om/computed add-transaction
-                                                  {:on-close on-close-add-transaction
-                                                   :project-id project-id
+                                                  {:on-close     (utils/modal-on-close on-close-add-transaction)
+                                                   :project-id   project-id
                                                    :project-name (:project/name active-project)}))
-                         :on-close on-close-add-transaction}))
+                         :on-close (utils/modal-on-close on-close-add-transaction)}))
          (when new-project?
-           (let [on-close #(om/update-state! this assoc :new-project? false)]
+           (let [on-close (utils/modal-on-close #(om/update-state! this assoc :new-project? false))]
              (utils/modal {:content  (->NewProject (om/computed
                                                      {}
                                                      {:on-close on-close
-                                                      :on-save  on-save-new-project}))
+                                                      :on-save on-save-new-project}))
                            :on-close on-close})))]))))
 
 (def ->NavbarSubmenu (om/factory NavbarSubmenu))
@@ -205,14 +205,14 @@
 
           (when settings-open?
             (utils/modal
-              (let [on-close #(om/transact! this `[(navbar/settings-hide) :routing/app-root])]
+              (let [on-close (utils/modal-on-close #(om/transact! this `[(navbar/settings-hide) :routing/app-root]))]
                 {:content  (->Settings (om/computed settings-props {:on-close on-close}))
                  :on-close on-close})))
           (when new-transaction?
             (utils/modal {:content  (->AddTransaction
                                       (om/computed add-transaction
-                                                   {:on-close add-transaction-on-close}))
-                          :on-close add-transaction-on-close}))]]))))
+                                                   {:on-close (utils/modal-on-close add-transaction-on-close)}))
+                          :on-close (utils/modal-on-close add-transaction-on-close)}))]]))))
 
 (def ->NavbarMenu (om/factory NavbarMenu))
 

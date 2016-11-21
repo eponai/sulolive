@@ -287,15 +287,16 @@
          (at/->QuickAddTransaction (om/computed quick-add-transaction
                                                 {:project project}))
          (when (some? edit-transaction)
-           (utils/modal {:content (->AddTransaction (om/computed add-transaction
-                                                                 {:on-close #(om/update-state! this dissoc :edit-transaction)
-                                                                  :input-transaction edit-transaction}))
-                         :on-close #(om/update-state! this dissoc :edit-transaction)}))
+           (let [on-close (utils/modal-on-close #(om/update-state! this dissoc :edit-transaction))]
+             (utils/modal {:content  (->AddTransaction (om/computed add-transaction
+                                                                    {:on-close          on-close
+                                                                     :input-transaction edit-transaction}))
+                           :on-close on-close})))
          (if (seq transactions)
            (.render-transaction-list this transactions)
            (.render-empty-message this))
          (when add-transaction?
-           (let [on-close #(om/update-state! this assoc :add-transaction? false)]
+           (let [on-close (utils/modal-on-close #(om/update-state! this assoc :add-transaction? false))]
              (utils/modal {:content  (->AddTransaction (om/computed add-transaction {:on-close on-close}))
                            :on-close on-close})))]))))
 

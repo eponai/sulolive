@@ -14,7 +14,7 @@
 (defn subscribe-modal [component]
   (when (:playground/show-subscribe-modal? (om/get-state component))
     (web-utils/modal
-      {:on-close #(om/update-state! component assoc :playground/show-subscribe-modal? false)
+      {:on-close (web-utils/modal-on-close #(om/update-state! component assoc :playground/show-subscribe-modal? false))
        :content  (html
                    [:div#subscribe
                     [:h4.header "Coming soon"]

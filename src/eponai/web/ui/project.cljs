@@ -105,7 +105,7 @@
                 "create a new project"]
                "."]]])]
          (when add-project?
-           (let [on-close #(om/update-state! this assoc :add-project? false)]
+           (let [on-close (utils/modal-on-close #(om/update-state! this assoc :add-project? false))]
              (utils/modal {:content  (->NewProject (om/computed
                                                      {}
                                                      {:on-close on-close
