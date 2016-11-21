@@ -223,10 +223,11 @@
                        :function      (str activate-account)
                        :function-args {'user-uuid user-uuid 'email email}}))))
 
-(defn share-project [conn project-uuid user-email]
+(defn share-project [conn project-uuid user-email current-user-uuid]
   (let [db (d/db conn)
         user (pull/lookup-entity db [:user/email user-email])
-        email-chan (chan 1)]
+        email-chan (chan 1)
+        current-user (p/lookup-entity (d/db conn) [:user/uuid current-user-uuid])]
     (if user
       ;; If user already exists, check that they are not already sharing this project.
       (let [user-projects (pull/pull db [{:project/_users [:project/uuid]}] (:db/id user))
@@ -246,7 +247,8 @@
                           [:db/add [:project/uuid project-uuid] :project/users [:user/email user-email]]])
           (put! email-chan verification)
           {:email-chan email-chan
-           :status     (:user/status user)}))
+           :status     (:user/status user)
+           :inviter    (:user/email current-user)}))
 
       ;; If no user exists, create a new account, and verification as normal.
       ;; And add that user to the users for the project.
@@ -259,7 +261,8 @@
                         [:db/add [:project/uuid project-uuid] :project/users (:db/id new-user)]])
         (put! email-chan verification)
         {:email-chan email-chan
-         :status     (:user/status new-user)}))))
+         :status     (:user/status new-user)
+         :inviter    (:user/email current-user)}))))
 
 (defn delete-project
   "Delete a project entity with its transactions from the DB."

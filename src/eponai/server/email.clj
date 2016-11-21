@@ -116,7 +116,10 @@
                                       (button-title user-status)
                                       (link-message user-status))}]]
     (if in-prod?
-      (let [status (send-email address "You're invited to share project." body)]
+      (let [subject-txt (if-let [invite-email (not-empty inviter)]
+                          (str invite-email " has invited you to share project" (when (= user-status :user.status/new) " on Jourmoney") ".")
+                          "You're invited to share project.")
+            status (send-email address  subject-txt body)]
         (debug "Sent invitation email to uuid: " uuid "with status:" status))
       (debug "Dev mode. Did not send invitation email to uuid: " uuid))))
 

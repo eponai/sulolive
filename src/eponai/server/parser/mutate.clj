@@ -76,11 +76,11 @@
                (transact/transact-one state (format/project user-ref params))))})
 
 (defmutation project/share
-  [{:keys [state]} _ {:keys [project/uuid user/email] :as params}]
+  [{:keys [state auth]} _ {:keys [project/uuid user/email] :as params}]
   ["Shared project" "Unable to share project"]
   {:action (fn []
              (debug "project/save with params: " params)
-             (api/share-project state uuid email))})
+             (api/share-project state uuid email (:username auth)))})
 
 (defmutation project/delete
   [{:keys [state]} _ {:keys [project-dbid] :as params}]
