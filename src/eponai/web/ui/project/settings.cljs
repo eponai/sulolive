@@ -6,12 +6,42 @@
     [taoensso.timbre :refer-macros [debug]]
     [eponai.web.ui.utils :as utils]))
 
+(defui Shareproject
+  Object
+  (render [this]
+    (let [{:keys [on-close on-save]} (om/get-computed this)
+          {:keys [input-email]} (om/get-state this)]
+      (html
+        [:div#invite-user
+         [:h4.header "Invite Friend"]
+         [:div.top-bar-container]
+         [:div.content
+          [:div.content-section
+
+           [:div.row.column [:label "Email"]]
+           [:div.row
+            [:div.column
+             [:input
+              {:type        "email"
+               :value       (or input-email "")
+               :on-change   #(om/update-state! this assoc :input-email (.. % -target -value))
+               :placeholder "yourfriend@example.com"}]]
+            [:div.column.small-3
+             [:a.button.hollow.expanded
+              {:on-click #(do (on-save input-email)
+                              (on-close))}
+              "Invite"]]]
+           [:div.row.column
+            [:span "Invite a friend to share this project and collaborate with your finances. An invitation email will be sent to the provided email."]]]]]))))
+
+(def ->Shareproject (om/factory Shareproject))
+
 (defui ProjectSettings
   static om/IQuery
   (query [_]
     [{:query/active-project [:ui.component.project/active-project]}
      {:query/all-categories [:category/name]}
-     {:query/project-users [:user/email]}])
+     {:query/project-users [:user/email {:user/status [:db/ident]}]}])
   Object
   (delete-project [this]
     (let [{:keys [query/active-project]} (om/props this)
@@ -42,10 +72,19 @@
                                                       :project {:db/id (:db/id project)}})
                              :query/all-categories])
         (om/update-state! this assoc :add-category? false))))
+  (invite-user [this email]
+    (let [{:keys [project]} (om/get-computed this)]
+      (debug "Send invite to user: " {:user/email   email
+                                      :project/uuid (:project/uuid project)})
+      (om/transact! this `[(project/share ~{:user/email   email
+                                            :project/uuid (:project/uuid project)})
+                           :query/project-users])))
   (render [this]
     (let [{:keys [query/all-categories
                   query/project-users]} (om/props this)
-          {:keys [add-category? input-category]} (om/get-state this)]
+          {:keys [add-category? input-category
+                  add-user? input-user]} (om/get-state this)]
+      (debug "Got users: " project-users)
       (html
         [:div#project-settings
          [:div.content-section
@@ -62,7 +101,7 @@
                        (:category/name c)]])
                    all-categories))
             [:li.add-category-section
-             [:a.button.hollow.secondary
+             [:a.button.hollow.secondary.no-border
               {:on-click #(om/update-state! this assoc :add-category? true)}
               "+ Create"]
              (when add-category?
@@ -78,15 +117,21 @@
                    {:on-click #(.save-category this)}
                    "Save"]]))]]]]
 
-         ;[:div.content-section
-         ; [:div.row.section-title
-         ;  [:span "Users"]]
-         ; [:div.row
-         ;  (map (fn [u]
-         ;         [:a.button.hollow.black
-         ;          {:key (str (:db/id u))}
-         ;          (:user/email u)])
-         ;       project-users)]]
+         [:div.content-section
+          [:div.row.section-title
+           [:span "Users"]]
+          [:div.row
+           [:ul.menu.all-users
+            (map (fn [u]
+                   [:li
+                    {:key (str (:db/id u))}
+                    [:a.button.hollow.black
+                     (:user/email u)]])
+                 project-users)
+            [:li.add-user-section
+             [:a.button.hollow.secondary.no-border
+              {:on-click #(om/update-state! this assoc :add-user? true)}
+              "+ Invite"]]]]]
 
 
          [:div.content-section
@@ -99,6 +144,24 @@
            [:div.column.small-4
             [:a.button.secondary.expanded.hollow.delete-button
              {:on-click #(.delete-project this)}
-             "Delete Project"]]]]]))))
+             "Delete Project"]]]]
+
+         (when add-user?
+           (let [on-close (utils/modal-on-close #(om/update-state! this assoc :add-user? false))]
+             (utils/modal {:content  (->Shareproject (om/computed {}
+                                                                  {:on-close on-close
+                                                                   :on-save #(.invite-user this %)}))
+                           :on-close on-close}))
+           ;(html [:div.add-category-input
+           ;       [:input
+           ;        {:value       (or input-user "")
+           ;         :placeholder "your@friend.com"
+           ;         :type        "email"
+           ;         :on-change   #(om/update-state! this assoc :input-user (.. % -target -value))}]
+           ;       [:a.button.hollow.black
+           ;        {:on-click #(do (.invite-user this)
+           ;                        (on-close))}
+           ;        "Invite"]])
+           )]))))
 
 (def ->ProjectSettings (om/factory ProjectSettings))

@@ -14,32 +14,6 @@
     [medley.core :as medley]
     [datascript.core :as d]))
 
-(defui Shareproject
-  Object
-  (render [this]
-    (let [{:keys [on-close on-save]} (om/get-computed this)
-          {:keys [input-email]} (om/get-state this)]
-      (html
-        [:div.clearfix
-         [:h3 "Share"]
-         [:label "Invite a friend to collaborate on this project:"]
-         [:input
-          {:type        "email"
-           :value       (or input-email "")
-           :on-change   #(om/update-state! this assoc :input-email (.. % -target -value))
-           :placeholder "yourfriend@example.com"}]
-
-         [:div.float-right
-          [:a.button.secondary
-           {:on-click on-close}
-           "Cancel"]
-          [:a.button.primary
-           {:on-click #(do (on-save input-email)
-                           (on-close))}
-           "Share"]]]))))
-
-(def ->Shareproject (om/factory Shareproject))
-
 (def content->component {:dashboard    {:factory ->Dashboard :component Dashboard}
                          :transactions {:factory ->AllTransactions :component AllTransactions}
                          :settings     {:factory ->ProjectSettings :component ProjectSettings}})

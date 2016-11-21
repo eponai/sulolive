@@ -30,7 +30,7 @@
                 [:db/id
                  :user/uuid
                  :user/email
-                 {:user/status [:db/ident]}
+                 {:user/status [:db/id :db/ident]}
                  {:user/currency [:db/id :currency/code]}]
                 {:where   '[[?e :user/uuid ?user-uuid]]
                  :symbols {'?user-uuid user-uuid}}
