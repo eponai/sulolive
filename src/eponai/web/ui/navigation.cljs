@@ -66,10 +66,11 @@
                 (utils/dropdown
                   {:on-close #(om/update-state! this assoc :menu-visible? false)}
                   [:li.menu-text.header
+                   {:key "projects-menu-header"}
                    "Projects"]
                   (map (fn [p]
                          [:li
-                          {:key (str (:project/uuid p))}
+                          {:key (str "project-item-" (:db/id p))}
                           [:a
                            {:on-click #(om/update-state! this assoc :menu-visible? false)
                             :href     (routes/key->route :route/project->dashboard
@@ -77,8 +78,10 @@
                            (:project/name p)]])
                        all-projects)
                   [:li
+                   {:key "projects-menu-divider"}
                    [:hr]]
                   [:li
+                   {:key "projects-menu-create-new"}
                    [(if utils/*playground?*
                       :a.secondary-action.disabled
                       :a.secondary-action)

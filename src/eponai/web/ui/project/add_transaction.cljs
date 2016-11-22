@@ -492,7 +492,6 @@
   (close [this event]
     (let [{:keys [on-close-fn is-open? input-transaction]} (om/get-state this)
           should-close? (.mouse-event-outside this event)]
-      (debug "Close event: " should-close? " input-transaction: " input-transaction)
       (when (and is-open? should-close?)
         (om/update-state! this assoc :is-open? false ::input-error nil)
         (.. js/document (removeEventListener "click" on-close-fn)))))
