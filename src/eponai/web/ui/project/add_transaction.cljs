@@ -484,40 +484,43 @@
     (let [includes-class-fn (fn [class-name class-names-str]
                               (let [class-array (clojure.string/split class-names-str #" ")]
                                 (some #(when (= % class-name) %) class-array)))]
-      (debug "Includes quick-add-input-section: " (some #(includes-class-fn "quick-add-input-section" (.-className %))
+      (debug "Includes quick-add: " (some #(includes-class-fn "quick-add" (.-className %))
                                                         (.-path event)))
-      (not (some #(includes-class-fn "quick-add-input-section" (.-className %))
+      (not (some #(includes-class-fn "quick-add" (.-className %))
                  (.-path event)))))
 
   (close [this event]
-    (let [{:keys [on-close-fn is-open?]} (om/get-state this)
+    (let [{:keys [on-close-fn is-open? input-transaction]} (om/get-state this)
           should-close? (.mouse-event-outside this event)]
+      (debug "Close event: " should-close? " input-transaction: " input-transaction)
       (when (and is-open? should-close?)
-        (om/update-state! this assoc :is-open? false)
+        (om/update-state! this assoc :is-open? false ::input-error nil)
         (.. js/document (removeEventListener "click" on-close-fn)))))
 
   (save [this]
-    (let [st (om/get-state this)
-          update-category (fn [tx]
-                            (let [{:keys [transaction/category]} tx]
-                              (if (nil? (:category/name category))
-                                (dissoc tx :transaction/category)
-                                tx)))
-          message-id (message/om-transact! this
-                                           `[(transaction/create
-                                               ~(-> (:input-transaction st)
-                                                    (assoc :transaction/uuid (d/squuid))
-                                                    update-category
-                                                    (assoc :transaction/created-at (.getTime (js/Date.)))))
-                                             :routing/project])
-          new-transaction (.new-transaction this)
-          ]
-      (debug "Save new transaction: " (:input-transaction st) " input " (:input-amount st))
-      (debug "Set new transaction: " new-transaction)
-      (om/update-state! this assoc :is-open? false
-                        :pending-transaction message-id
-                        :input-transaction new-transaction)
-      ))
+    (let [{:keys [input-transaction] :as st} (om/get-state this)]
+      (if (not-empty (:transaction/amount input-transaction))
+        (let [update-category (fn [tx]
+                                (let [{:keys [transaction/category]} tx]
+                                  (if (nil? (:category/name category))
+                                    (dissoc tx :transaction/category)
+                                    tx)))
+              message-id (message/om-transact! this
+                                               `[(transaction/create
+                                                   ~(-> input-transaction
+                                                        (assoc :transaction/uuid (d/squuid))
+                                                        update-category
+                                                        (assoc :transaction/created-at (.getTime (js/Date.)))))
+                                                 :routing/project])
+              new-transaction (.new-transaction this)
+              ]
+          (debug "Save new transaction: " input-transaction " input " (:input-amount st))
+          (debug "Set new transaction: " new-transaction)
+          (om/update-state! this assoc :is-open? false
+                            :pending-transaction message-id
+                            :input-transaction new-transaction)
+          )
+        (om/update-state! this assoc ::input-error :transaction/amount))))
 
   (componentDidUpdate [this _ _]
     (when-let [history-id (:pending-transaction (om/get-state this))]
@@ -533,7 +536,7 @@
 
   (render [this]
     (let [{:keys [query/all-categories query/all-currencies query/all-tags]} (om/props this)
-          {:keys [is-open? input-amount input-transaction on-keydown-fn]} (om/get-state this)]
+          {:keys [is-open? input-amount input-transaction on-keydown-fn ::input-error]} (om/get-state this)]
       (html
         [:div.quick-add-container
          {:on-key-down on-keydown-fn}
@@ -542,7 +545,8 @@
            {:class    (when is-open? "is-open")
             :on-click #(.open this)}
            [:li.attribute.note
-            [:input {:value       (if is-open? (or (:transaction/amount input-transaction) "") "")
+            [:input {:class (when (= input-error :transaction/amount) "invalid")
+                     :value       (if is-open? (or (:transaction/amount input-transaction) "") "")
                      :type        "number"
                      :placeholder (if is-open? "0.00" "Quick add expense for today...")
                      :tabIndex    0
@@ -604,7 +608,10 @@
              :tabIndex 0}
             [:i.fa.fa-check.fa-fw]]
            [:a.cancel-button
-            {:on-click #(om/update-state! this assoc :input-transaction (.new-transaction this))
+            {:on-click  #(om/update-state! this assoc
+                                           :input-transaction (.new-transaction this)
+                                           :is-open? false
+                                           ::input-error nil)
              :tabIndex 0}
             [:i.fa.fa-times.fa-fw]]]]]))))
 
