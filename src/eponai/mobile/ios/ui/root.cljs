@@ -15,11 +15,6 @@
             [taoensso.timbre :refer-macros [debug]]
             [eponai.mobile.ios.ui.signup :refer [->LoginMenu ->ActivateAccount ActivateAccount]]))
 
-;(comment
-;  (def route->transition
-;   {:route/login        {:route/transactions js/ReactNative.Navigator.SceneConfigs.FloatFromBottom}
-;    :route/transactions {:route/login js/ReactNative.Navigator.SceneConfigs.FloatFromBottom}}))
-
 (defn props->route [props]
   (get-in props [:query/app :ui.component.app/route]))
 

@@ -49,7 +49,6 @@
   (render [this]
     (let [{:keys [project transactions]} (unwrap-props (om/props this))
           {:keys [selected-item]} (om/get-state this)]
-      (debug "Rendering transactions: " transactions)
       (view (opts {:style {:flex 1}})
             (->ProjectMenu (om/computed
                              {:selected-item selected-item}
@@ -59,8 +58,7 @@
                   (= selected-item :dashboard)
                   (d/->Dashboard))))))
 
-
-(def ->ProjectView (om/factory ProjectView {:keyfn #(str ProjectView)}))
+(def ->ProjectView (om/factory ProjectView))
 
 (defui ProjectWidget
   Object
@@ -94,8 +92,6 @@
     (let [props (om/props this)
           nav (.-navigator props)
           {:keys [all-projects transactions-by-project]} (unwrap-props props)]
-      (debug "ALL PROJECTS: " [all-projects nav])
-      (debug "Main's props: " (om/props this))
       (tv/->TableView
         (om/computed
           {:rows all-projects}
@@ -130,7 +126,6 @@
   (render [this]
     (let [{:keys [query/all-projects]} (om/props this)
           {:keys [transactions-by-project]} (om/get-state this)]
-      (debug "RENDERING STUFF: " transactions-by-project)
       (nav/navigator
         {:initial-route {:title     "Overview"
                          :component ->Main

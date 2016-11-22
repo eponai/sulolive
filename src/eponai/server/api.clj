@@ -89,6 +89,7 @@
           email-chan (chan 1)]
       (if user
         (let [{:keys [verification/uuid] :as verification} (datomic.format/email-verification user)]
+          (debug "Transacting verification for user: " (select-keys user [:db/id :user/uuid :user/email]))
           (transact-one conn verification)
           (info "New verification " uuid "for user:" email)
           (debug (str "Helper for mobile dev. verify uri: jourmoney://ios/1/login/verify/" uuid))
