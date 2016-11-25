@@ -253,8 +253,11 @@
                                         (= '* x) x)))
                            (remove #(= :db/id %)))
                   pattern)
-         joins (filter map? pattern)]
-     (into [{:path path :attrs ks :attr->pattern (into {} joins)}]
+         joins (filter map? pattern)
+         attr->pattern (into {}
+                             (map #(medley/map-keys normalize-attribute %))
+                             joins)]
+     (into [{:path path :attrs ks :normalized-attr->pattern attr->pattern}]
            (mapcat (fn [join]
                      {:pre (= 1 (count join))}
                      (let [[k v] (first join)]
@@ -313,7 +316,7 @@
                          (let [eavts (p/find-with (d/history db) query)]
                            (when (seq eavts)
                              (let [feavs (datoms->feav eavts)
-                                   attr->pattern (:attr->pattern attr-path)
+                                   attr->pattern (:normalized-attr->pattern attr-path)
                                    ;; Grouping all :db/add's by attr, so we can use pull to get any data
                                    ;; the user is missing that hadn't changed in db/history.
                                    pullable? (set (keys attr->pattern))
