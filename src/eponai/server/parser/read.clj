@@ -5,13 +5,13 @@
     [datomic.api :as d]
     [eponai.common.datascript :as eponai.datascript]
     [eponai.common.format :as f]
-    [eponai.common.parser :refer [server-read]]
+    [eponai.common.parser :as parser :refer [server-read]]
+    [eponai.common.parser.util :as p.util]
     [eponai.server.datomic.pull :as server.pull]
     [eponai.server.external.facebook :as facebook]
     [eponai.server.external.stripe :as stripe]
     [taoensso.timbre :as timbre :refer [error debug trace warn]]
     [eponai.common.database.pull :as pull]
-    [eponai.common.parser :as parser]
     [eponai.common.database.pull :as p])
   (:import (clojure.lang ExceptionInfo)))
 
@@ -73,6 +73,24 @@
             (debug "fetched smallest project eid: " ret)
             ret))))))
 
+(def conversion-attributes #{:transaction/conversion
+                             :transaction/currency
+                             :transaction/date
+                             :transaction/fees})
+
+(defn transaction-conversion-entities [db user-uuid tx-ids]
+  (let [tx-entities (into [] (map #(d/entity db %)) tx-ids)
+        conversions (pull/transaction-conversions db user-uuid tx-entities)
+        conv-ids (into #{}
+                       (mapcat (comp (juxt :user-conversion-id :transaction-conversion-id)
+                                     val))
+                       conversions)]
+    (-> []
+        (into (comp (map #(hash-map :db/id %))
+                    (pull/assoc-conversion-xf conversions))
+              tx-ids)
+        (into (pull/pull-many db pull/conversion-query (seq conv-ids))))))
+
 (defmethod parser/read-basis-param-path :query/transactions [env _ params] [(env+params->project-eid env params)])
 (defmethod server-read :query/transactions
   [{:keys [db db-history query user-uuid] :as env} _ params]
@@ -81,7 +99,14 @@
       (let [datom-txs (server.pull/all-datoms
                         db db-history query
                         (common.pull/transaction-entity-query {:project-eid project-eid
-                                                               :user-uuid   user-uuid}))]
+                                                               :user-uuid   user-uuid})
+                        (fn [attr-path eavts]
+                          (when (server.pull/attr-path-root? attr-path)
+                            (when-let [tx-ids (seq (into #{}
+                                                         (comp (filter #(contains? conversion-attributes (nth % 1)))
+                                                               (map first))
+                                                         eavts))]
+                              (transaction-conversion-entities db user-uuid tx-ids)))))]
         {:value {:refs datom-txs}})
       (let [entity-query (common.pull/transaction-entity-query {:project-eid project-eid
                                                                 :user-uuid user-uuid})
