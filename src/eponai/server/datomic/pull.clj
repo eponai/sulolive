@@ -272,14 +272,19 @@
 (def feav-val #(nth % 3))
 
 (defn- datoms->feav
-  "Returning datascript transactions with [function entity attribute value]"
-  [datoms]
+  "Returning datascript transactions with [function entity attribute value]
+
+  Can be passed an additional transducing function xf which will be applied
+  to each feav."
+  [datoms & [xf]]
   (->> datoms
        ;; Sort datoms by tx number, so that earlier transactions
        ;; get applied first.
        (sort-by #(nth % 3))
-       (mapv (fn [[e a v _ added]]
-               [(if added :db/add :db/retract) e a v]))))
+       (into [] (cond-> (map (fn [[e a v _ added]]
+                               [(if added :db/add :db/retract) e a v]))
+                        (some? xf)
+                        (comp xf)))))
 
 
 ;; ######## History api
@@ -302,7 +307,7 @@
   By defaults uses a find-pattern that gets datoms [e a v tx added],
   but can be customized by passing a find-pattern parameter."
 
-  [db db-history pull-pattern entity-query & [path+eavts->txs]]
+  [db db-history pull-pattern entity-query & [path+eavts->txs path->feav-xf-fn]]
   {:pre [(some? db-history)]}
   (->> pull-pattern
        (pattern->attr-paths)
@@ -315,7 +320,8 @@
                (mapcat (fn [[attr-path query]]
                          (let [eavts (p/find-with (d/history db) query)]
                            (when (seq eavts)
-                             (let [feavs (datoms->feav eavts)
+                             (let [feavs (datoms->feav eavts (when path->feav-xf-fn
+                                                               (path->feav-xf-fn attr-path)))
                                    attr->pattern (:normalized-attr->pattern attr-path)
                                    ;; Grouping all :db/add's by attr, so we can use pull to get any data
                                    ;; the user is missing that hadn't changed in db/history.

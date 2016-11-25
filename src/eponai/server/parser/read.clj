@@ -106,8 +106,18 @@
                                                          (comp (filter #(contains? conversion-attributes (nth % 1)))
                                                                (map first))
                                                          eavts))]
-                              (transaction-conversion-entities db user-uuid tx-ids)))))]
-        {:value {:refs datom-txs}})
+                              (transaction-conversion-entities db user-uuid tx-ids))))
+                        (fn [attr-path]
+                          (when (server.pull/attr-path-root? attr-path)
+                            ;; Put meta on the root datoms to be able to handle the differently.
+                            (map (fn [feav] (with-meta feav {::transaction-datom true}))))))
+            {transactions true others false} (group-by #(true? (::transaction-datom (meta %)))
+                                                       datom-txs)]
+        {:value (cond-> {}
+                        (seq others)
+                        (assoc :refs others)
+                        (seq transactions)
+                        (assoc :transactions transactions))})
       (let [entity-query (common.pull/transaction-entity-query {:project-eid project-eid
                                                                 :user-uuid user-uuid})
             tx-ids (pull/all-with db entity-query)
