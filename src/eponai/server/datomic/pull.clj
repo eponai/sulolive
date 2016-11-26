@@ -213,11 +213,11 @@
        ;; Else, return queries for normal and reverse attributes.
        (let [create-query (fn [attrs where-clause find-pattern]
                             (when (seq attrs)
-                              (->> path-query
-                                   (p/merge-query
-                                     {:where        [where-clause]
-                                      :symbols      {'[?datom-attr-keyword ...] attrs}
-                                      :find-pattern find-pattern}))))
+                              (-> path-query
+                                  (p/merge-query
+                                    {:where        [where-clause]
+                                     :symbols      {'[?datom-attr-keyword ...] attrs}
+                                     :find-pattern find-pattern}))))
              keyword-attrs (filter keyword? attrs)
              query-attrs (create-query (remove reverse-lookup-attr? attrs)
                                        db-history-clause
@@ -310,6 +310,8 @@
                     (retracts-only-from-eids (pop path) (pop path-symbols) pulled-eids))]
     ret))
 
+(def immutable-entity-namespaces #{:currency :tag :category :date})
+
 ;; ######## History api
 
 (defn all-datoms
@@ -337,6 +339,11 @@
          (pattern->attr-paths)
          (into []
                (comp
+                 (remove (fn [attr-path]
+                           (seq (sequence (comp (map (comp keyword namespace))
+                                                (filter immutable-entity-namespaces)
+                                                (take 1))
+                                          (:attrs attr-path)))))
                  (mapcat (fn [{:keys [path] :as attr-path}]
                            (let [path-symbols (vec (sym-seq path))]
                              (->> (changed-path-queries db-history entity-query attr-path path-symbols)
@@ -344,6 +351,7 @@
                                          (retracts-only-from-eids query path (vec path-symbols) @pulled-eids)))
                                (map vector (repeat attr-path))))))
                  (mapcat (fn [[attr-path query]]
+                           (debug [:query query])
                            (let [eavts (p/find-with (d/history db) query)]
                              (when (seq eavts)
                                (let [feavs (datoms->feav eavts (when path->feav-xf-fn

@@ -101,7 +101,7 @@
 
 (defmethod parser/read-basis-param-path :query/transactions [env _ params] [(env+params->project-eid env params)])
 (defmethod server-read :query/transactions
-  [{:keys [db db-history query user-uuid] :as env} _ params]
+  [{:keys [db db-history query user-uuid] :as env} k params]
   (when-let [project-eid (env+params->project-eid env params)]
     (let [read-retractions? (some? db-history)
           datom-txs (server.pull/all-datoms
