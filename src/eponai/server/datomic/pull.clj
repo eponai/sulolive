@@ -8,7 +8,8 @@
     [eponai.common.database.pull :as p]
     [eponai.common.parser.util :as parser]
     [eponai.common.report :as report]
-    [taoensso.timbre :as timbre :refer [info debug warn trace]]))
+    [taoensso.timbre :as timbre :refer [info debug warn trace]]
+    [eponai.common.database.pull :as pull]))
 
 (defn currencies [db]
   (p/q '[:find [(pull ?e [*]) ...]
@@ -140,8 +141,8 @@
 
 (defn sym-seq
   "Generates symbols. Is passed around for testability."
-  [path]
-  (map #(gensym (str "?" (name %) "_")) path))
+  [path & [suffix]]
+  (map #(gensym (str "?" (name %) "_" suffix)) path))
 
 (defn reverse-lookup-attr? [attr]
   {:pre [(or (keyword? attr) (= '* attr))]}
@@ -168,63 +169,66 @@
       (assoc i1 (nth v i2))
       (assoc i2 (nth v i1))))
 
-(defn- changed-path-queries [db-history entity-query {:keys [path attrs]}]
-  {:pre [(some? db-history)]}
-  (let [path-syms (cons '?e (sym-seq path))
-        return-eid (last path-syms)
-        ;; Create a path of where-clauses from entity ?e through
-        ;; the path of the pull-pattern.
-        path-where-clauses (map path->where-clause
-                                path
-                                (partition 2 1 path-syms))
-        find-pattern [return-eid
-                      '?datom-attr-keyword
-                      '?datom-value
-                      '?datom-tx
-                      '?datom-added]
-        attribute-number-to-keyword-clause '[?datom-attr-number
-                                             :db/ident
-                                             ?datom-attr-keyword]
-        path-query (cond-> entity-query
-                           (seq path-where-clauses)
-                           (p/merge-query {:where (vec path-where-clauses)})
-                           :always
-                           (p/merge-query {:where        [attribute-number-to-keyword-clause]
-                                           :symbols      {'$db-history db-history}}))
-        db-history-clause (->> find-pattern
-                               (replace {'?datom-attr-keyword '?datom-attr-number})
-                               (cons '$db-history)
-                               (vec))]
-    (assert (every? #(or (keyword? %) (= '* %)) attrs)
-            (str "Attributes in path: " path " were not only"
-                 " keywords or '*, were: " attrs))
-    ;; If we've got a star attribute,
-    ;; just return the query matching everything.
-    (if (some #(= '* %) attrs)
-      ;; For a "star" attribute, just don't specify
-      ;; which values the ?datom-attr-keyword can take.
-      (vector (p/merge-query {:where [db-history-clause]
-                              :find-pattern find-pattern}
-                             path-query))
-      ;; Else, return queries for normal and reverse attributes.
-      (let [create-query (fn [attrs where-clause find-pattern]
-                           (when (seq attrs)
-                             (->> path-query
-                                  (p/merge-query
-                                    {:where        [where-clause]
-                                     :symbols      {'[?datom-attr-keyword ...] attrs}
-                                     :find-pattern find-pattern}))))
-            keyword-attrs (filter keyword? attrs)
-            query-attrs (create-query (remove reverse-lookup-attr? attrs)
-                                      db-history-clause
-                                      find-pattern)
-            query-reverse-attrs (create-query (->> keyword-attrs
-                                                   (filter reverse-lookup-attr?)
-                                                   (map normalize-attribute))
-                                              ;; Swap the e and v for reverse attrs
-                                              (vector-swap db-history-clause 1 3)
-                                              (vector-swap find-pattern 0 2))]
-        (filter some? [query-attrs query-reverse-attrs])))))
+(defn- changed-path-queries
+  ([db-history entity-query attr-path]
+   (changed-path-queries db-history entity-query attr-path (sym-seq (:path attr-path))))
+  ([db-history entity-query {:keys [path attrs]} sym-seq]
+   {:pre [(some? db-history)]}
+   (let [path-syms (cons '?e sym-seq)
+         return-eid (last path-syms)
+         ;; Create a path of where-clauses from entity ?e through
+         ;; the path of the pull-pattern.
+         path-where-clauses (map path->where-clause
+                                 path
+                                 (partition 2 1 path-syms))
+         find-pattern [return-eid
+                       '?datom-attr-keyword
+                       '?datom-value
+                       '?datom-tx
+                       '?datom-added]
+         attribute-number-to-keyword-clause '[?datom-attr-number
+                                              :db/ident
+                                              ?datom-attr-keyword]
+         path-query (cond-> entity-query
+                            (seq path-where-clauses)
+                            (p/merge-query {:where (vec path-where-clauses)})
+                            :always
+                            (p/merge-query {:where   [attribute-number-to-keyword-clause]
+                                            :symbols {'$db-history db-history}}))
+         db-history-clause (->> find-pattern
+                                (replace {'?datom-attr-keyword '?datom-attr-number})
+                                (cons '$db-history)
+                                (vec))]
+     (assert (every? #(or (keyword? %) (= '* %)) attrs)
+             (str "Attributes in path: " path " were not only"
+                  " keywords or '*, were: " attrs))
+     ;; If we've got a star attribute,
+     ;; just return the query matching everything.
+     (if (some #(= '* %) attrs)
+       ;; For a "star" attribute, just don't specify
+       ;; which values the ?datom-attr-keyword can take.
+       (vector (p/merge-query {:where        [db-history-clause]
+                               :find-pattern find-pattern}
+                              path-query))
+       ;; Else, return queries for normal and reverse attributes.
+       (let [create-query (fn [attrs where-clause find-pattern]
+                            (when (seq attrs)
+                              (->> path-query
+                                   (p/merge-query
+                                     {:where        [where-clause]
+                                      :symbols      {'[?datom-attr-keyword ...] attrs}
+                                      :find-pattern find-pattern}))))
+             keyword-attrs (filter keyword? attrs)
+             query-attrs (create-query (remove reverse-lookup-attr? attrs)
+                                       db-history-clause
+                                       find-pattern)
+             query-reverse-attrs (create-query (->> keyword-attrs
+                                                    (filter reverse-lookup-attr?)
+                                                    (map normalize-attribute))
+                                               ;; Swap the e and v for reverse attrs
+                                               (vector-swap db-history-clause 1 3)
+                                               (vector-swap find-pattern 0 2))]
+         (filter some? [query-attrs query-reverse-attrs]))))))
 
 ;; TODO: TEST THIS :D
 
@@ -286,6 +290,25 @@
                         (some? xf)
                         (comp xf)))))
 
+(defn retracts-only-from-eids [query path path-symbols path->pulled-eids]
+  {:pre [(vector? path) (vector? path-symbols)]}
+  (let [pulled-eids (get-in path->pulled-eids path)
+        path-sym (peek path-symbols)
+        exclude-sym (last (sym-seq path "exclude"))
+        ret (cond-> query
+                    (seq pulled-eids)
+                    (pull/merge-query {:where   [(list 'or
+                                                       (list 'and
+                                                             [(list '= path-sym exclude-sym)]
+                                                             '[(identity false) ?datom-added])
+                                                       (list 'and
+                                                             [(list 'not= path-sym exclude-sym)]
+                                                             '(or [(identity false) ?datom-added]
+                                                                  [(identity true) ?datom-added])))]
+                                       :symbols {[exclude-sym '...] (seq pulled-eids)}})
+                    (seq (rest path))
+                    (retracts-only-from-eids (pop path) (pop path-symbols) pulled-eids))]
+    ret))
 
 ;; ######## History api
 
@@ -309,48 +332,56 @@
 
   [db db-history pull-pattern entity-query & [path+eavts->txs path->feav-xf-fn]]
   {:pre [(some? db-history)]}
-  (->> pull-pattern
-       (pattern->attr-paths)
-       (into []
-             (comp
-               (mapcat (fn [attr-path]
-                         (map vector
-                              (repeat attr-path)
-                              (changed-path-queries db-history entity-query attr-path))))
-               (mapcat (fn [[attr-path query]]
-                         (let [eavts (p/find-with (d/history db) query)]
-                           (when (seq eavts)
-                             (let [feavs (datoms->feav eavts (when path->feav-xf-fn
-                                                               (path->feav-xf-fn attr-path)))
-                                   attr->pattern (:normalized-attr->pattern attr-path)
-                                   ;; Grouping all :db/add's by attr, so we can use pull to get any data
-                                   ;; the user is missing that hadn't changed in db/history.
-                                   pullable? (set (keys attr->pattern))
-                                   adds-by-attr (transduce (comp
-                                                             (filter (comp pullable? feav-attr))
-                                                             (filter (comp #{:db/add} feav-fn)))
-                                                           (completing
-                                                             (fn [by-attr feav]
-                                                               (update by-attr
-                                                                       (feav-attr feav)
-                                                                       (fnil conj #{})
-                                                                       (feav-val feav))))
-                                                           {}
-                                                           feavs)]
-                               ;; Put onto our feavs the "current truth" about all refs, using
-                               ;; pull on the latest db.
-                               (-> feavs
-                                   ;; Add extra transactions that contain only the current truth,
-                                   ;; no retractions.
-                                   (into (when path+eavts->txs (path+eavts->txs attr-path eavts)))
-                                   (into (mapcat (fn [[attr vs]]
-                                                   ;; TODO: Now that we've pulled on some eids, we
-                                                   ;;       don't have to pull on their children.
-                                                   ;;       Need to make sure we only do this filtering
-                                                   ;;       for entities that has been pulled using
-                                                   ;;       the same pattern.
-                                                   (d/pull-many db (get attr->pattern attr) (seq vs))))
-                                         adds-by-attr)))))))))))
+  (let [pulled-eids (atom {})]
+    (->> pull-pattern
+         (pattern->attr-paths)
+         (into []
+               (comp
+                 (mapcat (fn [{:keys [path] :as attr-path}]
+                           (let [path-symbols (vec (sym-seq path))]
+                             (->> (changed-path-queries db-history entity-query attr-path path-symbols)
+                                  (map (fn [query]
+                                         (retracts-only-from-eids query path (vec path-symbols) @pulled-eids)))
+                               (map vector (repeat attr-path))))))
+                 (mapcat (fn [[attr-path query]]
+                           (let [eavts (p/find-with (d/history db) query)]
+                             (when (seq eavts)
+                               (let [feavs (datoms->feav eavts (when path->feav-xf-fn
+                                                                 (path->feav-xf-fn attr-path)))
+                                     attr->pattern (:normalized-attr->pattern attr-path)
+                                     ;; Grouping all :db/add's by attr, so we can use pull to get any data
+                                     ;; the user is missing that hadn't changed in db/history.
+                                     pullable? (set (keys attr->pattern))
+                                     adds-by-attr (transduce (comp
+                                                               (filter (comp pullable? feav-attr))
+                                                               (filter (comp #{:db/add} feav-fn)))
+                                                             (completing
+                                                               (fn [by-attr feav]
+                                                                 (update by-attr
+                                                                         (feav-attr feav)
+                                                                         (fnil conj #{})
+                                                                         (feav-val feav))))
+                                                             {}
+                                                             feavs)]
+                                 ;; Put onto our feavs the "current truth" about all refs, using
+                                 ;; pull on the latest db.
+                                 (-> feavs
+                                     ;; Add extra transactions that contain only the current truth,
+                                     ;; no retractions.
+                                     (into (when path+eavts->txs (path+eavts->txs attr-path eavts)))
+                                     (into (mapcat (fn [[attr vs]]
+                                                     ;; TODO: Now that we've pulled on some eids, we
+                                                     ;;       don't have to pull on their children.
+                                                     ;;       Need to make sure we only do this filtering
+                                                     ;;       for entities that has been pulled using
+                                                     ;;       the same pattern.
+                                                     (let [cache-path (-> []
+                                                                          (into (map normalize-attribute) (:path attr-path))
+                                                                          (conj attr))]
+                                                       (swap! pulled-eids update-in cache-path
+                                                              (fnil set/union #{}) vs))
+                                                     (d/pull-many db (get attr->pattern attr) (seq vs))))
+                                           adds-by-attr))))))))))))
 
 (defn one
   "Initially gets an entity and uses (pull ...) on it with

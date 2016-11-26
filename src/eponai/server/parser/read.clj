@@ -12,7 +12,8 @@
     [eponai.server.external.stripe :as stripe]
     [taoensso.timbre :as timbre :refer [error debug trace warn]]
     [eponai.common.database.pull :as pull]
-    [eponai.common.database.pull :as p])
+    [eponai.common.database.pull :as p]
+    [medley.core :as medley])
   (:import (clojure.lang ExceptionInfo)))
 
 (defmethod server-read :datascript/schema
@@ -91,53 +92,54 @@
               tx-ids)
         (into (pull/pull-many db pull/conversion-query (seq conv-ids))))))
 
+(defn feavs->entity-maps [feavs]
+  (->> (group-by server.pull/feav-e feavs)
+       (mapv (fn [[e feavs]]
+               (into {:db/id e}
+                     (map (juxt server.pull/feav-attr server.pull/feav-val))
+                     feavs)))))
+
 (defmethod parser/read-basis-param-path :query/transactions [env _ params] [(env+params->project-eid env params)])
 (defmethod server-read :query/transactions
   [{:keys [db db-history query user-uuid] :as env} _ params]
   (when-let [project-eid (env+params->project-eid env params)]
-    (if db-history
-      (let [datom-txs (server.pull/all-datoms
-                        db db-history query
-                        (common.pull/transaction-entity-query {:project-eid project-eid
-                                                               :user-uuid   user-uuid})
-                        (fn [attr-path eavts]
-                          (when (server.pull/attr-path-root? attr-path)
-                            (when-let [tx-ids (seq (into #{}
-                                                         (comp (filter #(contains? conversion-attributes (nth % 1)))
-                                                               (map first))
-                                                         eavts))]
-                              (transaction-conversion-entities db user-uuid tx-ids))))
-                        (fn [attr-path]
-                          (when (server.pull/attr-path-root? attr-path)
-                            ;; Put meta on the root datoms to be able to handle the differently.
-                            (map (fn [feav] (with-meta feav {::transaction-datom true}))))))
-            {transactions true others false} (group-by #(true? (::transaction-datom (meta %)))
-                                                       datom-txs)]
-        {:value (cond-> {}
-                        (seq others)
-                        (assoc :refs others)
-                        (seq transactions)
-                        (assoc :transactions transactions))})
-      (let [entity-query (common.pull/transaction-entity-query {:project-eid project-eid
-                                                                :user-uuid user-uuid})
-            tx-ids (pull/all-with db entity-query)
-            tx-entities (mapv #(d/entity db %) tx-ids)
-            conversions (pull/transaction-conversions db user-uuid tx-entities)
-
-            conv-ids (into #{} (mapcat (fn [[_ v]]
-                                         {:pre [(:transaction-conversion-id v) (:user-conversion-id v)]}
-                                         (vector (:user-conversion-id v)
-                                                 (:transaction-conversion-id v))))
-                           conversions)
-            ref-ids (set/union
-                      (server.pull/all-entities db query tx-ids)
-                      (server.pull/all-entities db pull/conversion-query conv-ids))]
-        {:value (cond-> {:transactions (into [] (comp (map #(entity-map->shallow-map %))
-                                                      (map #(update % :transaction/type (fn [t] {:db/ident t})))
-                                                      (pull/assoc-conversion-xf conversions))
-                                             (sort-by (comp :date/timestamp :transaction/date) > tx-entities))
-                         :conversions  (d/pull-many db '[*] (seq conv-ids))
-                         :refs         (d/pull-many db '[*] (seq ref-ids))})}))))
+    (let [read-retractions? (some? db-history)
+          datom-txs (server.pull/all-datoms
+                      db
+                      (if read-retractions? db-history db)
+                      query
+                      (common.pull/transaction-entity-query {:project-eid project-eid
+                                                             :user-uuid   user-uuid})
+                      (fn [attr-path eavts]
+                        (when (server.pull/attr-path-root? attr-path)
+                          (when-let [tx-ids (seq (into #{}
+                                                       (comp (filter #(contains? conversion-attributes (nth % 1)))
+                                                             (map first))
+                                                       eavts))]
+                            (transaction-conversion-entities db user-uuid tx-ids))))
+                      (fn [attr-path]
+                        (when (server.pull/attr-path-root? attr-path)
+                          ;; Put meta on the root datoms to be able to handle the differently.
+                          (map (fn [feav] (with-meta feav {::transaction-datom true}))))))]
+      (if read-retractions?
+        ;; When there are retractions, we can't create entity maps and stream transactions via the
+        ;; the :transactions key. So just return all of them on the :refs key.
+        (when (seq datom-txs) {:value {:refs datom-txs}})
+        ;; There are no retractions, so we can create entity maps to send less data and
+        ;; "stream" each transaction on the clients side on the :transactions key.
+        (let [{transactions true others false} (group-by #(true? (::transaction-datom (meta %))) datom-txs)
+              tx->timestamp (memoize
+                              (fn [tx-id]
+                                {:post [(number? %)]}
+                                (get-in (d/entity db tx-id) [:transaction/date :date/timestamp])))
+              transactions (->> transactions
+                                (feavs->entity-maps)
+                                (sort-by (comp tx->timestamp :db/id) >))]
+          {:value (cond-> {}
+                          (seq others)
+                          (assoc :refs others)
+                          (seq transactions)
+                          (assoc :transactions transactions))})))))
 
 (defmethod server-read :query/all-projects
   [{:keys [db db-history query auth]} _ _]
