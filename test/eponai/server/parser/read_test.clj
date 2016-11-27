@@ -41,51 +41,59 @@
                         ~{:project {:db/id (:db/id (project-entity conn project))}})]))
 
 
-(deftest read-transactions-return-conversions-matching-all
-  (testing "query/transactions should return transactions and all matching conversions."
-    (let [user (test-user)
-          project (format/project (:db/id user))
-          convs [(conversion "1000-01-01" "SEK")
-                 (conversion "1000-01-02" "SEK")
-                 (conversion "1000-01-03" "SEK")
-                 (conversion "1000-01-01" "USD")
-                 (conversion "1000-01-02" "USD")
-                 (conversion "1000-01-03" "USD")]
-          conn (util/new-db (concat [user
-                                     project]
-                                    convs))
-          ;; Total 4 conversions should be fetched for the following transactions.
-          ts [(transaction [:project/uuid (:project/uuid project)] "1000-01-01" "SEK")      ;; One conversions fetched SEK
-              (transaction [:project/uuid (:project/uuid project)] "1000-01-02" "USD")      ;; Two conversions fetched SEK+USD (user's + transactions's)
-              (transaction [:project/uuid (:project/uuid project)] "1000-01-03" "SEK")]]    ;; One conversions fetched SEK
-      (debug "Transactions: " ts)
-      (transact/transact conn ts)
-      (let [{result :query/transactions} (read-transactions conn user project)
-            {:keys [transactions conversions]} result]
-        (is (= (count ts) (count transactions)))
-        ; We're expecting one more than the number of conversions since one of the transactions is in USD.
-        ; That means we're fetching conversions for both USD and SEK (user's currency) for that date
-        (is (= (count conversions) 4))))))
+(comment
+  ":query/transactions doesn't return conversions on their own anymore.
+  To test this, we'd have to transact the result of :query/transaction
+  to datascript and validate the result in there."
+  (deftest read-transactions-return-conversions-matching-all
+   (testing "query/transactions should return transactions and all matching conversions."
+     (let [user (test-user)
+           project (format/project (:db/id user))
+           convs [(conversion "1000-01-01" "SEK")
+                  (conversion "1000-01-02" "SEK")
+                  (conversion "1000-01-03" "SEK")
+                  (conversion "1000-01-01" "USD")
+                  (conversion "1000-01-02" "USD")
+                  (conversion "1000-01-03" "USD")]
+           conn (util/new-db (concat [user
+                                      project]
+                                     convs))
+           ;; Total 4 conversions should be fetched for the following transactions.
+           ts [(transaction [:project/uuid (:project/uuid project)] "1000-01-01" "SEK") ;; One conversions fetched SEK
+               (transaction [:project/uuid (:project/uuid project)] "1000-01-02" "USD") ;; Two conversions fetched SEK+USD (user's + transactions's)
+               (transaction [:project/uuid (:project/uuid project)] "1000-01-03" "SEK")]] ;; One conversions fetched SEK
+       (debug "Transactions: " ts)
+       (transact/transact conn ts)
+       (let [{result :query/transactions} (read-transactions conn user project)
+             {:keys [transactions conversions]} result]
+         (is (= (count ts) (count transactions)))
+         ; We're expecting one more than the number of conversions since one of the transactions is in USD.
+         ; That means we're fetching conversions for both USD and SEK (user's currency) for that date
+         (is (= (count conversions) 4)))))))
 
-(deftest read-transactions-return-conversions-matching-some
-  (testing "query/transactions should return transactions and all matching conversions."
-    (let [user (test-user)
-          project (format/project (:db/id user))
-          convs [(conversion "1000-01-01" "SEK")
-                 (conversion "1000-01-02" "SEK")
-                 (conversion "1000-01-03" "SEK")
-                 (conversion "1000-01-01" "USD")
-                 (conversion "1000-01-02" "USD")
-                 (conversion "1000-01-03" "USD")]
-          conn (util/new-db (concat [user
-                                     project]
-                                    convs))
-          ;; Total 3 conversions should be fetched for the following transactions.
-          ts [(transaction [:project/uuid (:project/uuid project)] "1000-01-01" "SEK")       ;; One conversions fetched SEK
-              (transaction [:project/uuid (:project/uuid project)] "1000-01-02" "USD")       ;; Two conversions fetched SEK+USD (user's + transactions's)
-              (transaction [:project/uuid (:project/uuid project)] "1000-01-04" "SEK")]]     ;; Zero conversions fetched SEK (no conversion for date)
-      (transact/transact conn ts)
-      (let [{result :query/transactions} (read-transactions conn user project)
-            {:keys [transactions conversions] :as r} result]
-        (is (= (count ts) (count transactions)))
-        (is (= (count conversions) 3))))))
+(comment
+  ":query/transactions doesn't return conversions on their own anymore.
+  To test this, we'd have to transact the result of :query/transaction
+  to datascript and validate the result in there."
+  (deftest read-transactions-return-conversions-matching-some
+   (testing "query/transactions should return transactions and all matching conversions."
+     (let [user (test-user)
+           project (format/project (:db/id user))
+           convs [(conversion "1000-01-01" "SEK")
+                  (conversion "1000-01-02" "SEK")
+                  (conversion "1000-01-03" "SEK")
+                  (conversion "1000-01-01" "USD")
+                  (conversion "1000-01-02" "USD")
+                  (conversion "1000-01-03" "USD")]
+           conn (util/new-db (concat [user
+                                      project]
+                                     convs))
+           ;; Total 3 conversions should be fetched for the following transactions.
+           ts [(transaction [:project/uuid (:project/uuid project)] "1000-01-01" "SEK") ;; One conversions fetched SEK
+               (transaction [:project/uuid (:project/uuid project)] "1000-01-02" "USD") ;; Two conversions fetched SEK+USD (user's + transactions's)
+               (transaction [:project/uuid (:project/uuid project)] "1000-01-04" "SEK")]] ;; Zero conversions fetched SEK (no conversion for date)
+       (transact/transact conn ts)
+       (let [{result :query/transactions} (read-transactions conn user project)
+             {:keys [transactions conversions] :as r} result]
+         (is (= (count ts) (count transactions)))
+         (is (= (count conversions) 3)))))))
