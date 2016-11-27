@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node_modules/react-native/packager/packager.sh --nonPersistent",
-    "postinstall": "./node_modules/rnpm/bin/cli link"
+    "postinstall": "node ./node_modules/react-native/local-cli/cli.js link"
   },
   "dependencies": {
     "pikaday": "1.4.0",
@@ -13,7 +13,6 @@
     "react-native-fbsdk": "^0.3.0"
   },
   "devDependencies": {
-    "rnpm": "1.9.0",
     "source-map-support": "0.3.2",
     "karma": "0.13.9",
     "karma-junit-reporter": "0.3.8",
