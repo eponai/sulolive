@@ -46,15 +46,15 @@
     (let [{:keys [release?]} (om/props this)]
       (dom/html
         {:lang "en"}
-        (apply dom/head nil
-               (-> (common/head release?)
-                   (conj (common/inline-javascript (iubenda-script-code)))
-                   (conj (dom/script {:type    text-javascript
-                                      :src     "//cdn.iubenda.com/cookie_solution/safemode/iubenda_cs.js"
-                                      :charset "utf-8"
-                                      :async   true}))))
+
+        (apply dom/head nil (common/head release?))
         (dom/body
           nil
+          (common/inline-javascript (iubenda-script-code))
+          (dom/script {:type    text-javascript
+                       :src     "//cdn.iubenda.com/cookie_solution/safemode/iubenda_cs.js"
+                       :charset "utf-8"
+                       :async   true})
           (dom/div {:id "landing-page"}
             (dom/div {:id "header"}
               (dom/nav {:className "top-bar"}
@@ -73,7 +73,7 @@
                            (dom/li nil
                              (dom/a {:href "#at-a-glance"} "Features"))
                            (dom/li nil (dom/a {:href "#pay-what-you-want"} "Pricing"))
-                           ;;(dom/li nil (dom/a {:href "/signup"} (dom/strong nil "Sign In / Sign Up")))
+                           (dom/li nil (dom/a {:href "#subscribe-form"} (dom/strong nil "Sign In / Sign Up")))
                            )))
               (dom/div {:className "intro"}
                 (dom/div {:className "row align-center column small-12 medium-8 large-5"}
@@ -159,17 +159,17 @@
             (dom/div {:id "footer"}
               (dom/form
                 {:id    "subscribe-form"
-                 :class "row actions medium-unstack align-center align-middle"}
-                (dom/div {:class "text-center column small-12 medium-6 large-3"}
+                 :className "row actions medium-unstack align-center align-middle"}
+                (dom/div {:className "text-center column small-12 medium-6 large-3"}
                   (dom/span nil "Subscribe to our newsletter to be notified when we launch:"))
-                (dom/div {:class "column small-10 medium-6 large-3"}
+                (dom/div {:className "column small-10 medium-6 large-3"}
                   (dom/input {:type        "email"
                               :name "email"
                               :placeholder "jouremail@example.com"
                               :tabindex    "1"}))
-                (dom/div {:class "column small-5 medium-3 large-2 text-center"}
+                (dom/div {:className "column small-5 medium-3 large-2 text-center"}
                   (dom/button {:type "submit"
-                               :class "button hollow"
+                               :className "button hollow"
                                :onclick "onSubscribe('subscribe-intro')"
                                :tabindex "2"}
                               (dom/strong nil "Notify Me"))))
@@ -186,7 +186,13 @@
                 (dom/ul {:className "menu"}
                         (dom/li nil
                                 (dom/p {:className "copyright small"}
-                                       "Copyright © eponai 2016. All Rights Reserved"))))))
+                                           (dom/a {:href  "//www.iubenda.com/privacy-policy/7944779"
+                                                   :class "iubenda-nostyle no-brand iubenda-embed"
+                                                   :title "Privacy Policy"} "Privacy Policy")))
+                        (dom/li nil
+                                (dom/p {:className "copyright small"}
+                                       "Copyright © eponai 2016. All Rights Reserved"))))
+              ))
 
           (dom/script {:src "https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"
                        :type text-javascript})

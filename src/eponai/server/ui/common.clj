@@ -103,9 +103,9 @@
    (dom/meta {:name "theme-color" :content "#ffffff"})])
 
 
-(defn footer []
+(defn footer [id]
   (dom/div {:className "footer"
-            :id        "footer"}
+            :id        (or id "footer")}
     (dom/ul {:className "menu"}
 
             (dom/li nil
