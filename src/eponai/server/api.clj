@@ -416,4 +416,6 @@
                          email
                          (:verification/uuid verification))
     (info "Newsletter subscribe successful, transacting user into datomic.")
-    (transact-map conn account)))
+    (comment
+      ;; TODO: Actually transact this if we want to release jourmoney ^^
+      (transact-map conn account))))

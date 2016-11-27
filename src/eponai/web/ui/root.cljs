@@ -83,8 +83,7 @@
              "Welcome to the playground! You can play with the app here but nothing will be saved. "
              [:strong
               [:a
-               {:href   "/signup"
-                :target "_blank"}
+               {:on-click #(om/update-state! this assoc :playground/show-subscribe-modal? true)}
                "Sign up"]]
              " to create an account."])
           (subscribe-modal this)]
