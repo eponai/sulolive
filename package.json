@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node_modules/react-native/packager/packager.sh --nonPersistent",
-    "postinstall": "node ./node_modules/react-native/local-cli/cli.js link"
+    "postinstall": "node ./node_modules/react-native/local-cli/cli.js link; exit 0"
   },
   "dependencies": {
     "pikaday": "1.4.0",
