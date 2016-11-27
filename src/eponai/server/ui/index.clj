@@ -158,21 +158,24 @@
 
             (dom/div {:id "footer"}
               (dom/form
-                {:id    "subscribe-form"
-                 :className "row actions medium-unstack align-center align-middle"}
-                (dom/div {:className "text-center column small-12 medium-6 large-3"}
-                  (dom/span nil "Subscribe to our newsletter to be notified when we launch:"))
-                (dom/div {:className "column small-10 medium-6 large-3"}
-                  (dom/input {:type        "email"
-                              :name "email"
-                              :placeholder "jouremail@example.com"
-                              :tabindex    "1"}))
-                (dom/div {:className "column small-5 medium-3 large-2 text-center"}
-                  (dom/button {:type "submit"
-                               :className "button hollow"
-                               :onclick "onSubscribe('subscribe-intro')"
-                               :tabindex "2"}
-                              (dom/strong nil "Notify Me"))))
+                {:id "subscribe-form"
+                 :className "actions"}
+                (dom/div {:className "row medium-unstack align-center align-middle"}
+                  (dom/div {:className "text-center column small-12 medium-6 large-3"}
+                    (dom/span nil "Subscribe to our newsletter to be notified when we launch:"))
+                  (dom/div {:className "column small-10 medium-6 large-3"}
+                    (dom/input {:type        "email"
+                                :name        "email"
+                                :placeholder "jouremail@example.com"
+                                :tabindex    "1"}))
+                  (dom/div {:className "column small-5 medium-3 large-2 text-center"}
+                    (dom/button {:type      "submit"
+                                 :className "button hollow"
+                                 :onclick   "onSubscribe('subscribe-intro')"
+                                 :tabindex  "2"}
+                                (dom/strong nil "Notify Me"))))
+                (dom/div {:className "row column text-center"}
+                  (dom/div {:className "text-center" :id "subscribe-intro"})))
 
               (dom/footer
                 {:className "footer"}

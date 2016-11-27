@@ -94,8 +94,13 @@
       (api/newsletter-subscribe conn (:email params))
       (r/response (json/write-str {:message "Thank you, we'll let you know the second we launch!"}))
       (catch Exception e
-        (error "Exception when subscribing user:" (:email params) "exception:" e)
-        (r/status (r/response (json/write-str {:message "Oops, something went wrong. Please try again in a little while."})) 500))))
+        (let [body (:body (ex-data e))
+              json-body (json/read-str body :key-fn keyword)
+              _ (debug "EX data " json-body)
+              message (get json-body :detail "Oops, something went wrong. Please try again in a little while.")]
+          (debug "Using message: " message)
+          (error "Exception when subscribing user:" (:email params) "exception:" e)
+          (r/status (r/response (json/write-str {:message message})) 500)))))
 
   (route/resources "/")
   (route/not-found "Not found"))
