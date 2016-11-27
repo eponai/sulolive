@@ -71,9 +71,10 @@
                          (dom/ul
                            {:className "menu"}
                            (dom/li nil
-                                   (dom/a {:href "#at-a-glance"} "Features"))
+                             (dom/a {:href "#at-a-glance"} "Features"))
                            (dom/li nil (dom/a {:href "#pay-what-you-want"} "Pricing"))
-                           (dom/li nil (dom/a {:href "/signup"} (dom/strong nil "Sign In / Sign Up"))))))
+                           ;;(dom/li nil (dom/a {:href "/signup"} (dom/strong nil "Sign In / Sign Up")))
+                           )))
               (dom/div {:className "intro"}
                 (dom/div {:className "row align-center column small-12 medium-8 large-5"}
                   (dom/div {:className "intro-message"}
@@ -85,7 +86,8 @@
                   (map (fn [[classes text href]]
                          (dom/div {:className "column small-5 medium-3 large-2 text-center"}
                            (dom/a {:className classes :href href} text)))
-                       [["button hollow" "Get Started" "/signup"]
+                       [
+                        ;;["button hollow" "Get Started" "/signup"]
                         ["button" "Demo" "/play"]]))))
 
             (dom/div {:id "nomadic-living" :className "content-section"}
@@ -155,14 +157,22 @@
                           ["We are interested in how you value Jourmoney, so we can keep improving and make it better!"]])))))
 
             (dom/div {:id "footer"}
-              (dom/div {:className "row align-center"}
-                (dom/span nil "Start tracking your money today"))
-              (dom/div {:className "row align-center"}
-                (map (fn [[classes text href]]
-                       (dom/div {:className "column small-5 medium-3 large-2 text-center"}
-                         (dom/a {:className classes :href href} text)))
-                     [["button hollow" "Get Started" "/signup"]
-                      ["button" "Demo" "/play"]]))
+              (dom/form
+                {:id    "subscribe-form"
+                 :class "row actions medium-unstack align-center align-middle"}
+                (dom/div {:class "text-center column small-12 medium-6 large-3"}
+                  (dom/span nil "Subscribe to our newsletter to be notified when we launch:"))
+                (dom/div {:class "column small-10 medium-6 large-3"}
+                  (dom/input {:type        "email"
+                              :name "email"
+                              :placeholder "jouremail@example.com"
+                              :tabindex    "1"}))
+                (dom/div {:class "column small-5 medium-3 large-2 text-center"}
+                  (dom/button {:type "submit"
+                               :class "button hollow"
+                               :onclick "onSubscribe('subscribe-intro')"
+                               :tabindex "2"}
+                              (dom/strong nil "Notify Me"))))
 
               (dom/footer
                 {:className "footer"}
@@ -183,3 +193,16 @@
           (dom/script {:type text-javascript
                        :src "https://cdn.jsdelivr.net/foundation/6.2.4/foundation.min.js"})
           (common/inline-javascript (document-ready-code)))))))
+
+(comment
+  ;; TODO: Use this footer when we release jourmoney.
+  "Our release footer"
+  (dom/div {:className "row align-center"}
+    (dom/span nil "Start tracking your money today"))
+  (dom/div {:className "row align-center"}
+    (map (fn [[classes text href]]
+           (dom/div {:className "column small-5 medium-3 large-2 text-center"}
+             (dom/a {:className classes :href href} text)))
+         [                                      ;;
+          ["button hollow" "Get Started" "/signup"]
+          ["button" "Demo" "/play"]])))
