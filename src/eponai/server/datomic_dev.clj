@@ -161,7 +161,7 @@
       (if (contains? #{nil "" "test"} uri)
         (let [mem-conn (create-new-inmemory-db)]
           (info "Setting up inmemory db because uri is set to:" uri)
-          (add-data-to-connection mem-conn (transaction-data))
+          (add-data-to-connection mem-conn)
           (debug "Successfully set up inmemory db!")
           mem-conn)
         (do
