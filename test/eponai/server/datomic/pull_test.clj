@@ -1,5 +1,5 @@
 (ns eponai.server.datomic.pull-test
-  (:require [eponai.server.datomic.pull :as s.pull]
+  (:require [eponai.server.datomic.query :as s.pull]
             [eponai.common.database.pull :as c.pull]
             [eponai.common.format :as f]
             [eponai.server.test-util :as util]

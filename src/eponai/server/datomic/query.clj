@@ -1,18 +1,11 @@
-(ns eponai.server.datomic.pull
+(ns eponai.server.datomic.query
   (:require
-    [clojure.walk :as w :refer [walk]]
     [clojure.string :as string]
     [clojure.set :as set]
     [datomic.api :as d]
     [medley.core :as medley]
-    [eponai.common.parser.util :as parser]
-    [eponai.common.report :as report]
     [taoensso.timbre :as timbre :refer [info debug warn trace]]
     [eponai.common.database :as db]))
-
-(defn currencies [db]
-  (db/q '[:find [(pull ?e [*]) ...]
-          :where [?e :currency/code]] db))
 
 (defn schema
   "Pulls schema from the db. If data is provided includes only the necessary fields for that data.
@@ -29,112 +22,6 @@
                                        :symbols {'$db-history db-history}}))]
      (mapv #(into {} (d/entity db %))
            (db/all-with db query)))))
-
-;(defn dates-between [db start end]
-;  (p/pull-many db [:date/timestamp] (p/all-with db {:where '[[?e :date/timestamp ?time]
-;                                                            [(<= ?start ?time)]
-;                                                            [(<= ?time ?end)]]
-;                                                    :symbols {'?start start
-;                                                              '?end end}})))
-
-(defn new-currencies [db rates]
-  (let [currency-codes (mapv #(get-in % [:conversion/currency :currency/code]) rates)
-        currencies (db/pull-many db [:currency/code] (db/all-with db {:where   '[[?e :currency/code ?code]]
-                                                                    :symbols {'[?code ...] currency-codes}}))
-        db-currency-codes (map :currency/code currencies)
-        new-currencies (clojure.set/difference (set currency-codes) (set db-currency-codes))]
-    (debug "Found new currencies: " new-currencies)
-    new-currencies))
-
-
-;; ######### All entities
-
-(declare reverse-lookup-attr? normalize-attribute)
-
-;; Pull pattern stuff
-
-(defn keep-refs-only
-  "Given a pull pattern, keeps only the refs (maps).
-
-  Example:
-  [:db/id
-   {:conversion/date [:db/id :date/ymd]}
-   :conversion/rate
-   {:conversion/currency [:db/id :currency/code]}]
-   => retruns =>
-   [{:conversion/date [:date/ymd]}
-    {:conversion/currency [:currency/code]}]"
-  [pattern]
-  (letfn [(keep-maps [x]
-            (if (vector? x)
-              (filterv map? x)
-              (filter map? x)))]
-    (w/prewalk (fn [x]
-                 (cond
-                   (map-entry? x)
-                   (let [v (val x)
-                         v (if (some map? v)
-                             (keep-maps v)
-                             (some-> (some #(when (not= :db/id %) %) v)
-                                     (vector)
-                                     (with-meta {::keep true})))]
-                     [(key x) v])
-                   (and (sequential? x) (not (::keep (meta x))))
-                   (keep-maps x)
-
-                   :else x))
-               pattern)))
-
-;; Generate tests for this?
-;; Something with (get-in paths) or something.
-(defn pull-pattern->paths
-  ([pattern] (pull-pattern->paths pattern []))
-  ([pattern prev]
-   (cond
-     (keyword? pattern)
-     (when (not= pattern :db/id)
-       [(conj prev pattern)])
-
-     (map? pattern)
-     (let [[k v] (first pattern)]
-       (recur v (conj prev k)))
-
-     (sequential? pattern)
-     (if (symbol? (first pattern))
-       (recur (second pattern) prev)
-       (sequence (comp (mapcat #(pull-pattern->paths % prev))
-                       (filter some?))
-                 pattern))
-     :else nil)))
-
-(defn eid->refs [db eid attr]
-  (if (reverse-lookup-attr? attr)
-    (map :e (d/datoms db :vaet eid (normalize-attribute attr)))
-    (map :v (d/datoms db :eavt eid attr))))
-
-(defn eids->refs [db eids attr]
-  {:post [(set? %)]}
-  (into #{} (mapcat (fn [e] (eid->refs db e attr)))
-        eids))
-
-(defn path+eids->refs [db eids path]
-  {:post [(set? %)]}
-  (loop [eids eids path path ret #{}]
-    (if (and (seq eids) (seq (rest path)))
-      (let [attr (first path)
-            refs (eids->refs db eids attr)]
-        (recur refs (rest path) (into ret refs)))
-      ret)))
-
-(defn all-entities [db pull-pattern eids]
-  {:post [(set? %)]}
-  (->> pull-pattern
-       (keep-refs-only)
-       (pull-pattern->paths)
-       (map (fn [path]
-              {:post [(or (nil? %) (set? %))]}
-              (path+eids->refs db eids path)))
-       (apply set/union)))
 
 ;; ######### x-historically
 
@@ -309,8 +196,6 @@
                     (retracts-only-from-eids (pop path) (pop path-symbols) pulled-eids))]
     ret))
 
-(def immutable-entity-namespaces #{:currency :tag :category :date})
-
 ;; ######## History api
 
 (defn all-datoms
@@ -331,7 +216,7 @@
   By defaults uses a find-pattern that gets datoms [e a v tx added],
   but can be customized by passing a find-pattern parameter."
 
-  [db db-history pull-pattern entity-query & [path+eavts->txs path->feav-xf-fn]]
+  [db db-history pull-pattern entity-query & [path+eavts->txs path->feav-xf-fn immutable-entity-namespaces]]
   {:pre [(some? db-history)]}
   (let [pulled-eids (atom {})]
     (->> pull-pattern
@@ -340,7 +225,7 @@
                (comp
                  (remove (fn [attr-path]
                            (seq (sequence (comp (map (comp keyword namespace))
-                                                (filter immutable-entity-namespaces)
+                                                (filter (or immutable-entity-namespaces #{}))
                                                 (take 1))
                                           (:attrs attr-path)))))
                  (mapcat (fn [{:keys [path] :as attr-path}]
@@ -421,8 +306,7 @@
          (some (fn [attr-path]
                  (->> (changed-path-queries db-history entity-query attr-path)
                       (some (fn [query]
-                              (let [q (db/merge-query query
-                                                     {:find '[?e .]})]
+                              (let [q (db/merge-query query {:find '[?e .]})]
                                 (db/one-with (d/history db) q))))))))))
 
 (defn- adds-and-retracts-for-eid

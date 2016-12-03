@@ -213,7 +213,6 @@
       (cond-> (some? find)
               (assoc :find find))))
 
-
 (defn tempid [partition & [n]]
   #?(:clj (apply datomic/tempid (cond-> [partition] (some? n) (conj n)))
      :cljs (apply datascript/tempid (cond-> [partition] (some? n) (conj n)))))
@@ -254,11 +253,6 @@
 ;; Transact
 
 (def ^:dynamic *tx-meta* nil)
-
-
-(defn- tempid [part]
-  #?(:clj (datomic/tempid part)
-     :cljs (datascript/tempid part)))
 
 (defn transact
   "Transact a collecion of entites into datomic.

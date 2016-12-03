@@ -2,7 +2,6 @@
   (:require [datomic.api :as d]
             [environ.core :refer [env]]
             [eponai.common.format :as format]
-            [eponai.server.import.ods :as ods]
             [clojure.tools.reader.edn :as edn]
             [clojure.java.io :as io]
             [eponai.common.database :as db]
@@ -148,10 +147,6 @@
      (debug "Conversion rates added"))))
 
 (defonce connection (atom nil))
-
-(defn transaction-data [& [n]]
-  (let [txs (ods/import-parsed (ods/parsed-transactions))]
-    (->> (cycle txs) (take (or n (count txs))))))
 
 (defn create-connection []
   (let [uri (env :db-url)]

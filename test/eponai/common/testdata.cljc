@@ -1,7 +1,7 @@
 (ns eponai.common.testdata
   #?(:clj (:require [datomic.api :as d]
                      [eponai.server.datomic-dev :as datomic_dev]
-                     [eponai.server.datomic.pull :as pull])
+                     [eponai.server.datomic.query :as pull])
      :cljs (:require-macros [eponai.common.testdata :refer [inline-datomic-schema]]))
   (:require [eponai.common.datascript :as eponai.datascript]
             [eponai.common.database :as db]))
