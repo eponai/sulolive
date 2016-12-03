@@ -1,8 +1,6 @@
 (ns eponai.common.parser.util
   (:refer-clojure :exclude [proxy])
-  (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error]]
-            [om.next :as om]
-            [om.next.impl.parser :as om.parser]))
+  (:require [taoensso.timbre :refer [debug error]]))
 
 (defn get-time []
   #?(:clj (. System (currentTimeMillis))

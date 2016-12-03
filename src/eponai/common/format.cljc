@@ -3,6 +3,7 @@
   (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
             [clojure.set :refer [rename-keys]]
             [clojure.data :as diff]
+            [eponai.common.database :refer [tempid squuid]]
             [eponai.common.database.functions :as dbfn]
             [eponai.common.format.date :as date]
             #?(:clj [datomic.api :as datomic])
@@ -10,25 +11,6 @@
             [datascript.db])
   #?(:clj (:import [datomic Connection]
                    [clojure.lang Atom])))
-
-(defn tempid [partition & [n]]
-  #?(:clj (apply datomic/tempid (cond-> [partition] (some? n) (conj n)))
-     :cljs (apply datascript/tempid (cond-> [partition] (some? n) (conj n)))))
-
-#?(:clj
-   (def tempid-type (type (tempid :db.part/user))))
-
-(defn tempid? [x]
-  #?(:clj (= tempid-type (type x))
-     :cljs (and (number? x) (neg? x))))
-
-(defn dbid? [x]
-  #?(:clj  (or (tempid? x) (number? x))
-     :cljs (number? x)))
-
-(defn squuid []
-  ;; Works for both datomic and datascript.
-  (datascript/squuid))
 
 (defn str->uuid [str-uuid]
   #?(:clj  (java.util.UUID/fromString str-uuid)

@@ -11,8 +11,6 @@
     #?(:clj
             [eponai.server.datomic.filter :as filter])
             [eponai.client.utils :as client.utils]
-            [clojure.walk :as w]
-            [clojure.data :as diff]
             [clojure.set :as set]
             [medley.core :as medley])
   #?(:clj

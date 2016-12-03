@@ -213,17 +213,26 @@
       (cond-> (some? find)
               (assoc :find find))))
 
-(defn with-db-since
-  "Adds a where clause for which symbol that should be available in
-  the since-db. Binds the since-db to symbol $since.
 
-  More complicated usages are easier to just do inline."
-  ([query db-since] (with-db-since query db-since '[$since ?e]))
-  ([query db-since since-clause]
-   (cond-> query
-           (some? db-since)
-           (merge-query {:where [since-clause]
-                         :symbols {'$since db-since}}))))
+(defn tempid [partition & [n]]
+  #?(:clj (apply datomic/tempid (cond-> [partition] (some? n) (conj n)))
+     :cljs (apply datascript/tempid (cond-> [partition] (some? n) (conj n)))))
+
+#?(:clj
+   (def tempid-type (type (tempid :db.part/user))))
+
+(defn tempid? [x]
+  #?(:clj (= tempid-type (type x))
+     :cljs (and (number? x) (neg? x))))
+
+(defn dbid? [x]
+  #?(:clj  (or (tempid? x) (number? x))
+     :cljs (number? x)))
+
+(defn squuid []
+  ;; Works for both datomic and datascript.
+  (datascript/squuid))
+
 
 (defn min-by [db k params]
   (some->> (all-with db params)
