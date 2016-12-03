@@ -3,7 +3,7 @@
             [taoensso.timbre :refer [debug]]))
 
 (defn has-active-user? [db]
-  (let [auth (d/entity db [:ui/singleton :ui.singleton/auth])
-        current-user (:ui.singleton.auth/user auth)]
-    (= :user.status/active (get-in current-user [:user/status :db/ident]))))
+  (throw (ex-info (str "TODO: Either extract as an option to where it's"
+                       " being used, or implement this when we need it.")
+                  {:todo :implement-function})))
 

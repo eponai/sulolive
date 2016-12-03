@@ -24,20 +24,6 @@
     (d/transact new-conn current-entities)
     (d/db new-conn)))
 
-;(defn merge-current-user [db _ current-user]
-;  (debug "IS MERGING CURRENT_USER: " current-user)
-;  (if (:error current-user)
-;    (d/db-with db [[:db.fn/retractEntity [:ui/singleton :ui.singleton/auth]]])
-;    (d/db-with db [{:ui/singleton           :ui.singleton/auth
-;                    :ui.singleton.auth/user current-user}])))
-
-(defn merge-transactions [db _ {:keys [transactions conversions refs]}]
-  (-> db
-      (transact refs)
-      ;;(transact conversions)
-      ;;(transact transactions)
-      ))
-
 (defn merge-mutation-message [db history-id key val message-type]
   (let [message (get-in val [::parser/mutation-message message-type])]
     (debug "Mutation message-type" message-type "for :" key " message: " message)
@@ -46,13 +32,12 @@
 (defn merge-signout [db key val]
   ;;TODO: We probably need to do more retracting.
   (letfn [(all-entities-with-attr [attr]
-            (into [] (map :e) (d/datoms db :aevt attr)))]
+            (into []
+                  (map :e)
+                  (d/datoms db :aevt attr)))]
     (transact db (into [] (comp (mapcat all-entities-with-attr)
                                 (map #(vector :db.fn/retractEntity %)))
-                       [:user/uuid
-                        :transaction/uuid
-                        :project/uuid
-                        :eponai.common.parser.read-basis-t/map]))))
+                       [:eponai.common.parser.read-basis-t/map]))))
 
 ;;;;;;; API
 
@@ -77,8 +62,6 @@
           (= key 'session/signout)
           (merge-signout key val)))
 
-;; TODO: Fix comments in this namespace.
-;; TODO: Clean up merge-read and merge-mutate now that we have a merge-fn.
 (defn merge-read [merge-fn db key val]
   {:pre [(methods merge-fn) (db/db? db)]
    :post [(db/db? %)]}
@@ -101,23 +84,16 @@
       (= :datascript/schema key)
       (merge-schema db key val)
 
-      (= :query/transactions key)
-      (merge-transactions db key val)
-
-      ;;(= :user/current key)
-      ;;(merge-current-user db key val)
-
       :else
       (transact db val))))
 
 (defn merge-novelty-by-key
-  ;; TODO: Add comment when this has stabilized.
   "Merges server response for each [k v] in novelty. Returns the next db and the keys to re-read."
   [merge-fn db novelty history-id]
   {:pre [(methods merge-fn) (db/db? db)]
    :post [(:keys %) (db/db? (:next %))]}
   ;; Merge :datascript/schema first if it exists
-  (let [keys-to-merge-first (select-keys novelty [:datascript/schema :user/current])
+  (let [keys-to-merge-first (select-keys novelty [:datascript/schema])
         other-novelty (apply dissoc novelty keys-to-merge-first)
         ordered-novelty (concat keys-to-merge-first other-novelty)]
     (reduce

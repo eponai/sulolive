@@ -340,6 +340,62 @@
           (warn "Om and eponai UI differ for component: " (pr-str c) " diff: " (diff/diff om-ui eponai-ui)))
         eponai-ui))))
 
+;; ------ UI Sync with props -----------
+
+(defprotocol ISyncStateWithProps
+  (props->init-state [this props] "Takes props and returns initial state."))
+
+(defn sync-with-received-props [component new-props & [{:keys [will-sync did-sync without-logging]}]]
+  {:pre [(and (om/component? component) (satisfies? ISyncStateWithProps component))]}
+  (when (not= new-props (om/props component))
+    (let [this-state (om/get-state component)
+          next-state (props->init-state component new-props)]
+      (when-not without-logging
+        (debug "Reseting initial state for component: " component
+               " diff between old and new props:" (diff/diff (om/props component) new-props)
+               "next-state: " next-state))
+      ;; Call a function to unmount stateful state.
+      ;; Called with the old and the next state.
+      (when will-sync
+        (will-sync this-state next-state))
+      (om/update-state! component merge next-state)
+      (when did-sync
+        (did-sync this-state (om/get-state component))))))
+
+;;############# Debugging ############################
+
+#?(:cljs
+   (defn shouldComponentUpdate [this next-props next-state]
+     (let [next-children (. next-props -children)
+           next-children (if (undefined? next-children) nil next-children)
+           next-props (goog.object/get next-props "omcljs$value")
+           next-props (cond-> next-props
+                              (instance? om/OmProps next-props) om.next/unwrap)
+           children (.. this -props -children)
+           pe (not= (om.next/props this)
+                    next-props)
+           se (and (.. this -state)
+                   (not= (goog.object/get (. this -state) "omcljs$state")
+                         (goog.object/get next-state "omcljs$state")))
+           ce (not= children next-children)
+
+           pdiff (diff/diff (om.next/props this) next-props)
+           sdiff (diff/diff (when (.. this -state) (goog.object/get (. this -state) "omcljs$state"))
+                            (goog.object/get next-state "omcljs$state"))
+           cdiff (diff/diff children next-children)
+           prn-diff (fn [label [in-first in-second :as diff]]
+                      (when (or (some? in-first) (some? in-second))
+                        (debug label " diff:" diff)))]
+       (debug "this: " this
+              "props-not-eq?: " pe
+              " state-not-eq?:" se
+              " children-not-eq?:" ce)
+       (prn-diff "props diff" pdiff)
+       (prn-diff "state diff" sdiff)
+       (prn-diff "children diff" cdiff)
+       (or pe se ce))))
+
+
 ;; ------ App initialization -----------
 
 (defn set-level [l]

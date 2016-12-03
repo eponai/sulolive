@@ -9,7 +9,7 @@
             [clojure.set :as set]
             [clojure.walk :as walk]
             [medley.core :as medley]
-            [taoensso.timbre :as timbre #?(:clj :refer :cljs :refer-macros) [debug error trace warn info]]
+            [taoensso.timbre :as timbre :refer [debug error trace warn info]]
     #?@(:clj
         [
             [clojure.core.async :as async :refer [go <! >! chan timeout]]
@@ -177,28 +177,12 @@
   [chan]
   (take-while some? (repeatedly #(async/poll! chan))))
 
-(defn query-transactions->ds-txs [novelty]
-  (let [{:keys [transactions conversions] :as all}
-        (->> (:result novelty)
-             (tree-seq map? vals)
-             (filter #(and (map? %) (contains? % :query/transactions)))
-             (map :query/transactions)
-             ;; TODO: What should we do about query/transactions
-             ;; occurring in multiple places?
-             ;; It should always return the same thing now that we
-             ;; don't filter anymore.
-             (first))]
-    ;; transact conversions before transactions
-    ;; because transactions depend on conversions.
-    (into (vec conversions) transactions)))
-
-;; TODO: Sort transactions by date before transacting. Makes graphs update nicer.
-;; Can't do this yet because we don't transfer transactions with their refs.
-(comment (cond->> transactions
-                  (seq transactions)
-                  (sort-by (fn [tx]
-                             {:pre [(-> tx :transaction/date :date/timestamp)]}
-                             (get-in tx [:transaction/date :date/timestamp])) >)))
+(defn chunk-response
+  "Given the novelty returned by the server, return a seq transactables that can be
+  split up and transacted little by little, every frame until all of it has been
+  transacted."
+  [novelty]
+  nil)
 
 ;; TODO: Un-hard-code this. Put it in the app-state or something.
 (def KEY-TO-RERENDER-UI :routing/app-root)
@@ -350,7 +334,7 @@
         app-state (om/app-state reconciler)]
     (go
       (when (nil? error)
-        (when-let [chunked-txs (seq (query-transactions->ds-txs response))]
+        (when-let [chunked-txs (seq (chunk-response response))]
           (loop [stable-db stable-db mutation-queue mutation-queue txs chunked-txs]
             (let [[head tail] (split-at 50 txs)]
               ;; Merge the head.

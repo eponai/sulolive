@@ -32,19 +32,45 @@
           datomic-schema))
 
 
-;;TODO: This is now old? Remove this?
-(defn mark-entity-txs
-  "Returns transactions which makes the new datascript db contain a datom with e a v in the new db.
-
-  The reason we're doing this is to notice when attributes have been retracted. There's no way in
-  datascript to list datoms that have been retracted. By marking entities that may have retracted
-  something, we can list these entities later and get their updated values. This is needed to keep
-  caches of entities correct. See :query/transactions.
-
-  Caution: do not use (mark-entity-txs [:unique-attr :val] :unique-attr :val) because
-  :unique-attr :val will be retracted first and will not be found when doing the :db/add."
-  [e a v]
-  [[:db/retract e a v] [:db/add e a v]])
+(defn pull-many
+  "Experimental pull-many which has been much faster than the datascript one."
+  [db query eids]
+  (let [is-ref? (memoize (fn [k] (and (keyword? k) (= :db.type/ref (get-in (:schema db) [k :db/valueType])))))
+        parse-query (memoize
+                      (fn [query]
+                        (let [query (mapv #(if (is-ref? %) {% [:db/id]} %) query)
+                              {refs true others false} (group-by map? query)
+                              ref-attrs (into #{} (map ffirst) refs)
+                              ref-queries (into {} (map seq) refs)
+                              other-attrs (set others)
+                              ret {:ref-attrs   ref-attrs
+                                   :ref-queries ref-queries
+                                   :other-attrs other-attrs}]
+                          ret)))
+        cardinality-many? (memoize
+                            (fn [attr] (= :db.cardinality/many (get-in (:schema db) [attr :db/cardinality]))))
+        seen (atom {})
+        eid->map (fn self [query eid]
+                   (let [{:keys [ref-attrs ref-queries other-attrs]} (parse-query query)
+                         m (reduce (fn [m [_ a v]]
+                                     (let [v (cond
+                                               (contains? ref-attrs a)
+                                               (or (get @seen v)
+                                                   (self (get ref-queries a) v))
+                                               (contains? other-attrs a)
+                                               v
+                                               :else nil)]
+                                       (if (nil? v)
+                                         m
+                                         (if (cardinality-many? a)
+                                           (update m a (fnil conj []) v)
+                                           (assoc m a v)))))
+                                   {:db/id eid}
+                                   (d/datoms db :eavt eid))]
+                     (swap! seen assoc eid m)
+                     m))
+        ret (into [] (map #(eid->map query %)) eids)]
+    ret))
 
 ;; ----------------------
 ;; -- btset/Iter equallity

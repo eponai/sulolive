@@ -82,12 +82,17 @@
   Sends to the user-api when the user is logged in, public api otherwise."
   [conn]
   (fn [query]
-    (let [db (d/db conn)
-          conf (d/entity db [:ui/singleton :ui.singleton/configuration])
-          remote-fn (post-to-url (if (auth/has-active-user? db)
-                                     (:ui.singleton.configuration.endpoints/user-api conf)
-                                     (:ui.singleton.configuration.endpoints/api conf)))]
-      (remote-fn query))))
+    (comment
+      "This is with old jourmoney configuration details.
+      We may want to do this an entire different way."
+      (let [db (d/db conn)
+           conf (d/entity db [:ui/singleton :ui.singleton/configuration])
+           remote-fn (post-to-url (if (auth/has-active-user? db)
+                                    (:ui.singleton.configuration.endpoints/user-api conf)
+                                    (:ui.singleton.configuration.endpoints/api conf)))]
+       (remote-fn query)))
+    (throw (ex-info "TODO" {:todo "implement function"
+                            :details "see comments in this function"}))))
 
 (defn read-remote-on-auth-change [remote-fn reconciler-atom]
   (fn [query]
