@@ -1,13 +1,12 @@
 (ns eponai.server.parser.mutate
   (:require
     [clojure.core.async :as async]
-    [eponai.common.database.transact :as transact]
     [eponai.common.format :as format]
     [eponai.common.parser :as parser :refer [server-mutate server-message]]
     [eponai.common.validate :as validate]
     [taoensso.timbre :refer [debug info]]
     [eponai.server.api :as api]
-    [eponai.common.database.pull :as p]
+    [eponai.common.database :as db]
     [datomic.api :as d]
     [eponai.common.format :as common.format]
     [environ.core :refer [env]]))
@@ -35,7 +34,7 @@
                                        :user-uuid   (:username auth)})
              (let [transaction (common.format/transaction input-transaction)
                    currency-chan (async/chan 1)
-                   tx-report (transact/transact-one state transaction)]
+                   tx-report (db/transact-one state transaction)]
                (async/go (async/>! currency-chan (:transaction/date transaction)))
                (assoc tx-report :currency-chan currency-chan)))})
 
@@ -44,7 +43,7 @@
   (let [title (when-let [return (::parser/return env)]
                 (-> return
                     :db-after
-                    (p/entity* (:db/id old))
+                    (db/entity (:db/id old))
                     :transaction/title))]
     {:success (str "Edited transaction " title)
      :error   (str "Error editing transaction ")})
@@ -54,7 +53,7 @@
              (debug "validated transaction")
              (let [txs (format/edit env k p format/transaction)
                    _ (debug "editing transaction: " (:db/id old) " txs: " txs)
-                   ret (transact/transact state txs)]
+                   ret (db/transact state txs)]
                ret))})
 
 (defmutation transaction/delete
@@ -63,7 +62,7 @@
    :error   (str "Error deleting transaction " (:db/id transaction))}
   {:action (fn []
              (when-let [transaction-id (:db/id transaction)]
-               (transact/transact-one state [:db.fn/retractEntity transaction-id])))})
+               (db/transact-one state [:db.fn/retractEntity transaction-id])))})
 
 ;; ----------------- project --------------------
 
@@ -73,7 +72,7 @@
   {:action (fn []
              (debug "project/save with params: " params)
              (let [user-ref [:user/uuid (:username auth)]]
-               (transact/transact-one state (format/project user-ref params))))})
+               (db/transact-one state (format/project user-ref params))))})
 
 (defmutation project/share
   [{:keys [state auth]} _ {:keys [project/uuid user/email] :as params}]
@@ -95,7 +94,7 @@
    (str "Couldn't create category '" (:category/name category) "'.")]
   {:action (fn []
              (let [c (format/category* category)]
-               (transact/transact state [c
+               (db/transact state [c
                                          [:db/add (:db/id project) :project/categories (:db/id c)]])))})
 
 ;; ------------------- User account related ------------------
@@ -109,11 +108,11 @@
   ["Saved settings" "Error saving settings"]
   {:action (fn []
              (let [db (d/db state)
-                   stripe-eid (p/one-with db {:where   '[[?u :user/uuid ?user-uuid]
+                   stripe-eid (db/one-with db {:where   '[[?u :user/uuid ?user-uuid]
                                                          [?e :stripe/user ?u]]
                                               :symbols {'?user-uuid (:username auth)}})
                    stripe-account (when stripe-eid
-                                    (p/pull db [:stripe/customer
+                                    (db/pull db [:stripe/customer
                                                 {:stripe/subscription [:stripe.subscription/id]}]
                                             stripe-eid))]
                (debug "settings/save with params: " params)
@@ -121,24 +120,24 @@
                  (api/stripe-update-subscription state stripe-fn stripe-account {:quantity paywhatyouwant})
                  (force-read-keys! env :query/stripe)))
              (when currency
-               (transact/transact-one state [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]])))})
+               (db/transact-one state [:db/add [:user/uuid (:user/uuid user)] :user/currency [:currency/code currency]])))})
 
 (defmutation stripe/update-card
   [{:keys [state auth stripe-fn] :as env} _ p]
   ["Card details updated!" "Could not update card details"]
   (let [db (d/db state)
         _ (debug "stripe/card-update with params:" p)
-        stripe-eid (p/one-with db {:where '[[?u :user/uuid ?user-uuid]
+        stripe-eid (db/one-with db {:where '[[?u :user/uuid ?user-uuid]
                                             [?e :stripe/user ?u]]
                                    :symbols {'?user-uuid (:username auth)}})
         stripe-account (when stripe-eid
-                         (p/pull db [:stripe/customer
+                         (db/pull db [:stripe/customer
                                      {:stripe/subscription [:stripe.subscription/id]}]
                                  stripe-eid))]
     {:action (fn []
                (debug "Stripe information: " stripe-account)
                (when stripe-eid
-                 (debug "User: " (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])))
+                 (debug "User: " (db/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])))
                (api/stripe-update-card state stripe-fn stripe-account p)
                (force-read-keys! env :query/stripe))}))
 
@@ -148,23 +147,23 @@
   {:action (fn []
              (let [db (d/db state)
                    _ (debug "stripe/delete-card with params:" p)
-                   stripe-eid (p/one-with db {:where   '[[?u :user/uuid ?user-uuid]
+                   stripe-eid (db/one-with db {:where   '[[?u :user/uuid ?user-uuid]
                                                          [?e :stripe/user ?u]]
                                               :symbols {'?user-uuid (:username auth)}})
                    stripe-account (when stripe-eid
-                                    (p/pull db [:stripe/customer
+                                    (db/pull db [:stripe/customer
                                                 {:stripe/subscription [:stripe.subscription/id]}]
                                             stripe-eid))]
                (debug "Stripe information: " stripe-account)
                (when stripe-eid
-                 (debug "User: " (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])))
+                 (debug "User: " (db/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])))
                (api/stripe-delete-card state stripe-fn stripe-account p)
                (force-read-keys! env :query/stripe)))})
 
 (defmutation stripe/trial
   [{:keys [state auth stripe-fn]} _ _]
   ["Started trial" "Error starting trial"]
-  (let [user (p/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])]
+  (let [user (db/pull (d/db state) [:user/email :stripe/_user] [:user/uuid (:username auth)])]
     {:action (fn []
                (api/stripe-trial state stripe-fn user)
                (force-read-keys! env :query/stripe))}))

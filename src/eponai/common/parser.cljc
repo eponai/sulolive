@@ -3,7 +3,7 @@
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn trace]]
             [om.next :as om]
             [om.next.cache :as om.cache]
-            [eponai.common.database.transact :as transact]
+            [eponai.common.database :as db]
             [eponai.common.format.date :as date]
             [datascript.core :as datascript]
     #?(:clj
@@ -358,7 +358,7 @@
       (update-action (mutate env k p)
                      (fn [action]
                        (fn []
-                         (binding [transact/*tx-meta* tx-meta]
+                         (binding [db/*tx-meta* tx-meta]
                            (action))))))))
 
 (def ^:dynamic *parser-allow-remote* true)

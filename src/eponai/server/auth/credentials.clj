@@ -1,9 +1,8 @@
 (ns eponai.server.auth.credentials
   (:require [cemerick.friend :as friend]
             [datomic.api :as d]
-            [eponai.common.database.pull :as p]
+            [eponai.common.database :as db]
             [eponai.server.http :as h]
-            [eponai.common.database.transact :refer [transact transact-map transact-one]]
             [eponai.server.datomic.format :as f]
             [eponai.server.api :as api]
             [taoensso.timbre :refer [debug error info]]))
@@ -29,18 +28,18 @@
 (defn link-fb-user-to-account [conn {:keys [user/email] :as opts}]
   ;; There's already a user account for the email provided by the FB account,
   ;; so just link the FB user to the existing account.
-  (if-let [user (p/lookup-entity (d/db conn) [:user/email email])]
+  (if-let [user (db/lookup-entity (d/db conn) [:user/email email])]
     (let [txs [(f/fb-user user opts)]]
       ; We already have a user account for the FB email.
       ; If we had a user with that email, loggin in with FB means it's now verified.
-      (transact conn (conj txs (f/email-verification user {:verification/status :verification.status/verified}))))
+      (db/transact conn (conj txs (f/email-verification user {:verification/status :verification.status/verified}))))
 
     ;; No user exists, create a new user account
     (if email
       ; If we are creating an account and received an email from the FB account, create a new user with verified email.
-      (transact-map conn (f/user-account-map email (assoc opts :verification/status :verification.status/verified)))
+      (db/transact-map conn (f/user-account-map email (assoc opts :verification/status :verification.status/verified)))
       ; Else create a new account without an email, the user will provide one when creating an account.
-      (transact-map conn (f/user-account-map nil opts)))))
+      (db/transact-map conn (f/user-account-map nil opts)))))
 
 (def user-roles-active #{::user})
 (def user-roles-inactive #{::user-inactive})
@@ -73,7 +72,7 @@
 (defmethod auth-map :facebook
   [conn {:keys [access_token user_id fb-info-fn stripe-fn] :as params}]
   (if (and user_id access_token fb-info-fn)
-    (if-let [fb-user (p/lookup-entity (d/db conn) [:fb-user/id user_id])]
+    (if-let [fb-user (db/lookup-entity (d/db conn) [:fb-user/id user_id])]
       (let [db-user (d/entity (d/db conn) (-> fb-user
                                               :fb-user/user
                                               :db/id))]
@@ -82,7 +81,7 @@
         ; If Facebook has returned a new access token, we need to renew that in the db as well
         (when-not (= (:fb-user/token fb-user) access_token)
           (debug "Updating new access token for Facebook user.")
-          (transact-one conn [:db/add (:db/id fb-user) :fb-user/token access_token]))
+          (db/transact-one conn [:db/add (:db/id fb-user) :fb-user/token access_token]))
 
         ;; Check that the user is activated, if not throw exception.
         (if (= (:user/status db-user)
@@ -100,7 +99,7 @@
         (let [db-after-link (:db-after (link-fb-user-to-account conn {:user/email    email
                                                                       :fb-user/id    user_id
                                                                       :fb-user/token access_token}))
-              fb-user (p/lookup-entity db-after-link [:fb-user/id user_id])
+              fb-user (db/lookup-entity db-after-link [:fb-user/id user_id])
               user (d/entity db-after-link (-> fb-user
                                                :fb-user/user
                                                :db/id))]

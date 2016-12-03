@@ -1,7 +1,7 @@
 (ns eponai.server.datomic.filter-test
   (:require [clojure.test :refer :all]
             [datomic.api :as d]
-            [eponai.common.database.transact :as t]
+            [eponai.common.database :as db]
             [eponai.server.datomic.filter :as f]
             [eponai.server.test-util :as util]
             [taoensso.timbre :as timbre :refer [debug]]))
@@ -85,7 +85,7 @@
         user-uuid (util/user-email->user-uuid db user)
         new-project-uuid (d/squuid)
         auth-filters (f/update-filters db (f/authenticated-db-filters user-uuid))
-        {:keys [db-after]} (t/transact conn [{:project/name       "foo"
+        {:keys [db-after]} (db/transact conn [{:project/name       "foo"
                                               :project/uuid       new-project-uuid
                                               :project/created-by [:user/uuid user-uuid]
                                               :project/users      [[:user/uuid user-uuid]]

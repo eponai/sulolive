@@ -3,7 +3,7 @@
     #?(:clj [eponai.server.http :as h])
     #?(:clj [datomic.api :as d]
        :cljs [datascript.core :as d])
-    [eponai.common.database.pull :as p]
+    [eponai.common.database :as db]
     #?(:clj [taoensso.timbre :refer [info debug]]
        :cljs [taoensso.timbre :refer-macros [info debug]])))
 
@@ -81,7 +81,7 @@
                             :missing-keys missing-keys}))
             (debug "No missing keys")
 
-            (let [db-entry (p/lookup-entity db (:db/id transaction))]
+            (let [db-entry (db/lookup-entity db (:db/id transaction))]
               ;; Validate that the transaction that we're trying to edit exists in the db.
               (do-validate k p #(some? db-entry)
                            {:message "Transaction to be edited not found."
@@ -109,7 +109,7 @@
                   :code         :missing-required-fields
                   :missing-keys missing-keys})
     (let [dashboard-id (:widget/dashboard widget)
-          db-project (p/one-with db
+          db-project (db/one-with db
                                  {:where   '[[?d :dashboard/project ?e]
                                              [?u :user/uuid ?user-uuid]
                                              [?e :project/users ?u]]
@@ -144,7 +144,7 @@
                     :new-id  new-id
                     :user    user-uuid})
 
-      (do-validate k p #(some? (p/lookup-entity db old-id))
+      (do-validate k p #(some? (db/lookup-entity db old-id))
                    {:message (str "Could not lookup entity: " old-id
                                   " for user: " user-uuid)
                     :user    user-uuid}))))

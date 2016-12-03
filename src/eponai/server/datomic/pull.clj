@@ -5,15 +5,14 @@
     [clojure.set :as set]
     [datomic.api :as d]
     [medley.core :as medley]
-    [eponai.common.database.pull :as p]
     [eponai.common.parser.util :as parser]
     [eponai.common.report :as report]
     [taoensso.timbre :as timbre :refer [info debug warn trace]]
-    [eponai.common.database.pull :as pull]))
+    [eponai.common.database :as db]))
 
 (defn currencies [db]
-  (p/q '[:find [(pull ?e [*]) ...]
-       :where [?e :currency/code]] db))
+  (db/q '[:find [(pull ?e [*]) ...]
+          :where [?e :currency/code]] db))
 
 (defn schema
   "Pulls schema from the db. If data is provided includes only the necessary fields for that data.
@@ -26,10 +25,10 @@
                                  [(.startsWith ^String ?ns "db") ?d]
                                  [(not ?d)]]}
                        (some? db-history)
-                       (p/merge-query {:where   '[[$db-history ?e]]
+                       (db/merge-query {:where   '[[$db-history ?e]]
                                        :symbols {'$db-history db-history}}))]
      (mapv #(into {} (d/entity db %))
-           (p/all-with db query)))))
+           (db/all-with db query)))))
 
 ;(defn dates-between [db start end]
 ;  (p/pull-many db [:date/timestamp] (p/all-with db {:where '[[?e :date/timestamp ?time]
@@ -40,7 +39,7 @@
 
 (defn new-currencies [db rates]
   (let [currency-codes (mapv #(get-in % [:conversion/currency :currency/code]) rates)
-        currencies (p/pull-many db [:currency/code] (p/all-with db {:where   '[[?e :currency/code ?code]]
+        currencies (db/pull-many db [:currency/code] (db/all-with db {:where   '[[?e :currency/code ?code]]
                                                                     :symbols {'[?code ...] currency-codes}}))
         db-currency-codes (map :currency/code currencies)
         new-currencies (clojure.set/difference (set currency-codes) (set db-currency-codes))]
@@ -191,9 +190,9 @@
                                               ?datom-attr-keyword]
          path-query (cond-> entity-query
                             (seq path-where-clauses)
-                            (p/merge-query {:where (vec path-where-clauses)})
+                            (db/merge-query {:where (vec path-where-clauses)})
                             :always
-                            (p/merge-query {:where   [attribute-number-to-keyword-clause]
+                            (db/merge-query {:where   [attribute-number-to-keyword-clause]
                                             :symbols {'$db-history db-history}}))
          db-history-clause (->> find-pattern
                                 (replace {'?datom-attr-keyword '?datom-attr-number})
@@ -207,17 +206,17 @@
      (if (some #(= '* %) attrs)
        ;; For a "star" attribute, just don't specify
        ;; which values the ?datom-attr-keyword can take.
-       (vector (p/merge-query {:where        [db-history-clause]
-                               :find-pattern find-pattern}
+       (vector (db/merge-query {:where        [db-history-clause]
+                               :find find-pattern}
                               path-query))
        ;; Else, return queries for normal and reverse attributes.
        (let [create-query (fn [attrs where-clause find-pattern]
                             (when (seq attrs)
                               (-> path-query
-                                  (p/merge-query
+                                  (db/merge-query
                                     {:where        [where-clause]
                                      :symbols      {'[?datom-attr-keyword ...] attrs}
-                                     :find-pattern find-pattern}))))
+                                     :find find-pattern}))))
              keyword-attrs (filter keyword? attrs)
              query-attrs (create-query (remove reverse-lookup-attr? attrs)
                                        db-history-clause
@@ -297,7 +296,7 @@
         exclude-sym (last (sym-seq path "exclude"))
         ret (cond-> query
                     (seq pulled-eids)
-                    (pull/merge-query {:where   [(list 'or
+                    (db/merge-query {:where   [(list 'or
                                                        (list 'and
                                                              [(list '= path-sym exclude-sym)]
                                                              '[(identity false) ?datom-added])
@@ -352,7 +351,7 @@
                                (map vector (repeat attr-path))))))
                  (mapcat (fn [[attr-path query]]
                            (debug [:query query])
-                           (let [eavts (p/find-with (d/history db) query)]
+                           (let [eavts (db/find-with (d/history db) query)]
                              (when (seq eavts)
                                (let [feavs (datoms->feav eavts (when path->feav-xf-fn
                                                                  (path->feav-xf-fn attr-path)))
@@ -397,7 +396,7 @@
   available."
   [db db-history pull-pattern entity-query]
   (if (nil? db-history)
-    (p/pull db pull-pattern (p/one-with db entity-query))
+    (db/pull db pull-pattern (db/one-with db entity-query))
     (all-datoms db db-history pull-pattern entity-query)))
 
 (defn all
@@ -406,7 +405,7 @@
   query and the pull-pattern."
   [db db-history pull-pattern entity-query]
   (if (nil? db-history)
-    (p/pull-many db pull-pattern (p/all-with db entity-query))
+    (db/pull-many db pull-pattern (db/all-with db entity-query))
     (all-datoms db db-history pull-pattern entity-query)))
 
 (defn- one-changed-entity
@@ -416,15 +415,15 @@
   {:post [(or (nil? %)
               (number? %))]}
   (if (nil? db-history)
-    (p/one-with db entity-query)
+    (db/one-with db entity-query)
     (->> pull-pattern
          (pattern->attr-paths)
          (some (fn [attr-path]
                  (->> (changed-path-queries db-history entity-query attr-path)
                       (some (fn [query]
-                              (let [q (p/merge-query query
-                                                     {:find-pattern '[?e .]})]
-                                (p/one-with (d/history db) q))))))))))
+                              (let [q (db/merge-query query
+                                                     {:find '[?e .]})]
+                                (db/one-with (d/history db) q))))))))))
 
 (defn- adds-and-retracts-for-eid
   "returns all adds and retracts for an eid bounded by db-history."
@@ -446,7 +445,7 @@
   {:pre (fn? eid->client-txs)}
   (when-let [eid (one-changed-entity db db-history query entity-query)]
     (let [in-datomic (if (nil? db-history)
-                       [(p/pull db query eid)]
+                       [(db/pull db query eid)]
                        (adds-and-retracts-for-eid db db-history eid))
           external-data (eid->client-txs eid)]
       (assert (or (nil? external-data)

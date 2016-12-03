@@ -4,7 +4,7 @@
             [datomic.api :as d]
             [eponai.server.datomic.format :as f]
             [eponai.server.auth.credentials :as a]
-            [eponai.common.database.pull :as p]
+            [eponai.common.database :as db]
             [eponai.server.test-util :refer [new-db]]
             [eponai.server.api :as api])
   (:import (clojure.lang ExceptionInfo)))
@@ -43,7 +43,7 @@
 
       ; We're authenticated.
       (is (= user-record
-             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email (:user/email user)]) a/user-roles-active))))))
+             (a/auth-map-for-db-user (db/lookup-entity (d/db conn) [:user/email (:user/email user)]) a/user-roles-active))))))
 
 (deftest fb-user-exists-but-no-user-account-with-matching-email
   (testing "FB account exists, but a matching user account does not. Should prompt user to create an account
@@ -56,7 +56,7 @@
           credential-fn (a/credential-fn conn)
           user-record (credential-fn
                         (creds-input id))
-          db-user (:fb-user/user (p/lookup-entity (d/db conn) [:fb-user/id id]))]
+          db-user (:fb-user/user (db/lookup-entity (d/db conn) [:fb-user/id id]))]
 
       (is (= user-record
              (a/auth-map-for-db-user db-user a/user-roles-inactive))))))
@@ -70,8 +70,8 @@
           credential-fn (a/credential-fn conn)
           user-record (credential-fn (creds-input id))
           ; Entities added to the DB
-          db-user (p/lookup-entity (d/db conn) [:user/email email])
-          fb-user (p/lookup-entity (d/db conn) [:fb-user/id id])]
+          db-user (db/lookup-entity (d/db conn) [:user/email email])
+          fb-user (db/lookup-entity (d/db conn) [:fb-user/id id])]
 
       ; We're authenticated
       (is (= user-record
@@ -90,10 +90,10 @@
           credential-fn (a/credential-fn conn)
           user-record (credential-fn (creds-input id))]
 
-      (let [{:keys [fb-user/user]} (p/lookup-entity (d/db conn) [:fb-user/id id])]
+      (let [{:keys [fb-user/user]} (db/lookup-entity (d/db conn) [:fb-user/id id])]
         ;TODO we might want to automatically create an ccount here and let the user login immediately?
         (is (= user-record
-               (a/auth-map-for-db-user (p/lookup-entity (d/db conn) (:db/id user)) a/user-roles-active)))
+               (a/auth-map-for-db-user (db/lookup-entity (d/db conn) (:db/id user)) a/user-roles-active)))
         (is (= (:user/email (d/entity (d/db conn) (:db/id user)))
                email))))))
 
@@ -107,7 +107,7 @@
           credential-fn (a/credential-fn conn)
           user-record (credential-fn (creds-input id fb-info-fn))]
 
-      (let [fb-user (p/lookup-entity (d/db conn) [:fb-user/id id])]
+      (let [fb-user (db/lookup-entity (d/db conn) [:fb-user/id id])]
         (is fb-user)
         (is (:fb-user/user fb-user))
         (is (= user-record
@@ -129,7 +129,7 @@
       (is (= (credential-fn
                (with-meta {:uuid (str (:verification/uuid verification))}
                           {::friend/workflow :form}))
-             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]) a/user-roles-active))))))
+             (a/auth-map-for-db-user (db/lookup-entity (d/db conn) [:user/email email]) a/user-roles-active))))))
 
 ; Failure cases
 (deftest user-verifies-email-with-account-not-activated
@@ -144,10 +144,10 @@
                         (with-meta {:uuid (str (:verification/uuid verification))
                                     :stripe-fn stripe-fn}
                                    {::friend/workflow :form}))
-          stripe-cus (p/lookup-entity (d/db conn) [:stripe/customer "cus-id"])]
+          stripe-cus (db/lookup-entity (d/db conn) [:stripe/customer "cus-id"])]
 
       (is (= user-record
-             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]) a/user-roles-active)))
+             (a/auth-map-for-db-user (db/lookup-entity (d/db conn) [:user/email email]) a/user-roles-active)))
       (is (and (some? stripe-cus)
                (some? (:stripe/subscription stripe-cus)))))))
 
@@ -200,9 +200,9 @@
                                                     :user-email (:user/email user)
                                                     :stripe-fn stripe-fn}
                                                    {::friend/workflow :activate-account}))
-          stripe-cus (p/lookup-entity (d/db conn) [:stripe/customer "cus-id"])]
+          stripe-cus (db/lookup-entity (d/db conn) [:stripe/customer "cus-id"])]
       (is (= activated-auth
-             (a/auth-map-for-db-user (p/lookup-entity (d/db conn) [:user/email email]) a/user-roles-active)))
+             (a/auth-map-for-db-user (db/lookup-entity (d/db conn) [:user/email email]) a/user-roles-active)))
       (is (nil? stripe-cus)))))
 
 (deftest user-activates-account-with-invalid-input

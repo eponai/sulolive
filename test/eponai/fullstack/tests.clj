@@ -1,7 +1,7 @@
 (ns eponai.fullstack.tests
   (:require [om.next :as om]
             [om.util]
-            [eponai.common.database.pull :as pull]
+            [eponai.common.database :as db]
             [eponai.common.parser :as parser]
             [eponai.common.format.date :as date]
             [eponai.common.format :as format]
@@ -31,7 +31,7 @@
   (fw/call-parser reconciler (om/get-query (or (om/app-root reconciler) JvmRoot))))
 
 (defn db [client]
-  (pull/db* (om/app-state client)))
+  (db/db* (om/app-state client)))
 
 (defn entity? [x]
   (or
@@ -40,7 +40,7 @@
 
 (defn entity-map
   [client lookup-ref]
-  (->> (pull/entity* (db client) lookup-ref)
+  (->> (db/entity* (db client) lookup-ref)
        (walk/prewalk #(cond->> %
                                (entity? %)
                                (into {:db/id (:db/id %)})))))
@@ -60,8 +60,8 @@
             (partition 2 1 app-states)))))
 
 (defn new-transaction [client]
-  (let [project-uuid (pull/find-with (pull/db* (om/app-state client))
-                                     {:find-pattern '[?uuid .]
+  (let [project-uuid (db/find-with (db/db* (om/app-state client))
+                                     {:find '[?uuid .]
                                       :where        '[[_ :project/uuid ?uuid]]})]
     {:transaction/tags       #{{:tag/name "thailand"}}
      :transaction/date       {:date/ymd "2015-10-10"}
@@ -74,7 +74,7 @@
      :transaction/created-at 1}))
 
 (defn has-transaction? [tx client]
-  (pull/lookup-entity (db client) [:transaction/uuid (:transaction/uuid tx)]))
+  (db/lookup-entity (db client) [:transaction/uuid (:transaction/uuid tx)]))
 
 (def get-transaction has-transaction?)
 
@@ -229,7 +229,7 @@
    :project/name "fullstack test project"})
 
 (defn has-project? [project client]
-  (pull/lookup-entity (db client) [:project/uuid (:project/uuid project)]))
+  (db/lookup-entity (db client) [:project/uuid (:project/uuid project)]))
 
 (def get-project has-project?)
 
@@ -431,7 +431,7 @@
                                                              clients)))))
 
 (defn get-email [client]
-  (let [emails (pull/all-with (db client) {:where '[[?user :user/email ?e]]})]
+  (let [emails (db/all-with (db client) {:where '[[?user :user/email ?e]]})]
     (assert= 1 (count emails))
     (first emails)))
 
@@ -493,14 +493,14 @@
         (fn [login-fn]
           [{::fw/transaction (returning-nil #(jvmclient/log-out! client))
             ::fw/asserts     #(do (when @project-atom
-                                    (assert= nil (pull/lookup-entity (db client) (first @project-atom))))
-                                  (assert= nil (seq (pull/all-with (db client) {:where '[[?e :user/uuid]]}))))
+                                    (assert= nil (db/lookup-entity (db client) (first @project-atom))))
+                                  (assert= nil (seq (db/all-with (db client) {:where '[[?e :user/uuid]]}))))
             ;; TODO: Make sure we can't access /api/user ?
             }
            {::fw/transaction   (returning-nil #(jvmclient/log-in! client (login-fn email)))
             ::fw/sync-clients! true
-            ::fw/asserts       #(let [projects (pull/find-with (db client)
-                                                               {:find-pattern '[?e ?uuid]
+            ::fw/asserts       #(let [projects (db/find-with (db client)
+                                                               {:find '[?e ?uuid]
                                                                 :where        '[[?e :project/uuid ?uuid]]})
                                       _ (assert= 1 (count projects))
                                       [project-eid project-uuid :as project] (first projects)]

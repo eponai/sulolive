@@ -2,8 +2,7 @@
   (:require
     [clojure.core.async :refer [go <!]]
     [datomic.api :as d]
-    [eponai.common.database.pull :as p]
-    [eponai.common.database.transact :as t]
+    [eponai.common.database :as db]
     [eponai.server.datomic.format :as f]
     [eponai.server.datomic.pull :as server.pull]
     [eponai.server.email :as email]
@@ -32,15 +31,15 @@
   (when-let [chan (get-in response [:result :currency-chan])]
     (go
       (let [date (<! chan)]
-        (when-not (p/pull (d/db state) '[:conversion/_date] [:date/ymd (:date/ymd date)])
+        (when-not (db/pull (d/db state) '[:conversion/_date] [:date/ymd (:date/ymd date)])
           (let [rates (f/currency-rates (currency-rates-fn (:date/ymd date)))
                 new-currencies (server.pull/new-currencies (d/db state) rates)]
-            (t/transact state rates)
+            (db/transact state rates)
             (info "Currency rates transacted for date: " (:date/ymd date))
 
             (when (seq new-currencies)
               (info "Found currencies not in DB. Pulling and transacting currencies.")
-              (t/transact state (f/currencies (currencies-fn)))))))))
+              (db/transact state (f/currencies (currencies-fn)))))))))
   (update response :result dissoc :currency-chan))
 
 (defmethod response-handler 'session.signin/email
@@ -48,7 +47,7 @@
   (when-let [chan (get-in response [:result :email-chan])]
     (go
       (let [verification (<! chan)]
-        (send-verification-fn (p/lookup-entity (d/db state) [:verification/uuid (:verification/uuid verification)])
+        (send-verification-fn (db/lookup-entity (d/db state) [:verification/uuid (:verification/uuid verification)])
                               {:user-status (get-in response [:result :status])
                                :device      (get-in response [:result :device])}))))
   ;; TODO: What's the plan here? Do we really just want to return nil?
@@ -61,7 +60,7 @@
       (let [user-status (get-in response [:result :status])
             inviter (get-in response [:result :inviter])
             verification (<! chan)]
-        (send-invitation-fn (p/lookup-entity (d/db state) [:verification/uuid (:verification/uuid verification)])
+        (send-invitation-fn (db/lookup-entity (d/db state) [:verification/uuid (:verification/uuid verification)])
                             {:inviter inviter
                              :user-status user-status}))))
   (-> response

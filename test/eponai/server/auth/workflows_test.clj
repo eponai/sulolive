@@ -6,7 +6,7 @@
     [eponai.server.email :as email]
     [eponai.server.auth.credentials :as a]
     [eponai.server.auth.workflows :as w]
-    [eponai.common.database.pull :as p]
+    [eponai.common.database :as db]
     [eponai.server.datomic.format :as f]
     [eponai.server.test-util :refer [new-db]]
     [om.next.server :as om]
@@ -45,7 +45,7 @@
           conn (new-db (vals account))
           credential-fn (fn [input] (a/auth-map conn input))
           workflow (w/facebook)
-          _ (assert (nil? (p/lookup-entity (d/db conn) [:fb-user/id id])))
+          _ (assert (nil? (db/lookup-entity (d/db conn) [:fb-user/id id])))
           res (workflow {:login-parser             login-parser
                          :path-info                "/api"
                          :body                     {:query [`(session.signin/facebook ~{:user-id id :access-token access-token})]}
@@ -55,8 +55,8 @@
                                                                                    :user-id id
                                                                                    :token   "long-lived-token"
                                                                                    :is-valid true})})
-          db-user (p/lookup-entity (d/db conn) [:user/email email])
-          db-fb-user (p/lookup-entity (d/db conn) [:fb-user/id id])]
+          db-user (db/lookup-entity (d/db conn) [:user/email email])
+          db-fb-user (db/lookup-entity (d/db conn) [:fb-user/id id])]
       (is (= (:identity res) (:db/id db-user)))
       (is (= (:fb-user/token db-fb-user) "long-lived-token")))))
 

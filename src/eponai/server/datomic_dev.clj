@@ -5,13 +5,10 @@
             [eponai.server.import.ods :as ods]
             [clojure.tools.reader.edn :as edn]
             [clojure.java.io :as io]
-            [eponai.common.database.transact :as transact]
+            [eponai.common.database :as db]
             [eponai.common.database.functions :as dbfn]
             [taoensso.timbre :refer [debug error info]]
-            [eponai.server.datomic.format :as f]
-            [clj-time.coerce :as c]
-            [clj-time.core :as t])
-  (:import (java.util UUID)))
+            [eponai.server.datomic.format :as f]))
 
 (def currencies {:THB "Thai Baht"
                  :SEK "Swedish Krona"
@@ -97,7 +94,7 @@
                                         :stripe/customer     "cus_9YcNWTiUBc4Jpm"
                                         :stripe/subscription (format/add-tempid {:stripe.subscription/id         "sub_9YcN9rluT5azTj"
                                                                                  :stripe.subscription/status     :active})})
-        ret (transact/transact-map conn (-> account
+        ret (db/transact-map conn (-> account
                                             (assoc :project project)
                                             (update :user assoc :user/currency [:currency/code "USD"])
                                             (assoc :stripe stripe-user)))]
@@ -111,13 +108,13 @@
         (map #(assoc % :transaction/uuid (d/squuid)))
         (map #(assoc % :transaction/project {:project/uuid project-uuid}))
         (map #(format/transaction %))
-        (transact/transact conn))))
+        (db/transact conn))))
 
 (defn add-currencies [conn]
-  (transact/transact conn (f/currencies {:currencies currencies})))
+  (db/transact conn (f/currencies {:currencies currencies})))
 
 (defn add-conversion-rates [conn]
-  (transact/transact conn
+  (db/transact conn
                      (f/currency-rates {:date  "2015-10-10"
                                         :rates {:THB 36
                                                 :SEK 8.4
@@ -137,7 +134,8 @@
    (let [schemas (or schema (read-schema-files))
          email test-user-email
          project-uuid (d/squuid)]
-     (transact/transact-schemas conn schemas)
+     (doseq [schema schemas]
+       (db/transact conn schema))
      (debug "Schema added.")
      (add-currencies conn)
      (debug "Currencies added.")

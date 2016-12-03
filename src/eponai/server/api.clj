@@ -4,8 +4,8 @@
             [clojure.core.async :refer [go >! <! chan put!]]
             [compojure.core :refer :all]
             [datomic.api :as d]
+            [eponai.common.database :as db]
             [eponai.common.database.pull :as pull]
-            [eponai.common.database.transact :refer [transact transact-map transact-one]]
             [eponai.common.format :as common.format]
             [eponai.server.datomic.format :as datomic.format]
             [eponai.server.external.stripe :as stripe]
@@ -13,9 +13,7 @@
             [eponai.server.http :as http]
             [taoensso.timbre :refer [debug error info]]
             [environ.core :refer [env]]
-            [eponai.common.database.pull :as p]
-            [clj-time.core :as t]
-            [eponai.common.database.transact :as transact])
+            [clj-time.core :as t])
   (:import (datomic Connection)))
 
 ;(defn currency-infos
@@ -32,10 +30,10 @@
 ; Actions
 
 (defn link-fb-user-to-current-account [conn {:keys [user-uuid fb-user]}]
-  (let [user (p/lookup-entity (d/db conn) [:user/uuid user-uuid])
+  (let [user (db/lookup-entity (d/db conn) [:user/uuid user-uuid])
         formatted-fb-user (datomic.format/fb-user user fb-user)]
     (debug "Transacting formatted fb-user: " formatted-fb-user)
-    (transact-one conn formatted-fb-user)))
+    (db/transact-one conn formatted-fb-user)))
 
 (defn api-error [status code ex-data]
   (ex-info (str "API error code " code)
@@ -44,10 +42,10 @@
                   ex-data)))
 
 (defn facebook-disconnect [conn {:keys [user-uuid]}]
-  (when-let [fb-user (p/one-with (d/db conn) {:where   '[[?u :user/uuid ?uuid]
+  (when-let [fb-user (db/one-with (d/db conn) {:where   '[[?u :user/uuid ?uuid]
                                                          [?e :fb-user/user ?u]]
                                               :symbols {'?uuid user-uuid}})]
-    (transact/transact-one conn [:db.fn/retractEntity fb-user])))
+    (db/transact-one conn [:db.fn/retractEntity fb-user])))
 
 (defn facebook-connect [conn {:keys [user-uuid user-id access-token]} fb-validate-fn]
   (assert (and fb-validate-fn) "Needs a Facebook validator function.")
@@ -55,8 +53,8 @@
     (if err
       (throw (ex-info "Facebook login error. Validating access token failed."
                       {}))
-      (if-let [fb-user (p/lookup-entity (d/db conn) [:fb-user/id user_id])]
-        (let [db-user (p/lookup-entity (d/db conn) [:user/uuid user-uuid])]
+      (if-let [fb-user (db/lookup-entity (d/db conn) [:fb-user/id user_id])]
+        (let [db-user (db/lookup-entity (d/db conn) [:user/uuid user-uuid])]
           (debug "Facebook user existed: " db-user " will change connected user ")
           (when-let [txs (not-empty
                            (cond-> []
@@ -66,7 +64,7 @@
                                    (not= (:fb-user/token fb-user) access-token)
                                    (conj [:db/add (:db/id fb-user) :fb-user/token access_token])))]
             (debug "Updating Facebook user with transactions: " txs)
-            (transact conn txs)))
+            (db/transact conn txs)))
 
         ; If we don't have a facebook user in the DB, check if there's an accout with a matching email.
         (do
@@ -85,19 +83,19 @@
   {:pre [(instance? Connection conn)
          (string? email)]}
   (if email
-    (let [user (pull/lookup-entity (d/db conn) [:user/email email])
+    (let [user (db/lookup-entity (d/db conn) [:user/email email])
           email-chan (chan 1)]
       (if user
         (let [{:keys [verification/uuid] :as verification} (datomic.format/email-verification user)]
           (debug "Transacting verification for user: " (select-keys user [:db/id :user/uuid :user/email]))
-          (transact-one conn verification)
+          (db/transact-one conn verification)
           (info "New verification " uuid "for user:" email)
           (debug (str "Helper for mobile dev. verify uri: jourmoney://ios/1/login/verify/" uuid))
           (put! email-chan verification)
           {:email-chan email-chan
            :status (:user/status user)})
         (let [{:keys [verification] :as account} (datomic.format/user-account-map email)]
-          (transact-map conn account)
+          (db/transact-map conn account)
           (debug "Creating new user with email:" email "verification:" (:verification/uuid verification))
           (put! email-chan verification)
           (debug "Done creating new user with email:" email)
@@ -122,7 +120,7 @@
   [conn verification-uuid]
   {:pre [(instance? Connection conn)
          (string? verification-uuid)]}
-  (if-let [verification (pull/lookup-entity (d/db conn) [:verification/uuid (common.format/str->uuid verification-uuid)])]
+  (if-let [verification (db/lookup-entity (d/db conn) [:verification/uuid (common.format/str->uuid verification-uuid)])]
     (let [expiry-time (:verification/expires-at verification)]
       ; If the verification was not used within 15 minutes, it's expired.
       (if (or (nil? expiry-time) (>= expiry-time (c/to-long (t/now))))
@@ -132,7 +130,7 @@
 
           (do
             (debug "Successful verify for uuid: " (:verification/uuid verification))
-            (transact-one conn [:db/add (:db/id verification) :verification/status :verification.status/verified])
+            (db/transact-one conn [:db/add (:db/id verification) :verification/status :verification.status/verified])
             (:verification/entity verification))
           (throw (api-error ::http/unathorized :verification-invalid
                             {:type          :verification-error
@@ -140,7 +138,7 @@
                              :function-args {'verification-uuid verification-uuid}
                              :message       "The verification link is invalid."})))
         (do
-          (transact-one conn [:db/add (:db/id verification) :verification/status :verification.status/expired])
+          (db/transact-one conn [:db/add (:db/id verification) :verification/status :verification.status/expired])
           (throw (api-error ::http/unathorized
                             :verification-expired
                             {:type          :verification-error
@@ -170,10 +168,10 @@
   {:pre [(instance? Connection conn)
          (string? user-uuid)
          (string? email)]}
-  (if-let [user (pull/lookup-entity (d/db conn) [:user/uuid (common.format/str->uuid user-uuid)])]
+  (if-let [user (db/lookup-entity (d/db conn) [:user/uuid (common.format/str->uuid user-uuid)])]
 
     (do
-      (when-let [existing-user (pull/lookup-entity (d/db conn) [:user/email email])]
+      (when-let [existing-user (db/lookup-entity (d/db conn) [:user/email email])]
         (if-not (= (:db/id user)
                    (:db/id existing-user))
           (throw (api-error ::http/unathorized
@@ -184,7 +182,7 @@
                              :message       (str email " is already in use. Maybe you already have an account?")}))))
 
       (let [user-db-id (:db/id user)
-            email-changed-db (:db-after (transact-one conn [:db/add user-db-id :user/email email]))
+            email-changed-db (:db-after (db/transact-one conn [:db/add user-db-id :user/email email]))
             verifications (pull/verifications email-changed-db user-db-id :verification.status/verified)]
 
         ; There's no verification verified for this email on the user,
@@ -192,9 +190,9 @@
         ; Create a new verification and throw exception
         (when-not (seq verifications)
           (debug "User not verified for email:" email "will create new verification for user: " user-db-id)
-          (let [user-with-new-email (p/lookup-entity (d/db conn) [:user/email email])
+          (let [user-with-new-email (db/lookup-entity (d/db conn) [:user/email email])
                 verification (datomic.format/email-verification user-with-new-email)]
-            (transact-one conn verification)
+            (db/transact-one conn verification)
             (throw (api-error ::http/unathorized :unverified-email
                               {:type          :authentication-error
                                :function      (str activate-account)
@@ -206,11 +204,11 @@
         (if (= (:user/status user) :user.status/active)
           (do
             (debug "User already activated, returning user.")
-            (pull/lookup-entity (d/db conn) [:user/email email]))
+            (db/lookup-entity (d/db conn) [:user/email email]))
           ; First time activation, set status to active and return user entity.
-          (let [activated-db (:db-after (transact conn [[:db/add user-db-id :user/status :user.status/active]
+          (let [activated-db (:db-after (db/transact conn [[:db/add user-db-id :user/status :user.status/active]
                                                         [:db/add user-db-id :user/currency [:currency/code "USD"]]]))
-                activated-user (pull/lookup-entity activated-db [:user/email email])]
+                activated-user (db/lookup-entity activated-db [:user/email email])]
             (debug "Activated account for user-uuid:" user-uuid)
             (when (:stripe-fn opts)
               (stripe-trial conn (:stripe-fn opts) activated-user))
@@ -226,12 +224,12 @@
 
 (defn share-project [conn project-uuid user-email current-user-uuid]
   (let [db (d/db conn)
-        user (pull/lookup-entity db [:user/email user-email])
+        user (db/lookup-entity db [:user/email user-email])
         email-chan (chan 1)
-        current-user (p/lookup-entity (d/db conn) [:user/uuid current-user-uuid])]
+        current-user (db/lookup-entity (d/db conn) [:user/uuid current-user-uuid])]
     (if user
       ;; If user already exists, check that they are not already sharing this project.
-      (let [user-projects (pull/pull db [{:project/_users [:project/uuid]}] (:db/id user))
+      (let [user-projects (db/pull db [{:project/_users [:project/uuid]}] (:db/id user))
             grouped (group-by :project/uuid (:project/_users user-projects))]
         ;; If the user is already sharing this budget, throw an exception.
         (when (get grouped project-uuid)
@@ -244,7 +242,7 @@
         ;; Else create a new verification for the user, to login through their email.
         ;; We let this verification be unlimited time, as the user invited may not see their email within 15 minutes from the invitation
         (let [verification (datomic.format/verification user)]
-          (transact conn [verification
+          (db/transact conn [verification
                           [:db/add [:project/uuid project-uuid] :project/users [:user/email user-email]]])
           (put! email-chan verification)
           {:email-chan email-chan
@@ -257,7 +255,7 @@
       (let [new-user (datomic.format/user user-email)
             verification (datomic.format/verification new-user)]
         (info "New user created: " (:user/uuid new-user))
-        (transact conn [new-user
+        (db/transact conn [new-user
                         verification
                         [:db/add [:project/uuid project-uuid] :project/users (:db/id new-user)]])
         (put! email-chan verification)
@@ -269,12 +267,12 @@
   "Delete a project entity with its transactions from the DB."
   [conn project-dbid]
   ; Find transactions that are referring to the project to be deleted. We need to make sure these are also deleted from the DB
-  (let [transactions (p/all-with (d/db conn) {:where   '[[?e :transaction/project ?p]]
+  (let [transactions (db/all-with (d/db conn) {:where   '[[?e :transaction/project ?p]]
                                               :symbols {'?p project-dbid}})
         delete-transactions-txs (map (fn [dbid]
                                        [:db.fn/retractEntity dbid])
                                      transactions)]
-    (transact/transact conn (conj
+    (db/transact conn (conj
                               delete-transactions-txs
                               [:db.fn/retractEntity project-dbid]))))
 
@@ -338,7 +336,7 @@
                                             :params {"trial_end" "now"}})]
         (debug "Did update stripe customer: " updated-customer)
         (debug "Updated subscription: " update-subscription)
-        (transact-one conn [:db/add [:stripe.subscription/id subscription-id] :stripe.subscription/status (:stripe.subscription/status update-subscription)]))
+        (db/transact-one conn [:db/add [:stripe.subscription/id subscription-id] :stripe.subscription/status (:stripe.subscription/status update-subscription)]))
       (throw (ex-info (str "Could not find customer for user with email: " email)
                       {:data {:token token}})))))
 
@@ -372,7 +370,7 @@
                        :function      (str stripe-trial)
                        :function-args {'stripe-fn stripe-fn
                                        'user      user}})))
-  (let [{user-id :db/id} (pull/pull (d/db conn) [:db/id] [:user/email email])
+  (let [{user-id :db/id} (db/pull (d/db conn) [:db/id] [:user/email email])
         stripe (stripe-fn :customer/create
                           {:params {"plan"  "paywhatyouwant"
                                     "email" email
@@ -380,7 +378,7 @@
     (debug "Starting trial for user: " email " with stripe info: " stripe)
     (assert (some? user-id))
     (when stripe
-      (transact-one conn (datomic.format/stripe-account user-id stripe)))))
+      (db/transact-one conn (datomic.format/stripe-account user-id stripe)))))
 
 ;(defn stripe-cancel
 ;  "Cancel the subscription in Stripe for user with uuid."

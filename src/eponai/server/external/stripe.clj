@@ -1,8 +1,7 @@
 (ns eponai.server.external.stripe
   (:require
     [datomic.api :as d]
-    [eponai.common.database.pull :as p]
-    [eponai.common.database.transact :as transact]
+    [eponai.common.database :as db]
     [eponai.common.format :as f]
     [eponai.server.email :as email]
     [eponai.server.http :as h]
@@ -201,7 +200,7 @@
         {:keys [::email/send-payment-reminder-fn]} opts]
     (if customer
       ;; Find the customer entry in the db.
-      (let [db-customer (p/lookup-entity (d/db conn) [:stripe/customer customer])]
+      (let [db-customer (db/lookup-entity (d/db conn) [:stripe/customer customer])]
         ;; If the customer is not found in the DB, something is wrong and we're out of sync with Stripe.
         (when-not db-customer
           (throw (webhook-ex event
@@ -211,7 +210,7 @@
                               :code     :entity-not-found})))
 
         ;; Find the user corresponding to the specified stripe customer.
-        (let [user (p/lookup-entity (d/db conn) (get-in db-customer [:stripe/user :db/id]))]
+        (let [user (db/lookup-entity (d/db conn) (get-in db-customer [:stripe/user :db/id]))]
           ;; If the customer entity has no user, something is wrong in the db entry, throw exception.
           (when-not user
             (throw (webhook-ex event
@@ -233,21 +232,21 @@
   ;; Reference: https://stripe.com/docs/api#customer_object
   [conn event & _]
   (let [{:keys [customer]} (get-in event [:data :object])
-        db-entry (p/lookup-entity (d/db conn) [:stripe/customer customer])]
+        db-entry (db/lookup-entity (d/db conn) [:stripe/customer customer])]
     (when db-entry
       (info "Stripe customer.deleted, retracting entity from db: " (d/touch db-entry))
-      (transact/transact-one conn [:db.fn/retractEntity (:db/id db-entry)]))))
+      (db/transact-one conn [:db.fn/retractEntity (:db/id db-entry)]))))
 
 (defmethod webhook "customer.subscription.created"
   ;; Receiving a Subscription object in event.
   ;; Reference: https://stripe.com/docs/api#subscription_object
   [conn event & _]
   (let [{:keys [customer] :as subscription} (get-in event [:data :object])
-        db-customer (p/lookup-entity (d/db conn) [:stripe/customer customer])]
+        db-customer (db/lookup-entity (d/db conn) [:stripe/customer customer])]
     (if db-customer
       (let [db-sub (f/add-tempid (json->subscription-map subscription))]
         (debug "Customer subscription created: " (:id subscription))
-        (transact/transact conn [db-sub
+        (db/transact conn [db-sub
                                  [:db/add (:db/id db-customer) :stripe/subscription (:db/id db-sub)]]))
       (throw (webhook-ex event
                          (str ":stripe/customer not found: " customer)
@@ -260,11 +259,11 @@
   ;; Reference: https://stripe.com/docs/api#subscription_object
   [conn event & _]
   (let [{:keys [customer] :as subscription} (get-in event [:data :object])
-        db-customer (p/lookup-entity (d/db conn) [:stripe/customer customer])]
+        db-customer (db/lookup-entity (d/db conn) [:stripe/customer customer])]
     (if db-customer
       (let [db-sub (f/add-tempid (json->subscription-map subscription))]
         (debug "Customer subscription updated: " (:id subscription))
-        (transact/transact conn [db-sub
+        (db/transact conn [db-sub
                                  [:db/add (:db/id db-customer) :stripe/subscription (:db/id db-sub)]]))
       (throw (webhook-ex event
                          (str ":stripe/customer not found: " customer)
@@ -277,23 +276,23 @@
   ;; Reference: https://stripe.com/docs/api#subscription_object
   [conn event & _]
   (let [subscription (get-in event [:data :object])
-        db-entry (p/lookup-entity (d/db conn) [:stripe.subscription/id (:id subscription)])]
+        db-entry (db/lookup-entity (d/db conn) [:stripe.subscription/id (:id subscription)])]
     (debug "Customer subscription deleted: " (:id subscription))
     (when db-entry
       (info "Stripe customer.subscription.deleted, retracting entity from db: " (d/touch db-entry))
-      (transact/transact-one conn [:db.fn/retractEntity (:db/id db-entry)]))))
+      (db/transact-one conn [:db.fn/retractEntity (:db/id db-entry)]))))
 
 (defmethod webhook "invoice.payment_succeeded"
   ;; Receiving an Invoice object in event
   ;; reference: https://stripe.com/docs/api#invoice_object
   [conn event & _]
   (let [{:keys [customer period_end] :as invoice} (get-in event [:data :object])
-        {:keys [stripe/subscription]} (p/pull (d/db conn) [:stripe/subscription] [:stripe/customer customer])
+        {:keys [stripe/subscription]} (db/pull (d/db conn) [:stripe/subscription] [:stripe/customer customer])
         subscription-ends-at (* 1000 period_end)]
     (if subscription
       (do
         (debug "Invoice payment succeeded: " (:id invoice))
-        (transact/transact-one conn [:db/add (:db/id subscription) :stripe.subscription/period-end subscription-ends-at]))
+        (db/transact-one conn [:db/add (:db/id subscription) :stripe.subscription/period-end subscription-ends-at]))
       (throw (webhook-ex event
                          (str "No :stripe/subscription associated with :stripe/customer: " customer)
                          {:customer customer
@@ -307,7 +306,7 @@
         {:keys [::email/send-payment-reminder-fn]} opts]
     (if customer
       ;; Find the customer entry in the db.
-      (let [db-customer (p/lookup-entity (d/db conn) [:stripe/customer customer])]
+      (let [db-customer (db/lookup-entity (d/db conn) [:stripe/customer customer])]
         ;; If the customer is not found in the DB, something is wrong and we're out of sync with Stripe.
         (when-not db-customer
           (throw (webhook-ex event
@@ -317,7 +316,7 @@
                               :cause    ::h/unprocessable-entity})))
 
         ;; Find the user corresponding to the specified stripe customer.
-        (let [user (p/lookup-entity (d/db conn) (get-in db-customer [:stripe/user :db/id]))]
+        (let [user (db/lookup-entity (d/db conn) (get-in db-customer [:stripe/user :db/id]))]
           ;; If the customer entity has no user, something is wrong in the db entry, throw exception.
           (when-not user
             (throw (webhook-ex event

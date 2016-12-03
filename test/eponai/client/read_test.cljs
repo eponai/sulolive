@@ -6,7 +6,7 @@
     [eponai.common.parser :as parser]
     [eponai.common.datascript :as common.datascript]
     [eponai.common.testdata :as testdata]
-    [eponai.common.database.transact :as transact]
+    [eponai.common.database :as db]
     [taoensso.timbre :refer-macros [debug]]
     [eponai.common.database.pull :as p]
     [eponai.common.format.date :as date]))
@@ -14,7 +14,7 @@
 (defn new-db []
   (let [conn (d/create-conn (merge (testdata/datascript-schema)
                                    (common.datascript/ui-schema)))]
-    (transact/transact conn [{:ui/singleton :ui.singleton/app}
+    (db/transact conn [{:ui/singleton :ui.singleton/app}
                       {:ui/singleton :ui.singleton/auth}
                       {:ui/component :ui.component/project}])
     conn))
@@ -64,11 +64,11 @@
         ts [(transaction project "1000-01-01" "SEK")
             (transaction project "1000-01-02" "USD")
             (transaction project "1000-01-03" "SEK")]]
-    (transact/transact conn (concat [user project
+    (db/transact conn (concat [user project
                                      {:ui/singleton :ui.singleton/auth
                                       :ui.singleton.auth/user (:db/id user)}]
                                     convs))
-    (transact/transact conn ts)
+    (db/transact conn ts)
     (let [{:keys [query/transactions]} (read-transactions (parser/client-parser) conn user project)]
       (t/is (count ts) (count transactions))
       ;; Conversion rates are attached to the transactions on the client side, vefiry that all the transactions got conversions.
@@ -90,11 +90,11 @@
             (transaction project "1000-01-04" "SEK")]
         grouped (group-by #(get-in % [:conversion/date :date/timestamp]) convs)]
 
-    (transact/transact conn (concat [user project
+    (db/transact conn (concat [user project
                                      {:ui/singleton :ui.singleton/auth
                                       :ui.singleton.auth/user (:db/id user)}]
                                     convs))
-    (transact/transact conn ts)
+    (db/transact conn ts)
     (let [{:keys [query/transactions]} (read-transactions (parser/client-parser) conn user project)]
       (t/is (count ts) (count transactions))
       (t/is (= (count (filter some? (map :transaction/conversion transactions))) (count ts)))

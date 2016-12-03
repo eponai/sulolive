@@ -5,8 +5,7 @@
     [eponai.common.format :as format]
     [eponai.server.datomic.format :as server.format]
     [eponai.server.test-util :as util]
-    [eponai.common.database.pull :as p]
-    [eponai.common.database.transact :as transact]
+    [eponai.common.database :as db]
     [taoensso.timbre :as timbre :refer [debug]]))
 
 (defn conversion [date-ymd currency-code]
@@ -63,7 +62,7 @@
                (transaction [:project/uuid (:project/uuid project)] "1000-01-02" "USD") ;; Two conversions fetched SEK+USD (user's + transactions's)
                (transaction [:project/uuid (:project/uuid project)] "1000-01-03" "SEK")]] ;; One conversions fetched SEK
        (debug "Transactions: " ts)
-       (transact/transact conn ts)
+       (db/transact conn ts)
        (let [{result :query/transactions} (read-transactions conn user project)
              {:keys [transactions conversions]} result]
          (is (= (count ts) (count transactions)))
@@ -92,7 +91,7 @@
            ts [(transaction [:project/uuid (:project/uuid project)] "1000-01-01" "SEK") ;; One conversions fetched SEK
                (transaction [:project/uuid (:project/uuid project)] "1000-01-02" "USD") ;; Two conversions fetched SEK+USD (user's + transactions's)
                (transaction [:project/uuid (:project/uuid project)] "1000-01-04" "SEK")]] ;; Zero conversions fetched SEK (no conversion for date)
-       (transact/transact conn ts)
+       (db/transact conn ts)
        (let [{result :query/transactions} (read-transactions conn user project)
              {:keys [transactions conversions] :as r} result]
          (is (= (count ts) (count transactions)))

@@ -4,7 +4,7 @@
     [clj-time.coerce :as c]
     [clojure.test :refer :all]
     [datomic.api :as d]
-    [eponai.common.database.pull :as p]
+    [eponai.common.database :as db]
     [eponai.server.api :as api]
     [eponai.server.datomic.format :as f]
     [eponai.server.stripe-test :as stripe-test]
@@ -22,7 +22,7 @@
           uuid (:verification/uuid verification)
           conn (new-db (vals account))
           _ (api/verify-email conn (str uuid))]
-      (is (= (:verification/status (p/lookup-entity (d/db conn) [:verification/uuid uuid]))
+      (is (= (:verification/status (db/lookup-entity (d/db conn) [:verification/uuid uuid]))
              :verification.status/verified)))))
 
 ; Failure cases
@@ -64,7 +64,7 @@
                             #":verification-expired"
                             (api/verify-email conn (str uuid))))
       ; Make sure that status of the verification is set to expired.
-      (is (= (:verification/status (p/lookup-entity (d/db conn) [:verification/uuid uuid]))
+      (is (= (:verification/status (db/lookup-entity (d/db conn) [:verification/uuid uuid]))
              :verification.status/expired)))))
 
 ;;;; ------ api/activate-account tests ---------
@@ -75,7 +75,7 @@
                                                          {:verification/status :verification.status/verified})
           conn (new-db (vals account))
           _ (api/activate-account conn (str (:user/uuid user)) user-email)
-          user (p/lookup-entity (d/db conn) [:user/email user-email])]
+          user (db/lookup-entity (d/db conn) [:user/email user-email])]
       (is (= (:user/status (d/entity (d/db conn) (:db/id user)))
              :user.status/active)))))
 
@@ -99,7 +99,7 @@
       (is (thrown-with-msg? ExceptionInfo
                             #":unverified-email"
                             (api/activate-account conn (str (:user/uuid user)) "email")))
-      (is (some? (p/lookup-entity (d/db conn) [:user/email "email"]))))))
+      (is (some? (db/lookup-entity (d/db conn) [:user/email "email"]))))))
 
 ;;;; --------- Share project tests -----------------------
 
@@ -116,7 +116,7 @@
                                       (vals account-invitee))
                               project))
            result (api/share-project conn (:project/uuid project) invitee)
-           {:keys [project/_users]} (p/pull (d/db conn) [{:project/_users [:project/uuid]}] [:user/email invitee])]
+           {:keys [project/_users]} (db/pull (d/db conn) [{:project/_users [:project/uuid]}] [:user/email invitee])]
        (is (= (:status result) (:user/status user)))
        (is (= 2 (count _users)))
        (is (= (:verification/status (async/<!! (get result :email-chan))) :verification.status/pending))))))
@@ -132,7 +132,7 @@
            conn (new-db (conj (vals account-inviter)
                               project))
            result (api/share-project conn (:project/uuid project) invitee)
-           {:keys [project/_users]} (p/pull (d/db conn) [{:project/_users [:project/uuid]}] [:user/email invitee])]
+           {:keys [project/_users]} (db/pull (d/db conn) [{:project/_users [:project/uuid]}] [:user/email invitee])]
        (is (= (:status result) (:user/status user)))
        (is (= 1 (count _users)))
        (is (= (:verification/status (async/<!! (get result :email-chan))) :verification.status/pending))))))
@@ -149,7 +149,7 @@
        (is (thrown-with-msg? ExceptionInfo
                              #":duplicate-project-shares"
                              (api/share-project conn (:project/uuid project) user-email)))
-       (let [{:keys [project/_users]} (p/pull (d/db conn) [{:project/_users [:project/uuid]}] [:user/email user-email])]
+       (let [{:keys [project/_users]} (db/pull (d/db conn) [{:project/_users [:project/uuid]}] [:user/email user-email])]
          (is (= 2 (count _users))))))))
 
 
@@ -170,7 +170,7 @@
     (let [{:keys [user] :as a} (f/user-account-map user-email)
           conn (new-db (vals a))
           _ (api/stripe-trial conn (test-stripe-read :trialing) user)
-          customer (p/pull (d/db conn) [{:stripe/user [:user/email]} {:stripe/subscription '[*]}] [:stripe/customer stripe-test/default-customer-id])]
+          customer (db/pull (d/db conn) [{:stripe/user [:user/email]} {:stripe/subscription '[*]}] [:stripe/customer stripe-test/default-customer-id])]
       (is (some? customer))
       (let [sub (:stripe/subscription customer)]
         (is (= (:stripe.subscription/id sub) stripe-test/default-subscription-id))
@@ -192,7 +192,7 @@
           _ (api/stripe-update-card conn (test-stripe-read :active) stripe {:token (:token stripe-params)})
 
           ; Get new customer entity from DB after having update the customer card. Status should have been set to active at this point.
-          customer (p/pull (d/db conn) [{:stripe/subscription '[*]}] [:stripe/customer customer-id])]
+          customer (db/pull (d/db conn) [{:stripe/subscription '[*]}] [:stripe/customer customer-id])]
       (is (= (get-in customer [:stripe/subscription :stripe.subscription/status]) :active)))))
 
 ;(deftest trial-user-updates-subscription
@@ -263,7 +263,7 @@
           _ (prn "Got stripe account: " stripe)
           conn (new-db (conj (vals account)
                              stripe))
-          db-user (p/pull (d/db conn) [:user/email :stripe/_user] [:user/email user-email])]
+          db-user (db/pull (d/db conn) [:user/email :stripe/_user] [:user/email user-email])]
       (is (thrown-with-msg? ExceptionInfo
                             #":illegal-argument"
                             (api/stripe-trial conn (test-stripe-read :trialing) db-user))))))

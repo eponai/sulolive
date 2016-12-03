@@ -4,7 +4,6 @@
             [datomic.api :as d]
             [environ.core :refer [env]]
             [taoensso.timbre :refer [debug error info warn]]
-            [eponai.common.database.pull :as p]
             [hiccup.page :refer [xhtml]]
             [garden.core :refer [css]]))
 

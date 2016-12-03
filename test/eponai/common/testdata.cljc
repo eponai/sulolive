@@ -4,7 +4,7 @@
                      [eponai.server.datomic.pull :as pull])
      :cljs (:require-macros [eponai.common.testdata :refer [inline-datomic-schema]]))
   (:require [eponai.common.datascript :as eponai.datascript]
-            [eponai.common.database.transact :as transact]))
+            [eponai.common.database :as db]))
 
 #?(:clj
    (defmacro inline-datomic-schema
@@ -13,7 +13,7 @@
      []
      (let [schemas (datomic_dev/read-schema-files)
            conn# (datomic_dev/create-new-inmemory-db "read-datomic-schema")
-           _ (transact/transact-schemas conn# schemas)
+           _ (run! #(db/transact conn# %) schemas)
            inlined# (into [] (pull/schema (d/db conn#)))]
        inlined#)))
 

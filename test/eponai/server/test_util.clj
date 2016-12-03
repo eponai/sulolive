@@ -1,11 +1,8 @@
 (ns eponai.server.test-util
   (:require [datomic.api :as d]
-            [clojure.core.async :as async]
-            [eponai.server.auth.credentials :as a]
-            [eponai.server.middleware :as m]
             [eponai.common.parser :as parser]
             [eponai.server.datomic-dev :as dev]
-            [eponai.common.database.transact :as transact]))
+            [eponai.common.database :as db]))
 
 (def schemas (dev/read-schema-files))
 
@@ -26,11 +23,11 @@
      (d/delete-database uri)
      (d/create-database uri)
      (let [conn (d/connect uri)]
-       (transact/transact-schemas conn schemas)
-       (transact/transact conn [{:db/id         (d/tempid :db.part/user)
+       (db/transact-schemas conn schemas)
+       (db/transact conn [{:db/id         (d/tempid :db.part/user)
                                  :currency/code "USD"}])
        (when txs
-         (transact/transact conn txs))
+         (db/transact conn txs))
        conn))))
 
 (defn setup-db-with-user!

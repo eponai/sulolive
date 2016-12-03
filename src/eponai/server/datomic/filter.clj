@@ -20,7 +20,7 @@
   incrementally updatable database filters."
   (:require [clojure.set :as s]
             [datomic.api :as d]
-            [eponai.common.database.pull :as pull]
+            [eponai.common.database :as db]
             [taoensso.timbre :as timbre :refer [debug trace]]))
 
 ;; Updating and applying filters
@@ -102,19 +102,19 @@
                :symbols {'$since   db-since
                          '?user-id user-id
                          '%        user-owned-rule}}]
-    (pull/all-with db query)))
+    (db/all-with db query)))
 
 (defn user-attributes [db db-since]
   ;;TODO: Add more user entities? We want to filter out anything that has to do with sensitive
   ;;      user data. Such as what they have bought.
   (let [user-entity-keys [:project/uuid :transaction/uuid]
-        query {:find-pattern '[[?a ...]]
+        query {:find '[[?a ...]]
                :where        '[[$ ?e ?user-entity-key]
                                [$ ?e ?a]
                                [$since ?e]]
                :symbols      {'$since                 db-since
                               '[?user-entity-key ...] user-entity-keys}}]
-    (pull/find-with db query)))
+    (db/find-with db query)))
 
 (defn- user-specific-entities-filter [user-id]
   {:props {:user-entities {:init      #{}

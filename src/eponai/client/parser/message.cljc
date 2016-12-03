@@ -2,7 +2,7 @@
   (:require [datascript.db :as db]
             [datascript.core :as d]
             [om.next :as om]
-            [eponai.common.database.pull :as pull]
+            [eponai.common.database :as database]
             [eponai.common.parser :as parser])
   #?(:clj (:import [datascript.db DB])))
 
@@ -86,18 +86,18 @@
     (fn [history-id mutation-key]
       (assert (some? history-id) (str "Called (get-message-fn ) with history-id nil."
                                       " Needs history-id to look up messages. mutation-key: " mutation-key))
-      (some->> (pull/one-with this {:where   '[[?e :mutation-message/history-id ?history-id]
-                                               [?e :mutation-message/mutation-key ?mutation-key]]
-                                    :symbols {'?history-id   history-id
-                                              '?mutation-key mutation-key}})
+      (some->> (database/one-with this {:where   '[[?e :mutation-message/history-id ?history-id]
+                                                   [?e :mutation-message/mutation-key ?mutation-key]]
+                                        :symbols {'?history-id   history-id
+                                                  '?mutation-key mutation-key}})
                (d/entity this)
                entity->MutationMessage)))
   (get-messages [this]
-    (some->> (pull/find-with this {:find-pattern '[?e ?tx]
-                                   :where        '[[?e :mutation-message/history-id _ ?tx]]})
+    (some->> (database/find-with this {:find  '[?e ?tx]
+                                       :where '[[?e :mutation-message/history-id _ ?tx]]})
              (into (sorted-set-by #(compare (:tx %1) (:tx %2)))
                    (comp (map (fn [[id tx]] (into {:tx tx :db/id id}
-                                                (d/entity this id))))
+                                                  (d/entity this id))))
                          (map entity->MutationMessage))))))
 
 (defn om-transact!

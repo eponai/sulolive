@@ -13,8 +13,7 @@
             [cljs.test :refer-macros [deftest is]]
             [om.next :as om]
             [taoensso.timbre :as timbre :refer-macros [debug error]]
-            [clojure.test.check.properties :as prop :include-macros true]
-            [eponai.common.database.transact :as t]))
+            [clojure.test.check.properties :as prop :include-macros true]))
 
 (defn init-state []
   (let [user-uuid (d/squuid)

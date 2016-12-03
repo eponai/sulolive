@@ -1,6 +1,5 @@
 (ns eponai.client.backend
-  (:require [eponai.common.parser.util :as parser.util]
-            [eponai.common.database.pull :as pull]
+  (:require [eponai.common.database :as db]
             [eponai.client.utils :as client.utils]
             [datascript.impl.entity :as e]
             [om.next :as om]
@@ -8,7 +7,6 @@
             [datascript.core :as d]
             [clojure.set :as set]
             [clojure.walk :as walk]
-            [medley.core :as medley]
             [taoensso.timbre :as timbre :refer [debug error trace warn info]]
     #?@(:clj
         [
@@ -252,7 +250,7 @@
                                  unique-attrs (into [] (comp (filter @unique-attributes)
                                                              (map (juxt identity #(get old-entity %))))
                                                     (keys old-entity))
-                                 new-eid (pull/one-with new-db
+                                 new-eid (db/one-with new-db
                                                         {:where   '[[?e ?attr ?val]]
                                                          :symbols {'[[?attr ?val] ...] unique-attrs}})]
                              (if (nil? new-eid)

@@ -1,6 +1,6 @@
 (ns eponai.mobile.parser.mutate
   (:require [eponai.common.parser :refer [client-mutate]]
-            [eponai.common.database.transact :as t]
+            [eponai.common.database :as db]
             [om.next :as om]
             [datascript.core :as d]
             [taoensso.timbre :refer-macros [debug]]))
