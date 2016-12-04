@@ -118,6 +118,18 @@
                                     (dom/span nil "$0.00")
                                     (dom/i {:className "fa fa-shopping-cart fa-fw"})))))))
 
+(defn product-element [product]
+  (dom/div {:className "column featured-item product-item"}
+    (dom/a {:className "featured-item-thumbnail" :style {:background-image (str "url(" (:img-src product) ")")}})
+    (dom/div {:className "featured-item-title-section"}
+      (dom/a nil (:name product)))
+    (dom/div {:className "featured-item-subtitle-section"}
+      (dom/strong nil (:price product))
+      (dom/div {:className "user-rating-container"}
+        (dom/img {:className "user-rating"
+                  :src       "/assets/img/rating-5.png"})
+        (dom/small nil "(11)")))))
+
 (defn budget-js-path [release?]
   (str "/"
        (if release? "release" "dev")

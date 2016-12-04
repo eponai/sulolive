@@ -95,22 +95,11 @@
     (dom/div {:className "featured-item-subtitle-section"}
       (dom/a nil (:store channel)))))
 
-(defn product-element [product]
-  (dom/div {:className "column featured-item product-item"}
-    (dom/a {:className "featured-item-thumbnail" :style {:background-image (str "url(" (:img-src product) ")")}})
-    (dom/div {:className "featured-item-title-section"}
-      (dom/a nil (:name product)))
-    (dom/div {:className "featured-item-subtitle-section"}
-      (dom/strong nil (:price product))
-      (dom/div {:className "user-rating-container"}
-        (dom/img {:className "user-rating"
-                  :src       "/assets/img/rating-5.png"})
-        (dom/small nil "(11)")))))
-
 (defn store-element [store]
   (let [[large mini-1 mini-2] (:img-src store)]
     (dom/div {:className "column featured-item store-item"}
-      (dom/a {:className "store-collage featured-item-thumbnail-multi"}
+      (dom/a {:href "/store"
+              :className "store-collage featured-item-thumbnail-multi"}
              (dom/div {:className "thumbnail-large"
                        :style     {:background-image (str "url(" large ")")}})
              (dom/div {:className "thumbnail-mini-container"}
@@ -196,7 +185,7 @@
             (content-section nil
                              "Fresh from the oven goods"
                              (map (fn [p]
-                                    (product-element p))
+                                    (common/product-element p))
                                   mocked-goods)
                              "Check out more goods >>")
 
