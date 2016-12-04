@@ -30,8 +30,7 @@
                  (dom/div {:className "row column"}
                    (dom/div {:className "top-bar"}))))
              (dom/div {:id "page-content"})
-             (dom/div {:id "footer-container"}
-               (common/footer))))
+             (dom/div {:id "footer-container"})))
          (dom/script {:src  (common/budget-js-path release?)
                       :type text-javascript})
          (if playground?

@@ -84,7 +84,7 @@
 
    ;; Custom fonts
    (dom/link {:href (if release?
-                      "https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css"
+                      "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
                       "/assets/font-awesome/css/font-awesome.min.css")
               :rel  "stylesheet"
               :type "text/css"})
@@ -103,29 +103,20 @@
    (dom/meta {:name "theme-color" :content "#ffffff"})])
 
 
-(defn footer []
-  (dom/div {:className "footer"
-            :id        "footer"}
-    (dom/ul {:className "menu"}
+(defn navbar [opts]
+  (dom/nav {:className "top-bar"}
+           (dom/div {:className "top-bar-left"}
+             (dom/ul {:className "menu"}
+                     (dom/li nil
+                             (dom/a {:className "navbar-brand"}
+                                    "Sulo"))))
 
-      (dom/li nil
-        (dom/small nil
-                   "Say hi to us anytime at "
-                   (dom/a {:className "mail-link"
-                           :href      "mailto:info@jourmoney.com"}
-                          "info@jourmoney.com"))))
-    (dom/ul {:className "menu"}
-      (dom/li nil
-        (dom/small nil
-                   (dom/a {:href  "//www.iubenda.com/privacy-policy/7944779"
-                           :class "iubenda-nostyle no-brand iubenda-embed"
-                           :title "Privacy Policy"} "Privacy Policy")))
-      (dom/li nil
-        (dom/small nil
-                   (dom/a {:href   "/terms"
-                           :target "_blank"} "Terms of Service")))
-      (dom/li nil
-        (dom/small nil "Copyright © eponai 2016. All Rights Reserved")))))
+           (dom/div {:className "top-bar-right"}
+             (dom/ul {:className "menu"}
+                     (dom/li nil
+                             (dom/a nil
+                                    (dom/span nil "$0.00")
+                                    (dom/i {:className "fa fa-shopping-cart fa-fw"})))))))
 
 (defn budget-js-path [release?]
   (str "/"
