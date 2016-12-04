@@ -1,6 +1,15 @@
 #sulo-store {
+	nav {
+		position: relative;
+	}
 	.cover-photo {
 		height: 20rem;
+		@include breakpoint(medium) {
+			height: 30rem;
+		}
+		@include breakpoint(large) {
+			height: 40rem;
+		}
 		// background: white;
 		background-image: url("https://img0.etsystatic.com/151/0/11651126/isbl_3360x840.22956500_1bj341c6.jpg");
 		background-size: cover;
@@ -10,8 +19,7 @@
 
 	.store-nav {
 		padding: 0.7rem 0;
-		background: $navbar-background-color;
-		color: $white;
+		background: $body-background;//$navbar-background-color;
 		// border-bottom: 1px solid rgba($black, 0.2);
 		box-shadow: 0 1px 3px 1px rgba($black, 0.2);
 		ul {

@@ -11,7 +11,7 @@ html, body {
 
 .product-item {
 	.featured-item-subtitle-section {
-		align-items: flex-end;
+		// align-items: flex-end;
 	}
 }
 
@@ -43,7 +43,7 @@ html, body {
 				background: $white;
 				z-index: -1;
 			}
-			height: 8rem;
+			height: 10rem;
 			@include breakpoint(medium) {
 				height: 14rem;
 			}
@@ -61,7 +61,7 @@ html, body {
 
 		.featured-item-thumbnail-multi {
 			box-shadow: 1px 1px 3px 1px rgba($black, 0.1);
-			height: 8rem;
+			height: 14rem;
 			@include breakpoint(medium) {
 				height: 20rem;
 			}
@@ -87,11 +87,19 @@ html, body {
 		.featured-item-title-section {
 			padding-top: 1rem;
 			display: flex;	
-			justify-content: space-between;
+			flex-direction: column;
+			@include breakpoint(medium) {
+				flex-direction: row;
+				justify-content: space-between;
+			}
 		}
 		.featured-item-subtitle-section {
 			display: flex;
-			justify-content: space-between;
+			flex-direction: column;
+			@include breakpoint(medium) {
+				flex-direction: row;
+				justify-content: space-between;
+			}
 		}
 		.user-rating {
 			height: 0.8rem;
@@ -101,7 +109,6 @@ html, body {
 			margin-left: 0.2rem;
 			display: flex;
 			flex-wrap: nowrap;
-			flex:0;
 		}
 	}
 }
