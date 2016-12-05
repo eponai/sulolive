@@ -5,7 +5,6 @@
             [eponai.common.parser.util :as p.util]
             [eponai.client.parser.read]
             [eponai.client.auth :as auth]
-            [eponai.mobile.ios.routes :as routes]
             [taoensso.timbre :as timbre :refer-macros [debug]]))
 
 (defmethod client-read :routing/app-root

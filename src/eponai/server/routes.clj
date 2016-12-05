@@ -29,7 +29,8 @@
   (= "release" (::m/cljs-build-id request)))
 
 (defn request->props [request]
-  {:release? (release? request)})
+  {:release? (release? request)
+   :params (:params request)})
 
 (defroutes
   app-routes

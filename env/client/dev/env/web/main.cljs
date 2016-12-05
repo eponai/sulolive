@@ -1,8 +1,7 @@
 (ns env.web.main
   (:require [eponai.web.app :as app]
-            [eponai.web.signup :as signup]
-            [eponai.web.playground :as playground]
-            [eponai.client.utils :as utils]))
+            [eponai.client.utils :as utils]
+            [eponai.web.ui.stream :as stream]))
 
 (set! js/window.mixpanel #js {"track" (fn [& args] )})
 
@@ -10,10 +9,6 @@
   (utils/install-app)
   (app/run))
 
-(defn ^:export runsignup []
+(defn ^:export runstream []
   (utils/install-app)
-  (signup/run))
-
-(defn ^:export runplayground []
-  (utils/install-app)
-  (playground/run))
+  (stream/run))

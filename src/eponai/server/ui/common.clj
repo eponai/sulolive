@@ -81,6 +81,8 @@
    (dom/title nil "Tracking Expenses for Nomads - jourmoney")
    (dom/link {:href "/assets/css/app.css"
               :rel  "stylesheet"})
+   (dom/link {:href "/lib/videojs/video-js.min.css"
+              :rel "stylesheet"})
 
    ;; Custom fonts
    (dom/link {:href (if release?

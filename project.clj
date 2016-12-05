@@ -245,8 +245,6 @@
              :web      {:dependencies [[figwheel-sidecar "0.5.7"]]
                         :cljsbuild {:builds [{:id           "dev"
                                               :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
-                                              :figwheel     {:on-jsload "eponai.web.figwheel/reload!"
-                                                             }
                                               :compiler     {:main          "env.web.main"
                                                              :asset-path    "/dev/js/out"
                                                              :output-to     "resources/public/dev/js/out/budget.js"

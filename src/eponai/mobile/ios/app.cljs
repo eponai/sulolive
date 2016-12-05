@@ -1,6 +1,5 @@
 (ns eponai.mobile.ios.app
   (:require [eponai.client.utils :as utils]
-            [eponai.mobile.ios.ui.root :as root]
             [om.next :as om :refer-macros [defui ui]]
             [re-natal.support :as sup]
             [taoensso.timbre :refer-macros [info debug error trace warn]]))
