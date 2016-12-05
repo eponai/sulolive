@@ -43,7 +43,10 @@
     (if (friend/authorized? #{::a/user} request)
       (r/redirect "/app")
       (server.ui/index-html (request->props request))))
-  (GET "/store" request (server.ui/store-html (request->props request)))
+  (GET "/store/:store-id" request (server.ui/store-html (request->props request)))
+  (GET "/goods/:product-id" r (server.ui/product-html (request->props r)))
+  (GET "/goods" request (server.ui/goods-html (request->props request)))
+  ;(GET "/goods/:id" request (server.ui/product-html (request->props request)))
   (GET "/terms" request
        (server.ui/terms-html (request->props request)))
 

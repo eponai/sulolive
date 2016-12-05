@@ -1,0 +1,45 @@
+#sulo-product {
+	nav {
+		position: relative;
+	}
+
+	.store-container {
+		h1 {
+			font-size: 1.6rem;
+		}
+		.user-rating {
+			height: 1.2rem;
+		}
+	}
+
+	.product-container {
+		padding: 2rem;
+		background: white;
+		box-shadow: 0 1px 3px 1px rgba($black, 0.2);
+	}
+
+	.product-photo-container {
+		// box-shadow: 0 1px 3px 1px rgba($black, 0.2);
+		.product-photo {
+			background-size: contain;
+			background-repeat: no-repeat;
+			background-position: center center;
+			padding-top: 75%;
+		}
+	}
+
+	.product-info-container {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+	}
+
+	.product-info-title {
+		font-size: 1.4rem;
+	}
+	.product-info-price {
+		font-size: 1.5rem;
+		font-weight: 500;
+		color: map-get($foundation-palette, primary);
+	}
+}

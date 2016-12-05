@@ -68,12 +68,12 @@
                                           " medium-offset-4 text-right"))}
                content)))))
 
-(defn content-section [{:keys [class]} header content footer]
+(defn content-section [{:keys [href]} header content footer]
   (dom/div {:className "row column section text-center"}
     (dom/h3 {:className "text-center"} header)
     (apply dom/div {:className "content-items-container row small-up-2 medium-up-4"}
       content)
-    (dom/a nil footer)))
+    (dom/a {:href href} footer)))
 
 (defn online-channel-element [channel]
   (dom/div {:className "column content-item online-channel"}
@@ -90,7 +90,7 @@
 (defn store-element [store]
   (let [[large mini-1 mini-2] (:img-src store)]
     (dom/div {:className "column content-item store-item"}
-      (dom/a {:href      (str "/store?id=" (:id store))
+      (dom/a {:href      (str "/store/" (:id store))
               :className "store-collage content-item-thumbnail-container"}
              (dom/div {:className "content-item-thumbnail"
                        :style     {:background-image (str "url(" large ")")}})
@@ -115,101 +115,91 @@
         {:lang "en"}
 
         (apply dom/head nil (common/head release?))
-        (dom/body
-          {:id "sulo-start"}
-          (common/navbar nil)
-          (dom/svg {:height 0}
-                   (dom/defs nil
-                     (dom/mask {:id               "header-alpha-mask"
-                                :maskUnits        "objectBoundingBox"
-                                :maskContentUnits "objectBoundingBox"}
-                               (dom/radialGradient {:id "grad1" :gradientUnits "objectBoundingBox" :cx "50%" :cy "50%" :r "50%"}
-                                                   (dom/stop {:offset "0%" :style {:stop-color "black" :stop-opacity 1}})
-                                                   (dom/stop {:offset "100%" :style {:stop-color "black" :stop-opacity 0}}))))
-                   (dom/ellipse {:cx 200 :cy 70 :rx 85 :ry 55 :fill "url(#grad1)"}))
-          (dom/div {:className "page-content"}
+        (dom/body nil
+          (dom/div
+            {:id "sulo-start"
+             :className "page-container"}
+            (common/navbar nil)
+            (dom/div {:className "page-content"}
+              (dom/svg {:height 0}
+                       (dom/defs nil
+                                 (dom/mask {:id               "header-alpha-mask"
+                                            :maskUnits        "objectBoundingBox"
+                                            :maskContentUnits "objectBoundingBox"}
+                                           (dom/radialGradient {:id "grad1" :gradientUnits "objectBoundingBox" :cx "50%" :cy "50%" :r "50%"}
+                                                               (dom/stop {:offset "0%" :style {:stop-color "black" :stop-opacity 1}})
+                                                               (dom/stop {:offset "100%" :style {:stop-color "black" :stop-opacity 0}}))))
+                       (dom/ellipse {:cx 200 :cy 70 :rx 85 :ry 55 :fill "url(#grad1)"}))
 
-            (dom/div {:className "intro-header"}
-              (dom/div {:className "row"}
-                (dom/div {:className "column small-offset-6 header-photo-container"}
-                  (dom/div {:className "header-photo"})))
-              (dom/div {:className "row column header-content"}
-                (dom/h1 nil "Go to the market in the comfort of your own home")
-                (dom/div {:className "search-container row"}
-                  (dom/div {:className "column small-12 medium-6"}
-                    (dom/input {:placeholder "What are you shopping for?"
-                                :type        "text"}))
-                  (dom/div {:className "column"}
-                    (dom/a {:className "button"}
-                           "Search")))))
+              (dom/div {:className "intro-header"}
+                (dom/div {:className "row"}
+                  (dom/div {:className "column small-offset-6 header-photo-container"}
+                    (dom/div {:className "header-photo"})))
+                (dom/div {:className "row column header-content"}
+                  (dom/h1 nil "Go to the market in the comfort of your own home")
+                  (dom/div {:className "search-container row"}
+                    (dom/div {:className "column small-12 medium-6"}
+                      (dom/input {:placeholder "What are you shopping for?"
+                                  :type        "text"}))
+                    (dom/div {:className "column"}
+                      (dom/a {:className "button"}
+                             "Search")))))
 
-            (dom/div {:className "top-features row small-up-1 medium-up-3"}
-              (top-feature
-                nil
-                "fa-shopping-cart"
-                "Connect with the community"
-                "Real time interaction with the community.")
-              (top-feature
-                nil
-                "fa-shopping-cart"
-                "Find products and stories you love"
-                "Our partners have a wide range of home made goods")
-              (top-feature
-                nil
-                "fa-shopping-cart"
-                "Share your favorites"
-                "Interact with your customers as a store owner and create real long time relationships"))
+              (dom/div {:className "top-features row small-up-1 medium-up-3"}
+                (top-feature
+                  nil
+                  "fa-shopping-cart"
+                  "Connect with the community"
+                  "Real time interaction with the community.")
+                (top-feature
+                  nil
+                  "fa-shopping-cart"
+                  "Find products and stories you love"
+                  "Our partners have a wide range of home made goods")
+                (top-feature
+                  nil
+                  "fa-shopping-cart"
+                  "Share your favorites"
+                  "Interact with your customers as a store owner and create real long time relationships"))
 
 
-            (banner {:color :red}
-                    (dom/h2 nil "Interact live with store owners and other buyers from the community"))
+              (banner {:color :red}
+                      (dom/h2 nil "Interact live with store owners and other buyers from the community"))
 
-            (content-section nil
-                             "Stores streaming on the online market right now"
-                             (map (fn [c]
-                                    (online-channel-element c))
-                                  (mocked-channels))
-                             "Check out more on the live market >>")
+              (content-section nil
+                               "Stores streaming on the online market right now"
+                               (map (fn [c]
+                                      (online-channel-element c))
+                                    (mocked-channels))
+                               "Check out more on the live market >>")
 
-            (banner {:color :blue}
-                    (dom/h2 nil "Find products you love made by passionate store owners"))
+              (banner {:color :blue}
+                      (dom/h2 nil "Find products you love made by passionate store owners"))
 
-            (content-section nil
-                             "Fresh from the oven goods"
-                             (map (fn [p]
-                                    (common/product-element p))
-                                  (take 4 (mocked-goods)))
-                             "Check out more goods >>")
+              (content-section {:href "/goods"}
+                               "Fresh from the oven goods"
+                               (map (fn [p]
+                                      (common/product-element p))
+                                    (take 4 (mocked-goods)))
+                               "Check out more goods >>")
 
-            (banner {:color :green}
-                    (dom/h2 nil "Discover new stores and become part of their community"))
+              (banner {:color :green}
+                      (dom/h2 nil "Discover new stores and become part of their community"))
 
-            (content-section nil
-                             "Have you seen these stores?"
-                             (map (fn [s]
-                                    (store-element s))
-                                  (mocked-stores))
-                             "Check out more stores >>")
+              (content-section nil
+                               "Have you seen these stores?"
+                               (map (fn [s]
+                                      (store-element s))
+                                    (mocked-stores))
+                               "Check out more stores >>")
 
-            (banner {:color :default}
-                    (dom/h2 nil "Follow your favorite stores and stay updated on when they go online")
-                    (dom/a {:className "button"} "Sign up"))
+              (banner {:color :default}
+                      (dom/h2 nil "Follow your favorite stores and stay updated on when they go online")
+                      (dom/a {:className "button"} "Sign up"))
 
-            (banner {:color :white
-                     :align :right}
-                    (dom/h2 nil "Start streaming on Sulo and tell your story to your customers")
-                    (dom/a {:className "button secondary"} "Contact us")))
+              (banner {:color :white
+                       :align :right}
+                      (dom/h2 nil "Start streaming on Sulo and tell your story to your customers")
+                      (dom/a {:className "button secondary"} "Contact us")))
 
-          (dom/div {:className "footer"}
-            (dom/footer {:className "clearfix"}
-                        (dom/ul {:className "float-left menu"}
-                                (dom/li {:className "menu-text"} (dom/small nil "Say hi anytime"))
-                                (dom/li nil (dom/a nil (dom/i {:className "fa fa-instagram fa-fw"})))
-                                (dom/li nil (dom/a nil (dom/i {:className "fa fa-twitter fa-fw"})))
-                                (dom/li nil (dom/a nil (dom/i {:className "fa fa-facebook fa-fw"})))
-                                (dom/li nil (dom/a nil (dom/i {:className "fa fa-envelope-o fa-fw"}))))
-
-                        (dom/ul {:className "float-right menu"}
-                                (dom/li nil (dom/a nil (dom/small nil "Privacy Policy")))
-                                (dom/li nil (dom/a nil (dom/small nil "Terms & Conditions")))
-                                (dom/li {:className "menu-text"} (dom/small nil "© Sulo 2016"))))))))))
+            (common/footer nil)))))))

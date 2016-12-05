@@ -3,7 +3,6 @@ $header-background-color: #2E2A31;
 $banner-background-color: $header-background-color;
 
 $font-color-light: $body-background;
-$navbar-height: 56px;
 nav {
 	height: $navbar-height;
 	width: 100%;
@@ -23,11 +22,10 @@ nav {
 	box-shadow: 0 1px 5px 1px rgba($black, 0.2);
 }
 
-.page-content {
-	padding-top: $navbar-height;
-}
-
 #sulo-start {
+	// .page-content {
+	// 	padding-top: $navbar-height;
+	// }  
 	overflow-x: hidden;
 	svg {
 		position: absolute;
@@ -158,8 +156,6 @@ nav {
 
 	.footer {
 		background: $header-background-color;
-		padding-top: 2rem;
-		padding-bottom: 0.7rem;
 		color: $body-background;
 		a {
 			color: $body-background;

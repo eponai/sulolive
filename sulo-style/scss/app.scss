@@ -6,6 +6,7 @@
 
 @include foundation-global-styles;
 // @include foundation-grid;
+@include foundation-flex-classes;
 @include foundation-flex-grid;
 @include foundation-typography;
 @include foundation-button;
@@ -53,3 +54,4 @@
 @import "start";
 @import "store";
 @import "stream";
+@import "goods";

@@ -1,3 +1,5 @@
+$navbar-height: 56px;
+
 html, body {
 	overflow-x: hidden;
 	min-height: 100%;
@@ -7,6 +9,30 @@ html, body {
 body {
 	overflow-y: scroll; /* has to be scroll, not auto */
   	-webkit-overflow-scrolling: touch;
+}
+
+$footer-height: 4rem;
+
+.page-container {
+	min-height: 100%;
+	position: relative;
+}
+
+.page-content {
+	padding-bottom: $footer-height;
+}
+
+.footer {
+	footer {
+		height: 100%;
+		display: flex;
+		justify-content: space-between;	
+		align-items: center;
+	}
+	width: 100%;
+	position: absolute;
+	bottom: 0;
+	height: $footer-height;
 }
 
 .navbar-brand {
@@ -35,23 +61,6 @@ body {
 		}
 		display: flex;
 		flex-direction: column;
-
-		.content-item-thumbnail-container {
-			box-shadow: 1px 1px 3px 1px rgba($black, 0.1);
-			.content-item-thumbnail {
-				background-size: cover;
-				background-repeat: no-repeat;
-				background-position: center center;
-				padding-top: 100%;
-				&.mini {
-					width: 50%;
-					padding-top: 50%;
-				}
-			}
-			.content-item-thumbnail-mini-container {
-				display: flex;
-			}
-		}
 
 		.content-item-title-section {
 			span, a {
@@ -84,5 +93,22 @@ body {
 			display: flex;
 			flex-wrap: nowrap;
 		}
+	}
+}
+
+.content-item-thumbnail-container {
+	box-shadow: 1px 1px 3px 1px rgba($black, 0.1);
+	.content-item-thumbnail {
+		background-size: cover;
+		background-repeat: no-repeat;
+		background-position: center center;
+		padding-top: 100%;
+		&.mini {
+			width: 50%;
+			padding-top: 50%;
+		}
+	}
+	.content-item-thumbnail-mini-container {
+		display: flex;
 	}
 }

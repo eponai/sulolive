@@ -106,7 +106,7 @@
 
 
 (defn navbar [opts]
-  (dom/nav {:className "top-bar"}
+  (dom/nav {:className "navbar top-bar"}
            (dom/div {:className "top-bar-left"}
              (dom/ul {:className "menu"}
                      (dom/li nil
@@ -123,7 +123,8 @@
 
 (defn product-element [product]
   (dom/div {:className "column content-item product-item"}
-    (dom/a {:className "content-item-thumbnail-container"}
+    (dom/a {:className "content-item-thumbnail-container"
+            :href      (str "/goods/" (:id product))}
            (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:img-src product) ")")}}))
     (dom/div {:className "content-item-title-section"}
       (dom/a nil (:name product)))
@@ -133,6 +134,21 @@
         (dom/img {:className "user-rating"
                   :src       "/assets/img/rating-5.png"})
         (dom/small nil "(11)")))))
+
+(defn footer [opts]
+  (dom/div {:className "footer"}
+    (dom/footer {:className ""}
+                (dom/ul {:className "menu"}
+                        (dom/li {:className "menu-text"} (dom/small nil "Say hi anytime"))
+                        (dom/li nil (dom/a nil (dom/i {:className "fa fa-instagram fa-fw"})))
+                        (dom/li nil (dom/a nil (dom/i {:className "fa fa-twitter fa-fw"})))
+                        (dom/li nil (dom/a nil (dom/i {:className "fa fa-facebook fa-fw"})))
+                        (dom/li nil (dom/a nil (dom/i {:className "fa fa-envelope-o fa-fw"}))))
+
+                (dom/ul {:className "menu"}
+                        (dom/li nil (dom/a nil (dom/small nil "Privacy Policy")))
+                        (dom/li nil (dom/a nil (dom/small nil "Terms & Conditions")))
+                        (dom/li {:className "menu-text"} (dom/small nil "© Sulo 2016"))))))
 
 (defn budget-js-path [release?]
   (str "/"

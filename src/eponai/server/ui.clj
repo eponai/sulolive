@@ -3,6 +3,8 @@
     [om.next :as om]
     [om.dom :as dom]
     [eponai.server.ui.app :as app]
+    [eponai.server.ui.goods :as goods]
+    [eponai.server.ui.product :as product]
     [eponai.server.ui.index :as index]
     [eponai.server.ui.signup :as signup]
     [eponai.server.ui.store :as store]
@@ -27,9 +29,11 @@
          (render-fn# props#)))))
 
 ;; These will be defined by the defsite macro.
-(declare app-html index-html signup-html terms-html store-html)
+(declare app-html index-html signup-html terms-html store-html goods-html product-html)
 
 (defsite app-html app/App)
+(defsite goods-html goods/Goods)
+(defsite product-html product/Product)
 (defsite index-html index/Index)
 (defsite signup-html signup/Signup)
 (defsite store-html store/Store)
