@@ -10,9 +10,9 @@ DOCKER_IMAGE="$2"
 docker push $DOCKER_IMAGE 
 
 # Elastic Beanstalk vars
-EB_BUCKET=eponai
-EB_APP_NAME=jourmoney
-EB_ENV_NAME=jourmoney-prod-env
+EB_BUCKET=sulo-conf
+EB_APP_NAME=sulo
+EB_ENV_NAME=Custom-env
 
 # Create new Elastic Beanstalk version
 DOCKERRUN_FILE=$SHA1-Dockerrun.aws.json
