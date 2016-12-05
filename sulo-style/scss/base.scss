@@ -11,6 +11,7 @@ body {
   	-webkit-overflow-scrolling: touch;
 }
 
+$footer-height-small: 6rem;
 $footer-height: 4rem;
 
 .page-container {
@@ -19,21 +20,26 @@ $footer-height: 4rem;
 }
 
 .page-content {
-	padding-bottom: $footer-height;
+	padding-bottom: $footer-height-small;
 	padding-top: $navbar-height;
+	@include breakpoint(medium) {
+		padding-bottom: $footer-height;
+	}
 }
 
 .footer {
 	footer {
+		margin: auto 0;
 		height: 100%;
-		display: flex;
-		justify-content: space-between;	
-		align-items: center;
 	}
 	width: 100%;
 	position: absolute;
 	bottom: 0;
-	height: $footer-height;
+	height: $footer-height-small;
+	@include breakpoint(medium) {
+		height: $footer-height;
+		padding-top: 0.75rem;
+	}
 }
 
 .navbar-brand {
@@ -72,7 +78,7 @@ $footer-height: 4rem;
 			padding-top: 1rem;
 			display: flex;	
 			flex-direction: column;
-			@include breakpoint(medium) {
+			@include breakpoint(large) {
 				flex-direction: row;
 				justify-content: space-between;
 			}
@@ -80,7 +86,7 @@ $footer-height: 4rem;
 		.content-item-subtitle-section {
 			display: flex;
 			flex-direction: column;
-			@include breakpoint(medium) {
+			@include breakpoint(large) {
 				flex-direction: row;
 				justify-content: space-between;
 			}

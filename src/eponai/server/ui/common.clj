@@ -137,15 +137,15 @@
 
 (defn footer [opts]
   (dom/div {:className "footer"}
-    (dom/footer {:className ""}
-                (dom/ul {:className "menu"}
+    (dom/footer {:className "clearfix"}
+                (dom/ul {:className "menu float-left"}
                         (dom/li {:className "menu-text"} (dom/small nil "Say hi anytime"))
                         (dom/li nil (dom/a nil (dom/i {:className "fa fa-instagram fa-fw"})))
                         (dom/li nil (dom/a nil (dom/i {:className "fa fa-twitter fa-fw"})))
                         (dom/li nil (dom/a nil (dom/i {:className "fa fa-facebook fa-fw"})))
                         (dom/li nil (dom/a nil (dom/i {:className "fa fa-envelope-o fa-fw"}))))
 
-                (dom/ul {:className "menu"}
+                (dom/ul {:className "menu float-right"}
                         (dom/li nil (dom/a nil (dom/small nil "Privacy Policy")))
                         (dom/li nil (dom/a nil (dom/small nil "Terms & Conditions")))
                         (dom/li {:className "menu-text"} (dom/small nil "© Sulo 2016"))))))
