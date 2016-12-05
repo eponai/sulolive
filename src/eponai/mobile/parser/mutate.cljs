@@ -11,7 +11,7 @@
 
 (defmethod client-mutate 'app/set-route
   [{:keys [state]} _ {:keys [route]}]
-  {:action #(t/transact state [(set-route-tx route)])})
+  {:action #(db/transact state [(set-route-tx route)])})
 
 ;(defmethod mutate 'login/verify
 ;  [{:keys [state]} k {:keys [verify-uuid]}]
