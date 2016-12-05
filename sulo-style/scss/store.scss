@@ -35,7 +35,7 @@
 		&.shrink {
 			flex: 0 0;
 		}
-		@include breakpoint(medium) {
+		@include breakpoint(large) {
 			flex: 1;
 		}
 	}
@@ -53,16 +53,25 @@
 			padding: 2rem 0;
 		}
 		@include breakpoint(large) {
+			padding: 5rem 2rem;
+		}
+		@include breakpoint(xlarge) {
 			padding: 4rem;
 		}
-		.video-container {
+		#video-container {
 			max-width: 75rem;
+			height: 100%;
+			width: 100%;
 		}
 	}
 	#stream-chat {
 		// height: 100%;
+		display: none;
 		background: rgba($white, 0.7);
 		// box-shadow: inset 1px 0 3px 1px rgba($black, 0.2);
+		@include breakpoint(large) {
+			display: block;
+		}
 	}
 	.cover-container {
 		background: rgba(#3A5288, 0.2); 
@@ -76,10 +85,10 @@
 		height: 25rem;
 		// padding: 4rem 0;
 		@include breakpoint(medium) {
-			flex-direction: row;
 			height: 30rem;
 		}
 		@include breakpoint(large) {
+			flex-direction: row;
 			height: 40rem;
 		}
 		// background: white;

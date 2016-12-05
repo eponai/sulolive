@@ -111,9 +111,9 @@
               (dom/div {:className "cover-container"}
                 (dom/div {:className "cover-photo" :style {:background-image (str "url(" background-cover ")")}}
 
-                  (dom/div {:className "store-container cover-photo-section medium-2"}
+                  (dom/div {:className "store-container cover-photo-section large-2"}
                     (dom/div {:className "row store-short-info-container"}
-                      (dom/div {:className "column small-2 medium-12"}
+                      (dom/div {:className "column small-2 large-12"}
                         (dom/div {:className "content-item-thumbnail-container"}
                           (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:photo store) ")")}})))
 

@@ -60,9 +60,7 @@
     )
   (render [this]
     (html
-      [:div {:id "video-container"
-             :style {:height "100%"
-                     :width "100%"}}
+      [:div {:id "video-container"}
        [:video {:id "red5pro-subscriber" :class "video-js vjs-sublime-skin"}]
        ])))
 
