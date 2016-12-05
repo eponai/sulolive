@@ -85,6 +85,11 @@ html, body {
 		}
 
 		.featured-item-title-section {
+			span, a {
+				text-overflow: ellipsis;
+				overflow: hidden;
+				white-space: nowrap;
+			}
 			padding-top: 1rem;
 			display: flex;	
 			flex-direction: column;

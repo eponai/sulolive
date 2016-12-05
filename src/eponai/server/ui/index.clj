@@ -6,7 +6,7 @@
 
 
 
-(def mocked-goods
+(defn mocked-goods []
   (shuffle (mapcat :goods store/stores))
   ;[{:name    "Kids clothes"
   ;  :price   "$34.00"
@@ -22,51 +22,30 @@
   ;  :img-src "https://img0.etsystatic.com/057/2/5243597/il_570xN.729877080_d5f4.jpg"}]
   )
 
-(def mocked-channels
+(defn mocked-channels []
   (let [stores store/stores]
-    [{:name         "Wear and tear proof your clothes"
-      :store        (get stores 0)
-      :viewer-count 8
-      :img-src      "https://img1.etsystatic.com/122/0/10558959/isla_500x500.21872363_66njj7uo.jpg"}
-     {:name         "What's up with thread count"
-      :store        (get stores 1)
-      :viewer-count 13
-      :img-src      "https://img0.etsystatic.com/125/0/11651126/isla_500x500.17338368_6u0a6c4s.jpg"}
-     {:name         "Old looking leather, how?"
-      :store        (get stores 2)
-      :viewer-count 43
-      :img-src      "https://img1.etsystatic.com/121/0/6396625/isla_500x500.17289961_hkw1djlp.jpg"}
-     {:name         "Talking wedding bands"
-      :store        (get stores 3)
-      :viewer-count 3
-      :img-src      "https://img0.etsystatic.com/139/0/5243597/isla_500x500.22177516_ath1ugrh.jpg"}]))
+    (shuffle [{:name         "Wear and tear proof your clothes"
+               :store        (get stores 0)
+               :viewer-count 8
+               :img-src      "https://img1.etsystatic.com/122/0/10558959/isla_500x500.21872363_66njj7uo.jpg"}
+              {:name         "What's up with thread count"
+               :store        (get stores 1)
+               :viewer-count 13
+               :img-src      "https://img0.etsystatic.com/125/0/11651126/isla_500x500.17338368_6u0a6c4s.jpg"}
+              {:name         "Old looking leather, how?"
+               :store        (get stores 2)
+               :viewer-count 43
+               :img-src      "https://img1.etsystatic.com/121/0/6396625/isla_500x500.17289961_hkw1djlp.jpg"}
+              {:name         "Talking wedding bands"
+               :store        (get stores 3)
+               :viewer-count 3
+               :img-src      "https://img0.etsystatic.com/139/0/5243597/isla_500x500.22177516_ath1ugrh.jpg"}])))
 
-(def mocked-stores
+(defn mocked-stores []
   (let [featured-fn (fn [s]
                       (let [[img-1 img-2] (take 2 (shuffle (map :img-src (:goods s))))]
                         (assoc s :img-src [img-1 (:photo s) img-2])))]
-    (map featured-fn (shuffle store/stores)))
-  ;[{:name         "Kids clothes"
-  ;  :review-count "8"
-  ;  :img-src      ["https://img1.etsystatic.com/128/0/10558959/il_570xN.1062110535_7rew.jpg"
-  ;                 "https://img1.etsystatic.com/122/0/10558959/isla_500x500.21872363_66njj7uo.jpg"
-  ;                 "https://img0.etsystatic.com/152/0/10558959/il_570xN.1073678902_kvps.jpg"]}
-  ; {:name         "Accessories"
-  ;  :review-count "43"
-  ;  :img-src      ["https://img1.etsystatic.com/030/0/6396625/il_570xN.635631611_4c3s.jpg"
-  ;                 "https://img1.etsystatic.com/121/0/6396625/isla_500x500.17289961_hkw1djlp.jpg"
-  ;                 "https://img0.etsystatic.com/031/0/6396625/il_570xN.581066412_s3ff.jpg"]}
-  ; {:name         "Jewel"
-  ;  :review-count "3"
-  ;  :img-src      ["https://img1.etsystatic.com/140/1/5243597/il_570xN.930929519_ce8d.jpg"
-  ;                 "https://img0.etsystatic.com/139/0/5243597/isla_500x500.22177516_ath1ugrh.jpg"
-  ;                 "https://img0.etsystatic.com/140/1/5243597/il_570xN.964805038_b4eq.jpg"]}
-  ; {:name         "Beddings"
-  ;  :review-count "13"
-  ;  :img-src      ["https://img0.etsystatic.com/137/0/11651126/il_570xN.1003284712_ip5e.jpg"
-  ;                 "https://img0.etsystatic.com/125/0/11651126/isla_500x500.17338368_6u0a6c4s.jpg"
-  ;                 "https://img0.etsystatic.com/133/0/11651126/il_570xN.915745904_opjr.jpg"]}]
-  )
+    (map featured-fn (shuffle store/stores))))
 
 
 
@@ -188,7 +167,7 @@
                              "Stores streaming on the online market right now"
                              (map (fn [c]
                                     (online-channel-element c))
-                                  mocked-channels)
+                                  (mocked-channels))
                              "Check out more on the live market >>")
 
             (banner {:color :blue}
@@ -198,7 +177,7 @@
                              "Fresh from the oven goods"
                              (map (fn [p]
                                     (common/product-element p))
-                                  (take 4 mocked-goods))
+                                  (take 4 (mocked-goods)))
                              "Check out more goods >>")
 
             (banner {:color :green}
@@ -208,7 +187,7 @@
                              "Have you seen these stores?"
                              (map (fn [s]
                                     (store-element s))
-                                  mocked-stores)
+                                  (mocked-stores))
                              "Check out more stores >>")
 
             (banner {:color :default}

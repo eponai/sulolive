@@ -110,7 +110,8 @@
            (dom/div {:className "top-bar-left"}
              (dom/ul {:className "menu"}
                      (dom/li nil
-                             (dom/a {:className "navbar-brand"}
+                             (dom/a {:className "navbar-brand"
+                                     :href "/"}
                                     "Sulo"))))
 
            (dom/div {:className "top-bar-right"}

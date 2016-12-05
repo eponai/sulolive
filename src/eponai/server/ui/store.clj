@@ -130,9 +130,9 @@
 
           (dom/div {:className "items"}
             (apply dom/div {:className "featured-items-container row small-up-2 medium-up-4"}
-              (mapcat (fn [p]
-                        (map #(common/product-element %) (shuffle p)))
-                      (take 4 (repeat (:goods store))))))
+              (map (fn [p]
+                     (common/product-element p))
+                   (shuffle (apply concat (take 4 (repeat (:goods store))))))))
 
           ;(dom/script {:src "https://webrtc.github.io/adapter/adapter-latest.js"})
           (dom/script {:src "/lib/videojs/video.min.js"})
