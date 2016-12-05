@@ -109,14 +109,15 @@
             (common/navbar nil)
             (dom/div {:className "page-content"}
               (dom/div {:className "cover-container"}
-                (dom/div {:className "row cover-photo" :style {:background-image (str "url(" background-cover ")")}}
+                (dom/div {:className "cover-photo" :style {:background-image (str "url(" background-cover ")")}}
 
-                  (dom/div {:className "column small-12 medium-3 large-2 store-container"}
+                  (dom/div {:className "store-container cover-photo-section medium-2"}
                     (dom/div {:className "row store-short-info-container"}
-                      (dom/div {:className "columns small-4 medium-12"}
+                      (dom/div {:className "column small-2 medium-12"}
                         (dom/div {:className "content-item-thumbnail-container"}
                           (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:photo store) ")")}})))
-                      (dom/div {:className "column"}
+
+                      (dom/div {:className "content-item-title-section"}
                         (dom/a {:href (str "/store/" (:id store))} (dom/h1 {:className "store-name"} (:name store)))
                         (dom/div {:className "user-rating-container"}
                           (dom/i {:className "fa fa-star fa-fw"})
@@ -128,12 +129,13 @@
                           ;          :src       "/assets/img/rating-5.png"})
                           (dom/small nil "(23)")))))
 
-                  (dom/div {:id        "stream-container"
-                            :className "column medium-9 large-6 large-offset-1"})
+                  (dom/div {:className "cover-photo-section grow large-8"}
+                    (dom/div {:id "stream-container" }))
 
                   (dom/div {:id        "stream-chat"
-                            :className "column large-offset-1"}
-                    (dom/span nil "This is a message"))))
+                            :className "small-shrink cover-photo-section medium-2"}
+                    (dom/span nil "This is a message"))
+                  ))
 
               (dom/div {:className "store-nav"}
                 (dom/div {:className "row column"}
