@@ -1,8 +1,6 @@
 (ns eponai.client.figwheel.test-main
   (:require [eponai.client.tests :as tests]
             [eponai.client.utils :as utils]
-            [eponai.web.parser.mutate]
-            [eponai.web.parser.read]
             [cljs.test]
             [goog.dom :as gdom]
             [taoensso.timbre :as timbre :refer-macros [debug]]))
