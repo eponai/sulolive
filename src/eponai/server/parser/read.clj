@@ -106,4 +106,6 @@
     (prn "Read query/store: " store-id)
     (let [store (some #(when (= (Long/parseLong store-id) (:store/id %))
                         %) stores)]
-      {:value (select-keys store query)})))
+      {:value (-> (select-keys store query)
+                  (update :store/goods
+                          #(apply concat (take 4 (repeat %)))))})))
