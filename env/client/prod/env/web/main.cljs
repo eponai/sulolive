@@ -1,7 +1,6 @@
 (ns env.web.main
   (:require [eponai.web.app :as app]
-            [eponai.web.signup :as signup]
-            [eponai.web.playground :as playground]
+            [eponai.web.ui.stream :as stream]
             [taoensso.timbre :as timbre]))
 
 (taoensso.timbre/set-level! :info)
@@ -10,10 +9,7 @@
   (enable-console-print!)
   (app/run))
 
-(defn ^:export runsignup []
-  (enable-console-print!)
-  (signup/run))
 
-(defn ^:export runplayground []
+(defn ^:export runstream []
   (enable-console-print!)
-  (playground/run))
+  (stream/run))

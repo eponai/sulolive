@@ -3,10 +3,7 @@
             [cljsjs.react]
             [eponai.common.datascript_test]
             [eponai.common.diff-test]
-            [eponai.web.ui.add-transaction-test]
-            [eponai.client.read-test]
             [eponai.common.format.date-test]
-            [eponai.web.routes-test]
             [doo.runner :refer-macros [doo-tests]]
             [taoensso.timbre :refer-macros [info error]]))
 
@@ -28,10 +25,7 @@
 (enable-console-print!)
 ;; doo-tests sets *main-cli-fn* to a function that runs tests.
 (doo-tests 'eponai.common.datascript_test
-           'eponai.web.ui.add-transaction-test
-           'eponai.web.routes-test
            'eponai.common.format.date-test
            'eponai.common.diff-test
-           ;'eponai.client.read-test
            )
 

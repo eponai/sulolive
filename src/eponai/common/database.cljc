@@ -126,9 +126,8 @@
 
 (defn- where->query [where-clauses find-pattern symbols]
   {:pre [(vector? find-pattern)]}
-  {:find find-pattern
-   :in   (vec (concat '[$]
-                      symbols))
+  {:find  find-pattern
+   :in    (into '[$] symbols)
    :where where-clauses})
 
 (defn- x-with
@@ -144,7 +143,7 @@
            " are not equal. :find: " find " find-pattern: " find-pattern
            ". Use (find-with ...) instead of (all-with ...)"
            "or (one-with ...) when supplying your own :find."))
-   (let [find-pattern (or find find)
+   (let [find-pattern (or find find-pattern)
          symbol-seq (seq symbols)
          query (where->query where
                              find-pattern

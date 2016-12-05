@@ -19,7 +19,7 @@
                                  [(not ?d)]]}
                        (some? db-history)
                        (db/merge-query {:where   '[[$db-history ?e]]
-                                       :symbols {'$db-history db-history}}))]
+                                        :symbols {'$db-history db-history}}))]
      (mapv #(into {} (d/entity db %))
            (db/all-with db query)))))
 

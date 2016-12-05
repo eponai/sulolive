@@ -592,8 +592,10 @@
                         ))
          (fw/result-summary))))
 
-(test/deftest run-fullstack-tests
-  (let [ret (run)]
-    (test/is (zero? (:failures ret)))
-    (test/is (zero? (:skips ret)))
-    (test/is (pos? (:successes ret)))))
+(comment
+  "This is how we ran tests with jourmoney."
+  (test/deftest run-fullstack-tests
+   (let [ret (run)]
+     (test/is (zero? (:failures ret)))
+     (test/is (zero? (:skips ret)))
+     (test/is (pos? (:successes ret))))))

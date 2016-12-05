@@ -23,7 +23,7 @@
      (d/delete-database uri)
      (d/create-database uri)
      (let [conn (d/connect uri)]
-       (db/transact-schemas conn schemas)
+       (run! (partial db/transact conn) schemas)
        (db/transact conn [{:db/id         (d/tempid :db.part/user)
                                  :currency/code "USD"}])
        (when txs
