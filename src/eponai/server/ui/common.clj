@@ -122,11 +122,12 @@
                                     (dom/i {:className "fa fa-shopping-cart fa-fw"})))))))
 
 (defn product-element [product]
-  (dom/div {:className "column featured-item product-item"}
-    (dom/a {:className "featured-item-thumbnail" :style {:background-image (str "url(" (:img-src product) ")")}})
-    (dom/div {:className "featured-item-title-section"}
+  (dom/div {:className "column content-item product-item"}
+    (dom/a {:className "content-item-thumbnail-container"}
+           (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:img-src product) ")")}}))
+    (dom/div {:className "content-item-title-section"}
       (dom/a nil (:name product)))
-    (dom/div {:className "featured-item-subtitle-section"}
+    (dom/div {:className "content-item-subtitle-section"}
       (dom/strong nil (:price product))
       (dom/div {:className "user-rating-container"}
         (dom/img {:className "user-rating"

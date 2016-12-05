@@ -71,36 +71,37 @@
 (defn content-section [{:keys [class]} header content footer]
   (dom/div {:className "row column section text-center"}
     (dom/h3 {:className "text-center"} header)
-    (apply dom/div {:className "featured-items-container row small-up-2 medium-up-4"}
+    (apply dom/div {:className "content-items-container row small-up-2 medium-up-4"}
       content)
     (dom/a nil footer)))
 
 (defn online-channel-element [channel]
-  (dom/div {:className "column featured-item online-channel"}
-    (dom/a {:className "featured-item-thumbnail" :style {:background-image (str "url(" (:img-src channel) ")")}})
-    (dom/div {:className "featured-item-title-section"}
+  (dom/div {:className "column content-item online-channel"}
+    (dom/a {:className "content-item-thumbnail-container"}
+      (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:img-src channel) ")")}}))
+    (dom/div {:className "content-item-title-section"}
       (dom/a nil (dom/strong nil (:name channel)))
       (dom/div {:className "viewers-container"}
         (dom/i {:className "fa fa-eye fa-fw"})
         (dom/small nil (:viewer-count channel))))
-    (dom/div {:className "featured-item-subtitle-section"}
+    (dom/div {:className "content-item-subtitle-section"}
       (dom/a nil (:name (:store channel))))))
 
 (defn store-element [store]
   (let [[large mini-1 mini-2] (:img-src store)]
-    (dom/div {:className "column featured-item store-item"}
+    (dom/div {:className "column content-item store-item"}
       (dom/a {:href      (str "/store?id=" (:id store))
-              :className "store-collage featured-item-thumbnail-multi"}
-             (dom/div {:className "thumbnail-large"
+              :className "store-collage content-item-thumbnail-container"}
+             (dom/div {:className "content-item-thumbnail"
                        :style     {:background-image (str "url(" large ")")}})
-             (dom/div {:className "thumbnail-mini-container"}
-               (dom/div {:className "thumbnail-mini"
+             (dom/div {:className "content-item-thumbnail-mini-container"}
+               (dom/div {:className "content-item-thumbnail mini"
                          :style     {:background-image (str "url(" mini-1 ")")}})
-               (dom/div {:className "thumbnail-mini"
+               (dom/div {:className "content-item-thumbnail mini"
                          :style     {:background-image (str "url(" mini-2 ")")}})))
-      (dom/div {:className "featured-item-title-section"}
+      (dom/div {:className "content-item-title-section"}
         (dom/a nil (:name store)))
-      (dom/div {:className "featured-item-subtitle-section"}
+      (dom/div {:className "content-item-subtitle-section"}
         (dom/div {:className "user-rating-container"}
           (dom/img {:className "user-rating"
                     :src       "/assets/img/rating-5.png"})
@@ -135,7 +136,7 @@
               (dom/div {:className "row column header-content"}
                 (dom/h1 nil "Go to the market in the comfort of your own home")
                 (dom/div {:className "search-container row"}
-                  (dom/div {:className "column small-8 medium-6"}
+                  (dom/div {:className "column small-12 medium-6"}
                     (dom/input {:placeholder "What are you shopping for?"
                                 :type        "text"}))
                   (dom/div {:className "column"}

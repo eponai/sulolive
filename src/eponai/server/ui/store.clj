@@ -129,7 +129,7 @@
                       (dom/li nil (dom/a nil "Duvets")))))
 
           (dom/div {:className "items"}
-            (apply dom/div {:className "featured-items-container row small-up-2 medium-up-4"}
+            (apply dom/div {:className "content-items-container row small-up-2 medium-up-4"}
               (map (fn [p]
                      (common/product-element p))
                    (shuffle (apply concat (take 4 (repeat (:goods store))))))))
