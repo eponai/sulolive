@@ -2,6 +2,7 @@
   (:require
     [om.next :as om]
     [om.dom :as dom]
+    [eponai.common.parser :as parser]
     [eponai.server.ui.app :as app]
     [eponai.server.ui.goods :as goods]
     [eponai.server.ui.product :as product]
@@ -20,13 +21,11 @@
 (defmacro defsite
   "Defines a function named name, that takes props and returns html."
   [name component]
-  `(let [render-fn# (partial render-to-str ~component)
-         mem-fn# (memoize render-fn#)
-         props# (gensym)]
+  `(let [props# (gensym)]
      (defn ~name [props#]
-       (if (:release? props#)
-         (mem-fn# props#)
-         (render-fn# props#)))))
+       (let [component-props# ((::component->props-fn props#) ~component)]
+         (render-to-str ~component (merge component-props#
+                                          (dissoc props# ::component->props-fn)))))))
 
 ;; These will be defined by the defsite macro.
 (declare app-html index-html signup-html terms-html store-html goods-html product-html)

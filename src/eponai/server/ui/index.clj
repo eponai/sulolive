@@ -108,6 +108,8 @@
           (dom/small nil "(23)"))))))
 
 (defui Index
+  static om/IQuery
+  (query [this] [:foo])
   Object
   (render [this]
     (let [{:keys [release?]} (om/props this)]

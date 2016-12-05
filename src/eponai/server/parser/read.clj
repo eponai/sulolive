@@ -9,3 +9,7 @@
   [{:keys [db db-history]} _ _]
   {:value (-> (query/schema db db-history)
               (eponai.datascript/schema-datomic->datascript))})
+
+(defmethod server-read :foo
+  [{:keys [db db-history]} _ _]
+  {:value {:FOO "IS THE SHIT"}})
