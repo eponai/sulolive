@@ -128,7 +128,8 @@
      :state                             conn
      :auth                              (or playground-auth (friend/current-authentication request))
      :stripe-fn                         stripe-fn
-     :fb-validate-fn                    facebook-token-validator}
+     :fb-validate-fn                    facebook-token-validator
+     :params                            (:params request)}
     (:query body)))
 
 (defn trace-parser-response-handlers

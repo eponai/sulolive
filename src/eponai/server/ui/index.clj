@@ -1,26 +1,13 @@
 (ns eponai.server.ui.index
   (:require [om.next :as om :refer [defui]]
             [om.dom :as dom]
-            [eponai.server.ui.store :as store]
+            [eponai.server.parser.read :as store]
             [eponai.server.ui.common :as common :refer [text-javascript]]))
 
 
 
 (defn mocked-goods []
-  (shuffle (mapcat :goods store/stores))
-  ;[{:name    "Kids clothes"
-  ;  :price   "$34.00"
-  ;  :img-src "https://img0.etsystatic.com/112/0/10558959/il_570xN.1006376182_5fke.jpg"}
-  ; {:name    "Beddings"
-  ;  :price   "$52.00"
-  ;  :img-src "https://img0.etsystatic.com/137/0/11651126/il_570xN.1003284712_ip5e.jpg"}
-  ; {:name    "Accessories"
-  ;  :price   "$134.00"
-  ;  :img-src "https://img1.etsystatic.com/030/0/6396625/il_570xN.635631611_4c3s.jpg"}
-  ; {:name    "Jewel"
-  ;  :price   "$34.00"
-  ;  :img-src "https://img0.etsystatic.com/057/2/5243597/il_570xN.729877080_d5f4.jpg"}]
-  )
+  (shuffle (mapcat :goods store/stores)))
 
 (defn mocked-channels []
   (let [stores store/stores]

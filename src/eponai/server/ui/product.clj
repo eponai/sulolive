@@ -1,7 +1,7 @@
 (ns eponai.server.ui.product
   (:require
     [eponai.server.ui.common :as common]
-    [eponai.server.ui.store :as store]
+    [eponai.server.parser.read :as store]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]))
 
