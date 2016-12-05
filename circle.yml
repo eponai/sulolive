@@ -16,7 +16,7 @@ machine:
 
 dependencies:
   cache_directories:
-    - jourmoney-style/node_modules
+    - sulo-style/node_modules
   pre:
     - pip install awscli
     - npm install -g npm
