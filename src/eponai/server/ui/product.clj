@@ -40,10 +40,15 @@
 
 
               (dom/div {:className "row product-container"}
-                (dom/div {:className "column small-12 medium-8"}
-                  (dom/div {:className "product-photo-container"}
-                    (dom/div {:className "product-photo" :style {:background-image (str "url(" (:img-src product) ")")}})))
-                (dom/div {:className "column product-info-container"}
+                (dom/div {:className "column small-12 medium-8 small-order-2 medium-order-1"}
+                  (dom/div {:className "product-photo-container row"}
+                    (dom/div {:className "product-photo" :style {:background-image (str "url(" (:img-src product) ")")}}))
+                  (apply dom/div {:className "row small-up-4 medium-up-6"}
+                    (map (fn [im]
+                           (dom/div {:className "column"}
+                             (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" im ")")}})))
+                         (take 4 (repeat (:img-src product))))))
+                (dom/div {:className "column product-info-container small-order-1 medium-order-2"}
                   (dom/div {:className "product-info"}
                     (dom/h2 {:className "product-info-title"} (:name product))
                     (dom/h3 {:className "product-info-price"}

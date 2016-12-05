@@ -1,7 +1,5 @@
 #sulo-product {
-	nav {
-		position: relative;
-	}
+
 
 	.store-container {
 		h1 {
@@ -24,6 +22,7 @@
 			background-size: contain;
 			background-repeat: no-repeat;
 			background-position: center center;
+			width: 100%;
 			padding-top: 75%;
 		}
 	}

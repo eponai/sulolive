@@ -101,24 +101,29 @@
         (apply dom/head nil (common/head release?))
 
         (dom/body
-          {:id "sulo-store"}
-          (common/navbar nil)
-          (dom/div {:className "cover-photo" :style {:background-image (str "url(" (:cover store) ")")}}
-            (dom/div {:id "stream-container"
-                      :className "row column"}))
+          nil
+          (dom/div
+            {:id "sulo-store"
+             :className "page-container"}
+            (common/navbar nil)
+            (dom/div {:className "page-content"}
+              (dom/div {:className "cover-photo" :style {:background-image (str "url(" (:cover store) ")")}}
+                (dom/div {:id        "stream-container"
+                          :className "row column"}))
 
-          (dom/div {:className "store-nav"}
-            (dom/div {:className "row column"}
-              (dom/ul {:className "menu"}
-                      (dom/li nil (dom/a nil "Sheets"))
-                      (dom/li nil (dom/a nil "Pillows"))
-                      (dom/li nil (dom/a nil "Duvets")))))
+              (dom/div {:className "store-nav"}
+                (dom/div {:className "row column"}
+                  (dom/ul {:className "menu"}
+                          (dom/li nil (dom/a nil "Sheets"))
+                          (dom/li nil (dom/a nil "Pillows"))
+                          (dom/li nil (dom/a nil "Duvets")))))
 
-          (dom/div {:className "items"}
-            (apply dom/div {:className "content-items-container row small-up-2 medium-up-4"}
-              (map (fn [p]
-                     (common/product-element p))
-                   (shuffle (apply concat (take 4 (repeat (:goods store))))))))
+              (dom/div {:className "items"}
+                (apply dom/div {:className "content-items-container row small-up-2 medium-up-4"}
+                       (map (fn [p]
+                              (common/product-element p))
+                            (shuffle (apply concat (take 4 (repeat (:goods store)))))))))
+            (common/footer nil))
 
           ;(dom/script {:src "https://webrtc.github.io/adapter/adapter-latest.js"})
           (dom/script {:src "/lib/videojs/video.min.js"})

@@ -17,15 +17,19 @@
         (apply dom/head nil (common/head release?))
 
         (dom/body
-          {:id "sulo-goods"}
-          (common/navbar nil)
+          nil
+          (dom/div
+            {:id "sulo-goods"
+             :className "page-container"}
+            (common/navbar nil)
 
-          (dom/div {:className "page-content"}
-            (dom/div {:className "items"}
-              (apply dom/div {:className "content-items-container row small-up-2 medium-up-4"}
-                     (map (fn [p]
-                            (common/product-element p))
-                          (shuffle goods)))))
+            (dom/div {:className "page-content"}
+              (dom/div {:className "items"}
+                (apply dom/div {:className "content-items-container row small-up-2 medium-up-4"}
+                       (map (fn [p]
+                              (common/product-element p))
+                            (shuffle goods)))))
+            (common/footer nil))
 
           ;(dom/script {:src "https://webrtc.github.io/adapter/adapter-latest.js"})
           (dom/script {:src "/lib/videojs/video.min.js"})

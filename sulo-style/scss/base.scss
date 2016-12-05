@@ -20,6 +20,7 @@ $footer-height: 4rem;
 
 .page-content {
 	padding-bottom: $footer-height;
+	padding-top: $navbar-height;
 }
 
 .footer {
@@ -98,17 +99,17 @@ $footer-height: 4rem;
 
 .content-item-thumbnail-container {
 	box-shadow: 1px 1px 3px 1px rgba($black, 0.1);
-	.content-item-thumbnail {
-		background-size: cover;
-		background-repeat: no-repeat;
-		background-position: center center;
-		padding-top: 100%;
-		&.mini {
-			width: 50%;
-			padding-top: 50%;
-		}
-	}
 	.content-item-thumbnail-mini-container {
 		display: flex;
+	}
+}
+.content-item-thumbnail {
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-position: center center;
+	padding-top: 100%;
+	&.mini {
+		width: 50%;
+		padding-top: 50%;
 	}
 }
