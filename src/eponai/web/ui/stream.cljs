@@ -62,7 +62,7 @@
     (html
       [:div {:id "video-container"
              :style {:height "100%"
-                     :width "75%"}}
+                     :width "100%"}}
        [:video {:id "red5pro-subscriber" :class "video-js vjs-sublime-skin"}]
        ])))
 

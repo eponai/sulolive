@@ -2,6 +2,17 @@
 	nav {
 		position: relative;
 	}
+	.page-content {
+		padding-top: 0;
+		@include breakpoint(medium) {
+			padding-top: 2rem;
+		}
+	}
+	.store-container {
+		// position: absolute;
+		// width: 20rem;
+		// padding: 0 2rem;
+	}
 	#stream-container {
 		height: 100%;
 		width: 100%;
@@ -9,13 +20,17 @@
 		justify-content: center;
 	}
 	.cover-photo {
+		&.row {
+			max-width: 100%;
+		}
 		height: 20rem;
-		padding: 4rem 0;
+		// padding: 4rem 0;
 		@include breakpoint(medium) {
 			height: 30rem;
 		}
 		@include breakpoint(large) {
 			height: 40rem;
+			padding-bottom: 2rem;
 		}
 		// background: white;
 		background-image: url("https://img0.etsystatic.com/151/0/11651126/isbl_3360x840.22956500_1bj341c6.jpg");
@@ -32,5 +47,13 @@
 		ul {
 			background: transparent;
 		}
+	}
+}
+.store-container {
+	h1 {
+		font-size: 1.6rem;
+	}
+	.user-rating {
+		height: 1.2rem;
 	}
 }

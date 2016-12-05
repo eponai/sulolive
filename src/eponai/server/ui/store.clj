@@ -107,9 +107,22 @@
              :className "page-container"}
             (common/navbar nil)
             (dom/div {:className "page-content"}
-              (dom/div {:className "cover-photo" :style {:background-image (str "url(" (:cover store) ")")}}
+              (dom/div {:className "row cover-photo" :style {:background-image (str "url(" (:cover store) ")")}}
+
+                (dom/div {:className "column small-12 medium-3 large-2 store-container"}
+                  (dom/div {:className "row"}
+                    (dom/div {:className "columns small-4 medium-12"}
+                      (dom/div {:className "content-item-thumbnail-container"}
+                        (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:photo store) ")")}})))
+                    (dom/div {:className "column"}
+                      (dom/a {:href (str "/store/" (:id store))} (dom/h1 {:className "store-name"} (:name store)))
+                      (dom/div {:className "user-rating-container"}
+                        (dom/img {:className "user-rating"
+                                  :src       "/assets/img/rating-5.png"})
+                        (dom/small nil "(23)")))))
+
                 (dom/div {:id        "stream-container"
-                          :className "row column"}))
+                          :className "column medium-9 large-6 large-offset-1"}))
 
               (dom/div {:className "store-nav"}
                 (dom/div {:className "row column"}
