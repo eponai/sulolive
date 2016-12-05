@@ -5,7 +5,7 @@
             [compojure.core :refer :all]
             [datomic.api :as d]
             [eponai.common.database :as db]
-            [eponai.common.database.pull :as pull]
+            [eponai.common.database.query :as pull]
             [eponai.common.format :as common.format]
             [eponai.server.datomic.format :as datomic.format]
             [eponai.server.external.stripe :as stripe]

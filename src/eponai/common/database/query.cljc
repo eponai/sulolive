@@ -1,10 +1,9 @@
-(ns eponai.common.database.pull
+(ns eponai.common.database.query
   (:require
     [taoensso.timbre :refer [error debug trace info warn]]
     [eponai.common.database :as db]
     [datascript.db]
     [eponai.common.parser.util :as parser]))
-
 
 (defn project []
   {:where '[[?e :project/uuid]]})
