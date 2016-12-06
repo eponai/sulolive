@@ -12,6 +12,14 @@ else
   echo "Using foundation: $foundation_install"
 fi
 
+bower_install=$(which bower)
+if [ "0" != "$?" ]; then
+  echo "Could not find bower. Installing globally"
+  npm install -g bower
+else
+  echo "Using bower: $bower_install"
+fi
+
 cd "$foundation_dir"
 npm install
 bower install
