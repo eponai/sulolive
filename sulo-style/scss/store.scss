@@ -10,6 +10,7 @@
 		$nude: #F0EDE3;
 		background: rgba($brown, 0.3);
 		color: $nude;
+		box-shadow: 1px 0 2px 0 rgba($black, 0.5);
 		h1 {
 			color: $nude;
 			text-shadow: 1px 1px 1px rgba($black, 0.7);
@@ -78,13 +79,30 @@
 			max-width: 75rem;
 			flex: 1;
 			// min-height: 
+			box-shadow: 0px 1px 4px 0 rgba($black, 0.5);
 		}
 	}
-	#stream-chat {
+	.stream-chat-container {
 		display: none;
 		background: rgba($white, 0.7);
+		box-shadow: -1px 0 2px 0 rgba($black, 0.5);
 		@include breakpoint(large) {
-			display: block;
+			display: flex;
+			flex-direction: column;
+			justify-content: flex-end;
+		}
+		.stream-chat-content {
+			color: $black;
+			padding: 1rem;
+			font-weight: 500;
+			text-shadow: 0px 1px 1px rgba($white, 0.5);
+		}
+		.stream-chat-input {
+			padding: 0 0.5rem;
+			input {
+				margin: 0;
+			}
+			// box-shadow: 1px 2px 2px 0 rgba($black, 0.5);
 		}
 	}
 	.cover-photo {

@@ -56,9 +56,13 @@
                   (dom/div {:className "large-8"}
                     (dom/div {:id "stream-container" }))
 
-                  (dom/div {:id        "stream-chat"
-                            :className "medium-2"}
-                    (dom/span nil "This is a message"))))
+                  (dom/div {:className "medium-2 stream-chat-container"}
+                    (dom/div {:className "stream-chat-content"}
+                      (dom/span nil "This is a message"))
+                    (dom/div {:className "stream-chat-input"}
+                      (dom/input {:type        "text"
+                                  :placeholder "Your message..."})
+                      (dom/a {:className "button expanded"} "Send")))))
 
               (dom/div {:className "store-nav"}
                 (dom/div {:className "row column"}
