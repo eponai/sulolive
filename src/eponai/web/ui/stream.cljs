@@ -1,14 +1,8 @@
 (ns eponai.web.ui.stream
   (:require
-    [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
     [sablono.core :refer [html]]
-    [taoensso.timbre :refer [debug]]
-    [eponai.client.utils :as utils]
-    [eponai.common.parser :as parser]
-    [eponai.client.backend :as backend]
-    [eponai.client.remotes :as remotes]
-    [eponai.client.parser.merge :as merge]))
+    [taoensso.timbre :refer [debug]]))
 
 (defui VideoApp
   Object
@@ -50,8 +44,7 @@
                     ))
             (catch (fn [error]
                      (debug "Subscribe error: " error))))
-        subscriber
-        )))
+        subscriber)))
   (componentDidMount [this]
     ;(.publish this)
     (.subscribe this)
@@ -63,14 +56,4 @@
       [:div {:id "video-container"}
        [:video {:id "red5pro-subscriber" :class "video-js vjs-sublime-skin"}]
        ])))
-
-(defn run []
-  (debug "Run video")
-  (let [conn (utils/init-conn)
-        reconciler (om/reconciler {:state   conn
-                                   :parser  (parser/client-parser)
-                                   :remotes []
-                                   :migrate nil})]
-    (reset! utils/reconciler-atom reconciler)
-    (om/add-root! reconciler VideoApp (gdom/getElement "stream-container"))))
 

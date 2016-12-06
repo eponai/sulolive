@@ -1,5 +1,6 @@
 (ns eponai.server.ui.product
   (:require
+    [eponai.common.ui.common :as cljc-common]
     [eponai.server.ui.common :as common]
     [eponai.server.parser.read :as store]
     [om.dom :as dom]
@@ -33,7 +34,7 @@
                     (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:store/photo store) ")")}})))
                 (dom/div {:className "columns"}
                   (dom/a {:href (str "/store/" (:store/id store))} (dom/h1 {:className "store-name"} (:store/name store)))
-                  (common/rating-element (:store/rating store) (:store/review-count store))))
+                  (cljc-common/rating-element (:store/rating store) (:store/review-count store))))
 
 
               (dom/div {:className "row product-container"}

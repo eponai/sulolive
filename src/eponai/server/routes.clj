@@ -34,7 +34,6 @@
   {:release?                       (release? request)
    :params                         (:params request)
    ::server.ui/component->props-fn (fn [component]
-                                     (prn "Calling component, props stuff with quer: " (pr-str component) (om/get-query component))
                                      (-> request
                                          (assoc :body {:query (om/get-query component)})
                                          (handle-parser-request)))})

@@ -1,8 +1,10 @@
 (ns eponai.server.ui.index
-  (:require [om.next :as om :refer [defui]]
-            [om.dom :as dom]
-            [eponai.server.parser.read :as store]
-            [eponai.server.ui.common :as common :refer [text-javascript]]))
+  (:require
+    [eponai.common.ui.common :as cljc-common]
+    [eponai.server.parser.read :as store]
+    [eponai.server.ui.common :as clj-common :refer [text-javascript]]
+    [om.dom :as dom]
+    [om.next :as om :refer [defui]]))
 
 
 
@@ -30,7 +32,7 @@
 
 (defn mocked-stores []
   (let [featured-fn (fn [s]
-                      (let [[img-1 img-2] (take 2 (shuffle (map :img-src (:store/goods s))))]
+                      (let [[img-1 img-2] (take 2 (shuffle (map :item/img-src (:store/goods s))))]
                         (assoc s :img-src [img-1 (:store/photo s) img-2])))]
     (map featured-fn (shuffle store/stores))))
 
@@ -89,7 +91,7 @@
       (dom/div {:className "content-item-title-section"}
         (dom/a nil (:store/name store)))
       (dom/div {:className "content-item-subtitle-section"}
-        (common/rating-element (:store/rating store) (:store/review-count store))))))
+        (cljc-common/rating-element (:store/rating store) (:store/review-count store))))))
 
 (defui Index
   static om/IQuery
@@ -100,13 +102,13 @@
       (dom/html
         {:lang "en"}
 
-        (apply dom/head nil (common/head release?))
+        (apply dom/head nil (clj-common/head release?))
         (dom/body nil
-          (dom/div
+                  (dom/div
             {:id "sulo-start"
              :className "page-container"}
-            (common/navbar nil)
-            (dom/div {:className "page-content"}
+                    (clj-common/navbar nil)
+                    (dom/div {:className "page-content"}
               (dom/svg {:height 0}
                        (dom/defs nil
                                  (dom/mask {:id               "header-alpha-mask"
@@ -165,7 +167,7 @@
               (content-section {:href "/goods"}
                                "Fresh from the oven goods"
                                (map (fn [p]
-                                      (common/product-element p))
+                                      (cljc-common/product-element p))
                                     (take 4 (mocked-goods)))
                                "Check out more goods >>")
 
@@ -188,4 +190,4 @@
                       (dom/h2 nil "Start streaming on Sulo and tell your story to your customers")
                       (dom/a {:className "button secondary"} "Contact us")))
 
-            (common/footer nil)))))))
+                    (clj-common/footer nil)))))))

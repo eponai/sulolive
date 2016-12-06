@@ -18,22 +18,15 @@
   {:pre [(some? (:release? props))]}
   (with-doctype (dom/render-to-str ((om/factory component) props))))
 
-(defmacro defsite
-  "Defines a function named name, that takes props and returns html."
-  [name component]
-  `(let [props# (gensym)]
-     (defn ~name [props#]
-       (let [component-props# ((::component->props-fn props#) ~component)]
-         (render-to-str ~component (merge component-props#
-                                          (dissoc props# ::component->props-fn)))))))
+(defn makesite [component]
+  (fn [props]
+    (let [component-props ((::component->props-fn props) component)
+          ret (render-to-str component (merge component-props
+                                              (dissoc props ::component->props-fn)))]
+      ret)))
 
-;; These will be defined by the defsite macro.
-(declare app-html index-html signup-html terms-html store-html goods-html product-html)
-
-(defsite app-html app/App)
-(defsite goods-html goods/Goods)
-(defsite product-html product/Product)
-(defsite index-html index/Index)
-(defsite signup-html signup/Signup)
-(defsite store-html store/Store)
-(defsite terms-html terms/Terms)
+(def app-html (makesite app/App))
+(def goods-html (makesite goods/Goods))
+(def product-html (makesite product/Product))
+(def index-html (makesite index/Index))
+(def store-html (makesite store/Store))

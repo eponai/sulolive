@@ -171,7 +171,7 @@
 
   :figwheel {:css-dirs    ["resources/public/assets/css/"]
              :server-port ~(read-string (or (System/getenv "FIGWHEEL_PORT") "3449"))
-             :reload-clj-files {:clj true :cljc false}
+             :reload-clj-files {:clj true :cljc true}
  }
 
   :profiles {:uberjar  {:jvm-opts   ^:replace ["-Dclojure.compiler.direct-linking=true"
@@ -245,6 +245,7 @@
                                                              }}]}}
              :web      {:dependencies [[figwheel-sidecar "0.5.7"]]
                         :cljsbuild {:builds [{:id           "dev"
+                                              :figwheel     {:on-jsload "eponai.web.figwheel/reload!"}
                                               :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
                                               :compiler     {:main          "env.web.main"
                                                              :asset-path    "/dev/js/out"

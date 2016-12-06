@@ -1,6 +1,7 @@
 (ns eponai.server.ui.goods
   (:require
-    [eponai.server.ui.common :as common]
+    [eponai.common.ui.common :as cljc-common]
+    [eponai.server.ui.common :as clj-common]
     [eponai.server.parser.read :as store]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]))
@@ -18,22 +19,22 @@
       (dom/html
         {:lang "en"}
 
-        (apply dom/head nil (common/head release?))
+        (apply dom/head nil (clj-common/head release?))
 
         (dom/body
           nil
           (dom/div
             {:id "sulo-goods"
              :className "page-container"}
-            (common/navbar nil)
+            (clj-common/navbar nil)
 
             (dom/div {:className "page-content"}
               (dom/div {:className "items"}
                 (apply dom/div {:className "content-items-container row small-up-2 medium-up-4"}
                        (map (fn [p]
-                              (common/product-element p))
+                              (cljc-common/product-element p))
                             (shuffle all-items)))))
-            (common/footer nil))
+            (clj-common/footer nil))
 
           ;(dom/script {:src "https://webrtc.github.io/adapter/adapter-latest.js"})
           ;(dom/script {:src "/lib/videojs/video.min.js"})
