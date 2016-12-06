@@ -23,7 +23,8 @@
                      :store/review-count]} {:store-id ?store-id})])
   Object
   (render [this]
-    (let [{:keys [query/store]} (om/props this)
+    (let [{:keys [show-item]} (om/get-state this)
+          {:keys [query/store]} (om/props this)
           {:keys      [store/cover store/review-count store/rating store/photo store/goods]
            store-name :store/name} store]
       (dom/div
@@ -39,8 +40,7 @@
 
                 (dom/div #js {:className "content-item-title-section"}
                   (dom/h1 #js {:className "store-name"} store-name)
-                  (common/rating-element rating review-count)
-                  ))
+                  (common/rating-element rating review-count)))
 
               (dom/ul #js {:className "menu vertical store-main-menu"}
                       (dom/li nil (dom/a nil "About"))
@@ -68,8 +68,11 @@
         (dom/div #js {:className "items"}
           (apply dom/div #js {:className "content-items-container row small-up-2 medium-up-4"}
                  (map (fn [p]
-                        (common/product-element p)
-                        )
-                      (shuffle goods))))))))
+                        (common/product-element p {:on-click #(om/update-state! this assoc :show-item p)}))
+                      goods)))
+
+        (when (some? show-item)
+          (common/modal {:on-close #(om/update-state! this dissoc :show-item)}
+                        (dom/h1 nil "Show product: " (:item/name show-item))))))))
 
 (def ->Store (om/factory Store))

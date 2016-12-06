@@ -11,6 +11,13 @@ body {
   	-webkit-overflow-scrolling: touch;
 }
 
+.reveal-overlay {
+	display: block;
+	.reveal {
+		display: block;
+	}
+}
+
 $footer-height-small: 6rem;
 $footer-height: 4rem;
 

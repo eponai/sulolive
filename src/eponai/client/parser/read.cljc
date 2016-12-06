@@ -106,7 +106,6 @@
 
 (defmethod client-read :query/store
   [{:keys [query]} _ {:keys [store-id] :as p}]
-  (prn "Read with params:  " p)
   (let [store (some #(when (= #?(:cljs (cljs.reader/read-string store-id)
                                  :clj  (Long/parseLong store-id)) (:store/id %))
                       %) stores)]
