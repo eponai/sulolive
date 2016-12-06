@@ -5,12 +5,6 @@
     [eponai.server.datomic.query :as query]
     [taoensso.timbre :as timbre :refer [error debug trace warn]]))
 
-(defmethod server-read :datascript/schema
-  [{:keys [db db-history]} _ _]
-  {:value (-> (query/schema db db-history)
-              (eponai.datascript/schema-datomic->datascript))})
-
-
 (def stores
   [{:store/name         "HeadnTail"
     :store/id           0
@@ -99,6 +93,11 @@
                           :item/img-src "https://img0.etsystatic.com/139/3/5243597/il_570xN.931188156_qhqe.jpg"
                           :item/price   "$34.00"
                           :item/id      "33"}]}])
+
+(defmethod server-read :datascript/schema
+  [{:keys [db db-history]} _ _]
+  {:value (-> (query/schema db db-history)
+              (eponai.datascript/schema-datomic->datascript))})
 
 (defmethod server-read :query/store
   [{:keys [query params]} _ _]

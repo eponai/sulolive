@@ -2,9 +2,10 @@
   (:require
     [eponai.client.utils :as utils]
     [eponai.common.parser :as parser]
+    [eponai.client.parser.read]
     [goog.dom :as gdom]
     [om.next :as om]
-    [eponai.web.ui.stream :refer [VideoApp]]
+    [eponai.common.ui.store :refer [Store]]
     [taoensso.timbre :refer [debug]]))
 
 (defn store []
@@ -15,4 +16,4 @@
                                    :remotes []
                                    :migrate nil})]
     (reset! utils/reconciler-atom reconciler)
-    (om/add-root! reconciler VideoApp (gdom/getElement "stream-container"))))
+    (om/add-root! reconciler Store (gdom/getElement "sulo-store-container"))))

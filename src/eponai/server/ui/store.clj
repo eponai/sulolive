@@ -22,7 +22,7 @@
             {:id "sulo-store"
              :className "page-container"}
             (common/navbar nil)
-            (dom/div {:className "page-content"}
+            (dom/div {:className "page-content" :id "sulo-store-container"}
               (common.store/->Store store)
               )
             (common/footer nil))

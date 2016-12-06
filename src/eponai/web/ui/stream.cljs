@@ -4,7 +4,7 @@
     [sablono.core :refer [html]]
     [taoensso.timbre :refer [debug]]))
 
-(defui VideoApp
+(defui Stream
   Object
   (subscribe [this]
     (let [subscriber (new js/red5prosdk.Red5ProSubscriber)
@@ -57,3 +57,4 @@
        [:video {:id "red5pro-subscriber" :class "video-js vjs-sublime-skin"}]
        ])))
 
+(def ->Stream (om/factory Stream))
