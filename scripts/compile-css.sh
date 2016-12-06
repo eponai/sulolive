@@ -14,6 +14,7 @@ fi
 
 cd "$foundation_dir"
 npm install
+bower install
 
 if [[ $# -ge 1 ]]; then
   echo "Calling: foundation $@"
