@@ -22,6 +22,7 @@ dependencies:
   pre:
     - pip install awscli
     - npm install -g npm
+    - npm install -g bower
     - npm install -g foundation-cli
   override:
     - lein deps
