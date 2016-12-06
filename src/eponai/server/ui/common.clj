@@ -121,6 +121,21 @@
                                     (dom/span nil "$0.00")
                                     (dom/i {:className "fa fa-shopping-cart fa-fw"})))))))
 
+(defn rating-element [rating review-count]
+  (prn "Got rating: " rating)
+  (let [full-stars (repeat rating "fa fa-star fa-fw")
+        half-stars (if (< 0 (- rating (count full-stars)))
+                     ["fa fa-star-half-o fa-fw"] [])
+        empty-stars (repeat (- 5 (count full-stars) (count half-stars)) "fa fa-star-o fa-fw")
+        _ (prn "Got stars: " full-stars " half: " half-stars " empty: " empty-stars)
+        all-stars (concat full-stars half-stars empty-stars)]
+    (dom/div {:className "user-rating-container"}
+      (apply dom/span nil
+             (map (fn [cl]
+                    (dom/i {:className cl}))
+                  all-stars))
+      (dom/span nil (str "(" review-count ")")))))
+
 (defn product-element [product]
   (dom/div {:className "column content-item product-item"}
     (dom/a {:className "content-item-thumbnail-container"
@@ -130,10 +145,7 @@
       (dom/a nil (:name product)))
     (dom/div {:className "content-item-subtitle-section"}
       (dom/strong nil (:price product))
-      (dom/div {:className "user-rating-container"}
-        (dom/img {:className "user-rating"
-                  :src       "/assets/img/rating-5.png"})
-        (dom/small nil "(11)")))))
+      (rating-element 5 11))))
 
 (defn footer [opts]
   (dom/div {:className "footer"}

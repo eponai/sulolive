@@ -81,6 +81,7 @@ $footer-height: 4rem;
 			@include breakpoint(large) {
 				flex-direction: row;
 				justify-content: space-between;
+				align-items: center;
 			}
 		}
 		.content-item-subtitle-section {
@@ -89,10 +90,11 @@ $footer-height: 4rem;
 			@include breakpoint(large) {
 				flex-direction: row;
 				justify-content: space-between;
+				align-items: center;
 			}
 		}
-		.user-rating {
-			height: 0.8rem;
+		.user-rating-container {
+			font-size: 0.9rem;
 		}
 
 		.viewers-container {

@@ -9,10 +9,10 @@
 		$brown: #2E2A31;
 		$nude: #F0EDE3;
 		background: rgba($brown, 0.3);
-		color: $nude;
+		color: $white;
 		box-shadow: 1px 0 2px 0 rgba($black, 0.5);
-		h1 {
-			color: $nude;
+		h1, small {
+			color: $white;
 			text-shadow: 1px 1px 1px rgba($black, 0.7);
 		}
 		i {
@@ -32,7 +32,7 @@
 					background: rgba($brown, 0.7);
 				}
 				a {
-					color: $nude;
+					color: $white;
 					font-weight: 500;
 				text-shadow: 1px 1px 1px rgba($black, 0.7);
 				}

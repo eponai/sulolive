@@ -12,11 +12,13 @@
                     :store/cover
                     :store/photo
                     :store/goods
-                    :store/name]}])
+                    :store/name
+                    :store/rating
+                    :store/review-count]}])
   Object
   (render [this]
     (let [{:keys [release? query/store]} (om/props this)
-          {:keys [store/photo store/cover store/goods]
+          {:keys [store/photo store/cover store/goods store/rating store/review-count]
            store-name :store/name } store]
       (dom/html
         {:lang "en"}
@@ -41,13 +43,7 @@
 
                       (dom/div {:className "content-item-title-section"}
                         (dom/h1 {:className "store-name"} store-name)
-                        (dom/div {:className "user-rating-container"}
-                          (dom/i {:className "fa fa-star fa-fw"})
-                          (dom/i {:className "fa fa-star fa-fw"})
-                          (dom/i {:className "fa fa-star fa-fw"})
-                          (dom/i {:className "fa fa-star fa-fw"})
-                          (dom/i {:className "fa fa-star fa-fw"})
-                          (dom/small nil "(23)"))))
+                        (common/rating-element rating review-count)))
 
                     (dom/ul {:className "menu vertical store-main-menu"}
                             (dom/li nil (dom/a nil "About"))

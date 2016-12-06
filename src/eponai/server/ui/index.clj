@@ -89,10 +89,7 @@
       (dom/div {:className "content-item-title-section"}
         (dom/a nil (:store/name store)))
       (dom/div {:className "content-item-subtitle-section"}
-        (dom/div {:className "user-rating-container"}
-          (dom/img {:className "user-rating"
-                    :src       "/assets/img/rating-5.png"})
-          (dom/small nil "(23)"))))))
+        (common/rating-element (:store/rating store) (:store/review-count store))))))
 
 (defui Index
   static om/IQuery

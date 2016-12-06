@@ -33,10 +33,7 @@
                     (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:store/photo store) ")")}})))
                 (dom/div {:className "columns"}
                   (dom/a {:href (str "/store/" (:store/id store))} (dom/h1 {:className "store-name"} (:store/name store)))
-                  (dom/div {:className "user-rating-container"}
-                    (dom/img {:className "user-rating"
-                              :src       "/assets/img/rating-5.png"})
-                    (dom/small nil "(23)"))))
+                  (common/rating-element (:store/rating store) (:store/review-count store))))
 
 
               (dom/div {:className "row product-container"}

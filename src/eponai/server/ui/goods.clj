@@ -9,7 +9,7 @@
   Object
   (render [this]
     (let [{:keys [release?]} (om/props this)
-          goods (mapcat :goods store/stores)]
+          goods (mapcat :store/goods store/stores)]
       (prn "PROPS: " (om/props this))
       (dom/html
         {:lang "en"}
