@@ -45,74 +45,35 @@
     (server.ui/app-html (request->props request))))
 
 (defroutes
-  site-routes
-  (GET "/" [:as request]
-    (if (friend/authorized? #{::a/user} request)
-      (r/redirect "/app")
-      (server.ui/index-html (request->props request))))
+  admin-routes
+  (GET "/" request (server.ui/index-html (request->props request)))
   (GET "/store/:store-id" request (server.ui/store-html (request->props request)))
   (GET "/goods/:product-id" r (server.ui/product-html (request->props r)))
-  (GET "/goods" request (server.ui/goods-html (request->props request)))
+  (GET "/goods" request (server.ui/goods-html (request->props request))))
+
+(defroutes
+  site-routes
+  (context "/" [:as request] (if (release? request)
+                               (friend/wrap-authorize admin-routes #{::a/admin})
+                               admin-routes))
+
   ;(GET "/goods/:id" request (server.ui/product-html (request->props request)))
-  (GET "/terms" request
-       (server.ui/terms-html (request->props request)))
+  ;(GET "/terms" request
+  ;     (server.ui/terms-html (request->props request)))
 
-  (ANY "/stripe" {:keys [::m/conn body]}
-    (try
-      (let [result (stripe/webhook conn body {::email/send-payment-reminder-fn email/send-payment-reminder-email})]
-        (debug "Stripe webhook handled with result: " result)
-        (r/response {:status :SUCCESS
-                     :message "ok"}))
-      (catch ExceptionInfo e
-        (error e)
-        (r/response {:status :ERROR
-                     :message (.getMessage e)
-                     :ex-data (ex-data e)}))
-      (catch Exception e
-        (error e))))
-
-  (context "/app" _
-    (friend/wrap-authorize app-routes #{::a/user}))
-
-  (context "/play" _
-    (GET "/*" request
-         (server.ui/app-html (assoc (request->props request) :playground? true))))
-
-  (GET "/activate" request
-    (friend/authorize #{::a/user-inactive}
-                      (server.ui/signup-html (request->props request))))
-
-  (GET "/verify/:uuid" [uuid]
-    (r/redirect (str "/api/login/email?uuid=" uuid)))
-
-  (GET "/signup" request
-    (cond (friend/authorized? #{::a/user} request)
-          (r/redirect "/app")
-
-          (friend/authorized? #{::a/user-inactive} request)
-          (r/redirect "/activate")
-
-          :else
-          (server.ui/signup-html (request->props request))))
-
-  (GET "/devcards" []
-    (html "devcards" "app.html"))
-
-  (POST
-    "/newsletter/subscribe" {params :params
-                             conn ::m/conn}
-
-    (try
-      (api/newsletter-subscribe conn (:email params))
-      (r/response (json/write-str {:message "Thank you, we'll let you know the second we launch!"}))
-      (catch Exception e
-        (let [body (:body (ex-data e))
-              json-body (json/read-str body :key-fn keyword)
-              _ (debug "EX data " json-body)
-              message (get json-body :detail "Oops, something went wrong. Please try again in a little while.")]
-          (debug "Using message: " message)
-          (error "Exception when subscribing user:" (:email params) "exception:" e)
-          (r/status (r/response (json/write-str {:message message})) 500)))))
+  ;(ANY "/stripe" {:keys [::m/conn body]}
+  ;  (try
+  ;    (let [result (stripe/webhook conn body {::email/send-payment-reminder-fn email/send-payment-reminder-email})]
+  ;      (debug "Stripe webhook handled with result: " result)
+  ;      (r/response {:status :SUCCESS
+  ;                   :message "ok"}))
+  ;    (catch ExceptionInfo e
+  ;      (error e)
+  ;      (r/response {:status :ERROR
+  ;                   :message (.getMessage e)
+  ;                   :ex-data (ex-data e)}))
+  ;    (catch Exception e
+  ;      (error e))))
 
   (route/resources "/")
   (route/not-found "Not found"))

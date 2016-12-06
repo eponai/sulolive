@@ -99,21 +99,21 @@
 (defn wrap-authenticate [handler conn in-prod?]
   (friend/authenticate
     handler
-    {:allow-anon?          true
-     :credential-fn        (ac/credential-fn conn)
-     :workflows            [(workflows/email-web)
-                            (workflows/create-account)
-                            (workflows/facebook)
-                            (workflows/email-mobile)]
-     :unauthorized-handler (workflows/unauthorized)
-     :unauthenticated-handler (workflows/unauthenticated)
-     ;:uri "/api"
-     :login-uri            "/signup"
-     :default-landing-uri  "/app"
+    {
+     :allow-anon?          true
+     ;:credential-fn        (ac/simple-credential-fn)
+     :workflows            [(cemerick.friend.workflows/http-basic :credential-fn (ac/simple-credential-fn) :realm "Friend demo")]
+     :unauthenticated-handler #(cemerick.friend.workflows/http-basic-deny "Friend demo" %)
+     ;:unauthorized-handler (workflows/unauthorized)
+     ;:unauthenticated-handler (workflows/unauthenticated)
+     ;:uri "/api
+     ;:login-uri            "/signup"
+     ;:default-landing-uri  "/app"
      ;:fb-login-uri         "/api/login/fb"
-     :email-login-uri      "/api/login/email"
+     ;:email-login-uri      "/api/login/email"
      ;:activate-account-uri "/api/login/create"
-     :login-mutation-uri   "/api"}))
+     ;:login-mutation-uri   "/api"
+     }))
 
 (defn config [in-prod? disable-anti-forgery]
   {:pre [(contains? env :session-cookie-store-key)

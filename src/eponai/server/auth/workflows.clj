@@ -30,6 +30,12 @@
       (debug "Workflow unauthorized: " auth)
       (r/redirect "/signup"))))
 
+(defn simple []
+  (fn [{:keys [params]}]
+    (let [{:keys [psswd]} params]
+      (when (= psswd "hejsan")
+        (workflows/make-auth {:identity "admin" :roles :admin})))))
+
 (defn email-web
   []
   (fn [{:keys [params ::friend/auth-config ::stripe/stripe-fn] :as request}]

@@ -145,3 +145,10 @@
   [conn]
   (fn [input]
     (auth-map conn input)))
+
+(defn simple-credential-fn []
+  (fn [{:keys [username password] :as params}]
+    (when (and (= password "hejsan") (= username "sulo"))
+      {:identity 0
+       :username "admin"
+       :roles    #{::admin}})))
