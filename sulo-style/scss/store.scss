@@ -8,16 +8,16 @@
 	.store-container {
 		$brown: #2E2A31;
 		$nude: #F0EDE3;
-		background: rgba($brown, 0.3);
-		color: $white;
+		background: rgba($nude, 0.5);
+		// color: $white;
 		box-shadow: 1px 0 2px 0 rgba($black, 0.5);
 		h1, small {
-			color: $white;
-			text-shadow: 1px 1px 1px rgba($black, 0.7);
+			// color: $white;
+			text-shadow: 1px 1px 1px rgba($white, 0.7);
 		}
 		i {
-			color: yellow;
-			text-shadow: 1px 1px 1px rgba($black, 0.7);
+			color: $brown;
+			text-shadow: 1px 1px 1px rgba($nude, 0.7);
 		}
 		.store-main-menu {
 			width: 100%;
@@ -30,11 +30,14 @@
 				}
 				&:hover {
 					background: rgba($brown, 0.7);
+					a {
+						color: $nude;
+					}
 				}
 				a {
-					color: $white;
-					font-weight: 500;
-				text-shadow: 1px 1px 1px rgba($black, 0.7);
+					color: $brown;
+					font-weight: bold;
+					text-shadow: 0px 0px 0px rgba($white, 0.5);
 				}
 			}
 		}
