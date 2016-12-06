@@ -177,7 +177,7 @@
   :profiles {:uberjar  {:jvm-opts   ^:replace ["-Dclojure.compiler.direct-linking=true"
                                                "-Xmx1g" "-server"]
                         :aot        :all
-                        :prep-tasks ["compile" "prod-build-web"]}
+                        :prep-tasks ["compile" "prod-build-web" "lein-css"]}
 
              :mobile   {:dependencies 
                                       [[org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT"
