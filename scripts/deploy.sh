@@ -11,8 +11,8 @@ docker push $DOCKER_IMAGE
 
 # Elastic Beanstalk vars
 EB_BUCKET=sulo-conf
-EB_APP_NAME=sulo
-EB_ENV_NAME=Custom-env
+EB_APP_NAME=sulo-live
+EB_ENV_NAME=Custom-env-1
 
 # Create new Elastic Beanstalk version
 DOCKERRUN_FILE=$SHA1-Dockerrun.aws.json
