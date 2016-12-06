@@ -237,6 +237,7 @@
                                                              :output-dir    "resources/public/release/js/out/"
                                                              :optimizations :advanced
                                                              :externs ["src-hacks/js/externs/stripe-checkout.js"]
+                                                             :language-in :ecmascript5
                                                              ;;   :parallel-build true
                                                              ;;   :pseudo-names true
                                                              ;;   :pretty-print true
