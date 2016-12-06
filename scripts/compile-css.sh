@@ -1,4 +1,4 @@
-#!/bin/bash -eu
+#!/bin/bash -u
 
 script_dir=$(dirname $0)
 foundation_dir="$script_dir/../sulo-style"
