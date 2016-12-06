@@ -10,9 +10,9 @@
   (render [this]
     (let [{:keys [release? params]} (om/props this)
           {:keys [product-id]} params
-          goods (mapcat :goods store/stores)
+          goods (mapcat :store/goods store/stores)
           product (some #(when (= product-id (:id %)) %) goods)
-          store (some #(when (some #{product-id} (mapv :id (:goods %)))
+          store (some #(when (some #{product-id} (mapv :id (:store/goods %)))
                         %) store/stores)]
       (dom/html
         {:lang "en"}
@@ -30,9 +30,9 @@
               (dom/div {:className "row content-items-container store-container align-middle"}
                 (dom/div {:className "columns small-4 medium-2"}
                   (dom/div {:className "content-item-thumbnail-container"}
-                    (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:photo store) ")")}})))
+                    (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:store/photo store) ")")}})))
                 (dom/div {:className "columns"}
-                  (dom/a {:href (str "/store/" (:id store))} (dom/h1 {:className "store-name"} (:name store)))
+                  (dom/a {:href (str "/store/" (:store/id store))} (dom/h1 {:className "store-name"} (:store/name store)))
                   (dom/div {:className "user-rating-container"}
                     (dom/img {:className "user-rating"
                               :src       "/assets/img/rating-5.png"})

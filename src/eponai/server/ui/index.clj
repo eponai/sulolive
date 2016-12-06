@@ -7,7 +7,7 @@
 
 
 (defn mocked-goods []
-  (shuffle (mapcat :goods store/stores)))
+  (shuffle (mapcat :store/goods store/stores)))
 
 (defn mocked-channels []
   (let [stores store/stores]
@@ -30,8 +30,8 @@
 
 (defn mocked-stores []
   (let [featured-fn (fn [s]
-                      (let [[img-1 img-2] (take 2 (shuffle (map :img-src (:goods s))))]
-                        (assoc s :img-src [img-1 (:photo s) img-2])))]
+                      (let [[img-1 img-2] (take 2 (shuffle (map :img-src (:store/goods s))))]
+                        (assoc s :img-src [img-1 (:store/photo s) img-2])))]
     (map featured-fn (shuffle store/stores))))
 
 
@@ -77,7 +77,7 @@
 (defn store-element [store]
   (let [[large mini-1 mini-2] (:img-src store)]
     (dom/div {:className "column content-item store-item"}
-      (dom/a {:href      (str "/store/" (:id store))
+      (dom/a {:href      (str "/store/" (:store/id store))
               :className "store-collage content-item-thumbnail-container"}
              (dom/div {:className "content-item-thumbnail"
                        :style     {:background-image (str "url(" large ")")}})
@@ -87,7 +87,7 @@
                (dom/div {:className "content-item-thumbnail mini"
                          :style     {:background-image (str "url(" mini-2 ")")}})))
       (dom/div {:className "content-item-title-section"}
-        (dom/a nil (:name store)))
+        (dom/a nil (:store/name store)))
       (dom/div {:className "content-item-subtitle-section"}
         (dom/div {:className "user-rating-container"}
           (dom/img {:className "user-rating"
