@@ -6,11 +6,15 @@
     [om.next :as om :refer [defui]]))
 
 (defui Goods
+  static om/IQuery
+  (query [this]
+    [{:query/all-items [:item/name
+                        :item/price
+                        :item/img-src
+                        :item/id]}])
   Object
   (render [this]
-    (let [{:keys [release?]} (om/props this)
-          goods (mapcat :store/goods store/stores)]
-      (prn "PROPS: " (om/props this))
+    (let [{:keys [release? query/all-items]} (om/props this)]
       (dom/html
         {:lang "en"}
 
@@ -28,15 +32,16 @@
                 (apply dom/div {:className "content-items-container row small-up-2 medium-up-4"}
                        (map (fn [p]
                               (common/product-element p))
-                            (shuffle goods)))))
+                            (shuffle all-items)))))
             (common/footer nil))
 
           ;(dom/script {:src "https://webrtc.github.io/adapter/adapter-latest.js"})
-          (dom/script {:src "/lib/videojs/video.min.js"})
-          (dom/script {:src "/lib/videojs/videojs-media-sources.min.js"})
-          (dom/script {:src "/lib/videojs/videojs.hls.min.js"})
-          (dom/script {:src "/lib/red5pro/red5pro-sdk.min.js"})
-          (dom/script {:src  (common/budget-js-path release?)
-                       :type common/text-javascript})
+          ;(dom/script {:src "/lib/videojs/video.min.js"})
+          ;(dom/script {:src "/lib/videojs/videojs-media-sources.min.js"})
+          ;(dom/script {:src "/lib/videojs/videojs.hls.min.js"})
+          ;(dom/script {:src "/lib/red5pro/red5pro-sdk.min.js"})
+          ;(dom/script {:src  (common/budget-js-path release?)
+          ;             :type common/text-javascript})
 
-          (common/inline-javascript ["env.web.main.runstream()"]))))))
+          ;(common/inline-javascript ["env.web.main.runstream()"])
+          )))))

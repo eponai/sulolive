@@ -122,13 +122,13 @@
                                     (dom/i {:className "fa fa-shopping-cart fa-fw"})))))))
 
 (defn rating-element [rating review-count]
-  (prn "Got rating: " rating)
-  (let [full-stars (repeat rating "fa fa-star fa-fw")
-        half-stars (if (< 0 (- rating (count full-stars)))
-                     ["fa fa-star-half-o fa-fw"] [])
-        empty-stars (repeat (- 5 (count full-stars) (count half-stars)) "fa fa-star-o fa-fw")
-        _ (prn "Got stars: " full-stars " half: " half-stars " empty: " empty-stars)
-        all-stars (concat full-stars half-stars empty-stars)]
+  (let [stars (cond-> (vec (repeat rating "fa fa-star fa-fw"))
+
+                      (< 0 (- rating (int rating)))
+                      (conj "fa fa-star-half-o fa-fw"))
+
+        empty-stars (repeat (- 5 (count stars)) "fa fa-star-o fa-fw")
+        all-stars (concat stars empty-stars)]
     (dom/div {:className "user-rating-container"}
       (apply dom/span nil
              (map (fn [cl]
@@ -139,12 +139,12 @@
 (defn product-element [product]
   (dom/div {:className "column content-item product-item"}
     (dom/a {:className "content-item-thumbnail-container"
-            :href      (str "/goods/" (:id product))}
-           (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:img-src product) ")")}}))
+            :href      (str "/goods/" (:item/id product))}
+           (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:item/img-src product) ")")}}))
     (dom/div {:className "content-item-title-section"}
-      (dom/a nil (:name product)))
+      (dom/a nil (:item/name product)))
     (dom/div {:className "content-item-subtitle-section"}
-      (dom/strong nil (:price product))
+      (dom/strong nil (:item/price product))
       (rating-element 5 11))))
 
 (defn footer [opts]

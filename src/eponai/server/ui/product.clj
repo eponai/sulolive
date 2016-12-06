@@ -6,14 +6,14 @@
     [om.next :as om :refer [defui]]))
 
 (defui Product
+  static om/IQuery
+  (query [_]
+    [{:query/item [:item/name :item/price :item/img-src :item/store]}])
   Object
   (render [this]
-    (let [{:keys [release? params]} (om/props this)
-          {:keys [product-id]} params
-          goods (mapcat :store/goods store/stores)
-          product (some #(when (= product-id (:id %)) %) goods)
-          store (some #(when (some #{product-id} (mapv :id (:store/goods %)))
-                        %) store/stores)]
+    (let [{:keys [release? query/item]} (om/props this)
+          {:keys [item/price item/store item/img-src]
+           item-name :item/name} item]
       (dom/html
         {:lang "en"}
 
@@ -39,35 +39,29 @@
               (dom/div {:className "row product-container"}
                 (dom/div {:className "column small-12 medium-8 small-order-2 medium-order-1"}
                   (dom/div {:className "product-photo-container row"}
-                    (dom/div {:className "product-photo" :style {:background-image (str "url(" (:img-src product) ")")}}))
+                    (dom/div {:className "product-photo" :style {:background-image (str "url(" img-src ")")}}))
                   (apply dom/div {:className "row small-up-4 medium-up-6"}
                     (map (fn [im]
                            (dom/div {:className "column"}
                              (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" im ")")}})))
-                         (take 4 (repeat (:img-src product))))))
+                         (take 4 (repeat img-src)))))
                 (dom/div {:className "column product-info-container small-order-1 medium-order-2"}
                   (dom/div {:className "product-info"}
-                    (dom/h2 {:className "product-info-title"} (:name product))
+                    (dom/h2 {:className "product-info-title"} item-name)
                     (dom/h3 {:className "product-info-price"}
-                            (:price product)))
+                            price))
                   (dom/div {:className "product-action-container clearfix"}
-                    (dom/a {:className "button expanded"} "Add to Cart"))))
-              ;(dom/div {:className "items"}
-              ;         (apply dom/div {:className "content-items-container row small-up-2 medium-up-4"}
-              ;                (map (fn [p]
-              ;                       (common/product-element p))
-              ;                     (shuffle goods))))
-              )
+                    (dom/a {:className "button expanded"} "Add to Cart")))))
 
             (common/footer nil))
 
-          ;(dom/script {:src "https://webrtc.github.io/adapter/adapter-latest.js"})
-          (dom/script {:src "/lib/videojs/video.min.js"})
-          (dom/script {:src "/lib/videojs/videojs-media-sources.min.js"})
-          (dom/script {:src "/lib/videojs/videojs.hls.min.js"})
-          (dom/script {:src "/lib/red5pro/red5pro-sdk.min.js"})
-          (dom/script {:src  (common/budget-js-path release?)
-                       :type common/text-javascript})
+          ;(dom/script {:src "/lib/videojs/video.min.js"})
+          ;(dom/script {:src "/lib/videojs/videojs-media-sources.min.js"})
+          ;(dom/script {:src "/lib/videojs/videojs.hls.min.js"})
+          ;(dom/script {:src "/lib/red5pro/red5pro-sdk.min.js"})
+          ;(dom/script {:src  (common/budget-js-path release?)
+          ;             :type common/text-javascript})
 
-          (common/inline-javascript ["env.web.main.runstream()"]))))))
+          ;(common/inline-javascript ["env.web.main.runstream()"])
+          )))))
 
