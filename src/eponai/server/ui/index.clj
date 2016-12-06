@@ -6,38 +6,6 @@
     [om.dom :as dom]
     [om.next :as om :refer [defui]]))
 
-
-
-(defn mocked-goods []
-  (shuffle (mapcat :store/goods store/stores)))
-
-(defn mocked-channels []
-  (let [stores store/stores]
-    (shuffle [{:name         "Wear and tear proof your clothes"
-               :store        (get stores 0)
-               :viewer-count 8
-               :img-src      "https://img1.etsystatic.com/122/0/10558959/isla_500x500.21872363_66njj7uo.jpg"}
-              {:name         "What's up with thread count"
-               :store        (get stores 1)
-               :viewer-count 13
-               :img-src      "https://img0.etsystatic.com/125/0/11651126/isla_500x500.17338368_6u0a6c4s.jpg"}
-              {:name         "Old looking leather, how?"
-               :store        (get stores 2)
-               :viewer-count 43
-               :img-src      "https://img1.etsystatic.com/121/0/6396625/isla_500x500.17289961_hkw1djlp.jpg"}
-              {:name         "Talking wedding bands"
-               :store        (get stores 3)
-               :viewer-count 3
-               :img-src      "https://img0.etsystatic.com/139/0/5243597/isla_500x500.22177516_ath1ugrh.jpg"}])))
-
-(defn mocked-stores []
-  (let [featured-fn (fn [s]
-                      (let [[img-1 img-2] (take 2 (shuffle (map :item/img-src (:store/goods s))))]
-                        (assoc s :img-src [img-1 (:store/photo s) img-2])))]
-    (map featured-fn (shuffle store/stores))))
-
-
-
 (defn top-feature [opts icon title text]
   (dom/div {:className "feature-item column"}
     (dom/div {:className "row"}
@@ -65,19 +33,21 @@
     (dom/a {:href href} footer)))
 
 (defn online-channel-element [channel]
-  (dom/div {:className "column content-item online-channel"}
-    (dom/a {:className "content-item-thumbnail-container"}
-      (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:img-src channel) ")")}}))
-    (dom/div {:className "content-item-title-section"}
-      (dom/a nil (dom/strong nil (:name channel)))
-      (dom/div {:className "viewers-container"}
-        (dom/i {:className "fa fa-eye fa-fw"})
-        (dom/small nil (:viewer-count channel))))
-    (dom/div {:className "content-item-subtitle-section"}
-      (dom/a nil (:name (:store channel))))))
+  (let [{:keys [stream/store]} channel]
+    (dom/div {:className "column content-item online-channel"}
+      (dom/a {:className "content-item-thumbnail-container"
+              :href (str "/store/" (:store/id store))}
+             (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:stream/img-src channel) ")")}}))
+      (dom/div {:className "content-item-title-section"}
+        (dom/a {:href (str "/store/" (:store/id store))} (dom/strong nil (:stream/name channel)))
+        (dom/div {:className "viewers-container"}
+          (dom/i {:className "fa fa-eye fa-fw"})
+          (dom/small nil (:stream/viewer-count channel))))
+      (dom/div {:className "content-item-subtitle-section"}
+        (dom/a {:href (str "/store/" (:store/id store))} (:store/name store))))))
 
 (defn store-element [store]
-  (let [[large mini-1 mini-2] (:img-src store)]
+  (let [[large mini-1 mini-2] (:store/featured-img-src store)]
     (dom/div {:className "column content-item store-item"}
       (dom/a {:href      (str "/store/" (:store/id store))
               :className "store-collage content-item-thumbnail-container"}
@@ -89,16 +59,24 @@
                (dom/div {:className "content-item-thumbnail mini"
                          :style     {:background-image (str "url(" mini-2 ")")}})))
       (dom/div {:className "content-item-title-section"}
-        (dom/a nil (:store/name store)))
+        (dom/a {:href (str "/store/" (:store/id store))}
+               (:store/name store)))
       (dom/div {:className "content-item-subtitle-section"}
         (cljc-common/rating-element (:store/rating store) (:store/review-count store))))))
 
 (defui Index
   static om/IQuery
-  (query [this] [:foo])
+  (query [this]
+    [{:query/featured-items [:item/name
+                             :item/price
+                             :item/id
+                             :item/img-src]}
+     {:query/featured-stores [:store/name :store/featured-img-src :store/rating :store/review-count]}
+     {:query/featured-streams [:stream/name :stream/store :stream/viewer-count :stream/img-src]}])
   Object
   (render [this]
-    (let [{:keys [release?]} (om/props this)]
+    (let [{:keys [release? query/featured-items query/featured-stores query/featured-streams]} (om/props this)]
+      (prn "Got items: " featured-items)
       (dom/html
         {:lang "en"}
 
@@ -158,7 +136,7 @@
                                "Stores streaming on the online market right now"
                                (map (fn [c]
                                       (online-channel-element c))
-                                    (mocked-channels))
+                                    featured-streams)
                                "Check out more on the live market >>")
 
               (banner {:color :blue}
@@ -168,7 +146,7 @@
                                "Fresh from the oven goods"
                                (map (fn [p]
                                       (cljc-common/product-element p))
-                                    (take 4 (mocked-goods)))
+                                    featured-items)
                                "Check out more goods >>")
 
               (banner {:color :green}
@@ -178,7 +156,7 @@
                                "Have you seen these stores?"
                                (map (fn [s]
                                       (store-element s))
-                                    (mocked-stores))
+                                    featured-stores)
                                "Check out more stores >>")
 
               (banner {:color :default}

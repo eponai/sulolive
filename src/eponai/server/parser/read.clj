@@ -10,10 +10,6 @@
   {:value (-> (query/schema db db-history)
               (eponai.datascript/schema-datomic->datascript))})
 
-(defmethod server-read :foo
-  [{:keys [db db-history]} _ _]
-  {:value {:FOO "IS THE SHIT"}})
-
 
 (def stores
   [{:store/name         "HeadnTail"
@@ -43,7 +39,7 @@
     :store/cover        "https://img0.etsystatic.com/151/0/11651126/isbl_3360x840.22956500_1bj341c6.jpg"
     :store/photo        "https://img0.etsystatic.com/125/0/11651126/isla_500x500.17338368_6u0a6c4s.jpg"
     :store/review-count 8
-    :store/goods        [{:name    "Linen duvet cover. Woodrose colour. Linen bedding. Stonewashed linen duvet cover. Taupe bedding. Linen bedding queen, king, double, twin."
+    :store/goods        [{:item/name    "Linen duvet cover. Woodrose colour. Linen bedding. Stonewashed linen duvet cover. Taupe bedding. Linen bedding queen, king, double, twin."
                           :item/price   "$34.00"
                           :item/img-src "https://img1.etsystatic.com/141/1/11651126/il_570xN.1142044641_1j6c.jpg"
                           :item/id      "10"}
@@ -107,12 +103,20 @@
 (defmethod server-read :query/store
   [{:keys [query params]} _ _]
   (let [{:keys [store-id]} params]
-    (prn "Read query/store: " store-id)
     (let [store (some #(when (= (Long/parseLong store-id) (:store/id %))
                         %) stores)]
       {:value (-> (select-keys store query)
                   (update :store/goods
                           #(apply concat (take 4 (repeat %)))))})))
+
+(defmethod server-read :query/featured-stores
+  [{:keys [query]} _ _]
+  (let [featured-stores (take 4 (shuffle stores))
+        photos-fn (fn [s]
+                    (let [[img-1 img-2] (take 2 (shuffle (map :item/img-src (:store/goods s))))]
+                      (assoc s :store/featured-img-src [img-1 (:store/photo s) img-2])))
+        xf (comp (map photos-fn) (map #(select-keys % query)))]
+    {:value (transduce xf conj [] featured-stores)}))
 
 (defmethod server-read :query/all-items
   [{:keys [query]} _ _]
@@ -123,6 +127,15 @@
     (prn "Got goods: " goods)
     {:value (transduce xf conj [] stores)}))
 
+(defmethod server-read :query/featured-items
+  [{:keys [query]} _ _]
+  (prn "query/all-items: " query)
+  (let [goods (map #(select-keys % query) (mapcat :store/goods stores))
+        xf (comp (mapcat :store/goods) (map #(select-keys % query)))]
+
+    (prn "Got goods: " goods)
+    {:value (map #(select-keys % query) (take 4 (shuffle (transduce xf conj [] stores))))}))
+
 (defmethod server-read :query/item
   [{:keys [query params]} _ _]
   (let [{:keys [product-id]} params]
@@ -132,3 +145,23 @@
           store (some #(when (some #{product-id} (mapv :item/id (:store/goods %)))
                         %) stores)]
       {:value (select-keys (assoc product :item/store store) query)})))
+
+(defmethod server-read :query/featured-streams
+  [{:keys [query]} _ _]
+  {:value (map #(select-keys % query)
+               (shuffle [{:stream/name         "Wear and tear proof your clothes"
+                          :stream/store        (get stores 0)
+                          :stream/viewer-count 8
+                          :stream/img-src      "https://img1.etsystatic.com/122/0/10558959/isla_500x500.21872363_66njj7uo.jpg"}
+                         {:stream/name         "What's up with thread count"
+                          :stream/store        (get stores 1)
+                          :stream/viewer-count 13
+                          :stream/img-src      "https://img0.etsystatic.com/125/0/11651126/isla_500x500.17338368_6u0a6c4s.jpg"}
+                         {:stream/name         "Old looking leather, how?"
+                          :stream/store        (get stores 2)
+                          :stream/viewer-count 43
+                          :stream/img-src      "https://img1.etsystatic.com/121/0/6396625/isla_500x500.17289961_hkw1djlp.jpg"}
+                         {:stream/name         "Talking wedding bands"
+                          :stream/store        (get stores 3)
+                          :stream/viewer-count 3
+                          :stream/img-src      "https://img0.etsystatic.com/139/0/5243597/isla_500x500.22177516_ath1ugrh.jpg"}]))})
