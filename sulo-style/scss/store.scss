@@ -1,4 +1,12 @@
 #sulo-store {
+	#sulo-product {
+		.store-container {
+			display: none;
+		}
+		.product-container {
+			box-shadow: none;
+		}
+	}
 	nav {
 		position: relative;
 	}

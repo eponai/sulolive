@@ -1,6 +1,7 @@
 (ns eponai.common.ui.store
   (:require
     [eponai.common.ui.common :as common]
+    [eponai.common.ui.product :as item]
     #?(:cljs
        [eponai.web.ui.stream :as stream])
     [om.dom :as dom]
@@ -15,12 +16,12 @@
   static om/IQuery
   (query [_]
     ['({:query/store [:store/id
-                     :store/cover
-                     :store/photo
-                     :store/goods
-                     :store/name
-                     :store/rating
-                     :store/review-count]} {:store-id ?store-id})])
+                      :store/cover
+                      :store/photo
+                      :store/goods
+                      :store/name
+                      :store/rating
+                      :store/review-count]} {:store-id ?store-id})])
   Object
   (render [this]
     (let [{:keys [show-item]} (om/get-state this)
@@ -72,7 +73,8 @@
                       goods)))
 
         (when (some? show-item)
-          (common/modal {:on-close #(om/update-state! this dissoc :show-item)}
-                        (dom/h1 nil "Show product: " (:item/name show-item))))))))
+          (common/modal {:on-close #(om/update-state! this dissoc :show-item)
+                         :size :large}
+                        (item/->Product show-item)))))))
 
 (def ->Store (om/factory Store))

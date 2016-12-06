@@ -3,12 +3,12 @@
     [om.dom :as dom]))
 
 (defn modal [opts & content]
-  (let [{:keys [on-close]} opts]
+  (let [{:keys [on-close size]} opts]
     (dom/div #js {:className "reveal-overlay"
                   :id        "reveal-overlay"
                   :onClick   #(when (= "reveal-overlay" (.-id (.-target %)))
                                (on-close))}
-      (apply dom/div #js {:className "reveal"}
+      (apply dom/div #js {:className (str "reveal " (when (some? size) (name size)))}
              (dom/a #js {:className "close-button"
                          :onClick   on-close} "x")
              content))))
