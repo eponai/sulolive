@@ -1,14 +1,8 @@
 $navbar-height: 56px;
 
 html, body {
-	// overflow-x: hidden;
 	min-height: 100%;
 	width: 100%;
-}
-
-body {
-	// overflow-y: scroll; /* has to be scroll, not auto */
- //  	-webkit-overflow-scrolling: touch;
 }
 
 .reveal-overlay {
@@ -54,77 +48,46 @@ $footer-height: 4rem;
 	font-weight: 500;
 }
 
-.product-item {
-	.featured-item-subtitle-section {
-		// align-items: flex-end;
-	}
-}
-
-.content-items-container {
-	display: flex;
-	margin: 1rem auto 2rem auto;
+.content-item {
+	padding-top: 1.5rem;
+	text-align: left;
 	@include breakpoint(large) {
-		margin: 2rem auto;
+		padding: 1.5rem;
 	}
+	display: flex;
+	flex-direction: column;
 
-	.content-item {
-		padding-top: 1.5rem;
-		text-align: left;
-		@include breakpoint(large) {
-			padding: 1.5rem;
+	.content-item-title-section {
+		span, a {
+			text-overflow: ellipsis;
+			overflow: hidden;
+			white-space: nowrap;
 		}
+		padding-top: 1rem;
+		display: flex;	
+		flex-direction: column;
+		@include breakpoint(large) {
+			flex-direction: row;
+			justify-content: space-between;
+			align-items: center;
+		}
+	}
+	.content-item-subtitle-section {
 		display: flex;
 		flex-direction: column;
-
-		.content-item-title-section {
-			span, a {
-				text-overflow: ellipsis;
-				overflow: hidden;
-				white-space: nowrap;
-			}
-			padding-top: 1rem;
-			display: flex;	
-			flex-direction: column;
-			@include breakpoint(large) {
-				flex-direction: row;
-				justify-content: space-between;
-				align-items: center;
-			}
-		}
-		.content-item-subtitle-section {
-			display: flex;
-			flex-direction: column;
-			@include breakpoint(large) {
-				flex-direction: row;
-				justify-content: space-between;
-				align-items: center;
-			}
-		}
-		.user-rating-container {
-			font-size: 0.9rem;
-		}
-
-		.viewers-container {
-			margin-left: 0.2rem;
-			display: flex;
-			flex-wrap: nowrap;
+		@include breakpoint(large) {
+			flex-direction: row;
+			justify-content: space-between;
+			align-items: center;
 		}
 	}
-}
+	.user-rating-container {
+		font-size: 0.9rem;
+	}
 
-.content-item-thumbnail-container {
-	box-shadow: 1px 1px 3px 1px rgba($black, 0.1);
-	.content-item-thumbnail-mini-container {
+	.viewers-container {
+		margin-left: 0.2rem;
 		display: flex;
-	}
-}
-.content-item-thumbnail {
-	background-size: cover;
-	background-repeat: no-repeat;
-	background-position: center center;
-	padding-top: 100%;
-	&.mini {
-		width: 50%;
-		padding-top: 50%;
+		flex-wrap: nowrap;
 	}
 }

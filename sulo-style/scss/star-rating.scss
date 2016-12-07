@@ -1,0 +1,14 @@
+.star-rating-container {
+	.star-rating {
+		i {
+			margin: 0;
+		}
+		font-size: 0.9rem;
+		&.small {
+			font-size: 0.8rem;
+		}
+		&.large {
+			font-size: 1.2rem;
+		}
+	}
+}

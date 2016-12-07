@@ -5,7 +5,6 @@
 }
 #sulo-product {
 	.product-container {
-		// padding: 2rem;
 		background: white;
 		box-shadow: 0 1px 3px 1px rgba($black, 0.2);
 	}
@@ -13,22 +12,6 @@
 		p {
 			font-size: 1.5rem;
 		}
-	}
-
-	.product-photo-container {
-		// box-shadow: 0 1px 3px 1px rgba($black, 0.2);
-		.product-photo {
-			background-size: cover;
-			background-repeat: no-repeat;
-			background-position: center center;
-			width: 100%;
-			padding-top: 75%;
-			// margin-bottom: 1rem;
-		}
-	}
-	.product-photos-mini-container {
-		margin-top: 1rem;
-		margin-bottom: 1rem;
 	}
 
 	.product-info-container {
@@ -47,21 +30,5 @@
 		font-size: 1.5rem;
 		font-weight: 500;
 		color: map-get($foundation-palette, primary);
-	}
-
-	.product-details-menu {
-		.user-rating-container {
-			display: inline-block;
-			// font-size: 80%;
-			i {
-				margin: 0;
-			}
-		}
-	}
-}
-
-.user-reviews-container {
-	.user-review-item {
-		padding: 1rem 0;
 	}
 }

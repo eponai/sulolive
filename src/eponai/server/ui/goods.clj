@@ -30,7 +30,7 @@
 
             (dom/div {:className "page-content"}
               (dom/div {:className "items"}
-                (apply dom/div {:className "content-items-container row small-up-2 medium-up-4"}
+                (apply dom/div {:className "row small-up-2 medium-up-4"}
                        (map (fn [p]
                               (cljc-common/product-element p))
                             (shuffle all-items)))))

@@ -23,8 +23,8 @@
 
         empty-stars (repeat (- 5 (count stars)) "fa fa-star-o fa-fw")
         all-stars (concat stars empty-stars)]
-    (dom/div #js {:className "user-rating-container"}
-      (apply dom/span nil
+    (dom/div #js {:className "star-rating-container"}
+      (apply dom/span #js {:className "star-rating"}
              (map (fn [cl]
                     (dom/i #js {:className cl}))
                   all-stars))
@@ -33,12 +33,11 @@
 
 (defn product-element [product & [opts]]
   (let [{:keys [on-click open-url?]} opts]
-  (prn "Open url:" open-url?)
     (dom/div #js {:className "column content-item product-item"}
-      (dom/a #js {:className "content-item-thumbnail-container"
+      (dom/a #js {:className "photo-container"
                   :onClick   (when-not open-url? on-click)
                   :href      (when (or open-url? (nil? on-click)) (str "/goods/" (:item/id product)))}
-             (dom/div #js {:className "content-item-thumbnail" :style #js {:backgroundImage (str "url(" (:item/img-src product) ")")}}))
+             (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" (:item/img-src product) ")")}}))
       (dom/div #js {:className "content-item-title-section"}
         (dom/a nil (:item/name product)))
       (dom/div #js {:className "content-item-subtitle-section"}

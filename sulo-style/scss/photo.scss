@@ -1,0 +1,43 @@
+@mixin sulo-photo() {
+	.photo-container {
+		box-shadow: 1px 1px 3px 1px rgba($black, 0.1);
+
+		&.collage {
+			.mini-container {
+				display: flex;
+				.photo {
+					width: 50%;
+					padding-top: 50%;
+				}
+			}
+		}
+	}
+
+	.multi-photos-container {
+		display: flex;
+		justify-content: center;
+		padding: 0.5rem 0;
+		.photo.thumbnail {
+			margin: 0 0.5rem;
+			padding-top: 10%;
+			width: 10%;
+		}
+	}
+
+	.photo {
+		background-size: cover;
+		background-repeat: no-repeat;
+		background-position: center center;
+		padding-top: 75%;
+		width: 100%;
+		&.square {
+			padding-top: 100%;				
+		}
+		&.thumbnail {
+			&.mini {
+				width: 50%;
+				padding-top: 50%
+			}		
+		}
+	}
+}

@@ -50,8 +50,8 @@
             (dom/div #js {:className "column store-container large-2"}
 
               (dom/div #js {:className "store-short-info-container"}
-                (dom/div #js {:className "content-item-thumbnail-container"}
-                  (dom/div #js {:className "content-item-thumbnail" :style #js {:backgroundImage (str "url(" photo ")")}}))
+                (dom/div #js {:className "photo-container"}
+                  (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" photo ")")}}))
 
                 (dom/div #js {:className "content-item-title-section"}
                   (dom/h1 #js {:className "store-name"} store-name)

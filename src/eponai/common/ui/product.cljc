@@ -16,6 +16,11 @@
                          )))
               reviews)))
 
+(defn thumbnail-element [{:keys [img-src size]}]
+  (dom/div #js {:className "content-item-thumbnail-container"}
+    (dom/div #js {:className "content-item-thumbnail" :style #js {:backgroundImage (str "url(" img-src ")")
+                                                                  :backgroundSize (or size "cover")}})))
+
 (defui Product
   static om/IQuery
   (query [_]
@@ -34,8 +39,7 @@
         #js {:id "sulo-product"}
         (dom/div #js {:className "row content-items-container store-container align-middle"}
           (dom/div #js {:className "columns small-4 medium-2"}
-            (dom/div #js {:className "content-item-thumbnail-container"}
-              (dom/div #js {:className "content-item-thumbnail" :style #js {:backgroundImage (str "url(" (:store/photo store) ")")}})))
+            (thumbnail-element {:img-src (:store/photo store)}))
           (dom/div #js {:className "columns"}
             (dom/a #js {:href (str "/store/" (:store/id store))}
                    (dom/p #js {:className "store-name"} (:store/name store)))
@@ -45,12 +49,11 @@
         (dom/div #js {:className "row column product-container"}
           (dom/div #js {:className "row"}
             (dom/div #js {:className "column small-12 medium-8 small-order-2 medium-order-1"}
-              (dom/div #js {:className "product-photo-container row column"}
-                (dom/div #js {:className "product-photo" :style #js {:backgroundImage (str "url(" img-src ")")}}))
-              (apply dom/div #js {:className "row align-center small-up-4 large-up-8 product-photos-mini-container"}
+              (dom/div #js {:className "photo-container"}
+                (dom/div #js {:className "photo" :style #js {:backgroundImage (str "url(" img-src ")")}}))
+              (apply dom/div #js {:className "multi-photos-container"}
                      (map (fn [im]
-                            (dom/div #js {:className "column"}
-                              (dom/div #js {:className "content-item-thumbnail" :style #js {:backgroundImage (str "url(" im ")")}})))
+                            (dom/a #js {:className "photo square thumbnail" :style #js {:backgroundImage (str "url(" im ")")}}))
                           (take 4 (repeat img-src)))))
             (dom/div #js {:className "column product-info-container small-order-1 medium-order-2"}
               (dom/div #js {:className "product-info"}

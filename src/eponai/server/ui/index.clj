@@ -28,16 +28,16 @@
 (defn content-section [{:keys [href]} header content footer]
   (dom/div {:className "row column section text-center"}
     (dom/h3 {:className "text-center"} header)
-    (apply dom/div {:className "content-items-container row small-up-2 medium-up-4"}
+    (apply dom/div {:className "row small-up-2 medium-up-4"}
       content)
     (dom/a {:href href} footer)))
 
 (defn online-channel-element [channel]
   (let [{:keys [stream/store]} channel]
     (dom/div {:className "column content-item online-channel"}
-      (dom/a {:className "content-item-thumbnail-container"
+      (dom/a {:className "photo-container"
               :href (str "/store/" (:store/id store))}
-             (dom/div {:className "content-item-thumbnail" :style {:background-image (str "url(" (:stream/img-src channel) ")")}}))
+             (dom/div {:className "photo square" :style {:background-image (str "url(" (:stream/img-src channel) ")")}}))
       (dom/div {:className "content-item-title-section"}
         (dom/a {:href (str "/store/" (:store/id store))} (dom/strong nil (:stream/name channel)))
         (dom/div {:className "viewers-container"}
@@ -50,13 +50,13 @@
   (let [[large mini-1 mini-2] (:store/featured-img-src store)]
     (dom/div {:className "column content-item store-item"}
       (dom/a {:href      (str "/store/" (:store/id store))
-              :className "store-collage content-item-thumbnail-container"}
-             (dom/div {:className "content-item-thumbnail"
+              :className "photo-container collage"}
+             (dom/div {:className "photo square"
                        :style     {:background-image (str "url(" large ")")}})
-             (dom/div {:className "content-item-thumbnail-mini-container"}
-               (dom/div {:className "content-item-thumbnail mini"
+             (dom/div {:className "mini-container"}
+               (dom/div {:className "photo"
                          :style     {:background-image (str "url(" mini-1 ")")}})
-               (dom/div {:className "content-item-thumbnail mini"
+               (dom/div {:className "photo"
                          :style     {:background-image (str "url(" mini-2 ")")}})))
       (dom/div {:className "content-item-title-section"}
         (dom/a {:href (str "/store/" (:store/id store))}

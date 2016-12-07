@@ -1,0 +1,38 @@
+.content-item {
+	padding-top: 1.5rem;
+	text-align: left;
+	@include breakpoint(large) {
+		padding: 1.5rem;
+	}
+
+	.content-item-title-section {
+		span, a {
+			text-overflow: ellipsis;
+			overflow: hidden;
+			white-space: nowrap;
+		}
+		padding-top: 1rem;
+		display: flex;	
+		flex-direction: column;
+		@include breakpoint(large) {
+			flex-direction: row;
+			justify-content: space-between;
+			align-items: center;
+		}
+	}
+	.content-item-subtitle-section {
+		display: flex;
+		flex-direction: column;
+		@include breakpoint(large) {
+			flex-direction: row;
+			justify-content: space-between;
+			align-items: center;
+		}
+	}
+
+	.viewers-container {
+		margin-left: 0.2rem;
+		display: flex;
+		flex-wrap: nowrap;
+	}
+}
