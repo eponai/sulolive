@@ -27,13 +27,14 @@
     [:item/name
      :item/price
      :item/img-src
-     :item/store])
+     :item/store
+     :item/details])
   Object
   (initLocalState [_]
     {:selected-tab :details})
   (render [this]
     (let [{:keys [selected-tab]} (om/get-state this)
-          {:keys     [item/price item/store item/img-src]
+          {:keys     [item/price item/store item/img-src item/details]
            item-name :item/name} (om/props this)]
       (dom/div
         #js {:id "sulo-product"}
@@ -65,7 +66,7 @@
 
 
           (dom/div #js {:className "row column product-details-container"}
-            (dom/ul #js {:className "row column product-details-menu menu"}
+            (dom/ul #js {:className "product-details-menu menu"}
                     (dom/li
                       #js {:className (when (= selected-tab :details) "active")}
                       (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :details)}
@@ -77,14 +78,15 @@
                             (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :rating)} (c/rating-element 3 11))))
 
             (cond (= selected-tab :rating)
-                  (dom/div #js {:className "row column product-reviews"}
+                  (dom/div #js {:className "product-reviews"}
                     (reviews-list [{:review/rating 4}
                                    {:review/rating 3}
                                    {:review/rating 5}]))
                   (= selected-tab :details)
-                  (dom/div #js {:className "row column product-details"})
+                  (dom/div #js {:className "product-details"}
+                    details)
 
                   (= selected-tab :shipping)
-                  (dom/div #js {:className "row column product-details"}))))))))
+                  (dom/div #js {:className "product-details"}))))))))
 
 (def ->Product (om/factory Product))
