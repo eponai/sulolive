@@ -41,9 +41,7 @@
              (dom/div {:className "photo square" :style {:background-image (str "url(" (:stream/img-src channel) ")")}}))
       (dom/div {:className "content-item-title-section"}
         (dom/a {:href (str "/store/" (:store/id store))} (dom/strong nil (:stream/name channel)))
-        (dom/div {:className "viewers-container"}
-          (dom/i {:className "fa fa-eye fa-fw"})
-          (dom/small nil (:stream/viewer-count channel))))
+        (cljc-common/viewer-element (:stream/viewer-count channel)))
       (dom/div {:className "content-item-subtitle-section"}
         (dom/a {:href (str "/store/" (:store/id store))} (:store/name store))))))
 

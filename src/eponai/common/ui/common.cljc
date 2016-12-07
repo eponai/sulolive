@@ -15,6 +15,11 @@
                          :onClick   on-close} "x")
              content))))
 
+(defn viewer-element [view-count]
+  (dom/div #js {:className "viewers-container"}
+    (dom/i #js {:className "fa fa-eye fa-fw"})
+    (dom/small nil (str view-count))))
+
 (defn rating-element [rating & [review-count]]
   (let [rating (or rating 0)
         stars (cond-> (vec (repeat rating "fa fa-star fa-fw"))

@@ -20,6 +20,7 @@
                       :store/cover
                       :store/photo
                       {:store/goods ~(om/get-query item/Product)}
+                      {:stream/_store [:stream/name :stream/viewer-count]}
                       :store/name
                       :store/rating
                       :store/review-count]} {:store-id ~'?store-id})])
@@ -39,6 +40,7 @@
     (let [{:keys [show-item breakpoint]} (om/get-state this)
           {:keys [query/store]} (om/props this)
           {:keys      [store/cover store/review-count store/rating store/photo store/goods]
+           stream :stream/_store
            store-name :store/name} store]
 
       (dom/div
@@ -56,14 +58,19 @@
                   (dom/h1 #js {:className "store-name"} store-name)
                   (common/rating-element rating review-count)))
 
-              #?(:cljs
-                 (dom/ul #js {:className (str "menu store-main-menu" (when (utils/bp-compare :large breakpoint <) " vertical"))}
-                         (dom/li nil (dom/a nil "About"))
-                         (dom/li nil (dom/a nil "Policies")))))
+              ;#?(:cljs)
+              (dom/ul #js {:className (str "menu store-main-menu")}
+                      (dom/li nil (dom/a nil "About"))
+                      (dom/li nil (dom/a nil "Policies"))))
 
             (dom/div #js {:className "large-8"}
               (dom/div #js {:className "stream-container"}
-                (stream/->Stream)))
+                (stream/->Stream)
+                (dom/div #js {:className "row"}
+                  (dom/div #js {:className "column"}
+                    (dom/h2 #js {:className "stream-title"} (:stream/name stream)))
+                  (dom/div #js {:className "column text-right"}
+                    (common/viewer-element (:stream/viewer-count stream))))))
 
             (dom/div #js {:className "medium-2 stream-chat-container"}
               (dom/div #js {:className "stream-chat-content"}
