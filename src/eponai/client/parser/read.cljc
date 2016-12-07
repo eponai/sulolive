@@ -106,9 +106,9 @@
 
 (defmethod client-read :query/store
   [{:keys [query]} _ {:keys [store-id] :as p}]
-  (let [store (some #(when (= #?(:cljs (cljs.reader/read-string store-id)
-                                 :clj  (Long/parseLong store-id)) (:store/id %))
+  (prn "Got store id: " store-id)
+  (let [store (some #(when (= #?(:cljs (cljs.reader/read-string store-id)) (:store/id %))
                       %) stores)]
-    {:value (-> (select-keys store query)
+    {:value (-> (select-keys store (conj (filter keyword? query) :store/goods))
                 (update :store/goods
                         #(apply concat (take 4 (repeat %)))))}))

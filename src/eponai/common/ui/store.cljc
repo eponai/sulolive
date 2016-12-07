@@ -12,16 +12,17 @@
   (params [_]
     #?(:cljs
        (let [path js/window.location.pathname]
-         {:store-id (last (clojure.string/split path #"/"))})))
+         {:store-id (last (clojure.string/split path #"/"))
+          :item (om/get-query item/Product) })))
   static om/IQuery
   (query [_]
-    ['({:query/store [:store/id
+    [`({:query/store [:store/id
                       :store/cover
                       :store/photo
-                      :store/goods
+                      {:store/goods ~(om/get-query item/Product)}
                       :store/name
                       :store/rating
-                      :store/review-count]} {:store-id ?store-id})])
+                      :store/review-count]} {:store-id ~'?store-id})])
   Object
   (render [this]
     (let [{:keys [show-item]} (om/get-state this)

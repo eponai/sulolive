@@ -13,7 +13,7 @@
                          :onClick   on-close} "x")
              content))))
 
-(defn rating-element [rating review-count]
+(defn rating-element [rating & [review-count]]
   (let [rating (or rating 0)
         stars (cond-> (vec (repeat rating "fa fa-star fa-fw"))
 
@@ -27,7 +27,8 @@
              (map (fn [cl]
                     (dom/i #js {:className cl}))
                   all-stars))
-      (dom/span nil (str "(" review-count ")")))))
+      (when (some? review-count)
+        (dom/span nil (str "(" review-count ")"))))))
 
 (defn product-element [product & [opts]]
   (let [{:keys [on-click]} opts]
