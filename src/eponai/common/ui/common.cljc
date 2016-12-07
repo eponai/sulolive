@@ -1,5 +1,6 @@
 (ns eponai.common.ui.common
   (:require
+    [eponai.common.ui.navbar :as nav]
     #?(:cljs [eponai.web.utils :as utils])
     [om.dom :as dom]))
 
@@ -43,3 +44,6 @@
       (dom/div #js {:className "content-item-subtitle-section"}
         (dom/strong nil (:item/price product))
         (rating-element 5 11)))))
+
+(defn navbar [opts]
+  (nav/->Navbar))

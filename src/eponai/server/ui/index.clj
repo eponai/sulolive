@@ -85,7 +85,7 @@
                   (dom/div
             {:id "sulo-start"
              :className "page-container"}
-                    (clj-common/navbar nil)
+                    (cljc-common/navbar nil)
                     (dom/div {:className "page-content"}
 
               (dom/div {:className "intro-header"}

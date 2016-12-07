@@ -105,22 +105,6 @@
    (dom/meta {:name "theme-color" :content "#ffffff"})])
 
 
-(defn navbar [opts]
-  (dom/nav {:className "navbar top-bar"}
-           (dom/div {:className "top-bar-left"}
-             (dom/ul {:className "menu"}
-                     (dom/li nil
-                             (dom/a {:className "navbar-brand"
-                                     :href "/"}
-                                    "Sulo"))))
-
-           (dom/div {:className "top-bar-right"}
-             (dom/ul {:className "menu"}
-                     (dom/li nil
-                             (dom/a nil
-                                    (dom/span nil "$0.00")
-                                    (dom/i {:className "fa fa-shopping-cart fa-fw"})))))))
-
 (defn footer [opts]
   (dom/div {:className "footer"}
     (dom/footer {:className "clearfix"}

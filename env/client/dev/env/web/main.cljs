@@ -5,6 +5,10 @@
 
 (set! js/window.mixpanel #js {"track" (fn [& args] )})
 
+(defn ^:export runnavbar []
+      (utils/install-app)
+      (run/navbar))
+
 (defn ^:export runstream []
       (utils/install-app)
       (run/store))
