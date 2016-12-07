@@ -87,15 +87,6 @@
              :className "page-container"}
                     (clj-common/navbar nil)
                     (dom/div {:className "page-content"}
-              (dom/svg {:height 0}
-                       (dom/defs nil
-                                 (dom/mask {:id               "header-alpha-mask"
-                                            :maskUnits        "objectBoundingBox"
-                                            :maskContentUnits "objectBoundingBox"}
-                                           (dom/radialGradient {:id "grad1" :gradientUnits "objectBoundingBox" :cx "50%" :cy "50%" :r "50%"}
-                                                               (dom/stop {:offset "0%" :style {:stop-color "black" :stop-opacity 1}})
-                                                               (dom/stop {:offset "100%" :style {:stop-color "black" :stop-opacity 0}}))))
-                       (dom/ellipse {:cx 200 :cy 70 :rx 85 :ry 55 :fill "url(#grad1)"}))
 
               (dom/div {:className "intro-header"}
                 (dom/div {:className "row"}

@@ -6,8 +6,8 @@ $font-color-light: $body-background;
 nav {
 	height: $navbar-height;
 	width: 100%;
-	position: fixed;
-	z-index: 1;
+	position: absolute;
+	z-index: 3;
 	top: 0;
 	&.top-bar {
 		background: $navbar-background-color;
@@ -23,9 +23,6 @@ nav {
 }
 
 #sulo-start {
-	// .page-content {
-	// 	padding-top: $navbar-height;
-	// }  
 	overflow-x: hidden;
 	svg {
 		position: absolute;

@@ -60,8 +60,8 @@
               (dom/a #js {:className "button expanded"} "Add to Cart"))))
 
 
-        (dom/div #js {:className "row product-details-container"}
-          (dom/ul #js {:className "product-details-menu menu"}
+        (dom/div #js {:className "product-details-container"}
+          (dom/ul #js {:className "row column product-details-menu menu"}
                   (dom/li
                     #js {:className (when (= selected-tab :details) "active")}
                     (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :details)}
@@ -70,10 +70,17 @@
                           (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :shipping)}
                                  "Shipping"))
                   (dom/li #js {:className (when (= selected-tab :rating) "active")}
-                          (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :rating)} (c/rating-element 3 11)))))
-        (dom/div #js {:className "row column product-reviews-container"}
-          (reviews-list [{:review/rating 4}
-                         {:review/rating 3}
-                         {:review/rating 5}]))))))
+                          (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :rating)} (c/rating-element 3 11))))
+
+          (cond (= selected-tab :rating)
+                (dom/div #js {:className "row column product-reviews"}
+                  (reviews-list [{:review/rating 4}
+                                 {:review/rating 3}
+                                 {:review/rating 5}]))
+                (= selected-tab :details)
+                (dom/div #js {:className "row column product-details"})
+
+                (= selected-tab :shipping)
+                (dom/div #js {:className "row column product-details"})))))))
 
 (def ->Product (om/factory Product))

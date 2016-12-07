@@ -29,6 +29,7 @@
           {:keys [query/store]} (om/props this)
           {:keys      [store/cover store/review-count store/rating store/photo store/goods]
            store-name :store/name} store]
+      (prn "Getting store: " store)
       (dom/div
         nil
         (dom/div #js {:className "cover-container"}
