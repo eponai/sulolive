@@ -31,15 +31,15 @@
     ;; TODO
     "Enable this again when we have a certificate for sulo.live"
     (-> handler
-       ;; Redirects to ssl request is not https
-       ssl/wrap-ssl-redirect
-       ;; Sets request to be https if http header says so.
-       ;; The http header will say so when we're behind an amazon load balancer (production).
-       ssl/wrap-forwarded-scheme
-       ;; This ensures the browser will only use HTTPS for future requests to the domain.
-       ;; The value 86400 (24 hours) is taken from what instagram.com uses.
-       (ssl/wrap-hsts {:max-age 86400 :include-subdomains? false}))
-    handler))
+        ;; Redirects to ssl request is not https
+        ssl/wrap-ssl-redirect
+        ;; Sets request to be https if http header says so.
+        ;; The http header will say so when we're behind an amazon load balancer (production).
+        ssl/wrap-forwarded-scheme
+        ;; This ensures the browser will only use HTTPS for future requests to the domain.
+        ;; The value 86400 (24 hours) is taken from what instagram.com uses.
+        (ssl/wrap-hsts {:max-age 86400 :include-subdomains? false})))
+  handler)
 
 (defn wrap-error [handler]
   (fn [request]
