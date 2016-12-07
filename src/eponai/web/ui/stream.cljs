@@ -17,31 +17,29 @@
         (debug "subscriber: " subscriber " view " view)
         (.on subscriber "*" js/window.red5proHandleSubscriberEvent)
         (.. subscriber
-            (setPlaybackOrder #js ["rtmp" "hls"])
+            (setPlaybackOrder #js ["hls"])
             (init
               #js {
                    :rtmp #js {:protocol          "rtmp"     ;(if is-secure "wss" "ws")
-                              :host              "localhost"
+                              :host              "192.168.0.32"
                               :port              1935       ;(if is-secure "8083" "8081")
                               :width             "1000px"
                               :height            "750px"
                               :mimeType          "rtmp/flv"
-                              :useVideoJS        false
+                              :useVideoJS        true
                               :swf               "/lib/red5pro/red5pro-subscriber.swf"
                               :swfobjectURL      "/lib/swfobject/swfobject.js"
                               :productInstallURL "/lib/swfobject/playerProductInstall.swf"
                               :app               "live"
-                              :streamName        "first"}
+                              :streamName        "mystream"}
                    :hls  #js {:protocol          "http"
-                              :host              "localhost"
                               :port              5080
-                              :streamName        "first"
+                              :streamName        "mystream"
                               :mimeType          "application/x-mpegURL"
                               :swf               "/lib/red5pro/red5pro-video-js.swf"
                               :swfobjectURL      "/lib/swfobject/swfobject.js"
                               :productInstallURL "/lib/swfobject/playerProductInstall.swf"}})
             (then (fn []
-                    (debug "Subscribed")
                     (.off subscriber "*" js/window.red5proHandleSubscriberEvent)
                     ))
             (catch (fn [error]

@@ -4,6 +4,13 @@
 	@include breakpoint(large) {
 		padding: 1.5rem;
 	}
+	&.row {
+		.content-item-title-section,
+		.content-item-subtitle-section {
+			padding: 0;
+			margin-left: 0.5rem;
+		}
+	}
 
 	.content-item-title-section {
 		span, a {

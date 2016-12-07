@@ -34,6 +34,8 @@
 			padding-top: 100%;				
 		}
 		&.thumbnail {
+			margin: 0;
+			display: block;
 			&.mini {
 				width: 50%;
 				padding-top: 50%
