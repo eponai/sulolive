@@ -71,7 +71,7 @@
                              :item/price
                              :item/id
                              :item/img-src]}
-     {:query/featured-stores [:store/name :store/featured-img-src :store/rating :store/review-count]}
+     {:query/featured-stores [:store/name :store/featured-img-src :store/rating :store/review-count :store/id]}
      {:query/featured-streams [:stream/name :stream/store :stream/viewer-count :stream/img-src]}])
   Object
   (render [this]
@@ -136,7 +136,7 @@
               (content-section {:href "/goods"}
                                "Fresh from the oven goods"
                                (map (fn [p]
-                                      (cljc-common/product-element p))
+                                      (cljc-common/product-element p {:open-url? true}))
                                     featured-items)
                                "Check out more goods >>")
 

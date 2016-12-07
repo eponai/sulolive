@@ -42,45 +42,46 @@
             (c/rating-element (:store/rating store) (:store/review-count store))))
 
 
-        (dom/div #js {:className "row product-container"}
-          (dom/div #js {:className "column small-12 medium-8 small-order-2 medium-order-1"}
-            (dom/div #js {:className "product-photo-container row column"}
-              (dom/div #js {:className "product-photo" :style #js {:backgroundImage (str "url(" img-src ")")}}))
-            (apply dom/div #js {:className "row align-center small-up-4 large-up-8 product-photos-mini-container"}
-                   (map (fn [im]
-                          (dom/div #js {:className "column"}
-                            (dom/div #js {:className "content-item-thumbnail" :style #js {:backgroundImage (str "url(" im ")")}})))
-                        (take 4 (repeat img-src)))))
-          (dom/div #js {:className "column product-info-container small-order-1 medium-order-2"}
-            (dom/div #js {:className "product-info"}
-              (dom/h1 #js {:className "product-info-title"} item-name)
-              (dom/h2 #js {:className "product-info-price"}
-                      price))
-            (dom/div #js {:className "product-action-container clearfix"}
-              (dom/a #js {:className "button expanded"} "Add to Cart"))))
+        (dom/div #js {:className "row column product-container"}
+          (dom/div #js {:className "row"}
+            (dom/div #js {:className "column small-12 medium-8 small-order-2 medium-order-1"}
+              (dom/div #js {:className "product-photo-container row column"}
+                (dom/div #js {:className "product-photo" :style #js {:backgroundImage (str "url(" img-src ")")}}))
+              (apply dom/div #js {:className "row align-center small-up-4 large-up-8 product-photos-mini-container"}
+                     (map (fn [im]
+                            (dom/div #js {:className "column"}
+                              (dom/div #js {:className "content-item-thumbnail" :style #js {:backgroundImage (str "url(" im ")")}})))
+                          (take 4 (repeat img-src)))))
+            (dom/div #js {:className "column product-info-container small-order-1 medium-order-2"}
+              (dom/div #js {:className "product-info"}
+                (dom/h1 #js {:className "product-info-title"} item-name)
+                (dom/h2 #js {:className "product-info-price"}
+                        price))
+              (dom/div #js {:className "product-action-container clearfix"}
+                (dom/a #js {:className "button expanded"} "Add to Cart"))))
 
 
-        (dom/div #js {:className "product-details-container"}
-          (dom/ul #js {:className "row column product-details-menu menu"}
-                  (dom/li
-                    #js {:className (when (= selected-tab :details) "active")}
-                    (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :details)}
-                           "Details"))
-                  (dom/li #js {:className (when (= selected-tab :shipping) "active")}
-                          (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :shipping)}
-                                 "Shipping"))
-                  (dom/li #js {:className (when (= selected-tab :rating) "active")}
-                          (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :rating)} (c/rating-element 3 11))))
+          (dom/div #js {:className "row column product-details-container"}
+            (dom/ul #js {:className "row column product-details-menu menu"}
+                    (dom/li
+                      #js {:className (when (= selected-tab :details) "active")}
+                      (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :details)}
+                             "Details"))
+                    (dom/li #js {:className (when (= selected-tab :shipping) "active")}
+                            (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :shipping)}
+                                   "Shipping"))
+                    (dom/li #js {:className (when (= selected-tab :rating) "active")}
+                            (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :rating)} (c/rating-element 3 11))))
 
-          (cond (= selected-tab :rating)
-                (dom/div #js {:className "row column product-reviews"}
-                  (reviews-list [{:review/rating 4}
-                                 {:review/rating 3}
-                                 {:review/rating 5}]))
-                (= selected-tab :details)
-                (dom/div #js {:className "row column product-details"})
+            (cond (= selected-tab :rating)
+                  (dom/div #js {:className "row column product-reviews"}
+                    (reviews-list [{:review/rating 4}
+                                   {:review/rating 3}
+                                   {:review/rating 5}]))
+                  (= selected-tab :details)
+                  (dom/div #js {:className "row column product-details"})
 
-                (= selected-tab :shipping)
-                (dom/div #js {:className "row column product-details"})))))))
+                  (= selected-tab :shipping)
+                  (dom/div #js {:className "row column product-details"}))))))))
 
 (def ->Product (om/factory Product))

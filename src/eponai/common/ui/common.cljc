@@ -1,5 +1,6 @@
 (ns eponai.common.ui.common
   (:require
+    #?(:cljs [eponai.web.utils :as utils])
     [om.dom :as dom]))
 
 (defn modal [opts & content]
@@ -31,10 +32,12 @@
         (dom/span nil (str "(" review-count ")"))))))
 
 (defn product-element [product & [opts]]
-  (let [{:keys [on-click]} opts]
+  (let [{:keys [on-click open-url?]} opts]
+  (prn "Open url:" open-url?)
     (dom/div #js {:className "column content-item product-item"}
       (dom/a #js {:className "content-item-thumbnail-container"
-                  :onClick   on-click}
+                  :onClick   (when-not open-url? on-click)
+                  :href      (when (or open-url? (nil? on-click)) (str "/goods/" (:item/id product)))}
              (dom/div #js {:className "content-item-thumbnail" :style #js {:backgroundImage (str "url(" (:item/img-src product) ")")}}))
       (dom/div #js {:className "content-item-title-section"}
         (dom/a nil (:item/name product)))

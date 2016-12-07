@@ -4,6 +4,7 @@
     [eponai.common.ui.product :as item]
     #?(:cljs
        [eponai.web.ui.stream :as stream])
+    #?(:cljs [eponai.web.utils :as utils])
     [om.dom :as dom]
     [om.next :as om #?(:clj :refer :cljs :refer-macros) [defui]]))
 
@@ -24,12 +25,23 @@
                       :store/rating
                       :store/review-count]} {:store-id ~'?store-id})])
   Object
+  (initLocalState [this]
+    {:resize-listener #(.on-window-resize this)
+     #?@(:cljs [:breakpoint (utils/breakpoint js/window.innerWidth)])})
+  #?(:cljs
+     (on-window-resize [this]
+                       (om/update-state! this assoc :breakpoint (utils/breakpoint js/window.innerWidth))))
+  (componentDidMount [this]
+    #?(:cljs (.addEventListener js/window "resize" (:resize-listener (om/get-state this)))))
+  (componentWillUnmount [this]
+    #?(:cljs (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
+
   (render [this]
-    (let [{:keys [show-item]} (om/get-state this)
+    (let [{:keys [show-item breakpoint]} (om/get-state this)
           {:keys [query/store]} (om/props this)
           {:keys      [store/cover store/review-count store/rating store/photo store/goods]
            store-name :store/name} store]
-      (prn "Getting store: " store)
+      
       (dom/div
         nil
         (dom/div #js {:className "cover-container"}
@@ -71,7 +83,8 @@
         (dom/div #js {:className "items"}
           (apply dom/div #js {:className "content-items-container row small-up-2 medium-up-4"}
                  (map (fn [p]
-                        (common/product-element p {:on-click #(om/update-state! this assoc :show-item p)}))
+                        (common/product-element p {:on-click #(om/update-state! this assoc :show-item p)
+                                                   #?@(:cljs [:open-url? (utils/bp-compare :large breakpoint >)])}))
                       goods)))
 
         (when (some? show-item)
