@@ -31,10 +31,12 @@
 			width: 100%;
 			padding: 1rem 0;
 			li {
-				$border: 1px solid rgba($brown, 0.2);
-				border-top: $border;
-				&:last-child {
-					border-bottom: $border;
+				@include breakpoint(large) {
+					$border: 1px solid rgba($brown, 0.2);
+					border-top: $border;
+					&:last-child {
+						border-bottom: $border;
+					}
 				}
 				&:hover {
 					background: rgba($brown, 0.7);

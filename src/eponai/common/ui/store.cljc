@@ -41,7 +41,7 @@
           {:keys [query/store]} (om/props this)
           {:keys      [store/cover store/review-count store/rating store/photo store/goods]
            store-name :store/name} store]
-      
+
       (dom/div
         nil
         (dom/div #js {:className "cover-container"}
@@ -57,9 +57,10 @@
                   (dom/h1 #js {:className "store-name"} store-name)
                   (common/rating-element rating review-count)))
 
-              (dom/ul #js {:className "menu vertical store-main-menu"}
-                      (dom/li nil (dom/a nil "About"))
-                      (dom/li nil (dom/a nil "Policies"))))
+              #?(:cljs
+                 (dom/ul #js {:className (str "menu store-main-menu" (when (utils/bp-compare :large breakpoint <) " vertical"))}
+                         (dom/li nil (dom/a nil "About"))
+                         (dom/li nil (dom/a nil "Policies")))))
 
             (dom/div #js {:className "large-8"}
               (dom/div #js {:id "stream-container"}
