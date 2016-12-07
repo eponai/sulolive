@@ -2,14 +2,12 @@
   (:require
     [om.next :as om]
     [om.dom :as dom]
-    [eponai.common.parser :as parser]
     [eponai.server.ui.app :as app]
     [eponai.server.ui.goods :as goods]
     [eponai.server.ui.product :as product]
     [eponai.server.ui.index :as index]
-    [eponai.server.ui.signup :as signup]
     [eponai.server.ui.store :as store]
-    [eponai.server.ui.terms :as terms]))
+    [eponai.server.ui.checkout :as checkout]))
 
 (defn with-doctype [html-str]
   (str "<!DOCTYPE html>" html-str))
@@ -30,3 +28,4 @@
 (def product-html (makesite product/Product))
 (def index-html (makesite index/Index))
 (def store-html (makesite store/Store))
+(def checkout-html (makesite checkout/Checkout))

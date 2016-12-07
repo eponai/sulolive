@@ -4,7 +4,8 @@
     [eponai.server.parser.read :as store]
     [eponai.server.ui.common :as clj-common :refer [text-javascript]]
     [om.dom :as dom]
-    [om.next :as om :refer [defui]]))
+    [om.next :as om :refer [defui]]
+    [eponai.common.ui.navbar :as nav]))
 
 (defn top-feature [opts icon title text]
   (dom/div {:className "feature-item column"}
@@ -67,7 +68,8 @@
 (defui Index
   static om/IQuery
   (query [this]
-    [{:query/featured-items [:item/name
+    [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:query/featured-items [:item/name
                              :item/price
                              :item/id
                              :item/img-src]}
@@ -75,7 +77,7 @@
      {:query/featured-streams [:stream/name :stream/store :stream/viewer-count :stream/img-src]}])
   Object
   (render [this]
-    (let [{:keys [release? query/featured-items query/featured-stores query/featured-streams]} (om/props this)]
+    (let [{:keys [release? query/featured-items query/featured-stores query/featured-streams proxy/navbar]} (om/props this)]
       (prn "Got items: " featured-items)
       (dom/html
         {:lang "en"}
@@ -85,7 +87,7 @@
                   (dom/div
             {:id "sulo-start"
              :className "page-container"}
-                    (cljc-common/navbar nil)
+                    (nav/->Navbar navbar)
                     (dom/div {:className "page-content"}
 
               (dom/div {:className "intro-header"}
@@ -159,4 +161,9 @@
                       (dom/h2 nil "Start streaming on Sulo and tell your story to your customers")
                       (dom/a {:className "button secondary"} "Contact us")))
 
-                    (clj-common/footer nil)))))))
+                    (clj-common/footer nil))
+
+                  (dom/script {:src  (clj-common/budget-js-path release?)
+                               :type clj-common/text-javascript})
+
+                  (clj-common/inline-javascript ["env.web.main.runnavbar()"]))))))

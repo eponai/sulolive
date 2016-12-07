@@ -1,4 +1,7 @@
 #sulo-store {
+	nav {
+		position: relative;
+	}
 	#sulo-product {
 		.store-container {
 			display: none;
@@ -7,11 +10,28 @@
 			box-shadow: none;
 		}
 	}
-	nav {
-		position: relative;
-	}
+
 	.page-content {
 		padding-top: 0;
+	}
+
+	#sulo-store-container {
+		.cover.photo {
+			@include breakpoint(large) {
+				display: flex;
+			}
+			.stream-container {
+				text-align: center;
+			}
+			#video-container {
+				padding: 1rem;
+				margin: 0 auto;
+				min-height: 10rem;
+				@include breakpoint(large) {
+					max-width: 75%;
+				}
+			}
+		}
 	}
 	.store-container {
 		$brown: #2E2A31;
@@ -69,32 +89,6 @@
 		}
 	}
 
-	#stream-container {
-		min-height: 18rem;
-		height: 100%;
-		flex: 1;
-		padding: 0;
-		width: 100%;
-		display: flex;
-		justify-content: center;
-		padding: 1rem 0.5rem;
-		@include breakpoint(medium) {
-			min-height: 24rem;
-			padding: 2rem 8rem;
-		}
-		@include breakpoint(large) {
-			padding: 5rem 2rem;
-		}
-		@include breakpoint(xlarge) {
-			padding: 4rem;
-		}
-		#video-container {
-			max-width: 75rem;
-			flex: 1;
-			// min-height: 
-			box-shadow: 0px 1px 4px 0 rgba($black, 0.5);
-		}
-	}
 	.stream-chat-container {
 		display: none;
 		background: rgba($white, 0.7);
@@ -117,25 +111,6 @@
 			}
 			// box-shadow: 1px 2px 2px 0 rgba($black, 0.5);
 		}
-	}
-	.cover-photo {
-		&.row {
-			max-width: 100%;
-		}
-		display: flex;
-		flex-direction: column;
-		min-height: 25rem;
-		@include breakpoint(medium) {
-			min-height: 30rem;
-		}
-		@include breakpoint(large) {
-			flex-direction: row;
-			min-height: 40rem;
-		}
-		background-image: url("https://img0.etsystatic.com/151/0/11651126/isbl_3360x840.22956500_1bj341c6.jpg");
-		background-size: cover;
-		background-repeat: no-repeat;
-		background-position: center center;
 	}
 
 	.store-nav {

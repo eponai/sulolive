@@ -12,3 +12,7 @@
 (defn ^:export runstream []
       (utils/install-app)
       (run/store))
+
+(defn ^:export runcheckout []
+      (utils/install-app)
+      (run/checkout))

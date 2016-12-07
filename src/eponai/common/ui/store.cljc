@@ -2,8 +2,7 @@
   (:require
     [eponai.common.ui.common :as common]
     [eponai.common.ui.product :as item]
-    #?(:cljs
-       [eponai.web.ui.stream :as stream])
+    [eponai.common.ui.stream :as stream]
     #?(:cljs [eponai.web.utils :as utils])
     [om.dom :as dom]
     [om.next :as om #?(:clj :refer :cljs :refer-macros) [defui]]))
@@ -45,7 +44,7 @@
       (dom/div
         nil
         (dom/div #js {:className "cover-container"}
-          (dom/div #js {:className "row collapse cover-photo" :style #js {:backgroundImage (str "url(" cover ")")}}
+          (dom/div #js {:className "photo cover" :style #js {:backgroundImage (str "url(" cover ")")}}
 
             (dom/div #js {:className "column store-container large-2"}
 
@@ -63,8 +62,8 @@
                          (dom/li nil (dom/a nil "Policies")))))
 
             (dom/div #js {:className "large-8"}
-              (dom/div #js {:id "stream-container"}
-                #?(:cljs (stream/->Stream))))
+              (dom/div #js {:className "stream-container"}
+                (stream/->Stream)))
 
             (dom/div #js {:className "medium-2 stream-chat-container"}
               (dom/div #js {:className "stream-chat-content"}

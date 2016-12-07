@@ -48,6 +48,7 @@
                                                           (dom/div #js {:className "content-item-subtitle-section"}
                                                             (dom/span nil (:item/price i)))))))
                                      (:cart/items cart)))
-                         (dom/a #js {:className "button"} "Checkout"))))))))))
+                         (dom/a #js {:className "button"
+                                     :href "/checkout"} "Checkout"))))))))))
 
 (def ->Navbar (om/factory Navbar))
