@@ -5,15 +5,17 @@
     [eponai.server.parser.read :as read]
     [eponai.server.ui.common :as common]
     [eponai.common.ui.store :as common.store]
-    [eponai.common.ui.common :as cljc-common]))
+    [eponai.common.ui.common :as cljc-common]
+    [eponai.common.ui.navbar :as nav]))
 
 (defui Store
   static om/IQuery
   (query [_]
-    [{:proxy/store (om/get-query common.store/Store)}])
+    [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/store (om/get-query common.store/Store)}])
   Object
   (render [this]
-    (let [{:keys [release? proxy/store]} (om/props this)]
+    (let [{:keys [release? proxy/store proxy/navbar]} (om/props this)]
       (dom/html
         {:lang "en"}
         (apply dom/head nil (common/head release?))
@@ -22,7 +24,7 @@
           (dom/div
             {:id "sulo-store"
              :className "page-container"}
-            (cljc-common/navbar nil)
+            (nav/->Navbar navbar)
             (dom/div {:className "page-content" :id "sulo-store-container"}
               (common.store/->Store store))
             (common/footer nil))

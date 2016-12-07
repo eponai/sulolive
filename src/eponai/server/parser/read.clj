@@ -14,6 +14,13 @@
   {:value (-> (query/schema db db-history)
               (eponai.datascript/schema-datomic->datascript))})
 
+(defmethod server-read :query/cart
+  [{:keys [query params]} _ _]
+  (let [cart {:cart/price 103
+              :cart/items (:store/goods (first stores))}]
+    (prn "READING cart: " cart)
+    {:value (select-keys cart query)}))
+
 (defmethod server-read :query/store
   [{:keys [query params]} _ _]
   (let [{:keys [store-id]} params]

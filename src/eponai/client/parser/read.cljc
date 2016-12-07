@@ -27,3 +27,9 @@
     {:value (-> (select-keys store (conj (filter keyword? query) :store/goods))
                 (update :store/goods
                         (fn [gs] (map #(assoc % :item/details details) (apply concat (take 4 (repeat gs)))))))}))
+
+(defmethod client-read :query/cart
+  [{:keys [query params]} _ _]
+  (let [cart {:cart/price 103
+              :cart/items (:store/goods (first stores))}]
+    {:value (select-keys cart query)}))
