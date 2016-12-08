@@ -5,15 +5,17 @@
     [eponai.common.ui.product :as cljc-product]
     [eponai.server.parser.read :as store]
     [om.dom :as dom]
-    [om.next :as om :refer [defui]]))
+    [om.next :as om :refer [defui]]
+    [eponai.common.ui.navbar :as nav]))
 
 (defui Product
   static om/IQuery
   (query [_]
-    [{:query/item (om/get-query cljc-product/Product)}])
+    [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:query/item (om/get-query cljc-product/Product)}])
   Object
   (render [this]
-    (let [{:keys [release? query/item]} (om/props this)]
+    (let [{:keys [release? query/item proxy/navbar]} (om/props this)]
       (dom/html
         {:lang "en"}
 
@@ -24,7 +26,7 @@
           (dom/div
             {:id "sulo-product-page"
              :className "page-container"}
-            (cljc-common/navbar nil)
+            (nav/->Navbar navbar)
 
             (dom/div {:className "page-content" :id "sulo-product-container"}
               (cljc-product/->Product item))

@@ -16,11 +16,6 @@
                          )))
               reviews)))
 
-(defn thumbnail-element [{:keys [img-src size]}]
-  (dom/div #js {:className "content-item-thumbnail-container"}
-    (dom/div #js {:className "content-item-thumbnail" :style #js {:backgroundImage (str "url(" img-src ")")
-                                                                  :backgroundSize (or size "cover")}})))
-
 (defui Product
   static om/IQuery
   (query [_]
@@ -40,7 +35,8 @@
         #js {:id "sulo-product"}
         (dom/div #js {:className "row content-items-container store-container align-middle"}
           (dom/div #js {:className "columns small-4 medium-2"}
-            (thumbnail-element {:img-src (:store/photo store)}))
+            (dom/div #js {:className "photo-container"}
+              (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" (:store/photo store) ")")}})))
           (dom/div #js {:className "columns"}
             (dom/a #js {:href (str "/store/" (:store/id store))}
                    (dom/p #js {:className "store-name"} (:store/name store)))
