@@ -37,9 +37,10 @@
 
 (defn add-test-data [conn]
   (let [mocked-data (parse-resource (clojure.java.io/resource "private/mocked-data.edn"))
-        txs (into [] cat (vals mocked-data))]
-    (debug "Transacting: " txs)
-    (db/transact conn txs)))
+        txs (into [] cat (vals (dissoc mocked-data :cart)))]
+    (db/transact conn txs)
+    ;; Transact the cart once we have the store and item data.
+    (db/transact conn (:cart mocked-data))))
 
 (defn add-data-to-connection
   ([conn & [schema]]

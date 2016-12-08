@@ -475,7 +475,7 @@
             (did-merge-fn @reconciler-atom)))))))
 
 (defn send!
-  [reconciler-atom remote->send & [did-merge-fn]]
+  [reconciler-atom remote->send & [{:keys [did-merge-fn query-fn]}]]
   {:pre [(map? remote->send)]}
   (let [query-chan (async/chan 10000)
         ;; Make leeb listen to the query-chan:
@@ -485,7 +485,7 @@
      (run! (fn [[key query]]
              (async/put! query-chan {:remote->send remote->send
                                      :cb           cb
-                                     :query        query
+                                     :query        (cond-> query (some? query-fn) (query-fn))
                                      :remote-key   key
                                      :query-db     (db-before-mutation @reconciler-atom
                                                                        (query-history-id query))}))

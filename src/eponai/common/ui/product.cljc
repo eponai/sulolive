@@ -38,7 +38,7 @@
             (dom/div #js {:className "photo-container"}
               (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" (:store/photo store) ")")}})))
           (dom/div #js {:className "columns"}
-            (dom/a #js {:href (str "/store/" (:store/id store))}
+            (dom/a #js {:href (str "/store/" (:db/id store))}
                    (dom/p #js {:className "store-name"} (:store/name store)))
             (c/rating-element (:store/rating store) (:store/review-count store))))
 

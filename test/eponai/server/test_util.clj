@@ -36,14 +36,8 @@
   * conversion-rates
   * verified user accounts
   * transactions"
-  ([users] (setup-db-with-user! (new-db) users))
-  ([conn users]
-   (dev/add-currencies conn)
-   (dev/add-conversion-rates conn)
-   (doseq [{:keys [user project-uuid]} users]
-     (dev/add-verified-user-account conn user project-uuid)
-     (dev/add-transactions conn project-uuid))
-    conn))
+  [& args]
+  (throw (ex-info "This method needs to be re-implemented" {:cause "not sulo enough"})))
 
 
 (def user-email "user@email.com")

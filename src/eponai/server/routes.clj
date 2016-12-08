@@ -49,7 +49,8 @@
   (GET "/store/:store-id" request (server.ui/store-html (request->props request)))
   (GET "/goods/:product-id" r (server.ui/product-html (request->props r)))
   (GET "/goods" request (server.ui/goods-html (request->props request)))
-  (GET "/checkout" request (server.ui/checkout-html (request->props request))))
+  (GET "/checkout" request (server.ui/checkout-html (request->props request)))
+  (POST "/api" request (handle-parser-request request)))
 
 (defroutes
   site-routes
@@ -83,7 +84,6 @@
 (defn handle-parser-request
   [{:keys [::m/conn ::m/parser ::stripe/stripe-fn ::playground-auth body ::fb/facebook-token-validator] :as request}]
   (debug "Handling parser request with body:" body)
-  (debug "Facebook validator: " facebook-token-validator)
   (parser
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
      :state                             conn

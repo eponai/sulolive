@@ -1,13 +1,21 @@
 (ns eponai.server.parser.read
   (:require
-    [eponai.common.test-data :as td]
+    [eponai.common.database :as db]
     [eponai.common.datascript :as eponai.datascript]
-    [eponai.common.parser :refer [server-read]]
+    [eponai.common.parser :as parser :refer [server-read read-basis-param-path]]
+    [eponai.common.parser.read :as common.read]
     [eponai.server.datomic.query :as query]
-    [taoensso.timbre :refer [error debug trace warn]]))
+    [clojure.data.generators :as gen]
+    [datomic.api :as d]
+    [taoensso.timbre :refer [error debug trace warn]])
+  (:import [java.util Random]))
 
-(def data td/mocked-data)
-(def stores (:stores data))
+(defn db-shuffle
+  "Shuffle items consistently with the db, meaing
+  with the same db basis-t you get the same items."
+  [db items]
+  (binding [gen/*rnd* (Random. (d/basis-t db))]
+    (gen/shuffle items)))
 
 (defmethod server-read :datascript/schema
   [{:keys [db db-history]} _ _]
@@ -15,59 +23,60 @@
               (eponai.datascript/schema-datomic->datascript))})
 
 (defmethod server-read :query/cart
-  [{:keys [query params]} _ _]
-  (let [cart {:cart/price 103
-              :cart/items (:store/goods (first stores))}]
-    {:value (select-keys cart query)}))
+  [{:keys [db db-history query params]} _ _]
+  (let [cart (query/one db db-history query {:where '[[?e :cart/items]]})]
+    {:value (cond-> cart
+                    (nil? db-history)
+                    (-> (update :cart/items #(seq (map (comp (partial d/entity db) :db/id) %)))
+                        (common.read/compute-cart-price)))}))
 
+(defmethod read-basis-param-path :query/store [{:keys [params]} _ _] [(:store-id params)])
 (defmethod server-read :query/store
-  [{:keys [query params]} _ _]
-  (let [{:keys [store-id]} params]
-    (let [store (some #(when (= (Long/parseLong store-id) (:store/id %))
-                        %) stores)]
-      {:value (-> (select-keys store (conj (filter keyword? query) :store/goods))
-                  (update :store/goods
-                          #(apply concat (take 4 (repeat %))))
-                  (assoc :stream/_store (some #(when (= (:stream/store %) (Long/parseLong store-id))
-                                                %) (:streams data))))})))
+  [{:keys [db db-history query params]} _ p]
+  (let [store-id (or (:store-id params) (:store-id p))]
+    (when-let [store-id (cond-> store-id (string? store-id) (Long/parseLong))]
+      {:value (cond-> (query/one db db-history query {:where   '[[?e]]
+                                                      :symbols {'?e store-id}})
+                      (nil? db-history)
+                      (common.read/multiply-store-items))})))
 
 (defmethod server-read :query/featured-stores
-  [{:keys [query]} _ _]
-  (let [featured-stores (take 4 (shuffle stores))
-        photos-fn (fn [s]
-                    (let [[img-1 img-2] (take 2 (shuffle (map :item/img-src (:store/goods s))))]
-                      (assoc s :store/featured-img-src [img-1 (:store/photo s) img-2])))
-        xf (comp (map photos-fn) (map #(select-keys % query)))]
-    {:value (transduce xf conj [] featured-stores)}))
+  [{:keys [db db-history query]} _ _]
+  ;; Only fetch featured-stores initially? i.e. (when (nil? db-history) ...)
+  ;; TODO: Come up with a way to feature stores.
+  (let [feautred-stores (->> (db/all-with db {:where '[[?e :store/name]]})
+                             (db-shuffle db)
+                             (take 4))
+        photos-fn (fn [store]
+                    (let [s (d/entity db store)
+                          [img-1 img-2] (into [] (comp (take 2) (map :item/img-src)) (db-shuffle db (:item/_goods s)))]
+                      {:db/id store
+                       :store/featured-img-src [img-1 (:store/photo s) img-2]}))]
+    {:value (into [] (comp (map photos-fn)
+                           (map #(merge % (db/pull db query (:db/id %)))))
+                  feautred-stores)}))
 
 (defmethod server-read :query/all-items
-  [{:keys [query]} _ _]
-  (prn "query/all-items: " query)
-  (let [goods (map #(select-keys % query) (mapcat :store/goods stores))
-        xf (comp (mapcat :store/goods) (map #(select-keys % query)))]
-
-    (prn "Got goods: " goods)
-    {:value (transduce xf conj [] stores)}))
+  [{:keys [db db-history query]} _ _]
+  {:value (query/all db db-history query {:where '[[?e :item/id]]})})
 
 (defmethod server-read :query/featured-items
-  [{:keys [query]} _ _]
-  (prn "query/all-items: " query)
-  (let [goods (map #(select-keys % query) (mapcat :store/goods stores))
-        xf (comp (mapcat :store/goods) (map #(select-keys % query)))]
+  [{:keys [db query]} _ _]
+  (let [items (->> (db/all-with db {:where '[[?e :item/id]]})
+                   (db-shuffle db)
+                   (take 4))]
+    {:value (db/pull-many db query items)}))
 
-    {:value (map #(select-keys % query) (take 4 (shuffle (transduce xf conj [] stores))))}))
-
+(defmethod read-basis-param-path :query/store [{:keys [params]} _ _] [(:product-id params)])
 (defmethod server-read :query/item
-  [{:keys [query params]} _ _]
+  [{:keys [db db-history query params]} _ _]
   (let [{:keys [product-id]} params]
-    (prn "Read query/item: " product-id)
-    (let [all-items (mapcat :store/goods stores)
-          product (some #(when (= product-id (:item/id %)) %) all-items)
-          store (some #(when (some #{product-id} (mapv :item/id (:store/goods %)))
-                        %) stores)]
-      {:value (select-keys (assoc product :item/store store) query)})))
+    {:value (query/one db db-history query
+                       {:where   '[[?e :item/id ?item-id]]
+                        :symbols {'?item-id product-id}})}))
 
 (defmethod server-read :query/featured-streams
-  [{:keys [query]} _ _]
-  {:value (map #(select-keys % query)
-               (shuffle (map (fn [s] (update s :stream/store #(get stores %))) (:streams data))))})
+  [{:keys [db query]} _ _]
+  {:value (->> (db/all-with db {:where '[[?e :stream/store]]})
+               (db-shuffle db)
+               (db/pull-many db query))})

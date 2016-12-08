@@ -33,22 +33,27 @@
       content)
     (dom/a {:href href} footer)))
 
+(defn link-to-store [store]
+  (str "/store/" (:db/id store)))
+
 (defn online-channel-element [channel]
-  (let [{:keys [stream/store]} channel]
+  (let [{:stream/keys [store]} channel
+        store-link (link-to-store store)]
     (dom/div {:className "column content-item online-channel"}
       (dom/a {:className "photo-container"
-              :href (str "/store/" (:store/id store))}
+              :href      store-link}
              (dom/div {:className "photo square" :style {:background-image (str "url(" (:stream/img-src channel) ")")}}))
       (dom/div {:className "content-item-title-section"}
-        (dom/a {:href (str "/store/" (:store/id store))} (dom/strong nil (:stream/name channel)))
+        (dom/a {:href store-link} (dom/strong nil (:stream/name channel)))
         (cljc-common/viewer-element (:stream/viewer-count channel)))
       (dom/div {:className "content-item-subtitle-section"}
-        (dom/a {:href (str "/store/" (:store/id store))} (:store/name store))))))
+        (dom/a {:href store-link} (:store/name store))))))
 
 (defn store-element [store]
-  (let [[large mini-1 mini-2] (:store/featured-img-src store)]
+  (let [[large mini-1 mini-2] (:store/featured-img-src store)
+        store-link (link-to-store store)]
     (dom/div {:className "column content-item store-item"}
-      (dom/a {:href      (str "/store/" (:store/id store))
+      (dom/a {:href      store-link
               :className "photo-container collage"}
              (dom/div {:className "photo square"
                        :style     {:background-image (str "url(" large ")")}})
@@ -58,7 +63,7 @@
                (dom/div {:className "photo"
                          :style     {:background-image (str "url(" mini-2 ")")}})))
       (dom/div {:className "content-item-title-section"}
-        (dom/a {:href (str "/store/" (:store/id store))}
+        (dom/a {:href store-link}
                (:store/name store)))
       (dom/div {:className "content-item-subtitle-section"}
         (cljc-common/rating-element (:store/rating store) (:store/review-count store))))))
@@ -71,7 +76,7 @@
                              :item/price
                              :item/id
                              :item/img-src]}
-     {:query/featured-stores [:store/name :store/featured-img-src :store/rating :store/review-count :store/id]}
+     {:query/featured-stores [:db/id :store/name :store/featured-img-src :store/rating :store/review-count]}
      {:query/featured-streams [:stream/name :stream/store :stream/viewer-count :stream/img-src]}])
   Object
   (render [this]

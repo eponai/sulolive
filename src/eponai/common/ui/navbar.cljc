@@ -1,6 +1,6 @@
 (ns eponai.common.ui.navbar
   (:require
-    #?(:cljs [goog.string :refer [format]])
+    [eponai.common :as com]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]))
 
@@ -30,7 +30,7 @@
                                    (dom/a #js {:href "/checkout"
                                                ;:onClick #(om/update-state! this update :cart-open? not)
                                                }
-                                          (dom/span nil (format "$%.2f" (double (:cart/price cart))))
+                                          (dom/span nil (com/format-str "$%.2f" (double (:cart/price cart))))
                                           (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))))
 
                    ;(when cart-open?)
@@ -53,7 +53,7 @@
                        (dom/div #js {:className "callout nude"}
                          (when (< 3 (count (:cart/items cart)))
                            (dom/small nil (str "You have " (- (count (:cart/items cart)) 3) " more item(s) in your bag")))
-                         (dom/h5 nil "Total: " (dom/strong nil (format "$%.2f" (double (:cart/price cart))))))
+                         (dom/h5 nil "Total: " (dom/strong nil (com/format-str "$%.2f" (double (:cart/price cart))))))
                        (dom/a #js {:className "button expanded"
                                    :href      "/checkout"} "View My Bag")))))))))
 

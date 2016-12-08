@@ -71,7 +71,7 @@
       :cljs [Atom
              (transact* [conn txs] (datascript/transact conn txs))]))
 
-(defn db-instance? [db]
+(defn database? [db]
   (satisfies? DatabaseApi db))
 
 (defn- throw-error [e cause data]
@@ -86,7 +86,7 @@
 
 (defn- do-pull [pull-fn db pattern ents]
   {:pre [(fn? pull-fn)
-         (db-instance? db)
+         (database? db)
          (vector? pattern)]}
   (try
     (let [ret (pull-fn db pattern ents)]
@@ -113,10 +113,8 @@
   (pull-many* db pattern eids))
 
 (defn pull [db pattern eid]
-  {:pre [(db-instance? db)
-         (vector? pattern)
-         (or (number? eid) (vector? eid) (keyword? eid))]}
-  (pull* db pattern eid))
+  (when eid
+    (pull* db pattern eid)))
 
 (defn entity [db eid]
   (entity* db eid))
@@ -133,8 +131,8 @@
 (defn- x-with
   ([db entity-query] (x-with db entity-query nil))
   ([db {:keys [find where symbols] :as entity-query} find-pattern]
-   {:pre [(db-instance? db)
-          (or (vector? where) (seq? where))
+   {:pre [(database? db)
+          (or (vector? where) (seq? where) (and (nil? where) (contains? symbols '?e)))
           (or (nil? symbols) (map? symbols))
           (or find-pattern find)]}
    (when (and (some? find) (some? find-pattern)
@@ -158,7 +156,7 @@
 
   Returns entity matching the lookupref, (nil if no lookup ref is provided or no entity exists)."
   [db lookup-ref]
-  {:pre [(db-instance? db)]}
+  {:pre [(database? db)]}
   (when lookup-ref
     (try
       (entity* db (:db/id (pull db [:db/id] lookup-ref)))
@@ -168,7 +166,7 @@
 (defn one-with
   "Used the same way as all-with. Returns one entity id."
   [db params]
-  {:pre [(db-instance? db)
+  {:pre [(database? db)
          (map? params)]}
   (x-with db params '[?e .]))
 
@@ -182,7 +180,7 @@
 
   Returns all entities matching the symbol ?e."
   [db params]
-  {:pre [(db-instance? db)
+  {:pre [(database? db)
          (map? params)]}
   (x-with db params '[[?e ...]]))
 
@@ -194,14 +192,6 @@
           (str "No find-pattern for query: " params))
   (x-with db params))
 
-(defn all
-  [db query values]
-  {:pre [(db-instance? db)]}
-
-  (if (empty? values)
-    (q query db)
-    (apply (partial q query db) values)))
-
 (defn merge-query
   "Preforms a merge of two query maps with :where and :symbols."
   [base {:keys [find] :as addition}]
@@ -211,6 +201,14 @@
       (update :symbols merge (:symbols addition))
       (cond-> (some? find)
               (assoc :find find))))
+
+;; Common usages:
+
+(defn pull-one-with [db pattern params]
+  (pull db pattern (one-with db params)))
+
+(defn pull-all-with [db pattern params]
+  (pull-many db pattern (all-with db params)))
 
 (defn tempid [partition & [n]]
   #?(:clj (apply datomic/tempid (cond-> [partition] (some? n) (conj n)))

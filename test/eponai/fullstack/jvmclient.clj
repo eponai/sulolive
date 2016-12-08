@@ -55,7 +55,7 @@
                                          (remotes/read-basis-t-remote-middleware conn)
                                          (remotes/wrap-update :opts assoc :cookie-store cookie-store)
                                          (remotes/wrap-update :shutting-down? (fn [& _] @teardown-atom)))}
-                            did-merge-fn)
+                            {:did-merge-fn did-merge-fn})
         reconciler (om/reconciler {:id-key (str "jvmclient reconciler: " idx)
                                    :state   conn
                                    :parser  (parser/client-parser)

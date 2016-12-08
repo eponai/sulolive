@@ -25,7 +25,7 @@
 
 (defn verifications
   [db user-db-id status]
-  {:pre [(db/db-instance? db)
+  {:pre [(db/database? db)
          (number? user-db-id)
          (keyword? status)]}
   (db/q '[:find [?v ...]

@@ -24,7 +24,8 @@
                  [org.clojure/data.xml "0.0.8"]
                  [environ "1.0.1"]
                  [hiccup "1.0.5"]
-                 [org.clojure/clojure "1.8.0"]
+                 [org.clojure/clojure "1.9.0-alpha14"]
+                 [org.clojure/data.generators "0.1.2"]
                  [org.clojure/core.async "0.2.391"]
                  [org.clojure/core.memoize "0.5.8"]         ; needed to work around lein+core.async dependency issue.
                  [org.clojure/data.json "0.2.6"]

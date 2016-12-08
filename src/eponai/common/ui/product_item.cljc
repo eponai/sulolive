@@ -1,5 +1,6 @@
 (ns eponai.common.ui.product-item
   (:require
+    [eponai.common :as com]
     [eponai.common.ui.product :as product]
     [eponai.common.ui.common :as common]
     [om.dom :as dom]
@@ -36,7 +37,7 @@
         (dom/div #js {:className "content-item-title-section"}
           (dom/a nil (:item/name product)))
         (dom/div #js {:className "content-item-subtitle-section"}
-          (dom/strong nil (:item/price product))
+          (dom/strong nil (com/format-str "$%.2f" (:item/price product)))
           (common/rating-element 5 11))
 
         (when show-item?

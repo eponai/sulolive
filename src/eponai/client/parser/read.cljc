@@ -1,7 +1,9 @@
 (ns eponai.client.parser.read
   (:require
     [eponai.common.parser :as parser :refer [client-read]]
-    [eponai.common.test-data :as td]
+    [eponai.common.parser.read :as common.read]
+    [eponai.common.database :as db]
+    [eponai.common :as c]
     #?(:cljs
        [cljs.reader])))
 
@@ -16,34 +18,23 @@
 
 ;; ----------
 
-(def data td/mocked-data)
-(def stores (:stores td/mocked-data))
-
 (defmethod client-read :query/store
-  [{:keys [query]} _ {:keys [store-id] :as p}]
-  (let [store (some #(when (= #?(:cljs (cljs.reader/read-string store-id)) (:store/id %))
-                      %) stores)
-        streams (:streams data)
-        details "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."]
-    {:value (-> (select-keys store (conj (filter keyword? query) :store/goods))
-                (update :store/goods
-                        (fn [gs] (map #(assoc % :item/details details) (apply concat (take 4 (repeat gs))))))
-                (assoc :stream/_store (some #(when (= (:stream/store %) #?(:cljs (cljs.reader/read-string store-id)))
-                                              %) streams)))}))
+  [{:keys [db query target]} _ {:keys [store-id]}]
+  (let [store (db/pull-one-with db query {:where '[[?e]]
+                                          :symbols {'?e (c/parse-long store-id)}})]
+    (if target
+      {:remote true}
+      {:value (common.read/multiply-store-items store)})))
 
 (defmethod client-read :query/cart
-  [{:keys [query params]} _ _]
-  (let [cart {:cart/price 103
-              :cart/items (:store/goods (first stores))}]
-    {:value (select-keys cart query)}))
+  [{:keys [db query target]} _ _]
+  (let [cart (db/pull-one-with db query {:where '[[?e :cart/items]]})]
+    (if target
+      {:remote true}
+      {:value (common.read/compute-cart-price cart)})))
 
 (defmethod client-read :query/all-items
-  [{:keys [query]} _ _]
-  (prn "query/all-items: " query)
-  (let [goods (map #(select-keys % query) (mapcat :store/goods stores))
-        ks (filter keyword? query)
-        xf (comp
-             (mapcat :store/goods)
-             (map #(select-keys % ks)))]
-
-    {:value (transduce xf conj [] stores)}))
+  [{:keys [db query target]} _ _]
+  (if target
+    {:remote true}
+    {:value (db/pull-all-with db query {:where '[[?e :item/id]]})}))

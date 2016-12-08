@@ -75,18 +75,6 @@
   :db/doc                "Cover photo url for the store"
   :db.install/_attribute :db.part/db}
 
-
- ;; TODO: Should we have this attribute, or should
- ;;       the goods have a ref to the store?
- ;;       Then this attribute would be :store/_goods ?
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store/goods
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/many
-  :db/isComponent        true
-  :db/doc                "Goods of the store"
-  :db.install/_attribute :db.part/db}
-
  ;; Goods aka Items
 
  {:db/id                 #db/id[:db.part/db]
@@ -97,9 +85,15 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
+  :db/ident              :item/store
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Ref which has the item"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
   :db/ident              :item/price
-  ;; TODO: price should be a bigdec?
-  :db/valueType          :db.type/string
+  :db/valueType          :db.type/bigdec
   :db/cardinality        :db.cardinality/one
   :db/doc                "Price of the item"
   :db.install/_attribute :db.part/db}
@@ -122,5 +116,16 @@
   :db/unique             :db.unique/value
   :db/doc                "String id of the item"
   :db.install/_attribute :db.part/db}
+
+ ;; Cart
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :cart/items
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/many
+  :db/doc                "Items in the cart"
+  :db.install/_attribute :db.part/db}
+
+ ;; TODO: Add :cart/user, or something when we have a user.
 
  ]

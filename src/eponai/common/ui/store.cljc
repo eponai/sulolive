@@ -17,10 +17,10 @@
           :item (om/get-query item/Product) })))
   static om/IQuery
   (query [_]
-    [`({:query/store [:store/id
+    [`({:query/store [:db/id
                       :store/cover
                       :store/photo
-                      {:store/goods ~(om/get-query item/Product)}
+                      {:item/_store ~(om/get-query item/Product)}
                       {:stream/_store [:stream/name :stream/viewer-count]}
                       :store/name
                       :store/rating
@@ -40,8 +40,9 @@
   (render [this]
     (let [{:keys [show-item breakpoint]} (om/get-state this)
           {:keys [query/store]} (om/props this)
-          {:keys      [store/cover store/review-count store/rating store/photo store/goods]
-           stream :stream/_store
+          {:keys      [store/cover store/review-count store/rating store/photo]
+           stream     :stream/_store
+           items      :item/_store
            store-name :store/name} store]
 
       (dom/div
@@ -90,9 +91,8 @@
           (apply dom/div #js {:className "content-items-container row small-up-2 medium-up-3 large-up-4"}
                  (map (fn [p]
                         (pi/->ProductItem {:product p
-                                               :on-click #(om/update-state! this assoc :show-item p)})
-                        )
-                      goods)))
+                                               :on-click #(om/update-state! this assoc :show-item p)}))
+                      items)))
 
         ;(when (some? show-item)
         ;  (common/modal {:on-close #(om/update-state! this dissoc :show-item)

@@ -107,7 +107,7 @@
 (defn user-attributes [db db-since]
   ;;TODO: Add more user entities? We want to filter out anything that has to do with sensitive
   ;;      user data. Such as what they have bought.
-  (let [user-entity-keys [:project/uuid :transaction/uuid]
+  (let [user-entity-keys []                                 ;; [:project/uuid :transaction/uuid]
         query {:find '[[?a ...]]
                :where        '[[$ ?e ?user-entity-key]
                                [$ ?e ?a]
