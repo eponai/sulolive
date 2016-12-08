@@ -1,7 +1,44 @@
+.cart-container {
+	.callout {
+		background: transparent;
+		border: none;
+		margin: 0;
+	}
+}
 .cart {
 	&.menu.vertical {
 		.content-item {
 			padding: 0.5rem 0;
+		}
+		li {
+			$border-color: map-get($foundation-palette, brown);
+			$border: 1px solid rgba($border-color, 0.1);
+			border-bottom: $border;
+		}
+	}
+
+	.content-item-title-section {
+		span, small {
+			overflow: hidden; 
+			max-height: 2rem;
+			line-height: 1rem;
+			white-space: normal;
+		}
+	}
+	.content-item-subtitle-section {
+		.price {
+			font-weight: 500;
+		}
+	}
+}
+
+.shopping-cart {
+	.cart-container.dropdown-pane {
+		visibility: hidden;
+	}
+	&:hover {
+		.cart-container.dropdown-pane {
+			visibility: visible;
 		}
 	}
 }
