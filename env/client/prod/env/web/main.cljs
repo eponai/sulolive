@@ -5,11 +5,14 @@
 
 (taoensso.timbre/set-level! :info)
 
-(defn ^:export run []
+(defn ^:export runstore[]
   (enable-console-print!)
-  (app/run))
+  (run/run :store))
 
-
-(defn ^:export runstream []
+(defn ^:export rungoods []
   (enable-console-print!)
-  (run/store))
+  (run/run :goods))
+
+(defn ^:export runcheckout []
+  (enable-console-print!)
+  (run/run :checkout))

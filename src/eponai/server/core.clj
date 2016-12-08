@@ -41,13 +41,6 @@
                                                     (stripe/stripe (env :stripe-secret-key) k p))
                      ::email/send-verification-fn (partial email/send-verification-email @in-production?)
                      ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
-                     ::m/playground-user-uuid-fn  (if (env :playground-user-uuid)
-                                                    (constantly (java.util.UUID/fromString (env :playground-user-uuid)))
-                                                    (when-not @in-production?
-                                                      ;; In development we'll just get the first user.
-                                                      (fn [] (d/q '{:find  [?uuid .]
-                                                                    :where [[_ :user/uuid ?uuid]]}
-                                                                  (d/db conn)))))
                      ::fb/facebook-token-validator   (fn [fb-params]
                                                     (let [app-id (env :facebook-app-id "no-facebook-app-id")
                                                           app-secret (env :facebook-app-secret "no-facebook-app-secret")]

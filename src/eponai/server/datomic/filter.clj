@@ -96,13 +96,16 @@
      (owner? ?user-id ?ref)]])
 
 (defn user-entities [db db-since user-id]
-  (let [query {:where   '[[$ ?e]
-                          [$since ?e]
-                          (owner? ?user-id ?e)]
-               :symbols {'$since   db-since
-                         '?user-id user-id
-                         '%        user-owned-rule}}]
-    (db/all-with db query)))
+  (comment
+    "Not used yet, because we don't have a user/uuid thing"
+    (let [query {:where   '[[$ ?e]
+                            [$since ?e]
+                            (owner? ?user-id ?e)]
+                 :symbols {'$since   db-since
+                           '?user-id user-id
+                           '%        user-owned-rule}}]
+      (db/all-with db query)))
+  #{})
 
 (defn user-attributes [db db-since]
   ;;TODO: Add more user entities? We want to filter out anything that has to do with sensitive
