@@ -27,7 +27,9 @@
 				padding: 1rem;
 				font-size: 1.4rem;
 				h2 {
-					
+					text-overflow: ellipsis;
+					overflow: hidden;
+					white-space: nowrap;
 					font-size: 1.4rem;
 					font-weight: 500;
 				}
@@ -53,18 +55,21 @@
 			color: $nude;
 			text-shadow: 1px 1px 1px rgba($black, 0.7);
 		}
+		@include breakpoint(large) {
+			padding: 0;
+		}
 		.store-main-menu {
 			width: 100%;
-			padding: 1rem 0;
-			// ul {
-				@include breakpoint(large) {
-					// @extend .vertical;
-					@include menu-direction(vertical);
-				}
-			// }
+			padding-top: 0.5rem;
+			@include breakpoint(large) {
+				padding: 1rem 0;
+				@include menu-direction(vertical);
+			}
 			li {
 				@include breakpoint(large) {
-					$border: 1px solid rgba($brown, 0.2);
+					padding-left: 5%;
+					padding-right: 5%;
+					$border: 1px solid rgba($brown, 0.3);
 					border-top: $border;
 					&:last-child {
 						border-bottom: $border;
@@ -86,17 +91,16 @@
 	}
 	.store-short-info-container {
 		display: flex;
-		padding: 0 1rem;
 		@include breakpoint(large) {
-			flex-direction: column;
-			padding: 0 2rem;
+			display: block;
+			padding: 0 10%;
 		}
-		.content-item-thumbnail-container {
+		.photo-container {
 			width: 5rem;
 			margin-right: 1rem;
-			@include breakpoint(large){
+
+			@include breakpoint(large) {
 				width: 100%;
-				margin: 0;
 			}
 		}
 	}

@@ -64,13 +64,11 @@
                       (dom/li nil (dom/a nil "Policies"))))
 
             (dom/div #js {:className "large-8"}
-              (dom/div #js {:className "stream-container"}
+              (dom/div #js {:className "stream-container content-item"}
                 (stream/->Stream)
-                (dom/div #js {:className "row"}
-                  (dom/div #js {:className "column"}
-                    (dom/h2 #js {:className "stream-title"} (:stream/name stream)))
-                  (dom/div #js {:className "column text-right"}
-                    (common/viewer-element (:stream/viewer-count stream))))))
+                (dom/div #js {:className "content-item-title-section"}
+                  (dom/h2 #js {:className "stream-title"} (:stream/name stream))
+                  (common/viewer-element (:stream/viewer-count stream)))))
 
             (dom/div #js {:className "medium-2 stream-chat-container"}
               (dom/div #js {:className "stream-chat-content"}
@@ -88,10 +86,11 @@
                     (dom/li nil (dom/a nil "Duvets")))))
 
         (dom/div #js {:className "items"}
-          (apply dom/div #js {:className "content-items-container row small-up-2 medium-up-4"}
+          (apply dom/div #js {:className "content-items-container row small-up-2 medium-up-3 large-up-4"}
                  (map (fn [p]
-                        (common/product-element p {:on-click #(om/update-state! this assoc :show-item p)
-                                                   #?@(:cljs [:open-url? (utils/bp-compare :large breakpoint >)])}))
+                        (common/->ProductItem {:product p
+                                               :on-click #(om/update-state! this assoc :show-item p)})
+                        )
                       goods)))
 
         (when (some? show-item)

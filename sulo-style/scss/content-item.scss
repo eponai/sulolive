@@ -18,7 +18,7 @@
 			overflow: hidden;
 			white-space: nowrap;
 		}
-		padding-top: 1rem;
+		padding-top: 0.5rem;
 		display: flex;	
 		flex-direction: column;
 		@include breakpoint(large) {
@@ -36,10 +36,10 @@
 			align-items: center;
 		}
 	}
+}
 
 	.viewers-container {
 		margin-left: 0.2rem;
 		display: flex;
 		flex-wrap: nowrap;
 	}
-}

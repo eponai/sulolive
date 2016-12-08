@@ -2,7 +2,8 @@
   (:require
     [eponai.common.ui.navbar :as nav]
     #?(:cljs [eponai.web.utils :as utils])
-    [om.dom :as dom]))
+    [om.dom :as dom]
+    [om.next :as om :refer [defui]]))
 
 (defn modal [opts & content]
   (let [{:keys [on-close size]} opts]
@@ -36,6 +37,35 @@
                   all-stars))
       (when (some? review-count)
         (dom/span nil (str "(" review-count ")"))))))
+
+(defui ProductItem
+  Object
+  (initLocalState [this]
+    {:resize-listener #(.on-window-resize this)
+     #?@(:cljs [:breakpoint (utils/breakpoint js/window.innerWidth)])})
+  #?(:cljs
+     (on-window-resize [this]
+                       (om/update-state! this assoc :breakpoint (utils/breakpoint js/window.innerWidth))))
+  (componentDidMount [this]
+    #?(:cljs (.addEventListener js/window "resize" (:resize-listener (om/get-state this)))))
+  (componentWillUnmount [this]
+    #?(:cljs (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
+
+  (render [this]
+    (let [{:keys [on-click product]} (om/props this)
+          {:keys [breakpoint]} (om/get-state this)
+          open-url? #?(:cljs (utils/bp-compare :large breakpoint >) :clj false)]
+      (dom/div #js {:className "column content-item product-item"}
+        (dom/a #js {:className "photo-container"
+                    :onClick   (when-not open-url? on-click)
+                    :href      (when (or open-url? (nil? on-click)) (str "/goods/" (:item/id product)))}
+               (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" (:item/img-src product) ")")}}))
+        (dom/div #js {:className "content-item-title-section"}
+          (dom/a nil (:item/name product)))
+        (dom/div #js {:className "content-item-subtitle-section"}
+          (dom/strong nil (:item/price product))
+          (rating-element 5 11))))))
+(def ->ProductItem (om/factory ProductItem))
 
 (defn product-element [product & [opts]]
   (let [{:keys [on-click open-url?]} opts]
