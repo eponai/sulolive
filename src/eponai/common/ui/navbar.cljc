@@ -9,7 +9,9 @@
   static om/IQuery
   (query [_]
     [{:query/cart [:cart/price
-                   :cart/items]}])
+                   {:cart/items [:item/price
+                                 :item/img-src
+                                 :item/name]}]}])
   Object
   (initLocalState [_]
     {:cart-open? false})

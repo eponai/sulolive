@@ -28,7 +28,6 @@
           open-url? #?(:cljs (utils/bp-compare :large breakpoint >) :clj false)
           on-click #(om/update-state! this assoc :show-item? true)]
 
-      (debug "Breakpoint: " breakpoint)
       (dom/div #js {:className "column content-item product-item"}
         (dom/a #js {:className "photo-container"
                     :onClick   (when-not open-url? on-click)
