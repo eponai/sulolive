@@ -215,7 +215,8 @@
 (defn setup-system []
   {:results-atom    (atom [])
    :db-schema       (datomic-dev/read-schema-files)
-   :db-transactions (take 105 (datomic-dev/transactions))})
+   :db-transactions nil                                     ;;(take 105 (datomic-dev/transactions))
+   })
 
 (defn run-test [{:keys [server] :as system} test-fn]
   (let [action-chan (async/chan)

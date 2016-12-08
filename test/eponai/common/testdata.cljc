@@ -14,9 +14,9 @@
      "Compiles our schema-0.edn into a clojurescript file (testdata.cljs)
      so we can use it in our tests."
      []
-     (when-let [schemas (seq (datomic_dev/read-schema-files))]
+     (when-let [schema (seq (datomic_dev/read-schema-files))]
        (let [conn# (datomic_dev/create-new-inmemory-db "read-datomic-schema")
-             _ (run! #(db/transact conn# %) schemas)
+             _ (db/transact conn# schema)
              inlined# (into [] (pull/schema (d/db conn#)))]
          inlined#))))
 

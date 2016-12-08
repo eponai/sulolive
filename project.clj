@@ -14,7 +14,7 @@
                  [com.cemerick/friend "0.2.3"
                   :exclusions [org.clojure/core.cache]]
                  [com.cemerick/url "0.1.1"]
-                 [com.datomic/datomic-pro "0.9.5350"
+                 [com.datomic/datomic-pro "0.9.5544"
                   :exclusions [joda-time]]
                  [com.amazonaws/aws-java-sdk-dynamodb "1.10.56"
                   :exclusions [joda-time org.clojure/test.check]]

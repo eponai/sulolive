@@ -417,3 +417,4 @@
     (comment
       ;; TODO: Actually transact this if we want to release jourmoney ^^
       (transact-map conn account))))
+

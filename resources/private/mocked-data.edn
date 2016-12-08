@@ -1,24 +1,24 @@
 {:streams [{:stream/name         "Wear and tear proof your clothes"
-            :stream/store        0
+            :stream/store        #db/id[:db.part/user -100]
             :stream/viewer-count 8
             :stream/img-src      "https://img1.etsystatic.com/122/0/10558959/isla_500x500.21872363_66njj7uo.jpg"}
            {:stream/name         "What's up with thread count"
-            :stream/store        1
+            :stream/store        #db/id[:db.part/user -1]
             :stream/viewer-count 13
             :stream/img-src      "https://img0.etsystatic.com/125/0/11651126/isla_500x500.17338368_6u0a6c4s.jpg"}
            {:stream/name         "Old looking leather, how?"
-            :stream/store        2
+            :stream/store        #db/id[:db.part/user -2]
             :stream/viewer-count 43
             :stream/img-src      "https://img1.etsystatic.com/121/0/6396625/isla_500x500.17289961_hkw1djlp.jpg"}
            {:stream/name         "Talking wedding bands"
-            :stream/store        3
+            :stream/store        #db/id[:db.part/user -3]
             :stream/viewer-count 3
             :stream/img-src      "https://img0.etsystatic.com/139/0/5243597/isla_500x500.22177516_ath1ugrh.jpg"}]
 
- :stores  [{:store/name         "HeadnTail"
-            :store/id           0
+ :stores  [{:db/id              #db/id[:db.part/user -100]
+            :store/name         "HeadnTail"
             :store/review-count 13
-            :store/rating       4.5
+            :store/rating       4.5M
             :store/photo        "https://img1.etsystatic.com/122/0/10558959/isla_500x500.21872363_66njj7uo.jpg"
             :store/goods        [{:item/name    "Vintage 90's Fila Sport USA Sweatshirt Red Black Sport Trainer Sweater"
                                   :item/price   "$34.00"
@@ -36,9 +36,9 @@
                                   :item/price   "$34.00"
                                   :item/img-src "https://img1.etsystatic.com/101/0/10558959/il_570xN.1038331841_gk1f.jpg"
                                   :item/id      "03"}]}
-           {:store/name         "MagicLinen"
-            :store/id           1
-            :store/rating       5
+           {:db/id              #db/id[:db.part/user -1]
+            :store/name         "MagicLinen"
+            :store/rating       5M
             :store/cover        "https://img0.etsystatic.com/151/0/11651126/isbl_3360x840.22956500_1bj341c6.jpg"
             :store/photo        "https://img0.etsystatic.com/125/0/11651126/isla_500x500.17338368_6u0a6c4s.jpg"
             :store/review-count 8
@@ -58,11 +58,11 @@
                                   :item/price   "$34.00"
                                   :item/img-src "https://img1.etsystatic.com/126/0/11651126/il_570xN.1098073811_5ca0.jpg"
                                   :item/id      "13"}]}
-           {:store/name         "thislovesthat"
-            :store/id           2
+           {:db/id           #db/id[:db.part/user -2]
+            :store/name         "thislovesthat"
             :store/cover        "https://img1.etsystatic.com/126/0/6396625/iusb_760x100.17290451_heo8.jpg"
             :store/review-count 43
-            :store/rating       3.5
+            :store/rating       3.5M
             :store/photo        "https://img1.etsystatic.com/121/0/6396625/isla_500x500.17289961_hkw1djlp.jpg"
             :store/goods        [{:item/name    "Glitter & Navy Blue Envelope Clutch"
                                   :item/img-src "https://img1.etsystatic.com/030/0/6396625/il_570xN.635631611_4c3s.jpg"
@@ -80,11 +80,11 @@
                                   :item/price   "$34.00"
                                   :item/img-src "https://img1.etsystatic.com/033/0/6396625/il_570xN.523107737_juvf.jpg"
                                   :item/id      "23"}]}
-           {:store/name         "Nafsika"
+           {:db/id              #db/id[:db.part/user -3]
+            :store/name         "Nafsika"
             :store/cover        "https://img1.etsystatic.com/133/0/5243597/isbl_3360x840.20468865_f7kumdbt.jpg"
             :store/review-count 22
-            :store/rating       4.5
-            :store/id           3
+            :store/rating       4.5M
             :store/photo        "https://img0.etsystatic.com/139/0/5243597/isla_500x500.22177516_ath1ugrh.jpg"
             :store/goods        [{:item/name    "Silver Twig Ring Milky Aquamarine Cabochon Light Blue March Birthstone Gifts for her Botanical Jewelry"
                                   :item/img-src "https://img0.etsystatic.com/036/1/5243597/il_570xN.654738182_2k08.jpg"
@@ -102,11 +102,11 @@
                                   :item/img-src "https://img0.etsystatic.com/139/3/5243597/il_570xN.931188156_qhqe.jpg"
                                   :item/price   "$34.00"
                                   :item/id      "33"}]}
-           {:store/name         "FlowerRainbowNJ"
+           {:db/id              #db/id[:db.part/user -4]
+            :store/name         "FlowerRainbowNJ"
             :store/cover        "https://img1.etsystatic.com/142/0/10419159/isbl_3360x840.23915763_oyuug7tu.jpg"
             :store/review-count 132
-            :store/rating       4.5
-            :store/id           4
+            :store/rating       4.5M
             :store/photo        "https://img0.etsystatic.com/070/0/10419159/isla_500x500.15898658_8drjcd1j.jpg"
             :store/goods        [{:item/name    "Christmas Sale 25% OFF Opal nose studs x5, set of nose studs, tiny nose stud, gold nose stud, small nose stud, tiny stud, nose stud opal, pi"
                                   :item/img-src "https://img1.etsystatic.com/162/0/10419159/il_570xN.1142775003_oe2z.jpg"

@@ -4,7 +4,7 @@
             [eponai.server.datomic-dev :as dev]
             [eponai.common.database :as db]))
 
-(def schemas (dev/read-schema-files))
+(def schema (dev/read-schema-files))
 
 (defn user-email->user-uuid [db user-email]
   (d/q '{:find  [?uuid .]
@@ -23,7 +23,7 @@
      (d/delete-database uri)
      (d/create-database uri)
      (let [conn (d/connect uri)]
-       (run! (partial db/transact conn) schemas)
+       (db/transact conn schema)
        (db/transact conn [{:db/id         (d/tempid :db.part/user)
                                  :currency/code "USD"}])
        (when txs

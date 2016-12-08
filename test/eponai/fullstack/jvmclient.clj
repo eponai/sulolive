@@ -126,7 +126,7 @@
                                   ::email-chan      email-chan
                                   ::callback-chan   callback-chan})]
     (fs.utils/take-with-timeout callback-chan "initial merge")
-    (log-in! client (log-in-with-email datomic-dev/test-user-email))
+    (log-in! client (log-in-with-email (throw (ex-info "Need a test-user email" {:was 'datomic-dev/test-user-email}))))
     (om/force-root-render! client)
     client))
 

@@ -5,6 +5,6 @@
 #?(:clj
    (defmacro inline-test-data
      []
-     (clojure.edn/read-string (slurp (clojure.java.io/resource "private/mocked-data.edn")))))
+     (clojure.edn/read-string {:readers *data-readers*} (slurp (clojure.java.io/resource "private/mocked-data.edn")))))
 
 (def mocked-data (inline-test-data))

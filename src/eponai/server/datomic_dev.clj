@@ -1,59 +1,11 @@
 (ns eponai.server.datomic-dev
   (:require [datomic.api :as d]
             [environ.core :refer [env]]
-            [eponai.common.format :as format]
             [clojure.tools.reader.edn :as edn]
             [clojure.java.io :as io]
             [eponai.common.database :as db]
             [eponai.common.database.functions :as dbfn]
-            [taoensso.timbre :refer [debug error info]]
-            [eponai.server.datomic.format :as f]))
-
-(def currencies {:THB "Thai Baht"
-                 :SEK "Swedish Krona"
-                 :USD "US Dollar"
-                 :JPY "Japanese Yen"
-                 :MYR "Malaysian Ringit"
-                 :VND "Vietnamese Dollar"
-                 :EUR "Euro"
-                 :ALL "Albanian Money"
-                 :HRK "Croatian Money"
-                 :CNY "Chineese Money"})
-
-(defn transactions []
-  [{:transaction/title      "lunch"
-    :transaction/date       {:date/ymd "2015-10-10"}
-    :transaction/amount     "180"
-    :transaction/currency   {:currency/code "THB"}
-    :transaction/created-at 1
-    :transaction/tags       [{:tag/name "thailand"}]
-    :transaction/type       :transaction.type/expense}
-   {:transaction/title      "coffee"
-    :transaction/date       {:date/ymd "2015-10-10"}
-    :transaction/amount     "140"
-    :transaction/currency   {:currency/code "THB"}
-    :transaction/created-at 1
-    :transaction/type       :transaction.type/expense}
-   {:transaction/title      "dinner"
-    :transaction/date       {:date/ymd "2015-10-10"}
-    :transaction/amount     "350"
-    :transaction/currency   {:currency/code "THB"}
-    :transaction/created-at 1
-    :transaction/type       :transaction.type/expense}
-   {:transaction/title      "market"
-    :transaction/date       {:date/ymd "2015-10-11"}
-    :transaction/amount     "789"
-    :transaction/currency   {:currency/code "THB"}
-    :transaction/created-at 1
-    :transaction/type       :transaction.type/expense}
-   {:transaction/title      "lunch"
-    :transaction/date       {:date/ymd "2015-10-11"}
-    :transaction/amount     "125"
-    :transaction/currency   {:currency/code "THB"}
-    :transaction/created-at 1
-    :transaction/type       :transaction.type/expense}])
-
-(def test-user-email "test-user@email.com")
+            [taoensso.timbre :refer [debug error info]]))
 
 (defn create-new-inmemory-db
   ([] (create-new-inmemory-db "test-db"))
@@ -64,9 +16,12 @@
      (d/connect uri))))
 
 (defn database-functions-schema []
-  [{:db/id    #db/id [:db.part/user]
-    :db/ident :db.fn/edit-attr
-    :db/fn    (dbfn/dbfn dbfn/edit-attr)}])
+  {:db/id    #db/id [:db.part/user]
+   :db/ident :db.fn/edit-attr
+   :db/fn    (dbfn/dbfn dbfn/edit-attr)})
+
+(defn- parse-resource [resource]
+  (edn/read-string {:readers *data-readers*} (slurp resource)))
 
 (defn list-schema-files []
   (for [i (range)
@@ -77,74 +32,22 @@
 (defn read-schema-files
   ([] (read-schema-files (list-schema-files)))
   ([schema-files]
-   (let [schemas (map #(->> %
-                            slurp
-                            (edn/read-string {:readers *data-readers*}))
-                      schema-files)]
-     (conj schemas
-           (database-functions-schema)))))
+   (let [schema (into [] (mapcat parse-resource) schema-files)]
+     (conj schema (database-functions-schema)))))
 
-(defn add-verified-user-account [conn email project-uuid]
-  (let [{:keys [user] :as account} (f/user-account-map email {:verification/status :verification.status/verified
-                                                              :user/status         :user.status/active})
-        project (format/project (:db/id user) {:project/name "Project-1"
-                                               :project/uuid project-uuid})
-        stripe-user (format/add-tempid {:stripe/user (:db/id user)
-                                        :stripe/customer     "cus_9YcNWTiUBc4Jpm"
-                                        :stripe/subscription (format/add-tempid {:stripe.subscription/id         "sub_9YcN9rluT5azTj"
-                                                                                 :stripe.subscription/status     :active})})
-        ret (db/transact-map conn (-> account
-                                            (assoc :project project)
-                                            (update :user assoc :user/currency [:currency/code "USD"])
-                                            (assoc :stripe stripe-user)))]
-    (debug "New user created with email:" email)
-    ret))
-
-(defn add-transactions
-  ([conn project-uuid] (add-transactions conn project-uuid (transactions)))
-  ([conn project-uuid transactions]
-   (->> transactions
-        (map #(assoc % :transaction/uuid (d/squuid)))
-        (map #(assoc % :transaction/project {:project/uuid project-uuid}))
-        (map #(format/transaction %))
-        (db/transact conn))))
-
-(defn add-currencies [conn]
-  (db/transact conn (f/currencies {:currencies currencies})))
-
-(defn add-conversion-rates [conn]
-  (db/transact conn
-                     (f/currency-rates {:date  "2015-10-10"
-                                        :rates {:THB 36
-                                                :SEK 8.4
-                                                :USD 1
-                                                :JPY 110.61
-                                                :MYR 3.91
-                                                :VND 22295.00
-                                                :EUR 0.89
-                                                :ALL 121.35
-                                                :HRK 6.64
-                                                :KRW 1189.80
-                                                :CNY 6.67}})))
+(defn add-test-data [conn]
+  (let [mocked-data (parse-resource (clojure.java.io/resource "private/mocked-data.edn"))
+        txs (into [] cat (vals mocked-data))]
+    (debug "Transacting: " txs)
+    (db/transact conn txs)))
 
 (defn add-data-to-connection
-  ([conn] (add-data-to-connection conn (transactions)))
-  ([conn transactions & [schema]]
-   (let [schemas (or schema (read-schema-files))
-         email test-user-email
-         project-uuid (d/squuid)]
-     (doseq [schema schemas]
-       (db/transact conn schema))
+  ([conn & [schema]]
+   (let [schema (or schema (read-schema-files))]
+     (db/transact conn schema)
      (debug "Schema added.")
-     (add-currencies conn)
-     (debug "Currencies added.")
-
-     (add-verified-user-account conn email project-uuid)
-     (debug "New user created and verified.")
-     (add-transactions conn project-uuid transactions)
-     (debug "User transactions added.")
-     (add-conversion-rates conn)
-     (debug "Conversion rates added"))))
+     (add-test-data conn)
+     (debug "Test data added."))))
 
 (defonce connection (atom nil))
 
