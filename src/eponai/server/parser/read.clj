@@ -18,7 +18,6 @@
   [{:keys [query params]} _ _]
   (let [cart {:cart/price 103
               :cart/items (:store/goods (first stores))}]
-    (prn "READING cart: " cart)
     {:value (select-keys cart query)}))
 
 (defmethod server-read :query/store
@@ -28,7 +27,9 @@
                         %) stores)]
       {:value (-> (select-keys store (conj (filter keyword? query) :store/goods))
                   (update :store/goods
-                          #(apply concat (take 4 (repeat %)))))})))
+                          #(apply concat (take 4 (repeat %))))
+                  (assoc :stream/_store (some #(when (= (:stream/store %) (Long/parseLong store-id))
+                                                %) (:streams data))))})))
 
 (defmethod server-read :query/featured-stores
   [{:keys [query]} _ _]
