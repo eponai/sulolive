@@ -72,7 +72,7 @@
    (dom/meta {:http-equiv "X-UA-Compatible"
               :content    "IE=edge"})
    (dom/meta {:name    "viewport"
-              :content "width=device-width, initial-scale=1 maximum-scale=1 user-scalable=no"})
+              :content "width=device-width, initial-scale=1 maximum-scale=1 user-scalable=0"})
    (dom/meta {:name "author" :content "eponai hb"})
    (dom/meta {:name "description"
               :content "Jourmoney is an expense tracker for nomads, making it easy to track different housing arrangements, transports and international bank fees."})

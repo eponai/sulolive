@@ -3,7 +3,7 @@
     [eponai.common.ui.common :as common]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug error]]))
 
 (defui Navbar
   static om/IQuery
@@ -13,8 +13,65 @@
                                  :item/img-src
                                  :item/name]}]}])
   Object
+  #?(:cljs
+     (signin [this]
+             (let [{:keys [lock]} (om/get-state this)
+                   options (clj->js {:connections ["facebook" "google-oauth2"]
+                                     :callbackURL "http://localhost:3000"
+                                     :authParams {:scope "openid email"
+                                                  }
+                                     :connectionScopes {"facebook" ["email" "public_profile" "user_friends"]}
+                                     :primaryColor "#9A4B4F"
+                                     :languageDictionary {
+                                                          :title "My Company"
+                                                          }
+                                     :avatar {:displayName (fn [email cb])}})]
+               (.socialOrMagiclink lock options)
+               ;(.show lock)
+               )))
+
+  ;lock.magiclink({
+  ;                callbackURL: 'https://YOUR_APP/callback',
+  ;                             authParams: {
+  ;                                          scope: 'openid email' // Learn about scopes: https://auth0.com/docs/scopes
+  ;                                          }
+  ;                });
+
   (initLocalState [_]
     {:cart-open? false})
+  (componentDidMount [this]
+    #?(:cljs
+       (when js/Auth0LockPasswordless
+         (let [auth-options (clj->js {:connectionScopes {"facebook" ["email" "public_profile" "user_friends"]}
+                                      :primaryColor "#9A4B4F"
+                                      ;:title "SULO"
+                                      :languageDictionary {
+                                                           :title "My Company"
+                                                           }})
+               lock (new js/Auth0LockPasswordless "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh" "sulo.auth0.com" auth-options)]
+           ;(.. lock
+           ;    (on "authenticated" (fn [authResult]
+           ;                          (.. lock
+           ;                              (getProfile (.-idToken authResult) (fn [error profile]
+           ;                                                                   (if (some? error)
+           ;                                                                     (error "Got error: " error)
+           ;                                                                     (do
+           ;                                                                       (.setItem js/localStorage "idToken" (.-idToken authResult))
+           ;                                                                       (.setItem js/localStorage "profile" (js/JSON.stringify profile))))))))))
+           (om/update-state! this assoc :lock lock)))))
+
+  ;lock.on("authenticated", function(authResult) {
+  ;                                               // Use the token in authResult to getProfile() and save it to localStorage
+  ;                                               lock.getProfile(authResult.idToken, function(error, profile) {
+  ;                                                                                                             if (error) {
+  ;                                                                                                                         // Handle error
+  ;                                                                                                                            return;
+  ;                                                                                                                         }
+  ;
+  ;                                                                                                                localStorage.setItem('idToken', authResult.idToken);
+  ;                                                                                                                localStorage.setItem('profile', JSON.stringify(profile));
+  ;                                                                                                             });
+  ;                                               });
   (render [this]
     (let [{:keys [cart-open?]} (om/get-state this)
           {:keys [query/cart]} (om/props this)]
@@ -25,7 +82,10 @@
                            (dom/li nil
                                    (dom/a #js {:className "navbar-brand"
                                                :href      "/"}
-                                          "Sulo"))))
+                                          "Sulo"))
+                           #?(:cljs
+                              (dom/li nil
+                                      (dom/a #js {:onClick #(.signin this)} "Sign in")))))
 
                  (dom/div #js {:className "top-bar-right shopping-cart"}
                    (dom/ul #js {:className "menu"}
