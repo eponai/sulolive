@@ -6,7 +6,9 @@
 (defui Checkout
   static om/IQuery
   (query [_]
-    [{:query/cart [:cart/items]}])
+    [{:query/cart [{:cart/items [:item/name
+                                 :item/price
+                                 :item/img-src]}]}])
   Object
   (render [this]
     (let [{:keys [query/cart]} (om/props this)]

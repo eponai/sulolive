@@ -71,7 +71,7 @@
                             (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :shipping)}
                                    "Shipping"))
                     (dom/li #js {:className (when (= selected-tab :rating) "active")}
-                            (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :rating)} (c/rating-element 3 11))))
+                            (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :rating)} (c/rating-element 4 11))))
 
             (cond (= selected-tab :rating)
                   (dom/div #js {:className "product-reviews"}

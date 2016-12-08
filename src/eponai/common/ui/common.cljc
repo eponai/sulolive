@@ -49,7 +49,7 @@
         (dom/a nil (:item/name product)))
       (dom/div #js {:className "content-item-subtitle-section"}
         (dom/strong nil (:item/price product))
-        (rating-element 5 11)))))
+        (rating-element 4 11)))))
 
 (defn navbar [opts]
   (nav/->Navbar))

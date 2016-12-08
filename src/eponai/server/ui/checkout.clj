@@ -29,6 +29,5 @@
           (dom/script {:src  (common/budget-js-path release?)
                        :type common/text-javascript})
 
-          (common/inline-javascript ["env.web.main.runnavbar()"])
           (common/inline-javascript ["env.web.main.runcheckout()"])
           )))))

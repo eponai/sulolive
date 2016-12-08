@@ -37,7 +37,7 @@
           (dom/a nil (:item/name product)))
         (dom/div #js {:className "content-item-subtitle-section"}
           (dom/strong nil (com/format-str "$%.2f" (:item/price product)))
-          (common/rating-element 5 11))
+          (common/rating-element 4 11))
 
         (when show-item?
           (common/modal {:on-close #(om/update-state! this assoc :show-item? false)
