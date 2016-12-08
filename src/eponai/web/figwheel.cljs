@@ -9,8 +9,7 @@
     (cond
       (clojure.string/starts-with? url "/store")
       (do
-        (run/navbar)
-        (run/store))
+        (run/run :store))
 
       :else
       (warn "Url did not match an app route. Figwheel will not call (app/run)"))))

@@ -6,36 +6,30 @@
     [eponai.client.parser.read]
     [goog.dom :as gdom]
     [om.next :as om]
-    [eponai.common.ui.checkout :refer [Checkout]]
-    [eponai.common.ui.store :refer [Store]]
-    [taoensso.timbre :refer [debug]]))
+    [eponai.common.ui.checkout :as checkout]
+    [eponai.common.ui.store :as store]
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.ui.goods :as goods]))
 
-(defn navbar []
-  (debug "Run navbar")
-  (let [conn (utils/init-conn)
-        reconciler (om/reconciler {:state   conn
+(defn run-element [{:keys [id component]}]
+  (let [reconciler (om/reconciler {:state   (utils/init-conn)
                                    :parser  (parser/client-parser)
                                    :remotes []
                                    :migrate nil})]
-    (reset! utils/reconciler-atom reconciler)
-    (om/add-root! reconciler nav/Navbar (gdom/getElement "sulo-navbar"))))
+    ;(reset! utils/reconciler-atom reconciler)
+    (om/add-root! reconciler component (gdom/getElement id))))
 
-(defn checkout []
-  (debug "Run checkout")
-  (let [conn (utils/init-conn)
-        reconciler (om/reconciler {:state   conn
-                                   :parser  (parser/client-parser)
-                                   :remotes []
-                                   :migrate nil})]
-    (reset! utils/reconciler-atom reconciler)
-    (om/add-root! reconciler Checkout (gdom/getElement "sulo-checkout-container"))))
+(def inline-containers
+  {:navbar   {:id        "sulo-navbar"
+              :component nav/Navbar}
+   :store    {:id        "sulo-store-container"
+              :component store/Store}
+   :checkout {:id        "sulo-checkout-container"
+              :component checkout/Checkout}
+   :goods    {:id        "sulo-items-container"
+              :component goods/Goods}})
 
-(defn store []
-  (debug "Run store stream")
-  (let [conn (utils/init-conn)
-        reconciler (om/reconciler {:state   conn
-                                   :parser  (parser/client-parser)
-                                   :remotes []
-                                   :migrate nil})]
-    (reset! utils/reconciler-atom reconciler)
-    (om/add-root! reconciler Store (gdom/getElement "sulo-store-container"))))
+(defn run [k]
+  (prn "RUN: " k)
+  (run-element (:navbar inline-containers))
+  (run-element (get inline-containers k)))

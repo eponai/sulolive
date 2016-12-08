@@ -55,7 +55,6 @@
   (let [goods (map #(select-keys % query) (mapcat :store/goods stores))
         xf (comp (mapcat :store/goods) (map #(select-keys % query)))]
 
-    (prn "Got goods: " goods)
     {:value (map #(select-keys % query) (take 4 (shuffle (transduce xf conj [] stores))))}))
 
 (defmethod server-read :query/item

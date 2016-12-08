@@ -15,7 +15,6 @@
   (render [this]
     (let [{:keys [cart-open?]} (om/get-state this)
           {:keys [query/cart]} (om/props this)]
-      (prn "CART " cart)
       (dom/div #js {:id "sulo-navbar"}
         (dom/nav #js {:className "navbar top-bar"}
                  (dom/div #js {:className "top-bar-left"}

@@ -9,6 +9,9 @@
     [eponai.common.ui.navbar :as nav]))
 
 (defui Store
+  static common/IJSContainer
+  (container [_]
+    "sulo-store-container")
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
@@ -37,5 +40,5 @@
           (dom/script {:src  (common/budget-js-path release?)
                        :type common/text-javascript})
 
-          (common/inline-javascript ["env.web.main.runnavbar()"])
-          (common/inline-javascript ["env.web.main.runstream()"]))))))
+          ;(common/inline-javascript ["env.web.main.runnavbar()"])
+          (common/inline-javascript ["env.web.main.runstore()"]))))))

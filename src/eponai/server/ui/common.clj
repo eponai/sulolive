@@ -124,3 +124,10 @@
   (str "/"
        (if release? "release" "dev")
        "/js/out/budget.js"))
+
+(defprotocol IJSContainer
+  (container [this] "Return the id of the container for javascript."))
+
+;(defn get-jscontainer [component]
+;  (when #?(:clj  (extends? IJSContainer class)
+;           :cljs (implements? IJSContainer component))))

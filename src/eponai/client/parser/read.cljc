@@ -36,3 +36,14 @@
   (let [cart {:cart/price 103
               :cart/items (:store/goods (first stores))}]
     {:value (select-keys cart query)}))
+
+(defmethod client-read :query/all-items
+  [{:keys [query]} _ _]
+  (prn "query/all-items: " query)
+  (let [goods (map #(select-keys % query) (mapcat :store/goods stores))
+        ks (filter keyword? query)
+        xf (comp
+             (mapcat :store/goods)
+             (map #(select-keys % ks)))]
+
+    {:value (transduce xf conj [] stores)}))

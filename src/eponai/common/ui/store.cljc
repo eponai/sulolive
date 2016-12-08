@@ -1,5 +1,6 @@
 (ns eponai.common.ui.store
   (:require
+    [eponai.common.ui.product-item :as pi]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.product :as item]
     [eponai.common.ui.stream :as stream]
@@ -25,16 +26,16 @@
                       :store/rating
                       :store/review-count]} {:store-id ~'?store-id})])
   Object
-  (initLocalState [this]
-    {:resize-listener #(.on-window-resize this)
-     #?@(:cljs [:breakpoint (utils/breakpoint js/window.innerWidth)])})
-  #?(:cljs
-     (on-window-resize [this]
-                       (om/update-state! this assoc :breakpoint (utils/breakpoint js/window.innerWidth))))
-  (componentDidMount [this]
-    #?(:cljs (.addEventListener js/window "resize" (:resize-listener (om/get-state this)))))
-  (componentWillUnmount [this]
-    #?(:cljs (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
+  ;(initLocalState [this]
+  ;  {:resize-listener #(.on-window-resize this)
+  ;   #?@(:cljs [:breakpoint (utils/breakpoint js/window.innerWidth)])})
+  ;#?(:cljs
+  ;   (on-window-resize [this]
+  ;                     (om/update-state! this assoc :breakpoint (utils/breakpoint js/window.innerWidth))))
+  ;(componentDidMount [this]
+  ;  #?(:cljs (.addEventListener js/window "resize" (:resize-listener (om/get-state this)))))
+  ;(componentWillUnmount [this]
+  ;  #?(:cljs (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
 
   (render [this]
     (let [{:keys [show-item breakpoint]} (om/get-state this)
@@ -88,14 +89,15 @@
         (dom/div #js {:className "items"}
           (apply dom/div #js {:className "content-items-container row small-up-2 medium-up-3 large-up-4"}
                  (map (fn [p]
-                        (common/->ProductItem {:product p
+                        (pi/->ProductItem {:product p
                                                :on-click #(om/update-state! this assoc :show-item p)})
                         )
                       goods)))
 
-        (when (some? show-item)
-          (common/modal {:on-close #(om/update-state! this dissoc :show-item)
-                         :size :large}
-                        (item/->Product show-item)))))))
+        ;(when (some? show-item)
+        ;  (common/modal {:on-close #(om/update-state! this dissoc :show-item)
+        ;                 :size :large}
+        ;                (item/->Product show-item)))
+        ))))
 
 (def ->Store (om/factory Store))
