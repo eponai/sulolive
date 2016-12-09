@@ -22,8 +22,11 @@
     [:item/name
      :item/price
      :item/img-src
-     :item/store
-     :item/details])
+     :item/details
+     {:item/store [:store/photo
+                   :store/name
+                   :store/rating
+                   :store/review-count]}])
   Object
   (initLocalState [_]
     {:selected-tab :details})
