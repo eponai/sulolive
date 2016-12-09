@@ -25,15 +25,20 @@
     (let [{:keys [on-click product]} (om/props this)
           {:keys [show-item? breakpoint]} (om/get-state this)
           open-url? #?(:cljs (utils/bp-compare :large breakpoint >) :clj false)
-          on-click #(om/update-state! this assoc :show-item? true)]
+          on-click (when-not open-url? #(om/update-state! this assoc :show-item? true))
+          product-href (when (or open-url? (nil? on-click)) (str "/goods/" (:item/id product)))]
 
+      ;; TODO: Very similar to eponai.common.ui.common/product-element
+      ;;       Extract?
       (dom/div #js {:className "column content-item product-item"}
         (dom/a #js {:className "photo-container"
-                    :onClick   (when-not open-url? on-click)
-                    :href      (when (or open-url? (nil? on-click)) (str "/goods/" (:item/id product)))}
+                    :onClick   on-click
+                    :href      product-href}
                (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" (:item/img-src product) ")")}}))
         (dom/div #js {:className "content-item-title-section"}
-          (dom/a nil (:item/name product)))
+          (dom/a #js {:onClick on-click
+                      :href    product-href}
+                 (:item/name product)))
         (dom/div #js {:className "content-item-subtitle-section"}
           (dom/strong nil (common/two-decimal-price (:item/price product)))
           (common/rating-element 4 11))

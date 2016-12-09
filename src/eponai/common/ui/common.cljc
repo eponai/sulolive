@@ -41,14 +41,18 @@
         (dom/span nil (str "(" review-count ")"))))))
 
 (defn product-element [product & [opts]]
-  (let [{:keys [on-click open-url?]} opts]
+  (let [{:keys [on-click open-url?]} opts
+        goods-href (when (or open-url? (nil? on-click)) (str "/goods/" (:item/id product)))
+        on-click (when-not open-url? on-click)]
     (dom/div #js {:className "column content-item product-item"}
       (dom/a #js {:className "photo-container"
-                  :onClick   (when-not open-url? on-click)
-                  :href      (when (or open-url? (nil? on-click)) (str "/goods/" (:item/id product)))}
+                  :onClick   on-click
+                  :href      goods-href}
              (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" (:item/img-src product) ")")}}))
       (dom/div #js {:className "content-item-title-section"}
-        (dom/a nil (:item/name product)))
+        (dom/a #js {:onClick on-click
+                    :href    goods-href}
+               (:item/name product)))
       (dom/div #js {:className "content-item-subtitle-section"}
         (dom/strong nil (two-decimal-price (:item/price product)))
         (rating-element 4 11)))))
