@@ -53,9 +53,9 @@
 (defroutes
   site-routes
   (context "/" [:as request]
-    ;(if (release? request)
-                               (friend/wrap-authorize admin-routes #{::a/admin})
-                               ;admin-routes)
+    (if (release? request)
+      (friend/wrap-authorize admin-routes #{::a/admin ::a/user})
+      admin-routes)
     )
 
   ;(GET "/goods/:id" request (server.ui/product-html (request->props request)))
@@ -87,7 +87,7 @@
   (parser
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
      :state                             conn
-     ;:auth                              (or playground-auth (friend/current-authentication request))
+     :auth                              (friend/current-authentication request)
      :stripe-fn                         stripe-fn
      :fb-validate-fn                    facebook-token-validator
      :params                            (:params request)}

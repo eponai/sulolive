@@ -146,11 +146,26 @@
   (fn [input]
     (auth-map conn input)))
 
+(defn auth0 [token-info]
+  (debug "Credential fn: " token-info)
+  (debug "User id: " (:user_id token-info))
+  (when (= (:email token-info) "testemail")
+    {:identity (:user_id token-info)
+     :username "user"
+     :roles #{::user ::admin}}
+    ))
+
+
+
 (defn simple-credential-fn []
-  (fn [k {:keys [username password] :as params}]
+  (fn [k {:keys [username password] :as input}]
     (condp = k
       :simple
       (when (and (= password "hejsan") (= username "sulo"))
         {:identity 0
          :username "admin"
-         :roles    #{::admin}}))))
+         :roles    #{::admin}})
+
+      :jwe
+      (auth0 input)
+      )))

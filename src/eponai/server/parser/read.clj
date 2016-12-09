@@ -32,7 +32,8 @@
 
 (defmethod read-basis-param-path :query/store [{:keys [params]} _ _] [(:store-id params)])
 (defmethod server-read :query/store
-  [{:keys [db db-history query params]} _ p]
+  [{:keys [db db-history query params auth]} _ p]
+  (debug "AUTH: " auth)
   (let [store-id (or (:store-id params) (:store-id p))]
     (when-let [store-id (cond-> store-id (string? store-id) (Long/parseLong))]
       {:value (cond-> (query/one db db-history query {:where   '[[?e]]

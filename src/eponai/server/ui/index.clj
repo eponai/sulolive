@@ -40,9 +40,9 @@
   (let [{:stream/keys [store]} channel
         store-link (link-to-store store)]
     (dom/div {:className "column content-item online-channel"}
-      (dom/a {:className "photo-container"
-              :href      store-link}
-             (dom/div {:className "photo square" :style {:background-image (str "url(" (:stream/img-src channel) ")")}}))
+      (dom/a {:href store-link}
+             (dom/div {:className "photo-container"}
+               (dom/div {:className "photo square" :style {:background-image (str "url(" (:stream/img-src channel) ")")}})))
       (dom/div {:className "content-item-title-section"}
         (dom/a {:href store-link} (dom/strong nil (:stream/name channel)))
         (cljc-common/viewer-element (:stream/viewer-count channel)))
@@ -53,15 +53,15 @@
   (let [[large mini-1 mini-2] (:store/featured-img-src store)
         store-link (link-to-store store)]
     (dom/div {:className "column content-item store-item"}
-      (dom/a {:href      store-link
-              :className "photo-container collage"}
-             (dom/div {:className "photo square"
-                       :style     {:background-image (str "url(" large ")")}})
-             (dom/div {:className "mini-container"}
-               (dom/div {:className "photo"
-                         :style     {:background-image (str "url(" mini-1 ")")}})
-               (dom/div {:className "photo"
-                         :style     {:background-image (str "url(" mini-2 ")")}})))
+      (dom/a {:href store-link}
+             (dom/div {:className "photo-container collage"}
+               (dom/div {:className "photo square"
+                         :style     {:background-image (str "url(" large ")")}})
+               (dom/div {:className "mini-container"}
+                 (dom/div {:className "photo"
+                           :style     {:background-image (str "url(" mini-1 ")")}})
+                 (dom/div {:className "photo"
+                           :style     {:background-image (str "url(" mini-2 ")")}}))))
       (dom/div {:className "content-item-title-section"}
         (dom/a {:href store-link}
                (:store/name store)))

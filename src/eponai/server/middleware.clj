@@ -108,8 +108,9 @@
                               :workflows [(workflows/simple)
                                           (workflows/auth0)]
                               :unauthenticated-handler (workflows/unauthenticated)})
-        (wrap-authorization auth-backend)
-        (wrap-authentication auth-backend)))
+        ;(wrap-authorization auth-backend)
+        ;(wrap-authentication auth-backend)
+        ))
   ;(friend/authenticate
   ;  handler
   ;  {

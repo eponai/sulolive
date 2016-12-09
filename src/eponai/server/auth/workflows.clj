@@ -39,11 +39,19 @@
       ((workflows/http-basic :credential-fn (partial credential-fn :simple) :realm "Friend demo") request))))
 
 (defn auth0 []
-  (fn [request]
+  (fn [{:keys [::friend/auth-config] :as request}]
     (debug "Request: " request)
     (debug " ")
     (debug "Auth: " (get (:headers request) "authorization"))
-    ))
+    (let [{:keys [credential-fn]} auth-config
+          token (get (:headers request) "authorization")
+          token-info (auth0/token-info token)
+          user-record (credential-fn :jwe token-info)]
+      (debug "Token info " token-info)
+      (workflows/make-auth user-record
+                           {::friend/workflow :http-basic
+                            ::friend/redirect-on-auth? false
+                            ::friend/ensure-session false}))))
 
 (defn unauthenticated []
   (fn [request]

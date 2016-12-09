@@ -18,15 +18,20 @@
              (let [{:keys [lock]} (om/get-state this)
                    options (clj->js {:connections ["facebook" "google-oauth2"]
                                      :callbackURL "http://localhost:3000"
-                                     :authParams {:scope "openid email"
-                                                  }
+                                     :authParams {:scope "openid email"}
                                      :connectionScopes {"facebook" ["email" "public_profile" "user_friends"]}
                                      :primaryColor "#9A4B4F"
                                      :languageDictionary {
                                                           :title "My Company"
                                                           }
                                      :avatar {:displayName (fn [email cb])}})]
-               (.socialOrMagiclink lock options)
+               ;callbackURL: 'http://localhost:3000/',
+               ;responseType: 'token',
+               ;authParams: {
+               ;             state: getUrlPath(),
+               ;                    scope: 'openid profile'
+               ;(.socialOrMagiclink lock options)
+               (.show lock options)
                ;(.show lock)
                )))
 
@@ -42,22 +47,25 @@
   (componentDidMount [this]
     #?(:cljs
        (when js/Auth0LockPasswordless
-         (let [auth-options (clj->js {:connectionScopes {"facebook" ["email" "public_profile" "user_friends"]}
-                                      :primaryColor "#9A4B4F"
+         (let [auth-options (clj->js {
+                                      ;:connectionScopes {"facebook" ["email" "public_profile" "user_friends"]}
                                       ;:title "SULO"
-                                      :languageDictionary {
-                                                           :title "My Company"
-                                                           }})
-               lock (new js/Auth0LockPasswordless "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh" "sulo.auth0.com" auth-options)]
-           ;(.. lock
-           ;    (on "authenticated" (fn [authResult]
-           ;                          (.. lock
-           ;                              (getProfile (.-idToken authResult) (fn [error profile]
-           ;                                                                   (if (some? error)
-           ;                                                                     (error "Got error: " error)
-           ;                                                                     (do
-           ;                                                                       (.setItem js/localStorage "idToken" (.-idToken authResult))
-           ;                                                                       (.setItem js/localStorage "profile" (js/JSON.stringify profile))))))))))
+                                      ;:redirect false
+                                      :auth {:redirect false
+                                             :params {
+                                                      :scope "openid email" ;// Learn about scopes: https://auth0.com/docs/scopes
+                                                      }}})
+               lock (new js/Auth0Lock "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh" "sulo.auth0.com" auth-options)]
+           (.. lock
+               (on "authenticated" (fn [authResult]
+                                     (.. lock
+                                         (getProfile (.-idToken authResult) (fn [error profile]
+                                                                              (if (some? error)
+                                                                                (error "Got error: " error)
+                                                                                (do
+                                                                                  (debug "Got token: " (.-idToken authResult))
+                                                                                  (.setItem js/localStorage "idToken" (.-idToken authResult))
+                                                                                  (.setItem js/localStorage "profile" (js/JSON.stringify profile))))))))))
            (om/update-state! this assoc :lock lock)))))
 
   ;lock.on("authenticated", function(authResult) {

@@ -5,7 +5,7 @@
     [om.next :as om :refer [defui]]))
 
 (defn two-decimal-price [price]
-  (com/format-str "$%.2f" (double price)))
+  (com/format-str "$%.2f" (double (or price 0))))
 
 (defn modal [opts & content]
   (let [{:keys [on-close size]} opts]
@@ -45,10 +45,10 @@
         goods-href (when (or open-url? (nil? on-click)) (str "/goods/" (:item/id product)))
         on-click (when-not open-url? on-click)]
     (dom/div #js {:className "column content-item product-item"}
-      (dom/a #js {:className "photo-container"
-                  :onClick   on-click
+      (dom/a #js {:onClick   on-click
                   :href      goods-href}
-             (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" (:item/img-src product) ")")}}))
+             (dom/div #js {:className "photo-container"}
+               (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" (:item/img-src product) ")")}})))
       (dom/div #js {:className "content-item-title-section"}
         (dom/a #js {:onClick on-click
                     :href    goods-href}

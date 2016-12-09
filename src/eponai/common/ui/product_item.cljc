@@ -31,10 +31,10 @@
       ;; TODO: Very similar to eponai.common.ui.common/product-element
       ;;       Extract?
       (dom/div #js {:className "column content-item product-item"}
-        (dom/a #js {:className "photo-container"
-                    :onClick   on-click
+        (dom/a #js {:onClick   on-click
                     :href      product-href}
-               (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" (:item/img-src product) ")")}}))
+               (dom/div #js {:className "photo-container"}
+                 (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" (:item/img-src product) ")")}})))
         (dom/div #js {:className "content-item-title-section"}
           (dom/a #js {:onClick on-click
                       :href    product-href}
