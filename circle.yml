@@ -31,7 +31,6 @@ dependencies:
 
 test:
   override:
-    - lein test
     - ./scripts/run-cljs-tests.sh
   post:
     - lein clean
