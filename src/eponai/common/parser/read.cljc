@@ -14,4 +14,4 @@
 (defn compute-cart-price [cart]
   (cond-> cart
           (:cart/items cart)
-          (assoc :cart/price (transduce (map :item/price) + 0 (:cart/items cart)))))
+          (assoc :cart/price (transduce (map :item/price) + 0M (:cart/items cart)))))

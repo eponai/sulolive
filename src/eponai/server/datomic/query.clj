@@ -235,7 +235,6 @@
                                          (retracts-only-from-eids query path (vec path-symbols) @pulled-eids)))
                                (map vector (repeat attr-path))))))
                  (mapcat (fn [[attr-path query]]
-                           (debug [:query query])
                            (let [eavts (db/find-with (d/history db) query)]
                              (when (seq eavts)
                                (let [feavs (datoms->feav eavts (when path->feav-xf-fn

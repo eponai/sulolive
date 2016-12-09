@@ -1,7 +1,8 @@
 (ns eponai.common.ui.checkout
   (:require
     [om.dom :as dom]
-    [om.next :as om :refer [defui]]))
+    [om.next :as om :refer [defui]]
+    [eponai.common.ui.common :as common]))
 
 (defui Checkout
   static om/IQuery
@@ -23,7 +24,8 @@
                           (dom/div #js {:className "content-item-title-section"}
                             (dom/span #js {:className "name"} (:item/name i)))
                           (dom/div #js {:className "content-item-subtitle-section"}
-                            (dom/span #js {:className "price"} (:item/price i))))))
+                            (dom/span #js {:className "price"}
+                                      (common/two-decimal-price (:item/price i)))))))
                     (:cart/items cart)))))))
 
 (def ->Checkout (om/factory Checkout))

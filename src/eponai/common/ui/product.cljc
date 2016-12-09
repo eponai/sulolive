@@ -56,7 +56,7 @@
               (dom/div #js {:className "product-info"}
                 (dom/h1 #js {:className "product-info-title"} item-name)
                 (dom/h2 #js {:className "product-info-price"}
-                        price))
+                        (c/two-decimal-price price)))
               (dom/div #js {:className "product-action-container clearfix"}
                 (dom/a #js {:className "button expanded"} "Add to Cart"))))
 

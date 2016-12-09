@@ -1,9 +1,11 @@
 (ns eponai.common.ui.common
   (:require
-    [eponai.common.ui.navbar :as nav]
-    #?(:cljs [eponai.web.utils :as utils])
+    [eponai.common :as com]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]))
+
+(defn two-decimal-price [price]
+  (com/format-str "$%.2f" (double price)))
 
 (defn modal [opts & content]
   (let [{:keys [on-close size]} opts]
@@ -48,8 +50,5 @@
       (dom/div #js {:className "content-item-title-section"}
         (dom/a nil (:item/name product)))
       (dom/div #js {:className "content-item-subtitle-section"}
-        (dom/strong nil (:item/price product))
+        (dom/strong nil (two-decimal-price (:item/price product)))
         (rating-element 4 11)))))
-
-(defn navbar [opts]
-  (nav/->Navbar))
