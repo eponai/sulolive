@@ -77,7 +77,7 @@
                              :item/id
                              :item/img-src]}
      {:query/featured-stores [:db/id :store/name :store/featured-img-src :store/rating :store/review-count]}
-     {:query/featured-streams [:stream/name :stream/store :stream/viewer-count :stream/img-src]}])
+     {:query/featured-streams [:stream/name {:stream/store [:store/name]} :stream/viewer-count :stream/img-src]}])
   Object
   (render [this]
     (let [{:keys [release? query/featured-items query/featured-stores query/featured-streams proxy/navbar]} (om/props this)]
