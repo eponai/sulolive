@@ -15,7 +15,7 @@
 	#sulo-store-container {
 		.cover.photo {
 			> * {
-				background: rgba(#F0EDE3, 0.5);
+				background: rgba($white, 0.5);
 			}
 			@include breakpoint(large) {
 				display: flex;
@@ -40,7 +40,7 @@
 	}
 	.store-container {
 		$brown: map-get($foundation-palette, brown);
-		$nude: map-get($foundation-palette, nude);
+		$nude: $white;//map-get($foundation-palette, nude);
 		background: rgba($brown, 0.7) !important;
 		color: $white;
 		box-shadow: 1px 0 2px 0 rgba($black, 0.5);

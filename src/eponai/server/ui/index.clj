@@ -107,26 +107,27 @@
                       (dom/a {:className "button"}
                              "Search")))))
 
-              (dom/div {:className "top-features row small-up-1 medium-up-3"}
-                (top-feature
-                  nil
-                  "fa-shopping-cart"
-                  "Connect with the community"
-                  "Real time interaction with the community.")
-                (top-feature
-                  nil
-                  "fa-shopping-cart"
-                  "Find products and stories you love"
-                  "Our partners have a wide range of home made goods")
-                (top-feature
-                  nil
-                  "fa-shopping-cart"
-                  "Share your favorites"
-                  "Interact with your customers as a store owner and create real long time relationships"))
+              (dom/div {:className "top-features"}
+                (dom/div {:className " row small-up-1 medium-up-3"}
+                  (top-feature
+                    nil
+                    "fa-shopping-cart"
+                    "Connect with the community"
+                    "Real time interaction with the community.")
+                  (top-feature
+                    nil
+                    "fa-shopping-cart"
+                    "Find products and stories you love"
+                    "Our partners have a wide range of home made goods")
+                  (top-feature
+                    nil
+                    "fa-shopping-cart"
+                    "Share your favorites"
+                    "Interact with your customers as a store owner and create real long time relationships")))
 
 
-              (banner {:color :red}
-                      (dom/h2 nil "Interact live with store owners and other buyers from the community"))
+              ;(banner {:color :red}
+              ;        (dom/h2 nil "Interact live with store owners and other buyers from the community"))
 
               (content-section nil
                                "Stores streaming on the online market right now"
@@ -135,8 +136,8 @@
                                     featured-streams)
                                "Check out more on the live market >>")
 
-              (banner {:color :blue}
-                      (dom/h2 nil "Find products you love made by passionate store owners"))
+              ;(banner {:color :blue}
+              ;        (dom/h2 nil "Find products you love made by passionate store owners"))
 
               (content-section {:href "/goods"}
                                "Fresh from the oven goods"
@@ -145,8 +146,8 @@
                                     featured-items)
                                "Check out more goods >>")
 
-              (banner {:color :green}
-                      (dom/h2 nil "Discover new stores and become part of their community"))
+              ;(banner {:color :green}
+              ;        (dom/h2 nil "Discover new stores and become part of their community"))
 
               (content-section nil
                                "Have you seen these stores?"

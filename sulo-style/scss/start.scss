@@ -90,21 +90,19 @@ nav {
 
 	.top-features {
 		padding: 2rem 0;
+		// background: #F0EDE3;
 		@include breakpoint(medium) {
-			padding: 4rem 0;
+			padding: 2rem 0 0.5rem 0;
 		}
 		.feature-item {
-			// display: flex;
-			// flex-direction: row;
 			i {
 				font-size: 2rem;
 			}
 			@include breakpoint(medium) {
 				text-align: center;
 				i {
-					font-size: 3rem;
+					font-size: 2rem;
 				}
-				// flex-direction: column;
 			}
 
 			.feature-title {
@@ -138,7 +136,8 @@ nav {
 		}
 
 		&.white {
-			background: #F0EDE3;
+			background: rgba(#9A4B4F, 0.1);
+			// background: $white; //#F0EDE3;
 			h2 {
 				color: $black;
 				text-shadow: none;
