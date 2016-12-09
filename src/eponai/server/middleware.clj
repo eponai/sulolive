@@ -1,10 +1,6 @@
 (ns eponai.server.middleware
   (:require
-    [cemerick.friend :as friend]
-    [cemerick.friend.workflows :as friend-wf]
     [buddy.core.codecs.base64 :as b64]
-    [buddy.core.codecs :as codecs]
-    [eponai.server.auth.credentials :as ac]
     [cognitect.transit :as transit]
     [environ.core :refer [env]]
     [eponai.common.parser.util :as parser.util]
@@ -12,8 +8,6 @@
     [buddy.auth.backends.session :refer [session-backend]]
     [buddy.auth.backends :as buddy-backends]
     [buddy.auth.middleware :refer [wrap-authentication wrap-authorization]]
-    [eponai.server.auth.workflows :as workflows]
-    [om.next.server :as om]
     [ring.middleware.defaults :as r]
     [ring.middleware.gzip :as gzip]
     [ring.middleware.json :refer [wrap-json-body
@@ -103,81 +97,30 @@
   (gzip/wrap-gzip handler))
 
 (defn wrap-authenticate [handler conn in-prod?]
-  (debug "Wrap authenticate")
   (let [auth-fn (fn [req {:keys [username password] :as token}]
-                  (debug "Authfn for request: ")
-                  (debug "Token: " token)
-                  ;(debug "Wiall auth: " (and (= password "hejsan") (= username "sulo")))
                   (when (and (= password "hejsan") (= username "sulo"))
                     {:user "admin"}))
         unauthed-fn (fn [req metadata]
-                      (debug "Unauthed: " metadata)
-                      (debug "REQUEST: " req)
-
+                      ;(debug "Unauthed: " metadata)
                       {:status 200
                        :headers {}
                        :body {}})
-        client-secret (apply str (replace {\_ \/ \- \+} (seq (env :auth0-secret))))
-
-        ;base64decoder (Base64/getUrlDecoder)
-        ;s_bytes (.getBytes (env :auth0-scret) StandardCharsets/UTF_8)
         auth-backend (buddy-backends/jws {:authfn               auth-fn
                                           :unauthorized-handler unauthed-fn
-                                          :secret               (b64/decode client-secret) ;(codecs/bytes->str (b64/decode client-secret))
+                                          :secret               (b64/decode (env :auth0-secret))
                                           :token-name           "Bearer"
-                                          :on-error             (fn [r e] (debug "Error decrypting")
-                                                                  (error e))
-                                          ;:options              {:enc :hs256}
-                                          })
-
-        ;url-decoder (let [base64decoder (java.util.Base64/getUrlDecoder)
-        ;                          s_bytes (.getBytes client-secret java.nio.charset.StandardCharsets/UTF_8)]
-        ;                   )
+                                          :on-error             (fn [r e]
+                                                                  (error e))})
         basic-backend (buddy-backends/http-basic {:authfn auth-fn
-                                                  ;:unauthorized-handler unauthed-fn
-                                                  :realm "Demo"})
-        wrap-auth (fn [h]
-                    (fn [req]
-                      ;(debug "Authenticate request: " req)
-                      (let [ret ((wrap-authentication h auth-backend basic-backend) req)]
-                        ;(debug "Authentication response: " ret)
-                        ret)))]
+                                                  :realm "Demo"})]
     (-> handler
-        ;(friend/authenticate {:credential-fn (ac/simple-credential-fn)
-        ;                      :workflows [(workflows/simple)
-        ;                                  (workflows/auth0)]
-        ;                      :unauthenticated-handler (workflows/unauthenticated)})
-        ;(wrap-authentication auth-backend)
         (wrap-authorization auth-backend)
-        (wrap-auth)
-        ))
-  ;(friend/authenticate
-  ;  handler
-  ;  {
-  ;   :allow-anon?          true
-  ;   ;:credential-fn        (ac/simple-credential-fn)
-  ;   :workflows            [(cemerick.friend.workflows/http-basic :credential-fn (ac/simple-credential-fn) :realm "Friend demo")
-  ;                          (workflows/auth0)]
-  ;   :unauthenticated-handler #(cemerick.friend.workflows/http-basic-deny "Friend demo" %)
-  ;   ;:unauthorized-handler (workflows/unauthorized)
-  ;   ;:unauthenticated-handler (workflows/unauthenticated)
-  ;   ;:uri "/api
-  ;   ;:login-uri            "/signup"
-  ;   ;:default-landing-uri  "/app"
-  ;   ;:fb-login-uri         "/api/login/fb"
-  ;   ;:email-login-uri      "/api/login/email"
-  ;   ;:activate-account-uri "/api/login/create"
-  ;   ;:login-mutation-uri   "/api"
-  ;   })
-  )
+        (wrap-authentication auth-backend basic-backend))))
 
 (defn config [in-prod? disable-anti-forgery]
   {:pre [(contains? env :session-cookie-store-key)
          (contains? env :session-cookie-name)]}
   (let [conf (-> r/site-defaults
-                 ;(assoc-in [:session :store] (cookie/cookie-store {:key (env :session-cookie-store-key)}))
-                 ;(assoc-in [:session :cookie-name] (env :session-cookie-name))
-                 ;(assoc-in [:session :cookie-attrs :max-age] 7776000)
                  (assoc-in [:security :anti-forgery] (and false
                                                           (if in-prod?
                                                             true
@@ -189,28 +132,3 @@
 
 (defn wrap-defaults [handler in-prod? disable-anti-forgery]
   (r/wrap-defaults handler (config in-prod? disable-anti-forgery)))
-
-;;TODO: fix this ffs
-;(defn wrap-login-parser [handler]
-;  (fn [request]
-;    (let [parser (om/parser
-;                   {:mutate (fn [_ _ p]
-;                              {:action (fn [] p)})
-;                    :read   (fn [_ _ _])})]
-;      (handler (assoc request
-;                 :login-parser parser)))))
-
-;(defn wrap-logout [handler]
-;  (fn [req]
-;    (let [parser (om/parser
-;                   {:mutate (fn [_ k p]
-;                              {:action (fn []
-;                                         (cond (= k 'session/signout)
-;                                               {:signout true}))})
-;                    :read   (fn [_ _ _])})
-;          parsed-res (parser {} (:query (:body req)))
-;          signout? (get-in parsed-res ['session/signout :result :signout])]
-;      ;(if signout?
-;      ;  ((friend/logout handler) req))
-;      (handler req)
-;      )))

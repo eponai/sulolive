@@ -12,11 +12,8 @@
                  [compojure "1.5.1"]
                  [aprint "0.1.3"]
                  [buddy/buddy-auth "1.3.0"]
-                 ;[buddy/buddy-sign "1.3.0"]
-                 [base64-clj "0.1.1"]
-                 [com.cemerick/friend "0.2.3"
-                  :exclusions [org.clojure/core.cache]]
-                 ;[com.auth0/auth0-servlet "3.4.0"]
+                 ;[com.cemerick/friend "0.2.3"
+                 ; :exclusions [org.clojure/core.cache]]
                  [com.cemerick/url "0.1.1"]
                  [com.datomic/datomic-pro "0.9.5544"
                   :exclusions [joda-time]]

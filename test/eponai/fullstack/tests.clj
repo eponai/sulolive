@@ -6,8 +6,6 @@
             [eponai.common.format.date :as date]
             [eponai.common.format :as format]
             [eponai.client.utils :as utils]
-            [eponai.server.auth.workflows :as wf]
-            [eponai.server.auth.workflows-test :as wf.test]
             [eponai.server.middleware]
             [eponai.server.external.facebook :as facebook]
             [taoensso.timbre :refer [info debug error]]
@@ -452,14 +450,7 @@
 (def access-token "long-lived-token")
 
 (defn with-fb-meta [email f]
-  (let [validator (wf.test/test-facebook-token-validator
-                    {:email    email
-                     :user-id  user-id
-                     :token    access-token
-                     :is-valid true})
-        state {::wf/create-account-without-throwing true
-               ::facebook/facebook-token-validator  validator}]
-    (with-meta f {:system {:server {:wrap-state state}}})))
+  (with-meta f {:system {:server {:wrap-state nil}}}))
 
 (defn returning-nil
   "Wraps a function in a new function that returns nil"

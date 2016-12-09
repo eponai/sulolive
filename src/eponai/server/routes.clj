@@ -1,9 +1,7 @@
 (ns eponai.server.routes
   (:require
-    [cemerick.friend :as friend]
     [buddy.auth.accessrules :refer [restrict]]
     [buddy.auth.backends :refer [http-basic]]
-    [eponai.server.auth.credentials :as a]
     [clojure.string :as clj.string]
     [compojure.core :refer :all]
     [compojure.route :as route]
@@ -12,13 +10,10 @@
     [eponai.common.parser.util :as parser.util]
     [eponai.server.parser.response :as parser.resp]
     [taoensso.timbre :refer [debug error trace warn]]
-    [eponai.server.api :as api]
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.facebook :as fb]
     [eponai.server.ui :as server.ui]
-    [eponai.common.parser :as parser]
     [buddy.auth :refer [authenticated? throw-unauthorized]]
-    [eponai.client.auth :as auth]
     [om.next :as om]))
 
 (defn html [& path]
@@ -47,7 +42,6 @@
   (parser
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
      :state                             conn
-     :auth                              (friend/current-authentication request)
      :stripe-fn                         stripe-fn
      :fb-validate-fn                    facebook-token-validator
      :params                            (:params request)}
@@ -117,15 +111,15 @@
 
 (defroutes
   site-routes
-  (POST "/api" request (r/response (call-parser request)))
-  ;(POST "/api" request
-  ;  (restrict
-  ;    #(r/response (call-parser %))
-  ;    {:handler auth/is-user?
-  ;     :on-error (fn [& _]
-  ;                 (debug "Unauthorized api request")
-  ;                 (r/response "You fucked up"))})
-  ;  )
+  ;(POST "/api" request (r/response (call-parser request)))
+  (POST "/api" request
+    (restrict
+      #(r/response (call-parser %))
+      {:handler (fn [req] (debug "Identity: " (:identity req)) true)
+       :on-error (fn [& _]
+                   (debug "Unauthorized api request")
+                   (r/response "You fucked up"))})
+    )
   (context "/" [:as request]
     (restrict admin-routes
               {:handler  authenticated?
