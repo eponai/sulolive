@@ -83,7 +83,6 @@
   Object
   (render [this]
     (let [{:keys [release? query/featured-items query/featured-stores query/featured-streams proxy/navbar]} (om/props this)]
-      (prn "Got items: " featured-items)
       (dom/html
         {:lang "en"}
 

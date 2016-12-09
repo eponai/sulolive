@@ -84,6 +84,7 @@
                               )])]
     ;; http-cljs returns a channel with the response on it.
     ;; http-clj doesnt.
+    (debug "Send request: " params)
     #?(:cljs (send-fn url params)
        :clj  (go (to-cljs-http-response send-fn url params)))))
 

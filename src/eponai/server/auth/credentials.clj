@@ -146,15 +146,6 @@
   (fn [input]
     (auth-map conn input)))
 
-(defn auth0 [token-info]
-  (debug "Credential fn: " token-info)
-  (debug "User id: " (:user_id token-info))
-  (when (= (:email token-info) "testemail")
-    {:identity (:user_id token-info)
-     :username "user"
-     :roles #{::user ::admin}}
-    ))
-
 
 
 (defn simple-credential-fn []

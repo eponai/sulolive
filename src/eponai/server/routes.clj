@@ -1,6 +1,8 @@
 (ns eponai.server.routes
   (:require
     [cemerick.friend :as friend]
+    [buddy.auth.accessrules :refer [restrict]]
+    [buddy.auth.backends :refer [http-basic]]
     [eponai.server.auth.credentials :as a]
     [clojure.string :as clj.string]
     [compojure.core :refer :all]
@@ -16,6 +18,7 @@
     [eponai.server.ui :as server.ui]
     [eponai.common.parser :as parser]
     [buddy.auth :refer [authenticated? throw-unauthorized]]
+    [eponai.client.auth :as auth]
     [om.next :as om]))
 
 (defn html [& path]
@@ -35,49 +38,6 @@
                                      (-> request
                                          (assoc :body {:query (om/get-query component)})
                                          (handle-parser-request)))})
-
-(defroutes
-  app-routes
-  (GET "/*" request
-    (server.ui/app-html (request->props request))))
-
-(defroutes
-  admin-routes
-  (GET "/" request (server.ui/index-html (request->props request)))
-  (GET "/store/:store-id" request (server.ui/store-html (request->props request)))
-  (GET "/goods/:product-id" r (server.ui/product-html (request->props r)))
-  (GET "/goods" request (server.ui/goods-html (request->props request)))
-  (GET "/checkout" request (server.ui/checkout-html (request->props request)))
-  (POST "/api" request (handle-parser-request request)))
-
-(defroutes
-  site-routes
-  (context "/" [:as request]
-    (if (release? request)
-      (friend/wrap-authorize admin-routes #{::a/admin ::a/user})
-      admin-routes)
-    )
-
-  ;(GET "/goods/:id" request (server.ui/product-html (request->props request)))
-  ;(GET "/terms" request
-  ;     (server.ui/terms-html (request->props request)))
-
-  ;(ANY "/stripe" {:keys [::m/conn body]}
-  ;  (try
-  ;    (let [result (stripe/webhook conn body {::email/send-payment-reminder-fn email/send-payment-reminder-email})]
-  ;      (debug "Stripe webhook handled with result: " result)
-  ;      (r/response {:status :SUCCESS
-  ;                   :message "ok"}))
-  ;    (catch ExceptionInfo e
-  ;      (error e)
-  ;      (r/response {:status :ERROR
-  ;                   :message (.getMessage e)
-  ;                   :ex-data (ex-data e)}))
-  ;    (catch Exception e
-  ;      (error e))))
-
-  (route/resources "/")
-  (route/not-found "Not found"))
 
 ;----------API Routes
 
@@ -148,54 +108,33 @@
      :meta m}))
 
 (defroutes
-  user-routes
-  (POST "/" request
-    (r/response (call-parser request))))
-
-(defn playground-handler [request parser]
-  (let [user-uuid-fn (::m/playground-user-uuid-fn request)
-        user-uuid (if (fn? user-uuid-fn)
-                    (user-uuid-fn)
-                    (warn "user-uuid-fn was not a function. Was: " user-uuid-fn))]
-    (if (some? user-uuid)
-      (r/response (call-parser (-> request
-                                   (assoc ::playground-auth {:username user-uuid})
-                                   (assoc ::m/parser parser))))
-      (let [msg "No playground user-uuid with request. Will not call parser."]
-        (throw (ex-info msg
-                        {:message          msg
-                         :keys-of-interest [::m/playground-user-uuid-fn]}))))))
+  admin-routes
+  (GET "/" request (server.ui/index-html (request->props request)))
+  (GET "/store/:store-id" request (server.ui/store-html (request->props request)))
+  (GET "/goods/:product-id" r (server.ui/product-html (request->props r)))
+  (GET "/goods" request (server.ui/goods-html (request->props request)))
+  (GET "/checkout" request (server.ui/checkout-html (request->props request))))
 
 (defroutes
-  api-routes
-  (context "/api" []
-
-    (POST "/" request
-      (debug "Got request:")
-      (debug request)
-      (r/response (call-parser request)))
-
-    ;; TODO: We need a test which fails if a request mutates the db.
-    (context "/playground" []
-
-      ;; This is an endpoint where we can only subscribe to our newsletter from the playground.
-      (POST "/subscribe" request
-        (playground-handler
-          request
-          (om/parser {:read   (constantly nil)
-                      :mutate (fn [_ k p]
-                                (if-not (= k 'playground/subscribe)
-                                  (throw (ex-info (str "Mutation not allowed: " k) {:mutation k :params p}))
-                                  (do (assert (string? (:email p)))
-                                      (api/newsletter-subscribe (::m/conn request) (:email p)))))})))
-      (POST "/" request
-        (playground-handler
-          request
-          (-> (parser/server-parser (parser/server-parser-state {:mutate (constantly nil)}))
-              ;; Remove mutations from query even though there
-              ;; isn't any mutate function, just in case.
-              parser/parse-without-mutations
-              parser/parser-require-auth))))
-
-    ; Requires user login
-    ))
+  site-routes
+  (POST "/api" request (r/response (call-parser request)))
+  ;(POST "/api" request
+  ;  (restrict
+  ;    #(r/response (call-parser %))
+  ;    {:handler auth/is-user?
+  ;     :on-error (fn [& _]
+  ;                 (debug "Unauthorized api request")
+  ;                 (r/response "You fucked up"))})
+  ;  )
+  (context "/" [:as request]
+    (restrict admin-routes
+              {:handler  authenticated?
+               :on-error (fn [a b]
+                           (debug "Erro request: " a)
+                           (debug "Erro: " b)
+                           {:status  401
+                            :headers {"Content-Type"     "text/plain"
+                                      "WWW-Authenticate" (format "Basic realm=\"%s\"" "Demo")}})})
+    )
+  (route/resources "/")
+  (route/not-found "Not found"))

@@ -11,7 +11,7 @@
             [eponai.server.datomic-dev :as datomic_dev]
             [eponai.server.parser.read]
             [eponai.server.parser.mutate]
-            [eponai.server.routes :refer [site-routes api-routes]]
+            [eponai.server.routes :refer [site-routes]]
             [eponai.server.middleware :as m]
             [eponai.server.external.stripe :as stripe]
             [ring.adapter.jetty :as jetty]
@@ -24,7 +24,7 @@
 (defonce in-production? (atom true))
 
 (defn app* [conn {:keys [::extra-middleware ::disable-anti-forgery] :as options}]
-  (-> (routes api-routes site-routes)
+  (-> (routes site-routes)
       m/wrap-post-middlewares
       (m/wrap-authenticate conn @in-production?)
       (cond-> (some? extra-middleware) extra-middleware)

@@ -2,6 +2,8 @@
   (:require
     [cemerick.friend :as friend]
     [cemerick.friend.workflows :as friend-wf]
+    [buddy.core.codecs.base64 :as b64]
+    [buddy.core.codecs :as codecs]
     [eponai.server.auth.credentials :as ac]
     [cognitect.transit :as transit]
     [environ.core :refer [env]]
@@ -102,14 +104,52 @@
 
 (defn wrap-authenticate [handler conn in-prod?]
   (debug "Wrap authenticate")
-  (let [auth-backend (buddy-backends/jwe {:unauthorized-handler (workflows/unauthorized "Prototype")})]
+  (let [auth-fn (fn [req {:keys [username password] :as token}]
+                  (debug "Authfn for request: ")
+                  (debug "Token: " token)
+                  ;(debug "Wiall auth: " (and (= password "hejsan") (= username "sulo")))
+                  (when (and (= password "hejsan") (= username "sulo"))
+                    {:user "admin"}))
+        unauthed-fn (fn [req metadata]
+                      (debug "Unauthed: " metadata)
+                      (debug "REQUEST: " req)
+
+                      {:status 200
+                       :headers {}
+                       :body {}})
+        client-secret (apply str (replace {\_ \/ \- \+} (seq (env :auth0-secret))))
+
+        ;base64decoder (Base64/getUrlDecoder)
+        ;s_bytes (.getBytes (env :auth0-scret) StandardCharsets/UTF_8)
+        auth-backend (buddy-backends/jws {:authfn               auth-fn
+                                          :unauthorized-handler unauthed-fn
+                                          :secret               (b64/decode client-secret) ;(codecs/bytes->str (b64/decode client-secret))
+                                          :token-name           "Bearer"
+                                          :on-error             (fn [r e] (debug "Error decrypting")
+                                                                  (error e))
+                                          ;:options              {:enc :hs256}
+                                          })
+
+        ;url-decoder (let [base64decoder (java.util.Base64/getUrlDecoder)
+        ;                          s_bytes (.getBytes client-secret java.nio.charset.StandardCharsets/UTF_8)]
+        ;                   )
+        basic-backend (buddy-backends/http-basic {:authfn auth-fn
+                                                  ;:unauthorized-handler unauthed-fn
+                                                  :realm "Demo"})
+        wrap-auth (fn [h]
+                    (fn [req]
+                      ;(debug "Authenticate request: " req)
+                      (let [ret ((wrap-authentication h auth-backend basic-backend) req)]
+                        ;(debug "Authentication response: " ret)
+                        ret)))]
     (-> handler
-        (friend/authenticate {:credential-fn (ac/simple-credential-fn)
-                              :workflows [(workflows/simple)
-                                          (workflows/auth0)]
-                              :unauthenticated-handler (workflows/unauthenticated)})
-        ;(wrap-authorization auth-backend)
+        ;(friend/authenticate {:credential-fn (ac/simple-credential-fn)
+        ;                      :workflows [(workflows/simple)
+        ;                                  (workflows/auth0)]
+        ;                      :unauthenticated-handler (workflows/unauthenticated)})
         ;(wrap-authentication auth-backend)
+        (wrap-authorization auth-backend)
+        (wrap-auth)
         ))
   ;(friend/authenticate
   ;  handler
