@@ -28,10 +28,12 @@
 
 (defn content-section [{:keys [href]} header content footer]
   (dom/div {:className "row column section text-center"}
-    (dom/h3 {:className "text-center"} header)
+    (dom/div {:className "row column"}
+      (dom/h3 {:className "text-center section-header"} header))
     (apply dom/div {:className "row small-up-2 medium-up-4"}
       content)
-    (dom/a {:href href} footer)))
+    (dom/div {:className "row column section-footer"}
+      (dom/a {:href      href} footer))))
 
 (defn link-to-store [store]
   (str "/store/" (:db/id store)))

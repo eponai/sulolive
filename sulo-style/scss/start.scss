@@ -146,8 +146,18 @@ nav {
 	}
 
 	.section {
-		padding-top: 2rem;
-		padding-bottom: 2rem;
+		margin-top: 2rem;
+		margin-bottom: 2rem;
+
+		.section-footer {
+			padding: 1rem 0;
+			@include breakpoint(large) {
+				padding: 0 0 1rem 0;
+			}
+			a {
+				font-weight: bold;
+			}
+		}
 	}
 
 	.footer {
