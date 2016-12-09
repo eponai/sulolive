@@ -49,7 +49,7 @@
                              (take 4))
         photos-fn (fn [store]
                     (let [s (d/entity db store)
-                          [img-1 img-2] (into [] (comp (take 2) (map :item/img-src)) (db-shuffle db (:item/_goods s)))]
+                          [img-1 img-2] (into [] (comp (take 2) (map :item/img-src)) (db-shuffle db (:item/_store s)))]
                       {:db/id store
                        :store/featured-img-src [img-1 (:store/photo s) img-2]}))]
     {:value (into [] (comp (map photos-fn)
