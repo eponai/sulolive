@@ -24,7 +24,7 @@
     (dom/small nil (str view-count))))
 
 (defn rating-element [rating & [review-count]]
-  (let [rating (or rating 0)
+  (let [rating (or (int rating) 0)
         stars (cond-> (vec (repeat rating "fa fa-star fa-fw"))
 
                       (< 0 (- rating (int rating)))

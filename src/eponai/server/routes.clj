@@ -1,24 +1,22 @@
 (ns eponai.server.routes
-  (:require [cemerick.friend :as friend]
-            [clojure.string :as clj.string]
-            [compojure.core :refer :all]
-            [compojure.route :as route]
-            [eponai.server.auth.credentials :as a]
-            [eponai.server.middleware :as m]
-            [ring.util.response :as r]
-            [eponai.common.parser.util :as parser.util]
-            [eponai.server.parser.response :as parser.resp]
-            [taoensso.timbre :refer [debug error trace warn]]
-            [eponai.server.api :as api]
-            [eponai.server.external.stripe :as stripe]
-            [eponai.server.external.facebook :as fb]
-            [eponai.server.ui :as server.ui]
-            [clojure.data.json :as json]
-            [eponai.server.email :as email]
-            [eponai.common.parser :as parser]
-            [eponai.server.auth.workflows :as w]
-            [om.next :as om])
-  (:import [clojure.lang ExceptionInfo]))
+  (:require
+    [cemerick.friend :as friend]
+    [eponai.server.auth.credentials :as a]
+    [clojure.string :as clj.string]
+    [compojure.core :refer :all]
+    [compojure.route :as route]
+    [eponai.server.middleware :as m]
+    [ring.util.response :as r]
+    [eponai.common.parser.util :as parser.util]
+    [eponai.server.parser.response :as parser.resp]
+    [taoensso.timbre :refer [debug error trace warn]]
+    [eponai.server.api :as api]
+    [eponai.server.external.stripe :as stripe]
+    [eponai.server.external.facebook :as fb]
+    [eponai.server.ui :as server.ui]
+    [eponai.common.parser :as parser]
+    [buddy.auth :refer [authenticated? throw-unauthorized]]
+    [om.next :as om]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -54,9 +52,11 @@
 
 (defroutes
   site-routes
-  (context "/" [:as request] (if (release? request)
+  (context "/" [:as request]
+    ;(if (release? request)
                                (friend/wrap-authorize admin-routes #{::a/admin})
-                               admin-routes))
+                               ;admin-routes)
+    )
 
   ;(GET "/goods/:id" request (server.ui/product-html (request->props request)))
   ;(GET "/terms" request
@@ -87,7 +87,7 @@
   (parser
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
      :state                             conn
-     :auth                              (or playground-auth (friend/current-authentication request))
+     ;:auth                              (or playground-auth (friend/current-authentication request))
      :stripe-fn                         stripe-fn
      :fb-validate-fn                    facebook-token-validator
      :params                            (:params request)}
@@ -198,7 +198,4 @@
               parser/parser-require-auth))))
 
     ; Requires user login
-    (context "/user" _
-      (friend/wrap-authorize user-routes #{::a/user}))
-
-    (friend/logout (ANY "/logout" [] (r/redirect "/")))))
+    ))

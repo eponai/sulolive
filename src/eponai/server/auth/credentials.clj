@@ -1,11 +1,11 @@
 (ns eponai.server.auth.credentials
-  (:require [cemerick.friend :as friend]
-            [datomic.api :as d]
-            [eponai.common.database :as db]
-            [eponai.server.http :as h]
-            [eponai.server.datomic.format :as f]
-            [eponai.server.api :as api]
-            [taoensso.timbre :refer [debug error info]]))
+  (:require
+    [datomic.api :as d]
+    [eponai.common.database :as db]
+    [eponai.server.http :as h]
+    [eponai.server.datomic.format :as f]
+    [eponai.server.api :as api]
+    [taoensso.timbre :refer [debug error info]]))
 
 ; ---- exceptions
 
@@ -49,7 +49,7 @@
    :roles    roles})
 
 (defmulti auth-map
-          (fn [_ input] (::friend/workflow (meta input))))
+          (fn [_ input] (::workflow (meta input))))
 
 (defmethod auth-map :default
   [conn {:keys [uuid stripe-fn]}]
@@ -140,15 +140,17 @@
 (defn credential-fn
   "Create a credential fn with a db to pull user credentials.
 
-  Returned function will dispatc on the ::friend/workflow and return the
+  Returned function will dispatc on the ::workflow and return the
   appropriate authentication map for the workflow."
   [conn]
   (fn [input]
     (auth-map conn input)))
 
 (defn simple-credential-fn []
-  (fn [{:keys [username password] :as params}]
-    (when (and (= password "hejsan") (= username "sulo"))
-      {:identity 0
-       :username "admin"
-       :roles    #{::admin}})))
+  (fn [k {:keys [username password] :as params}]
+    (condp = k
+      :simple
+      (when (and (= password "hejsan") (= username "sulo"))
+        {:identity 0
+         :username "admin"
+         :roles    #{::admin}}))))
