@@ -50,32 +50,6 @@
    :symbols {'?user-uuid user-uuid
              '?p         project-eid}})
 
-;; TODO: This is probably slow. We want to do a separate
-;;       query for transaction conversions and user
-;;       conversions.
-(defn find-conversions [db tx-ids user-uuid]
-  (->> (db/all-with db {:find '[?t ?e ?e2]
-                     :symbols      {'[?t ...] tx-ids
-                                    '?uuid    user-uuid}
-                     :where        '[[?t :transaction/date ?d]
-                                     [?e :conversion/date ?d]
-                                     [?t :transaction/currency ?cur]
-                                     [?e :conversion/currency ?cur]
-                                     [?u :user/uuid ?uuid]
-                                     [?u :user/currency ?u-cur]
-                                     [?e2 :conversion/currency ?u-cur]
-                                     [?e2 :conversion/date ?d]]})
-       (sequence (comp (mapcat (juxt second last))
-                       (distinct)))))
-
-(def conversion-query (parser/put-db-id-in-query
-                        [{:conversion/date [:date/ymd]}
-                         :conversion/rate
-                         {:conversion/currency [:currency/code]}]))
-
-(defn conversions [db tx-ids user-uuid]
-  (db/pull-many db conversion-query (find-conversions db tx-ids user-uuid)))
-
 (defn transaction-with-conversion-fn [db transaction-convs user-convs]
   {:pre [(delay? transaction-convs) (delay? user-convs)]}
   (let [approx-tx-conv (memoize

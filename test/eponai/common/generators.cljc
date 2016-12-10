@@ -9,10 +9,6 @@
 (defn gen-amount []
   (gen/fmap str gen/pos-int))
 
-(defn gen-currency []
-  (gen/hash-map :currency/code (gen/fmap (fn [s] (apply str (take 3 (cycle s))))
-                                         (gen/not-empty (gen/vector gen/char-alpha)))))
-
 (defn gen-title []
   gen/string-alphanumeric)
 
@@ -34,7 +30,6 @@
   ([] (gen-transaction (gen-project)))
   ([project-generator]
    (gen/hash-map :transaction/amount (gen-amount)
-                 :transaction/currency (gen-currency)
                  :transaction/title (gen-title)
                  :transaction/date (gen-date)
                  :transaction/tags (gen-tags)

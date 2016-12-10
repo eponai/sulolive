@@ -87,11 +87,6 @@
                  (:date/timestamp date)) (str "Created date needs :date/timestamp or :date/ymd, got: " date))
     (add-tempid date)))
 
-(defn currency*
-  [input]
-  {:pre [(map? input)]}
-  (add-tempid (select-keys input [:db/id :currency/code])))
-
 (defn bigdec! [x]
   #?(:clj  (bigdec x)
      :cljs (cond-> x
@@ -102,87 +97,10 @@
   (and (sequential? x)
        (count (= 2 x))))
 
-(defn fee* [fee]
-  (letfn [(curr [c]
-            (currency* (cond->> c (lookup-ref? c) (apply hash-map))))]
-    (cond-> (add-tempid fee)
-            (:transaction.fee/value fee)
-            (update :transaction.fee/value bigdec!)
-            (:transaction.fee/currency fee)
-            (update :transaction.fee/currency curr))))
-
-(defn transaction
-  "Create a transaction entity for the given input. Will replace the name space of the keys to the :transaction/ namespace
-
-  Provide opts for special behavior, will consider keys:
-  * :no-rename - set this key to not rename the namespace of the keys.
-
-  Calls special functions on following keys to format according to datomic:
-  * :transaction/currency - takes a currency code string, returns a currency entity.
-  * :transaction/date - takes a \"yyy-MM-dd\" string, returns a date entity.
-  * :transaction/tags - takes a collections of strings, returns a collection of tag entities.
-  * :transaction/amount - takes a number string, returns a number.
-  * :transaction/project - takes a string UUID, returns a lookup ref.
-
-  Returns a map representing a transaction entity"
-  [input]
-  (let [conv-fn-map {:transaction/date     (fn [d] {:pre [(map? d)]}
-                                             (date* d))
-                     :transaction/tags     (fn [ts]
-                                             {:pre [(coll? ts)]}
-                                             (into #{} (comp (filter some?) (map tag*)) ts))
-                     :transaction/category (fn [c]
-                                             {:pre [(map? c)]}
-                                             (category* c))
-                     :transaction/fees     (fn [fees]
-                                             {:pre [(every? map? fees)]}
-                                             (into #{} (map fee*) fees))
-                     :transaction/amount   (fn [a]
-                                             {:pre [(or (string? a) (number? a))]}
-                                             (bigdec! a))
-                     :transaction/type     (fn [t] {:pre [(or (keyword? (:db/ident t t)))]}
-                                             (let [type (if (keyword? t)
-                                                          {:db/ident t}
-                                                          t)]
-                                               (add-tempid type)))}
-        update-fn (fn [m k]
-                    (if (get m k)
-                      (update m k (get conv-fn-map k))
-                      m))
-        transaction (reduce update-fn input (keys conv-fn-map))]
-    (add-tempid transaction)))
 
 
 (defn category [category-name]
   (category* {:category/name category-name}))
-
-(defn transaction-edit [{:keys [transaction/tags transaction/uuid] :as input-transaction}]
-  (let [tag->txs (fn [{:keys [tag/status tag/name] :as tag}]
-                   {:pre [(some? name)]}
-                   (condp = status
-                     :deleted
-                     [[:db/retract [:transaction/uuid uuid] :transaction/tags [:tag/name name]]]
-
-                     nil
-                     (let [tempid (tempid :db.part/user)]
-                       ;; Create new tag and add it to the transaction
-                       [(assoc (tag* tag) :db/id tempid)
-                        [:db/add [:transaction/uuid uuid] :transaction/tags tempid]])))
-        transaction (-> input-transaction
-                        (dissoc :transaction/tags)
-                        (assoc :db/id (tempid :db.part/user))
-                        (->> (reduce-kv (fn [m k v]
-                                          (assoc m k (condp = k
-                                                       :transaction/amount (str->number v)
-                                                       :transaction/currency (add-tempid v)
-                                                       :transaction/type (add-tempid v)
-                                                       :transaction/date (add-tempid v)
-                                                       :transaction/project {:project/uuid (str->uuid (:project/uuid v))}
-                                                       v)))
-                                        {})))]
-    (cond-> [transaction]
-            (seq tags)
-            (into (mapcat tag->txs) tags))))
 
 (defn edit-txs [{:keys [old new]} conform-fn created-at]
   {:pre [(some? (:db/id old))

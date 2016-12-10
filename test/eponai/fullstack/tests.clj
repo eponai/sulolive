@@ -4,10 +4,8 @@
             [eponai.common.database :as db]
             [eponai.common.parser :as parser]
             [eponai.common.format.date :as date]
-            [eponai.common.format :as format]
             [eponai.client.utils :as utils]
             [eponai.server.middleware]
-            [eponai.server.external.facebook :as facebook]
             [taoensso.timbre :refer [info debug error]]
             [clojure.data :as diff]
             [clojure.test :as test]
@@ -64,7 +62,6 @@
     {:transaction/tags       #{{:tag/name "thailand"}}
      :transaction/date       {:date/ymd "2015-10-10"}
      :transaction/type       :transaction.type/expense
-     :transaction/currency   {:currency/code "THB"}
      :transaction/title      "lunch"
      :transaction/project    {:project/uuid project-uuid}
      :transaction/uuid       (datascript/squuid)

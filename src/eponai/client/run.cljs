@@ -24,8 +24,7 @@
         send-fn (backend/send! reconciler-atom
                                {:remote (-> (remotes/post-to-url "/api")
                                             (remotes/read-basis-t-remote-middleware conn)
-                                            (remotes/wrap-auth)
-                                            )}
+                                            (remotes/wrap-auth))}
                                {:did-merge-fn #(when-not @init?
                                                  (reset! init? true)
                                                  (debug "First merge happened. Adding reconciler to root.")
