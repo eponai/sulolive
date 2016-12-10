@@ -91,9 +91,10 @@
                                    (dom/a #js {:className "navbar-brand"
                                                :href      "/"}
                                           "Sulo"))
-                           #?(:cljs
-                              (dom/li nil
-                                      (dom/a #js {:onClick #(.signin this)} "Sign in")))))
+                           ;#?(:cljs
+                           ;   (dom/li nil
+                           ;           (dom/a #js {:onClick #(.signin this)} "Sign in")))
+                           ))
 
                  (dom/div #js {:className "top-bar-right shopping-cart"}
                    (dom/ul #js {:className "menu"}
