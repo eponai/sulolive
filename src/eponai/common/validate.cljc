@@ -1,8 +1,5 @@
 (ns eponai.common.validate
   (:require
-    #?(:clj [eponai.server.http :as h])
-    #?(:clj [datomic.api :as d]
-       :cljs [datascript.core :as d])
     [eponai.common.database :as db]
     #?(:clj [taoensso.timbre :refer [info debug]]
        :cljs [taoensso.timbre :refer-macros [info debug]])))

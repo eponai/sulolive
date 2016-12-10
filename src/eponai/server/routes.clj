@@ -1,7 +1,6 @@
 (ns eponai.server.routes
   (:require
-    [buddy.auth.accessrules :refer [restrict]]
-    [buddy.auth.backends :refer [http-basic]]
+    [eponai.server.auth :as auth]
     [clojure.string :as clj.string]
     [compojure.core :refer :all]
     [compojure.route :as route]
@@ -10,10 +9,7 @@
     [eponai.common.parser.util :as parser.util]
     [eponai.server.parser.response :as parser.resp]
     [taoensso.timbre :refer [debug error trace warn]]
-    [eponai.server.external.stripe :as stripe]
-    [eponai.server.external.facebook :as fb]
     [eponai.server.ui :as server.ui]
-    [buddy.auth :refer [authenticated? throw-unauthorized]]
     [om.next :as om]))
 
 (defn html [& path]
@@ -37,13 +33,11 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [::m/conn ::m/parser ::stripe/stripe-fn ::playground-auth body ::fb/facebook-token-validator] :as request}]
+  [{:keys [::m/conn ::m/parser body] :as request}]
   (debug "Handling parser request with body:" body)
   (parser
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
      :state                             conn
-     :stripe-fn                         stripe-fn
-     :fb-validate-fn                    facebook-token-validator
      :params                            (:params request)}
     (:query body)))
 
@@ -111,24 +105,15 @@
 
 (defroutes
   site-routes
-  ;(POST "/api" request (r/response (call-parser request)))
   (POST "/api" request
-    (restrict
-      #(r/response (call-parser %))
-      {:handler (fn [req] (debug "Identity: " (:identity req)) true)
-       :on-error (fn [& _]
-                   (debug "Unauthorized api request")
-                   (r/response "You fucked up"))})
+    (r/response (call-parser request))
+    ;(auth/restrict
+    ;  #(r/response (call-parser %))
+    ;  (auth/jwt-restrict-opts))
     )
   (context "/" [:as request]
-    (restrict admin-routes
-              {:handler  authenticated?
-               :on-error (fn [a b]
-                           (debug "Erro request: " a)
-                           (debug "Erro: " b)
-                           {:status  401
-                            :headers {"Content-Type"     "text/plain"
-                                      "WWW-Authenticate" (format "Basic realm=\"%s\"" "Demo")}})})
-    )
+    (if (release? request)
+      (auth/restrict admin-routes (auth/http-basic-restrict-opts))
+      admin-routes))
   (route/resources "/")
   (route/not-found "Not found"))

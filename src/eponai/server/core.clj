@@ -1,25 +1,23 @@
 (ns eponai.server.core
   (:gen-class)
-  (:require [clojure.core.async :as async :refer [<! go chan]]
-            [compojure.core :refer :all]
-            [environ.core :refer [env]]
-            [datomic.api :as d]
-            [eponai.common.parser :as parser]
-            [eponai.common.validate]
-            [eponai.server.email :as email]
-            [eponai.server.external.openexchangerates :as exch]
-            [eponai.server.datomic-dev :as datomic_dev]
-            [eponai.server.parser.read]
-            [eponai.server.parser.mutate]
-            [eponai.server.routes :refer [site-routes]]
-            [eponai.server.middleware :as m]
-            [eponai.server.external.stripe :as stripe]
-            [ring.adapter.jetty :as jetty]
-            [taoensso.timbre :refer [debug error info]]
+  (:require
+    [clojure.core.async :as async :refer [<! go chan]]
+    [compojure.core :refer :all]
+    [environ.core :refer [env]]
+    [eponai.common.parser :as parser]
+    [eponai.common.validate]
+    [eponai.server.email :as email]
+    [eponai.server.datomic-dev :as datomic_dev]
+    [eponai.server.parser.read]
+    [eponai.server.parser.mutate]
+    [eponai.server.routes :refer [site-routes]]
+    [eponai.server.middleware :as m]
+    [eponai.server.external.stripe :as stripe]
+    [ring.adapter.jetty :as jetty]
+    [taoensso.timbre :refer [debug error info]]
     ;; Debug/dev requires
-            [ring.middleware.reload :as reload]
-            [prone.middleware :as prone]
-            [eponai.server.external.facebook :as fb]))
+    [ring.middleware.reload :as reload]
+    [prone.middleware :as prone]))
 
 (defonce in-production? (atom true))
 
@@ -32,17 +30,11 @@
       m/wrap-format
       (m/wrap-state {::m/conn                     conn
                      ::m/parser                   (parser/server-parser)
-                     ::m/currencies-fn            #(exch/currencies (when @in-production? (env :open-exchange-app-id)))
-                     ::m/currency-rates-fn        (exch/currency-rates-fn (when @in-production? (env :open-exchange-app-id)))
                      ;::m/send-email-fn     (e/send-email-fn conn)
                      ::stripe/stripe-fn           (fn [k p]
                                                     (stripe/stripe (env :stripe-secret-key) k p))
                      ::email/send-verification-fn (partial email/send-verification-email @in-production?)
                      ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
-                     ::fb/facebook-token-validator   (fn [fb-params]
-                                                    (let [app-id (env :facebook-app-id "no-facebook-app-id")
-                                                          app-secret (env :facebook-app-secret "no-facebook-app-secret")]
-                                                      (fb/user-token-validate app-id app-secret fb-params)))
                      ;; either "dev" or "release"
                      ::m/cljs-build-id            (or (env :cljs-build-id) "dev")})
       (m/wrap-defaults @in-production? disable-anti-forgery)

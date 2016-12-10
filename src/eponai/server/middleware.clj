@@ -1,13 +1,9 @@
 (ns eponai.server.middleware
   (:require
-    [buddy.core.codecs.base64 :as b64]
     [cognitect.transit :as transit]
     [environ.core :refer [env]]
     [eponai.common.parser.util :as parser.util]
     [eponai.server.http :as h]
-    [buddy.auth.backends.session :refer [session-backend]]
-    [buddy.auth.backends :as buddy-backends]
-    [buddy.auth.middleware :refer [wrap-authentication wrap-authorization]]
     [ring.middleware.defaults :as r]
     [ring.middleware.gzip :as gzip]
     [ring.middleware.json :refer [wrap-json-body
@@ -15,7 +11,8 @@
     [ring.middleware.ssl :as ssl]
     [ring.middleware.transit :refer [wrap-transit-response
                                      wrap-transit-body]]
-    [taoensso.timbre :refer [debug error trace]])
+    [taoensso.timbre :refer [debug error trace]]
+    [eponai.server.auth :as auth])
   (:import (datomic.query EntityMap)))
 
 (defn wrap-timing [handler]
@@ -97,25 +94,7 @@
   (gzip/wrap-gzip handler))
 
 (defn wrap-authenticate [handler conn in-prod?]
-  (let [auth-fn (fn [req {:keys [username password] :as token}]
-                  (when (and (= password "hejsan") (= username "sulo"))
-                    {:user "admin"}))
-        unauthed-fn (fn [req metadata]
-                      ;(debug "Unauthed: " metadata)
-                      {:status 200
-                       :headers {}
-                       :body {}})
-        auth-backend (buddy-backends/jws {:authfn               auth-fn
-                                          :unauthorized-handler unauthed-fn
-                                          :secret               (b64/decode (env :auth0-secret))
-                                          :token-name           "Bearer"
-                                          :on-error             (fn [r e]
-                                                                  (error e))})
-        basic-backend (buddy-backends/http-basic {:authfn auth-fn
-                                                  :realm "Demo"})]
-    (-> handler
-        (wrap-authorization auth-backend)
-        (wrap-authentication auth-backend basic-backend))))
+  (auth/wrap-auth handler conn))
 
 (defn config [in-prod? disable-anti-forgery]
   {:pre [(contains? env :session-cookie-store-key)

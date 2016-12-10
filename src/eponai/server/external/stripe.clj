@@ -31,9 +31,7 @@
                  :last4     (.getLast4 card)
                  :brand     (.getBrand card)
                  :id        (.getId card)
-                 })
-       }
-      )))
+                 })})))
 ;; ######################################
 
 (defn obj->subscription-map [^Subscription stripe-obj]

@@ -1,11 +1,12 @@
 (ns eponai.server.email
-  (:require [eponai.server.http :as h]
-            [postal.core :as email]
-            [datomic.api :as d]
-            [environ.core :refer [env]]
-            [taoensso.timbre :refer [debug error info warn]]
-            [hiccup.page :refer [xhtml]]
-            [garden.core :refer [css]]))
+  (:require
+    [eponai.server.http :as h]
+    [postal.core :as email]
+    [datomic.api :as d]
+    [environ.core :refer [env]]
+    [taoensso.timbre :refer [debug error info warn]]
+    [hiccup.page :refer [xhtml]]
+    [garden.core :refer [css]]))
 
 (declare html-content)
 (declare text-content)
