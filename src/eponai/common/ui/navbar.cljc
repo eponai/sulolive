@@ -32,11 +32,11 @@
                ;(.show lock options)
                ;(.show lock)
                )))
-  #?(:cljs
-     (close-signin [this]
-                   (debug "Close signin")
-                   (let [{:keys [lock]} (om/get-state this)]
-                     (.close lock))))
+  ;#?(:cljs
+  ;   (close-signin [this]
+  ;                 (debug "Close signin")
+  ;                 (let [{:keys [lock]} (om/get-state this)]
+  ;                   (.close lock))))
 
   (componentDidUpdate [this prev-props prev-state]
     (debug "Did update: " prev-state)
@@ -44,11 +44,11 @@
        (let [{:keys [signin-open?]} (om/get-state this)]
          (when signin-open?
            (.open-signin this)))))
-  (componentWillUpdate [this next-props next-state]
-    #?(:cljs
-       (let [{:keys [signin-open?]} (om/get-state this)]
-         (when-not signin-open?
-           (.close-signin this)))))
+  ;(componentWillUpdate [this next-props next-state]
+  ;  #?(:cljs
+  ;     (let [{:keys [signin-open?]} (om/get-state this)]
+  ;       (when-not signin-open?
+  ;         (.close-signin this)))))
 
   (initLocalState [_]
     {:cart-open? false})
