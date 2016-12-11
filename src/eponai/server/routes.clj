@@ -111,9 +111,10 @@
     ;  #(r/response (call-parser %))
     ;  (auth/jwt-restrict-opts))
     )
+  (route/resources "/")
   (context "/" [:as request]
     (if (release? request)
       (auth/restrict admin-routes (auth/http-basic-restrict-opts))
-      admin-routes))
-  (route/resources "/")
+      admin-routes)
+    )
   (route/not-found "Not found"))
