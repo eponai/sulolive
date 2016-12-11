@@ -2,7 +2,7 @@
   (:require
     [om.next :as om]
     [om.dom :as dom]
-    [eponai.server.ui.app :as app]
+    [eponai.server.auth :as auth]
     [eponai.server.ui.goods :as goods]
     [eponai.server.ui.product :as product]
     [eponai.server.ui.index :as index]
@@ -23,7 +23,7 @@
                                               (dissoc props ::component->props-fn)))]
       ret)))
 
-(def app-html (makesite app/App))
+(def auth-html (makesite auth/Auth))
 (def goods-html (makesite goods/Goods))
 (def product-html (makesite product/Product))
 (def index-html (makesite index/Index))

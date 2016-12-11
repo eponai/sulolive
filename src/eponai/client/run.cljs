@@ -23,8 +23,10 @@
         init? (atom false)
         send-fn (backend/send! reconciler-atom
                                {:remote (-> (remotes/post-to-url "/api")
-                                            (remotes/read-basis-t-remote-middleware conn)
-                                            (remotes/wrap-auth))}
+                                            (remotes/read-basis-t-remote-middleware conn))
+                                :remote/user (-> (remotes/post-to-url "/api/user")
+                                                 (remotes/read-basis-t-remote-middleware conn)
+                                                 (remotes/wrap-auth))}
                                {:did-merge-fn #(when-not @init?
                                                  (reset! init? true)
                                                  (debug "First merge happened. Adding reconciler to root.")
@@ -35,7 +37,7 @@
         reconciler (om/reconciler {:state     conn
                                    :ui->props (utils/cached-ui->props-fn parser)
                                    :parser    parser
-                                   :remotes   [:remote]
+                                   :remotes   [:remote :remote/user]
                                    :send      send-fn
                                    :merge     (merge/merge! client-merge)
                                    :migrate   nil})

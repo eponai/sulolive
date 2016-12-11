@@ -14,74 +14,55 @@
                                  :item/name]}]}])
   Object
   #?(:cljs
-     (signin [this]
+     (open-signin [this]
+                  (debug "Open signin")
              (let [{:keys [lock]} (om/get-state this)
-                   options (clj->js {:connections ["facebook" "google-oauth2"]
-                                     :callbackURL "http://localhost:3000"
-                                     :authParams {:scope "openid email"}
-                                     :connectionScopes {"facebook" ["email" "public_profile" "user_friends"]}
-                                     :primaryColor "#9A4B4F"
-                                     :languageDictionary {
-                                                          :title "My Company"
-                                                          }
-                                     :avatar {:displayName (fn [email cb])}})]
-               ;callbackURL: 'http://localhost:3000/',
-               ;responseType: 'token',
-               ;authParams: {
-               ;             state: getUrlPath(),
-               ;                    scope: 'openid profile'
-               ;(.socialOrMagiclink lock options)
-               (.show lock options)
+                   current-url js/window.location.href
+                   options (clj->js {:connections        ["facebook" "google-oauth2"]
+                                     :callbackURL        "http://localhost:3000/auth"
+                                     :authParams         {:scope "openid email user_friends"
+                                                          :connectionScopes   {"facebook" ["email" "public_profile" "user_friends"]}
+                                                          :state current-url}
+                                     :primaryColor       "#9A4B4F"
+                                     :dict               {:title "SULO"}
+                                     :icon ""
+                                     ;:container "modal"
+                                     })]
+               (.socialOrMagiclink lock options)
+               ;(.show lock options)
                ;(.show lock)
                )))
+  #?(:cljs
+     (close-signin [this]
+                   (debug "Close signin")
+                   (let [{:keys [lock]} (om/get-state this)]
+                     (.close lock))))
 
-  ;lock.magiclink({
-  ;                callbackURL: 'https://YOUR_APP/callback',
-  ;                             authParams: {
-  ;                                          scope: 'openid email' // Learn about scopes: https://auth0.com/docs/scopes
-  ;                                          }
-  ;                });
+  (componentDidUpdate [this prev-props prev-state]
+    (debug "Did update: " prev-state)
+    #?(:cljs
+       (let [{:keys [signin-open?]} (om/get-state this)]
+         (when signin-open?
+           (.open-signin this)))))
+  (componentWillUpdate [this next-props next-state]
+    #?(:cljs
+       (let [{:keys [signin-open?]} (om/get-state this)]
+         (when-not signin-open?
+           (.close-signin this)))))
 
   (initLocalState [_]
     {:cart-open? false})
+  (componentWillUnmount [this]
+    (let [{:keys [lock]} (om/get-state this)]
+      (.close lock)))
   (componentDidMount [this]
     #?(:cljs
        (when js/Auth0LockPasswordless
-         (let [auth-options (clj->js {
-                                      ;:connectionScopes {"facebook" ["email" "public_profile" "user_friends"]}
-                                      ;:title "SULO"
-                                      ;:redirect false
-                                      :auth {:redirect false
-                                             :params {
-                                                      :scope "openid email" ;// Learn about scopes: https://auth0.com/docs/scopes
-                                                      }}})
-               lock (new js/Auth0Lock "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh" "sulo.auth0.com" auth-options)]
-           (.. lock
-               (on "authenticated" (fn [authResult]
-                                     (.. lock
-                                         (getProfile (.-idToken authResult) (fn [error profile]
-                                                                              (if (some? error)
-                                                                                (error "Got error: " error)
-                                                                                (do
-                                                                                  (debug "Got token: " (.-idToken authResult))
-                                                                                  (.setItem js/localStorage "idToken" (.-idToken authResult))
-                                                                                  (.setItem js/localStorage "profile" (js/JSON.stringify profile))))))))))
+         (let [lock (new js/Auth0LockPasswordless "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh" "sulo.auth0.com")]
            (om/update-state! this assoc :lock lock)))))
 
-  ;lock.on("authenticated", function(authResult) {
-  ;                                               // Use the token in authResult to getProfile() and save it to localStorage
-  ;                                               lock.getProfile(authResult.idToken, function(error, profile) {
-  ;                                                                                                             if (error) {
-  ;                                                                                                                         // Handle error
-  ;                                                                                                                            return;
-  ;                                                                                                                         }
-  ;
-  ;                                                                                                                localStorage.setItem('idToken', authResult.idToken);
-  ;                                                                                                                localStorage.setItem('profile', JSON.stringify(profile));
-  ;                                                                                                             });
-  ;                                               });
   (render [this]
-    (let [{:keys [cart-open?]} (om/get-state this)
+    (let [{:keys [cart-open? signin-open?]} (om/get-state this)
           {:keys [query/cart]} (om/props this)]
       (dom/div #js {:id "sulo-navbar"}
         (dom/nav #js {:className "navbar top-bar"}
@@ -91,9 +72,12 @@
                                    (dom/a #js {:className "navbar-brand"
                                                :href      "/"}
                                           "Sulo"))
-                           ;#?(:cljs
-                           ;   (dom/li nil
-                           ;           (dom/a #js {:onClick #(.signin this)} "Sign in")))
+                           #?(:cljs
+                              (dom/li nil
+                                      (dom/a #js {:onClick #(do
+                                                             (.open-signin this)
+                                                             ;(om/update-state! this assoc :signin-open? true)
+                                                             )} "Sign in")))
                            ))
 
                  (dom/div #js {:className "top-bar-right shopping-cart"}
@@ -128,6 +112,9 @@
                            (dom/small nil (str "You have " (- (count (:cart/items cart)) 3) " more item(s) in your bag")))
                          (dom/h5 nil "Total: " (dom/strong nil (common/two-decimal-price (:cart/price cart)))))
                        (dom/a #js {:className "button expanded"
-                                   :href      "/checkout"} "View My Bag")))))))))
+                                   :href      "/checkout"} "View My Bag")))))
+        (when signin-open?
+          (common/modal {:size "tiny"
+                         :on-close #(om/update-state! this assoc :signin-open? false)} (dom/div #js {:id "modal"})))))))
 
 (def ->Navbar (om/factory Navbar))
