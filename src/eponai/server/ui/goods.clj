@@ -37,6 +37,7 @@
           ;(dom/script {:src "/lib/videojs/videojs-media-sources.min.js"})
           ;(dom/script {:src "/lib/videojs/videojs.hls.min.js"})
           ;(dom/script {:src "/lib/red5pro/red5pro-sdk.min.js"})
+          (dom/script {:src "https://cdn.auth0.com/js/lock-passwordless-2.2.min.js"})
           (dom/script {:src  (clj-common/budget-js-path release?)
                        :type clj-common/text-javascript})
 

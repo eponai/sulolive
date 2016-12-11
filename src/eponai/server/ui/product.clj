@@ -41,5 +41,6 @@
           ;             :type common/text-javascript})
 
           ;(common/inline-javascript ["env.web.main.runstream()"])
+          (dom/script {:src "https://cdn.auth0.com/js/lock-passwordless-2.2.min.js"})
           )))))
 

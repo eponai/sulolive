@@ -25,6 +25,7 @@
 (defn request->props [request]
   {:release?                       (release? request)
    :params                         (:params request)
+   :auth                           (:identity request)
    ::server.ui/component->props-fn (fn [component]
                                      (-> request
                                          (assoc :body {:query (om/get-query component)})

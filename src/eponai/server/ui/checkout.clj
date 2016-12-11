@@ -26,6 +26,7 @@
             (dom/div {:className "page-content" :id "sulo-checkout-container"}
               (checkout/->Checkout cart))
             (common/footer nil))
+          (dom/script {:src "https://cdn.auth0.com/js/lock-passwordless-2.2.min.js"})
           (dom/script {:src  (common/budget-js-path release?)
                        :type common/text-javascript})
 

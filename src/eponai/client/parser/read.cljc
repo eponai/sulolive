@@ -5,7 +5,8 @@
     [eponai.common.database :as db]
     [eponai.common :as c]
     #?(:cljs
-       [cljs.reader])))
+       [cljs.reader])
+    [taoensso.timbre :refer [debug]]))
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
@@ -38,3 +39,11 @@
   (if target
     {:remote true}
     {:value (db/pull-all-with db query {:where '[[?e :item/id]]})}))
+
+(defmethod client-read :query/auth
+  [{:keys [target]} _ _]
+  (debug "Read query/auth: ")
+  (if target
+    {:remote true}
+    {:value #?(:cljs (.getItem js/localStorage "idToken")
+               :clj nil)}))

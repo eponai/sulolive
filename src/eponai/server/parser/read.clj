@@ -81,3 +81,8 @@
   {:value (->> (db/all-with db {:where '[[?e :stream/store]]})
                (db-shuffle db)
                (db/pull-many db query))})
+
+(defmethod server-read :query/auth
+  [{:keys [auth]} _ _]
+  (debug "Read query/auth: " auth)
+  {:value auth})

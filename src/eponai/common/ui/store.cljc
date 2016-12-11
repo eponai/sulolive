@@ -26,17 +26,6 @@
                       :store/rating
                       :store/review-count]} {:store-id ~'?store-id})])
   Object
-  ;(initLocalState [this]
-  ;  {:resize-listener #(.on-window-resize this)
-  ;   #?@(:cljs [:breakpoint (utils/breakpoint js/window.innerWidth)])})
-  ;#?(:cljs
-  ;   (on-window-resize [this]
-  ;                     (om/update-state! this assoc :breakpoint (utils/breakpoint js/window.innerWidth))))
-  ;(componentDidMount [this]
-  ;  #?(:cljs (.addEventListener js/window "resize" (:resize-listener (om/get-state this)))))
-  ;(componentWillUnmount [this]
-  ;  #?(:cljs (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
-
   (render [this]
     (let [{:keys [show-item breakpoint]} (om/get-state this)
           {:keys [query/store]} (om/props this)
