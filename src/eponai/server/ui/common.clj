@@ -68,6 +68,10 @@
 (defn head [release? & [exclude-icons?]]
   [(dom/meta {:name    "google-site-verification"
               :content "eWC2ZsxC6JcZzOWYczeVin6E0cvP4u6PE3insn9p76U"})
+
+   (dom/meta {:name    "google-site-verification"
+              :content "zjhZsdkxffVOaYQLvO4Y9nw-C8qw5TbxXXY-QLVkIfw"})
+   
    (dom/meta {:charset "utf-8"})
    (dom/meta {:http-equiv "X-UA-Compatible"
               :content    "IE=edge"})
