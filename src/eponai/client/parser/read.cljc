@@ -6,7 +6,8 @@
     [eponai.common :as c]
     #?(:cljs
        [cljs.reader])
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.client.auth :as auth]))
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
@@ -29,10 +30,14 @@
 
 (defmethod client-read :query/cart
   [{:keys [db query target]} _ _]
-  (let [cart (db/pull-one-with db query {:where '[[?e :cart/items]]})]
-    (if target
-      {:remote true}
-      {:value (common.read/compute-cart-price cart)})))
+  (debug "REad wuery/cart: " (auth/logged-in-user))
+  (if target
+    {:remote/user (auth/is-logged-in?)}
+    {:value (let [cart (if (auth/is-logged-in?)
+                         (db/pull-one-with db query {:where '[[?e :cart/items]]})
+                         (db/pull-one-with db query {:where '[[?e :ui.component.cart/items]]}))]
+              (debug "Got cart: " cart " active user: " (auth/logged-in-user))
+              (common.read/compute-cart-price cart))}))
 
 (defmethod client-read :query/all-items
   [{:keys [db query target]} _ _]

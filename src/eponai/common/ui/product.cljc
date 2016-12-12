@@ -33,7 +33,7 @@
   (render [this]
     (let [{:keys [selected-tab]} (om/get-state this)
           {:keys     [item/price item/store item/img-src item/details]
-           item-name :item/name} (om/props this)]
+           item-name :item/name :as item} (om/props this)]
       (dom/div
         #js {:id "sulo-product"}
         (dom/div #js {:className "row content-items-container store-container align-middle"}
@@ -61,7 +61,8 @@
                 (dom/h2 #js {:className "product-info-price"}
                         (c/two-decimal-price price)))
               (dom/div #js {:className "product-action-container clearfix"}
-                (dom/a #js {:className "button expanded"} "Add to Cart"))))
+                (dom/a #js {:onClick   #(om/transact! this `[(shopping-bag/add-item ~{:item (select-keys item [:db/id])})])
+                            :className "button expanded"} "Add to bag"))))
 
 
           (dom/div #js {:className "row column product-details-container"}

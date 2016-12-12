@@ -63,17 +63,17 @@
                                      })]
                (.socialOrMagiclink lock options))))
 
-  (componentDidUpdate [this prev-props prev-state]
-    (debug "Did update: " prev-state)
-    #?(:cljs
-       (let [{:keys [signin-open?]} (om/get-state this)]
-         (when signin-open?
-           (.open-signin this)))))
+  ;(componentDidUpdate [this prev-props prev-state]
+  ;  (debug "Did update: " prev-state)
+  ;  #?(:cljs
+  ;     (let [{:keys [signin-open?]} (om/get-state this)]
+  ;       (when signin-open?
+  ;         (.open-signin this)))))
   (initLocalState [_]
     {:cart-open? false})
-  (componentWillUnmount [this]
-    (let [{:keys [lock]} (om/get-state this)]
-      (.close lock)))
+  ;(componentWillUnmount [this]
+  ;  (let [{:keys [lock]} (om/get-state this)]
+  ;    (.close lock)))
   (componentDidMount [this]
     #?(:cljs
        (when js/Auth0LockPasswordless
@@ -103,13 +103,17 @@
                      (dom/ul #js {:className "menu"}
                              (if (some? (not-empty auth))
                                (dom/li #js {:className "user-profile menu-dropdown"}
-                                       (dom/a nil "You")
+                                       #?(:cljs
+                                          (dom/a nil "You")
+                                          :clj (dom/a nil))
                                        (user-dropdown this cart))
                                (dom/li nil
-                                       (dom/a #js {:className "button hollow"
-                                                   :onClick   #(do
-                                                                #?(:cljs
-                                                                   (.open-signin this)))} "Sign in")))
+                                       #?(:cljs
+                                          (dom/a #js {:className "button hollow"
+                                                      :onClick   #(do
+                                                                   #?(:cljs
+                                                                      (.open-signin this)))} "Sign in")
+                                          :clj (dom/a nil))))
                              (dom/li #js {:className "menu-dropdown"}
                                      (dom/a #js {:href "/checkout"
                                                  ;:onClick #(om/update-state! this update :cart-open? not)

@@ -64,7 +64,10 @@
    :goods    {:id        "sulo-items-container"
               :component goods/Goods}})
 
+(defn run-navbar []
+  (run-element (:navbar inline-containers)))
+
 (defn run [k]
   (prn "RUN: " k)
-  (run-element (:navbar inline-containers))
+  (run-navbar)
   (run-element (get inline-containers k)))

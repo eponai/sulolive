@@ -39,6 +39,7 @@
   (parser
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
      :state                             conn
+     :auth                              (:identity request)
      :params                            (:params request)}
     (:query body)))
 
@@ -107,6 +108,10 @@
 
 (defroutes
   site-routes
+  (POST "/api/user" request
+    (auth/restrict
+      #(r/response (call-parser %))
+      (auth/jwt-restrict-opts)))
   (POST "/api" request
     (r/response (call-parser request))
     ;(auth/restrict

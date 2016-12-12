@@ -16,3 +16,7 @@
 (defn ^:export runcheckout []
       (utils/install-app)
       (run/run :checkout))
+
+(defn ^:export runnavbar []
+      (utils/install-app)
+      (run/run-navbar))

@@ -171,5 +171,6 @@
                   (dom/script {:src "https://cdn.auth0.com/js/lock-passwordless-2.2.min.js"})
                   (dom/script {:src  (clj-common/budget-js-path release?)
                                :type clj-common/text-javascript})
+                  (clj-common/inline-javascript ["env.web.main.runnavbar()"])
 
                   )))))

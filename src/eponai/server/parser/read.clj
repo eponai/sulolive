@@ -17,18 +17,23 @@
   (binding [gen/*rnd* (Random. (d/basis-t db))]
     (gen/shuffle items)))
 
+(defn is-authenticated? [auth]
+  (boolean (not-empty auth)))
+
 (defmethod server-read :datascript/schema
   [{:keys [db db-history]} _ _]
   {:value (-> (query/schema db db-history)
               (eponai.datascript/schema-datomic->datascript))})
 
 (defmethod server-read :query/cart
-  [{:keys [db db-history query params]} _ _]
+  [{:keys [db db-history query params auth]} _ _]
   (let [cart (query/one db db-history query {:where '[[?e :cart/items]]})]
-    {:value (cond-> cart
-                    (nil? db-history)
-                    (-> (update :cart/items #(seq (map (comp (partial d/entity db) :db/id) %)))
-                        (common.read/compute-cart-price)))}))
+    (debug "Read query/cart: " auth)
+    {:value (when (is-authenticated? auth)
+              (cond-> cart
+                      (nil? db-history)
+                      (-> (update :cart/items #(seq (map (comp (partial d/entity db) :db/id) %)))
+                          (common.read/compute-cart-price))))}))
 
 (defmethod read-basis-param-path :query/store [{:keys [params]} _ _] [(:store-id params)])
 (defmethod server-read :query/store

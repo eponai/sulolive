@@ -22,16 +22,10 @@
 (defonce conn-atom (atom nil))
 
 (defn create-conn []
-  (let [ui-state [{:ui/singleton :ui.singleton/app}
-                  {:ui/singleton :ui.singleton/auth}
-                  {:ui/component                      :ui.component/project
-                   :ui.component.project/selected-tab :dashboard}
-                  {:ui/component :ui.component/widget}
+  (let [ui-state [{:ui/component :ui.component/cart}
+                  {:ui/singleton :ui.singleton/app}
                   {:ui/component :ui.component/root}
-                  {:ui/component :ui.component/mutation-queue}
-                  {:ui/component :ui.component/sidebar
-                   :ui.component.sidebar/newsletter-subscribe-status
-                                 :ui.component.sidebar.newsletter-subscribe-status/not-sent}]
+                  {:ui/component :ui.component/mutation-queue}]
         conn (d/create-conn (common.datascript/ui-schema))]
     (d/transact! conn ui-state)
     conn))
