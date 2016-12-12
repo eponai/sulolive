@@ -31,7 +31,7 @@
             (dom/div {:className "page-content" :id "sulo-product-container"}
               (cljc-product/->Product item))
 
-            (common/footer nil))
+            (cljc-common/footer nil))
 
           ;(dom/script {:src "/lib/videojs/video.min.js"})
           ;(dom/script {:src "/lib/videojs/videojs-media-sources.min.js"})

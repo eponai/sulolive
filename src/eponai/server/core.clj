@@ -38,6 +38,7 @@
       (m/wrap-defaults @in-production? disable-anti-forgery)
       (m/wrap-error @in-production?)
       m/wrap-trace-request
+      (cond-> (some? extra-middleware) extra-middleware)
       (cond-> @in-production? m/wrap-ssl)
       (cond-> (not @in-production?) reload/wrap-reload)
       m/wrap-gzip))

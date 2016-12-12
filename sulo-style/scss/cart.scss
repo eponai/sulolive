@@ -33,6 +33,7 @@
 }
 
 .menu-dropdown {
+	position: relative;
 	.dropdown-pane {
 		transition: visibility 0s linear 0.25s, opacity 0.25s linear;
 		visibility: hidden;

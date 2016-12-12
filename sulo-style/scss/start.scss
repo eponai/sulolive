@@ -1,10 +1,12 @@
-$navbar-background-color: $white;//map-get($foundation-palette, nude);
 $header-background-color: #2E2A31;
 $banner-background-color: $header-background-color;
 
 $font-color-light: $body-background;
 
-#sulo-start {
+#sulo-index {
+	.button {
+		font-weight: bold;
+	}
 	overflow-x: hidden;
 	svg {
 		position: absolute;

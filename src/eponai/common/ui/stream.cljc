@@ -55,8 +55,8 @@
   #?(:cljs
      (componentDidMount [this]
                         ;(.publish this)
-                        (let [player (js/videojs "red5pro-subscriber")]
-                          (.play player))
+                        ;(let [player (js/videojs "red5pro-subscriber")]
+                        ;  (.play player))
                         ;(.subscribe this)
                         )
      )

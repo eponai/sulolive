@@ -2,6 +2,7 @@
   (:require
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.checkout :as checkout]
+    [eponai.common.ui.common :as cljc-common]
     [eponai.server.ui.common :as common]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]))
@@ -20,12 +21,8 @@
         (dom/body
           nil
           (dom/div
-            {:id "sulo-checkout"
-             :className "page-container"}
-            (nav/navbar navbar)
-            (dom/div {:className "page-content" :id "sulo-checkout-container"}
-              (checkout/->Checkout cart))
-            (common/footer nil))
+            {:id "sulo-checkout" :className "sulo-page"}
+            (checkout/->Checkout cart))
           (dom/script {:src "https://cdn.auth0.com/js/lock-passwordless-2.2.min.js"})
           (dom/script {:src  (common/budget-js-path release?)
                        :type common/text-javascript})

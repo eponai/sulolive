@@ -1,6 +1,6 @@
 (ns eponai.common.ui.navbar
   (:require
-    [eponai.common.ui.common :as common]
+    [eponai.common.ui.utils :as ui-utils]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug error]]))
@@ -20,13 +20,13 @@
                                   (dom/small #js {:className "name"} (:item/name i)))
                                 (dom/div #js {:className "content-item-subtitle-section"}
                                   (dom/span #js {:className "price"}
-                                            (common/two-decimal-price (:item/price i))))))))
+                                            (ui-utils/two-decimal-price (:item/price i))))))))
                   (take 3 items)))
 
       (dom/div #js {:className "callout nude"}
         (when (< 3 (count items))
           (dom/small nil (str "You have " (- (count items) 3) " more item(s) in your bag")))
-        (dom/h5 nil "Total: " (dom/strong nil (common/two-decimal-price price))))
+        (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price price))))
       (dom/a #js {:className "button expanded"
                   :href      "/checkout"} "View My Bag"))))
 
@@ -118,22 +118,22 @@
                                      (dom/a #js {:href "/checkout"
                                                  ;:onClick #(om/update-state! this update :cart-open? not)
                                                  }
-                                            (dom/span nil (common/two-decimal-price (:cart/price cart)))
+                                            (dom/span nil (ui-utils/two-decimal-price (:cart/price cart)))
                                             (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))
                                      (cart-dropdown cart)))
 
                      ;(when cart-open?)
                      )))
-        (dom/div #js {:className "subnav-container"}
+        (dom/div #js {:className "navbar-container"}
           (dom/div #js {:className "subnav navbar top-bar"}
             (dom/div #js {:className "top-bar-left"}
               (dom/ul #js {:className "menu"}
-                      (dom/li nil (dom/a nil "Clothing"))
-                      (dom/li nil (dom/a nil "Accessories"))
-                      (dom/li nil (dom/a nil "Home"))))))
-        (when signin-open?
-          (common/modal {:size "tiny"
-                         :on-close #(om/update-state! this assoc :signin-open? false)} (dom/div #js {:id "modal"})))
+                      (dom/li nil (dom/a #js {:href "/goods?category=clothing"} "Clothing"))
+                      (dom/li nil (dom/a #js {:href "/goods?category=accessories"} "Accessories"))
+                      (dom/li nil (dom/a #js {:href "/goods?category=home"} "Home"))))))
+        ;(when signin-open?
+        ;  (ui-utils/modal {:size   "tiny"
+        ;                 :on-close #(om/update-state! this assoc :signin-open? false)} (dom/div #js {:id "modal"})))
         ))))
 
 (def ->Navbar (om/factory Navbar))

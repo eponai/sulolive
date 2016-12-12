@@ -1,11 +1,9 @@
 (ns eponai.common.ui.common
   (:require
-    [eponai.common :as com]
+    [eponai.common.ui.utils :as ui-utils]
+    [eponai.common.ui.navbar :as nav]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]))
-
-(defn two-decimal-price [price]
-  (com/format-str "$%.2f" (double (or price 0))))
 
 (defn modal [opts & content]
   (let [{:keys [on-close size]} opts]
@@ -24,7 +22,7 @@
     (dom/small nil (str view-count))))
 
 (defn rating-element [rating & [review-count]]
-  (let [rating (or (int rating) 0)
+  (let [rating (if (some? rating) (int rating) 0)
         stars (cond-> (vec (repeat rating "fa fa-star fa-fw"))
 
                       (< 0 (- rating (int rating)))
@@ -54,5 +52,27 @@
                     :href    goods-href}
                (:item/name product)))
       (dom/div #js {:className "content-item-subtitle-section"}
-        (dom/strong nil (two-decimal-price (:item/price product)))
+        (dom/strong nil (ui-utils/two-decimal-price (:item/price product)))
         (rating-element 4 11)))))
+
+(defn footer [opts]
+  (dom/div #js {:className "footer"}
+    (dom/footer #js {:className "clearfix"}
+                (dom/ul #js {:className "menu float-left"}
+                        (dom/li #js {:className "menu-text"} (dom/small nil "Say hi anytime"))
+                        (dom/li nil (dom/a nil (dom/i #js {:className "fa fa-instagram fa-fw"})))
+                        (dom/li nil (dom/a nil (dom/i #js {:className "fa fa-twitter fa-fw"})))
+                        (dom/li nil (dom/a nil (dom/i #js {:className "fa fa-facebook fa-fw"})))
+                        (dom/li nil (dom/a nil (dom/i #js {:className "fa fa-envelope-o fa-fw"}))))
+
+                (dom/ul #js {:className "menu float-right"}
+                        (dom/li nil (dom/a nil (dom/small nil "Privacy Policy")))
+                        (dom/li nil (dom/a nil (dom/small nil "Terms & Conditions")))
+                        (dom/li #js {:className "menu-text"} (dom/small nil "© Sulo 2016"))))))
+
+(defn page-container [props content]
+  (dom/div #js {:className "page-container"}
+    (nav/navbar (:navbar props))
+    (dom/div #js {:className "page-content"}
+      content)
+    (footer nil)))

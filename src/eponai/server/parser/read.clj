@@ -46,32 +46,9 @@
                       (nil? db-history)
                       (common.read/multiply-store-items))})))
 
-(defmethod server-read :query/featured-stores
-  [{:keys [db db-history query]} _ _]
-  ;; Only fetch featured-stores initially? i.e. (when (nil? db-history) ...)
-  ;; TODO: Come up with a way to feature stores.
-  (let [feautred-stores (->> (db/all-with db {:where '[[?e :store/name]]})
-                             (db-shuffle db)
-                             (take 4))
-        photos-fn (fn [store]
-                    (let [s (d/entity db store)
-                          [img-1 img-2] (into [] (comp (take 2) (map :item/img-src)) (db-shuffle db (:item/_store s)))]
-                      {:db/id store
-                       :store/featured-img-src [img-1 (:store/photo s) img-2]}))]
-    {:value (into [] (comp (map photos-fn)
-                           (map #(merge % (db/pull db query (:db/id %)))))
-                  feautred-stores)}))
-
 (defmethod server-read :query/all-items
   [{:keys [db db-history query]} _ _]
   {:value (query/all db db-history query {:where '[[?e :item/id]]})})
-
-(defmethod server-read :query/featured-items
-  [{:keys [db query]} _ _]
-  (let [items (->> (db/all-with db {:where '[[?e :item/id]]})
-                   (db-shuffle db)
-                   (take 4))]
-    {:value (db/pull-many db query items)}))
 
 (defmethod read-basis-param-path :query/store [{:keys [params]} _ _] [(:product-id params)])
 (defmethod server-read :query/item
@@ -81,13 +58,46 @@
                        {:where   '[[?e :item/id ?item-id]]
                         :symbols {'?item-id product-id}})}))
 
-(defmethod server-read :query/featured-streams
-  [{:keys [db query]} _ _]
-  {:value (->> (db/all-with db {:where '[[?e :stream/store]]})
-               (db-shuffle db)
-               (db/pull-many db query))})
-
 (defmethod server-read :query/auth
   [{:keys [auth]} _ _]
   (debug "Read query/auth: " auth)
   {:value auth})
+
+; #### FEATURED ### ;
+
+(defmethod server-read :query/featured-streams
+  [{:keys [db query]} _ _]
+  {:value (sort-by :db/id
+                   (into []
+                         (map #(assoc % :stream/featured true))
+                         (->> (db/all-with db {:where '[[?e :stream/store]]})
+                              (db-shuffle db)
+                              (db/pull-many db query))))})
+
+(defmethod server-read :query/featured-items
+  [{:keys [db query]} _ _]
+  (let [items (->> (db/all-with db {:where '[[?e :item/id]]})
+                   (db-shuffle db)
+                   (take 4))]
+    {:value (sort-by :db/id
+                     (into []
+                           (map #(assoc % :item/featured true))
+                           (db/pull-many db query items)))}))
+
+(defmethod server-read :query/featured-stores
+  [{:keys [db db-history query]} _ _]
+  ;; Only fetch featured-stores initially? i.e. (when (nil? db-history) ...)
+  ;; TODO: Come up with a way to feature stores.
+  (let [feautred-stores (->> (db/all-with db {:where '[[?e :store/name]]})
+                             (db-shuffle db)
+                             (take 4))
+        photos-fn (fn [store]
+                    (let [s (db/entity db store)
+                          [img-1 img-2] (into [] (comp (take 2) (map :item/img-src)) (db-shuffle db (:item/_store s)))]
+                      {:db/id store
+                       :store/featured-img-src [img-1 (:store/photo s) img-2]}))]
+    {:value (sort-by :db/id
+                     (into [] (comp (map photos-fn)
+                                    (map #(merge % (db/pull db query (:db/id %))))
+                                    (map #(assoc % :store/featured true)))
+                           feautred-stores))}))

@@ -1,5 +1,6 @@
 (ns eponai.common.ui.store
   (:require
+    [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.product-item :as pi]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.product :as item]
@@ -17,7 +18,8 @@
           :item (om/get-query item/Product) })))
   static om/IQuery
   (query [_]
-    [`({:query/store [:db/id
+    [{:proxy/navbar (om/get-query nav/Navbar)}
+     `({:query/store [:db/id
                       :store/cover
                       :store/photo
                       {:item/_store ~(om/get-query item/Product)}
@@ -28,65 +30,66 @@
   Object
   (render [this]
     (let [{:keys [show-item breakpoint]} (om/get-state this)
-          {:keys [query/store]} (om/props this)
+          {:keys [query/store proxy/navbar]} (om/props this)
           {:keys      [store/cover store/review-count store/rating store/photo]
            stream     :stream/_store
            items      :item/_store
            store-name :store/name} store]
+      (common/page-container
+        {:navbar navbar}
+        (dom/div
+          #js {:id "sulo-store-container"}
+          (dom/div #js {:className "cover-container"}
+            (dom/div #js {:className "photo cover" :style #js {:backgroundImage (str "url(" cover ")")}}
 
-      (dom/div
-        nil
-        (dom/div #js {:className "cover-container"}
-          (dom/div #js {:className "photo cover" :style #js {:backgroundImage (str "url(" cover ")")}}
+              (dom/div #js {:className "column store-container large-2"}
 
-            (dom/div #js {:className "column store-container large-2"}
+                (dom/div #js {:className "store-short-info-container"}
+                  (dom/div #js {:className "photo-container"}
+                    (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" photo ")")}}))
 
-              (dom/div #js {:className "store-short-info-container"}
-                (dom/div #js {:className "photo-container"}
-                  (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" photo ")")}}))
+                  (dom/div #js {:className "content-item-title-section"}
+                    (dom/h1 #js {:className "store-name"} store-name)
+                    (common/rating-element rating review-count)))
 
-                (dom/div #js {:className "content-item-title-section"}
-                  (dom/h1 #js {:className "store-name"} store-name)
-                  (common/rating-element rating review-count)))
+                ;#?(:cljs)
+                (dom/ul #js {:className (str "menu store-main-menu")}
+                        (dom/li nil (dom/a nil "About"))
+                        (dom/li nil (dom/a nil "Policies"))))
 
-              ;#?(:cljs)
-              (dom/ul #js {:className (str "menu store-main-menu")}
-                      (dom/li nil (dom/a nil "About"))
-                      (dom/li nil (dom/a nil "Policies"))))
+              (dom/div #js {:className "large-8"}
+                (dom/div #js {:className "stream-container content-item"}
+                  (stream/->Stream)
+                  (dom/div #js {:className "content-item-title-section"}
+                    (dom/h2 #js {:className "stream-title"} (:stream/name stream))
+                    (common/viewer-element (:stream/viewer-count stream)))))
 
-            (dom/div #js {:className "large-8"}
-              (dom/div #js {:className "stream-container content-item"}
-                (stream/->Stream)
-                (dom/div #js {:className "content-item-title-section"}
-                  (dom/h2 #js {:className "stream-title"} (:stream/name stream))
-                  (common/viewer-element (:stream/viewer-count stream)))))
+              (dom/div #js {:className "medium-2 stream-chat-container"}
+                (dom/div #js {:className "stream-chat-content"}
+                  (dom/span nil "This is a message"))
+                (dom/div #js {:className "stream-chat-input"}
+                  (dom/input #js {:type        "text"
+                                  :placeholder "Your message..."})
+                  (dom/a #js {:className "button expanded"} "Send")))))
 
-            (dom/div #js {:className "medium-2 stream-chat-container"}
-              (dom/div #js {:className "stream-chat-content"}
-                (dom/span nil "This is a message"))
-              (dom/div #js {:className "stream-chat-input"}
-                (dom/input #js {:type        "text"
-                            :placeholder "Your message..."})
-                (dom/a #js {:className "button expanded"} "Send")))))
+          (dom/div #js {:className "store-nav"}
+            (dom/div #js {:className "row column"}
+              (dom/ul #js {:className "menu"}
+                      (dom/li nil (dom/a nil "Sheets"))
+                      (dom/li nil (dom/a nil "Pillows"))
+                      (dom/li nil (dom/a nil "Duvets")))))
 
-        (dom/div #js {:className "store-nav"}
-          (dom/div #js {:className "row column"}
-            (dom/ul #js {:className "menu"}
-                    (dom/li nil (dom/a nil "Sheets"))
-                    (dom/li nil (dom/a nil "Pillows"))
-                    (dom/li nil (dom/a nil "Duvets")))))
+          (dom/div #js {:className "items"}
+            (apply dom/div #js {:className "content-items-container row small-up-2 medium-up-3 large-up-4"}
+                   (map (fn [p]
+                          (pi/->ProductItem {:product  p
+                                             :on-click #(om/update-state! this assoc :show-item p)}))
+                        items)))
 
-        (dom/div #js {:className "items"}
-          (apply dom/div #js {:className "content-items-container row small-up-2 medium-up-3 large-up-4"}
-                 (map (fn [p]
-                        (pi/->ProductItem {:product p
-                                               :on-click #(om/update-state! this assoc :show-item p)}))
-                      items)))
-
-        ;(when (some? show-item)
-        ;  (common/modal {:on-close #(om/update-state! this dissoc :show-item)
-        ;                 :size :large}
-        ;                (item/->Product show-item)))
-        ))))
+          ;(when (some? show-item)
+          ;  (common/modal {:on-close #(om/update-state! this dissoc :show-item)
+          ;                 :size :large}
+          ;                (item/->Product show-item)))
+          )))))
 
 (def ->Store (om/factory Store))

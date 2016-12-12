@@ -11,11 +11,10 @@
 (defui Goods
   static om/IQuery
   (query [this]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/goods (om/get-query goods/Goods)}])
+    [{:proxy/goods (om/get-query goods/Goods)}])
   Object
   (render [this]
-    (let [{:keys [release? proxy/goods proxy/navbar]} (om/props this)]
+    (let [{:keys [release? proxy/goods]} (om/props this)]
       (dom/html
         {:lang "en"}
 
@@ -24,13 +23,8 @@
         (dom/body
           nil
           (dom/div
-            {:id "sulo-goods"
-             :className "page-container"}
-            (nav/navbar navbar)
-
-            (dom/div {:className "page-content" :id "sulo-items-container"}
-              (goods/->Goods goods))
-            (clj-common/footer nil))
+            {:id "sulo-items"}
+            (goods/->Goods goods))
 
           ;(dom/script {:src "https://webrtc.github.io/adapter/adapter-latest.js"})
           ;(dom/script {:src "/lib/videojs/video.min.js"})

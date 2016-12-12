@@ -13,7 +13,8 @@
     [eponai.common.ui.checkout :as checkout]
     [eponai.common.ui.store :as store]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.ui.goods :as goods]))
+    [eponai.common.ui.goods :as goods]
+    [eponai.common.ui.index :as index]))
 
 (defmulti client-merge om/dispatch)
 
@@ -57,11 +58,13 @@
 (def inline-containers
   {:navbar   {:id        "sulo-navbar-container"
               :component nav/Navbar}
-   :store    {:id        "sulo-store-container"
+   :index    {:id        "sulo-index"
+              :component index/Index}
+   :store    {:id        "sulo-store"
               :component store/Store}
-   :checkout {:id        "sulo-checkout-container"
+   :checkout {:id        "sulo-checkout"
               :component checkout/Checkout}
-   :goods    {:id        "sulo-items-container"
+   :goods    {:id        "sulo-items"
               :component goods/Goods}})
 
 (defn run-navbar []
@@ -69,5 +72,5 @@
 
 (defn run [k]
   (prn "RUN: " k)
-  (run-navbar)
+  ;(run-navbar)
   (run-element (get inline-containers k)))

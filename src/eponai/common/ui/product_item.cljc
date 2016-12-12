@@ -2,6 +2,7 @@
   (:require
     [eponai.common.ui.product :as product]
     [eponai.common.ui.common :as common]
+    [eponai.common.ui.utils :as ui-utils]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     #?(:cljs
@@ -40,7 +41,7 @@
                       :href    product-href}
                  (:item/name product)))
         (dom/div #js {:className "content-item-subtitle-section"}
-          (dom/strong nil (common/two-decimal-price (:item/price product)))
+          (dom/strong nil (ui-utils/two-decimal-price (:item/price product)))
           (common/rating-element 4 11))
 
         (when show-item?

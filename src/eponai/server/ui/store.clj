@@ -14,23 +14,23 @@
     "sulo-store-container")
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/store (om/get-query common.store/Store)}])
+    [{:proxy/store (om/get-query common.store/Store)}])
   Object
   (render [this]
-    (let [{:keys [release? proxy/store proxy/navbar]} (om/props this)]
+    (let [{:keys [release? proxy/store]} (om/props this)]
       (dom/html
         {:lang "en"}
         (apply dom/head nil (common/head release?))
         (dom/body
           nil
           (dom/div
-            {:id "sulo-store"
-             :className "page-container"}
-            (nav/navbar navbar)
-            (dom/div {:className "page-content" :id "sulo-store-container"}
-              (common.store/->Store store))
-            (common/footer nil))
+            {:id "sulo-store" :className "sulo-page"}
+            (common.store/->Store store)
+            ;(nav/navbar navbar)
+            ;(dom/div {:className "page-content" :id "sulo-store-container"}
+            ;  (common.store/->Store store))
+            ;(common/footer nil)
+            )
 
           ;(dom/script {:src "https://webrtc.github.io/adapter/adapter-latest.js"})
           (dom/script {:src "/lib/videojs/video.min.js"})

@@ -1,6 +1,7 @@
 (ns eponai.common.ui.product
   (:require
     [eponai.common.ui.common :as c]
+    [eponai.common.ui.utils :as utils]
     [om.next :as om :refer [defui]]
     [om.dom :as dom]))
 
@@ -59,7 +60,7 @@
               (dom/div #js {:className "product-info"}
                 (dom/h1 #js {:className "product-info-title"} item-name)
                 (dom/h2 #js {:className "product-info-price"}
-                        (c/two-decimal-price price)))
+                        (utils/two-decimal-price price)))
               (dom/div #js {:className "product-action-container clearfix"}
                 (dom/a #js {:onClick   #(om/transact! this `[(shopping-bag/add-item ~{:item (select-keys item [:db/id])})])
                             :className "button expanded"} "Add to bag"))))

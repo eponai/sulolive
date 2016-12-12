@@ -1,7 +1,10 @@
 (ns eponai.server.ui.common
-  (:require [om.dom :as dom]
-            [clojure.string :as string]
-            [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]))
+  (:require
+    [om.dom :as dom]
+    [om.next :as om :refer [defui]]
+    [clojure.string :as string]
+    [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]
+    [eponai.common.ui.navbar :as nav]))
 
 ;; Utils
 
@@ -105,22 +108,6 @@
               :content "/assets/img/favicon/ms-icon-144x144.png"})
    (dom/meta {:name "theme-color" :content "#ffffff"})])
 
-
-(defn footer [opts]
-  (dom/div {:className "footer"}
-    (dom/footer {:className "clearfix"}
-                (dom/ul {:className "menu float-left"}
-                        (dom/li {:className "menu-text"} (dom/small nil "Say hi anytime"))
-                        (dom/li nil (dom/a nil (dom/i {:className "fa fa-instagram fa-fw"})))
-                        (dom/li nil (dom/a nil (dom/i {:className "fa fa-twitter fa-fw"})))
-                        (dom/li nil (dom/a nil (dom/i {:className "fa fa-facebook fa-fw"})))
-                        (dom/li nil (dom/a nil (dom/i {:className "fa fa-envelope-o fa-fw"}))))
-
-                (dom/ul {:className "menu float-right"}
-                        (dom/li nil (dom/a nil (dom/small nil "Privacy Policy")))
-                        (dom/li nil (dom/a nil (dom/small nil "Terms & Conditions")))
-                        (dom/li {:className "menu-text"} (dom/small nil "© Sulo 2016"))))))
-
 (defn budget-js-path [release?]
   (str "/"
        (if release? "release" "dev")
@@ -128,6 +115,21 @@
 
 (defprotocol IJSContainer
   (container [this] "Return the id of the container for javascript."))
+
+;(defui PageContainer
+;  static om/IQuery
+;  (query [_]
+;    [{:proxy/navbar (om/get-query nav/Navbar)}])
+;  Object
+;  (render [this]
+;    (let [{:keys [proxy/navbar]} (om/props this)
+;          {:keys [content]} (om/get-computed this)]
+;      (dom/div {:className "page-container"}
+;        (nav/navbar navbar)
+;        content
+;        (footer nil)))))
+
+;(def ->PageContainer (om/factory PageContainer))
 
 ;(defn get-jscontainer [component]
 ;  (when #?(:clj  (extends? IJSContainer class)
