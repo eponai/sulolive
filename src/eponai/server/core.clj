@@ -15,9 +15,8 @@
     [eponai.server.external.stripe :as stripe]
     [ring.adapter.jetty :as jetty]
     [taoensso.timbre :refer [debug error info]]
-    ;; Debug/dev requires
-    [ring.middleware.reload :as reload]
-    [prone.middleware :as prone]))
+    ;; Dev/debug require
+    [ring.middleware.reload :as reload]))
 
 (defonce in-production? (atom true))
 
@@ -26,7 +25,6 @@
       m/wrap-post-middlewares
       (m/wrap-authenticate conn @in-production?)
       (cond-> (some? extra-middleware) extra-middleware)
-      (cond-> @in-production? m/wrap-error)
       m/wrap-format
       (m/wrap-state {::m/conn                     conn
                      ::m/parser                   (parser/server-parser)
@@ -38,8 +36,10 @@
                      ;; either "dev" or "release"
                      ::m/cljs-build-id            (or (env :cljs-build-id) "dev")})
       (m/wrap-defaults @in-production? disable-anti-forgery)
+      (m/wrap-error @in-production?)
       m/wrap-trace-request
       (cond-> @in-production? m/wrap-ssl)
+      (cond-> (not @in-production?) reload/wrap-reload)
       m/wrap-gzip))
 
 ;; Do a little re-def dance. Store the arguments to app* in a var, right before
@@ -92,11 +92,7 @@
   [& [opts]]
   {:pre [(or (nil? opts) (map? opts))]}
   (reset! in-production? false)
-  (start-server (merge {:join?             false
-                        ::extra-middleware #(-> %
-                                                (prone/wrap-exceptions {:app-namespaces ["eponai"]})
-                                                reload/wrap-reload)}
-                       opts)))
+  (start-server (merge {:join? false} opts)))
 
 (defn start-server-for-tests [& [{:keys [email-chan conn port wrap-state] :as opts}]]
   {:pre [(or (nil? opts) (map? opts))]}

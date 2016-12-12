@@ -45,7 +45,7 @@
                  [ring/ring-ssl "0.2.1"]
                  [ring/ring-anti-forgery "1.0.1"]
                  [ring-transit "0.1.6"]
-                 [prone "1.1.2"]
+                 [prone "1.1.4"]
 		 [medley "0.8.3"]
 
                  ;; CLJS

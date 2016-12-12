@@ -12,7 +12,9 @@
     [ring.middleware.transit :refer [wrap-transit-response
                                      wrap-transit-body]]
     [taoensso.timbre :refer [debug error trace]]
-    [eponai.server.auth :as auth])
+    [eponai.server.auth :as auth]
+    ;; Debug/dev require
+    [prone.middleware :as prone])
   (:import (datomic.query EntityMap)))
 
 (defn wrap-timing [handler]
@@ -34,16 +36,21 @@
         (ssl/wrap-hsts {:max-age 86400 :include-subdomains? false})))
   handler)
 
-(defn wrap-error [handler]
-  (fn [request]
-    (try
-      (handler request)
-      (catch Throwable e
-        (error "Error for request: " request " message: " (.getMessage e))
-        (error e)
-        (let [error (ex-data e)
-              code (h/error-codes (or (:status error) ::h/internal-error))]
-          {:status code :body error})))))
+(defn wrap-error [handler in-prod?]
+  (letfn [(wrap-error-prod [handler]
+            (fn [request]
+              (try
+                (handler request)
+                (catch Throwable e
+                  (error "Error for request: " request " message: " (.getMessage e))
+                  (error e)
+                  (let [error (ex-data e)
+                        code (h/error-codes (or (:status error) ::h/internal-error))]
+                    {:status code :body error})))))]
+    (if in-prod?
+      (wrap-error-prod handler)
+      (prone/wrap-exceptions handler {:app-namespaces     '[eponai]
+                                      :print-stacktraces? true}))))
 
 (def datomic-transit
   (transit/write-handler
