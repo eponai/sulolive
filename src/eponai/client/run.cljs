@@ -55,7 +55,7 @@
                 (om/merge! reconciler res query))))))
 
 (def inline-containers
-  {:navbar   {:id        "sulo-navbar"
+  {:navbar   {:id        "sulo-navbar-container"
               :component nav/Navbar}
    :store    {:id        "sulo-store-container"
               :component store/Store}

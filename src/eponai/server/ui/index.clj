@@ -91,7 +91,7 @@
                   (dom/div
             {:id "sulo-start"
              :className "page-container"}
-                    (nav/->Navbar navbar)
+                    (nav/navbar navbar)
                     (dom/div {:className "page-content"}
 
               (dom/div {:className "intro-header"}

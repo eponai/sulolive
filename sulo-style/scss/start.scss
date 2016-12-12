@@ -5,20 +5,25 @@ $banner-background-color: $header-background-color;
 $font-color-light: $body-background;
 nav {
 	height: $navbar-height;
-	width: 100%;
-	position: absolute;
+	// width: 100%;
+	// position: absolute;
 	z-index: 3;
-	top: 0;
+	// top: 0;
+	border-bottom: 1px solid rgba($black, 0.2);
+}
+.navbar {
 	&.top-bar {
 		background: $navbar-background-color;
 		ul {
 			background: transparent;
-			a:not(.button) {
-				color: map-get($foundation-palette, brown);//$font-color-light;
-			}
+			// a:not(.button) {
+			// 	color: map-get($foundation-palette, brown);//$font-color-light;
+			// }
 		}
 	}
-	border-bottom: 1px solid rgba($black, 0.2);
+}
+.subnav {
+	// margin-top: $navbar-height;
 	box-shadow: 0 1px 5px 1px rgba($black, 0.2);
 }
 

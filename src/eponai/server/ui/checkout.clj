@@ -22,7 +22,7 @@
           (dom/div
             {:id "sulo-checkout"
              :className "page-container"}
-            (nav/->Navbar navbar)
+            (nav/navbar navbar)
             (dom/div {:className "page-content" :id "sulo-checkout-container"}
               (checkout/->Checkout cart))
             (common/footer nil))

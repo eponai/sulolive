@@ -26,7 +26,7 @@
           (dom/div
             {:id "sulo-product-page"
              :className "page-container"}
-            (nav/->Navbar navbar)
+            (nav/navbar navbar)
 
             (dom/div {:className "page-content" :id "sulo-product-container"}
               (cljc-product/->Product item))

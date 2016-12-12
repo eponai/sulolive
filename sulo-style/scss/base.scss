@@ -5,6 +5,20 @@ html, body {
 	width: 100%;
 }
 
+.navbar {
+	a:not(.button) {		
+		color: map-get($foundation-palette, brown);
+	}
+}
+.subnav {
+	a:not(.button) {
+		transition: background 0.25s;
+		&:hover {
+			background: darken($white, 10%);
+		}
+	}
+}
+
 .reveal-overlay {
 	display: block;
 	.reveal {
@@ -28,7 +42,7 @@ $footer-height: 4rem;
 
 .page-content {
 	padding-bottom: $footer-height-small;
-	padding-top: $navbar-height;
+	// padding-top: $navbar-height;
 	@include breakpoint(medium) {
 		padding-bottom: $footer-height;
 	}
@@ -52,4 +66,5 @@ $footer-height: 4rem;
 .navbar-brand {
 	text-transform: uppercase;
 	font-weight: 500;
+	font-size: 1.2rem;
 }

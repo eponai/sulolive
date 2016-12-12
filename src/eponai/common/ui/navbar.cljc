@@ -94,16 +94,19 @@
                                           "Sulo"))
                            (dom/li nil
                                    (dom/input #js {:type "text"
-                                                   :placeholder "Search items or stores"}))))
+                                                   :placeholder "Search items or stores"}))
+                           (dom/li nil (dom/a nil "Stores"))
+                           (dom/li nil (dom/a nil "Live"))
+                           (dom/li nil (dom/a #js {:href "/goods"} "Goods"))))
 
                  (dom/div #js {:className "top-bar-right"}
                    (dom/ul #js {:className "menu"}
-                           (if (some? auth)
+                           (if (some? (not-empty auth))
                              (dom/li #js {:className "user-profile menu-dropdown"}
                                      (dom/a nil "You")
                                      (user-dropdown this cart))
                              (dom/li nil
-                                     (dom/a #js {:className "button hollow nude"
+                                     (dom/a #js {:className "button hollow"
                                                  :onClick #(do
                                                             #?(:cljs
                                                                (.open-signin this)))} "Sign in")))
@@ -117,9 +120,19 @@
 
                    ;(when cart-open?)
                    ))
+        (dom/div #js {:className "subnav navbar top-bar"}
+          (dom/div #js {:className "top-bar-left"}
+            (dom/ul #js {:className "menu"}
+                    (dom/li nil (dom/a nil "Clothing"))
+                    (dom/li nil (dom/a nil "Accessories"))
+                    (dom/li nil (dom/a nil "Home")))))
         (when signin-open?
           (common/modal {:size "tiny"
                          :on-close #(om/update-state! this assoc :signin-open? false)} (dom/div #js {:id "modal"})))
         ))))
 
 (def ->Navbar (om/factory Navbar))
+
+(defn navbar [props]
+  (dom/div #js {:id "sulo-navbar-container"}
+    (->Navbar props)))
