@@ -85,41 +85,41 @@
           {:keys [query/cart query/auth]} (om/props this)]
       (debug "Got auth: " auth)
       (dom/div #js {:id "sulo-navbar"}
-        (dom/nav #js {:className "navbar top-bar"}
-                 (dom/div #js {:className "top-bar-left"}
-                   (dom/ul #js {:className "menu"}
-                           (dom/li nil
-                                   (dom/a #js {:className "navbar-brand"
-                                               :href      "/"}
-                                          "Sulo"))
-                           (dom/li nil
-                                   (dom/input #js {:type "text"
-                                                   :placeholder "Search items or stores"}))
-                           (dom/li nil (dom/a nil "Stores"))
-                           (dom/li nil (dom/a nil "Live"))
-                           (dom/li nil (dom/a #js {:href "/goods"} "Goods"))))
-
-                 (dom/div #js {:className "top-bar-right"}
-                   (dom/ul #js {:className "menu"}
-                           (if (some? (not-empty auth))
-                             (dom/li #js {:className "user-profile menu-dropdown"}
-                                     (dom/a nil "You")
-                                     (user-dropdown this cart))
+        (dom/nav #js {:className "navbar-container"}
+                 (dom/div #js {:className "top-bar navbar"}
+                   (dom/div #js {:className "top-bar-left"}
+                     (dom/ul #js {:className "menu"}
                              (dom/li nil
-                                     (dom/a #js {:className "button hollow"
-                                                 :onClick #(do
-                                                            #?(:cljs
-                                                               (.open-signin this)))} "Sign in")))
-                           (dom/li #js {:className "menu-dropdown"}
-                                   (dom/a #js {:href "/checkout"
-                                               ;:onClick #(om/update-state! this update :cart-open? not)
-                                               }
-                                          (dom/span nil (common/two-decimal-price (:cart/price cart)))
-                                          (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))
-                                   (cart-dropdown cart)))
+                                     (dom/a #js {:className "navbar-brand"
+                                                 :href      "/"}
+                                            "Sulo"))
+                             (dom/li nil
+                                     (dom/input #js {:type        "text"
+                                                     :placeholder "Search items or stores"}))
+                             (dom/li nil (dom/a #js {:className "top-nav-link"} (dom/strong nil "Stores")))
+                             (dom/li nil (dom/a #js {:className "top-nav-link"} (dom/strong nil "Live")))))
 
-                   ;(when cart-open?)
-                   ))
+                   (dom/div #js {:className "top-bar-right"}
+                     (dom/ul #js {:className "menu"}
+                             (if (some? (not-empty auth))
+                               (dom/li #js {:className "user-profile menu-dropdown"}
+                                       (dom/a nil "You")
+                                       (user-dropdown this cart))
+                               (dom/li nil
+                                       (dom/a #js {:className "button hollow"
+                                                   :onClick   #(do
+                                                                #?(:cljs
+                                                                   (.open-signin this)))} "Sign in")))
+                             (dom/li #js {:className "menu-dropdown"}
+                                     (dom/a #js {:href "/checkout"
+                                                 ;:onClick #(om/update-state! this update :cart-open? not)
+                                                 }
+                                            (dom/span nil (common/two-decimal-price (:cart/price cart)))
+                                            (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))
+                                     (cart-dropdown cart)))
+
+                     ;(when cart-open?)
+                     )))
         (dom/div #js {:className "subnav-container"}
           (dom/div #js {:className "subnav navbar top-bar"}
             (dom/div #js {:className "top-bar-left"}

@@ -5,22 +5,6 @@ html, body {
 	width: 100%;
 }
 
-.navbar {
-	a:not(.button) {		
-		color: map-get($foundation-palette, brown);
-	}
-}
-.subnav {
-	max-width: 65rem;
-	margin: 0 auto;
-	a:not(.button) {
-		transition: background 0.25s;
-		&:hover {
-			background: darken($white, 10%);
-		}
-	}
-}
-
 .reveal-overlay {
 	display: block;
 	.reveal {
@@ -52,7 +36,8 @@ $footer-height: 4rem;
 
 .footer {
 	footer {
-		margin: auto 0;
+		max-width: 65rem;
+		margin: auto auto;
 		height: 100%;
 	}
 	width: 100%;

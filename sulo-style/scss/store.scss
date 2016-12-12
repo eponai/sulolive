@@ -1,7 +1,8 @@
 #sulo-store {
-	nav {
-		position: relative;
+	.navbar, footer {
+		max-width: 100%;
 	}
+
 	#sulo-product {
 		.store-container {
 			display: none;

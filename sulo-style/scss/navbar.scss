@@ -1,0 +1,37 @@
+$navbar-background-color: $white;//map-get($foundation-palette, nude);
+
+#sulo-navbar-container {
+	box-shadow: 0 1px 5px 1px rgba($black, 0.2);
+}
+nav {
+	height: $navbar-height;
+	// width: 100%;
+	// position: absolute;
+	z-index: 3;
+	// top: 0;
+	// border-bottom: 1px solid rgba($black, 0.2);
+}
+.navbar-container {
+	background: $navbar-background-color;
+}
+.navbar {
+	max-width: 65rem;
+	margin: 0 auto;
+	a:not(.button):not(.top-nav-link) {		
+		color: map-get($foundation-palette, brown);
+	}
+	&.top-bar {
+		background: $navbar-background-color;
+		ul {
+			background: transparent;
+		}
+	}
+}
+.subnav {
+	a:not(.button) {
+		transition: background 0.25s;
+		&:hover {
+			background: darken($white, 10%);
+		}
+	}
+}

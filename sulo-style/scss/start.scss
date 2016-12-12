@@ -3,29 +3,6 @@ $header-background-color: #2E2A31;
 $banner-background-color: $header-background-color;
 
 $font-color-light: $body-background;
-nav {
-	height: $navbar-height;
-	// width: 100%;
-	// position: absolute;
-	z-index: 3;
-	// top: 0;
-	border-bottom: 1px solid rgba($black, 0.2);
-}
-.navbar {
-	&.top-bar {
-		background: $navbar-background-color;
-		ul {
-			background: transparent;
-			// a:not(.button) {
-			// 	color: map-get($foundation-palette, brown);//$font-color-light;
-			// }
-		}
-	}
-}
-.subnav-container {
-	// margin-top: $navbar-height;
-	box-shadow: 0 1px 5px 1px rgba($black, 0.2);
-}
 
 #sulo-start {
 	overflow-x: hidden;
@@ -172,7 +149,7 @@ nav {
 
 	.footer {
 		background: $header-background-color;
-		color: map-get($foundation-palette, brown);//$body-background;
+		color: map-get($foundation-palette, nude);//$body-background;
 		a {
 			color: $body-background;
 		}
