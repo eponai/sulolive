@@ -4,6 +4,7 @@
     [eponai.common.ui.navbar :as nav]
     [eponai.common.parser :as parser]
     [eponai.client.parser.read]
+    [eponai.client.parser.mutate]
     [eponai.client.parser.merge :as merge]
     [eponai.client.backend :as backend]
     [eponai.client.remotes :as remotes]

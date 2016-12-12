@@ -27,6 +27,11 @@ nav {
 	svg {
 		position: absolute;
 	}
+	.navbar {
+		input {
+			display: none;
+		}
+	}
 
 	@include breakpoint(medium) {
 		h1 {

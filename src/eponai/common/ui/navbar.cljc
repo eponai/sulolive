@@ -29,6 +29,14 @@
         (dom/h5 nil "Total: " (dom/strong nil (common/two-decimal-price price))))
       (dom/a #js {:className "button expanded"
                   :href      "/checkout"} "View My Bag"))))
+
+(defn user-dropdown [component user]
+  (dom/div #js {:className "dropdown-pane"}
+    (dom/ul #js {:className "menu vertical"}
+            (dom/li nil
+                    (dom/a #js {:onClick #(om/transact! component `[(session/signout) :query/auth])}
+                           "Sign Out")))))
+
 (defui Navbar
   static om/IQuery
   (query [_]
@@ -91,12 +99,14 @@
                  (dom/div #js {:className "top-bar-right"}
                    (dom/ul #js {:className "menu"}
                            (if (some? auth)
-                             (dom/li nil (dom/a nil "You"))
+                             (dom/li #js {:className "user-profile menu-dropdown"}
+                                     (dom/a nil "You")
+                                     (user-dropdown this cart))
                              (dom/li nil
                                      (dom/a #js {:onClick #(do
                                                             #?(:cljs
                                                                (.open-signin this)))} "Sign in")))
-                           (dom/li #js {:className "shopping-cart"}
+                           (dom/li #js {:className "menu-dropdown"}
                                    (dom/a #js {:href "/checkout"
                                                ;:onClick #(om/update-state! this update :cart-open? not)
                                                }

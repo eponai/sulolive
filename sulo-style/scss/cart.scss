@@ -32,14 +32,19 @@
 	}
 }
 
-.shopping-cart {
-	.cart-container.dropdown-pane {
+.menu-dropdown {
+	.dropdown-pane {
 		transition: visibility 0s linear 0.25s, opacity 0.25s linear;
 		visibility: hidden;
 		opacity: 0;
+
+		a:not(.button) {
+			color: map-get($foundation-palette, primary);
+			padding: 0;
+		}
 	}
 	&:hover {
-		.cart-container.dropdown-pane {
+		.dropdown-pane {
 			visibility: visible;
 			opacity: 1;
 			transition-delay: 0s;
