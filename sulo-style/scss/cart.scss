@@ -1,3 +1,61 @@
+#sulo-checkout {
+	.callout.transparent {
+		border: none;
+	}
+	.button {
+		font-weight: bold;
+	}
+	.callout.success {
+		table {
+			$border-color: map-get($foundation-palette, success);
+			$border: 1px solid rgba(10,10,10,0.05);
+			border-color: $border-color;
+			tr {
+				&.total-price {
+				border-top: $border;
+				font-weight: bold;
+				}
+			}
+			tbody {
+				border: $border;
+			}
+		}
+	}
+	tbody {
+		background-color: transparent;
+	}
+	tr {
+		$border-color: map-get($foundation-palette, brown);
+		$border: 1px solid rgba($border-color, 0.05);
+		background: transparent;
+		&.total-price {
+			border-top: $border;
+			font-weight: bold;
+		}
+	}
+	.page-content {
+		padding-top: 1.5rem;
+	}
+	.cart-items {
+		padding: 1rem 0;
+	}
+	.cart-empty, .cart-loading {
+		padding: 1.5rem;
+		h5 {
+			margin-bottom: 2rem;
+			// font-weight: bold;
+		}
+		padding: 2.5rem;
+	}
+	.cart-loading {
+		color: rgba(map-get($foundation-palette, brown), 0.2);
+	}
+
+	span.price {
+		font-weight: 500;
+		// color: map-get($foundation-palette, secondary);
+	}
+}
 .cart-container {
 	.callout {
 		background: transparent;

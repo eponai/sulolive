@@ -23,6 +23,16 @@ html, body {
 $footer-height-small: 6rem;
 $footer-height: 4rem;
 
+@mixin sulo-anchor {
+	@each $name, $color in $foundation-palette {
+		&.#{$name} {
+			color: $color;
+		}
+    }
+}
+a {
+	@include sulo-anchor;
+}
 .sulo-page {
 	height: 100vh;
 }
@@ -44,6 +54,9 @@ $footer-height: 4rem;
 		max-width: 65rem;
 		margin: auto auto;
 		height: 100%;
+		a {
+			color: map-get($foundation-palette, brown);
+		}
 	}
 	width: 100%;
 	position: absolute;

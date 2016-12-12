@@ -147,5 +147,5 @@
 
  :cart    [{:cart/items #{[:item/id "00"]
                           [:item/id "01"]
-                          [:item/id "02"]
-                          [:item/id "03"]}}]}
+                          [:item/id "42"]
+                          [:item/id "43"]}}]}

@@ -13,6 +13,10 @@
 	}
 }
 
+.store-name {
+	margin: 0;
+}
+
 #sulo-product {
 	padding: 1rem 0;
 	.product-container {
@@ -24,7 +28,6 @@
 		box-shadow: none;
 		.store-name {
 			font-size: 1.5rem;
-			margin: 0;
 		}
 	}
 
