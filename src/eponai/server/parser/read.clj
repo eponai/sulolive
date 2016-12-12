@@ -48,15 +48,15 @@
 
 (defmethod server-read :query/all-items
   [{:keys [db db-history query]} _ _]
-  {:value (query/all db db-history query {:where '[[?e :item/id]]})})
+  {:value (query/all db db-history query {:where '[[?e :item/name]]})})
 
-(defmethod read-basis-param-path :query/store [{:keys [params]} _ _] [(:product-id params)])
+(defmethod read-basis-param-path :query/item [{:keys [params]} _ _] [(:product-id params)])
 (defmethod server-read :query/item
   [{:keys [db db-history query params]} _ _]
   (let [{:keys [product-id]} params]
     {:value (query/one db db-history query
-                       {:where   '[[?e :item/id ?item-id]]
-                        :symbols {'?item-id product-id}})}))
+                       {:where   '[[?e :item/name]]
+                        :symbols {'?e (Long/parseLong product-id)}})}))
 
 (defmethod server-read :query/auth
   [{:keys [auth]} _ _]

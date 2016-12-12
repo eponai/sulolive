@@ -27,7 +27,7 @@
           {:keys [show-item? breakpoint]} (om/get-state this)
           open-url? #?(:cljs (utils/bp-compare :large breakpoint >) :clj false)
           on-click (when-not open-url? #(om/update-state! this assoc :show-item? true))
-          product-href (when (or open-url? (nil? on-click)) (str "/goods/" (:item/id product)))]
+          product-href (when (or open-url? (nil? on-click)) (str "/goods/" (:db/id product)))]
 
       ;; TODO: Very similar to eponai.common.ui.common/product-element
       ;;       Extract?

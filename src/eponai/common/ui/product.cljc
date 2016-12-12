@@ -37,8 +37,9 @@
            item-name :item/name :as item} (om/props this)]
       (dom/div
         #js {:id "sulo-product"}
+
         (dom/div #js {:className "row content-items-container store-container align-middle"}
-          (dom/div #js {:className "columns small-4 medium-2"}
+          (dom/div #js {:className "columns small-2 medium-1"}
             (dom/div #js {:className "photo-container"}
               (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" (:store/photo store) ")")}})))
           (dom/div #js {:className "columns"}

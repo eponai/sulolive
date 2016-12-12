@@ -40,7 +40,7 @@
 
 (defn product-element [product & [opts]]
   (let [{:keys [on-click open-url?]} opts
-        goods-href (when (or open-url? (nil? on-click)) (str "/goods/" (:item/id product)))
+        goods-href (when (or open-url? (nil? on-click)) (str "/goods/" (:db/id product)))
         on-click (when-not open-url? on-click)]
     (dom/div #js {:className "column content-item product-item"}
       (dom/a #js {:onClick   on-click

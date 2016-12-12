@@ -14,7 +14,7 @@
                         :item/price
                         :item/img-src
                         :item/id
-                        {:item/_store [:store/name :store/photo :store/rating :store/review-count]}]}])
+                        {:item/store [:store/name :store/photo :store/rating :store/review-count]}]}])
   Object
   (render [this]
     (let [{:keys [query/all-items proxy/navbar]} (om/props this)]

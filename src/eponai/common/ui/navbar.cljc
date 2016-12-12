@@ -24,8 +24,9 @@
                   (take 3 items)))
 
       (dom/div #js {:className "callout nude"}
-        (when (< 3 (count items))
-          (dom/small nil (str "You have " (- (count items) 3) " more item(s) in your bag")))
+        (if (< 3 (count items))
+          (dom/small nil (str "You have " (- (count items) 3) " more item(s) in your bag"))
+          (dom/small nil (str "You have " (count items) " item(s) in your bag")))
         (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price price))))
       (dom/a #js {:className "button expanded"
                   :href      "/checkout"} "View My Bag"))))

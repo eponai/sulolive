@@ -6,6 +6,7 @@
 
 .reveal {
 	#sulo-product {
+		padding: 0;
 		.product-container {
 			box-shadow: none;
 		}
@@ -13,13 +14,17 @@
 }
 
 #sulo-product {
+	padding: 1rem 0;
 	.product-container {
 		background: white;
 		box-shadow: 0 1px 3px 1px rgba($black, 0.2);
 	}
 	.store-container {
-		p {
+		margin-bottom: 1rem;
+		box-shadow: none;
+		.store-name {
 			font-size: 1.5rem;
+			margin: 0;
 		}
 	}
 
