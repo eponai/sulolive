@@ -120,12 +120,13 @@
 
                    ;(when cart-open?)
                    ))
-        (dom/div #js {:className "subnav navbar top-bar"}
-          (dom/div #js {:className "top-bar-left"}
-            (dom/ul #js {:className "menu"}
-                    (dom/li nil (dom/a nil "Clothing"))
-                    (dom/li nil (dom/a nil "Accessories"))
-                    (dom/li nil (dom/a nil "Home")))))
+        (dom/div #js {:className "subnav-container"}
+          (dom/div #js {:className "subnav navbar top-bar"}
+            (dom/div #js {:className "top-bar-left"}
+              (dom/ul #js {:className "menu"}
+                      (dom/li nil (dom/a nil "Clothing"))
+                      (dom/li nil (dom/a nil "Accessories"))
+                      (dom/li nil (dom/a nil "Home"))))))
         (when signin-open?
           (common/modal {:size "tiny"
                          :on-close #(om/update-state! this assoc :signin-open? false)} (dom/div #js {:id "modal"})))
