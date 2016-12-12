@@ -1,4 +1,4 @@
-$navbar-background-color: #2E2A31;
+$navbar-background-color: $white;//map-get($foundation-palette, nude);
 $header-background-color: #2E2A31;
 $banner-background-color: $header-background-color;
 
@@ -13,8 +13,8 @@ nav {
 		background: $navbar-background-color;
 		ul {
 			background: transparent;
-			a {
-				color: $font-color-light;
+			a:not(.button) {
+				color: map-get($foundation-palette, brown);//$font-color-light;
 			}
 		}
 	}
@@ -141,8 +141,8 @@ nav {
 		}
 
 		&.white {
-			background: rgba(#9A4B4F, 0.1);
-			// background: $white; //#F0EDE3;
+			// background: rgba(#9A4B4F, 1);
+			background: $white; //#F0EDE3;
 			h2 {
 				color: $black;
 				text-shadow: none;
@@ -167,7 +167,7 @@ nav {
 
 	.footer {
 		background: $header-background-color;
-		color: $body-background;
+		color: map-get($foundation-palette, brown);//$body-background;
 		a {
 			color: $body-background;
 		}

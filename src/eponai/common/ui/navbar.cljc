@@ -103,7 +103,8 @@
                                      (dom/a nil "You")
                                      (user-dropdown this cart))
                              (dom/li nil
-                                     (dom/a #js {:onClick #(do
+                                     (dom/a #js {:className "button hollow nude"
+                                                 :onClick #(do
                                                             #?(:cljs
                                                                (.open-signin this)))} "Sign in")))
                            (dom/li #js {:className "menu-dropdown"}

@@ -44,16 +44,16 @@
 	.store-container {
 		$brown: map-get($foundation-palette, brown);
 		$nude: $white;//map-get($foundation-palette, nude);
-		background: rgba($brown, 0.7) !important;
-		color: $white;
+		background: rgba($white, 0.7) !important;
+		// color: $white;
 		box-shadow: 1px 0 2px 0 rgba($black, 0.5);
 		h1, small {
 			// color: $white;
-			text-shadow: 1px 1px 1px rgba($black, 0.7);
+			text-shadow: 1px 1px 1px rgba($white, 0.7);
 		}
 		i {
-			color: $nude;
-			text-shadow: 1px 1px 1px rgba($black, 0.7);
+			// color: $nude;
+			text-shadow: 1px 1px 1px rgba($white, 0.7);
 		}
 		@include breakpoint(large) {
 			padding: 0;
@@ -76,15 +76,15 @@
 					}
 				}
 				&:hover {
-					background: rgba($brown, 0.7);
+					background: rgba($brown, 0.2);
 					a {
 						color: $white;
 					}
 				}
 				a {
-					color: $nude;
+					// color: $nude;
 					font-weight: bold;
-					text-shadow: 0px 1px 1px rgba($black, 0.5);
+					// text-shadow: 0px 1px 1px rgba($white, 0.5);
 				}
 			}
 		}
