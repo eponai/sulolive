@@ -22,6 +22,7 @@
 
 (defn app* [conn {:keys [::extra-middleware ::disable-anti-forgery] :as options}]
   (-> (routes site-routes)
+      (cond-> (not @in-production?) (m/wrap-node-modules))
       m/wrap-post-middlewares
       (m/wrap-authenticate conn @in-production?)
       (cond-> (some? extra-middleware) extra-middleware)

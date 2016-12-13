@@ -125,6 +125,5 @@
   (context "/" [:as request]
     (if (release? request)
       (auth/restrict admin-routes (auth/http-basic-restrict-opts))
-      admin-routes)
-    )
+      admin-routes))
   (route/not-found "Not found"))

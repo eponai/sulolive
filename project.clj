@@ -86,6 +86,7 @@
   :jvm-opts ^:replace ["-Xms512m" "-Xmx2048m" "-server"
                        "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1"
                       ]
+  :resource-paths ["resources" "node_modules"]
   :plugins [
            ;; [lein-npm "0.6.1"]
             [lein-shell "0.5.0"]
@@ -107,7 +108,7 @@
                                    ]
 
   :aliases {"all-deps"               ^{:doc "Fetches both clj, cljs and node dependencies."}
-                                     ["do" 
+                                     ["do"
                                       ["deps"]
                                       ["pod-deps"]
                                       ["npm-deps"]
@@ -144,24 +145,24 @@
                                       ["with-profile" "web" "doo" "phantom" "doo-test" "once"]]
             "figwheel-ios"           ^{:doc "Start figwheel for ios"}
                                      ["do"
-                                      ["with-profile" "mobile" "figwheel" "ios"]]
-            "figwheel-web"           ^{:doc "Start figwheel for web"}
-                                     ["do"
                                       ;; Exporting an environment variable for figwheel port
                                       ;; as it's only configurable globally (per project.clj file).
-                                      ;; This port should differ from the one running figwheel-ios,
+                                      ;; This port should differ from the one running figwheel-web,
                                       ;; because they need to be running lein with different profiles
                                       ;; and different dependencies.
                                       ["shell" "bash" "-c"
-                                       "export FIGWHEEL_PORT=3450; lein with-profile web figwheel dev"]]
+                                       "export FIGWHEEL_PORT=3450; lein with-profile mobile figwheel ios"]
+                                      ["with-profile" "mobile" "figwheel" "ios"]]
+            "figwheel-web"           ^{:doc "Start figwheel for web"}
+                                     ["do"
+                                      ["with-profile" "web" "figwheel" "dev"]
+                                      ]
             "figwheel-test"          ^{:doc "Start figwheel for web"}
                                      ["do"
-                                      ["shell" "bash" "-c"
-                                       "export FIGWHEEL_PORT=3450; lein with-profile web figwheel test"]]
+                                      ["with-profile" "web" "figwheel" "test"]]
             "figwheel-web+test"      ^{:doc "Start figwheel for web"}
                                      ["do"
-                                      ["shell" "bash" "-c"
-                                       "export FIGWHEEL_PORT=3450; lein with-profile web figwheel dev test"]]
+                                      ["with-profile" "web" "figwheel" "dev" "test"]]
             }
 
   ;; TODO: TEST ALL ALIASES

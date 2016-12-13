@@ -29,11 +29,7 @@
             ;(common/footer nil)
             )
 
-          (dom/script {:src "https://webrtc.github.io/adapter/adapter-latest.js"})
-          (dom/script {:src "/lib/videojs/video.min.js"})
-          (dom/script {:src "/lib/videojs/videojs-media-sources.min.js"})
-          (dom/script {:src "/lib/videojs/videojs.hls.min.js"})
-          (dom/script {:src "/lib/red5pro/red5pro-sdk.min.js"})
+          (common/red5pro-script-tags release?)
           (dom/script {:src  (common/budget-js-path release?)
                        :type common/text-javascript})
           ;(dom/script {:src "https://cdn.auth0.com/js/lock/10.6/lock.min.js"})

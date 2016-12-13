@@ -1,9 +1,12 @@
 (ns eponai.server.middleware
   (:require
     [cognitect.transit :as transit]
+    [clojure.string :as str]
     [environ.core :refer [env]]
     [eponai.common.parser.util :as parser.util]
     [eponai.server.http :as h]
+    [ring.util.request :as ring.request]
+    [ring.util.response :as ring.response]
     [ring.middleware.defaults :as r]
     [ring.middleware.gzip :as gzip]
     [ring.middleware.json :refer [wrap-json-body
@@ -118,3 +121,11 @@
 
 (defn wrap-defaults [handler in-prod? disable-anti-forgery]
   (r/wrap-defaults handler (config in-prod? disable-anti-forgery)))
+
+(defn wrap-node-modules [handler]
+  (fn [request]
+    (let [path (subs (ring.request/path-info request) 1)
+          [p & ps] (str/split path #"/")]
+      (if (= p "node_modules")
+        (ring.response/resource-response (str/join "/" ps))
+        (handler request)))))
