@@ -46,7 +46,7 @@
     {:value (let [pattern (if category
                             {:where '[[?e :item/category ?c]]
                              :symbols {'?c category}}
-                            {:where '[[?e :item/id]]})]
+                            {:where '[[?e :item/name]]})]
               (debug "Read query/items: " category " query: " pattern)
 
               (assert (some #{:db/id} query)
