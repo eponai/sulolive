@@ -1,4 +1,13 @@
 #sulo-checkout {
+	span.name {
+		max-height: 4.8rem;
+		overflow: hidden;
+		display: -webkit-box;
+		-webkit-line-clamp: 4;
+		-webkit-box-orient: vertical;
+		line-height: 1.2rem;
+		text-overflow: ellipsis;
+	}
 	.callout.transparent {
 		border: none;
 	}
@@ -7,6 +16,8 @@
 	}
 	.callout.transparent {
 		table {
+			margin-top: 2rem;
+
 			$border-color: map-get($foundation-palette, success);
 			$border: 1px solid rgba(10,10,10,0.05);
 			border-color: $border-color;

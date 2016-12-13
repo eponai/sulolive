@@ -41,7 +41,7 @@
                       (dom/div #js {:className "columns small-5 medium-7"}
                         (dom/div #js {:className "content-item-title-section"}
                           (dom/span #js {:className "name"} (:item/name i))))
-                      (dom/div #js {:className "columns small-3 medium-2"}
+                      (dom/div #js {:className "columns small-3 medium-2 text-right"}
                         (dom/div #js {:className "content-item-subtitle-section"}
                           (dom/span #js {:className "price"}
                                     (utils/two-decimal-price (:item/price i)))))))
@@ -77,29 +77,35 @@
   Object
   (render [this]
     (let [{:keys [query/cart proxy/navbar]} (om/props this)
-          {:keys [cart/items]} cart]
+          {:keys [cart/items]} cart
+          item-count (count items)]
       (common/page-container
         {:navbar navbar}
         (dom/div #js {:className "row column checkout-container"}
           (if (not-empty items)
             (dom/div nil
+              ;(dom/h4 nil (if (= 1 item-count)
+              ;              "1 item in your shopping bag"
+              ;              (str (count items) " items in your shopping bag")))
               (apply dom/div nil
                      (map (fn [[s its]]
                             (store-checkout-element s its))
                           (items-by-store items)))
               (dom/div #js {:className "callout transparent"}
-                (dom/h4 nil "Checkout all stores")
-                (dom/div #js {:className "row"}
+                (dom/h4 nil "or checkout all stores")
+                (dom/div #js {:className "row callout"}
                   (apply dom/div #js {:className "column"}
-                         (map (fn [[s _]]
+                         (map (fn [[s its]]
                                 (dom/div #js {:className "row content-items-container store-container align-middle"}
                                   (dom/div #js {:className "columns small-2 medium-2"}
-                                    (photo-element {:class "square" :url (:store/photo s)})
-                                    )
+                                    (photo-element {:class "square" :url (:store/photo s)}))
                                   (dom/div #js {:className "columns"}
                                     (dom/a #js {:href (str "/store/" (:db/id s))}
                                            (dom/p #js {:className "store-name"} (:store/name s)))
-                                    (common/rating-element (:store/rating s) (:store/review-count s)))))
+                                    (common/rating-element (:store/rating s) (:store/review-count s)))
+                                  (dom/div #js {:className "columns text-right "}
+                                    ;(dom/p nil (str (count its) " items"))
+                                    (dom/span #js {:className "price"} (str (count its) " items: " (utils/two-decimal-price (compute-item-price its)))))))
                               (items-by-store items))
                     )
                   (dom/div #js {:className "column small-12 medium-4 text-right"}

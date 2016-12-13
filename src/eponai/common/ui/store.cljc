@@ -7,7 +7,8 @@
     [eponai.common.ui.stream :as stream]
     #?(:cljs [eponai.web.utils :as utils])
     [om.dom :as dom]
-    [om.next :as om #?(:clj :refer :cljs :refer-macros) [defui]]))
+    [om.next :as om #?(:clj :refer :cljs :refer-macros) [defui]]
+    [taoensso.timbre :refer [debug]]))
 
 (defui Store
   static om/IQueryParams
@@ -34,7 +35,9 @@
           {:keys      [store/cover store/review-count store/rating store/photo]
            stream     :stream/_store
            items      :item/_store
-           store-name :store/name} store]
+           store-name :store/name} store
+          stream (first stream)]
+      (debug "Got stream: " stream)
       (common/page-container
         {:navbar navbar}
         (dom/div
