@@ -16,3 +16,7 @@
 (defn ^:export runcheckout []
   (enable-console-print!)
   (run/run :checkout))
+
+(defn ^:export runindex []
+  (enable-console-print!)
+  (run/run :index))
