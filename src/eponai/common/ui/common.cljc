@@ -16,6 +16,27 @@
                          :onClick   on-close} "x")
              content))))
 
+(defn photo-element [opts]
+  (let [{:keys [url class]} opts]
+    (dom/div #js {:className "photo-container"}
+      (dom/div #js {:className (str "photo " class) :style #js {:backgroundImage (str "url(" url ")")}}))))
+
+(defn photo-collage-element [{:keys [urls]}]
+  (prn "URLS: " urls)
+  (let [[large mini-1 mini-2] urls]
+    (dom/div #js {:className "photo-container collage"}
+      (photo-element {:class "square" :url large})
+      ;(dom/div #js {:className "photo square"
+      ;              :style     #js {:backgroundImage (str "url(" large ")")}})
+      (dom/div #js {:className "mini-container"}
+        (photo-element {:url mini-1})
+        (photo-element {:url mini-2})
+        ;(dom/div #js {:className "photo"
+        ;              :style     #js {:backgroundImage (str "url(" mini-1 ")")}})
+        ;(dom/div #js {:className "photo"
+        ;              :style     #js {:backgroundImage (str "url(" mini-2 ")")}})
+        ))))
+
 (defn viewer-element [view-count]
   (dom/div #js {:className "viewers-container"}
     (dom/i #js {:className "fa fa-eye fa-fw"})

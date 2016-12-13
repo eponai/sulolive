@@ -9,19 +9,13 @@
 (defn items-by-store [items]
   (group-by :item/store items))
 
-(defn photo-element [opts]
-  (let [{:keys [url class]} opts]
-    (dom/div #js {:className "photo-container"}
-      (dom/div #js {:className (str "photo " class) :style #js {:backgroundImage (str "url(" url ")")}}))))
-
 (defn compute-item-price [items]
   (reduce + (map :item/price items)))
 
 (defn store-element [s]
   (dom/div #js {:className "row content-items-container store-container align-middle"}
     (dom/div #js {:className "columns small-2 medium-1"}
-      (photo-element {:class "square" :url (:store/photo s)})
-      )
+      (common/photo-element {:class "square" :url (:store/photo s)}))
     (dom/div #js {:className "columns"}
       (dom/a #js {:href (str "/store/" (:db/id s))}
              (dom/p #js {:className "store-name"} (:store/name s)))
@@ -36,7 +30,7 @@
              (map (fn [i]
                     (dom/div #js {:className "row cart-items align-top"}
                       (dom/div #js {:className "columns small-4 medium-3"}
-                        (photo-element {:class "square"
+                        (common/photo-element {:class "square"
                                         :url   (:item/img-src i)}))
                       (dom/div #js {:className "columns small-5 medium-7"}
                         (dom/div #js {:className "content-item-title-section"}
@@ -98,7 +92,7 @@
                          (map (fn [[s its]]
                                 (dom/div #js {:className "row content-items-container store-container align-middle"}
                                   (dom/div #js {:className "columns small-2 medium-2"}
-                                    (photo-element {:class "square" :url (:store/photo s)}))
+                                    (common/photo-element {:class "square" :url (:store/photo s)}))
                                   (dom/div #js {:className "columns"}
                                     (dom/a #js {:href (str "/store/" (:db/id s))}
                                            (dom/p #js {:className "store-name"} (:store/name s)))

@@ -42,8 +42,10 @@
         store-link (link-to-store store)]
     (dom/div #js {:className "column content-item online-channel"}
       (dom/a #js {:href store-link}
-             (dom/div #js {:className "photo-container"}
-               (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" img-src ")")}})))
+             (common/photo-element {:class "square" :url img-src})
+             ;(dom/div #js {:className "photo-container"}
+             ;  (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" img-src ")")}}))
+             )
       (dom/div #js {:className "content-item-title-section"}
         (dom/a #js {:href store-link} (dom/strong nil stream-name))
         (common/viewer-element viewer-count))
@@ -55,14 +57,16 @@
         store-link (link-to-store store)]
     (dom/div #js {:className "column content-item store-item"}
       (dom/a #js {:href store-link}
-             (dom/div #js {:className "photo-container collage"}
-               (dom/div #js {:className "photo square"
-                         :style     #js {:backgroundImage (str "url(" large ")")}})
-               (dom/div #js {:className "mini-container"}
-                 (dom/div #js {:className "photo"
-                           :style     #js {:backgroundImage (str "url(" mini-1 ")")}})
-                 (dom/div #js {:className "photo"
-                           :style     #js {:backgroundImage (str "url(" mini-2 ")")}}))))
+             (common/photo-collage-element {:urls (:store/featured-img-src store)})
+             ;(dom/div #js {:className "photo-container collage"}
+             ;  (dom/div #js {:className "photo square"
+             ;            :style     #js {:backgroundImage (str "url(" large ")")}})
+             ;  (dom/div #js {:className "mini-container"}
+             ;    (dom/div #js {:className "photo"
+             ;              :style     #js {:backgroundImage (str "url(" mini-1 ")")}})
+             ;    (dom/div #js {:className "photo"
+             ;              :style     #js {:backgroundImage (str "url(" mini-2 ")")}})))
+             )
       (dom/div #js {:className "content-item-title-section"}
         (dom/a #js {:href store-link}
                (:store/name store)))
