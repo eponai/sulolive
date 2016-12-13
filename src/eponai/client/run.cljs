@@ -15,7 +15,8 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.goods :as goods]
     [eponai.common.ui.index :as index]
-    [eponai.common.ui.product :as product]))
+    [eponai.common.ui.product :as product]
+    [eponai.common.ui.streams :as streams]))
 
 (defmulti client-merge om/dispatch)
 
@@ -70,7 +71,9 @@
    :goods    {:id        "sulo-items"
               :component goods/Goods}
    :product  {:id        "sulo-product-page"
-              :component product/ProductPage}})
+              :component product/ProductPage}
+   :streams  {:id        "sulo-streams"
+              :component streams/Streams}})
 
 (defn run-navbar []
   (run-element (:navbar inline-containers)))

@@ -33,28 +33,9 @@
     (dom/div #js {:className "row column section-footer"}
       (dom/a #js {:href      href} footer))))
 
-(defn link-to-store [store]
-  (str "/store/" (:db/id store)))
-
-(defn online-channel-element [channel]
-  (let [{:stream/keys [store viewer-count img-src]
-         stream-name :stream/name} channel
-        store-link (link-to-store store)]
-    (dom/div #js {:className "column content-item online-channel"}
-      (dom/a #js {:href store-link}
-             (common/photo-element {:class "square" :url img-src})
-             ;(dom/div #js {:className "photo-container"}
-             ;  (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" img-src ")")}}))
-             )
-      (dom/div #js {:className "content-item-title-section"}
-        (dom/a #js {:href store-link} (dom/strong nil stream-name))
-        (common/viewer-element viewer-count))
-      (dom/div #js {:className "content-item-subtitle-section"}
-        (dom/a #js {:href store-link} (:store/name store))))))
-
 (defn store-element [store]
   (let [[large mini-1 mini-2] (:store/featured-img-src store)
-        store-link (link-to-store store)]
+        store-link (common/link-to-store store)]
     (dom/div #js {:className "column content-item store-item"}
       (dom/a #js {:href store-link}
              (common/photo-collage-element {:urls (:store/featured-img-src store)})
@@ -127,10 +108,10 @@
           ;(banner {:color :red}
           ;        (dom/h2 nil "Interact live with store owners and other buyers from the community"))
 
-          (content-section nil
+          (content-section {:href "/streams"}
                            "Stores streaming on the online market right now"
                            (map (fn [c]
-                                  (online-channel-element c))
+                                  (common/online-channel-element c))
                                 featured-streams)
                            "Check out more on the live market >>")
 

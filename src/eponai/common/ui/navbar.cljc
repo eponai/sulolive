@@ -98,7 +98,8 @@
                                      (dom/input #js {:type        "text"
                                                      :placeholder "Search items or stores"}))
                              ;(dom/li nil (dom/a #js {:className "top-nav-link"} (dom/strong nil "Stores")))
-                             (dom/li nil (dom/a #js {:className "top-nav-link warning "} (dom/strong nil "Live Market")))))
+                             (dom/li nil (dom/a #js {:href "/streams"
+                                                     :className "top-nav-link warning "} (dom/strong nil "Live Market")))))
 
                    (dom/div #js {:className "top-bar-right"}
                      (dom/ul #js {:className "menu"}

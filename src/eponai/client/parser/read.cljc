@@ -69,6 +69,14 @@
     {:value #?(:cljs (auth/logged-in-user)
                :clj nil)}))
 
+(defmethod client-read :query/streams
+  [{:keys [db query target]} _ _]
+  ;(debug "Read query/auth: ")
+  (if target
+    {:remote true}
+    {:value (db/pull-all-with db query
+                              {:where   '[[?e :stream/name]]}) }))
+
 ; ### FEATURED ### ;
 
 (defmethod client-read :query/featured-streams

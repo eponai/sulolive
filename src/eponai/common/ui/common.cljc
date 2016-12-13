@@ -25,10 +25,9 @@
     (photo opts)))
 
 (defn photo-collage-element [{:keys [urls]}]
-  (prn "URLS: " urls)
   (let [[large mini-1 mini-2] urls]
     (dom/div #js {:className "photo-container collage"}
-      (photo-element {:class "square" :url large})
+      (photo {:class "square" :url large})
       ;(dom/div #js {:className "photo square"
       ;              :style     #js {:backgroundImage (str "url(" large ")")}})
       (dom/div #js {:className "mini-container"}
@@ -44,6 +43,25 @@
   (dom/div #js {:className "viewers-container"}
     (dom/i #js {:className "fa fa-eye fa-fw"})
     (dom/small nil (str view-count))))
+
+(defn link-to-store [store]
+  (str "/store/" (:db/id store)))
+
+(defn online-channel-element [channel]
+  (let [{:stream/keys [store viewer-count img-src]
+         stream-name :stream/name} channel
+        store-link (link-to-store store)]
+    (dom/div #js {:className "column content-item online-channel"}
+      (dom/a #js {:href store-link}
+             (photo-element {:class "square" :url img-src})
+             ;(dom/div #js {:className "photo-container"}
+             ;  (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" img-src ")")}}))
+             )
+      (dom/div #js {:className "content-item-title-section"}
+        (dom/a #js {:href store-link} (dom/strong nil stream-name))
+        (viewer-element viewer-count))
+      (dom/div #js {:className "content-item-subtitle-section"}
+        (dom/a #js {:href store-link} (:store/name store))))))
 
 (defn rating-element [rating & [review-count]]
   (let [rating (if (some? rating) (int rating) 0)

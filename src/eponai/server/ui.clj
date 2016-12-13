@@ -7,7 +7,8 @@
     [eponai.server.ui.product :as product]
     [eponai.server.ui.index :as index]
     [eponai.server.ui.store :as store]
-    [eponai.server.ui.checkout :as checkout]))
+    [eponai.server.ui.checkout :as checkout]
+    [eponai.server.ui.streams :as streams]))
 
 (defn with-doctype [html-str]
   (str "<!DOCTYPE html>" html-str))
@@ -29,3 +30,4 @@
 (def index-html (makesite index/Index))
 (def store-html (makesite store/Store))
 (def checkout-html (makesite checkout/Checkout))
+(def streams-html (makesite streams/Streams))

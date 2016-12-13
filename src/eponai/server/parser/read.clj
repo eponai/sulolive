@@ -77,6 +77,12 @@
   {:value (when (some? (:iss auth))
             auth)})
 
+(defmethod server-read :query/streams
+  [{:keys [db db-history query target]} _ _]
+  (debug "Read query/streams: " query)
+  {:value (db/pull-all-with db query
+                            {:where '[[?e :stream/name]]})})
+
 ; #### FEATURED ### ;
 
 (defmethod server-read :query/featured-streams

@@ -24,3 +24,7 @@
 (defn ^:export runproduct []
       (utils/install-app)
       (run/run :product))
+
+(defn ^:export runstreams []
+      (utils/install-app)
+      (run/run :streams))
