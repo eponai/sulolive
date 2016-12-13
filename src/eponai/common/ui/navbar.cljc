@@ -99,7 +99,9 @@
                                                      :placeholder "Search items or stores"}))
                              ;(dom/li nil (dom/a #js {:className "top-nav-link"} (dom/strong nil "Stores")))
                              (dom/li nil (dom/a #js {:href "/streams"
-                                                     :className "top-nav-link warning "} (dom/strong nil "Live Market")))))
+                                                     :className "top-nav-link warning "}
+                                                (dom/strong nil "Live Market")
+                                                (dom/i #js {:className "fa fa-video-camera fa-fw"})))))
 
                    (dom/div #js {:className "top-bar-right"}
                      (dom/ul #js {:className "menu"}

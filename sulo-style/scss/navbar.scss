@@ -26,6 +26,26 @@ nav {
 		ul {
 			background: transparent;
 		}
+		i { vertical-align: bottom };
+
+		i.fa-video-camera {
+			display: inline-block;
+		}
+		a.top-nav-link {
+			strong {
+				display: none;
+			}
+		}
+		@include breakpoint(medium) {
+			i.fa-video-camera {
+				display: none;
+			}		
+		a.top-nav-link {
+			strong {
+				display: block;
+			}
+		}
+		}
 	}
 	a.button {
 		font-weight: bold;
@@ -42,5 +62,14 @@ nav {
 		&:hover {
 			background: darken($navbar-background-color, 10%);
 		}
+		// font-size: 80%;
+		// text-transform: uppercase;
 	}
+}
+
+.navbar-brand {
+	text-transform: uppercase;
+	font-weight: 500;
+	font-size: 1rem;
+	// vertical-align: middle;
 }
