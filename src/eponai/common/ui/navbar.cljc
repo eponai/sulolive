@@ -98,7 +98,7 @@
                                      (dom/input #js {:type        "text"
                                                      :placeholder "Search items or stores"}))
                              ;(dom/li nil (dom/a #js {:className "top-nav-link"} (dom/strong nil "Stores")))
-                             (dom/li nil (dom/a #js {:className "top-nav-link"} (dom/strong nil "Live Market")))))
+                             (dom/li nil (dom/a #js {:className "top-nav-link warning "} (dom/strong nil "Live Market")))))
 
                    (dom/div #js {:className "top-bar-right"}
                      (dom/ul #js {:className "menu"}
@@ -110,7 +110,7 @@
                                        (user-dropdown this cart))
                                (dom/li nil
                                        #?(:cljs
-                                          (dom/a #js {:className "button hollow"
+                                          (dom/a #js {:className "button hollow nude"
                                                       :onClick   #(do
                                                                    #?(:cljs
                                                                       (.open-signin this)))} "Sign in")
@@ -125,7 +125,7 @@
 
                      ;(when cart-open?)
                      )))
-        (dom/div #js {:className "navbar-container"}
+        (dom/div #js {:className "navbar-container subnav-container"}
           (dom/div #js {:className "subnav navbar top-bar"}
             (dom/div #js {:className "top-bar-left"}
               (dom/ul #js {:className "menu"}

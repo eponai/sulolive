@@ -92,7 +92,7 @@
               (dom/div #js {:className "column small-offset-6 header-photo-container"}
                 (dom/div #js {:className "header-photo"})))
             (dom/div #js {:className "row column header-content"}
-              (dom/h1 nil "Go to the market in the comfort of your own home")
+              (dom/h1 nil "Your local marketplace online")
               (dom/div #js {:className "search-container row"}
                 (dom/div #js {:className "column small-12 medium-6"}
                   (dom/input #js {:placeholder "What are you shopping for?"
@@ -151,12 +151,12 @@
                            "Check out more stores >>")
 
           (banner {:color :default}
-                  (dom/h2 nil "Follow your favorite stores and stay updated on when they go online")
+                  (dom/p nil "Follow your favorite stores and stay updated on when they go online")
                   (dom/a #js {:className "button"} "Sign up"))
 
           (banner {:color :white
                    :align :right}
-                  (dom/h2 nil "Start streaming on Sulo and tell your story to your customers")
+                  (dom/p nil "Start streaming on Sulo and tell your story to your customers")
                   (dom/a #js {:className "button secondary"} "Contact us")))))))
 
 (def ->Index (om/factory Index))

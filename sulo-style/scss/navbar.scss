@@ -1,4 +1,4 @@
-$navbar-background-color: $white;//map-get($foundation-palette, nude);
+$navbar-background-color: map-get($foundation-palette, brown);
 
 #sulo-navbar-container {
 	box-shadow: 0 1px 5px 1px rgba($black, 0.2);
@@ -13,25 +13,34 @@ nav {
 }
 .navbar-container {
 	background: $navbar-background-color;
+	box-shadow: 1
 }
 .navbar {
 	max-width: 65rem;
 	margin: 0 auto;
 	a:not(.button):not(.top-nav-link) {		
-		color: map-get($foundation-palette, brown);
+		color: $white;//map-get($foundation-palette, brown);
 	}
 	&.top-bar {
-		background: $navbar-background-color;
+		background: transparent;
 		ul {
 			background: transparent;
 		}
 	}
+	a.button {
+		font-weight: bold;
+	}
+}
+
+.subnav-container {
+	// background: rgba(map-get($foundation-palette, brown), 0.1);
 }
 .subnav {
 	a:not(.button) {
+		color: $white;//map-get($foundation-palette, brown) !important;
 		transition: background 0.25s;
 		&:hover {
-			background: darken($white, 10%);
+			background: darken($navbar-background-color, 10%);
 		}
 	}
 }

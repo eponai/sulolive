@@ -1,5 +1,5 @@
-$header-background-color: #2E2A31;
-$banner-background-color: $header-background-color;
+$header-background-color: $white;//#2E2A31;
+$banner-background-color: #2E2A31;//$header-background-color;
 
 $font-color-light: $body-background;
 
@@ -19,29 +19,34 @@ $font-color-light: $body-background;
 
 	@include breakpoint(medium) {
 		h1 {
-			font-size: 2rem;
+			// font-size: 2rem;
 		}
 		h2 {
-			font-size: 1.5rem;
+			// font-size: 1.5rem;
 		}
 		h3 {
-			font-size: 1.3rem;
+			// font-size: 1.3rem;
 		}
 	}
+
 	.intro-header {
-		box-shadow: 0 1px 5px 1px rgba($black, 0.2);
+		$brown: map-get($foundation-palette, brown);
+		box-shadow: 0 0px 1px 1px rgba($brown, 0.15);
 
 		padding-top: 8rem;
 		padding-bottom: 2rem;
 		background: $header-background-color;
 		position: relative;
 		h1 {
-			color: $white;
-			text-shadow: 1px 1px 1px $black;
+			// color: $white;
+			text-shadow: 1px 1px 1px $white;
 			font-weight: 500;
 			@include breakpoint(medium) {
 				font-weight: 400;
 			}
+		}
+		.button, input {
+			box-shadow: 0px 1px 1px 1px rgba($brown, 0.1);
 		}
 		.header-photo {
 			position: absolute;
@@ -107,7 +112,8 @@ $font-color-light: $body-background;
 			padding-bottom: 2rem;
 		}
 		background: $banner-background-color;
-		h2 {
+		p {
+			font-size: 1.5rem;
 			color: $font-color-light;
 			text-shadow: 1px 1px 1px rgba($black, 0.5);
 		}
@@ -127,7 +133,7 @@ $font-color-light: $body-background;
 		&.white {
 			// background: rgba(#9A4B4F, 1);
 			background: $white; //#F0EDE3;
-			h2 {
+			p {
 				color: $black;
 				text-shadow: none;
 			}
@@ -150,7 +156,7 @@ $font-color-light: $body-background;
 	}
 
 	.footer {
-		background: $header-background-color;
+		background: $navbar-background-color;//$header-background-color;
 		color: map-get($foundation-palette, nude);//$body-background;
 		a {
 			color: $body-background;

@@ -1,7 +1,27 @@
 #sulo-store {
 	.navbar, footer {
 		max-width: 100%;
+		background: $white;
+		a {
+			color: map-get($foundation-palette, brown);
+			&.top-nav-link {
+				color: map-get($foundation-palette, primary);
+			}
+			&.button.hollow {
+				$primary: map-get($foundation-palette, primary);
+    			@include button-hollow;
+    			@include button-hollow-style($primary);
+				// @include button-style($primary);
+			}
+		}
 	}
+			.subnav {
+			a {
+				&:hover {
+					background: darken($white, 10%);
+				}
+			}
+		}
 
 	// #sulo-product {
 	// 	.store-container {
