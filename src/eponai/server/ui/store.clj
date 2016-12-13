@@ -32,7 +32,7 @@
             ;(common/footer nil)
             )
 
-          ;(dom/script {:src "https://webrtc.github.io/adapter/adapter-latest.js"})
+          (dom/script {:src "https://webrtc.github.io/adapter/adapter-latest.js"})
           (dom/script {:src "/lib/videojs/video.min.js"})
           (dom/script {:src "/lib/videojs/videojs-media-sources.min.js"})
           (dom/script {:src "/lib/videojs/videojs.hls.min.js"})
