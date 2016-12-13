@@ -16,34 +16,29 @@
                          :onClick   on-close} "x")
              content))))
 
-(defn photo [{:keys [url class]}]
-  (dom/div #js {:className (str "photo " class) :style #js {:backgroundImage #?(:cljs (str "url(" url ")")
-                                                                                :clj "")}}))
+(defn photo [{:keys [url class]} & content]
+  (apply dom/div #js {:className (str "photo " class) :style #js {:backgroundImage #?(:cljs (str "url(" url ")")
+                                                                                :clj "")}}
+         content))
 
 (defn photo-header []
-  (photo {:class "header" :url "/assets/img/night-market.jpg"})
-  ;(dom/div #js {:className "header-photo" :style #js {:backgroundImage #?(:cljs "url(\"/assets/img/night-market.jpg\")"
-  ;                                                                        :clj "")}})
-  )
+  (photo {:class "header" :url "/assets/img/night-market.jpg"}))
 
-(defn photo-element [opts]
+(defn photo-element [opts & content]
   (dom/div #js {:className "photo-container"}
-    (photo opts)))
+    (apply photo opts content)))
+
+(defn photo-cover [opts & content]
+  (apply photo-element (assoc opts :class "cover")
+         content))
 
 (defn photo-collage-element [{:keys [urls]}]
   (let [[large mini-1 mini-2] urls]
     (dom/div #js {:className "photo-container collage"}
       (photo {:class "square" :url large})
-      ;(dom/div #js {:className "photo square"
-      ;              :style     #js {:backgroundImage (str "url(" large ")")}})
       (dom/div #js {:className "mini-container"}
         (photo {:url mini-1})
-        (photo {:url mini-2})
-        ;(dom/div #js {:className "photo"
-        ;              :style     #js {:backgroundImage (str "url(" mini-1 ")")}})
-        ;(dom/div #js {:className "photo"
-        ;              :style     #js {:backgroundImage (str "url(" mini-2 ")")}})
-        ))))
+        (photo {:url mini-2})))))
 
 (defn viewer-element [view-count]
   (dom/div #js {:className "viewers-container"}

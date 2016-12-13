@@ -43,39 +43,37 @@
         {:navbar navbar}
         (dom/div
           #js {:id "sulo-store-container"}
-          (dom/div #js {:className "cover-container"}
-            (dom/div #js {:className "photo cover" :style #js {:backgroundImage (str "url(" cover ")")}}
+          ;(dom/div #js {:className "cover-container"})
+          (common/photo-cover {:url cover}
 
-              (dom/div #js {:className "column store-container large-2"}
+                              (dom/div #js {:className "column store-container large-2"}
 
-                (dom/div #js {:className "store-short-info-container"}
-                  (dom/div #js {:className "photo-container"}
-                    (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" photo ")")}}))
+                                (dom/div #js {:className "store-short-info-container"}
+                                  (common/photo-element {:class "square" :url photo})
+                                  (dom/div #js {:className "content-item-title-section"}
+                                    (dom/h1 #js {:className "store-name"} store-name)
+                                    (common/rating-element rating review-count)))
 
-                  (dom/div #js {:className "content-item-title-section"}
-                    (dom/h1 #js {:className "store-name"} store-name)
-                    (common/rating-element rating review-count)))
+                                ;#?(:cljs)
+                                (dom/ul #js {:className (str "menu store-main-menu")}
+                                        (dom/li nil (dom/a nil "About"))
+                                        (dom/li nil (dom/a nil "Policies"))))
 
-                ;#?(:cljs)
-                (dom/ul #js {:className (str "menu store-main-menu")}
-                        (dom/li nil (dom/a nil "About"))
-                        (dom/li nil (dom/a nil "Policies"))))
+                              (dom/div #js {:className (str "large-8" (when (some? stream) " has-stream"))}
+                                (when (some? stream)
+                                  (dom/div #js {:className "stream-container content-item"}
+                                    (stream/->Stream (:proxy/stream props))
+                                    (dom/div #js {:className "content-item-title-section"}
+                                      (dom/h2 #js {:className "stream-title"} (:stream/name stream))
+                                      (common/viewer-element (:stream/viewer-count stream))))))
 
-              (dom/div #js {:className (str "large-8" (when (some? stream) " has-stream"))}
-                (when (some? stream)
-                  (dom/div #js {:className "stream-container content-item"}
-                    (stream/->Stream (:proxy/stream props))
-                    (dom/div #js {:className "content-item-title-section"}
-                      (dom/h2 #js {:className "stream-title"} (:stream/name stream))
-                      (common/viewer-element (:stream/viewer-count stream))))))
-
-              (dom/div #js {:className "medium-2 stream-chat-container"}
-                (dom/div #js {:className "stream-chat-content"}
-                  (dom/span nil "This is a message"))
-                (dom/div #js {:className "stream-chat-input"}
-                  (dom/input #js {:type        "text"
-                                  :placeholder "Your message..."})
-                  (dom/a #js {:className "button expanded"} "Send")))))
+                              (dom/div #js {:className "medium-2 stream-chat-container"}
+                                (dom/div #js {:className "stream-chat-content"}
+                                  (dom/span nil "This is a message"))
+                                (dom/div #js {:className "stream-chat-input"}
+                                  (dom/input #js {:type        "text"
+                                                  :placeholder "Your message..."})
+                                  (dom/a #js {:className "button expanded"} "Send"))))
 
           (dom/div #js {:className "store-nav"}
             (dom/div #js {:className "row column"}

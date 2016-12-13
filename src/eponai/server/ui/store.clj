@@ -9,9 +9,6 @@
     [eponai.common.ui.navbar :as nav]))
 
 (defui Store
-  static common/IJSContainer
-  (container [_]
-    "sulo-store-container")
   static om/IQuery
   (query [_]
     [{:proxy/store (om/get-query common.store/Store)}])
