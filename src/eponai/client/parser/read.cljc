@@ -36,22 +36,27 @@
     {:value (let [cart (if (auth/is-logged-in?)
                          (db/pull-one-with db query {:where '[[?e :cart/items]]})
                          (db/pull-one-with db query {:where '[[?e :ui/component :ui.component/cart]]}))]
-              (debug "Got cart: " cart " active user: " (auth/logged-in-user))
+              ;(debug "Got cart: " cart " active user: " (auth/logged-in-user))
               (common.read/compute-cart-price cart))}))
 
 (defmethod client-read :query/items
-  [{:keys [db query target]} _ {:keys [category]}]
+  [{:keys [db query target]} _ {:keys [category search]}]
   (if target
     {:remote true}
-    {:value (let [pattern (if category
-                            {:where '[[?e :item/category ?c]]
-                             :symbols {'?c category}}
-                            {:where '[[?e :item/name]]})]
-              (debug "Read query/items: " category " query: " pattern)
-
+    {:value (let [pattern {:where '[[?e :item/name]]}]
               (assert (some #{:db/id} query)
                       (str "Query to :query/all-tiems must contain :db/id, was: " query))
-              (sort-by :db/id (db/pull-all-with db query pattern)))}))
+
+              (cond->> (db/pull-all-with db query pattern)
+                       (or search category)
+                       (filter #(cond (not-empty search)
+                                      (not-empty (re-find (re-pattern search) (.toLowerCase (:item/name %))))
+                                      (some? category)
+                                      (= category (:item/category %))
+                                      :else
+                                      true))
+                       :always
+                       (sort-by :db/id)))}))
 
 (defmethod client-read :query/item
   [{:keys [db query target]} _ {:keys [product-id]}]

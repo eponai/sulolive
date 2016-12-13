@@ -14,12 +14,15 @@
   (params [_]
     #?(:cljs
        (let [href js/window.location.href
-             {:strs [category]} (:query (url/url href))]
-         {:category category})))
+             {:strs [category search]} (:query (url/url href))]
+         (debug "Got query: " (:query (url/url href)))
+         {:category category
+          :search search})))
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     `({:query/items ~(om/get-query product/Product)} {:category ~'?category})])
+     `({:query/items ~(om/get-query product/Product)} {:category ~'?category
+                                                       :search ~'?search})])
   Object
   (render [this]
     (let [{:keys [query/items proxy/navbar]} (om/props this)]

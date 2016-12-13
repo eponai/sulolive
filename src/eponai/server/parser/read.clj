@@ -51,15 +51,26 @@
 
 (defmethod server-read :query/items
   [{:keys [db db-history query params]} _ p]
-  {:value (let [category (or (:category params) (:category p))
-                _ (debug "Read query/items: " category)
-                pattern (if category
-                          {:where   '[[?e :item/category ?c]]
-                           :symbols {'?c category}}
+  {:value (let [category (or (:category params) (when (string? (:category p)) (:category p)))
+                search (or (:search params) (when (string? (:search p)) (:search p)))
+                pattern (if (or category search)
+                          (cond-> {:where '[]}
+                                  (not-empty category)
+                                  (db/merge-query
+                                    {:where   '[[?e :item/category ?c]]
+                                     :symbols {'?c category}})
+                                  (not-empty search)
+                                  (db/merge-query
+                                    {:where   '[[(str "(?i)" ?search) ?matcher]
+                                                [(re-pattern ?matcher) ?regex]
+                                                [(re-find ?regex ?aname)]
+                                                [?e :item/name ?aname]]
+                                     :symbols {'?search search}}))
                           {:where '[[?e :item/name]]})]
-            (cond->> (query/all db db-history query pattern)
-                     (nil? db-history)
-                     (sort-by :db/id)))})
+            (cond->>
+              (db/pull-many db query (db/all-with db pattern))
+              (nil? db-history)
+              (sort-by :db/id)))})
 
 (defmethod read-basis-param-path :query/item [{:keys [params]} _ _] [(:product-id params)])
 (defmethod server-read :query/item
@@ -73,13 +84,11 @@
 
 (defmethod server-read :query/auth
   [{:keys [auth]} _ _]
-  (debug "Read query/auth: " auth)
   {:value (when (some? (:iss auth))
             auth)})
 
 (defmethod server-read :query/streams
-  [{:keys [db db-history query target]} _ _]
-  (debug "Read query/streams: " query)
+  [{:keys [db query]} _ _]
   {:value (db/pull-all-with db query
                             {:where '[[?e :stream/name]]})})
 

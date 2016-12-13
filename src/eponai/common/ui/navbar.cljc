@@ -98,7 +98,12 @@
                                      (dom/a #js {:className "search-icon"}
                                             (dom/i #js {:className "fa fa-search fa-fw"}))
                                      (dom/input #js {:type        "text"
-                                                     :placeholder "Search items or stores"}))
+                                                     :placeholder "Search items or stores"
+                                                     :onKeyDown   (fn [e]
+                                                                    #?(:cljs
+                                                                       (when (= 13 (.. e -keyCode))
+                                                                         (let [search-string (.. e -target -value)]
+                                                                           (set! js/window.location (str "/goods?search=" search-string))))))}))
                              ;(dom/li nil (dom/a #js {:className "top-nav-link"} (dom/strong nil "Stores")))
                              (dom/li nil (dom/a #js {:href "/streams"
                                                      :className "top-nav-link warning "}

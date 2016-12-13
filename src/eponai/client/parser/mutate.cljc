@@ -2,7 +2,8 @@
   (:require
     [eponai.common.parser :as parser :refer [client-mutate]]
     [eponai.client.auth :as auth]
-    [eponai.common.database :as db]))
+    [eponai.common.database :as db]
+    [taoensso.timbre :refer [debug]]))
 
 ;; ################ Remote mutations ####################
 ;; Remote mutations goes here. We share these mutations
@@ -25,3 +26,10 @@
                  (let [cart (db/one-with (db/db state) {:where '[[?e :cart/items]]})]
                    (db/transact-one state [:db/add cart :cart/items (:db/id item)]))
                  (db/transact-one state [:db/add [:ui/component :ui.component/cart] :cart/items (:db/id item)])))}))
+
+(defmethod client-mutate 'search/search
+  [{:keys [target]} _ {:keys [search-string]}]
+  (if target
+    {:remote true}
+    {:action (fn []
+               (debug "Mutate search string: " search-string))}))
