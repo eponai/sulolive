@@ -51,17 +51,17 @@ $font-color-light: $body-background;
 		.button, input {
 			box-shadow: 0px 1px 1px 1px rgba($brown, 0.1);
 		}
-		.header-photo {
+		.header.photo {
+			padding: 0;
 			position: absolute;
 			height: 100%;
 			width: 150%;
 			top: 0;
 			left: 0;
-			background-image: url("/assets/img/night-market.jpg");
 			background-repeat: no-repeat;
 			background-size: cover;
 			background-position: center right;
-			opacity: 0.6;
+			opacity: 0.3;
 			@include breakpoint(medium) {
 				width: 100%;
 				left: 25%;

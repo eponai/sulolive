@@ -75,7 +75,8 @@
           (dom/div #js {:className "intro-header"}
             (dom/div #js {:className "row"}
               (dom/div #js {:className "column small-offset-6 header-photo-container"}
-                (dom/div #js {:className "header-photo"})))
+                ;(photo-cover-element)
+                (common/photo-header)))
             (dom/div #js {:className "row column header-content"}
               (dom/h1 nil "Your local marketplace online")
               (dom/div #js {:className "search-container row"}

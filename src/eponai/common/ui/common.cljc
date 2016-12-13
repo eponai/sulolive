@@ -20,6 +20,12 @@
   (dom/div #js {:className (str "photo " class) :style #js {:backgroundImage #?(:cljs (str "url(" url ")")
                                                                                 :clj "")}}))
 
+(defn photo-header []
+  (photo {:class "header" :url "/assets/img/night-market.jpg"})
+  ;(dom/div #js {:className "header-photo" :style #js {:backgroundImage #?(:cljs "url(\"/assets/img/night-market.jpg\")"
+  ;                                                                        :clj "")}})
+  )
+
 (defn photo-element [opts]
   (dom/div #js {:className "photo-container"}
     (photo opts)))
