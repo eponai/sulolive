@@ -50,8 +50,8 @@
 @include motion-ui-transitions;
 @include motion-ui-animations;
 
-@import "base";
 @import "navbar";
+@import "base";
 @import "photo";
 @include sulo-photo;
 @import "star-rating";

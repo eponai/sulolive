@@ -113,7 +113,9 @@ $font-color-light: $body-background;
 		}
 		background: $banner-background-color;
 		p {
-			font-size: 1.5rem;
+			@include breakpoint(medium) {
+				font-size: 1.5rem;
+			}
 			color: $font-color-light;
 			text-shadow: 1px 1px 1px rgba($black, 0.5);
 		}

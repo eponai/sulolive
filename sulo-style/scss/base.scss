@@ -1,4 +1,3 @@
-$navbar-height: rem-calc(56);
 
 html, body {
 	min-height: 100%;
@@ -24,7 +23,7 @@ html, body {
 	box-shadow: 1px 1px 3px 0 rgba($black, 0.5);
 }
 
-$footer-height-small: 6rem;
+$footer-height-small: 8rem;
 $footer-height: 4rem;
 
 @mixin sulo-anchor {
@@ -54,12 +53,17 @@ a {
 }
 
 .footer {
+	background: $navbar-background-color;//$header-background-color;
+	color: map-get($foundation-palette, nude);//$body-background;
+	a {
+		color: $body-background;
+	}
 	footer {
 		max-width: 65rem;
 		margin: auto auto;
 		height: 100%;
 		a {
-			color: map-get($foundation-palette, brown);
+			// color: map-get($foundation-palette, brown);
 		}
 	}
 	width: 100%;
