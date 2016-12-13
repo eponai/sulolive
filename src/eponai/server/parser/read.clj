@@ -49,7 +49,9 @@
 
 (defmethod server-read :query/all-items
   [{:keys [db db-history query]} _ _]
-  {:value (query/all db db-history query {:where '[[?e :item/name]]})})
+  {:value (cond->> (query/all db db-history query {:where '[[?e :item/name]]})
+                   (nil? db-history)
+                   (sort-by :db/id))})
 
 (defmethod read-basis-param-path :query/item [{:keys [params]} _ _] [(:product-id params)])
 (defmethod server-read :query/item

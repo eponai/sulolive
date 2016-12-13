@@ -43,7 +43,10 @@
   [{:keys [db query target]} _ _]
   (if target
     {:remote true}
-    {:value (db/pull-all-with db query {:where '[[?e :item/id]]})}))
+    {:value (do
+              (assert (some #{:db/id} query)
+                      (str "Query to :query/all-tiems must contain :db/id, was: " query))
+              (sort-by :db/id (db/pull-all-with db query {:where '[[?e :item/id]]})))}))
 
 (defmethod client-read :query/auth
   [{:keys [target]} _ _]

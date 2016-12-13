@@ -10,7 +10,8 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:query/all-items [:item/name
+     {:query/all-items [:db/id
+                        :item/name
                         :item/price
                         :item/img-src
                         :item/id
