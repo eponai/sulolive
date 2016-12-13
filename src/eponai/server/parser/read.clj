@@ -47,11 +47,17 @@
                       (nil? db-history)
                       (common.read/multiply-store-items))})))
 
-(defmethod server-read :query/all-items
-  [{:keys [db db-history query]} _ _]
-  {:value (cond->> (query/all db db-history query {:where '[[?e :item/name]]})
-                   (nil? db-history)
-                   (sort-by :db/id))})
+(defmethod server-read :query/items
+  [{:keys [db db-history query params]} _ p]
+  {:value (let [category (or (:category params) (:category p))
+                _ (debug "Read query/items: " category)
+                pattern (if category
+                          {:where   '[[?e :item/category ?c]]
+                           :symbols {'?c category}}
+                          {:where '[[?e :item/name]]})]
+            (cond->> (query/all db db-history query pattern)
+                     (nil? db-history)
+                     (sort-by :db/id)))})
 
 (defmethod read-basis-param-path :query/item [{:keys [params]} _ _] [(:product-id params)])
 (defmethod server-read :query/item

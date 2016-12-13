@@ -39,14 +39,19 @@
               (debug "Got cart: " cart " active user: " (auth/logged-in-user))
               (common.read/compute-cart-price cart))}))
 
-(defmethod client-read :query/all-items
-  [{:keys [db query target]} _ _]
+(defmethod client-read :query/items
+  [{:keys [db query target]} _ {:keys [category]}]
   (if target
     {:remote true}
-    {:value (do
+    {:value (let [pattern (if category
+                            {:where '[[?e :item/category ?c]]
+                             :symbols {'?c category}}
+                            {:where '[[?e :item/id]]})]
+              (debug "Read query/items: " category)
+
               (assert (some #{:db/id} query)
                       (str "Query to :query/all-tiems must contain :db/id, was: " query))
-              (sort-by :db/id (db/pull-all-with db query {:where '[[?e :item/id]]})))}))
+              (sort-by :db/id (db/pull-all-with db query pattern)))}))
 
 (defmethod client-read :query/auth
   [{:keys [target]} _ _]

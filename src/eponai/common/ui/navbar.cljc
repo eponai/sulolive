@@ -140,5 +140,4 @@
 (def ->Navbar (om/factory Navbar))
 
 (defn navbar [props]
-  (dom/div #js {:id "sulo-navbar-container"}
-    (->Navbar props)))
+  (->Navbar props))

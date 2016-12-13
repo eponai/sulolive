@@ -23,7 +23,7 @@
         (dom/body
           nil
           (dom/div
-            {:id "sulo-items"}
+            {:id "sulo-items" :className "sulo-page"}
             (goods/->Goods goods))
 
           ;(dom/script {:src "https://webrtc.github.io/adapter/adapter-latest.js"})
