@@ -17,7 +17,8 @@
              content))))
 
 (defn photo [{:keys [url class]}]
-  (dom/div #js {:className (str "photo " class) :style #js {:backgroundImage (str "url(" url ")")}}))
+  (dom/div #js {:className (str "photo " class) :style #js {:backgroundImage #?(:cljs (str "url(" url ")")
+                                                                                :clj "")}}))
 
 (defn photo-element [opts]
   (dom/div #js {:className "photo-container"}
