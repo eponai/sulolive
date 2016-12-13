@@ -60,12 +60,13 @@
                         (dom/li nil (dom/a nil "About"))
                         (dom/li nil (dom/a nil "Policies"))))
 
-              (dom/div #js {:className "large-8"}
-                (dom/div #js {:className "stream-container content-item"}
-                  (stream/->Stream)
-                  (dom/div #js {:className "content-item-title-section"}
-                    (dom/h2 #js {:className "stream-title"} (:stream/name stream))
-                    (common/viewer-element (:stream/viewer-count stream)))))
+              (dom/div #js {:className (str "large-8" (when (some? stream) " has-stream"))}
+                (when (some? stream)
+                  (dom/div #js {:className "stream-container content-item"}
+                    (stream/->Stream)
+                    (dom/div #js {:className "content-item-title-section"}
+                      (dom/h2 #js {:className "stream-title"} (:stream/name stream))
+                      (common/viewer-element (:stream/viewer-count stream))))))
 
               (dom/div #js {:className "medium-2 stream-chat-container"}
                 (dom/div #js {:className "stream-chat-content"}

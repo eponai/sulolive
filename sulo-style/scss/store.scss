@@ -15,7 +15,7 @@
 
 	#sulo-store-container {
 		.cover.photo {
-			> * {
+			> .has-stream {
 				background: rgba($white, 0.5);
 			}
 			@include breakpoint(large) {
@@ -39,6 +39,9 @@
 				@include breakpoint(large) {
 					max-width: 75%;
 				}
+				// .content-item-title-section {
+				// 					// background: rgba($white, 0.5);
+				// }
 
 				#sulo-video-container {
 					width: 100%;
