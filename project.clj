@@ -238,7 +238,8 @@
                                                              :output-to     "resources/public/release/js/out/budget.js"
                                                              :output-dir    "resources/public/release/js/out/"
                                                              :optimizations :advanced
-                                                             :externs ["src-hacks/js/externs/stripe-checkout.js"]
+                                                             :externs ["src-hacks/js/externs/stripe-checkout.js"
+                                                                       "src-hacks/js/externs/red5pro.js"]
                                                              :language-in :ecmascript5
                                                              ;;   :parallel-build true
                                                              ;;   :pseudo-names true
