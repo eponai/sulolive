@@ -17,6 +17,9 @@
 
 (def restrict buddy/restrict)
 
+(defn is-logged-in? [identity]
+  (= (:iss identity) "sulo.auth0.com"))
+
 (defn- auth0-code->token [code]
   (json/read-json
     (:body (http/post "https://sulo.auth0.com/oauth/token"

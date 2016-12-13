@@ -58,7 +58,7 @@
   (debug "Read query/auth: ")
   (if target
     {:remote true}
-    {:value #?(:cljs (.getItem js/localStorage "idToken")
+    {:value #?(:cljs (auth/logged-in-user)
                :clj nil)}))
 
 ; ### FEATURED ### ;

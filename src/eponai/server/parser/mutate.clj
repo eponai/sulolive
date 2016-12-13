@@ -1,5 +1,6 @@
 (ns eponai.server.parser.mutate
   (:require
+    [eponai.common.database :as db]
     [eponai.common.parser :as parser :refer [server-mutate server-message]]
     [taoensso.timbre :refer [debug info]]))
 
@@ -19,3 +20,11 @@
 (defn force-read-keys! [{:keys [::parser/force-read-without-history] :as env} k & ks]
   (apply swap! force-read-without-history conj k ks)
   nil)
+
+
+(defmutation shopping-cart/add-item
+  [{:keys [state auth]} _ {:keys [item]}]
+  {}
+  {:action (fn []
+             (let [cart (db/one-with (db/db state) {:where '[[?e :cart/items]]})]
+               (db/transact-one state [:db/add cart :cart/items (:db/id item)])))})
