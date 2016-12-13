@@ -52,14 +52,14 @@
                   (debug "Open signin")
              (let [{:keys [lock]} (om/get-state this)
                    current-url js/window.location.href
-                   options (clj->js {:connections        ["facebook" "google-oauth2"]
-                                     :callbackURL        "http://localhost:3000/auth"
-                                     :authParams         {:scope "openid email user_friends"
-                                                          :connectionScopes   {"facebook" ["email" "public_profile" "user_friends"]}
-                                                          :state current-url}
-                                     :primaryColor       "#9A4B4F"
-                                     :dict               {:title "SULO"}
-                                     :icon ""
+                   options (clj->js {:connections  ["facebook"]
+                                     :callbackURL  (str js/window.location.origin "/auth")
+                                     :authParams   {:scope            "openid email user_friends"
+                                                    :connectionScopes {"facebook" ["email" "public_profile" "user_friends"]}
+                                                    :state            current-url}
+                                     :primaryColor "#9A4B4F"
+                                     :dict         {:title "SULO"}
+                                     :icon         ""
                                      ;:container "modal"
                                      })]
                (.socialOrMagiclink lock options))))

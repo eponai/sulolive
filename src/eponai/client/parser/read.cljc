@@ -32,8 +32,8 @@
   [{:keys [db query target]} _ _]
   (debug "REad wuery/cart: " (auth/logged-in-user))
   (if target
-    {:remote/user (auth/is-logged-in?)}
-    {:value (let [cart (if (auth/is-logged-in?)
+    {:remote/user (or true (auth/is-logged-in?))}
+    {:value (let [cart (if (or true (auth/is-logged-in?))
                          (db/pull-one-with db query {:where '[[?e :cart/items]]})
                          (db/pull-one-with db query {:where '[[?e :ui.component.cart/items]]}))]
               (debug "Got cart: " cart " active user: " (auth/logged-in-user))

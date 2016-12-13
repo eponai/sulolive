@@ -43,7 +43,7 @@
     (dom/div #js {:className "column content-item online-channel"}
       (dom/a #js {:href store-link}
              (dom/div #js {:className "photo-container"}
-               (dom/div #js {:className "photo square" :style #js {:background-image (str "url(" img-src ")")}})))
+               (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" img-src ")")}})))
       (dom/div #js {:className "content-item-title-section"}
         (dom/a #js {:href store-link} (dom/strong nil stream-name))
         (common/viewer-element viewer-count))
@@ -57,12 +57,12 @@
       (dom/a #js {:href store-link}
              (dom/div #js {:className "photo-container collage"}
                (dom/div #js {:className "photo square"
-                         :style     #js {:background-image (str "url(" large ")")}})
+                         :style     #js {:backgroundImage (str "url(" large ")")}})
                (dom/div #js {:className "mini-container"}
                  (dom/div #js {:className "photo"
-                           :style     #js {:background-image (str "url(" mini-1 ")")}})
+                           :style     #js {:backgroundImage (str "url(" mini-1 ")")}})
                  (dom/div #js {:className "photo"
-                           :style     #js {:background-image (str "url(" mini-2 ")")}}))))
+                           :style     #js {:backgroundImage (str "url(" mini-2 ")")}}))))
       (dom/div #js {:className "content-item-title-section"}
         (dom/a #js {:href store-link}
                (:store/name store)))

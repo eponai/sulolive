@@ -109,9 +109,11 @@
 (defroutes
   site-routes
   (POST "/api/user" request
-    (auth/restrict
-      #(r/response (call-parser %))
-      (auth/jwt-restrict-opts)))
+    (r/response (call-parser request))
+    ;(auth/restrict
+    ;  #(r/response (call-parser %))
+    ;  (auth/jwt-restrict-opts))
+    )
   (POST "/api" request
     (r/response (call-parser request))
     ;(auth/restrict

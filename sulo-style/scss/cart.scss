@@ -5,15 +5,18 @@
 	.button {
 		font-weight: bold;
 	}
-	.callout.success {
+	.callout.transparent {
 		table {
 			$border-color: map-get($foundation-palette, success);
 			$border: 1px solid rgba(10,10,10,0.05);
 			border-color: $border-color;
 			tr {
 				&.total-price {
-				border-top: $border;
-				font-weight: bold;
+					border-top: $border;
+					font-weight: bold;
+					td h5 {
+						font-weight: bold;
+					}
 				}
 			}
 			tbody {

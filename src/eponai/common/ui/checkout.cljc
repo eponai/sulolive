@@ -92,7 +92,14 @@
                 (dom/div #js {:className "row"}
                   (apply dom/div #js {:className "column"}
                          (map (fn [[s _]]
-                                (store-element s))
+                                (dom/div #js {:className "row content-items-container store-container align-middle"}
+                                  (dom/div #js {:className "columns small-2 medium-2"}
+                                    (photo-element {:class "square" :url (:store/photo s)})
+                                    )
+                                  (dom/div #js {:className "columns"}
+                                    (dom/a #js {:href (str "/store/" (:db/id s))}
+                                           (dom/p #js {:className "store-name"} (:store/name s)))
+                                    (common/rating-element (:store/rating s) (:store/review-count s)))))
                               (items-by-store items))
                     )
                   (dom/div #js {:className "column small-12 medium-4 text-right"}
