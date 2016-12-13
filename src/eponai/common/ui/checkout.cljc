@@ -118,8 +118,8 @@
                            "Checkout All Stores")))))
             #?(:cljs
                     (dom/div #js {:className "cart-empty callout text-center"}
-                      (dom/h5 nil "Your shopping bag is empty")
-                      (dom/a #js {:href "/"} "Go to the market - start shopping"))
+                      (dom/h3 nil "Your shopping bag is empty")
+                      (dom/a #js {:href "/"} (dom/h5 nil "Go to the market - start shopping")))
                :clj (dom/div {:className "cart-loading text-center"}
                       (dom/i {:className "fa fa-spinner fa-spin fa-4x"})))))))))
 
