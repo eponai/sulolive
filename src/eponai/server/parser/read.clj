@@ -5,6 +5,7 @@
     [eponai.common.parser :as parser :refer [server-read read-basis-param-path]]
     [eponai.common.parser.read :as common.read]
     [eponai.server.datomic.query :as query]
+    [environ.core :as env]
     [clojure.data.generators :as gen]
     [datomic.api :as d]
     [taoensso.timbre :refer [error debug trace warn]]
@@ -33,11 +34,15 @@
                       (-> (update :cart/items #(seq (map (comp (partial d/entity db) :db/id) %)))
                           (common.read/compute-cart-price))))}))
 
-(defmethod read-basis-param-path :query/store [{:keys [params]} _ _] [(:store-id params)])
+(defn- env-params->store-id [env params]
+  (or (get-in env [:params :store-id])
+      (get-in params [:store-id])))
+
+(defmethod read-basis-param-path :query/store [e _ p] [(env-params->store-id e p)])
 (defmethod server-read :query/store
-  [{:keys [db db-history query params auth]} _ p]
+  [{:keys [db db-history query auth] :as env} _ p]
   (debug "AUTH: " auth)
-  (let [store-id (or (:store-id params) (:store-id p))]
+  (let [store-id (env-params->store-id env p)]
     (when-let [store-id (cond-> store-id (string? store-id) (Long/parseLong))]
       {:value (cond-> (query/one db db-history query {:where   '[[?e]]
                                                       :symbols {'?e store-id}})
@@ -110,3 +115,12 @@
                                     (map #(merge % (db/pull db query (:db/id %))))
                                     (map #(assoc % :store/featured true)))
                            feautred-stores))}))
+
+(defmethod server-read :query/stream-config
+  [{:keys [db query]} k _]
+  (assert (= (every? {:db/id :stream-config/hostname} query))
+          (str "server read: " k
+               " only supports pull-pattern : " [:stream-config/hostname :db/id]
+               " was: " query))
+  {:value {:ui/singleton                        :ui.singleton/stream-config
+           :ui.singleton.stream-config/hostname (or (env/env :red5pro-server-url) "localhost")}})

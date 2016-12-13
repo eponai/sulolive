@@ -26,7 +26,8 @@
                    :ui.component.cart/items #{}}
                   {:ui/singleton :ui.singleton/app}
                   {:ui/component :ui.component/root}
-                  {:ui/component :ui.component/mutation-queue}]
+                  {:ui/component :ui.component/mutation-queue}
+                  {:ui/component :ui.singleton/stream-config}]
         conn (d/create-conn (common.datascript/ui-schema))]
     (d/transact! conn ui-state)
     conn))

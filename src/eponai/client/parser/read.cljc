@@ -100,3 +100,10 @@
                         (into [] (comp (map photos-fn)
                                        (map #(merge % (db/pull db query (:db/id %)))))
                               featured-stores)))}))
+
+(defmethod client-read :query/stream-config
+  [{:keys [db query]} k _]
+  {:remote true
+   :value  (db/pull-one-with db query
+                             {:where '[[?e :ui.singleton.stream-config/hostname]
+                                       [?e :ui/singleton :ui.singleton/stream-config]]})})

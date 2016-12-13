@@ -20,6 +20,7 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/stream (om/get-query stream/Stream)}
      `({:query/store [:db/id
                       :store/cover
                       :store/photo
@@ -31,7 +32,7 @@
   Object
   (render [this]
     (let [{:keys [show-item breakpoint]} (om/get-state this)
-          {:keys [query/store proxy/navbar]} (om/props this)
+          {:keys [query/store proxy/navbar] :as props} (om/props this)
           {:keys      [store/cover store/review-count store/rating store/photo]
            stream     :stream/_store
            items      :item/_store
@@ -63,7 +64,7 @@
               (dom/div #js {:className (str "large-8" (when (some? stream) " has-stream"))}
                 (when (some? stream)
                   (dom/div #js {:className "stream-container content-item"}
-                    (stream/->Stream)
+                    (stream/->Stream (:proxy/stream props))
                     (dom/div #js {:className "content-item-title-section"}
                       (dom/h2 #js {:className "stream-title"} (:stream/name stream))
                       (common/viewer-element (:stream/viewer-count stream))))))

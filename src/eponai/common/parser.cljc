@@ -82,12 +82,9 @@
 #?(:clj
    (defn error->message [err]
      (error err)
-     (if-let [data (ex-data err)]
-       (do (assert (::mutation-message data)
-                   (str "ex-data did not have a mutation-message! ex-data: " data
-                        " ex-message: " (medley/ex-message err)))
-           (select-keys data [::mutation-message]))
-       (throw (ex-info (str "Unable to get ex-data from error ")
+     (if-let [msg (::mutation-message (ex-data err))]
+       {::mutation-message msg}
+       (throw (ex-info (str "Unable to get mutation-message from error ")
                        {:error err
                         :where ::wrap-om-next-error-handler})))))
 
