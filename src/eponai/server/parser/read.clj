@@ -57,14 +57,17 @@
 (defmethod server-read :query/item
   [{:keys [db db-history query params]} _ _]
   (let [{:keys [product-id]} params]
-    {:value (query/one db db-history query
-                       {:where   '[[?e :item/name]]
-                        :symbols {'?e (Long/parseLong product-id)}})}))
+    {:value (cond-> (query/one db db-history query
+                               {:where   '[[?e :item/name]]
+                                :symbols {'?e (Long/parseLong product-id)}})
+                    (nil? db-history)
+                    (assoc :item/details common.read/item-details))}))
 
 (defmethod server-read :query/auth
   [{:keys [auth]} _ _]
   (debug "Read query/auth: " auth)
-  {:value auth})
+  {:value (when (some? (:iss auth))
+            auth)})
 
 ; #### FEATURED ### ;
 

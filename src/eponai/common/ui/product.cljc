@@ -20,7 +20,8 @@
 (defui Product
   static om/IQuery
   (query [_]
-    [:item/name
+    [:db/id
+     :item/name
      :item/price
      :item/img-src
      :item/details

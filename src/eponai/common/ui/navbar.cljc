@@ -28,7 +28,7 @@
           (dom/small nil (str "You have " (- (count items) 3) " more item(s) in your bag"))
           (dom/small nil (str "You have " (count items) " item(s) in your bag")))
         (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price price))))
-      (dom/a #js {:className "button expanded"
+      (dom/a #js {:className "button expanded hollow"
                   :href      "/checkout"} "View My Bag"))))
 
 (defn user-dropdown [component user]
