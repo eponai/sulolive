@@ -95,6 +95,8 @@
                                                  :href      "/"}
                                             "Sulo"))
                              (dom/li nil
+                                     (dom/a #js {:className "search-icon"}
+                                            (dom/i #js {:className "fa fa-search fa-fw"}))
                                      (dom/input #js {:type        "text"
                                                      :placeholder "Search items or stores"}))
                              ;(dom/li nil (dom/a #js {:className "top-nav-link"} (dom/strong nil "Stores")))

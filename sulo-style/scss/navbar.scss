@@ -1,26 +1,39 @@
 $navbar-height: rem-calc(56);
 $navbar-background-color: map-get($foundation-palette, brown);
+$navbar-font-color: $white;
+$subnav-background-color: rgba($navbar-background-color, 0.03);//map-get($foundation-palette, nude);
+// $subnav-background-color: lighten($navbar-background-color, 75%);//map-get($foundation-palette, nude);
+$subnav-font-color: rgba(map-get($foundation-palette, brown), 0.5);
 
-#sulo-navbar-container {
-	box-shadow: 0 1px 5px 1px rgba($black, 0.2);
+#sulo-navbar {
+	background: $white;
+	// box-shadow: 0 1px 5px 1px rgba($black, 0.2);
+	border-bottom: 1px solid rgba($navbar-background-color, 0.15);
 }
 nav {
 	height: $navbar-height;
-	// width: 100%;
-	// position: absolute;
 	z-index: 3;
-	// top: 0;
-	// border-bottom: 1px solid rgba($black, 0.2);
+	font-size: 0.9rem;
+	@include breakpoint(medium) {
+		font-size: 1rem;
+	}
 }
 .navbar-container {
 	background: $navbar-background-color;
-	box-shadow: 1
 }
 .navbar {
 	max-width: 65rem;
 	margin: 0 auto;
+	// color: $white;
 	a:not(.button):not(.top-nav-link) {		
 		color: $white;//map-get($foundation-palette, brown);
+	}
+	a.button.nude {
+		@extend .tiny;
+		font-size: 0.8rem;
+		@include breakpoint(medium) {
+			
+		}
 	}
 	input {
 		display: none;
@@ -35,7 +48,7 @@ nav {
 		}
 		i { vertical-align: bottom };
 
-		i.fa-video-camera {
+		.fa-video-camera, .seach-icon {
 			display: inline-block;
 		}
 		a.top-nav-link {
@@ -44,7 +57,7 @@ nav {
 			}
 		}
 		@include breakpoint(medium) {
-			i.fa-video-camera {
+			.fa-video-camera, .search-icon {
 				display: none;
 			}		
 		a.top-nav-link {
@@ -61,22 +74,27 @@ nav {
 
 .subnav-container {
 	// background: rgba(map-get($foundation-palette, brown), 0.1);
+		background: $subnav-background-color;
+		// box-shadow: 0px 1px 1px 0px rgba($navbar-background-color, 0.15);
+
 }
 .subnav {
 	a:not(.button) {
-		color: $white;//map-get($foundation-palette, brown) !important;
+		color: $subnav-font-color !important;
+		font-weight: 500;
 		transition: background 0.25s;
 		&:hover {
-			background: darken($navbar-background-color, 10%);
+			background: darken($subnav-background-color, 10%);
 		}
-		// font-size: 80%;
-		// text-transform: uppercase;
 	}
 }
 
 .navbar-brand {
 	text-transform: uppercase;
 	font-weight: 500;
-	font-size: 1rem;
+	font-size: 0.8rem;
+	@include breakpoint(medium) {
+		font-size: 1.2rem;
+	}
 	// vertical-align: middle;
 }

@@ -17,9 +17,7 @@ html, body {
 
 .dropdown-pane {
 	visibility: visible;
-	@include breakpoint(medium) {
-		right: 0;
-	}
+	right: 0;
 	box-shadow: 1px 1px 3px 0 rgba($black, 0.5);
 }
 

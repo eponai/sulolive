@@ -4,6 +4,9 @@ $banner-background-color: #2E2A31;//$header-background-color;
 $font-color-light: $body-background;
 
 #sulo-index {
+	.subnav-container {
+		// box-shadow: none;
+	}
 	.button {
 		font-weight: bold;
 	}
@@ -12,7 +15,7 @@ $font-color-light: $body-background;
 		position: absolute;
 	}
 	.navbar {
-		input {
+		input, .search-icon {
 			display: none;
 		}
 	}
@@ -31,7 +34,7 @@ $font-color-light: $body-background;
 
 	.intro-header {
 		$brown: map-get($foundation-palette, brown);
-		box-shadow: 0 0px 1px 1px rgba($brown, 0.15);
+		// box-shadow: 0 0px 1px 1px rgba($brown, 0.15);
 
 		padding-top: 8rem;
 		padding-bottom: 2rem;
