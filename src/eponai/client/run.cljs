@@ -23,32 +23,34 @@
         reconciler-atom (atom nil)
         conn (utils/create-conn)
         init? (atom false)
+        remotes [:remote :remote/user]
         send-fn (backend/send! reconciler-atom
-                               {:remote (-> (remotes/post-to-url "/api")
-                                            (remotes/read-basis-t-remote-middleware conn))
+                               {:remote      (-> (remotes/post-to-url "/api")
+                                                 (remotes/read-basis-t-remote-middleware conn))
                                 :remote/user (-> (remotes/post-to-url "/api/user")
                                                  (remotes/read-basis-t-remote-middleware conn)
                                                  (remotes/wrap-auth))}
                                {:did-merge-fn #(when-not @init?
-                                                 (reset! init? true)
-                                                 (debug "First merge happened. Adding reconciler to root.")
-                                                 (om/add-root! @reconciler-atom component (gdom/getElement id)))
-                                :query-fn      (fn [q]
-                                                 {:pre [(sequential? q)]}
-                                                 (into [:datascript/schema] q))})
+                                                (reset! init? true)
+                                                (debug "First merge happened. Adding reconciler to root.")
+                                                (om/add-root! @reconciler-atom component (gdom/getElement id)))
+                                :query-fn     (fn [q]
+                                                {:pre [(sequential? q)]}
+                                                (into [:datascript/schema] q))})
         reconciler (om/reconciler {:state     conn
                                    :ui->props (utils/cached-ui->props-fn parser)
                                    :parser    parser
-                                   :remotes   [:remote :remote/user]
+                                   :remotes   remotes
                                    :send      send-fn
                                    :merge     (merge/merge! client-merge)
                                    :migrate   nil})
-        remote-query (parser (backend/to-env reconciler)
-                             (om/get-query component)
-                             :remote)]
+        remote-queries (into {}
+                             (map (fn [remote]
+                                    [remote (parser (backend/to-env reconciler) (om/get-query component) remote)]))
+                             remotes)]
     (reset! reconciler-atom reconciler)
-    (debug "Remote-query: " remote-query)
-    (send-fn {:remote remote-query}
+    (debug "Remote-queries: " remote-queries)
+    (send-fn remote-queries
              (fn send-cb
                ([res]
                 (om/merge! reconciler res nil))
