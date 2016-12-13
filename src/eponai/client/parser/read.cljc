@@ -30,12 +30,12 @@
 
 (defmethod client-read :query/cart
   [{:keys [db query target]} _ _]
-  (debug "REad wuery/cart: " (auth/logged-in-user))
+  ;(debug "REad wuery/cart: " (auth/logged-in-user))
   (if target
-    {:remote/user (or true (auth/is-logged-in?))}
-    {:value (let [cart (if (or true (auth/is-logged-in?))
+    {:remote/user (auth/is-logged-in?)}
+    {:value (let [cart (if (auth/is-logged-in?)
                          (db/pull-one-with db query {:where '[[?e :cart/items]]})
-                         (db/pull-one-with db query {:where '[[?e :ui.component.cart/items]]}))]
+                         (db/pull-one-with db query {:where '[[?e :ui/component :ui.component/cart]]}))]
               (debug "Got cart: " cart " active user: " (auth/logged-in-user))
               (common.read/compute-cart-price cart))}))
 
@@ -47,15 +47,23 @@
                             {:where '[[?e :item/category ?c]]
                              :symbols {'?c category}}
                             {:where '[[?e :item/id]]})]
-              (debug "Read query/items: " category)
+              (debug "Read query/items: " category " query: " pattern)
 
               (assert (some #{:db/id} query)
                       (str "Query to :query/all-tiems must contain :db/id, was: " query))
               (sort-by :db/id (db/pull-all-with db query pattern)))}))
 
+(defmethod client-read :query/item
+  [{:keys [db query target]} _ {:keys [product-id]}]
+  (if target
+    {:remote true}
+    {:value (db/pull-one-with db query
+                              {:where   '[[?e :item/name]]
+                               :symbols {'?e (c/parse-long product-id)}})}))
+
 (defmethod client-read :query/auth
   [{:keys [target]} _ _]
-  (debug "Read query/auth: ")
+  ;(debug "Read query/auth: ")
   (if target
     {:remote true}
     {:value #?(:cljs (auth/logged-in-user)

@@ -7,7 +7,8 @@
     [eponai.server.datomic.query :as query]
     [clojure.data.generators :as gen]
     [datomic.api :as d]
-    [taoensso.timbre :refer [error debug trace warn]])
+    [taoensso.timbre :refer [error debug trace warn]]
+    [eponai.server.auth :as auth])
   (:import [java.util Random]))
 
 (defn db-shuffle
@@ -16,10 +17,6 @@
   [db items]
   (binding [gen/*rnd* (Random. (d/basis-t db))]
     (gen/shuffle items)))
-
-(defn is-authenticated? [auth]
-  (boolean (not-empty auth))
-  true)
 
 (defmethod server-read :datascript/schema
   [{:keys [db db-history]} _ _]
@@ -30,7 +27,7 @@
   [{:keys [db db-history query params auth]} _ _]
   (let [cart (query/one db db-history query {:where '[[?e :cart/items]]})]
     (debug "Read query/cart: " auth)
-    {:value (when (is-authenticated? auth)
+    {:value (when (auth/is-logged-in? auth)
               (cond-> cart
                       (nil? db-history)
                       (-> (update :cart/items #(seq (map (comp (partial d/entity db) :db/id) %)))
@@ -61,8 +58,8 @@
 
 (defmethod read-basis-param-path :query/item [{:keys [params]} _ _] [(:product-id params)])
 (defmethod server-read :query/item
-  [{:keys [db db-history query params]} _ _]
-  (let [{:keys [product-id]} params]
+  [{:keys [db db-history query params]} _ p]
+  (let [product-id (or (:product-id params) (:product-id p))]
     {:value (cond-> (query/one db db-history query
                                {:where   '[[?e :item/name]]
                                 :symbols {'?e (Long/parseLong product-id)}})

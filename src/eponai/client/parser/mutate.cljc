@@ -24,4 +24,4 @@
                (if (auth/is-logged-in?)
                  (let [cart (db/one-with (db/db state) {:where '[[?e :cart/items]]})]
                    (db/transact-one state [:db/add cart :cart/items (:db/id item)]))
-                 (db/transact-one state [:db/add [:ui/component :ui.component/cart] :ui.component.cart/items (:db/id item)])))}))
+                 (db/transact-one state [:db/add [:ui/component :ui.component/cart] :cart/items (:db/id item)])))}))

@@ -22,7 +22,8 @@
 (defonce conn-atom (atom nil))
 
 (defn create-conn []
-  (let [ui-state [{:ui/component :ui.component/cart}
+  (let [ui-state [{:ui/component :ui.component/cart
+                   :ui.component.cart/items #{}}
                   {:ui/singleton :ui.singleton/app}
                   {:ui/component :ui.component/root}
                   {:ui/component :ui.component/mutation-queue}]

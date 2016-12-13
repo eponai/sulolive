@@ -3,7 +3,10 @@
     [eponai.common.ui.common :as c]
     [eponai.common.ui.utils :as utils]
     [om.next :as om :refer [defui]]
-    [om.dom :as dom]))
+    [om.dom :as dom]
+    [eponai.common.ui.common :as common]
+    [eponai.common.ui.navbar :as nav]
+    [taoensso.timbre :refer [debug]]))
 
 (defn reviews-list [reviews]
   (apply dom/div
@@ -25,6 +28,7 @@
      :item/price
      :item/img-src
      :item/details
+     :item/category
      {:item/store [:store/photo
                    :store/name
                    :store/rating
@@ -36,6 +40,7 @@
     (let [{:keys [selected-tab]} (om/get-state this)
           {:keys     [item/price item/store item/img-src item/details]
            item-name :item/name :as item} (om/props this)]
+      (debug "Render product: " item)
       (dom/div
         #js {:id "sulo-product"}
 
@@ -64,7 +69,8 @@
                 (dom/h2 #js {:className "product-info-price"}
                         (utils/two-decimal-price price)))
               (dom/div #js {:className "product-action-container clearfix"}
-                (dom/a #js {:onClick   #(om/transact! this `[(shopping-bag/add-item ~{:item (select-keys item [:db/id])})])
+                (dom/a #js {:onClick   #(om/transact! this `[(shopping-bag/add-item ~{:item (select-keys item [:db/id])})
+                                                             :query/cart])
                             :className "button expanded"} "Add to bag"))))
 
 
@@ -93,3 +99,30 @@
                   (dom/div #js {:className "product-details"}))))))))
 
 (def ->Product (om/factory Product))
+;`({:query/store [:db/id
+;                 :store/cover
+;                 :store/photo
+;                 {:item/_store ~(om/get-query item/Product)}
+;                 {:stream/_store [:stream/name :stream/viewer-count]}
+;                 :store/name
+;                 :store/rating
+;                 :store/review-count]} {:store-id ~'?store-id})
+
+(defui ProductPage
+  static om/IQueryParams
+  (params [_]
+    #?(:cljs
+       (let [path js/window.location.pathname]
+         {:product-id (last (clojure.string/split path #"/"))})))
+  static om/IQuery
+  (query [_]
+    [{:proxy/navbar (om/get-query nav/Navbar)}
+     `({:query/item ~(om/get-query Product)} {:product-id ~'?product-id})])
+  Object
+  (render [this]
+    (let [{:keys [query/item proxy/navbar]} (om/props this)]
+      (common/page-container
+        {:navbar navbar}
+        (->Product item)))))
+
+(def ->ProductPage (om/factory ProductPage))

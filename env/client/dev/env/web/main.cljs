@@ -20,3 +20,7 @@
 (defn ^:export runindex []
       (utils/install-app)
       (run/run :index))
+
+(defn ^:export runproduct []
+      (utils/install-app)
+      (run/run :product))

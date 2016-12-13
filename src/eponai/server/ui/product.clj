@@ -11,11 +11,10 @@
 (defui Product
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:query/item (om/get-query cljc-product/Product)}])
+    [{:proxy/product (om/get-query cljc-product/ProductPage)}])
   Object
   (render [this]
-    (let [{:keys [release? query/item proxy/navbar]} (om/props this)]
+    (let [{:keys [release? proxy/product]} (om/props this)]
       (dom/html
         {:lang "en"}
 
@@ -24,23 +23,24 @@
         (dom/body
           nil
           (dom/div
-            {:id "sulo-product-page"
-             :className "page-container"}
-            (nav/navbar navbar)
+            {:id "sulo-product-page" :class "sulo-page"}
+            (cljc-product/->ProductPage product)
+            ;(nav/navbar navbar)
 
-            (dom/div {:className "page-content" :id "sulo-product-container"}
-              (cljc-product/->Product item))
+            ;(dom/div {:className "page-content" :id "sulo-product-container"}
+            ;  (cljc-product/->Product item))
 
-            (cljc-common/footer nil))
+            ;(cljc-common/footer nil)
+            )
 
           ;(dom/script {:src "/lib/videojs/video.min.js"})
           ;(dom/script {:src "/lib/videojs/videojs-media-sources.min.js"})
           ;(dom/script {:src "/lib/videojs/videojs.hls.min.js"})
           ;(dom/script {:src "/lib/red5pro/red5pro-sdk.min.js"})
-          ;(dom/script {:src  (common/budget-js-path release?)
-          ;             :type common/text-javascript})
+          (dom/script {:src  (common/budget-js-path release?)
+                       :type common/text-javascript})
 
-          ;(common/inline-javascript ["env.web.main.runstream()"])
           (dom/script {:src "https://cdn.auth0.com/js/lock-passwordless-2.2.min.js"})
+          (common/inline-javascript ["env.web.main.runproduct()"])
           )))))
 

@@ -11,19 +11,24 @@
 
 (defui ProductItem
   Object
-  (initLocalState [this]
-    {:resize-listener #(.on-window-resize this)
-     #?@(:cljs [:breakpoint (utils/breakpoint js/window.innerWidth)])})
+  #?(:cljs
+     (initLocalState [this]
+                     {:resize-listener #(.on-window-resize this)
+                      :breakpoint      (utils/breakpoint js/window.innerWidth)}))
+
   #?(:cljs
      (on-window-resize [this]
-                       (om/update-state! this assoc :breakpoint (utils/breakpoint js/window.innerWidth))))
-  (componentDidMount [this]
-    #?(:cljs (.addEventListener js/window "resize" (:resize-listener (om/get-state this)))))
-  (componentWillUnmount [this]
-    #?(:cljs (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
+       (om/update-state! this assoc :breakpoint (utils/breakpoint js/window.innerWidth))))
+  #?(:cljs
+     (componentDidMount [this]
+       (.addEventListener js/window "resize" (:resize-listener (om/get-state this)))))
+  #?(:cljs
+     (componentWillUnmount [this]
+       (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
 
   (render [this]
-    (let [{:keys [on-click product]} (om/props this)
+    (let [{:keys [ product]} (om/props this)
+          {:keys [display-content]} (om/get-computed this)
           {:keys [show-item? breakpoint]} (om/get-state this)
           open-url? #?(:cljs (utils/bp-compare :large breakpoint >) :clj false)
           on-click (when-not open-url? #(om/update-state! this assoc :show-item? true))
@@ -47,6 +52,6 @@
         (when show-item?
           (common/modal {:on-close #(om/update-state! this assoc :show-item? false)
                   :size :large}
-                 (product/->Product product)))))))
+                 display-content))))))
 
 (def ->ProductItem (om/factory ProductItem))
