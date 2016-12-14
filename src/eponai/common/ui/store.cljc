@@ -8,7 +8,8 @@
     #?(:cljs [eponai.web.utils :as utils])
     [om.dom :as dom]
     [om.next :as om #?(:clj :refer :cljs :refer-macros) [defui]]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.ui.elements.photo :as photo]))
 
 (defui Store
   static om/IQueryParams
@@ -38,51 +39,51 @@
            items      :item/_store
            store-name :store/name} store
           stream (first stream)]
-      (debug "Got stream: " stream)
       (common/page-container
         {:navbar navbar}
         (dom/div
           #js {:id "sulo-store-container"}
-          ;(dom/div #js {:className "cover-container"})
-          (common/photo-cover {:url cover}
+          ;(dom/div #js {:className "cover-container"}
+          (photo/cover
+            cover
 
-                              (dom/div #js {:className "column store-container large-2"}
+            (dom/div #js {:className "column store-container large-2"}
 
-                                (dom/div #js {:className "store-short-info-container"}
-                                  (common/photo-element {:class "square" :url photo})
-                                  (dom/div #js {:className "content-item-title-section"}
-                                    (dom/h1 #js {:className "store-name"} store-name)
-                                    (common/rating-element rating review-count)))
+              (dom/div #js {:className "store-short-info-container"}
+                (photo/square photo)
+                (dom/div #js {:className "content-item-title-section"}
+                  (dom/h1 #js {:className "store-name"} store-name)
+                  (common/rating-element rating review-count)))
 
-                                ;#?(:cljs)
-                                (dom/ul #js {:className (str "menu store-main-menu")}
-                                        (dom/li nil (dom/a nil "About"))
-                                        (dom/li nil (dom/a nil "Policies"))))
+              ;#?(:cljs)
+              (dom/ul #js {:className (str "menu store-main-menu")}
+                      (dom/li nil (dom/a nil "About"))
+                      (dom/li nil (dom/a nil "Policies"))))
 
-                              (dom/div #js {:className (str "large-8" (when (some? stream) " has-stream"))}
-                                (when (some? stream)
-                                  (dom/div #js {:className "stream-container content-item"}
-                                    (stream/->Stream (:proxy/stream props))
-                                    (dom/div #js {:className "content-item-title-section"}
-                                      (dom/h5 #js {:className "stream-title"} (:stream/name stream))
-                                      (dom/div #js {:className "viewers-container"}
-                                        (dom/i #js {:className "fa fa-eye fa-fw"})
-                                        (dom/h5 nil (str (:stream/viewer-count stream))))))))
+            (dom/div #js {:className (str "large-8" (when (some? stream) " has-stream"))}
+              (when (some? stream)
+                (dom/div #js {:className "stream-container content-item"}
+                  (stream/->Stream (:proxy/stream props))
+                  (dom/div #js {:className "content-item-title-section"}
+                    (dom/h5 #js {:className "stream-title"} (:stream/name stream))
+                    (dom/div #js {:className "viewers-container"}
+                      (dom/i #js {:className "fa fa-eye fa-fw"})
+                      (dom/h5 nil (str (:stream/viewer-count stream))))))))
 
-                              (dom/div #js {:className "medium-2 stream-chat-container"}
-                                (dom/div #js {:className "stream-chat-content"}
-                                  (dom/span nil "This is a message"))
-                                (dom/div #js {:className "stream-chat-input"}
-                                  (dom/input #js {:type        "text"
-                                                  :placeholder "Your message..."})
-                                  (dom/a #js {:className "button expanded"} "Send"))))
+            (dom/div #js {:className "medium-2 stream-chat-container"}
+              (dom/div #js {:className "stream-chat-content"}
+                (dom/span nil "This is a message"))
+              (dom/div #js {:className "stream-chat-input"}
+                (dom/input #js {:type        "text"
+                                :placeholder "Your message..."})
+                (dom/a #js {:className "button expanded"} "Send"))))
 
           (dom/div #js {:className "store-nav"}
             (dom/div #js {:className "row column"}
               (dom/ul #js {:className "menu"}
                       (dom/li nil (dom/a nil "Sheets"))
                       (dom/li nil (dom/a nil "Pillows"))
-                      (dom/li nil (dom/a nil "Duvets")))))
+                      (dom/li nil (dom/a nil "Duvets ")))))
 
           (dom/div #js {:className "items"}
             (apply dom/div #js {:className "content-items-container row small-up-2 medium-up-3 large-up-4"}

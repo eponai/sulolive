@@ -2,6 +2,7 @@
   (:require
     [eponai.common.ui.common :as common]
     [eponai.common.ui.navbar :as nav]
+    [eponai.common.ui.elements.photo :as photo]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]))
@@ -39,7 +40,7 @@
         store-link (common/link-to-store store)]
     (dom/div #js {:className "column content-item store-item"}
       (dom/a #js {:href store-link}
-             (common/photo-collage-element {:urls (:store/featured-img-src store)})
+             (photo/collage (:store/featured-img-src store))
              ;(dom/div #js {:className "photo-container collage"}
              ;  (dom/div #js {:className "photo square"
              ;            :style     #js {:backgroundImage (str "url(" large ")")}})
@@ -77,8 +78,7 @@
           (dom/div #js {:className "intro-header"}
             (dom/div #js {:className "row"}
               (dom/div #js {:className "column small-offset-6 header-photo-container"}
-                ;(photo-cover-element)
-                (common/photo-header)))
+                (photo/header "/assets/img/night-market.jpg")))
             (dom/div #js {:className "row column header-content"}
               (dom/h1 nil "Your local marketplace online")
               (dom/div #js {:className "search-container row"}

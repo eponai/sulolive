@@ -52,12 +52,11 @@
 
 @import "navbar";
 @import "base";
+@import "start";
 @import "photo";
-@include sulo-photo;
 @import "star-rating";
 @import "content-item";
 @import "cart";
-@import "start";
 @import "store";
 @import "stream";
 @import "goods";

@@ -7,7 +7,8 @@
     [om.next :as om :refer [defui]]
     #?(:cljs
        [eponai.web.utils :as utils])
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.ui.elements.photo :as photo]))
 
 (defui ProductItem
   Object
@@ -39,7 +40,7 @@
       (dom/div #js {:className "column content-item product-item"}
         (dom/a #js {:onClick   on-click
                     :href      product-href}
-               (common/photo-element {:url (:item/img-src product) :class "square"}))
+               (photo/square (:item/img-src product)))
         (dom/div #js {:className "content-item-title-section"}
           (dom/a #js {:onClick on-click
                       :href    product-href}

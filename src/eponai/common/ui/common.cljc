@@ -1,6 +1,7 @@
 (ns eponai.common.ui.common
   (:require
     [eponai.common.ui.utils :as ui-utils]
+    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.navbar :as nav]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]))
@@ -16,30 +17,6 @@
                          :onClick   on-close} "x")
              content))))
 
-(defn photo [{:keys [url class]} & content]
-  (apply dom/div #js {:className (str "photo " class) :style #js {:backgroundImage #?(:cljs (str "url(" url ")")
-                                                                                      :clj  "")}}
-         content))
-
-(defn photo-header []
-  (photo {:class "header" :url "/assets/img/night-market.jpg"}))
-
-(defn photo-element [opts & content]
-  (dom/div #js {:className "photo-container"}
-    (apply photo opts content)))
-
-(defn photo-cover [opts & content]
-  (apply photo-element (assoc opts :class "cover")
-         content))
-
-(defn photo-collage-element [{:keys [urls]}]
-  (let [[large mini-1 mini-2] urls]
-    (dom/div #js {:className "photo-container collage"}
-      (photo {:class "square" :url large})
-      (dom/div #js {:className "mini-container"}
-        (photo {:url mini-1})
-        (photo {:url mini-2})))))
-
 (defn viewer-element [view-count]
   (dom/div #js {:className "viewers-container"}
     (dom/i #js {:className "fa fa-eye fa-fw"})
@@ -54,10 +31,7 @@
         store-link (link-to-store store)]
     (dom/div #js {:className "column content-item online-channel"}
       (dom/a #js {:href store-link}
-             (photo-element {:class "square" :url img-src})
-             ;(dom/div #js {:className "photo-container"}
-             ;  (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" img-src ")")}}))
-             )
+             (photo/square img-src))
       (dom/div #js {:className "content-item-title-section"}
         (dom/a #js {:href store-link} (dom/strong nil stream-name))
         (viewer-element viewer-count))
@@ -88,8 +62,7 @@
     (dom/div #js {:className "column content-item product-item"}
       (dom/a #js {:onClick   on-click
                   :href      goods-href}
-             (photo-element {:url (:item/img-src product)
-                             :class "square"}))
+             (photo/square (:item/img-src product)))
       (dom/div #js {:className "content-item-title-section"}
         (dom/a #js {:onClick on-click
                     :href    goods-href}

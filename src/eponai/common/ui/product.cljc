@@ -5,6 +5,7 @@
     [om.next :as om :refer [defui]]
     [om.dom :as dom]
     [eponai.common.ui.common :as common]
+    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.navbar :as nav]
     [taoensso.timbre :refer [debug]]))
 
@@ -46,8 +47,7 @@
 
         (dom/div #js {:className "row content-items-container store-container align-middle"}
           (dom/div #js {:className "columns small-2 medium-1"}
-            (dom/div #js {:className "photo-container"}
-              (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" (:store/photo store) ")")}})))
+            (photo/square (:store/photo store) ))
           (dom/div #js {:className "columns"}
             (dom/a #js {:href (str "/store/" (:db/id store))}
                    (dom/p #js {:className "store-name"} (:store/name store)))
@@ -57,11 +57,11 @@
         (dom/div #js {:className "row column product-container"}
           (dom/div #js {:className "row"}
             (dom/div #js {:className "column small-12 medium-8 small-order-2 medium-order-1"}
-              (dom/div #js {:className "photo-container"}
-                (dom/div #js {:className "photo" :style #js {:backgroundImage (str "url(" img-src ")")}}))
+              (photo/photo img-src)
+
               (apply dom/div #js {:className "multi-photos-container"}
                      (map (fn [im]
-                            (dom/a #js {:className "photo square thumbnail" :style #js {:backgroundImage (str "url(" im ")")}}))
+                            (photo/thumbail im))
                           (take 4 (repeat img-src)))))
             (dom/div #js {:className "column product-info-container small-order-1 medium-order-2"}
               (dom/div #js {:className "product-info"}

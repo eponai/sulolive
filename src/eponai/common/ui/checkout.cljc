@@ -3,6 +3,7 @@
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.common :as common]
+    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.utils :as utils]
     [eponai.common.ui.navbar :as nav]
     [taoensso.timbre :refer [debug]]))
@@ -16,7 +17,7 @@
 (defn store-element [s]
   (dom/div #js {:className "row content-items-container store-container align-middle"}
     (dom/div #js {:className "columns small-2 medium-1"}
-      (common/photo-element {:class "square" :url (:store/photo s)}))
+      (photo/square (:store/photo s)))
     (dom/div #js {:className "columns"}
       (dom/a #js {:href (str "/store/" (:db/id s))}
              (dom/p #js {:className "store-name"} (:store/name s)))
@@ -31,8 +32,7 @@
              (map (fn [i]
                     (dom/div #js {:className "row cart-items align-top"}
                       (dom/div #js {:className "columns small-4 medium-3"}
-                        (common/photo-element {:class "square"
-                                        :url   (:item/img-src i)}))
+                        (photo/square (:item/img-src i)))
                       (dom/div #js {:className "columns small-5 medium-7"}
                         (dom/div #js {:className "content-item-title-section"}
                           (dom/a #js {:href (str "/goods/" (:db/id i))
@@ -95,7 +95,7 @@
                          (map (fn [[s its]]
                                 (dom/div #js {:className "row content-items-container store-container align-middle"}
                                   (dom/div #js {:className "columns small-2 medium-2"}
-                                    (common/photo-element {:class "square" :url (:store/photo s)}))
+                                    (photo/square (:store/photo s)))
                                   (dom/div #js {:className "columns"}
                                     (dom/a #js {:href (str "/store/" (:db/id s))}
                                            (dom/p #js {:className "store-name"} (:store/name s)))

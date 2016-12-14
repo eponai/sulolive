@@ -1,48 +1,70 @@
-@mixin sulo-photo() {
-	.photo-container {
-		box-shadow: 1px 1px 3px 1px rgba($black, 0.1);
+.photo-container {
+	box-shadow: 1px 1px 3px 1px rgba($black, 0.1);
 
-		&.collage {
-			.mini-container {
-				display: flex;
-				.photo {
-					width: 50%;
-					padding-top: 50%;
-				}
+	&.collage {
+		.photo-container {
+			display: flex;
+			box-shadow: none;
+			.photo {
+				width: 50%;
+				padding-top: 50%;
 			}
 		}
 	}
+}
 
-	.multi-photos-container {
-		display: flex;
-		justify-content: center;
-		padding: 0.5rem 0;
-		.photo.thumbnail {
-			margin: 0 0.5rem;
-			padding-top: 10%;
-			width: 10%;
-		}
+.multi-photos-container {
+	display: flex;
+	justify-content: center;
+	padding: 0.5rem 0;
+	.photo-container {
+		margin: 0 0.5rem;
+		width: 10%;
+	}
+}
+
+.photo {
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-position: center center;
+	padding-top: 75%;
+	width: 100%;
+	transition: background-image .25s ease-in;
+	&.square {
+		padding-top: 100%;				
+	}
+	&.thumbnail {
+		margin: 0;
+		display: block;
+		&.mini {
+			width: 50%;
+			padding-top: 50%
+		}		
+	}
+	&.cover {
+		padding: 0;
 	}
 
-	.photo {
-		background-size: cover;
-		background-repeat: no-repeat;
-		background-position: center center;
-		padding-top: 75%;
-		width: 100%;
-		&.square {
-			padding-top: 100%;				
+	&.header {
+		padding: 0;
+		position: absolute;
+		height: 100%;
+		width: 150%;
+		top: 0;
+		left: 0;
+		background-position: center right;
+		opacity: 0.5;
+		@include breakpoint(medium) {
+			width: 100%;
+			left: 25%;
 		}
-		&.thumbnail {
-			margin: 0;
+
+		&::after {
+			content: "";
 			display: block;
-			&.mini {
-				width: 50%;
-				padding-top: 50%
-			}		
-		}
-		&.cover {
-			padding: 0;
+			background: linear-gradient(to right, rgba($header-background-color,1) 0%,rgba($header-background-color,0) 50%,rgba($header-background-color,1) 100%);
+			position: absolute;
+			top: 0; left: -1px; right: 0; bottom: 0;
 		}
 	}
 }

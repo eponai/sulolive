@@ -3,6 +3,7 @@
     [eponai.common.ui.utils :as ui-utils]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
+    [eponai.common.ui.elements.photo :as photo]
     [taoensso.timbre :refer [debug error]]))
 
 (defn cart-dropdown [{:keys [cart/items cart/price]}]
@@ -10,12 +11,11 @@
     (dom/div nil
       (apply dom/ul #js {:className "cart menu vertical"}
              (map (fn [i]
-                    (dom/li nil
+                    (dom/li #js {:key (str "cart-" (:db/id i) "-" (rand-int 1000))}
                             (dom/a #js {:href      (str "/goods/" (:db/id i))}
                                    (dom/div #js {:className "row collapse align-middle content-item"}
-                                     (dom/a #js {:className "columns small-2"}
-                                            (dom/div #js {:className "photo-container"}
-                                              (dom/div #js {:className "photo square thumbnail" :style #js {:backgroundImage (str "url(" (:item/img-src i) ")")}})))
+                                     (dom/div #js {:className "columns small-2"}
+                                            (photo/thumbail (:item/img-src i)))
                                      (dom/div #js {:className "columns small-10"}
                                        (dom/div #js {:className "content-item-title-section"}
                                          (dom/small #js {:className "name"} (:item/name i)))
