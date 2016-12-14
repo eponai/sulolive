@@ -26,6 +26,8 @@
   (merge
     {::grid-row              "row"
      ::grid-row-align-middle "align-middle"
+     ::grid-row-align-bottom "align-bottom"
+     ::grid-row-align-top "align-top"
      ::grid-column           "column"}
     (calc-grid-styles)))
 

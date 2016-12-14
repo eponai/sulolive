@@ -7,6 +7,17 @@ html, body {
   	-webkit-overflow-scrolling: touch;
 }
 
+.padded {
+	&.vertical {
+		padding-bottom: 1rem;
+		padding-top: 1rem;
+	}
+	&.horizontal {
+		padding-left: 1rem;
+		padding-right: 2rem;
+	}
+}
+
 .reveal-overlay {
 	display: block;
 	.reveal {
