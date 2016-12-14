@@ -12,7 +12,7 @@
 
   See css.cljc for available class keys."
   [{:keys [classes]} & content]
-  (apply dom/ul #js {:className (css/keys->class (conj classes ::css/menu))}
+  (apply dom/ul #js {:className (css/keys->class-str (conj classes ::css/menu))}
          content))
 
 (defn horizontal
@@ -35,7 +35,7 @@
 ;; Menu list item elements
 (defn- item* [{:keys [classes]} & content]
   (apply
-    dom/li #js {:className (css/keys->class classes)}
+    dom/li #js {:className (css/keys->class-str classes)}
     content))
 
 (defn item

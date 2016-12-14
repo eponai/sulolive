@@ -1,6 +1,8 @@
 (ns eponai.common.ui.product
   (:require
     [eponai.common.ui.common :as c]
+    [eponai.common.ui.elements.css :as css]
+    [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.utils :as utils]
     [om.next :as om :refer [defui]]
     [om.dom :as dom]
@@ -45,26 +47,38 @@
 
       (dom/div
         #js {:id "sulo-product"}
-
-        (dom/div #js {:className "row content-items-container store-container align-middle"}
-          (dom/div #js {:className "columns small-2 medium-1"}
+        (grid/row
+          {:classes [::css/grid-row-align-middle
+                     ::css/store-container]}
+          (grid/column
+            {:classes [::css/grid-column-small-2
+                       ::css/grid-column-medium-1]}
             (photo/square (:store/photo store) ))
-          (dom/div #js {:className "columns"}
+          (grid/column
+            nil
             (dom/a #js {:href (str "/store/" (:db/id store))}
                    (dom/p #js {:className "store-name"} (:store/name store)))
             (c/rating-element (:store/rating store) (:store/review-count store))))
 
 
-        (dom/div #js {:className "row column product-container"}
-          (dom/div #js {:className "row"}
-            (dom/div #js {:className "column small-12 medium-8 small-order-2 medium-order-1"}
+        (grid/row-column
+          nil
+          (grid/row
+            nil
+            (grid/column
+              {:classes [::css/grid-column-small-12
+                         ::css/grid-column-medium-8
+                         :medium-order-1
+                         :small-order-2]}
               (photo/photo img-src)
 
               (apply dom/div #js {:className "multi-photos-container"}
                      (map (fn [im]
                             (photo/thumbail im))
                           (take 4 (repeat img-src)))))
-            (dom/div #js {:className "column product-info-container small-order-1 medium-order-2"}
+
+            (grid/column
+              {:classes [:small-order-1 :medium-order-2]}
               (dom/div #js {:className "product-info"}
                 (dom/h1 #js {:className "product-info-title"} item-name)
                 (dom/h2 #js {:className "product-info-price"}
@@ -74,8 +88,7 @@
                                                              :query/cart])
                             :className "button expanded"} "Add to bag"))))
 
-
-          (dom/div #js {:className "row column product-details-container"}
+          (grid/row-column nil
             (menu/horizontal
               nil
               (menu/item-tab {:active?  (= selected-tab :details)
@@ -100,14 +113,6 @@
                   (dom/div #js {:className "product-details"}))))))))
 
 (def ->Product (om/factory Product))
-;`({:query/store [:db/id
-;                 :store/cover
-;                 :store/photo
-;                 {:item/_store ~(om/get-query item/Product)}
-;                 {:stream/_store [:stream/name :stream/viewer-count]}
-;                 :store/name
-;                 :store/rating
-;                 :store/review-count]} {:store-id ~'?store-id})
 
 (defui ProductPage
   static om/IQueryParams

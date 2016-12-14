@@ -7,12 +7,12 @@
 ;; Element helper functions
 (defn- photo* [{:keys [url classes]} & content]
   (apply dom/div
-         #js {:className (css/keys->class (conj classes ::css/photo))
+         #js {:className (css/keys->class-str (conj classes ::css/photo))
               #?@(:cljs [:style #js {:backgroundImage (str "url(" url ")")}])}
          content))
 
 (defn- photo-container [{:keys [classes]} & content]
-  (dom/div #js {:className (css/keys->class (conj classes ::css/photo-container))}
+  (dom/div #js {:className (css/keys->class-str (conj classes ::css/photo-container))}
     content))
 
 ;; Functiosn for creating elements in the UI
@@ -48,7 +48,7 @@
 (defn collage [urls]
   (when-not (every? string? urls) (error "Invalid photo URL type. Collage expects collection of URL strings. Got URLs: " urls))
   (apply photo-container
-         {:classes [:css.photo/collage]}
+         {:classes [:css/photo-collage]}
          (mapcat
            (fn [[large mini-1 mini-2]]
              [(photo* {:url     large
