@@ -3,7 +3,8 @@
     [eponai.common.ui.common :as common]
     [eponai.common.ui.navbar :as nav]
     [om.dom :as dom]
-    [om.next :as om :refer [defui]]))
+    [om.next :as om :refer [defui]]
+    [taoensso.timbre :refer [debug]]))
 
 (defn top-feature [opts icon title text]
   (dom/div #js {:className "feature-item column"}
@@ -67,7 +68,8 @@
      {:query/featured-streams [:stream/name {:stream/store [:store/name]} :stream/viewer-count :stream/img-src]}])
   Object
   (render [this]
-    (let [{:keys [proxy/navbar query/featured-items query/featured-stores query/featured-streams]} (om/props this)]
+    (let [{:keys [proxy/navbar query/featured-items query/featured-stores query/featured-streams]} (om/props this)
+          {:keys [input-search]} (om/get-state this)]
       (common/page-container
         {:navbar navbar}
         (dom/div #js {:id "sulo-index-container"}
@@ -82,9 +84,19 @@
               (dom/div #js {:className "search-container row"}
                 (dom/div #js {:className "column small-12 medium-6"}
                   (dom/input #js {:placeholder "What are you shopping for?"
-                              :type        "text"}))
+                                  :type        "text"
+                                  :value       (or input-search "")
+                                  :onChange    #(do (debug " search " (.. % -target -value)) (om/update-state! this assoc :input-search (.. % -target -value)))
+                                  :onKeyDown   (fn [e]
+                                                 #?(:cljs
+                                                    (when (= 13 (.. e -keyCode))
+                                                      (let [search-string (.. e -target -value)]
+                                                        (set! js/window.location (str "/goods?search=" search-string))))))}))
                 (dom/div #js {:className "column"}
-                  (dom/a #js {:className "button"}
+                  (dom/a #js {:className "button"
+                              :onClick   (fn []
+                                           #?(:cljs
+                                              (set! js/window.location (str "/goods?search=" input-search))))}
                          "Search")))))
 
           (dom/div #js {:className "top-features"}
