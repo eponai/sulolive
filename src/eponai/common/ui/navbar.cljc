@@ -11,18 +11,17 @@
       (apply dom/ul #js {:className "cart menu vertical"}
              (map (fn [i]
                     (dom/li nil
-                            ;(dom/a nil)
-                            (dom/div #js {:className "row collapse align-middle content-item"}
-                              (dom/a #js {:href      (str "/goods/" (:db/id i))
-                                          :className "columns small-2"}
-                                (dom/div #js {:className "photo-container"}
-                                  (dom/div #js {:className "photo square thumbnail" :style #js {:backgroundImage (str "url(" (:item/img-src i) ")")}})))
-                              (dom/div #js {:className "columns small-10"}
-                                (dom/div #js {:className "content-item-title-section"}
-                                  (dom/small #js {:className "name"} (:item/name i)))
-                                (dom/div #js {:className "content-item-subtitle-section"}
-                                  (dom/span #js {:className "price"}
-                                            (ui-utils/two-decimal-price (:item/price i))))))))
+                            (dom/a #js {:href      (str "/goods/" (:db/id i))}
+                                   (dom/div #js {:className "row collapse align-middle content-item"}
+                                     (dom/a #js {:className "columns small-2"}
+                                            (dom/div #js {:className "photo-container"}
+                                              (dom/div #js {:className "photo square thumbnail" :style #js {:backgroundImage (str "url(" (:item/img-src i) ")")}})))
+                                     (dom/div #js {:className "columns small-10"}
+                                       (dom/div #js {:className "content-item-title-section"}
+                                         (dom/small #js {:className "name"} (:item/name i)))
+                                       (dom/div #js {:className "content-item-subtitle-section"}
+                                         (dom/span #js {:className "price"}
+                                                   (ui-utils/two-decimal-price (:item/price i)))))))))
                   (take 3 items)))
 
       (dom/div #js {:className "callout nude"}

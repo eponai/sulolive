@@ -89,6 +89,15 @@
 			$border-color: map-get($foundation-palette, brown);
 			$border: 1px solid rgba($border-color, 0.1);
 			border-bottom: $border;
+
+			a {
+				color: $border-color;
+			}
+			&:hover {
+				background: darken($white, 5%);
+				transition: background .25s ease-in-out;
+				cursor: pointer;
+			}
 		}
 	}
 
