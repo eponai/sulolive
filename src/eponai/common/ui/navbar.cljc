@@ -11,8 +11,10 @@
       (apply dom/ul #js {:className "cart menu vertical"}
              (map (fn [i]
                     (dom/li nil
+                            ;(dom/a nil)
                             (dom/div #js {:className "row collapse align-middle content-item"}
-                              (dom/div #js {:className "columns small-2"}
+                              (dom/a #js {:href      (str "/goods/" (:db/id i))
+                                          :className "columns small-2"}
                                 (dom/div #js {:className "photo-container"}
                                   (dom/div #js {:className "photo square thumbnail" :style #js {:backgroundImage (str "url(" (:item/img-src i) ")")}})))
                               (dom/div #js {:className "columns small-10"}
@@ -107,7 +109,7 @@
                              ;(dom/li nil (dom/a #js {:className "top-nav-link"} (dom/strong nil "Stores")))
                              (dom/li nil (dom/a #js {:href "/streams"
                                                      :className "top-nav-link warning "}
-                                                (dom/strong nil "Live Market")
+                                                (dom/strong nil "Live")
                                                 (dom/i #js {:className "fa fa-video-camera fa-fw"})))))
 
                    (dom/div #js {:className "top-bar-right"}

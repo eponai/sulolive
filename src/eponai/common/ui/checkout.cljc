@@ -35,7 +35,8 @@
                                         :url   (:item/img-src i)}))
                       (dom/div #js {:className "columns small-5 medium-7"}
                         (dom/div #js {:className "content-item-title-section"}
-                          (dom/span #js {:className "name"} (:item/name i))))
+                          (dom/a #js {:href (str "/goods/" (:db/id i))
+                                      :className "name"} (:item/name i))))
                       (dom/div #js {:className "columns small-3 medium-2 text-right"}
                         (dom/div #js {:className "content-item-subtitle-section"}
                           (dom/span #js {:className "price"}
@@ -115,7 +116,7 @@
                                                   (dom/td nil (utils/two-decimal-price 0)))
                                           (dom/tr #js {:className "total-price"}
                                                   (dom/td nil (dom/h5 nil "Total"))
-                                                  (dom/td nil (dom/h5 nil (compute-item-price items))))))
+                                                  (dom/td nil (dom/h5 nil (utils/two-decimal-price (compute-item-price items)))))))
                     (dom/a #js {:className "button success"}
                            "Checkout All Stores")))))
             #?(:cljs
