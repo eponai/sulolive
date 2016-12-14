@@ -5,14 +5,14 @@
     [taoensso.timbre :refer [debug error warn]]))
 
 ;; Element helper functions
-(defn- photo* [{:keys [url formats]} & content]
+(defn- photo* [{:keys [url classes]} & content]
   (apply dom/div
-         #js {:className (css/keys->class (conj formats ::css/photo))
+         #js {:className (css/keys->class (conj classes ::css/photo))
               #?@(:cljs [:style #js {:backgroundImage (str "url(" url ")")}])}
          content))
 
-(defn- photo-container [{:keys [formats]} & content]
-  (dom/div #js {:className (css/keys->class (conj formats ::css/photo-container))}
+(defn- photo-container [{:keys [classes]} & content]
+  (dom/div #js {:className (css/keys->class (conj classes ::css/photo-container))}
     content))
 
 ;; Functiosn for creating elements in the UI
@@ -25,34 +25,34 @@
   (photo-container
     nil
     (photo* {:url url
-             :formats [::css/photo-square]})))
+             :classes [::css/photo-square]})))
 
 (defn thumbail [url]
   (photo-container
     nil
     (photo* {:url     url
-             :formats [::css/photo-square ::css/photo-thumbnail]})))
+             :classes [::css/photo-square ::css/photo-thumbnail]})))
 
 (defn header [url]
   (photo* {:url url
-           :formats [::css/photo-header]}))
+           :classes [::css/photo-header]}))
 
 (defn cover [url & content]
   (when-not (string? url) (error "Invalid photo URL type. Cover expects URL string as first argument. Got URL: " url))
   (photo-container
     nil
     (apply photo* {:url url
-                   :formats [::css/photo-cover]}
+                   :classes [::css/photo-cover]}
            content)))
 
 (defn collage [urls]
   (when-not (every? string? urls) (error "Invalid photo URL type. Collage expects collection of URL strings. Got URLs: " urls))
   (apply photo-container
-         {:formats [:css.photo/collage]}
+         {:classes [:css.photo/collage]}
          (mapcat
            (fn [[large mini-1 mini-2]]
              [(photo* {:url     large
-                       :formats [::css/photo-square]})
+                       :classes [::css/photo-square]})
               (photo-container nil
                                (photo* {:url mini-1})
                                (photo* {:url mini-2}))])

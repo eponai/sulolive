@@ -1,36 +1,38 @@
 (ns eponai.common.ui.navbar
   (:require
     [eponai.common.ui.utils :as ui-utils]
+    [eponai.common.ui.elements.css :as css]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.photo :as photo]
-    [taoensso.timbre :refer [debug error]]))
+    [taoensso.timbre :refer [debug error]]
+    [eponai.common.ui.elements.menu :as menu]))
 
 (defn cart-dropdown [{:keys [cart/items cart/price]}]
   (dom/div #js {:className "cart-container dropdown-pane"}
-    (dom/div nil
-      (apply dom/ul #js {:className "cart menu vertical"}
-             (map (fn [i]
-                    (dom/li #js {:key (str "cart-" (:db/id i) "-" (rand-int 1000))}
-                            (dom/a #js {:href      (str "/goods/" (:db/id i))}
-                                   (dom/div #js {:className "row collapse align-middle content-item"}
-                                     (dom/div #js {:className "columns small-2"}
-                                            (photo/thumbail (:item/img-src i)))
-                                     (dom/div #js {:className "columns small-10"}
-                                       (dom/div #js {:className "content-item-title-section"}
-                                         (dom/small #js {:className "name"} (:item/name i)))
-                                       (dom/div #js {:className "content-item-subtitle-section"}
-                                         (dom/span #js {:className "price"}
-                                                   (ui-utils/two-decimal-price (:item/price i)))))))))
-                  (take 3 items)))
+    (apply menu/vertical
+           {:classes [::css/cart]}
+           (map (fn [i]
+                  (menu/item-link
+                    {:href (str "/goods/" (:db/id i))}
+                    (dom/div #js {:className "row collapse align-middle content-item"}
+                      (dom/div #js {:className "columns small-2"}
+                        (photo/thumbail (:item/img-src i)))
+                      (dom/div #js {:className "columns small-10"}
+                        (dom/div #js {:className "content-item-title-section"}
+                          (dom/small #js {:className "name"} (:item/name i)))
+                        (dom/div #js {:className "content-item-subtitle-section"}
+                          (dom/span #js {:className "price"}
+                                    (ui-utils/two-decimal-price (:item/price i))))))))
+                (take 3 items)))
 
-      (dom/div #js {:className "callout nude"}
-        (if (< 3 (count items))
-          (dom/small nil (str "You have " (- (count items) 3) " more item(s) in your bag"))
-          (dom/small nil (str "You have " (count items) " item(s) in your bag")))
-        (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price price))))
-      (dom/a #js {:className "button expanded hollow"
-                  :href      "/checkout"} "View My Bag"))))
+    (dom/div #js {:className "callout nude"}
+      (if (< 3 (count items))
+        (dom/small nil (str "You have " (- (count items) 3) " more item(s) in your bag"))
+        (dom/small nil (str "You have " (count items) " item(s) in your bag")))
+      (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price price))))
+    (dom/a #js {:className "button expanded hollow"
+                :href      "/checkout"} "View My Bag")))
 
 (defn user-dropdown [component user]
   (dom/div #js {:className "dropdown-pane"}
@@ -90,64 +92,50 @@
         (dom/nav #js {:className "navbar-container"}
                  (dom/div #js {:className "top-bar navbar"}
                    (dom/div #js {:className "top-bar-left"}
-                     (dom/ul #js {:className "menu"}
-                             (dom/li nil
-                                     (dom/a #js {:id "navbar-brand"
-                                                 :href      "/"}
-                                            "Sulo"))
-                             (dom/li nil
-                                     (dom/a #js {:className "search-icon"}
-                                            (dom/i #js {:className "fa fa-search fa-fw"}))
-                                     (dom/input #js {:type        "text"
-                                                     :placeholder "Search items or stores"
-                                                     :onKeyDown   (fn [e]
-                                                                    #?(:cljs
-                                                                       (when (= 13 (.. e -keyCode))
-                                                                         (let [search-string (.. e -target -value)]
-                                                                           (set! js/window.location (str "/goods?search=" search-string))))))}))
-                             ;(dom/li nil (dom/a #js {:className "top-nav-link"} (dom/strong nil "Stores")))
-                             (dom/li nil (dom/a #js {:href "/streams"
-                                                     :className "top-nav-link warning "}
-                                                (dom/strong nil "Live")
-                                                (dom/i #js {:className "fa fa-video-camera fa-fw"})))))
+                     (menu/horizontal
+                       nil
+                       (menu/item-link {:href "/"}
+                                       "Sulo")
+                       (menu/item nil
+                                  (dom/a #js {:className "search-icon"}
+                                         (dom/i #js {:className "fa fa-search fa-fw"}))
+                                  (dom/input #js {:type        "text"
+                                                  :placeholder "Search items or stores"
+                                                  :onKeyDown   (fn [e]
+                                                                 #?(:cljs
+                                                                    (when (= 13 (.. e -keyCode))
+                                                                      (let [search-string (.. e -target -value)]
+                                                                        (set! js/window.location (str "/goods?search=" search-string))))))}))
+                       (menu/item-link {:href "/streams"}
+                                       (dom/strong nil "Live")
+                                       (dom/i #js {:className "fa fa-video-camera fa-fw"}))))
 
                    (dom/div #js {:className "top-bar-right"}
-                     (dom/ul #js {:className "menu"}
-                             (if (some? (not-empty auth))
-                               (dom/li #js {:className "user-profile menu-dropdown"}
-                                       #?(:cljs
-                                          (dom/a nil "You")
-                                          :clj (dom/a nil))
-                                       (user-dropdown this cart))
-                               (dom/li nil
-                                       #?(:cljs
-                                          (dom/a #js {:className "button hollow nude"
-                                                      :onClick   #(do
-                                                                   #?(:cljs
-                                                                      (.open-signin this)))} "Sign in")
-                                          :clj (dom/a nil))))
-                             (dom/li #js {:className "menu-dropdown"}
-                                     (dom/a #js {:id "shopping-icon"
-                                                 :href "/checkout"
-                                                 ;:onClick #(om/update-state! this update :cart-open? not)
-                                                 }
-                                            (dom/span #js {:className "cart-price"} (ui-utils/two-decimal-price (:cart/price cart)))
-                                            (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))
-                                     (cart-dropdown cart)))
-
-                     ;(when cart-open?)
-                     )))
+                     (menu/horizontal
+                       nil
+                       (if (some? (not-empty auth))
+                         (menu/item-link nil #?(:cljs
+                                                (dom/a nil "You")
+                                           :clj (dom/a nil)))
+                         (menu/item nil
+                                    #?(:cljs
+                                            (dom/a #js {:className "button hollow nude"
+                                                        :onClick   #(do
+                                                                     #?(:cljs
+                                                                        (.open-signin this)))} "Sign in")
+                                       :clj (dom/a nil))))
+                       (menu/item-dropdown
+                         {:dropdown (cart-dropdown cart)}
+                         (dom/span #js {:className "cart-price"} (ui-utils/two-decimal-price (:cart/price cart)))
+                         (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))))))
         (dom/div #js {:className "navbar-container subnav-container"}
           (dom/div #js {:className "subnav navbar top-bar"}
             (dom/div #js {:className "top-bar-left"}
-              (dom/ul #js {:className "menu"}
-                      (dom/li nil (dom/a #js {:href "/goods?category=clothing"} "Clothing"))
-                      (dom/li nil (dom/a #js {:href "/goods?category=accessories"} "Accessories"))
-                      (dom/li nil (dom/a #js {:href "/goods?category=home"} "Home"))))))
-        ;(when signin-open?
-        ;  (ui-utils/modal {:size   "tiny"
-        ;                 :on-close #(om/update-state! this assoc :signin-open? false)} (dom/div #js {:id "modal"})))
-        ))))
+              (menu/horizontal
+                nil
+                (menu/item-link {:href "/goods?category=clothing"} "Clothing")
+                (menu/item-link {:href "/goods?category=accessories"} "Accessories")
+                (menu/item-link {:href "/goods?category=home"} "Home")))))))))
 
 (def ->Navbar (om/factory Navbar))
 

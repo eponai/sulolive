@@ -20,13 +20,22 @@
   {::menu          "menu"
    ::menu-vertical "vertical"
    ::menu-active   "active"
-   ::menu-text     "menu-text"})
+   ::menu-text     "menu-text"
+   ::menu-dropdown "menu-dropdown"})
+
+(def cart-styles
+  {::cart "cart"})
+
+(def store-styles
+  {::store-main-menu "store-main-menu"})
 
 (defn all-styles []
   (merge
     global-styles
     photo-styles
-    menu-styles))
+    menu-styles
+    cart-styles
+    store-styles))
 
 (defn keys->class
   "Convert keywords to string of classnames to use for :className in element options.
@@ -37,6 +46,6 @@
         style-set (set styles)]
     (when-not (every? #(some? (get all %)) style-set)
       (let [unexpected (filter #(nil? (get all %)) style-set)]
-        (warn "Ignoring unexpected CSS class keys " unexpected ". Available keys: " all)))
+        (warn "Ignoring unexpected CSS class keys " unexpected ". Available keys: " (keys all))))
 
     (s/join " " (map #(get all %) style-set))))

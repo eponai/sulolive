@@ -2,6 +2,7 @@
   (:require
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.product-item :as pi]
+    [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.product :as item]
     [eponai.common.ui.stream :as stream]
@@ -57,9 +58,9 @@
                   (common/rating-element rating review-count)))
 
               (menu/vertical
-                nil
-                (menu/link nil "About")
-                (menu/link nil "Policies")))
+                {:classes [::css/store-main-menu]}
+                (menu/item-link nil "About")
+                (menu/item-link nil "Policies")))
 
             (dom/div #js {:className (str "large-8" (when (some? stream) " has-stream"))}
               (when (some? stream)
@@ -83,9 +84,9 @@
             (dom/div #js {:className "row column"}
               (menu/horizontal
                 nil
-                (menu/link nil "Sheets")
-                (menu/link nil "Pillows")
-                (menu/link nil "Duvets"))))
+                (menu/item-link nil "Sheets")
+                (menu/item-link nil "Pillows")
+                (menu/item-link nil "Duvets"))))
 
           (dom/div #js {:className "items"}
             (apply dom/div #js {:className "content-items-container row small-up-2 medium-up-3 large-up-4"}

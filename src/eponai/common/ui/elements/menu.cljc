@@ -4,41 +4,95 @@
     [om.dom :as dom]))
 
 ;; Menu elements
-(defn- menu* [{:keys [formats]} & content]
-  (apply dom/ul #js {:className (css/keys->class (conj formats ::css/menu))}
+(defn- menu*
+  "Custom menu element with provided content. For the provided content it's
+  recommended to use any if the item- functions to generate compatible elements.
+  Opts
+  :classes - class keys to apply to this menu element.
+
+  See css.cljc for available class keys."
+  [{:keys [classes]} & content]
+  (apply dom/ul #js {:className (css/keys->class (conj classes ::css/menu))}
          content))
 
-(defn horizontal [{:keys [formats]} & content]
+(defn horizontal
+  "Menu in horizontal layout.
+
+  See menu* for general opts and recommended content."
+  [{:keys [classes]} & content]
   (apply menu*
-         {:formats formats}
+         {:classes classes}
          content))
 
-(defn vertical [{:keys [formats]} & content]
+(defn vertical
+  "Menu in vertical layout.
+  See menu* for general opts and recommended content."
+  [{:keys [classes]} & content]
   (apply menu*
-         {:formats (conj formats ::css/menu-vertical)}
+         {:classes (conj classes ::css/menu-vertical)}
          content))
 
 ;; Menu list item elements
-(defn- item* [{:keys [formats]} & content]
+(defn- item* [{:keys [classes]} & content]
   (apply
-    dom/li #js {:className (css/keys->class formats)}
+    dom/li #js {:className (css/keys->class classes)}
     content))
 
-(defn tab [{:keys [active? on-click]} & content]
+(defn item
+  "Custom menu item containing the provided content.
+
+  Opts
+  :classes - what class keys should be added to this item.
+
+  See css.cljc for available class keys."
+  [opts & content]
+  (apply item* opts content))
+
+(defn item-tab
+  "Menu item representing a tab in some sort of stateful situation.
+
+  Opts
+  :active? - Whether this tab is in an active state.
+  :on-click - Function called when item is clicked, this can be used to update any state.
+
+  See item for general opts."
+  [{:keys [classes active? on-click]} & content]
   (item*
-    {:formats (when active? [::css/menu-active])}
+    {:classes (cond-> classes
+                      active?
+                      (conj ::css/menu-active))}
     (apply dom/a
            #js {:onClick on-click}
            content)))
 
-(defn link [{:keys [href]} & content]
+(defn item-link
+  "Menu item containing an anchor link.
+
+  Opts
+  :href - href for the containng anchor
+
+  See item for general opts."
+  [{:keys [classes href]} & content]
   (item*
-    nil
+    {:classes classes}
     (apply dom/a
            #js {:href href}
            content)))
 
-(defn text [opts & content]
+(defn item-dropdown
+  "Menu item containg a link that opens a dropdown.
+  Accepts a :dropdown key in opts containing the actual dropdown content element."
+  [{:keys [dropdown href classes]} & content]
+  (item*
+    {:classes (conj classes ::css/menu-dropdown)}
+    (apply dom/a #js {:href href} content)
+    dropdown))
+
+(defn item-text
+  "Menu item element containing text only.
+
+  See item for general opts."
+  [{:keys [classes]} & content]
   (apply item*
-         {:formats [::css/menu-text]}
+         {:classes (conj classes ::css/menu-text)}
          content))

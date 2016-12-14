@@ -78,15 +78,15 @@
           (dom/div #js {:className "row column product-details-container"}
             (menu/horizontal
               nil
-              (menu/tab {:active? (= selected-tab :details)
-                         :on-click #(om/update-state! this assoc :selected-tab :details)}
-                        "Details")
-              (menu/tab {:active? (= selected-tab :shipping)
-                         :on-click #(om/update-state! this assoc :selected-tab :shipping)}
-                        "Shipping")
-              (menu/tab {:active? (= selected-tab :rating)
-                         :on-click #(om/update-state! this assoc :selected-tab :rating)}
-                        (c/rating-element 4 11)))
+              (menu/item-tab {:active?  (= selected-tab :details)
+                              :on-click #(om/update-state! this assoc :selected-tab :details)}
+                             "Details")
+              (menu/item-tab {:active?  (= selected-tab :shipping)
+                              :on-click #(om/update-state! this assoc :selected-tab :shipping)}
+                             "Shipping")
+              (menu/item-tab {:active?  (= selected-tab :rating)
+                              :on-click #(om/update-state! this assoc :selected-tab :rating)}
+                             (c/rating-element 4 11)))
             (cond (= selected-tab :rating)
                   (dom/div #js {:className "product-reviews"}
                     (reviews-list [{:review/rating 4}
