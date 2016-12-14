@@ -9,7 +9,8 @@
     [om.dom :as dom]
     [om.next :as om #?(:clj :refer :cljs :refer-macros) [defui]]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.ui.elements.photo :as photo]))
+    [eponai.common.ui.elements.photo :as photo]
+    [eponai.common.ui.elements.menu :as menu]))
 
 (defui Store
   static om/IQueryParams
@@ -55,10 +56,10 @@
                   (dom/h1 #js {:className "store-name"} store-name)
                   (common/rating-element rating review-count)))
 
-              ;#?(:cljs)
-              (dom/ul #js {:className (str "menu store-main-menu")}
-                      (dom/li nil (dom/a nil "About"))
-                      (dom/li nil (dom/a nil "Policies"))))
+              (menu/vertical
+                nil
+                (menu/link nil "About")
+                (menu/link nil "Policies")))
 
             (dom/div #js {:className (str "large-8" (when (some? stream) " has-stream"))}
               (when (some? stream)
@@ -80,16 +81,17 @@
 
           (dom/div #js {:className "store-nav"}
             (dom/div #js {:className "row column"}
-              (dom/ul #js {:className "menu"}
-                      (dom/li nil (dom/a nil "Sheets"))
-                      (dom/li nil (dom/a nil "Pillows"))
-                      (dom/li nil (dom/a nil "Duvets ")))))
+              (menu/horizontal
+                nil
+                (menu/link nil "Sheets")
+                (menu/link nil "Pillows")
+                (menu/link nil "Duvets"))))
 
           (dom/div #js {:className "items"}
             (apply dom/div #js {:className "content-items-container row small-up-2 medium-up-3 large-up-4"}
                    (map (fn [p]
-                          (pi/->ProductItem {:product  p
-                                             :on-click #(om/update-state! this assoc :show-item p)}))
+                          (pi/->ProductItem (om/computed {:product p}
+                                                         {:display-content (item/->Product p)})))
                         items)))
 
           ;(when (some? show-item)

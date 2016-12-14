@@ -28,7 +28,7 @@
        (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
 
   (render [this]
-    (let [{:keys [ product]} (om/props this)
+    (let [{:keys [product]} (om/props this)
           {:keys [display-content]} (om/get-computed this)
           {:keys [show-item? breakpoint]} (om/get-state this)
           open-url? #?(:cljs (utils/bp-compare :large breakpoint >) :clj false)

@@ -7,7 +7,8 @@
     [eponai.common.ui.common :as common]
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.navbar :as nav]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.ui.elements.menu :as menu]))
 
 (defn reviews-list [reviews]
   (apply dom/div
@@ -41,7 +42,7 @@
     (let [{:keys [selected-tab]} (om/get-state this)
           {:keys     [item/price item/store item/img-src item/details]
            item-name :item/name :as item} (om/props this)]
-      (debug "Render product: " item)
+
       (dom/div
         #js {:id "sulo-product"}
 
@@ -75,17 +76,17 @@
 
 
           (dom/div #js {:className "row column product-details-container"}
-            (dom/ul #js {:className "product-details-menu menu"}
-                    (dom/li
-                      #js {:className (when (= selected-tab :details) "active")}
-                      (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :details)}
-                             "Details"))
-                    (dom/li #js {:className (when (= selected-tab :shipping) "active")}
-                            (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :shipping)}
-                                   "Shipping"))
-                    (dom/li #js {:className (when (= selected-tab :rating) "active")}
-                            (dom/a #js {:onClick #(om/update-state! this assoc :selected-tab :rating)} (c/rating-element 4 11))))
-
+            (menu/horizontal
+              nil
+              (menu/tab {:active? (= selected-tab :details)
+                         :on-click #(om/update-state! this assoc :selected-tab :details)}
+                        "Details")
+              (menu/tab {:active? (= selected-tab :shipping)
+                         :on-click #(om/update-state! this assoc :selected-tab :shipping)}
+                        "Shipping")
+              (menu/tab {:active? (= selected-tab :rating)
+                         :on-click #(om/update-state! this assoc :selected-tab :rating)}
+                        (c/rating-element 4 11)))
             (cond (= selected-tab :rating)
                   (dom/div #js {:className "product-reviews"}
                     (reviews-list [{:review/rating 4}

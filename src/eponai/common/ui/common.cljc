@@ -1,10 +1,12 @@
 (ns eponai.common.ui.common
   (:require
     [eponai.common.ui.utils :as ui-utils]
+    [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.navbar :as nav]
     [om.dom :as dom]
-    [om.next :as om :refer [defui]]))
+    [om.next :as om :refer [defui]]
+    [eponai.common.ui.elements.menu :as menu]))
 
 (defn modal [opts & content]
   (let [{:keys [on-close size]} opts]
@@ -74,17 +76,30 @@
 (defn footer [opts]
   (dom/div #js {:className "footer"}
     (dom/footer #js {:className "clearfix"}
-                (dom/ul #js {:className "menu float-left"}
-                        (dom/li #js {:className "menu-text"} (dom/small nil "Say hi anytime"))
-                        (dom/li nil (dom/a nil (dom/i #js {:className "fa fa-instagram fa-fw"})))
-                        (dom/li nil (dom/a nil (dom/i #js {:className "fa fa-twitter fa-fw"})))
-                        (dom/li nil (dom/a nil (dom/i #js {:className "fa fa-facebook fa-fw"})))
-                        (dom/li nil (dom/a nil (dom/i #js {:className "fa fa-envelope-o fa-fw"}))))
+                (menu/horizontal
+                  {:formats [::css/global-float-left]}
+                  (menu/text nil (dom/small nil "Say hi anytime"))
+                  (menu/link nil (dom/i #js {:className "fa fa-instagram fa-fw"}))
+                  (menu/link nil (dom/i #js {:className "fa fa-twitter fa-fw"}))
+                  (menu/link nil (dom/i #js {:className "fa fa-facebook fa-fw"}))
+                  (menu/link nil (dom/i #js {:className "fa fa-envelope-o fa-fw"})))
+                (menu/horizontal
+                  {:formats [::css/global-float-right]}
+                  (menu/link nil (dom/small nil "Privacy Policy"))
+                  (menu/link nil (dom/small nil "Terms & Conditions"))
+                  (menu/text nil (dom/small nil "© Sulo 2016")))
+                ;(dom/ul #js {:className "menu float-left"}
+                ;        (dom/li #js {:className "menu-text"} (dom/small nil "Say hi anytime"))
+                ;        (dom/li nil (dom/a nil (dom/i #js {:className "fa fa-instagram fa-fw"})))
+                ;        (dom/li nil (dom/a nil (dom/i #js {:className "fa fa-twitter fa-fw"})))
+                ;        (dom/li nil (dom/a nil (dom/i #js {:className "fa fa-facebook fa-fw"})))
+                ;        (dom/li nil (dom/a nil (dom/i #js {:className "fa fa-envelope-o fa-fw"}))))
 
-                (dom/ul #js {:className "menu float-right"}
-                        (dom/li nil (dom/a nil (dom/small nil "Privacy Policy")))
-                        (dom/li nil (dom/a nil (dom/small nil "Terms & Conditions")))
-                        (dom/li #js {:className "menu-text"} (dom/small nil "© Sulo 2016"))))))
+                ;(dom/ul #js {:className "menu float-right"}
+                ;        (dom/li nil (dom/a nil (dom/small nil "Privacy Policy")))
+                ;        (dom/li nil (dom/a nil (dom/small nil "Terms & Conditions")))
+                ;        (dom/li #js {:className "menu-text"} (dom/small nil "© Sulo 2016")))
+                )))
 
 (defn page-container [props content]
   (dom/div #js {:className "page-container"}
