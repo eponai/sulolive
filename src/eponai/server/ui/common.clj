@@ -124,25 +124,3 @@
 (defn auth0-lock-passwordless [release?]
   (dom/script {:src (if release? "https://cdn.auth0.com/js/lock-passwordless-2.2.min.js"
                                  "/bower_components/auth0-lock-passwordless/build/lock-passwordless.min.js")}))
-
-(defprotocol IJSContainer
-  (container [this] "Return the id of the container for javascript."))
-
-;(defui PageContainer
-;  static om/IQuery
-;  (query [_]
-;    [{:proxy/navbar (om/get-query nav/Navbar)}])
-;  Object
-;  (render [this]
-;    (let [{:keys [proxy/navbar]} (om/props this)
-;          {:keys [content]} (om/get-computed this)]
-;      (dom/div {:className "page-container"}
-;        (nav/navbar navbar)
-;        content
-;        (footer nil)))))
-
-;(def ->PageContainer (om/factory PageContainer))
-
-;(defn get-jscontainer [component]
-;  (when #?(:clj  (extends? IJSContainer class)
-;           :cljs (implements? IJSContainer component))))
