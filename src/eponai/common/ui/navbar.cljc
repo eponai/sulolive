@@ -93,7 +93,7 @@
                    (dom/div #js {:className "top-bar-left"}
                      (dom/ul #js {:className "menu"}
                              (dom/li nil
-                                     (dom/a #js {:className "navbar-brand"
+                                     (dom/a #js {:id "navbar-brand"
                                                  :href      "/"}
                                             "Sulo"))
                              (dom/li nil
@@ -128,10 +128,11 @@
                                                                       (.open-signin this)))} "Sign in")
                                           :clj (dom/a nil))))
                              (dom/li #js {:className "menu-dropdown"}
-                                     (dom/a #js {:href "/checkout"
+                                     (dom/a #js {:id "shopping-icon"
+                                                 :href "/checkout"
                                                  ;:onClick #(om/update-state! this update :cart-open? not)
                                                  }
-                                            (dom/span nil (ui-utils/two-decimal-price (:cart/price cart)))
+                                            (dom/span #js {:className "cart-price"} (ui-utils/two-decimal-price (:cart/price cart)))
                                             (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))
                                      (cart-dropdown cart)))
 

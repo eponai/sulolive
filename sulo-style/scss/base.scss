@@ -17,7 +17,10 @@ html, body {
 }
 
 .dropdown-pane {
-	visibility: visible;
+	visibility: hidden !important;
+	@include breakpoint(medium) {
+		visibility: visible;
+	}
 	right: 0;
 	box-shadow: 1px 1px 3px 0 rgba($black, 0.5);
 }
@@ -44,7 +47,7 @@ a {
 }
 
 .page-content {
-	padding-bottom: $footer-height-small;
+	padding-bottom: $footer-height-small + 2rem;
 	// padding-top: $navbar-height;
 	@include breakpoint(medium) {
 		padding-bottom: $footer-height;

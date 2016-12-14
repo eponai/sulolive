@@ -18,7 +18,7 @@
 
 (defn photo [{:keys [url class]} & content]
   (apply dom/div #js {:className (str "photo " class) :style #js {:backgroundImage #?(:cljs (str "url(" url ")")
-                                                                                :clj "")}}
+                                                                                      :clj  "")}}
          content))
 
 (defn photo-header []

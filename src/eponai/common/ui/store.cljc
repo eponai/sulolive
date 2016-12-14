@@ -64,8 +64,10 @@
                                   (dom/div #js {:className "stream-container content-item"}
                                     (stream/->Stream (:proxy/stream props))
                                     (dom/div #js {:className "content-item-title-section"}
-                                      (dom/h2 #js {:className "stream-title"} (:stream/name stream))
-                                      (common/viewer-element (:stream/viewer-count stream))))))
+                                      (dom/h5 #js {:className "stream-title"} (:stream/name stream))
+                                      (dom/div #js {:className "viewers-container"}
+                                        (dom/i #js {:className "fa fa-eye fa-fw"})
+                                        (dom/h5 nil (str (:stream/viewer-count stream))))))))
 
                               (dom/div #js {:className "medium-2 stream-chat-container"}
                                 (dom/div #js {:className "stream-chat-content"}
