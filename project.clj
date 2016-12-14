@@ -22,7 +22,6 @@
                  [com.draines/postal "2.0.1"]
                  [com.stripe/stripe-java "3.2.0"]
                  [com.taoensso/timbre "4.7.4"]
-                 [org.clojure/data.xml "0.0.8"]
                  [environ "1.0.1"]
                  [hiccup "1.0.5"]
                  [org.clojure/clojure "1.9.0-alpha14"]
@@ -54,17 +53,11 @@
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
-                 [com.google.guava/guava "19.0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-alpha2"]
                  [garden "1.3.2"]
                  [datascript "0.15.4"]
-                 [sablono "0.7.4"]
-                 [cljsjs/d3 "4.2.2-0"]
-                 [cljsjs/pikaday "1.4.0-1"]
-                 [cljsjs/moment "2.10.6-4"]
-                 [cljsjs/react-grid-layout "0.10.8-0"]
                  [cljsjs/stripe "2.0-0"]
                  [cljsjs/facebook "v20150729-0"]
                  [bidi "2.0.10"]
@@ -72,7 +65,6 @@
                  [binaryage/devtools "0.8.1"]
                  [org.clojure/tools.nrepl "0.2.11"
                   :exclusions [org.clojure/clojure]]
-                 [cljsjs/react-select "1.0.0-rc.1"]
 
                  ;; React-native
                  [natal-shell "0.3.0"]

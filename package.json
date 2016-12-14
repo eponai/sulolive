@@ -7,7 +7,6 @@
     "postinstall": "node ./node_modules/react-native/local-cli/cli.js link"
   },
   "dependencies": {
-    "pikaday": "1.4.0",
     "react": "15.3.1",
     "react-native": "^0.36.1",
     "react-native-fbsdk": "^0.3.0"
