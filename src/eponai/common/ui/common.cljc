@@ -88,8 +88,8 @@
     (dom/div #js {:className "column content-item product-item"}
       (dom/a #js {:onClick   on-click
                   :href      goods-href}
-             (dom/div #js {:className "photo-container"}
-               (dom/div #js {:className "photo square" :style #js {:backgroundImage (str "url(" (:item/img-src product) ")")}})))
+             (photo-element {:url (:item/img-src product)
+                             :class "square"}))
       (dom/div #js {:className "content-item-title-section"}
         (dom/a #js {:onClick on-click
                     :href    goods-href}

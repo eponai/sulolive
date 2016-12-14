@@ -61,7 +61,7 @@ $font-color-light: $body-background;
 			background-repeat: no-repeat;
 			background-size: cover;
 			background-position: center right;
-			opacity: 0.3;
+			opacity: 0.5;
 			@include breakpoint(medium) {
 				width: 100%;
 				left: 25%;

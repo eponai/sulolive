@@ -17,7 +17,7 @@ html, body {
 }
 
 .dropdown-pane {
-	visibility: hidden !important;
+	visibility: hidden;
 	@include breakpoint(medium) {
 		visibility: visible;
 	}
