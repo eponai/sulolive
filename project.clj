@@ -12,8 +12,6 @@
                  [compojure "1.5.1"]
                  [aprint "0.1.3"]
                  [buddy/buddy-auth "1.3.0"]
-                 ;[com.cemerick/friend "0.2.3"
-                 ; :exclusions [org.clojure/core.cache]]
                  [com.cemerick/url "0.1.1"]
                  [com.datomic/datomic-pro "0.9.5544"
                   :exclusions [joda-time]]
@@ -45,7 +43,7 @@
                  [ring/ring-anti-forgery "1.0.1"]
                  [ring-transit "0.1.6"]
                  [prone "1.1.4"]
-		 [medley "0.8.3"]
+                 [medley "0.8.3"]
 
                  ;; CLJS
                  [com.cognitect/transit-cljs "0.8.239"]
@@ -60,7 +58,6 @@
                  [garden "1.3.2"]
                  [datascript "0.15.4"]
                  [cljsjs/stripe "2.0-0"]
-                 [cljsjs/facebook "v20150729-0"]
                  [bidi "2.0.10"]
                  [kibu/pushy "0.3.6"]
                  [binaryage/devtools "0.8.1"]
