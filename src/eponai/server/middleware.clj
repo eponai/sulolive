@@ -126,6 +126,6 @@
   (fn [request]
     (let [path (subs (ring.request/path-info request) 1)
           [p & ps] (str/split path #"/")]
-      (if (= p "node_modules")
+      (if (contains? #{"bower_components" "node_modules"} p)
         (ring.response/resource-response (str/join "/" ps))
         (handler request)))))

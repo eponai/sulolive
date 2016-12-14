@@ -30,9 +30,9 @@
             )
 
           (common/red5pro-script-tags release?)
+          (common/auth0-lock-passwordless release?)
           (dom/script {:src  (common/budget-js-path release?)
                        :type common/text-javascript})
           ;(dom/script {:src "https://cdn.auth0.com/js/lock/10.6/lock.min.js"})
-          (dom/script {:src "https://cdn.auth0.com/js/lock-passwordless-2.2.min.js"})
 
           (common/inline-javascript ["env.web.main.runstore()"]))))))

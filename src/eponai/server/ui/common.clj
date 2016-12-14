@@ -115,11 +115,15 @@
 
 (defn red5pro-script-tags [release?]
   [(dom/script {:src (if release? "https://webrtc.github.io/adapter/adapter-latest.js"
-                                  "/node_modules/webrtc-adapter/out/adapter.js")})
+                                  "/bower_components/webrtc-adapter/release/adapter.js")})
    (dom/script {:src "/lib/videojs/video.min.js"})
    (dom/script {:src "/lib/videojs/videojs-media-sources.min.js"})
    (dom/script {:src "/lib/videojs/videojs.hls.min.js"})
    (dom/script {:src "/lib/red5pro/red5pro-sdk.min.js"})])
+
+(defn auth0-lock-passwordless [release?]
+  (dom/script {:src (if release? "https://cdn.auth0.com/js/lock-passwordless-2.2.min.js"
+                                 "/bower_components/auth0-lock-passwordless/build/lock-passwordless.min.js")}))
 
 (defprotocol IJSContainer
   (container [this] "Return the id of the container for javascript."))

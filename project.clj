@@ -86,7 +86,7 @@
   :jvm-opts ^:replace ["-Xms512m" "-Xmx2048m" "-server"
                        "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1"
                       ]
-  :resource-paths ["resources" "node_modules"]
+  :resource-paths ["resources" "node_modules" "bower_components"]
   :plugins [
            ;; [lein-npm "0.6.1"]
             [lein-shell "0.5.0"]
@@ -113,7 +113,9 @@
                                       ["pod-deps"]
                                       ["npm-deps"]
                                       ["css"]]
-            "npm-deps"               ["shell" "npm" "install"]
+            "npm-deps"               ["do"
+                                       ["shell" "npm" "install"]
+                                       ["shell" "bower" "install"]]
             "pod-deps"               ["shell" "pod" "install" "--project-directory=./ios"]
             "css"                    ["shell" "./scripts/compile-css.sh"]
             "css-watch"              ["shell" "./scripts/compile-css.sh" "watch"]

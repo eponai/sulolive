@@ -23,7 +23,7 @@
           (dom/div
             {:id "sulo-checkout" :className "sulo-page"}
             (checkout/->Checkout cart))
-          (dom/script {:src "https://cdn.auth0.com/js/lock-passwordless-2.2.min.js"})
+          (common/auth0-lock-passwordless release?)
           (dom/script {:src  (common/budget-js-path release?)
                        :type common/text-javascript})
 

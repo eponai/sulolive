@@ -37,10 +37,11 @@
           ;(dom/script {:src "/lib/videojs/videojs-media-sources.min.js"})
           ;(dom/script {:src "/lib/videojs/videojs.hls.min.js"})
           ;(dom/script {:src "/lib/red5pro/red5pro-sdk.min.js"})
+          (common/auth0-lock-passwordless release?)
           (dom/script {:src  (common/budget-js-path release?)
                        :type common/text-javascript})
 
-          (dom/script {:src "https://cdn.auth0.com/js/lock-passwordless-2.2.min.js"})
+
           (common/inline-javascript ["env.web.main.runproduct()"])
           )))))
 
