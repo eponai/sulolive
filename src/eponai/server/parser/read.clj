@@ -24,15 +24,25 @@
   {:value (-> (query/schema db db-history)
               (eponai.datascript/schema-datomic->datascript))})
 
-(defmethod server-read :query/cart
-  [{:keys [db db-history query params auth]} _ _]
+(defn read-cart-items [{:keys [db query]} items]
+  (let [pattern [:db/id :item/price :item/img-src :item/name {:item/store [:db/id :store/name :store/rating :store/review-count :store/photo]}]]
+    (debug "Signout cart: " (db/pull-many db pattern items))
+    (db/pull-many db pattern items)))
+
+(defn read-user-cart [{:keys [db db-history query]}]
   (let [cart (query/one db db-history query {:where '[[?e :cart/items]]})]
-    (debug "Read query/cart: " auth)
-    {:value (when (auth/is-logged-in? auth)
-              (cond-> cart
-                      (nil? db-history)
-                      (-> (update :cart/items #(seq (map (comp (partial d/entity db) :db/id) %)))
-                          (common.read/compute-cart-price))))}))
+    (cond-> cart
+            (nil? db-history)
+            (-> (update :cart/items #(seq (map (comp (partial d/entity db) :db/id) %)))
+                (common.read/compute-cart-price)))))
+
+(defmethod server-read :query/cart
+  [{:keys [db db-history query params auth] :as env} _ {:keys [items]}]
+  {:value (cond
+            (auth/is-logged-in? auth)
+            (read-user-cart env)
+            (not-empty items)
+            (read-cart-items env items))})
 
 (defn- env-params->store-id [env params]
   (or (get-in env [:params :store-id])

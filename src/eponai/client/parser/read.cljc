@@ -3,6 +3,7 @@
     [eponai.common.parser :as parser :refer [client-read]]
     [eponai.common.parser.read :as common.read]
     [eponai.common.database :as db]
+    [om.next.impl.parser :as om.parser]
     [eponai.common :as c]
     #?(:cljs
        [cljs.reader])
@@ -22,22 +23,38 @@
 
 (defmethod client-read :query/store
   [{:keys [db query target]} _ {:keys [store-id]}]
-  (let [store (db/pull-one-with db query {:where '[[?e]]
+  (let [store (db/pull-one-with db query {:where   '[[?e]]
                                           :symbols {'?e (c/parse-long store-id)}})]
     (if target
       {:remote true}
       {:value (common.read/multiply-store-items store)})))
 
+(defn local-cart []
+  #?(:cljs
+    (when-let [stored (.getItem js/localStorage "cart")]
+      (cljs.reader/read-string stored))))
+
+(defn read-local-cart [db cart]
+  (debug "Read cart: " cart)
+  (debug "Has items: " (db/pull-many db '[*] (:cart/items cart)))
+  (-> (or cart {:cart/items []})
+      (update :cart/items #(db/pull-many db [:db/id :item/price :item/img-src :item/name {:item/store [:store/photo :store/name :store/rating :store/review-count]}] %))
+      (common.read/compute-cart-price)))
+
 (defmethod client-read :query/cart
-  [{:keys [db query target]} _ _]
-  ;(debug "REad wuery/cart: " (auth/logged-in-user))
-  (if target
-    {:remote/user (auth/is-logged-in?)}
-    {:value (let [cart (if (auth/is-logged-in?)
-                         (db/pull-one-with db query {:where '[[?e :cart/items]]})
-                         (db/pull-one-with db query {:where '[[?e :ui/component :ui.component/cart]]}))]
-              ;(debug "Got cart: " cart " active user: " (auth/logged-in-user))
-              (common.read/compute-cart-price cart))}))
+  [{:keys [db query target ast]} _ _]
+  (let [cart (if (auth/is-logged-in?)
+               (db/pull-one-with db query {:where '[[?e :cart/items]]})
+               (local-cart))]
+    (if target
+      {:remote (if (auth/is-logged-in?)
+                 true
+                 (assoc-in ast [:params :items] (:cart/items cart)))}
+      {:value (do
+                (debug "Got cart: " cart " active user: " (auth/logged-in-user))
+                (if (auth/is-logged-in?)
+                  (common.read/compute-cart-price cart)
+                  (read-local-cart db cart)))})))
 
 (defmethod client-read :query/items
   [{:keys [db query target]} _ {:keys [category search]}]
@@ -72,7 +89,7 @@
   (if target
     {:remote true}
     {:value #?(:cljs (auth/logged-in-user)
-               :clj nil)}))
+               :clj  nil)}))
 
 (defmethod client-read :query/streams
   [{:keys [db query target]} _ _]
@@ -80,16 +97,16 @@
   (if target
     {:remote true}
     {:value (db/pull-all-with db query
-                              {:where   '[[?e :stream/name]]}) }))
+                              {:where '[[?e :stream/name]]})}))
 
 ; ### FEATURED ### ;
 
 (defmethod client-read :query/featured-streams
   [{:keys [db query]} _ _]
   {:remote true
-   :value (->> (db/all-with db {:where '[[?e :stream/featured]]})
-               (db/pull-many db query)
-               (sort-by :db/id))})
+   :value  (->> (db/all-with db {:where '[[?e :stream/featured]]})
+                (db/pull-many db query)
+                (sort-by :db/id))})
 
 (defmethod client-read :query/featured-items
   [{:keys [db query]} _ _]
@@ -105,7 +122,7 @@
   (let [photos-fn (fn [store]
                     (let [s (db/entity db store)
                           [img-1 img-2] (into [] (comp (take 2) (map :item/img-src)) (:item/_store s))]
-                      {:db/id store
+                      {:db/id                  store
                        :store/featured-img-src [img-1 (:store/photo s) img-2]}))]
     {:remote true
      :value  (let [featured-stores (db/all-with db {:where '[[?e :store/featured]]})]

@@ -26,7 +26,7 @@
   Object
   (render [this]
     (let [{:keys [query/items proxy/navbar]} (om/props this)]
-      (debug "Got items to render: " (om/props this))
+      #?(:cljs (debug "Got items to render: " (om/props this)))
       (common/page-container
         {:navbar navbar}
         (dom/div #js {:id "sulo-items-container"}

@@ -4,7 +4,8 @@
     [om.next :as om :refer [defui]]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.utils :as utils]
-    [eponai.common.ui.navbar :as nav]))
+    [eponai.common.ui.navbar :as nav]
+    [taoensso.timbre :refer [debug]]))
 
 (defn items-by-store [items]
   (group-by :item/store items))
@@ -73,6 +74,7 @@
     (let [{:keys [query/cart proxy/navbar]} (om/props this)
           {:keys [cart/items]} cart
           item-count (count items)]
+      (debug "GOT CART: " cart)
       (common/page-container
         {:navbar navbar}
         (dom/div #js {:className "row column checkout-container"}
