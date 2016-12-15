@@ -15,3 +15,8 @@
   (cond-> cart
           (:cart/items cart)
           (assoc :cart/price (transduce (map :item/price) + 0M (:cart/items cart)))))
+
+(defn get-param [env params k]
+  (or (get-in env [:params k])
+      (get-in params [k])))
+
