@@ -74,7 +74,7 @@
               (->> (css/grid-column)
                    (css/grid-column-size {:small 12 :medium 8})
                    (css/grid-column-order {:small 2 :medium 1}))
-              (photo/photo img-src)
+              (photo/photo {:src img-src})
 
               (apply dom/div #js {:className "multi-photos-container"}
                      (map (fn [im]

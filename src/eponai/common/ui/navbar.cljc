@@ -107,9 +107,10 @@
                                                                     (when (= 13 (.. e -keyCode))
                                                                       (let [search-string (.. e -target -value)]
                                                                         (set! js/window.location (str "/goods?search=" search-string))))))}))
-                       (menu/item-link {:href "/streams"}
-                                       (dom/strong nil "Live")
-                                       (dom/i #js {:className "fa fa-video-camera fa-fw"}))))
+                       (menu/item-link
+                         (css/add-class ::css/yellow {:href "/streams"})
+                         (dom/strong nil "Live")
+                         (dom/i #js {:className "fa fa-video-camera fa-fw"}))))
 
                    (dom/div #js {:className "top-bar-right"}
                      (menu/horizontal

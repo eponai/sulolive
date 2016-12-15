@@ -17,10 +17,10 @@
   (apply dom/div (css/add-class ::css/photo-container opts) content))
 
 ;; Functiosn for creating elements in the UI
-(defn photo [url]
+(defn photo [opts]
   (photo-container
     nil
-    (photo* {:url url})))
+    (photo* opts)))
 
 (defn square [opts]
   (photo-container

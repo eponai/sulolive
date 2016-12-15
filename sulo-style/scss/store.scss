@@ -1,33 +1,14 @@
+@mixin list-item($color: $white, $hover-color: darken($color, 10%)) {
+	transition: background .25s ease-in-out;
+	&:hover {
+		background: $hover-color;
+	}
+}
+
 #sulo-store {
 	.navbar, footer {
 		max-width: 100%;
-		// background: $white;
-		a {
-			// color: map-get($foundation-palette, brown);
-			&.top-nav-link {
-				// color: map-get($foundation-palette, primary);
-			}
-			&.button.hollow {
-				// $primary: map-get($foundation-palette, primary);
-    			// @include button-hollow;
-    			// @include button-hollow-style($primary);
-				// @include button-style($primary);
-			}
-		}
 	}
-			.subnav {
-			a {
-				&:hover {
-					background: darken($white, 10%);
-				}
-			}
-		}
-
-	// #sulo-product {
-	// 	.store-container {
-	// 		// display: none;
-	// 	}
-	// }
 
 	.page-content {
 		padding-top: 0;
@@ -54,7 +35,6 @@
 					text-overflow: ellipsis;
 					overflow: hidden;
 					white-space: nowrap;
-					// font-size: 1.4rem;
 					font-weight: bold;
 				}
 				margin: 0 auto 1rem auto;
@@ -62,37 +42,14 @@
 				@include breakpoint(large) {
 					max-width: 75%;
 				}
-				// .content-item-title-section {
-				// 					// background: rgba($white, 0.5);
-				// }
-
-				#sulo-video-container {
-					width: 100%;
-					position: relative;
-					padding-top: 50%;
-					#sulo-video {
-						position: absolute;
-						top: 0;
-						left: 0;
-						width: 100%;
-						height: 100%;
-					}
-				}
 			}
 		}
 	}
 	.store-container {
 		$brown: map-get($foundation-palette, brown);
-		$nude: $white;//map-get($foundation-palette, nude);
 		background: rgba($white, 0.7) !important;
-		// color: $white;
 		box-shadow: 1px 0 2px 0 rgba($black, 0.5);
-		h1, small {
-			// color: $white;
-			text-shadow: 1px 1px 1px rgba($white, 0.7);
-		}
-		i {
-			// color: $nude;
+		h1, small, i {
 			text-shadow: 1px 1px 1px rgba($white, 0.7);
 		}
 		@include breakpoint(large) {
@@ -100,13 +57,13 @@
 		}
 		.store-main-menu {
 			width: 100%;
-			padding-top: 0.5rem;
+			padding: 0.5rem 0;
 			@include breakpoint(large) {
 				padding: 1rem 0;
 				@include menu-direction(vertical);
 			}
 			li {
-				transition: background .25s ease-in-out;
+				@include list-item($hover-color: rgba($brown, 0.05));
 				@include breakpoint(large) {
 					padding-left: 5%;
 					padding-right: 5%;
@@ -116,17 +73,9 @@
 						border-bottom: $border;
 					}
 				}
-				&:hover {
-					background: rgba($brown, 0.05);
-					a {
-						// color: $white;
-					}
-				}
 				a {
-					transition: color .25s ease-in-out;
-					color: rgba(map-get($foundation-palette, brown), 0.5);//$nude;
+					color: rgba($brown, 0.6);
 					font-weight: bold;
-					// text-shadow: 0px 1px 1px rgba($white, 0.5);
 				}
 			}
 		}
@@ -138,7 +87,7 @@
 			padding: 0 10%;
 		}
 		.photo-container {
-			width: 5rem;
+			width: 4rem;
 			margin-right: 1rem;
 
 			@include breakpoint(large) {
@@ -167,7 +116,6 @@
 			input {
 				margin: 0;
 			}
-			// box-shadow: 1px 2px 2px 0 rgba($black, 0.5);
 		}
 	}
 
@@ -175,16 +123,5 @@
 		padding: 0.7rem 0;
 		background: $body-background;
 		box-shadow: 0 1px 3px 1px rgba($black, 0.2);
-		ul {
-			background: transparent;
-		}
-	}
-}
-.store-container {
-	h1 {
-		font-size: 1.6rem;
-	}
-	.user-rating {
-		height: 1.2rem;
 	}
 }

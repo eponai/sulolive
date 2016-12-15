@@ -54,7 +54,7 @@
                 (photo/square
                   {:src photo})
                 (dom/div #js {:className "content-item-title-section"}
-                  (dom/h1 #js {:className "store-name"} store-name)
+                  (dom/h4 #js {:className "store-name"} store-name)
                   (common/rating-element rating review-count)))
 
               (menu/vertical
@@ -62,7 +62,7 @@
                 (menu/item-link nil "About")
                 (menu/item-link nil "Policies")))
 
-            (dom/div #js {:className (str "large-8" (when (some? stream) " has-stream"))}
+            (dom/div #js {:className (str "large-8 small-12" (when (some? stream) " has-stream"))}
               (when (some? stream)
                 (dom/div #js {:className "stream-container content-item"}
                   (stream/->Stream (:proxy/stream props))

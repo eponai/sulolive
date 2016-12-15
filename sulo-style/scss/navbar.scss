@@ -1,13 +1,13 @@
 $navbar-height: rem-calc(56);
 $navbar-background-color: map-get($foundation-palette, brown);
 $navbar-font-color: $white;
+
+$subnav-height: $navbar-height;
 $subnav-background-color: rgba($navbar-background-color, 0.03);//map-get($foundation-palette, nude);
-// $subnav-background-color: lighten($navbar-background-color, 75%);//map-get($foundation-palette, nude);
 $subnav-font-color: rgba(map-get($foundation-palette, brown), 0.5);
 
 #sulo-navbar {
 	background: $white;
-	// box-shadow: 0 1px 5px 1px rgba($black, 0.2);
 	border-bottom: 1px solid rgba($navbar-background-color, 0.15);
 }
 nav {
@@ -21,12 +21,12 @@ nav {
 .navbar-container {
 	background: $navbar-background-color;
 }
+
 .navbar {
 	max-width: 65rem;
 	margin: 0 auto;
-	// color: $white;
 	a:not(.button):not(.top-nav-link) {		
-		color: $white;//map-get($foundation-palette, brown);
+		color: $white;
 	}
 	.cart-price {
 		display: none;
@@ -90,7 +90,7 @@ nav {
 		font-weight: 500;
 		transition: background 0.25s;
 		&:hover {
-			background: darken($subnav-background-color, 10%);
+			background: darken($subnav-background-color, 50%);
 		}
 	}
 }

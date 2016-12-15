@@ -80,7 +80,7 @@
   (render [this]
     (debug "STREAM PROPS:" (om/props this))
     (dom/div #js {:id "sulo-video-container"}
-      (dom/div #js {:id "sulo-video"}
+      (dom/div #js {:id "sulo-video" :className "flex-video widescreen"}
         (dom/video #js {:id "red5pro-subscriber" :controls true :className "video-element video-js vjs-sublime-skin"}
                    ;#?(:cljs
                    ;   (dom/source #js {:src  (str "http://" (.server-url this) ":5080/live/" (url->store-id) ".m3u8")

@@ -39,15 +39,18 @@ html, body {
 $footer-height-small: 8rem;
 $footer-height: 4rem;
 
-@mixin sulo-anchor {
+@mixin sulo-colors {
 	@each $name, $color in $foundation-palette {
 		&.#{$name} {
 			color: $color;
+			a {
+				color: $color;
+			}
 		}
     }
 }
 a {
-	@include sulo-anchor;
+	@include sulo-colors;
 }
 .sulo-page {
 	height: 100vh;
