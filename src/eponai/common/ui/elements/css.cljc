@@ -44,14 +44,15 @@
 (defn keys->classes
   [ks]
   (let [all global-styles
-        ;; To keep order:
+    ;; To keep order:
         style-set (into [] (distinct) ks)]
-    (when-not (every? #(some? (or (get all %)
-                                  (contains? (grid-styles) (name %)))) style-set)
-      (let [unexpected (filter #(nil? (get all %)) style-set)]
-        (warn "Unexpected CSS class keys " unexpected ", using values " (map name unexpected) ".")))
+    (when-not (every? #(or (some? (get all %))
+                           (contains? (grid-styles) %)) style-set)
+      (let [unexpected (filter #(or (nil? (get all %))
+                                    (not (contains? (grid-styles) %))) style-set)]
+        (warn "Unexpected CSS class keys " unexpected ", using values " (map #(when (some? %) (name %)) unexpected) ".")))
 
-    (map #(or (get all %) (name %)) style-set)))
+    (map #(or (get all %) (when (some? %) (name %))) style-set)))
 
 (defn keys->class-str
   "Convert keywords to string of classnames to use for :className in element options.

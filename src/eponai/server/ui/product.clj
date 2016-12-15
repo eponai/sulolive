@@ -20,7 +20,7 @@
         (dom/body
           nil
           (dom/div
-            {:id "sulo-product-page" :class "sulo-page"}
+            {:id "sulo-product-page" :className "sulo-page"}
             (render-component-as-html cljc-product/ProductPage)
             ;(nav/navbar navbar)
 

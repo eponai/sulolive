@@ -11,7 +11,7 @@ nav {
 }
 
 .navbar {
-	max-width: 65rem;
+	max-width: $global-width;
 	margin: 0 auto;
 	a:not(.button) {		
 		color: $white;
@@ -29,14 +29,14 @@ nav {
 
 .subnav-container {
 	background: $subnav-background-color;
+	border-bottom: 1px solid rgba($navbar-background-color, 0.15);
 	.subnav {
-		border-bottom: 1px solid rgba($navbar-background-color, 0.15);
 		li {
 			@include list-item-hover($hover-color: darken($white, 10%));
 			a {
 				color: $subnav-font-color;
 				font-size: 0.9rem;
-				font-weight: 500;
+				font-weight: bold;
 			}
 		}
 	}
@@ -50,11 +50,11 @@ nav {
 }
 #navbar-brand {
 	text-transform: uppercase;
-	font-weight: 500;
+	font-weight: bold;
 	font-size: 0.8rem;
 	padding: 0;
 	@include breakpoint(medium) {
-		font-size: 1.2rem;
+		font-size: 1rem;
 		padding: 0.7rem 1rem;
 	}
 }

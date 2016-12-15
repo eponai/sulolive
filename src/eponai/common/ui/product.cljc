@@ -72,7 +72,7 @@
             (css/grid-row)
             (my-dom/div
               (->> (css/grid-column)
-                   (css/grid-column-size {:small 12 :medium 8})
+                   (css/grid-column-size {:smalls 13 :medium 8})
                    (css/grid-column-order {:small 2 :medium 1}))
               (photo/photo {:src img-src})
 
@@ -87,8 +87,8 @@
                    (css/grid-column-order {:small 1 :medium 2})
                    (css/add-class ::css/product-info-container))
               (dom/div #js {:className "product-info"}
-                (dom/h1 #js {:className "product-info-title"} item-name)
-                (dom/h2 #js {:className "product-info-price"}
+                (dom/h5 #js {:className "product-info-title"} item-name)
+                (dom/h4 #js {:className "product-info-price"}
                         (utils/two-decimal-price price)))
               (dom/div #js {:className "product-action-container clearfix"}
                 (dom/a #js {:onClick   #(om/transact! this `[(shopping-bag/add-item ~{:item (select-keys item [:db/id])})

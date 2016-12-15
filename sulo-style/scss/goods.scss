@@ -1,15 +1,7 @@
-// #sulo-product-page {
-// 	.product-container {
-// 		padding: 1rem;
-// 	}
-// }
 
 .reveal {
 	#sulo-product {
 		padding: 0;
-		// .product-container {
-		// 	box-shadow: none;
-		// }
 	}
 }
 
@@ -19,28 +11,13 @@
 
 #sulo-product {
 	padding: 1rem 0;
-	.store-container {
-		margin-bottom: 1rem;
-		box-shadow: none;
-		.store-name {
-			font-size: 1.5rem;
-		}
-	}
-
 	.product-info-container {
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
 	}
 
-	.product-info-title {
-		font-size: 1.1rem;
-		@include breakpoint(large) {
-			font-size: 1.3rem;
-		}
-	}
-	.product-info-price {
-		font-size: 1.5rem;
+	h4 {
 		font-weight: 500;
 		color: map-get($foundation-palette, primary);
 	}

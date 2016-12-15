@@ -87,13 +87,13 @@ a {
 }
 
 .footer {
-	background: $navbar-background-color;//$header-background-color;
-	color: map-get($foundation-palette, nude);//$body-background;
+	background: $navbar-background-color;
+	color: $navbar-font-color;
 	a {
 		color: $body-background;
 	}
 	footer {
-		max-width: 65rem;
+		max-width: $global-width;
 		margin: auto auto;
 		height: 100%;
 	}
