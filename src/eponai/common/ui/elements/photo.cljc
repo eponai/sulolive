@@ -8,7 +8,7 @@
 (defn- photo* [{:keys [url classes]} & content]
   (apply dom/div
          #js {:className (css/keys->class-str (conj classes ::css/photo))
-              #?@(:cljs [:style #js {:backgroundImage (str "url(" url ")")}])}
+              :style     #js {:backgroundImage (str "url(" url ")")}}
          content))
 
 (defn- photo-container [{:keys [classes]} & content]
@@ -38,7 +38,7 @@
            :classes [::css/photo-header]}))
 
 (defn cover [url & content]
-  (when-not (string? url) (error "Invalid photo URL type. Cover expects URL string as first argument. Got URL: " url))
+  #?(:cljs (when-not (string? url) (error "Invalid photo URL type. Cover expects URL string as first argument. Got URL: " url)))
   (photo-container
     nil
     (apply photo* {:url url
@@ -46,7 +46,7 @@
            content)))
 
 (defn collage [urls]
-  (when-not (every? string? urls) (error "Invalid photo URL type. Collage expects collection of URL strings. Got URLs: " urls))
+  #?(:cljs (when-not (every? string? urls) (error "Invalid photo URL type. Collage expects collection of URL strings. Got URLs: " urls)))
   (apply photo-container
          {:classes [:css/photo-collage]}
          (mapcat
@@ -56,4 +56,4 @@
               (photo-container nil
                                (photo* {:url mini-1})
                                (photo* {:url mini-2}))])
-                 (partition 3 urls))))
+           (partition 3 urls))))

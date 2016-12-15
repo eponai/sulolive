@@ -74,17 +74,18 @@
         (rating-element 4 11)))))
 
 (defn footer [opts]
-  (dom/div #js {:className "footer"}
+  (dom/div #js {:key "footer" :className "footer"}
     (dom/footer #js {:className "clearfix"}
                 (menu/horizontal
-                  {:formats [::css/global-float-left]}
+                  {:key "social" :formats [::css/global-float-left]}
                   (menu/item-text nil (dom/small nil "Say hi anytime"))
                   (menu/item-link nil (dom/i #js {:className "fa fa-instagram fa-fw"}))
                   (menu/item-link nil (dom/i #js {:className "fa fa-twitter fa-fw"}))
                   (menu/item-link nil (dom/i #js {:className "fa fa-facebook fa-fw"}))
                   (menu/item-link nil (dom/i #js {:className "fa fa-envelope-o fa-fw"})))
                 (menu/horizontal
-                  {:formats [::css/global-float-right]}
+                  {:key     "legal"
+                   :formats [::css/global-float-right]}
                   (menu/item-link nil (dom/small nil "Privacy Policy"))
                   (menu/item-link nil (dom/small nil "Terms & Conditions"))
                   (menu/item-text nil (dom/small nil "© Sulo 2016"))))))
@@ -92,6 +93,6 @@
 (defn page-container [props content]
   (dom/div #js {:className "page-container"}
     (nav/navbar (:navbar props))
-    (dom/div #js {:className "page-content"}
+    (dom/div #js {:key "content" :className "page-content"}
       content)
     (footer nil)))

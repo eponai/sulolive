@@ -79,13 +79,14 @@
   ;  (let [{:keys [lock]} (om/get-state this)]
   ;    (.close lock)))
   (componentDidMount [this]
-    #?(:cljs
-       (when js/Auth0LockPasswordless
-         (let [lock (new js/Auth0LockPasswordless "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh" "sulo.auth0.com")]
-           (om/update-state! this assoc :lock lock)))))
+    #?@(:cljs
+        [(when js/Auth0LockPasswordless
+           (let [lock (new js/Auth0LockPasswordless "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh" "sulo.auth0.com")]
+             (om/update-state! this assoc :lock lock)))
+         (om/update-state! this assoc :did-mount? true)]))
 
   (render [this]
-    (let [{:keys [cart-open? signin-open?]} (om/get-state this)
+    (let [{:keys [cart-open? signin-open? did-mount?]} (om/get-state this)
           {:keys [query/cart query/auth]} (om/props this)]
       (debug "Got auth: " auth)
       (dom/div #js {:id "sulo-navbar"}
@@ -111,23 +112,18 @@
                                        (dom/i #js {:className "fa fa-video-camera fa-fw"}))))
 
                    (dom/div #js {:className "top-bar-right"}
-                     (menu/horizontal
-                       nil
-                       (if (some? (not-empty auth))
-                         (menu/item-link nil #?(:cljs
-                                                (dom/a nil "You")
-                                           :clj (dom/a nil)))
-                         (menu/item nil
-                                    #?(:cljs
-                                            (dom/a #js {:className "button hollow nude"
-                                                        :onClick   #(do
-                                                                     #?(:cljs
-                                                                        (.open-signin this)))} "Sign in")
-                                       :clj (dom/a nil))))
-                       (menu/item-dropdown
-                         {:dropdown (cart-dropdown cart)}
-                         (dom/span #js {:className "cart-price"} (ui-utils/two-decimal-price (:cart/price cart)))
-                         (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))))))
+                     (when did-mount?
+                       (menu/horizontal
+                         nil
+                         (if (some? (not-empty auth))
+                           (menu/item-link nil (dom/a nil "You"))
+                           (menu/item nil (dom/a #js {:className "button hollow nude"
+                                                      :onClick   #(.open-signin this)}
+                                                 "Sign in")))
+                         (menu/item-dropdown
+                           {:dropdown (cart-dropdown cart)}
+                           (dom/span #js {:className "cart-price"} (ui-utils/two-decimal-price (:cart/price cart)))
+                           (dom/i #js {:className "fa fa-shopping-cart fa-fw"})))))))
         (dom/div #js {:className "navbar-container subnav-container"}
           (dom/div #js {:className "subnav navbar top-bar"}
             (dom/div #js {:className "top-bar-left"}
