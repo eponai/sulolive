@@ -42,6 +42,19 @@
       @conn-atom)
     (reset! conn-atom (create-conn))))
 
+
+(defn init-state! [reconciler remotes send-fn parser component]
+  (let [remote-queries (into {}
+                             (map (fn [remote]
+                                    [remote (parser (#'om/to-env reconciler) (om/get-query component) remote)]))
+                             remotes)]
+    (debug "Remote-queries: " remote-queries)
+    (send-fn remote-queries
+             (fn send-cb
+               [res & [query]]
+               (om/merge! reconciler res query)))))
+
+
 ;; --------------------------
 ;; -- Mutation queue protocol
 

@@ -91,6 +91,7 @@
   :clean-targets ^{:protect false} ["resources/public/dev/js/out"
                                     "resources/public/devcards/js/out"
                                     "resources/public/release/js/out"
+                                    "resources/public/doo-test/js/out"
                                     "resources/public/test/js/out"
                                     "target/"
                                   ;;  "index.ios.js"

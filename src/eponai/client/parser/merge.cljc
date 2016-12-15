@@ -42,7 +42,7 @@
 ;;;;;;; API
 
 (defn merge-mutation [merge-fn db history-id key val]
-  {:pre  [(methods merge-fn)
+  {:pre  [(or (nil? merge-fn) (methods merge-fn))
           (db/db? db)
           (symbol? key)]
    :post [(db/db? %)]}
@@ -50,7 +50,7 @@
   ;; Passing db to all functions for mutate.
   ;; We may want to do this for merge-read also.
   (cond-> db
-          (contains? (methods merge-fn) key)
+          (when merge-fn (contains? (methods merge-fn) key))
           (merge-fn key val)
 
           (some? (get-in val [:om.next/error ::parser/mutation-message]))
@@ -63,7 +63,7 @@
           (merge-signout key val)))
 
 (defn merge-read [merge-fn db key val]
-  {:pre [(methods merge-fn) (db/db? db)]
+  {:pre  [(or (nil? merge-fn) (methods merge-fn)) (db/db? db)]
    :post [(db/db? %)]}
 
   ;; Dispatch proxy first, so our merge-fn doesn't have to
@@ -74,7 +74,7 @@
                val)
     (cond
 
-      (contains? (methods merge-fn) key)
+      (when merge-fn (contains? (methods merge-fn) key))
       (merge-fn db key val)
 
       (or (= key :om.next/error)
@@ -90,7 +90,7 @@
 (defn merge-novelty-by-key
   "Merges server response for each [k v] in novelty. Returns the next db and the keys to re-read."
   [merge-fn db novelty history-id]
-  {:pre [(methods merge-fn) (db/db? db)]
+  {:pre  [(or (nil? merge-fn) (methods merge-fn)) (db/db? db)]
    :post [(:keys %) (db/db? (:next %))]}
   ;; Merge :datascript/schema first if it exists
   (let [keys-to-merge-first (select-keys novelty [:datascript/schema])
@@ -129,7 +129,7 @@
   should return db. Hook for specific platforms to do
   arbitrary actions by key.
   Returns merge function for om.next's reconciler's :merge"
-  [merge-fn]
+  [& [merge-fn]]
   (fn [reconciler current-db {:keys [db result meta history-id] :as novelty} query]
     #?(:cljs (debug "Merge! transacting novelty:" (update novelty :db :max-tx)))
     (let [db (cond-> db (some? meta) (merge-meta meta))

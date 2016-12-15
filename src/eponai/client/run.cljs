@@ -18,13 +18,11 @@
     [eponai.common.ui.product :as product]
     [eponai.common.ui.streams :as streams]))
 
-(defmulti client-merge om/dispatch)
-
 (defn run-element [{:keys [id component]}]
-  (let [parser (parser/client-parser)
+  (let [init? (atom false)
         reconciler-atom (atom nil)
+        parser (parser/client-parser)
         conn (utils/create-conn)
-        init? (atom false)
         remotes [:remote :remote/user]
         send-fn (backend/send! reconciler-atom
                                {:remote      (-> (remotes/post-to-url "/api")
@@ -44,20 +42,10 @@
                                    :parser    parser
                                    :remotes   remotes
                                    :send      send-fn
-                                   :merge     (merge/merge! client-merge)
-                                   :migrate   nil})
-        remote-queries (into {}
-                             (map (fn [remote]
-                                    [remote (parser (backend/to-env reconciler) (om/get-query component) remote)]))
-                             remotes)]
+                                   :merge     (merge/merge!)
+                                   :migrate   nil})]
     (reset! reconciler-atom reconciler)
-    (debug "Remote-queries: " remote-queries)
-    (send-fn remote-queries
-             (fn send-cb
-               ([res]
-                (om/merge! reconciler res nil))
-               ([res query]
-                (om/merge! reconciler res query))))))
+    (utils/init-state! reconciler remotes send-fn parser component)))
 
 (def inline-containers
   {:navbar   {:id        "sulo-navbar-container"
