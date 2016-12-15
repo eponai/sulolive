@@ -54,8 +54,9 @@
                (css/add-class :vertical))
           (my-dom/div
             (->> (css/grid-column)
-                 (css/grid-sizes {:small 2 :medium 1}))
-            (photo/square (:store/photo store)))
+                 (css/grid-column-size {:small 2 :medium 1}))
+            (photo/square
+              {:src (:store/photo store)}))
 
           (my-dom/div
             (css/grid-column)
@@ -71,18 +72,19 @@
             (css/grid-row)
             (my-dom/div
               (->> (css/grid-column)
-                   (css/grid-sizes {:small 12 :medium 8})
-                   (css/grid-orders {:small 2 :medium 1}))
+                   (css/grid-column-size {:small 12 :medium 8})
+                   (css/grid-column-order {:small 2 :medium 1}))
               (photo/photo img-src)
 
               (apply dom/div #js {:className "multi-photos-container"}
                      (map (fn [im]
-                            (photo/thumbail im))
+                            (photo/thumbail
+                              {:src im}))
                           (take 4 (repeat img-src)))))
 
             (my-dom/div
               (->> (css/grid-column)
-                   (css/grid-orders {:small 1 :medium 2}))
+                   (css/grid-column-order {:small 1 :medium 2}))
               (dom/div #js {:className "product-info"}
                 (dom/h1 #js {:className "product-info-title"} item-name)
                 (dom/h2 #js {:className "product-info-price"}

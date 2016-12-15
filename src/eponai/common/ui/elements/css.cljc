@@ -40,6 +40,7 @@
                                (keyword (str v "-order-" n))])
                             (range 1 (inc grid-cols)))))
           #{} breakpoints))
+
 (defn keys->classes
   [ks]
   (let [all global-styles
@@ -47,7 +48,7 @@
     (when-not (every? #(some? (or (get all %)
                                   (contains? (grid-styles) (name %)))) style-set)
       (let [unexpected (filter #(nil? (get all %)) style-set)]
-        (warn "Unexpected CSS class keys " unexpected ", using values " (map name unexpected) ". Available keys: " (keys all))))
+        (warn "Unexpected CSS class keys " unexpected ", using values " (map name unexpected) ".")))
 
     (map #(or (get all %) (name %)) style-set)))
 
@@ -61,35 +62,48 @@
 (defn add-class [class opts]
   (update opts :classes conj class))
 
+;; ----------- Basic ----------------------------------------------
+
 (defn text-right [& [opts]]
   (add-class ::text-right opts))
 
-(defn grid-row [& [opts]]
-  (add-class ::row opts))
-
-(defn grid-sizes [sizes & [opts]]
-  (reduce (fn [m class]
-            (add-class class m))
-          opts
-          (map (fn [[k v]]
-                 (when (contains? breakpoints k)
-                   (str (get breakpoints k) "-" v)))
-               sizes)))
-
-(defn grid-orders [orders & [opts]]
-  (reduce (fn [m class]
-            (add-class class m))
-          opts
-          (map (fn [[k v]]
-                 (when (contains? breakpoints k)
-                   (str (get breakpoints k) "-order-" v)))
-               orders)))
-
 (defn align [alignment & [opts]]
-  (add-class (keyword (str (name :align) "-" (name alignment))) opts))
+  (let [available #{:top :left :right :bottom :center :middle}]
+    (if (contains? available alignment)
+      (add-class (keyword (str (name :align) "-" (name alignment))) opts)
+      (do
+        (warn "Ignoring alignment CSS class with invalid alignment: " alignment ". Available keys are: " available)
+        opts))))
+
+(defn callout [& [opts]]
+  (add-class ::callout opts))
+
+;; ----------- Grid ---------------------------------------------
 
 (defn grid-column [& [opts]]
   (add-class ::column opts))
 
-(defn callout [& [opts]]
-  (add-class ::callout opts))
+(defn grid-row [& [opts]]
+  (add-class ::row opts))
+
+(defn grid-column-size [sizes & [opts]]
+  (let [class-fn (fn [[k v]]
+                   (if (contains? breakpoints k)
+                     (if (<= 1 v grid-cols)
+                       (str (get breakpoints k) "-" v)
+                       (warn "Ignoring column size CSS class for invalid column size: " v
+                             ". Available values are 1-" grid-cols))
+                     (warn "Ignoring column size CSS class for invalid breakpoint: " k
+                           ". Available are: " (keys breakpoints)))) ]
+    (reduce #(add-class %2 %1) opts (map class-fn sizes))))
+
+(defn grid-column-order [orders & [opts]]
+  (let [class-fn (fn [[k v]]
+                   (if (contains? breakpoints k)
+                     (if (<= 1 v grid-cols)
+                       (str (get breakpoints k) "-order-" v)
+                       (warn "Ignoring column order CSS class for invalid order value: " v
+                             ". Available values are 1-" grid-cols))
+                     (warn "Ignoring column order CSS class for invalid breakpoint: " k
+                           ". Available are: " (keys breakpoints))))]
+    (reduce (fn [m class] (add-class class m)) opts (map class-fn orders))))

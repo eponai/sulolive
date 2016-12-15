@@ -40,7 +40,8 @@
       (dom/div #js {:className "column content-item product-item"}
         (dom/a #js {:onClick   on-click
                     :href      product-href}
-               (photo/square (:item/img-src product)))
+               (photo/square
+                 {:src (:item/img-src product)}))
         (dom/div #js {:className "content-item-title-section"}
           (dom/a #js {:onClick on-click
                       :href    product-href}

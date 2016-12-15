@@ -1,7 +1,7 @@
 (ns eponai.common.ui.elements.menu
   (:require
     [eponai.common.ui.elements.css :as css]
-    [om.dom :as dom]))
+    [eponai.common.ui.dom :as dom]))
 
 ;; Menu elements
 (defn- menu*
@@ -11,32 +11,25 @@
   :classes - class keys to apply to this menu element.
 
   See css.cljc for available class keys."
-  [{:keys [classes]} & content]
-  (apply dom/ul #js {:className (css/keys->class-str (conj classes ::css/menu))}
-         content))
+  [opts & content]
+  (apply dom/ul (css/add-class ::css/menu opts) content))
 
 (defn horizontal
   "Menu in horizontal layout.
 
   See menu* for general opts and recommended content."
-  [{:keys [classes]} & content]
-  (apply menu*
-         {:classes classes}
-         content))
+  [opts & content]
+  (apply menu* opts content))
 
 (defn vertical
   "Menu in vertical layout.
   See menu* for general opts and recommended content."
-  [{:keys [classes]} & content]
-  (apply menu*
-         {:classes (conj classes ::css/menu-vertical)}
-         content))
+  [opts & content]
+  (apply menu* (css/add-class ::css/menu-vertical opts) content))
 
 ;; Menu list item elements
-(defn- item* [{:keys [classes]} & content]
-  (apply
-    dom/li #js {:className (css/keys->class-str classes)}
-    content))
+(defn- item* [opts & content]
+  (apply dom/li opts content))
 
 (defn item
   "Custom menu item containing the provided content.
@@ -61,9 +54,7 @@
     {:classes (cond-> classes
                       active?
                       (conj ::css/menu-active))}
-    (apply dom/a
-           #js {:onClick on-click}
-           content)))
+    (apply dom/a {:onClick on-click} content)))
 
 (defn item-link
   "Menu item containing an anchor link.
@@ -75,9 +66,7 @@
   [{:keys [classes href]} & content]
   (item*
     {:classes classes}
-    (apply dom/a
-           #js {:href href}
-           content)))
+    (apply dom/a {:href href} content)))
 
 (defn item-dropdown
   "Menu item containg a link that opens a dropdown.
@@ -85,14 +74,12 @@
   [{:keys [dropdown href classes]} & content]
   (item*
     {:classes (conj classes ::css/menu-dropdown)}
-    (apply dom/a #js {:href href} content)
+    (apply dom/a {:href href} content)
     dropdown))
 
 (defn item-text
   "Menu item element containing text only.
 
   See item for general opts."
-  [{:keys [classes]} & content]
-  (apply item*
-         {:classes (conj classes ::css/menu-text)}
-         content))
+  [opts & content]
+  (apply item* (css/add-class ::css/menu-text opts) content))

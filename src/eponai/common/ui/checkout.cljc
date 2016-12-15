@@ -23,8 +23,9 @@
 
     (my-dom/div
       (->> (css/grid-column)
-           (css/grid-sizes {:small 2 :medium 1}))
-      (photo/square (:store/photo s)))
+           (css/grid-column-size {:small 2 :medium 1}))
+      (photo/square
+        {:src (:store/photo s)}))
 
     (my-dom/div
       (->> (css/grid-column))
@@ -41,7 +42,7 @@
            (css/align :bottom))
       (apply my-dom/div
              (->> (css/grid-column)
-                  (css/grid-sizes {:small 2 :medium 8}))
+                  (css/grid-column-size {:small 2 :medium 8}))
              (map (fn [i]
                     (my-dom/div
                       (->> (css/grid-row)
@@ -51,12 +52,13 @@
 
                       (my-dom/div
                         (->> (css/grid-column)
-                             (css/grid-sizes {:small 4 :medium 3}))
-                        (photo/square (:item/img-src i)))
+                             (css/grid-column-size {:small 4 :medium 3}))
+                        (photo/square
+                          {:src (:item/img-src i)}))
 
                       (my-dom/div
                         (->> (css/grid-column)
-                             (css/grid-sizes {:small 5 :medium 7}))
+                             (css/grid-column-size {:small 5 :medium 7}))
 
                         (dom/div #js {:className "content-item-title-section"}
 
@@ -64,7 +66,7 @@
                                       :className "name"} (:item/name i))))
                       (my-dom/div
                         (->> (css/grid-column)
-                             (css/grid-sizes {:small 3 :medium 2})
+                             (css/grid-column-size {:small 3 :medium 2})
                              css/text-right)
                         (dom/div #js {:className "content-item-subtitle-section"}
                           (dom/span #js {:className "price"}
@@ -131,8 +133,9 @@
                                                   ;{:classes [::css/grid-row-align-middle :padded :vertical]}
                                     (my-dom/div
                                       (->> (css/grid-column)
-                                           (css/grid-sizes {:small 2}))
-                                      (photo/square (:store/photo s)))
+                                           (css/grid-column-size {:small 2}))
+                                      (photo/square
+                                        {:src (:store/photo s)}))
                                     (my-dom/div
                                       (css/grid-column)
                                       (dom/a #js {:href (str "/store/" (:db/id s))}
@@ -148,8 +151,8 @@
 
                     (my-dom/div
                       (->> (css/grid-column)
-                           (css/grid-sizes {:small 12
-                                            :medium 4})
+                           (css/grid-column-size {:small 12
+                                            :medium      4})
                            css/text-right)
                       (dom/table nil
                                  (dom/tbody nil

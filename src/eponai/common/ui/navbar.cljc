@@ -17,7 +17,8 @@
                     {:href (str "/goods/" (:db/id i))}
                     (dom/div #js {:className "row collapse align-middle content-item"}
                       (dom/div #js {:className "columns small-2"}
-                        (photo/thumbail (:item/img-src i)))
+                        (photo/thumbail
+                          {:src (:item/img-src i)}))
                       (dom/div #js {:className "columns small-10"}
                         (dom/div #js {:className "content-item-title-section"}
                           (dom/small #js {:className "name"} (:item/name i)))

@@ -34,8 +34,7 @@
                       :store/review-count]} {:store-id ~'?store-id})])
   Object
   (render [this]
-    (let [{:keys [show-item breakpoint]} (om/get-state this)
-          {:keys [query/store proxy/navbar] :as props} (om/props this)
+    (let [{:keys [query/store proxy/navbar] :as props} (om/props this)
           {:keys      [store/cover store/review-count store/rating store/photo]
            stream     :stream/_store
            items      :item/_store
@@ -45,14 +44,15 @@
         {:navbar navbar}
         (dom/div
           #js {:id "sulo-store-container"}
-          ;(dom/div #js {:className "cover-container"}
           (photo/cover
-            cover
+            (->> {:src cover}
+                 css/grid-row)
 
             (dom/div #js {:className "column store-container large-2"}
 
               (dom/div #js {:className "store-short-info-container"}
-                (photo/square photo)
+                (photo/square
+                  {:src photo})
                 (dom/div #js {:className "content-item-title-section"}
                   (dom/h1 #js {:className "store-name"} store-name)
                   (common/rating-element rating review-count)))

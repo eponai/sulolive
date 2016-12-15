@@ -13,7 +13,13 @@
            content)))
 
 (defn div [opts & content]
-  (element
-    dom/div
-    opts
-    content))
+  (element dom/div opts content))
+
+(defn a [opts & content]
+  (element dom/a opts content))
+
+(defn li [opts & content]
+  (element dom/li opts content))
+
+(defn ul [opts & content]
+  (element dom/ul opts content))
