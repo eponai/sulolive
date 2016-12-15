@@ -25,8 +25,12 @@
 (defn server-send [server-env reconciler-atom]
   (fn [queries cb]
     (run! (fn [[remote-key query]]
-            (let [res ((parser/server-parser) server-env query)]
-              (cb {:db (db/db (om/app-state @reconciler-atom)) :result res})))
+            ;; We don't need to query for datascript/schema since
+            ;; we've already set up the datascript instance.
+            (let [query (remove #(= % :datascript/schema) query)
+                  res ((parser/server-parser) server-env query)]
+              (cb {:db     (db/db (om/app-state @reconciler-atom))
+                   :result res})))
           queries)))
 
 (defn make-reconciler [request-env component]
