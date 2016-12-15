@@ -1,5 +1,6 @@
 (ns eponai.common.ui.navbar
   (:require
+    [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.utils :as ui-utils]
     [eponai.common.ui.elements.css :as css]
     [om.dom :as dom]
@@ -95,22 +96,31 @@
                    (dom/div #js {:className "top-bar-left"}
                      (menu/horizontal
                        nil
-                       (menu/item-link {:href "/"}
+                       (menu/item-link {:href "/"
+                                        :id "navbar-brand"}
                                        "Sulo")
                        (menu/item nil
-                                  (dom/a #js {:className "search-icon"}
-                                         (dom/i #js {:className "fa fa-search fa-fw"}))
-                                  (dom/input #js {:type        "text"
-                                                  :placeholder "Search items or stores"
-                                                  :onKeyDown   (fn [e]
-                                                                 #?(:cljs
-                                                                    (when (= 13 (.. e -keyCode))
-                                                                      (let [search-string (.. e -target -value)]
-                                                                        (set! js/window.location (str "/goods?search=" search-string))))))}))
+                                  (my-dom/a
+                                    (->> {:id "search-icon"}
+                                         (css/show-for {:size :small :only? true}))
+                                    (dom/i #js {:className "fa fa-search fa-fw"}))
+                                  (my-dom/div
+                                    (css/hide-for {:size :small :only? true})
+                                    (dom/input #js {:type        "text"
+                                                    :placeholder "Search items or stores"
+                                                    :onKeyDown   (fn [e]
+                                                                   #?(:cljs
+                                                                      (when (= 13 (.. e -keyCode))
+                                                                        (let [search-string (.. e -target -value)]
+                                                                          (set! js/window.location (str "/goods?search=" search-string))))))})))
                        (menu/item-link
                          (css/add-class ::css/yellow {:href "/streams"})
-                         (dom/strong nil "Live")
-                         (dom/i #js {:className "fa fa-video-camera fa-fw"}))))
+                         (my-dom/strong
+                           (css/hide-for {:size :small :only? true})
+                           "Live")
+                         (my-dom/div
+                           (css/show-for {:size :small :only? true})
+                           (dom/i #js {:className "fa fa-video-camera fa-fw"})))))
 
                    (dom/div #js {:className "top-bar-right"}
                      (menu/horizontal
@@ -121,14 +131,16 @@
                                            :clj (dom/a nil)))
                          (menu/item nil
                                     #?(:cljs
-                                            (dom/a #js {:className "button hollow nude"
+                                            (dom/a #js {:className "button hollow nude tiny"
                                                         :onClick   #(do
                                                                      #?(:cljs
                                                                         (.open-signin this)))} "Sign in")
                                        :clj (dom/a nil))))
                        (menu/item-dropdown
                          {:dropdown (cart-dropdown cart)}
-                         (dom/span #js {:className "cart-price"} (ui-utils/two-decimal-price (:cart/price cart)))
+                         (my-dom/span
+                           (css/hide-for {:size :small :only? true})
+                           (ui-utils/two-decimal-price (:cart/price cart)))
                          (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))))))
         (dom/div #js {:className "navbar-container subnav-container"}
           (dom/div #js {:className "subnav navbar top-bar"}

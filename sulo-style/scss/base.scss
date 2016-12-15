@@ -1,3 +1,13 @@
+$navbar-height: rem-calc(56);
+$navbar-background-color: map-get($foundation-palette, brown);
+$navbar-font-color: $white;
+
+$subnav-height: $navbar-height;
+$subnav-background-color: rgba($navbar-background-color, 0.03);//map-get($foundation-palette, nude);
+$subnav-font-color: rgba(map-get($foundation-palette, brown), 0.5);
+
+$footer-height-small: 8rem;
+$footer-height: 4rem;
 
 html, body {
 	overflow-x: hidden;
@@ -18,6 +28,10 @@ html, body {
 	}
 }
 
+.button {
+	font-weight: bold;
+}
+
 .reveal-overlay {
 	display: block;
 	.reveal {
@@ -36,8 +50,12 @@ html, body {
 	box-shadow: 1px 1px 3px 0 rgba($black, 0.5);
 }
 
-$footer-height-small: 8rem;
-$footer-height: 4rem;
+@mixin list-item-hover($color: $white, $hover-color: darken($color, 5%)) {
+	transition: background .25s ease-in-out;
+	&:hover {
+		background: $hover-color;
+	}
+}
 
 @mixin sulo-colors {
 	@each $name, $color in $foundation-palette {
@@ -55,6 +73,7 @@ a {
 .sulo-page {
 	height: 100vh;
 }
+
 .page-container {
 	min-height: 100%;
 	position: relative;
@@ -62,7 +81,6 @@ a {
 
 .page-content {
 	padding-bottom: $footer-height-small + 2rem;
-	// padding-top: $navbar-height;
 	@include breakpoint(medium) {
 		padding-bottom: $footer-height;
 	}
@@ -78,9 +96,6 @@ a {
 		max-width: 65rem;
 		margin: auto auto;
 		height: 100%;
-		a {
-			// color: map-get($foundation-palette, brown);
-		}
 	}
 	width: 100%;
 	position: absolute;

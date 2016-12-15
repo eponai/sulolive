@@ -84,7 +84,8 @@
 
             (my-dom/div
               (->> (css/grid-column)
-                   (css/grid-column-order {:small 1 :medium 2}))
+                   (css/grid-column-order {:small 1 :medium 2})
+                   (css/add-class ::css/product-info-container))
               (dom/div #js {:className "product-info"}
                 (dom/h1 #js {:className "product-info-title"} item-name)
                 (dom/h2 #js {:className "product-info-price"}

@@ -25,7 +25,7 @@
   "Menu in vertical layout.
   See menu* for general opts and recommended content."
   [opts & content]
-  (apply menu* (css/add-class ::css/menu-vertical opts) content))
+  (apply menu* (css/add-class ::css/vertical opts) content))
 
 ;; Menu list item elements
 (defn- item* [opts & content]
@@ -53,7 +53,7 @@
   (item*
     {:classes (cond-> classes
                       active?
-                      (conj ::css/menu-active))}
+                      (conj ::css/active))}
     (apply dom/a {:onClick on-click} content)))
 
 (defn item-link
@@ -63,10 +63,10 @@
   :href - href for the containng anchor
 
   See item for general opts."
-  [{:keys [classes href]} & content]
+  [opts & content]
   (item*
-    {:classes classes}
-    (apply dom/a {:href href} content)))
+    nil
+    (apply dom/a opts content)))
 
 (defn item-dropdown
   "Menu item containg a link that opens a dropdown.

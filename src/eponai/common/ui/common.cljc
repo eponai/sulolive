@@ -79,14 +79,14 @@
   (dom/div #js {:className "footer"}
     (dom/footer #js {:className "clearfix"}
                 (menu/horizontal
-                  {:formats [::css/global-float-left]}
+                  {:classes [::css/float-left]}
                   (menu/item-text nil (dom/small nil "Say hi anytime"))
                   (menu/item-link nil (dom/i #js {:className "fa fa-instagram fa-fw"}))
                   (menu/item-link nil (dom/i #js {:className "fa fa-twitter fa-fw"}))
                   (menu/item-link nil (dom/i #js {:className "fa fa-facebook fa-fw"}))
                   (menu/item-link nil (dom/i #js {:className "fa fa-envelope-o fa-fw"})))
                 (menu/horizontal
-                  {:formats [::css/global-float-right]}
+                  {:classes [::css/float-right]}
                   (menu/item-link nil (dom/small nil "Privacy Policy"))
                   (menu/item-link nil (dom/small nil "Terms & Conditions"))
                   (menu/item-text nil (dom/small nil "© Sulo 2016"))))))

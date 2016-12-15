@@ -50,8 +50,8 @@
 @include motion-ui-transitions;
 @include motion-ui-animations;
 
-@import "navbar";
 @import "base";
+@import "navbar";
 @import "start";
 @import "photo";
 @import "star-rating";

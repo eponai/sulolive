@@ -15,20 +15,8 @@ $font-color-light: $body-background;
 		position: absolute;
 	}
 	.navbar {
-		input, .search-icon {
+		input, #search-icon {
 			display: none;
-		}
-	}
-
-	@include breakpoint(medium) {
-		h1 {
-			// font-size: 2rem;
-		}
-		h2 {
-			// font-size: 1.5rem;
-		}
-		h3 {
-			// font-size: 1.3rem;
 		}
 	}
 
@@ -63,7 +51,6 @@ $font-color-light: $body-background;
 
 	.top-features {
 		padding: 2rem 0;
-		// background: #F0EDE3;
 		@include breakpoint(medium) {
 			padding: 2rem 0 0.5rem 0;
 		}
@@ -99,23 +86,10 @@ $font-color-light: $body-background;
 			text-shadow: 1px 1px 1px rgba($black, 0.5);
 		}
 
-		&.blue {
-			background: #3A5288;
-		}
-
-		&.green {
-			background: #224947;
-		}
-
-		&.red {
-			background: #9A4B4F;
-		}
-
 		&.white {
-			// background: rgba(#9A4B4F, 1);
 			background: $white; //#F0EDE3;
 			p {
-				color: $black;
+				color: $banner-background-color;
 				text-shadow: none;
 			}
 		}	

@@ -1,4 +1,4 @@
-@mixin list-item($color: $white, $hover-color: darken($color, 10%)) {
+@mixin list-item-hover($color: $white, $hover-color: darken($color, 10%)) {
 	transition: background .25s ease-in-out;
 	&:hover {
 		background: $hover-color;
@@ -63,7 +63,7 @@
 				@include menu-direction(vertical);
 			}
 			li {
-				@include list-item($hover-color: rgba($brown, 0.05));
+				@include list-item-hover($hover-color: rgba($brown, 0.05));
 				@include breakpoint(large) {
 					padding-left: 5%;
 					padding-right: 5%;
@@ -100,6 +100,7 @@
 		display: none;
 		background: rgba($white, 1) !important;
 		box-shadow: -1px 0 2px 0 rgba($black, 0.5);
+		padding: 0;
 		@include breakpoint(large) {
 			display: flex;
 			flex-direction: column;
@@ -115,6 +116,9 @@
 			padding: 0 0.5rem;
 			input {
 				margin: 0;
+			}
+			.button {
+				margin-bottom: 0.5rem;
 			}
 		}
 	}

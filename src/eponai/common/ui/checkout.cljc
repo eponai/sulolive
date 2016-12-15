@@ -67,14 +67,14 @@
                       (my-dom/div
                         (->> (css/grid-column)
                              (css/grid-column-size {:small 3 :medium 2})
-                             css/text-right)
+                             (css/text-align :right))
                         (dom/div #js {:className "content-item-subtitle-section"}
                           (dom/span #js {:className "price"}
                                     (utils/two-decimal-price (:item/price i)))))))
                   items))
       (my-dom/div
         (->> (css/grid-column)
-             css/text-right)
+             (css/text-align :right))
         (dom/div #js {:className "total-price-section"}
           (let [item-price (compute-item-price items)
                 shipping-price 0]
@@ -143,7 +143,7 @@
                                       (common/rating-element (:store/rating s) (:store/review-count s)))
 
                                     (my-dom/div
-                                      (-> (css/text-right)
+                                      (-> (css/text-align :right)
                                           css/grid-column)
                                       (dom/span #js {:className "price"}
                                                 (str (count its) " items: " (utils/two-decimal-price (compute-item-price its)))))))
@@ -153,7 +153,7 @@
                       (->> (css/grid-column)
                            (css/grid-column-size {:small 12
                                             :medium      4})
-                           css/text-right)
+                           (css/text-align :right))
                       (dom/table nil
                                  (dom/tbody nil
                                             (dom/tr nil

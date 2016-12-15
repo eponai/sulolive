@@ -84,17 +84,12 @@
 			padding: 0.5rem 0;
 		}
 		li {
+			@include list-item-hover;
 			$border-color: map-get($foundation-palette, brown);
 			$border: 1px solid rgba($border-color, 0.1);
 			border-bottom: $border;
-
 			a {
 				color: $border-color;
-			}
-			&:hover {
-				background: darken($white, 5%);
-				transition: background .25s ease-in-out;
-				cursor: pointer;
 			}
 		}
 	}

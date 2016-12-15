@@ -23,3 +23,12 @@
 
 (defn ul [opts & content]
   (element dom/ul opts content))
+
+(defn strong [opts & content]
+  (element dom/strong opts content))
+
+(defn i [opts & content]
+  (element dom/i opts content))
+
+(defn span [opts & content]
+  (element dom/span opts content))

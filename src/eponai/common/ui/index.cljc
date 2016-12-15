@@ -5,11 +5,14 @@
     [eponai.common.ui.elements.photo :as photo]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.ui.dom :as my-dom :refer [div a]]
+    [eponai.common.ui.elements.css :as css]))
 
 (defn top-feature [opts icon title text]
   (dom/div #js {:className "feature-item column"}
-    (dom/div #js {:className "row"}
+    (div
+      (css/grid-row)
       (dom/div #js {:className "column align-self-middle small-2 medium-12"}
         (dom/i #js {:className (str "fa fa-fw " icon)}))
       (dom/div #js {:className "text-content columns"}
@@ -27,33 +30,35 @@
                content)))))
 
 (defn content-section [{:keys [href]} header content footer]
-  (dom/div #js {:className "row column section text-center"}
-    (dom/div #js {:className "row column"}
+  (div
+    (->> (css/grid-row)
+         css/grid-column
+         (css/text-align :center)
+         (css/add-class :section))
+    (div
+      (->> (css/grid-row) css/grid-column)
       (dom/h3 #js {:className "text-center section-header"} header))
-    (apply dom/div #js {:className "row small-up-2 medium-up-4"}
+    (apply div
+           (->> (css/grid-row) (css/grid-row-columns {:small 2 :medium 4}))
            content)
-    (dom/div #js {:className "row column section-footer"}
-      (dom/a #js {:href      href} footer))))
+    (div
+      (->> (css/grid-row) css/grid-column (css/add-class :section-footer))
+      (dom/a #js {:href href} footer))))
 
 (defn store-element [store]
-  (let [[large mini-1 mini-2] (:store/featured-img-src store)
-        store-link (common/link-to-store store)]
-    (dom/div #js {:className "column content-item store-item"}
-      (dom/a #js {:href store-link}
-             (photo/collage (:store/featured-img-src store))
-             ;(dom/div #js {:className "photo-container collage"}
-             ;  (dom/div #js {:className "photo square"
-             ;            :style     #js {:backgroundImage (str "url(" large ")")}})
-             ;  (dom/div #js {:className "mini-container"}
-             ;    (dom/div #js {:className "photo"
-             ;              :style     #js {:backgroundImage (str "url(" mini-1 ")")}})
-             ;    (dom/div #js {:className "photo"
-             ;              :style     #js {:backgroundImage (str "url(" mini-2 ")")}})))
-             )
-      (dom/div #js {:className "content-item-title-section"}
-        (dom/a #js {:href store-link}
-               (:store/name store)))
-      (dom/div #js {:className "content-item-subtitle-section"}
+  (let [store-link (common/link-to-store store)]
+    (div
+      (->> (css/grid-column)
+           (css/add-class :content-item))
+
+      (a {:href store-link}
+         (photo/collage {:srcs (:store/featured-img-src store)}))
+      (div
+        (css/add-class :content-item-title-section)
+        (a {:href store-link}
+           (:store/name store)))
+      (div
+        (css/add-class :content-item-subtitle-section)
         (common/rating-element (:store/rating store) (:store/review-count store))))))
 
 (defui Index
@@ -118,10 +123,6 @@
                 "Share your favorites"
                 "Interact with your customers as a store owner and create real long time relationships")))
 
-
-          ;(banner {:color :red}
-          ;        (dom/h2 nil "Interact live with store owners and other buyers from the community"))
-
           (content-section {:href "/streams"}
                            "Stores streaming on the online market right now"
                            (map (fn [c]
@@ -129,18 +130,12 @@
                                 featured-streams)
                            "Check out more on the live market >>")
 
-          ;(banner {:color :blue}
-          ;        (dom/h2 nil "Find products you love made by passionate store owners"))
-
           (content-section {:href "/goods"}
                            "Fresh from the oven goods"
                            (map (fn [p]
                                   (common/product-element p {:open-url? true}))
                                 featured-items)
                            "Check out more goods >>")
-
-          ;(banner {:color :green}
-          ;        (dom/h2 nil "Discover new stores and become part of their community"))
 
           (content-section nil
                            "Have you seen these stores?"

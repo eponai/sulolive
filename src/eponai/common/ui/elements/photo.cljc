@@ -45,16 +45,16 @@
     (apply photo* (css/add-class ::css/photo-cover opts)
            content)))
 
-(defn collage [urls]
-  (when-not (every? string? urls)
-    (error "Invalid photo URL type. Collage expects collection of URL strings. Got URLs: " urls))
+(defn collage [{:keys [srcs]}]
+  (when-not (every? string? srcs)
+    (error "Invalid photo URL type. Collage expects collection of URL strings. Got URLs: " srcs))
   (apply photo-container
-         {:classes [:css/photo-collage]}
+         {:classes [::css/photo-collage]}
          (mapcat
            (fn [[large mini-1 mini-2]]
-             [(photo* {:url     large
+             [(photo* {:src     large
                        :classes [::css/photo-square]})
               (photo-container nil
-                               (photo* {:url mini-1})
-                               (photo* {:url mini-2}))])
-                 (partition 3 urls))))
+                               (photo* {:src mini-1})
+                               (photo* {:src mini-2}))])
+                 (partition 3 srcs))))

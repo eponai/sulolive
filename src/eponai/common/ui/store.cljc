@@ -7,6 +7,7 @@
     [eponai.common.ui.product :as item]
     [eponai.common.ui.stream :as stream]
     #?(:cljs [eponai.web.utils :as utils])
+    [eponai.common.ui.dom :as my-dom]
     [om.dom :as dom]
     [om.next :as om #?(:clj :refer :cljs :refer-macros) [defui]]
     [taoensso.timbre :refer [debug]]
@@ -48,7 +49,10 @@
             (->> {:src cover}
                  css/grid-row)
 
-            (dom/div #js {:className "column store-container large-2"}
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/grid-column-size {:large 2})
+                   (css/add-class :css/store-container))
 
               (dom/div #js {:className "store-short-info-container"}
                 (photo/square
@@ -62,17 +66,26 @@
                 (menu/item-link nil "About")
                 (menu/item-link nil "Policies")))
 
-            (dom/div #js {:className (str "large-8 small-12" (when (some? stream) " has-stream"))}
+            (my-dom/div
+              (cond->> (->> (css/grid-column)
+                            (css/grid-column-size {:small 12 :large 8}))
+                       (some? stream)
+                       (css/add-class :css/has-stream))
               (when (some? stream)
                 (dom/div #js {:className "stream-container content-item"}
                   (stream/->Stream (:proxy/stream props))
                   (dom/div #js {:className "content-item-title-section"}
-                    (dom/h5 #js {:className "stream-title"} (:stream/name stream))
+                    (dom/h5 #js {:className "stream-title"}
+                            (:stream/name stream))
                     (dom/div #js {:className "viewers-container"}
                       (dom/i #js {:className "fa fa-eye fa-fw"})
-                      (dom/h5 nil (str (:stream/viewer-count stream))))))))
+                      (dom/h5 nil
+                              (str (:stream/viewer-count stream))))))))
 
-            (dom/div #js {:className "medium-2 stream-chat-container"}
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/grid-column-size {:medium 2})
+                   (css/add-class ::css/stream-chat-container))
               (dom/div #js {:className "stream-chat-content"}
                 (dom/span nil "This is a message"))
               (dom/div #js {:className "stream-chat-input"}
@@ -81,24 +94,23 @@
                 (dom/a #js {:className "button expanded"} "Send"))))
 
           (dom/div #js {:className "store-nav"}
-            (dom/div #js {:className "row column"}
+            (my-dom/div
+              (->> (css/grid-row)
+                   (css/grid-column))
               (menu/horizontal
                 nil
                 (menu/item-link nil "Sheets")
                 (menu/item-link nil "Pillows")
                 (menu/item-link nil "Duvets"))))
 
-          (dom/div #js {:className "items"}
-            (apply dom/div #js {:className "content-items-container row small-up-2 medium-up-3 large-up-4"}
+          (my-dom/div
+            nil
+            (apply my-dom/div
+              (->> (css/grid-row)
+                   (css/grid-row-columns {:small 2 :medium 3 :large 4}))
                    (map (fn [p]
                           (pi/->ProductItem (om/computed {:product p}
                                                          {:display-content (item/->Product p)})))
-                        items)))
-
-          ;(when (some? show-item)
-          ;  (common/modal {:on-close #(om/update-state! this dissoc :show-item)
-          ;                 :size :large}
-          ;                (item/->Product show-item)))
-          )))))
+                        items))))))))
 
 (def ->Store (om/factory Store))

@@ -59,13 +59,18 @@
   [styles]
   (s/join " " (keys->classes styles)))
 
-(defn add-class [class opts]
+(defn add-class [class & [opts]]
   (update opts :classes conj class))
 
 ;; ----------- Basic ----------------------------------------------
 
-(defn text-right [& [opts]]
-  (add-class ::text-right opts))
+(defn text-align [alignment & [opts]]
+  (let [available #{:left :right :center}]
+    (if (contains? available alignment)
+      (add-class (keyword (str "text-" (name alignment))) opts)
+      (do
+        (warn "Ignoring text alignment CSS class with invalid alignment: " alignment ". Available keys are: " available)
+        opts))))
 
 (defn align [alignment & [opts]]
   (let [available #{:top :left :right :bottom :center :middle}]
@@ -75,16 +80,47 @@
         (warn "Ignoring alignment CSS class with invalid alignment: " alignment ". Available keys are: " available)
         opts))))
 
+(defn hide-for [{:keys [size only?]} & [opts]]
+  (let [s (get breakpoints size)]
+    (if (some? s)
+      (let [c (str "hide-for-" s (when only? "-only"))]
+        (add-class (keyword c) opts))
+      (do
+        (warn "Ignoring column visibility CSS class for invalid breakpoint: " size
+              ". Available are: " (keys breakpoints))
+        opts))))
+
+(defn show-for [{:keys [size only?]} & [opts]]
+  (let [s (get breakpoints size)]
+    (if (some? s)
+      (let [c (str "show-for-" s (when only? "-only"))]
+        (add-class (keyword c) opts))
+      (do
+        (warn "Ignoring column visibility CSS class for invalid breakpoint: " size
+              ". Available are: " (keys breakpoints))
+        opts))))
+
 (defn callout [& [opts]]
   (add-class ::callout opts))
 
 ;; ----------- Grid ---------------------------------------------
 
-(defn grid-column [& [opts]]
-  (add-class ::column opts))
-
 (defn grid-row [& [opts]]
   (add-class ::row opts))
+
+(defn grid-row-columns [counts & [opts]]
+  (let [class-fn (fn [[k v]]
+                   (if (contains? breakpoints k)
+                     (if (<= 1 v grid-cols)
+                       (str (get breakpoints k) "-up-" v)
+                       (warn "Ignoring row column count CSS class for invalid column count: " v
+                             ". Available values are 1-" grid-cols))
+                     (warn "Ignoring row column count CSS class for invalid breakpoint: " k
+                           ". Available are: " (keys breakpoints))))]
+    (reduce #(add-class %2 %1) opts (map class-fn counts))))
+
+(defn grid-column [& [opts]]
+  (add-class ::column opts))
 
 (defn grid-column-size [sizes & [opts]]
   (let [class-fn (fn [[k v]]
