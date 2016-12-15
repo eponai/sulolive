@@ -8,13 +8,9 @@
     [om.next :as om :refer [defui]]))
 
 (defui Checkout
-  static om/IQuery
-  (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/cart (om/get-query checkout/Checkout)}])
   Object
   (render [this]
-    (let [{:keys [release? proxy/cart proxy/navbar]} (om/props this)]
+    (let [{:keys [release? :eponai.server.ui/render-component-as-html]} (om/props this)]
       (dom/html
         {:lang "en"}
         (apply dom/head nil (common/head release?))
@@ -22,7 +18,7 @@
           nil
           (dom/div
             {:id "sulo-checkout" :className "sulo-page"}
-            (checkout/->Checkout cart))
+            (render-component-as-html checkout/Checkout))
           (common/auth0-lock-passwordless release?)
           (dom/script {:src  (common/budget-js-path release?)
                        :type common/text-javascript})

@@ -6,12 +6,9 @@
     [eponai.server.ui.common :as common]))
 
 (defui Goods
-  static om/IQuery
-  (query [this]
-    [{:proxy/goods (om/get-query goods/Goods)}])
   Object
   (render [this]
-    (let [{:keys [release? proxy/goods]} (om/props this)]
+    (let [{:keys [release? :eponai.server.ui/render-component-as-html]} (om/props this)]
       (dom/html
         {:lang "en"}
 
@@ -21,7 +18,7 @@
           nil
           (dom/div
             {:id "sulo-items" :className "sulo-page"}
-            (goods/->Goods goods))
+            (render-component-as-html goods/Goods))
 
           ;(dom/script {:src "https://webrtc.github.io/adapter/adapter-latest.js"})
           ;(dom/script {:src "/lib/videojs/video.min.js"})

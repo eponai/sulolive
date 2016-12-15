@@ -9,12 +9,9 @@
     [eponai.common.ui.navbar :as nav]))
 
 (defui Store
-  static om/IQuery
-  (query [_]
-    [{:proxy/store (om/get-query common.store/Store)}])
   Object
   (render [this]
-    (let [{:keys [release? proxy/store]} (om/props this)]
+    (let [{:keys [release? :eponai.server.ui/render-component-as-html]} (om/props this)]
       (dom/html
         {:lang "en"}
         (apply dom/head nil (common/head release?))
@@ -22,7 +19,7 @@
           nil
           (dom/div
             {:id "sulo-store" :className "sulo-page"}
-            (common.store/->Store store)
+            (render-component-as-html common.store/Store)
             ;(nav/navbar navbar)
             ;(dom/div {:className "page-content" :id "sulo-store-container"}
             ;  (common.store/->Store store))

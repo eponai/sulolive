@@ -7,12 +7,9 @@
 
 
 (defui Streams
-  static om/IQuery
-  (query [_]
-    [{:proxy/streams (om/get-query streams/Streams)}])
   Object
   (render [this]
-    (let [{:keys [release? proxy/streams]} (om/props this)]
+    (let [{:keys [release? :eponai.server.ui/render-component-as-html]} (om/props this)]
       (dom/html
         {:lang "en"}
         (apply dom/head nil (common/head release?))
@@ -20,7 +17,7 @@
           nil
           (dom/div
             {:id "sulo-streams" :className "sulo-page"}
-            (streams/->Streams streams)
+            (render-component-as-html streams/Streams)
             ;(common.store/->Store store)
             ;(nav/navbar navbar)
             ;(dom/div {:className "page-content" :id "sulo-store-container"}
