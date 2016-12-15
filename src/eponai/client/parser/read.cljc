@@ -35,8 +35,6 @@
       (cljs.reader/read-string stored))))
 
 (defn read-local-cart [db cart]
-  (debug "Read cart: " cart)
-  (debug "Has items: " (db/pull-many db '[*] (:cart/items cart)))
   (-> (or cart {:cart/items []})
       (update :cart/items #(db/pull-many db [:db/id :item/price :item/img-src :item/name {:item/store [:store/photo :store/name :store/rating :store/review-count]}] %))
       (common.read/compute-cart-price)))
@@ -51,7 +49,6 @@
                  true
                  (assoc-in ast [:params :items] (:cart/items cart)))}
       {:value (do
-                (debug "Got cart: " cart " active user: " (auth/logged-in-user))
                 (if (auth/is-logged-in?)
                   (common.read/compute-cart-price cart)
                   (read-local-cart db cart)))})))
