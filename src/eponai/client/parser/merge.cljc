@@ -98,7 +98,7 @@
         ordered-novelty (concat keys-to-merge-first other-novelty)]
     (reduce
       (fn [{:keys [next] :as m} [key value]]
-        (debug "Merging response for key:" key "value:" value)
+        #?(:cljs (debug "Merging response for key:" key "value:" value))
         (if (symbol? key)
           (do (assert (some? history-id)
                       (str "No history-id was provided when merging mutations for novelty: " ordered-novelty))

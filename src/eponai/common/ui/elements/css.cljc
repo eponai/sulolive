@@ -44,7 +44,8 @@
 (defn keys->classes
   [ks]
   (let [all global-styles
-        style-set (set ks)]
+        ;; To keep order:
+        style-set (into [] (distinct) ks)]
     (when-not (every? #(some? (or (get all %)
                                   (contains? (grid-styles) (name %)))) style-set)
       (let [unexpected (filter #(nil? (get all %)) style-set)]

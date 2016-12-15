@@ -65,13 +65,21 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:query/featured-items [:item/name
+     {:query/featured-items [:db/id
+                             :item/name
                              :item/price
                              :item/id
                              :item/img-src
                              :item/store]}
-     {:query/featured-stores [:db/id :store/name :store/featured-img-src :store/rating :store/review-count]}
-     {:query/featured-streams [:stream/name {:stream/store [:store/name]} :stream/viewer-count :stream/img-src]}])
+     {:query/featured-stores [:db/id
+                              :store/name
+                              :store/featured
+                              :store/featured-img-src
+                              :store/rating
+                              :store/review-count
+                              :store/photo
+                              {:item/_store [:db/id :item/img-src]}]}
+     {:query/featured-streams [:db/id :stream/name {:stream/store [:db/id  :store/name]} :stream/viewer-count :stream/img-src]}])
   Object
   (render [this]
     (let [{:keys [proxy/navbar query/featured-items query/featured-stores query/featured-streams]} (om/props this)

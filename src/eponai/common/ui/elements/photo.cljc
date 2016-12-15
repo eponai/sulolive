@@ -10,7 +10,7 @@
     (warn "Ignoring invalid photo src type, expecting a URL string. Got src: " src)
     (apply dom/div
            {:classes (conj classes ::css/photo)
-            #?@(:cljs [:style {:backgroundImage (str "url(" src ")")}])}
+            :style   {:backgroundImage (str "url(" src ")")}}
            content)))
 
 (defn- photo-container [opts & content]

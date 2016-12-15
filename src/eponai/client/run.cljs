@@ -18,6 +18,14 @@
     [eponai.common.ui.product :as product]
     [eponai.common.ui.streams :as streams]))
 
+(defn apply-once [f]
+  (let [appliced? (atom false)]
+    (fn [x]
+      (if @appliced?
+        x
+        (do (reset! appliced? true)
+            (f x))))))
+
 (defn run-element [{:keys [id component]}]
   (let [init? (atom false)
         reconciler-atom (atom nil)
@@ -34,9 +42,9 @@
                                                 (reset! init? true)
                                                 (debug "First merge happened. Adding reconciler to root.")
                                                 (om/add-root! @reconciler-atom component (gdom/getElement id)))
-                                :query-fn     (fn [q]
-                                                {:pre [(sequential? q)]}
-                                                (into [:datascript/schema] q))})
+                                :query-fn     (apply-once (fn [q]
+                                                            {:pre [(sequential? q)]}
+                                                            (into [:datascript/schema] q)))})
         reconciler (om/reconciler {:state     conn
                                    :ui->props (utils/cached-ui->props-fn parser)
                                    :parser    parser

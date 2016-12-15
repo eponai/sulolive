@@ -114,20 +114,22 @@
                       (db/pull-many db query items)))})
 
 (defmethod client-read :query/featured-stores
-  [{:keys [db db-history query]} _ _]
+  [{:keys [db query]} _ _]
   ;; Only fetch featured-stores initially? i.e. (when (nil? db-history) ...)
   ;; TODO: Come up with a way to feature stores. DB SHUFFLE
-  (let [photos-fn (fn [store]
-                    (let [s (db/entity db store)
-                          [img-1 img-2] (into [] (comp (take 2) (map :item/img-src)) (:item/_store s))]
-                      {:db/id                  store
-                       :store/featured-img-src [img-1 (:store/photo s) img-2]}))]
-    {:remote true
-     :value  (let [featured-stores (db/all-with db {:where '[[?e :store/featured]]})]
-               (sort-by :db/id
-                        (into [] (comp (map photos-fn)
-                                       (map #(merge % (db/pull db query (:db/id %)))))
-                              featured-stores)))}))
+  {:remote true
+   :value  (letfn [(photos-fn [store]
+                     (let [s (db/entity db store)
+                           [img-1 img-2] (->> (:item/_store s)
+                                              (sort-by :db/id)
+                                              (map :item/img-src)
+                                              (take 2))]
+                       {:db/id                  store
+                        :store/featured-img-src [img-1 (:store/photo s) img-2]}))]
+             (sort-by :db/id
+                      (into [] (comp (map photos-fn)
+                                     (map #(merge % (db/pull db query (:db/id %)))))
+                            (db/all-with db {:where '[[?e :store/featured]]}))))})
 
 (defmethod client-read :query/stream-config
   [{:keys [db query]} k _]
