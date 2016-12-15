@@ -21,10 +21,14 @@
 
 ;; ----------
 
+(defn- env-params->store-id [env params]
+  (or (get-in env [:params :store-id])
+      (get-in params [:store-id])))
+
 (defmethod client-read :query/store
-  [{:keys [db query target]} _ {:keys [store-id]}]
+  [{:keys [db query target] :as env} _ p]
   (let [store (db/pull-one-with db query {:where   '[[?e]]
-                                          :symbols {'?e (c/parse-long store-id)}})]
+                                          :symbols {'?e (c/parse-long (env-params->store-id env p))}})]
     (if target
       {:remote true}
       {:value (common.read/multiply-store-items store)})))

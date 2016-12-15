@@ -33,6 +33,8 @@
           {}
           datomic-schema))
 
+(defn init-db [datomic-schema]
+  (d/db (d/create-conn (schema-datomic->datascript datomic-schema))))
 
 (defn pull-many
   "Experimental pull-many which has been much faster than the datascript one."

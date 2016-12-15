@@ -19,3 +19,14 @@
     (keyword? k) (when (empty-coll? v) :dissoc)
 
     :else nil))
+
+(defn remove-mutation-tx-reports
+  "Removes :db-after, :db-before and :tx-data from our
+  mutations' return values."
+  [response]
+  (reduce-kv (fn [m k _]
+               (if-not (symbol? k)
+                 m
+                 (update-in m [k :result] dissoc :db-after :db-before :tx-data :tempids)))
+             response
+             response))

@@ -20,7 +20,8 @@
     #?(:cljs
        (let [path js/window.location.pathname]
          {:store-id (last (clojure.string/split path #"/"))
-          :item (om/get-query item/Product) })))
+          :item (om/get-query item/Product) })
+       :clj {:store-id nil}))
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}

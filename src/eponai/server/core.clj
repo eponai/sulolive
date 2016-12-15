@@ -28,6 +28,7 @@
       (cond-> (some? extra-middleware) extra-middleware)
       m/wrap-format
       (m/wrap-state {::m/conn                     conn
+                     ::m/empty-datascript-db      (m/init-datascript-db conn)
                      ::m/parser                   (parser/server-parser)
                      ;::m/send-email-fn     (e/send-email-fn conn)
                      ::stripe/stripe-fn           (fn [k p]

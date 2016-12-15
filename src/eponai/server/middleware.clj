@@ -3,8 +3,6 @@
     [cognitect.transit :as transit]
     [clojure.string :as str]
     [environ.core :refer [env]]
-    [eponai.common.parser.util :as parser.util]
-    [eponai.server.http :as h]
     [ring.util.request :as ring.request]
     [ring.util.response :as ring.response]
     [ring.middleware.defaults :as r]
@@ -15,7 +13,12 @@
     [ring.middleware.transit :refer [wrap-transit-response
                                      wrap-transit-body]]
     [taoensso.timbre :refer [debug error trace]]
+    [eponai.common.parser.util :as parser.util]
+    [eponai.common.database :as db]
+    [eponai.common.datascript :as common.datascript]
     [eponai.server.auth :as auth]
+    [eponai.server.http :as h]
+    [eponai.server.datomic.query :as query]
     ;; Debug/dev require
     [prone.middleware :as prone])
   (:import (datomic.query EntityMap)))
@@ -129,3 +132,6 @@
       (if (contains? #{"bower_components" "node_modules"} p)
         (ring.response/resource-response (str/join "/" ps))
         (handler request)))))
+
+(defn init-datascript-db [conn]
+  (common.datascript/init-db (query/schema (db/db conn))))
