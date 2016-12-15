@@ -92,7 +92,7 @@
   admin-routes
   (GET "/" request (server.ui/index-html (request->props request)))
   (GET "/auth" request (server.ui/auth-html (merge (request->props request) (auth/auth0 request))))
-  (GET "/store/:store-id" request (server.ui/new-store-html (request->props request)))
+  (GET "/store/:store-id" request (server.ui/store-html (request->props request)))
   (GET "/goods/:product-id" r (server.ui/product-html (request->props r)))
   (GET "/goods" request (server.ui/goods-html (request->props request)))
   (GET "/checkout" request (server.ui/checkout-html (request->props request)))

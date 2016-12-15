@@ -9,12 +9,9 @@
     [eponai.common.ui.navbar :as nav]))
 
 (defui Product
-  static om/IQuery
-  (query [_]
-    [{:proxy/product (om/get-query cljc-product/ProductPage)}])
   Object
   (render [this]
-    (let [{:keys [release? proxy/product]} (om/props this)]
+    (let [{:keys [release? :eponai.server.ui/render-component-as-html]} (om/props this)]
       (dom/html
         {:lang "en"}
 
@@ -24,7 +21,7 @@
           nil
           (dom/div
             {:id "sulo-product-page" :class "sulo-page"}
-            (cljc-product/->ProductPage product)
+            (render-component-as-html cljc-product/ProductPage)
             ;(nav/navbar navbar)
 
             ;(dom/div {:className "page-content" :id "sulo-product-container"}

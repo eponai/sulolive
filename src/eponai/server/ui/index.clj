@@ -7,12 +7,9 @@
     [eponai.server.ui.common :as common]))
 
 (defui Index
-  static om/IQuery
-  (query [this]
-    [{:proxy/index (om/get-query index/Index)}])
   Object
   (render [this]
-    (let [{:keys [release? proxy/index]} (om/props this)]
+    (let [{:keys [release? :eponai.server.ui/render-component-as-html]} (om/props this)]
       (dom/html
         {:lang "en"}
 
@@ -20,7 +17,7 @@
         (dom/body
           nil
           (dom/div {:id "sulo-index" :className "sulo-page"}
-            (index/->Index index))
+            (render-component-as-html index/Index))
           ;(common/page-container
           ;  {:navbar navbar}
           ;  (dom/div

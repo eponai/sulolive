@@ -46,29 +46,12 @@
     (client.utils/init-state! reconciler remotes send-fn parser component)
     reconciler))
 
-(defn render-page [{:keys [release?] :as env} component]
-  (let [reconciler (make-reconciler env component)
-        ui-root (om/add-root! reconciler component nil)
-        html-string (dom/render-to-str ui-root)]
-    (html/render-html-without-reactid-tags
-      (dom/html
-       {:lang "en"}
-       (apply dom/head nil (common/head release?))
-       (dom/body
-         nil
-         (dom/div
-           {:id "sulo-store" :className "sulo-page"}
-           ;; Include the server side rendered react html, with react id tags:
-           (html/raw-string html-string))
-
-         (common/red5pro-script-tags release?)
-         (common/auth0-lock-passwordless release?)
-         (dom/script {:src  (common/budget-js-path release?)
-                      :type common/text-javascript})
-
-         (common/inline-javascript ["env.web.main.runstore()"])
-         ))))
-  )
+(defn component-to-html-str-fn [env]
+  (fn [component]
+    (let [reconciler (make-reconciler env component)
+          ui-root (om/add-root! reconciler component nil)
+          html-string (dom/render-to-str ui-root)]
+      (html/raw-string html-string))))
 
 (defn with-doctype [html-str]
   (str "<!DOCTYPE html>" html-str))
@@ -78,11 +61,12 @@
   (with-doctype (dom/render-to-str ((om/factory component) props))))
 
 (defn makesite [component]
-  (fn [props]
-    (let [component-props ((::component->props-fn props) component)
-          ret (render-to-str component (merge component-props
-                                              (dissoc props ::component->props-fn)))]
-      ret)))
+  (let [->component (om/factory component)]
+    (fn [env]
+      (with-doctype
+        (html/render-html-without-reactid-tags
+          (->component (assoc env ::render-component-as-html
+                                  (component-to-html-str-fn env))))))))
 
 (def auth-html (makesite auth/Auth))
 (def goods-html (makesite goods/Goods))
@@ -91,10 +75,3 @@
 (def store-html (makesite store/Store))
 (def checkout-html (makesite checkout/Checkout))
 (def streams-html (makesite streams/Streams))
-
-(defn new-store-html [env]
-  (debug "RENDERING NEW STORE")
-  (parser.util/timeit "old-store" (store-html env))
-  (parser.util/timeit "new-store" (timbre/with-level
-                                    :info
-                                    (render-page env common.store/Store))))
