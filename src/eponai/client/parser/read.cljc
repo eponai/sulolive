@@ -1,7 +1,7 @@
 (ns eponai.client.parser.read
   (:require
     [eponai.common.parser :as parser :refer [client-read]]
-    [eponai.common.parser.read :as common.read]
+    [eponai.common.parser.read :as common.read :refer [get-param]]
     [eponai.common.database :as db]
     [om.next.impl.parser :as om.parser]
     [eponai.common :as c]
@@ -21,14 +21,10 @@
 
 ;; ----------
 
-(defn- env-params->store-id [env params]
-  (or (get-in env [:params :store-id])
-      (get-in params [:store-id])))
-
 (defmethod client-read :query/store
   [{:keys [db query target] :as env} _ p]
   (let [store (db/pull-one-with db query {:where   '[[?e]]
-                                          :symbols {'?e (c/parse-long (env-params->store-id env p))}})]
+                                          :symbols {'?e (c/parse-long (get-param env p :store-id))}})]
     (if target
       {:remote true}
       {:value (common.read/multiply-store-items store)})))
@@ -58,10 +54,12 @@
                   (read-local-cart db cart)))})))
 
 (defmethod client-read :query/items
-  [{:keys [db query target]} _ {:keys [category search]}]
+  [{:keys [db query target] :as env} _ p]
   (if target
     {:remote true}
-    {:value (let [pattern {:where '[[?e :item/name]]}]
+    {:value (let [category (get-param env p :category)
+                  search (get-param env p :search)
+                  pattern {:where '[[?e :item/name]]}]
               (assert (some #{:db/id} query)
                       (str "Query to :query/all-tiems must contain :db/id, was: " query))
 
@@ -77,12 +75,12 @@
                        (sort-by :db/id)))}))
 
 (defmethod client-read :query/item
-  [{:keys [db query target]} _ {:keys [product-id]}]
+  [{:keys [db query target] :as env} _ p]
   (if target
     {:remote true}
     {:value (db/pull-one-with db query
                               {:where   '[[?e :item/name]]
-                               :symbols {'?e (c/parse-long product-id)}})}))
+                               :symbols {'?e (c/parse-long (get-param env p :product-id))}})}))
 
 (defmethod client-read :query/auth
   [{:keys [target]} _ _]
@@ -97,8 +95,7 @@
   ;(debug "Read query/auth: ")
   (if target
     {:remote true}
-    {:value (db/pull-all-with db query
-                              {:where '[[?e :stream/name]]})}))
+    {:value (db/pull-all-with db query {:where '[[?e :stream/name]]})}))
 
 ; ### FEATURED ### ;
 
