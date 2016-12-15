@@ -4,35 +4,25 @@
     [taoensso.timbre :refer [debug warn]]))
 
 (def global-styles
-  {::global-float-left  "float-left"
-   ::global-float-right "float-right"})
+  {::float-left      "float-left"
+   ::float-right     "float-right"
+   ::text-right      "text-right"
+   ::vertical        "vertical"
 
-(defn- calc-grid-styles []
-  (let [breakpoints ["small" "medium" "large" "xlarge"]
-        prefix :grid-column
-        cols 12
+   ::callout         "callout"
 
-        ret (reduce (fn [m bp]
-                  (let [str-vals (map #(str (name bp) "-" %) (range 1 (inc cols)))
-                        ks (map #(keyword
-                                  (str 'eponai.common.ui.elements.css)
-                                  (str (name prefix) "-" %))
-                                str-vals)]
-                    (merge m
-                           (zipmap ks str-vals)))) {} breakpoints)]
-    ret))
+   ;; Menu
+   ::menu            "menu"
+   ::active          "active"
+   ::menu-text       "menu-text"
+   ::menu-dropdown   "menu-dropdown"
 
-(def grid-styles
-  (merge
-    {::grid-row              "row"
-     ::grid-row-align-middle "align-middle"
-     ::grid-row-align-bottom "align-bottom"
-     ::grid-row-align-top "align-top"
-     ::grid-column           "column"}
-    (calc-grid-styles)))
+   ;; Grid
+   ::row             "row"
+   ::column          "column"
 
-(def photo-styles
-  {::photo     "photo"
+   ;; Photo
+   ::photo           "photo"
    ::photo-container "photo-container"
    ::photo-square    "square"
    ::photo-thumbnail "thumbnail"
@@ -40,34 +30,22 @@
    ::photo-collage   "collage"
    ::photo-cover     "cover"})
 
-(def menu-styles
-  {::menu          "menu"
-   ::menu-vertical "vertical"
-   ::menu-active   "active"
-   ::menu-text     "menu-text"
-   ::menu-dropdown "menu-dropdown"})
+(def breakpoints {:small "small" :medium "medium" :large "large" :xlarge "xlarge" :xxlarge "xxlarge"})
+(def grid-cols 12)
 
-(def cart-styles
-  {::cart "cart"})
-
-(def store-styles
-  {::store-main-menu "store-main-menu"
-   ::store-container "store-container"})
-
-(defn all-styles []
-  (merge
-    global-styles
-    grid-styles
-    photo-styles
-    menu-styles
-    cart-styles
-    store-styles))
-
+(defn grid-styles []
+  (reduce (fn [l [_ v]]
+            (apply conj l (mapcat (fn [n]
+                              [(keyword (str v "-" n))
+                               (keyword (str v "-order-" n))])
+                            (range 1 (inc grid-cols)))))
+          #{} breakpoints))
 (defn keys->classes
   [ks]
-  (let [all (all-styles)
+  (let [all global-styles
         style-set (set ks)]
-    (when-not (every? #(some? (get all %)) style-set)
+    (when-not (every? #(some? (or (get all %)
+                                  (contains? (grid-styles) (name %)))) style-set)
       (let [unexpected (filter #(nil? (get all %)) style-set)]
         (warn "Unexpected CSS class keys " unexpected ", using values " (map name unexpected) ". Available keys: " (keys all))))
 
@@ -79,3 +57,39 @@
   Valid keywords are found in eponai.common.ui.elements.photo/all-styles"
   [styles]
   (s/join " " (keys->classes styles)))
+
+(defn add-class [class opts]
+  (update opts :classes conj class))
+
+(defn text-right [& [opts]]
+  (add-class ::text-right opts))
+
+(defn grid-row [& [opts]]
+  (add-class ::row opts))
+
+(defn grid-sizes [sizes & [opts]]
+  (reduce (fn [m class]
+            (add-class class m))
+          opts
+          (map (fn [[k v]]
+                 (when (contains? breakpoints k)
+                   (str (get breakpoints k) "-" v)))
+               sizes)))
+
+(defn grid-orders [orders & [opts]]
+  (reduce (fn [m class]
+            (add-class class m))
+          opts
+          (map (fn [[k v]]
+                 (when (contains? breakpoints k)
+                   (str (get breakpoints k) "-order-" v)))
+               orders)))
+
+(defn align [alignment & [opts]]
+  (add-class (keyword (str (name :align) "-" (name alignment))) opts))
+
+(defn grid-column [& [opts]]
+  (add-class ::column opts))
+
+(defn callout [& [opts]]
+  (add-class ::callout opts))

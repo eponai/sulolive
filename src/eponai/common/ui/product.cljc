@@ -1,8 +1,8 @@
 (ns eponai.common.ui.product
   (:require
+    [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.common :as c]
     [eponai.common.ui.elements.css :as css]
-    [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.utils :as utils]
     [om.next :as om :refer [defui]]
     [om.dom :as dom]
@@ -47,29 +47,32 @@
 
       (dom/div
         #js {:id "sulo-product"}
-        (grid/row
-          {:classes [::css/grid-row-align-middle
-                     ::css/store-container]}
-          (grid/column
-            {:classes [::css/grid-column-small-2
-                       ::css/grid-column-medium-1]}
-            (photo/square (:store/photo store) ))
-          (grid/column
-            nil
+        (my-dom/div
+          (->> (css/grid-row)
+               (css/align :bottom)
+               (css/add-class :padded)
+               (css/add-class :vertical))
+          (my-dom/div
+            (->> (css/grid-column)
+                 (css/grid-sizes {:small 2 :medium 1}))
+            (photo/square (:store/photo store)))
+
+          (my-dom/div
+            (css/grid-column)
             (dom/a #js {:href (str "/store/" (:db/id store))}
                    (dom/p #js {:className "store-name"} (:store/name store)))
             (c/rating-element (:store/rating store) (:store/review-count store))))
 
 
-        (grid/row-column
-          nil
-          (grid/row
-            nil
-            (grid/column
-              {:classes [::css/grid-column-small-12
-                         ::css/grid-column-medium-8
-                         :medium-order-1
-                         :small-order-2]}
+        (my-dom/div
+          (->> (css/grid-row)
+               css/grid-column)
+          (my-dom/div
+            (css/grid-row)
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/grid-sizes {:small 12 :medium 8})
+                   (css/grid-orders {:small 2 :medium 1}))
               (photo/photo img-src)
 
               (apply dom/div #js {:className "multi-photos-container"}
@@ -77,8 +80,9 @@
                             (photo/thumbail im))
                           (take 4 (repeat img-src)))))
 
-            (grid/column
-              {:classes [:small-order-1 :medium-order-2]}
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/grid-orders {:small 1 :medium 2}))
               (dom/div #js {:className "product-info"}
                 (dom/h1 #js {:className "product-info-title"} item-name)
                 (dom/h2 #js {:className "product-info-price"}
@@ -88,7 +92,8 @@
                                                              :query/cart])
                             :className "button expanded"} "Add to bag"))))
 
-          (grid/row-column nil
+          (my-dom/div
+            (css/grid-column)
             (menu/horizontal
               nil
               (menu/item-tab {:active?  (= selected-tab :details)
