@@ -3,8 +3,8 @@
     [clojure.set :as set]
     [eponai.common.parser :as parser :refer [client-read]]
     [eponai.common.parser.util :as parser.util]
-    [eponai.common.parser.read :as common.read :refer [get-param]]
     [eponai.common.database :as db]
+    [eponai.common.parser.read :as common.read]
     [om.next.impl.parser :as om.parser]
     [eponai.client.routes :as routes]
     [eponai.common :as c]
@@ -25,12 +25,12 @@
 ;; ----------
 
 (defmethod client-read :query/store
-  [{:keys [db query target] :as env} _ p]
-  (let [store-id (c/parse-long (get-param env p :store-id))
+  [{:keys [db query target ast route-params] :as env} _ _]
+  (let [store-id (c/parse-long (:store-id route-params))
         store (db/pull-one-with db query {:where   '[[?e]]
-                                          :symbols {'?e (c/parse-long (get-param env p :store-id))}})]
+                                          :symbols {'?e store-id}})]
     (if target
-      {:remote true}
+      {:remote (assoc-in ast [:params :store-id] store-id)}
       {:value (common.read/multiply-store-items store)})))
 
 (defn local-cart []
@@ -58,34 +58,36 @@
                   (read-local-cart db cart)))})))
 
 (defmethod client-read :query/items
-  [{:keys [db query target] :as env} _ p]
-  (if target
-    {:remote true}
-    {:value (let [when-string #(when (string? %) %)
-                  category (when-string (get-param env p :category))
-                  search (when-string (get-param env p :search))
-                  pattern {:where '[[?e :item/name]]}]
-              (assert (some #{:db/id} query)
-                      (str "Query to :query/all-tiems must contain :db/id, was: " query))
-
-              (cond->> (db/pull-all-with db query pattern)
-                       (or search category)
-                       (filter #(cond (not-empty search)
-                                      (not-empty (re-find (re-pattern search) (.toLowerCase (:item/name %))))
-                                      (some? category)
-                                      (= category (:item/category %))
-                                      :else
-                                      true))
-                       :always
-                       (sort-by :db/id)))}))
+  [{:keys [db query target route-params ast] :as env} _ p]
+  (let [{:keys [category search]} route-params]
+    (if target
+      {:remote (cond-> ast
+                       (some? category)
+                       (assoc-in [:params :category] category)
+                       (some? search)
+                       (assoc-in [:params :search] search))}
+      {:value (let [pattern {:where '[[?e :item/name]]}]
+                (assert (some #{:db/id} query)
+                        (str "Query to :query/all-tiems must contain :db/id, was: " query))
+                (cond->> (db/pull-all-with db query pattern)
+                         (or search category)
+                         (filter #(cond (not-empty search)
+                                        (not-empty (re-find (re-pattern search) (.toLowerCase (:item/name %))))
+                                        (some? category)
+                                        (= category (:item/category %))
+                                        :else
+                                        true))
+                         :always
+                         (sort-by :db/id)))})))
 
 (defmethod client-read :query/item
-  [{:keys [db query target] :as env} _ p]
-  (if target
-    {:remote true}
-    {:value (db/pull-one-with db query
-                              {:where   '[[?e :item/name]]
-                               :symbols {'?e (c/parse-long (get-param env p :product-id))}})}))
+  [{:keys [db query target route-params ast]} _ _]
+  (let [product-id (c/parse-long (:product-id route-params))]
+    (if target
+      {:remote (assoc-in ast [:params :product-id] product-id)}
+      {:value (db/pull-one-with db query
+                                {:where   '[[?e :item/name]]
+                                 :symbols {'?e product-id}})})))
 
 (defmethod client-read :query/auth
   [{:keys [target]} _ _]

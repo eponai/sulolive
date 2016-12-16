@@ -7,10 +7,12 @@
     [eponai.client.parser.merge :as merge]
     [eponai.client.backend :as backend]
     [eponai.client.remotes :as remotes]
+    [medley.core :as medley]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     ;; Routing
+    [cemerick.url :as url]
     [bidi.bidi :as bidi]
     [pushy.core :as pushy]
     [eponai.client.routes :as routes]
@@ -18,10 +20,12 @@
     [eponai.common.ui.router :as router]))
 
 (defn update-route-fn [reconciler-atom]
-  (fn [{:keys [handler route-params]}]
+  (fn [{:keys [handler route-params] :as match}]
     (let [r @reconciler-atom]
-      (routes/set-route! r handler {:route-params route-params
-                                    :queue?       (some? (om/app-root r))}))))
+      (try (routes/set-route! r handler {:route-params route-params
+                                     :queue?       (some? (om/app-root r))})
+           (catch :default e
+             (debug "Tried to set route: " match ", got error: " e))))))
 
 (defn apply-once [f]
   (let [appliced? (atom false)]
@@ -41,9 +45,15 @@
         match-route (partial bidi/match-route common.routes/routes)
         history (pushy/pushy (update-route-fn reconciler-atom) match-route)
         current-route-fn #(:handler (match-route (pushy/get-token history)))
-        parser (parser/client-parser (parser/client-parser-state
-                                       {::parser/get-route-params #(:route-params (current-route-fn))}))
         conn (utils/create-conn)
+        parser (parser/client-parser
+                 (parser/client-parser-state
+                   {::parser/get-route-params #(let [route-params (or (:route-params (routes/current-route conn))
+                                                                      (:route-params (current-route-fn)))
+                                                     url (pushy/get-token history)
+                                                     query-params (medley/map-keys keyword (:query (url/url url)))]
+                                                ;;TODO: These are merged for now. Separate them?
+                                                (merge route-params query-params))}))
         remotes [:remote :remote/user]
         send-fn (backend/send! reconciler-atom
                                {:remote      (-> (remotes/post-to-url "/api")

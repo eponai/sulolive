@@ -359,9 +359,9 @@
 (def ^:dynamic *parser-allow-remote* true)
 (def ^:dynamic *parser-allow-local-read* true)
 
-(defn with-assoced-env [read-or-mutate m]
+(defn with-assoced-env [read-or-mutate map-thunk]
   (fn [env k p]
-    (read-or-mutate (merge env m) k p)))
+    (read-or-mutate (merge env (map-thunk)) k p)))
 
 (defn with-remote-guard [read-or-mutate]
   (fn [{:keys [target] :as env} k p]
@@ -415,11 +415,11 @@
    (make-parser state
                 (fn [parser state]
                   (fn [env query & [target]]
-                    (parser (assoc env ::server? false) query target)))
-                (fn [read {:keys [elide-paths txs-by-project ::get-route-params] :as state}]
+                    (parser (assoc env ::server? false
+                                       :route-params ((::get-route-params state)))
+                            query target)))
+                (fn [read {:keys [elide-paths txs-by-project] :as state}]
                   (-> read
-                      (cond-> (some? get-route-params)
-                              (with-assoced-env {:params (get-route-params)}))
                       wrap-datascript-db
                       (with-txs-by-project-atom txs-by-project)
                       (cond-> (not elide-paths)

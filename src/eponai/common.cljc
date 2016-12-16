@@ -6,8 +6,10 @@
              [goog.string :as gstring])))
 
 (defn parse-long [l]
-  #?(:clj  (Long/parseLong l)
-     :cljs (cljs.reader/read-string l)))
+  (if (and (number? l) (= l (long l)))
+    l
+    #?(:clj  (Long/parseLong l)
+       :cljs (cljs.reader/read-string l))))
 
 (defn format-str [s & args]
   #?(:clj  (apply clojure.core/format s args)

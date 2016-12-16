@@ -16,21 +16,15 @@
         "checkout"             :checkout}])
 
 (def route->component
-  {:index    {:id        "sulo-index"
-              :component index/Index
+  {:index    {:component index/Index
               :factory   index/->Index}
-   :store    {:id        "sulo-store"
-              :component store/Store
+   :store    {:component store/Store
               :factory   store/->Store}
-   :checkout {:id        "sulo-checkout"
-              :component checkout/Checkout
+   :checkout {:component checkout/Checkout
               :factory   checkout/->Checkout}
-   :goods    {:id        "sulo-items"
-              :component goods/Goods
+   :goods    {:component goods/Goods
               :factory   goods/->Goods}
-   :product  {:id        "sulo-product-page"
-              :component product/ProductPage
+   :product  {:component product/ProductPage
               :factory   product/->ProductPage}
-   :streams  {:id        "sulo-streams"
-              :component streams/Streams
+   :streams  {:component streams/Streams
               :factory   streams/->Streams}})

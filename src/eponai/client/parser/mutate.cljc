@@ -49,7 +49,8 @@
   [{:keys [state]} _ {:keys [route route-params]}]
   {:action (fn []
              (debug "Setting route: " route " route-params: " route-params)
-             (db/transact state [(cond-> {:ui/singleton                      :ui.singleton/routes
-                                          :ui.singleton.routes/current-route route}
-                                         (seq route-params)
-                                         (assoc :ui.singleton.routes/route-params route-params))]))})
+             (let [id (:db/id (db/entity (db/db state) [:ui/singleton :ui.singleton/routes]))]
+               (db/transact state [[:db/add id :ui.singleton.routes/current-route route]
+                                   (if (seq route-params)
+                                     [:db/add id :ui.singleton.routes/route-params route-params]
+                                     [:db.fn/retractAttribute id :ui.singleton.routes/route-params])])))})

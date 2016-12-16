@@ -1,6 +1,5 @@
 (ns eponai.common.ui.goods
   (:require
-    [cemerick.url :as url]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.product-item :as pi]
     [om.dom :as dom]
@@ -10,19 +9,10 @@
     [eponai.common.ui.product :as product]))
 
 (defui Goods
-  static om/IQueryParams
-  (params [_]
-    #?(:cljs
-       (let [href js/window.location.href
-             {:strs [category search]} (:query (url/url href))]
-         (debug "Got query: " (:query (url/url href)))
-         {:category category
-          :search search})))
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     `({:query/items ~(om/get-query product/Product)} {:category ~'?category
-                                                       :search ~'?search})])
+     {:query/items (om/get-query product/Product)}])
   Object
   (render [this]
     (let [{:keys [query/items proxy/navbar]} (om/props this)]

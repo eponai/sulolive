@@ -15,25 +15,18 @@
     [eponai.common.ui.elements.menu :as menu]))
 
 (defui Store
-  static om/IQueryParams
-  (params [_]
-    #?(:cljs
-       (let [path js/window.location.pathname]
-         {:store-id (last (clojure.string/split path #"/"))
-          :item (om/get-query item/Product) })
-       :clj {:store-id nil}))
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:proxy/stream (om/get-query stream/Stream)}
-     `({:query/store [:db/id
-                      :store/cover
-                      :store/photo
-                      {:item/_store ~(om/get-query item/Product)}
-                      {:stream/_store [:stream/name :stream/viewer-count]}
-                      :store/name
-                      :store/rating
-                      :store/review-count]} {:store-id ~'?store-id})])
+     {:query/store [:db/id
+                    :store/cover
+                    :store/photo
+                    {:item/_store (om/get-query item/Product)}
+                    {:stream/_store [:stream/name :stream/viewer-count]}
+                    :store/name
+                    :store/rating
+                    :store/review-count]}])
   Object
   (initLocalState [this]
     ;{:show-chat? false}

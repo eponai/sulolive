@@ -3,21 +3,11 @@
     [eponai.common.database :as db]
     [eponai.common.datascript :as eponai.datascript]
     [eponai.common.parser :as parser :refer [server-read read-basis-param-path]]
-    [eponai.common.parser.read :as common.read :refer [get-param]]
     [eponai.server.datomic.query :as query]
     [environ.core :as env]
-    [clojure.data.generators :as gen]
     [datomic.api :as d]
     [taoensso.timbre :refer [error debug trace warn]]
-    [eponai.server.auth :as auth])
-  (:import [java.util Random]))
-
-(defn db-shuffle
-  "Shuffle items consistently with the db, meaing
-  with the same db basis-t you get the same items."
-  [db items]
-  (binding [gen/*rnd* (Random. (d/basis-t db))]
-    (gen/shuffle items)))
+    [eponai.server.auth :as auth]))
 
 (defmethod server-read :datascript/schema
   [{:keys [db db-history]} _ _]
@@ -30,20 +20,16 @@
                                                  (seq items)
                                                  (db/merge-query {:symbols {'[?e ...] items}})))})
 
-(defmethod read-basis-param-path :query/store [e _ p] [(get-param e p :store-id)])
+(defmethod read-basis-param-path :query/store [_ _ {:keys [store-id]}]
+  [store-id])
 (defmethod server-read :query/store
-  [{:keys [db db-history query auth] :as env} _ p]
-  (let [store-id (get-param env p :store-id)]
-    (when-let [store-id (cond-> store-id (string? store-id) (Long/parseLong))]
-      {:value (query/one db db-history query {:where   '[[?e]]
-                                              :symbols {'?e store-id}})})))
+  [{:keys [db db-history query]} _ {:keys [store-id]}]
+  {:value (query/one db db-history query {:where   '[[?e]]
+                                          :symbols {'?e store-id}})})
 
 (defmethod server-read :query/items
-  [{:keys [db db-history query params] :as env} _ p]
-  {:value (let [when-string #(when (string? %) %)
-                category (when-string (get-param env p :category))
-                search (when-string (get-param env p :search))
-                entity-query (if (or category search)
+  [{:keys [db db-history query]} _ {:keys [category search]}]
+  {:value (let [entity-query (if (or category search)
                                (cond-> {:where []}
                                        (not-empty category)
                                        (db/merge-query
@@ -59,13 +45,13 @@
                                {:where '[[?e :item/name]]})]
             (query/all db db-history query entity-query))})
 
-(defmethod read-basis-param-path :query/item [env _ p] [(get-param env p :product-id)])
+(defmethod read-basis-param-path :query/item [_ _ {:keys [product-id]}]
+  [product-id])
 (defmethod server-read :query/item
-  [{:keys [db db-history query params] :as env} _ p]
-  (let [product-id (get-param env p :product-id)]
-    {:value (query/one db db-history query
-                       {:where   '[[?e :item/name]]
-                        :symbols {'?e (Long/parseLong product-id)}})}))
+  [{:keys [db db-history query]} _ {:keys [product-id]}]
+  {:value (query/one db db-history query
+                     {:where   '[[?e :item/name]]
+                      :symbols {'?e product-id}})})
 
 (defmethod server-read :query/auth
   [{:keys [auth]} _ _]

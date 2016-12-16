@@ -5,7 +5,7 @@
     [eponai.common.database :as db]
     [taoensso.timbre :as timbre :refer [debug]]))
 
-(def root-route-key ::app-root)
+(def root-route-key :routing/app-root)
 
 (defn set-route!
   "Set's the app route given either a reconciler or a component, and a route.
@@ -17,7 +17,7 @@
 
    Examples:
    - Set route to be a store:
-     (set-route! this :store/by-id {:route-params 12345})
+     (set-route! this :store {:route-params {:store-id 12345}})
    - Set route to index and re-read :cart/price
      (set-route! this :index {:tx :cart/price})
      (set-route! this :index {:tx [:cart/price]})
@@ -48,7 +48,7 @@
            [db/connection? db/db]]))
 
 (defn current-route [x]
-  {:pre [(or (om/component? x) (om/reconciler x) (db/connection? x) (db/database? x))]}
+  {:pre [(or (om/component? x) (om/reconciler? x) (db/connection? x) (db/database? x))]}
   (-> (to-db x)
       (db/entity [:ui/singleton :ui.singleton/routes])
       (->> (into {}))

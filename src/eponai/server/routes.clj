@@ -30,17 +30,18 @@
         ui-route (bidi/match-route common.routes/routes path-info)]
     (debug [:path-info path-info :ui-route ui-route])
     {:empty-datascript-db            (::m/empty-datascript-db request)
-    :state                          (::m/conn request)
-    :release?                       (release? request)
-    :params                         (:params request)
-    :route-params                   (:route-params ui-route)
-    ;; TODO: Un-hard code this.
-    :route                          (:handler ui-route)
-    :auth                           (:identity request)
-    ::server.ui/component->props-fn (fn [component]
-                                      (-> request
-                                          (assoc :body {:query (om/get-query component)})
-                                          (handle-parser-request)))}))
+     :state                          (::m/conn request)
+     :release?                       (release? request)
+     :params                         (:params request)
+     :route-params                   (merge (:route-params ui-route)
+                                            (:params request))
+     ;; TODO: Un-hard code this.
+     :route                          (:handler ui-route)
+     :auth                           (:identity request)
+     ::server.ui/component->props-fn (fn [component]
+                                       (-> request
+                                           (assoc :body {:query (om/get-query component)})
+                                           (handle-parser-request)))}))
 
 ;----------API Routes
 
@@ -51,8 +52,7 @@
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
      :state                             conn
      :auth                              (:identity request)
-     :params                            (:params request)
-     :route-params                      (:params request)}
+     :params                            (:params request)}
     (:query body)))
 
 (defn trace-parser-response-handlers
@@ -100,6 +100,7 @@
 
 (defroutes
   admin-routes
+  ;;TODO: Use bidi->compojure routes:
   (GET "/" request (server.ui/index-html (request->props request)))
   (GET "/auth" request (server.ui/auth-html (merge (request->props request) (auth/auth0 request))))
   (GET "/store/:store-id" request (server.ui/store-html (request->props request)))
