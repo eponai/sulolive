@@ -50,7 +50,7 @@ $global-width: rem-calc(1024);
 $global-lineheight: 1.5;
 $foundation-palette: (
   primary: #240061, //#2199e8,
-  secondary: #fefefe,//#D9D7D9, //#3A5288,
+  secondary: #D9D7D9, //#3A5288,
   success: #3adb76,
   warning: #ffae00,
   alert: #ec5840,
@@ -102,13 +102,13 @@ $block-grid-max: 8;
 // 4. Base Typography
 // ------------------
 
-$header-font-family: 'Noto Sans', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;//$body-font-family;
-$header-font-weight: $global-weight-normal;
-$header-font-style: italic;
+$header-font-family: Arial, sans-serif;//$body-font-family;
+$header-font-weight: bold;//$global-weight-normal;
+$header-font-style: normal;
 $font-family-monospace: Consolas, 'Liberation Mono', Courier, monospace;
 $header-sizes: (
   small: (
-    'h1': 24,
+    'h1': 78,
     'h2': 20,
     'h3': 19,
     'h4': 18,
@@ -116,7 +116,7 @@ $header-sizes: (
     'h6': 16,
   ),
   medium: (
-    'h1': 48,
+    'h1': 120,
     'h2': 28,//40,
     'h3': 22,
     'h4': 25,
@@ -124,7 +124,7 @@ $header-sizes: (
     'h6': 16,
   ),
 );
-$header-color: $primary-color;//inherit;
+$header-color: inherit;
 $header-lineheight: 1.4;
 $header-margin-bottom: 1rem;
 $header-text-rendering: optimizeLegibility;
@@ -141,7 +141,7 @@ $code-background: $light-gray;
 $code-border: 1px solid $medium-gray;
 $code-padding: rem-calc(2 5 1);
 
-$anchor-color: $primary-color;
+$anchor-color: $body-font-color;//$primary-color;
 $anchor-color-hover: scale-color($anchor-color, $lightness: -14%);
 $anchor-text-decoration: none;
 $anchor-text-decoration-hover: none;

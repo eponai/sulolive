@@ -4,7 +4,8 @@ $header-background-color: rgba($white,1);//map-get($foundation-palette, primary)
 $header-font-color: $black;
 $header-border-color: rgba($black, 0.1);
 
-$banner-background-color: rgba($primary-color, 0.15);
+$banner-background-color: #FFECD6;//rgba($primary-color, 0.15);
+$section-footer-color: $primary-color;
 
 // $font-color-light: $bod;
 
@@ -28,42 +29,40 @@ $banner-background-color: rgba($primary-color, 0.15);
 	.intro-header {
 		// box-shadow: 0 0px 1px 1px rgba($brown, 0.15);
 
-		// height: 40vh;
+		min-height: 30rem;
+		height: 75vh;
 		font-size: 3rem;
 		padding-top: 8rem;
 		padding-bottom: 4rem;
 		background: $header-background-color;
 		position: relative;
 		border-bottom: 1px solid $header-border-color;
+		> * {
+			vertical-align: middle;
+		}
 		h1 {
-			// color: $header-font-color;
-			font-weight: 500;
-			margin-bottom: 4rem;
-			// font-size: inherit;
 			@include breakpoint(medium) {
-				font-weight: 400;
+				font-weight: bold;
 			}
 			small {
 				font-size: inherit;
-				color: rgba($primary-color, 0.15);
 			}
 		}
 		h2 {
-			// font
-			// font-size: 1.7rem;
-			color: rgba($primary-color, 0.5);
+			font-weight: bold;
 			text-transform: uppercase;
 
 		}
 		.button, input {
 			box-shadow: 0px 1px 1px 1px rgba($black, 0.1);
+			margin: 0;
 		}
 	
 		.header-content {
 			display: block;
 			position: relative;
 			.search-container {
-				margin-top: 4rem;
+				// margin-top: 4rem;
 			}
 		}
 	}
@@ -97,23 +96,10 @@ $banner-background-color: rgba($primary-color, 0.15);
 			padding-bottom: 2rem;
 		}
 		background: $banner-background-color;
-		p {
-			@include breakpoint(medium) {
-				font-size: 1.2rem;
-			}
-			text-transform: uppercase;
-			font-style: italic;
-			// color: $font-color-light;
-			// text-shadow: 1px 1px 1px rgba($black, 0.5);
-		}
 
 		&.white {
 			background: $white; //#F0EDE3;
-		border-bottom: 1px solid $banner-background-color;
-			p {
-				// color: $banner-background-color;
-				text-shadow: none;
-			}
+			border-bottom: 1px solid rgba($primary-color, 0.1);
 		}	
 	}
 
@@ -121,42 +107,65 @@ $banner-background-color: rgba($primary-color, 0.15);
 		margin-top: 8rem;
 		margin-bottom: 2rem;
 
-		&:first-child {
-			margin-top: 1rem;
-		}
+		// &:first-child {
+		// 	margin-top: 1rem;
+		// }
 		.section-footer {
 			padding: 1rem 0;
+			margin-top: $global-margin;
 			@include breakpoint(large) {
 				padding: 0 0 1rem 0;
 			}
 			a {
+				color: $section-footer-color;
 				font-weight: bold;
 			}
 		}
 		.section-header {
-			display: flex;
-			align-items: center;
-			position: relative;
+			padding: 0 $global-padding;
+			margin-bottom: 2rem;
 			text-transform: uppercase;
 			h3 {
-				flex: 1 0 auto;
-			}
-			// border-bottom: 1px solid $header-border-color;
-			a {
-				color: rgba($primary-color, 0.5);
-
-				// position: absolute;
-				text-transform: none;
+				text-align: center;
+				margin-bottom: 0;
 				font-weight: bold;
-				right: 0;
 			}
+			.middle-border { 
+				position: relative;
+				visibility: hidden;
+				@include breakpoint(medium) {
+					visibility: visible;
+				}
+			}
+			.middle-border:before { 
+				content: '';
+				position: absolute;
+				left: 0;
+				border-bottom: 2px solid $body-font-color;
+				height: 100%;
+				width: 100%;
+				transform: translateY(-50%);
+			}
+			// a {
+			// 	color: rgba($primary-color, 0.5);
+			// 	text-transform: none;
+			// 	font-weight: bold;
+			// 	right: 0;
+			// }
 		}
 
 		&.online-channels {
-			margin-top: 2rem;	
+			// margin-top: 2rem;	
 			.overlay-container {
 				p, i {
 					font-size: 1.2rem;
+				}
+			}
+		}
+		&.collections {
+			.overlay-container {
+				p {
+					text-transform: uppercase;
 				}
 			}
 		}

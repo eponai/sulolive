@@ -29,51 +29,47 @@
                                           " medium-offset-4 text-right"))}
                content)))))
 
-(defn content-section [{:keys [href sizes class]} header content footer]
+(defn content-section [{:keys [href class sizes]} header content footer]
   (div
     (->> {:classes [class]}
          css/grid-row
          css/grid-column
          (css/add-class :section))
+    ;(div
+    ;  (->> (css/grid-row) css/grid-column))
     (div
-      (->> (css/grid-row) css/grid-column (css/add-class :section-header))
-      (dom/h3 nil header)
-      (a {:href href}
-         (dom/span nil "See more >>")))
+      (->> (css/grid-row) (css/add-class :section-header) (css/add-class :small-unstack))
+      (div (->> (css/grid-column) (css/add-class :middle-border)))
+      (div (->> (css/grid-column) (css/add-class :shrink))
+           (dom/h3 nil header))
+      (div (->> (css/grid-column) (css/add-class :middle-border)))
+      ;(a {:href href}
+      ;   (dom/span nil "See more >>"))
+      )
 
     (apply div
            (->> (css/grid-row)
                 (css/grid-row-columns sizes))
            content)
-    ;(div
-    ;  (->> (css/grid-row) css/grid-column (css/add-class :section-footer))
-    ;  (dom/a #js {:href href} footer))
+    (div
+      (->> (css/grid-row) css/grid-column (css/add-class :section-footer) (css/text-align :right))
+      (dom/a #js {:href href} footer))
     ))
 
-(defn store-element [store]
-  (let [store-link (common/link-to-store store)]
-    (div
-      (->> (css/grid-column)
-           (css/add-class :content-item))
+(defn collection-element [{:keys [url title]}]
+  (div
+    (->> (css/grid-column)
+         (css/add-class :content-item))
 
-      ;; Use the whole thing as hover elem
-      (my-dom/a
-        {:href store-link}
-        (photo/with-overlay
-          nil
-          (photo/collage {:srcs (:store/featured-img-src store)})
-          (my-dom/div
-            (->> (css/text-align :center))
-            (dom/p nil (dom/span nil (:store/name store)))
-            (common/rating-element (:store/rating store) (:store/review-count store))
-            (my-dom/div
-              (->> (css/add-class :padded)
-                   (css/add-class :vertical))))))
-
-      (div
-        (css/add-class :content-item-title-section)
-        (a {:href store-link}
-           (dom/span nil (:store/name store)))))))
+    ;; Use the whole thing as hover elem
+    (my-dom/a
+      {:href (str "/goods?category=" (.toLowerCase title))}
+      (photo/with-overlay
+        nil
+        (photo/photo {:src url})
+        (my-dom/div
+          (->> (css/text-align :center))
+          (dom/p nil (dom/strong nil title)))))))
 
 (defui Index
   static om/IQuery
@@ -84,7 +80,7 @@
                              :item/price
                              :item/id
                              :item/img-src
-                             :item/store]}
+                             {:item/store [:store/name]}]}
      {:query/featured-stores [:db/id
                               :store/name
                               :store/featured
@@ -121,7 +117,8 @@
      (componentWillUnmount [this]
                            (let [body (.getElementById js/document "sulo-index")
                                  {:keys [lock on-scroll-fn]} (om/get-state this)]
-                             (.removeEventListener body "scroll" on-scroll-fn))))
+                             ;(.removeEventListener body "scroll" on-scroll-fn)
+                             )))
   #?(:cljs
      (componentDidMount [this]
                         (debug "Component did mount")
@@ -129,8 +126,9 @@
                              navbar-brand (.getElementById js/document "navbar-brand")
                              {:keys [lock on-scroll-fn]} (om/get-state this)]
                          (debug "Scroll body: " body)
-                         (set! (.-opacity (.-style navbar-brand)) 0)
-                         (.addEventListener body "scroll" on-scroll-fn))))
+                         ;(set! (.-opacity (.-style navbar-brand)) 0)
+                         ;(.addEventListener body "scroll" on-scroll-fn)
+                         )))
   (render [this]
     (let [{:keys [proxy/navbar query/featured-items query/featured-stores query/featured-streams]} (om/props this)
           {:keys [input-search]} (om/get-state this)]
@@ -150,40 +148,42 @@
                   (css/grid-row)
                   css/grid-column
                   (css/add-class :header-content)
-                  (css/text-align :center))
+                  (css/text-align :center)
+                  (css/add-class :large-offset-4))
                 (div
                   (css/text-align :left)
-                  (dom/h1 #js {:id "header-content"} "SU" (dom/small nil "PPORT") (dom/br nil) "LO" (dom/small nil "CAL"))
+                  (dom/h1 #js {:id "header-content"} "SULO")
                   ;(dom/h1 nil "LO" (dom/small nil "CAL"))
-                  (dom/h2 nil "your local market online"))
-                ;(dom/div #js {:className "search-container row"}
-                ;  (dom/div #js {:className "column small-12 medium-6"}
-                ;    (dom/input #js {:placeholder "What are you shopping for?"
-                ;                    :type        "text"
-                ;                    :value       (or input-search "")
-                ;                    :onChange    #(do (debug " search " (.. % -target -value)) (om/update-state! this assoc :input-search (.. % -target -value)))
-                ;                    :onKeyDown   (fn [e]
-                ;                                   #?(:cljs
-                ;                                      (when (= 13 (.. e -keyCode))
-                ;                                        (let [search-string (.. e -target -value)]
-                ;                                          (set! js/window.location (str "/goods?search=" search-string))))))}))
-                ;  (dom/div #js {:className "column"}
-                ;    (dom/a #js {:className "button"
-                ;                :onClick   (fn []
-                ;                             #?(:cljs
-                ;                                (set! js/window.location (str "/goods?search=" input-search))))}
-                ;           "Search")))
+                  (dom/h2 nil "Vancouver's local marketplace online"))
+                (dom/div #js {:className "search-container row"}
+                  (dom/div #js {:className "column small-12 medium-6"}
+                    (dom/input #js {:placeholder "What are you looking for?"
+                                    :type        "text"
+                                    :value       (or input-search "")
+                                    :onChange    #(do (debug " search " (.. % -target -value)) (om/update-state! this assoc :input-search (.. % -target -value)))
+                                    :onKeyDown   (fn [e]
+                                                   #?(:cljs
+                                                      (when (= 13 (.. e -keyCode))
+                                                        (let [search-string (.. e -target -value)]
+                                                          (set! js/window.location (str "/goods?search=" search-string))))))}))
+                  (dom/div #js {:className "column text-left small-4 medium-2"}
+                    (dom/a #js {:className "button expanded"
+                                :onClick   (fn []
+                                             #?(:cljs
+                                                (set! js/window.location (str "/goods?search=" input-search))))}
+                           "Search"))
+                  )
                 ))
 
 
             (content-section {:href  "/streams"
-                              :sizes {:small 2}
+                              :sizes {:small 2 :medium 4}
                               :class "online-channels"}
-                             "Makers online right now"
+                             "Stores streaming at the market right now"
                              (map (fn [c]
                                     (common/online-channel-element c))
                                   featured-streams)
-                             "Check out more on the live market >>")
+                             "Discover more at the LIVE market >>")
 
             ;(dom/div #js {:className "top-features"}
             ;  (dom/div #js {:className " row small-up-1 medium-up-3"}
@@ -205,27 +205,33 @@
 
             (content-section {:href  "/goods"
                               :sizes {:small 2 :medium 4}}
-                             "Fresh from the oven goods"
+                             "New arrivals"
                              (map (fn [p]
                                     (common/product-element {:open-url? true} p))
                                   featured-items)
-                             "Check out more goods >>")
+                             "See more >>")
 
-            (content-section {:sizes {:small 2 :medium 4}}
-                             "Have you seen these stores?"
-                             (map (fn [s]
-                                    (store-element s))
-                                  featured-stores)
-                             "Check out more stores >>")
+            (content-section {:sizes {:small 1 :medium 2}
+                              :class "collections"}
+                             "Shop by collection"
+                             (map (fn [s t]
+                                    (collection-element {:url (first (:store/featured-img-src s))
+                                                         :title t}))
+                                  featured-stores
+                                  ["Home" "Kids" "Women" "Men"])
+                             ""
+                             )
 
             (banner {:color :default}
-                    (dom/p nil "Follow your favorite stores and stay updated on when they go online")
-                    (dom/a #js {:className "button"} "Sign up"))
+                    (dom/h3 nil "Watch, shop and chat with your favorite Locals.")
+                    (dom/p nil "Follow and stay up-to-date on when they're online to meet you!")
+                    (dom/a #js {:className "button"} "Join"))
 
             (banner {:color :white
                      :align :right}
-                    (dom/p nil "Start streaming on Sulo and tell your story to your customers")
-                    (dom/a #js {:className "button hollow"} "Contact us"))))))))
+                    (dom/h3 nil "Open your own shop on SULO and tell your story to Vancouver.")
+                    (dom/p nil "Enjoy a community that lives for local.")
+                    (dom/a #js {:className "button secondary"} "Contact us"))))))))
 
 
 (def ->Index (om/factory Index))

@@ -38,20 +38,13 @@
       (my-dom/a {:href store-link}
                 (photo/with-overlay
                   nil
-                  (photo/photo
+                  (photo/square
                     {:src img-src})
-                  (my-dom/div
-                    (->> (css/text-align :center))
-                    (dom/p nil (dom/strong nil stream-name))
-                    (viewer-element (css/text-align :center) viewer-count)
-
-                    (my-dom/div
-                      (->> (css/add-class :padded) (css/add-class :vertical)))
-                    )))
+                  (my-dom/div nil (dom/p nil (dom/strong nil (:store/name store))))))
       (my-dom/div
-        (->> (css/show-for {:size :small :only? true})
-             (css/add-class :content-item-title-section)
-             (css/text-align :left))
+        (->>
+             ;(css/add-class :content-item-title-section)
+             (css/text-align :center))
         (dom/a #js {:href store-link}
                (dom/strong nil stream-name))
         (viewer-element nil viewer-count))
@@ -84,23 +77,24 @@
            (my-dom/a
              {:onClick on-click
               :href    goods-href}
-             (photo/with-overlay
-               nil
-               (photo/square
-                 {:src (:item/img-src product)})
-               (my-dom/div
-                 (->> (css/text-align :center))
-                 (dom/p nil (dom/span nil (:item/name product)))
-                 (dom/strong nil (ui-utils/two-decimal-price (:item/price product)))
-                 (rating-element 4 11)
-                 (my-dom/div
-                   (->> (css/add-class :padded)
-                        (css/add-class :vertical)))
-                 )))
+             (photo/square
+               {:src (:item/img-src product)})
+             ;(my-dom/div
+             ;  (->> (css/text-align :center))
+             ;  (dom/p nil (dom/span nil (:item/name product)))
+             ;  (dom/strong nil (ui-utils/two-decimal-price (:item/price product)))
+             ;  (rating-element 4 11)
+             ;  (my-dom/div
+             ;    (->> (css/add-class :padded)
+             ;         (css/add-class :vertical)))
+             ;  )
+             )
            (dom/div #js {:className "content-item-title-section"}
              (dom/a #js {:onClick on-click
                          :href    goods-href}
                     (:item/name product)))
+           (dom/div #js {:className "content-item-subtitle-section"}
+             (dom/strong nil (:store/name (:item/store product))))
            (dom/div #js {:className "content-item-subtitle-section"}
              (dom/strong nil (ui-utils/two-decimal-price (:item/price product))))
            children

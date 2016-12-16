@@ -17,6 +17,7 @@
 	}
 
 	.content-item-title-section {
+		// text-align: center;
 		a {
 			flex: 1;
 		}
@@ -38,13 +39,14 @@
 		}
 	}
 	.content-item-subtitle-section {
+		text-align: center;
 		display: flex;
 		flex-direction: column;
-		color: $primary-color;
+		// color: $primary-color;
 		@include breakpoint(large) {
-			flex-direction: row;
-			justify-content: space-between;
-			align-items: center;
+			// flex-direction: row;
+			// justify-content: space-between;
+			// align-items: center;
 		}
 	}
 }
