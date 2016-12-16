@@ -72,7 +72,7 @@
   #?(:cljs
      (componentDidMount [this]
                         ;(.publish this)
-                        (.subscribe this)
+                        ;(.subscribe this)
                         ;(let [player (js/videojs "red5pro-subscriber")]
                         ;    (.play player))
                         )
