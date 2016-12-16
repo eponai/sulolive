@@ -1,6 +1,6 @@
 $navbar-height: rem-calc(56);
 $primary-color: map-get($foundation-palette, primary);
-$navbar-background-color: rgba($white, 0.9);
+$navbar-background-color: rgba($white, 1);
 $navbar-font-color: $primary-color;
 
 $subnav-height: $navbar-height;
@@ -51,7 +51,7 @@ html, body {
 
 .dropdown-pane {
 	visibility: hidden;
-	background: rgba($white, 0.9);
+	background: $white;
 	@include breakpoint(medium) {
 		visibility: visible;
 	}

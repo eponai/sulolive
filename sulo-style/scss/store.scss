@@ -18,6 +18,9 @@
 				padding-right: $chat-width;
 			}
 		}
+		.page-content {
+			// padding-top: 0;
+		}
 	}
 
 	// .page-content {
@@ -58,6 +61,7 @@
 			}
 		}
 		.cover.photo {
+			// padding-top: $navbar-height;
 			.stream-container {
 				visibility: hidden;
 				// padding: 1rem;

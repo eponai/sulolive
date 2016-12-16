@@ -75,20 +75,20 @@
                ;    (menu/item-link nil "About")
                ;    (menu/item-link nil "Policies")))
 
-               (my-dom/div
-                 (cond->> (->> (css/grid-row) css/grid-column)
-                          (some? stream)
-                          (css/add-class :css/has-stream))
-                 ;(when (some? stream))
-                 (dom/div #js {:className "stream-container content-item"}
-                   (stream/->Stream (:proxy/stream props))
-                   (dom/div #js {:className "content-item-title-section"}
-                     (dom/h5 #js {:className "stream-title"}
-                             (:stream/name stream))
-                     (dom/div #js {:className "viewers-container"}
-                       (dom/i #js {:className "fa fa-eye fa-fw"})
-                       (dom/span nil
-                                 (str (:stream/viewer-count stream)))))))
+              (my-dom/div
+                (cond->> (->> (css/grid-row) css/grid-column)
+                         (some? stream)
+                         (css/add-class :css/has-stream))
+                (when (or (some? stream) cover)
+                  (dom/div #js {:className "stream-container content-item"}
+                    (stream/->Stream (:proxy/stream props))
+                    (dom/div #js {:className "content-item-title-section"}
+                      (dom/h5 #js {:className "stream-title"}
+                              (:stream/name stream))
+                      (dom/div #js {:className "viewers-container"}
+                        (dom/i #js {:className "fa fa-eye fa-fw"})
+                        (dom/span nil
+                                  (str (:stream/viewer-count stream))))))))
 
                (my-dom/div
                  (cond->> (css/add-class ::css/stream-chat-container)

@@ -40,8 +40,18 @@
   Object
   (initLocalState [_]
     {:selected-tab :rating})
+  #?(:cljs
+     (add-to-bag [this item]
+                 (om/transact! this `[(shopping-bag/add-item ~{:item (select-keys item [:db/id])})
+                                       :query/cart])
+                 (om/update-state! this assoc :added-to-bag? true)))
+  #?(:cljs
+     (componentDidUpdate [this prev-props prev-state]
+                         (let [{:keys [added-to-bag?]} (om/get-state this)]
+                           (if added-to-bag?
+                             (js/setTimeout #(om/update-state! this assoc :added-to-bag? false) 2000)))))
   (render [this]
-    (let [{:keys [selected-tab]} (om/get-state this)
+    (let [{:keys [selected-tab added-to-bag?]} (om/get-state this)
           {:keys     [item/price item/store item/img-src item/details]
            item-name :item/name :as item} (om/props this)]
 
@@ -89,9 +99,9 @@
                 (dom/h4 #js {:className "product-info-price"}
                         (utils/two-decimal-price price)))
               (dom/div #js {:className "product-action-container clearfix"}
-                (dom/a #js {:onClick   #(om/transact! this `[(shopping-bag/add-item ~{:item (select-keys item [:db/id])})
-                                                             :query/cart])
-                            :className "button expanded"} "Add to bag"))))
+                (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
+                            :className "button expanded"} "Add to bag")
+                (dom/p #js {:className (str (when added-to-bag? "show"))} "Your shopping bag was updated" ))))
 
           (my-dom/div
             (css/grid-column)
