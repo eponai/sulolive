@@ -29,21 +29,7 @@
 
 (defmethod server-read :query/items
   [{:keys [db db-history query]} _ {:keys [category search]}]
-  {:value (let [entity-query (if (or category search)
-                               (cond-> {:where []}
-                                       (not-empty category)
-                                       (db/merge-query
-                                         {:where   '[[?e :item/category ?c]]
-                                          :symbols {'?c category}})
-                                       (not-empty search)
-                                       (db/merge-query
-                                         {:where   '[[(str "(?i)" ?search) ?matcher]
-                                                     [(re-pattern ?matcher) ?regex]
-                                                     [(re-find ?regex ?aname)]
-                                                     [?e :item/name ?aname]]
-                                          :symbols {'?search search}}))
-                               {:where '[[?e :item/name]]})]
-            (query/all db db-history query entity-query))})
+  {:value (query/all db db-history query {:where '[[?e :item/name]]})})
 
 (defmethod read-basis-param-path :query/item [_ _ {:keys [product-id]}]
   [product-id])
