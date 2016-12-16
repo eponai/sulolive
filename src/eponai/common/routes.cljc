@@ -11,7 +11,7 @@
   ["/" {""                     :index
         ["store/" :store-id]   :store
         "goods"                :goods
-        ["goods/" :product-id] :goods
+        ["goods/" :product-id] :product
         "streams"              :streams
         "checkout"             :checkout}])
 
