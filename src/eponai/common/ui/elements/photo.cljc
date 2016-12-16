@@ -45,6 +45,14 @@
     (apply photo* (css/add-class ::css/photo-cover opts)
            content)))
 
+(defn with-overlay [opts photo-element & content]
+  (dom/div
+    (css/add-class ::css/overlay-container)
+    photo-element
+    (dom/div
+      (css/add-class ::css/photo-overlay)
+      (apply dom/div (css/add-class ::css/photo-overlay-content opts) content))))
+
 (defn collage [{:keys [srcs]}]
   (when-not (every? string? srcs)
     (error "Invalid photo URL type. Collage expects collection of URL strings. Got URLs: " srcs))
@@ -55,6 +63,8 @@
              [(photo* {:src     large
                        :classes [::css/photo-square]})
               (photo-container nil
-                               (photo* {:src mini-1})
-                               (photo* {:src mini-2}))])
+                               (photo* {:src mini-1
+                                        :classes [::css/photo-square]})
+                               (photo* {:src mini-2
+                                        :classes [::css/photo-square]}))])
                  (partition 3 srcs))))

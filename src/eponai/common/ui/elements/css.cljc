@@ -4,31 +4,33 @@
     [taoensso.timbre :refer [debug warn]]))
 
 (def global-styles
-  {::float-left      "float-left"
-   ::float-right     "float-right"
-   ::text-right      "text-right"
-   ::vertical        "vertical"
+  {::float-left            "float-left"
+   ::float-right           "float-right"
+   ::text-right            "text-right"
+   ::vertical              "vertical"
 
-   ::callout         "callout"
+   ::callout               "callout"
 
    ;; Menu
-   ::menu            "menu"
-   ::active          "active"
-   ::menu-text       "menu-text"
-   ::menu-dropdown   "menu-dropdown"
+   ::menu                  "menu"
+   ::active                "active"
+   ::menu-text             "menu-text"
+   ::menu-dropdown         "menu-dropdown"
 
    ;; Grid
-   ::row             "row"
-   ::column          "column"
+   ::row                   "row"
+   ::column                "column"
 
    ;; Photo
-   ::photo           "photo"
-   ::photo-container "photo-container"
-   ::photo-square    "square"
-   ::photo-thumbnail "thumbnail"
-   ::photo-header    "header"
-   ::photo-collage   "collage"
-   ::photo-cover     "cover"})
+   ::photo                 "photo"
+   ::photo-container       "photo-container"
+   ::photo-square          "square"
+   ::photo-thumbnail       "thumbnail"
+   ::photo-header          "header"
+   ::photo-collage         "collage"
+   ::photo-cover           "cover"
+   ::photo-overlay         "overlay"
+   ::photo-overlay-content "content"})
 
 (def breakpoints {:small "small" :medium "medium" :large "large" :xlarge "xlarge" :xxlarge "xxlarge"})
 (def grid-cols 12)

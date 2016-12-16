@@ -30,7 +30,7 @@
       (common/page-container
         {:navbar navbar}
         (dom/div #js {:id "sulo-items-container"}
-          (apply dom/div #js {:className "row small-up-2 medium-up-3 large-up-4"}
+          (apply dom/div #js {:className "row small-up-2 medium-up-3"}
                  (map (fn [p]
                         (pi/->ProductItem (om/computed {:product p}
                                                        {:display-content (product/->Product p)}))

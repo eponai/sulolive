@@ -39,7 +39,7 @@
                    :store/review-count]}])
   Object
   (initLocalState [_]
-    {:selected-tab :details})
+    {:selected-tab :rating})
   (render [this]
     (let [{:keys [selected-tab]} (om/get-state this)
           {:keys     [item/price item/store item/img-src item/details]
@@ -72,8 +72,7 @@
             (css/grid-row)
             (my-dom/div
               (->> (css/grid-column)
-                   (css/grid-column-size {:smalls 13 :medium 8})
-                   (css/grid-column-order {:small 2 :medium 1}))
+                   (css/grid-column-size {:small 12 :medium 8}))
               (photo/photo {:src img-src})
 
               (apply dom/div #js {:className "multi-photos-container"}
@@ -84,7 +83,6 @@
 
             (my-dom/div
               (->> (css/grid-column)
-                   (css/grid-column-order {:small 1 :medium 2})
                    (css/add-class ::css/product-info-container))
               (dom/div #js {:className "product-info"}
                 (dom/h5 #js {:className "product-info-title"} item-name)

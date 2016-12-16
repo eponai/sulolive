@@ -16,13 +16,13 @@
            (map (fn [i]
                   (menu/item-link
                     {:href (str "/goods/" (:db/id i))}
-                    (dom/div #js {:className "row collapse align-middle content-item"}
+                    (dom/div #js {:className "row collapse align-middle"}
                       (dom/div #js {:className "columns small-2"}
                         (photo/thumbail
                           {:src (:item/img-src i)}))
                       (dom/div #js {:className "columns small-10"}
                         (dom/div #js {:className "content-item-title-section"}
-                          (dom/small #js {:className "name"} (:item/name i)))
+                          (dom/span #js {:className "name"} (:item/name i)))
                         (dom/div #js {:className "content-item-subtitle-section"}
                           (dom/span #js {:className "price"}
                                     (ui-utils/two-decimal-price (:item/price i))))))))
@@ -35,6 +35,17 @@
       (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price price))))
     (dom/a #js {:className "button expanded hollow"
                 :href      "/checkout"} "View My Bag")))
+
+(defn category-dropdown []
+  (dom/div #js {:className "dropdown-pane"}
+    (menu/vertical
+      {:classes [::css/categories]}
+      (menu/item-link
+        {:href (str "/goods?category=clothing")} "Clothing")
+      (menu/item-link
+        {:href (str "/goods?category=accessories")} "Accessories")
+      (menu/item-link
+        {:href (str "/goods?category=home")} "Home"))))
 
 (defn user-dropdown [component user]
   (dom/div #js {:className "dropdown-pane"}
@@ -76,16 +87,21 @@
   ;       (when signin-open?
   ;         (.open-signin this)))))
   (initLocalState [_]
-    {:cart-open? false})
-  ;(componentWillUnmount [this]
-  ;  (let [{:keys [lock]} (om/get-state this)]
-  ;    (.close lock)))
-  (componentDidMount [this]
-    #?@(:cljs
-        [(when js/Auth0LockPasswordless
+    {:cart-open? false
+     :on-scroll-fn #(debug "Did scroll: " %)})
+  (componentWillUnmount [this]
+    #?(:cljs
+       (let [{:keys [lock on-scroll-fn]} (om/get-state this)]
+         (.removeEventListener js/document.documentElement "scroll" on-scroll-fn))))
+  #?(:cljs
+     (componentDidMount
+       [this]
+       (let [{:keys [on-scroll-fn]} (om/get-state this)]
+         (when js/Auth0LockPasswordless
            (let [lock (new js/Auth0LockPasswordless "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh" "sulo.auth0.com")]
              (om/update-state! this assoc :lock lock)))
-         (om/update-state! this assoc :did-mount? true)]))
+         (.addEventListener js/document.documentElement "scroll" on-scroll-fn)
+         (om/update-state! this assoc :did-mount? true))))
 
   (render [this]
     (let [{:keys [cart-open? signin-open? did-mount?]} (om/get-state this)
@@ -99,7 +115,7 @@
                        nil
                        (menu/item-link {:href "/"
                                         :id "navbar-brand"}
-                                       "Sulo")
+                                       "Su" (dom/br nil) "lo")
                        (menu/item nil
                                   (my-dom/a
                                     (->> {:id "search-icon"}
@@ -108,7 +124,7 @@
                                   (my-dom/div
                                     (css/hide-for {:size :small :only? true})
                                     (dom/input #js {:type        "text"
-                                                    :placeholder "Search items or stores"
+                                                    :placeholder "Search"
                                                     :onKeyDown   (fn [e]
                                                                    #?(:cljs
                                                                       (when (= 13 (.. e -keyCode))
@@ -121,7 +137,12 @@
                            "Live")
                          (my-dom/div
                            (css/show-for {:size :small :only? true})
-                           (dom/i #js {:className "fa fa-video-camera fa-fw"})))))
+                           (dom/i #js {:className "fa fa-video-camera fa-fw"})))
+                       (menu/item-dropdown
+                         (->> {:dropdown (category-dropdown)}
+                              (css/hide-for {:size :small :only? true}))
+                         "Shop"
+                         (dom/i #js {:className "fa fa-caret-down fa-fw"}))))
 
                    (dom/div #js {:className "top-bar-right"}
                      (when did-mount?
@@ -129,23 +150,14 @@
                          nil
                          (if (some? (not-empty auth))
                            (menu/item-link nil (dom/a nil "You"))
-                           (menu/item nil (dom/a #js {:className "button hollow nude tiny"
-                                                      :onClick   #(.open-signin this)} "Sign in")))
+                           (menu/item nil (dom/a #js {:className "button hollow"
+                                                      :onClick   #(do
+                                                                   #?(:cljs
+                                                                      (.open-signin this)))} "Sign in")))
                          (menu/item-dropdown
-                           {:dropdown (cart-dropdown cart)}
-                           (my-dom/span
-                             (css/hide-for {:size :small :only? true})
-                             (ui-utils/two-decimal-price (:cart/price cart)))
-                           (dom/i #js {:className "fa fa-shopping-cart fa-fw"})))))))
-        (dom/div #js {:className "navbar-container subnav-container"}
-          (dom/div #js {:className "subnav navbar top-bar"}
-            (dom/div #js {:className "top-bar-left"}
-              (menu/horizontal
-                nil
-                (menu/item-link {:href "/goods?category=clothing"} "Clothing")
-                (menu/item-link {:href "/goods?category=accessories"} "Accessories")
-                (menu/item-link {:href "/goods?category=home"} "Home")))))))))
-
+                           {:dropdown (cart-dropdown cart)
+                            :href "/checkout"}
+                           (dom/i #js {:className "fa fa-shopping-cart fa-fw"})))))))))))
 (def ->Navbar (om/factory Navbar))
 
 (defn navbar [props]

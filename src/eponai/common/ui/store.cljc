@@ -35,44 +35,57 @@
                       :store/rating
                       :store/review-count]} {:store-id ~'?store-id})])
   Object
+  (initLocalState [this]
+    ;{:show-chat? false}
+    )
+  (componentWillReceiveProps [this next-props]
+    (let [{:keys [query/store]} next-props
+          stream (first (:stream/_store store))]
+      (when (some? stream)
+        (om/update-state! this assoc :show-chat? true))))
   (render [this]
-    (let [{:keys [query/store proxy/navbar] :as props} (om/props this)
+    (let [st (om/get-state this)
+          {:keys [query/store proxy/navbar] :as props} (om/props this)
           {:keys      [store/cover store/review-count store/rating store/photo]
            stream     :stream/_store
            items      :item/_store
            store-name :store/name} store
-          stream (first stream)]
+          stream (first stream)
+          show-chat? (:show-chat? st (some? stream))]
       (common/page-container
         {:navbar navbar}
         (dom/div
-          #js {:id "sulo-store-container"}
+          #js {:id "sulo-store-container" :className (str (when show-chat? "chat-open"))}
           (photo/cover
-            (->> {:src cover}
-                 css/grid-row)
-
+            {:src (or cover "")}
             (my-dom/div
-              (->> (css/grid-column)
-                   (css/grid-column-size {:large 2})
-                   (css/add-class :css/store-container))
+              (->> {:src cover}
+                   ;css/grid-row
+                   ;css/grid-column
+                   )
 
-              (dom/div #js {:className "store-short-info-container"}
-                (photo/square
-                  {:src photo})
-                (dom/div #js {:className "content-item-title-section"}
-                  (dom/h4 #js {:className "store-name"} store-name)
-                  (common/rating-element rating review-count)))
+              ;(my-dom/div
+              ;  (->> (css/grid-column)
+              ;       (css/grid-column-size {:large 2})
+              ;       (css/add-class :css/store-container))
+              ;
+              ;  (dom/div #js {:className "store-short-info-container"}
+              ;    (photo/square
+              ;      {:src photo})
+              ;    (dom/div #js {:className "content-item-title-section"}
+              ;      (dom/h4 #js {:className "store-name"} store-name)
+              ;      (common/rating-element rating review-count)))
+              ;
+              ;  (menu/vertical
+              ;    {:classes [::css/store-main-menu]}
+              ;    (menu/item-link nil "About")
+              ;    (menu/item-link nil "Policies")))
 
-              (menu/vertical
-                {:classes [::css/store-main-menu]}
-                (menu/item-link nil "About")
-                (menu/item-link nil "Policies")))
-
-            (my-dom/div
-              (cond->> (->> (css/grid-column)
-                            (css/grid-column-size {:small 12 :large 8}))
-                       (some? stream)
-                       (css/add-class :css/has-stream))
-              (when (some? stream)
+              (my-dom/div
+                (cond->> (->> (css/grid-row) css/grid-column)
+                         (some? stream)
+                         (css/add-class :css/has-stream))
+                ;(when (some? stream))
                 (dom/div #js {:className "stream-container content-item"}
                   (stream/->Stream (:proxy/stream props))
                   (dom/div #js {:className "content-item-title-section"}
@@ -80,24 +93,47 @@
                             (:stream/name stream))
                     (dom/div #js {:className "viewers-container"}
                       (dom/i #js {:className "fa fa-eye fa-fw"})
-                      (dom/h5 nil
-                              (str (:stream/viewer-count stream))))))))
+                      (dom/span nil
+                                (str (:stream/viewer-count stream)))))))
 
-            (my-dom/div
-              (->> (css/grid-column)
-                   (css/grid-column-size {:medium 2})
-                   (css/add-class ::css/stream-chat-container))
-              (dom/div #js {:className "stream-chat-content"}
-                (dom/span nil "This is a message"))
-              (dom/div #js {:className "stream-chat-input"}
-                (dom/input #js {:type        "text"
-                                :placeholder "Your message..."})
-                (dom/a #js {:className "button expanded"} "Send"))))
+              (my-dom/div
+                (cond->> (css/add-class ::css/stream-chat-container)
+                         show-chat?
+                         (css/add-class :show))
+                (my-dom/div
+                  (->> {:onClick #(om/update-state! this update :show-chat? not)}
+                       (css/add-class ::css/stream-toggle))
+                  (my-dom/a (->> (css/add-class ::button) (css/add-class :expanded))
+                            (if show-chat? ">>" (dom/i #js {:className "fa fa-comments fa-fw"}))))
+                (dom/div #js {:className "stream-chat-content"}
+                  (dom/span nil "This is a message"))
+                (dom/div #js {:className "stream-chat-input"}
+                  (dom/input #js {:type        "text"
+                                  :placeholder "Your message..."})
+                  (dom/a #js {:className "button expanded"} "Send")))))
+          (my-dom/div nil
+                      (my-dom/div
+                        (->> (css/grid-row)
+                             ;css/grid-column
+                             ;(css/align :bottom)
+                             (css/add-class :padded)
+                             (css/add-class :vertical))
+                        (my-dom/div
+                          (->> (css/grid-column)
+                               (css/grid-column-size {:small 2 :medium 2}))
+                          (photo/square
+                            {:src (:store/photo store)}))
+
+                        (my-dom/div
+                          (css/grid-column)
+                          (dom/a #js {:href (str "/store/" (:db/id store))}
+                                 (dom/p #js {:className "store-name"} (:store/name store)))
+                          (common/rating-element (:store/rating store) (:store/review-count store)))))
 
           (dom/div #js {:className "store-nav"}
             (my-dom/div
               (->> (css/grid-row)
-                   (css/grid-column))
+                   css/grid-column)
               (menu/horizontal
                 nil
                 (menu/item-link nil "Sheets")
@@ -108,10 +144,11 @@
             nil
             (apply my-dom/div
               (->> (css/grid-row)
-                   (css/grid-row-columns {:small 2 :medium 3 :large 4}))
+                   (css/grid-row-columns {:small 2 :medium 3}))
                    (map (fn [p]
                           (pi/->ProductItem (om/computed {:product p}
                                                          {:display-content (item/->Product p)})))
-                        items))))))))
+                        items))))
+        {:class (str (when show-chat? "chat-open"))}))))
 
 (def ->Store (om/factory Store))

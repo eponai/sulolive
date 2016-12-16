@@ -19,7 +19,7 @@
       (common/page-container
         {:navbar navbar}
         (dom/div #js {:id "sulo-items-container"}
-          (apply dom/div #js {:className "row small-up-2 medium-up-3 large-up-4"}
+          (apply dom/div #js {:className "row small-up-2 medium-up-3"}
                  (map (fn [s]
                         (common/online-channel-element s))
                       streams)))))))

@@ -37,22 +37,27 @@
 
       ;; TODO: Very similar to eponai.common.ui.common/product-element
       ;;       Extract?
-      (dom/div #js {:className "column content-item product-item"}
-        (dom/a #js {:onClick   on-click
-                    :href      product-href}
-               (photo/square
-                 {:src (:item/img-src product)}))
-        (dom/div #js {:className "content-item-title-section"}
-          (dom/a #js {:onClick on-click
-                      :href    product-href}
-                 (:item/name product)))
-        (dom/div #js {:className "content-item-subtitle-section"}
-          (dom/strong nil (ui-utils/two-decimal-price (:item/price product)))
-          (common/rating-element 4 11))
 
+      (common/product-element
+        {:on-click on-click
+         :href     product-href}
+        product
         (when show-item?
           (common/modal {:on-close #(om/update-state! this assoc :show-item? false)
-                  :size :large}
-                 display-content))))))
+                         :size     :large}
+                        display-content)))
+      ;(dom/div #js {:className "column content-item product-item"}
+      ;  (dom/a #js {:onClick   on-click
+      ;              :href      product-href}
+      ;         (photo/square
+      ;           {:src (:item/img-src product)}))
+      ;  (dom/div #js {:className "content-item-title-section"}
+      ;    (dom/a #js {:onClick on-click
+      ;                :href    product-href}
+      ;           (:item/name product)))
+      ;  (dom/div #js {:className "content-item-subtitle-section"}
+      ;    (dom/strong nil (ui-utils/two-decimal-price (:item/price product)))
+      ;    (common/rating-element 4 11)))
+      )))
 
 (def ->ProductItem (om/factory ProductItem))

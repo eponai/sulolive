@@ -1,7 +1,12 @@
-$header-background-color: $white;//#2E2A31;
-$banner-background-color: #2E2A31;//$header-background-color;
+$primary-color: map-get($foundation-palette, primary);
 
-$font-color-light: $body-background;
+$header-background-color: rgba($white,1);//map-get($foundation-palette, primary);//#2E2A31;
+$header-font-color: $black;
+$header-border-color: rgba($black, 0.1);
+
+$banner-background-color: rgba($primary-color, 0.15);
+
+// $font-color-light: $bod;
 
 #sulo-index {
 	.subnav-container {
@@ -16,28 +21,42 @@ $font-color-light: $body-background;
 	}
 	.navbar {
 		input, #search-icon {
-			display: none;
+			// display: snone;
 		}
 	}
 
 	.intro-header {
-		$brown: map-get($foundation-palette, brown);
 		// box-shadow: 0 0px 1px 1px rgba($brown, 0.15);
 
+		// height: 40vh;
+		font-size: 3rem;
 		padding-top: 8rem;
-		padding-bottom: 2rem;
+		padding-bottom: 4rem;
 		background: $header-background-color;
 		position: relative;
+		border-bottom: 1px solid $header-border-color;
 		h1 {
-			// color: $white;
-			text-shadow: 1px 1px 1px $white;
+			// color: $header-font-color;
 			font-weight: 500;
+			margin-bottom: 4rem;
+			// font-size: inherit;
 			@include breakpoint(medium) {
 				font-weight: 400;
 			}
+			small {
+				font-size: inherit;
+				color: rgba($primary-color, 0.15);
+			}
+		}
+		h2 {
+			// font
+			// font-size: 1.7rem;
+			color: rgba($primary-color, 0.5);
+			text-transform: uppercase;
+
 		}
 		.button, input {
-			box-shadow: 0px 1px 1px 1px rgba($brown, 0.1);
+			box-shadow: 0px 1px 1px 1px rgba($black, 0.1);
 		}
 	
 		.header-content {
@@ -50,7 +69,7 @@ $font-color-light: $body-background;
 	}
 
 	.top-features {
-		padding: 2rem 0;
+		padding: 4rem 0;
 		@include breakpoint(medium) {
 			padding: 2rem 0 0.5rem 0;
 		}
@@ -66,7 +85,7 @@ $font-color-light: $body-background;
 			}
 
 			.feature-title {
-				color: #9A4B4F;
+				color: map-get($foundation-palette, primary);
 			}
 		}
 	}
@@ -80,25 +99,31 @@ $font-color-light: $body-background;
 		background: $banner-background-color;
 		p {
 			@include breakpoint(medium) {
-				font-size: 1.5rem;
+				font-size: 1.2rem;
 			}
-			color: $font-color-light;
-			text-shadow: 1px 1px 1px rgba($black, 0.5);
+			text-transform: uppercase;
+			font-style: italic;
+			// color: $font-color-light;
+			// text-shadow: 1px 1px 1px rgba($black, 0.5);
 		}
 
 		&.white {
 			background: $white; //#F0EDE3;
+		border-bottom: 1px solid $banner-background-color;
 			p {
-				color: $banner-background-color;
+				// color: $banner-background-color;
 				text-shadow: none;
 			}
 		}	
 	}
 
 	.section {
-		margin-top: 2rem;
+		margin-top: 8rem;
 		margin-bottom: 2rem;
 
+		&:first-child {
+			margin-top: 1rem;
+		}
 		.section-footer {
 			padding: 1rem 0;
 			@include breakpoint(large) {
@@ -108,13 +133,46 @@ $font-color-light: $body-background;
 				font-weight: bold;
 			}
 		}
-	}
+		.section-header {
+			display: flex;
+			align-items: center;
+			position: relative;
+			text-transform: uppercase;
+			h3 {
+				flex: 1 0 auto;
+			}
+			// border-bottom: 1px solid $header-border-color;
+			a {
+				color: rgba($primary-color, 0.5);
 
-	.footer {
-		background: $navbar-background-color;//$header-background-color;
-		color: map-get($foundation-palette, nude);//$body-background;
-		a {
-			color: $body-background;
+				// position: absolute;
+				text-transform: none;
+				font-weight: bold;
+				right: 0;
+			}
+		}
+
+		&.online-channels {
+			margin-top: 2rem;	
+			.overlay-container {
+				p, i {
+					font-size: 1.2rem;
+				}
+			}
 		}
 	}
+
+	// .footer {
+	// 	color: $navbar-font-color;
+	// 	background: $navbar-background-color;//$header-background-color;
+	// 	// color: map-get($foundation-palette, nude);//$body-background;
+	// 	a {
+	// 		color: $navbar-font-color;
+	// 		// color: $body-background;
+	// 	}
+	// }
+	// #navbar-brand {
+	// 	transition: opacity 0.25s ease-in-out;
+	// }
+
 }

@@ -1,6 +1,11 @@
+#sulo-navbar {
+	position: fixed;
+	width: 100%;
+	z-index: $navbar-zindex;
+}
+
 nav {
 	height: $navbar-height;
-	z-index: 3;
 	font-size: 0.9rem;
 	@include breakpoint(medium) {
 		font-size: 1rem;
@@ -8,13 +13,20 @@ nav {
 }
 .navbar-container {
 	background: $navbar-background-color;
+	box-shadow: 1px 1px 3px 0 rgba($black, 0.1);
 }
 
 .navbar {
+	.top-bar-right li {
+		padding-top: 0.5rem;
+	}
 	max-width: $global-width;
 	margin: 0 auto;
+	padding: 0;
 	a:not(.button) {		
-		color: $white;
+		color: $navbar-font-color;
+		text-transform: uppercase;
+		// font-style: italic;
 	}
 	.button.tiny {
 		font-size: 0.8rem;
@@ -22,24 +34,14 @@ nav {
 	&.top-bar, ul {
 		background: transparent;
 		i { 
-			vertical-align: bottom;
+			font-size: 1.25rem;
 		}
 	}
 }
 
-.subnav-container {
-	background: $subnav-background-color;
-	border-bottom: 1px solid rgba($navbar-background-color, 0.15);
-	.subnav {
-		li {
-			@include list-item-hover($hover-color: darken($white, 10%));
-			a {
-				color: $subnav-font-color;
-				font-size: 0.9rem;
-				font-weight: bold;
-			}
-		}
-	}
+.navbar-blur {
+	@extend .navbar-container;
+	filter: blur(20px);
 }
 
 #shopping-icon {
@@ -52,9 +54,11 @@ nav {
 	text-transform: uppercase;
 	font-weight: bold;
 	font-size: 0.8rem;
-	padding: 0;
+	// font-style: italic;
+	// padding: 0;
+	color: $black;
 	@include breakpoint(medium) {
 		font-size: 1rem;
-		padding: 0.7rem 1rem;
+		// padding: 0.7rem 1rem;
 	}
 }

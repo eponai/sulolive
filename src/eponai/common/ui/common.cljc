@@ -3,6 +3,7 @@
     [eponai.common.ui.utils :as ui-utils]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.photo :as photo]
+    [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.navbar :as nav]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
@@ -19,10 +20,12 @@
                          :onClick   on-close} "x")
              content))))
 
-(defn viewer-element [view-count]
-  (dom/div #js {:className "viewers-container"}
+(defn viewer-element [opts view-count]
+  (my-dom/div
+    (->> opts
+         (css/add-class :viewers-container))
     (dom/i #js {:className "fa fa-eye fa-fw"})
-    (dom/small nil (str view-count))))
+    (dom/span nil (str view-count))))
 
 (defn link-to-store [store]
   (str "/store/" (:db/id store)))
@@ -32,14 +35,29 @@
          stream-name :stream/name} channel
         store-link (link-to-store store)]
     (dom/div #js {:className "column content-item online-channel"}
-      (dom/a #js {:href store-link}
-             (photo/square
-               {:src img-src}))
-      (dom/div #js {:className "content-item-title-section"}
-        (dom/a #js {:href store-link} (dom/strong nil stream-name))
-        (viewer-element viewer-count))
-      (dom/div #js {:className "content-item-subtitle-section"}
-        (dom/a #js {:href store-link} (:store/name store))))))
+      (my-dom/a {:href store-link}
+                (photo/with-overlay
+                  nil
+                  (photo/photo
+                    {:src img-src})
+                  (my-dom/div
+                    (->> (css/text-align :center))
+                    (dom/p nil (dom/strong nil stream-name))
+                    (viewer-element (css/text-align :center) viewer-count)
+
+                    (my-dom/div
+                      (->> (css/add-class :padded) (css/add-class :vertical)))
+                    )))
+      (my-dom/div
+        (->> (css/show-for {:size :small :only? true})
+             (css/add-class :content-item-title-section)
+             (css/text-align :left))
+        (dom/a #js {:href store-link}
+               (dom/strong nil stream-name))
+        (viewer-element nil viewer-count))
+      ;(dom/div #js {:className "content-item-subtitle-section"}
+      ;  (dom/a #js {:href store-link} (:store/name store)))
+      )))
 
 (defn rating-element [rating & [review-count]]
   (let [rating (if (some? rating) (int rating) 0)
@@ -58,29 +76,41 @@
       (when (some? review-count)
         (dom/span nil (str "(" review-count ")"))))))
 
-(defn product-element [product & [opts]]
+(defn product-element [opts product & children]
   (let [{:keys [on-click open-url?]} opts
         goods-href (when (or open-url? (nil? on-click)) (str "/goods/" (:db/id product)))
         on-click (when-not open-url? on-click)]
-    (dom/div #js {:className "column content-item product-item"}
-      (dom/a #js {:onClick   on-click
-                  :href      goods-href}
-             (photo/square
-               {:src (:item/img-src product)}))
-      (dom/div #js {:className "content-item-title-section"}
-        (dom/a #js {:onClick on-click
-                    :href    goods-href}
-               (:item/name product)))
-      (dom/div #js {:className "content-item-subtitle-section"}
-        (dom/strong nil (ui-utils/two-decimal-price (:item/price product)))
-        (rating-element 4 11)))))
+    (apply dom/div #js {:className "column content-item product-item"}
+           (my-dom/a
+             {:onClick on-click
+              :href    goods-href}
+             (photo/with-overlay
+               nil
+               (photo/square
+                 {:src (:item/img-src product)})
+               (my-dom/div
+                 (->> (css/text-align :center))
+                 (dom/p nil (dom/span nil (:item/name product)))
+                 (dom/strong nil (ui-utils/two-decimal-price (:item/price product)))
+                 (rating-element 4 11)
+                 (my-dom/div
+                   (->> (css/add-class :padded)
+                        (css/add-class :vertical)))
+                 )))
+           (dom/div #js {:className "content-item-title-section"}
+             (dom/a #js {:onClick on-click
+                         :href    goods-href}
+                    (:item/name product)))
+           (dom/div #js {:className "content-item-subtitle-section"}
+             (dom/strong nil (ui-utils/two-decimal-price (:item/price product))))
+           children
+           )))
 
 (defn footer [opts]
   (dom/div #js {:key "footer" :className "footer"}
     (dom/footer #js {:className "clearfix"}
                 (menu/horizontal
                   {:key "social" :classes [::css/float-left]}
-                  (menu/item-text nil (dom/small nil "Say hi anytime"))
                   (menu/item-link nil (dom/i #js {:className "fa fa-instagram fa-fw"}))
                   (menu/item-link nil (dom/i #js {:className "fa fa-twitter fa-fw"}))
                   (menu/item-link nil (dom/i #js {:className "fa fa-facebook fa-fw"}))
@@ -92,8 +122,8 @@
                   (menu/item-link nil (dom/small nil "Terms & Conditions"))
                   (menu/item-text nil (dom/small nil "© Sulo 2016"))))))
 
-(defn page-container [props content]
-  (dom/div #js {:className "page-container"}
+(defn page-container [props content & [{:keys [class]}]]
+  (dom/div #js {:className (str "page-container " class)}
     (nav/navbar (:navbar props))
     (dom/div #js {:key "content" :className "page-content"}
       content)

@@ -6,24 +6,61 @@
 }
 
 #sulo-store {
-	.navbar, footer {
-		max-width: 100%;
+	@include breakpoint(large) {
+		.navbar-container, .footer {
+			transition: padding .25s ease-in-out;
+			// transform: translate($chat-width, 0);
+			padding-right: 0;
+		}
+		.chat-open {
+			.navbar-container, .footer {
+		// max-width: 100%;
+				padding-right: $chat-width;
+			}
+		}
 	}
 
-	.page-content {
-		padding-top: 0;
-	}
+	// .page-content {
+	// 	padding-right: 0;
+	// 	transition: padding .25s ease-in-out; 
+	// 	@include breakpoint(large) {
+	// 		padding-right: $chat-width;
+	// 	}
+	// }
+
+	// .page-content {
+	// 	padding-top: 0;
+	// }
 
 	#sulo-store-container {
+		// padding-top: $navbar-height;
+		@include breakpoint(large) {
+			> * {
+				padding-right: 0;
+				transition: padding .25s ease-in-out;
+				&.photo-container {
+					padding-right: 0;
+					> *  {
+						padding-right: 0;
+					}
+				}
+			}
+			&.chat-open {
+				> * {
+					padding-right: $chat-width;
+					&.photo-container {
+						padding-right: 0;
+						> * {
+							padding-right: $chat-width;
+						}
+					}
+				}
+			}
+		}
 		.cover.photo {
-			> .has-stream {
-				background: rgba($white, 0.5);
-			}
-			@include breakpoint(large) {
-				display: flex;
-			}
 			.stream-container {
-				padding: 1rem;
+				visibility: hidden;
+				// padding: 1rem;
 				font-size: 1.4rem;
 				font-weight: bold;
 				text-shadow: 1px 1px 1px rgba($white, 0.7);
@@ -40,13 +77,19 @@
 				margin: 0 auto 1rem auto;
 				min-height: 10rem;
 				@include breakpoint(large) {
-					max-width: 75%;
+					padding: 1rem;
+					// max-width: 75%;
+				}
+			}
+			.has-stream {
+				// background: rgba($white, 0.5);
+				.stream-container {
+					visibility: visible;
 				}
 			}
 		}
 	}
 	.store-container {
-		$brown: map-get($foundation-palette, brown);
 		background: rgba($white, 0.7) !important;
 		box-shadow: 1px 0 2px 0 rgba($black, 0.5);
 		h1, small, i {
@@ -63,18 +106,18 @@
 				@include menu-direction(vertical);
 			}
 			li {
-				@include list-item-hover($hover-color: rgba($brown, 0.05));
+				@include list-item-hover($hover-color: rgba($black, 0.05));
 				@include breakpoint(large) {
 					padding-left: 5%;
 					padding-right: 5%;
-					$border: 1px solid rgba($brown, 0.05);
+					$border: 1px solid rgba($black, 0.05);
 					border-top: $border;
 					&:last-child {
 						border-bottom: $border;
 					}
 				}
 				a {
-					color: rgba($brown, 0.6);
+					color: rgba($black, 0.6);
 					font-weight: bold;
 				}
 			}
@@ -92,33 +135,6 @@
 
 			@include breakpoint(large) {
 				width: 100%;
-			}
-		}
-	}
-
-	.stream-chat-container {
-		display: none;
-		background: rgba($white, 1) !important;
-		box-shadow: -1px 0 2px 0 rgba($black, 0.5);
-		padding: 0;
-		@include breakpoint(large) {
-			display: flex;
-			flex-direction: column;
-			justify-content: flex-end;
-		}
-		.stream-chat-content {
-			color: $black;
-			padding: 1rem;
-			font-weight: 500;
-			text-shadow: 0px 1px 1px rgba($white, 0.5);
-		}
-		.stream-chat-input {
-			padding: 0 0.5rem;
-			input {
-				margin: 0;
-			}
-			.button {
-				margin-bottom: 0.5rem;
 			}
 		}
 	}

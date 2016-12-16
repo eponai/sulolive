@@ -1,8 +1,12 @@
+
 .content-item {
 	padding-top: 1.5rem;
 	text-align: left;
 	@include breakpoint(large) {
-		padding: 1.5rem;
+		padding: 1rem;
+		&.online-channel {
+			// padding: 3rem;
+		}
 	}
 	&.row {
 		.content-item-title-section,
@@ -13,10 +17,16 @@
 	}
 
 	.content-item-title-section {
+		a {
+			flex: 1;
+		}
 		span, a {
 			text-overflow: ellipsis;
 			overflow: hidden;
 			white-space: nowrap;
+			color: $body-font-color;
+			font-style: italic;
+			font-weight: 500;
 		}
 		padding-top: 0.5rem;
 		display: flex;	
@@ -30,6 +40,7 @@
 	.content-item-subtitle-section {
 		display: flex;
 		flex-direction: column;
+		color: $primary-color;
 		@include breakpoint(large) {
 			flex-direction: row;
 			justify-content: space-between;
@@ -39,7 +50,7 @@
 }
 
 	.viewers-container {
-		margin-left: 0.2rem;
-		display: flex;
-		flex-wrap: nowrap;
+		// margin-left: 0.2rem;
+		// display: flex;
+		// flex-wrap: nowrap;
 	}

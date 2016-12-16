@@ -1,13 +1,18 @@
 $navbar-height: rem-calc(56);
-$navbar-background-color: map-get($foundation-palette, brown);
-$navbar-font-color: $white;
+$primary-color: map-get($foundation-palette, primary);
+$navbar-background-color: rgba($white, 0.9);
+$navbar-font-color: $primary-color;
 
 $subnav-height: $navbar-height;
-$subnav-background-color: rgba($navbar-background-color, 0.03);//map-get($foundation-palette, nude);
-$subnav-font-color: rgba(map-get($foundation-palette, brown), 0.5);
+$subnav-background-color: $navbar-background-color;//map-get($foundation-palette, nude);
+$subnav-font-color: map-get($foundation-palette, primary);//rgba($black, 0.5);
 
-$footer-height-small: 8rem;
+$footer-height-small: 6rem;
 $footer-height: 4rem;
+
+$navbar-zindex: 3;
+
+$chat-width: rem-calc(300);
 
 html, body {
 	overflow-x: hidden;
@@ -15,6 +20,9 @@ html, body {
 	width: 100%;
 	overflow-y: scroll; /* has to be scroll, not auto */
   	-webkit-overflow-scrolling: touch;
+  	@include breakpoint(large) {
+  		overflow-y: auto;
+  	}
 }
 
 .padded {
@@ -43,11 +51,13 @@ html, body {
 
 .dropdown-pane {
 	visibility: hidden;
+	background: rgba($white, 0.9);
 	@include breakpoint(medium) {
 		visibility: visible;
 	}
 	right: 0;
-	box-shadow: 1px 1px 3px 0 rgba($black, 0.5);
+	border: 1px solid rgba($primary-color, 0.2);
+	// box-shadow: 1px 1px 3px 0 rgba($primary-color, 0.1);
 }
 
 @mixin list-item-hover($color: $white, $hover-color: darken($color, 5%)) {
@@ -55,6 +65,21 @@ html, body {
 	&:hover {
 		background: $hover-color;
 	}
+}
+
+@mixin wrap-text($font-size: 1, $lines: 1) {
+	overflow: hidden; 
+	max-height: $font-size * $lines + rem;
+	line-height: $font-size + rem;
+	white-space: normal;
+
+		// max-height: 4.8rem;
+		// overflow: hidden;
+		display: -webkit-box;
+		-webkit-line-clamp: 4;
+		-webkit-box-orient: vertical;
+		// line-height: 1.2rem;
+		text-overflow: ellipsis;
 }
 
 @mixin sulo-colors {
@@ -80,6 +105,7 @@ a {
 }
 
 .page-content {
+	padding-top: $navbar-height;
 	padding-bottom: $footer-height-small + 2rem;
 	@include breakpoint(medium) {
 		padding-bottom: $footer-height;
@@ -89,8 +115,12 @@ a {
 .footer {
 	background: $navbar-background-color;
 	color: $navbar-font-color;
+	i {
+		font-size: 1.2rem;
+	}
 	a {
-		color: $body-background;
+		color: $navbar-font-color;
+		text-transform: uppercase;
 	}
 	footer {
 		max-width: $global-width;

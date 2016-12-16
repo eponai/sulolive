@@ -39,7 +39,7 @@
 		background-color: transparent;
 	}
 	tr {
-		$border-color: map-get($foundation-palette, brown);
+		$border-color: $black;
 		$border: 1px solid rgba($border-color, 0.05);
 		background: transparent;
 		&.total-price {
@@ -48,7 +48,10 @@
 		}
 	}
 	.page-content {
-		padding-top: 1.5rem;
+		> * {
+			padding-top: 1.5rem;
+		}
+		// padding-top: 1.5rem;
 	}
 
 	.cart-empty, .cart-loading {
@@ -60,7 +63,7 @@
 		padding: 2.5rem;
 	}
 	.cart-loading {
-		color: rgba(map-get($foundation-palette, brown), 0.2);
+		color: rgba($black, 0.2);
 	}
 
 	span.price {
@@ -78,14 +81,11 @@
 		font-weight: bold;
 	}
 }
-.cart {
+
 	&.menu.vertical {
-		.content-item {
-			padding: 0.5rem 0;
-		}
 		li {
 			@include list-item-hover;
-			$border-color: map-get($foundation-palette, brown);
+			$border-color: $black;
 			$border: 1px solid rgba($border-color, 0.1);
 			border-bottom: $border;
 			a {
@@ -94,12 +94,16 @@
 		}
 	}
 
+.cart {
+
 	.content-item-title-section {
 		span, small {
-			overflow: hidden; 
-			max-height: 2rem;
-			line-height: 1rem;
-			white-space: normal;
+			font-size: 0.8rem;
+			@include wrap-text(1.1, 2);
+			// overflow: hidden; 
+			// max-height: 2rem;
+			// line-height: 1rem;
+			// white-space: normal;
 		}
 	}
 	.content-item-subtitle-section {
@@ -118,7 +122,7 @@
 
 		a:not(.button) {
 			color: map-get($foundation-palette, primary);
-			padding: 0;
+			// padding: 0;
 		}
 	}
 	&:hover {
