@@ -1,7 +1,7 @@
-{:streams [{:stream/name         "Wear and tear proof your clothes"
+{:streams [{:stream/name         "Handcrafted jewlery"
             :stream/store        #db/id[:db.part/user -100]
             :stream/viewer-count 8
-            :stream/img-src      "https://img1.etsystatic.com/122/0/10558959/isla_500x500.21872363_66njj7uo.jpg"}
+            :stream/img-src      "https://img1.etsystatic.com/151/0/6380862/isla_500x500.24111301_nvjpi6zo.jpg"}
            {:stream/name         "What's up with thread count"
             :stream/store        #db/id[:db.part/user -1]
             :stream/viewer-count 13
@@ -16,10 +16,10 @@
             :stream/img-src      "https://img0.etsystatic.com/139/0/5243597/isla_500x500.22177516_ath1ugrh.jpg"}]
 
  :stores  [{:db/id              #db/id[:db.part/user -100]
-            :store/name         "HeadnTail"
+            :store/name         "ikcha"
             :store/review-count 13
             :store/rating       4.5M
-            :store/photo        "https://img1.etsystatic.com/122/0/10558959/isla_500x500.21872363_66njj7uo.jpg"}
+            :store/photo        "https://img1.etsystatic.com/151/0/6380862/isla_500x500.24111301_nvjpi6zo.jpg"}
            {:db/id              #db/id[:db.part/user -1]
             :store/name         "MagicLinen"
             :store/rating       5M
@@ -68,30 +68,30 @@
             :item/img-src "https://img1.etsystatic.com/126/0/11651126/il_570xN.1098073811_5ca0.jpg"
             :item/id      "13"
             :item/category "home"}
-           {:item/name    "Vintage 90's Fila Sport USA Sweatshirt Red Black Sport Trainer Sweater"
-            :item/price   34.00M
+           {:item/name    "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
+            :item/price   318.00M
             :item/store   #db/id[:db.part/user -100]
-            :item/img-src "https://img0.etsystatic.com/104/0/10558959/il_570xN.1015873526_1oed.jpg"
+            :item/img-src "https://img1.etsystatic.com/106/1/6380862/il_570xN.883668651_pp7m.jpg"
             :item/id      "00"
-            :item/category "clothing"}
-           {:item/name    "Jean Michel Basquiat Pink T Shirt"
-            :item/price   52.00M
+            :item/category "accessories"}
+           {:item/name    "Emerald silver choker"
+            :item/price   219.00M
             :item/store   #db/id[:db.part/user -100]
-            :item/img-src "https://img1.etsystatic.com/108/0/10558959/il_570xN.1060411775_k1ob.jpg"
+            :item/img-src "https://img1.etsystatic.com/178/0/6380862/il_570xN.1122315115_m1kt.jpg"
             :item/id      "01"
-            :item/category "clothing"}
-           {:item/name    "Vintage Tommy Hilfiger Short Pant Size 34"
-            :item/price   134.00M
+            :item/category "accessories"}
+           {:item/name    "Ear Floral Cuff in Sterling Silver"
+            :item/price   68.00M
             :item/store   #db/id[:db.part/user -100]
-            :item/img-src "https://img1.etsystatic.com/146/0/10558959/il_570xN.1138598331_iu0t.jpg"
+            :item/img-src "https://img1.etsystatic.com/124/0/6380862/il_570xN.883522367_34xx.jpg"
             :item/id      "02"
-            :item/category "clothing"}
-           {:item/name    "Majestic Utah Jazz Hardwood Classics White Throwback NBA Basketball Jersey"
-            :item/price   34.00M
+            :item/category "accessories"}
+           {:item/name    "Sun Stone geometrical Sterling Silver Ring"
+            :item/price   211.00M
             :item/store   #db/id[:db.part/user -100]
-            :item/img-src "https://img1.etsystatic.com/101/0/10558959/il_570xN.1038331841_gk1f.jpg"
+            :item/img-src "https://img0.etsystatic.com/130/1/6380862/il_570xN.883902058_swjc.jpg"
             :item/id      "03"
-            :item/category "clothing"}
+            :item/category "accessories"}
            {:item/name    "Glitter & Navy Blue Envelope Clutch"
             :item/img-src "https://img1.etsystatic.com/030/0/6396625/il_570xN.635631611_4c3s.jpg"
             :item/price   34.00M
