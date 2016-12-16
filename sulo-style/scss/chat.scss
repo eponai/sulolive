@@ -12,7 +12,15 @@ $chat-zindex: 2;
 	right: 0;
 	width: $chat-width;
 	transition: right .25s ease-in-out;
+	&:not(.show) {
+		.button {
+			background: rgba($primary-color, 0.75);
+		}	
+	}
 	.stream-toggle {
+		&:not(.show) {
+
+			}
 		position: fixed;
 		top: $navbar-height;
 		right: 0;
