@@ -58,21 +58,12 @@
     (client.utils/init-state! reconciler remotes send-fn parser component)
     reconciler))
 
-(defn component-to-html-str-fn [env]
-  (fn [component]
-    (let [reconciler (make-reconciler env component)
-          ui-root (om/add-root! reconciler component nil)
-          html-string (dom/render-to-str ui-root)]
-      (html/raw-string html-string))))
-
-
-(defn render-env [env]
+(defn render-page [env]
   (let [component router/Router
         reconciler (make-reconciler env component)
         ui-root (om/add-root! reconciler component nil)
         html-string (dom/render-to-str ui-root)]
     (html/raw-string html-string)))
-
 
 (defn with-doctype [html-str]
   (str "<!DOCTYPE html>" html-str))
@@ -87,8 +78,7 @@
       (debug "COMPONENT: " (pr-str component))
       (with-doctype
         (html/render-html-without-reactid-tags
-          (->component (assoc env ::render-component-as-html (component-to-html-str-fn env)
-                                  ::root/app-html (render-env env))))))))
+          (->component (assoc env ::root/app-html (render-page env))))))))
 
 (def auth-html (makesite auth/Auth))
 (def goods-html (makesite root/Root))
