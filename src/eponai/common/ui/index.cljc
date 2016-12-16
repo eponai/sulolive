@@ -39,7 +39,7 @@
       (->> (css/grid-row) css/grid-column (css/add-class :section-header))
       (dom/h3 nil header)
       (a {:href href}
-         "See more >>"))
+         (dom/span nil "See more >>")))
 
     (apply div
            (->> (css/grid-row)
@@ -73,7 +73,7 @@
       (div
         (css/add-class :content-item-title-section)
         (a {:href store-link}
-           (:store/name store))))))
+           (dom/span nil (:store/name store)))))))
 
 (defui Index
   static om/IQuery

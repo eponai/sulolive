@@ -98,13 +98,16 @@
                    (->> {:onClick #(om/update-state! this update :show-chat? not)}
                         (css/add-class ::css/stream-toggle))
                    (my-dom/a (->> (css/add-class ::button) (css/add-class :expanded))
-                             (if show-chat? ">>" (dom/i #js {:className "fa fa-comments fa-fw"}))))
+                             (if show-chat?
+                               (dom/span nil ">>")
+                               (dom/i #js {:className "fa fa-comments fa-fw"}))))
                  (dom/div #js {:className "stream-chat-content"}
                    (dom/span nil "This is a message"))
                  (dom/div #js {:className "stream-chat-input"}
                    (dom/input #js {:type        "text"
                                    :placeholder "Your message..."})
-                   (dom/a #js {:className "button expanded"} "Send")))))
+                   (dom/a #js {:className "button expanded"}
+                          (dom/span nil "Send"))))))
            (my-dom/div nil
                        (my-dom/div
                          (->> (css/grid-row)
@@ -130,9 +133,9 @@
                     css/grid-column)
                (menu/horizontal
                  nil
-                 (menu/item-link nil "Sheets")
-                 (menu/item-link nil "Pillows")
-                 (menu/item-link nil "Duvets"))))
+                 (menu/item-link nil (dom/span nil "Sheets"))
+                 (menu/item-link nil (dom/span nil "Pillows"))
+                 (menu/item-link nil (dom/span nil "Duvets")))))
 
            (my-dom/div
              nil

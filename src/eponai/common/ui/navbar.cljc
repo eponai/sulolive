@@ -41,11 +41,14 @@
     (menu/vertical
       {:classes [::css/categories]}
       (menu/item-link
-        {:href (str "/goods?category=clothing")} "Clothing")
+        {:href (str "/goods?category=clothing")}
+        (dom/span nil "Clothing"))
       (menu/item-link
-        {:href (str "/goods?category=accessories")} "Accessories")
+        {:href (str "/goods?category=accessories")}
+        (dom/span nil "Accessories"))
       (menu/item-link
-        {:href (str "/goods?category=home")} "Home"))))
+        {:href (str "/goods?category=home")}
+        (dom/span nil "Home")))))
 
 (defn user-dropdown [component user]
   (dom/div #js {:className "dropdown-pane"}
@@ -134,7 +137,8 @@
                          (css/add-class ::css/yellow {:href "/streams"})
                          (my-dom/strong
                            (css/hide-for {:size :small :only? true})
-                           "Live")
+                           ;; Wrap in span for server and client to render the same html
+                           (dom/span nil "Live"))
                          (my-dom/div
                            (css/show-for {:size :small :only? true})
                            (dom/i #js {:className "fa fa-video-camera fa-fw"})))
