@@ -2,6 +2,7 @@
   (:require
     [om.next :as om]
     [om.dom :as dom]
+    [om.next.cache :as om.cache]
     [datascript.core :as datascript]
     [eponai.server.ui.html :as html]
     [eponai.common.database :as db]
@@ -10,6 +11,7 @@
     [eponai.client.parser.read]
     [eponai.client.utils :as client.utils]
     [eponai.common.parser :as parser]
+    [eponai.common.routes :as routes]
     [eponai.common.parser.util :as parser.util]
     [eponai.common.ui.store :as common.store]
     [eponai.server.auth :as auth]
@@ -19,8 +21,10 @@
     [eponai.server.ui.store :as store]
     [eponai.server.ui.checkout :as checkout]
     [eponai.server.ui.streams :as streams]
+    [eponai.server.ui.root :as root]
     [eponai.server.ui.common :as common]
-    [taoensso.timbre :as timbre :refer [debug]]))
+    [taoensso.timbre :as timbre :refer [debug]]
+    [eponai.common.ui.router :as router]))
 
 (defn server-send [server-env reconciler-atom]
   (fn [queries cb]
@@ -35,9 +39,10 @@
 
 (defn make-reconciler [request-env component]
   (let [reconciler-atom (atom nil)
-        parser (parser/client-parser)
+        parser (parser/client-parser (parser/client-parser-state {::parser/get-route-params #(:route-params request-env)}))
+        ;; TODO: Is this parser wrapper needed?
         parser (fn [env query & [target]]
-                 (parser (merge env (dissoc request-env :state)) query target))
+                 (parser (merge env (dissoc request-env :state :params)) query target))
         remotes [:remote :remote/user]
         send-fn (server-send request-env reconciler-atom )
         reconciler (om/reconciler {:state   (datascript/conn-from-db (:empty-datascript-db request-env))
@@ -45,8 +50,11 @@
                                    :remotes remotes
                                    :send    send-fn
                                    :merge   (merge/merge!)
+                                   :history 2
                                    :migrate nil})]
     (reset! reconciler-atom reconciler)
+    (binding [parser/*parser-allow-remote* false]
+      (om/transact! reconciler [(list 'routes/set-route! (select-keys request-env [:route :route-params]))]))
     (client.utils/init-state! reconciler remotes send-fn parser component)
     reconciler))
 
@@ -56,6 +64,15 @@
           ui-root (om/add-root! reconciler component nil)
           html-string (dom/render-to-str ui-root)]
       (html/raw-string html-string))))
+
+
+(defn render-env [env]
+  (let [component router/Router
+        reconciler (make-reconciler env component)
+        ui-root (om/add-root! reconciler component nil)
+        html-string (dom/render-to-str ui-root)]
+    (html/raw-string html-string)))
+
 
 (defn with-doctype [html-str]
   (str "<!DOCTYPE html>" html-str))
@@ -67,15 +84,16 @@
 (defn makesite [component]
   (let [->component (om/factory component)]
     (fn [env]
+      (debug "COMPONENT: " (pr-str component))
       (with-doctype
         (html/render-html-without-reactid-tags
-          (->component (assoc env ::render-component-as-html
-                                  (component-to-html-str-fn env))))))))
+          (->component (assoc env ::render-component-as-html (component-to-html-str-fn env)
+                                  ::root/app-html (render-env env))))))))
 
 (def auth-html (makesite auth/Auth))
-(def goods-html (makesite goods/Goods))
-(def product-html (makesite product/Product))
-(def index-html (makesite index/Index))
-(def store-html (makesite store/Store))
-(def checkout-html (makesite checkout/Checkout))
-(def streams-html (makesite streams/Streams))
+(def goods-html (makesite root/Root))
+(def product-html (makesite root/Root))
+(def index-html (makesite root/Root))
+(def store-html (makesite root/Root))
+(def checkout-html (makesite root/Root))
+(def streams-html (makesite root/Root))

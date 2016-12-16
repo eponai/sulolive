@@ -20,3 +20,7 @@
 (defn ^:export runindex []
   (enable-console-print!)
   (run/run :index))
+
+(defn ^:export runsulo []
+      (enable-console-print!)
+      (run/run :sulo))

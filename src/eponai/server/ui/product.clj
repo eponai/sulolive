@@ -19,8 +19,7 @@
 
         (dom/body
           nil
-          (dom/div
-            {:id "sulo-product-page" :className "sulo-page"}
+          (dom/div {:height "100%" :id "the-sulo-app"}
             (render-component-as-html cljc-product/ProductPage)
             ;(nav/navbar navbar)
 

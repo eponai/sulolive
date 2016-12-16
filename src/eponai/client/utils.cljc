@@ -21,15 +21,18 @@
 (defonce reconciler-atom (atom nil))
 (defonce conn-atom (atom nil))
 
+(defn initial-ui-state []
+  [{:ui/component :ui.component/cart
+    :ui.component.cart/items #{}}
+   {:ui/singleton :ui.singleton/app}
+   {:ui/singleton :ui.singleton/routes}
+   {:ui/component :ui.component/root}
+   {:ui/component :ui.component/mutation-queue}
+   {:ui/component :ui.singleton/stream-config}])
+
 (defn create-conn []
-  (let [ui-state [{:ui/component :ui.component/cart
-                   :ui.component.cart/items #{}}
-                  {:ui/singleton :ui.singleton/app}
-                  {:ui/component :ui.component/root}
-                  {:ui/component :ui.component/mutation-queue}
-                  {:ui/component :ui.singleton/stream-config}]
-        conn (d/create-conn (common.datascript/ui-schema))]
-    (d/transact! conn ui-state)
+  (let [conn (d/create-conn (common.datascript/ui-schema))]
+    (d/transact! conn (initial-ui-state))
     conn))
 
 (defn init-conn

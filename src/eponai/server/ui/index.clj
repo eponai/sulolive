@@ -16,7 +16,7 @@
         (apply dom/head nil (clj-common/head release?))
         (dom/body
           nil
-          (dom/div {:id "sulo-index" :className "sulo-page"}
+          (dom/div {:height "100%" :id "the-sulo-app"}
             (render-component-as-html index/Index))
           ;(common/page-container
           ;  {:navbar navbar}

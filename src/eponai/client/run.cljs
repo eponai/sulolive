@@ -1,7 +1,6 @@
 (ns eponai.client.run
   (:require
     [eponai.client.utils :as utils]
-    [eponai.common.ui.navbar :as nav]
     [eponai.common.parser :as parser]
     [eponai.client.parser.read]
     [eponai.client.parser.mutate]
@@ -9,14 +8,20 @@
     [eponai.client.backend :as backend]
     [eponai.client.remotes :as remotes]
     [goog.dom :as gdom]
-    [om.next :as om]
-    [eponai.common.ui.checkout :as checkout]
-    [eponai.common.ui.store :as store]
+    [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.ui.goods :as goods]
-    [eponai.common.ui.index :as index]
-    [eponai.common.ui.product :as product]
-    [eponai.common.ui.streams :as streams]))
+    ;; Routing
+    [bidi.bidi :as bidi]
+    [pushy.core :as pushy]
+    [eponai.client.routes :as routes]
+    [eponai.common.routes :as common.routes]
+    [eponai.common.ui.router :as router]))
+
+(defn update-route-fn [reconciler-atom]
+  (fn [{:keys [handler route-params]}]
+    (let [r @reconciler-atom]
+      (routes/set-route! r handler {:route-params route-params
+                                    :queue?       (some? (om/app-root r))}))))
 
 (defn apply-once [f]
   (let [appliced? (atom false)]
@@ -26,10 +31,18 @@
         (do (reset! appliced? true)
             (f x))))))
 
-(defn run-element [{:keys [id component]}]
+(defonce history-atom (atom nil))
+
+(defn run-element [{:keys [id] :as routed}]
   (let [init? (atom false)
         reconciler-atom (atom nil)
-        parser (parser/client-parser)
+        _ (when-let [h @history-atom]
+            (pushy/stop! h))
+        match-route (partial bidi/match-route common.routes/routes)
+        history (pushy/pushy (update-route-fn reconciler-atom) match-route)
+        current-route-fn #(:handler (match-route (pushy/get-token history)))
+        parser (parser/client-parser (parser/client-parser-state
+                                       {::parser/get-route-params #(:route-params (current-route-fn))}))
         conn (utils/create-conn)
         remotes [:remote :remote/user]
         send-fn (backend/send! reconciler-atom
@@ -41,7 +54,8 @@
                                {:did-merge-fn #(when-not @init?
                                                 (reset! init? true)
                                                 (debug "First merge happened. Adding reconciler to root.")
-                                                (om/add-root! @reconciler-atom component (gdom/getElement id)))
+                                                (binding [parser/*parser-allow-remote* false]
+                                                  (om/add-root! @reconciler-atom router/Router (gdom/getElement router/dom-app-id))))
                                 :query-fn     (apply-once (fn [q]
                                                             {:pre [(sequential? q)]}
                                                             (into [:datascript/schema] q)))})
@@ -52,29 +66,12 @@
                                    :send      send-fn
                                    :merge     (merge/merge!)
                                    :migrate   nil})]
+    (reset! history-atom history)
     (reset! reconciler-atom reconciler)
-    (utils/init-state! reconciler remotes send-fn parser component)))
-
-(def inline-containers
-  {:navbar   {:id        "sulo-navbar-container"
-              :component nav/Navbar}
-   :index    {:id        "sulo-index"
-              :component index/Index}
-   :store    {:id        "sulo-store"
-              :component store/Store}
-   :checkout {:id        "sulo-checkout"
-              :component checkout/Checkout}
-   :goods    {:id        "sulo-items"
-              :component goods/Goods}
-   :product  {:id        "sulo-product-page"
-              :component product/ProductPage}
-   :streams  {:id        "sulo-streams"
-              :component streams/Streams}})
-
-(defn run-navbar []
-  (run-element (:navbar inline-containers)))
+    (binding [parser/*parser-allow-remote* false]
+      (pushy/start! history))
+    (utils/init-state! reconciler remotes send-fn parser router/Router)))
 
 (defn run [k]
   (prn "RUN: " k)
-  ;(run-navbar)
-  (run-element (get inline-containers k)))
+  (run-element (common.routes/route->component k)))

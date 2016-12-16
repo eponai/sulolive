@@ -1,9 +1,12 @@
 (ns eponai.client.parser.read
   (:require
+    [clojure.set :as set]
     [eponai.common.parser :as parser :refer [client-read]]
+    [eponai.common.parser.util :as parser.util]
     [eponai.common.parser.read :as common.read :refer [get-param]]
     [eponai.common.database :as db]
     [om.next.impl.parser :as om.parser]
+    [eponai.client.routes :as routes]
     [eponai.common :as c]
     #?(:cljs
        [cljs.reader])
@@ -23,7 +26,8 @@
 
 (defmethod client-read :query/store
   [{:keys [db query target] :as env} _ p]
-  (let [store (db/pull-one-with db query {:where   '[[?e]]
+  (let [store-id (c/parse-long (get-param env p :store-id))
+        store (db/pull-one-with db query {:where   '[[?e]]
                                           :symbols {'?e (c/parse-long (get-param env p :store-id))}})]
     (if target
       {:remote true}
@@ -57,8 +61,9 @@
   [{:keys [db query target] :as env} _ p]
   (if target
     {:remote true}
-    {:value (let [category (get-param env p :category)
-                  search (get-param env p :search)
+    {:value (let [when-string #(when (string? %) %)
+                  category (when-string (get-param env p :category))
+                  search (when-string (get-param env p :search))
                   pattern {:where '[[?e :item/name]]}]
               (assert (some #{:db/id} query)
                       (str "Query to :query/all-tiems must contain :db/id, was: " query))
@@ -137,3 +142,13 @@
    :value  (db/pull-one-with db query
                              {:where '[[?e :ui.singleton.stream-config/hostname]
                                        [?e :ui/singleton :ui.singleton/stream-config]]})})
+
+(defmethod client-read :query/current-route
+  [{:keys [db]} k p]
+  {:value (routes/current-route db)})
+
+(defmethod client-read :routing/app-root
+  [{:keys [db] :as env} k p]
+  (let [current-route (routes/current-route db)]
+    (debug "Reading app-root: " [k :route current-route])
+    (parser.util/read-union env k p (:route current-route))))

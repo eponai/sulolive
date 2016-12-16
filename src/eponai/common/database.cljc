@@ -74,6 +74,9 @@
 (defn database? [db]
   (satisfies? DatabaseApi db))
 
+(defn connection? [conn]
+  (satisfies? ConnectionApi conn))
+
 (defn- throw-error [e cause data]
   (let [#?@(:clj  [msg (.getMessage e)]
             :cljs [msg (.-message e)])]

@@ -16,8 +16,7 @@
 
         (dom/body
           nil
-          (dom/div
-            {:id "sulo-items" :className "sulo-page"}
+          (dom/div {:height "100%" :id "the-sulo-app"}
             (render-component-as-html goods/Goods))
 
           ;(dom/script {:src "https://webrtc.github.io/adapter/adapter-latest.js"})

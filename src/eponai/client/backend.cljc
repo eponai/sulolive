@@ -1,6 +1,8 @@
 (ns eponai.client.backend
   (:require [eponai.common.database :as db]
             [eponai.client.utils :as client.utils]
+    ;; Routes should be a configuration.
+            [eponai.client.routes :as routes]
             [datascript.impl.entity :as e]
             [om.next :as om]
             [cognitect.transit :as transit]

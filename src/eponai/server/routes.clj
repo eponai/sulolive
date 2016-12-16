@@ -6,6 +6,9 @@
     [compojure.route :as route]
     [eponai.server.middleware :as m]
     [ring.util.response :as r]
+    [ring.util.request :as ring.request]
+    [bidi.bidi :as bidi]
+    [eponai.common.routes :as common.routes]
     [eponai.common.parser.util :as parser.util]
     [eponai.server.parser.response :as parser.resp]
     [taoensso.timbre :refer [debug error trace warn]]
@@ -23,15 +26,21 @@
 (declare handle-parser-request)
 
 (defn request->props [request]
-  {:empty-datascript-db            (::m/empty-datascript-db request)
-   :state                          (::m/conn request)
-   :release?                       (release? request)
-   :params                         (:params request)
-   :auth                           (:identity request)
-   ::server.ui/component->props-fn (fn [component]
-                                     (-> request
-                                         (assoc :body {:query (om/get-query component)})
-                                         (handle-parser-request)))})
+  (let [path-info (ring.request/path-info request)
+        ui-route (bidi/match-route common.routes/routes path-info)]
+    (debug [:path-info path-info :ui-route ui-route])
+    {:empty-datascript-db            (::m/empty-datascript-db request)
+    :state                          (::m/conn request)
+    :release?                       (release? request)
+    :params                         (:params request)
+    :route-params                   (:route-params ui-route)
+    ;; TODO: Un-hard code this.
+    :route                          (:handler ui-route)
+    :auth                           (:identity request)
+    ::server.ui/component->props-fn (fn [component]
+                                      (-> request
+                                          (assoc :body {:query (om/get-query component)})
+                                          (handle-parser-request)))}))
 
 ;----------API Routes
 
@@ -42,7 +51,8 @@
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
      :state                             conn
      :auth                              (:identity request)
-     :params                            (:params request)}
+     :params                            (:params request)
+     :route-params                      (:params request)}
     (:query body)))
 
 (defn trace-parser-response-handlers

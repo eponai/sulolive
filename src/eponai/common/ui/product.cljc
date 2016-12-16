@@ -133,8 +133,10 @@
   Object
   (render [this]
     (let [{:keys [query/item proxy/navbar]} (om/props this)]
-      (common/page-container
-        {:navbar navbar}
-        (->Product item)))))
+      (dom/div
+        #js {:id "sulo-product-page" :className "sulo-page"}
+        (common/page-container
+          {:navbar navbar}
+          (->Product item))))))
 
 (def ->ProductPage (om/factory ProductPage))

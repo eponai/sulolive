@@ -134,96 +134,98 @@
   (render [this]
     (let [{:keys [proxy/navbar query/featured-items query/featured-stores query/featured-streams]} (om/props this)
           {:keys [input-search]} (om/get-state this)]
-      (common/page-container
-        {:navbar navbar}
-        (dom/div #js {:id "sulo-index-container" :onScroll #(debug "Did scroll page: " %)}
+      (dom/div #js {:id "sulo-index" :className "sulo-page"}
+        (common/page-container
+          {:navbar navbar}
+          (dom/div #js {:id "sulo-index-container" :onScroll #(debug "Did scroll page: " %)}
 
-          (dom/div #js {:className "intro-header"}
-            (dom/div #js {:className "row"}
-              (dom/div #js {:className "column small-offset-6 header-photo-container"}
-                ;(photo/header
-                ;  {:src "/assets/img/night-market.jpg"})
-                ))
-            (div
-              (->>
-                (css/grid-row)
-                css/grid-column
-                (css/add-class :header-content)
-                (css/text-align :center))
+            (dom/div #js {:className "intro-header"}
+              (dom/div #js {:className "row"}
+                (dom/div #js {:className "column small-offset-6 header-photo-container"}
+                  ;(photo/header
+                  ;  {:src "/assets/img/night-market.jpg"})
+                  ))
               (div
-                (css/text-align :left)
-                (dom/h1 #js {:id "header-content"} "SU" (dom/small nil "PPORT") (dom/br nil) "LO" (dom/small nil "CAL"))
-                ;(dom/h1 nil "LO" (dom/small nil "CAL"))
-                (dom/h2 nil "your local market online"))
-              ;(dom/div #js {:className "search-container row"}
-              ;  (dom/div #js {:className "column small-12 medium-6"}
-              ;    (dom/input #js {:placeholder "What are you shopping for?"
-              ;                    :type        "text"
-              ;                    :value       (or input-search "")
-              ;                    :onChange    #(do (debug " search " (.. % -target -value)) (om/update-state! this assoc :input-search (.. % -target -value)))
-              ;                    :onKeyDown   (fn [e]
-              ;                                   #?(:cljs
-              ;                                      (when (= 13 (.. e -keyCode))
-              ;                                        (let [search-string (.. e -target -value)]
-              ;                                          (set! js/window.location (str "/goods?search=" search-string))))))}))
-              ;  (dom/div #js {:className "column"}
-              ;    (dom/a #js {:className "button"
-              ;                :onClick   (fn []
-              ;                             #?(:cljs
-              ;                                (set! js/window.location (str "/goods?search=" input-search))))}
-              ;           "Search")))
-              ))
+                (->>
+                  (css/grid-row)
+                  css/grid-column
+                  (css/add-class :header-content)
+                  (css/text-align :center))
+                (div
+                  (css/text-align :left)
+                  (dom/h1 #js {:id "header-content"} "SU" (dom/small nil "PPORT") (dom/br nil) "LO" (dom/small nil "CAL"))
+                  ;(dom/h1 nil "LO" (dom/small nil "CAL"))
+                  (dom/h2 nil "your local market online"))
+                ;(dom/div #js {:className "search-container row"}
+                ;  (dom/div #js {:className "column small-12 medium-6"}
+                ;    (dom/input #js {:placeholder "What are you shopping for?"
+                ;                    :type        "text"
+                ;                    :value       (or input-search "")
+                ;                    :onChange    #(do (debug " search " (.. % -target -value)) (om/update-state! this assoc :input-search (.. % -target -value)))
+                ;                    :onKeyDown   (fn [e]
+                ;                                   #?(:cljs
+                ;                                      (when (= 13 (.. e -keyCode))
+                ;                                        (let [search-string (.. e -target -value)]
+                ;                                          (set! js/window.location (str "/goods?search=" search-string))))))}))
+                ;  (dom/div #js {:className "column"}
+                ;    (dom/a #js {:className "button"
+                ;                :onClick   (fn []
+                ;                             #?(:cljs
+                ;                                (set! js/window.location (str "/goods?search=" input-search))))}
+                ;           "Search")))
+                ))
 
 
-          (content-section {:href "/streams"
-                            :sizes {:small 2}
-                            :class "online-channels"}
-                           "Makers online right now"
-                           (map (fn [c]
-                                  (common/online-channel-element c))
-                                featured-streams)
-                           "Check out more on the live market >>")
+            (content-section {:href  "/streams"
+                              :sizes {:small 2}
+                              :class "online-channels"}
+                             "Makers online right now"
+                             (map (fn [c]
+                                    (common/online-channel-element c))
+                                  featured-streams)
+                             "Check out more on the live market >>")
 
-          ;(dom/div #js {:className "top-features"}
-          ;  (dom/div #js {:className " row small-up-1 medium-up-3"}
-          ;    (top-feature
-          ;      nil
-          ;      "fa-shopping-cart"
-          ;      "Connect with the community"
-          ;      "Real time interaction with the community.")
-          ;    (top-feature
-          ;      nil
-          ;      "fa-shopping-cart"
-          ;      "Find products and stories you love"
-          ;      "Our partners have a wide range of home made goods")
-          ;    (top-feature
-          ;      nil
-          ;      "fa-shopping-cart"
-          ;      "Share your favorites"
-          ;      "Interact with your customers as a store owner and create real long time relationships")))
+            ;(dom/div #js {:className "top-features"}
+            ;  (dom/div #js {:className " row small-up-1 medium-up-3"}
+            ;    (top-feature
+            ;      nil
+            ;      "fa-shopping-cart"
+            ;      "Connect with the community"
+            ;      "Real time interaction with the community.")
+            ;    (top-feature
+            ;      nil
+            ;      "fa-shopping-cart"
+            ;      "Find products and stories you love"
+            ;      "Our partners have a wide range of home made goods")
+            ;    (top-feature
+            ;      nil
+            ;      "fa-shopping-cart"
+            ;      "Share your favorites"
+            ;      "Interact with your customers as a store owner and create real long time relationships")))
 
-          (content-section {:href "/goods"
-                            :sizes {:small 2 :medium 4}}
-                           "Fresh from the oven goods"
-                           (map (fn [p]
-                                  (common/product-element {:open-url? true} p))
-                                featured-items)
-                           "Check out more goods >>")
+            (content-section {:href  "/goods"
+                              :sizes {:small 2 :medium 4}}
+                             "Fresh from the oven goods"
+                             (map (fn [p]
+                                    (common/product-element {:open-url? true} p))
+                                  featured-items)
+                             "Check out more goods >>")
 
-          (content-section {:sizes {:small 2 :medium 4}}
-                           "Have you seen these stores?"
-                           (map (fn [s]
-                                  (store-element s))
-                                featured-stores)
-                           "Check out more stores >>")
+            (content-section {:sizes {:small 2 :medium 4}}
+                             "Have you seen these stores?"
+                             (map (fn [s]
+                                    (store-element s))
+                                  featured-stores)
+                             "Check out more stores >>")
 
-          (banner {:color :default}
-                  (dom/p nil "Follow your favorite stores and stay updated on when they go online")
-                  (dom/a #js {:className "button"} "Sign up"))
+            (banner {:color :default}
+                    (dom/p nil "Follow your favorite stores and stay updated on when they go online")
+                    (dom/a #js {:className "button"} "Sign up"))
 
-          (banner {:color :white
-                   :align :right}
-                  (dom/p nil "Start streaming on Sulo and tell your story to your customers")
-                  (dom/a #js {:className "button hollow"} "Contact us")))))))
+            (banner {:color :white
+                     :align :right}
+                    (dom/p nil "Start streaming on Sulo and tell your story to your customers")
+                    (dom/a #js {:className "button hollow"} "Contact us"))))))))
+
 
 (def ->Index (om/factory Index))

@@ -13,6 +13,7 @@
     [ring.middleware.transit :refer [wrap-transit-response
                                      wrap-transit-body]]
     [taoensso.timbre :refer [debug error trace]]
+    [eponai.client.utils :as client.utils]
     [eponai.common.parser.util :as parser.util]
     [eponai.common.database :as db]
     [eponai.common.datascript :as common.datascript]
@@ -134,4 +135,4 @@
         (handler request)))))
 
 (defn init-datascript-db [conn]
-  (common.datascript/init-db (query/schema (db/db conn))))
+  (common.datascript/init-db (query/schema (db/db conn)) (client.utils/initial-ui-state)))

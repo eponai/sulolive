@@ -44,3 +44,12 @@
     {:remote true}
     {:action (fn []
                (debug "Mutate search string: " search-string))}))
+
+(defmethod client-mutate 'routes/set-route!
+  [{:keys [state]} _ {:keys [route route-params]}]
+  {:action (fn []
+             (debug "Setting route: " route " route-params: " route-params)
+             (db/transact state [(cond-> {:ui/singleton                      :ui.singleton/routes
+                                          :ui.singleton.routes/current-route route}
+                                         (seq route-params)
+                                         (assoc :ui.singleton.routes/route-params route-params))]))})

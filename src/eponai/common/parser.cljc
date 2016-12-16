@@ -37,7 +37,7 @@
     (util/read-join e k p)
 
     :else
-    (throw (ex-info (str "Read not implemented for key " k) {:key k :params p}))))
+    (warn (str "Read not implemented for key " k {:key k :params p}))))
 
 (defmethod client-read :default [e k p] (default-read e k p :client))
 (defmethod server-read :default [e k p] (default-read e k p :server))
@@ -359,6 +359,10 @@
 (def ^:dynamic *parser-allow-remote* true)
 (def ^:dynamic *parser-allow-local-read* true)
 
+(defn with-assoced-env [read-or-mutate m]
+  (fn [env k p]
+    (read-or-mutate (merge env m) k p)))
+
 (defn with-remote-guard [read-or-mutate]
   (fn [{:keys [target] :as env} k p]
     (let [ret (read-or-mutate env k p)
@@ -412,8 +416,10 @@
                 (fn [parser state]
                   (fn [env query & [target]]
                     (parser (assoc env ::server? false) query target)))
-                (fn [read {:keys [elide-paths txs-by-project] :as state}]
+                (fn [read {:keys [elide-paths txs-by-project ::get-route-params] :as state}]
                   (-> read
+                      (cond-> (some? get-route-params)
+                              (with-assoced-env {:params (get-route-params)}))
                       wrap-datascript-db
                       (with-txs-by-project-atom txs-by-project)
                       (cond-> (not elide-paths)

@@ -27,14 +27,16 @@
   (render [this]
     (let [{:keys [query/items proxy/navbar]} (om/props this)]
       #?(:cljs (debug "Got items to render: " (om/props this)))
-      (common/page-container
-        {:navbar navbar}
-        (dom/div #js {:id "sulo-items-container"}
-          (apply dom/div #js {:className "row small-up-2 medium-up-3"}
-                 (map (fn [p]
-                        (pi/->ProductItem (om/computed {:product p}
-                                                       {:display-content (product/->Product p)}))
-                        )
-                      items)))))))
+      (dom/div
+        #js {:id "sulo-items" :className "sulo-page"}
+        (common/page-container
+         {:navbar navbar}
+         (dom/div #js {:id "sulo-items-container"}
+           (apply dom/div #js {:className "row small-up-2 medium-up-3"}
+                  (map (fn [p]
+                         (pi/->ProductItem (om/computed {:product p}
+                                                        {:display-content (product/->Product p)}))
+                         )
+                       items))))))))
 
 (def ->Goods (om/factory Goods))

@@ -16,8 +16,7 @@
         (apply dom/head nil (common/head release?))
         (dom/body
           nil
-          (dom/div
-            {:id "sulo-checkout" :className "sulo-page"}
+          (dom/div {:height "100%" :id "the-sulo-app"}
             (render-component-as-html checkout/Checkout))
           (common/auth0-lock-passwordless release?)
           (dom/script {:src  (common/budget-js-path release?)

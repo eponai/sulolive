@@ -16,15 +16,13 @@
         {:lang "en"}
         (apply dom/head nil (common/head release?))
         (dom/body
-          nil
-          (dom/div
-            {:id "sulo-store" :className "sulo-page"}
-            (render-component-as-html common.store/Store)
-            ;(nav/navbar navbar)
-            ;(dom/div {:className "page-content" :id "sulo-store-container"}
-            ;  (common.store/->Store store))
-            ;(common/footer nil)
-            )
+          (dom/div {:height "100%" :id "the-sulo-app"}
+            (render-component-as-html common.store/Store))
+          ;(nav/navbar navbar)
+          ;(dom/div {:className "page-content" :id "sulo-store-container"}
+          ;  (common.store/->Store store))
+          ;(common/footer nil)
+
 
           (common/red5pro-script-tags release?)
           (common/auth0-lock-passwordless release?)
