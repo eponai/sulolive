@@ -37,7 +37,7 @@
 
 (defonce history-atom (atom nil))
 
-(defn run-element [{:keys [id] :as routed}]
+(defn run []
   (let [init? (atom false)
         reconciler-atom (atom nil)
         _ (when-let [h @history-atom]
@@ -81,7 +81,3 @@
     (binding [parser/*parser-allow-remote* false]
       (pushy/start! history))
     (utils/init-state! reconciler remotes send-fn parser router/Router)))
-
-(defn run [k]
-  (prn "RUN: " k)
-  (run-element (common.routes/route->component k)))

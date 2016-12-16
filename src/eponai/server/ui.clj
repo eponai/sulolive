@@ -42,7 +42,7 @@
         parser (parser/client-parser (parser/client-parser-state {::parser/get-route-params #(:route-params request-env)}))
         ;; TODO: Is this parser wrapper needed?
         parser (fn [env query & [target]]
-                 (parser (merge env (dissoc request-env :state :params)) query target))
+                 (parser (merge env (dissoc request-env :state :route-params)) query target))
         remotes [:remote :remote/user]
         send-fn (server-send request-env reconciler-atom )
         reconciler (om/reconciler {:state   (datascript/conn-from-db (:empty-datascript-db request-env))

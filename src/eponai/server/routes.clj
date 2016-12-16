@@ -32,7 +32,6 @@
     {:empty-datascript-db            (::m/empty-datascript-db request)
      :state                          (::m/conn request)
      :release?                       (release? request)
-     :params                         (:params request)
      :route-params                   (merge (:route-params ui-route)
                                             (:params request))
      ;; TODO: Un-hard code this.

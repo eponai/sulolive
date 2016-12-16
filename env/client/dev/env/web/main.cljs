@@ -5,30 +5,6 @@
 
 (set! js/window.mixpanel #js {"track" (fn [& args] )})
 
-(defn ^:export runstore[]
-      (utils/install-app)
-      (run/run :store))
-
-(defn ^:export rungoods []
-      (utils/install-app)
-      (run/run :goods))
-
-(defn ^:export runcheckout []
-      (utils/install-app)
-      (run/run :checkout))
-
-(defn ^:export runindex []
-      (utils/install-app)
-      (run/run :index))
-
-(defn ^:export runproduct []
-      (utils/install-app)
-      (run/run :product))
-
-(defn ^:export runstreams []
-      (utils/install-app)
-      (run/run :streams))
-
 (defn ^:export runsulo []
       (utils/install-app)
-      (run/run :sulo))
+      (run/run))
