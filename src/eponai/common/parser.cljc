@@ -136,9 +136,8 @@
   We currently don't have any filters for the client
   side, so we're not using ::filter-atom."
   [read-or-mutate]
-  (fn [{:keys [state] :as env} & args]
-    (apply read-or-mutate (assoc env :db (datascript/db state))
-           args)))
+  (fn [{:keys [state] :as env} k p]
+    (read-or-mutate (assoc env :db (datascript/db state)) k p)))
 
 (defn read-with-dbid-in-query [read]
   (fn [{:keys [query] :as env} k p]
