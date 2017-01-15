@@ -3,13 +3,20 @@
 (defn cad->usd [x]
   (/ x 1.35))
 
+(defn per-month->per-day [x]
+  (/ x 30M))
+
+(defn per-hour->per-day [x]
+  (* x 24M))
+
 ;; Q. What is Twitch?
 ;; A. Twitch is the world’s leading live social video platform and community for gamers with 9.6M daily active users with an average of 106 minutes watched per person per day and 1.7+ million unique broadcasters per month.
 
 (def world
   {:businesses                             0
    :visitors                               0
-   :visitor/time-watching-stream           (* 30 60 10)
+   ;; 106 minutes watched per person per day (is what twitch has)
+   :visitor/time-watching-stream           (* 106 60)
    :conversion-rate/product-sales          0.03M
    :conversion-rate/ads                    0M
    :conversion-rate/viewer-subscribing     0M
@@ -19,29 +26,55 @@
    ;; TODO: Include stripe fee in calculations
    :product/stripe-fee                     0.30M
    :price/ad-viewed                        0M
-   :price/business-subscription            (cad->usd 99)
-   :price/avg-product                      (cad->usd 60)
-   :price/avg-viewer-subscription          5
+   :price/business-subscription            (per-month->per-day (cad->usd 99))
+   :price/avg-product                      (per-month->per-day (cad->usd 60))
+   :price/avg-viewer-subscription          (per-month->per-day 5)
    ;; cost of stream bandwidth per GB:
-   :price/stream-bandwidth                 {:from-aws 0.05 :p2p 0.005}
+   :price/stream-bandwidth                 {:to-aws         0.00M
+                                            :from-ec2       0.05M
+                                            ;; Streamroot CDN+p2p solution is $0.01/GB
+                                            :cdn-streamroot 0.01M
+                                            :p2p-streamroot 0.005M}
    ;; ec2-server per month (m3.xlarge?)
    ;; TODO: Get real prices
+   :price.ec2/t2.small                     (per-hour->per-day 0.023M)
+   :price.ec2/t2.large                     (per-hour->per-day 0.094M)
+   :price.ec2/m4.large                     (per-hour->per-day 0.108M)
+   :price.ec2/m4.xlarge                    (per-hour->per-day 0.215M)
+   :price.ec2/m4.2xlarge                   (per-hour->per-day 0.431M)
    :price/ec2-server                       50
-   :price/red5                             {:first-server 129 :rest-servers 79}
+   :price/red5-license                     {:first-server (per-month->per-day 129)
+                                            :rest-servers (per-month->per-day 79)}
+   :red5/server-capacity                   {:m4.2xlarge 2600}
+   :red5.server-type/stream-manager        :t2.small
+   :red5.server-type/origin                :t2.large
+   :red5.server-type/edge                  :m4.xlarge
+   ;; Streamroot saves bandwidth by using p2p tech, so we can reduce the bandwidth costs?
+   ;; According to a livestreaming usecase - retrievable from streamroot.io - the bandwidth savings range is 60%-75%.
+   :streamroot/bandwidth-reduction         0.50M
    :stream/avg-bit-rate                    1500
-   ;; This is hopefully quite a low estimate:
-   :stream/p2p-effectivity                 0.8M
+   ;; This is hopefully quite a low estimate, but it doesn't matter if we're using streamroot's CDN+p2p solution.
+   :stream/p2p-efficiency                  0.8M
+   :stream/avg-edges                       2
+   :stream/avg-stream-managers             1
+   :stream/avg-origins                     1
+   ;; It's really weird estimating this like this:
    :stream/servers-per-visitor             (/ 1M 2000M)
    ;; It's really weird estimating this like this:
    :website/servers-per-visitor            (/ 1M 10000M)
+   :website/avg-servers                    1
+   :website/server-type                    :m4.large
    })
+
+(defn price-by-ec2-type [world ec2-type]
+  {:pre [(keyword? ec2-type)] :post [(number? %)]}
+  (get world (keyword "price.ec2" (name ec2-type))))
 
 (defn add-businesses [world bs]
   (update world :businesses + bs))
 
 (defn add-visitors [world vs]
   (update world :visitors + vs))
-
 
 (defn multiply [world ks]
   (assert (every? (partial contains? world) ks)
@@ -63,11 +96,13 @@
 
 
 (defn product-sales-income [world]
-  (* (multiply world
-               [:visitors
-                :conversion-rate/product-sales
-                :price/avg-product])
-     (our-comission-rate world)))
+  (let [products-sold (multiply world [:visitors
+                                       :conversion-rate/product-sales])]
+    (- (* products-sold
+          (:price/avg-product world)
+          (our-comission-rate world))
+       (* products-sold
+          (:product/stripe-fee world)))))
 
 (defn stream-ads-income [world]
   (multiply world [:visitors
@@ -77,49 +112,47 @@
                    :price/ad-viewed]))
 
 (defn stream-bandwidth-cost [world]
-  (let [kbits-streamed
-        (multiply world [:visitors
-                         :conversion-rate/viewer-watching-stream
-                         :visitor/time-watching-stream
-                         :stream/avg-bit-rate])
-        gb-streamed (/ kbits-streamed 8 1024 1024)
-        p2p-portion (:stream/p2p-effectivity world)
-        aws-portion (- 1 p2p-portion)]
-    (+ (* gb-streamed
-          (get-in world [:price/stream-bandwidth :from-aws])
-          aws-portion)
-       (* gb-streamed
-          (get-in world [:price/stream-bandwidth :p2p])
-          p2p-portion))))
+  (let [kbits-per-stream (multiply world [:stream/avg-bit-rate
+                                          :visitor/time-watching-stream])
+        gb-per-stream (/ kbits-per-stream 8 1024 1024)
+        cost-between-aws-and-streamroot (* gb-per-stream
+                                           ;; We only stream once between aws and streamroot?
+                                           1
+                                           (get-in world [:price/stream-bandwidth :from-aws]))
+        cost-between-streamroot-and-visitors (* gb-per-stream
+                                                (multiply world [:visitors
+                                                                 :conversion-rate/viewer-watching-stream
+                                                                 :streamroot/bandwidth-reduction])
+                                                (get-in world [:price/stream-bandwidth
+                                                               :cdn-streamroot]))]
+    (+ cost-between-aws-and-streamroot
+       cost-between-streamroot-and-visitors)))
 
 (defn ec2-server-time-cost [world]
-  (+ (multiply world
-               [:visitors
-                :conversion-rate/viewer-watching-stream
-                :stream/servers-per-visitor
-                :price/ec2-server])
-     (multiply world
-               [:visitors
-                :website/servers-per-visitor
-                :price/ec2-server])))
+  (letfn [(server-price [amount-key price-key]
+            (* (get world amount-key)
+               (price-by-ec2-type world (get world price-key))))]
+    (+ (server-price :website/avg-servers
+                     :website/server-type)
+       (server-price :stream/avg-edges
+                     :red5.server-type/edge)
+       (server-price :stream/avg-origins
+                     :red5.server-type/origin)
+       (server-price :stream/avg-stream-managers
+                     :red5.server-type/stream-manager))))
 
 
 (defn red5-server-license-cost [world]
-  (let [servers (->> (multiply world
-                               [:visitors
-                                :conversion-rate/viewer-watching-stream
-                                :stream/servers-per-visitor])
-                     (+ 0.5M)
-                     (double)
-                     #?(:clj  (Math/round)
-                        :cljs (.round js/Math)))]
-    (+ (get-in world [:price/red5 :first-server])
+  (let [servers (+ (:stream/avg-origins world)
+                   (:stream/avg-edges world))]
+    (+ (get-in world [:price/red5-license :first-server])
        (* (dec servers)
-          (get-in world [:price/red5 :rest-servers])))))
+          (get-in world [:price/red5-license :rest-servers])))))
 
-(defn total-products-sold [world revenue]
-  (-> (get-in revenue [:incomes :income/product-sales])
-      (/ (our-comission-rate world))))
+(defn total-products-sold [world]
+  (multiply world [:visitors
+                   :conversion-rate/product-sales
+                   :price/avg-product]))
 
 (defn revenue [world]
   (letfn [(compute-sum [fn-map]
@@ -140,14 +173,15 @@
                    :profit   (- (:total incomes)
                                 (:total expenses))}]
       (assoc revenue :total-products-sold-usd
-                     (total-products-sold world revenue)
+                     (total-products-sold world)
                      :income-per-expense (/ (:total incomes)
                                             (:total expenses))
                      :profit-per-income (/ (:profit revenue)
                                            (:total incomes))))))
 
-(defn revenue-in [businesses visitors]
-  (-> world
-      (add-businesses businesses)
-      (add-visitors visitors)
-      (revenue)))
+(defn revenue-in [businesses visitors & [days]]
+  (* (or days 1)
+     (-> world
+         (add-businesses businesses)
+         (add-visitors visitors)
+         (revenue))))
