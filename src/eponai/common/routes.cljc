@@ -5,7 +5,8 @@
     [eponai.common.ui.goods :as goods]
     [eponai.common.ui.index :as index]
     [eponai.common.ui.product :as product]
-    [eponai.common.ui.streams :as streams]))
+    [eponai.common.ui.streams :as streams]
+    [eponai.common.ui.business :as business]))
 
 (def routes
   ["/" {""                     :index
@@ -14,7 +15,8 @@
         "goods"                :goods
         ["goods/" :product-id] :product
         "streams"              :streams
-        "checkout"             :checkout}])
+        "checkout"             :checkout
+        "business"             :business}])
 
 (def route->component
   {:index       {:component index/Index
@@ -30,4 +32,6 @@
    :product     {:component product/ProductPage
                  :factory   product/->ProductPage}
    :streams     {:component streams/Streams
-                 :factory   streams/->Streams}})
+                 :factory   streams/->Streams}
+   :business {:component business/Business
+              :factory   business/->Business}})
