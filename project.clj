@@ -44,6 +44,7 @@
                  [ring-transit "0.1.6"]
                  [prone "1.1.4"]
                  [medley "0.8.3"]
+                 [cljsjs/nvd3 "1.8.2-1"]
 
                  ;; CLJS
                  [com.cognitect/transit-cljs "0.8.239"]
