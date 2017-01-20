@@ -82,6 +82,13 @@ html, body {
 		text-overflow: ellipsis;
 }
 
+@mixin single-line-text() {
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+	font-weight: bold;
+}
+
 @mixin sulo-colors {
 	@each $name, $color in $foundation-palette {
 		&.#{$name} {

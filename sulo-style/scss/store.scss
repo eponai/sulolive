@@ -5,147 +5,71 @@
 	}
 }
 
-#sulo-store {
+@mixin text-shadow($type: dark) {
+	$text-shadow: none;
+	@if $type == dark{
+		$text-shadow: 1px 1px 1px rgba($black, 0.1);
+	}
+	@if $type == light {
+		$text-shadow: 1px 1px 1px rgba($white, 0.5);
+	}
+	text-shadow: $text-shadow;
+	h1, h2, h3, h4, h5, h6 {
+		text-shadow: $text-shadow;
+	}
+}
+
+@mixin chat-open($is-open: true) {
 	@include breakpoint(large) {
-		.navbar-container, .footer {
+		.navbar-container, 
+		.footer, 
+		.page-content > *:not(.cover),
+		.page-content > .photo.cover > * {
 			transition: padding .25s ease-in-out;
-			// transform: translate($chat-width, 0);
-			padding-right: 0;
-		}
-		.chat-open {
-			.navbar-container, .footer {
-		// max-width: 100%;
+			@if $is-open {
 				padding-right: $chat-width;
 			}
-		}
-		.page-content {
-			// padding-top: 0;
-		}
-	}
-
-	// .page-content {
-	// 	padding-right: 0;
-	// 	transition: padding .25s ease-in-out; 
-	// 	@include breakpoint(large) {
-	// 		padding-right: $chat-width;
-	// 	}
-	// }
-
-	// .page-content {
-	// 	padding-top: 0;
-	// }
-
-	#sulo-store-container {
-		// padding-top: $navbar-height;
-		@include breakpoint(large) {
-			> * {
+			@else {
 				padding-right: 0;
-				transition: padding .25s ease-in-out;
-				&.photo-container {
-					padding-right: 0;
-					> *  {
-						padding-right: 0;
-					}
-				}
-			}
-			&.chat-open {
-				> * {
-					padding-right: $chat-width;
-					&.photo-container {
-						padding-right: 0;
-						> * {
-							padding-right: $chat-width;
-						}
-					}
-				}
-			}
-		}
-		.cover.photo {
-			// padding-top: $navbar-height;
-			.stream-container {
-				visibility: hidden;
-				// padding: 1rem;
-				font-size: 1.4rem;
-				font-weight: bold;
-				text-shadow: 1px 1px 1px rgba($white, 0.7);
-				.fa-eye:before {
-					vertical-align: middle;
-				}
-				h5 {
-					text-shadow: 0px 1px 1px rgba($white, 0.7);
-					text-overflow: ellipsis;
-					overflow: hidden;
-					white-space: nowrap;
-					font-weight: bold;
-				}
-				margin: 0 auto 1rem auto;
-				min-height: 10rem;
-				@include breakpoint(large) {
-					padding: 1rem;
-					// max-width: 75%;
-				}
-			}
-			.has-stream {
-				// background: rgba($white, 0.5);
-				.stream-container {
-					visibility: visible;
-				}
 			}
 		}
 	}
-	.store-container {
-		background: rgba($white, 0.7) !important;
-		box-shadow: 1px 0 2px 0 rgba($black, 0.5);
-		h1, small, i {
-			text-shadow: 1px 1px 1px rgba($white, 0.7);
-		}
-		@include breakpoint(large) {
-			padding: 0;
-		}
-		.store-main-menu {
-			width: 100%;
-			padding: 0.5rem 0;
-			@include breakpoint(large) {
-				padding: 1rem 0;
-				@include menu-direction(vertical);
-			}
-			li {
-				@include list-item-hover($hover-color: rgba($black, 0.05));
-				@include breakpoint(large) {
-					padding-left: 5%;
-					padding-right: 5%;
-					$border: 1px solid rgba($black, 0.05);
-					border-top: $border;
-					&:last-child {
-						border-bottom: $border;
-					}
-				}
-				a {
-					color: rgba($black, 0.6);
-					font-weight: bold;
-				}
-			}
-		}
+}
+
+#sulo-store {
+	@include chat-open(false);
+	&.chat-open {
+		@include chat-open(true);
 	}
-	.store-short-info-container {
+	.page-content {
 		display: flex;
-		@include breakpoint(large) {
-			display: block;
-			padding: 0 10%;
+		flex-direction: column;
+	}
+	.stream-container {
+		@include text-shadow(light);
+		visibility: hidden;
+		font-size: 1.4rem;
+		font-weight: bold;
+		.fa-eye:before {
+			vertical-align: middle;
 		}
-		.photo-container {
-			width: 4rem;
-			margin-right: 1rem;
-
-			@include breakpoint(large) {
-				width: 100%;
-			}
+		h5 {
+			@include single-line-text;
+		}
+		margin: 0 auto 1rem auto;
+		min-height: 10rem;
+		@include breakpoint(large) {
+			padding: 1rem;
 		}
 	}
-
+	.has-stream {
+		.stream-container {
+			visibility: visible;
+		}
+	}
 	.store-nav {
 		padding: 0.7rem 0;
 		background: $body-background;
-		box-shadow: 0 1px 3px 1px rgba($black, 0.2);
+		box-shadow: 0 0 3px 1px rgba($primary-color, 0.1);
 	}
 }
