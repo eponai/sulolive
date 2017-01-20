@@ -9,10 +9,63 @@ $section-footer-color: $primary-color;
 
 // $font-color-light: $bod;
 
-#sulo-index {
-	.subnav-container {
-		// box-shadow: none;
+#sulo-coming-soon {
+	.page-content {
+		min-height: 100vh;
+		padding-bottom: 0;
+		display: flex;
+		> .photo.header {
+			flex: 1;
+		}
 	}
+	.footer {
+		display: none;
+	}
+
+	.content-container {
+		padding: 4rem 2rem;
+		padding-top: 2rem;
+		margin-top: 7rem;
+		background: rgba($white, 0.85);
+		strong {
+			font-size: 1.4rem;
+		}
+		h1, h2, h3, strong {
+			text-transform: uppercase;
+		}
+		form {
+			display: flex;
+			justify-content: center;
+			flex-direction: row;
+			flex-wrap: wrap;
+			> * {
+				margin: 0 0.5rem;
+			}
+			.button {
+				flex: 0 0 auto;
+			}
+			input {
+				max-width: 20rem;
+			}
+		}
+	}
+	.bottom-container {
+		margin-top: 2rem;
+		background: rgba($black, 0.7);
+
+		strong {
+			padding: 1rem;
+			color: $white;
+			text-transform: uppercase;
+			font-size: 2rem;
+			@include breakpoint(medium) {
+				font-size: 3.5rem; 
+			}
+		}
+	}
+}
+
+#sulo-index {
 	.button {
 		font-weight: bold;
 	}
@@ -20,15 +73,8 @@ $section-footer-color: $primary-color;
 	svg {
 		position: absolute;
 	}
-	.navbar {
-		input, #search-icon {
-			// display: snone;
-		}
-	}
 
 	.intro-header {
-		// box-shadow: 0 0px 1px 1px rgba($brown, 0.15);
-
 		min-height: 30rem;
 		height: 75vh;
 		font-size: 3rem;
@@ -61,9 +107,6 @@ $section-footer-color: $primary-color;
 		.header-content {
 			display: block;
 			position: relative;
-			.search-container {
-				// margin-top: 4rem;
-			}
 		}
 	}
 
@@ -106,10 +149,6 @@ $section-footer-color: $primary-color;
 	.section {
 		margin-top: 8rem;
 		margin-bottom: 2rem;
-
-		// &:first-child {
-		// 	margin-top: 1rem;
-		// }
 		.section-footer {
 			padding: 1rem 0;
 			margin-top: $global-margin;
@@ -146,16 +185,9 @@ $section-footer-color: $primary-color;
 				width: 100%;
 				transform: translateY(-50%);
 			}
-			// a {
-			// 	color: rgba($primary-color, 0.5);
-			// 	text-transform: none;
-			// 	font-weight: bold;
-			// 	right: 0;
-			// }
 		}
 
 		&.online-channels {
-			// margin-top: 2rem;	
 			.overlay-container {
 				p, i {
 					font-size: 1.2rem;
@@ -170,18 +202,4 @@ $section-footer-color: $primary-color;
 			}
 		}
 	}
-
-	// .footer {
-	// 	color: $navbar-font-color;
-	// 	background: $navbar-background-color;//$header-background-color;
-	// 	// color: map-get($foundation-palette, nude);//$body-background;
-	// 	a {
-	// 		color: $navbar-font-color;
-	// 		// color: $body-background;
-	// 	}
-	// }
-	// #navbar-brand {
-	// 	transition: opacity 0.25s ease-in-out;
-	// }
-
 }

@@ -89,7 +89,7 @@
              ;         (css/add-class :vertical)))
              ;  )
              )
-           (dom/div #js {:className "content-item-title-section"}
+           (dom/div #js {:className "content-item-title-section text-center"}
              (dom/a #js {:onClick on-click
                          :href    goods-href}
                     (:item/name product)))
@@ -116,9 +116,9 @@
                   (menu/item-link nil (dom/small nil "Terms & Conditions"))
                   (menu/item-text nil (dom/small nil "© Sulo 2016"))))))
 
-(defn page-container [props content & [{:keys [class]}]]
-  (dom/div #js {:className (str "page-container " class)}
+(defn page-container [props & content]
+  (dom/div #js {:className "page-container"}
     (nav/navbar (:navbar props))
-    (dom/div #js {:key "content" :className "page-content"}
+    (apply dom/div #js {:key "content" :className "page-content"}
       content)
     (footer nil)))

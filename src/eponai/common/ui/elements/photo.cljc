@@ -34,16 +34,21 @@
                  (css/add-class ::css/photo-square)
                  (css/add-class ::css/photo-thumbnail)))))
 
-(defn header [opts]
-  (photo* (css/add-class ::css/photo-header opts)))
+(defn header [{:keys [src] :as opts} & content]
+  (when-not (string? src)
+    (error "Invalid photo URL type. Cover expects URL string as first argument. Got URL: " src))
+  ;(photo-container
+  ;  nil)
+  (apply photo* (css/add-class ::css/photo-header opts)
+         content))
 
 (defn cover [{:keys [src] :as opts} & content]
   (when-not (string? src)
     (error "Invalid photo URL type. Cover expects URL string as first argument. Got URL: " src))
-  (photo-container
-    nil
-    (apply photo* (css/add-class ::css/photo-cover opts)
-           content)))
+  ;(photo-container
+  ;  nil)
+  (apply photo* (css/add-class ::css/photo-cover opts)
+         content))
 
 (defn with-overlay [opts photo-element & content]
   (dom/div
