@@ -113,7 +113,7 @@
                        nil
                        (menu/item-link {:href ""
                                         :id "navbar-brand"}
-                                       "Sulo")
+                                       (dom/span nil "Sulo"))
                        (menu/item-link
                          (css/add-class ::css/yellow {:href "/streams"})
                          (my-dom/strong
@@ -127,28 +127,28 @@
                        (menu/item-link
                          (->> (css/add-class :category {:href ""})
                               (css/show-for {:size :large}))
-                         "Women")
+                         (dom/span nil "Women"))
                        (menu/item-link
                          (->> (css/add-class :category {:href ""})
                               (css/show-for {:size :large}))
-                         "Men")
+                         (dom/span nil "Men"))
                        (menu/item-link
                          (->> (css/add-class :category {:href ""})
                               (css/show-for {:size :large}))
-                         "Kids")
+                         (dom/span nil "Kids"))
                        (menu/item-link
                          (->> (css/add-class :category {:href ""})
                               (css/show-for {:size :large}))
-                         "Home")
+                         (dom/span nil "Home"))
                        (menu/item-link
                          (->> (css/add-class :category {:href ""})
                               (css/show-for {:size :large}))
-                         "Art")
+                         (dom/span nil "Art"))
                        (menu/item-dropdown
                          (->> {:dropdown (category-dropdown)}
                               (css/hide-for {:size :large})
                               (css/add-class :category))
-                         "Shop"
+                         (dom/span nil "Shop")
                          ;(dom/i #js {:className "fa fa-caret-down fa-fw"})
                          )
                        ))
@@ -159,7 +159,7 @@
                          nil
                          (menu/item-link
                            (css/add-class :contact {:href "mailto:hello@sulo.live"})
-                           (my-dom/span (css/show-for {:size :medium}) "Sell on SULO? Send us an email")
+                           (my-dom/span (css/show-for {:size :medium}) (dom/span nil "Sell on SULO? Send us an email"))
                            (dom/i #js {:className "fa fa-envelope-o fa-fw"})))
 
                        (menu/horizontal
@@ -186,7 +186,7 @@
                          ;                                             (.open-signin this)))} "Sign in")))
                          (menu/item-link
                            {:href "/logout"}
-                           "Sign Out")
+                           (dom/span nil "Sign Out"))
                          (if did-mount?
                            (menu/item-dropdown
                              {:dropdown (cart-dropdown cart)

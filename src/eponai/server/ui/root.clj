@@ -11,6 +11,7 @@
   (render [this]
     (let [{:keys [release? ::app-html route]} (om/props this)]
       (debug "app-html: " app-html)
+      (debug "ROUTE: " route)
       (dom/html
         {:lang "en"}
         (apply dom/head nil (common/head release?))
@@ -29,7 +30,7 @@
 
           (when (= route :coming-soon)
             [(dom/script {:src "https://code.jquery.com/jquery-1.11.0.min.js"})
-             (common/inline-javascript ["window.jQuery || document.write('<scr' + 'ipt src=\"https://code.jquery.com/jquery-1.11.0.min.js\"><\\/sc' + 'ript>')"])
+             ;(common/inline-javascript ["window.jQuery || document.write('<scr' + 'ipt src=\"https://code.jquery.com/jquery-1.11.0.min.js\"><\\/sc' + 'ript>')"])
              (common/inline-javascript ["window.$kol_jquery = window.jQuery"])
              (dom/script {:src "https://kickoffpages-kickofflabs.netdna-ssl.com/widgets/1.9.4/kol_any_form.js"})
              (dom/script {:src "https://kickoffpages-kickofflabs.netdna-ssl.com/w/88102/141997.js"})])

@@ -266,7 +266,7 @@
                    (dom/form
                      nil
                      (dom/input #js {:type "email" :placeholder "you@email.com"})
-                     (dom/button #js {:className "button"} "Invite Me!"))))
+                     (dom/button #js {:className "button" :type "submit"} "Invite Me!"))))
 
             (div (->> (css/grid-row)
                       css/grid-column
