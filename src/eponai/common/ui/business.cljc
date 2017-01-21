@@ -25,7 +25,9 @@
             (group-by key)
             (map (fn [[k values]]
                    {:key    (name k)
-                    :values (vec (map-indexed (fn [i [_ v]] {:x i :y v}) values))}))
+                    :values (vec (map-indexed (fn [i [_ v]]
+                                                {:x i :y (* v (:fixed/days world))})
+                                              values))}))
             (map (fn [color m] (assoc m :color color))
                  ["47a"
                   "a47"
@@ -115,7 +117,8 @@
                      :price/business-subscription
                      :product/commission-rate
                      :fixed/visitors
-                     :fixed/businesses]]
+                     :fixed/businesses
+                     :fixed/days]]
        (into [] (map create-input controls)))))
 
 (defui Business
@@ -125,7 +128,8 @@
   Object
   (initLocalState [this]
     {:model {:fixed/visitors   "2000"
-             :fixed/businesses "200"}})
+             :fixed/businesses "200"
+             :fixed/days       (str b/days-per-month)}})
   (componentDidMount [this]
     #?(:cljs
        (let [charts-by-graph-key
