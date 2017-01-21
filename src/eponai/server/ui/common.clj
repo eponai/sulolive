@@ -85,8 +85,10 @@
    (dom/title nil "Tracking Expenses for Nomads - jourmoney")
    (dom/link {:href "/assets/css/app.css"
               :rel  "stylesheet"})
-   (dom/link {:href "/assets/css/nvd3.css"
-              :rel "stylesheet"})
+   (dom/link {:href (if release?
+                      "https://cdn.rawgit.com/novus/nvd3/v1.8.1/build/nv.d3.css"
+                      "/bower_components/nvd3/build/nv.d3.css")
+              :rel  "stylesheet"})
    (dom/link {:href "/lib/videojs/video-js.min.css"
               :rel "stylesheet"})
 

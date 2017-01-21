@@ -2,6 +2,7 @@
   "name": "sulo-bower",
   "dependencies": {
     "webrtc-adapter": "2.1.0",
-    "auth0-lock-passwordless": "2.2.3"
+    "auth0-lock-passwordless": "2.2.3",
+    "nvd3": "1.8.2"
   }
 }
