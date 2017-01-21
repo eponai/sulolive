@@ -1,7 +1,6 @@
 (ns eponai.server.auth
   (:require
     [buddy.auth.accessrules :as buddy]
-    [buddy.auth :refer [authenticated?]]
     [buddy.auth.backends :as backends]
     [buddy.auth.middleware :refer [wrap-authentication wrap-authorization]]
     [buddy.core.codecs.base64 :as b64]
@@ -11,7 +10,8 @@
     [clj-http.client :as http]
     [clojure.data.json :as json]
     [om.dom :as dom]
-    [om.next :as om :refer [defui]]))
+    [om.next :as om :refer [defui]]
+    [ring.util.response :as r]))
 
 (def http-realm "Sulo-Prototype")
 
@@ -47,12 +47,25 @@
          :token-type token_type})
       {:redirect-url state})))
 
+(defn authenticated? [request]
+  (debug "Authing request id: " (:identity request))
+  (boolean (:identity request)))
+
 (defn http-basic-restrict-opts []
   {:handler  authenticated?
    :on-error (fn [a b]
                {:status  401
                 :headers {"Content-Type"     "text/plain"
                           "WWW-Authenticate" (format "Basic realm=\"%s\"" http-realm)}})})
+
+(defn member-restrict-opts []
+  {:handler  authenticated?
+   :on-error (fn [a b]
+               (r/redirect "/coming-soon")
+               ;{:status  401
+               ; :headers {"Content-Type"     "text/plain"
+               ;           "WWW-Authenticate" (format "Basic realm=\"%s\"" http-realm)}}
+               )})
 
 (defn jwt-restrict-opts []
   {:handler (fn [req] (debug "Identity: " (:identity req)) true)

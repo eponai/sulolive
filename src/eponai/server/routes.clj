@@ -98,10 +98,9 @@
      :meta m}))
 
 (defroutes
-  admin-routes
+  member-routes
   ;;TODO: Use bidi->compojure routes:
   (GET "/" request (server.ui/index-html (request->props request)))
-  (GET "/coming-soon" request (server.ui/landing-html (request->props request)))
   (GET "/auth" request (server.ui/auth-html (merge (request->props request) (auth/auth0 request))))
   (GET "/store/:store-id" request (server.ui/store-html (request->props request)))
   (GET "/goods/:product-id" r (server.ui/product-html (request->props r)))
@@ -124,8 +123,19 @@
     ;  (auth/jwt-restrict-opts))
     )
   (route/resources "/")
+  (GET "/coming-soon" request (server.ui/landing-html (request->props request)))
+  (GET "/enter" request
+    (if (release? request)
+      (auth/restrict (fn [_] (r/redirect "/")) (auth/http-basic-restrict-opts))
+      (r/redirect "/"))
+    )
+  (GET "/logout" request (-> (r/redirect "/coming-soon") (assoc :session {})))
+
   (context "/" [:as request]
     (if (release? request)
-      (auth/restrict admin-routes (auth/http-basic-restrict-opts))
-      admin-routes))
+      (auth/restrict member-routes (auth/member-restrict-opts))
+      member-routes)
+    )
+
+
   (route/not-found "Not found"))

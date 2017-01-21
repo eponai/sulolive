@@ -272,6 +272,11 @@
                       css/grid-column
                       (css/add-class :bottom-container)
                       (css/text-align :center))
-                 (dom/strong nil "Coming Soon, Spring '17"))))))))
+                 (dom/strong nil "Coming Soon, Spring '17"))
+
+            (div (->> (css/grid-row)
+                      css/grid-column
+                      (css/text-align :center))
+                 (dom/a #js {:href "/enter"} (dom/strong nil "ENTER >>")))))))))
 
 (def ->ComingSoon (om/factory ComingSoon))

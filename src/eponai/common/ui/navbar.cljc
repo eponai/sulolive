@@ -111,7 +111,7 @@
                    (dom/div #js {:className "top-bar-left"}
                      (menu/horizontal
                        nil
-                       (menu/item-link {:href "/"
+                       (menu/item-link {:href ""
                                         :id "navbar-brand"}
                                        "Sulo")
                        (menu/item-link
@@ -161,32 +161,39 @@
                            (css/add-class :contact {:href "mailto:hello@sulo.live"})
                            (my-dom/span (css/show-for {:size :medium}) "Sell on SULO? Send us an email")
                            (dom/i #js {:className "fa fa-envelope-o fa-fw"})))
-                       (when did-mount?
-                         (menu/horizontal
-                           nil
-                           (menu/item nil
-                                      (my-dom/a
-                                        (->> {:id "search-icon"}
-                                             (css/show-for {:size :small :only? true}))
-                                        (dom/i #js {:className "fa fa-search fa-fw"}))
-                                      (my-dom/div
-                                        (css/hide-for {:size :small :only? true})
-                                        (dom/input #js {:type        "text"
-                                                        :placeholder "Search"
-                                                        :onKeyDown   (fn [e]
-                                                                       #?(:cljs
-                                                                          (when (= 13 (.. e -keyCode))
-                                                                            (let [search-string (.. e -target -value)]
-                                                                              (set! js/window.location (str "/goods?search=" search-string))))))})))
-                           (if (some? (not-empty auth))
-                             (menu/item-link nil (dom/a nil "You"))
-                             (menu/item nil (dom/a #js {:className "button hollow"
-                                                        :onClick   #(do
+
+                       (menu/horizontal
+                         nil
+                         (menu/item nil
+                                    (my-dom/a
+                                      (->> {:id "search-icon"}
+                                           (css/show-for {:size :small :only? true}))
+                                      (dom/i #js {:className "fa fa-search fa-fw"}))
+                                    (my-dom/div
+                                      (css/hide-for {:size :small :only? true})
+                                      (dom/input #js {:type        "text"
+                                                      :placeholder "Search"
+                                                      :onKeyDown   (fn [e]
                                                                      #?(:cljs
-                                                                        (.open-signin this)))} "Sign in")))
+                                                                        (when (= 13 (.. e -keyCode))
+                                                                          (let [search-string (.. e -target -value)]
+                                                                            (set! js/window.location (str "/goods?search=" search-string))))))})))
+                         ;(if (some? (not-empty auth))
+                         ;  (menu/item-link nil (dom/a nil "You"))
+                         ;  (menu/item nil (dom/a #js {:className "button hollow"
+                         ;                             :onClick   #(do
+                         ;                                          #?(:cljs
+                         ;                                             (.open-signin this)))} "Sign in")))
+                         (menu/item-link
+                           {:href "/logout"}
+                           "Sign Out")
+                         (if did-mount?
                            (menu/item-dropdown
                              {:dropdown (cart-dropdown cart)
                               :href     "/checkout"}
+                             (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))
+                           (menu/item-dropdown
+                             {:href     "/checkout"}
                              (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))))))))))))
 (def ->Navbar (om/factory Navbar))
 
