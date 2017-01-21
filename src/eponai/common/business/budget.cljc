@@ -23,7 +23,7 @@
    :conversion-rate/ads                    0
    :conversion-rate/viewer-subscribing     0
    :conversion-rate/viewer-watching-stream 0.5
-   :product/comission-rate                 0.10
+   :product/commission-rate                 0.10
    :product/stripe-rate                    0.029
    ;; TODO: Include stripe fee in calculations
    :product/stripe-fee                     0.30
@@ -93,7 +93,7 @@
   (multiply world [:visitors :conversion-rate/viewer-subscribing]))
 
 (defn- our-comission-rate [world]
-  (- (:product/comission-rate world)
+  (- (:product/commission-rate world)
      (:product/stripe-rate world)))
 
 
