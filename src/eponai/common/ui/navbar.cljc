@@ -115,7 +115,7 @@
                                         :id "navbar-brand"}
                                        (dom/span nil "Sulo"))
                        (menu/item-link
-                         (css/add-class ::css/yellow {:href "/streams"})
+                         (css/add-class ::css/yellow {:href (if coming-soon? "" "/streams")})
                          (my-dom/strong
                            (css/hide-for {:size :small :only? true})
                            ;; Wrap in span for server and client to render the same html
