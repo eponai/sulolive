@@ -36,24 +36,24 @@
                   :varying-vis
                   :varying-biz-and-vis])
 
-(def graphs {:varying-biz-and-vis (let [biz-range [1 10 100 200 500 1000 2000 5000 10000]
-                                        vis-range (mapv (partial * 10) biz-range)]
-                                    {:biz-range             biz-range
-                                     :vis-range             vis-range
-                                     :x-axis/tick-format-fn (fn [x] (str [(nth biz-range x) (nth vis-range x)]))
-                                     :x-axis/label          "[businesses visitors]"})
-             :varying-biz         (let [biz-range [1 10 100 200 500 1000 2000 5000 10000]
-                                        visitors 1000]
-                                    {:biz-range             biz-range
-                                     :vis-range             (repeat visitors)
-                                     :x-axis/tick-format-fn (fn [x] (nth biz-range x))
-                                     :x-axis/label          (str "businesses=x, visitors=" visitors)})
-             :varying-vis         (let [vis-range (into [] (take 6) (iterate (partial * 10) 1))
-                                        businesses 100]
-                                    {:biz-range             (repeat businesses)
-                                     :vis-range             vis-range
-                                     :x-axis/tick-format-fn (fn [x] (nth vis-range x))
-                                     :x-axis/label          (str "businesses=" businesses ", visitors=x")})})
+(defn graphs [this]
+  (let [{:fixed/keys [visitors businesses]} (:model (om/get-state this))]
+    {:varying-biz-and-vis (let [biz-range [1 10 100 200 500 1000 2000 5000 10000]
+                                vis-range (mapv (partial * 10) biz-range)]
+                            {:biz-range             biz-range
+                             :vis-range             vis-range
+                             :x-axis/tick-format-fn (fn [x] (str [(nth biz-range x) (nth vis-range x)]))
+                             :x-axis/label          "[businesses visitors]"})
+     :varying-biz         (let [biz-range [1 10 100 200 500 1000 2000 5000 10000]]
+                            {:biz-range             biz-range
+                             :vis-range             (repeat visitors)
+                             :x-axis/tick-format-fn (fn [x] (nth biz-range x))
+                             :x-axis/label          (str "businesses=x, visitors=" visitors)})
+     :varying-vis         (let [vis-range (into [] (take 6) (iterate (partial * 10) 1))]
+                            {:biz-range             (repeat businesses)
+                             :vis-range             vis-range
+                             :x-axis/tick-format-fn (fn [x] (nth vis-range x))
+                             :x-axis/label          (str "businesses=" businesses ", visitors=x")})}))
 
 (defn adjusted-business-model [this]
   (let [model (:query/business-model (om/props this))
@@ -81,9 +81,14 @@
        chart)))
 
 #?(:cljs
-   (defn update-chart [chart-ref business-model {:keys [biz-range vis-range]} chart]
+   (defn update-chart [chart-ref business-model {:keys        [biz-range vis-range]
+                                                 :x-axis/keys [tick-format-fn label]} chart]
      {:pre [(some? chart)]}
      (let [select-str (str "#" chart-ref " svg")]
+       (set! (.-xAxis chart)
+             (-> (.-xAxis chart)
+                 (.tickFormat tick-format-fn)
+                 (.axisLabel label)))
        (-> (.select js/d3 select-str)
            (.datum (graph-data business-model biz-range vis-range))
            (.transition)
@@ -99,14 +104,16 @@
                             (dom/input #js {:value    (str (or (get-in (om/get-state this) [:model k])
                                                                (get model k)))
                                             :onChange #(do
-                                                         (debug %)
+                                                         (debug [k (.-value (.-target %))])
                                                          (om/update-state! this assoc-in [:model k]
                                                                            (reader/read-string (.-value (.-target %)))))})))
            controls [:visitor/time-watching-stream
                      :conversion-rate/product-sales
                      :price/avg-product
                      :price/business-subscription
-                     :product/commission-rate]]
+                     :product/commission-rate
+                     :fixed/visitors
+                     :fixed/businesses]]
        (into [] (map create-input controls)))))
 
 (defui Business
@@ -114,6 +121,9 @@
   (query [this]
     [:query/business-model])
   Object
+  (initLocalState [this]
+    {:model {:fixed/visitors   2000
+             :fixed/businesses 200}})
   (componentDidMount [this]
     #?(:cljs
        (let [charts-by-graph-key
@@ -121,7 +131,7 @@
                                      (let [create-graph-fn (memoize
                                                              #(create-chart (str "line-chart-" id)
                                                                             (adjusted-business-model this)
-                                                                            (get graphs graph-key)))]
+                                                                            (get (graphs this) graph-key)))]
                                        (.addGraph js/nv create-graph-fn)
                                        ;; returns the graph-key associated with the chart object returned
                                        ;; in create-graph-fn. It's memoized, so it'll just return when we call
@@ -136,7 +146,7 @@
            (map-indexed (fn [id graph-key]
                           (update-chart (str "line-chart-" id)
                                         (adjusted-business-model this)
-                                        (get graphs graph-key)
+                                        (get (graphs this) graph-key)
                                         (get-in (om/get-state this) [:charts graph-key])))
                         graph-order)))))
   (render [this]
