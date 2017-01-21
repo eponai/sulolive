@@ -264,9 +264,13 @@
                    (dom/h2 nil "Join a community that lives for local!")
                    (dom/p nil "Enter your email and we’ll put you on our invite list for an exclusive beta.")
                    (dom/form
-                     nil
-                     (dom/input #js {:type "email" :placeholder "you@email.com"})
-                     (dom/button #js {:className "button" :type "submit"} "Invite Me!"))))
+                     #js {:className "row collapse align-center"}
+                     (div (->> (css/grid-column)
+                               (css/grid-column-size {:small 12 :medium 8 :large 8}))
+                          (dom/input #js {:type "email" :placeholder "you@email.com"}))
+                     (div (->> (css/grid-column)
+                               (css/add-class :shrink))
+                          (dom/button #js {:className "button expanded" :type "submit"} "Invite Me!")))))
 
             (div (->> (css/grid-row)
                       css/grid-column

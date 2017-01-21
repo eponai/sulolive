@@ -29,7 +29,9 @@
 
 
           (when (= route :coming-soon)
-            [(dom/script {:src "https://code.jquery.com/jquery-1.11.0.min.js"})
+            [
+             ;(dom/script {:src "https://cdn.auth0.com/js/lock/10.6/lock.min.js"})
+             (dom/script {:src "https://code.jquery.com/jquery-1.11.0.min.js"})
              ;(common/inline-javascript ["window.jQuery || document.write('<scr' + 'ipt src=\"https://code.jquery.com/jquery-1.11.0.min.js\"><\\/sc' + 'ript>')"])
              (common/inline-javascript ["window.$kol_jquery = window.jQuery"])
              (dom/script {:src "https://kickoffpages-kickofflabs.netdna-ssl.com/widgets/1.9.4/kol_any_form.js"})
