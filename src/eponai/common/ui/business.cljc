@@ -55,8 +55,13 @@
                                      :x-axis/tick-format-fn (fn [x] (nth vis-range x))
                                      :x-axis/label          (str "businesses=" businesses ", visitors=x")})})
 
+(defn adjusted-business-model [this]
+  (let [model (:query/business-model (om/props this))
+        state-model (:model (om/get-state this))]
+    (merge model state-model)))
+
 #?(:cljs
-   (defn create-graph [chart-ref business-model {:keys        [biz-range vis-range]
+   (defn create-chart [chart-ref business-model {:keys        [biz-range vis-range]
                                                  :x-axis/keys [tick-format-fn label]}]
      (let [chart (-> (js/nv.models.lineChart)
                      (.options #js {:duration                300
@@ -75,21 +80,18 @@
            (.call chart))
        chart)))
 
-(defn adjusted-business-model [this]
-  (let [model (:query/business-model (om/props this))
-        state-model (:model (om/get-state this))
-        ret (merge model state-model)]
-    (debug "adjusted-model-differs: " (data/diff model ret))
-    ret))
+#?(:cljs
+   (defn update-chart [chart-ref business-model {:keys [biz-range vis-range]} chart]
+     {:pre [(some? chart)]}
+     (let [select-str (str "#" chart-ref " svg")]
+       (-> (.select js/d3 select-str)
+           (.datum (graph-data business-model biz-range vis-range))
+           (.transition)
+           (.duration 500)
+           (.call chart)))))
 
 #?(:cljs
    (defn render-input-controls [this]
-     (comment
-       + Conversion rate
-       + Avg price per product
-       + Time watched per user
-       + Commission
-       + Business subscription price)
      (let [model (:query/business-model (om/props this))
            create-input (fn [k]
                           (dom/div nil
@@ -114,11 +116,10 @@
   Object
   (componentDidMount [this]
     #?(:cljs
-       (let [_ (debug "MOUNTING!!!")
-             charts-by-graph-key
+       (let [charts-by-graph-key
              (into {} (map-indexed (fn [id graph-key]
                                      (let [create-graph-fn (memoize
-                                                             #(create-graph (str "line-chart-" id)
+                                                             #(create-chart (str "line-chart-" id)
                                                                             (adjusted-business-model this)
                                                                             (get graphs graph-key)))]
                                        (.addGraph js/nv create-graph-fn)
@@ -131,33 +132,12 @@
   (componentDidUpdate [this _ prev-state]
     #?(:cljs
        (when (not= (:model prev-state) (:model (om/get-state this)))
-         (debug "UPDATING!")
          (doall
            (map-indexed (fn [id graph-key]
-                          (debug "Updating key: " graph-key)
-                          (let [chart-ref (str "line-chart-" id)
-                                select-str (str "#" chart-ref " svg")
-                                _ (debug "Selecting: " select-str)
-                                svg (.select js/d3 select-str)
-                                _ (debug "Selected: " select-str " svg: " svg)
-                                graph (get graphs graph-key)
-                                _ (debug "Getting data for graph: " graph)
-                                chart-data (graph-data (adjusted-business-model this)
-                                                       (:biz-range graph)
-                                                       (:vis-range graph))
-                                _ (debug "Chart data: " chart-data)
-                                chart (get-in (om/get-state this) [:charts graph-key])]
-                            (debug "chart: " chart)
-                            (if-not (some? chart)
-                              (debug "No chart object found in state: " (om/get-state this))
-                              (do
-                                (-> svg
-                                    (.datum chart-data)
-                                    (.transition)
-                                    (.duration 500)
-                                    (.call chart))
-                                (debug "Calling UPDATE chart")
-                                (.update chart)))))
+                          (update-chart (str "line-chart-" id)
+                                        (adjusted-business-model this)
+                                        (get graphs graph-key)
+                                        (get-in (om/get-state this) [:charts graph-key])))
                         graph-order)))))
   (render [this]
     (dom/div #js {:className "row small-up-2"
