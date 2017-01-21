@@ -83,12 +83,6 @@
                                      })]
                (.socialOrMagiclink lock options))))
 
-  ;(componentDidUpdate [this prev-props prev-state]
-  ;  (debug "Did update: " prev-state)
-  ;  #?(:cljs
-  ;     (let [{:keys [signin-open?]} (om/get-state this)]
-  ;       (when signin-open?
-  ;         (.open-signin this)))))
   (initLocalState [_]
     {:cart-open? false
      :on-scroll-fn #(debug "Did scroll: " %)})
@@ -108,8 +102,9 @@
 
   (render [this]
     (let [{:keys [cart-open? signin-open? did-mount?]} (om/get-state this)
-          {:keys [query/cart query/auth]} (om/props this)]
-      (debug "Got auth: " auth)
+          {:keys [query/cart query/auth]} (om/props this)
+          {:keys [coming-soon?]} (om/get-computed this)]
+
       (dom/div #js {:id "sulo-navbar"}
         (dom/nav #js {:className "navbar-container"}
                  (dom/div #js {:className "top-bar navbar"}
@@ -118,21 +113,7 @@
                        nil
                        (menu/item-link {:href "/"
                                         :id "navbar-brand"}
-                                       "Su" (dom/br nil) "lo")
-                       (menu/item nil
-                                  (my-dom/a
-                                    (->> {:id "search-icon"}
-                                         (css/show-for {:size :small :only? true}))
-                                    (dom/i #js {:className "fa fa-search fa-fw"}))
-                                  (my-dom/div
-                                    (css/hide-for {:size :small :only? true})
-                                    (dom/input #js {:type        "text"
-                                                    :placeholder "Search"
-                                                    :onKeyDown   (fn [e]
-                                                                   #?(:cljs
-                                                                      (when (= 13 (.. e -keyCode))
-                                                                        (let [search-string (.. e -target -value)]
-                                                                          (set! js/window.location (str "/goods?search=" search-string))))))})))
+                                       "Sulo")
                        (menu/item-link
                          (css/add-class ::css/yellow {:href "/streams"})
                          (my-dom/strong
@@ -142,26 +123,71 @@
                          (my-dom/div
                            (css/show-for {:size :small :only? true})
                            (dom/i #js {:className "fa fa-video-camera fa-fw"})))
+
+                       (menu/item-link
+                         (->> (css/add-class :category {:href ""})
+                              (css/show-for {:size :large}))
+                         "Women")
+                       (menu/item-link
+                         (->> (css/add-class :category {:href ""})
+                              (css/show-for {:size :large}))
+                         "Men")
+                       (menu/item-link
+                         (->> (css/add-class :category {:href ""})
+                              (css/show-for {:size :large}))
+                         "Kids")
+                       (menu/item-link
+                         (->> (css/add-class :category {:href ""})
+                              (css/show-for {:size :large}))
+                         "Home")
+                       (menu/item-link
+                         (->> (css/add-class :category {:href ""})
+                              (css/show-for {:size :large}))
+                         "Art")
                        (menu/item-dropdown
                          (->> {:dropdown (category-dropdown)}
-                              (css/hide-for {:size :small :only? true}))
+                              (css/hide-for {:size :large})
+                              (css/add-class :category))
                          "Shop"
-                         (dom/i #js {:className "fa fa-caret-down fa-fw"}))))
+                         ;(dom/i #js {:className "fa fa-caret-down fa-fw"})
+                         )
+                       ))
 
                    (dom/div #js {:className "top-bar-right"}
-                     (when did-mount?
+                     (if coming-soon?
                        (menu/horizontal
                          nil
-                         (if (some? (not-empty auth))
-                           (menu/item-link nil (dom/a nil "You"))
-                           (menu/item nil (dom/a #js {:className "button hollow"
-                                                      :onClick   #(do
-                                                                   #?(:cljs
-                                                                      (.open-signin this)))} "Sign in")))
-                         (menu/item-dropdown
-                           {:dropdown (cart-dropdown cart)
-                            :href "/checkout"}
-                           (dom/i #js {:className "fa fa-shopping-cart fa-fw"})))))))))))
+                         (menu/item-link
+                           (css/add-class :contact {:href "mailto:hello@sulo.live"})
+                           (my-dom/span (css/show-for {:size :medium}) "Sell on SULO? Send us an email")
+                           (dom/i #js {:className "fa fa-envelope-o fa-fw"})))
+                       (when did-mount?
+                         (menu/horizontal
+                           nil
+                           (menu/item nil
+                                      (my-dom/a
+                                        (->> {:id "search-icon"}
+                                             (css/show-for {:size :small :only? true}))
+                                        (dom/i #js {:className "fa fa-search fa-fw"}))
+                                      (my-dom/div
+                                        (css/hide-for {:size :small :only? true})
+                                        (dom/input #js {:type        "text"
+                                                        :placeholder "Search"
+                                                        :onKeyDown   (fn [e]
+                                                                       #?(:cljs
+                                                                          (when (= 13 (.. e -keyCode))
+                                                                            (let [search-string (.. e -target -value)]
+                                                                              (set! js/window.location (str "/goods?search=" search-string))))))})))
+                           (if (some? (not-empty auth))
+                             (menu/item-link nil (dom/a nil "You"))
+                             (menu/item nil (dom/a #js {:className "button hollow"
+                                                        :onClick   #(do
+                                                                     #?(:cljs
+                                                                        (.open-signin this)))} "Sign in")))
+                           (menu/item-dropdown
+                             {:dropdown (cart-dropdown cart)
+                              :href     "/checkout"}
+                             (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))))))))))))
 (def ->Navbar (om/factory Navbar))
 
 (defn navbar [props]

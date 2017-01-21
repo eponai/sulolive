@@ -1,0 +1,77 @@
+#sulo-coming-soon {
+	.page-content {
+		min-height: 100vh;
+		padding-bottom: 0;
+		display: flex;
+		> .photo.header {
+			flex: 1;
+		}
+	}
+	.footer {
+		display: none;
+	}
+
+	.content-container {
+		padding: 4rem 2rem;
+		padding-top: 2rem;
+		margin-top: 7rem;
+		background: rgba($white, 0.85);
+		strong {
+			font-size: 1.4rem;
+		}
+		h1, h2, h3, strong {
+			text-transform: uppercase;
+		}
+		form {
+			display: flex;
+			justify-content: center;
+			flex-direction: row;
+			flex-wrap: wrap;
+			> * {
+				margin: 0 0.5rem;
+			}
+			.button {
+				flex: 0 0 auto;
+			}
+			input {
+				max-width: 20rem;
+			}
+		}
+	}
+	.bottom-container {
+		margin: 2rem auto;
+		background: rgba($black, 0.85);
+
+		strong {
+			padding: 1rem;
+			color: $white;
+			text-transform: uppercase;
+			font-size: 2rem;
+			@include breakpoint(medium) {
+				font-size: 3.5rem; 
+			}
+		}
+	}
+
+	#sulo-navbar {
+		.dropdown-pane {
+			display: none;
+		}
+		.category, .contact {
+			font-weight: bold;
+			text-transform: uppercase;
+		}
+		.contact {
+			display: flex;
+			align-items: center;
+			font-size: 0.8rem;
+			@include breakpoint(medium) {
+				font-size: 1rem;
+			}
+		}
+		.category, .category a {
+			color: $medium-gray;
+			text-decoration: line-through;
+		}
+	}
+}

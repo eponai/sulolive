@@ -246,7 +246,7 @@
       (dom/div #js {:id "sulo-coming-soon" :className "sulo-page"}
 
         (common/page-container
-          {:navbar navbar}
+          {:navbar (om/computed navbar {:coming-soon? true})}
 
           (photo/header
             {:src "/assets/img/coming-soon-bg.jpg"}

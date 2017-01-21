@@ -1,4 +1,9 @@
 #sulo-navbar {
+	.top-bar-right {
+		li {
+			padding-left: 0.5rem;
+		}
+	}
 	position: fixed;
 	width: 100%;
 	z-index: $navbar-zindex;
@@ -14,11 +19,14 @@ nav {
 .navbar-container {
 	background: $navbar-background-color;
 	box-shadow: 1px 1px 3px 0 rgba($black, 0.1);
+	display: flex;
+	align-items: center;
 }
 
 .navbar {
+	flex: 1;
 	.top-bar-right li {
-		padding-top: 0.5rem;
+		// padding-top: 0.5rem;
 	}
 	max-width: $global-width;
 	margin: 0 auto;
@@ -53,12 +61,13 @@ nav {
 #navbar-brand {
 	text-transform: uppercase;
 	font-weight: bold;
-	font-size: 0.8rem;
+	font-size: 1rem;
+	color: $black;
 	// font-style: italic;
 	// padding: 0;
 	// color: $black;
 	@include breakpoint(medium) {
-		font-size: 1rem;
+		font-size: 1.2rem;
 		// padding: 0.7rem 1rem;
 	}
 }
