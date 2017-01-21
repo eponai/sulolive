@@ -18,7 +18,7 @@
   {:businesses                             0
    :visitors                               0
    ;; 106 minutes watched per person per day (is what twitch has)
-   :visitor/time-watching-stream           (* 106 60)
+   :visitor/stream-viewing-in-secs           (* 106 60)
    :conversion-rate/product-sales          0.02
    :conversion-rate/ads                    0
    :conversion-rate/viewer-subscribing     0
@@ -114,7 +114,7 @@
 
 (defn stream-bandwidth-cost [world]
   (let [kbits-per-stream (multiply world [:stream/avg-bit-rate
-                                          :visitor/time-watching-stream])
+                                          :visitor/stream-viewing-in-secs])
         gb-per-stream (/ kbits-per-stream 8 1024 1024)
         cost-between-aws-and-streamroot (* gb-per-stream
                                            ;; We only stream once between aws and streamroot?

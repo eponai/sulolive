@@ -105,21 +105,26 @@
    (defn render-input-controls [this]
      (let [model (:query/business-model (om/props this))
            create-input (fn [k]
-                          (dom/div nil
+                          (dom/div #js {:className "column"
+                                        :style     #js {:display        "flex"
+                                                        :justifyContent "space-between"}}
                             (dom/span nil (str k))
                             (dom/input #js {:value    (str (or (get-in (om/get-state this) [:model k])
                                                                (get model k)))
                                             :onChange #(do
                                                          (om/update-state! this assoc-in [:model k] (.-value (.-target %))))})))
-           controls [:visitor/time-watching-stream
+           controls [:visitor/stream-viewing-in-secs
                      :conversion-rate/product-sales
                      :price/avg-product
                      :price/business-subscription
                      :product/commission-rate
                      :fixed/visitors
                      :fixed/businesses
-                     :fixed/days]]
-       (into [] (map create-input controls)))))
+                     :fixed/days
+                     :stream/avg-edges
+                     :website/avg-servers]]
+       (dom/div #js {:className "row small-up-1"}
+         (into [] (map create-input controls))))))
 
 (defui Business
   static om/IQuery
@@ -169,6 +174,7 @@
                     :style     #js {:height "100%"}})
       (dom/div #js {:className "column"
                     :style     #js {:height "100%"}}
+        (dom/p nil "Controls normalized to USD per Day where applicable")
         #?(:cljs (render-input-controls this))))))
 
 (def ->Business (om/factory Business))
