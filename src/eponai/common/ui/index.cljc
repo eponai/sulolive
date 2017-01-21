@@ -259,14 +259,14 @@
                      (css/text-align :center)
                      (css/add-class :content-container))
                    (dom/h1 nil "SULO")
-                   (dom/strong nil "Vancouver's local marketplace online")
+                   (dom/strong nil (dom/i #js {:className "fa fa-map-marker fa-fw"}) "Vancouver's local marketplace online")
                    (dom/hr nil)
                    (dom/h2 nil "Join a community that lives for local!")
                    (dom/p nil "Enter your email and we’ll put you on our invite list for an exclusive beta.")
                    (dom/form
                      nil
-                     (dom/input #js {:type "text" :placeholder "you@email.com"})
-                     (dom/a #js {:className "button"} "Invite Me!"))))
+                     (dom/input #js {:type "email" :placeholder "you@email.com"})
+                     (dom/button #js {:className "button"} "Invite Me!"))))
 
             (div (->> (css/grid-row)
                       css/grid-column

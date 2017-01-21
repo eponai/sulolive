@@ -9,7 +9,7 @@
 (defui Root
   Object
   (render [this]
-    (let [{:keys [release? ::app-html]} (om/props this)]
+    (let [{:keys [release? ::app-html route]} (om/props this)]
       (debug "app-html: " app-html)
       (dom/html
         {:lang "en"}
@@ -23,6 +23,15 @@
           (common/auth0-lock-passwordless release?)
           (dom/script {:src  (common/budget-js-path release?)
                        :type common/text-javascript})
+
           ;(dom/script {:src "https://cdn.auth0.com/js/lock/10.6/lock.min.js"})
+
+
+          (when (= route :coming-soon)
+            [(dom/script {:src "https://code.jquery.com/jquery-1.11.0.min.js"})
+             (common/inline-javascript ["window.jQuery || document.write('<scr' + 'ipt src=\"https://code.jquery.com/jquery-1.11.0.min.js\"><\\/sc' + 'ript>')"])
+             (common/inline-javascript ["window.$kol_jquery = window.jQuery"])
+             (dom/script {:src "https://kickoffpages-kickofflabs.netdna-ssl.com/widgets/1.9.4/kol_any_form.js"})
+             (dom/script {:src "https://kickoffpages-kickofflabs.netdna-ssl.com/w/88102/141997.js"})])
 
           (common/inline-javascript ["env.web.main.runsulo()"]))))))
