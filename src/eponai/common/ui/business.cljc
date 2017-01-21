@@ -6,7 +6,8 @@
     [taoensso.timbre :refer [debug]]
     #?@(:cljs [[cljsjs.nvd3]
                [cljs.reader :as reader]])
-    [clojure.data :as data]))
+    [clojure.data :as data]
+    [medley.core :as medley]))
 
 #?(:cljs
    (defn graph-data [world biz-range vis-range]
@@ -38,13 +39,13 @@
 
 (defn graphs [this]
   (let [{:fixed/keys [visitors businesses]} (:model (om/get-state this))]
-    {:varying-biz-and-vis (let [biz-range [1 10 100 200 500 1000 2000 5000 10000]
+    {:varying-biz-and-vis (let [biz-range (take 9 (iterate (partial * 2) 10))
                                 vis-range (mapv (partial * 10) biz-range)]
                             {:biz-range             biz-range
                              :vis-range             vis-range
                              :x-axis/tick-format-fn (fn [x] (str [(nth biz-range x) (nth vis-range x)]))
                              :x-axis/label          "[businesses visitors]"})
-     :varying-biz         (let [biz-range [1 10 100 200 500 1000 2000 5000 10000]]
+     :varying-biz         (let [biz-range (take 9 (iterate (partial * 2) 10))]
                             {:biz-range             biz-range
                              :vis-range             (repeat visitors)
                              :x-axis/tick-format-fn (fn [x] (nth biz-range x))
@@ -55,10 +56,12 @@
                              :x-axis/tick-format-fn (fn [x] (nth vis-range x))
                              :x-axis/label          (str "businesses=" businesses ", visitors=x")})}))
 
-(defn adjusted-business-model [this]
-  (let [model (:query/business-model (om/props this))
-        state-model (:model (om/get-state this))]
-    (merge model state-model)))
+#?(:cljs
+   (defn adjusted-business-model [this]
+     (let [model (:query/business-model (om/props this))
+           state-model (->> (:model (om/get-state this))
+                            (medley/map-vals reader/read-string))]
+       (merge model state-model))))
 
 #?(:cljs
    (defn create-chart [chart-ref business-model {:keys        [biz-range vis-range]
@@ -70,6 +73,7 @@
              (-> (.-xAxis chart)
                  (.tickFormat tick-format-fn)
                  (.axisLabel label)))
+       ;; (.yScale chart (.log (.-scale js/d3)))
        (set! (.-yAxis chart)
              (-> (.-yAxis chart)
                  (.showMaxMin false)
@@ -104,9 +108,7 @@
                             (dom/input #js {:value    (str (or (get-in (om/get-state this) [:model k])
                                                                (get model k)))
                                             :onChange #(do
-                                                         (debug [k (.-value (.-target %))])
-                                                         (om/update-state! this assoc-in [:model k]
-                                                                           (reader/read-string (.-value (.-target %)))))})))
+                                                         (om/update-state! this assoc-in [:model k] (.-value (.-target %))))})))
            controls [:visitor/time-watching-stream
                      :conversion-rate/product-sales
                      :price/avg-product
@@ -122,8 +124,8 @@
     [:query/business-model])
   Object
   (initLocalState [this]
-    {:model {:fixed/visitors   2000
-             :fixed/businesses 200}})
+    {:model {:fixed/visitors   "2000"
+             :fixed/businesses "200"}})
   (componentDidMount [this]
     #?(:cljs
        (let [charts-by-graph-key

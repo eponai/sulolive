@@ -19,13 +19,12 @@
    :visitors                               0
    ;; 106 minutes watched per person per day (is what twitch has)
    :visitor/time-watching-stream           (* 106 60)
-   :conversion-rate/product-sales          0.03
+   :conversion-rate/product-sales          0.02
    :conversion-rate/ads                    0
    :conversion-rate/viewer-subscribing     0
    :conversion-rate/viewer-watching-stream 0.5
-   :product/commission-rate                 0.10
+   :product/commission-rate                0.10
    :product/stripe-rate                    0.029
-   ;; TODO: Include stripe fee in calculations
    :product/stripe-fee                     0.30
    :price/ad-viewed                        0
    :price/business-subscription            (per-month->per-day (cad->usd 99))
