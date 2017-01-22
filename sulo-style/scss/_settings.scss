@@ -54,6 +54,7 @@ $foundation-palette: (
   success: #3adb76,
   warning: #ffae00,
   alert: #ec5840,
+  blue: #64F7C6,
 );
 $light-gray: #e6e6e6;
 $medium-gray: #cacaca;
@@ -103,7 +104,7 @@ $block-grid-max: 8;
 // ------------------
 
 $header-font-family: Arial, sans-serif;//$body-font-family;
-$header-font-weight: bold;//$global-weight-normal;
+$header-font-weight: normal;//$global-weight-normal;
 $header-font-style: normal;
 $font-family-monospace: Consolas, 'Liberation Mono', Courier, monospace;
 $header-sizes: (
