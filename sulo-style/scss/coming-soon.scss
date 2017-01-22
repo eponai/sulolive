@@ -5,7 +5,7 @@
 		display: flex;
 		> .photo.header {
 			flex: 1;
-			padding: 2rem 0;
+			padding: 3%;
 		}
 	}
 	.footer {
@@ -13,17 +13,16 @@
 	}
 
 	.content-container {
-		padding: 1rem;
-		margin-top: 1rem;
+		padding: 2%;
+		margin-top: 1%;
 		background: rgba($white, 0.85);
 		@include breakpoint(xxlarge) {
-			padding: 2rem;
-			margin-top: 7rem;
+			margin-top: 3%;
 		}
 		strong {
-			font-size: 1rem;
+			font-size: 0.9rem;
 			@include breakpoint(medium) {
-				font-size: 1.2rem;
+				font-size: 1rem;
 			}
 		}
 		h1, h2, h3, strong {
@@ -32,12 +31,10 @@
 		h1 {
 			margin-bottom: 0;
 			line-height: 1.2;
-		}
-		h2 {
-			font-weight: bold;
+			font-weight: normal;
 		}
 		hr {
-			// margin-bottom: 3rem;
+			margin: 5% auto;
 		}
 		form {
 			display: flex;
@@ -50,31 +47,26 @@
 			.button {
 				flex: 0 0 auto;
 			}
-			input {
-				// max-width: 20rem;
-			}
 		}
 	}
 	.bottom-container {
-		margin: 2rem auto;
+		margin-top: 3%;
+		padding: 0.5%;
 		background: rgba($black, 0.85);
 
-		@include breakpoint(xxlarge) {
-			margin-top: 4rem;
-		}
-
 		strong {
-			padding: 1rem;
+			// padding: 5%;
 			color: $white;
 			text-transform: uppercase;
 			font-size: 2rem;
 			@include breakpoint(medium) {
-				font-size: 3.5rem; 
+				font-size: 2.5rem; 
 			}
 		}
 	}
-	.enter {
-		color: $white;
+	.enter strong {
+		font-size: 80%;
+		text-transform: none;
 	}
 
 	#sulo-navbar {
@@ -84,14 +76,15 @@
 		.category, .contact {
 			font-weight: bold;
 			text-transform: uppercase;
+			font-size: 80%;
+			span {
+				vertical-align: middle;
+			}
 		}
 		.contact {
 			display: flex;
 			align-items: center;
-			font-size: 0.8rem;
-			@include breakpoint(medium) {
-				font-size: 1rem;
-			}
+			font-size: 80%;
 		}
 		.category, .category a {
 			color: $medium-gray;

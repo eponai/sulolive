@@ -115,7 +115,8 @@
                                         :id   "navbar-brand"}
                                        (dom/span nil "Sulo"))
                        (menu/item-link
-                         (css/add-class ::css/yellow {:href (if coming-soon? "" "/streams")})
+                         (->> (css/add-class ::css/highlight {:href (if coming-soon? "" "/streams")})
+                              (css/add-class :navbar-live))
                          (my-dom/strong
                            (css/hide-for {:size :small :only? true})
                            ;; Wrap in span for server and client to render the same html
@@ -123,6 +124,14 @@
                          (my-dom/div
                            (css/show-for {:size :small :only? true})
                            (dom/i #js {:className "fa fa-video-camera fa-fw"})))
+
+                       (menu/item-dropdown
+                         (->> {:dropdown (category-dropdown)}
+                              (css/hide-for {:size :large})
+                              (css/add-class :category))
+                         (dom/span nil "Shop")
+                         ;(dom/i #js {:className "fa fa-caret-down fa-fw"})
+                         )
 
                        (menu/item-link
                          (->> (css/add-class :category {:href ""})
@@ -144,13 +153,6 @@
                          (->> (css/add-class :category {:href ""})
                               (css/show-for {:size :large}))
                          (dom/span nil "Art"))
-                       (menu/item-dropdown
-                         (->> {:dropdown (category-dropdown)}
-                              (css/hide-for {:size :large})
-                              (css/add-class :category))
-                         (dom/span nil "Shop")
-                         ;(dom/i #js {:className "fa fa-caret-down fa-fw"})
-                         )
                        ))
 
                    (dom/div #js {:className "top-bar-right"}

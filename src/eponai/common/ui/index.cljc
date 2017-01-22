@@ -293,23 +293,18 @@
                    (dom/h2 nil "Join a community that lives for local!")
                    (dom/p nil "Enter your email and we’ll put you on our invite list for an exclusive beta.")
                    (dom/form
-                     #js {:className "row collapse align-center"}
+                     #js {:className "row align-center"}
                      (div (->> (css/grid-column)
                                (css/grid-column-size {:small 12 :medium 8 :large 8}))
                           (dom/input #js {:type "email" :placeholder "you@email.com"}))
                      (div (->> (css/grid-column)
                                (css/add-class :shrink))
-                          (dom/button #js {:className "button expanded" :type "submit"} "Invite Me!")))))
+                          (dom/button #js {:className "button" :type "submit"} "Invite Me!")))
+                   (dom/a #js {:onClick on-login-fn :className "enter"} (dom/strong nil "Already a member? Sign In >>"))))
 
             (div (->> (css/grid-row)
                       css/grid-column
                       (css/add-class :bottom-container)
                       (css/text-align :center))
-                 (dom/strong nil "Coming Soon, Spring '17"))
-
-            (div (->> (css/grid-row)
-                      css/grid-column
-                      (css/text-align :center))
-                 (dom/a #js {:onClick on-login-fn :className "enter"} (dom/strong nil "ENTER >>")))))))))
-
+                 (dom/strong nil "Coming Soon, Spring '17"))))))))
 (def ->ComingSoon (om/factory ComingSoon))
