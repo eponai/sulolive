@@ -13,9 +13,13 @@
 	}
 
 	.content-container {
-		padding: 2rem;
-		margin-top: 7rem;
+		padding: 1rem;
+		margin-top: 1rem;
 		background: rgba($white, 0.85);
+		@include breakpoint(xxlarge) {
+			padding: 2rem;
+			margin-top: 7rem;
+		}
 		strong {
 			font-size: 1rem;
 			@include breakpoint(medium) {
@@ -27,9 +31,10 @@
 		}
 		h1 {
 			margin-bottom: 0;
+			line-height: 1.2;
 		}
 		hr {
-			margin-bottom: 3rem;
+			// margin-bottom: 3rem;
 		}
 		form {
 			display: flex;
@@ -50,6 +55,10 @@
 	.bottom-container {
 		margin: 2rem auto;
 		background: rgba($black, 0.85);
+
+		@include breakpoint(xxlarge) {
+			margin-top: 4rem;
+		}
 
 		strong {
 			padding: 1rem;
