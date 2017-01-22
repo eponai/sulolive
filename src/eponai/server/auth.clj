@@ -4,6 +4,7 @@
     [buddy.auth.backends :as backends]
     [buddy.auth.middleware :refer [wrap-authentication wrap-authorization]]
     [buddy.core.codecs.base64 :as b64]
+    [buddy.auth.protocols :as auth.protocols]
     [environ.core :refer [env]]
     [eponai.server.ui.common :as common]
     [taoensso.timbre :refer [error debug]]
@@ -84,6 +85,21 @@
                  :on-error   (fn [r e]
                                (error e))}))
 
+(defn jwt-cookie-backend [cookie-key]
+  (let [jws-backend (backends/jws {:secret   (b64/decode (env :auth0-client-secret))
+                                   :on-error (fn [r e]
+                                               (error e))})]
+    ;; Only changes how the token is parsed. Parses from cookie instead of header
+    (reify
+      auth.protocols/IAuthentication
+      (-parse [_ request]
+        (get-in request [:cookies cookie-key :value]))
+      (-authenticate [_ request data]
+        (auth.protocols/-authenticate jws-backend request data))
+      auth.protocols/IAuthorization
+      (-handle-unauthorized [_ request metadata]
+        (auth.protocols/-handle-unauthorized jws-backend request metadata)))))
+
 (defn- http-backend []
   (let [auth-fn (fn [req {:keys [username password] :as token}]
                   (when (and (= password "hejsan") (= username "sulo"))
@@ -93,17 +109,11 @@
                           :realm  http-realm})))
 
 (defn wrap-auth [handler conn]
-  (let [auth-backend (jwt-backend)
-        basic-backend (http-backend)
-        wrap-identity (fn [h]
-                        (fn [request]
-                          (let [token (get-in request [:cookies "token" :value])]
-                            ;(debug "Associng token: " token)
-                            (h (assoc-in request [:headers "Authorization"] (str "Bearer " token))))))]
+  (let [auth-backend (jwt-cookie-backend "token")
+        basic-backend (http-backend)]
     (-> handler
         (wrap-authorization auth-backend)
-        (wrap-authentication auth-backend basic-backend)
-        wrap-identity)))
+        (wrap-authentication auth-backend basic-backend))))
 
 (defn inline-auth-code [{:keys [token profile token-type redirect-url]}]
   (let [new-location (if redirect-url (str "'" redirect-url "'") "window.location.origin")]
