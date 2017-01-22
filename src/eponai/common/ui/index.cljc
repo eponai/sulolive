@@ -310,6 +310,6 @@
             (div (->> (css/grid-row)
                       css/grid-column
                       (css/text-align :center))
-                 (dom/a #js {:onClick on-login-fn} (dom/strong nil "ENTER >>")))))))))
+                 (dom/a #js {:onClick on-login-fn :className "enter"} (dom/strong nil "ENTER >>")))))))))
 
 (def ->ComingSoon (om/factory ComingSoon))
