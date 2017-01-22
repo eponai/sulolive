@@ -18,10 +18,19 @@
 		margin-top: 7rem;
 		background: rgba($white, 0.85);
 		strong {
-			font-size: 1.4rem;
+			font-size: 1rem;
+			@include breakpoint(medium) {
+				font-size: 1.2rem;
+			}
 		}
 		h1, h2, h3, strong {
 			text-transform: uppercase;
+		}
+		h1 {
+			margin-bottom: 0;
+		}
+		hr {
+			margin-bottom: 3rem;
 		}
 		form {
 			display: flex;
