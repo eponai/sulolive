@@ -25,7 +25,7 @@
   (json/read-json
     (:body (http/post "https://sulo.auth0.com/oauth/token"
                       {:form-params {:client_id     (env :auth0-client-id)
-                                     :redirect_uri  "http://localhost:3000/auth"
+                                     :redirect_uri  (str (env :server-url-schema) "://" (env :server-url-host) "/auth")
                                      :client_secret (env :auth0-client-secret)
                                      :code          code
                                      :grant_type    "authorization_code"}}))

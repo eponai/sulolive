@@ -49,13 +49,13 @@
      :port (cond-> port (string? port) Integer/parseInt)}))
 
 (defn url []
-  (let [schema (env :jourmoney-server-url-schema)
-        host (env :jourmoney-server-url-host)]
+  (let [schema (env :server-url-schema)
+        host (env :server-url-host)]
     (assert (and schema host)
             (str "Did not have required schema: " schema " or host: " host
                  ". Please set these keys in your environment:"
-                 :jourmoney-server-url-schema " and "
-                 :jourmoney-server-url-host))
+                 :server-url-schema " and "
+                 :server-url-host))
     {:schema schema :host host}))
 
 (defn- verify-link-by-device [device uuid]

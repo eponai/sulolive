@@ -111,8 +111,8 @@
                    (dom/div #js {:className "top-bar-left"}
                      (menu/horizontal
                        nil
-                       (menu/item-link {:href ""
-                                        :id "navbar-brand"}
+                       (menu/item-link {:href (if coming-soon? "" "/")
+                                        :id   "navbar-brand"}
                                        (dom/span nil "Sulo"))
                        (menu/item-link
                          (css/add-class ::css/yellow {:href (if coming-soon? "" "/streams")})
