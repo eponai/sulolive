@@ -5,9 +5,10 @@
     [eponai.common.ui.elements.photo :as photo]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]
+    [taoensso.timbre :refer [debug error]]
     [eponai.common.ui.dom :as my-dom :refer [div a]]
-    [eponai.common.ui.elements.css :as css]))
+    [eponai.common.ui.elements.css :as css]
+    [eponai.client.auth :as auth]))
 
 (defn top-feature [opts icon title text]
   (dom/div #js {:className "feature-item column"}
@@ -241,8 +242,36 @@
   (query [this]
     [{:proxy/navbar (om/get-query nav/Navbar)}])
   Object
+  #?(:cljs
+     (show-login [this]
+                 (let [{:keys [lock]} (om/get-state this)]
+                   (.show lock (clj->js {:allowedConnections ["Username-Password-Authentication"]
+                                         :auth               {:params       {:state js/window.location.origin}}})))))
+  #?(:cljs
+     (do-login [this auth-res]
+               (debug "Auth-result: " auth-res)))
+  #?(:cljs
+     (componentDidMount [this]
+                        (when js/Auth0Lock
+                          (let [lock (new js/Auth0Lock
+                                          "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh"
+                                          "sulo.auth0.com"
+                                          (clj->js {:auth {:redirectUrl  (str js/window.location.origin "/auth")}
+                                                    :languageDictionary {:title "SULO"}
+                                                    :theme              {:primaryColor "#240061"}}))]
+                            (.on lock "authenticated" (fn [res]
+                                                        (debug "Login result: " res)
+                                                        (.getUserInfo (.-accessToken res)
+                                                                      (fn [e p]
+                                                                        (if e
+                                                                          (error e)
+                                                                          (auth/set-logged-in-token (.-accessToken res)))))))
+                            (om/update-state! this assoc :lock lock)))))
+  (initLocalState [this]
+    {:on-login-fn #?(:cljs #(.show-login this) :clj (fn [] nil))})
   (render [this]
-    (let [{:keys [proxy/navbar]} (om/props this)]
+    (let [{:keys [proxy/navbar]} (om/props this)
+          {:keys [lock on-login-fn]} (om/get-state this)]
       (dom/div #js {:id "sulo-coming-soon" :className "sulo-page"}
 
         (common/page-container
@@ -281,6 +310,6 @@
             (div (->> (css/grid-row)
                       css/grid-column
                       (css/text-align :center))
-                 (dom/a #js {:href "/enter"} (dom/strong nil "ENTER >>")))))))))
+                 (dom/a #js {:onClick on-login-fn} (dom/strong nil "ENTER >>")))))))))
 
 (def ->ComingSoon (om/factory ComingSoon))

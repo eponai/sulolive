@@ -36,11 +36,13 @@
                      {:query-params {"access_token" token}}))
     true))
 
-(defn auth0 [{:keys [params]}]
+(defn auth0 [{:keys [params] :as req}]
+  (debug "AUTHING REQUEST: " req)
   (let [{:keys [code state]} params]
     (if (some? code)
-      (let [{:keys [id_token access_token token_type]}  (auth0-code->token code)
+      (let [{:keys [id_token access_token token_type] :as to}  (auth0-code->token code)
             profile (auth0-token->profile access_token)]
+        (debug "Got Token auth0: " to)
         {:token        id_token
          :profile      profile
          :redirect-url state
@@ -61,6 +63,7 @@
 (defn member-restrict-opts []
   {:handler  authenticated?
    :on-error (fn [a b]
+               (debug "A: " a " B: " b)
                (r/redirect "/coming-soon")
                ;{:status  401
                ; :headers {"Content-Type"     "text/plain"
@@ -91,26 +94,35 @@
 
 (defn wrap-auth [handler conn]
   (let [auth-backend (jwt-backend)
-        basic-backend (http-backend)]
+        basic-backend (http-backend)
+        wrap-identity (fn [h]
+                        (fn [request]
+                          (let [token (get-in request [:cookies "token" :value])]
+                            ;(debug "Associng token: " token)
+                            (h (assoc-in request [:headers "Authorization"] (str "Bearer " token))))))]
     (-> handler
         (wrap-authorization auth-backend)
-        (wrap-authentication auth-backend basic-backend))))
+        (wrap-authentication auth-backend basic-backend)
+        wrap-identity)))
 
 (defn inline-auth-code [{:keys [token profile token-type redirect-url]}]
-  (cond-> []
-          (some? token)
-          (conj "localStorage.setItem('idToken', '" token "');")
-          ;(some? profile)
-          ;(conj "localStorage.setItem('profile', '" (json/write-str profile) "');")
-          (some? token-type)
-          (conj "localStorage.setItem('tokenType', '" token-type "');")
-          :always
-          (conj "window.location = '" redirect-url "'")))
+  (let [new-location (if redirect-url (str "'" redirect-url "'") "window.location.origin")]
+    (cond-> []
+            (some? token)
+            (conj (str "localStorage.setItem('idToken', '" token "');"))
+            ;(some? profile)
+            ;(conj "localStorage.setItem('profile', '" (json/write-str profile) "');")
+            (some? token-type)
+            (conj (str "localStorage.setItem('tokenType', '" token-type "');"))
+            :always
+            (conj (str "window.location = '" redirect-url "'"))
+            )))
 
 (defui Auth
   Object
   (render [this]
-    (let [props (om/props this)]
+    (let [{:keys [token] :as props} (om/props this)]
+      (debug "Auth Props: " props)
       (dom/html
         {:lang "en"}
         (dom/body

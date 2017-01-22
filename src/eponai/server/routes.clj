@@ -101,7 +101,6 @@
   member-routes
   ;;TODO: Use bidi->compojure routes:
   (GET "/" request (server.ui/index-html (request->props request)))
-  (GET "/auth" request (server.ui/auth-html (merge (request->props request) (auth/auth0 request))))
   (GET "/store/:store-id" request (server.ui/store-html (request->props request)))
   (GET "/goods/:product-id" r (server.ui/product-html (request->props r)))
   (GET "/goods" request (server.ui/goods-html (request->props request)))
@@ -125,17 +124,24 @@
     )
   (route/resources "/")
   (GET "/coming-soon" request (server.ui/landing-html (request->props request)))
+  (GET "/auth" request (let [{:keys [redirect-url token]} (auth/auth0 request)]
+                         (if token
+                           (r/set-cookie (r/redirect redirect-url) "token" token)
+                           (r/redirect "/coming-soon"))))
   (GET "/enter" request
-    (if (release? request)
-      (auth/restrict (fn [_] (r/redirect "/")) (auth/http-basic-restrict-opts))
-      (r/redirect "/"))
+    (auth/restrict (fn [_] (r/redirect "/")) (auth/http-basic-restrict-opts))
+    ;(if (release? request)
+    ;  (auth/restrict (fn [_] (r/redirect "/")) (auth/http-basic-restrict-opts))
+    ;  (r/redirect "/"))
     )
-  (GET "/logout" request (-> (r/redirect "/coming-soon") (assoc :session {})))
+  (GET "/logout" request (-> (r/redirect "/coming-soon")
+                             (assoc-in [:cookies "token"] {:value "kill" :max-age 1})))
 
   (context "/" [:as request]
-    (if (release? request)
-      (auth/restrict member-routes (auth/member-restrict-opts))
-      member-routes)
+    (auth/restrict member-routes (auth/member-restrict-opts))
+    ;(if (release? request)
+    ;  (auth/restrict member-routes (auth/member-restrict-opts))
+    ;  member-routes)
     )
 
 

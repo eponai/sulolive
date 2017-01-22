@@ -70,7 +70,7 @@
         (html/render-html-without-reactid-tags
           (->component (assoc env ::root/app-html (render-page env))))))))
 
-(def auth-html (makesite auth/Auth))
+(def auth-html (partial render-to-str auth/Auth))
 (def goods-html (makesite root/Root))
 (def product-html (makesite root/Root))
 (def index-html (makesite root/Root))

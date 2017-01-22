@@ -52,7 +52,8 @@
                            (contains? (grid-styles) %)) style-set)
       (let [unexpected (filter #(or (nil? (get all %))
                                     (not (contains? (grid-styles) %))) style-set)]
-        (warn "Unexpected CSS class keys " unexpected ", using values " (map #(when (some? %) (name %)) unexpected) ".")))
+        ;(warn "Unexpected CSS class keys " unexpected ", using values " (map #(when (some? %) (name %)) unexpected) ".")
+        ))
 
     (map #(or (get all %) (when (some? %) (name %))) style-set)))
 

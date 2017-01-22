@@ -30,3 +30,7 @@
   (throw (ex-info (str "TODO: Either extract as an option to where it's"
                        " being used, or implement this when we need it.")
                   {:todo :implement-function})))
+
+(defn set-logged-in-token [token]
+  #?(:cljs
+     (.setItem js/localStorage "idToken" token)))
