@@ -5,65 +5,38 @@
 		display: flex;
 		> .photo.header {
 			flex: 1;
-			padding: 3%;
+			padding: 1%;
 		}
 	}
 	.footer {
 		display: none;
 	}
-
-	.content-container {
-		padding: 2%;
-		margin-top: 1%;
+	.callout {
+		margin-top: 3%;
+		border: none;
 		background: rgba($white, 0.85);
-		@include breakpoint(xxlarge) {
-			margin-top: 3%;
-		}
-		strong {
-			font-size: 0.9rem;
-			@include breakpoint(medium) {
-				font-size: 1rem;
-			}
-		}
-		h1, h2, h3, strong {
-			text-transform: uppercase;
+		text-transform: uppercase;
+
+		p {
+			text-transform: none;
 		}
 		h1 {
-			margin-bottom: 0;
 			line-height: 1.2;
 			font-weight: normal;
 		}
-		hr {
-			margin: 5% auto;
-		}
-		form {
-			display: flex;
-			justify-content: center;
-			flex-direction: row;
-			flex-wrap: wrap;
-			> * {
-				margin: 0 0.5rem;
-			}
-			.button {
-				flex: 0 0 auto;
-			}
-		}
-	}
-	.bottom-container {
-		margin-top: 3%;
-		padding: 0.5%;
-		background: rgba($black, 0.85);
 
-		strong {
-			// padding: 5%;
+		&.secondary {
+			margin-top: 3%;
+			// padding: 0.5%;
+			background: rgba($black, 0.85);
 			color: $white;
-			text-transform: uppercase;
 			font-size: 2rem;
 			@include breakpoint(medium) {
 				font-size: 2.5rem; 
 			}
 		}
 	}
+
 	.enter strong {
 		font-size: 80%;
 		text-transform: none;
@@ -72,19 +45,6 @@
 	#sulo-navbar {
 		.dropdown-pane {
 			display: none;
-		}
-		.category, .contact {
-			font-weight: bold;
-			text-transform: uppercase;
-			font-size: 80%;
-			span {
-				vertical-align: middle;
-			}
-		}
-		.contact {
-			display: flex;
-			align-items: center;
-			font-size: 80%;
 		}
 		.category, .category a {
 			color: $medium-gray;

@@ -17,6 +17,20 @@
 	position: fixed;
 	width: 100%;
 	z-index: $navbar-zindex;
+
+	.category, .contact {
+		font-weight: bold;
+		text-transform: uppercase;
+		font-size: 80%;
+		span {
+			vertical-align: middle;
+		}
+	}
+	.contact {
+		display: flex;
+		align-items: center;
+		font-size: 80%;
+	}
 }
 
 nav {

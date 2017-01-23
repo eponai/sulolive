@@ -286,7 +286,7 @@
                      (css/grid-column)
                      (css/grid-column-size {:small 12 :medium 10 :large 8})
                      (css/text-align :center)
-                     (css/add-class :content-container))
+                     (css/add-class ::css/callout))
                    (dom/h1 nil "SULO")
                    (dom/strong nil (dom/i #js {:className "fa fa-map-marker fa-fw"}) "Vancouver's local marketplace online")
                    (dom/hr nil)
@@ -303,8 +303,9 @@
                    (dom/a #js {:onClick on-login-fn :className "enter"} (dom/strong nil "Already a member? Sign In >>"))))
 
             (div (->> (css/grid-row)
-                      css/grid-column
-                      (css/add-class :bottom-container)
                       (css/text-align :center))
-                 (dom/strong nil "Coming Soon, Spring '17"))))))))
+                 (div (->> (css/grid-column)
+                           (css/add-class ::css/callout)
+                           (css/add-class ::css/secondary))
+                      (dom/strong nil "Coming Soon, Spring '17")))))))))
 (def ->ComingSoon (om/factory ComingSoon))
