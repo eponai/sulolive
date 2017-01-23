@@ -15,25 +15,25 @@
            {:classes [::css/cart]}
            (map (fn [i]
                   (menu/item-link
-                    {:href (str "/goods/" (:db/id i))}
-                    (dom/div #js {:className "row collapse align-middle"}
-                      (dom/div #js {:className "columns small-2"}
-                        (photo/thumbail
-                          {:src (:item/img-src i)}))
-                      (dom/div #js {:className "columns small-10"}
-                        (dom/div #js {:className "content-item-title-section"}
-                          (dom/span #js {:className "name"} (:item/name i)))
-                        (dom/div #js {:className "content-item-subtitle-section"}
-                          (dom/span #js {:className "price"}
-                                    (ui-utils/two-decimal-price (:item/price i))))))))
+                    {:href    (str "/goods/" (:db/id i))
+                     :classes [:cart-link]}
+                    ;(dom/div #js {})
+                    (photo/square
+                      {:src (:item/img-src i)})
+                    (dom/div #js {:className ""}
+                      (dom/div #js {:className "content-item-title-section"}
+                        (dom/p nil (dom/span #js {:className "name"} (:item/name i))))
+                      (dom/div #js {:className "content-item-subtitle-section"}
+                        (dom/strong #js {:className "price"}
+                                  (ui-utils/two-decimal-price (:item/price i)))))))
                 (take 3 items)))
 
-    (dom/div #js {:className "callout nude"}
+    (dom/div #js {:className "callout transparent"}
       (if (< 3 (count items))
         (dom/small nil (str "You have " (- (count items) 3) " more item(s) in your bag"))
         (dom/small nil (str "You have " (count items) " item(s) in your bag")))
       (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price price))))
-    (dom/a #js {:className "button expanded hollow"
+    (dom/a #js {:className "button expanded hollow gray"
                 :href      "/checkout"} "View My Bag")))
 
 (defn category-dropdown []

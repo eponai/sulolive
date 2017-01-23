@@ -34,10 +34,12 @@
       {:remote (assoc-in ast [:params :store-id] store-id)}
       {:value (common.read/multiply-store-items store)})))
 
-(defn local-cart []
+(defn local-cart [db]
   #?(:cljs
-    (when-let [stored (.getItem js/localStorage "cart")]
-      (cljs.reader/read-string stored))))
+     (if-let [stored (.getItem js/localStorage "cart")]
+       (-> (cljs.reader/read-string stored)
+           (update :cart/items #(db/pull-many db [:db/id :item/price :item/img-src :item/name {:item/store [:store/photo :store/name :store/rating :store/review-count]}] %)))
+       {:cart/items []})))
 
 (defn read-local-cart [db cart]
   (-> (or cart {:cart/items []})
@@ -46,17 +48,10 @@
 
 (defmethod client-read :query/cart
   [{:keys [db query target ast]} _ _]
-  (let [cart (if (auth/is-logged-in?)
-               (db/pull-one-with db query {:where '[[?e :cart/items]]})
-               (local-cart))]
+  (let [cart (db/pull-one-with db query {:where '[[?e :cart/items]]})]
     (if target
-      {:remote (if (auth/is-logged-in?)
-                 true
-                 (assoc-in ast [:params :items] (:cart/items cart)))}
-      {:value (do
-                (if (auth/is-logged-in?)
-                  (common.read/compute-cart-price cart)
-                  (read-local-cart db cart)))})))
+      {:remote true }
+      {:value (common.read/compute-cart-price cart)})))
 
 (defmethod client-read :query/items
   [{:keys [db query target route-params ast] :as env} _ p]

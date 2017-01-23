@@ -35,7 +35,8 @@
          stream-name :stream/name} channel
         store-link (link-to-store store)]
     (my-dom/div
-      (css/grid-column)
+      (->> (css/grid-column)
+           (css/add-class :content-item))
       ;(dom/div #js {:className "column content-item online-channel"})
       (my-dom/a {:href store-link}
                 (photo/with-overlay
@@ -45,11 +46,13 @@
                   (my-dom/div (css/add-class :video) (dom/i #js {:className "fa fa-play fa-fw"}))))
       (my-dom/div
         nil
-        (dom/a #js {:href store-link}
-               (dom/span nil (:store/name store)))
-        (dom/a #js {:href store-link}
-               (dom/span nil stream-name))
-        (viewer-element nil viewer-count))
+        (dom/div #js {:className "content-item-title-section text-center"}
+          (dom/a #js {:href store-link}
+                 (dom/span nil stream-name)))
+        (dom/div #js {:className "content-item-subtitle-section"}
+          (dom/a #js {:href store-link} (dom/strong nil (:store/name store))))
+        (dom/div #js {:className "content-item-subtitle-section"}
+          (viewer-element nil viewer-count)))
       ;(dom/div #js {:className "content-item-subtitle-section"}
       ;  (dom/a #js {:href store-link} (:store/name store)))
       )))

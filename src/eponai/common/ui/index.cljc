@@ -193,18 +193,18 @@
                   nil
                   "fa-heart"
                   "Join the Community"
-                  "Sign up and go follow, like and share your faves.")))
+                  "Sign up and follow, like and share your faves with others.")))
 
 
             (content-section {:href  "/streams"
                               :class "online-channels"}
-                             "Stores streaming at the market right now"
+                             "Stores streaming right now"
                              (div (->> (css/grid-row)
                                        (css/grid-row-columns {:small 2 :medium 4}))
                                   (map (fn [c]
                                          (common/online-channel-element c))
                                        featured-streams))
-                             "Discover more at SULO LIVE")
+                             "See More")
 
             (content-section {:class "collections"}
                              "Shop by collection"
@@ -252,7 +252,7 @@
                                   (map (fn [p]
                                          (common/product-element {:open-url? true} p))
                                        featured-items))
-                             "See more")
+                             "See More")
 
             (banner {:color :default}
                     (dom/h2 nil "Watch, shop and chat with your favorite vendors and artisans.")
@@ -263,7 +263,7 @@
                      :align :right}
                     (dom/h2 nil "Open your own shop on SULO and tell your story to Vancouver.")
                     (dom/p nil "Enjoy a community that lives for local.")
-                    (dom/a #js {:className "button gray hollow"} "Contact us"))))))))
+                    (dom/a #js {:className "button gray hollow"} "Contact Us"))))))))
 
 
 (def ->Index (om/factory Index))
