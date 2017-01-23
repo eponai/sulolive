@@ -6,6 +6,9 @@
 		> .photo.header {
 			flex: 1;
 			padding: 1%;
+			.button {
+				font-weight: bold;
+			}
 		}
 	}
 	.footer {

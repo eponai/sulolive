@@ -33,6 +33,9 @@ $section-footer-color: $primary-color;
 		input {
 			border-color: $white;
 		}
+		.button {
+			font-weight: bold;
+		}
 		.button, input {
 			box-shadow: 0px 1px 1px 1px rgba($white, 0.1);
 			margin: 0;

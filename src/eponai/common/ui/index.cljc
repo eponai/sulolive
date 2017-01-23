@@ -169,7 +169,7 @@
                        (div (->> (css/grid-column)
                                  (css/grid-column-size {:small 4 :medium 3})
                                  (css/text-align :left))
-                            (dom/a #js {:className "button expanded"
+                            (dom/a #js {:className "button expanded highlight"
                                         :onClick   (fn []
                                                      #?(:cljs
                                                         (set! js/window.location (str "/goods?search=" input-search))))}
@@ -330,7 +330,7 @@
                           (dom/input #js {:type "email" :placeholder "you@email.com"}))
                      (div (->> (css/grid-column)
                                (css/add-class :shrink))
-                          (dom/button #js {:className "button" :type "submit"} "Invite Me!")))
+                          (dom/button #js {:className "button highlight" :type "submit"} "Invite Me!")))
                    (dom/a #js {:onClick on-login-fn :className "enter"} (dom/strong nil "Already a member? Sign In >>"))))
 
             (div (->> (css/grid-row)
