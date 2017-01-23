@@ -27,6 +27,11 @@
     nil
     (photo* (css/add-class ::css/photo-square opts))))
 
+(defn full [opts]
+  (photo-container
+    nil
+    (photo* (css/add-class ::css/photo-full opts))))
+
 (defn thumbail [opts]
   (photo-container
     nil

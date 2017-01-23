@@ -55,6 +55,8 @@ $foundation-palette: (
   warning: #ffae00,
   alert: #ec5840,
   highlight: #FC302D,
+  gray: #444444,
+  banner: #FFECD6,
 );
 $light-gray: #e6e6e6;
 $medium-gray: #cacaca;
@@ -119,7 +121,7 @@ $header-sizes: (
   medium: (
     'h1': 110,
     'h2': 24,//40,
-    'h3': 22,
+    'h3': 20,
     'h4': 25,
     'h5': 20,
     'h6': 16,
@@ -128,7 +130,7 @@ $header-sizes: (
   xlarge: (
     'h1': 120,
     'h2': 24,//40,
-    'h3': 22,
+    'h3': 20,
     'h4': 25,
     'h5': 20,
     'h6': 16,

@@ -34,19 +34,21 @@
   (let [{:stream/keys [store viewer-count img-src]
          stream-name :stream/name} channel
         store-link (link-to-store store)]
-    (dom/div #js {:className "column content-item online-channel"}
+    (my-dom/div
+      (css/grid-column)
+      ;(dom/div #js {:className "column content-item online-channel"})
       (my-dom/a {:href store-link}
                 (photo/with-overlay
                   nil
                   (photo/square
                     {:src img-src})
-                  (my-dom/div nil (dom/p nil (dom/strong nil (:store/name store))))))
+                  (my-dom/div (css/add-class :video) (dom/i #js {:className "fa fa-play fa-fw"}))))
       (my-dom/div
-        (->>
-             ;(css/add-class :content-item-title-section)
-             (css/text-align :center))
+        nil
         (dom/a #js {:href store-link}
-               (dom/strong nil stream-name))
+               (dom/span nil (:store/name store)))
+        (dom/a #js {:href store-link}
+               (dom/span nil stream-name))
         (viewer-element nil viewer-count))
       ;(dom/div #js {:className "content-item-subtitle-section"}
       ;  (dom/a #js {:href store-link} (:store/name store)))
@@ -103,18 +105,53 @@
 (defn footer [opts]
   (dom/div #js {:key "footer" :className "footer"}
     (dom/footer #js {:className "clearfix"}
-                (menu/horizontal
-                  {:key "social" :classes [::css/float-left]}
-                  (menu/item-link nil (dom/i #js {:className "fa fa-instagram fa-fw"}))
-                  (menu/item-link nil (dom/i #js {:className "fa fa-twitter fa-fw"}))
-                  (menu/item-link nil (dom/i #js {:className "fa fa-facebook fa-fw"}))
-                  (menu/item-link nil (dom/i #js {:className "fa fa-envelope-o fa-fw"})))
+                (my-dom/div
+                  (->> (css/grid-row)
+                       (css/grid-row-columns {:small 2 :medium 3 :large 4}))
+                  (my-dom/div
+                    (->> (css/grid-column))
+                    (menu/vertical {}
+                                   (menu/item-text nil (dom/span nil "Discover"))
+                                   (menu/item-link nil (dom/span nil "HOME"))
+                                   (menu/item-link nil (dom/span nil "WOMEN"))
+                                   (menu/item-link nil (dom/span nil "MEN"))
+                                   (menu/item-link nil (dom/span nil "KIDS"))))
+
+                  (my-dom/div
+                    (->> (css/grid-column))
+                    (menu/vertical {}
+                                   (menu/item-text nil (dom/span nil "Learn More"))
+                                   (menu/item-link nil (dom/span nil "About Us"))
+                                   (menu/item-link nil (dom/span nil "Contact"))
+                                   (menu/item-link nil (dom/span nil "Help"))
+                                   (menu/item-link nil (dom/span nil "Legal"))
+                                   (menu/item-link nil (dom/span nil "Shipping & Returns"))))
+                  (my-dom/div
+                    (->> (css/grid-column))
+                    (menu/vertical {}
+                                   (menu/item-text nil (dom/span nil "SULO"))
+                                   (menu/item-link nil (dom/span nil "Start a Shop"))
+                                   (menu/item-link nil (dom/span nil "Sign Up/Sign In"))
+                                   (menu/item-link nil (dom/span nil "Press"))
+                                   (menu/item-link nil (dom/span nil "Blog"))
+                                   (menu/item-link nil (dom/span nil "FAQ"))))
+                  (my-dom/div
+                    (->> (css/grid-column)
+                         (css/grid-column-size {:small 12 :medium 4})
+                         (css/add-class :social))
+                    (menu/vertical {}
+                                   (menu/item-text nil (dom/span nil "Follow Us")))
+                    (menu/horizontal
+                      {:key "social"}
+                      (menu/item-link nil (dom/i #js {:className "fa fa-instagram fa-fw"}))
+                      (menu/item-link nil (dom/i #js {:className "fa fa-twitter fa-fw"}))
+                      (menu/item-link nil (dom/i #js {:className "fa fa-facebook fa-fw"})))))
                 (menu/horizontal
                   {:key     "legal"
                    :classes [::css/float-right]}
-                  (menu/item-link nil (dom/small nil "Privacy Policy"))
-                  (menu/item-link nil (dom/small nil "Terms & Conditions"))
-                  (menu/item-text nil (dom/small nil "© Sulo 2016"))))))
+                  ;(menu/item-link nil (dom/small nil "Privacy Policy"))
+                  ;(menu/item-link nil (dom/small nil "Terms & Conditions"))
+                  (menu/item-text nil (dom/small #js {:className "copyright"} "© Sulo 2016"))))))
 
 (defn page-container [props & content]
   (dom/div #js {:className "page-container"}

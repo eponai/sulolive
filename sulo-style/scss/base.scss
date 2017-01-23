@@ -7,6 +7,9 @@ $subnav-height: $navbar-height;
 $subnav-background-color: $navbar-background-color;//map-get($foundation-palette, nude);
 $subnav-font-color: map-get($foundation-palette, primary);//rgba($black, 0.5);
 
+$footer-background-color: map-get($foundation-palette, gray);
+$footer-header-color: map-get($foundation-palette, banner);
+$footer-font-color: $white;
 $footer-height-small: 6rem;
 $footer-height: 4rem;
 
@@ -37,7 +40,7 @@ html, body {
 }
 
 .button {
-	font-weight: bold;
+	// font-weight: bold;
 }
 
 .reveal-overlay {
@@ -113,21 +116,21 @@ a {
 
 .page-content {
 	padding-top: $navbar-height;
-	padding-bottom: $footer-height-small + 2rem;
+	// padding-bottom: $footer-height-small + 2rem;
 	@include breakpoint(medium) {
-		padding-bottom: $footer-height;
+		// padding-bottom: $footer-height;
 	}
 }
 
 .footer {
-	background: $navbar-background-color;
-	color: $navbar-font-color;
+	background: $footer-background-color;
+	color: $footer-header-color;
 	i {
 		font-size: 1.2rem;
 	}
 	a {
-		color: $navbar-font-color;
-		text-transform: uppercase;
+		color: $footer-font-color;
+		font-weight: 500;
 	}
 	footer {
 		max-width: $global-width;
@@ -135,11 +138,28 @@ a {
 		height: 100%;
 	}
 	width: 100%;
-	position: absolute;
-	bottom: 0;
-	height: $footer-height-small;
+	// position: absolute;
+	// bottom: 0;
+	// height: $footer-height-small;
 	@include breakpoint(medium) {
-		height: $footer-height;
+		// height: $footer-height;
 		padding-top: 0.75rem;
+	}
+	.copyright {
+		color: $black;
+	}
+	.social {
+		border-left: 1px solid $black;
+		ul.menu:not(.vertical) {
+			li a {
+				color: $black;
+			}
+		}
+		@include breakpoint(large) {
+			text-align: right;
+			ul.menu:not(.vertical) {
+				float: right;
+			}
+		}
 	}
 }

@@ -24,6 +24,7 @@
    ;; Photo
    ::photo                 "photo"
    ::photo-container       "photo-container"
+   ::photo-full "full"
    ::photo-square          "square"
    ::photo-thumbnail       "thumbnail"
    ::photo-header          "header"
@@ -133,7 +134,7 @@
                      (if (<= 1 v grid-cols)
                        (str (get breakpoints k) "-" v)
                        (warn "Ignoring column size CSS class for invalid column size: " v
-                             ". Available values are 1-" grid-cols))
+                             ". Available values are " 1 "-" grid-cols))
                      (warn "Ignoring column size CSS class for invalid breakpoint: " k
                            ". Available are: " (keys breakpoints)))) ]
     (reduce #(add-class %2 %1) opts (map class-fn sizes))))
@@ -144,7 +145,18 @@
                      (if (<= 1 v grid-cols)
                        (str (get breakpoints k) "-order-" v)
                        (warn "Ignoring column order CSS class for invalid order value: " v
-                             ". Available values are 1-" grid-cols))
+                             ". Available values are " 1 "-" grid-cols))
                      (warn "Ignoring column order CSS class for invalid breakpoint: " k
                            ". Available are: " (keys breakpoints))))]
     (reduce (fn [m class] (add-class class m)) opts (map class-fn orders))))
+
+(defn grid-column-offset [offsets & [opts]]
+  (let [class-fn (fn [[k v]]
+                   (if (contains? breakpoints k)
+                     (if (<= 1 v grid-cols)
+                       (str (get breakpoints k) "-offset-" v)
+                       (warn "Ignoring column offset CSS class for invalid order value: " v
+                             ". Available values are " 1 "-" grid-cols))
+                     (warn "Ignoring column offset CSS class for invalid breakpoint: " k
+                           ". Available are: " (keys breakpoints))))]
+    (reduce (fn [m class] (add-class class m)) opts (map class-fn offsets))))

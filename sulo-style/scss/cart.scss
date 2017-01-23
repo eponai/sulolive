@@ -82,17 +82,17 @@
 	}
 }
 
-	&.menu.vertical {
-		li {
-			@include list-item-hover;
-			$border-color: $black;
-			$border: 1px solid rgba($border-color, 0.1);
-			border-bottom: $border;
-			a {
-				color: $border-color;
-			}
-		}
-	}
+// &.menu.vertical {
+	// li {
+		// @include list-item-hover;
+		// $border-color: $black;
+		// $border: 1px solid rgba($border-color, 0.1);
+		// border-bottom: $border;
+		// a {
+			// color: $border-color;
+// 		}
+// 	}
+// }
 
 .cart {
 

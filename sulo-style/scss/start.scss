@@ -4,7 +4,7 @@ $header-background-color: rgba($white,1);//map-get($foundation-palette, primary)
 $header-font-color: $black;
 $header-border-color: rgba($black, 0.1);
 
-$banner-background-color: #FFECD6;//rgba($primary-color, 0.15);
+$banner-background-color: map-get($foundation-palette, banner);//rgba($primary-color, 0.15);
 $section-footer-color: $primary-color;
 
 // $font-color-light: $bod;
@@ -12,7 +12,7 @@ $section-footer-color: $primary-color;
 
 #sulo-index {
 	.button {
-		font-weight: bold;
+		// font-weight: bold;
 	}
 	overflow-x: hidden;
 	svg {
@@ -21,58 +21,36 @@ $section-footer-color: $primary-color;
 
 	.intro-header {
 		min-height: 30rem;
-		height: 75vh;
-		font-size: 3rem;
-		padding-top: 8rem;
-		padding-bottom: 4rem;
-		background: $header-background-color;
-		position: relative;
-		border-bottom: 1px solid $header-border-color;
+		height: 85vh;
+		padding: 3% 0;
+		text-shadow: 1px 1px 0 rgba($white, 0.5);
 		> * {
 			vertical-align: middle;
 		}
-		h1 {
-			@include breakpoint(medium) {
-				font-weight: bold;
-			}
-			small {
-				font-size: inherit;
-			}
-		}
 		h2 {
-			font-weight: bold;
 			text-transform: uppercase;
-
+		}
+		input {
+			border-color: $white;
 		}
 		.button, input {
-			box-shadow: 0px 1px 1px 1px rgba($black, 0.1);
+			box-shadow: 0px 1px 1px 1px rgba($white, 0.1);
 			margin: 0;
-		}
-	
-		.header-content {
-			display: block;
-			position: relative;
 		}
 	}
 
 	.top-features {
-		padding: 4rem 0;
-		@include breakpoint(medium) {
-			padding: 2rem 0 0.5rem 0;
-		}
 		.feature-item {
+			padding: 2%;
 			i {
+				padding: 10% 0;
 				font-size: 2rem;
 			}
 			@include breakpoint(medium) {
 				text-align: center;
 				i {
-					font-size: 2rem;
+					font-size: 2.5rem;
 				}
-			}
-
-			.feature-title {
-				color: map-get($foundation-palette, primary);
 			}
 		}
 	}
@@ -89,11 +67,14 @@ $section-footer-color: $primary-color;
 			background: $white; //#F0EDE3;
 			border-bottom: 1px solid rgba($primary-color, 0.1);
 		}	
+		h2 {
+			font-weight: normal;
+		}
 	}
 
 	.section {
-		margin-top: 8rem;
-		margin-bottom: 2rem;
+		margin-top: 5%;
+		// margin-bottom: 2rem;
 		.section-footer {
 			padding: 1rem 0;
 			margin-top: $global-margin;
@@ -101,35 +82,14 @@ $section-footer-color: $primary-color;
 				padding: 0 0 1rem 0;
 			}
 			a {
-				color: $section-footer-color;
-				font-weight: bold;
+				// color: $section-footer-color;
+				// font-weight: bold;
 			}
 		}
 		.section-header {
 			padding: 0 $global-padding;
-			margin-bottom: 2rem;
+			// margin-bottom: 2rem;
 			text-transform: uppercase;
-			h3 {
-				text-align: center;
-				margin-bottom: 0;
-				font-weight: bold;
-			}
-			.middle-border { 
-				position: relative;
-				visibility: hidden;
-				@include breakpoint(medium) {
-					visibility: visible;
-				}
-			}
-			.middle-border:before { 
-				content: '';
-				position: absolute;
-				left: 0;
-				border-bottom: 2px solid $body-font-color;
-				height: 100%;
-				width: 100%;
-				transform: translateY(-50%);
-			}
 		}
 
 		&.online-channels {
@@ -143,6 +103,13 @@ $section-footer-color: $primary-color;
 			.overlay-container {
 				p {
 					text-transform: uppercase;
+				}
+				font-size: 2rem;
+				text-shadow: 1px 1px 0 rgba($black, 0.5);
+				color: $white;
+				.content {
+					// background: rgba($white, 0.85);
+					// padding: 1rem 2rem;
 				}
 			}
 		}

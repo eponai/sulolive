@@ -4,9 +4,6 @@
 	text-align: left;
 	@include breakpoint(large) {
 		padding: 1rem;
-		&.online-channel {
-			// padding: 3rem;
-		}
 	}
 	&.row {
 		.content-item-title-section,
@@ -17,7 +14,6 @@
 	}
 
 	.content-item-title-section {
-		// text-align: center;
 		a {
 			flex: 1;
 		}
@@ -42,17 +38,11 @@
 		text-align: center;
 		display: flex;
 		flex-direction: column;
-		// color: $primary-color;
-		@include breakpoint(large) {
-			// flex-direction: row;
-			// justify-content: space-between;
-			// align-items: center;
+	}
+
+	.full {
+		.overlay-container, .photo-container {
+			height: 100%;
 		}
 	}
 }
-
-	.viewers-container {
-		// margin-left: 0.2rem;
-		// display: flex;
-		// flex-wrap: nowrap;
-	}
