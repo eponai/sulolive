@@ -110,6 +110,7 @@
           {:keys [cart/items]} cart
           item-count (count items)]
 
+      (debug "CART ITEMS: " cart)
       (dom/div
         #js {:id "sulo-checkout" :className "sulo-page"}
         (common/page-container

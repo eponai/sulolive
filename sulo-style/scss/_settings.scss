@@ -73,7 +73,7 @@ $global-weight-normal: normal;
 $global-weight-bold: bold;
 $global-radius: 2px;
 $global-text-direction: ltr;
-$global-flexbox: false;
+$global-flexbox: true;
 $print-transparent-backgrounds: true;
 
 @include add-foundation-colors;
@@ -393,8 +393,8 @@ $mediaobject-image-width-stacked: 100%;
 $menu-margin: 0;
 $menu-margin-nested: 1rem;
 $menu-item-padding: 0.7rem 1rem;
-$menu-item-color-active: $white;
-$menu-item-background-active: map-get($foundation-palette, primary);
+$menu-item-color-active: $black;//$white;
+$menu-item-background-active: transparent;//map-get($foundation-palette, primary);
 $menu-icon-spacing: 0.25rem;
 
 // 23. Meter

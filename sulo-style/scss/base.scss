@@ -160,7 +160,7 @@ a {
 		@include breakpoint(large) {
 			text-align: right;
 			ul.menu:not(.vertical) {
-				float: right;
+				justify-content: flex-end;
 			}
 		}
 	}

@@ -79,3 +79,4 @@
 (def checkout-html (makesite root/Root))
 (def streams-html (makesite root/Root))
 (def business-html (makesite root/Root))
+(def profile-html (makesite root/Root))

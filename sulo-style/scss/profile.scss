@@ -1,0 +1,14 @@
+#sulo-profile .page-content {
+	.header {
+		border-bottom: 1px solid $light-gray;
+		.photo-container {
+			border-radius: 50%;
+			overflow: hidden;
+			margin: 2rem 0;
+		}
+	}
+
+	ul {
+		text-transform: uppercase;
+	}
+}
