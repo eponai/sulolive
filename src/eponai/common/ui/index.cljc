@@ -248,7 +248,7 @@
             (content-section {:href  "/goods"}
                              "New arrivals"
                              (div (->> (css/grid-row)
-                                       (css/grid-row-columns {:small 2 :medium 4}))
+                                       (css/grid-row-columns {:small 2 :medium 4 :large 5}))
                                   (map (fn [p]
                                          (common/product-element {:open-url? true} p))
                                        featured-items))

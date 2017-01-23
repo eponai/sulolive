@@ -112,17 +112,21 @@
 		visibility: hidden;
 		opacity: 0;
 
-		a:not(.button) {
-			color: map-get($foundation-palette, primary);
-			// padding: 0;
-			padding: 0.7rem 0;
-		}
 		li {
-			transition: background .25s ease-in-out;
+			// border-bottom: 1px solid $medium-gray;
 		}
-		li:hover {
-			background: darken($white, 2%);
+		a:not(.button) {
+			// color: map-get($foundation-palette, primary);
+			// padding: 0;
+			padding-right: 0;
+			padding-left: 0;
 		}
+		// li {
+		// 	transition: background .25s ease-in-out;
+		// }
+		// li:hover {
+		// 	background: darken($white, 2%);
+		// }
 	}
 	&:hover {
 		.dropdown-pane {

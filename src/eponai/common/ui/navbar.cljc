@@ -54,7 +54,10 @@
   (dom/div #js {:className "dropdown-pane"}
     (dom/ul #js {:className "menu vertical"}
             (dom/li nil
-                    (dom/a #js {:onClick #(om/transact! component `[(session/signout) :query/auth])}
+                    (dom/a #js {:href "/profile"}
+                           "My Profile"))
+            (dom/li nil
+                    (dom/a #js {:href "/logout"}
                            "Sign Out")))))
 
 (defui Navbar
@@ -174,7 +177,7 @@
                                     (my-dom/div
                                       (css/hide-for {:size :small :only? true})
                                       (dom/input #js {:type        "text"
-                                                      :placeholder "Search"
+                                                      :placeholder "Search on SULO..."
                                                       :onKeyDown   (fn [e]
                                                                      #?(:cljs
                                                                         (when (= 13 (.. e -keyCode))
@@ -186,9 +189,9 @@
                          ;                             :onClick   #(do
                          ;                                          #?(:cljs
                          ;                                             (.open-signin this)))} "Sign in")))
-                         (menu/item-link
-                           {:href "/logout"}
-                           (dom/span nil "Sign Out"))
+                         (menu/item-dropdown
+                           {:dropdown (user-dropdown this nil)}
+                           (dom/i #js {:className "fa fa-user fa-fw"}))
                          (if did-mount?
                            (menu/item-dropdown
                              {:dropdown (cart-dropdown cart)
