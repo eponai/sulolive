@@ -1,5 +1,15 @@
 #!/bin/bash -eux
 
+## Step 0:
+## EC2 Instance Setup (https://www.red5pro.com/docs/server/awsinstall/):
+## In the AWS Console, Select EC2 Dashboard
+## Click Launch Instance to create a new EC2 instance
+## Select the latest Ubuntu Server from the list (Note: we suggest that you choose ubuntu over the Amazon Linux AMI because the latter does not support all of the libraries needed for some Red5 Pro functionality).
+
+## Step 1, run script with input parameters.
+## Step 2. Watch the output, as everything is setup and red5pro is started.
+## Step 3. Terminate the script when everything is setup.
+
 ### Inputs
 
 ec2_host="$1"
