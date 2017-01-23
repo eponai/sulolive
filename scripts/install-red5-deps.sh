@@ -1,9 +1,10 @@
 #!/bin/bash
 
 apt-get update
-apt-get install default-jre
-apt-get install unzip
-apt-get install libva1
-apt-get install libva-drm1
-apt-get install libva-x11-1
+apt-get install -y default-jre
+apt-get install -y unzip
+apt-get install -y libva1
+apt-get install -y libva-drm1
+apt-get install -y libva-x11-1
+apt-get install -y libvdpau1
 
