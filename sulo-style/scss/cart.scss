@@ -2,10 +2,18 @@
 	border: none;
 }
 #sulo-checkout {
+	.cart-checkout-item {
+		.callout {
+			margin: 0;
+		}
+	}
 	.page-content {
 		> * {
-			margin-top: 2%;
+			margin: 4% auto;
 		}
+	}
+	h3 {
+		margin-top: 4%;
 	}
 	a.name {
 		max-height: 1.2rem;

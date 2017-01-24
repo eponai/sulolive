@@ -304,7 +304,6 @@
     (let [{:keys [proxy/navbar]} (om/props this)
           {:keys [lock on-login-fn]} (om/get-state this)]
       (dom/div #js {:id "sulo-coming-soon" :className "sulo-page"}
-
         (common/page-container
           {:navbar (om/computed navbar {:coming-soon? true})}
 
