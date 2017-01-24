@@ -159,6 +159,7 @@
 (defn page-container [props & content]
   (dom/div #js {:className "page-container"}
     (nav/navbar (:navbar props))
-    (apply dom/div #js {:key "content" :className "page-content"}
-      content)
+    (dom/div #js {:key "content-container" :className "page-content-container"}
+      (apply dom/div #js {:className "page-content"}
+             content))
     (footer nil)))

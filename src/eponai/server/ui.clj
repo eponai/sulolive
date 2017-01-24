@@ -80,3 +80,4 @@
 (def streams-html (makesite root/Root))
 (def business-html (makesite root/Root))
 (def profile-html (makesite root/Root))
+(def settings-html (makesite root/Root))

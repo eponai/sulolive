@@ -57,6 +57,9 @@
                     (dom/a #js {:href "/profile"}
                            "My Profile"))
             (dom/li nil
+                    (dom/a #js {:href "/settings"}
+                           "Account Settings"))
+            (dom/li nil
                     (dom/a #js {:href "/logout"}
                            "Sign Out")))))
 

@@ -14,6 +14,9 @@
   [opts & content]
   (apply dom/ul (css/add-class ::css/menu opts) content))
 
+(defn tabs [opts & content]
+  (apply menu* (css/add-class ::css/tabs opts) content))
+
 (defn horizontal
   "Menu in horizontal layout.
 
@@ -51,10 +54,11 @@
   See item for general opts."
   [{:keys [classes active? on-click]} & content]
   (item*
-    {:classes (cond-> classes
+    {:classes (cond-> (conj classes ::css/tabs-title)
                       active?
-                      (conj ::css/active))}
-    (apply dom/a {:onClick on-click} content)))
+                      (conj ::css/is-active))}
+    (apply dom/a {:onClick       on-click
+                  :aria-selected (boolean active?)} content)))
 
 (defn item-link
   "Menu item containing an anchor link.

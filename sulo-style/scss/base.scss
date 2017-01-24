@@ -28,6 +28,10 @@ html, body {
   	}
 }
 
+.tabs-title.is-active {
+	background: $light-gray;
+}
+
 .padded {
 	&.vertical {
 		padding-bottom: 1rem;
@@ -37,6 +41,10 @@ html, body {
 		padding-left: 1rem;
 		padding-right: 2rem;
 	}
+}
+
+h3 {
+	text-transform: uppercase;
 }
 
 .button {
@@ -114,12 +122,15 @@ a {
 	position: relative;
 }
 
-.page-content {
+.page-content-container {
 	padding-top: $navbar-height;
 	// padding-bottom: $footer-height-small + 2rem;
 	min-height: 90vh;
 	@include breakpoint(medium) {
 		// padding-bottom: $footer-height;
+	}
+	.page-content {
+		padding: 2% 0;
 	}
 }
 

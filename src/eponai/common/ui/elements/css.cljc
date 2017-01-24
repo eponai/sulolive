@@ -16,6 +16,8 @@
    ::active                "active"
    ::menu-text             "menu-text"
    ::menu-dropdown         "menu-dropdown"
+   ::tabs-title            "tabs-title"
+   ::tabs                  "tabs"
 
    ;; Grid
    ::row                   "row"
@@ -24,7 +26,7 @@
    ;; Photo
    ::photo                 "photo"
    ::photo-container       "photo-container"
-   ::photo-full "full"
+   ::photo-full            "full"
    ::photo-square          "square"
    ::photo-thumbnail       "thumbnail"
    ::photo-header          "header"
@@ -39,15 +41,15 @@
 (defn grid-styles []
   (reduce (fn [l [_ v]]
             (apply conj l (mapcat (fn [n]
-                              [(keyword (str v "-" n))
-                               (keyword (str v "-order-" n))])
-                            (range 1 (inc grid-cols)))))
+                                    [(keyword (str v "-" n))
+                                     (keyword (str v "-order-" n))])
+                                  (range 1 (inc grid-cols)))))
           #{} breakpoints))
 
 (defn keys->classes
   [ks]
   (let [all global-styles
-    ;; To keep order:
+        ;; To keep order:
         style-set (into [] (distinct) ks)]
     (when-not (every? #(or (some? (get all %))
                            (contains? (grid-styles) %)) style-set)
@@ -136,7 +138,7 @@
                        (warn "Ignoring column size CSS class for invalid column size: " v
                              ". Available values are " 1 "-" grid-cols))
                      (warn "Ignoring column size CSS class for invalid breakpoint: " k
-                           ". Available are: " (keys breakpoints)))) ]
+                           ". Available are: " (keys breakpoints))))]
     (reduce #(add-class %2 %1) opts (map class-fn sizes))))
 
 (defn grid-column-order [orders & [opts]]
