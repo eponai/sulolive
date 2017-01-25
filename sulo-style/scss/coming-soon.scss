@@ -1,9 +1,26 @@
 #sulo-sell-coming-soon {
-	.callout {
+	.content .callout {
 		background: rgba($white, 0.9);
 	}
 }
 #sulo-coming-soon, #sulo-sell-coming-soon {
+	.info-banner {
+		$bg: lighten(map-get($foundation-palette, warning), 30%);
+		background: rgba($bg, 0.85);
+		// color: $white;
+		font-weight: 500;
+		border: none;
+		box-shadow: 0px 1px 2px 0 rgba($black, 0.1);
+		transition: height 0.25s ease-in-out, visibility 0s linear 0.25s, opacity 0.25s linear;
+		&.invisible {
+			opacity: 0;
+		}
+		// position: absolute;
+		// top: 0;
+		// left: 0;
+		// right: 0;
+		// transition: visibility .25s ease-in-out;
+	}
 	.page-content-container {
 		min-height: 100vh;
 		display: flex;
@@ -14,7 +31,9 @@
 		display: flex;
 		> .photo.header {
 			flex: 1;
-			padding: 3%;
+			padding-bottom: 3%;
+			// padding-top: 0;
+			position: relative;
 			.button {
 				font-weight: bold;
 			}
@@ -24,7 +43,7 @@
 		display: none;
 	}
 
-	.callout {
+	.content .callout {
 		hr {
 			margin: 2rem 0;
 		}

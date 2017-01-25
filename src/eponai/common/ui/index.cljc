@@ -302,48 +302,55 @@
   (render [this]
     (let [{:keys [header-src]} (om/props this)
           {:keys [content-form]} (om/get-computed this)]
-      (photo/header
-        {:src header-src}
-        (div (->> (css/grid-row)
-                  (css/add-class :align-center))
-             (div
-               (->>
-                 (css/grid-column)
-                 (css/grid-column-size {:small 12 :medium 10 :large 8})
-                 (css/text-align :center)
-                 (css/add-class ::css/callout))
-               (dom/h1 nil "SULO")
-               (dom/strong nil (dom/i #js {:className "fa fa-map-marker fa-fw"}) "Vancouver's local marketplace online")
-               ;(dom/hr nil)
-               ;(dom/h2 nil "Get on the early adopter train!")
-               ;(dom/p nil "Enter your email and we’ll put you on our invite list for an exclusive beta.")
-               content-form
-               ;(dom/div #js {:className "callout transparent"})
-               (dom/h2 #js {:className "coming-soon"} "Coming Soon, Summer '17")
-               ;(dom/a #js {:onClick on-login-fn :className "enter"} (dom/strong nil "Already a member? Sign In >>"))
-               ))
-
-        ;(div (->> (css/grid-row)
-        ;          (css/text-align :center))
-        ;     (div (->> (css/grid-column)
-        ;               (css/add-class ::css/callout)
-        ;               (css/add-class ::css/secondary))
-        ;          (dom/strong nil "Coming Soon, Spring '17")))
-        ))))
+      (div (->> (css/grid-row)
+                (css/add-class :align-center)
+                (css/add-class :content))
+           (div
+             (->>
+               (css/grid-column)
+               (css/grid-column-size {:small 12 :medium 10 :large 8})
+               (css/text-align :center)
+               (css/add-class ::css/callout))
+             (dom/h1 nil "SULO")
+             (dom/strong nil (dom/i #js {:className "fa fa-map-marker fa-fw"}) "Vancouver's local marketplace online")
+             ;(dom/hr nil)
+             ;(dom/h2 nil "Get on the early adopter train!")
+             ;(dom/p nil "Enter your email and we’ll put you on our invite list for an exclusive beta.")
+             content-form
+             ;(dom/div #js {:className "callout transparent"})
+             (dom/h2 #js {:className "coming-soon"} "Coming Soon, Summer '17")
+             ;(dom/a #js {:onClick on-login-fn :className "enter"} (dom/strong nil "Already a member? Sign In >>"))
+             )))))
 (def ->ComingSoonContent (om/factory ComingSoonContent))
+
+(defn callout-banner [open?]
+  (div
+    (cond->> {:classes [::css/callout ::css/primary :info-banner]}
+             (not open?)
+             (css/add-class :invisible))
+    ;(div (->> (css/add-class :close-button)) (dom/small nil "x"))
+    (div (->> (css/grid-row)
+              css/grid-column)
+         (dom/span nil "Sign up to check out the LIVE market when it opens!"))))
 
 (defui ComingSoon
   static om/IQuery
   (query [this]
     [{:proxy/navbar (om/get-query nav/Navbar)}])
   Object
+  (componentDidUpdate [this _ _]
+    #?(:cljs
+       (let [{:keys [live-open?]} (om/get-state this)]
+         (when live-open?
+           (.setTimeout js/window (fn [] (om/update-state! this assoc :live-open? false)) 5000)))))
   (render [this]
     (let [{:keys [proxy/navbar]} (om/props this)
-          {:keys [lock on-login-fn]} (om/get-state this)]
+          {:keys [lock on-login-fn live-open?]} (om/get-state this)]
 
       (dom/div #js {:id "sulo-coming-soon" :className "sulo-page"}
         (common/page-container
           {:navbar (om/computed navbar {:coming-soon? true
+                                        :on-live-click #(om/update-state! this assoc :live-open? true)
                                         :right-menu (menu/horizontal
                                                       nil
                                                       (menu/item-link
@@ -351,17 +358,28 @@
                                                         (my-dom/span (css/show-for {:size :small}) (dom/span nil "Sell on SULO?"))
                                                         (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
 
-          (->ComingSoonContent (om/computed {:header-src "/assets/img/coming-soon-bg.jpg"}
-                                            {:content-form (dom/form
-                                                             nil
-                                                             (div (->> (css/grid-row)
-                                                                       (css/align :center))
-                                                                  (div (->> (css/grid-column)
-                                                                            (css/grid-column-size {:small 12 :medium 8 :large 8}))
-                                                                       (dom/input #js {:type "email" :placeholder "you@email.com"}))
-                                                                  (div (->> (css/grid-column)
-                                                                            (css/add-class :shrink))
-                                                                       (dom/button #js {:className "button green" :type "submit"} "Get Early Access"))))})))))))
+          (photo/header
+            {:src "/assets/img/coming-soon-bg.jpg"}
+
+            (callout-banner live-open?)
+            ;(div (->> (css/grid-row)
+            ;          (css/text-align :center))
+            ;     (div (->> (css/grid-column)
+            ;               (css/add-class ::css/callout)
+            ;               (css/add-class ::css/secondary))
+            ;          (dom/strong nil "Coming Soon, Spring '17")))
+
+            (->ComingSoonContent (om/computed {:header-src "/assets/img/coming-soon-bg.jpg"}
+                                              {:content-form (dom/form
+                                                               nil
+                                                               (div (->> (css/grid-row)
+                                                                         (css/align :center))
+                                                                    (div (->> (css/grid-column)
+                                                                              (css/grid-column-size {:small 12 :medium 8 :large 8}))
+                                                                         (dom/input #js {:type "email" :placeholder "you@email.com"}))
+                                                                    (div (->> (css/grid-column)
+                                                                              (css/add-class :shrink))
+                                                                         (dom/button #js {:className "button green" :type "submit"} "Get Early Access"))))}))))))))
 
 (def ->ComingSoon (om/factory ComingSoon))
 
@@ -371,47 +389,62 @@
     [{:proxy/navbar (om/get-query nav/Navbar)}])
 
   Object
+  #?(:cljs
+     (open-live-popup [this]
+                      (om/update-state! this assoc :live-open? true)))
+  (componentDidUpdate [this _ _]
+    #?(:cljs
+       (let [{:keys [live-open?]} (om/get-state this)]
+         (when live-open?
+           (.setTimeout js/window (fn [] (om/update-state! this assoc :live-open? false)) 5000)))))
   (render [this]
     (let [{:keys [proxy/navbar]} (om/props this)
-          {:keys [lock on-login-fn]} (om/get-state this)]
+          {:keys [lock on-login-fn live-open?]} (om/get-state this)]
 
       (dom/div #js {:id "sulo-sell-coming-soon" :className "sulo-page"}
         (common/page-container
-          {:navbar (om/computed navbar {:coming-soon? true
-                                        :right-menu (menu/horizontal
-                                                      nil
-                                                      (menu/item-link
-                                                        (css/add-class :contact {:href "/coming-soon"})
-                                                        (my-dom/span (css/show-for {:size :small}) (dom/span nil "Shop on SULO?"))
-                                                        (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
+          {:navbar (om/computed navbar {:coming-soon?  true
+                                        :on-live-click #(om/update-state! this assoc :live-open? true)
+                                        :right-menu    (menu/horizontal
+                                                         nil
+                                                         (menu/item-link
+                                                           (css/add-class :contact {:href "/coming-soon"})
+                                                           (my-dom/span (css/show-for {:size :small}) (dom/span nil "Shop on SULO?"))
+                                                           (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
+          (debug "Live opene: " live-open?)
+          (photo/header
+            {:src "/assets/img/coming-soon-sell-bg.jpg"}
 
-          (->ComingSoonContent
-            (om/computed {:header-src "/assets/img/coming-soon-sell-bg.jpg"}
-                         {:content-form (div nil
-                                             (dom/hr nil)
-                                             (dom/p nil "Are you a maker or artisan in Vancouver? Get in touch with us!")
-                                             (dom/form nil
-                                                       (div (->> (css/grid-row)
-                                                                 (css/align :middle))
-                                                            (div (->> (css/grid-column)
-                                                                      (css/grid-column-size {:small 12 :medium 2}))
-                                                                 (dom/label nil "Name"))
-                                                            (div (->> (css/grid-column))
-                                                                 (dom/input #js {:type "email" :placeholder "Company Name"})))
-                                                       (div (->> (css/grid-row)
-                                                                 (css/align :middle))
-                                                            (div (->> (css/grid-column)
-                                                                      (css/grid-column-size {:small 12 :medium 2}))
-                                                                 (dom/label nil "Website"))
-                                                            (div (->> (css/grid-column))
-                                                                 (dom/input #js {:type "text" :placeholder "yourwebsite.com"})))
-                                                       (div (->> (css/grid-row)
-                                                                 (css/align :middle))
-                                                            (div (->> (css/grid-column)
-                                                                      (css/grid-column-size {:small 12 :medium 2}))
-                                                                 (dom/label nil "Email"))
-                                                            (div (->> (css/grid-column))
-                                                                 (dom/input #js {:type "email" :placeholder "you@email.com"})))
-                                                       (dom/button #js {:className "button green" :type "submit"} "Tell Me More")))})))))))
+            (callout-banner live-open?)
+            ;(dom/div #js {:className "callout alert"} "Sign up to check out the LIVE market when it opens!")
+            (->ComingSoonContent
+              (om/computed {:header-src "/assets/img/coming-soon-sell-bg.jpg"
+                            :show-live? live-open?}
+                           {:content-form (div nil
+                                               (dom/hr nil)
+                                               (dom/p nil "Are you a maker or artisan in Vancouver? Get in touch with us!")
+                                               (dom/form nil
+                                                         (div (->> (css/grid-row)
+                                                                   (css/align :middle))
+                                                              (div (->> (css/grid-column)
+                                                                        (css/grid-column-size {:small 12 :medium 2}))
+                                                                   (dom/label nil "Name"))
+                                                              (div (->> (css/grid-column))
+                                                                   (dom/input #js {:type "email" :placeholder "Company Name"})))
+                                                         (div (->> (css/grid-row)
+                                                                   (css/align :middle))
+                                                              (div (->> (css/grid-column)
+                                                                        (css/grid-column-size {:small 12 :medium 2}))
+                                                                   (dom/label nil "Website"))
+                                                              (div (->> (css/grid-column))
+                                                                   (dom/input #js {:type "text" :placeholder "yourwebsite.com"})))
+                                                         (div (->> (css/grid-row)
+                                                                   (css/align :middle))
+                                                              (div (->> (css/grid-column)
+                                                                        (css/grid-column-size {:small 12 :medium 2}))
+                                                                   (dom/label nil "Email"))
+                                                              (div (->> (css/grid-column))
+                                                                   (dom/input #js {:type "email" :placeholder "you@email.com"})))
+                                                         (dom/button #js {:className "button green" :type "submit"} "Tell Me More")))}))))))))
 
 (def ->ComingSoonBiz (om/factory ComingSoonBiz))

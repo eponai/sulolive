@@ -110,7 +110,7 @@
   (render [this]
     (let [{:keys [cart-open? signin-open? did-mount?]} (om/get-state this)
           {:keys [query/cart query/auth]} (om/props this)
-          {:keys [coming-soon? right-menu]} (om/get-computed this)]
+          {:keys [coming-soon? right-menu on-live-click]} (om/get-computed this)]
 
       (dom/div #js {:id "sulo-navbar"}
         (dom/nav #js {:className "navbar-container"}
@@ -122,7 +122,8 @@
                                         :id   "navbar-brand"}
                                        (dom/span nil "Sulo"))
                        (menu/item-link
-                         (->> (css/add-class ::css/highlight {:href (if coming-soon? "" "/streams")})
+                         (->> (css/add-class ::css/highlight {:href (if coming-soon? "" "/streams")
+                                                              :onClick on-live-click})
                               (css/add-class :navbar-live))
                          (my-dom/strong
                            (css/hide-for {:size :small :only? true})
