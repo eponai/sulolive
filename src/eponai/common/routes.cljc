@@ -13,7 +13,7 @@
 (def routes
   ["/" {""                     :index
         "coming-soon"          :coming-soon
-        "sell/coming-soon" :sell-soon
+        "sell/coming-soon"     :sell-soon
         ["store/" :store-id]   :store
         "goods"                :goods
         ["goods/" :product-id] :product

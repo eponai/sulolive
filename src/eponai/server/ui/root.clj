@@ -35,6 +35,6 @@
              ;(common/inline-javascript ["window.jQuery || document.write('<scr' + 'ipt src=\"https://code.jquery.com/jquery-1.11.0.min.js\"><\\/sc' + 'ript>')"])
              (common/inline-javascript ["window.$kol_jquery = window.jQuery"])
              (dom/script {:src "https://kickoffpages-kickofflabs.netdna-ssl.com/widgets/1.9.4/kol_any_form.js"})
-             (dom/script {:src "https://kickoffpages-kickofflabs.netdna-ssl.com/w/88102/141997.js"})])
+             (dom/script {:src "https://kickoffpages-kickofflabs.netdna-ssl.com/w/89256/144137.js"})])
 
           (common/inline-javascript ["env.web.main.runsulo()"]))))))
