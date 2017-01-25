@@ -26,6 +26,7 @@
     :ui.component.cart/items #{}}
    {:ui/singleton :ui.singleton/app}
    {:ui/singleton :ui.singleton/routes}
+   {:ui/singleton :ui.singleton/auth}
    {:ui/component :ui.component/root}
    {:ui/component :ui.component/mutation-queue}
    {:ui/component :ui.singleton/stream-config}])

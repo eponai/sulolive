@@ -199,10 +199,10 @@
                          (if did-mount?
                            (menu/item-dropdown
                              {:dropdown (cart-dropdown cart)
-                              :href     "/checkout"}
+                              :href     "/shopping-bag"}
                              (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))
                            (menu/item-dropdown
-                             {:href     "/checkout"}
+                             {:href     "/shopping-bag"}
                              (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))))))))))))
 (def ->Navbar (om/factory Navbar))
 

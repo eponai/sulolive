@@ -41,6 +41,7 @@
 
 (defmethod server-read :query/auth
   [{:keys [auth]} _ _]
+  (debug "READING AUTH: " auth)
   {:value (when (some? (:iss auth))
             auth)})
 

@@ -1,4 +1,4 @@
-(ns eponai.common.ui.checkout
+(ns eponai.common.ui.shopping-bag
   (:require
     [om.dom :as dom]
     [eponai.common.ui.dom :as my-dom]
@@ -96,7 +96,7 @@
           (dom/a #js {:className "button gray"} "Checkout"))))))
 
 
-(defui Checkout
+(defui ShoppingBag
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
@@ -187,4 +187,4 @@
                 :clj (dom/div {:className "cart-loading text-center"}
                        (dom/i {:className "fa fa-spinner fa-spin fa-4x"}))))))))))
 
-(def ->Checkout (om/factory Checkout))
+(def ->ShoppingBag (om/factory ShoppingBag))

@@ -57,6 +57,7 @@ $foundation-palette: (
   highlight: #FC302D,
   gray: #444444,
   banner: #FFECD6,
+  green: #39AC97,
 );
 $light-gray: #e6e6e6;
 $medium-gray: #cacaca;
@@ -106,7 +107,7 @@ $block-grid-max: 8;
 // ------------------
 
 $header-font-family: Arial, sans-serif;//$body-font-family;
-$header-font-weight: bold;//$global-weight-normal;
+$header-font-weight: normal;//$global-weight-normal;
 $header-font-style: normal;
 $font-family-monospace: Consolas, 'Liberation Mono', Courier, monospace;
 $header-sizes: (
@@ -122,7 +123,7 @@ $header-sizes: (
     'h1': 110,
     'h2': 24,//40,
     'h3': 20,
-    'h4': 25,
+    'h4': 18,
     'h5': 20,
     'h6': 16,
   ),
@@ -131,7 +132,7 @@ $header-sizes: (
     'h1': 120,
     'h2': 24,//40,
     'h3': 20,
-    'h4': 25,
+    'h4': 18,
     'h5': 20,
     'h6': 16,
     ),
@@ -496,11 +497,11 @@ $switch-height: 2rem;
 $switch-height-tiny: 1.5rem;
 $switch-height-small: 1.75rem;
 $switch-height-large: 2.5rem;
-$switch-radius: $global-radius;
+$switch-radius: 100px;//$global-radius;
 $switch-margin: $global-margin;
 $switch-paddle-background: $white;
 $switch-paddle-offset: 0.25rem;
-$switch-paddle-radius: $global-radius;
+$switch-paddle-radius: 50%;//$global-radius;
 $switch-paddle-transition: all 0.25s ease-out;
 
 // 31. Table

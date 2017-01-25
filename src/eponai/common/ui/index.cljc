@@ -277,7 +277,8 @@
      (show-login [this]
                  (let [{:keys [lock]} (om/get-state this)]
                    (.show lock (clj->js {:allowedConnections ["Username-Password-Authentication"]
-                                         :auth               {:params       {:state js/window.location.origin}}})))))
+                                         :auth               {:params       {:state js/window.location.origin
+                                                                             :scope            "openid email"}}})))))
   #?(:cljs
      (do-login [this auth-res]
                (debug "Auth-result: " auth-res)))
@@ -329,13 +330,15 @@
                           (dom/input #js {:type "email" :placeholder "you@email.com"}))
                      (div (->> (css/grid-column)
                                (css/add-class :shrink))
-                          (dom/button #js {:className "button highlight" :type "submit"} "Invite Me!")))
-                   (dom/a #js {:onClick on-login-fn :className "enter"} (dom/strong nil "Already a member? Sign In >>"))))
+                          (dom/button #js {:className "button green" :type "submit"} "Get Early Access")))
+                   ;(dom/div #js {:className "callout transparent"})
+                   (dom/strong #js {:className "coming-soon"} "Coming Soon, Spring '17")))
 
-            (div (->> (css/grid-row)
-                      (css/text-align :center))
-                 (div (->> (css/grid-column)
-                           (css/add-class ::css/callout)
-                           (css/add-class ::css/secondary))
-                      (dom/strong nil "Coming Soon, Spring '17")))))))))
+            ;(div (->> (css/grid-row)
+            ;          (css/text-align :center))
+            ;     (div (->> (css/grid-column)
+            ;               (css/add-class ::css/callout)
+            ;               (css/add-class ::css/secondary))
+            ;          (dom/strong nil "Coming Soon, Spring '17")))
+            ))))))
 (def ->ComingSoon (om/factory ComingSoon))

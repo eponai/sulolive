@@ -1,11 +1,14 @@
 #sulo-coming-soon {
+	.page-content-container {
+		min-height: 100vh;
+	}
 	.page-content {
 		min-height: 100vh;
 		padding-bottom: 0;
 		display: flex;
 		> .photo.header {
 			flex: 1;
-			padding: 1%;
+			padding: 3%;
 			.button {
 				font-weight: bold;
 			}
@@ -14,18 +17,49 @@
 	.footer {
 		display: none;
 	}
+
 	.callout {
-		margin-top: 3%;
+		hr {
+			margin: 2rem 0;
+		}
+		padding: 2rem 1rem;
+		@include breakpoint(medium) {
+			padding: 2rem 3rem;
+		}
+		// margin-top: 3%;
 		border: none;
 		background: rgba($white, 0.85);
 		text-transform: uppercase;
+		&.transparent {
+			background: transparent;
+		}
 
+		strong {
+			text-transform: uppercase;
+		}
+
+		form {
+			margin-bottom: 2rem;
+		}
+		.coming-soon {
+			font-size: 1.2rem;
+			@include breakpoint(medium) {
+				font-size: 2rem;
+			}
+			@include breakpoint(large) {
+				font-size: 2.5rem;
+			}
+		}
 		p {
 			text-transform: none;
 		}
 		h1 {
 			line-height: 1.2;
 			font-weight: normal;
+			margin-bottom: 0;
+		}
+		h2 {
+			font-weight: bold;
 		}
 
 		&.secondary {

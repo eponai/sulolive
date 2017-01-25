@@ -12,7 +12,6 @@
    :ui/component {:db/unique :db.unique/identity}
    :ui.component.cart/items {:db/cardinality :db.cardinality/many
                              :db/valueType :db.type/ref}
-   :ui.singleton.auth/user {:db/valueType :db.type/ref}
    :db/ident {:db/unique :db.unique/identity}})
 
 (defn schema-datomic->datascript [datomic-schema]

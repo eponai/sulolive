@@ -86,7 +86,7 @@
                                  :symbols {'?e product-id}})})))
 
 (defmethod client-read :query/auth
-  [{:keys [target]} _ _]
+  [{:keys [target auth]} _ _]
   ;(debug "Read query/auth: ")
   (if target
     {:remote true}

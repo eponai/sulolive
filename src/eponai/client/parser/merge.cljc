@@ -39,6 +39,9 @@
                                 (map #(vector :db.fn/retractEntity %)))
                        [:eponai.common.parser.read-basis-t/map]))))
 
+(defn merge-auth [db key val]
+  (transact db [[:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/user val]]))
+
 ;;;;;;; API
 
 (defn merge-mutation [merge-fn db history-id key val]
@@ -83,6 +86,10 @@
 
       (= :datascript/schema key)
       (merge-schema db key val)
+
+      (= :query/auth key)
+      (merge-auth db key val)
+
 
       :else
       (transact db val))))

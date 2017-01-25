@@ -76,6 +76,7 @@
 (def index-html (makesite root/Root))
 (def landing-html (makesite root/Root))
 (def store-html (makesite root/Root))
+(def cart-html (makesite root/Root))
 (def checkout-html (makesite root/Root))
 (def streams-html (makesite root/Root))
 (def business-html (makesite root/Root))

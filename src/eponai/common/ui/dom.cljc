@@ -33,5 +33,11 @@
 (defn span [opts & content]
   (element dom/span opts content))
 
+(defn label [opts & content]
+  (element dom/label opts content))
+
 (defn h3 [opts & content]
   (element dom/h3 opts content))
+
+(defn input [opts & content]
+  (element dom/input opts content))

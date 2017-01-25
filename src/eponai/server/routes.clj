@@ -104,6 +104,7 @@
   (GET "/store/:store-id" request (server.ui/store-html (request->props request)))
   (GET "/goods/:product-id" r (server.ui/product-html (request->props r)))
   (GET "/goods" request (server.ui/goods-html (request->props request)))
+  (GET "/shopping-bag" request (server.ui/cart-html (request->props request)))
   (GET "/checkout" request (server.ui/checkout-html (request->props request)))
   (GET "/streams" request (server.ui/streams-html (request->props request)))
   (GET "/business" request (server.ui/business-html (request->props request)))
