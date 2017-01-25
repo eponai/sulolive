@@ -13,12 +13,13 @@
 (def routes
   ["/" {""                     :index
         "coming-soon"          :coming-soon
+        "sell/coming-soon" :sell-soon
         ["store/" :store-id]   :store
         "goods"                :goods
         ["goods/" :product-id] :product
         "streams"              :streams
         "checkout"             :checkout
-        "shopping-bag"                 :shopping-bag
+        "shopping-bag"         :shopping-bag
         "business"             :business
         "profile"              :profile
         "settings"             :settings}])
@@ -28,6 +29,8 @@
                   :factory   index/->Index}
    :coming-soon  {:component index/ComingSoon
                   :factory   index/->ComingSoon}
+   :sell-soon    {:component index/ComingSoonBiz
+                  :factory   index/->ComingSoonBiz}
    :store        {:component store/Store
                   :factory   store/->Store}
    :checkout     {:component bag/ShoppingBag

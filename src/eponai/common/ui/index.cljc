@@ -8,7 +8,8 @@
     [taoensso.timbre :refer [debug error]]
     [eponai.common.ui.dom :as my-dom :refer [div a]]
     [eponai.common.ui.elements.css :as css]
-    [eponai.client.auth :as auth]))
+    [eponai.client.auth :as auth]
+    [eponai.common.ui.elements.menu :as menu]))
 
 (defn top-feature [opts icon title text]
   (dom/div #js {:className "feature-item column"}
@@ -268,10 +269,7 @@
 
 (def ->Index (om/factory Index))
 
-(defui ComingSoon
-  static om/IQuery
-  (query [this]
-    [{:proxy/navbar (om/get-query nav/Navbar)}])
+(defui ComingSoonContent
   Object
   #?(:cljs
      (show-login [this]
@@ -302,43 +300,118 @@
   (initLocalState [this]
     {:on-login-fn #?(:cljs #(.show-login this) :clj (fn [] nil))})
   (render [this]
+    (let [{:keys [header-src]} (om/props this)
+          {:keys [content-form]} (om/get-computed this)]
+      (photo/header
+        {:src header-src}
+        (div (->> (css/grid-row)
+                  (css/add-class :align-center))
+             (div
+               (->>
+                 (css/grid-column)
+                 (css/grid-column-size {:small 12 :medium 10 :large 8})
+                 (css/text-align :center)
+                 (css/add-class ::css/callout))
+               (dom/h1 nil "SULO")
+               (dom/strong nil (dom/i #js {:className "fa fa-map-marker fa-fw"}) "Vancouver's local marketplace online")
+               ;(dom/hr nil)
+               ;(dom/h2 nil "Get on the early adopter train!")
+               ;(dom/p nil "Enter your email and we’ll put you on our invite list for an exclusive beta.")
+               content-form
+               ;(dom/div #js {:className "callout transparent"})
+               (dom/h2 #js {:className "coming-soon"} "Coming Soon, Summer '17")
+               ;(dom/a #js {:onClick on-login-fn :className "enter"} (dom/strong nil "Already a member? Sign In >>"))
+               ))
+
+        ;(div (->> (css/grid-row)
+        ;          (css/text-align :center))
+        ;     (div (->> (css/grid-column)
+        ;               (css/add-class ::css/callout)
+        ;               (css/add-class ::css/secondary))
+        ;          (dom/strong nil "Coming Soon, Spring '17")))
+        ))))
+(def ->ComingSoonContent (om/factory ComingSoonContent))
+
+(defui ComingSoon
+  static om/IQuery
+  (query [this]
+    [{:proxy/navbar (om/get-query nav/Navbar)}])
+  Object
+  (render [this]
     (let [{:keys [proxy/navbar]} (om/props this)
           {:keys [lock on-login-fn]} (om/get-state this)]
+
       (dom/div #js {:id "sulo-coming-soon" :className "sulo-page"}
         (common/page-container
-          {:navbar (om/computed navbar {:coming-soon? true})}
+          {:navbar (om/computed navbar {:coming-soon? true
+                                        :right-menu (menu/horizontal
+                                                      nil
+                                                      (menu/item-link
+                                                        (css/add-class :contact {:href "/sell/coming-soon"})
+                                                        (my-dom/span (css/show-for {:size :small}) (dom/span nil "Sell on SULO?"))
+                                                        (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
 
-          (photo/header
-            {:src "/assets/img/coming-soon-bg.jpg"}
-            (div (->> (css/grid-row)
-                      (css/add-class :align-center))
-                 (div
-                   (->>
-                     (css/grid-column)
-                     (css/grid-column-size {:small 12 :medium 10 :large 8})
-                     (css/text-align :center)
-                     (css/add-class ::css/callout))
-                   (dom/h1 nil "SULO")
-                   (dom/strong nil (dom/i #js {:className "fa fa-map-marker fa-fw"}) "Vancouver's local marketplace online")
-                   (dom/hr nil)
-                   (dom/h2 nil "Join a community that lives for local!")
-                   (dom/p nil "Enter your email and we’ll put you on our invite list for an exclusive beta.")
-                   (dom/form
-                     #js {:className "row align-center"}
-                     (div (->> (css/grid-column)
-                               (css/grid-column-size {:small 12 :medium 8 :large 8}))
-                          (dom/input #js {:type "email" :placeholder "you@email.com"}))
-                     (div (->> (css/grid-column)
-                               (css/add-class :shrink))
-                          (dom/button #js {:className "button green" :type "submit"} "Get Early Access")))
-                   ;(dom/div #js {:className "callout transparent"})
-                   (dom/strong #js {:className "coming-soon"} "Coming Soon, Spring '17")))
+          (->ComingSoonContent (om/computed {:header-src "/assets/img/coming-soon-bg.jpg"}
+                                            {:content-form (dom/form
+                                                             nil
+                                                             (div (->> (css/grid-row)
+                                                                       (css/align :center))
+                                                                  (div (->> (css/grid-column)
+                                                                            (css/grid-column-size {:small 12 :medium 8 :large 8}))
+                                                                       (dom/input #js {:type "email" :placeholder "you@email.com"}))
+                                                                  (div (->> (css/grid-column)
+                                                                            (css/add-class :shrink))
+                                                                       (dom/button #js {:className "button green" :type "submit"} "Get Early Access"))))})))))))
 
-            ;(div (->> (css/grid-row)
-            ;          (css/text-align :center))
-            ;     (div (->> (css/grid-column)
-            ;               (css/add-class ::css/callout)
-            ;               (css/add-class ::css/secondary))
-            ;          (dom/strong nil "Coming Soon, Spring '17")))
-            ))))))
 (def ->ComingSoon (om/factory ComingSoon))
+
+(defui ComingSoonBiz
+  static om/IQuery
+  (query [this]
+    [{:proxy/navbar (om/get-query nav/Navbar)}])
+
+  Object
+  (render [this]
+    (let [{:keys [proxy/navbar]} (om/props this)
+          {:keys [lock on-login-fn]} (om/get-state this)]
+
+      (dom/div #js {:id "sulo-sell-coming-soon" :className "sulo-page"}
+        (common/page-container
+          {:navbar (om/computed navbar {:coming-soon? true
+                                        :right-menu (menu/horizontal
+                                                      nil
+                                                      (menu/item-link
+                                                        (css/add-class :contact {:href "/coming-soon"})
+                                                        (my-dom/span (css/show-for {:size :small}) (dom/span nil "Shop on SULO?"))
+                                                        (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
+
+          (->ComingSoonContent
+            (om/computed {:header-src "/assets/img/coming-soon-sell-bg.jpg"}
+                         {:content-form (div nil
+                                             (dom/hr nil)
+                                             (dom/p nil "Are you a maker or artisan in Vancouver? Get in touch with us!")
+                                             (dom/form nil
+                                                       (div (->> (css/grid-row)
+                                                                 (css/align :middle))
+                                                            (div (->> (css/grid-column)
+                                                                      (css/grid-column-size {:small 12 :medium 2}))
+                                                                 (dom/label nil "Name"))
+                                                            (div (->> (css/grid-column))
+                                                                 (dom/input #js {:type "email" :placeholder "Company Name"})))
+                                                       (div (->> (css/grid-row)
+                                                                 (css/align :middle))
+                                                            (div (->> (css/grid-column)
+                                                                      (css/grid-column-size {:small 12 :medium 2}))
+                                                                 (dom/label nil "Website"))
+                                                            (div (->> (css/grid-column))
+                                                                 (dom/input #js {:type "text" :placeholder "yourwebsite.com"})))
+                                                       (div (->> (css/grid-row)
+                                                                 (css/align :middle))
+                                                            (div (->> (css/grid-column)
+                                                                      (css/grid-column-size {:small 12 :medium 2}))
+                                                                 (dom/label nil "Email"))
+                                                            (div (->> (css/grid-column))
+                                                                 (dom/input #js {:type "email" :placeholder "you@email.com"})))
+                                                       (dom/button #js {:className "button green" :type "submit"} "Tell Me More")))})))))))
+
+(def ->ComingSoonBiz (om/factory ComingSoonBiz))

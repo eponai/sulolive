@@ -110,7 +110,7 @@
   (render [this]
     (let [{:keys [cart-open? signin-open? did-mount?]} (om/get-state this)
           {:keys [query/cart query/auth]} (om/props this)
-          {:keys [coming-soon?]} (om/get-computed this)]
+          {:keys [coming-soon? right-menu]} (om/get-computed this)]
 
       (dom/div #js {:id "sulo-navbar"}
         (dom/nav #js {:className "navbar-container"}
@@ -118,7 +118,7 @@
                    (dom/div #js {:className "top-bar-left"}
                      (menu/horizontal
                        nil
-                       (menu/item-link {:href (if coming-soon? "" "/")
+                       (menu/item-link {:href (if coming-soon? "/coming-soon" "/")
                                         :id   "navbar-brand"}
                                        (dom/span nil "Sulo"))
                        (menu/item-link
@@ -164,12 +164,7 @@
 
                    (dom/div #js {:className "top-bar-right"}
                      (if coming-soon?
-                       (menu/horizontal
-                         nil
-                         (menu/item-link
-                           (css/add-class :contact {:href "mailto:hello@sulo.live"})
-                           (my-dom/span (css/show-for {:size :medium}) (dom/span nil "Sell on SULO? Send us an email"))
-                           (dom/i #js {:className "fa fa-envelope-o fa-fw"})))
+                       right-menu
 
                        (menu/horizontal
                          nil

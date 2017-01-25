@@ -127,6 +127,7 @@
     )
   (route/resources "/")
   (GET "/coming-soon" request (server.ui/landing-html (request->props request)))
+  (GET "/sell/coming-soon" request (server.ui/landing-html (request->props request)))
   (GET "/auth" request (let [{:keys [redirect-url token]} (auth/auth0 request)]
                          (if token
                            (r/set-cookie (r/redirect redirect-url) "token" token)
