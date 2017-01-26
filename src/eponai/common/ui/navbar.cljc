@@ -122,8 +122,9 @@
                                         :id   "navbar-brand"}
                                        (dom/span nil "Sulo"))
                        (menu/item-link
-                         (->> (css/add-class ::css/highlight {:href (if coming-soon? "" "/streams")
-                                                              :onClick on-live-click})
+                         (->> (css/add-class ::css/highlight (cond-> {:onClick on-live-click}
+                                                                     (not coming-soon?)
+                                                                     (assoc :href "/streams")))
                               (css/add-class :navbar-live))
                          (my-dom/strong
                            (css/hide-for {:size :small :only? true})
