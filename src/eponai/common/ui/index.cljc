@@ -10,6 +10,7 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.client.parser.message :as msg]
     [eponai.client.auth :as auth]
+    [eponai.client.utils :as utils]
     [eponai.common.ui.elements.menu :as menu]))
 
 (defn top-feature [opts icon title text]
@@ -341,12 +342,15 @@
   Object
   (componentDidUpdate [this _ _]
     #?(:cljs
-       (let [{:keys [live-open?]} (om/get-state this)]
-         (when live-open?
-           (.setTimeout js/window (fn [] (om/update-state! this assoc :live-open? false)) 5000)))))
+       (let [{:keys [live-open? live-timer-started?]} (om/get-state this)]
+         (when (and live-open? (not live-timer-started?))
+           (.setTimeout js/window (fn [] (om/update-state! this assoc
+                                                           :live-open? false
+                                                           :live-timer-started? false)) 5000)
+           (om/update-state! this assoc :live-timer-started? true)))))
   (render [this]
     (let [{:keys [proxy/navbar]} (om/props this)
-          {:keys [lock on-login-fn live-open?]} (om/get-state this)]
+          {:keys [lock on-login-fn live-open? client-msg email-input]} (om/get-state this)]
 
       (dom/div #js {:id "sulo-coming-soon" :className "sulo-page"}
         (common/page-container
@@ -377,10 +381,23 @@
                                                                          (css/align :center))
                                                                     (div (->> (css/grid-column)
                                                                               (css/grid-column-size {:small 12 :medium 8 :large 8}))
-                                                                         (dom/input #js {:type "email" :placeholder "you@email.com"}))
+                                                                         (dom/input #js {:type        "email"
+                                                                                         :placeholder "you@email.com"
+                                                                                         :value       email-input
+                                                                                         :onChange    #(om/update-state! this assoc :email-input (.-value (.-target %)))}))
                                                                     (div (->> (css/grid-column)
                                                                               (css/add-class :shrink))
-                                                                         (dom/button #js {:className "button green" :type "submit"} "Get Early Access"))))}))))))))
+                                                                         (dom/button #js {:className "button green"
+                                                                                          :onClick   (fn [e]
+                                                                                                       (let [valid-email? (utils/valid-email? email-input)]
+                                                                                                         (when-not valid-email?
+                                                                                                           (om/update-state! this assoc :client-msg
+                                                                                                                             "Please enter a valid email.")
+                                                                                                           (.preventDefault e))))
+                                                                                          :type      "submit"}
+                                                                                     "Get Early Access"))
+                                                                    (when (some? client-msg)
+                                                                      (dom/p #js {:className "alert"} client-msg))))}))))))))
 
 (def ->ComingSoon (om/factory ComingSoon))
 
@@ -401,10 +418,14 @@
                               :email (.-value (.getElementById js/document "beta-EMAIL"))
                               :site  (.-value (.getElementById js/document "beta-SITE"))}
                       history-id (msg/om-transact! this `[(beta/vendor ~params)])]
-                  (if (and (not-empty (:name params)) (not-empty (:email params)))
+                  (if (and (not-empty (:name params))
+                           (not-empty (:email params))
+                           (utils/valid-email? (:email params)))
                     (om/update-state! this assoc :subscription-pending-id history-id)
                     (let [message (cond (empty? (:email params))
-                                        "Please provide an email."
+                                        "Please provide valid email."
+                                        (not (utils/valid-email? (:email params)))
+                                        "Please provide a valid email."
                                         (empty? (:name params))
                                         "Please provide the name of your brand.")]
                       (om/update-state! this assoc :client-msg message))))))

@@ -12,7 +12,9 @@
          [devtools.core :as devtools]
          [goog.date]
          [goog.format.EmailAddress]]))
-  #?(:clj (:import [datascript.db DB])))
+  #?(:clj
+     (:import [datascript.db DB]
+              [javax.mail.internet InternetAddress])))
 
 ;; ---------------------
 ;; -- App initialization
@@ -164,9 +166,11 @@
 
 ;; ------ Util functions -----------
 
-#?(:cljs
-   (defn valid-email? [email]
-     (and (string? email) (goog.format.EmailAddress/isValidAddress email))))
+(defn valid-email? [email]
+  (and (string? email)
+       #?(:cljs (goog.format.EmailAddress/isValidAddress email)
+          :clj  (try (.validate (InternetAddress. email))
+                     (catch Exception _ false)))))
 
 (defn distinct-by
   "Distinct by (f input). See clojure.core/distinct."
