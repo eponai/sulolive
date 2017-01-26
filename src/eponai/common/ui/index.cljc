@@ -351,8 +351,7 @@
            (om/update-state! this assoc :live-timer-started? true)))))
   (render [this]
     (let [{:keys [proxy/navbar]} (om/props this)
-          {:keys [lock on-login-fn live-open? client-msg email-input]} (om/get-state this)]
-
+          {:keys [lock on-login-fn live-open? client-msg]} (om/get-state this)]
       (dom/div #js {:id "sulo-coming-soon" :className "sulo-page"}
         (common/page-container
           {:navbar (om/computed navbar {:coming-soon?  true
@@ -375,33 +374,35 @@
             ;               (css/add-class ::css/secondary))
             ;          (dom/strong nil "Coming Soon, Spring '17")))
 
-            (->ComingSoonContent (om/computed {:header-src "/assets/img/coming-soon-bg.jpg"}
-                                              {:content-form (dom/div
-                                                               nil
-                                                               (dom/form
-                                                                 nil
-                                                                 (div (->> (css/grid-row)
-                                                                           (css/align :center))
-                                                                      (div (->> (css/grid-column)
-                                                                                (css/grid-column-size {:small 12 :medium 8 :large 8}))
-                                                                           (dom/input #js {:type        "email"
-                                                                                           :placeholder "you@email.com"
-                                                                                           :value       email-input
-                                                                                           :onChange    #(om/update-state! this assoc :email-input (.-value (.-target %)))}))
-                                                                      (div (->> (css/grid-column)
-                                                                                (css/add-class :shrink))
-                                                                           (dom/button #js {:className "button green"
-                                                                                            :onClick   (fn [e]
-                                                                                                         (let [valid-email? (utils/valid-email? email-input)]
-                                                                                                           (when-not valid-email?
-                                                                                                             (om/update-state! this assoc :client-msg
-                                                                                                                               "Please enter a valid email.")
-                                                                                                             (.preventDefault e))))
-                                                                                            :type      "submit"}
-                                                                                       "Get Early Access")))
-                                                                 (div (->> (css/grid-row)
-                                                                           (css/align :center))
-                                                                      (dom/p #js {:className "alert"} client-msg))))}))))))))
+            (->ComingSoonContent
+              (om/computed {:header-src "/assets/img/coming-soon-bg.jpg"}
+                           {:content-form (dom/div
+                                            nil
+                                            (dom/form
+                                              nil
+                                              (div (->> (css/grid-row)
+                                                        (css/align :center))
+                                                   (div (->> (css/grid-column)
+                                                             (css/grid-column-size {:small 12 :medium 8 :large 8}))
+                                                        (dom/input #js {:type        "email"
+                                                                        :placeholder "you@email.com"
+                                                                        :id          "coming-soon-email-input"}))
+                                                   (div (->> (css/grid-column)
+                                                             (css/add-class :shrink))
+                                                        (dom/button #js {:className "button green"
+                                                                         :onClick   #?(:clj  identity
+                                                                                       :cljs (fn [e]
+                                                                                               (let [input (.-value (.getElementById js/document "coming-soon-email-input"))
+                                                                                                     valid-email? (utils/valid-email? input)]
+                                                                                                 (when-not valid-email?
+                                                                                                   (om/update-state! this assoc :client-msg
+                                                                                                                     "Please enter a valid email.")
+                                                                                                   (.preventDefault e)))))
+                                                                         :type      "submit"}
+                                                                    "Get Early Access")))
+                                              (div (->> (css/grid-row)
+                                                        (css/align :center))
+                                                   (dom/p #js {:className "alert"} client-msg))))}))))))))
 
 (def ->ComingSoon (om/factory ComingSoon))
 
