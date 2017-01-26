@@ -33,7 +33,7 @@
 
 (defmutation beta/vendor
   [{:keys [state ::parser/return ::parser/exception auth]} _ params]
-  {:success (:detail return "")
+  {:success "Cool! Check your inbox for a confirmation email"
    :error   (if exception (:detail (json/read-str (:body (ex-data exception)) :key-fn keyword) "") "")}
   {:action (fn []
              (let [ret (api/beta-vendor-subscribe params)]

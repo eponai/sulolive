@@ -416,8 +416,9 @@
          (when live-open?
            (.setTimeout js/window (fn [] (om/update-state! this assoc :live-open? false)) 5000))
          (when message
-           (when (and (msg/final? message) (msg/success? message))
-             (set! js/window.location "http://sell-thankyou.sulo.live")
+           (if (and (msg/final? message) (msg/success? message))
+             (debug "FINAL SUCCESS MESSAGE")
+             ;(set! js/window.location "http://sell-thankyou.sulo.live")
              (debug "PENDING MESSAGE")))
          )))
   (render [this]
