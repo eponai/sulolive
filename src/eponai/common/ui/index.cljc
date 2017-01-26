@@ -303,7 +303,8 @@
     {:on-login-fn #?(:cljs #(.show-login this) :clj (fn [] nil))})
   (render [this]
     (let [{:keys [header-src]} (om/props this)
-          {:keys [content-form]} (om/get-computed this)]
+          {:keys [content-form]} (om/get-computed this)
+          {:keys [on-login-fn]} (om/get-state this)]
       (div (->> (css/grid-row)
                 (css/add-class :align-center)
                 (css/add-class :content))
@@ -375,28 +376,31 @@
             ;          (dom/strong nil "Coming Soon, Spring '17")))
 
             (->ComingSoonContent (om/computed {:header-src "/assets/img/coming-soon-bg.jpg"}
-                                              {:content-form (dom/form
+                                              {:content-form (dom/div
                                                                nil
-                                                               (div (->> (css/grid-row)
-                                                                         (css/align :center))
-                                                                    (div (->> (css/grid-column)
-                                                                              (css/grid-column-size {:small 12 :medium 8 :large 8}))
-                                                                         (dom/input #js {:type        "email"
-                                                                                         :placeholder "you@email.com"
-                                                                                         :value       email-input
-                                                                                         :onChange    #(om/update-state! this assoc :email-input (.-value (.-target %)))}))
-                                                                    (div (->> (css/grid-column)
-                                                                              (css/add-class :shrink))
-                                                                         (dom/button #js {:className "button green"
-                                                                                          :onClick   (fn [e]
-                                                                                                       (let [valid-email? (utils/valid-email? email-input)]
-                                                                                                         (when-not valid-email?
-                                                                                                           (om/update-state! this assoc :client-msg
-                                                                                                                             "Please enter a valid email.")
-                                                                                                           (.preventDefault e))))
-                                                                                          :type      "submit"}
-                                                                                     "Get Early Access"))
-                                                                    (when (some? client-msg)
+                                                               (dom/form
+                                                                 nil
+                                                                 (div (->> (css/grid-row)
+                                                                           (css/align :center))
+                                                                      (div (->> (css/grid-column)
+                                                                                (css/grid-column-size {:small 12 :medium 8 :large 8}))
+                                                                           (dom/input #js {:type        "email"
+                                                                                           :placeholder "you@email.com"
+                                                                                           :value       email-input
+                                                                                           :onChange    #(om/update-state! this assoc :email-input (.-value (.-target %)))}))
+                                                                      (div (->> (css/grid-column)
+                                                                                (css/add-class :shrink))
+                                                                           (dom/button #js {:className "button green"
+                                                                                            :onClick   (fn [e]
+                                                                                                         (let [valid-email? (utils/valid-email? email-input)]
+                                                                                                           (when-not valid-email?
+                                                                                                             (om/update-state! this assoc :client-msg
+                                                                                                                               "Please enter a valid email.")
+                                                                                                             (.preventDefault e))))
+                                                                                            :type      "submit"}
+                                                                                       "Get Early Access")))
+                                                                 (div (->> (css/grid-row)
+                                                                           (css/align :center))
                                                                       (dom/p #js {:className "alert"} client-msg))))}))))))))
 
 (def ->ComingSoon (om/factory ComingSoon))
@@ -423,7 +427,7 @@
                            (utils/valid-email? (:email params)))
                     (om/update-state! this assoc :subscription-pending-id history-id)
                     (let [message (cond (empty? (:email params))
-                                        "Please provide valid email."
+                                        "Please provide an email."
                                         (not (utils/valid-email? (:email params)))
                                         "Please provide a valid email."
                                         (empty? (:name params))
@@ -432,7 +436,7 @@
   (componentDidUpdate [this _ _]
     #?(:cljs
        (let [{:keys [query/message-fn]} (om/props this)
-             {:keys [live-open? subscription-pending-id ]} (om/get-state this)
+             {:keys [live-open? subscription-pending-id]} (om/get-state this)
              message (when subscription-pending-id (message-fn subscription-pending-id 'beta/vendor))]
          (when live-open?
            (.setTimeout js/window (fn [] (om/update-state! this assoc :live-open? false)) 5000))
@@ -468,7 +472,7 @@
                             :show-live? live-open?}
                            {:content-form (div nil
                                                (dom/hr nil)
-                                               (dom/p nil "Are you a maker or artisan in Vancouver? Subscribe to our Beta invite list!")
+                                               (dom/p nil "Are you a maker or artisan in Vancouver? Get in touch with us and sign up for our Beta invite list!")
                                                (dom/form #js {:id "beta-vendor-subscribe-form"}
                                                          (div (->> (css/grid-row)
                                                                    (css/align :middle))
@@ -491,24 +495,28 @@
                                                                    (dom/label nil "Website"))
                                                               (div (->> (css/grid-column))
                                                                    (dom/input #js {:type "text" :placeholder "yourwebsite.com (optional)" :id "beta-SITE"})))
-                                                         (dom/a #js {:className "button green" :onClick #?(:cljs #(.subscribe this) :clj nil)}
-                                                                (if (and (not (and (some? message) (msg/final? message)))
-                                                                         (some? subscription-pending-id))
-                                                                  (dom/i #js {:className "fa fa-spinner fa-spin fa-fw"})
-                                                                  "Subscribe")))
-                                               (dom/p #js {:className (cond
-                                                                        (some? client-msg)
-                                                                        "alert"
-                                                                        (some? message)
-                                                                        (if (msg/success? message)
-                                                                          "success"
-                                                                          "alert"))}
-                                                      (cond
-                                                        (not-empty client-msg)
-                                                        client-msg
-                                                        message
-                                                        (msg/message message)
-                                                        :else
-                                                        "")))}))))))))
+                                                         (div (->> (css/grid-row)
+                                                                   (css/align :center))
+                                                              (dom/a #js {:className "button green" :onClick #?(:cljs #(.subscribe this) :clj nil)}
+                                                                     (if (and (not (and (some? message) (msg/final? message)))
+                                                                              (some? subscription-pending-id))
+                                                                       (dom/i #js {:className "fa fa-spinner fa-spin fa-fw"})
+                                                                       "Invite Me")))
+                                                         (div (->> (css/grid-row)
+                                                                   (css/align :center))
+                                                              (dom/p #js {:className (cond
+                                                                                       (some? client-msg)
+                                                                                       "alert"
+                                                                                       (some? message)
+                                                                                       (if (msg/success? message)
+                                                                                         "success"
+                                                                                         "alert"))}
+                                                                     (cond
+                                                                       (not-empty client-msg)
+                                                                       client-msg
+                                                                       message
+                                                                       (msg/message message)
+                                                                       :else
+                                                                       "")))))}))))))))
 
 (def ->ComingSoonBiz (om/factory ComingSoonBiz))

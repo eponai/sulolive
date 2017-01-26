@@ -2,6 +2,9 @@
 	.content .callout {
 		background: rgba($white, 0.9);
 	}
+
+}
+#sulo-coming-soon, #sulo-sell-coming-soon {
 	p {
 		&.success {
 			text-transform: none;
@@ -12,8 +15,6 @@
 			color: red;
 		}
 	}
-}
-#sulo-coming-soon, #sulo-sell-coming-soon {
 	.info-banner {
 		$bg: lighten(map-get($foundation-palette, warning), 35%);
 		background: rgba($bg, 0.85);
@@ -70,12 +71,12 @@
 			background: transparent;
 		}
 
-		strong {
-			text-transform: uppercase;
-		}
+		// strong {
+		// 	text-transform: uppercase;
+		// }
 
 		form {
-			margin: 2rem auto 1rem auto;
+			margin: 2rem auto 0 auto;
 		}
 		.coming-soon {
 			// text-transform: none;
