@@ -401,11 +401,17 @@
                               :email (.-value (.getElementById js/document "beta-EMAIL"))
                               :site  (.-value (.getElementById js/document "beta-SITE"))}
                       history-id (msg/om-transact! this `[(beta/vendor ~params)])]
-                  (om/update-state! this assoc :subscription-pending-id history-id))))
+                  (if (and (not-empty (:name params)) (not-empty (:email params)))
+                    (om/update-state! this assoc :subscription-pending-id history-id)
+                    (let [message (cond (empty? (:email params))
+                                        "Please provide an email."
+                                        (empty? (:name params))
+                                        "Please provide the name of your brand.")]
+                      (om/update-state! this assoc :client-msg message))))))
   (componentDidUpdate [this _ _]
     #?(:cljs
        (let [{:keys [query/message-fn]} (om/props this)
-             {:keys [live-open? subscription-pending-id]} (om/get-state this)
+             {:keys [live-open? subscription-pending-id ]} (om/get-state this)
              message (when subscription-pending-id (message-fn subscription-pending-id 'beta/vendor))]
          (when live-open?
            (.setTimeout js/window (fn [] (om/update-state! this assoc :live-open? false)) 5000))
@@ -416,7 +422,7 @@
          )))
   (render [this]
     (let [{:keys [proxy/navbar query/message-fn]} (om/props this)
-          {:keys [lock on-login-fn live-open? subscription-pending-id]} (om/get-state this)
+          {:keys [lock on-login-fn live-open? subscription-pending-id client-msg]} (om/get-state this)
           message (when subscription-pending-id (message-fn subscription-pending-id 'beta/vendor))]
 
       (dom/div #js {:id "sulo-sell-coming-soon" :className "sulo-page"}
@@ -463,13 +469,24 @@
                                                                    (dom/label nil "Website"))
                                                               (div (->> (css/grid-column))
                                                                    (dom/input #js {:type "text" :placeholder "yourwebsite.com (optional)" :id "beta-SITE"})))
-                                                         (dom/a #js {:className "button green" :onClick #?(:cljs #(.subscribe this) :clj nil)} "Subscribe"))
-                                               (dom/p #js {:className (when message
-                                                                           (if (msg/success? message)
-                                                                             "success"
-                                                                             "alert"))}
-                                                         (if message
-                                                           (msg/message message)
-                                                           "")))}))))))))
+                                                         (dom/a #js {:className "button green" :onClick #?(:cljs #(.subscribe this) :clj nil)}
+                                                                (if (and (not (and (some? message) (msg/final? message)))
+                                                                         (some? subscription-pending-id))
+                                                                  (dom/i #js {:className "fa fa-spinner fa-spin fa-fw"})
+                                                                  "Subscribe")))
+                                               (dom/p #js {:className (cond
+                                                                        (some? client-msg)
+                                                                        "alert"
+                                                                        (some? message)
+                                                                        (if (msg/success? message)
+                                                                          "success"
+                                                                          "alert"))}
+                                                      (cond
+                                                        (not-empty client-msg)
+                                                        client-msg
+                                                        message
+                                                        (msg/message message)
+                                                        :else
+                                                        "")))}))))))))
 
 (def ->ComingSoonBiz (om/factory ComingSoonBiz))

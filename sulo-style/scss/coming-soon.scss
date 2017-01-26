@@ -15,7 +15,7 @@
 }
 #sulo-coming-soon, #sulo-sell-coming-soon {
 	.info-banner {
-		$bg: lighten(map-get($foundation-palette, warning), 30%);
+		$bg: lighten(map-get($foundation-palette, warning), 35%);
 		background: rgba($bg, 0.85);
 		// color: $white;
 		font-weight: 500;
