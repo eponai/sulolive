@@ -24,6 +24,10 @@
         "profile"              :profile
         "settings"             :settings}])
 
+;; Used on the client side to avoid us using routing for kick-off lab stuff.
+(defn without-coming-soon-route [routes]
+  (update routes 1 dissoc "coming-soon" "sell/coming-soon"))
+
 (def route->component
   {:index        {:component index/Index
                   :factory   index/->Index}

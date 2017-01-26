@@ -42,7 +42,7 @@
         reconciler-atom (atom nil)
         _ (when-let [h @history-atom]
             (pushy/stop! h))
-        match-route (partial bidi/match-route common.routes/routes)
+        match-route (partial bidi/match-route (common.routes/without-coming-soon-route common.routes/routes))
         history (pushy/pushy (update-route-fn reconciler-atom) match-route)
         current-route-fn #(:handler (match-route (pushy/get-token history)))
         conn (utils/create-conn)
