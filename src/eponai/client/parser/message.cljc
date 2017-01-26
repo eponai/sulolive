@@ -100,6 +100,23 @@
                                                   (d/entity this id))))
                          (map entity->MutationMessage))))))
 
+;;;;;;;;;;;;;;;; Developer facing API. ;;;;;;;;;;;;;;;;;;
+;; Usage:
+;; (require '[eponai.client.parser.message :as msg])
+;;
+;; Use `om-transact!` to perform mutation and get history-id.
+;; (let [history-id (msg/om-transact! this '[(mutate/this) :read/that])]
+;;   (om/update-state! this assoc :pending-action {:id history-id :mutation 'mutate/this}))
+;;
+;; Use `find-message` to retrieve your mesage:
+;; (let [{:keys [pending-action]} (om/get-state this)
+;;       message (msg/find-message this (:id pending-action) (:mutation pending-action))]
+;;   (if (msg/final? message)
+;;     ;; Do fancy stuff with either success or error message.
+;;     ;; Message pending, render spinner or something?
+;;    ))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn om-transact!
   "Like om.next/transact! but it returns the history-id generated from the transaction."
   [x tx]
@@ -107,3 +124,12 @@
              (om/reconciler? x))]}
   (om/transact! x tx)
   (parser/reconciler->history-id (cond-> x (om/component? x) (om/get-reconciler))))
+
+(defn find-message
+  "Takes a component, a history id and a mutation-key which was used in the mutation
+  and returns the message or nil if not found."
+  [component history-id mutation-key]
+  {:pre [(om/component? component)]}
+  (let [db (d/db (om/app-state (om/get-reconciler component)))
+        msg-fn (get-message-fn db)]
+    (msg-fn history-id mutation-key)))
