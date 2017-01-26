@@ -8,8 +8,10 @@
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.mailchimp :as mailchimp]
     [eponai.server.http :as http]
-    [taoensso.timbre :refer [debug error info]])
-  (:import (datomic Connection)))
+    [taoensso.timbre :refer [debug error info]]
+    [clojure.data.json :as json])
+  (:import (datomic Connection)
+           (clojure.lang ExceptionInfo)))
 
 ; Actions
 
@@ -62,14 +64,19 @@
     (when stripe
       (db/transact-one conn (datomic.format/stripe-account user-id stripe)))))
 
-(defn newsletter-subscribe [conn email]
-  (let [{:keys [verification] :as account} (datomic.format/user-account-map email)]
-    (mailchimp/subscribe (env :mail-chimp-api-key)
-                         (env :mail-chimp-list-id)
-                         email
-                         (:verification/uuid verification))
-    (info "Newsletter subscribe successful, transacting user into datomic.")
-    (comment
-      ;; TODO: Actually transact this if we want to release jourmoney ^^
-      (transact-map conn account))))
+;(defn newsletter-subscribe [conn email]
+;  (let [{:keys [verification] :as account} (datomic.format/user-account-map email)]
+;    (mailchimp/subscribe (env :mail-chimp-api-key)
+;                         (env :mail-chimp-list-id)
+;                         email
+;                         (:verification/uuid verification))
+;    (info "Newsletter subscribe successful, transacting user into datomic.")
+;    (comment
+;      ;; TODO: Actually transact this if we want to release jourmoney ^^
+;      (transact-map conn account))))
+
+(defn beta-vendor-subscribe [params]
+  (mailchimp/subscribe (env :mail-chimp-api-key)
+                       (env :mail-chimp-list-beta-id)
+                       params))
 

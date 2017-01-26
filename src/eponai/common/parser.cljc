@@ -297,8 +297,8 @@
                                    (and (vector? msg) (= 2 (count msg)))
                                    (->> (zipmap [::success-message
                                                  ::error-message])))]
-                   (assert (and (::error-message msg)
-                                (::success-message msg))
+                   (assert (and (contains? msg ::error-message)
+                                (contains? msg ::success-message))
                            (str "Message for mutation: " k
                                 " did not have both " ::error-message
                                 " and " ::success-message

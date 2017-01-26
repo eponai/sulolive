@@ -8,6 +8,7 @@
     [taoensso.timbre :refer [debug error]]
     [eponai.common.ui.dom :as my-dom :refer [div a]]
     [eponai.common.ui.elements.css :as css]
+    [eponai.client.parser.message :as msg]
     [eponai.client.auth :as auth]
     [eponai.common.ui.elements.menu :as menu]))
 
@@ -29,8 +30,8 @@
     (dom/div #js {:className (str "banner " (name color))}
       (dom/div #js {:className "row"}
         (apply dom/div #js {:className (str "column small-12 medium-8"
-                                        (when (= (name align) "right")
-                                          " medium-offset-4 text-right"))}
+                                            (when (= (name align) "right")
+                                              " medium-offset-4 text-right"))}
                content)))))
 
 (defn content-section [{:keys [href class sizes]} header content footer]
@@ -57,7 +58,7 @@
 (defn collection-element [{:keys [url title square?]}]
   ;; Use the whole thing as hover elem
   (my-dom/a
-    {:href (str "/goods?category=" (.toLowerCase title))
+    {:href    (str "/goods?category=" (.toLowerCase title))
      :classes [:full]}
     (photo/with-overlay
       nil
@@ -86,7 +87,7 @@
                               :store/review-count
                               :store/photo
                               {:item/_store [:db/id :item/img-src]}]}
-     {:query/featured-streams [:db/id :stream/name {:stream/store [:db/id  :store/name]} :stream/viewer-count :stream/img-src]}])
+     {:query/featured-streams [:db/id :stream/name {:stream/store [:db/id :store/name]} :stream/viewer-count :stream/img-src]}])
   Object
   #?(:cljs
      (on-scroll [this]
@@ -119,13 +120,13 @@
   #?(:cljs
      (componentDidMount [this]
                         (debug "Component did mount")
-                       (let [body (.getElementById js/document "sulo-index")
-                             navbar-brand (.getElementById js/document "navbar-brand")
-                             {:keys [lock on-scroll-fn]} (om/get-state this)]
-                         (debug "Scroll body: " body)
-                         ;(set! (.-opacity (.-style navbar-brand)) 0)
-                         ;(.addEventListener body "scroll" on-scroll-fn)
-                         )))
+                        (let [body (.getElementById js/document "sulo-index")
+                              navbar-brand (.getElementById js/document "navbar-brand")
+                              {:keys [lock on-scroll-fn]} (om/get-state this)]
+                          (debug "Scroll body: " body)
+                          ;(set! (.-opacity (.-style navbar-brand)) 0)
+                          ;(.addEventListener body "scroll" on-scroll-fn)
+                          )))
   (render [this]
     (let [{:keys [proxy/navbar query/featured-items query/featured-stores query/featured-streams]} (om/props this)
           {:keys [input-search]} (om/get-state this)]
@@ -221,8 +222,8 @@
                                       (->> (css/grid-column)
                                            (css/add-class :content-item)
                                            (css/grid-column-size {:small 12 :medium 5}))
-                                      (collection-element {:url   "/assets/img/collection-women-2.jpg"
-                                                           :title "Women"
+                                      (collection-element {:url     "/assets/img/collection-women-2.jpg"
+                                                           :title   "Women"
                                                            :square? true})))
                                   (div
                                     (->> (css/grid-row))
@@ -235,8 +236,8 @@
                                       (->> (css/grid-column)
                                            (css/add-class :content-item)
                                            (css/grid-column-size {:small 12 :medium 5}))
-                                      (collection-element {:url   "/assets/img/collection-kids-4.jpg"
-                                                           :title "Kids"
+                                      (collection-element {:url     "/assets/img/collection-kids-4.jpg"
+                                                           :title   "Kids"
                                                            :square? true}))))
                              ;(map (fn [s t]
                              ;       (collection-element {:url (first (:store/featured-img-src s))
@@ -246,7 +247,7 @@
                              ""
                              )
 
-            (content-section {:href  "/goods"}
+            (content-section {:href "/goods"}
                              "New arrivals"
                              (div (->> (css/grid-row)
                                        (css/grid-row-columns {:small 2 :medium 4 :large 5}))
@@ -275,8 +276,8 @@
      (show-login [this]
                  (let [{:keys [lock]} (om/get-state this)]
                    (.show lock (clj->js {:allowedConnections ["Username-Password-Authentication"]
-                                         :auth               {:params       {:state js/window.location.origin
-                                                                             :scope            "openid email"}}})))))
+                                         :auth               {:params {:state js/window.location.origin
+                                                                       :scope "openid email"}}})))))
   #?(:cljs
      (do-login [this auth-res]
                (debug "Auth-result: " auth-res)))
@@ -286,7 +287,7 @@
                           (let [lock (new js/Auth0Lock
                                           "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh"
                                           "sulo.auth0.com"
-                                          (clj->js {:auth {:redirectUrl  (str js/window.location.origin "/auth")}
+                                          (clj->js {:auth               {:redirectUrl (str js/window.location.origin "/auth")}
                                                     :languageDictionary {:title "SULO"}
                                                     :theme              {:primaryColor "#240061"}}))]
                             (.on lock "authenticated" (fn [res]
@@ -349,14 +350,14 @@
 
       (dom/div #js {:id "sulo-coming-soon" :className "sulo-page"}
         (common/page-container
-          {:navbar (om/computed navbar {:coming-soon? true
+          {:navbar (om/computed navbar {:coming-soon?  true
                                         :on-live-click #(om/update-state! this assoc :live-open? true)
-                                        :right-menu (menu/horizontal
-                                                      nil
-                                                      (menu/item-link
-                                                        (css/add-class :contact {:href "/sell/coming-soon"})
-                                                        (my-dom/span (css/show-for {:size :small}) (dom/span nil "Sell on SULO?"))
-                                                        (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
+                                        :right-menu    (menu/horizontal
+                                                         nil
+                                                         (menu/item-link
+                                                           (css/add-class :contact {:href "/sell/coming-soon"})
+                                                           (my-dom/span (css/show-for {:size :small}) (dom/span nil "Sell on SULO?"))
+                                                           (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
 
           (photo/header
             {:src "/assets/img/coming-soon-bg.jpg"}
@@ -386,20 +387,37 @@
 (defui ComingSoonBiz
   static om/IQuery
   (query [this]
-    [{:proxy/navbar (om/get-query nav/Navbar)}])
+    [{:proxy/navbar (om/get-query nav/Navbar)}
+     :query/message-fn])
 
   Object
   #?(:cljs
      (open-live-popup [this]
                       (om/update-state! this assoc :live-open? true)))
+  #?(:cljs
+     (subscribe [this]
+                (let [form (.getElementById js/document "beta-vendor-subscribe-form")
+                      params {:name  (.-value (.getElementById js/document "beta-NAME"))
+                              :email (.-value (.getElementById js/document "beta-EMAIL"))
+                              :site  (.-value (.getElementById js/document "beta-SITE"))}
+                      history-id (msg/om-transact! this `[(beta/vendor ~params)])]
+                  (om/update-state! this assoc :subscription-pending-id history-id))))
   (componentDidUpdate [this _ _]
     #?(:cljs
-       (let [{:keys [live-open?]} (om/get-state this)]
+       (let [{:keys [query/message-fn]} (om/props this)
+             {:keys [live-open? subscription-pending-id]} (om/get-state this)
+             message (when subscription-pending-id (message-fn subscription-pending-id 'beta/vendor))]
          (when live-open?
-           (.setTimeout js/window (fn [] (om/update-state! this assoc :live-open? false)) 5000)))))
+           (.setTimeout js/window (fn [] (om/update-state! this assoc :live-open? false)) 5000))
+         (when message
+           (when (and (msg/final? message) (msg/success? message))
+             (set! js/window.location "http://sell-thankyou.sulo.live")
+             (debug "PENDING MESSAGE")))
+         )))
   (render [this]
-    (let [{:keys [proxy/navbar]} (om/props this)
-          {:keys [lock on-login-fn live-open?]} (om/get-state this)]
+    (let [{:keys [proxy/navbar query/message-fn]} (om/props this)
+          {:keys [lock on-login-fn live-open? subscription-pending-id]} (om/get-state this)
+          message (when subscription-pending-id (message-fn subscription-pending-id 'beta/vendor))]
 
       (dom/div #js {:id "sulo-sell-coming-soon" :className "sulo-page"}
         (common/page-container
@@ -422,29 +440,36 @@
                             :show-live? live-open?}
                            {:content-form (div nil
                                                (dom/hr nil)
-                                               (dom/p nil "Are you a maker or artisan in Vancouver? Get in touch with us!")
-                                               (dom/form nil
+                                               (dom/p nil "Are you a maker or artisan in Vancouver? Subscribe to our Beta invite list!")
+                                               (dom/form #js {:id "beta-vendor-subscribe-form"}
                                                          (div (->> (css/grid-row)
                                                                    (css/align :middle))
                                                               (div (->> (css/grid-column)
                                                                         (css/grid-column-size {:small 12 :medium 2}))
                                                                    (dom/label nil "Name"))
                                                               (div (->> (css/grid-column))
-                                                                   (dom/input #js {:type "email" :placeholder "Company Name"})))
-                                                         (div (->> (css/grid-row)
-                                                                   (css/align :middle))
-                                                              (div (->> (css/grid-column)
-                                                                        (css/grid-column-size {:small 12 :medium 2}))
-                                                                   (dom/label nil "Website"))
-                                                              (div (->> (css/grid-column))
-                                                                   (dom/input #js {:type "text" :placeholder "yourwebsite.com"})))
+                                                                   (dom/input #js {:type "email" :placeholder "Your Brand" :id "beta-NAME"})))
                                                          (div (->> (css/grid-row)
                                                                    (css/align :middle))
                                                               (div (->> (css/grid-column)
                                                                         (css/grid-column-size {:small 12 :medium 2}))
                                                                    (dom/label nil "Email"))
                                                               (div (->> (css/grid-column))
-                                                                   (dom/input #js {:type "email" :placeholder "you@email.com"})))
-                                                         (dom/button #js {:className "button green" :type "submit"} "Tell Me More")))}))))))))
+                                                                   (dom/input #js {:type "email" :placeholder "youremail@example.com" :id "beta-EMAIL"})))
+                                                         (div (->> (css/grid-row)
+                                                                   (css/align :middle))
+                                                              (div (->> (css/grid-column)
+                                                                        (css/grid-column-size {:small 12 :medium 2}))
+                                                                   (dom/label nil "Website"))
+                                                              (div (->> (css/grid-column))
+                                                                   (dom/input #js {:type "text" :placeholder "yourwebsite.com (optional)" :id "beta-SITE"})))
+                                                         (dom/a #js {:className "button green" :onClick #?(:cljs #(.subscribe this) :clj nil)} "Subscribe"))
+                                               (dom/p #js {:className (when message
+                                                                           (if (msg/success? message)
+                                                                             "success"
+                                                                             "alert"))}
+                                                         (if message
+                                                           (msg/message message)
+                                                           "")))}))))))))
 
 (def ->ComingSoonBiz (om/factory ComingSoonBiz))

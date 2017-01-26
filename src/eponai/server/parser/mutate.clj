@@ -1,8 +1,10 @@
 (ns eponai.server.parser.mutate
   (:require
     [eponai.common.database :as db]
+    [eponai.server.api :as api]
     [eponai.common.parser :as parser :refer [server-mutate server-message]]
-    [taoensso.timbre :refer [debug info]]))
+    [taoensso.timbre :refer [debug info]]
+    [clojure.data.json :as json]))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -28,3 +30,11 @@
   {:action (fn []
              (let [cart (db/one-with (db/db state) {:where '[[?e :cart/items]]})]
                (db/transact-one state [:db/add cart :cart/items (:db/id item)])))})
+
+(defmutation beta/vendor
+  [{:keys [state ::parser/return ::parser/exception auth]} _ params]
+  {:success (:detail return "")
+   :error   (if exception (:detail (json/read-str (:body (ex-data exception)) :key-fn keyword) "") "")}
+  {:action (fn []
+             (let [ret (api/beta-vendor-subscribe params)]
+               ret))})

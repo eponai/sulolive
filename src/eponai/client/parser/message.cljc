@@ -21,7 +21,7 @@
   (message [this] "Returns the message")
   (final? [this] "true if the mutation message was returned from the server")
   (pending? [this] "true if we're still waiting for a server response.")
-  (success? [this] "true if the server mutation was successful."))
+  (success? [this] "true if the server mutation was successful. False is error occured."))
 
 (defn mutation-message? [x]
   (and (satisfies? IMutationMessage x)
@@ -32,7 +32,7 @@
   (message [_] message)
   (final? [_] (contains? #{::parser/success-message ::parser/error-message} message-type))
   (pending? [this] (not (final? this)))
-  (success? [_] (::parser/success-message message-type))
+  (success? [_] (= ::parser/success-message message-type))
   Object
   (toString [x]
     (str "[MutationMessage " {:message  (message x)

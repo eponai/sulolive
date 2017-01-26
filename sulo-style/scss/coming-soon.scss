@@ -2,6 +2,16 @@
 	.content .callout {
 		background: rgba($white, 0.9);
 	}
+	p {
+		&.success {
+			text-transform: none;
+			color: green;
+		}
+		&.alert {
+			text-transform: none;
+			color: red;
+		}
+	}
 }
 #sulo-coming-soon, #sulo-sell-coming-soon {
 	.info-banner {
@@ -36,6 +46,7 @@
 			position: relative;
 			.button {
 				font-weight: bold;
+				text-transform: none;
 			}
 		}
 	}

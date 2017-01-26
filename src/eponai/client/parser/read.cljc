@@ -8,6 +8,7 @@
     [eponai.common.parser.read :as common.read]
     [om.next.impl.parser :as om.parser]
     [eponai.client.routes :as routes]
+    [eponai.client.parser.message :as msg]
     [eponai.common :as c]
     #?(:cljs
        [cljs.reader])
@@ -154,3 +155,7 @@
 (defmethod client-read :query/business-model
   [e k p]
   {:value business.budget/world})
+
+(defmethod client-read :query/message-fn
+  [{:keys [db]} _ _]
+  {:value (msg/get-message-fn db)})

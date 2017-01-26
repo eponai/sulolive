@@ -54,3 +54,9 @@
                                    (if (seq route-params)
                                      [:db/add id :ui.singleton.routes/route-params route-params]
                                      [:db.fn/retractAttribute id :ui.singleton.routes/route-params])])))})
+
+(defmethod client-mutate 'beta/vendor
+  [{:keys [target]} _ p]
+  (debug "beta/vendor with params: " p)
+  (if target
+    {:remote true}))
