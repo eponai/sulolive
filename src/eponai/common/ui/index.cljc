@@ -322,8 +322,7 @@
              content-form
              ;(dom/div #js {:className "callout transparent"})
              (dom/h2 #js {:className "coming-soon"} "Coming Soon, Summer '17")
-             ;(dom/a #js {:onClick on-login-fn :className "enter"} (dom/strong nil "Already a member? Sign In >>"))
-             )))))
+             (dom/a #js {:onClick on-login-fn :className "enter"} (dom/strong nil "Already a member? Sign In >>")))))))
 (def ->ComingSoonContent (om/factory ComingSoonContent))
 
 (defn callout-banner [open?]
@@ -378,28 +377,14 @@
               (om/computed {}
                            {:content-form (dom/div
                                             nil
+                                            (dom/hr nil)
+                                            (dom/p nil "Are you loving local shopping in Vancouver? Get early access and be part of creating an interactive community with makers online!")
                                             (dom/form
                                               nil
                                               (div (->> (css/grid-row)
-                                                        (css/align :center))
-                                                   (div (->> (css/grid-column)
-                                                             (css/grid-column-size {:small 12 :medium 8 :large 8}))
-                                                        (dom/input #js {:type        "email"
-                                                                        :placeholder "you@email.com"
-                                                                        :id          "coming-soon-email-input"}))
-                                                   (div (->> (css/grid-column)
-                                                             (css/add-class :shrink))
-                                                        (dom/button #js {:className "button green"
-                                                                         :onClick   #?(:clj  identity
-                                                                                       :cljs (fn [e]
-                                                                                               (let [input (.-value (.getElementById js/document "coming-soon-email-input"))
-                                                                                                     valid-email? (utils/valid-email? input)]
-                                                                                                 (when-not valid-email?
-                                                                                                   (om/update-state! this assoc :client-msg
-                                                                                                                     "Please enter a valid email.")
-                                                                                                   (.preventDefault e)))))
-                                                                         :type      "submit"}
-                                                                    "Get Early Access")))
+                                                        (css/align :middle))
+                                                   (div (->> (css/grid-column))
+                                                        (dom/input #js {:type "email" :placeholder "youremail@example.com" :id "coming-soon-email-input"})))
                                               (div (->> (css/grid-row)
                                                         (css/align :center))
                                                    (dom/p nil (dom/small nil "By signing up you accept our "
@@ -407,6 +392,26 @@
                                                                                      :className "iubenda-nostyle no-brand iubenda-embed"
                                                                                      :title     "Privacy Policy"}
                                                                                 "Privacy Policy"))))
+                                              (div (->> (css/grid-row)
+                                                        (css/align :center))
+                                                   ;(div (->> (css/grid-column)
+                                                   ;          (css/grid-column-size {:small 12 :medium 8 :large 8}))
+                                                   ;     (dom/input #js {:type        "email"
+                                                   ;                     :placeholder "you@email.com"
+                                                   ;                     :id          "coming-soon-email-input"}))
+                                                   ;(div (->> (css/grid-column)
+                                                   ;          (css/add-class :shrink)))
+                                                   (dom/button #js {:className "button green"
+                                                                    :onClick   #?(:clj  identity
+                                                                                  :cljs (fn [e]
+                                                                                          (let [input (.-value (.getElementById js/document "coming-soon-email-input"))
+                                                                                                valid-email? (utils/valid-email? input)]
+                                                                                            (when-not valid-email?
+                                                                                              (om/update-state! this assoc :client-msg
+                                                                                                                "Please enter a valid email.")
+                                                                                              (.preventDefault e)))))
+                                                                    :type      "submit"}
+                                                               "Get Early Access"))
                                               (div (->> (css/grid-row)
                                                         (css/align :center))
                                                    (dom/p #js {:className "alert"} client-msg))))}))))))))
