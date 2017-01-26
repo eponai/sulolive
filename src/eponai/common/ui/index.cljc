@@ -364,7 +364,7 @@
                                                            (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
 
           (photo/header
-            {:src "/assets/img/coming-soon-bg.jpg"}
+            {:src "https://s3.amazonaws.com/sulo-images/site/coming-soon-bg.jpg"}
 
             (callout-banner live-open?)
             ;(div (->> (css/grid-row)
@@ -375,7 +375,7 @@
             ;          (dom/strong nil "Coming Soon, Spring '17")))
 
             (->ComingSoonContent
-              (om/computed {:header-src "/assets/img/coming-soon-bg.jpg"}
+              (om/computed {}
                            {:content-form (dom/div
                                             nil
                                             (dom/form
@@ -400,6 +400,13 @@
                                                                                                    (.preventDefault e)))))
                                                                          :type      "submit"}
                                                                     "Get Early Access")))
+                                              (div (->> (css/grid-row)
+                                                        (css/align :center))
+                                                   (dom/p nil (dom/small nil "By signing up you accept our "
+                                                                         (dom/a #js {:href      "//www.iubenda.com/privacy-policy/8010910"
+                                                                                     :className "iubenda-nostyle no-brand iubenda-embed"
+                                                                                     :title     "Privacy Policy"}
+                                                                                "Privacy Policy"))))
                                               (div (->> (css/grid-row)
                                                         (css/align :center))
                                                    (dom/p #js {:className "alert"} client-msg))))}))))))))
@@ -464,13 +471,12 @@
                                                            (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
           (debug "Live opene: " live-open?)
           (photo/header
-            {:src "/assets/img/coming-soon-sell-bg.jpg"}
+            {:src "https://s3.amazonaws.com/sulo-images/site/coming-soon-sell-bg.jpg"}
 
             (callout-banner live-open?)
             ;(dom/div #js {:className "callout alert"} "Sign up to check out the LIVE market when it opens!")
             (->ComingSoonContent
-              (om/computed {:header-src "/assets/img/coming-soon-sell-bg.jpg"
-                            :show-live? live-open?}
+              (om/computed {}
                            {:content-form (div nil
                                                (dom/hr nil)
                                                (dom/p nil "Are you a maker or artisan in Vancouver? Get in touch with us and sign up for our Beta invite list!")
@@ -496,6 +502,13 @@
                                                                    (dom/label nil "Website"))
                                                               (div (->> (css/grid-column))
                                                                    (dom/input #js {:type "text" :placeholder "yourwebsite.com (optional)" :id "beta-SITE"})))
+                                                         (div (->> (css/grid-row)
+                                                                   (css/align :center))
+                                                              (dom/p nil (dom/small nil "By signing up you accept our "
+                                                                                    (dom/a #js {:href      "//www.iubenda.com/privacy-policy/8010910"
+                                                                                                :className "iubenda-nostyle no-brand iubenda-embed"
+                                                                                                :title     "Privacy Policy"}
+                                                                                           "Privacy Policy"))))
                                                          (div (->> (css/grid-row)
                                                                    (css/align :center))
                                                               (dom/a #js {:className "button green" :onClick #?(:cljs #(.subscribe this) :clj nil)}

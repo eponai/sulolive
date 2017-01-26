@@ -22,7 +22,7 @@
 		font-weight: 500;
 		border: none;
 		box-shadow: 0px 1px 2px 0 rgba($black, 0.1);
-		transition: height 0.25s ease-in-out, visibility 0s linear 0.25s, opacity 0.25s linear;
+		transition: visibility 0s linear 0.25s, opacity 0.25s linear;
 		&.invisible {
 			opacity: 0;
 		}
@@ -56,6 +56,12 @@
 	}
 
 	.content .callout {
+		small {
+			text-transform: none;
+			a {
+				text-decoration: underline;
+			}
+		}
 		hr {
 			margin: 2rem 0;
 		}

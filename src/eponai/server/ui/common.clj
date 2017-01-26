@@ -25,8 +25,9 @@
      :type "hidden"
      :value *anti-forgery-token*}))
 
+
 (defn iubenda-code []
-  ["(function (w,d) {var loader = function () {var s = d.createElement(\"script\"), tag = d.getElementsByTagName(\"script\")[0]; s.src = \"//cdn.iubenda.com/iubenda.js\"; tag.parentNode.insertBefore(s,tag);}; if(w.addEventListener){w.addEventListener(\"load\", loader, false);}else if(w.attachEvent){w.attachEvent(\"onload\", loader);}else{w.onload = loader;}})(window, document);"])
+  (inline-javascript ["(function (w,d) {var loader = function () {var s = d.createElement(\"script\"), tag = d.getElementsByTagName(\"script\")[0]; s.src = \"//cdn.iubenda.com/iubenda.js\"; tag.parentNode.insertBefore(s,tag);}; if(w.addEventListener){w.addEventListener(\"load\", loader, false);}else if(w.attachEvent){w.attachEvent(\"onload\", loader);}else{w.onload = loader;}})(window, document);"]))
 
 ;; Facebook login init code
 
@@ -102,6 +103,7 @@
 
    (when release?
      (mixpanel))
+   (iubenda-code)
 
    ;; Favicon
    (when (not exclude-icons?)
