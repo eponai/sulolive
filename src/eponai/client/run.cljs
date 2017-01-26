@@ -43,7 +43,8 @@
         _ (when-let [h @history-atom]
             (pushy/stop! h))
         match-route (partial bidi/match-route (common.routes/without-coming-soon-route common.routes/routes))
-        history (pushy/pushy (update-route-fn reconciler-atom) match-route)
+        update-route! (update-route-fn reconciler-atom)
+        history (pushy/pushy update-route! match-route)
         current-route-fn #(:handler (match-route (pushy/get-token history)))
         conn (utils/create-conn)
         parser (parser/client-parser
@@ -79,5 +80,10 @@
     (reset! history-atom history)
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
-      (pushy/start! history))
+      (pushy/start! history)
+      ;; For landing page stuff, which we don't want routing for right now.
+      (let [match-all-routes (partial bidi/match-route common.routes/routes)
+            match (match-all-routes (pushy/get-token history))]
+        (when (contains? #{:coming-soon :sell-soon} (:handler match))
+          (update-route! match))))
     (utils/init-state! reconciler remotes send-fn parser router/Router)))
