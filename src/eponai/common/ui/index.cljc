@@ -284,7 +284,7 @@
              content-form
              ;(dom/div #js {:className "callout transparent"})
              (dom/h2 #js {:className "coming-soon"} "Coming Soon, Summer '17")
-             (dom/a #js {:onClick on-login-fn :className "enter"} (dom/strong nil "Already a member? Sign In >>")))))))
+             (dom/a #js {:onClick on-login-fn :className "enter"} (dom/strong nil "Already a member? Sign in!")))))))
 (def ->ComingSoonContent (om/factory ComingSoonContent))
 
 (defn callout-banner [open?]
@@ -325,7 +325,7 @@
                                                            (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
 
           (photo/header
-            {:src "https://s3.amazonaws.com/sulo-images/site/coming-soon-bg.jpg"}
+            {:src "https://s3.amazonaws.com/sulo-images/site/home-header-bg.jpg"}
 
             (callout-banner live-open?)
             (->ComingSoonContent
