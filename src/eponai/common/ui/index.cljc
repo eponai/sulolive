@@ -77,59 +77,18 @@
      {:query/featured-items [:db/id
                              :item/name
                              :item/price
-                             :item/id
-                             :item/img-src
+                             {:item/photos [:photo/path]}
                              {:item/store [:store/name]}]}
      {:query/featured-stores [:db/id
                               :store/name
                               :store/featured
                               :store/featured-img-src
-                              :store/rating
-                              :store/review-count
-                              :store/photo
-                              {:item/_store [:db/id :item/img-src]}]}
-     {:query/featured-streams [:db/id :stream/name {:stream/store [:db/id :store/name]} :stream/viewer-count :stream/img-src]}])
+                              {:store/photo [:photo/path]}
+                              {:item/_store [:db/id {:item/photos [:photo/path]}]}]}
+     {:query/featured-streams [:db/id :stream/name {:stream/store [:db/id :store/name {:store/photo [:photo/path]}]}]}])
   Object
-  #?(:cljs
-     (on-scroll [this]
-                (let [scroll-limit 145
-                      font-difference 2
-                      header (.getElementById js/document "header-content")
-                      navbar-brand (.getElementById js/document "navbar-brand")
-                      body (.getElementById js/document "sulo-index")
-                      quote (/ font-difference scroll-limit)
-                      scroll-value (.-scrollTop body)]
-
-                  (if (> scroll-limit scroll-value)
-                    (do
-                      (set! (.-fontSize (.-style header)) (str (inc (* (- scroll-limit scroll-value) quote)) "rem"))
-                      (set! (.-opacity (.-style header)) (* (- scroll-limit scroll-value) quote))
-                      (set! (.-opacity (.-style navbar-brand)) (/ 1 (- scroll-limit scroll-value)))
-                      )
-                    (do
-                      (set! (.-opacity (.-style header)) 0)
-                      (set! (.-opacity (.-style navbar-brand)) 1)))
-                  )))
-  (initLocalState [this]
-    {:on-scroll-fn #(.on-scroll this)})
-  #?(:cljs
-     (componentWillUnmount [this]
-                           (let [body (.getElementById js/document "sulo-index")
-                                 {:keys [lock on-scroll-fn]} (om/get-state this)]
-                             ;(.removeEventListener body "scroll" on-scroll-fn)
-                             )))
-  #?(:cljs
-     (componentDidMount [this]
-                        (debug "Component did mount")
-                        (let [body (.getElementById js/document "sulo-index")
-                              navbar-brand (.getElementById js/document "navbar-brand")
-                              {:keys [lock on-scroll-fn]} (om/get-state this)]
-                          (debug "Scroll body: " body)
-                          ;(set! (.-opacity (.-style navbar-brand)) 0)
-                          ;(.addEventListener body "scroll" on-scroll-fn)
-                          )))
   (render [this]
-    (let [{:keys [proxy/navbar query/featured-items query/featured-stores query/featured-streams]} (om/props this)
+    (let [{:keys [proxy/navbar query/featured-items query/featured-streams]} (om/props this)
           {:keys [input-search]} (om/get-state this)]
       (dom/div #js {:id "sulo-index" :className "sulo-page"}
         (common/page-container

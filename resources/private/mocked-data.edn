@@ -1,171 +1,199 @@
-{:streams [{:stream/name         "Handcrafted jewlery"
-            :stream/store        #db/id[:db.part/user -100]
-            :stream/viewer-count 8
-            :stream/img-src      "https://img1.etsystatic.com/151/0/6380862/isla_500x500.24111301_nvjpi6zo.jpg"}
-           {:stream/name         "What's up with thread count"
-            :stream/store        #db/id[:db.part/user -1]
-            :stream/viewer-count 13
-            :stream/img-src      "https://img0.etsystatic.com/125/0/11651126/isla_500x500.17338368_6u0a6c4s.jpg"}
-           {:stream/name         "Old looking leather, how?"
-            :stream/store        #db/id[:db.part/user -2]
-            :stream/viewer-count 43
-            :stream/img-src      "https://img1.etsystatic.com/121/0/6396625/isla_500x500.17289961_hkw1djlp.jpg"}
-           {:stream/name         "Talking wedding bands"
-            :stream/store        #db/id[:db.part/user -3]
-            :stream/viewer-count 3
-            :stream/img-src      "https://img0.etsystatic.com/139/0/5243597/isla_500x500.22177516_ath1ugrh.jpg"}]
+{:photos  [{:db/id      #db/id[:db.part/user -10]
+            :photo/path "https://img1.etsystatic.com/151/0/6380862/isla_500x500.24111301_nvjpi6zo.jpg"}
+           {:db/id      #db/id[:db.part/user -12]
+            :photo/path "https://img0.etsystatic.com/125/0/11651126/isla_500x500.17338368_6u0a6c4s.jpg"}
+           {:db/id      #db/id[:db.part/user -13]
+            :photo/path "https://img0.etsystatic.com/151/0/11651126/isbl_3360x840.22956500_1bj341c6.jpg"}
+           {:db/id      #db/id[:db.part/user -14]
+            :photo/path "https://img1.etsystatic.com/126/0/6396625/iusb_760x100.17290451_heo8.jpg"}
+           {:db/id      #db/id[:db.part/user -15]
+            :photo/path "https://img1.etsystatic.com/121/0/6396625/isla_500x500.17289961_hkw1djlp.jpg"}
+           {:db/id      #db/id[:db.part/user -15]
+            :photo/path "https://img1.etsystatic.com/121/0/6396625/isla_500x500.17289961_hkw1djlp.jpg"}
+           {:db/id      #db/id[:db.part/user -16]
+            :photo/path "https://img1.etsystatic.com/133/0/5243597/isbl_3360x840.20468865_f7kumdbt.jpg"}
+           {:db/id      #db/id[:db.part/user -17]
+            :photo/path "https://img0.etsystatic.com/139/0/5243597/isla_500x500.22177516_ath1ugrh.jpg"}
+           {:db/id      #db/id[:db.part/user -18]
+            :photo/path "https://img1.etsystatic.com/142/0/10419159/isbl_3360x840.23915763_oyuug7tu.jpg"}
+           {:db/id      #db/id[:db.part/user -19]
+            :photo/path "https://img0.etsystatic.com/070/0/10419159/isla_500x500.15898658_8drjcd1j.jpg"}
 
- :stores  [{:db/id              #db/id[:db.part/user -100]
-            :store/name         "ikcha"
-            :store/review-count 13
-            :store/rating       4.5M
-            :store/photo        "https://img1.etsystatic.com/151/0/6380862/isla_500x500.24111301_nvjpi6zo.jpg"}
-           {:db/id              #db/id[:db.part/user -1]
-            :store/name         "MagicLinen"
-            :store/rating       5M
-            :store/cover        "https://img0.etsystatic.com/151/0/11651126/isbl_3360x840.22956500_1bj341c6.jpg"
-            :store/photo        "https://img0.etsystatic.com/125/0/11651126/isla_500x500.17338368_6u0a6c4s.jpg"
-            :store/review-count 8}
-           {:db/id              #db/id[:db.part/user -2]
-            :store/name         "thislovesthat"
-            :store/cover        "https://img1.etsystatic.com/126/0/6396625/iusb_760x100.17290451_heo8.jpg"
-            :store/review-count 43
-            :store/rating       3.5M
-            :store/photo        "https://img1.etsystatic.com/121/0/6396625/isla_500x500.17289961_hkw1djlp.jpg"}
-           {:db/id              #db/id[:db.part/user -3]
-            :store/name         "Nafsika"
-            :store/cover        "https://img1.etsystatic.com/133/0/5243597/isbl_3360x840.20468865_f7kumdbt.jpg"
-            :store/review-count 22
-            :store/rating       4.5M
-            :store/photo        "https://img0.etsystatic.com/139/0/5243597/isla_500x500.22177516_ath1ugrh.jpg"}
-           {:db/id              #db/id[:db.part/user -4]
-            :store/name         "FlowerRainbowNJ"
-            :store/cover        "https://img1.etsystatic.com/142/0/10419159/isbl_3360x840.23915763_oyuug7tu.jpg"
-            :store/review-count 132
-            :store/rating       4.5M
-            :store/photo        "https://img0.etsystatic.com/070/0/10419159/isla_500x500.15898658_8drjcd1j.jpg"}]
- :items   [{:item/name    "Linen duvet cover. Woodrose colour. Linen bedding. Stonewashed linen duvet cover. Taupe bedding. Linen bedding queen, king, double, twin."
-            :item/price   34.00M
-            :item/img-src "https://img1.etsystatic.com/141/1/11651126/il_570xN.1142044641_1j6c.jpg"
-            :item/store   #db/id[:db.part/user -1]
-            :item/id      "10"
+           {:db/id      #db/id[:db.part/user -20]
+            :photo/path "https://img1.etsystatic.com/141/1/11651126/il_570xN.1142044641_1j6c.jpg"}
+           {:db/id      #db/id[:db.part/user -21]
+            :photo/path "https://img0.etsystatic.com/137/0/11651126/il_570xN.1003284712_ip5e.jpg"}
+           {:db/id      #db/id[:db.part/user -22]
+            :photo/path "https://img0.etsystatic.com/133/0/11651126/il_570xN.915745904_opjr.jpg"}
+           {:db/id      #db/id[:db.part/user -23]
+            :photo/path "https://img1.etsystatic.com/126/0/11651126/il_570xN.1098073811_5ca0.jpg"}
+           {:db/id      #db/id[:db.part/user -24]
+            :photo/path "https://img1.etsystatic.com/106/1/6380862/il_570xN.883668651_pp7m.jpg"}
+           {:db/id      #db/id[:db.part/user -25]
+            :photo/path "https://img1.etsystatic.com/178/0/6380862/il_570xN.1122315115_m1kt.jpg"}
+           {:db/id      #db/id[:db.part/user -26]
+            :photo/path "https://img1.etsystatic.com/124/0/6380862/il_570xN.883522367_34xx.jpg"}
+           {:db/id      #db/id[:db.part/user -27]
+            :photo/path "https://img0.etsystatic.com/130/1/6380862/il_570xN.883902058_swjc.jpg"}
+           {:db/id      #db/id[:db.part/user -28]
+            :photo/path "https://img1.etsystatic.com/030/0/6396625/il_570xN.635631611_4c3s.jpg"}
+           {:db/id      #db/id[:db.part/user -29]
+            :photo/path "https://img0.etsystatic.com/031/0/6396625/il_570xN.581066412_s3ff.jpg"}
+
+           {:db/id      #db/id[:db.part/user -30]
+            :photo/path "https://img0.etsystatic.com/045/1/6396625/il_570xN.723123424_ht5e.jpg"}
+           {:db/id      #db/id[:db.part/user -31]
+            :photo/path "https://img1.etsystatic.com/033/0/6396625/il_570xN.523107737_juvf.jpg"}
+           {:db/id      #db/id[:db.part/user -32]
+            :photo/path "https://img0.etsystatic.com/036/1/5243597/il_570xN.654738182_2k08.jpg"}
+           {:db/id      #db/id[:db.part/user -33]
+            :photo/path "https://img0.etsystatic.com/024/0/5243597/il_570xN.519102094_4gu0.jpg"}
+           {:db/id      #db/id[:db.part/user -34]
+            :photo/path "https://img0.etsystatic.com/140/1/5243597/il_570xN.964805038_b4eq.jpg"}
+           {:db/id      #db/id[:db.part/user -35]
+            :photo/path "https://img0.etsystatic.com/139/3/5243597/il_570xN.931188156_qhqe.jpg"}
+           {:db/id      #db/id[:db.part/user -36]
+            :photo/path "https://img1.etsystatic.com/162/0/10419159/il_570xN.1142775003_oe2z.jpg"}
+           {:db/id      #db/id[:db.part/user -37]
+            :photo/path "https://img1.etsystatic.com/150/1/10419159/il_570xN.1142779459_chfq.jpg"}
+           {:db/id      #db/id[:db.part/user -38]
+            :photo/path "https://img0.etsystatic.com/157/1/10419159/il_570xN.1096187952_ecv9.jpg"}
+           {:db/id      #db/id[:db.part/user -39]
+            :photo/path "https://img0.etsystatic.com/141/1/10419159/il_570xN.1096187360_ohgo.jpg"}]
+
+ :stores  [{:db/id       #db/id[:db.part/user -1]
+            :store/name  "ikcha"
+            :store/photo #db/id[:db.part/user -10]}
+           {:db/id       #db/id[:db.part/user -2]
+            :store/name  "MagicLinen"
+            :store/cover #db/id[:db.part/user -13]
+            :store/photo #db/id[:db.part/user -12]}
+
+           {:db/id       #db/id[:db.part/user -3]
+            :store/name  "thislovesthat"
+            :store/cover #db/id[:db.part/user -14]
+            :store/photo #db/id[:db.part/user -15]}
+           {:db/id       #db/id[:db.part/user -4]
+            :store/name  "Nafsika"
+            :store/cover #db/id[:db.part/user -16]
+            :store/photo #db/id[:db.part/user -17]}
+           {:db/id       #db/id[:db.part/user -5]
+            :store/name  "FlowerRainbowNJ"
+            :store/cover #db/id[:db.part/user -18]
+            :store/photo #db/id[:db.part/user -19]}]
+
+ :streams [{:stream/name  "Handcrafted jewlery"
+            :stream/store #db/id[:db.part/user -1]}
+           {:stream/name  "What's up with thread count"
+            :stream/store #db/id[:db.part/user -2]}
+           {:stream/name  "Old looking leather, how?"
+            :stream/store #db/id[:db.part/user -3]}
+           {:stream/name  "Talking wedding bands"
+            :stream/store #db/id[:db.part/user -4]}]
+
+ :items   [{:item/name     "Linen duvet cover - Woodrose"
+            :item/price    34.00M
+            :item/photos   [#db/id[:db.part/user -20]]
+            :item/store    #db/id[:db.part/user -2]
             :item/category "home"}
-           {:item/name    "Linen pillowcases with ribbons. Bow tie linen pillow cover. Natural linen pillow case. Pillow cases with ties. Romantic pillow cases"
-            :item/price   52.00M
-            :item/store   #db/id[:db.part/user -1]
-            :item/img-src "https://img0.etsystatic.com/137/0/11651126/il_570xN.1003284712_ip5e.jpg"
-            :item/id      "11"
+           {:item/name     "Linen pillowcases with ribbons"
+            :item/price    52.00M
+            :item/store    #db/id[:db.part/user -2]
+            :item/photos   [#db/id[:db.part/user -21]]
             :item/category "home"}
-           {:item/name    "Stone washed linen duvet cover, pleated. White linen bedding. Linen quilt cover. White duvet cover. Luxury, original, modern, handmade"
-            :item/price   134.00M
-            :item/store   #db/id[:db.part/user -1]
-            :item/img-src "https://img0.etsystatic.com/133/0/11651126/il_570xN.915745904_opjr.jpg"
-            :item/id      "12"
+           {:item/name     "Stone washed linen duvet cover"
+            :item/price    134.00M
+            :item/store    #db/id[:db.part/user -2]
+            :item/photos   [#db/id[:db.part/user -22]]
             :item/category "home"}
-           {:item/name    "Linen fitted sheet. Aquamarine colour. Blue linen fitted sheet. Natural bed sheet. Softened. Green blue stone washed linen bed sheet"
-            :item/price   34.00M
-            :item/store   #db/id[:db.part/user -1]
-            :item/img-src "https://img1.etsystatic.com/126/0/11651126/il_570xN.1098073811_5ca0.jpg"
-            :item/id      "13"
+           {:item/name     "Linen fitted sheet - Aquamarine"
+            :item/price    34.00M
+            :item/store    #db/id[:db.part/user -2]
+            :item/photos   [#db/id[:db.part/user -23]]
             :item/category "home"}
-           {:item/name    "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
-            :item/price   318.00M
-            :item/store   #db/id[:db.part/user -100]
-            :item/img-src "https://img1.etsystatic.com/106/1/6380862/il_570xN.883668651_pp7m.jpg"
-            :item/id      "00"
+           {:item/name     "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
+            :item/price    318.00M
+            :item/store    #db/id[:db.part/user -1]
+            :item/photos   [#db/id[:db.part/user -24]]
             :item/category "accessories"}
-           {:item/name    "Emerald silver choker"
-            :item/price   219.00M
-            :item/store   #db/id[:db.part/user -100]
-            :item/img-src "https://img1.etsystatic.com/178/0/6380862/il_570xN.1122315115_m1kt.jpg"
-            :item/id      "01"
+           {:item/name     "Emerald silver choker"
+            :item/price    219.00M
+            :item/store    #db/id[:db.part/user -1]
+            :item/photos   [#db/id[:db.part/user -25]]
             :item/category "accessories"}
-           {:item/name    "Ear Floral Cuff in Sterling Silver"
-            :item/price   68.00M
-            :item/store   #db/id[:db.part/user -100]
-            :item/img-src "https://img1.etsystatic.com/124/0/6380862/il_570xN.883522367_34xx.jpg"
-            :item/id      "02"
+           {:item/name     "Ear Floral Cuff in Sterling Silver"
+            :item/price    68.00M
+            :item/store    #db/id[:db.part/user -1]
+            :item/photos   [#db/id[:db.part/user -26]]
             :item/category "accessories"}
-           {:item/name    "Sun Stone geometrical Sterling Silver Ring"
-            :item/price   211.00M
-            :item/store   #db/id[:db.part/user -100]
-            :item/img-src "https://img0.etsystatic.com/130/1/6380862/il_570xN.883902058_swjc.jpg"
-            :item/id      "03"
+           {:item/name     "Sun Stone geometrical Sterling Silver Ring"
+            :item/price    211.00M
+            :item/store    #db/id[:db.part/user -1]
+            :item/photos   [#db/id[:db.part/user -27]]
             :item/category "accessories"}
-           {:item/name    "Glitter & Navy Blue Envelope Clutch"
-            :item/img-src "https://img1.etsystatic.com/030/0/6396625/il_570xN.635631611_4c3s.jpg"
-            :item/price   34.00M
-            :item/store   #db/id[:db.part/user -2]
-            :item/id      "20"
+           {:item/name     "Glitter & Navy Blue Envelope Clutch"
+            :item/photos   [#db/id[:db.part/user -28]]
+            :item/price    34.00M
+            :item/store    #db/id[:db.part/user -3]
             :item/category "accessories"}
-           {:item/name    "Mint Green & Gold Scallop Canvas Clutch"
-            :item/img-src "https://img0.etsystatic.com/031/0/6396625/il_570xN.581066412_s3ff.jpg"
-            :item/price   52.00M
-            :item/store   #db/id[:db.part/user -2]
-            :item/id      "21"
+           {:item/name     "Mint Green & Gold Scallop Canvas Clutch"
+            :item/photos   [#db/id[:db.part/user -29]]
+            :item/price    52.00M
+            :item/store    #db/id[:db.part/user -3]
             :item/category "accessories"}
-           {:item/name    "Modern Geometric Wood Bead Necklace"
-            :item/price   134.00M
-            :item/store   #db/id[:db.part/user -2]
-            :item/img-src "https://img0.etsystatic.com/045/1/6396625/il_570xN.723123424_ht5e.jpg"
-            :item/id      "22"
+           {:item/name     "Modern Geometric Wood Bead Necklace"
+            :item/price    134.00M
+            :item/store    #db/id[:db.part/user -3]
+            :item/photos   [#db/id[:db.part/user -30]]
             :item/category "accessories"}
-           {:item/name    "Modern Wood Teardrop Stud Earrings"
-            :item/price   34.00M
-            :item/store   #db/id[:db.part/user -2]
-            :item/img-src "https://img1.etsystatic.com/033/0/6396625/il_570xN.523107737_juvf.jpg"
-            :item/id      "23"
+           {:item/name     "Modern Wood Teardrop Stud Earrings"
+            :item/price    34.00M
+            :item/store    #db/id[:db.part/user -3]
+            :item/photos   [#db/id[:db.part/user -31]]
             :item/category "accessories"}
-           {:item/name    "Silver Twig Ring Milky Aquamarine Cabochon Light Blue March Birthstone Gifts for her Botanical Jewelry"
-            :item/img-src "https://img0.etsystatic.com/036/1/5243597/il_570xN.654738182_2k08.jpg"
-            :item/price   34.00M
-            :item/store   #db/id[:db.part/user -3]
-            :item/id      "30"
+           {:item/name     "Silver Twig Ring Milky"
+            :item/photos   [#db/id[:db.part/user -32]]
+            :item/price    34.00M
+            :item/store    #db/id[:db.part/user -4]
             :item/category "accessories"}
-           {:item/name    "Bunny Charm Necklace, Bunny Necklace, Rabbit Necklace, Easter Gift, Child Necklace, Sterling silver, Rabbit Jewelry, Bunny Pendant"
-            :item/img-src "https://img0.etsystatic.com/024/0/5243597/il_570xN.519102094_4gu0.jpg"
-            :item/price   52.00M
-            :item/store   #db/id[:db.part/user -3]
-            :item/id      "31"
+           {:item/name     "Bunny Charm Necklace"
+            :item/photos   [#db/id[:db.part/user -33]]
+            :item/price    52.00M
+            :item/store    #db/id[:db.part/user -4]
             :item/category "accessories"}
-           {:item/name    "Red Moss Planter Fall Cube Necklace Sterling Silver Pendant Botanical Jewelry Novelty Pendant"
-            :item/img-src "https://img0.etsystatic.com/140/1/5243597/il_570xN.964805038_b4eq.jpg"
-            :item/price   134.00M
-            :item/store   #db/id[:db.part/user -3]
-            :item/id      "32"
+           {:item/name     "Red Moss Planter Fall Cube Necklace"
+            :item/photos   [#db/id[:db.part/user -34]]
+            :item/price    134.00M
+            :item/store    #db/id[:db.part/user -4]
             :item/category "accessories"}
-           {:item/name    "Citrine Ring Elvish Twig Ring Branch Ring Thorn Jewelry November Birthstone Gifts for her Fine Jewelry"
-            :item/img-src "https://img0.etsystatic.com/139/3/5243597/il_570xN.931188156_qhqe.jpg"
-            :item/price   34.00M
-            :item/store   #db/id[:db.part/user -3]
-            :item/id      "33"
+           {:item/name     "Elvish Twig Ring"
+            :item/photos   [#db/id[:db.part/user -35]]
+            :item/price    34.00M
+            :item/store    #db/id[:db.part/user -4]
             :item/category "accessories"}
-           {:item/name    "Christmas Sale 25% OFF Opal nose studs x5, set of nose studs, tiny nose stud, gold nose stud, small nose stud, tiny stud, nose stud opal, pi"
-            :item/img-src "https://img1.etsystatic.com/162/0/10419159/il_570xN.1142775003_oe2z.jpg"
-            :item/price   24.74M
-            :item/store   #db/id[:db.part/user -4]
-            :item/id      "40"
+           {:item/name     "Nose Stud"
+            :item/photos   [#db/id[:db.part/user -36]]
+            :item/price    24.74M
+            :item/store    #db/id[:db.part/user -5]
             :item/category "accessories"}
-           {:item/name    "Christmas Sale 25% OFF Small tragus ring, tiny tragus hoop, gold tragus jewelry, tragus earring, silver tragus hoops, tragus earrings gold,"
-            :item/img-src "https://img1.etsystatic.com/150/1/10419159/il_570xN.1142779459_chfq.jpg"
-            :item/price   4.49M
-            :item/store   #db/id[:db.part/user -4]
-            :item/id      "41"
+           {:item/name     "Tragus Earring"
+            :item/photos   [#db/id[:db.part/user -37]]
+            :item/price    4.49M
+            :item/store    #db/id[:db.part/user -5]
             :item/category "accessories"}
-           {:item/name    "Christmas Sale 25% OFF Tiny hoop nose ring 20g, nose ring gold, gold nosering, septum nose ring, nose ring silver, nose ring hoop, nose ring"
-            :item/img-src "https://img0.etsystatic.com/157/1/10419159/il_570xN.1096187952_ecv9.jpg"
-            :item/price   6.37M
-            :item/store   #db/id[:db.part/user -4]
-            :item/id      "42"
+           {:item/name     "Nose Ring"
+            :item/photos   [#db/id[:db.part/user -38]]
+            :item/price    6.37M
+            :item/store    #db/id[:db.part/user -5]
             :item/category "accessories"}
-           {:item/name    "Christmas Sale 25% OFF Opal nose hoop, silver nose ring, tiny nose hoop, opal nose ring, nose hoop 18g, nose ring hoop, nose piercing, nose Christmas Sale 25% OFF Opal nose hoop, silver nose ring, tiny nose hoop, opal nose ring, nose hoop 18g, nose ring hoop, nose piercing, nose Christmas Sale 25% OFF Opal nose hoop, silver nose ring, "
-            :item/img-src "https://img0.etsystatic.com/141/1/10419159/il_570xN.1096187360_ohgo.jpg"
-            :item/price   6.74M
-            :item/store   #db/id[:db.part/user -4]
-            :item/id      "43"
+           {:item/name     "Nose Ring"
+            :item/photos   [#db/id[:db.part/user -39]]
+            :item/price    6.74M
+            :item/store    #db/id[:db.part/user -4]
             :item/category "accessories"}]
 
- :cart    [{:cart/items #{[:item/id "00"]
-                          [:item/id "01"]
-                          [:item/id "42"]
-                          [:item/id "43"]}}]}
+ ;:cart [{:cart/items #{[:item/id "00"]
+ ;                      [:item/id "01"]
+ ;                      [:item/id "42"]
+ ;                      [:item/id "43"]}}]
+ }

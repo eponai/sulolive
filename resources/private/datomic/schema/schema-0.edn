@@ -1,4 +1,12 @@
 [
+ ;; Photo
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :photo/path
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Photo URL"
+  :db.install/_attribute :db.part/db}
+
 ;; Stream
 
  {:db/id                 #db/id[:db.part/db]
@@ -15,21 +23,12 @@
   :db/doc                "Ref to the streams store"
   :db.install/_attribute :db.part/db}
 
- ;; TODO: Remove this attribute
- ;;       Get it from somewhere else.
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :stream/viewer-count
-  :db/valueType          :db.type/long
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Stream viewer count"
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :stream/img-src
-  :db/valueType          :db.type/string
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Tumbnail of the stream"
-  :db.install/_attribute :db.part/db}
+ ;{:db/id                 #db/id[:db.part/db]
+ ; :db/ident              :stream/photo
+ ; :db/valueType          :db.type/string
+ ; :db/cardinality        :db.cardinality/one
+ ; :db/doc                "Tumbnail of the stream"
+ ; :db.install/_attribute :db.part/db}
 
  ;; Store
  ;; TODO: Think about adding a :store/uuid ?
@@ -41,38 +40,18 @@
   :db/doc                "Name of a store"
   :db.install/_attribute :db.part/db}
 
- ;; TODO: Remove this attribute, as it will just be
- ;;       a count of the actual reviews
- ;;       e.g. (count :review/_store)
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store/review-count
-  :db/valueType          :db.type/long
-  :db/cardinality        :db.cardinality/one
-  :db/unique             :db.unique/identity
-  :db/doc                "Review count of the store"
-  :db.install/_attribute :db.part/db}
-
- ;; TODO: This attribute might be caluclated from
- ;;       :review/rating or something
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store/rating
-  :db/valueType          :db.type/bigdec
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Rating of the store"
-  :db.install/_attribute :db.part/db}
-
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :store/photo
-  :db/valueType          :db.type/string
+  :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Url to the photo of the store"
+  :db/doc                "Profile photo of the store"
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :store/cover
-  :db/valueType          :db.type/string
+  :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Cover photo url for the store"
+  :db/doc                "Cover photo for the store"
   :db.install/_attribute :db.part/db}
 
  ;; Goods aka Items
@@ -81,7 +60,7 @@
   :db/ident              :item/name
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
-  :db/fulltext true
+  :db/fulltext           true
   :db/doc                "Name of the item"
   :db.install/_attribute :db.part/db}
 
@@ -109,20 +88,10 @@
  ;; TODO: Add currency?
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :item/img-src
-  :db/valueType          :db.type/string
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Image url of the item"
-  :db.install/_attribute :db.part/db}
-
- ;; TODO: Remove this?
- ;;       Make it uuid or remove completely?
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :item/id
-  :db/valueType          :db.type/string
-  :db/cardinality        :db.cardinality/one
-  :db/unique             :db.unique/value
-  :db/doc                "String id of the item"
+  :db/ident              :item/photos
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/many
+  :db/doc                "Item photos"
   :db.install/_attribute :db.part/db}
 
  ;; Cart

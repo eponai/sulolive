@@ -30,13 +30,11 @@
     [:db/id
      :item/name
      :item/price
-     :item/img-src
+     {:item/photos [:photo/path]}
      :item/details
      :item/category
-     {:item/store [:store/photo
-                   :store/name
-                   :store/rating
-                   :store/review-count]}])
+     {:item/store [{:store/photo [:photo/path]}
+                   :store/name]}])
   Object
   (initLocalState [_]
     {:selected-tab :rating})
@@ -52,8 +50,9 @@
                              (js/setTimeout #(om/update-state! this assoc :added-to-bag? false) 2000)))))
   (render [this]
     (let [{:keys [selected-tab added-to-bag?]} (om/get-state this)
-          {:keys     [item/price item/store item/img-src item/details]
-           item-name :item/name :as item} (om/props this)]
+          {:item/keys     [price store photos details]
+           item-name :item/name :as item} (om/props this)
+          photo-url (:photo/path (first photos))]
 
       (dom/div
         #js {:id "sulo-product"}
@@ -66,7 +65,7 @@
             (->> (css/grid-column)
                  (css/grid-column-size {:small 2 :medium 1}))
             (photo/square
-              {:src (:store/photo store)}))
+              {:src (:photo/path (:store/photo store))}))
 
           (my-dom/div
             (css/grid-column)
@@ -83,13 +82,13 @@
             (my-dom/div
               (->> (css/grid-column)
                    (css/grid-column-size {:small 12 :medium 8}))
-              (photo/photo {:src img-src})
+              (photo/photo {:src photo-url})
 
               (apply dom/div #js {:className "multi-photos-container"}
                      (map (fn [im]
                             (photo/thumbail
                               {:src im}))
-                          (take 4 (repeat img-src)))))
+                          (take 4 (repeat photo-url)))))
 
             (my-dom/div
               (->> (css/grid-column)

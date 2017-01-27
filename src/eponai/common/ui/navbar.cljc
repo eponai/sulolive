@@ -68,9 +68,9 @@
   (query [_]
     [{:query/cart [:cart/price
                    {:cart/items [:item/price
-                                 :item/img-src
+                                 {:item/photos [:photo/path]}
                                  :item/name
-                                 {:item/store [:store/name :store/rating :store/photo :store/review-count]}]}]}
+                                 {:item/store [:store/name]}]}]}
      :query/auth])
   Object
   #?(:cljs

@@ -31,8 +31,9 @@
   (str "/store/" (:db/id store)))
 
 (defn online-channel-element [channel]
-  (let [{:stream/keys [store viewer-count img-src]
+  (let [{:stream/keys [store]
          stream-name :stream/name} channel
+        {:store/keys [photo]} store
         store-link (link-to-store store)]
     (my-dom/div
       (->> (css/grid-column)
@@ -42,7 +43,7 @@
                 (photo/with-overlay
                   nil
                   (photo/square
-                    {:src img-src})
+                    {:src (:photo/path photo)})
                   (my-dom/div (css/add-class :video) (dom/i #js {:className "fa fa-play fa-fw"}))))
       (my-dom/div
         nil
@@ -52,7 +53,7 @@
         (dom/div #js {:className "content-item-subtitle-section"}
           (dom/a #js {:href store-link} (dom/strong nil (:store/name store))))
         (dom/div #js {:className "content-item-subtitle-section"}
-          (viewer-element nil viewer-count)))
+          (viewer-element nil "x")))
       ;(dom/div #js {:className "content-item-subtitle-section"}
       ;  (dom/a #js {:href store-link} (:store/name store)))
       )))
@@ -77,13 +78,15 @@
 (defn product-element [opts product & children]
   (let [{:keys [on-click open-url?]} opts
         goods-href (when (or open-url? (nil? on-click)) (str "/goods/" (:db/id product)))
-        on-click (when-not open-url? on-click)]
+        on-click (when-not open-url? on-click)
+        {:item/keys [photos store price]
+         item-name :item/name} product]
     (apply dom/div #js {:className "column content-item product-item"}
            (my-dom/a
              {:onClick on-click
               :href    goods-href}
              (photo/square
-               {:src (:item/img-src product)})
+               {:src (:photo/path (first photos))})
              ;(my-dom/div
              ;  (->> (css/text-align :center))
              ;  (dom/p nil (dom/span nil (:item/name product)))
@@ -97,11 +100,11 @@
            (dom/div #js {:className "content-item-title-section text-center"}
              (dom/a #js {:onClick on-click
                          :href    goods-href}
-                    (:item/name product)))
+                    item-name))
            (dom/div #js {:className "content-item-subtitle-section"}
-             (dom/strong nil (:store/name (:item/store product))))
+             (dom/strong nil (:store/name store)))
            (dom/div #js {:className "content-item-subtitle-section"}
-             (dom/strong nil (ui-utils/two-decimal-price (:item/price product))))
+             (dom/strong nil (ui-utils/two-decimal-price price)))
            children
            )))
 

@@ -63,7 +63,7 @@
 
 (defmethod server-read :query/featured-items
   [{:keys [db db-history query]} _ _]
-  {:value (->> (query/all db db-history query {:where '[[?e :item/id]]})
+  {:value (->> (query/all db db-history query {:where '[[?e :item/name]]})
                (take 5)
                (feature-all db-history :item))})
 

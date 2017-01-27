@@ -20,16 +20,14 @@
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:proxy/stream (om/get-query stream/Stream)}
      {:query/store [:db/id
-                    :store/cover
-                    :store/photo
+                    {:store/cover [:photo/path]}
+                    {:store/photo [:photo/path]}
                     {:item/_store (om/get-query item/Product)}
-                    {:stream/_store [:stream/name :stream/viewer-count]}
-                    :store/name
-                    :store/rating
-                    :store/review-count]}])
+                    {:stream/_store [:stream/name]}
+                    :store/name]}])
   Object
   (initLocalState [this]
-    ;{:show-chat? false}
+    {:show-chat? false}
     )
   (componentWillReceiveProps [this next-props]
     (let [{:keys [query/store]} next-props
@@ -39,7 +37,7 @@
   (render [this]
     (let [st (om/get-state this)
           {:keys [query/store proxy/navbar] :as props} (om/props this)
-          {:keys      [store/cover store/review-count store/rating store/photo]
+          {:store/keys      [cover photo]
            stream     :stream/_store
            items      :item/_store
            store-name :store/name} store
@@ -51,30 +49,11 @@
          ;(dom/div
          ;  #js {:id "sulo-store-container" :className (str (when show-chat? "chat-open"))})
          (photo/cover
-           {:src (or cover "")}
+           {:src (if cover
+                   (:photo/path cover)
+                   "")}
            (my-dom/div
-             (->> {:src cover}
-                  ;css/grid-row
-                  ;css/grid-column
-                  )
-
-             ;(my-dom/div
-             ;  (->> (css/grid-column)
-             ;       (css/grid-column-size {:large 2})
-             ;       (css/add-class :css/store-container))
-             ;
-             ;  (dom/div #js {:className "store-short-info-container"}
-             ;    (photo/square
-             ;      {:src photo})
-             ;    (dom/div #js {:className "content-item-title-section"}
-             ;      (dom/h4 #js {:className "store-name"} store-name)
-             ;      (common/rating-element rating review-count)))
-             ;
-             ;  (menu/vertical
-             ;    {:classes [::css/store-main-menu]}
-             ;    (menu/item-link nil "About")
-             ;    (menu/item-link nil "Policies")))
-
+             nil
              (my-dom/div
                (cond->> (->> (css/grid-row) css/grid-column)
                         (some? stream)
@@ -121,7 +100,7 @@
                (->> (css/grid-column)
                     (css/grid-column-size {:small 2 :medium 2}))
                (photo/square
-                 {:src (:store/photo store)}))
+                 {:src (:photo/path (:store/photo store))}))
 
              (my-dom/div
                (css/grid-column)
