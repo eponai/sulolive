@@ -381,12 +381,12 @@
                 (let [form (.getElementById js/document "beta-vendor-subscribe-form")
                       params {:name  (.-value (.getElementById js/document "beta-NAME"))
                               :email (.-value (.getElementById js/document "beta-EMAIL"))
-                              :site  (.-value (.getElementById js/document "beta-SITE"))}
-                      history-id (msg/om-transact! this `[(beta/vendor ~params)])]
+                              :site  (.-value (.getElementById js/document "beta-SITE"))}]
                   (if (and (not-empty (:name params))
                            (not-empty (:email params))
                            (utils/valid-email? (:email params)))
-                    (om/update-state! this assoc :subscription-pending-id history-id)
+                    (let [history-id (msg/om-transact! this `[(beta/vendor ~params)])]
+                      (om/update-state! this assoc :subscription-pending-id history-id :client-msg nil))
                     (let [message (cond (empty? (:email params))
                                         "Please provide an email."
                                         (not (utils/valid-email? (:email params)))
@@ -463,11 +463,13 @@
                                                                                            "Privacy Policy"))))
                                                          (div (->> (css/grid-row)
                                                                    (css/align :center))
-                                                              (dom/a #js {:className "button green" :onClick #?(:cljs #(.subscribe this) :clj nil)}
-                                                                     (if (and (not (and (some? message) (msg/final? message)))
-                                                                              (some? subscription-pending-id))
-                                                                       (dom/i #js {:className "fa fa-spinner fa-spin fa-fw"})
-                                                                       "Invite Me")))
+                                                              (dom/button #js {:className "button green" :onClick #?(:cljs #(do (.preventDefault %)
+                                                                                                                             (.subscribe this))
+                                                                                                                     :clj  nil)}
+                                                                          (if (and (not (and (some? message) (msg/final? message)))
+                                                                                   (some? subscription-pending-id))
+                                                                            (dom/i #js {:className "fa fa-spinner fa-spin fa-fw"})
+                                                                            "Invite Me")))
                                                          (div (->> (css/grid-row)
                                                                    (css/align :center))
                                                               (dom/p #js {:className (cond
