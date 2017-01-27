@@ -58,6 +58,27 @@
       ;  (dom/a #js {:href store-link} (:store/name store)))
       )))
 
+(defn content-section [{:keys [href class sizes]} header content footer]
+  (my-dom/div
+    (->> {:classes [class]}
+         (css/add-class :section))
+    ;(div
+    ;  (->> (css/grid-row) css/grid-column))
+    (my-dom/div
+      (->> (css/grid-row) (css/add-class :section-header) (css/add-class :small-unstack))
+      (my-dom/div (->> (css/grid-column) (css/add-class :middle-border)))
+      (my-dom/div (->> (css/grid-column) (css/add-class :shrink))
+           (dom/h3 #js {:className "header"} header))
+      (my-dom/div (->> (css/grid-column) (css/add-class :middle-border)))
+      )
+
+    content
+    (when (not-empty footer)
+      (my-dom/div
+        (->> (css/grid-row) css/grid-column (css/add-class :section-footer) (css/text-align :center))
+        (dom/a #js {:href href :className "button hollow"} footer)))
+    ))
+
 (defn rating-element [rating & [review-count]]
   (let [rating (if (some? rating) (int rating) 0)
         stars (cond-> (vec (repeat rating "fa fa-star fa-fw"))

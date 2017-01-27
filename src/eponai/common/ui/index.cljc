@@ -35,26 +35,26 @@
                                               " medium-offset-4 text-right"))}
                content)))))
 
-(defn content-section [{:keys [href class sizes]} header content footer]
-  (div
-    (->> {:classes [class]}
-         (css/add-class :section))
-    ;(div
-    ;  (->> (css/grid-row) css/grid-column))
-    (div
-      (->> (css/grid-row) (css/add-class :section-header) (css/add-class :small-unstack))
-      (div (->> (css/grid-column) (css/add-class :middle-border)))
-      (div (->> (css/grid-column) (css/add-class :shrink))
-           (dom/h3 nil header))
-      (div (->> (css/grid-column) (css/add-class :middle-border)))
-      )
-
-    content
-    (when (not-empty footer)
-      (div
-        (->> (css/grid-row) css/grid-column (css/add-class :section-footer) (css/text-align :center))
-        (dom/a #js {:href href :className "button gray hollow"} footer)))
-    ))
+;(defn content-section [{:keys [href class sizes]} header content footer]
+;  (div
+;    (->> {:classes [class]}
+;         (css/add-class :section))
+;    ;(div
+;    ;  (->> (css/grid-row) css/grid-column))
+;    (div
+;      (->> (css/grid-row) (css/add-class :section-header) (css/add-class :small-unstack))
+;      (div (->> (css/grid-column) (css/add-class :middle-border)))
+;      (div (->> (css/grid-column) (css/add-class :shrink))
+;           (dom/h3 nil header))
+;      (div (->> (css/grid-column) (css/add-class :middle-border)))
+;      )
+;
+;    content
+;    (when (not-empty footer)
+;      (div
+;        (->> (css/grid-row) css/grid-column (css/add-class :section-footer) (css/text-align :center))
+;        (dom/a #js {:href href :className "button hollow"} footer)))
+;    ))
 
 (defn collection-element [{:keys [url title full?]}]
   ;; Use the whole thing as hover elem
@@ -159,63 +159,63 @@
                   "Sign up and follow, like and share your faves with others.")))
 
 
-            (content-section {:href  "/streams"
-                              :class "online-channels"}
-                             "Stores streaming right now"
-                             (div (->> (css/grid-row)
-                                       (css/grid-row-columns {:small 2 :medium 4}))
-                                  (map (fn [c]
-                                         (common/online-channel-element c))
-                                       featured-streams))
-                             "See More")
+            (common/content-section {:href  "/streams"
+                                     :class "online-channels"}
+                                    "Stores streaming right now"
+                                    (div (->> (css/grid-row)
+                                              (css/grid-row-columns {:small 2 :medium 4}))
+                                         (map (fn [c]
+                                                (common/online-channel-element c))
+                                              featured-streams))
+                                    "See More")
 
-            (content-section {:class "collections"}
-                             "Shop by collection"
-                             (div nil
-                                  (div
-                                    (->> (css/grid-row))
-                                    (div
-                                      (->> (css/grid-column)
-                                           (css/add-class :content-item))
-                                      (collection-element {:url   "/assets/img/collection-home-5.jpg"
-                                                           :title "Home"}))
-                                    (div
-                                      (->> (css/grid-column)
-                                           (css/add-class :content-item)
-                                           (css/grid-column-size {:small 12 :medium 5}))
-                                      (collection-element {:url     "/assets/img/collection-women-2.jpg"
-                                                           :title   "Women"
-                                                           :full? true})))
-                                  (div
-                                    (->> (css/grid-row))
-                                    (div
-                                      (->> (css/grid-column)
-                                           (css/add-class :content-item))
-                                      (collection-element {:url   "/assets/img/collection-men-2.jpg"
-                                                           :title "Men"}))
-                                    (div
-                                      (->> (css/grid-column)
-                                           (css/add-class :content-item)
-                                           (css/grid-column-size {:small 12 :medium 5}))
-                                      (collection-element {:url     "/assets/img/collection-kids-4.jpg"
-                                                           :title   "Kids"
-                                                           :full? true}))))
-                             ;(map (fn [s t]
-                             ;       (collection-element {:url (first (:store/featured-img-src s))
-                             ;                            :title t}))
-                             ;     featured-stores
-                             ;     ["Home" "Kids" "Women" "Men"])
-                             ""
-                             )
+            (common/content-section {:class "collections"}
+                                    "Shop by collection"
+                                    (div nil
+                                         (div
+                                           (->> (css/grid-row))
+                                           (div
+                                             (->> (css/grid-column)
+                                                  (css/add-class :content-item))
+                                             (collection-element {:url   "/assets/img/collection-home-5.jpg"
+                                                                  :title "Home"}))
+                                           (div
+                                             (->> (css/grid-column)
+                                                  (css/add-class :content-item)
+                                                  (css/grid-column-size {:small 12 :medium 5}))
+                                             (collection-element {:url   "/assets/img/collection-women-2.jpg"
+                                                                  :title "Women"
+                                                                  :full? true})))
+                                         (div
+                                           (->> (css/grid-row))
+                                           (div
+                                             (->> (css/grid-column)
+                                                  (css/add-class :content-item))
+                                             (collection-element {:url   "/assets/img/collection-men-2.jpg"
+                                                                  :title "Men"}))
+                                           (div
+                                             (->> (css/grid-column)
+                                                  (css/add-class :content-item)
+                                                  (css/grid-column-size {:small 12 :medium 5}))
+                                             (collection-element {:url   "/assets/img/collection-kids-4.jpg"
+                                                                  :title "Kids"
+                                                                  :full? true}))))
+                                    ;(map (fn [s t]
+                                    ;       (collection-element {:url (first (:store/featured-img-src s))
+                                    ;                            :title t}))
+                                    ;     featured-stores
+                                    ;     ["Home" "Kids" "Women" "Men"])
+                                    ""
+                                    )
 
-            (content-section {:href "/goods"}
-                             "New arrivals"
-                             (div (->> (css/grid-row)
-                                       (css/grid-row-columns {:small 2 :medium 4 :large 5}))
-                                  (map (fn [p]
-                                         (common/product-element {:open-url? true} p))
-                                       featured-items))
-                             "See More")
+            (common/content-section {:href "/goods"}
+                                    "New arrivals"
+                                    (div (->> (css/grid-row)
+                                              (css/grid-row-columns {:small 2 :medium 4 :large 5}))
+                                         (map (fn [p]
+                                                (common/product-element {:open-url? true} p))
+                                              featured-items))
+                                    "See More")
 
             (banner {:color :default}
                     (dom/h2 nil "Watch, shop and chat with your favorite vendors and artisans.")

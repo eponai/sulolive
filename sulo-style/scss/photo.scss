@@ -78,6 +78,7 @@ $primary-color: map-get($foundation-palette, primary);
 	&.thumbnail {
 		margin: 0;
 		display: block;
+		border: 2px solid $white;
 		&.mini {
 			width: 50%;
 			padding-top: 50%

@@ -56,23 +56,6 @@
 
       (dom/div
         #js {:id "sulo-product"}
-        (my-dom/div
-          (->> (css/grid-row)
-               (css/align :bottom)
-               (css/add-class :padded)
-               (css/add-class :vertical))
-          (my-dom/div
-            (->> (css/grid-column)
-                 (css/grid-column-size {:small 2 :medium 1}))
-            (photo/square
-              {:src (:photo/path (:store/photo store))}))
-
-          (my-dom/div
-            (css/grid-column)
-            (dom/a #js {:href (str "/store/" (:db/id store))}
-                   (dom/p #js {:className "store-name"} (:store/name store)))
-            (c/rating-element (:store/rating store) (:store/review-count store))))
-
 
         (my-dom/div
           (->> (css/grid-row)
@@ -84,48 +67,98 @@
                    (css/grid-column-size {:small 12 :medium 8}))
               (photo/photo {:src photo-url})
 
-              (apply dom/div #js {:className "multi-photos-container"}
-                     (map (fn [im]
-                            (photo/thumbail
-                              {:src im}))
-                          (take 4 (repeat photo-url)))))
+              (my-dom/div
+                (->> (css/grid-row)
+                     (css/align :center))
+                (my-dom/div (->> (css/grid-column)
+                                 (css/grid-column-size {:small 8 :medium 6}))
+                            (apply dom/div #js {:className "multi-photos-container"}
+                                   (map (fn [im]
+                                          (photo/thumbail
+                                            {:src im}))
+                                        (take 4 (repeat photo-url)))))))
 
             (my-dom/div
               (->> (css/grid-column)
                    (css/add-class ::css/product-info-container))
               (dom/div #js {:className "product-info"}
-                (dom/h5 #js {:className "product-info-title"} item-name)
-                (dom/h4 #js {:className "product-info-price"}
+                (dom/p #js {:className "title"} item-name)
+                (dom/p #js {:className "price"}
                         (utils/two-decimal-price price)))
-              (dom/div #js {:className "product-action-container clearfix"}
+              (dom/div nil
+                (dom/select nil
+                            (dom/option #js {:value "S"} "S - Small")
+                            (dom/option #js {:value "M"} "M - Medium")
+                            (dom/option #js {:value "L"} "L - Large")))
+              (dom/div #js {:className "product-action-container"}
+                ;(my-dom/div (->> (css/grid-row))
+                ;            (my-dom/div (->> (css/grid-column)
+                ;                             (css/grid-column-size {:small 6 :medium 8}))
+                ;                        (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
+                ;                                :className "button expanded"} "Add to bag"))
+                ;            (my-dom/div (css/grid-column)
+                ;                        (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
+                ;                                    :className "button expanded hollow"} "Save")))
+                (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
+                            :className "button expanded hollow"} "Save")
                 (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
                             :className "button expanded"} "Add to bag")
                 (dom/p #js {:className (str (when added-to-bag? "show"))} "Your shopping bag was updated" ))))
 
-          (my-dom/div
-            (css/grid-column)
-            (menu/horizontal
-              nil
-              (menu/item-tab {:active?  (= selected-tab :details)
-                              :on-click #(om/update-state! this assoc :selected-tab :details)}
-                             "Details")
-              (menu/item-tab {:active?  (= selected-tab :shipping)
-                              :on-click #(om/update-state! this assoc :selected-tab :shipping)}
-                             "Shipping")
-              (menu/item-tab {:active?  (= selected-tab :rating)
-                              :on-click #(om/update-state! this assoc :selected-tab :rating)}
-                             (c/rating-element 4 11)))
-            (cond (= selected-tab :rating)
-                  (dom/div #js {:className "product-reviews"}
-                    (reviews-list [{:review/rating 4}
-                                   {:review/rating 3}
-                                   {:review/rating 5}]))
-                  (= selected-tab :details)
-                  (dom/div #js {:className "product-details"}
-                    details)
 
-                  (= selected-tab :shipping)
-                  (dom/div #js {:className "product-details"}))))))))
+
+          (my-dom/div (->> (css/grid-row) css/grid-column)
+                      (dom/hr nil)
+                      (my-dom/div
+                        (->> (css/grid-row)
+                             (css/align :middle)
+                             (css/add-class :store-info))
+                        (my-dom/div
+                          (->> (css/grid-column)
+                               (css/grid-column-size {:small 3 :medium 2}))
+                          (photo/square
+                            {:src (:photo/path (:store/photo store))}))
+
+                        (my-dom/div
+                          (css/grid-column)
+                          (dom/div #js {:className "title"} (dom/span nil "Sold By"))
+                          (dom/div #js {:className "store-name"}
+                            (dom/a #js {:href (str "/store/" (:db/id store))}
+                                   (dom/span nil (:store/name store))))
+                          (dom/div #js {:className "store-tagline"} (dom/p nil "Some awesome tagline for the store"))
+                          (dom/div nil (dom/a #js {:className "button hollow"} "+ Follow"))))
+                      (dom/hr nil))
+
+          (common/content-section {}
+                                  (dom/div nil (dom/span nil "More from ") (dom/a nil (:store/name store)))
+                                  (dom/div nil)
+                                  "Load More")
+
+          ;(my-dom/div
+          ;  (css/grid-column)
+          ;  (menu/horizontal
+          ;    nil
+          ;    (menu/item-tab {:active?  (= selected-tab :details)
+          ;                    :on-click #(om/update-state! this assoc :selected-tab :details)}
+          ;                   "Details")
+          ;    (menu/item-tab {:active?  (= selected-tab :shipping)
+          ;                    :on-click #(om/update-state! this assoc :selected-tab :shipping)}
+          ;                   "Shipping")
+          ;    (menu/item-tab {:active?  (= selected-tab :rating)
+          ;                    :on-click #(om/update-state! this assoc :selected-tab :rating)}
+          ;                   (c/rating-element 4 11)))
+          ;  (cond (= selected-tab :rating)
+          ;        (dom/div #js {:className "product-reviews"}
+          ;          (reviews-list [{:review/rating 4}
+          ;                         {:review/rating 3}
+          ;                         {:review/rating 5}]))
+          ;        (= selected-tab :details)
+          ;        (dom/div #js {:className "product-details"}
+          ;          details)
+          ;
+          ;        (= selected-tab :shipping)
+          ;        (dom/div #js {:className "product-details"})))
+          )))))
 
 (def ->Product (om/factory Product))
 

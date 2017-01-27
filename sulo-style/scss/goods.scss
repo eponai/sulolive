@@ -10,18 +10,38 @@
 }
 
 #sulo-product {
-	padding: 1rem 0;
+	padding: 3% 0;
+	hr {
+		border-color: $light-gray;
+	}
+	.section {
+		.header {
+			a {
+				font-weight: bold;
+				text-transform: none;
+			}
+		}
+	}
 	.product-info-container {
 		display: flex;
 		flex-direction: column;
-		justify-content: space-between;
+		// justify-content: space-between;
+		.title {
+			font-weight: 500;
+			font-size: 1.3rem;
+			text-transform: uppercase;
+			margin-bottom: 0.1rem;
+		}
+		.price {
+			font-size: 1.25rem;
+		}
 	}
 
 	.product-action-container {
 		> p {
 			// overflow-y: hidden;
 			text-align: center;
-			font-weight: bold;
+			// font-weight: bold;
 			color: map-get($foundation-palette, success);
 			opacity: 0;
 			transition: opacity .25s ease-in-out, visibility .25s ease-in-out,;
@@ -35,5 +55,24 @@
 	h4 {
 		font-weight: 500;
 		color: map-get($foundation-palette, primary);
+	}
+
+	.store-info {
+		.title {
+			text-transform: uppercase;
+			// font-weight: 200;
+			font-size: 90%;
+		}
+		.store-name {
+			font-size: 1.5rem;
+		}
+		.store-tagline {
+			// font-style: italic;
+			color: $dark-gray; 
+			font-weight: 200;
+		}
+		a {
+			// font-size: 1.5rem;
+		}
 	}
 }

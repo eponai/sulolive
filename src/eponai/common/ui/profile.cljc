@@ -28,8 +28,9 @@
                              (css/align :center))
                         (my-dom/div (->> (css/grid-column)
                                          (css/grid-column-size {:small 2}))
-                                    (photo/circle
-                                      {:src "https://s3.amazonaws.com/sulo-images/site/collection-women.jpg"})))
+                                    (dom/a nil
+                                           (photo/circle
+                                             {:src "https://s3.amazonaws.com/sulo-images/site/collection-women.jpg"}))))
             (my-dom/div (->> (css/grid-row)
                              (css/align :center))
                         (my-dom/div (->> (css/grid-column)
