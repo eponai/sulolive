@@ -61,13 +61,15 @@
             (let [sxs (str size "x" size)]
               (dom/link {:rel   rel
                          :sizes sxs
-                         :href  (str href-without-size sxs ".png")
+                         :href  (str href-without-size sxs ".png?v=2")
                          :type  "image/png"})))]
     (concat
       (map #(icon % "apple-touch-icon" "/assets/img/favicon/apple-icon-")
            [57 60 72 76 114 120 144 152 180])
       (map #(icon % "icon" "/assets/img/favicon/favicon-")
-           [16 32 96]))))
+           [16 32 96])
+      (map #(icon % "icon" "/assets/img/favicon/android-icon-")
+           [36 48 72 96 144 192]))))
 
 (defn head [release? & [exclude-icons?]]
   [(dom/meta {:name    "google-site-verification"
@@ -113,7 +115,8 @@
    (dom/meta {:name "msapplication-TileColor" :content "#ffffff"})
    (dom/meta {:name    "msapplication-TileImage"
               :content "/assets/img/favicon/ms-icon-144x144.png"})
-   (dom/meta {:name "theme-color" :content "#ffffff"})])
+   (dom/meta {:name "theme-color" :content "#ffffff"})
+   ])
 
 (defn budget-js-path [release?]
   (str "/"

@@ -49,7 +49,7 @@
 		margin-top: 1rem;
 		margin-bottom: 1rem;
 		// padding: 0;
-		// border: 1px solid $light-gray;
+		border: 1px solid $light-gray;
 		// box-shadow: 0 0 3px 0 rgba($primary-color, 0.2);
 		// background: rgba(map-get($foundation-palette, primary), 0.05);
 		.photo.cover, .store-info {
@@ -57,7 +57,8 @@
 		}
 		.store-info {
 			padding: 1rem;
-			border: 1px solid $light-gray;
+			border-right: 1px solid $light-gray;
+			// border-right: none;
 		}
 		.column:last-child {
 			display: flex;
