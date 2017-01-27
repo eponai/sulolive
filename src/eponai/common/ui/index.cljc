@@ -333,7 +333,7 @@
                            {:content-form (dom/div
                                             nil
                                             (dom/hr nil)
-                                            (dom/p nil "Are you loving local shopping in Vancouver? Get early access and be part of creating an interactive community with makers online!")
+                                            (dom/p nil "Do you love to shop local in Vancouver? Get early access and be part of creating an interactive community with makers online!")
                                             (dom/form
                                               nil
                                               (div (->> (css/grid-row)
