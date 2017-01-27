@@ -3,12 +3,12 @@
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[cljsjs/react "15.3.1-0"]
-                 [cljsjs/react-dom "15.3.1-0"]
+  :dependencies [
+                 [amazonica "0.3.85"]
                  [org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT-3"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
                  [clj-http "3.3.0"]
-                 [clj-time "0.11.0"]
+                 ;[clj-time "0.11.0"]
                  [compojure "1.5.1"]
                  [aprint "0.1.3"]
                  [buddy/buddy-auth "1.3.0"]
@@ -44,9 +44,10 @@
                  [ring-transit "0.1.6"]
                  [prone "1.1.4"]
                  [medley "0.8.3"]
-                 [cljsjs/nvd3 "1.8.2-1"]
 
                  ;; CLJS
+                 [cljsjs/react "15.3.1-0"]
+                 [cljsjs/react-dom "15.3.1-0"]
                  [com.cognitect/transit-cljs "0.8.239"]
                  [org.clojure/clojurescript "1.9.293"
                   ;;  :classifier "aot"
@@ -59,6 +60,7 @@
                  [garden "1.3.2"]
                  [datascript "0.15.4"]
                  [cljsjs/stripe "2.0-0"]
+                 [cljsjs/nvd3 "1.8.2-1"]
                  [bidi "2.0.10"]
                  [kibu/pushy "0.3.6"]
                  [binaryage/devtools "0.8.1"]

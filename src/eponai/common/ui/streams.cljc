@@ -1,6 +1,5 @@
 (ns eponai.common.ui.streams
   (:require
-    [cemerick.url :as url]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.product-item :as pi]
     [om.dom :as dom]

@@ -14,6 +14,13 @@
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.menu :as menu]))
 
+(defn find-pos [el]
+  #?(:cljs (loop [cur-top 0
+                  obj el]
+             (if (.-offsetParent obj)
+               (recur (+ cur-top (.-offsetTop obj)) (.-offsetParent obj))
+               cur-top))
+     :clj 0))
 (defui Store
   static om/IQuery
   (query [_]
@@ -26,9 +33,6 @@
                     {:stream/_store [:stream/name]}
                     :store/name]}])
   Object
-  (initLocalState [this]
-    {:show-chat? false}
-    )
   (componentWillReceiveProps [this next-props]
     (let [{:keys [query/store]} next-props
           stream (first (:stream/_store store))]
@@ -46,35 +50,48 @@
       (dom/div #js {:id "sulo-store" :className (str "sulo-page" (when show-chat? " chat-open"))}
         (common/page-container
          {:navbar navbar}
-         ;(dom/div
-         ;  #js {:id "sulo-store-container" :className (str (when show-chat? "chat-open"))})
-         (photo/cover
-           {:src (if cover
-                   (:photo/path cover)
-                   "")}
+         (my-dom/div nil
+                     (my-dom/div
+                       (->> (css/grid-row)
+                            (css/add-class :collapse)
+                            (css/add-class :store-container))
+                       (my-dom/div
+                         (->> (css/grid-column)
+                              (css/grid-column-size {:small 12 :medium 3})
+                              (css/add-class :store-info)
+                              (css/text-align :center))
+                         (photo/circle
+                           {:src (:photo/path (:store/photo store))})
+
+                         (dom/p nil (dom/strong #js {:className "store-name"} store-name))
+                         (dom/a #js {:className "button hollow"} "+ Follow"))
+                       (my-dom/div
+                         (->> (css/grid-column))
+                         (photo/cover
+                           {:src (if cover
+                                   (:photo/path cover)
+                                   "")}))))
+
+         (if (some? stream)
            (my-dom/div
              nil
              (my-dom/div
-               (cond->> (->> (css/grid-row) css/grid-column)
+               (cond->> (->> (css/grid-row))
                         (some? stream)
                         (css/add-class :css/has-stream))
-               (when (or (some? stream) cover)
-                 (dom/div #js {:className "stream-container content-item"}
-                   (stream/->Stream (:proxy/stream props))
-                   (dom/div #js {:className "content-item-title-section"}
-                     (dom/h5 #js {:className "stream-title"}
-                             (:stream/name stream))
-                     (dom/div #js {:className "viewers-container"}
-                       (dom/i #js {:className "fa fa-eye fa-fw"})
-                       (dom/span nil
-                                 (str (:stream/viewer-count stream))))))))
+               (my-dom/div (css/grid-column)
+                           (when (or (some? stream) cover)
+                             (dom/div #js {:className "stream-container content-item"}
+                               (dom/div #js {:className "content-item-title-section"}
+                                 (dom/span nil (:stream/name stream)))
+                               (stream/->Stream (:proxy/stream props))))))
 
              (my-dom/div
                (cond->> (css/add-class ::css/stream-chat-container)
                         show-chat?
                         (css/add-class :show))
                (my-dom/div
-                 (->> {:onClick #(om/update-state! this update :show-chat? not)}
+                 (->> {:onClick #(om/update-state! this assoc :show-chat? (not show-chat?))}
                       (css/add-class ::css/stream-toggle))
                  (my-dom/a (cond->> (->> (css/add-class ::button)
                                          (css/add-class :expanded))
@@ -91,39 +108,24 @@
                  (dom/a #js {:className "button expanded"}
                         (dom/span nil "Send"))))))
 
-         (dom/div #js {:className "store-nav"}
-           (my-dom/div
-             (->> (css/grid-row)
-                  (css/add-class :padded)
-                  (css/add-class :vertical))
-             (my-dom/div
-               (->> (css/grid-column)
-                    (css/grid-column-size {:small 2 :medium 2}))
-               (photo/square
-                 {:src (:photo/path (:store/photo store))}))
+         (my-dom/div {:id "shop"}
+                     (my-dom/div
+                       (->> (css/grid-row)
+                            (css/add-class :collapse))
+                       (my-dom/div
+                         (css/grid-column)
+                         (menu/horizontal
+                           nil
+                           (menu/item-link nil (dom/span nil "Sheets"))
+                           (menu/item-link nil (dom/span nil "Pillows"))
+                           (menu/item-link nil (dom/span nil "Duvets")))))
 
-             (my-dom/div
-               (css/grid-column)
-               (dom/a #js {:href (str "/store/" (:db/id store))}
-                      (dom/p #js {:className "store-name"} (:store/name store)))
-               (common/rating-element (:store/rating store) (:store/review-count store))))
-           (my-dom/div
-             (->> (css/grid-row)
-                  css/grid-column)
-             (menu/horizontal
-               nil
-               (menu/item-link nil (dom/span nil "Sheets"))
-               (menu/item-link nil (dom/span nil "Pillows"))
-               (menu/item-link nil (dom/span nil "Duvets")))))
-
-         (my-dom/div
-           nil
-           (apply my-dom/div
-                  (->> (css/grid-row)
-                       (css/grid-row-columns {:small 2 :medium 3 :large 4}))
-                  (map (fn [p]
-                         (pi/->ProductItem (om/computed {:product p}
-                                                        {:display-content (item/->Product p)})))
-                       items))))))))
+                     (apply my-dom/div
+                            (->> (css/grid-row)
+                                 (css/grid-row-columns {:small 2 :medium 3 :large 4}))
+                            (map (fn [p]
+                                   (pi/->ProductItem (om/computed {:product p}
+                                                                  {:display-content (item/->Product p)})))
+                                 items))))))))
 
 (def ->Store (om/factory Store))

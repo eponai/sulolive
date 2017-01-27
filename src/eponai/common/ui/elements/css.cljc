@@ -28,6 +28,7 @@
    ::photo-container       "photo-container"
    ::photo-full            "full"
    ::photo-square          "square"
+   ::photo-circle          "circle"
    ::photo-thumbnail       "thumbnail"
    ::photo-header          "header"
    ::photo-collage         "collage"

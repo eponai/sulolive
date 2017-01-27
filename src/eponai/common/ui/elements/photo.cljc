@@ -27,6 +27,11 @@
     nil
     (photo* (css/add-class ::css/photo-square opts))))
 
+(defn circle [opts]
+  (photo-container
+    {:classes [::css/photo-circle]}
+    (photo* (css/add-class ::css/photo-square opts))))
+
 (defn full [opts]
   (photo-container
     nil

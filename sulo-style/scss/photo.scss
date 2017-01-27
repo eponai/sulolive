@@ -13,6 +13,10 @@ $primary-color: map-get($foundation-palette, primary);
 			}
 		}
 	}
+	&.circle {
+		border-radius: 50%;
+		overflow: hidden;
+	}
 }
 
 .overlay-container {
@@ -63,9 +67,13 @@ $primary-color: map-get($foundation-palette, primary);
 	width: 100%;
 	transition: background .25s ease-in-out;
 	&.square {
-		background-size: cover;
 		padding-top: 100%;		
 		transition: none;		
+	}
+	&.circle {
+		// padding-top: 100%;		
+		// border-radius: 50%;
+		// overflow: hidden;
 	}
 	&.thumbnail {
 		margin: 0;
@@ -76,7 +84,9 @@ $primary-color: map-get($foundation-palette, primary);
 		}		
 	}
 	&.cover {
+		height: 100%;
 		padding: 0;
+		// min-height: 20rem;
 	}
 
 	&.header {

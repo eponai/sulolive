@@ -41,35 +41,80 @@
 	&.chat-open {
 		@include chat-open(true);
 	}
-	.page-content {
-		display: flex;
-		flex-direction: column;
+	.cover {
+		// padding-bottom: 3%;
+		// padding-bottom: flex-video($flexvideo-ratio-widescreen);
 	}
+	.store-container {
+		margin-top: 1rem;
+		margin-bottom: 1rem;
+		// padding: 0;
+		// border: 1px solid $light-gray;
+		// box-shadow: 0 0 3px 0 rgba($primary-color, 0.2);
+		// background: rgba(map-get($foundation-palette, primary), 0.05);
+		.photo.cover, .store-info {
+			box-shadow: 0 1px 3px 0 rgba($medium-gray, 0.2);
+		}
+		.store-info {
+			padding: 1rem;
+			border: 1px solid $light-gray;
+		}
+		.column:last-child {
+			display: flex;
+		}
+		.photo.cover {
+			flex: 1;
+			height: auto;
+			// border: 1px solid $light-gray;
+		}
+		.photo-container.circle {
+			max-width: 10rem;
+			margin: 1rem auto;
+		}
+	}
+	// img {
+		// max-height: 30rem;
+	// }
+	// .page-content {
+		// display: flex;
+		// flex-direction: column;
+	// }
 	.stream-container {
 		@include text-shadow(light);
-		visibility: hidden;
-		font-size: 1.4rem;
-		font-weight: bold;
-		.fa-eye:before {
-			vertical-align: middle;
-		}
-		h5 {
-			@include single-line-text;
-		}
-		margin: 0 auto 1rem auto;
-		min-height: 10rem;
+		// visibility: hidden;
+		
+		// font-weight: bold;
+		// .fa-eye:before {
+		// 	vertical-align: middle;
+		// }
+		// h5 {
+		// 	@include single-line-text;
+		// }
+
+		// margin: 0 auto 1rem auto;
+		// min-height: 10rem;
 		@include breakpoint(large) {
 			padding: 1rem;
+			font-size: 1.25rem;
 		}
 	}
-	.has-stream {
-		.stream-container {
-			visibility: visible;
+	// .has-stream {
+		// .stream-container {
+			// visibility: visible;
+		// }
+	// }
+	#shop {
+		ul {
+			text-transform: uppercase;
+			font-size: 90%;
+			padding: 0.5rem 0;
+			border-top: 1px solid $light-gray;
+			border-bottom: 1px solid $light-gray;
 		}
 	}
-	.store-nav {
-		padding: 0.7rem 0;
-		background: $body-background;
-		box-shadow: 0 0 3px 1px rgba($primary-color, 0.1);
-	}
+	// .store-nav {
+	// 	padding: 0.7rem 0;
+	// 	background: $body-background;
+	// 	box-shadow: 0 0 3px 1px rgba($primary-color, 0.1);
+	// }
 }

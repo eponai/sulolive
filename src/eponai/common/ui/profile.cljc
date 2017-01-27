@@ -28,8 +28,8 @@
                              (css/align :center))
                         (my-dom/div (->> (css/grid-column)
                                          (css/grid-column-size {:small 2}))
-                                    (photo/square
-                                      {:src "https://scontent.fsjc1-3.fna.fbcdn.net/v/t1.0-9/10155053_10154618777965285_5052794971256899825_n.jpg?oh=f9cfc7ead53db03f9f8b1e1f6cbe75a5&oe=591823F9"})))
+                                    (photo/circle
+                                      {:src "https://s3.amazonaws.com/sulo-images/site/collection-women.jpg"})))
             (my-dom/div (->> (css/grid-row)
                              (css/align :center))
                         (my-dom/div (->> (css/grid-column)
