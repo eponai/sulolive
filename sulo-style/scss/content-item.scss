@@ -39,10 +39,4 @@
 		display: flex;
 		flex-direction: column;
 	}
-
-	.full {
-		.overlay-container, .photo-container {
-			height: 100%;
-		}
-	}
 }

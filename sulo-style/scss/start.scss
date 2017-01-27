@@ -7,39 +7,27 @@ $header-border-color: rgba($black, 0.1);
 $banner-background-color: map-get($foundation-palette, banner);//rgba($primary-color, 0.15);
 $section-footer-color: $primary-color;
 
-// $font-color-light: $bod;
-
-
 #sulo-index {
-	.button {
-		// font-weight: bold;
+	.page-content {
+		padding-bottom: 0;
 	}
 	overflow-x: hidden;
-	svg {
-		position: absolute;
-	}
-
 	.intro-header {
 		min-height: 30rem;
 		height: 85vh;
-		padding: 3% 0;
-		text-shadow: 1px 1px 0 rgba($white, 0.5);
+		text-shadow: 1px 1px 2px rgba($white, 0.5);
 		> * {
 			vertical-align: middle;
 		}
-		h2 {
+		.header {
 			text-transform: uppercase;
 			font-weight: bold;
-		}
-		input {
-			border-color: $white;
 		}
 		.button {
 			font-weight: bold;
 		}
-		.button, input {
-			box-shadow: 0px 1px 1px 1px rgba($white, 0.1);
-			margin: 0;
+		.drop-shadow {
+			box-shadow: 0px 1px 3px 0px rgba($black, 0.5);
 		}
 	}
 
@@ -68,17 +56,13 @@ $section-footer-color: $primary-color;
 		background: $banner-background-color;
 
 		&.white {
-			background: $white; //#F0EDE3;
+			background: $white;
 			border-bottom: 1px solid rgba($primary-color, 0.1);
 		}	
-		h2 {
-			font-weight: normal;
-		}
 	}
 
 	.section {
-		margin-top: 5%;
-		// margin-bottom: 2rem;
+		margin-top: 3%;
 		.section-footer {
 			padding: 1rem 0;
 			margin-top: $global-margin;
@@ -104,6 +88,19 @@ $section-footer-color: $primary-color;
 			}
 		}
 		&.collections {
+			margin-bottom: 3rem;
+			.content-item:last-child {
+				display: flex;
+				> * {
+					display: flex;
+					flex: 1;
+					justify-content: stretch;
+				}
+				.overlay-container {
+					flex: 1;
+					justify-content: stretch;
+				}
+			}
 			.overlay-container {
 				p {
 					text-transform: uppercase;
@@ -111,10 +108,6 @@ $section-footer-color: $primary-color;
 				font-size: 2rem;
 				text-shadow: 1px 1px 0 rgba($black, 0.5);
 				color: $white;
-				.content {
-					// background: rgba($white, 0.85);
-					// padding: 1rem 2rem;
-				}
 			}
 		}
 	}

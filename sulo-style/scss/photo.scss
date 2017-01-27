@@ -1,6 +1,8 @@
 $primary-color: map-get($foundation-palette, primary);
 .photo-container {
-	box-shadow: 0 1px 3px 0 rgba($primary-color, 0.15);
+	box-shadow: 0 1px 3px 0 rgba($primary-color, 0.1);
+	flex: 1;
+	display: flex;
 	&.collage {
 		.photo-container {
 			display: flex;
@@ -15,21 +17,20 @@ $primary-color: map-get($foundation-palette, primary);
 
 .overlay-container {
 	position: relative;
+	display: flex;
 	.overlay {
 		display: flex;	
 		flex-direction: column;
 		justify-content: center;	
 		position: absolute;
+		flex: 1;
 		width: 100%;
 		height: 100%;
 		top: 0;
 		left: 0;
 
 		.content {
-			// background: rgba($white, 0.85);
-			vertical-align: middle;
 			padding: $global-padding;
-			text-align: center;
 			.video {
 				display: flex;
 				align-items: center;
@@ -41,31 +42,7 @@ $primary-color: map-get($foundation-palette, primary);
 				background: rgba($white, 0.85);
 			}
 		}
-		p {
-			@include wrap-text(2, 1);
-			margin-bottom: 0.25rem;
-		}
-
-		.button.hollow {
-			border-width: 2px;
-			text-shadow: 1px 1px 0 rgba($black, 0.5);
-			box-shadow: 1px 1px 3px 0 rgba($black, 0.5);
-			&:hover, &:active, &:focus {
-				$color: lighten($primary-color, 10%);
-				border-color: $color;
-				color: $color;
-				text-shadow: 1px 0px 0 rgba($white, 0.5);
-				box-shadow: 1px 0px 3px 0 rgba($white, 0.5);
-			}
-		}
 	}
-	// &:hover {
-	// 	.photo {
-	// 		&:not(.square) {
-	// 			background-size: 105%;
-	// 		}
-	// 	}
-	// }
 }
 
 .multi-photos-container {
@@ -91,7 +68,6 @@ $primary-color: map-get($foundation-palette, primary);
 		transition: none;		
 	}
 	&.thumbnail {
-		background-size: cover;
 		margin: 0;
 		display: block;
 		&.mini {
@@ -100,26 +76,21 @@ $primary-color: map-get($foundation-palette, primary);
 		}		
 	}
 	&.cover {
-		background-size: cover;
 		padding: 0;
 	}
 
 	&.header {
 		padding: 0;
-		top: 0;
-		left: 0;
 		background-position: top center;
-		background-size: cover;
 		&.center {
 			background-position: center center;
 		}
 	}
 
 	&.full {
-
 		@include breakpoint(medium) {
 			padding: 0;
-			height:100%;
+			flex: 1;
 		}
 	}
 }

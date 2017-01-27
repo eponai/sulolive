@@ -56,14 +56,14 @@
         (dom/a #js {:href href :className "button gray hollow"} footer)))
     ))
 
-(defn collection-element [{:keys [url title square?]}]
+(defn collection-element [{:keys [url title full?]}]
   ;; Use the whole thing as hover elem
   (my-dom/a
     {:href    (str "/goods?category=" (.toLowerCase title))
      :classes [:full]}
     (photo/with-overlay
       nil
-      (if square?
+      (if full?
         (photo/full {:src url})
         (photo/photo {:src url}))
       (my-dom/div
@@ -153,14 +153,15 @@
                     (css/text-align :left)
                     (dom/h1 #js {:id "header-content" :className "show-for-sr"} "SULO")
                     ;(dom/h1 nil "LO" (dom/small nil "CAL"))
-                    (dom/h2 nil "Your local marketplace online")
+                    (dom/h2 #js {:className "header"} "Your local marketplace online")
                     (dom/p nil (dom/strong nil (dom/i #js {:className "fa fa-map-marker fa-fw"}) "Vancouver, BC")))
 
                   (div (->> (css/grid-row)
                             (css/add-class :search-container))
                        (div (->> (css/grid-column)
                                  (css/grid-column-size {:small 12 :medium 8}))
-                            (dom/input #js {:placeholder "What are you looking for?"
+                            (dom/input #js {:className "drop-shadow"
+                                            :placeholder "What are you looking for?"
                                             :type        "text"
                                             :value       (or input-search "")
                                             :onChange    #(do (debug " search " (.. % -target -value)) (om/update-state! this assoc :input-search (.. % -target -value)))
@@ -172,7 +173,7 @@
                        (div (->> (css/grid-column)
                                  (css/grid-column-size {:small 4 :medium 3})
                                  (css/text-align :left))
-                            (dom/a #js {:className "button expanded highlight"
+                            (dom/a #js {:className "button expanded highlight drop-shadow"
                                         :onClick   (fn []
                                                      #?(:cljs
                                                         (set! js/window.location (str "/goods?search=" input-search))))}
@@ -225,7 +226,7 @@
                                            (css/grid-column-size {:small 12 :medium 5}))
                                       (collection-element {:url     "/assets/img/collection-women-2.jpg"
                                                            :title   "Women"
-                                                           :square? true})))
+                                                           :full? true})))
                                   (div
                                     (->> (css/grid-row))
                                     (div
@@ -239,7 +240,7 @@
                                            (css/grid-column-size {:small 12 :medium 5}))
                                       (collection-element {:url     "/assets/img/collection-kids-4.jpg"
                                                            :title   "Kids"
-                                                           :square? true}))))
+                                                           :full? true}))))
                              ;(map (fn [s t]
                              ;       (collection-element {:url (first (:store/featured-img-src s))
                              ;                            :title t}))
@@ -366,13 +367,6 @@
             {:src "https://s3.amazonaws.com/sulo-images/site/coming-soon-bg.jpg"}
 
             (callout-banner live-open?)
-            ;(div (->> (css/grid-row)
-            ;          (css/text-align :center))
-            ;     (div (->> (css/grid-column)
-            ;               (css/add-class ::css/callout)
-            ;               (css/add-class ::css/secondary))
-            ;          (dom/strong nil "Coming Soon, Spring '17")))
-
             (->ComingSoonContent
               (om/computed {}
                            {:content-form (dom/div
@@ -394,13 +388,6 @@
                                                                                 "Privacy Policy"))))
                                               (div (->> (css/grid-row)
                                                         (css/align :center))
-                                                   ;(div (->> (css/grid-column)
-                                                   ;          (css/grid-column-size {:small 12 :medium 8 :large 8}))
-                                                   ;     (dom/input #js {:type        "email"
-                                                   ;                     :placeholder "you@email.com"
-                                                   ;                     :id          "coming-soon-email-input"}))
-                                                   ;(div (->> (css/grid-column)
-                                                   ;          (css/add-class :shrink)))
                                                    (dom/button #js {:className "button green"
                                                                     :onClick   #?(:clj  identity
                                                                                   :cljs (fn [e]
@@ -479,7 +466,6 @@
             {:src "https://s3.amazonaws.com/sulo-images/site/coming-soon-sell-bg.jpg"}
 
             (callout-banner live-open?)
-            ;(dom/div #js {:className "callout alert"} "Sign up to check out the LIVE market when it opens!")
             (->ComingSoonContent
               (om/computed {}
                            {:content-form (div nil
