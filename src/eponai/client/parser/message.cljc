@@ -3,7 +3,8 @@
             [datascript.core :as d]
             [om.next :as om]
             [eponai.common.database :as database]
-            [eponai.common.parser :as parser])
+            [eponai.common.parser :as parser]
+            [taoensso.timbre :refer [debug warn]])
   #?(:clj (:import [datascript.db DB])))
 
 ;; -----------------------------
@@ -123,7 +124,16 @@
   {:pre [(or (om/component? x)
              (om/reconciler? x))]}
   (om/transact! x tx)
-  (parser/reconciler->history-id (cond-> x (om/component? x) (om/get-reconciler))))
+  (let [history-id (parser/reconciler->history-id (cond-> x (om/component? x) (om/get-reconciler)))]
+    (when (om/component? x)
+      (om/update-state! x update ::component-messages
+                        (fn [messages]
+                          (let [mutations (filter (comp symbol? first) tx)]
+                            (reduce (fn [m mutation-key]
+                                      (update m mutation-key (fnil conj []) history-id))
+                                    messages
+                                    mutations)))))
+    history-id))
 
 (defn find-message
   "Takes a component, a history id and a mutation-key which was used in the mutation
@@ -133,3 +143,33 @@
   (let [db (d/db (om/app-state (om/get-reconciler component)))
         msg-fn (get-message-fn db)]
     (msg-fn history-id mutation-key)))
+
+(defn all-messages [component mutation-key]
+  (map #(find-message component % mutation-key)
+       (get-in (om/get-state component) [::component-messages mutation-key])))
+
+(defn one-message [component mutation-key]
+  (let [messages (all-messages component mutation-key)]
+    (when (< 1 (count messages))
+      (warn "Found more than one message in call to `one-message` for component: " (pr-str component)
+            " mutation-key: " mutation-key
+            ". There is possibly a bug in your UI?"
+            ". If your component performs multiple messages, please keep track of the history id's"
+            " returned by `om-transact!` and use `find-message` instead."))
+    (first messages)))
+
+(defn message-status [component mutation-key & [not-found]]
+  (if-let [msg (one-message component mutation-key)]
+    (cond (pending? msg)
+          :pending
+          (final? msg)
+          (if (success? msg) :success :failure)
+          :else
+          (throw (ex-info "Message was neither success, error or failure."
+                          {:message      msg
+                           :component    (pr-str component)
+                           :mutation-key mutation-key})))
+    (or not-found :not-found)))
+
+(defn message-data [component mutation-key]
+  (message (one-message component mutation-key)))
