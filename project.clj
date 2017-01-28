@@ -66,6 +66,7 @@
                  [binaryage/devtools "0.8.1"]
                  [org.clojure/tools.nrepl "0.2.11"
                   :exclusions [org.clojure/clojure]]
+                 [org.martinklepsch/s3-beam "0.6.0-alpha1"]
 
                  ;; React-native
                  [natal-shell "0.3.0"]
