@@ -32,7 +32,7 @@
                (db/transact-one state [:db/add cart :cart/items (:db/id item)])))})
 
 (defmutation beta/vendor
-  [{:keys [state ::parser/return ::parser/exception auth]} _ params]
+  [{:keys [state auth] ::parser/keys [return exception]} _ params]
   {:success "Cool! Check your inbox for a confirmation email"
    :error   (if exception (:detail (json/read-str (:body (ex-data exception)) :key-fn keyword) "") "")}
   {:action (fn []

@@ -20,7 +20,7 @@
 
 (defonce in-production? (atom true))
 
-(defn app* [conn {:keys [::extra-middleware ::disable-anti-forgery] :as options}]
+(defn app* [conn {::keys [extra-middleware disable-anti-forgery] :as options}]
   (-> (routes site-routes)
       (cond-> (not @in-production?) (m/wrap-node-modules))
       m/wrap-post-middlewares
