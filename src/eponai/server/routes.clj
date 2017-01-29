@@ -1,5 +1,6 @@
 (ns eponai.server.routes
   (:require
+    [eponai.server.api :as api]
     [eponai.server.auth :as auth]
     [clojure.string :as clj.string]
     [compojure.core :refer :all]
@@ -120,6 +121,7 @@
     ;  #(r/response (call-parser %))
     ;  (auth/jwt-restrict-opts))
     )
+  (GET "/aws" request (api/aws-s3-sign))
   (POST "/api" request
     (r/response (call-parser request))
     ;(auth/restrict

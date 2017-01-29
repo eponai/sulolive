@@ -44,6 +44,7 @@
                  [ring-transit "0.1.6"]
                  [prone "1.1.4"]
                  [medley "0.8.3"]
+                 [org.martinklepsch/s3-beam "0.6.0-alpha1"]
 
                  ;; CLJS
                  [cljsjs/react "15.3.1-0"]
@@ -66,7 +67,6 @@
                  [binaryage/devtools "0.8.1"]
                  [org.clojure/tools.nrepl "0.2.11"
                   :exclusions [org.clojure/clojure]]
-                 [org.martinklepsch/s3-beam "0.6.0-alpha1"]
 
                  ;; React-native
                  [natal-shell "0.3.0"]

@@ -8,6 +8,7 @@
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.mailchimp :as mailchimp]
     [eponai.server.http :as http]
+    [s3-beam.handler :as s3]
     [taoensso.timbre :refer [debug error info]]
     [clojure.data.json :as json])
   (:import (datomic Connection)
@@ -75,3 +76,11 @@
 ;      ;; TODO: Actually transact this if we want to release jourmoney ^^
 ;      (transact-map conn account))))
 
+
+(defn aws-s3-sign []
+  (let [bucket (env :aws-s3-bucket-photos)
+        zone (env :aws-s3-bucket-photos-zone)
+        access-key (env :aws-access-key-id)
+        secret (env :aws-secret-access-key)]
+    ;(debug "SIGNED: " (s3/s3-sign bucket zone access-key secret))
+    (s3/s3-sign bucket zone access-key secret)))

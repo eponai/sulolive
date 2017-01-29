@@ -1,4 +1,10 @@
 $primary-color: map-get($foundation-palette, primary);
+.photo-uploader {
+	width: 100%;
+	i {
+		color: $dark-gray;
+	}
+}
 .photo-container {
 	box-shadow: 0 1px 3px 0 rgba($primary-color, 0.1);
 	flex: 1;
