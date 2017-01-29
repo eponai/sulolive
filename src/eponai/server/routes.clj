@@ -142,7 +142,9 @@
                              (assoc-in [:cookies "token"] {:value "kill" :max-age 1})))
 
   (context "/" [:as request]
-    (auth/restrict member-routes (auth/member-restrict-opts))
+    (cond-> member-routes
+            (::m/in-production? request)
+            (auth/restrict (auth/member-restrict-opts)))
     ;(if (release? request)
     ;  (auth/restrict member-routes (auth/member-restrict-opts))
     ;  member-routes)
