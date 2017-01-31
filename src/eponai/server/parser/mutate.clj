@@ -1,7 +1,8 @@
 (ns eponai.server.parser.mutate
   (:require
+    [environ.core :as env]
     [eponai.common.database :as db]
-    [eponai.server.api :as api]
+    [eponai.server.external.mailchimp :as mailchimp]
     [eponai.common.parser :as parser :refer [server-mutate server-message]]
     [taoensso.timbre :refer [debug info]]
     [clojure.data.json :as json]))
@@ -32,9 +33,10 @@
                (db/transact-one state [:db/add cart :cart/items (:db/id item)])))})
 
 (defmutation beta/vendor
-  [{:keys [state auth] ::parser/keys [return exception]} _ params]
+  [{:keys [state auth system] ::parser/keys [return exception]} _ params]
   {:success "Cool! Check your inbox for a confirmation email"
    :error   (if exception (:detail (json/read-str (:body (ex-data exception)) :key-fn keyword) "") "")}
   {:action (fn []
-             (let [ret (api/beta-vendor-subscribe params)]
+             (let [ret (mailchimp/subscribe (:system/mailchimp system)
+                                            (assoc params :list-id (env/env :mail-chimp-list-beta-id)))]
                ret))})

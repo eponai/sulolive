@@ -75,8 +75,3 @@
 ;      ;; TODO: Actually transact this if we want to release jourmoney ^^
 ;      (transact-map conn account))))
 
-(defn beta-vendor-subscribe [params]
-  (mailchimp/subscribe (env :mail-chimp-api-key)
-                       (env :mail-chimp-list-beta-id)
-                       params))
-

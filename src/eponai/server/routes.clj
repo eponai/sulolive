@@ -45,13 +45,14 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [body] ::m/keys [conn parser] :as request}]
+  [{:keys [body] ::m/keys [conn parser system] :as request}]
   (debug "Handling parser request with body:" body)
   (parser
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
      :state                             conn
      :auth                              (:identity request)
-     :params                            (:params request)}
+     :params                            (:params request)
+     :system                            system}
     (:query body)))
 
 (defn trace-parser-response-handlers

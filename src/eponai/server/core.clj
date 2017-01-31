@@ -13,6 +13,7 @@
     [eponai.server.routes :refer [site-routes]]
     [eponai.server.middleware :as m]
     [eponai.server.external.stripe :as stripe]
+    [eponai.server.external.mailchimp :as mailchimp]
     [ring.adapter.jetty :as jetty]
     [taoensso.timbre :refer [debug error info]]
     ;; Dev/debug require
@@ -20,7 +21,7 @@
 
 (defonce in-production? (atom true))
 
-(defn app* [conn {::keys [extra-middleware disable-anti-forgery] :as options}]
+(defn app* [conn {::keys [extra-middleware disable-anti-forgery disable-ssl] :as options}]
   (-> (routes site-routes)
       (cond-> (not @in-production?) (m/wrap-node-modules))
       m/wrap-post-middlewares
@@ -36,13 +37,16 @@
                                                     (stripe/stripe (env :stripe-secret-key) k p))
                      ::email/send-verification-fn (partial email/send-verification-email @in-production?)
                      ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
-                     ;; either "dev" or "release"
+                     ::m/system                   {:system/mailchimp (if @in-production?
+                                                                       (mailchimp/mail-chimp (env :mail-chimp-api-key))
+                                                                       (mailchimp/mail-chimp-stub))}
                      ::m/cljs-build-id            (or (env :cljs-build-id) "dev")})
       (m/wrap-defaults @in-production? disable-anti-forgery)
       (m/wrap-error @in-production?)
       m/wrap-trace-request
       (cond-> (some? extra-middleware) extra-middleware)
-      (cond-> @in-production? m/wrap-ssl)
+      (cond-> (and @in-production? (not disable-ssl))
+              m/wrap-ssl)
       (cond-> (not @in-production?) reload/wrap-reload)
       m/wrap-gzip))
 
@@ -68,7 +72,9 @@
                    (datomic_dev/create-connection)
                    (datomic_dev/connect!)))]
     ;; See comments about this where app*args and app is defined.
-    (alter-var-root (var app*args) (fn [_] [conn (select-keys opts [::extra-middleware ::disable-anti-forgery])]))
+    (alter-var-root (var app*args) (fn [_] [conn (select-keys opts [::extra-middleware
+                                                                    ::disable-anti-forgery
+                                                                    ::disable-ssl])]))
     (alter-var-root (var app) call-app*))
   (info "Done initializing server."))
 
@@ -97,6 +103,10 @@
   {:pre [(or (nil? opts) (map? opts))]}
   (reset! in-production? false)
   (start-server (merge {:join? false} opts)))
+
+(defn main-release-no-ssl
+  []
+  (start-server {:join? false ::disable-ssl true}))
 
 (defn start-server-for-tests [& [{:keys [email-chan conn port wrap-state] :as opts}]]
   {:pre [(or (nil? opts) (map? opts))]}
