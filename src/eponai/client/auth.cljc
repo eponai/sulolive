@@ -15,16 +15,15 @@
 
 
 (defn current-auth [db]
-  #?(:cljs
-     (let [auth (db/lookup-entity db [:ui/singleton :ui.singleton/auth])]
-       (debug "Found auth: " auth)
-       (get-in auth [:ui.singleton.auth/user :db/id]))
-     ;(when-let [token (.getItem js/localStorage "idToken")]
-     ;  (let [decoded (crypt/base64.decodeString (second (clojure.string/split token #"\.")))]
-     ;    (debug "Decoded: " decoded)
-     ;    (when-not (is-expired-token? decoded)
-     ;      decoded)))
-     ))
+  (let [auth (db/lookup-entity db [:ui/singleton :ui.singleton/auth])]
+    (debug "Found auth: " auth)
+    (get-in auth [:ui.singleton.auth/user :db/id]))
+  ;(when-let [token (.getItem js/localStorage "idToken")]
+  ;  (let [decoded (crypt/base64.decodeString (second (clojure.string/split token #"\.")))]
+  ;    (debug "Decoded: " decoded)
+  ;    (when-not (is-expired-token? decoded)
+  ;      decoded)))
+  )
 
 (defn props->user [props]
   (let [{:keys [query/auth]} props]

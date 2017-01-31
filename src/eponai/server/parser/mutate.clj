@@ -50,5 +50,7 @@
   {:success "Photo uploaded"
    :error   "Could not upload photo :("}
   {:action (fn []
-             (let [user-entity (db/one-with (db/db state) '[[:user/email (:email auth)]])]
+             (debug "Upload photo for auth: " auth)
+             (let [user-entity (db/one-with (db/db state) {:where   '[[?e :user/email ?email]]
+                                                           :symbols {'?email (:email auth)}})]
                (api/upload-user-photo state (:photo-info params) user-entity)))})

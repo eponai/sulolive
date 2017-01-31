@@ -35,6 +35,16 @@
       {:remote (assoc-in ast [:params :store-id] store-id)}
       {:value (common.read/multiply-store-items store)})))
 
+(defmethod client-read :query/user
+  [{:keys [db query target ast route-params] :as env} _ _]
+  (debug "query/user: " (c/parse-long (:user-id route-params)))
+  (let [user-id (c/parse-long (:user-id route-params))
+        user (db/pull-one-with db query {:where   '[[?e]]
+                                          :symbols {'?e user-id}})]
+    (if target
+      {:remote (assoc-in ast [:params :user-id] user-id)}
+      {:value user})))
+
 (defn local-cart [db]
   #?(:cljs
      (if-let [stored (.getItem js/localStorage "cart")]
@@ -91,13 +101,9 @@
   ;(debug "Read query/auth: ")
   (if target
     {:remote true}
-    {:value #?(:cljs (let [query (or query [:db/id])
-                           user (auth/current-auth db)]
-                       (debug "Auth to query: " user)
-                       (debug "Query: " query)
-                       (debug "Pulled: " (db/pull db query user))
-                       (db/pull db query user))
-               :clj  nil)}))
+    {:value (let [query (or query [:db/id])
+                  user (auth/current-auth db)]
+              (db/pull db query user))}))
 
 (defmethod client-read :query/streams
   [{:keys [db query target]} _ _]

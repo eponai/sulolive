@@ -21,7 +21,7 @@
         "checkout"             :checkout
         "shopping-bag"         :shopping-bag
         "business"             :business
-        "profile"              :profile
+        ["profile/" :user-id]  :profile
         "settings"             :settings}])
 
 ;; Used on the client side to avoid us using routing for kick-off lab stuff.

@@ -453,7 +453,7 @@
                          wrap-datomic-db))
                    (fn [mutate state]
                      (-> mutate
-                         mutate-with-tx-meta
+                         ;mutate-with-tx-meta
                          server-mutate-creation-time-env
                          with-mutation-message
                          mutate-without-history-id-param

@@ -110,7 +110,7 @@
   (GET "/checkout" request (server.ui/checkout-html (request->props request)))
   (GET "/streams" request (server.ui/streams-html (request->props request)))
   (GET "/business" request (server.ui/business-html (request->props request)))
-  (GET "/profile" request (server.ui/profile-html (request->props request)))
+  (GET "/profile/:user-id" request (server.ui/profile-html (request->props request)))
   (GET "/settings" request (server.ui/settings-html (request->props request))))
 
 (defroutes

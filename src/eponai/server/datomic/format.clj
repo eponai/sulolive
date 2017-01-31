@@ -79,7 +79,7 @@
 
 (defn photo [url]
   {:db/id (d/tempid :db.part/user)
-   :photo/url url})
+   :photo/path url})
 
 (defn auth0->user [auth0]
   {:db/id         (d/tempid :db.part/user)

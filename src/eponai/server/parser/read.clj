@@ -27,6 +27,11 @@
   {:value (query/one db db-history query {:where   '[[?e]]
                                           :symbols {'?e store-id}})})
 
+(defmethod server-read :query/user
+  [{:keys [db db-history query]} _ {:keys [user-id]}]
+  {:value (query/one db db-history query {:where   '[[?e]]
+                                          :symbols {'?e user-id}})})
+
 (defmethod server-read :query/items
   [{:keys [db db-history query]} _ {:keys [category search]}]
   {:value (query/all db db-history query {:where '[[?e :item/name]]})})

@@ -15,8 +15,10 @@
     [amazonica.core :refer [defcredential]]
     [eponai.server.datomic.format :as f])
   (:import (datomic Connection)
-           (clojure.lang ExceptionInfo)))
+           (clojure.lang ExceptionInfo)
+           (com.amazonaws.services.s3.model CannedAccessControlList)))
 
+(defcredential (env :aws-access-key-id) (env :aws-secret-access-key) (env :aws-s3-bucket-photos-zone))
 ; Actions
 
 (defn api-error [status code ex-data]
@@ -79,15 +81,24 @@
 ;      ;; TODO: Actually transact this if we want to release jourmoney ^^
 ;      (transact-map conn account))))
 
-(defn s3-photo-upload-url [{:keys [bucket key]}]
-  (let [new-key (clojure.string/join "/" (assoc (clojure.string/split key #"/") 1 "real"))
-        copy-ret (aws-s3/copy-object bucket key bucket new-key)
-        delete-ret (aws-s3/delete-object bucket key)]
-    (str "https://s3.amazonaws.com/" bucket "/" key)))
+
+(defn s3-photo-move [bucket old-key new-key]
+  (aws-s3/copy-object bucket old-key bucket new-key)
+  (aws-s3/set-object-acl bucket new-key CannedAccessControlList/PublicRead)
+  (aws-s3/delete-object bucket key))
+
+(defn s3-photo-real-key [old-key]
+  (clojure.string/join "/" (assoc (clojure.string/split old-key #"/") 1 "real")))
+
+(defn s3-photo-upload-url [bucket key]
+  (str "https://s3.amazonaws.com/" bucket "/" key))
 
 (defn upload-user-photo [conn {:keys [bucket key] :as p} user]
-  (let [db-photo (f/photo (s3-photo-upload-url p))]
-    (db/transact conn [db-photo [:db/add user :user/photos (:db/id db-photo)]])))
+  (let [real-key (s3-photo-real-key key)
+        db-photo (f/photo (s3-photo-upload-url bucket real-key))]
+    (debug "Addig photo for user: " user)
+    (s3-photo-move bucket key real-key)
+    (db/transact conn [db-photo [:db/add user :user/photo (:db/id db-photo)]])))
 
 (defn aws-s3-sign [req]
   (debug "Sign req: " (get-in req [:params :x-amz-meta-size]))

@@ -16,18 +16,19 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:query/auth [:user/email
-                   :user/photos]}])
+     {:query/user [:db/id :user/email {:user/photo [:photo/path]}]}
+     #?(:cljs
+        {:proxy/photo-upload (om/get-query pu/PhotoUploader)})])
   Object
   (initLocalState [_]
     {:tab :following
      :file-upload? false
      :photo-url "https://s3.amazonaws.com/sulo-images/site/collection-women.jpg"})
   (render [this]
-    (let [{:keys [query/items proxy/navbar query/auth]} (om/props this)
+    (let [{:keys [query/user proxy/navbar proxy/photo-upload]} (om/props this)
           {:keys [tab file-upload? photo-url]} (om/get-state this)
-          photo-url (or (first (get auth :user/photos)) photo-url)]
-      (debug "Profile: " auth)
+          photo-url (or (get-in user [:user/photo :photo/path]) photo-url)]
+      (debug "Profile for user: " user)
       (dom/div
         #js {:id "sulo-profile" :className "sulo-page"}
         (common/page-container
@@ -38,21 +39,19 @@
                  (common/modal {:on-close #(om/update-state! this assoc :file-upload? false)}
                                (my-dom/div (css/grid-row)
                                            (pu/->PhotoUploader (om/computed
-                                                                 {}
-                                                                 {:auth auth
-                                                                  :on-change #(let [new-url (get-in (first %) [:response :location])]
-                                                                                          (om/update-state! this assoc :file-upload? false :photo-url new-url))}))))))
+                                                                 photo-upload
+                                                                 {:on-change #(om/update-state! this assoc :file-upload? false)}))))))
             (my-dom/div (->> (css/grid-row)
                              (css/align :center))
                         (my-dom/div (->> (css/grid-column)
-                                         (css/grid-column-size {:small 2}))
+                                         (css/grid-column-size {:small 4 :medium 3 :large 2}))
                                     (dom/a #js {:onClick #(om/update-state! this assoc :file-upload? true)}
                                            (photo/circle
                                              {:src photo-url}))))
             (my-dom/div (->> (css/grid-row)
                              (css/align :center))
                         (my-dom/div (->> (css/grid-column)
-                                         (css/grid-column-size {:small 2})
+                                         (css/grid-column-size {:small 4 :medium 3 :large 2})
                                          (css/text-align :center))
                                     (dom/a #js {:className "button gray hollow"} (dom/span nil "+ Follow"))))
             (my-dom/div (->> (css/grid-row)

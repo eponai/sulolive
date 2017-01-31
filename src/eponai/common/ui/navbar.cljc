@@ -54,7 +54,7 @@
   (dom/div #js {:className "dropdown-pane"}
     (dom/ul #js {:className "menu vertical"}
             (dom/li nil
-                    (dom/a #js {:href "/profile"}
+                    (dom/a #js {:href (str "/profile/" (:db/id user))}
                            "My Profile"))
             (dom/li nil
                     (dom/a #js {:href "/settings"}
@@ -71,7 +71,7 @@
                                  {:item/photos [:photo/path]}
                                  :item/name
                                  {:item/store [:store/name]}]}]}
-     :query/auth])
+     {:query/auth [:db/id :user/email]}])
   Object
   #?(:cljs
      (open-signin [this]
@@ -191,7 +191,7 @@
                          ;                                          #?(:cljs
                          ;                                             (.open-signin this)))} "Sign in")))
                          (menu/item-dropdown
-                           {:dropdown (user-dropdown this nil)}
+                           {:dropdown (user-dropdown this auth)}
                            (dom/i #js {:className "fa fa-user fa-fw"}))
                          (if did-mount?
                            (menu/item-dropdown
