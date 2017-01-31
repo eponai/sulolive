@@ -7,6 +7,7 @@
     #?@(:cljs [[cljsjs.nvd3]
                [cljs.reader :as reader]])
     [clojure.data :as data]
+    [clojure.set :as set]
     [medley.core :as medley]))
 
 #?(:cljs
@@ -16,9 +17,13 @@
                    (b/add-businesses businesses)
                    (b/add-visitors visitors)
                    (b/revenue)
-                   (select-keys [:incomes :expenses :profit])
+                   (select-keys [:incomes :expenses :profit
+                                 :expenses-with-greta :profit-with-greta])
                    (update :incomes :total)
-                   (update :expenses :total)))]
+                   (update :expenses :total)
+                   (update :expenses-with-greta :total)
+                   (set/rename-keys {:profit   :profit-with-streamroot
+                                     :expenses :expenses-with-streamroot})))]
        (->> (map vector biz-range vis-range)
             (map #(apply revenue %))
             (mapcat seq)
@@ -31,8 +36,9 @@
             (map (fn [color m] (assoc m :color color))
                  ["47a"
                   "a47"
-                  "7a4"])
-            ((fn [x] (debug x) x))
+                  "7a4"
+                  "5F5"
+                  "F55"])
             (clj->js)))))
 
 (def graph-order [:varying-biz
@@ -52,7 +58,7 @@
                              :vis-range             (repeat visitors)
                              :x-axis/tick-format-fn (fn [x] (nth biz-range x))
                              :x-axis/label          (str "businesses=x, visitors=" visitors)})
-     :varying-vis         (let [vis-range (into [] (take 6) (iterate (partial * 10) 1))]
+     :varying-vis         (let [vis-range (into [] (take 11) (iterate (partial * 2) 100))]
                             {:biz-range             (repeat businesses)
                              :vis-range             vis-range
                              :x-axis/tick-format-fn (fn [x] (nth vis-range x))
@@ -122,7 +128,9 @@
                      :fixed/businesses
                      :fixed/days
                      :stream/avg-edges
-                     :website/avg-servers]]
+                     :website/avg-servers
+                     :stream/p2p-efficiency
+                     :cloudfront/reserved-capacity-savings]]
        (dom/div #js {:className "row small-up-1"}
          (into [] (map create-input controls))))))
 

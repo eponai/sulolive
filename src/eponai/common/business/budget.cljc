@@ -1,4 +1,5 @@
-(ns eponai.common.business.budget)
+(ns eponai.common.business.budget
+  (:require [taoensso.timbre :refer [debug]]))
 
 (def days-per-month 30)
 
@@ -7,6 +8,9 @@
 
 (defn per-month->per-day [x]
   (/ x days-per-month))
+
+(defn per-day->per-month [x]
+  (* x days-per-month))
 
 (defn per-hour->per-day [x]
   (* x 24))
@@ -18,7 +22,7 @@
   {:businesses                             0
    :visitors                               0
    ;; 106 minutes watched per person per day (is what twitch has)
-   :visitor/stream-viewing-in-secs           (* 106 60)
+   :visitor/stream-viewing-in-secs         (* 106 60)
    :conversion-rate/product-sales          0.02
    :conversion-rate/ads                    0
    :conversion-rate/viewer-subscribing     0
@@ -36,6 +40,7 @@
                                             ;; Streamroot CDN+p2p solution is $0.01/GB
                                             :cdn-streamroot 0.01
                                             :p2p-streamroot 0.005}
+
    ;; ec2-server per month (m3.xlarge?)
    ;; TODO: Get real prices
    :price.ec2/t2.small                     (per-hour->per-day 0.023)
@@ -46,6 +51,8 @@
    :price/ec2-server                       50
    :price/red5-license                     {:first-server (per-month->per-day 129)
                                             :rest-servers (per-month->per-day 79)}
+   ;; Setting to 0.30 means we'll pay 30% of the on-demand price.
+   :cloudfront/reserved-capacity-savings   0.50
    :red5/server-capacity                   {:m4.2xlarge 2600}
    :red5.server-type/stream-manager        :t2.small
    :red5.server-type/origin                :t2.large
@@ -112,7 +119,58 @@
                    :conversion-rate/ads
                    :price/ad-viewed]))
 
-(defn stream-bandwidth-cost [world]
+(defn greta-cost-per-day [world gb-streamed-per-day]
+  (let [tb->gb #(* % 1024)
+        prices [[0 (tb->gb 100)]
+                [499 (tb->gb 2000)]
+                [2000 #?(:cljs js/Infinity :clj Long/MAX_VALUE)]]]
+    (->> prices
+         (map (fn [[price limit]]
+                (when (< (per-day->per-month gb-streamed-per-day) limit)
+                  (per-month->per-day price))))
+         (remove nil?)
+         (first))))
+
+(defn cloudfront-cost-per-day [world gb-streamed-per-day]
+  (let [byte->gb #(/ % 1024 1024 1024)
+        gb->byte #(* % 1024 1024 1024)
+        tb->byte #(* % 1024 1024 1024 1024)
+        price-points [[0.085 (tb->byte 10)]
+                      [0.080 (tb->byte 40)]
+                      [0.060 (tb->byte 100)]
+                      [0.040 (tb->byte 350)]
+                      [0.030 (tb->byte 524)]
+                      [0.025 (tb->byte 4000)]]
+        bytes-per-month (-> gb-streamed-per-day
+                            (gb->byte)
+                            (per-day->per-month))]
+    (if (> bytes-per-month (tb->byte 5000))
+      (* 0.020 gb-streamed-per-day)
+      (loop [price 0 bytes bytes-per-month price-points price-points]
+        (let [[price-per-gb for-next-tb] (first price-points)]
+          (if (< bytes for-next-tb)
+            (per-month->per-day (+ price (* price-per-gb (byte->gb bytes))))
+            (recur (+ price (* price-per-gb (byte->gb for-next-tb)))
+                   (- bytes for-next-tb)
+                   (rest price-points))))))))
+
+(defn kbits-streamed [world]
+  (multiply world [:stream/avg-bit-rate
+                   :visitor/stream-viewing-in-secs
+                   :visitors
+                   :conversion-rate/viewer-watching-stream]))
+
+(defn greta-bandwidth-cost [world]
+  (let [gb-streamed (/ (kbits-streamed world) 8 1024 1024)
+        p2p-efficiency (:stream/p2p-efficiency world)
+        greta-gb-streamed (* p2p-efficiency gb-streamed)
+        greta-cost (greta-cost-per-day world greta-gb-streamed)
+        aws-gb-streamed (* (- 1 p2p-efficiency) gb-streamed)
+        aws-cloudfront (cloudfront-cost-per-day world aws-gb-streamed)
+        aws-with-reserved-cap-cost (* aws-cloudfront (:cloudfront/reserved-capacity-savings world))]
+    (+ greta-cost aws-with-reserved-cap-cost)))
+
+(defn streamroot-bandwidth-cost [world]
   (let [kbits-per-stream (multiply world [:stream/avg-bit-rate
                                           :visitor/stream-viewing-in-secs])
         gb-per-stream (/ kbits-per-stream 8 1024 1024)
@@ -120,14 +178,16 @@
                                            ;; We only stream once between aws and streamroot?
                                            1
                                            (get-in world [:price/stream-bandwidth :from-ec2]))
-        cost-between-streamroot-and-visitors (* gb-per-stream
-                                                (multiply world [:visitors
-                                                                 :conversion-rate/viewer-watching-stream
-                                                                 :streamroot/bandwidth-reduction])
-                                                (get-in world [:price/stream-bandwidth
-                                                               :cdn-streamroot]))]
-    (+ cost-between-aws-and-streamroot
-       cost-between-streamroot-and-visitors)))
+        gb-streamed (* gb-per-stream
+                       (multiply world [:visitors
+                                        :conversion-rate/viewer-watching-stream]))
+        cost-between-streamroot-and-visitors (* gb-streamed (get-in world [:price/stream-bandwidth :cdn-streamroot]))
+        ;; The minimum streamroot costs is $1000 per month
+        total-streamroot-cost (max
+                                (per-month->per-day 1000)
+                                (+ cost-between-aws-and-streamroot
+                                   cost-between-streamroot-and-visitors))]
+    total-streamroot-cost))
 
 (defn ec2-server-time-cost [world]
   (letfn [(server-price [amount-key price-key]
@@ -165,23 +225,35 @@
                                  :income/product-sales         product-sales-income
                                  :income/stream-ads            stream-ads-income})
                     world)
-          expenses ((compute-sum {:expense/stream-bandwidth stream-bandwidth-cost
-                                  :expense/ec2-server-time  ec2-server-time-cost
-                                  :expense/red5-license     red5-server-license-cost})
-                     world)
-          revenue {:incomes  incomes
-                   :expenses expenses
-                   :profit   (- (:total incomes)
-                                (:total expenses))}]
-      (assoc revenue :total-products-sold-usd
-                     (total-products-sold world)
-                     :income-per-expense (/ (:total incomes)
-                                            (:total expenses))
-                     :profit-per-income (/ (:profit revenue)
-                                           (:total incomes))))))
+          expense-map {:expense/stream-bandwidth streamroot-bandwidth-cost
+                       :expense/ec2-server-time  ec2-server-time-cost
+                       :expense/red5-license     red5-server-license-cost}
+          expenses ((compute-sum expense-map) world)
+          expenses-with-greta ((compute-sum (assoc expense-map :expense/stream-bandwidth greta-bandwidth-cost))
+                                world)]
+      {:incomes             incomes
+       :expenses            expenses
+       :expenses-with-greta expenses-with-greta
+       :profit              (- (:total incomes)
+                               (:total expenses))
+       :profit-with-greta   (- (:total incomes)
+                               (:total expenses-with-greta))})))
 
 (defn revenue-in [businesses visitors]
   (-> world
       (add-businesses businesses)
       (add-visitors visitors)
       (revenue)))
+
+(defn always-pos-greta
+  "finds worlds where greta is always cheaper than streamroot, based on p2p-efficiency."
+  [world]
+  (let [p2p-efficiencies (take-while #(< % 1) (iterate (fn [x] (+ x 0.01)) 0.80))
+        non-positive (for [p2p p2p-efficiencies
+                           visitors (range 4267 8623 100)
+                           :let [world (assoc world :visitors visitors
+                                                    :stream/p2p-efficiency p2p)
+                                 diff (- (streamroot-bandwidth-cost world)
+                                         (greta-bandwidth-cost world))]]
+                       (when (neg? diff) p2p))]
+    (remove (set non-positive) p2p-efficiencies)))
