@@ -91,7 +91,6 @@
   (let [db-user (db/lookup-entity (db/db conn) [:user/email (:email auth0-user)])]
     (when-not db-user
       (let [new-user (f/auth0->user auth0-user)]
-        (debug "New user: " new-user)
         (db/transact-one conn new-user)))))
 
 (defn jwt-cookie-backend [conn cookie-key]

@@ -9,8 +9,11 @@
     [eponai.server.external.mailchimp :as mailchimp]
     [eponai.server.http :as http]
     [s3-beam.handler :as s3]
+    [amazonica.aws.s3 :as aws-s3]
     [taoensso.timbre :refer [debug error info]]
-    [clojure.data.json :as json])
+    [clojure.data.json :as json]
+    [amazonica.core :refer [defcredential]]
+    [eponai.server.datomic.format :as f])
   (:import (datomic Connection)
            (clojure.lang ExceptionInfo)))
 
@@ -76,6 +79,15 @@
 ;      ;; TODO: Actually transact this if we want to release jourmoney ^^
 ;      (transact-map conn account))))
 
+(defn s3-photo-upload-url [{:keys [bucket key]}]
+  (let [new-key (clojure.string/join "/" (assoc (clojure.string/split key #"/") 1 "real"))
+        copy-ret (aws-s3/copy-object bucket key bucket new-key)
+        delete-ret (aws-s3/delete-object bucket key)]
+    (str "https://s3.amazonaws.com/" bucket "/" key)))
+
+(defn upload-user-photo [conn {:keys [bucket key] :as p} user]
+  (let [db-photo (f/photo (s3-photo-upload-url p))]
+    (db/transact conn [db-photo [:db/add user :user/photos (:db/id db-photo)]])))
 
 (defn aws-s3-sign [req]
   (debug "Sign req: " (get-in req [:params :x-amz-meta-size]))

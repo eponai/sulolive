@@ -40,7 +40,8 @@
                        [:eponai.common.parser.read-basis-t/map]))))
 
 (defn merge-auth [db key val]
-  (transact db [[:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/user val]]))
+  (transact db [val
+                [:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/user (:db/id val)]]))
 
 ;;;;;;; API
 

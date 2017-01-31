@@ -87,11 +87,16 @@
                                  :symbols {'?e product-id}})})))
 
 (defmethod client-read :query/auth
-  [{:keys [target auth db query]} _ _]
+  [{:keys [target db query]} _ _]
   ;(debug "Read query/auth: ")
   (if target
     {:remote true}
-    {:value #?(:cljs (auth/current-auth db)
+    {:value #?(:cljs (let [query (or query [:db/id])
+                           user (auth/current-auth db)]
+                       (debug "Auth to query: " user)
+                       (debug "Query: " query)
+                       (debug "Pulled: " (db/pull db query user))
+                       (db/pull db query user))
                :clj  nil)}))
 
 (defmethod client-read :query/streams

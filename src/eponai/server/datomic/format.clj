@@ -77,6 +77,10 @@
                   {:cause "datomic.format/user-account-map does not exist anymore."
                    :args args})))
 
+(defn photo [url]
+  {:db/id (d/tempid :db.part/user)
+   :photo/url url})
+
 (defn auth0->user [auth0]
   {:db/id         (d/tempid :db.part/user)
    :user/email    (:email auth0)

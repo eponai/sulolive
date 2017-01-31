@@ -5,7 +5,8 @@
     [eponai.server.external.mailchimp :as mailchimp]
     [eponai.common.parser :as parser :refer [server-mutate server-message]]
     [taoensso.timbre :refer [debug info]]
-    [clojure.data.json :as json]))
+    [clojure.data.json :as json]
+    [eponai.server.api :as api]))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -43,3 +44,11 @@
                                              :merge-fields {"NAME" name
                                                             "SITE" site}})]
                ret))})
+
+(defmutation photo/upload
+  [{:keys [state ::parser/return ::parser/exception auth]} _ params]
+  {:success "Photo uploaded"
+   :error   "Could not upload photo :("}
+  {:action (fn []
+             (let [user-entity (db/one-with (db/db state) '[[:user/email (:email auth)]])]
+               (api/upload-user-photo state (:photo-info params) user-entity)))})

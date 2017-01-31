@@ -60,13 +60,10 @@
     (om/update-state! owner assoc :loading? true)))
 
 (defui PhotoUploader
-  static om/IQuery
-  (query [_]
-    [{:query/auth [:ui.singleton.auth/user]}])
   Object
   (s3-key [this filename]
-    (let [user (auth/props->user (om/props this))]
-      (str "photos/temp/" (:db/id user) "/" filename)))
+    (let [{:keys [auth]} (om/get-computed this)]
+      (str "photos/temp/" (:db/id auth) "/" filename)))
   (initLocalState [this]
     (let [uploaded (chan 20)]
       {:dropped-queue (chan 20)
@@ -77,14 +74,15 @@
     ;(listen-file-drop js/document (om/get-state this :dropped-queue))
     (go
       (while true
-        (let [{:query/keys [auth]} (om/props this)
-              {:keys [dropped-queue upload-queue uploaded uploads]} (om/get-state this)]
+        (let [{:keys [dropped-queue upload-queue uploaded uploads]} (om/get-state this)]
           (let [[v ch] (alts! [uploaded])]
             (cond
               ;(= ch dropped-queue)
               ;(put! upload-queue v)
               (= ch uploaded)
-              (om/update-state! this update :uploads conj v)))))))
+              (do
+                (om/transact! this `[(photo/upload ~{:photo-info (:response v)})])
+                (om/update-state! this update :uploads conj v))))))))
 
   (componentDidUpdate [this prev-props prev-state]
     (let [new-state (om/get-state this)
@@ -95,7 +93,7 @@
           (on-change (:uploads new-state))))))
 
   (render [this]
-    (let [{:query/keys [auth]} (om/props this)
+    (let [{:keys [auth]} (om/get-computed this)
           {:keys [loading?] :as state} (om/get-state this)]
       (debug "Authenticated user: " auth)
       (dom/div

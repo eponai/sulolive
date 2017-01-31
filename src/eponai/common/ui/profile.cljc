@@ -16,16 +16,18 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     #?(:cljs
-        {:proxy/photo-upload (om/get-query pu/PhotoUploader)})])
+     {:query/auth [:user/email
+                   :user/photos]}])
   Object
   (initLocalState [_]
     {:tab :following
      :file-upload? false
      :photo-url "https://s3.amazonaws.com/sulo-images/site/collection-women.jpg"})
   (render [this]
-    (let [{:keys [query/items proxy/navbar proxy/photo-upload]} (om/props this)
-          {:keys [tab file-upload? photo-url]} (om/get-state this)]
+    (let [{:keys [query/items proxy/navbar query/auth]} (om/props this)
+          {:keys [tab file-upload? photo-url]} (om/get-state this)
+          photo-url (or (first (get auth :user/photos)) photo-url)]
+      (debug "Profile: " auth)
       (dom/div
         #js {:id "sulo-profile" :className "sulo-page"}
         (common/page-container
@@ -36,8 +38,9 @@
                  (common/modal {:on-close #(om/update-state! this assoc :file-upload? false)}
                                (my-dom/div (css/grid-row)
                                            (pu/->PhotoUploader (om/computed
-                                                                 photo-upload
-                                                                 {:on-change #(let [new-url (get-in (first %) [:response :location])]
+                                                                 {}
+                                                                 {:auth auth
+                                                                  :on-change #(let [new-url (get-in (first %) [:response :location])]
                                                                                           (om/update-state! this assoc :file-upload? false :photo-url new-url))}))))))
             (my-dom/div (->> (css/grid-row)
                              (css/align :center))

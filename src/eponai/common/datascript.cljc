@@ -9,6 +9,7 @@
   "Additional schema we may use for our ui components"
   []
   {:ui/singleton {:db/unique :db.unique/identity}
+   :ui.singleton.auth/user {:db/valueType :db.type/ref}
    :ui/component {:db/unique :db.unique/identity}
    :ui.component.cart/items {:db/cardinality :db.cardinality/many
                              :db/valueType :db.type/ref}
