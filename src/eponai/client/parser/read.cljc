@@ -156,6 +156,6 @@
   [e k p]
   {:value business.budget/world})
 
-(defmethod client-read :query/message-fn
+(defmethod client-read :query/messages
   [{:keys [db]} _ _]
-  {:value (msg/get-message-fn db)})
+  {:value (msg/get-messages db)})

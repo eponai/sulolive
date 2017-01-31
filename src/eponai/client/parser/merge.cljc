@@ -111,7 +111,7 @@
                       (str "No history-id was provided when merging mutations for novelty: " ordered-novelty))
               (-> m
                   (assoc :next (merge-mutation merge-fn next history-id key value))
-                  (update :keys conj :query/message-fn)))
+                  (update :keys conj :query/messages)))
           (-> m
               (assoc :next (merge-read merge-fn next key value))
               (update :keys conj key))))

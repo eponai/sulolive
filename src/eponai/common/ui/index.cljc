@@ -370,7 +370,7 @@
   static om/IQuery
   (query [this]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     :query/message-fn])
+     :query/messages])
 
   Object
   #?(:cljs
@@ -385,8 +385,8 @@
                   (if (and (not-empty (:name params))
                            (not-empty (:email params))
                            (utils/valid-email? (:email params)))
-                    (let [history-id (msg/om-transact! this `[(beta/vendor ~params)])]
-                      (om/update-state! this assoc :subscription-pending-id history-id :client-msg nil))
+                    (do (msg/om-transact! this `[(beta/vendor ~params)])
+                        (om/update-state! this assoc :client-msg nil))
                     (let [message (cond (empty? (:email params))
                                         "Please provide an email."
                                         (not (utils/valid-email? (:email params)))
@@ -396,22 +396,13 @@
                       (om/update-state! this assoc :client-msg message))))))
   (componentDidUpdate [this _ _]
     #?(:cljs
-       (let [{:keys [query/message-fn]} (om/props this)
-             {:keys [live-open? subscription-pending-id]} (om/get-state this)
-             message (when subscription-pending-id (message-fn subscription-pending-id 'beta/vendor))]
+       (let [{:keys [live-open?]} (om/get-state this)]
          (when live-open?
-           (.setTimeout js/window (fn [] (om/update-state! this assoc :live-open? false)) 5000))
-         (when message
-           (if (and (msg/final? message) (msg/success? message))
-             (debug "FINAL SUCCESS MESSAGE")
-             ;(set! js/window.location "http://sell-thankyou.sulo.live")
-             (debug "PENDING MESSAGE")))
-         )))
+           (.setTimeout js/window (fn [] (om/update-state! this assoc :live-open? false)) 5000)))))
   (render [this]
-    (let [{:keys [proxy/navbar query/message-fn]} (om/props this)
-          {:keys [lock on-login-fn live-open? subscription-pending-id client-msg]} (om/get-state this)
-          message (when subscription-pending-id (message-fn subscription-pending-id 'beta/vendor))]
-
+    (let [{:keys [proxy/navbar]} (om/props this)
+          {:keys [lock on-login-fn live-open? client-msg]} (om/get-state this)
+          message (msg/one-message this 'beta/vendor)]
       (dom/div #js {:id "sulo-sell-coming-soon" :className "sulo-page"}
         (common/page-container
           {:navbar (om/computed navbar {:coming-soon?  true
@@ -464,10 +455,9 @@
                                                          (div (->> (css/grid-row)
                                                                    (css/align :center))
                                                               (dom/button #js {:className "button green" :onClick #?(:cljs #(do (.preventDefault %)
-                                                                                                                             (.subscribe this))
+                                                                                                                                (.subscribe this))
                                                                                                                      :clj  nil)}
-                                                                          (if (and (not (and (some? message) (msg/final? message)))
-                                                                                   (some? subscription-pending-id))
+                                                                          (if (msg/pending? message)
                                                                             (dom/i #js {:className "fa fa-spinner fa-spin fa-fw"})
                                                                             "Invite Me")))
                                                          (div (->> (css/grid-row)
@@ -475,14 +465,14 @@
                                                               (dom/p #js {:className (cond
                                                                                        (some? client-msg)
                                                                                        "alert"
-                                                                                       (some? message)
+                                                                                       (msg/final? message)
                                                                                        (if (msg/success? message)
                                                                                          "success"
                                                                                          "alert"))}
                                                                      (cond
                                                                        (not-empty client-msg)
                                                                        client-msg
-                                                                       message
+                                                                       (msg/final? message)
                                                                        (msg/message message)
                                                                        :else
                                                                        "")))))}))))))))

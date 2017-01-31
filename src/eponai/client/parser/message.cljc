@@ -4,7 +4,7 @@
             [om.next :as om]
             [eponai.common.database :as database]
             [eponai.common.parser :as parser]
-            [taoensso.timbre :refer [debug warn]])
+            [taoensso.timbre :refer [debug warn error]])
   #?(:clj (:import [datascript.db DB])))
 
 ;; -----------------------------
@@ -23,6 +23,17 @@
   (final? [this] "true if the mutation message was returned from the server")
   (pending? [this] "true if we're still waiting for a server response.")
   (success? [this] "true if the server mutation was successful. False is error occured."))
+
+(extend-protocol IMutationMessage
+  nil
+  (final? [_] nil)
+  (pending? [_] nil)
+  (message [_] (throw (ex-info (str "(message) undefined for nil. "
+                                    "Use (final?) or (pending?) before calling (message).")
+                               {})))
+  (success? [_] (throw (ex-info (str "(success?) is undefined for nil."
+                                     "Use (final?) first to check if (success?) can be called.")
+                                {}))))
 
 (defn mutation-message? [x]
   (and (satisfies? IMutationMessage x)
@@ -118,6 +129,29 @@
 ;;    ))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Cache the assert for preventing it to happen everytime it's called.
+(let [cache (atom {})]
+  (defn- assert-query
+    "Makes sure component has :query/messages in its query, so it is
+    refreshed when messages arrive."
+    [component]
+    (let [{:keys [components queries]} @cache
+          query (om/get-query component)]
+      (when-not (or (contains? components component)
+                    (contains? queries (om/get-query component)))
+        (let [parser (om/parser {:read   (fn [_ k _]
+                                           (when (= k :query/messages)
+                                             {:value true}))
+                                 :mutate (constantly nil)})
+              has-query-messages? (:query/messages (parser nil query))]
+          (when-not has-query-messages?
+            (error (str "Component did not have :query/messages in its query."
+                        " Having :query/messages is needed for the component to"
+                        " get refreshed when new messages are merged."
+                        " Component: " (pr-str component))))
+          (swap! cache (fn [m] (-> m (update :queries (fnil conj #{}) query
+                                             :components (fnil conj #{}) component)))))))))
+
 (defn om-transact!
   "Like om.next/transact! but it returns the history-id generated from the transaction."
   [x tx]
@@ -126,14 +160,19 @@
   (om/transact! x tx)
   (let [history-id (parser/reconciler->history-id (cond-> x (om/component? x) (om/get-reconciler)))]
     (when (om/component? x)
+      (assert-query x)
       (om/update-state! x update ::component-messages
                         (fn [messages]
-                          (let [mutations (filter (comp symbol? first) tx)]
+                          (let [mutation-keys (sequence (comp (filter coll?)
+                                                              (map first)
+                                                              (filter symbol?))
+                                                        tx)]
                             (reduce (fn [m mutation-key]
                                       (update m mutation-key (fnil conj []) history-id))
                                     messages
-                                    mutations)))))
+                                    mutation-keys)))))
     history-id))
+
 
 (defn find-message
   "Takes a component, a history id and a mutation-key which was used in the mutation
@@ -144,9 +183,13 @@
         msg-fn (get-message-fn db)]
     (msg-fn history-id mutation-key)))
 
+(defn- message-ids-for-key [c k]
+  (get-in (om/get-state c) [::component-messages k]))
+
 (defn all-messages [component mutation-key]
+  (assert-query component)
   (map #(find-message component % mutation-key)
-       (get-in (om/get-state component) [::component-messages mutation-key])))
+       (message-ids-for-key component mutation-key)))
 
 (defn one-message [component mutation-key]
   (let [messages (all-messages component mutation-key)]
@@ -154,22 +197,34 @@
       (warn "Found more than one message in call to `one-message` for component: " (pr-str component)
             " mutation-key: " mutation-key
             ". There is possibly a bug in your UI?"
-            ". If your component performs multiple messages, please keep track of the history id's"
+            " If your component performs multiple messages, please keep track of the history id's"
             " returned by `om-transact!` and use `find-message` instead."))
     (first messages)))
+
+(defn clear-messages! [component mutation-key]
+  (om/update-state! component ::component-messages dissoc mutation-key))
+
+(defn clear-one-message! [component mutation-key]
+  (when (< 1 (count (message-ids-for-key component mutation-key)))
+    (warn "Found more than one message in call to clear-one-message for component: " (pr-str component)
+          " mutation-key: " mutation-key
+          ". Will clear all messages."
+          ". There is possibly a bug in your UI?"
+          " Use `clear-messages` if you want to clear multiple messages."))
+  (clear-messages! component mutation-key))
 
 (defn message-status [component mutation-key & [not-found]]
   (if-let [msg (one-message component mutation-key)]
     (cond (pending? msg)
-          :pending
+          ::pending
           (final? msg)
-          (if (success? msg) :success :failure)
+          (if (success? msg) ::success ::failure)
           :else
           (throw (ex-info "Message was neither success, error or failure."
                           {:message      msg
                            :component    (pr-str component)
                            :mutation-key mutation-key})))
-    (or not-found :not-found)))
+    (or not-found ::not-found)))
 
 (defn message-data [component mutation-key]
   (message (one-message component mutation-key)))
