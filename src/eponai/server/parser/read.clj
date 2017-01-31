@@ -40,10 +40,12 @@
                       :symbols {'?e product-id}})})
 
 (defmethod server-read :query/auth
-  [{:keys [auth]} _ _]
-  (debug "READING AUTH: " auth)
+  [{:keys [auth query db]} _ _]
+  (debug "READING AUTH: " query)
   {:value (when (some? (:iss auth))
-            auth)})
+            (let [query (or query [:db/id])]
+              (db/pull-one-with db query {:where   '[[?e :user/email ?email]]
+                                          :symbols {'?email (:email auth)}})))})
 
 (defmethod server-read :query/streams
   [{:keys [db query]} _ _]

@@ -12,7 +12,9 @@
     [clojure.data.json :as json]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
-    [ring.util.response :as r]))
+    [ring.util.response :as r]
+    [eponai.server.datomic.format :as f]
+    [eponai.common.database :as db]))
 
 (def http-realm "Sulo-Prototype")
 
@@ -85,7 +87,14 @@
                  :on-error   (fn [r e]
                                (error e))}))
 
-(defn jwt-cookie-backend [cookie-key]
+(defn authenticate-auth0-user [conn auth0-user]
+  (let [db-user (db/lookup-entity (db/db conn) [:user/email (:email auth0-user)])]
+    (when-not db-user
+      (let [new-user (f/auth0->user auth0-user)]
+        (debug "New user: " new-user)
+        (db/transact-one conn new-user)))))
+
+(defn jwt-cookie-backend [conn cookie-key]
   (let [jws-backend (backends/jws {:secret   (b64/decode (env :auth0-client-secret))
                                    :on-error (fn [r e]
                                                (error e))})]
@@ -95,7 +104,10 @@
       (-parse [_ request]
         (get-in request [:cookies cookie-key :value]))
       (-authenticate [_ request data]
-        (auth.protocols/-authenticate jws-backend request data))
+        (let [auth0-user (auth.protocols/-authenticate jws-backend request data)]
+          (when (some? auth0-user)
+            (authenticate-auth0-user conn auth0-user)
+            auth0-user)))
       auth.protocols/IAuthorization
       (-handle-unauthorized [_ request metadata]
         (auth.protocols/-handle-unauthorized jws-backend request metadata)))))
@@ -109,7 +121,7 @@
                           :realm  http-realm})))
 
 (defn wrap-auth [handler conn]
-  (let [auth-backend (jwt-cookie-backend "token")
+  (let [auth-backend (jwt-cookie-backend conn "token")
         basic-backend (http-backend)]
     (-> handler
         (wrap-authorization auth-backend)

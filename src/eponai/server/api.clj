@@ -77,10 +77,16 @@
 ;      (transact-map conn account))))
 
 
-(defn aws-s3-sign []
-  (let [bucket (env :aws-s3-bucket-photos)
-        zone (env :aws-s3-bucket-photos-zone)
-        access-key (env :aws-access-key-id)
-        secret (env :aws-secret-access-key)]
-    ;(debug "SIGNED: " (s3/s3-sign bucket zone access-key secret))
-    (s3/s3-sign bucket zone access-key secret)))
+(defn aws-s3-sign [req]
+  (debug "Sign req: " (get-in req [:params :x-amz-meta-size]))
+  (let [image-size (Long/parseLong (get-in req [:params :x-amz-meta-size]))]
+    (if (< image-size 1000000)
+      (let [bucket (env :aws-s3-bucket-photos)
+            zone (env :aws-s3-bucket-photos-zone)
+            access-key (env :aws-access-key-id)
+            secret (env :aws-secret-access-key)
+            signature (s3/s3-sign bucket zone access-key secret)]
+        ;(debug "SIGNED: " signature)
+        signature)
+      (throw (ex-info "Image uploads need to be smaller than 5MB" {:cause ::http/unprocessable-entity
+                                                                   :message "Image cannot be larger than 5MB"})))))

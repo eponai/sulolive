@@ -121,7 +121,7 @@
     ;  #(r/response (call-parser %))
     ;  (auth/jwt-restrict-opts))
     )
-  (GET "/aws" request (api/aws-s3-sign))
+  (GET "/aws" request (api/aws-s3-sign request))
   (POST "/api" request
     (r/response (call-parser request))
     ;(auth/restrict

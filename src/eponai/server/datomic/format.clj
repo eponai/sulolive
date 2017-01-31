@@ -76,3 +76,8 @@
   (throw (ex-info "TODO, implement this"
                   {:cause "datomic.format/user-account-map does not exist anymore."
                    :args args})))
+
+(defn auth0->user [auth0]
+  {:db/id         (d/tempid :db.part/user)
+   :user/email    (:email auth0)
+   :user/verified (:email_verified auth0)})
