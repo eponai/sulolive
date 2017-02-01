@@ -28,6 +28,7 @@
             (map #(apply revenue %))
             (mapcat seq)
             (group-by key)
+            (into (sorted-map-by #(compare (name %1) (name %2))))
             (map (fn [[k values]]
                    {:key    (name k)
                     :values (vec (map-indexed (fn [i [_ v]]
@@ -48,7 +49,7 @@
 (defn graphs [this]
   (let [{:fixed/keys [visitors businesses]} (:model (om/get-state this))]
     {:varying-biz-and-vis (let [biz-range (take 9 (iterate (partial * 2) 10))
-                                vis-range (mapv (partial * 10) biz-range)]
+                                vis-range (mapv (partial * 500) biz-range)]
                             {:biz-range             biz-range
                              :vis-range             vis-range
                              :x-axis/tick-format-fn (fn [x] (str [(nth biz-range x) (nth vis-range x)]))
@@ -58,7 +59,7 @@
                              :vis-range             (repeat visitors)
                              :x-axis/tick-format-fn (fn [x] (nth biz-range x))
                              :x-axis/label          (str "businesses=x, visitors=" visitors)})
-     :varying-vis         (let [vis-range (into [] (take 11) (iterate (partial * 2) 100))]
+     :varying-vis         (let [vis-range (into [] (take 9) (iterate (partial * 2) 100))]
                             {:biz-range             (repeat businesses)
                              :vis-range             vis-range
                              :x-axis/tick-format-fn (fn [x] (nth vis-range x))
