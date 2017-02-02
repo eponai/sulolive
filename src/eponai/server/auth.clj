@@ -88,10 +88,11 @@
                                (error e))}))
 
 (defn authenticate-auth0-user [conn auth0-user]
-  (let [db-user (db/lookup-entity (db/db conn) [:user/email (:email auth0-user)])]
-    (when-not db-user
-      (let [new-user (f/auth0->user auth0-user)]
-        (db/transact-one conn new-user)))))
+  (when auth0-user
+    (let [db-user (db/lookup-entity (db/db conn) [:user/email (:email auth0-user)])]
+      (when-not db-user
+        (let [new-user (f/auth0->user auth0-user)]
+          (db/transact-one conn new-user))))))
 
 (defn jwt-cookie-backend [conn cookie-key]
   (let [jws-backend (backends/jws {:secret   (b64/decode (env :auth0-client-secret))
