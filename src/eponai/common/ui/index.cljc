@@ -132,7 +132,7 @@
                        (div (->> (css/grid-column)
                                  (css/grid-column-size {:small 4 :medium 3})
                                  (css/text-align :left))
-                            (dom/a #js {:className "button expanded highlight drop-shadow"
+                            (dom/a #js {:className "button expanded pink drop-shadow"
                                         :onClick   (fn []
                                                      #?(:cljs
                                                         (set! js/window.location (str "/goods?search=" input-search))))}

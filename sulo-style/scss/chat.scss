@@ -15,7 +15,8 @@ $chat-zindex: 2;
 	transition: right .25s ease-in-out;
 	&:not(.show) {
 		.button {
-			background: rgba($primary-color, 0.75);
+			$button-color: map-get($foundation-palette, green);
+			background: rgba($button-color, 1);
 		}	
 	}
 	.stream-toggle {

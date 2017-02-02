@@ -109,10 +109,11 @@
                (my-dom/div
                  (->> {:onClick #(om/update-state! this assoc :show-chat? (not show-chat?))}
                       (css/add-class ::css/stream-toggle))
-                 (my-dom/a (cond->> (->> (css/add-class ::button)
+                 (my-dom/a (cond-> (->> (css/add-class ::button)
                                          (css/add-class :expanded))
                                     show-chat?
-                                    (css/add-class :secondary))
+                                    (->> (css/add-class :secondary)
+                                         (css/add-class :hollow)))
                            (if show-chat?
                              (dom/span nil ">>")
                              (dom/i #js {:className "fa fa-comments fa-fw"}))))
@@ -121,7 +122,7 @@
                (dom/div #js {:className "stream-chat-input"}
                  (dom/input #js {:type        "text"
                                  :placeholder "Your message..."})
-                 (dom/a #js {:className "button expanded"}
+                 (dom/a #js {:className "button expanded green"}
                         (dom/span nil "Send"))))))
          ;(my-dom/div
          ;  nil
