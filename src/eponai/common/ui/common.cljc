@@ -123,7 +123,7 @@
                          :href    goods-href}
                     item-name))
            (dom/div #js {:className "content-item-subtitle-section"}
-             (dom/strong nil (:store/name store)))
+             (dom/small nil (dom/span nil "by") (dom/a #js {:href (link-to-store store)} (:store/name store))))
            (dom/div #js {:className "content-item-subtitle-section"}
              (dom/strong nil (ui-utils/two-decimal-price price)))
            children

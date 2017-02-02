@@ -108,7 +108,7 @@
         (dom/label #js {:htmlFor "file" :className "button hollow expanded"}
                    (if loading?
                      (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"})
-                     "Upload File"))
+                     "Upload Photo"))
         ;(apply dom/ul nil (map (fn [{:keys [file response] :as upload}]
         ;                         (debug "Upload: " upload)
         ;                         (dom/li nil

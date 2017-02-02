@@ -46,7 +46,8 @@
            items      :item/_store
            store-name :store/name} store
           stream (first stream)
-          show-chat? (:show-chat? st (some? stream))]
+          show-chat? (:show-chat? st (some? stream))
+          has-stream? (some? stream)]
       (dom/div #js {:id "sulo-store" :className (str "sulo-page" (when show-chat? " chat-open"))}
         (common/page-container
          {:navbar navbar}
@@ -63,14 +64,29 @@
                          (photo/circle
                            {:src (:photo/path (:store/photo store))})
 
-                         (dom/p nil (dom/strong #js {:className "store-name"} store-name))
-                         (dom/a #js {:className "button hollow"} "+ Follow"))
+                         (dom/div nil (dom/span nil (dom/strong #js {:className "store-name"} store-name)))
+                         (dom/div nil (dom/p nil
+                                                (dom/i #js {:className "fa fa-map-marker fa-fw"})
+                                             (dom/strong nil (dom/small nil "North Vancouver, BC"))))
+                         (dom/div nil (dom/a #js {:className "button expanded hollow"}
+                                             (dom/span nil "+ Follow")))
+                         (when-not has-stream?
+                           (dom/div nil (dom/a #js {:className "button expanded hollow"}
+                                               (dom/i #js {:className "fa fa-comment-o fa-fw"})
+                                               (dom/span nil "Contact")))))
                        (my-dom/div
                          (->> (css/grid-column))
                          (photo/cover
                            {:src (if cover
                                    (:photo/path cover)
-                                   "")}))))
+                                   "")})))
+                     (my-dom/div
+                       (->> (css/grid-row)
+                            (css/align :center))
+                       (my-dom/div (->> (css/grid-column)
+                                        (css/grid-column-size {:small 12})
+                                        (css/text-align :center))
+                                   (dom/span nil "Keep calm and wear pretty jewelry"))))
 
          (if (some? stream)
            (my-dom/div
@@ -82,9 +98,9 @@
                (my-dom/div (css/grid-column)
                            (when (or (some? stream) cover)
                              (dom/div #js {:className "stream-container content-item"}
+                               (stream/->Stream (:proxy/stream props))
                                (dom/div #js {:className "content-item-title-section"}
-                                 (dom/span nil (:stream/name stream)))
-                               (stream/->Stream (:proxy/stream props))))))
+                                 (dom/span nil (:stream/name stream)))))))
 
              (my-dom/div
                (cond->> (css/add-class ::css/stream-chat-container)
@@ -107,22 +123,33 @@
                                  :placeholder "Your message..."})
                  (dom/a #js {:className "button expanded"}
                         (dom/span nil "Send"))))))
+         ;(my-dom/div
+         ;  nil
+         ;  (my-dom/div (->> (css/grid-row))
+         ;              (my-dom/div (css/grid-column)
+         ;                          (dom/a #js {:className "button hollow"} (dom/span nil "+ Follow")))
+         ;              (my-dom/div (css/grid-column)
+         ;                          (dom/a #js {:className "button hollow"} (dom/span nil "About")))
+         ;              (my-dom/div (css/grid-column)
+         ;                          (dom/a #js {:className "button hollow"} (dom/span nil "Contact")))))
 
          (my-dom/div {:id "shop"}
                      (my-dom/div
                        (->> (css/grid-row)
-                            (css/add-class :collapse))
+                            (css/add-class :collapse)
+                            (css/add-class :menu-container))
                        (my-dom/div
                          (css/grid-column)
                          (menu/horizontal
-                           nil
+                           (css/align :center)
+                           (menu/item-link {:classes [:about]} (dom/span nil "About"))
                            (menu/item-link nil (dom/span nil "Sheets"))
                            (menu/item-link nil (dom/span nil "Pillows"))
                            (menu/item-link nil (dom/span nil "Duvets")))))
 
                      (apply my-dom/div
                             (->> (css/grid-row)
-                                 (css/grid-row-columns {:small 2 :medium 3 :large 4}))
+                                 (css/grid-row-columns {:small 2 :medium 3}))
                             (map (fn [p]
                                    (pi/->ProductItem (om/computed {:product p}
                                                                   {:display-content (item/->Product p)})))

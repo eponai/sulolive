@@ -4,11 +4,48 @@
 		.photo-container {
 		// 	border-radius: 50%;
 		// 	overflow: hidden;
-			margin: 2rem 0;
+			// margin: 2rem 0;
 		}
 	}
 
 	ul {
-		text-transform: uppercase;
+		// text-transform: uppercase;
+	}
+
+	.user-info {
+		$color: map-get($foundation-palette, green);
+		// background: rgba($color, 0.05);
+	}
+	.profile-photo {
+		margin: 1.75rem auto;
+		a {
+			cursor: auto;
+		}
+		// .overlay {
+		// 	display: none;
+		// 	transition: opacity .25s ease-in-out;
+		// 	background: rgba($white, 0.4);
+		// 	.content {
+		// 		margin: 0 auto;
+		// 	}
+
+		// }
+		&.edit-enabled {
+			a {
+				cursor: pointer;
+			}
+			// .overlay {
+			// 	opacity: 0;
+			// 	display: flex;
+			// 	border-radius: 50%;
+			// 	overflow: hidden;
+			// 	// justify-content: flex-end;
+
+			// 	// cursor: pointer;
+			// 	&:hover {
+			// 		opacity: 1;
+			// 	}
+			// }
+		}
 	}
 }

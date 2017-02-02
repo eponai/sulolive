@@ -58,6 +58,7 @@
 		.store-info {
 			padding: 1rem;
 			border-right: 1px solid $light-gray;
+			background: lighten($light-gray, 5%);
 			// border-right: none;
 		}
 		.column:last-child {
@@ -73,6 +74,10 @@
 			margin: 1rem auto;
 		}
 	}
+	#sulo-video {
+		margin-bottom: 0;
+		border: 1px solid $light-gray;
+	}
 	// img {
 		// max-height: 30rem;
 	// }
@@ -82,6 +87,9 @@
 	// }
 	.stream-container {
 		@include text-shadow(light);
+		span {
+			font-style: normal;
+		}
 		// visibility: hidden;
 		
 		// font-weight: bold;
@@ -96,7 +104,7 @@
 		// min-height: 10rem;
 		@include breakpoint(large) {
 			padding: 1rem;
-			font-size: 1.25rem;
+			// font-size: 1.25rem;
 		}
 	}
 	// .has-stream {
@@ -106,11 +114,34 @@
 	// }
 	#shop {
 		ul {
-			text-transform: uppercase;
-			font-size: 90%;
-			padding: 0.5rem 0;
+			// text-transform: uppercase;
+			// font-size: 90%;
+			// padding: 0.5rem 0;
+			font-weight: 500;
 			border-top: 1px solid $light-gray;
 			border-bottom: 1px solid $light-gray;
+		}
+		.about {
+			border-right: 1px solid $medium-gray;
+		}
+		.column {
+			// margin-top: 2rem;
+			padding: 1rem;
+			@include breakpoint(medium) {
+				padding: 1.5rem;
+			}
+			@include breakpoint(large) {
+				padding: 2rem;
+			}
+		}
+		.menu-container {
+			.column {
+				padding-left: 0;
+				padding-right: 0;
+			}
+			.menu {
+				padding: 1rem 0;
+			}
 		}
 	}
 	// .store-nav {

@@ -191,6 +191,9 @@
             :item/price    6.74M
             :item/store    #db/id[:db.part/user -5]
             :item/category "accessories"}]
+ :user [{:db/id #db/id[:db.part/user -500]
+         :user/email "dev@sulo.live"
+         :user/photo #db/id[:db.part/user -10]}]
 
  ;:cart [{:cart/items #{[:item/id "00"]
  ;                      [:item/id "01"]

@@ -38,5 +38,9 @@
 		text-align: center;
 		display: flex;
 		flex-direction: column;
+		// justify-content: center;
+		span {
+			margin-right: 0.25rem;
+		}
 	}
 }
