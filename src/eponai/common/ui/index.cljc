@@ -68,7 +68,7 @@
         (photo/photo {:src url}))
       (my-dom/div
         (->> (css/text-align :center))
-        (dom/p nil (dom/strong nil title))))))
+        (dom/p nil (dom/span nil title))))))
 
 (defui Index
   static om/IQuery
@@ -177,13 +177,13 @@
                                            (div
                                              (->> (css/grid-column)
                                                   (css/add-class :content-item))
-                                             (collection-element {:url   "/assets/img/collection-home-5.jpg"
+                                             (collection-element {:url   "/assets/img/collection-home.jpg"
                                                                   :title "Home"}))
                                            (div
                                              (->> (css/grid-column)
                                                   (css/add-class :content-item)
                                                   (css/grid-column-size {:small 12 :medium 5}))
-                                             (collection-element {:url   "/assets/img/collection-women-2.jpg"
+                                             (collection-element {:url   "/assets/img/collection-women.jpg"
                                                                   :title "Women"
                                                                   :full? true})))
                                          (div
@@ -191,13 +191,13 @@
                                            (div
                                              (->> (css/grid-column)
                                                   (css/add-class :content-item))
-                                             (collection-element {:url   "/assets/img/collection-men-2.jpg"
+                                             (collection-element {:url   "/assets/img/collection-men.jpg"
                                                                   :title "Men"}))
                                            (div
                                              (->> (css/grid-column)
                                                   (css/add-class :content-item)
                                                   (css/grid-column-size {:small 12 :medium 5}))
-                                             (collection-element {:url   "/assets/img/collection-kids-4.jpg"
+                                             (collection-element {:url   "/assets/img/collection-kids.jpg"
                                                                   :title "Kids"
                                                                   :full? true}))))
                                     ;(map (fn [s t]

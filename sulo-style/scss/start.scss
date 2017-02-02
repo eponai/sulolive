@@ -102,13 +102,20 @@ $section-footer-color: $primary-color;
 					justify-content: stretch;
 				}
 			}
+			.content {
+				// background: rgba($white, 0.5);
+				p {
+					margin-bottom: 0;
+					font-weight: 500;
+				}
+			}
 			.overlay-container {
 				p {
 					text-transform: uppercase;
 				}
 				font-size: 2rem;
-				text-shadow: 1px 1px 0 rgba($black, 0.5);
-				color: $white;
+				text-shadow: 1px 1px 3px rgba($white, 0.25);
+				// color: $white;
 			}
 		}
 	}
