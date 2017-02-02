@@ -5,6 +5,8 @@
     [cljs.core.async :refer [chan alts! put!]]
     [cljs.core]
     [goog.events :as events]
+    [goog.crypt]
+    [goog.crypt.Sha256]
     [s3-beam.client :as s3]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
@@ -47,8 +49,13 @@
    ;                           (put! out files)))))
    out))
 
-(defn s3-key [filename]
-  )
+(defn hashed [eid]
+  (let [digest (fn [hasher bytes]
+                 (.update hasher bytes)
+                 (.digest hasher))
+        str->bytes (fn [s]
+                     (goog.crypt/stringToUtf8ByteArray s))]
+    (goog.crypt/byteArrayToHex (digest (goog.crypt.Sha256.) (str->bytes (str eid))))))
 
 (defn queue-file [e owner {:keys [upload-queue]}]
   (let [file (first (array-seq (.. e -target -files)))
@@ -66,7 +73,12 @@
   Object
   (s3-key [this filename]
     (let [{:keys [query/auth]} (om/props this)]
-      (str "photos/temp/" (:db/id auth) "/" filename)))
+      (let [sha-dbid (hashed (:db/id auth))
+            chars 2
+            level1 (clojure.string/join (take chars sha-dbid))
+            level2 (clojure.string/join (take chars (drop chars sha-dbid)))]
+        (str "photos/temp/" level1 "/" level2 "/" sha-dbid "/" filename))))
+
   (initLocalState [this]
     (let [uploaded (chan 20)]
       {:dropped-queue (chan 20)
