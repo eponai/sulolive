@@ -16,7 +16,7 @@
     [eponai.server.datomic.format :as f])
   (:import (datomic Connection)
            (clojure.lang ExceptionInfo)
-           (com.amazonaws.services.s3.model CannedAccessControlList)))
+           (com.amazonaws.services.s3.model CannedAccessControlList AmazonS3Exception)))
 
 (defcredential (env :aws-access-key-id) (env :aws-secret-access-key) (env :aws-s3-bucket-photos-zone))
 ; Actions
@@ -94,11 +94,13 @@
   (str "https://s3.amazonaws.com/" bucket "/" key))
 
 (defn upload-user-photo [conn {:keys [bucket key] :as p} user]
-  (let [real-key (s3-photo-real-key key)
-        db-photo (f/photo (s3-photo-upload-url bucket real-key))]
-    (debug "Addig photo for user: " user)
-    (s3-photo-move bucket key real-key)
-    (db/transact conn [db-photo [:db/add user :user/photo (:db/id db-photo)]])))
+  (try
+    (let [real-key (s3-photo-real-key key)
+          db-photo (f/photo (s3-photo-upload-url bucket real-key))]
+      (s3-photo-move bucket key real-key)
+      (db/transact conn [db-photo [:db/add user :user/photo (:db/id db-photo)]]))
+    (catch AmazonS3Exception e
+      (throw (ex-info (.getMessage e) {:message (.getMessage e)})))))
 
 (defn aws-s3-sign [req]
   (debug "Sign req: " (get-in req [:params :x-amz-meta-size]))
