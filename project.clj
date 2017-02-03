@@ -177,6 +177,7 @@
   :profiles {:uberjar  {:jvm-opts   ^:replace ["-Dclojure.compiler.direct-linking=true"
                                                "-Xmx1g" "-server"]
                         :aot        :all
+                        :resource-paths ^:replace ["resources"]
                         :prep-tasks ["compile" "prod-build-web" "css"]}
 
              :mobile   {:dependencies 

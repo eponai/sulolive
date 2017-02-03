@@ -49,7 +49,8 @@
 (defn graphs [this]
   (let [{:fixed/keys [visitors businesses]} (:model (om/get-state this))]
     {:varying-biz-and-vis (let [biz-range (take 9 (iterate (partial * 2) 10))
-                                vis-range (mapv (partial * 500) biz-range)]
+                                customers-per-business-per-day (/ 1000 30)
+                                vis-range (mapv (partial * customers-per-business-per-day) biz-range)]
                             {:biz-range             biz-range
                              :vis-range             vis-range
                              :x-axis/tick-format-fn (fn [x] (str [(nth biz-range x) (nth vis-range x)]))
