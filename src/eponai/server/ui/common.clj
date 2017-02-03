@@ -80,7 +80,7 @@
               :content    "IE=edge"})
    (dom/meta {:name    "viewport"
               :content "width=device-width, initial-scale=1 maximum-scale=1 user-scalable=0"})
-   (dom/meta {:name "author" :content "SULO"})
+   (dom/meta {:name "author" :content "SULO Live"})
    (dom/meta {:name    "description"
               :content "Watch and interact with your favorite local makers and artisans on Vancouver's online marketplace."})
    (comment (dom/meta {:http-equiv "Content-Type"
