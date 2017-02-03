@@ -325,7 +325,11 @@
                                                            (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
 
           (photo/header
-            {:src "https://s3.amazonaws.com/sulo-images/site/home-header-bg.jpg"}
+            {:src
+             ;; TODO: We should resolve the s3 path to a configurable cloudfront path
+             ;; "https://s3.amazonaws.com/sulo-images/site/home-header-bg.jpg"
+             "https://d30slnyi7gxcwc.cloudfront.net/site/home-header-bg.jpg"
+             }
 
             (callout-banner live-open?)
             (->ComingSoonContent
@@ -415,7 +419,12 @@
                                                            (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
           (debug "Live opene: " live-open?)
           (photo/header
-            {:src "https://s3.amazonaws.com/sulo-images/site/coming-soon-sell-bg.jpg"}
+            {:src
+
+             ;;TODO: Resolve s3 paths to cloudfront paths
+             ;;"https://s3.amazonaws.com/sulo-images/site/coming-soon-sell-bg.jpg"
+             "https://d30slnyi7gxcwc.cloudfront.net/site/coming-soon-sell-bg.jpg"
+             }
 
             (callout-banner live-open?)
             (->ComingSoonContent
