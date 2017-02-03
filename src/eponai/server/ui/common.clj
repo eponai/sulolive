@@ -124,12 +124,14 @@
        "/js/out/budget.js"))
 
 (defn red5pro-script-tags [release?]
-  [(dom/script {:src (if release? "https://webrtc.github.io/adapter/adapter-latest.js"
-                                  "/bower_components/webrtc-adapter/release/adapter.js")})
-   (dom/script {:src "/lib/videojs/video.min.js"})
-   (dom/script {:src "/lib/videojs/videojs-media-sources.min.js"})
-   (dom/script {:src "/lib/videojs/videojs.hls.min.js"})
-   (dom/script {:src "/lib/red5pro/red5pro-sdk.min.js"})])
+  (comment
+    "We don't need these yet."
+    [(dom/script {:src (if release? "https://webrtc.github.io/adapter/adapter-latest.js"
+                                    "/bower_components/webrtc-adapter/release/adapter.js")})
+     (dom/script {:src "/lib/videojs/video.min.js"})
+     (dom/script {:src "/lib/videojs/videojs-media-sources.min.js"})
+     (dom/script {:src "/lib/videojs/videojs.hls.min.js"})
+     (dom/script {:src "/lib/red5pro/red5pro-sdk.min.js"})]))
 
 (defn auth0-lock-passwordless [release?]
   (dom/script {:src (if release? "https://cdn.auth0.com/js/lock-passwordless-2.2.min.js"
