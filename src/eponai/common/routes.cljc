@@ -2,6 +2,7 @@
   (:require
     [eponai.common.ui.shopping-bag :as bag]
     [eponai.common.ui.store :as store]
+    [eponai.common.ui.new-store :as new-store]
     [eponai.common.ui.goods :as goods]
     [eponai.common.ui.index :as index]
     [eponai.common.ui.product :as product]
@@ -11,18 +12,19 @@
     [eponai.common.ui.settings :as settings]))
 
 (def routes
-  ["/" {""                     :index
-        "coming-soon"          :coming-soon
-        "sell/coming-soon"     :sell-soon
-        ["store/" :store-id]   :store
-        "goods"                :goods
-        ["goods/" :product-id] :product
-        "streams"              :streams
-        "checkout"             :checkout
-        "shopping-bag"         :shopping-bag
-        "business"             :business
-        ["profile/" :user-id]  :profile
-        "settings"             :settings}])
+  ["/" {""                            :index
+        "coming-soon"                 :coming-soon
+        "sell/coming-soon"            :sell-soon
+        "store/new"                   :new-store
+        ["store/" [#"\d+" :store-id]] :store
+        "goods"                       :goods
+        ["goods/" :product-id]        :product
+        "streams"                     :streams
+        "checkout"                    :checkout
+        "shopping-bag"                :shopping-bag
+        "business"                    :business
+        ["profile/" :user-id]         :profile
+        "settings"                    :settings}])
 
 ;; Used on the client side to avoid us using routing for kick-off lab stuff.
 (defn without-coming-soon-route [routes]
@@ -37,6 +39,8 @@
                   :factory   index/->ComingSoonBiz}
    :store        {:component store/Store
                   :factory   store/->Store}
+   :new-store    {:component new-store/NewStore
+                  :factory   new-store/->NewStore}
    :checkout     {:component bag/ShoppingBag
                   :factory   bag/->ShoppingBag}
    :shopping-bag {:component bag/ShoppingBag

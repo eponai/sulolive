@@ -28,7 +28,7 @@
           ;(dom/script {:src "https://cdn.auth0.com/js/lock/10.6/lock.min.js"})
 
 
-          (when (or (= route :coming-soon) (= route :sell-soon))
+          (when  (= route :coming-soon)
             [
              (dom/script {:src "https://cdn.auth0.com/js/lock/10.6/lock.min.js"})
              (dom/script {:src "https://code.jquery.com/jquery-1.11.0.min.js"})

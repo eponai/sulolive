@@ -39,7 +39,10 @@
                      ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
                      ::m/system                   {:system/mailchimp (if @in-production?
                                                                        (mailchimp/mail-chimp (env :mail-chimp-api-key))
-                                                                       (mailchimp/mail-chimp-stub))}
+                                                                       (mailchimp/mail-chimp-stub))
+                                                   :system/stripe (if @in-production?
+                                                                    (stripe/stripe (env :stripe-secret-key))
+                                                                    (stripe/stripe-stub))}
                      ::m/cljs-build-id            (or (env :cljs-build-id) "dev")})
       (m/wrap-defaults @in-production? disable-anti-forgery)
       (m/wrap-error @in-production?)

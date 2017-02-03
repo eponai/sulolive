@@ -9,9 +9,65 @@
   (:import
     (com.stripe Stripe)
     (com.stripe.exception CardException)
-    (com.stripe.model Customer)
-    (com.stripe.model Card)
-    (com.stripe.model Subscription)))
+    (com.stripe.model Customer Card Subscription Account)
+    (com.stripe.net RequestOptions)))
+
+(defn set-api-key [api-key]
+  (if (some? api-key)
+    (set! (. Stripe apiKey) api-key)
+    (throw (ex-info "No Api key provided" {:message "No API key provided"
+                                           :cause   ::h/unprocessable-entity}))))
+
+;; ########## Stripe protocol ################
+
+(defprotocol IStripe
+  (create-account [this opts]
+    "Create a managed account on Stripe for a a seller.
+    Opts is a map with following keys:
+
+    :country - A two character string code for the country of the seller, e.g. 'US'.")
+
+  (get-account [this account-id]
+    "Get a managed account for a seller from Stripe.
+    Opts is a map with following keys:
+
+    :country - A two character string code for the country of the seller, e.g. 'US'.")
+
+  (create-customer [this account-id opts]
+    "Get a managed account for a seller from Stripe.
+    Opts is a map with following keys:
+
+    :country - A two character string code for the country of the seller, e.g. 'US'."))
+
+(defrecord StripeRecord [api-key]
+  IStripe
+  (get-account [_ account-id]
+    (set-api-key api-key)
+    (Account/retrieve ^String account-id))
+
+  (create-account [_ {:keys [country]}]
+    (set-api-key api-key)
+    (let [account (Account/create {"country" country
+                                   "managed" true})]
+      account))
+  (create-customer [_ account-id {:keys [email]}]
+    (let [^RequestOptions req-opts (.setStripeAccount (RequestOptions/builder) account-id)
+          customer (Customer/create {"email" email} req-opts)]
+      customer)))
+
+(defn stripe [api-key]
+  (->StripeRecord api-key))
+
+(defn stripe-stub []
+  (reify IStripe
+    (create-account [_ params]
+      (debug "DEV - Fake subscribing email to mail-chimp with params: " params))
+    (get-account [_ params]
+      (debug "DEV - Fake subscribing email to mail-chimp with params: " params))
+    (create-customer [_ _ params]
+      (debug "DEV - Fake subscribing email to mail-chimp with params: " params))))
+
+
 ;; ########### Stripe objects ################
 
 (defn customer [customer-id]
@@ -35,13 +91,13 @@
 ;; ######################################
 
 (defn obj->subscription-map [^Subscription stripe-obj]
-  {:stripe.subscription/id      (.getId stripe-obj)
-   :stripe.subscription/status  (keyword (.getStatus stripe-obj))
+  {:stripe.subscription/id         (.getId stripe-obj)
+   :stripe.subscription/status     (keyword (.getStatus stripe-obj))
    :stripe.subscription/period-end (* 1000 (.getCurrentPeriodEnd stripe-obj))})
 
 (defn json->subscription-map [{:keys [id current_period_end status]}]
-  {:stripe.subscription/id      id
-   :stripe.subscription/status  (keyword status)
+  {:stripe.subscription/id         id
+   :stripe.subscription/status     (keyword status)
    :stripe.subscription/period-end (* 1000 current_period_end)})
 
 (declare stripe-action)
@@ -71,88 +127,88 @@
 ;;; ########### Stripe actions ###############
 
 (defmulti stripe-action (fn [k _] k))
-
-(defmethod stripe-action :customer/get
-  [_ {:keys [customer-id subscription-id]}]
-  (when customer-id
-    (let [^Customer customer (Customer/retrieve customer-id)
-          _ (debug "Customer object: " customer)
-          default-source (.getDefaultSource customer)
-          ^Card card (when default-source
-                       (.retrieve (.getSources customer) (.getDefaultSource customer)))
-          ^Subscription subscription (when subscription-id
-                                       (.retrieve (.getSubscriptions customer) subscription-id))]
-      {:id           (.getId customer)
-       :email        (.getEmail customer)
-       :card         (when card
-                       {:exp-month (.getExpMonth card)
-                        :exp-year  (.getExpYear card)
-                        :name      (.getName card)
-                        :last4     (.getLast4 card)
-                        :brand     (.getBrand card)
-                        :id        (.getId card)
-                        })
-       :subscription (when subscription
-                       {:quantity   (.getQuantity subscription)
-                        :period-end (* 1000 (.getCurrentPeriodEnd subscription))
-                        :period-start (* 1000 (.getCurrentPeriodStart subscription))})})))
-
-(defmethod stripe-action :customer/create
-  [_ {:keys [params]}]
-  {:post [(map? %)]}
-  (let [customer (Customer/create params)
-        subscription (-> customer
-                         (.getSubscriptions)
-                         (.getData)
-                         first)]
-    (debug "Created customer: " customer)
-    (debug "Customer map: " {:stripe/customer     (.getId customer)
-                             :stripe/subscription (obj->subscription-map subscription)})
-    {:stripe/customer     (.getId customer)
-     :stripe/subscription (obj->subscription-map subscription)}))
-
-(defmethod stripe-action :customer/update
-  [_ {:keys [customer-id params]}]
-  (let [customer (Customer/retrieve customer-id)
-        updated-customer (.update customer params)]
-    (debug "Updated customer: " updated-customer)
-    {:stripe/customer customer-id}))
-
-(defmethod stripe-action :card/delete
-  [_ {:keys [customer-id card]}]
-  (let [customer (Customer/retrieve customer-id)
-        card (.retrieve (.getSources customer) (:id card))
-        deleted (.delete card)]
-    (debug "Deleted card from customer: " customer " " deleted)
-    {:stripe/customer customer-id}))
-
-
-(defmethod stripe-action :subscription/create
-  [_ {:keys [customer-id params]}]
-  {:post [(map? %)]}
-  (let [customer (Customer/retrieve customer-id)
-        created (.createSubscription customer params)]
-    (debug "Created subscription: " created)
-    (obj->subscription-map created)))
-
-(defmethod stripe-action :subscription/update
-  [_ {:keys [subscription-id customer-id params]}]
-  {:post [(map? %)]}
-  (let [customer (Customer/retrieve customer-id)
-        subscription (.retrieve (.getSubscriptions customer) subscription-id)
-        updated (.update subscription params)]
-    (debug "Updated subscription: " updated)
-    (obj->subscription-map updated)))
-
-(defmethod stripe-action :subscription/cancel
-  [_ {:keys [customer-id subscription-id]}]
-  {:post [(map? %)]}
-  (let [customer (Customer/retrieve customer-id)
-        subscription (.retrieve (.getSubscriptions customer) subscription-id)
-        params {"at_period_end" false}
-        canceled (.cancel subscription params)]
-    (debug "Canceled subscription: " canceled)
-    (obj->subscription-map canceled)))
+;
+;(defmethod stripe-action :customer/get
+;  [_ {:keys [customer-id subscription-id]}]
+;  (when customer-id
+;    (let [^Customer customer (Customer/retrieve customer-id)
+;          _ (debug "Customer object: " customer)
+;          default-source (.getDefaultSource customer)
+;          ^Card card (when default-source
+;                       (.retrieve (.getSources customer) (.getDefaultSource customer)))
+;          ^Subscription subscription (when subscription-id
+;                                       (.retrieve (.getSubscriptions customer) subscription-id))]
+;      {:id           (.getId customer)
+;       :email        (.getEmail customer)
+;       :card         (when card
+;                       {:exp-month (.getExpMonth card)
+;                        :exp-year  (.getExpYear card)
+;                        :name      (.getName card)
+;                        :last4     (.getLast4 card)
+;                        :brand     (.getBrand card)
+;                        :id        (.getId card)
+;                        })
+;       :subscription (when subscription
+;                       {:quantity     (.getQuantity subscription)
+;                        :period-end   (* 1000 (.getCurrentPeriodEnd subscription))
+;                        :period-start (* 1000 (.getCurrentPeriodStart subscription))})})))
+;
+;(defmethod stripe-action :customer/create
+;  [_ {:keys [params]}]
+;  {:post [(map? %)]}
+;  (let [customer (Customer/create params)
+;        subscription (-> customer
+;                         (.getSubscriptions)
+;                         (.getData)
+;                         first)]
+;    (debug "Created customer: " customer)
+;    (debug "Customer map: " {:stripe/customer     (.getId customer)
+;                             :stripe/subscription (obj->subscription-map subscription)})
+;    {:stripe/customer     (.getId customer)
+;     :stripe/subscription (obj->subscription-map subscription)}))
+;
+;(defmethod stripe-action :customer/update
+;  [_ {:keys [customer-id params]}]
+;  (let [customer (Customer/retrieve customer-id)
+;        updated-customer (.update customer params)]
+;    (debug "Updated customer: " updated-customer)
+;    {:stripe/customer customer-id}))
+;
+;(defmethod stripe-action :card/delete
+;  [_ {:keys [customer-id card]}]
+;  (let [customer (Customer/retrieve customer-id)
+;        card (.retrieve (.getSources customer) (:id card))
+;        deleted (.delete card)]
+;    (debug "Deleted card from customer: " customer " " deleted)
+;    {:stripe/customer customer-id}))
+;
+;
+;(defmethod stripe-action :subscription/create
+;  [_ {:keys [customer-id params]}]
+;  {:post [(map? %)]}
+;  (let [customer (Customer/retrieve customer-id)
+;        created (.createSubscription customer params)]
+;    (debug "Created subscription: " created)
+;    (obj->subscription-map created)))
+;
+;(defmethod stripe-action :subscription/update
+;  [_ {:keys [subscription-id customer-id params]}]
+;  {:post [(map? %)]}
+;  (let [customer (Customer/retrieve customer-id)
+;        subscription (.retrieve (.getSubscriptions customer) subscription-id)
+;        updated (.update subscription params)]
+;    (debug "Updated subscription: " updated)
+;    (obj->subscription-map updated)))
+;
+;(defmethod stripe-action :subscription/cancel
+;  [_ {:keys [customer-id subscription-id]}]
+;  {:post [(map? %)]}
+;  (let [customer (Customer/retrieve customer-id)
+;        subscription (.retrieve (.getSubscriptions customer) subscription-id)
+;        params {"at_period_end" false}
+;        canceled (.cancel subscription params)]
+;    (debug "Canceled subscription: " canceled)
+;    (obj->subscription-map canceled)))
 
 ;; ##################### Webhooooks ####################
 ;; References:
@@ -245,7 +301,7 @@
       (let [db-sub (f/add-tempid (json->subscription-map subscription))]
         (debug "Customer subscription created: " (:id subscription))
         (db/transact conn [db-sub
-                                 [:db/add (:db/id db-customer) :stripe/subscription (:db/id db-sub)]]))
+                           [:db/add (:db/id db-customer) :stripe/subscription (:db/id db-sub)]]))
       (throw (webhook-ex event
                          (str ":stripe/customer not found: " customer)
                          {:customer customer
@@ -262,7 +318,7 @@
       (let [db-sub (f/add-tempid (json->subscription-map subscription))]
         (debug "Customer subscription updated: " (:id subscription))
         (db/transact conn [db-sub
-                                 [:db/add (:db/id db-customer) :stripe/subscription (:db/id db-sub)]]))
+                           [:db/add (:db/id db-customer) :stripe/subscription (:db/id db-sub)]]))
       (throw (webhook-ex event
                          (str ":stripe/customer not found: " customer)
                          {:customer customer
