@@ -28,13 +28,13 @@
   static om/IQuery
   (query [_]
     [:db/id
-     :item/name
-     :item/price
-     {:item/photos [:photo/path]}
-     :item/details
-     :item/category
-     {:item/store [{:store/photo [:photo/path]}
-                   :store/name]}])
+     :store.item/name
+     :store.item/price
+     {:store.item/photos [:photo/path]}
+     :store.item/details
+     :store.item/category
+     {:store/_items [{:store/photo [:photo/path]}
+                     :store/name]}])
   Object
   (initLocalState [_]
     {:selected-tab :rating})
@@ -50,10 +50,12 @@
                              (js/setTimeout #(om/update-state! this assoc :added-to-bag? false) 2000)))))
   (render [this]
     (let [{:keys [selected-tab added-to-bag?]} (om/get-state this)
-          {:item/keys     [price store photos details]
-           item-name :item/name :as item} (om/props this)
+          {:store.item/keys     [price photos details]
+           item-name :store.item/name :as item} (om/props this)
+          store (:store/_items item)
           photo-url (:photo/path (first photos))]
 
+      (debug "Product props: " (om/props this))
       (dom/div
         #js {:id "sulo-product"}
 

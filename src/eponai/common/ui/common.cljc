@@ -100,8 +100,9 @@
   (let [{:keys [on-click open-url?]} opts
         goods-href (when (or open-url? (nil? on-click)) (str "/goods/" (:db/id product)))
         on-click (when-not open-url? on-click)
-        {:item/keys [photos store price]
-         item-name :item/name} product]
+        {:store.item/keys [photos price]
+         item-name :store.item/name
+         store :store/_items} product]
     (apply dom/div #js {:className "column content-item product-item"}
            (my-dom/a
              {:onClick on-click
@@ -110,8 +111,8 @@
                {:src (:photo/path (first photos))})
              ;(my-dom/div
              ;  (->> (css/text-align :center))
-             ;  (dom/p nil (dom/span nil (:item/name product)))
-             ;  (dom/strong nil (ui-utils/two-decimal-price (:item/price product)))
+             ;  (dom/p nil (dom/span nil (:store.item/name product)))
+             ;  (dom/strong nil (ui-utils/two-decimal-price (:store.item/price product)))
              ;  (rating-element 4 11)
              ;  (my-dom/div
              ;    (->> (css/add-class :padded)

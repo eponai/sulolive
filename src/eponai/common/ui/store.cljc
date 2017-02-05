@@ -29,7 +29,7 @@
      {:query/store [:db/id
                     {:store/cover [:photo/path]}
                     {:store/photo [:photo/path]}
-                    {:item/_store (om/get-query item/Product)}
+                    {:store/items (om/get-query item/Product)}
                     {:stream/_store [:stream/name]}
                     :store/name]}])
   Object
@@ -43,11 +43,12 @@
           {:keys [query/store proxy/navbar] :as props} (om/props this)
           {:store/keys      [cover photo]
            stream     :stream/_store
-           items      :item/_store
+           items      :store/items
            store-name :store/name} store
           stream (first stream)
           show-chat? (:show-chat? st (some? stream))
           has-stream? (some? stream)]
+      (debug "Store items: " items)
       (dom/div #js {:id "sulo-store" :className (str "sulo-page" (when show-chat? " chat-open"))}
         (common/page-container
          {:navbar navbar}

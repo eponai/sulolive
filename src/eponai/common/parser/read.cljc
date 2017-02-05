@@ -4,15 +4,15 @@
 
 (defn multiply-store-items [store]
   (cond-> store
-          (:item/_store store)
-          (update :item/_store
+          (:store.item/_store store)
+          (update :store.item/_store
                   #(into [] (comp (take 16)
                                   (map (fn [item]
-                                         (assoc item :item/details item-details))))
+                                         (assoc item :store.item/details item-details))))
                          (cycle %)))))
 
 (defn compute-cart-price [cart]
   (cond-> cart
           (:cart/items cart)
-          (assoc :cart/price (transduce (map :item/price) + 0M (:cart/items cart)))))
+          (assoc :cart/price (transduce (map :store.item/price) + 0M (:cart/items cart)))))
 

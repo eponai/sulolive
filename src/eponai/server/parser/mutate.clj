@@ -6,7 +6,8 @@
     [eponai.common.parser :as parser :refer [server-mutate server-message]]
     [taoensso.timbre :refer [debug info]]
     [clojure.data.json :as json]
-    [eponai.server.api :as api]))
+    [eponai.server.api :as api]
+    [eponai.server.external.stripe :as stripe]))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -54,3 +55,19 @@
              (let [user-entity (db/one-with (db/db state) {:where   '[[?e :user/email ?email]]
                                                            :symbols {'?email (:email auth)}})]
                (api/upload-user-photo state (:photo-info params) user-entity)))})
+
+
+;######## STRIPE ########
+
+(defmutation stripe/create-account
+  [{:keys [state ::parser/return ::parser/exception auth system]} _ _]
+  {:success "Your account was created"
+   :error "Could not create Stripe account"}
+  {:action (fn []
+             (let [account (stripe/create-account (:system/stripe system)
+                                                  {:country "CA"})
+                   store (db/one-with (db/db state) {:where '[?user :user/email ?auth
+                                                              [?e :store/user ?user]]
+                                                     :symbols {'?auth (:email auth)}})]
+               (db/transact state [account
+                                   [:db/add store :store/stripe account]])))})

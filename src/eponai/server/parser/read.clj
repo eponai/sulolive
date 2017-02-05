@@ -34,14 +34,14 @@
 
 (defmethod server-read :query/items
   [{:keys [db db-history query]} _ {:keys [category search]}]
-  {:value (query/all db db-history query {:where '[[?e :item/name]]})})
+  {:value (query/all db db-history query {:where '[[?e :store.item/name]]})})
 
 (defmethod read-basis-param-path :query/item [_ _ {:keys [product-id]}]
   [product-id])
 (defmethod server-read :query/item
   [{:keys [db db-history query]} _ {:keys [product-id]}]
   {:value (query/one db db-history query
-                     {:where   '[[?e :item/name]]
+                     {:where   '[[?e :store.item/name]]
                       :symbols {'?e product-id}})})
 
 (defmethod server-read :query/auth
@@ -70,7 +70,7 @@
 
 (defmethod server-read :query/featured-items
   [{:keys [db db-history query]} _ _]
-  {:value (->> (query/all db db-history query {:where '[[?e :item/name]]})
+  {:value (->> (query/all db db-history query {:where '[[?e :store.item/name]]})
                (take 5)
                (feature-all db-history :item))})
 

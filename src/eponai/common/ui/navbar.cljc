@@ -19,13 +19,13 @@
                      :classes [:cart-link]}
                     ;(dom/div #js {})
                     (photo/square
-                      {:src (:item/img-src i)})
+                      {:src (:store.item/img-src i)})
                     (dom/div #js {:className ""}
                       (dom/div #js {:className "content-item-title-section"}
-                        (dom/p nil (dom/span #js {:className "name"} (:item/name i))))
+                        (dom/p nil (dom/span #js {:className "name"} (:store.item/name i))))
                       (dom/div #js {:className "content-item-subtitle-section"}
                         (dom/strong #js {:className "price"}
-                                  (ui-utils/two-decimal-price (:item/price i)))))))
+                                  (ui-utils/two-decimal-price (:store.item/price i)))))))
                 (take 3 items)))
 
     (dom/div #js {:className "callout transparent"}
@@ -67,10 +67,10 @@
   static om/IQuery
   (query [_]
     [{:query/cart [:cart/price
-                   {:cart/items [:item/price
-                                 {:item/photos [:photo/path]}
-                                 :item/name
-                                 {:item/store [:store/name]}]}]}
+                   {:cart/items [:store.item/price
+                                 {:store.item/photos [:photo/path]}
+                                 :store.item/name
+                                 {:store.item/store [:store/name]}]}]}
      {:query/auth [:db/id :user/email]}])
   Object
   #?(:cljs

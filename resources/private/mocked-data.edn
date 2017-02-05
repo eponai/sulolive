@@ -61,27 +61,6 @@
            {:db/id      #db/id[:db.part/user -39]
             :photo/path "https://imgix.ttcdn.co/i/product/original/0/449892-18406d9dfa7e449e8d36627c088c92c1.png?q=50&w=1000&auto=format%2Ccompress&fm=jpeg"}]
 
- :stores  [{:db/id       #db/id[:db.part/user -1]
-            :store/name  "ikcha"
-            :store/photo #db/id[:db.part/user -10]}
-           {:db/id       #db/id[:db.part/user -2]
-            :store/name  "MagicLinen"
-            :store/cover #db/id[:db.part/user -12]
-            :store/photo #db/id[:db.part/user -11]}
-
-           {:db/id       #db/id[:db.part/user -3]
-            :store/name  "thislovesthat"
-            :store/cover #db/id[:db.part/user -13]
-            :store/photo #db/id[:db.part/user -13]}
-           {:db/id       #db/id[:db.part/user -4]
-            :store/name  "Nafsika"
-            :store/cover #db/id[:db.part/user -16]
-            :store/photo #db/id[:db.part/user -17]}
-           {:db/id       #db/id[:db.part/user -5]
-            :store/name  "FlowerRainbowNJ"
-            :store/cover #db/id[:db.part/user -18]
-            :store/photo #db/id[:db.part/user -18]}]
-
  :streams [{:stream/name  "Handcrafted jewlery"
             :stream/store #db/id[:db.part/user -1]}
            {:stream/name  "What's up with thread count"
@@ -91,112 +70,113 @@
            {:stream/name  "Talking wedding bands"
             :stream/store #db/id[:db.part/user -4]}]
 
- :items   [{:item/name     "Linen duvet cover - Woodrose"
-            :item/price    34.00M
-            :item/photos   [#db/id[:db.part/user -20]]
-            :item/store    #db/id[:db.part/user -2]
-            :item/category "home"}
-           {:item/name     "Linen pillowcases with ribbons"
-            :item/price    52.00M
-            :item/store    #db/id[:db.part/user -2]
-            :item/photos   [#db/id[:db.part/user -21]]
-            :item/category "home"}
-           {:item/name     "Stone washed linen duvet cover"
-            :item/price    134.00M
-            :item/store    #db/id[:db.part/user -2]
-            :item/photos   [#db/id[:db.part/user -22]]
-            :item/category "home"}
-           {:item/name     "Linen fitted sheet - Aquamarine"
-            :item/price    34.00M
-            :item/store    #db/id[:db.part/user -2]
-            :item/photos   [#db/id[:db.part/user -23]]
-            :item/category "home"}
-           {:item/name     "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
-            :item/price    318.00M
-            :item/store    #db/id[:db.part/user -1]
-            :item/photos   [#db/id[:db.part/user -24]]
-            :item/category "accessories"}
-           {:item/name     "Emerald silver choker"
-            :item/price    219.00M
-            :item/store    #db/id[:db.part/user -1]
-            :item/photos   [#db/id[:db.part/user -25]]
-            :item/category "accessories"}
-           {:item/name     "Ear Floral Cuff in Sterling Silver"
-            :item/price    68.00M
-            :item/store    #db/id[:db.part/user -1]
-            :item/photos   [#db/id[:db.part/user -26]]
-            :item/category "accessories"}
-           {:item/name     "Sun Stone geometrical Sterling Silver Ring"
-            :item/price    211.00M
-            :item/store    #db/id[:db.part/user -1]
-            :item/photos   [#db/id[:db.part/user -27]]
-            :item/category "accessories"}
-           {:item/name     "Glitter & Navy Blue Envelope Clutch"
-            :item/photos   [#db/id[:db.part/user -28]]
-            :item/price    34.00M
-            :item/store    #db/id[:db.part/user -3]
-            :item/category "accessories"}
-           {:item/name     "Mint Green & Gold Scallop Canvas Clutch"
-            :item/photos   [#db/id[:db.part/user -29]]
-            :item/price    52.00M
-            :item/store    #db/id[:db.part/user -3]
-            :item/category "accessories"}
-           {:item/name     "Modern Geometric Wood Bead Necklace"
-            :item/price    134.00M
-            :item/store    #db/id[:db.part/user -3]
-            :item/photos   [#db/id[:db.part/user -30]]
-            :item/category "accessories"}
-           {:item/name     "Modern Wood Teardrop Stud Earrings"
-            :item/price    34.00M
-            :item/store    #db/id[:db.part/user -3]
-            :item/photos   [#db/id[:db.part/user -31]]
-            :item/category "accessories"}
-           {:item/name     "Silver Twig Ring Milky"
-            :item/photos   [#db/id[:db.part/user -32]]
-            :item/price    34.00M
-            :item/store    #db/id[:db.part/user -4]
-            :item/category "accessories"}
-           {:item/name     "Bunny Charm Necklace"
-            :item/photos   [#db/id[:db.part/user -33]]
-            :item/price    52.00M
-            :item/store    #db/id[:db.part/user -4]
-            :item/category "accessories"}
-           {:item/name     "Red Moss Planter Fall Cube Necklace"
-            :item/photos   [#db/id[:db.part/user -34]]
-            :item/price    134.00M
-            :item/store    #db/id[:db.part/user -4]
-            :item/category "accessories"}
-           {:item/name     "Elvish Twig Ring"
-            :item/photos   [#db/id[:db.part/user -35]]
-            :item/price    34.00M
-            :item/store    #db/id[:db.part/user -4]
-            :item/category "accessories"}
-           {:item/name     "Nose Stud"
-            :item/photos   [#db/id[:db.part/user -36]]
-            :item/price    24.74M
-            :item/store    #db/id[:db.part/user -5]
-            :item/category "accessories"}
-           {:item/name     "Tragus Earring"
-            :item/photos   [#db/id[:db.part/user -37]]
-            :item/price    4.49M
-            :item/store    #db/id[:db.part/user -5]
-            :item/category "accessories"}
-           {:item/name     "Nose Ring"
-            :item/photos   [#db/id[:db.part/user -38]]
-            :item/price    6.37M
-            :item/store    #db/id[:db.part/user -5]
-            :item/category "accessories"}
-           {:item/name     "Nose Ring"
-            :item/photos   [#db/id[:db.part/user -39]]
-            :item/price    6.74M
-            :item/store    #db/id[:db.part/user -5]
-            :item/category "accessories"}]
  :user [{:db/id #db/id[:db.part/user -500]
          :user/email "dev@sulo.live"
          :user/photo #db/id[:db.part/user -10]}]
 
- ;:cart [{:cart/items #{[:item/id "00"]
- ;                      [:item/id "01"]
- ;                      [:item/id "42"]
- ;                      [:item/id "43"]}}]
+ :stores  [{:db/id       #db/id[:db.part/user -1]
+            :store/name  "ikcha"
+            :store/photo #db/id[:db.part/user -10]
+            :store/items [{:store.item/name     "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
+                           :store.item/price    318.00M
+                           :store.item/photos   [#db/id[:db.part/user -24]]
+                           :store.item/category "accessories"}
+                          {:store.item/name     "Emerald silver choker"
+                           :store.item/price    219.00M
+                           :store.item/photos   [#db/id[:db.part/user -25]]
+                           :store.item/category "accessories"}
+                          {:store.item/name     "Ear Floral Cuff in Sterling Silver"
+                           :store.item/price    68.00M
+                           :store.item/photos   [#db/id[:db.part/user -26]]
+                           :store.item/category "accessories"}
+                          {:store.item/name     "Sun Stone geometrical Sterling Silver Ring"
+                           :store.item/price    211.00M
+                           :store.item/photos   [#db/id[:db.part/user -27]]
+                           :store.item/category "accessories"}]}
+           {:db/id       #db/id[:db.part/user -2]
+            :store/name  "MagicLinen"
+            :store/cover #db/id[:db.part/user -12]
+            :store/photo #db/id[:db.part/user -11]
+            :store/items [{:store.item/name     "Linen duvet cover - Woodrose"
+                           :store.item/price    34.00M
+                           :store.item/photos   [#db/id[:db.part/user -20]]
+                           :store.item/category "home"}
+                          {:store.item/name     "Linen pillowcases with ribbons"
+                           :store.item/price    52.00M
+                           :store.item/photos   [#db/id[:db.part/user -21]]
+                           :store.item/category "home"}
+                          {:store.item/name     "Stone washed linen duvet cover"
+                           :store.item/price    134.00M
+                           :store.item/photos   [#db/id[:db.part/user -22]]
+                           :store.item/category "home"}
+                          {:store.item/name     "Linen fitted sheet - Aquamarine"
+                           :store.item/price    34.00M
+                           :store.item/photos   [#db/id[:db.part/user -23]]
+                           :store.item/category "home"}]}
+
+           {:db/id       #db/id[:db.part/user -3]
+            :store/name  "thislovesthat"
+            :store/cover #db/id[:db.part/user -13]
+            :store/photo #db/id[:db.part/user -13]
+            :store/items [{:store.item/name     "Glitter & Navy Blue Envelope Clutch"
+                           :store.item/photos   [#db/id[:db.part/user -28]]
+                           :store.item/price    34.00M
+                           :store.item/category "accessories"}
+                          {:store.item/name     "Mint Green & Gold Scallop Canvas Clutch"
+                           :store.item/photos   [#db/id[:db.part/user -29]]
+                           :store.item/price    52.00M
+                           :store.item/category "accessories"}
+                          {:store.item/name     "Modern Geometric Wood Bead Necklace"
+                           :store.item/price    134.00M
+                           :store.item/photos   [#db/id[:db.part/user -30]]
+                           :store.item/category "accessories"}
+                          {:store.item/name     "Modern Wood Teardrop Stud Earrings"
+                           :store.item/price    34.00M
+                           :store.item/photos   [#db/id[:db.part/user -31]]
+                           :store.item/category "accessories"}]}
+           {:db/id       #db/id[:db.part/user -4]
+            :store/name  "Nafsika"
+            :store/cover #db/id[:db.part/user -16]
+            :store/photo #db/id[:db.part/user -17]
+            :store/items [{:store.item/name     "Silver Twig Ring Milky"
+                           :store.item/photos   [#db/id[:db.part/user -32]]
+                           :store.item/price    34.00M
+                           :store.item/category "accessories"}
+                          {:store.item/name     "Bunny Charm Necklace"
+                           :store.item/photos   [#db/id[:db.part/user -33]]
+                           :store.item/price    52.00M
+                           :store.item/category "accessories"}
+                          {:store.item/name     "Red Moss Planter Fall Cube Necklace"
+                           :store.item/photos   [#db/id[:db.part/user -34]]
+                           :store.item/price    134.00M
+                           :store.item/category "accessories"}
+                          {:store.item/name     "Elvish Twig Ring"
+                           :store.item/photos   [#db/id[:db.part/user -35]]
+                           :store.item/price    34.00M
+                           :store.item/category "accessories"}]}
+           {:db/id       #db/id[:db.part/user -5]
+            :store/name  "FlowerRainbowNJ"
+            :store/cover #db/id[:db.part/user -18]
+            :store/photo #db/id[:db.part/user -18]
+            :store/items [{:store.item/name     "Nose Stud"
+                           :store.item/photos   [#db/id[:db.part/user -36]]
+                           :store.item/price    24.74M
+                           :store.item/category "accessories"}
+                          {:store.item/name     "Tragus Earring"
+                           :store.item/photos   [#db/id[:db.part/user -37]]
+                           :store.item/price    4.49M
+                           :store.item/category "accessories"}
+                          {:store.item/name     "Nose Ring"
+                           :store.item/photos   [#db/id[:db.part/user -38]]
+                           :store.item/price    6.37M
+                           :store.item/category "accessories"}
+                          {:store.item/name     "Nose Ring"
+                           :store.item/photos   [#db/id[:db.part/user -39]]
+                           :store.item/price    6.74M
+                           :store.item/category "accessories"}]}]
+
+ ;:cart [{:cart/items #{[:store.item/id "00"]
+ ;                      [:store.item/id "01"]
+ ;                      [:store.item/id "42"]
+ ;                      [:store.item/id "43"]}}]
  }

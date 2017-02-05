@@ -11,10 +11,10 @@
     [taoensso.timbre :refer [debug]]))
 
 (defn items-by-store [items]
-  (group-by :item/store items))
+  (group-by :store.item/store items))
 
 (defn compute-item-price [items]
-  (reduce + (map :item/price items)))
+  (reduce + (map :store.item/price items)))
 
 (defn store-element [s]
   (my-dom/div
@@ -51,7 +51,7 @@
                         (->> (css/grid-column)
                              (css/grid-column-size {:small 4 :medium 3}))
                         (photo/square
-                          {:src (:item/img-src i)}))
+                          {:src (:store.item/img-src i)}))
 
                       (my-dom/div
                         (->> (css/grid-column)
@@ -61,10 +61,10 @@
                         (dom/div #js {:className ""}
                           (dom/a #js {:href      (str "/goods/" (:db/id i))
                                       :className "name"}
-                                 (dom/strong nil (:item/name i))))
+                                 (dom/strong nil (:store.item/name i))))
                         (dom/div #js {:className ""}
                           (dom/strong #js {:className "price"}
-                                    (utils/two-decimal-price (:item/price i))))
+                                    (utils/two-decimal-price (:store.item/price i))))
                         (dom/div #js {:className "row align-middle"}
                           (dom/label #js {:className "column shrink"} "Quantity")
                           (dom/input #js {:className "column medium-2"
@@ -100,10 +100,10 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:query/cart [{:cart/items [:item/name
-                                 :item/price
-                                 :item/img-src
-                                 {:item/store [:store/name :store/photo :store/review-count :store/rating]}]}]}])
+     {:query/cart [{:cart/items [:store.item/name
+                                 :store.item/price
+                                 :store.item/img-src
+                                 {:store.item/store [:store/name :store/photo :store/review-count :store/rating]}]}]}])
   Object
   (render [this]
     (let [{:keys [query/cart proxy/navbar]} (om/props this)

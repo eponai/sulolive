@@ -41,6 +41,8 @@
             (my-dom/div
               (->> (css/grid-column))
               (dom/span nil "CREATE NEW STORE"))
+            (dom/a #js {:className "button"
+                        :onClick   #(om/transact! this `[(stripe/create-account)])} "Start my store")
             ))))))
 
 (def ->NewStore (om/factory NewStore))

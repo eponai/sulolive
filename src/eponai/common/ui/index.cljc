@@ -75,16 +75,16 @@
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/featured-items [:db/id
-                             :item/name
-                             :item/price
-                             {:item/photos [:photo/path]}
-                             {:item/store [:store/name]}]}
+                             :store.item/name
+                             :store.item/price
+                             {:store.item/photos [:photo/path]}
+                             {:store/_items [:store/name]}]}
      {:query/featured-stores [:db/id
                               :store/name
                               :store/featured
                               :store/featured-img-src
                               {:store/photo [:photo/path]}
-                              {:item/_store [:db/id {:item/photos [:photo/path]}]}]}
+                              {:store/items [:db/id {:store.item/photos [:photo/path]}]}]}
      {:query/featured-streams [:db/id :stream/name {:stream/store [:db/id :store/name {:store/photo [:photo/path]}]}]}])
   Object
   (render [this]

@@ -50,13 +50,13 @@
       ;  (dom/a #js {:onClick   on-click
       ;              :href      product-href}
       ;         (photo/square
-      ;           {:src (:item/img-src product)}))
+      ;           {:src (:store.item/img-src product)}))
       ;  (dom/div #js {:className "content-item-title-section"}
       ;    (dom/a #js {:onClick on-click
       ;                :href    product-href}
-      ;           (:item/name product)))
+      ;           (:store.item/name product)))
       ;  (dom/div #js {:className "content-item-subtitle-section"}
-      ;    (dom/strong nil (ui-utils/two-decimal-price (:item/price product)))
+      ;    (dom/strong nil (ui-utils/two-decimal-price (:store.item/price product)))
       ;    (common/rating-element 4 11)))
       )))
 

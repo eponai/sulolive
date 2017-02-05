@@ -59,15 +59,15 @@
                        (assoc-in [:params :category] category)
                        (some? search)
                        (assoc-in [:params :search] search))}
-      {:value (let [pattern {:where '[[?e :item/name]]}]
+      {:value (let [pattern {:where '[[?e :store.item/name]]}]
                 (assert (some #{:db/id} query)
                         (str "Query to :query/all-tiems must contain :db/id, was: " query))
                 (cond->> (db/pull-all-with db query pattern)
                          (or search category)
                          (filter #(cond (not-empty search)
-                                        (not-empty (re-find (re-pattern search) (.toLowerCase (:item/name %))))
+                                        (not-empty (re-find (re-pattern search) (.toLowerCase (:store.item/name %))))
                                         (some? category)
-                                        (= category (:item/category %))
+                                        (= category (:store.item/category %))
                                         :else
                                         true))
                          :always
@@ -79,7 +79,7 @@
     (if target
       {:remote (assoc-in ast [:params :product-id] product-id)}
       {:value (db/pull-one-with db query
-                                {:where   '[[?e :item/name]]
+                                {:where   '[[?e :store.item/name]]
                                  :symbols {'?e product-id}})})))
 
 (defmethod client-read :query/auth
@@ -110,7 +110,7 @@
 (defmethod client-read :query/featured-items
   [{:keys [db query]} _ _]
   {:remote true
-   :value  (let [items (db/all-with db {:where '[[?e :item/featured]]})]
+   :value  (let [items (db/all-with db {:where '[[?e :store.item/featured]]})]
              (sort-by :db/id
                       (db/pull-many db query items)))})
 
@@ -121,9 +121,9 @@
   {:remote true
    :value  (letfn [(photos-fn [store]
                      (let [s (db/entity db store)
-                           [img-1 img-2] (->> (:item/_store s)
+                           [img-1 img-2] (->> (:store.item/_store s)
                                               (sort-by :db/id)
-                                              (map :item/img-src)
+                                              (map :store.item/img-src)
                                               (take 2))]
                        {:db/id                  store
                         :store/featured-img-src [img-1 (:store/photo s) img-2]}))]
