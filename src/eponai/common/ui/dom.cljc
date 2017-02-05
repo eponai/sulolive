@@ -56,3 +56,6 @@
 
 (defn input [opts & content]
   (element dom/input opts content))
+
+(defn img [opts & content]
+  (element dom/img opts content))

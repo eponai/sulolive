@@ -72,6 +72,15 @@ $primary-color: map-get($foundation-palette, primary);
 	padding-top: 67%;
 	width: 100%;
 	transition: background .25s ease-in-out;
+	position: relative;
+	img {
+		position: absolute;
+		top: 0;
+		left: 0;
+		height: 100%;
+		width: 100%;
+		object-fit: cover;
+	}
 	&.square {
 		padding-top: 100%;		
 		transition: none;		
@@ -97,6 +106,9 @@ $primary-color: map-get($foundation-palette, primary);
 	}
 
 	&.header {
+		img {
+			display: none;
+		}
 		padding: 0;
 		background-position: top center;
 		&.center {
