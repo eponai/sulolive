@@ -86,7 +86,7 @@
             [lein-shell "0.5.0"]
             [lein-doo "0.1.6"]
             [lein-cljsbuild "1.1.4"]
-            [lein-figwheel "0.5.7"]
+            [lein-figwheel "0.5.9"]
             [lein-ring "0.9.7"]
             [lein-test-out "0.3.1"]
             [lein-environ "1.0.1"]]
@@ -185,7 +185,7 @@
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
                                     ;; [[org.omcljs/om "1.0.0-alpha46"
                                     ;;   :exclusions [cljsjs/react cljsjs/react-dom]]
-                                       [figwheel-sidecar "0.5.7"]
+                                       [figwheel-sidecar "0.5.9"]
                                        [com.cemerick/piggieback "0.2.1"]]
                         :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
                         :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
@@ -245,7 +245,7 @@
                                                              ;;   :pretty-print true
                                                              ;;   :verbose true
                                                              }}]}}
-             :web      {:dependencies [[figwheel-sidecar "0.5.7"]]
+             :web      {:dependencies [[figwheel-sidecar "0.5.9"]]
                         :cljsbuild {:builds [{:id           "dev"
                                               :figwheel     {:on-jsload "eponai.web.figwheel/reload!"}
                                               :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
