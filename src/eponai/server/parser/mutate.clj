@@ -62,13 +62,48 @@
 (defmutation stripe/create-account
   [{:keys [state ::parser/return ::parser/exception auth system]} _ _]
   {:success "Your account was created"
-   :error "Could not create Stripe account"}
+   :error   "Could not create Stripe account"}
   {:action (fn []
-             (let [account (stripe/create-account (:system/stripe system)
-                                                  {:country "CA"})
-                   _ (debug "Stripe account created: " account)
+             (let [{:keys [id secret publ] :as acc} (stripe/create-account (:system/stripe system)
+                                                                           {:country "CA"})
+                   _ (debug "Stripe account created: " acc)
                    store (db/one-with (db/db state) {:where   '[[?user :user/email ?auth]
                                                                 [?owner :store.owner/user ?user]
                                                                 [?e :store/owners ?owner]]
                                                      :symbols {'?auth (:email auth)}})]
-               (db/transact state [[:db/add store :store/stripe (:id account)]])))})
+               (db/transact state [[:db/add store :store/stripe {:stripe/id     id
+                                                                 :stripe/secret secret
+                                                                 :stripe/publ   publ}]])))})
+
+(defmutation stripe/create-product
+  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [product store-id]}]
+  {:success "Your account was created"
+   :error   "Could not create Stripe account"}
+  {:action (fn []
+             (let [product {:db/id           (db/tempid :db.part/user)
+                            :store.item/name (:name product)
+                            :store.item/uuid (db/squuid)}
+                   {:keys [stripe/secret]} (db/pull-one-with (db/db state) [:stripe/secret] {:where   '[[?s :store/stripe ?e]]
+                                                                                             :symbols {'s store-id}})
+                   stripe-p (stripe/create-product (:system/stripe system)
+                                                   secret
+                                                   product)]
+               (debug "Created product in stripe: " stripe-p)
+               (db/transact state [product
+                                   [:db/add store-id :store/items (:db/id product)]])))})
+
+(defmutation stripe/delete-product
+  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [product]}]
+  {:success "Product deleted"
+   :error   "Could not delete product"}
+  {:action (fn []
+             (let [{:keys [store.item/uuid]} (db/pull (db/db state) [:store.item/uuid] (:db/id product))
+                   {:keys [stripe/secret]} (db/pull-one-with (db/db state) [:stripe/secret] {:where   '[[?s :store/items ?p]
+                                                                                                        [?s :store/stripe ?e]]
+                                                                                             :symbols {'?p (:db/id product)}})
+                   _ (debug "Will delete product with UUID: " uuid)
+                   stripe-p (stripe/delete-product (:system/stripe system)
+                                                   secret
+                                                   (str uuid))]
+               (debug "Deleted product in stripe: " stripe-p)
+               (db/transact state [[:db.fn/retractEntity (:db/id product)]])))})

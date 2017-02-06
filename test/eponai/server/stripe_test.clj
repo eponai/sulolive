@@ -16,6 +16,8 @@
 
 (defn stripe-test []
   (reify stripe/IStripe
+    (charge [_ opts]
+      {})
     (create-account [_ {:keys [country]}]
       {:id "account-id"
        :country country})

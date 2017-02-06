@@ -23,6 +23,29 @@
   :db/doc                "User profile photo."
   :db.install/_attribute :db.part/db}
 
+ ;; ########## STRIPE ##################
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :stripe/id
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "Stripe account id."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :stripe/publ
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Stripe account publishable key"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :stripe/secret
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Stripe account secret key"
+  :db.install/_attribute :db.part/db}
+
  ;; ################ Store ##########################
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :store/uuid
@@ -34,7 +57,7 @@
 
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :store/stripe
-  :db/valueType          :db.type/string
+  :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
   :db/unique             :db.unique/identity
   :db/doc                "Store UUID unique identifier."
@@ -102,6 +125,14 @@
 
 
  ;; ############# STORE ITEMS ######################
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.item/uuid
+  :db/valueType          :db.type/uuid
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "Unique identifier of the item."
+  :db.install/_attribute :db.part/db}
+
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :store.item/name
   :db/valueType          :db.type/string

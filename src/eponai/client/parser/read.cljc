@@ -48,7 +48,7 @@
   [{:keys [db query target ast route-params] :as env} _ _]
   (if target
     {:remote true}
-    {:value nil}))
+    {:value (db/pull-one-with db query {:where '[[?e :stripe/id]]})}))
 
 (defmethod client-read :query/user
   [{:keys [db query target ast route-params] :as env} _ _]

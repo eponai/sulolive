@@ -74,3 +74,15 @@
   (debug "stripe/create-account with params: " p)
   (if target
     {:remote true}))
+
+(defmethod client-mutate 'stripe/create-product
+  [{:keys [target]} _ p]
+  (debug "stripe/create-product with params: " p)
+  (if target
+    {:remote true}))
+
+(defmethod client-mutate 'stripe/delete-product
+  [{:keys [target]} _ p]
+  (debug "stripe/delete-product with params: " p)
+  (if target
+    {:remote true}))

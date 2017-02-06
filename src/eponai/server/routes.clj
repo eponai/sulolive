@@ -14,7 +14,8 @@
     [eponai.server.parser.response :as parser.resp]
     [taoensso.timbre :refer [debug error trace warn]]
     [eponai.server.ui :as server.ui]
-    [om.next :as om]))
+    [om.next :as om]
+    [eponai.server.external.stripe :as stripe]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -132,6 +133,8 @@
     ;  (auth/jwt-restrict-opts))
     )
   (route/resources "/")
+  ;(POST "/stripe/main" request (r/response (stripe/webhook (::m/conn request) (:params request))))
+  (POST "/stripe/connected" request (r/response (stripe/webhook (::m/conn request) (:body request))))
   (GET "/coming-soon" request (server.ui/landing-html (request->props request)))
   (GET "/sell/coming-soon" request (server.ui/landing-html (request->props request)))
   (GET "/auth" request (let [{:keys [redirect-url token]} (auth/auth0 request)]

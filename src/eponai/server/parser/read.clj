@@ -30,21 +30,27 @@
 
 (defmethod server-read :query/my-store
   [{:keys [db db-history query auth]} _ _]
-  {:value (db/pull-one-with db query {:where   '[[?u :user/email ?email]
-                                                 [?owner :store.owner/user ?u]
-                                                 [?e :store/owners ?owner]]
-                                      :symbols {'?email (:email auth)}})})
+  {:value (query/one db db-history query {:where   '[[?u :user/email ?email]
+                                                     [?owner :store.owner/user ?u]
+                                                     [?e :store/owners ?owner]]
+                                          :symbols {'?email (:email auth)}})})
 
-(defmethod server-read :query/stripe
-  [{:keys [db db-history query system auth]} _ _]
-  (debug "SYSTEM: " system)
-  {:value (let [stripe-account-id (db/one-with db {:where   '[[?u :user/email ?email]
-                                                              [?owner :store.owner/user ?u]
-                                                              [?s :store/owners ?owner]
-                                                              [?s :store/stripe ?e]]
-                                                   :symbols {'?email (:email auth)}})
-                stripe-account (stripe/get-account (:system/stripe system) stripe-account-id)]
-            (debug "Got stripe account: " stripe-account))})
+;(defmethod server-read :query/stripe
+;  [{:keys [db db-history query system auth]} _ _]
+;  (debug "SYSTEM: " system)
+;  {:value (let [{:stripe/keys [id secret]}
+;                (db/pull-one-with db [:stripe/id :stripe/secret] {:where   '[[?u :user/email ?email]
+;                                                                             [?owner :store.owner/user ?u]
+;                                                                             [?s :store/owners ?owner]
+;                                                                             [?s :store/stripe ?e]]
+;                                                                  :symbols {'?email (:email auth)}})
+;                products (stripe/get-products (:system/stripe system) secret)
+;                stripe-account (stripe/get-account (:system/stripe system) id)]
+;            (debug "Got stripe account: " {:account  stripe-account
+;                                           :products products})
+;            {:stripe/id       id
+;             :stripe/account  stripe-account
+;             :stripe/products products})})
 
 (defmethod server-read :query/user
   [{:keys [db db-history query]} _ {:keys [user-id]}]
@@ -57,6 +63,7 @@
 
 (defmethod read-basis-param-path :query/item [_ _ {:keys [product-id]}]
   [product-id])
+
 (defmethod server-read :query/item
   [{:keys [db db-history query]} _ {:keys [product-id]}]
   {:value (query/one db db-history query

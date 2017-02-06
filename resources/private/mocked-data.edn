@@ -70,32 +70,35 @@
            {:stream/name  "Talking wedding bands"
             :stream/store #db/id[:db.part/user -4]}]
 
- :user [{:db/id #db/id[:db.part/user -500]
-         :user/email "dev@sulo.live"
-         :user/photo #db/id[:db.part/user -10]}]
+ :user    [{:db/id      #db/id[:db.part/user -500]
+            :user/email "dev@sulo.live"
+            :user/photo #db/id[:db.part/user -10]}]
 
- :stores  [{:db/id       #db/id[:db.part/user -1]
-            :store/name  "ikcha"
-            :store/stripe "acct_19jze1BbOp8CGZPS"
+ :stores  [{:db/id        #db/id[:db.part/user -1]
+            :store/name   "ikcha"
+            :store/stripe {:stripe/id "acct_19jze1BbOp8CGZPS"
+                           :stripe/publ "pk_test_wPQdpMye1koFukgPc8ujkjRh"
+                           :stripe/secret "sk_test_lAkQngZlCPS6UITtRmLwDLI8"}
             :store/owners {:store.owner/user #db/id[:db.part/user -500]
                            :store.owner/role :store.owner.role/admin}
-            :store/photo #db/id[:db.part/user -10]
-            :store/items [{:store.item/name     "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
-                           :store.item/price    318.00M
-                           :store.item/photos   [#db/id[:db.part/user -24]]
-                           :store.item/category "accessories"}
-                          {:store.item/name     "Emerald silver choker"
-                           :store.item/price    219.00M
-                           :store.item/photos   [#db/id[:db.part/user -25]]
-                           :store.item/category "accessories"}
-                          {:store.item/name     "Ear Floral Cuff in Sterling Silver"
-                           :store.item/price    68.00M
-                           :store.item/photos   [#db/id[:db.part/user -26]]
-                           :store.item/category "accessories"}
-                          {:store.item/name     "Sun Stone geometrical Sterling Silver Ring"
-                           :store.item/price    211.00M
-                           :store.item/photos   [#db/id[:db.part/user -27]]
-                           :store.item/category "accessories"}]}
+            :store/photo  #db/id[:db.part/user -10]
+            :store/items  [{:store.item/name     "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
+                            :store.item/price    318.00M
+                            :store.item/photos   [#db/id[:db.part/user -24]]
+                            :store.item/category "accessories"}
+                           {:store.item/name     "Emerald silver choker"
+                            :store.item/price    219.00M
+                            :store.item/photos   [#db/id[:db.part/user -25]]
+                            :store.item/category "accessories"}
+                           {:store.item/name     "Ear Floral Cuff in Sterling Silver"
+                            :store.item/price    68.00M
+                            :store.item/photos   [#db/id[:db.part/user -26]]
+                            :store.item/category "accessories"}
+                           {:store.item/name     "Sun Stone geometrical Sterling Silver Ring"
+                            :store.item/price    211.00M
+                            :store.item/photos   [#db/id[:db.part/user -27]]
+                            :store.item/category "accessories"}]
+            }
            {:db/id       #db/id[:db.part/user -2]
             :store/name  "MagicLinen"
             :store/cover #db/id[:db.part/user -12]

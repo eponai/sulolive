@@ -10,7 +10,7 @@
   (:import
     (com.stripe Stripe)
     (com.stripe.exception CardException)
-    (com.stripe.model Customer Card Subscription Account ExternalAccountCollection ExternalAccount BankAccount)
+    (com.stripe.model Customer Card Charge Subscription Account Product ExternalAccountCollection ExternalAccount BankAccount)
     (com.stripe.net RequestOptions)))
 
 (defn set-api-key [api-key]
@@ -34,14 +34,49 @@
 
     :country - A two character string code for the country of the seller, e.g. 'US'.")
 
+  (get-products [this account-secret]
+    "Get a managed account for a seller from Stripe.
+    Opts is a map with following keys:
+
+    :country - A two character string code for the country of the seller, e.g. 'US'.")
+
+  (create-product [this account-secret product]
+    "Get a managed account for a seller from Stripe.
+    Opts is a map with following keys:
+
+    :country - A two character string code for the country of the seller, e.g. 'US'.")
+
+  (delete-product [this account-secret product-id]
+    "Get a managed account for a seller from Stripe.
+    Opts is a map with following keys:
+
+    :country - A two character string code for the country of the seller, e.g. 'US'.")
+
   (create-customer [this account-id opts]
     "Get a managed account for a seller from Stripe.
     Opts is a map with following keys:
 
-    :country - A two character string code for the country of the seller, e.g. 'US'."))
+    :country - A two character string code for the country of the seller, e.g. 'US'.")
+
+  (charge [this opts]
+    "Get a managed account for a seller from Stripe.
+    Opts is a map with following keys:
+
+    :currency - A three character string code for the currency of the charge, e.g 'sek'.
+    :amount - The amount of the charge in cents. I.e. a charge for $10.00 has an amount of 1000.
+    :source - The token of the card to charge, received from Stripe.js.
+    :destination - The Stripe account ID of the seller who should receive payment."))
 
 (defrecord StripeRecord [api-key]
   IStripe
+  (charge [_ {:keys [amount currency source destination]}]
+    (let [params {"amount"      amount
+                  "currency"    currency
+                  "source"      source
+                  "destination" destination}
+          charge (Charge/create params)]
+      (debug "Created charge: " charge)))
+
   (get-account [_ account-id]
     (set-api-key api-key)
     (let [account (Account/retrieve ^String account-id)
@@ -49,11 +84,39 @@
       {:id      (.getId account)
        :country (.getCountry account)}))
 
+  (get-products [_ account-secret]
+    (set-api-key account-secret)
+    (let [products (Product/list nil)]
+      (map (fn [p]
+             {:id   (.getId p)
+              :name (.getName p)})
+           (.getData products))))
+
+  (create-product [_ account-secret product]
+    (set-api-key account-secret)
+    (let [params {"id"   (:store.item/uuid product)
+                  "name" (:store.item/name product)}
+          new-product (Product/create params)]
+      {:id   (.getId new-product)
+       :name (.getName new-product)}))
+
+  (delete-product [_ account-secret product-id]
+    (set-api-key account-secret)
+    (let [product (Product/retrieve product-id)
+          deleted (.delete product)]
+      {:id      (.getId deleted)
+       :deleted (.getDeleted deleted)}))
+
   (create-account [_ {:keys [country]}]
     (set-api-key api-key)
     (let [account (Account/create {"country" country
-                                   "managed" true})]
-      {:id (.getId account)}))
+                                   "managed" true})
+          keys (.getKeys account)]
+      (debug "Created account: " account)
+      {:id     (.getId account)
+       :secret (.getSecret keys)
+       :publ   (.getPublishable keys)}))
+
   (create-customer [_ account-id {:keys [email]}]
     (let [^RequestOptions req-opts (.setStripeAccount (RequestOptions/builder) account-id)
           customer (Customer/create {"email" email} req-opts)]
@@ -64,6 +127,8 @@
 
 (defn stripe-stub []
   (reify IStripe
+    (charge [_ params]
+      (debug "DEV - Fake Stripe: charge with params: " params))
     (create-account [_ params]
       (debug "DEV - Fake Stripe: create-account with params: " params))
     (get-account [_ params]
@@ -232,6 +297,7 @@
 ; Multi method for Stripe event types passed in via webhooks.
 ; Reference Events: https://stripe.com/docs/api#events
 (defmulti webhook (fn [_ event & _]
+                    (debug "Request: " event)
                     (info "Stripe event received: " {:type (:type event) :id (:id event)})
                     ; Dispatches on the event type.
                     ; Reference Event Type: https://stripe.com/docs/api#event_types
@@ -239,155 +305,169 @@
 
 (defmethod webhook :default
   [_ event & _]
+  (debug "Request: " event)
   (info "Stripe webhook event type not implemented: " (:type event))
   (debug "Stripe event: " event))
 
-(defmethod webhook "charge.succeeded"
-  ;; Receiving a Charge object in event.
-  ;; Reference: https://stripe.com/docs/api#charge_object
+(defn stripe->product [{:keys [name description]}]
+  {:db/id           (d/tempid :db.part/user)
+   :store.item/name name})
+(defmethod webhook "product.created"
   [conn event & _]
-  (let [charge (get-in event [:data :object])]
-    (prn "charge.succeeded: " charge)
-    (prn "Customer: " (:customer charge))))
+  (let [product (get-in event [:data :object])
+        {:keys [description name]} product]
+    ())
+  {:request nil, :type "product.created", :created 1326853478, :pending_webhooks 1, :id "evt_00000000000000", :api_version "2017-01-27", :livemode false, :object "event", :data {:object {:description "Comfortable gray cotton t-shirts", :caption nil, :updated 1486348116, :images [], :name "T-shirt", :deactivate_on [], :package_dimensions nil, :created 1486348116, :shippable true, :active true, :id "prod_00000000000000", :url nil, :livemode false, :skus {:object "list", :data [], :has_more false, :total_count 0, :url "/v1/skus?product=prod_A4AahEB2jWGNR3&active=true"}, :attributes ["size" "gender"], :metadata {}, :object "product"}}}
+  (debug "Request: " event)
+  (info "Stripe webhook event type not implemented: " (:type event))
+  (debug "Stripe event: " event))
 
-(defmethod webhook "charge.failed"
-  ;; Receiving a Charge object in event.
-  ;; Reference: https://stripe.com/docs/api#charge_object
-  [conn event & [opts]]
-  (let [{:keys [customer] :as charge} (get-in event [:data :object]) ;; customer id
-        {:keys [::email/send-payment-reminder-fn]} opts]
-    (if customer
-      ;; Find the customer entry in the db.
-      (let [db-customer (db/lookup-entity (d/db conn) [:stripe/customer customer])]
-        ;; If the customer is not found in the DB, something is wrong and we're out of sync with Stripe.
-        (when-not db-customer
-          (throw (webhook-ex event
-                             (str ":stripe/customer not found: " customer)
-                             {:customer customer
-                              :cause    ::h/unprocessable-entity
-                              :code     :entity-not-found})))
+;(defmethod webhook "charge.succeeded"
+;  ;; Receiving a Charge object in event.
+;  ;; Reference: https://stripe.com/docs/api#charge_object
+;  [conn event & _]
+;  (let [charge (get-in event [:data :object])]
+;    (prn "charge.succeeded: " charge)
+;    (prn "Customer: " (:customer charge))))
 
-        ;; Find the user corresponding to the specified stripe customer.
-        (let [user (db/lookup-entity (d/db conn) (get-in db-customer [:stripe/user :db/id]))]
-          ;; If the customer entity has no user, something is wrong in the db entry, throw exception.
-          (when-not user
-            (throw (webhook-ex event
-                               (str "No :stripe/user associated with :stripe/customer: " customer)
-                               {:customer customer
-                                :code     :entity-not-found})))
+;(defmethod webhook "charge.failed"
+;  ;; Receiving a Charge object in event.
+;  ;; Reference: https://stripe.com/docs/api#charge_object
+;  [conn event & [opts]]
+;  (let [{:keys [customer] :as charge} (get-in event [:data :object]) ;; customer id
+;        {:keys [::email/send-payment-reminder-fn]} opts]
+;    (if customer
+;      ;; Find the customer entry in the db.
+;      (let [db-customer (db/lookup-entity (d/db conn) [:stripe/customer customer])]
+;        ;; If the customer is not found in the DB, something is wrong and we're out of sync with Stripe.
+;        (when-not db-customer
+;          (throw (webhook-ex event
+;                             (str ":stripe/customer not found: " customer)
+;                             {:customer customer
+;                              :cause    ::h/unprocessable-entity
+;                              :code     :entity-not-found})))
+;
+;        ;; Find the user corresponding to the specified stripe customer.
+;        (let [user (db/lookup-entity (d/db conn) (get-in db-customer [:stripe/user :db/id]))]
+;          ;; If the customer entity has no user, something is wrong in the db entry, throw exception.
+;          (when-not user
+;            (throw (webhook-ex event
+;                               (str "No :stripe/user associated with :stripe/customer: " customer)
+;                               {:customer customer
+;                                :code     :entity-not-found})))
+;
+;          (info "Stripe charge.failed for user " (d/touch user))
+;
+;          ;; Notify the user by ending an email to the user for the customer. That payment failed and they should check their payment settings.
+;          (when send-payment-reminder-fn
+;            (send-payment-reminder-fn (:user/email user)))))
+;      (when-let [email (get-in charge [:source :name])]
+;        (when send-payment-reminder-fn
+;          (send-payment-reminder-fn email))))))
 
-          (info "Stripe charge.failed for user " (d/touch user))
+;(defmethod webhook "customer.deleted"
+;  ;; Receiving a Customer object in event.
+;  ;; Reference: https://stripe.com/docs/api#customer_object
+;  [conn event & _]
+;  (let [{:keys [customer]} (get-in event [:data :object])
+;        db-entry (db/lookup-entity (d/db conn) [:stripe/customer customer])]
+;    (when db-entry
+;      (info "Stripe customer.deleted, retracting entity from db: " (d/touch db-entry))
+;      (db/transact-one conn [:db.fn/retractEntity (:db/id db-entry)]))))
 
-          ;; Notify the user by ending an email to the user for the customer. That payment failed and they should check their payment settings.
-          (when send-payment-reminder-fn
-            (send-payment-reminder-fn (:user/email user)))))
-      (when-let [email (get-in charge [:source :name])]
-        (when send-payment-reminder-fn
-          (send-payment-reminder-fn email))))))
+;(defmethod webhook "customer.subscription.created"
+;  ;; Receiving a Subscription object in event.
+;  ;; Reference: https://stripe.com/docs/api#subscription_object
+;  [conn event & _]
+;  (let [{:keys [customer] :as subscription} (get-in event [:data :object])
+;        db-customer (db/lookup-entity (d/db conn) [:stripe/customer customer])]
+;    (if db-customer
+;      (let [db-sub (f/add-tempid (json->subscription-map subscription))]
+;        (debug "Customer subscription created: " (:id subscription))
+;        (db/transact conn [db-sub
+;                           [:db/add (:db/id db-customer) :stripe/subscription (:db/id db-sub)]]))
+;      (throw (webhook-ex event
+;                         (str ":stripe/customer not found: " customer)
+;                         {:customer customer
+;                          :cause    ::h/unprocessable-entity
+;                          :code     :entity-not-found})))))
 
-(defmethod webhook "customer.deleted"
-  ;; Receiving a Customer object in event.
-  ;; Reference: https://stripe.com/docs/api#customer_object
-  [conn event & _]
-  (let [{:keys [customer]} (get-in event [:data :object])
-        db-entry (db/lookup-entity (d/db conn) [:stripe/customer customer])]
-    (when db-entry
-      (info "Stripe customer.deleted, retracting entity from db: " (d/touch db-entry))
-      (db/transact-one conn [:db.fn/retractEntity (:db/id db-entry)]))))
+;(defmethod webhook "customer.subscription.updated"
+;  ;; Receiving a Subscription object in event.
+;  ;; Reference: https://stripe.com/docs/api#subscription_object
+;  [conn event & _]
+;  (let [{:keys [customer] :as subscription} (get-in event [:data :object])
+;        db-customer (db/lookup-entity (d/db conn) [:stripe/customer customer])]
+;    (if db-customer
+;      (let [db-sub (f/add-tempid (json->subscription-map subscription))]
+;        (debug "Customer subscription updated: " (:id subscription))
+;        (db/transact conn [db-sub
+;                           [:db/add (:db/id db-customer) :stripe/subscription (:db/id db-sub)]]))
+;      (throw (webhook-ex event
+;                         (str ":stripe/customer not found: " customer)
+;                         {:customer customer
+;                          :cause    ::h/unprocessable-entity
+;                          :code     :entity-not-found})))))
 
-(defmethod webhook "customer.subscription.created"
-  ;; Receiving a Subscription object in event.
-  ;; Reference: https://stripe.com/docs/api#subscription_object
-  [conn event & _]
-  (let [{:keys [customer] :as subscription} (get-in event [:data :object])
-        db-customer (db/lookup-entity (d/db conn) [:stripe/customer customer])]
-    (if db-customer
-      (let [db-sub (f/add-tempid (json->subscription-map subscription))]
-        (debug "Customer subscription created: " (:id subscription))
-        (db/transact conn [db-sub
-                           [:db/add (:db/id db-customer) :stripe/subscription (:db/id db-sub)]]))
-      (throw (webhook-ex event
-                         (str ":stripe/customer not found: " customer)
-                         {:customer customer
-                          :cause    ::h/unprocessable-entity
-                          :code     :entity-not-found})))))
+;(defmethod webhook "customer.subscription.deleted"
+;  ;; Receiving a Subscription object in event.
+;  ;; Reference: https://stripe.com/docs/api#subscription_object
+;  [conn event & _]
+;  (let [subscription (get-in event [:data :object])
+;        db-entry (db/lookup-entity (d/db conn) [:stripe.subscription/id (:id subscription)])]
+;    (debug "Customer subscription deleted: " (:id subscription))
+;    (when db-entry
+;      (info "Stripe customer.subscription.deleted, retracting entity from db: " (d/touch db-entry))
+;      (db/transact-one conn [:db.fn/retractEntity (:db/id db-entry)]))))
 
-(defmethod webhook "customer.subscription.updated"
-  ;; Receiving a Subscription object in event.
-  ;; Reference: https://stripe.com/docs/api#subscription_object
-  [conn event & _]
-  (let [{:keys [customer] :as subscription} (get-in event [:data :object])
-        db-customer (db/lookup-entity (d/db conn) [:stripe/customer customer])]
-    (if db-customer
-      (let [db-sub (f/add-tempid (json->subscription-map subscription))]
-        (debug "Customer subscription updated: " (:id subscription))
-        (db/transact conn [db-sub
-                           [:db/add (:db/id db-customer) :stripe/subscription (:db/id db-sub)]]))
-      (throw (webhook-ex event
-                         (str ":stripe/customer not found: " customer)
-                         {:customer customer
-                          :cause    ::h/unprocessable-entity
-                          :code     :entity-not-found})))))
+;(defmethod webhook "invoice.payment_succeeded"
+;  ;; Receiving an Invoice object in event
+;  ;; reference: https://stripe.com/docs/api#invoice_object
+;  [conn event & _]
+;  (let [{:keys [customer period_end] :as invoice} (get-in event [:data :object])
+;        {:keys [stripe/subscription]} (db/pull (d/db conn) [:stripe/subscription] [:stripe/customer customer])
+;        subscription-ends-at (* 1000 period_end)]
+;    (if subscription
+;      (do
+;        (debug "Invoice payment succeeded: " (:id invoice))
+;        (db/transact-one conn [:db/add (:db/id subscription) :stripe.subscription/period-end subscription-ends-at]))
+;      (throw (webhook-ex event
+;                         (str "No :stripe/subscription associated with :stripe/customer: " customer)
+;                         {:customer customer
+;                          :code     :entity-not-found})))))
 
-(defmethod webhook "customer.subscription.deleted"
-  ;; Receiving a Subscription object in event.
-  ;; Reference: https://stripe.com/docs/api#subscription_object
-  [conn event & _]
-  (let [subscription (get-in event [:data :object])
-        db-entry (db/lookup-entity (d/db conn) [:stripe.subscription/id (:id subscription)])]
-    (debug "Customer subscription deleted: " (:id subscription))
-    (when db-entry
-      (info "Stripe customer.subscription.deleted, retracting entity from db: " (d/touch db-entry))
-      (db/transact-one conn [:db.fn/retractEntity (:db/id db-entry)]))))
-
-(defmethod webhook "invoice.payment_succeeded"
-  ;; Receiving an Invoice object in event
-  ;; reference: https://stripe.com/docs/api#invoice_object
-  [conn event & _]
-  (let [{:keys [customer period_end] :as invoice} (get-in event [:data :object])
-        {:keys [stripe/subscription]} (db/pull (d/db conn) [:stripe/subscription] [:stripe/customer customer])
-        subscription-ends-at (* 1000 period_end)]
-    (if subscription
-      (do
-        (debug "Invoice payment succeeded: " (:id invoice))
-        (db/transact-one conn [:db/add (:db/id subscription) :stripe.subscription/period-end subscription-ends-at]))
-      (throw (webhook-ex event
-                         (str "No :stripe/subscription associated with :stripe/customer: " customer)
-                         {:customer customer
-                          :code     :entity-not-found})))))
-
-(defmethod webhook "invoice.payment_failed"
-  ;; Receiving an Invoice object in event
-  ;; reference: https://stripe.com/docs/api#invoice_object
-  [conn event & [opts]]
-  (let [{:keys [customer] :as invoice} (get-in event [:data :object])
-        {:keys [::email/send-payment-reminder-fn]} opts]
-    (if customer
-      ;; Find the customer entry in the db.
-      (let [db-customer (db/lookup-entity (d/db conn) [:stripe/customer customer])]
-        ;; If the customer is not found in the DB, something is wrong and we're out of sync with Stripe.
-        (when-not db-customer
-          (throw (webhook-ex event
-                             (str ":stripe/customer not found: " customer)
-                             {:code     :entity-not-found
-                              :customer customer
-                              :cause    ::h/unprocessable-entity})))
-
-        ;; Find the user corresponding to the specified stripe customer.
-        (let [user (db/lookup-entity (d/db conn) (get-in db-customer [:stripe/user :db/id]))]
-          ;; If the customer entity has no user, something is wrong in the db entry, throw exception.
-          (when-not user
-            (throw (webhook-ex event
-                               (str "No :stripe/user associated with :stripe/customer: " customer)
-                               {:customer customer
-                                :code     :entity-not-found})))
-
-          (info "Stripe invoice.payment_failed for user " (d/touch user))
-          (when send-payment-reminder-fn
-            ;; Notify the user by ending an email to the user for the customer. That payment failed and they should check their payment settings.
-            (send-payment-reminder-fn (:user/email user)))))
-      (when-let [email (get-in invoice [:source :name])]
-        (when send-payment-reminder-fn
-          (send-payment-reminder-fn email))))))
+;(defmethod webhook "invoice.payment_failed"
+;  ;; Receiving an Invoice object in event
+;  ;; reference: https://stripe.com/docs/api#invoice_object
+;  [conn event & [opts]]
+;  (let [{:keys [customer] :as invoice} (get-in event [:data :object])
+;        {:keys [::email/send-payment-reminder-fn]} opts]
+;    (if customer
+;      ;; Find the customer entry in the db.
+;      (let [db-customer (db/lookup-entity (d/db conn) [:stripe/customer customer])]
+;        ;; If the customer is not found in the DB, something is wrong and we're out of sync with Stripe.
+;        (when-not db-customer
+;          (throw (webhook-ex event
+;                             (str ":stripe/customer not found: " customer)
+;                             {:code     :entity-not-found
+;                              :customer customer
+;                              :cause    ::h/unprocessable-entity})))
+;
+;        ;; Find the user corresponding to the specified stripe customer.
+;        (let [user (db/lookup-entity (d/db conn) (get-in db-customer [:stripe/user :db/id]))]
+;          ;; If the customer entity has no user, something is wrong in the db entry, throw exception.
+;          (when-not user
+;            (throw (webhook-ex event
+;                               (str "No :stripe/user associated with :stripe/customer: " customer)
+;                               {:customer customer
+;                                :code     :entity-not-found})))
+;
+;          (info "Stripe invoice.payment_failed for user " (d/touch user))
+;          (when send-payment-reminder-fn
+;            ;; Notify the user by ending an email to the user for the customer. That payment failed and they should check their payment settings.
+;            (send-payment-reminder-fn (:user/email user)))))
+;      (when-let [email (get-in invoice [:source :name])]
+;        (when send-payment-reminder-fn
+;          (send-payment-reminder-fn email))))))
 
 ;(defmethod webhook "invoice.payment_succeeded")
