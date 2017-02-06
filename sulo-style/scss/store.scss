@@ -154,6 +154,9 @@
 #sulo-my-store {
 	.page-content {
 		position: relative;
+		input {
+			// @include form-element(1.5rem);
+		}
 	}
 	.store-nav {
 		// position: absolute;

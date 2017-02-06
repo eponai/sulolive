@@ -28,8 +28,14 @@ html, body {
   	}
 }
 
-.tabs-title.is-active {
-	background: $light-gray;
+.tabs-title {
+	// a {
+	// 	font-size: 1rem;
+	// 	font-weight: 500;
+	// }
+	.is-active {
+		background: $light-gray;
+	}	
 }
 
 .padded {

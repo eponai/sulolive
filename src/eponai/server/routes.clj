@@ -127,10 +127,10 @@
     )
   (GET "/aws" request (api/aws-s3-sign request))
   (POST "/api" request
-    (r/response (call-parser request))
-    ;(auth/restrict
-    ;  #(r/response (call-parser %))
-    ;  (auth/jwt-restrict-opts))
+    ;(r/response (call-parser request))
+    (auth/restrict
+      #(r/response (call-parser %))
+      (auth/jwt-restrict-opts))
     )
   (route/resources "/")
   ;(POST "/stripe/main" request (r/response (stripe/webhook (::m/conn request) (:params request))))
@@ -152,7 +152,7 @@
 
   (context "/" [:as request]
     (cond-> member-routes
-            (::m/in-production? request)
+            (or (::m/in-production? request) true)
             (auth/restrict (auth/member-restrict-opts)))
     ;(if (release? request)
     ;  (auth/restrict member-routes (auth/member-restrict-opts))

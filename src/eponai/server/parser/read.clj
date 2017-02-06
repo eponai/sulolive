@@ -30,10 +30,12 @@
 
 (defmethod server-read :query/my-store
   [{:keys [db db-history query auth]} _ _]
-  {:value (query/one db db-history query {:where   '[[?u :user/email ?email]
-                                                     [?owner :store.owner/user ?u]
-                                                     [?e :store/owners ?owner]]
-                                          :symbols {'?email (:email auth)}})})
+  {:value (when-let [email (:email auth)]
+            (debug "AUTH: " auth)
+            (query/one db db-history query {:where   '[[?u :user/email ?email]
+                                                       [?owner :store.owner/user ?u]
+                                                       [?e :store/owners ?owner]]
+                                            :symbols {'?email email}}))})
 
 ;(defmethod server-read :query/stripe
 ;  [{:keys [db db-history query system auth]} _ _]
