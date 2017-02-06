@@ -27,8 +27,7 @@
 (defmethod client-read :query/store
   [{:keys [db query target ast route-params] :as env} _ _]
   (let [store-id (c/parse-long (:store-id route-params))
-        store (db/pull-one-with db query {:where   '[[?e]]
-                                          :symbols {'?e store-id}})]
+        store (db/pull db query store-id)]
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
       {:value (common.read/multiply-store-items store)})))
@@ -59,6 +58,10 @@
     (if target
       {:remote (assoc-in ast [:params :user-id] user-id)}
       {:value user})))
+
+(defmethod client-read :query/route-params
+  [{:keys [route-params]} _ _]
+  {:value route-params})
 
 (defmethod client-read :query/cart
   [{:keys [db query target ast]} _ _]

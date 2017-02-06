@@ -52,12 +52,13 @@
   :on-click - Function called when item is clicked, this can be used to update any state.
 
   See item for general opts."
-  [{:keys [classes active? on-click]} & content]
+  [{:keys [classes active? on-click href]} & content]
   (item*
     {:classes (cond-> (conj classes ::css/tabs-title)
                       active?
                       (conj ::css/is-active))}
     (apply dom/a {:onClick       on-click
+                  :href href
                   :aria-selected (boolean active?)} content)))
 
 (defn item-link

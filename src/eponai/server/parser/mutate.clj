@@ -101,10 +101,13 @@
    :error   "Could not delete product"}
   {:action (fn []
              (let [{:keys [store.item/uuid]} (db/pull (db/db state) [:store.item/uuid] (:db/id product))
+                   store (db/pull-one-with (db/db state) [:db/id {:store/stripe '[*]}] {:where   '[[?e :store/items ?p]]
+                                                                            :symbols {'?p (:db/id product)}})
+                   _ (debug "Found store: " store)
                    {:keys [stripe/secret]} (db/pull-one-with (db/db state) [:stripe/secret] {:where   '[[?s :store/items ?p]
                                                                                                         [?s :store/stripe ?e]]
                                                                                              :symbols {'?p (:db/id product)}})
-                   _ (debug "Will delete product with UUID: " uuid)
+                   _ (debug "Will delete product with UUID: " uuid " secret: " secret)
                    stripe-p (stripe/delete-product (:system/stripe system)
                                                    secret
                                                    (str uuid))]

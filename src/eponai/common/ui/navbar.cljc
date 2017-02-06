@@ -51,17 +51,21 @@
         (dom/span nil "Home")))))
 
 (defn user-dropdown [component user]
-  (dom/div #js {:className "dropdown-pane"}
-    (dom/ul #js {:className "menu vertical"}
-            (dom/li nil
-                    (dom/a #js {:href (str "/profile/" (:db/id user))}
-                           "My Profile"))
-            (dom/li nil
-                    (dom/a #js {:href "/settings"}
-                           "Account Settings"))
-            (dom/li nil
-                    (dom/a #js {:href "/logout"}
-                           "Sign Out")))))
+  (let [store (get (first (get user :store.owner/_user)) :store/_owners)]
+    (dom/div #js {:className "dropdown-pane"}
+      (dom/ul #js {:className "menu vertical"}
+              (dom/li nil
+                      (dom/a #js {:href (str "/profile/" (:db/id user))}
+                             "My Profile"))
+              (dom/li nil
+                      (dom/a #js {:href (str "/store/" (:db/id store) "/dashboard")}
+                             "My Store"))
+              (dom/li nil
+                      (dom/a #js {:href "/settings"}
+                             "Account Settings"))
+              (dom/li nil
+                      (dom/a #js {:href "/logout"}
+                             "Sign Out"))))))
 
 (defui Navbar
   static om/IQuery
@@ -71,7 +75,7 @@
                                  {:store.item/photos [:photo/path]}
                                  :store.item/name
                                  {:store/_items [:store/name]}]}]}
-     {:query/auth [:db/id :user/email]}])
+     {:query/auth [:db/id :user/email {:store.owner/_user [{:store/_owners [:store/name :db/id]}]}]}])
   Object
   #?(:cljs
      (open-signin [this]
@@ -112,6 +116,7 @@
           {:keys [query/cart query/auth]} (om/props this)
           {:keys [coming-soon? right-menu on-live-click]} (om/get-computed this)]
 
+      (debug "AUTH: " auth)
       (dom/header #js {:id "sulo-navbar"}
         (dom/div #js {:className "navbar-container"}
                  (dom/div #js {:className "top-bar navbar"}

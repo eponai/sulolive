@@ -106,10 +106,22 @@
   member-routes
   ;;TODO: Use bidi->compojure routes:
   (GET "/" request (server.ui/index-html (request->props request)))
+
+  ;; STORE ROUTES
   (GET "/store" request (server.ui/store-html (request->props request)))
   (GET "/store/:store-id" request (server.ui/store-html (request->props request)))
+  (GET "/store/:store-id/dashboard" request (server.ui/store-html (request->props request)))
+  (GET "/store/:store-id/dashboard/orders" request (server.ui/store-html (request->props request)))
+  (GET "/store/:store-id/dashboard/orders/:order-id" request (server.ui/store-html (request->props request)))
+  (GET "/store/:store-id/dashboard/products" request (server.ui/store-html (request->props request)))
+  (GET "/store/:store-id/dashboard/products/create" request (server.ui/store-html (request->props request)))
+  (GET "/store/:store-id/dashboard/products/:product-id" request (server.ui/store-html (request->props request)))
+
+  ;; GOODS ROUTES
   (GET "/goods/:product-id" r (server.ui/product-html (request->props r)))
   (GET "/goods" request (server.ui/goods-html (request->props request)))
+
+
   (GET "/shopping-bag" request (server.ui/cart-html (request->props request)))
   (GET "/checkout" request (server.ui/checkout-html (request->props request)))
   (GET "/streams" request (server.ui/streams-html (request->props request)))
