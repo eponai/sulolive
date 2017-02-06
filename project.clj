@@ -50,7 +50,7 @@
                  [cljsjs/react "15.3.1-0"]
                  [cljsjs/react-dom "15.3.1-0"]
                  [com.cognitect/transit-cljs "0.8.239"]
-                 [org.clojure/clojurescript "1.9.293"
+                 [org.clojure/clojurescript "1.9.456"
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
