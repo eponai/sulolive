@@ -64,7 +64,7 @@
                  [cljsjs/nvd3 "1.8.2-1"]
                  [bidi "2.0.10"]
                  [kibu/pushy "0.3.6"]
-                 [binaryage/devtools "0.8.1"]
+                 [binaryage/devtools "0.9.0"]
                  [org.clojure/tools.nrepl "0.2.11"
                   :exclusions [org.clojure/clojure]]
 
