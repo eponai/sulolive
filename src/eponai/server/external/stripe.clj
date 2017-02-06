@@ -19,6 +19,10 @@
     (throw (ex-info "No Api key provided" {:message "No API key provided"
                                            :cause   ::h/unprocessable-entity}))))
 
+(defn pull-stripe [db store-id]
+  (when store-id
+    (db/pull-one-with db '[*] {:where   '[[?s :store/stripe ?e]]
+                               :symbols {'?s store-id}})))
 ;; ########## Stripe protocol ################
 
 (defprotocol IStripeConnect
@@ -51,6 +55,12 @@
 
 (defprotocol IStripeAccount
   (create-product [this account-secret product]
+    "Get a managed account for a seller from Stripe.
+    Opts is a map with following keys:
+
+    :country - A two character string code for the country of the seller, e.g. 'US'.")
+
+  (update-product [_ account-secret product-id params]
     "Get a managed account for a seller from Stripe.
     Opts is a map with following keys:
 
@@ -117,6 +127,13 @@
           new-product (Product/create params)]
       {:id   (.getId new-product)
        :name (.getName new-product)}))
+
+  (update-product [_ account-secret product-id params]
+    (set-api-key account-secret)
+    (let [params {"name" (:name params)}
+          old-product (Product/retrieve (str product-id))
+          new-product (.update old-product params)]
+      {:id (.getId new-product)}))
 
   (delete-product [_ account-secret product-id]
     (set-api-key account-secret)

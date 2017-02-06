@@ -7,7 +7,8 @@
     [taoensso.timbre :refer [debug info]]
     [clojure.data.json :as json]
     [eponai.server.api :as api]
-    [eponai.server.external.stripe :as stripe]))
+    [eponai.server.external.stripe :as stripe]
+    [eponai.common :as c]))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -86,14 +87,29 @@
              (let [product {:db/id           (db/tempid :db.part/user)
                             :store.item/name (:name product)
                             :store.item/uuid (db/squuid)}
-                   {:keys [stripe/secret]} (db/pull-one-with (db/db state) [:stripe/secret] {:where   '[[?s :store/stripe ?e]]
-                                                                                             :symbols {'s store-id}})
+                   {:keys [stripe/secret]} (stripe/pull-stripe (db/db state) (c/parse-long store-id))
                    stripe-p (stripe/create-product (:system/stripe system)
                                                    secret
                                                    product)]
                (debug "Created product in stripe: " stripe-p)
                (db/transact state [product
-                                   [:db/add store-id :store/items (:db/id product)]])))})
+                                   [:db/add (c/parse-long store-id) :store/items (:db/id product)]])))})
+
+(defmutation stripe/update-product
+  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [product store-id product-id]}]
+  {:success "Your account was created"
+   :error   "Could not create Stripe account"}
+  {:action (fn []
+             (let [{:keys [store.item/uuid]} (db/pull (db/db state) [:store.item/uuid] (c/parse-long product-id))
+                   {:keys [stripe/secret]} (stripe/pull-stripe (db/db state) (c/parse-long store-id))
+                   stripe-p (stripe/update-product (:system/stripe system)
+                                                   secret
+                                                   uuid
+                                                   product)
+                   new-item {:store.item/uuid uuid
+                             :store.item/name (:name product)}]
+               (debug "Created product in stripe: " stripe-p)
+               (db/transact-one state new-item)))})
 
 (defmutation stripe/delete-product
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [product]}]
@@ -102,7 +118,7 @@
   {:action (fn []
              (let [{:keys [store.item/uuid]} (db/pull (db/db state) [:store.item/uuid] (:db/id product))
                    store (db/pull-one-with (db/db state) [:db/id {:store/stripe '[*]}] {:where   '[[?e :store/items ?p]]
-                                                                            :symbols {'?p (:db/id product)}})
+                                                                                        :symbols {'?p (:db/id product)}})
                    _ (debug "Found store: " store)
                    {:keys [stripe/secret]} (db/pull-one-with (db/db state) [:stripe/secret] {:where   '[[?s :store/items ?p]
                                                                                                         [?s :store/stripe ?e]]

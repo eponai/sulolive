@@ -16,7 +16,7 @@
   {""           :store
    "/dashboard" {""                                    :store-dashboard
                  ["/" [#"products" :dashboard-option]] {""                             :store-dashboard
-                                                        ["/" [#"create" :new-product]] :store-dashboard
+                                                        ["/" [#"create" :action]] :store-dashboard
                                                         ["/" [#"\d+" :product-id]]     :store-dashboard}
                  ["/" [#"orders" :dashboard-option]]   {""                       :store-dashboard
                                                         ["/" [#"\d+" :order-id]] :store-dashboard}}})

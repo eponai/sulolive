@@ -16,6 +16,12 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common :as c]))
 
+(def form-elements
+  {:input-price      "input-price"
+   :input-on-sale?   "input-on-sale?"
+   :input-sale-price "input-sale-price"
+   :input-name       "input-name"})
+
 (defn route-store [store-id & [path]]
   (str "/store/" store-id "/dashboard" path))
 
@@ -24,56 +30,63 @@
                    css/grid-column)
               (dom/div nil "Thes are the orders")))
 
-(defn breadcrumbs [store current & path]
-  (dom/nav #js {:aria-label "You are here:"
-                :rolw       "navigation"}
-           (dom/ul #js {:className "breadcrumbs"}
-                   (map (fn [p]
-                          (dom/li nil (dom/li nil (dom/a #js {:href (route-store (:db/id store) (:path p))} (:title p)))))
-                        path)
-                   ;(dom/li nil (dom/a #js {:href (route-store (:db/id store))} "Dashboard"))
-                   ;(dom/li nil (dom/a #js {:href (route-store (:db/id store) "/products")} "Products"))
-                   (dom/li nil (dom/span nil (:title current))))))
+;(defn breadcrumbs [store current & path]
+;  (dom/nav #js {:aria-label "You are here:"
+;                :rolw       "navigation"}
+;           (dom/ul #js {:className "breadcrumbs"}
+;                   (map (fn [p]
+;                          (dom/li nil (dom/li nil (dom/a #js {:href (route-store (:db/id store) (:path p))} (:title p)))))
+;                        path)
+;                   ;(dom/li nil (dom/a #js {:href (route-store (:db/id store))} "Dashboard"))
+;                   ;(dom/li nil (dom/a #js {:href (route-store (:db/id store) "/products")} "Products"))
+;                   (dom/li nil (dom/span nil (:title current))))))
 
-(defn store-products [component store {:keys [product-id create?] :as rp}]
-  (if-let [product-id (when (some? product-id)
-                        (c/parse-long product-id))]
-    (let [selected-product (some #(when (= (:db/id %) product-id) %) (:store/items store))]
-      (dom/div nil
-        ;(my-dom/div (->> (css/grid-row)
-        ;                 (css/grid-column))
-        ;            (breadcrumbs store
-        ;                         {:title "Edit"}
-        ;                         {:title "Dashboard"} {:title "Products" :path "/products"}))
+#?(:cljs (defn get-element [id]
+           (.getElementById js/document id)))
 
-        (my-dom/div (->> (css/grid-row)
-                         (css/grid-column))
-                    (dom/h4 nil "Edit Product"))
-        (my-dom/div (->> (css/grid-row)
-                         (css/grid-column))
-                    (dom/label nil "Name:")
-                    (my-dom/input {:type         "text"
-                                   :defaultValue (:store.item/name selected-product)}))
-        (my-dom/div (->> (css/grid-row))
-                    (my-dom/div (css/grid-column)
-                                (dom/label nil "Price:")
-                                (my-dom/input {:type         "text"
-                                               :defaultValue (:store.item/price selected-product)}))
-                    (my-dom/div (css/grid-column)
-                                (dom/label nil "On Sale")
-                                (my-dom/input {:type "checkbox"}))
-                    (my-dom/div (css/grid-column)
-                                (dom/label nil "Sale Price:")
-                                (my-dom/input {:className    "disabled"
-                                               :type         "text"
-                                               :disabled     true
-                                               :defaultValue (:store.item/price selected-product)})))
-        (my-dom/div (->> (css/grid-row)
-                         (css/grid-column))
-                    (dom/div nil
-                      (dom/a #js {:className "button hollow"
-                                  :onClick   #(om/update-state! component dissoc :selected-product)} (dom/span nil "Cancel"))
-                      (dom/a #js {:className "button"} (dom/span nil "Save"))))))
+(defn product-edit-form [component & [product]]
+  (let [{:store.item/keys [price]
+         item-name        :store.item/name} product]
+    (dom/div nil
+      (my-dom/div (->> (css/grid-row)
+                       (css/grid-column))
+                  (dom/h4 nil "Edit Product"))
+      (my-dom/div (->> (css/grid-row)
+                       (css/grid-column))
+                  (dom/label nil "Name:")
+                  (my-dom/input {:id           (get form-elements :input-name)
+                                 :type         "text"
+                                 :defaultValue (or item-name "")}))
+      (my-dom/div (->> (css/grid-row))
+                  (my-dom/div (css/grid-column)
+                              (dom/label nil "Price:")
+                              (my-dom/input {:id           (get form-elements :input-price)
+                                             :type         "number"
+                                             :defaultValue (or price "0")}))
+                  (my-dom/div (css/grid-column)
+                              (dom/label nil "On Sale")
+                              (my-dom/input {:id   (get form-elements :input-on-sale?)
+                                             :type "checkbox"}))
+                  (my-dom/div (css/grid-column)
+                              (dom/label nil "Sale Price:")
+                              (my-dom/input {:id           (get form-elements :input-sale-price)
+                                             :className    "disabled"
+                                             :type         "number"
+                                             :disabled     true
+                                             :defaultValue (or price "")})))
+      (my-dom/div (->> (css/grid-row)
+                       (css/grid-column))
+                  (dom/div nil
+                    (dom/a #js {:className "button hollow"} (dom/span nil "Cancel"))
+                    (dom/a #js {:className "button"
+                                :onClick   #(.update-product component)} (dom/span nil "Save")))))))
+
+(defn store-products [component store {:keys [product-id action] :as rp}]
+  (if (or (= action "create") (some? product-id))
+    (let [product-id (when (some? product-id)
+                       (c/parse-long product-id))
+          selected-product (some #(when (= (:db/id %) product-id) %) (:store/items store))]
+      (product-edit-form component selected-product))
     (dom/div nil
       ;(my-dom/div (->> (css/grid-row)
       ;                 (css/grid-column))
@@ -85,11 +98,7 @@
         (my-dom/div
           (->> (css/grid-column))
           (dom/a #js {:className "button"
-                      :onClick   #(om/transact! component `[(stripe/create-product ~{:product  {:name "Test product"
-                                                                                                :price "100"
-                                                                                                :currency "CAD"}
-                                                                                :store-id (:db/id store)})
-                                                       :query/store])} "Add product")))
+                      :href (route-store (:db/id store) "/products/create")} "Add product")))
 
       (my-dom/div
         (->> (css/grid-row))
@@ -139,6 +148,29 @@
   Object
   (initLocalState [_]
     {:selected-tab :products})
+
+  #?(:cljs
+     (update-product [this]
+                     (let [{:keys [query/route-params]} (om/props this)
+                           {:keys [input-price input-name]} form-elements
+                           title (.-value (get-element input-name))
+                           price (.-value (get-element input-price))]
+
+                       (cond (some? (:product-id route-params))
+                             (om/transact! this `[(stripe/update-product ~{:product    {:name     title
+                                                                                        :price    price
+                                                                                        :currency "CAD"}
+                                                                           :product-id (:product-id route-params)
+                                                                           :store-id   (:store-id route-params)})
+                                                  :query/store])
+
+                             (= (:action route-params) "create")
+                             (om/transact! this `[(stripe/create-product ~{:product  {:name     title
+                                                                                      :price    price
+                                                                                      :currency "CAD"}
+                                                                           :store-id (:store-id route-params)})
+                                                  :query/store])))))
+
   (render [this]
     (let [{:keys [proxy/navbar query/store query/route-params]} (om/props this)
           {:keys [dashboard-option]} route-params
@@ -147,7 +179,7 @@
                                        :href    (route-store (:db/id store) path)} title))
           my-store store]
       (debug "My Store: " my-store)
-      ;(debug "Route params: " route-params)
+      (debug "Route params: " route-params)
       ;(debug "PRoducts: " stripe)
       (dom/div #js {:id "sulo-my-store" :className "sulo-page"}
         (common/page-container
@@ -164,9 +196,7 @@
                 (menu/item-tab {:active? (= dashboard-option "products")
                                  :href (route-store (:db/id my-store) "/products")} "Products")
                 (menu/item-tab {:active? (= dashboard-option "orders")
-                                 :href (route-store (:db/id my-store) "/orders")} "Orders")
-                ))
-            )
+                                 :href (route-store (:db/id my-store) "/orders")} "Orders"))))
           (cond (= dashboard-option "products")
                 (store-products this my-store route-params)
                 (= dashboard-option "orders")

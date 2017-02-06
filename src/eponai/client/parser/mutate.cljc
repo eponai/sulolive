@@ -81,6 +81,12 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'stripe/update-product
+  [{:keys [target]} _ p]
+  (debug "stripe/update-product with params: " p)
+  (if target
+    {:remote true}))
+
 (defmethod client-mutate 'stripe/delete-product
   [{:keys [target]} _ p]
   (debug "stripe/delete-product with params: " p)
