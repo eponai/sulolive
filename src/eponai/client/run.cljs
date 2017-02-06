@@ -10,7 +10,7 @@
     [medley.core :as medley]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]
+    [taoensso.timbre :refer [error debug warn]]
     ;; Routing
     [cemerick.url :as url]
     [bidi.bidi :as bidi]
@@ -23,7 +23,7 @@
   (fn [{:keys [handler route-params] :as match}]
     (let [r @reconciler-atom]
       (try (routes/set-route! r handler {:route-params route-params
-                                     :queue?       (some? (om/app-root r))})
+                                         :queue?       (some? (om/app-root r))})
            (catch :default e
              (debug "Tried to set route: " match ", got error: " e))))))
 
@@ -35,6 +35,15 @@
         (do (reset! appliced? true)
             (f x))))))
 
+
+(defn wrap-route-logging [route-matcher]
+  (fn [url]
+    (let [match (route-matcher url)]
+      (if (some? (:handler match))
+        (debug "Matched url: " url " to route handler: " (:handler match) " whole match:" match)
+        (warn "Could not match url: " url " to any route."))
+      match)))
+
 (defonce history-atom (atom nil))
 
 (defn run []
@@ -44,7 +53,7 @@
             (pushy/stop! h))
         match-route (partial bidi/match-route (common.routes/without-coming-soon-route common.routes/routes))
         update-route! (update-route-fn reconciler-atom)
-        history (pushy/pushy update-route! match-route)
+        history (pushy/pushy update-route! (wrap-route-logging match-route))
         current-route-fn #(:handler (match-route (pushy/get-token history)))
         conn (utils/create-conn)
         parser (parser/client-parser
