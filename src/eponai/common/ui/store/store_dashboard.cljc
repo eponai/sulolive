@@ -1,5 +1,6 @@
 (ns eponai.common.ui.store.store-dashboard
   (:require
+    [eponai.client.parser.message :as msg]
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.product-item :as pi]
     [eponai.common.ui.elements.css :as css]
@@ -30,24 +31,18 @@
                    css/grid-column)
               (dom/div nil "Thes are the orders")))
 
-;(defn breadcrumbs [store current & path]
-;  (dom/nav #js {:aria-label "You are here:"
-;                :rolw       "navigation"}
-;           (dom/ul #js {:className "breadcrumbs"}
-;                   (map (fn [p]
-;                          (dom/li nil (dom/li nil (dom/a #js {:href (route-store (:db/id store) (:path p))} (:title p)))))
-;                        path)
-;                   ;(dom/li nil (dom/a #js {:href (route-store (:db/id store))} "Dashboard"))
-;                   ;(dom/li nil (dom/a #js {:href (route-store (:db/id store) "/products")} "Products"))
-;                   (dom/li nil (dom/span nil (:title current))))))
-
 #?(:cljs (defn get-element [id]
            (.getElementById js/document id)))
 
 (defn product-edit-form [component & [product]]
   (let [{:store.item/keys [price]
-         item-name        :store.item/name} product]
+         item-name        :store.item/name} product
+        update-resp (msg/one-message component 'stripe/update-product)
+        create-resp (msg/one-message component 'stripe/create-product)
+        is-loading? (or (msg/pending? update-resp) (msg/pending? create-resp))]
     (dom/div nil
+      (when is-loading?
+        (common/loading-spinner nil))
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
                   (dom/h4 nil "Edit Product"))
@@ -79,7 +74,49 @@
                   (dom/div nil
                     (dom/a #js {:className "button hollow"} (dom/span nil "Cancel"))
                     (dom/a #js {:className "button"
-                                :onClick   #(.update-product component)} (dom/span nil "Save")))))))
+                                :onClick   #(when-not is-loading? (.update-product component))}
+                           (if is-loading?
+                             (dom/i #js {:className "fa fa-spinner fa-spin"})
+                             (dom/span nil "Save"))))))))
+
+(defn products-list [component store]
+  (dom/div nil
+    (my-dom/div
+      (->> (css/grid-row))
+      (my-dom/div
+        (->> (css/grid-column))
+        (dom/a #js {:className "button"
+                    :href (route-store (:db/id store) "/products/create")} "Add product")))
+
+    (my-dom/div
+      (->> (css/grid-row))
+      (my-dom/div
+        (->> (css/grid-column))
+        (dom/table
+          #js {:className "hover"}
+          (dom/thead
+            nil
+            (dom/tr nil
+                    (dom/th nil (dom/span nil "Delete"))
+                    (dom/th nil "Product Name")
+                    (dom/th nil "Price")
+                    (dom/th nil "Last Updated")))
+          (dom/tbody
+            nil
+            (map (fn [p]
+                   (dom/tr nil
+                           (dom/td nil
+                                   (dom/input #js {:type "checkbox"}))
+                           (dom/td nil
+                                   (dom/a #js {:href (route-store (:db/id store) (str "/products/" (:db/id p)))}
+                                          (dom/span nil (:store.item/name p))))
+                           (dom/td nil
+                                   (dom/a #js {:href (route-store (:db/id store) (str "/products/" (:db/id p)))}
+                                          (dom/span nil (:store.item/price p))))
+                           (dom/td nil
+                                   (dom/a #js {:href (route-store (:db/id store) (str "/products/" (:db/id p)))}
+                                          (dom/span nil (:store.item/price p))))))
+                 (:store/items store))))))))
 
 (defn store-products [component store {:keys [product-id action] :as rp}]
   (if (or (= action "create") (some? product-id))
@@ -87,51 +124,8 @@
                        (c/parse-long product-id))
           selected-product (some #(when (= (:db/id %) product-id) %) (:store/items store))]
       (product-edit-form component selected-product))
-    (dom/div nil
-      ;(my-dom/div (->> (css/grid-row)
-      ;                 (css/grid-column))
-      ;            (breadcrumbs store
-      ;                         {:title "Products"}
-      ;                         {:title "Dashboard"}))
-      (my-dom/div
-        (->> (css/grid-row))
-        (my-dom/div
-          (->> (css/grid-column))
-          (dom/a #js {:className "button"
-                      :href (route-store (:db/id store) "/products/create")} "Add product")))
+    (products-list component store)))
 
-      (my-dom/div
-        (->> (css/grid-row))
-        (my-dom/div
-          (->> (css/grid-column))
-          (dom/table
-            #js {:className "hover"}
-            (dom/thead
-              nil
-              (dom/tr nil
-                      (dom/th nil (dom/span nil "Delete"))
-                      (dom/th nil "Product Name")
-                      (dom/th nil "Price")
-                      (dom/th nil "Last Updated")))
-            (dom/tbody
-              nil
-              (map (fn [p]
-                     (dom/tr nil
-                             (dom/td nil
-                                     (dom/input #js {:type "checkbox"})
-                                     ;(dom/a #js {:onClick #(om/transact! component `[(stripe/delete-product ~{:product {:db/id (:db/id p)}})
-                                     ;                                                :query/store])} (dom/i #js {:className "fa fa-trash fa-fw"}))
-                                     )
-                             (dom/td nil
-                                     (dom/a #js {:href (route-store (:db/id store) (str "/products/" (:db/id p)))}
-                                            (dom/span nil (:store.item/name p))))
-                             (dom/td nil
-                                     (dom/a #js {:href (route-store (:db/id store) (str "/products/" (:db/id p)))}
-                                            (dom/span nil (:store.item/price p))))
-                             (dom/td nil
-                                     (dom/a #js {:href (route-store (:db/id store) (str "/products/" (:db/id p)))}
-                                            (dom/span nil (:store.item/price p))))))
-                   (:store/items store)))))))))
 (defui StoreDashboard
   static om/IQuery
   (query [_]
@@ -144,6 +138,7 @@
                     :store/collections]}
      ;{:query/stripe [:stripe/account :stripe/products]}
      :query/route-params
+     :query/messages
      ])
   Object
   (initLocalState [_]
@@ -173,12 +168,8 @@
 
   (render [this]
     (let [{:keys [proxy/navbar query/store query/route-params]} (om/props this)
-          {:keys [dashboard-option]} route-params
-          menu-item (fn [path title active?]
-                      (menu/item-link {:classes (cond-> [:button :green] (not active?) (conj :hollow))
-                                       :href    (route-store (:db/id store) path)} title))
-          my-store store]
-      (debug "My Store: " my-store)
+          {:keys [dashboard-option]} route-params]
+      (debug "My Store: " store)
       (debug "Route params: " route-params)
       ;(debug "PRoducts: " stripe)
       (dom/div #js {:id "sulo-my-store" :className "sulo-page"}
@@ -194,12 +185,12 @@
                 ;(menu-item "/products" "Products" (= dashboard-option "products"))
                 ;(menu-item "/orders" "Orders" (= dashboard-option "orders"))
                 (menu/item-tab {:active? (= dashboard-option "products")
-                                 :href (route-store (:db/id my-store) "/products")} "Products")
+                                 :href (route-store (:db/id store) "/products")} "Products")
                 (menu/item-tab {:active? (= dashboard-option "orders")
-                                 :href (route-store (:db/id my-store) "/orders")} "Orders"))))
+                                 :href (route-store (:db/id store) "/orders")} "Orders"))))
           (cond (= dashboard-option "products")
-                (store-products this my-store route-params)
+                (store-products this store route-params)
                 (= dashboard-option "orders")
-                (store-orders this my-store route-params)))))))
+                (store-orders this store route-params)))))))
 
 (def ->StoreDashboard (om/factory StoreDashboard))

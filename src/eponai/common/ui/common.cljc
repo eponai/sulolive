@@ -20,6 +20,11 @@
                          :onClick   on-close} "x")
              content))))
 
+(defn loading-spinner [& [opts]]
+  (dom/div #js {:className "spinner-overlay"}
+    (dom/div #js {:className "spinner"}
+      (dom/img #js {:src "/assets/img/auth0-icon.png"}))))
+
 (defn viewer-element [opts view-count]
   (my-dom/div
     (->> opts
