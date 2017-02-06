@@ -89,16 +89,19 @@
     ;(listen-file-drop js/document (om/get-state this :dropped-queue))
     (go
       (while true
-        (let [{:keys [dropped-queue upload-queue uploaded uploads]} (om/get-state this)]
+        (let [{:keys [dropped-queue upload-queue uploaded uploads]} (om/get-state this)
+              {:keys [on-photo-upload]} (om/get-computed this)]
           (let [[v ch] (alts! [uploaded])]
             (cond
               ;(= ch dropped-queue)
               ;(put! upload-queue v)
               (= ch uploaded)
               (do
-                (om/transact! this `[(photo/upload ~{:photo-info (:response v)})
-                                     :query/user])
-                (om/update-state! this update :uploads conj v))))))))
+                (when on-photo-upload
+                  (on-photo-upload  (:response v)))
+                (om/update-state! this (fn [st] (-> st
+                                                    (assoc :loading? false)
+                                                    (update :uploads conj v)))))))))))
 
   (componentDidUpdate [this prev-props prev-state]
     (let [new-state (om/get-state this)

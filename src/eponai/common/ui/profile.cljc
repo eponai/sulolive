@@ -47,7 +47,10 @@
                                                 (menu/item nil
                                                            (pu/->PhotoUploader (om/computed
                                                                                  photo-upload
-                                                                                 {:on-change #(om/update-state! this assoc :file-upload? false)})))
+                                                                                 {:on-photo-upload (fn [photo]
+                                                                                                     (om/transact! this `[(photo/upload ~{:photo photo})
+                                                                                                                          :query/user])
+                                                                                                     (om/update-state! this assoc :file-upload? false))})))
                                                 (menu/item nil
                                                            (dom/a #js {:className "button hollow expanded"} "Remove Photo")))))))
             (dom/div #js {:className "user-info"}

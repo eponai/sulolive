@@ -93,12 +93,13 @@
 (defn s3-photo-upload-url [bucket key]
   (str "https://s3.amazonaws.com/" bucket "/" key))
 
-(defn upload-user-photo [conn {:keys [bucket key] :as p} user]
+(defn upload-user-photo [{:keys [bucket key] :as p}]
   (try
+    (debug "Try to upload photo: " p)
     (let [real-key (s3-photo-real-key key)
           db-photo (f/photo (s3-photo-upload-url bucket real-key))]
       (s3-photo-move bucket key real-key)
-      (db/transact conn [db-photo [:db/add user :user/photo (:db/id db-photo)]]))
+      db-photo)
     (catch AmazonS3Exception e
       (throw (ex-info (.getMessage e) {:message (.getMessage e)})))))
 

@@ -152,9 +152,13 @@
 }
 
 #sulo-my-store {
+	.page-container {
+		$color: map-get($foundation-palette, primary);
+		background: rgba($color, 0.03);
+	}
 	tr {
 		// padding: 1rem 0;
-		border-top: 1px solid rgba($light-gray, 0.5);
+		border-top: 1px solid rgba($light-gray, 0.3);
 		&:first-child {
 			border-top: none;
 		}

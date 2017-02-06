@@ -8,6 +8,7 @@
     [eponai.common.ui.product :as item]
     [eponai.common.ui.stream :as stream]
     #?(:cljs [eponai.web.utils :as utils])
+    #?(:cljs [eponai.client.ui.photo-uploader :as pu])
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.format :as format]
     [om.dom :as dom]
@@ -21,7 +22,8 @@
   {:input-price      "input-price"
    :input-on-sale?   "input-on-sale?"
    :input-sale-price "input-sale-price"
-   :input-name       "input-name"})
+   :input-name       "input-name"
+   :input-desc       "input-desc"})
 
 (defn route-store [store-id & [path]]
   (str "/store/" store-id "/dashboard" path))
@@ -35,7 +37,9 @@
            (.getElementById js/document id)))
 
 (defn product-edit-form [component & [product]]
-  (let [{:store.item/keys [price]
+  (let [{:keys [uploaded-photo]} (om/get-state component)
+        {:keys [proxy/photo-upload]} (om/props component)
+        {:store.item/keys [price photos]
          item-name        :store.item/name} product
         update-resp (msg/one-message component 'stripe/update-product)
         create-resp (msg/one-message component 'stripe/create-product)
@@ -46,29 +50,53 @@
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
                   (dom/h4 nil "Edit Product"))
+
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
-                  (dom/label nil "Name:")
-                  (my-dom/input {:id           (get form-elements :input-name)
-                                 :type         "text"
-                                 :defaultValue (or item-name "")}))
-      (my-dom/div (->> (css/grid-row))
-                  (my-dom/div (css/grid-column)
-                              (dom/label nil "Price:")
-                              (my-dom/input {:id           (get form-elements :input-price)
-                                             :type         "number"
-                                             :defaultValue (or price "0")}))
-                  (my-dom/div (css/grid-column)
-                              (dom/label nil "On Sale")
-                              (my-dom/input {:id   (get form-elements :input-on-sale?)
-                                             :type "checkbox"}))
-                  (my-dom/div (css/grid-column)
-                              (dom/label nil "Sale Price:")
-                              (my-dom/input {:id           (get form-elements :input-sale-price)
-                                             :className    "disabled"
-                                             :type         "number"
-                                             :disabled     true
-                                             :defaultValue (or price "")})))
+                    (dom/h2 nil (dom/span nil "Details"))
+                  (dom/div #js {:className "callout transparent"}
+
+                    (my-dom/div
+                      (->> (css/grid-row))
+                      (my-dom/div
+                        (->> (css/grid-column)
+                             (css/grid-column-size {:small 12 :medium 4 :large 2}))
+                        (photo/square {:src (or (:location uploaded-photo) (:photo/path (first photos)) "/assets/img/auth0-icon.png")})
+                        #?(:cljs
+                           (pu/->PhotoUploader (om/computed
+                                                 photo-upload
+                                                 {:on-photo-upload (fn [photo]
+                                                                     (om/update-state! component assoc :uploaded-photo photo))})))))
+
+                    (my-dom/div (->> (css/grid-row)
+                                     (css/grid-column))
+                                (dom/label nil "Name:")
+                                (my-dom/input {:id           (get form-elements :input-name)
+                                               :type         "text"
+                                               :defaultValue (or item-name "")}))
+                    (my-dom/div (->> (css/grid-row)
+                                     (css/grid-column))
+                                (dom/label nil "Name:")
+                                (my-dom/input {:id           (get form-elements :input-desc)
+                                               :type         "text"
+                                               :defaultValue (or item-name "")}))
+                    (my-dom/div (->> (css/grid-row))
+                                (my-dom/div (css/grid-column)
+                                            (dom/label nil "Price:")
+                                            (my-dom/input {:id           (get form-elements :input-price)
+                                                           :type         "number"
+                                                           :defaultValue (or price "0")}))
+                                (my-dom/div (css/grid-column)
+                                            (dom/label nil "On Sale")
+                                            (my-dom/input {:id   (get form-elements :input-on-sale?)
+                                                           :type "checkbox"}))
+                                (my-dom/div (css/grid-column)
+                                            (dom/label nil "Sale Price:")
+                                            (my-dom/input {:id           (get form-elements :input-sale-price)
+                                                           :className    "disabled"
+                                                           :type         "number"
+                                                           :disabled     true
+                                                           :defaultValue (or price "")})))))
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
                   (dom/div nil
@@ -134,11 +162,13 @@
                     :store/name
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     :store/stripe
-                    {:store/items [:store.item/name]}
+                    {:store/items [:store.item/name {:store.item/photos [:photo/path]}]}
                     :store/collections]}
      ;{:query/stripe [:stripe/account :stripe/products]}
      :query/route-params
      :query/messages
+     #?(:cljs
+        {:proxy/photo-upload (om/get-query pu/PhotoUploader)})
      ])
   Object
   (initLocalState [_]
@@ -147,6 +177,7 @@
   #?(:cljs
      (update-product [this]
                      (let [{:keys [query/route-params]} (om/props this)
+                           {:keys [uploaded-photo]} (om/get-state this)
                            {:keys [input-price input-name]} form-elements
                            title (.-value (get-element input-name))
                            price (.-value (get-element input-price))]
@@ -154,7 +185,8 @@
                        (cond (some? (:product-id route-params))
                              (om/transact! this `[(stripe/update-product ~{:product    {:name     title
                                                                                         :price    price
-                                                                                        :currency "CAD"}
+                                                                                        :currency "CAD"
+                                                                                        :photo uploaded-photo}
                                                                            :product-id (:product-id route-params)
                                                                            :store-id   (:store-id route-params)})
                                                   :query/store])
@@ -162,9 +194,11 @@
                              (= (:action route-params) "create")
                              (om/transact! this `[(stripe/create-product ~{:product  {:name     title
                                                                                       :price    price
-                                                                                      :currency "CAD"}
+                                                                                      :currency "CAD"
+                                                                                      :photo uploaded-photo}
                                                                            :store-id (:store-id route-params)})
-                                                  :query/store])))))
+                                                  :query/store]))
+                       (om/update-state! this dissoc :uploaded-photo))))
 
   (render [this]
     (let [{:keys [proxy/navbar query/store query/route-params]} (om/props this)
