@@ -70,10 +70,13 @@
                    store (db/one-with (db/db state) {:where   '[[?user :user/email ?auth]
                                                                 [?owner :store.owner/user ?user]
                                                                 [?e :store/owners ?owner]]
-                                                     :symbols {'?auth (:email auth)}})]
-               (db/transact state [[:db/add store :store/stripe {:stripe/id     id
-                                                                 :stripe/secret secret
-                                                                 :stripe/publ   publ}]])))})
+                                                     :symbols {'?auth (:email auth)}})
+                   stripe-info {:db/id         (db/tempid :db.part/user)
+                                :stripe/id     id
+                                :stripe/secret secret
+                                :stripe/publ   publ}]
+               (db/transact state [stripe-info
+                                   [:db/add store :store/stripe (:db/id stripe-info)]])))})
 
 (defmutation stripe/create-product
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [product store-id]}]

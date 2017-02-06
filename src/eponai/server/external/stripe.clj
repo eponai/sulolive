@@ -21,7 +21,7 @@
 
 ;; ########## Stripe protocol ################
 
-(defprotocol IStripe
+(defprotocol IStripeConnect
   (create-account [this opts]
     "Create a managed account on Stripe for a a seller.
     Opts is a map with following keys:
@@ -29,24 +29,6 @@
     :country - A two character string code for the country of the seller, e.g. 'US'.")
 
   (get-account [this account-id]
-    "Get a managed account for a seller from Stripe.
-    Opts is a map with following keys:
-
-    :country - A two character string code for the country of the seller, e.g. 'US'.")
-
-  (get-products [this account-secret]
-    "Get a managed account for a seller from Stripe.
-    Opts is a map with following keys:
-
-    :country - A two character string code for the country of the seller, e.g. 'US'.")
-
-  (create-product [this account-secret product]
-    "Get a managed account for a seller from Stripe.
-    Opts is a map with following keys:
-
-    :country - A two character string code for the country of the seller, e.g. 'US'.")
-
-  (delete-product [this account-secret product-id]
     "Get a managed account for a seller from Stripe.
     Opts is a map with following keys:
 
@@ -67,8 +49,30 @@
     :source - The token of the card to charge, received from Stripe.js.
     :destination - The Stripe account ID of the seller who should receive payment."))
 
+(defprotocol IStripeAccount
+  (create-product [this account-secret product]
+    "Get a managed account for a seller from Stripe.
+    Opts is a map with following keys:
+
+    :country - A two character string code for the country of the seller, e.g. 'US'.")
+
+  (delete-product [this account-secret product-id]
+    "Get a managed account for a seller from Stripe.
+    Opts is a map with following keys:
+
+    :country - A two character string code for the country of the seller, e.g. 'US'.")
+
+  (get-products [this account-secret]
+    "Get a managed account for a seller from Stripe.
+    Opts is a map with following keys:
+
+    :country - A two character string code for the country of the seller, e.g. 'US'."))
+
+(defn request-options [account-id]
+  (.setStripeAccount (RequestOptions/builder) account-id))
+
 (defrecord StripeRecord [api-key]
-  IStripe
+  IStripeConnect
   (charge [_ {:keys [amount currency source destination]}]
     (let [params {"amount"      amount
                   "currency"    currency
@@ -84,6 +88,20 @@
       {:id      (.getId account)
        :country (.getCountry account)}))
 
+  (create-customer [_ account-id {:keys [email]}]
+    (let [customer (Customer/create {"email" email} ^RequestOptions (request-options account-id))]
+      customer))
+
+  (create-account [_ {:keys [country]}]
+    (set-api-key api-key)
+    (let [account (Account/create {"country" country
+                                   "managed" true})
+          keys (.getKeys account)]
+      (debug "Created account: " account)
+      {:id     (.getId account)
+       :secret (.getSecret keys)
+       :publ   (.getPublishable keys)}))
+  IStripeAccount
   (get-products [_ account-secret]
     (set-api-key account-secret)
     (let [products (Product/list nil)]
@@ -105,28 +123,13 @@
     (let [product (Product/retrieve product-id)
           deleted (.delete product)]
       {:id      (.getId deleted)
-       :deleted (.getDeleted deleted)}))
-
-  (create-account [_ {:keys [country]}]
-    (set-api-key api-key)
-    (let [account (Account/create {"country" country
-                                   "managed" true})
-          keys (.getKeys account)]
-      (debug "Created account: " account)
-      {:id     (.getId account)
-       :secret (.getSecret keys)
-       :publ   (.getPublishable keys)}))
-
-  (create-customer [_ account-id {:keys [email]}]
-    (let [^RequestOptions req-opts (.setStripeAccount (RequestOptions/builder) account-id)
-          customer (Customer/create {"email" email} req-opts)]
-      customer)))
+       :deleted (.getDeleted deleted)})))
 
 (defn stripe [api-key]
   (->StripeRecord api-key))
 
 (defn stripe-stub []
-  (reify IStripe
+  (reify IStripeConnect
     (charge [_ params]
       (debug "DEV - Fake Stripe: charge with params: " params))
     (create-account [_ params]
@@ -134,7 +137,8 @@
     (get-account [_ params]
       (debug "DEV - Fake Stripe: get-acconunt with params: " params))
     (create-customer [_ _ params]
-      (debug "DEV - Fake Stripe: create-customer with params: " params))))
+      (debug "DEV - Fake Stripe: create-customer with params: " params))
+    IStripeAccount))
 
 
 ;; ########### Stripe objects ################
