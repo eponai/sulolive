@@ -5,11 +5,12 @@
     [eponai.common.format :as f]
     [eponai.server.email :as email]
     [eponai.server.http :as h]
-    [taoensso.timbre :refer [debug error info]])
+    [taoensso.timbre :refer [debug error info]]
+    [clojure.data.json :as json])
   (:import
     (com.stripe Stripe)
     (com.stripe.exception CardException)
-    (com.stripe.model Customer Card Subscription Account)
+    (com.stripe.model Customer Card Subscription Account ExternalAccountCollection ExternalAccount BankAccount)
     (com.stripe.net RequestOptions)))
 
 (defn set-api-key [api-key]
@@ -43,13 +44,16 @@
   IStripe
   (get-account [_ account-id]
     (set-api-key api-key)
-    (Account/retrieve ^String account-id))
+    (let [account (Account/retrieve ^String account-id)
+          external-accounts (.getExternalAccounts account)]
+      {:id      (.getId account)
+       :country (.getCountry account)}))
 
   (create-account [_ {:keys [country]}]
     (set-api-key api-key)
     (let [account (Account/create {"country" country
                                    "managed" true})]
-      account))
+      {:id (.getId account)}))
   (create-customer [_ account-id {:keys [email]}]
     (let [^RequestOptions req-opts (.setStripeAccount (RequestOptions/builder) account-id)
           customer (Customer/create {"email" email} req-opts)]
@@ -61,11 +65,11 @@
 (defn stripe-stub []
   (reify IStripe
     (create-account [_ params]
-      (debug "DEV - Fake subscribing email to mail-chimp with params: " params))
+      (debug "DEV - Fake Stripe: create-account with params: " params))
     (get-account [_ params]
-      (debug "DEV - Fake subscribing email to mail-chimp with params: " params))
+      (debug "DEV - Fake Stripe: get-acconunt with params: " params))
     (create-customer [_ _ params]
-      (debug "DEV - Fake subscribing email to mail-chimp with params: " params))))
+      (debug "DEV - Fake Stripe: create-customer with params: " params))))
 
 
 ;; ########### Stripe objects ################
@@ -102,26 +106,26 @@
 
 (declare stripe-action)
 
-(defn stripe [api-key k params]
-  (when api-key
-    (try
-      (debug "Api key set, try connect to Stripe.")
-      (set! (. Stripe apiKey) api-key)
-      (stripe-action k params)
-      (catch CardException e
-        (throw (ex-info (str (class e) " on Stripe action key: " k)
-                        {:cause   ::h/unprocessable-entity
-                         :type    (class e)
-                         :message (.getMessage e)
-                         :code    (keyword "stripe" (.getCode e))
-                         :data    params})))
-      (catch Exception e
-        (throw (ex-info (str (class e) " on Stripe action key: " k)
-                        {:cause   ::h/internal-error
-                         :code    :undefined
-                         :type    (class e)
-                         :message (.getMessage e)
-                         :data    params}))))))
+;(defn stripe [api-key k params]
+;  (when api-key
+;    (try
+;      (debug "Api key set, try connect to Stripe.")
+;      (set! (. Stripe apiKey) api-key)
+;      (stripe-action k params)
+;      (catch CardException e
+;        (throw (ex-info (str (class e) " on Stripe action key: " k)
+;                        {:cause   ::h/unprocessable-entity
+;                         :type    (class e)
+;                         :message (.getMessage e)
+;                         :code    (keyword "stripe" (.getCode e))
+;                         :data    params})))
+;      (catch Exception e
+;        (throw (ex-info (str (class e) " on Stripe action key: " k)
+;                        {:cause   ::h/internal-error
+;                         :code    :undefined
+;                         :type    (class e)
+;                         :message (.getMessage e)
+;                         :data    params}))))))
 
 
 ;;; ########### Stripe actions ###############

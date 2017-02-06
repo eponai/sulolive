@@ -14,36 +14,47 @@
 (def default-subscription-id "default-subscription-id")
 (def default-period-end 0)
 
-(defn new-db-subscription [id status]
-  {:stripe.subscription/id      id
-   :stripe.subscription/period-end default-period-end
-   :stripe.subscription/status  status})
+(defn stripe-test []
+  (reify stripe/IStripe
+    (create-account [_ {:keys [country]}]
+      {:id "account-id"
+       :country country})
+    (get-account [_ account-id]
+      {:id account-id})
+    (create-customer [_ account-id {:keys [email]}]
+      {:id    "customer-id"
+       :email email})))
 
-
-(defmulti test-stripe-action (fn [_ k _] k))
-(defmethod test-stripe-action :customer/create
-  [status _ _]
-  {:stripe/customer     default-customer-id
-   :stripe/subscription (new-db-subscription default-subscription-id status)})
-
-(defmethod test-stripe-action :customer/update
-  [status _ _]
-  {:stripe/customer default-customer-id})
-
-(defmethod test-stripe-action :subscription/update
-  [status _ {:keys [subscription-id]}]
-  (new-db-subscription subscription-id status))
-
-(defmethod test-stripe-action :subscription/create
-  [status _ _]
-  (new-db-subscription default-subscription-id status))
-
-(defmethod test-stripe-action :subscription/cancel
-  [status _ {:keys [subscription-id]}]
-  (new-db-subscription subscription-id status))
-
-(defn test-stripe [status k params]
-  (test-stripe-action status k params))
+;(defn new-db-subscription [id status]
+;  {:stripe.subscription/id      id
+;   :stripe.subscription/period-end default-period-end
+;   :stripe.subscription/status  status})
+;
+;
+;(defmulti test-stripe-action (fn [_ k _] k))
+;(defmethod test-stripe-action :customer/create
+;  [status _ _]
+;  {:stripe/customer     default-customer-id
+;   :stripe/subscription (new-db-subscription default-subscription-id status)})
+;
+;(defmethod test-stripe-action :customer/update
+;  [status _ _]
+;  {:stripe/customer default-customer-id})
+;
+;(defmethod test-stripe-action :subscription/update
+;  [status _ {:keys [subscription-id]}]
+;  (new-db-subscription subscription-id status))
+;
+;(defmethod test-stripe-action :subscription/create
+;  [status _ _]
+;  (new-db-subscription default-subscription-id status))
+;
+;(defmethod test-stripe-action :subscription/cancel
+;  [status _ {:keys [subscription-id]}]
+;  (new-db-subscription subscription-id status))
+;
+;(defn test-stripe [status k params]
+;  (test-stripe-action status k params))
 
 ;### ------------ Webhook Tests ----------
 

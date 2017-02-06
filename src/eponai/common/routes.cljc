@@ -2,7 +2,8 @@
   (:require
     [eponai.common.ui.shopping-bag :as bag]
     [eponai.common.ui.store :as store]
-    [eponai.common.ui.new-store :as new-store]
+    [eponai.common.ui.store.new-store :as new-store]
+    [eponai.common.ui.store.your-store :as your-store]
     [eponai.common.ui.goods :as goods]
     [eponai.common.ui.index :as index]
     [eponai.common.ui.product :as product]
@@ -16,6 +17,7 @@
         "coming-soon"                 :coming-soon
         "sell/coming-soon"            :sell-soon
         "store/new"                   :new-store
+        "store"                       :your-store
         ["store/" [#"\d+" :store-id]] :store
         "goods"                       :goods
         ["goods/" :product-id]        :product
@@ -41,6 +43,8 @@
                   :factory   store/->Store}
    :new-store    {:component new-store/NewStore
                   :factory   new-store/->NewStore}
+   :your-store {:component your-store/YourStore
+                :factory   your-store/->YourStore}
    :checkout     {:component bag/ShoppingBag
                   :factory   bag/->ShoppingBag}
    :shopping-bag {:component bag/ShoppingBag

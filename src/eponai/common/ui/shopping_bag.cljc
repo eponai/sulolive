@@ -11,7 +11,7 @@
     [taoensso.timbre :refer [debug]]))
 
 (defn items-by-store [items]
-  (group-by :store.item/store items))
+  (group-by :store/_items items))
 
 (defn compute-item-price [items]
   (reduce + (map :store.item/price items)))

@@ -66,3 +66,11 @@
   (debug "photo/upload with params: " p)
   (if target
     {:remote true}))
+
+;; ########### STRIPE ###############
+
+(defmethod client-mutate 'stripe/create-account
+  [{:keys [target]} _ p]
+  (debug "stripe/create-account with params: " p)
+  (if target
+    {:remote true}))

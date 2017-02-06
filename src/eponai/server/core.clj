@@ -33,16 +33,14 @@
                      ::m/empty-datascript-db      (m/init-datascript-db conn)
                      ::m/parser                   (parser/server-parser)
                      ;::m/send-email-fn     (e/send-email-fn conn)
-                     ::stripe/stripe-fn           (fn [k p]
-                                                    (stripe/stripe (env :stripe-secret-key) k p))
                      ::email/send-verification-fn (partial email/send-verification-email @in-production?)
                      ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
                      ::m/system                   {:system/mailchimp (if @in-production?
                                                                        (mailchimp/mail-chimp (env :mail-chimp-api-key))
                                                                        (mailchimp/mail-chimp-stub))
-                                                   :system/stripe (if @in-production?
-                                                                    (stripe/stripe (env :stripe-secret-key))
-                                                                    (stripe/stripe-stub))}
+                                                   :system/stripe    (if (or @in-production? true)
+                                                                       (stripe/stripe (env :stripe-secret-key))
+                                                                       (stripe/stripe-stub))}
                      ::m/cljs-build-id            (or (env :cljs-build-id) "dev")})
       (m/wrap-defaults @in-production? disable-anti-forgery)
       (m/wrap-error @in-production?)

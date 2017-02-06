@@ -33,6 +33,23 @@
       {:remote (assoc-in ast [:params :store-id] store-id)}
       {:value (common.read/multiply-store-items store)})))
 
+(defmethod client-read :query/my-store
+  [{:keys [db query target ast route-params] :as env} _ _]
+  (let [user-eid (auth/current-auth db)
+        store (when user-eid
+                (db/pull-one-with db query {:where   '[[?e :store/owners ?owner]
+                                                       [?owner :store.owner/user ?user]]
+                                            :symbols {'?user user-eid}}))]
+    (if target
+      {:remote true}
+      {:value (common.read/multiply-store-items store)})))
+
+(defmethod client-read :query/stripe
+  [{:keys [db query target ast route-params] :as env} _ _]
+  (if target
+    {:remote true}
+    {:value nil}))
+
 (defmethod client-read :query/user
   [{:keys [db query target ast route-params] :as env} _ _]
   (debug "query/user: " (c/parse-long (:user-id route-params)))

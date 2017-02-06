@@ -32,6 +32,7 @@
     (debug [:path-info path-info :ui-route ui-route])
     {:empty-datascript-db            (::m/empty-datascript-db request)
      :state                          (::m/conn request)
+     :system                         (::m/system request)
      :release?                       (release? request)
      :route-params                   (merge (:route-params ui-route)
                                             (:params request))
@@ -48,6 +49,7 @@
 (defn handle-parser-request
   [{:keys [body] ::m/keys [conn parser system] :as request}]
   (debug "Handling parser request with body:" body)
+  (debug "SYSTEM PARSER REQUEST: " system)
   (parser
     {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
      :state                             conn
@@ -69,22 +71,22 @@
               (merge-with deep-merge-fn a b)
               b))]
     (cond
-     (map? x)
-     (reduce-kv (fn [m k v]
-                  (if (keyword? k)
-                    (merge-with deep-merge-fn
-                                m
-                                (meta v)
-                                (meta-from-keys v))
-                    m))
-                {}
-                x)
-     (sequential? x)
-     (apply merge (mapv meta-from-keys x))
-     :else (reduce-kv (fn [m k v]
-                        (cond-> m (some? v) (assoc k v)))
-                      nil
-                      (meta x)))))
+      (map? x)
+      (reduce-kv (fn [m k v]
+                   (if (keyword? k)
+                     (merge-with deep-merge-fn
+                                 m
+                                 (meta v)
+                                 (meta-from-keys v))
+                     m))
+                 {}
+                 x)
+      (sequential? x)
+      (apply merge (mapv meta-from-keys x))
+      :else (reduce-kv (fn [m k v]
+                         (cond-> m (some? v) (assoc k v)))
+                       nil
+                       (meta x)))))
 
 (def handle-parser-response
   "Will call response-handler for each key value in the parsed result."
@@ -97,12 +99,13 @@
                  (handle-parser-response (assoc request :state conn))
                  (parser.resp/remove-mutation-tx-reports))]
     {:result ret
-     :meta m}))
+     :meta   m}))
 
 (defroutes
   member-routes
   ;;TODO: Use bidi->compojure routes:
   (GET "/" request (server.ui/index-html (request->props request)))
+  (GET "/store" request (server.ui/store-html (request->props request)))
   (GET "/store/:store-id" request (server.ui/store-html (request->props request)))
   (GET "/goods/:product-id" r (server.ui/product-html (request->props r)))
   (GET "/goods" request (server.ui/goods-html (request->props request)))

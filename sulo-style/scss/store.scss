@@ -150,3 +150,18 @@
 	// 	box-shadow: 0 0 3px 1px rgba($primary-color, 0.1);
 	// }
 }
+
+#sulo-my-store {
+	.page-content {
+		position: relative;
+	}
+	.store-nav {
+		// position: absolute;
+		// top: 0;
+		// left: 0;
+		// width: 15rem;
+	}
+	.navbar, footer, .footer .row {
+		max-width: 100%;
+	}
+}

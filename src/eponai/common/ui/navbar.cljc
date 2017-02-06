@@ -70,7 +70,7 @@
                    {:cart/items [:store.item/price
                                  {:store.item/photos [:photo/path]}
                                  :store.item/name
-                                 {:store.item/store [:store/name]}]}]}
+                                 {:store/_items [:store/name]}]}]}
      {:query/auth [:db/id :user/email]}])
   Object
   #?(:cljs
@@ -112,8 +112,8 @@
           {:keys [query/cart query/auth]} (om/props this)
           {:keys [coming-soon? right-menu on-live-click]} (om/get-computed this)]
 
-      (dom/div #js {:id "sulo-navbar"}
-        (dom/nav #js {:className "navbar-container"}
+      (dom/header #js {:id "sulo-navbar"}
+        (dom/div #js {:className "navbar-container"}
                  (dom/div #js {:className "top-bar navbar"}
                    (dom/div #js {:className "top-bar-left"}
                      (menu/horizontal

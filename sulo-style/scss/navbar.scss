@@ -33,18 +33,16 @@
 	}
 }
 
-nav {
-	height: $navbar-height;
-	font-size: 0.9rem;
-	@include breakpoint(medium) {
-		font-size: 1rem;
-	}
-}
 .navbar-container {
 	background: $navbar-background-color;
 	box-shadow: 1px 1px 3px 0 rgba($black, 0.1);
 	display: flex;
 	align-items: center;
+	height: $navbar-height;
+	font-size: 0.9rem;
+	@include breakpoint(medium) {
+		font-size: 1rem;
+	}
 }
 
 .navbar {

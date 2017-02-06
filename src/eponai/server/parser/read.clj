@@ -7,7 +7,8 @@
     [environ.core :as env]
     [datomic.api :as d]
     [taoensso.timbre :refer [error debug trace warn]]
-    [eponai.server.auth :as auth]))
+    [eponai.server.auth :as auth]
+    [eponai.server.external.stripe :as stripe]))
 
 (defmethod server-read :datascript/schema
   [{:keys [db db-history]} _ _]
@@ -26,6 +27,24 @@
   [{:keys [db db-history query]} _ {:keys [store-id]}]
   {:value (query/one db db-history query {:where   '[[?e]]
                                           :symbols {'?e store-id}})})
+
+(defmethod server-read :query/my-store
+  [{:keys [db db-history query auth]} _ _]
+  {:value (db/pull-one-with db query {:where   '[[?u :user/email ?email]
+                                                 [?owner :store.owner/user ?u]
+                                                 [?e :store/owners ?owner]]
+                                      :symbols {'?email (:email auth)}})})
+
+(defmethod server-read :query/stripe
+  [{:keys [db db-history query system auth]} _ _]
+  (debug "SYSTEM: " system)
+  {:value (let [stripe-account-id (db/one-with db {:where   '[[?u :user/email ?email]
+                                                              [?owner :store.owner/user ?u]
+                                                              [?s :store/owners ?owner]
+                                                              [?s :store/stripe ?e]]
+                                                   :symbols {'?email (:email auth)}})
+                stripe-account (stripe/get-account (:system/stripe system) stripe-account-id)]
+            (debug "Got stripe account: " stripe-account))})
 
 (defmethod server-read :query/user
   [{:keys [db db-history query]} _ {:keys [user-id]}]

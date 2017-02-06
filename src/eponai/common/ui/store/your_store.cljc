@@ -1,4 +1,4 @@
-(ns eponai.common.ui.new-store
+(ns eponai.common.ui.store.your-store
   (:require
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.product-item :as pi]
@@ -14,35 +14,41 @@
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.menu :as menu]))
 
-(defui NewStore
+(defui YourStore
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}])
+    [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:query/my-store [:store/name
+                      {:store/owners [{:store.owner/user [:user/email]}]}
+                      :store/stripe
+                      :store/items
+                      :store/collections]}
+     :query/stripe])
   Object
   (initLocalState [_]
     {:selected-tab :products})
   (render [this]
     (let [{:keys [selected-tab]} (om/get-state this)
           {:keys [proxy/navbar]} (om/props this)]
-      (dom/div #js {:id "sulo-new-store" :className "sulo-page"}
+      (dom/div #js {:id "sulo-my-store" :className "sulo-page"}
         (common/page-container
           {:navbar navbar}
           (my-dom/div
             (->> (css/grid-row))
             (my-dom/div
-              (->> (css/grid-column)
-                   (css/grid-column-size {:small 0 :medium 4}))
-              (menu/vertical
-                nil
-                (menu/item-tab {:active? (= selected-tab :products)
+              (->> (css/grid-column))
+              (menu/horizontal
+                (css/add-class :store-nav)
+                (menu/item-tab {:active?  (= selected-tab :products)
                                 :on-click #(om/update-state! this assoc :selected-tab :products)} "Products")
-                (menu/item-tab {:active? (= selected-tab :orders)
-                                :on-click #(om/update-state! this assoc :selected-tab :orders)} "Orders")))
+                (menu/item-tab {:active?  (= selected-tab :orders)
+                                :on-click #(om/update-state! this assoc :selected-tab :orders)} "Orders"))))
+          (my-dom/div
+            (->> (css/grid-row))
             (my-dom/div
               (->> (css/grid-column))
-              (dom/span nil "CREATE NEW STORE"))
-            (dom/a #js {:className "button"
-                        :onClick   #(om/transact! this `[(stripe/create-account)])} "Start my store")
+              (dom/a #js {:className "button"
+                          :onClick   #(om/transact! this `[(stripe/create-account)])} "Start my store"))
             ))))))
 
-(def ->NewStore (om/factory NewStore))
+(def ->YourStore (om/factory YourStore))

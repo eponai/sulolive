@@ -66,8 +66,9 @@
   {:action (fn []
              (let [account (stripe/create-account (:system/stripe system)
                                                   {:country "CA"})
-                   store (db/one-with (db/db state) {:where '[?user :user/email ?auth
-                                                              [?e :store/user ?user]]
+                   _ (debug "Stripe account created: " account)
+                   store (db/one-with (db/db state) {:where   '[[?user :user/email ?auth]
+                                                                [?owner :store.owner/user ?user]
+                                                                [?e :store/owners ?owner]]
                                                      :symbols {'?auth (:email auth)}})]
-               (db/transact state [account
-                                   [:db/add store :store/stripe account]])))})
+               (db/transact state [[:db/add store :store/stripe (:id account)]])))})
