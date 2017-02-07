@@ -10,8 +10,6 @@
     [eponai.client.routes :as routes]
     [eponai.client.parser.message :as msg]
     [eponai.common :as c]
-    #?(:cljs
-       [cljs.reader])
     [taoensso.timbre :refer [debug]]
     [eponai.client.auth :as auth]))
 
@@ -44,18 +42,6 @@
     (if target
       {:remote (assoc-in ast [:params :user-id] user-id)}
       {:value user})))
-
-(defn local-cart [db]
-  #?(:cljs
-     (if-let [stored (.getItem js/localStorage "cart")]
-       (-> (cljs.reader/read-string stored)
-           (update :cart/items #(db/pull-many db [:db/id :item/price :item/img-src :item/name {:item/store [:store/photo :store/name :store/rating :store/review-count]}] %)))
-       {:cart/items []})))
-
-(defn read-local-cart [db cart]
-  (-> (or cart {:cart/items []})
-      (update :cart/items #(db/pull-many db [:db/id :item/price :item/img-src :item/name {:item/store [:store/photo :store/name :store/rating :store/review-count]}] %))
-      (common.read/compute-cart-price)))
 
 (defmethod client-read :query/cart
   [{:keys [db query target ast]} _ _]
