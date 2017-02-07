@@ -59,11 +59,21 @@
 
 (defn queue-file [e owner {:keys [upload-queue]}]
   (let [file (first (array-seq (.. e -target -files)))
+        {:keys [on-photo-queue]} (om/get-computed owner)
         ;resized (resize-image file 100 100)
         ]
     (debug {:original file})
     (put! upload-queue {:file     file
                         :metadata {:x-amz-meta-size (.-size file)}})
+    (when on-photo-queue
+      ;reader.onloadend = function() {
+      ;                               img.src = reader.result;
+      ;                               }
+      ;reader.readAsDataURL(file);
+      (let [reader (js/FileReader. )]
+        (set! (.-onloadend reader) (fn []
+                                     (on-photo-queue (.-result reader))))
+        (.readAsDataURL reader file)))
     (om/update-state! owner assoc :loading? true)))
 
 (defui PhotoUploader

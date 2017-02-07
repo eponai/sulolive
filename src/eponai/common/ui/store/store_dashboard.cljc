@@ -37,7 +37,7 @@
            (.getElementById js/document id)))
 
 (defn product-edit-form [component & [product]]
-  (let [{:keys [uploaded-photo]} (om/get-state component)
+  (let [{:keys [uploaded-photo queue-photo]} (om/get-state component)
         {:keys [proxy/photo-upload]} (om/props component)
         {:store.item/keys [price photos]
          item-name        :store.item/name} product
@@ -61,12 +61,23 @@
                       (my-dom/div
                         (->> (css/grid-column)
                              (css/grid-column-size {:small 12 :medium 4 :large 2}))
-                        (photo/square {:src (or (:location uploaded-photo) (:photo/path (first photos)) "/assets/img/auth0-icon.png")})
+                        (if-let [photo-url (or (:location uploaded-photo) (:photo/path (first photos)))]
+                          (photo/square {:src photo-url})
+                          (if-let [queue-url queue-photo]
+                            (photo/with-overlay nil  (photo/square {:src queue-url}) (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"}))
+                            (dom/label #js {:htmlFor "file" :className "button secondary hollow expanded upload-button"}
+                                       ;(if loading?
+                                       ;  (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"}))
+                                       (dom/div nil
+                                         (dom/i #js {:className "fa fa-plus fa-3x"})))))
                         #?(:cljs
                            (pu/->PhotoUploader (om/computed
                                                  photo-upload
-                                                 {:on-photo-upload (fn [photo]
-                                                                     (om/update-state! component assoc :uploaded-photo photo))})))))
+                                                 {:on-photo-queue (fn [img-result]
+                                                                    ;(debug "Got photo: " photo)
+                                                                    (om/update-state! component assoc :queue-photo img-result :uploaded-photo nil))
+                                                  :on-photo-upload (fn [photo]
+                                                                     (om/update-state! component assoc :uploaded-photo photo :queue-photo nil))})))))
 
                     (my-dom/div (->> (css/grid-row)
                                      (css/grid-column))

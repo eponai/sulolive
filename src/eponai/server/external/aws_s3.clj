@@ -2,7 +2,6 @@
   (:require
     [amazonica.aws.s3 :as aws-s3]
     [eponai.server.datomic.format :as f]
-    [environ.core :as env]
     [s3-beam.handler :as s3])
   (:import (com.amazonaws.services.s3.model CannedAccessControlList AmazonS3Exception)))
 
@@ -34,7 +33,8 @@
       (try
         ;(debug "Try to upload photo: " p)
         (let [real-key (convert-to-real-key this key)
-              db-photo (f/photo (s3-photo-upload-url bucket real-key))]
+              s3-upload-url (str "https://s3.amazonaws.com/" bucket "/" real-key)
+              db-photo (f/photo s3-upload-url)]
           (move-photo this bucket key real-key)
           db-photo)
         (catch AmazonS3Exception e
@@ -42,4 +42,7 @@
 
 (defn aws-s3-stub []
   (reify IAWSS3Photo
-    (sign [_])))
+    (sign [_])
+    (convert-to-real-key [_ _])
+    (upload-photo [_ _])
+    (move-photo [_ _ _ _])))
