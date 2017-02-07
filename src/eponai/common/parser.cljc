@@ -30,9 +30,11 @@
   (store-message [this id mutation-message]
     "Stores a mutation message on the id. Can store multiple messages for each id.")
   (get-messages [this]
-    "Returns messages in insertion order")
+    "Returns messages in insertion order.
+    Messages should include a :tx to order messages by.")
   (get-message-fn [this]
-    "Returns a 2-arity function taking id and mutation-key returning mutation message."))
+    "Returns a 2-arity function taking id and mutation-key returning mutation message.
+    Messages should include a number in :tx which makes messages time ordered."))
 
 (defprotocol IMutationMessage
   (message [this] "Returns the message")

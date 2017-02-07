@@ -406,7 +406,7 @@
   (render [this]
     (let [{:keys [proxy/navbar]} (om/props this)
           {:keys [lock on-login-fn live-open? client-msg]} (om/get-state this)
-          message (msg/one-message this 'beta/vendor)]
+          message (msg/last-message this 'beta/vendor)]
       (dom/div #js {:id "sulo-sell-coming-soon" :className "sulo-page"}
         (common/page-container
           {:navbar (om/computed navbar {:coming-soon?  true

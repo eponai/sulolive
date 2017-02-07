@@ -70,12 +70,15 @@
   (fn [history-id mutation-key]
     (assert (some? history-id) (str "Called (get-message-fn ) with history-id nil."
                                     " Needs history-id to look up messages. mutation-key: " mutation-key))
-    (some->> (database/one-with this {:where   '[[?e :mutation-message/history-id ?history-id]
+    (when-let [[id tx] (first (database/find-with
+                                this {:find    '[?e ?tx]
+                                      :where   '[[?e :mutation-message/history-id ?history-id ?tx]
                                                  [?e :mutation-message/mutation-key ?mutation-key]]
                                       :symbols {'?history-id   history-id
-                                                '?mutation-key mutation-key}})
-             (d/entity this)
-             entity->MutationMessage)))
+                                                '?mutation-key mutation-key}}))]
+      (-> (d/entity this id)
+          (entity->MutationMessage)
+          (assoc :tx tx)))))
 
 (defn- get-messages-datascript [this]
   (some->> (database/find-with this {:find  '[?e ?tx]
@@ -176,20 +179,26 @@
 (defn- message-ids-for-key [c k]
   (get-in (om/get-state c) [::component-messages k]))
 
-(defn all-messages [component mutation-key]
+(defn all-messages
+  "Returns all messages for a component and key in order when the message's id was
+  transacted, i.e. when it became pending."
+  [component mutation-key]
   (assert-query component)
-  (map #(find-message component % mutation-key)
-       (message-ids-for-key component mutation-key)))
+  (->> (message-ids-for-key component mutation-key)
+       (map (fn [id]
+              {:post [(or (nil? %) (number? (:tx %)))]}
+              (find-message component id mutation-key)))
+       (filter some?)
+       (sort-by :tx)
+       (into [])))
 
-(defn one-message [component mutation-key]
+(defn last-message
+  "Returns the latest message for a component and key, where latest is defined by :tx order."
+  [component mutation-key]
   (let [messages (all-messages component mutation-key)]
-    (when (< 1 (count messages))
-      (warn "Found more than one message in call to `one-message` for component: " (pr-str component)
-            " mutation-key: " mutation-key
-            ". There is possibly a bug in your UI?"
-            " If your component performs multiple messages, please keep track of the history id's"
-            " returned by `om-transact!` and use `find-message` instead."))
-    (first messages)))
+    (if (vector? messages)
+      (peek messages)
+      (last messages))))
 
 (defn clear-messages! [component mutation-key]
   (om/update-state! component ::component-messages dissoc mutation-key))
@@ -204,7 +213,7 @@
   (clear-messages! component mutation-key))
 
 (defn message-status [component mutation-key & [not-found]]
-  (if-let [msg (one-message component mutation-key)]
+  (if-let [msg (last-message component mutation-key)]
     (cond (pending? msg)
           ::pending
           (final? msg)
@@ -217,4 +226,4 @@
     (or not-found ::not-found)))
 
 (defn message-data [component mutation-key]
-  (message (one-message component mutation-key)))
+  (message (last-message component mutation-key)))
