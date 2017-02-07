@@ -95,13 +95,17 @@
                    stripe-p (stripe/create-product (:system/stripe system)
                                                    secret
                                                    db-product)
-                   photo-upload (s3/upload-photo (:system/aws-s3 system) (:photo product))]
+                   photo-upload (s3/upload-photo (:system/aws-s3 system) (:photo product))
+                   txs (if (some? photo-upload)
+                         [db-product
+                          photo-upload
+                          [:db/add (c/parse-long store-id) :store/items (:db/id db-product)]
+                          [:db/add (:db/id db-product) :store.item/photos (:db/id photo-upload)]]
+                         [db-product
+                          [:db/add (c/parse-long store-id) :store/items (:db/id db-product)]])]
                (debug "Created product in stripe: " stripe-p)
                (debug "Uploaded item photo: " photo-upload)
-               (db/transact state [db-product
-                                   photo-upload
-                                   [:db/add (c/parse-long store-id) :store/items (:db/id db-product)]
-                                   [:db/add (:db/id db-product) :store.item/photos (:db/id photo-upload)]])))})
+               (db/transact state txs)))})
 
 (defmutation stripe/update-product
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [product store-id product-id]}]
@@ -116,7 +120,7 @@
                                                    product)
                    new-item {:store.item/uuid uuid
                              :store.item/name (:name product)}
-                   photo-upload (when (:photo product) (s3/upload-photo (:system/aws-s3 system) (:photo product)))
+                   photo-upload (s3/upload-photo (:system/aws-s3 system) (:photo product))
                    txs (if (some? photo-upload)
                          (if (some? (first photos))
                            [new-item (assoc photo-upload :db/id (:db/id (first photos)))]

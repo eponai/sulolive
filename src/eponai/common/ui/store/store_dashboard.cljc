@@ -49,22 +49,23 @@
         (common/loading-spinner nil))
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
-                  (dom/h4 nil "Edit Product"))
+                  (dom/h2 nil "Edit Product - " (dom/small nil item-name)))
 
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
-                    (dom/h2 nil (dom/span nil "Details"))
+                  ;(dom/h3 nil (dom/span nil "Details"))
                   (dom/div #js {:className "callout transparent"}
 
                     (my-dom/div
-                      (->> (css/grid-row))
+                      (->> (css/grid-row)
+                           (css/add-class :photo-section))
                       (my-dom/div
                         (->> (css/grid-column)
                              (css/grid-column-size {:small 12 :medium 4 :large 2}))
                         (if-let [photo-url (or (:location uploaded-photo) (:photo/path (first photos)))]
                           (photo/square {:src photo-url})
                           (if-let [queue-url queue-photo]
-                            (photo/with-overlay nil  (photo/square {:src queue-url}) (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"}))
+                            (photo/with-overlay nil (photo/square {:src queue-url}) (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"}))
                             (dom/label #js {:htmlFor "file" :className "button secondary hollow expanded upload-button"}
                                        ;(if loading?
                                        ;  (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"}))
@@ -73,41 +74,47 @@
                         #?(:cljs
                            (pu/->PhotoUploader (om/computed
                                                  photo-upload
-                                                 {:on-photo-queue (fn [img-result]
-                                                                    ;(debug "Got photo: " photo)
-                                                                    (om/update-state! component assoc :queue-photo img-result :uploaded-photo nil))
+                                                 {:on-photo-queue  (fn [img-result]
+                                                                     ;(debug "Got photo: " photo)
+                                                                     (om/update-state! component assoc :queue-photo img-result :uploaded-photo nil))
                                                   :on-photo-upload (fn [photo]
                                                                      (om/update-state! component assoc :uploaded-photo photo :queue-photo nil))})))))
 
                     (my-dom/div (->> (css/grid-row)
                                      (css/grid-column))
-                                (dom/label nil "Name:")
+                                (dom/label nil "Name")
                                 (my-dom/input {:id           (get form-elements :input-name)
                                                :type         "text"
                                                :defaultValue (or item-name "")}))
                     (my-dom/div (->> (css/grid-row)
                                      (css/grid-column))
-                                (dom/label nil "Name:")
+                                (dom/label nil "Description")
                                 (my-dom/input {:id           (get form-elements :input-desc)
                                                :type         "text"
-                                               :defaultValue (or item-name "")}))
+                                               :defaultValue ""}))
                     (my-dom/div (->> (css/grid-row))
-                                (my-dom/div (css/grid-column)
-                                            (dom/label nil "Price:")
-                                            (my-dom/input {:id           (get form-elements :input-price)
-                                                           :type         "number"
-                                                           :defaultValue (or price "0")}))
-                                (my-dom/div (css/grid-column)
-                                            (dom/label nil "On Sale")
-                                            (my-dom/input {:id   (get form-elements :input-on-sale?)
-                                                           :type "checkbox"}))
-                                (my-dom/div (css/grid-column)
-                                            (dom/label nil "Sale Price:")
-                                            (my-dom/input {:id           (get form-elements :input-sale-price)
-                                                           :className    "disabled"
-                                                           :type         "number"
-                                                           :disabled     true
-                                                           :defaultValue (or price "")})))))
+                                (my-dom/div
+                                  (->> (css/grid-column)
+                                       (css/grid-column-size {:medium 3}))
+                                  (dom/label nil "Price")
+                                  (my-dom/input {:id           (get form-elements :input-price)
+                                                 :type         "number"
+                                                 :step         "0.01"
+                                                 :min          0
+                                                 :max          "99999999.99"
+                                                 :defaultValue (or price "")}))
+                                ;(my-dom/div (css/grid-column)
+                                ;            (dom/label nil "On Sale")
+                                ;            (my-dom/input {:id   (get form-elements :input-on-sale?)
+                                ;                           :type "checkbox"}))
+                                ;(my-dom/div (css/grid-column)
+                                ;            (dom/label nil "Sale Price")
+                                ;            (my-dom/input {:id           (get form-elements :input-sale-price)
+                                ;                           :className    "disabled"
+                                ;                           :type         "number"
+                                ;                           :disabled     true
+                                ;                           :defaultValue (or price "")}))
+                                )))
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
                   (dom/div nil
@@ -123,9 +130,10 @@
     (my-dom/div
       (->> (css/grid-row))
       (my-dom/div
-        (->> (css/grid-column))
+        (->> (css/grid-column)
+             (css/text-align :right))
         (dom/a #js {:className "button"
-                    :href (route-store (:db/id store) "/products/create")} "Add product")))
+                    :href      (route-store (:db/id store) "/products/create")} "Add product")))
 
     (my-dom/div
       (->> (css/grid-row))
@@ -197,7 +205,7 @@
                              (om/transact! this `[(stripe/update-product ~{:product    {:name     title
                                                                                         :price    price
                                                                                         :currency "CAD"
-                                                                                        :photo uploaded-photo}
+                                                                                        :photo    uploaded-photo}
                                                                            :product-id (:product-id route-params)
                                                                            :store-id   (:store-id route-params)})
                                                   :query/store])
@@ -206,7 +214,7 @@
                              (om/transact! this `[(stripe/create-product ~{:product  {:name     title
                                                                                       :price    price
                                                                                       :currency "CAD"
-                                                                                      :photo uploaded-photo}
+                                                                                      :photo    uploaded-photo}
                                                                            :store-id (:store-id route-params)})
                                                   :query/store]))
                        (om/update-state! this dissoc :uploaded-photo))))
@@ -230,9 +238,9 @@
                 ;(menu-item "/products" "Products" (= dashboard-option "products"))
                 ;(menu-item "/orders" "Orders" (= dashboard-option "orders"))
                 (menu/item-tab {:active? (= dashboard-option "products")
-                                 :href (route-store (:db/id store) "/products")} "Products")
+                                :href    (route-store (:db/id store) "/products")} "Products")
                 (menu/item-tab {:active? (= dashboard-option "orders")
-                                 :href (route-store (:db/id store) "/orders")} "Orders"))))
+                                :href    (route-store (:db/id store) "/orders")} "Orders"))))
           (cond (= dashboard-option "products")
                 (store-products this store route-params)
                 (= dashboard-option "orders")

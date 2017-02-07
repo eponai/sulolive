@@ -67,6 +67,10 @@
 		// 	font-size: 1.25rem;
 		// }
 	}
+	input {
+		@include form-element(rem-calc(16));
+		margin: 0;
+	}
 }
 
 .navbar-blur {

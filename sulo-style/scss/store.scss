@@ -152,6 +152,18 @@
 }
 
 #sulo-my-store {
+	.callout {
+		padding: 2rem;
+	}
+	h3 {
+		text-transform: none;
+	}
+	.photo-section {
+		padding: 1rem 0;
+		.upload-button {
+			margin: 0;
+		}
+	}
 	.photo-uploader {
 		label {
 			display: none;
@@ -167,14 +179,20 @@
 	}
 	.upload-button {
 		position: relative;
+		width: 100%;
 		padding-top: 100%;
 		// height: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		// display: flex;
+		// align-items: center;
+		// justify-content: center;
 		> * {
+			display: flex;
+			align-items: center;
+			justify-content: center;
 			height: 100%;
 			width: 100%;
+			top: 0;
+			left: 0;
 			position: absolute;
 		}
 	}

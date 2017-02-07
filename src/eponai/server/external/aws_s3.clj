@@ -29,16 +29,17 @@
       (aws-s3/set-object-acl bucket new-key CannedAccessControlList/PublicRead)
       (aws-s3/delete-object bucket old-key))
 
-    (upload-photo [this {:keys [bucket key]}]
-      (try
-        ;(debug "Try to upload photo: " p)
-        (let [real-key (convert-to-real-key this key)
-              s3-upload-url (str "https://s3.amazonaws.com/" bucket "/" real-key)
-              db-photo (f/photo s3-upload-url)]
-          (move-photo this bucket key real-key)
-          db-photo)
-        (catch AmazonS3Exception e
-          (throw (ex-info (.getMessage e) {:message (.getMessage e)})))))))
+    (upload-photo [this {:keys [bucket key] :as p}]
+      (when (some? p)
+        (try
+          ;(debug "Try to upload photo: " p)
+          (let [real-key (convert-to-real-key this key)
+                s3-upload-url (str "https://s3.amazonaws.com/" bucket "/" real-key)
+                db-photo (f/photo s3-upload-url)]
+            (move-photo this bucket key real-key)
+            db-photo)
+          (catch AmazonS3Exception e
+            (throw (ex-info (.getMessage e) {:message (.getMessage e)}))))))))
 
 (defn aws-s3-stub []
   (reify IAWSS3Photo
