@@ -43,7 +43,12 @@
          item-name        :store.item/name} product
         update-resp (msg/one-message component 'stripe/update-product)
         create-resp (msg/one-message component 'stripe/create-product)
-        is-loading? (or (msg/pending? update-resp) (msg/pending? create-resp))]
+        is-loading? (cond (some? update-resp)
+                          (msg/pending? update-resp)
+                          (some? create-resp)
+                          (msg/pending? create-resp))]
+    (debug "State: " (om/get-state component))
+    (debug "Messages: " {:update update-resp :create create-resp})
     (dom/div nil
       (when is-loading?
         (common/loading-spinner nil))
@@ -202,28 +207,37 @@
                            price (.-value (get-element input-price))]
 
                        (cond (some? (:product-id route-params))
-                             (om/transact! this `[(stripe/update-product ~{:product    {:name     title
+                             (msg/om-transact! this `[(stripe/update-product ~{:product {:name    title
                                                                                         :price    price
                                                                                         :currency "CAD"
                                                                                         :photo    uploaded-photo}
-                                                                           :product-id (:product-id route-params)
-                                                                           :store-id   (:store-id route-params)})
+                                                                           :product-id  (:product-id route-params)
+                                                                           :store-id    (:store-id route-params)})
                                                   :query/store])
 
                              (= (:action route-params) "create")
-                             (om/transact! this `[(stripe/create-product ~{:product  {:name     title
+                             (msg/om-transact! this `[(stripe/create-product ~{:product {:name  title
                                                                                       :price    price
                                                                                       :currency "CAD"
                                                                                       :photo    uploaded-photo}
-                                                                           :store-id (:store-id route-params)})
+                                                                           :store-id    (:store-id route-params)})
                                                   :query/store]))
                        (om/update-state! this dissoc :uploaded-photo))))
+  (componentDidUpdate [this _ _]
+    (let [{:keys [query/store]} (om/props this)
+          message-final-fn (fn [m] (when m (msg/final? m)))
+          update-msg (msg/one-message this 'stripe/update-product)
+          create-msg (msg/one-message this 'stripe/create-product)
+          action-finished? (or (message-final-fn update-msg) (message-final-fn create-msg))]
+      #?(:cljs
+         (when action-finished?
+           (set! js/window.location.href (route-store (:db/id store) "/products"))))))
 
   (render [this]
     (let [{:keys [proxy/navbar query/store query/route-params]} (om/props this)
           {:keys [dashboard-option]} route-params]
-      (debug "My Store: " store)
-      (debug "Route params: " route-params)
+      ;(debug "My Store: " store)
+      ;(debug "Route params: " route-params)
       ;(debug "PRoducts: " stripe)
       (dom/div #js {:id "sulo-my-store" :className "sulo-page"}
         (common/page-container
