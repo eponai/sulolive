@@ -27,7 +27,7 @@
 (defn merge-mutation-message [db history-id key val message-type]
   (let [message (get-in val [::parser/mutation-message message-type])]
     (debug "Mutation message-type" message-type "for :" key " message: " message)
-    (message/store-message db history-id (message/->message-from-server key message message-type))))
+    (parser/store-message db history-id (parser/->message-from-server key message message-type))))
 
 (defn merge-signout [db key val]
   ;;TODO: We probably need to do more retracting.

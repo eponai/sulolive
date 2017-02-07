@@ -23,6 +23,44 @@
 (defmulti server-mutate om/dispatch)
 (defmulti server-message om/dispatch)
 
+;; -------- Messaging protocols
+;; TODO: Move to its own protocol namespace? Like om.next.impl.protocol
+
+(defprotocol IStoreMessages
+  (store-message [this id mutation-message]
+    "Stores a mutation message on the id. Can store multiple messages for each id.")
+  (get-messages [this]
+    "Returns messages in insertion order")
+  (get-message-fn [this]
+    "Returns a 2-arity function taking id and mutation-key returning mutation message."))
+
+(defprotocol IMutationMessage
+  (message [this] "Returns the message")
+  (final? [this] "true if the mutation message was returned from the server")
+  (pending? [this] "true if we're still waiting for a server response.")
+  (success? [this] "true if the server mutation was successful. False is error occured."))
+
+(defrecord MutationMessage [mutation-key message message-type]
+  IMutationMessage
+  (message [_] message)
+  (final? [_] (contains? #{::success-message ::error-message} message-type))
+  (pending? [this] (not (final? this)))
+  (success? [_] (= ::success-message message-type))
+  Object
+  (toString [x]
+    (str "[MutationMessage " {:message  (message x)
+                              :final?   (final? x)
+                              :pending? (pending? x)
+                              :success? (success? x)
+                              :obj      x} "]")))
+
+(defn ->message-from-server [mutation-key message message-type]
+  {:pre [(contains? #{::success-message ::error-message} message-type)]}
+  (->MutationMessage mutation-key message message-type))
+
+(defn ->pending-message [mutation]
+  (->MutationMessage mutation "" ::pending-message))
+
 ;; -------- No matching dispatch
 
 (defn default-read [e k p type]
@@ -182,17 +220,21 @@
         last-history-id (om.cache/get-most-recent-id history)]
     last-history-id))
 
-(defn mutate-with-db-before-mutation [mutate]
-  (fn [{:keys [target ast reconciler state] :as env} k p]
-    (if (nil? reconciler)
-      (do
-        (assert (:running-tests? env)
+(defn- some-reconciler? [env]
+  (if (some? (:reconciler env))
+    true
+    (do (assert (:running-tests? env)
                 (str "Reconciler was nil in and we are not running tests."
                      " If you are running tests, please use (parser/test-parser)"
                      " instead of (parser/parser)."
                      " If that's not possible, some how assoc {:running-tests? true}"
                      " to parser's env argument."))
-        (mutate env k p))
+        false)))
+
+(defn mutate-with-db-before-mutation [mutate]
+  (fn [{:keys [target ast reconciler state] :as env} k p]
+    (if-not (some-reconciler? env)
+      (mutate env k p)
       (let [mutation (mutate env k p)
             history-id (reconciler->history-id reconciler)]
         (if (nil? target)
@@ -209,6 +251,31 @@
                            mutation
                            :eponai.client.backend/mutation-db-history-id
                            history-id))))))
+
+
+(defn with-pending-message [mutate]
+  (fn [{:keys [state target] :as env} k p]
+    (let [ret (mutate env k p)]
+      (if (or (some? target)
+              (not (some-reconciler? env)))
+        ret
+        (let [remote-return (mutate (assoc env :target :any-remote) k p)
+              remote-mutation? (and (map? remote-return)
+                                    (or (:remote remote-return)
+                                        (some (fn [k]
+                                                (when (= :remote (namespace k))
+                                                  (get remote-return k)))
+                                              (keys remote-return))))]
+          (cond-> ret
+                  remote-mutation?
+                  (update :action (fn [action]
+                                    (fn []
+                                      (when action (action))
+                                      (datascript/reset-conn! state (store-message
+                                                                      (datascript/db state)
+                                                                      (reconciler->history-id (:reconciler env))
+                                                                      (->pending-message k))))))))))))
+
 
 #?(:clj
    (defn mutate-without-history-id-param [mutate]
@@ -425,6 +492,7 @@
                               (with-elided-paths (delay (client-parser (assoc state :elide-paths true)))))))
                 (fn [mutate {:keys [elide-paths] :as state}]
                   (-> mutate
+                      with-pending-message
                       client-mutate-creation-time
                       mutate-with-db-before-mutation
                       wrap-datascript-db

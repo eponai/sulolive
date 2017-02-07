@@ -11,6 +11,7 @@
          [eponai.client.logger :as logger]
          [devtools.core :as devtools]
          [goog.date]
+         [goog.object]
          [goog.format.EmailAddress]]))
   #?(:clj
      (:import [datascript.db DB]

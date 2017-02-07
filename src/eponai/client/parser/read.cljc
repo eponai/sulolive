@@ -155,4 +155,4 @@
 
 (defmethod client-read :query/messages
   [{:keys [db]} _ _]
-  {:value (msg/get-messages db)})
+  {:value (parser/get-messages db)})

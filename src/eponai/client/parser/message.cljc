@@ -7,24 +7,16 @@
             [taoensso.timbre :refer [debug warn error]])
   #?(:clj (:import [datascript.db DB])))
 
+;; Alias for public API to make it easier to use.
+(def pending? parser/pending?)
+(def final? parser/final?)
+(def success? parser/success?)
+(def message parser/message)
+
 ;; -----------------------------
 ;; -- Mutation message public api
 
-(defprotocol IStoreMessages
-  (store-message [this id mutation-message]
-                 "Stores a mutation message on the id. Can store multiple messages for each id.")
-  (get-messages [this]
-                "Returns messages in insertion order")
-  (get-message-fn [this]
-                  "Returns a 2-arity function taking id and mutation-key returning mutation message."))
-
-(defprotocol IMutationMessage
-  (message [this] "Returns the message")
-  (final? [this] "true if the mutation message was returned from the server")
-  (pending? [this] "true if we're still waiting for a server response.")
-  (success? [this] "true if the server mutation was successful. False is error occured."))
-
-(extend-protocol IMutationMessage
+(extend-protocol parser/IMutationMessage
   nil
   (final? [_] nil)
   (pending? [_] nil)
@@ -36,29 +28,8 @@
                                 {}))))
 
 (defn mutation-message? [x]
-  (and (satisfies? IMutationMessage x)
+  (and (satisfies? parser/IMutationMessage x)
        (some? (message x))))
-
-(defrecord MutationMessage [mutation-key message message-type]
-  IMutationMessage
-  (message [_] message)
-  (final? [_] (contains? #{::parser/success-message ::parser/error-message} message-type))
-  (pending? [this] (not (final? this)))
-  (success? [_] (= ::parser/success-message message-type))
-  Object
-  (toString [x]
-    (str "[MutationMessage " {:message  (message x)
-                              :final?   (final? x)
-                              :pending? (pending? x)
-                              :success? (success? x)
-                              :obj      x} "]")))
-
-(defn ->message-from-server [mutation-key message message-type]
-  {:pre [(contains? #{::parser/success-message ::parser/error-message} message-type)]}
-  (->MutationMessage mutation-key message message-type))
-
-(defn ->pending-message [mutation message]
-  (->MutationMessage mutation message nil))
 
 ;; ------------------------------------
 ;; -- Datascript mutation message storage implementation
@@ -80,37 +51,56 @@
 
 (defn- entity->MutationMessage [entity]
   {:pre [(:db/id entity)]}
-  (-> (->MutationMessage (:mutation-message/mutation-key entity)
-                         (:mutation-message/message entity)
-                         (:mutation-message/message-type entity))
+  (-> (parser/->MutationMessage (:mutation-message/mutation-key entity)
+                                (:mutation-message/message entity)
+                                (:mutation-message/message-type entity))
       (assoc :db/id (:db/id entity))))
 
-(extend-protocol IStoreMessages
-  #?(:clj DB :cljs db/DB)
-  (store-message [this history-id mutation-message]
-    (assert (some? history-id))
-    (assert (mutation-message? mutation-message)
-            (str "Mutation message was not a valid mutation-message. Was: " mutation-message))
-    (if-let [existing ((get-message-fn this) history-id (:mutation-key mutation-message))]
+(defn- store-message-datascript [this history-id mutation-message]
+  (assert (some? history-id))
+  (assert (mutation-message? mutation-message)
+          (str "Mutation message was not a valid mutation-message. Was: " mutation-message))
+  (let [existing ((parser/get-message-fn this) history-id (:mutation-key mutation-message))]
+    (debug "Storing message with history-id: " [history-id mutation-message :existing? existing])
+    (if existing
       (update-message this existing mutation-message)
-      (new-message this history-id mutation-message)))
-  (get-message-fn [this]
-    (fn [history-id mutation-key]
-      (assert (some? history-id) (str "Called (get-message-fn ) with history-id nil."
-                                      " Needs history-id to look up messages. mutation-key: " mutation-key))
-      (some->> (database/one-with this {:where   '[[?e :mutation-message/history-id ?history-id]
-                                                   [?e :mutation-message/mutation-key ?mutation-key]]
-                                        :symbols {'?history-id   history-id
-                                                  '?mutation-key mutation-key}})
-               (d/entity this)
-               entity->MutationMessage)))
-  (get-messages [this]
-    (some->> (database/find-with this {:find  '[?e ?tx]
-                                       :where '[[?e :mutation-message/history-id _ ?tx]]})
-             (into (sorted-set-by #(compare (:tx %1) (:tx %2)))
-                   (comp (map (fn [[id tx]] (into {:tx tx :db/id id}
-                                                  (d/entity this id))))
-                         (map entity->MutationMessage))))))
+      (new-message this history-id mutation-message))))
+
+(defn- get-message-fn-datascript [this]
+  (fn [history-id mutation-key]
+    (assert (some? history-id) (str "Called (get-message-fn ) with history-id nil."
+                                    " Needs history-id to look up messages. mutation-key: " mutation-key))
+    (some->> (database/one-with this {:where   '[[?e :mutation-message/history-id ?history-id]
+                                                 [?e :mutation-message/mutation-key ?mutation-key]]
+                                      :symbols {'?history-id   history-id
+                                                '?mutation-key mutation-key}})
+             (d/entity this)
+             entity->MutationMessage)))
+
+(defn- get-messages-datascript [this]
+  (some->> (database/find-with this {:find  '[?e ?tx]
+                                     :where '[[?e :mutation-message/history-id _ ?tx]]})
+           (into []
+                 (comp (map (fn [[id tx]] (into {:tx tx :db/id id}
+                                                (d/entity this id))))
+                       (map entity->MutationMessage)))
+           (sort-by :tx)))
+
+(extend-protocol parser/IStoreMessages
+  #?@(:clj  [DB
+             (store-message [this history-id mutation-message]
+               (store-message-datascript this history-id mutation-message))
+             (get-message-fn [this]
+               (get-message-fn-datascript this))
+             (get-messages [this]
+               (get-messages-datascript this))]
+      :cljs [db/DB
+             (store-message [this history-id mutation-message]
+                            (store-message-datascript this history-id mutation-message))
+             (get-message-fn [this]
+                             (get-message-fn-datascript this))
+             (get-messages [this]
+                           (get-messages-datascript this))]))
 
 ;;;;;;;;;;;;;;;; Developer facing API. ;;;;;;;;;;;;;;;;;;
 ;; Usage:
@@ -180,7 +170,7 @@
   [component history-id mutation-key]
   {:pre [(om/component? component)]}
   (let [db (d/db (om/app-state (om/get-reconciler component)))
-        msg-fn (get-message-fn db)]
+        msg-fn (parser/get-message-fn db)]
     (msg-fn history-id mutation-key)))
 
 (defn- message-ids-for-key [c k]
