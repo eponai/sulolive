@@ -50,11 +50,11 @@
                  [cljsjs/react "15.4.2-2"]
                  [cljsjs/react-dom "15.4.2-2"]
                  [com.cognitect/transit-cljs "0.8.239"]
-                 [org.clojure/clojurescript "1.9.456"
+                 [org.clojure/clojurescript "1.9.293"
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
-                 [com.google.guava/guava "21.0"]
+                 [com.google.guava/guava "19.0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-alpha2"]
@@ -64,7 +64,7 @@
                  [cljsjs/nvd3 "1.8.2-1"]
                  [bidi "2.0.10"]
                  [kibu/pushy "0.3.6"]
-                 [binaryage/devtools "0.9.0"]
+                 [binaryage/devtools "0.8.1"]
                  [org.clojure/tools.nrepl "0.2.11"
                   :exclusions [org.clojure/clojure]]
 
