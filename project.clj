@@ -5,7 +5,7 @@
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [
                  [amazonica "0.3.85"]
-                 [org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT-3"]
+                 [org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT-4"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
                  [clj-http "3.3.0"]
                  ;[clj-time "0.11.0"]
@@ -47,14 +47,14 @@
                  [org.martinklepsch/s3-beam "0.6.0-alpha1"]
 
                  ;; CLJS
-                 [cljsjs/react "15.3.1-0"]
-                 [cljsjs/react-dom "15.3.1-0"]
+                 [cljsjs/react "15.4.2-2"]
+                 [cljsjs/react-dom "15.4.2-2"]
                  [com.cognitect/transit-cljs "0.8.239"]
                  [org.clojure/clojurescript "1.9.456"
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
-                 [com.google.guava/guava "19.0"]
+                 [com.google.guava/guava "21.0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-alpha2"]
@@ -86,7 +86,7 @@
             [lein-shell "0.5.0"]
             [lein-doo "0.1.6"]
             [lein-cljsbuild "1.1.4"]
-            [lein-figwheel "0.5.9"]
+            [lein-figwheel "0.5.7"]
             [lein-ring "0.9.7"]
             [lein-test-out "0.3.1"]
             [lein-environ "1.0.1"]]
@@ -171,7 +171,7 @@
 
   :figwheel {:css-dirs    ["resources/public/assets/css/"]
              :server-port ~(read-string (or (System/getenv "FIGWHEEL_PORT") "3449"))
-             :reload-clj-files {:clj true :cljc true}
+      ;;       :reload-clj-files {:clj true :cljc true}
  }
 
   :profiles {:uberjar  {:jvm-opts   ^:replace ["-Dclojure.compiler.direct-linking=true"
@@ -185,7 +185,7 @@
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
                                     ;; [[org.omcljs/om "1.0.0-alpha46"
                                     ;;   :exclusions [cljsjs/react cljsjs/react-dom]]
-                                       [figwheel-sidecar "0.5.9"]
+                                       [figwheel-sidecar "0.5.7"]
                                        [com.cemerick/piggieback "0.2.1"]]
                         :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
                         :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
@@ -245,7 +245,7 @@
                                                              ;;   :pretty-print true
                                                              ;;   :verbose true
                                                              }}]}}
-             :web      {:dependencies [[figwheel-sidecar "0.5.9"]]
+             :web      {:dependencies [[figwheel-sidecar "0.5.7"]]
                         :cljsbuild {:builds [{:id           "dev"
                                               :figwheel     {:on-jsload "eponai.web.figwheel/reload!"}
                                               :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
