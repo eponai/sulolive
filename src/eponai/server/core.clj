@@ -9,6 +9,7 @@
     [eponai.server.email :as email]
     [eponai.server.datomic-dev :as datomic_dev]
     [eponai.server.parser.read]
+    [eponai.server.external.aws-s3 :as s3]
     [eponai.server.parser.mutate]
     [eponai.server.routes :refer [site-routes]]
     [eponai.server.middleware :as m]
@@ -40,7 +41,13 @@
                                                                        (mailchimp/mail-chimp-stub))
                                                    :system/stripe    (if (or @in-production? true)
                                                                        (stripe/stripe (env :stripe-secret-key))
-                                                                       (stripe/stripe-stub))}
+                                                                       (stripe/stripe-stub))
+                                                   :system/aws-s3    (if @in-production?
+                                                                       (s3/aws-s3 {:bucket     (env :aws-s3-bucket-photos)
+                                                                                   :zone       (env :aws-s3-bucket-photos-zone)
+                                                                                   :access-key (env :aws-access-key-id)
+                                                                                   :secret     (env :aws-secret-access-key)})
+                                                                       (s3/aws-s3-stub))}
                      ::m/cljs-build-id            (or (env :cljs-build-id) "dev")})
       (m/wrap-defaults @in-production? disable-anti-forgery)
       (m/wrap-error @in-production?)

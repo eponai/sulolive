@@ -8,8 +8,7 @@
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.mailchimp :as mailchimp]
     [eponai.server.http :as http]
-    [s3-beam.handler :as s3]
-    [amazonica.aws.s3 :as aws-s3]
+    [eponai.server.external.aws-s3 :as s3]
     [taoensso.timbre :refer [debug error info]]
     [clojure.data.json :as json]
     [amazonica.core :refer [defcredential]]
@@ -82,37 +81,34 @@
 ;      (transact-map conn account))))
 
 
-(defn s3-photo-move [bucket old-key new-key]
-  (aws-s3/copy-object bucket old-key bucket new-key)
-  (aws-s3/set-object-acl bucket new-key CannedAccessControlList/PublicRead)
-  (aws-s3/delete-object bucket key))
+;(defn s3-photo-move [bucket old-key new-key]
+;  (aws-s3/copy-object bucket old-key bucket new-key)
+;  (aws-s3/set-object-acl bucket new-key CannedAccessControlList/PublicRead)
+;  (aws-s3/delete-object bucket old-key))
 
-(defn s3-photo-real-key [old-key]
-  (clojure.string/join "/" (assoc (clojure.string/split old-key #"/") 1 "real")))
+;(defn s3-photo-real-key [old-key]
+;  (clojure.string/join "/" (assoc (clojure.string/split old-key #"/") 1 "real")))
 
-(defn s3-photo-upload-url [bucket key]
-  (str "https://s3.amazonaws.com/" bucket "/" key))
+;(defn s3-photo-upload-url [bucket key]
+;  (str "https://s3.amazonaws.com/" bucket "/" key))
 
-(defn upload-user-photo [{:keys [bucket key] :as p}]
-  (try
-    (debug "Try to upload photo: " p)
-    (let [real-key (s3-photo-real-key key)
-          db-photo (f/photo (s3-photo-upload-url bucket real-key))]
-      (s3-photo-move bucket key real-key)
-      db-photo)
-    (catch AmazonS3Exception e
-      (throw (ex-info (.getMessage e) {:message (.getMessage e)})))))
+;(defn upload-user-photo [{:keys [bucket key] :as p}]
+;  (try
+;    (debug "Try to upload photo: " p)
+;    (let [real-key (s3-photo-real-key key)
+;          db-photo (f/photo (s3-photo-upload-url bucket real-key))]
+;      (s3-photo-move bucket key real-key)
+;      db-photo)
+;    (catch AmazonS3Exception e
+;      (throw (ex-info (.getMessage e) {:message (.getMessage e)})))))
 
 (defn aws-s3-sign [req]
-  (debug "Sign req: " (get-in req [:params :x-amz-meta-size]))
-  (let [image-size (Long/parseLong (get-in req [:params :x-amz-meta-size]))]
+  ;(debug "Sign req: " (get-in req [:params :x-amz-meta-size]))
+  (let [image-size (Long/parseLong (get-in req [:params :x-amz-meta-size]))
+        aws-s3 (get-in req [:eponai.server.middleware/system :system/aws-s3])]
     (if (< image-size 1000000)
-      (let [bucket (env :aws-s3-bucket-photos)
-            zone (env :aws-s3-bucket-photos-zone)
-            access-key (env :aws-access-key-id)
-            secret (env :aws-secret-access-key)
-            signature (s3/s3-sign bucket zone access-key secret)]
-        ;(debug "SIGNED: " signature)
+      (let [signature (s3/sign aws-s3)]
+        (debug "SIGNED: " signature)
         signature)
       (throw (ex-info "Image uploads need to be smaller than 5MB" {:cause ::http/unprocessable-entity
                                                                    :message "Image cannot be larger than 5MB"})))))

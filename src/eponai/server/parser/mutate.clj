@@ -8,7 +8,8 @@
     [clojure.data.json :as json]
     [eponai.server.api :as api]
     [eponai.server.external.stripe :as stripe]
-    [eponai.common :as c]))
+    [eponai.common :as c]
+    [eponai.server.external.aws-s3 :as s3]))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -48,14 +49,14 @@
                ret))})
 
 (defmutation photo/upload
-  [{:keys [state ::parser/return ::parser/exception auth]} _ params]
+  [{:keys [state ::parser/return ::parser/exception auth system]} _ params]
   {:success "Photo uploaded"
    :error   "Could not upload photo :("}
   {:action (fn []
              (debug "Upload photo for auth: " auth)
              (let [user-eid (db/one-with (db/db state) {:where   '[[?e :user/email ?email]]
                                                         :symbols {'?email (:email auth)}})
-                   photo (api/upload-user-photo (:photo params))]
+                   photo (s3/upload-photo (:system/aws-s3) (:photo params))]
                (db/transact state [photo [:db/add user-eid :user/photo (:db/id photo)]])))})
 
 
@@ -94,7 +95,7 @@
                    stripe-p (stripe/create-product (:system/stripe system)
                                                    secret
                                                    db-product)
-                   photo-upload (api/upload-user-photo (:photo product))]
+                   photo-upload (s3/upload-photo (:system/aws-s3 system) (:photo product))]
                (debug "Created product in stripe: " stripe-p)
                (debug "Uploaded item photo: " photo-upload)
                (db/transact state [db-product
@@ -115,14 +116,12 @@
                                                    product)
                    new-item {:store.item/uuid uuid
                              :store.item/name (:name product)}
-                   txs (if (some? (:photo product))
+                   photo-upload (when (:photo product) (s3/upload-photo (:system/aws-s3 system) (:photo product)))
+                   txs (if (some? photo-upload)
                          (if (some? (first photos))
-                           (let [updated-photo (assoc (first photos) :photo/path (get-in product [:photo :location]))]
-                             [new-item updated-photo])
-                           (let [new-photo {:db/id      (db/tempid :db.part/user)
-                                            :photo/path (get-in product [:photo :location])}]
-                             [new-photo
-                              [:db/add [:store.item/uuid uuid] :store.item/photos (:db/id new-photo)]]))
+                           [new-item (assoc photo-upload :db/id (:db/id (first photos)))]
+                           [photo-upload
+                            [:db/add [:store.item/uuid uuid] :store.item/photos (:db/id photo-upload)]])
                          [new-item])]
                (debug "Created product in stripe: " stripe-p)
                (debug "Transaction into datomic: " txs)
