@@ -9,6 +9,7 @@
     [eponai.server.api :as api]
     [eponai.server.external.stripe :as stripe]
     [eponai.common :as c]
+    [eponai.server.api.store :as store]
     [eponai.server.external.aws-s3 :as s3]))
 
 (defmacro defmutation
@@ -81,71 +82,25 @@
                (db/transact state [stripe-info
                                    [:db/add store :store/stripe (:db/id stripe-info)]])))})
 
-(defmutation stripe/create-product
-  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [product store-id] :as p}]
+(defmutation store/create-product
+  [env _ {:keys [product store-id] :as p}]
   {:success "Your account was created"
    :error   "Could not create Stripe account"}
   {:action (fn []
-             (debug "stripe/create-product with params: " p)
-             (debug "Got photo: " (:photo product))
-             (let [db-product {:db/id           (db/tempid :db.part/user)
-                               :store.item/name (:name product)
-                               :store.item/uuid (db/squuid)}
-                   {:keys [stripe/secret]} (stripe/pull-stripe (db/db state) (c/parse-long store-id))
-                   stripe-p (stripe/create-product (:system/stripe system)
-                                                   secret
-                                                   db-product)
-                   photo-upload (s3/upload-photo (:system/aws-s3 system) (:photo product))
-                   txs (if (some? photo-upload)
-                         [db-product
-                          photo-upload
-                          [:db/add (c/parse-long store-id) :store/items (:db/id db-product)]
-                          [:db/add (:db/id db-product) :store.item/photos (:db/id photo-upload)]]
-                         [db-product
-                          [:db/add (c/parse-long store-id) :store/items (:db/id db-product)]])]
-               (debug "Created product in stripe: " stripe-p)
-               (debug "Uploaded item photo: " photo-upload)
-               (db/transact state txs)))})
+             (debug "store/create-product with params: " p)
+             (store/create-product env (c/parse-long store-id) product))})
 
-(defmutation stripe/update-product
-  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [product store-id product-id]}]
+(defmutation store/update-product
+  [env _ {:keys [product store-id product-id] :as p}]
   {:success "Your account was created"
    :error   "Could not create Stripe account"}
   {:action (fn []
-             (let [{:keys [store.item/uuid store.item/photos]} (db/pull (db/db state) [:store.item/uuid :store.item/photos] (c/parse-long product-id))
-                   {:keys [stripe/secret]} (stripe/pull-stripe (db/db state) (c/parse-long store-id))
-                   stripe-p (stripe/update-product (:system/stripe system)
-                                                   secret
-                                                   uuid
-                                                   product)
-                   new-item {:store.item/uuid uuid
-                             :store.item/name (:name product)}
-                   photo-upload (s3/upload-photo (:system/aws-s3 system) (:photo product))
-                   txs (if (some? photo-upload)
-                         (if (some? (first photos))
-                           [new-item (assoc photo-upload :db/id (:db/id (first photos)))]
-                           [photo-upload
-                            [:db/add [:store.item/uuid uuid] :store.item/photos (:db/id photo-upload)]])
-                         [new-item])]
-               (debug "Created product in stripe: " stripe-p)
-               (debug "Transaction into datomic: " txs)
-               (db/transact state txs)))})
+             (debug "store/update-product with params: " p)
+             (store/update-product env (c/parse-long store-id) (c/parse-long product-id) product))})
 
-(defmutation stripe/delete-product
-  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [product]}]
+(defmutation store/delete-product
+  [env _ {:keys [product]}]
   {:success "Product deleted"
    :error   "Could not delete product"}
   {:action (fn []
-             (let [{:keys [store.item/uuid]} (db/pull (db/db state) [:store.item/uuid] (:db/id product))
-                   store (db/pull-one-with (db/db state) [:db/id {:store/stripe '[*]}] {:where   '[[?e :store/items ?p]]
-                                                                                        :symbols {'?p (:db/id product)}})
-                   _ (debug "Found store: " store)
-                   {:keys [stripe/secret]} (db/pull-one-with (db/db state) [:stripe/secret] {:where   '[[?s :store/items ?p]
-                                                                                                        [?s :store/stripe ?e]]
-                                                                                             :symbols {'?p (:db/id product)}})
-                   _ (debug "Will delete product with UUID: " uuid " secret: " secret)
-                   stripe-p (stripe/delete-product (:system/stripe system)
-                                                   secret
-                                                   (str uuid))]
-               (debug "Deleted product in stripe: " stripe-p)
-               (db/transact state [[:db.fn/retractEntity (:db/id product)]])))})
+             (store/delete-product env (:db/id product)))})

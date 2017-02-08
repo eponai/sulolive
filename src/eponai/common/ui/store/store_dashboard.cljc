@@ -16,7 +16,8 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common :as c]))
+    [eponai.common :as c]
+    [eponai.common.database :as db]))
 
 (def form-elements
   {:input-price      "input-price"
@@ -41,8 +42,8 @@
         {:keys [proxy/photo-upload]} (om/props component)
         {:store.item/keys [price photos]
          item-name        :store.item/name} product
-        update-resp (msg/one-message component 'stripe/update-product)
-        create-resp (msg/one-message component 'stripe/create-product)
+        update-resp (msg/last-message component 'store/update-product)
+        create-resp (msg/last-message component 'store/create-product)
         is-loading? (cond (some? update-resp)
                           (msg/pending? update-resp)
                           (some? create-resp)
@@ -207,27 +208,28 @@
                            price (.-value (get-element input-price))]
 
                        (cond (some? (:product-id route-params))
-                             (msg/om-transact! this `[(stripe/update-product ~{:product {:name    title
-                                                                                        :price    price
-                                                                                        :currency "CAD"
-                                                                                        :photo    uploaded-photo}
-                                                                           :product-id  (:product-id route-params)
-                                                                           :store-id    (:store-id route-params)})
+                             (msg/om-transact! this `[(store/update-product ~{:product    {:name     title
+                                                                                           :price    price
+                                                                                           :currency "CAD"
+                                                                                           :photo    uploaded-photo}
+                                                                              :product-id (:product-id route-params)
+                                                                              :store-id   (:store-id route-params)})
                                                   :query/store])
 
                              (= (:action route-params) "create")
-                             (msg/om-transact! this `[(stripe/create-product ~{:product {:name  title
-                                                                                      :price    price
-                                                                                      :currency "CAD"
-                                                                                      :photo    uploaded-photo}
-                                                                           :store-id    (:store-id route-params)})
+                             (msg/om-transact! this `[(store/create-product ~{:product  {:id       (db/squuid)
+                                                                                         :name     title
+                                                                                         :price    price
+                                                                                         :currency "CAD"
+                                                                                         :photo    uploaded-photo}
+                                                                              :store-id (:store-id route-params)})
                                                   :query/store]))
                        (om/update-state! this dissoc :uploaded-photo))))
   (componentDidUpdate [this _ _]
     (let [{:keys [query/store]} (om/props this)
           message-final-fn (fn [m] (when m (msg/final? m)))
-          update-msg (msg/one-message this 'stripe/update-product)
-          create-msg (msg/one-message this 'stripe/create-product)
+          update-msg (msg/last-message this 'store/update-product)
+          create-msg (msg/last-message this 'store/create-product)
           action-finished? (or (message-final-fn update-msg) (message-final-fn create-msg))]
       #?(:cljs
          (when action-finished?

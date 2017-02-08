@@ -14,18 +14,18 @@
 (def default-subscription-id "default-subscription-id")
 (def default-period-end 0)
 
-(defn stripe-test []
-  (reify stripe/IStripe
-    (charge [_ opts]
-      {})
-    (create-account [_ {:keys [country]}]
-      {:id "account-id"
-       :country country})
-    (get-account [_ account-id]
-      {:id account-id})
-    (create-customer [_ account-id {:keys [email]}]
-      {:id    "customer-id"
-       :email email})))
+;(defn stripe-test []
+;  (reify stripe/IStripeAccoun
+;    (charge [_ opts]
+;      {})
+;    (create-account [_ {:keys [country]}]
+;      {:id "account-id"
+;       :country country})
+;    (get-account [_ account-id]
+;      {:id account-id})
+;    (create-customer [_ account-id {:keys [email]}]
+;      {:id    "customer-id"
+;       :email email})))
 
 ;(defn new-db-subscription [id status]
 ;  {:stripe.subscription/id      id

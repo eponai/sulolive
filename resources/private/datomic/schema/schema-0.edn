@@ -168,6 +168,7 @@
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :store.item/photos
   :db/valueType          :db.type/ref
+  :db/isComponent        true
   :db/cardinality        :db.cardinality/many
   :db/doc                "Item photos"
   :db.install/_attribute :db.part/db}

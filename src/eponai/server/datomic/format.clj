@@ -78,8 +78,14 @@
                    :args args})))
 
 (defn photo [url]
+  {:pre [(string? url)]}
   {:db/id (d/tempid :db.part/user)
    :photo/path url})
+
+(defn product [params]
+  {:db/id           (d/tempid :db.part/user)
+   :store.item/name (:name params)
+   :store.item/uuid (:id params)})
 
 (defn auth0->user [auth0]
   {:db/id         (d/tempid :db.part/user)

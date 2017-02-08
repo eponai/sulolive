@@ -122,8 +122,8 @@
 
   (create-product [_ account-secret product]
     (set-api-key account-secret)
-    (let [params {"id"   (:store.item/uuid product)
-                  "name" (:store.item/name product)}
+    (let [params {"id"   (:id product)
+                  "name" (:name product)}
           new-product (Product/create params)]
       {:id   (.getId new-product)
        :name (.getName new-product)}))
@@ -131,7 +131,7 @@
   (update-product [_ account-secret product-id params]
     (set-api-key account-secret)
     (let [params {"name" (:name params)}
-          old-product (Product/retrieve (str product-id))
+          old-product (Product/retrieve product-id)
           new-product (.update old-product params)]
       {:id (.getId new-product)}))
 

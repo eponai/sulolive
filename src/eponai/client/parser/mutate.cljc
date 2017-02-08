@@ -75,20 +75,20 @@
   (if target
     {:remote true}))
 
-(defmethod client-mutate 'stripe/create-product
+(defmethod client-mutate 'store/create-product
   [{:keys [target]} _ p]
-  (debug "stripe/create-product with params: " p)
+  (debug "store/create-product with params: " p)
   (if target
     {:remote true}))
 
-(defmethod client-mutate 'stripe/update-product
+(defmethod client-mutate 'store/update-product
   [{:keys [target]} _ p]
-  (debug "stripe/update-product with params: " p)
+  (debug "store/update-product with params: " p)
   (if target
     {:remote true}))
 
-(defmethod client-mutate 'stripe/delete-product
+(defmethod client-mutate 'store/delete-product
   [{:keys [target]} _ p]
-  (debug "stripe/delete-product with params: " p)
+  (debug "store/delete-product with params: " p)
   (if target
     {:remote true}))
