@@ -6,11 +6,12 @@
     [eponai.server.email :as email]
     [eponai.server.http :as h]
     [taoensso.timbre :refer [debug error info]]
-    [clojure.data.json :as json])
+    [clojure.data.json :as json]
+    [eponai.common :as c])
   (:import
     (com.stripe Stripe)
     (com.stripe.exception CardException)
-    (com.stripe.model Customer Card Charge Subscription Account Product ExternalAccountCollection ExternalAccount BankAccount)
+    (com.stripe.model Customer Card Charge Subscription Account Product ExternalAccountCollection ExternalAccount BankAccount SKU Inventory)
     (com.stripe.net RequestOptions)))
 
 (defn set-api-key [api-key]
@@ -55,6 +56,12 @@
 
 (defprotocol IStripeAccount
   (create-product [this account-secret product]
+    "Get a managed account for a seller from Stripe.
+    Opts is a map with following keys:
+
+    :country - A two character string code for the country of the seller, e.g. 'US'.")
+
+  (create-sku [this account-secret product-id sku]
     "Get a managed account for a seller from Stripe.
     Opts is a map with following keys:
 
@@ -122,11 +129,30 @@
 
   (create-product [_ account-secret product]
     (set-api-key account-secret)
-    (let [params {"id"   (:id product)
-                  "name" (:name product)}
+    (let [params {"id"         (:id product)
+                  "name"       (:name product)
+                  "attributes" ["variation"]}
           new-product (Product/create params)]
       {:id   (.getId new-product)
        :name (.getName new-product)}))
+
+  (create-sku [_ account-secret product-id sku]
+    (set-api-key account-secret)
+    (let [{:keys [price type quantity value id]} sku
+          params {"id" id
+                  "product"    product-id
+                  "price"      (or (c/parse-long price) 0)
+                  "currency"   "CAD"
+                  "attributes" {"variation" value}
+                  "inventory"  (cond-> {"type" (name type)}
+                                       (some? quantity)
+                                       (assoc "quantity" (c/parse-long quantity)))}
+          SKU (SKU/create params)
+          inventory (.getInventory SKU)]
+      {:id       (.getId SKU)
+       :type     (keyword "store.item.sku.type" (.getType inventory))
+       :quantity (bigdec (.getQuantity inventory))
+       :value    (get (.getAttributes SKU) "variation")}))
 
   (update-product [_ account-secret product-id params]
     (set-api-key account-secret)

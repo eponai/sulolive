@@ -39,10 +39,10 @@
                      ::m/system                   {:system/mailchimp (if @in-production?
                                                                        (mailchimp/mail-chimp (env :mail-chimp-api-key))
                                                                        (mailchimp/mail-chimp-stub))
-                                                   :system/stripe    (if @in-production?
+                                                   :system/stripe    (if (or @in-production? true)
                                                                        (stripe/stripe (env :stripe-secret-key))
                                                                        (stripe/stripe-stub))
-                                                   :system/aws-s3    (if @in-production?
+                                                   :system/aws-s3    (if (or @in-production? true)
                                                                        (s3/aws-s3 {:bucket     (env :aws-s3-bucket-photos)
                                                                                    :zone       (env :aws-s3-bucket-photos-zone)
                                                                                    :access-key (env :aws-access-key-id)

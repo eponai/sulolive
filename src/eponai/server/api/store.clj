@@ -6,17 +6,30 @@
     [eponai.server.external.stripe :as stripe]
     [taoensso.timbre :refer [debug info]]))
 
-(defn create-product [{:keys [state system]} store-id {:keys [id photo] product-name :name :as params}]
+(defn new-sku [{:keys [value type quantity]}]
+  (cond-> {:db/id                (db/tempid :db.part/user)
+           :store.item.sku/value value
+           :store.item.sku/type  type}
+          (some? quantity)
+          (assoc :store.item.sku/quantity quantity)))
+
+(defn create-product [{:keys [state system]} store-id {:keys [id photo skus] product-name :name :as params}]
   {:pre [(string? product-name) (uuid? id)]}
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
         stripe-p (stripe/create-product (:system/stripe system) secret params)
+        _ (debug "Create product with params: " params)
+        stripe-sku (when (first skus)
+                     (f/sku (stripe/create-sku (:system/stripe system) secret (:id stripe-p) (first skus))))
         photo-upload (when photo (s3/upload-photo (:system/aws-s3 system) photo))
 
         db-product (f/product params)
         txs (cond-> [db-product
                      [:db/add store-id :store/items (:db/id db-product)]]
                     (some? photo-upload)
-                    (conj photo-upload [:db/add (:db/id db-product) :store.item/photos (:db/id photo-upload)]))]
+                    (conj photo-upload [:db/add (:db/id db-product) :store.item/photos (:db/id photo-upload)])
+
+                    (some? stripe-sku)
+                    (conj stripe-sku [:db/add (:db/id db-product) :store.item/skus (:db/id stripe-sku)]))]
     (debug "Created product in stripe: " stripe-p)
     ;(debug "Uploaded item photo: " photo-upload)
     ;(info "Transacting new product: " txs)

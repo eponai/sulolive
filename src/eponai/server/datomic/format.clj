@@ -87,6 +87,13 @@
    :store.item/name (:name params)
    :store.item/uuid (:id params)})
 
+(defn sku [{:keys [value type quantity]}]
+  (cond-> {:db/id                (d/tempid :db.part/user)
+           :store.item.sku/value value
+           :store.item.sku/type  type}
+          (some? quantity)
+          (assoc :store.item.sku/quantity quantity)))
+
 (defn auth0->user [auth0]
   {:db/id         (d/tempid :db.part/user)
    :user/email    (:email auth0)

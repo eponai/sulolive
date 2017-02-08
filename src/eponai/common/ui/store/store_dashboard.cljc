@@ -20,11 +20,15 @@
     [eponai.common.database :as db]))
 
 (def form-elements
-  {:input-price      "input-price"
-   :input-on-sale?   "input-on-sale?"
-   :input-sale-price "input-sale-price"
-   :input-name       "input-name"
-   :input-desc       "input-desc"})
+  {:input-price        "input-price"
+   :input-on-sale?     "input-on-sale?"
+   :input-sale-price   "input-sale-price"
+   :input-name         "input-name"
+   :input-desc         "input-desc"
+
+   :input-sku-value    "input-sku-value"
+   :input-sku-price    "input-sku-price"
+   :input-sku-quantity "input-sku-quantity"})
 
 (defn route-store [store-id & [path]]
   (str "/store/" store-id "/dashboard" path))
@@ -34,13 +38,14 @@
                    css/grid-column)
               (dom/div nil "Thes are the orders")))
 
-#?(:cljs (defn get-element [id]
-           (.getElementById js/document id)))
+#?(:cljs (defn get-input-value [id]
+           (when-let [el (.getElementById js/document id)]
+             (.-value el))))
 
 (defn product-edit-form [component & [product]]
   (let [{:keys [uploaded-photo queue-photo]} (om/get-state component)
         {:keys [proxy/photo-upload]} (om/props component)
-        {:store.item/keys [price photos]
+        {:store.item/keys [price photos skus]
          item-name        :store.item/name} product
         update-resp (msg/last-message component 'store/update-product)
         create-resp (msg/last-message component 'store/create-product)
@@ -123,6 +128,52 @@
                                 )))
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
+                  ;(dom/h3 nil (dom/span nil "Details"))
+                  (dom/div #js {:className "callout transparent"}
+                    ;(map (fn [sku]
+                    ;       (let [{:store.item.sku/keys [price value quantity]} sku]
+                    ;         (my-dom/div (->> (css/grid-row))
+                    ;                     (my-dom/div
+                    ;                       (css/grid-column)
+                    ;                       (dom/label nil "Variation")
+                    ;                       (my-dom/input {:id           (get form-elements :input-sku-value)
+                    ;                                      :type         "text"
+                    ;                                      :defaultValue (or value "")}))
+                    ;                     (my-dom/div
+                    ;                       (css/grid-column)
+                    ;                       (dom/label nil "Price")
+                    ;                       (my-dom/input {:id           (get form-elements :input-sku-price)
+                    ;                                      :type         "number"
+                    ;                                      :defaultValue (or price "Unlimited")}))
+                    ;                     (my-dom/div
+                    ;                       (css/grid-column)
+                    ;                       (dom/label nil "Quantity")
+                    ;                       (my-dom/input {:id           (get form-elements :input-sku-quantity)
+                    ;                                      :type         "text"
+                    ;                                      :defaultValue (or quantity "")})))))
+                    ;     skus)
+                    (let [{:store.item.sku/keys [price value quantity]} (first skus)]
+                      (my-dom/div (->> (css/grid-row))
+                                  (my-dom/div
+                                    (css/grid-column)
+                                    (dom/label nil "Variation")
+                                    (my-dom/input {:id           (get form-elements :input-sku-value)
+                                                   :type         "text"
+                                                   :defaultValue (or value "")}))
+                                  (my-dom/div
+                                    (css/grid-column)
+                                    (dom/label nil "Price")
+                                    (my-dom/input {:id           (get form-elements :input-sku-price)
+                                                   :type         "number"
+                                                   :defaultValue (or price "")}))
+                                  (my-dom/div
+                                    (css/grid-column)
+                                    (dom/label nil "Quantity")
+                                    (my-dom/input {:id           (get form-elements :input-sku-quantity)
+                                                   :type         "number"
+                                                   :defaultValue (or quantity "")}))))))
+      (my-dom/div (->> (css/grid-row)
+                       (css/grid-column))
                   (dom/div nil
                     (dom/a #js {:className "button hollow"} (dom/span nil "Cancel"))
                     (dom/a #js {:className "button"
@@ -187,7 +238,10 @@
                     :store/name
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     :store/stripe
-                    {:store/items [:store.item/name {:store.item/photos [:photo/path]}]}
+                    {:store/items [:store.item/name
+                                   {:store.item/photos [:photo/path]}
+                                   {:store.item/skus [:store.item.sku/quantity
+                                                      :store.item.sku/value]}]}
                     :store/collections]}
      ;{:query/stripe [:stripe/account :stripe/products]}
      :query/route-params
@@ -203,27 +257,30 @@
      (update-product [this]
                      (let [{:keys [query/route-params]} (om/props this)
                            {:keys [uploaded-photo]} (om/get-state this)
-                           {:keys [input-price input-name]} form-elements
-                           title (.-value (get-element input-name))
-                           price (.-value (get-element input-price))]
+                           {:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements
+                           product {:name     (get-input-value input-name)
+                                    :price    (get-input-value input-price)
+                                    :currency "CAD"
+                                    :photo    uploaded-photo}]
 
                        (cond (some? (:product-id route-params))
-                             (msg/om-transact! this `[(store/update-product ~{:product    {:name     title
-                                                                                           :price    price
-                                                                                           :currency "CAD"
-                                                                                           :photo    uploaded-photo}
+                             (msg/om-transact! this `[(store/update-product ~{:product    product
                                                                               :product-id (:product-id route-params)
                                                                               :store-id   (:store-id route-params)})
                                                   :query/store])
 
                              (= (:action route-params) "create")
-                             (msg/om-transact! this `[(store/create-product ~{:product  {:id       (db/squuid)
-                                                                                         :name     title
-                                                                                         :price    price
-                                                                                         :currency "CAD"
-                                                                                         :photo    uploaded-photo}
-                                                                              :store-id (:store-id route-params)})
-                                                  :query/store]))
+                             (msg/om-transact! this `[(store/create-product
+                                                        ~{:product  (assoc product :id (db/squuid)
+                                                                                   :skus [{:id       (db/squuid)
+                                                                                           :price    (get-input-value input-sku-price)
+                                                                                           :value    (get-input-value input-sku-value)
+                                                                                           :quantity (get-input-value input-sku-quantity)
+                                                                                           :type     (if (get-input-value input-sku-value)
+                                                                                                       :store.item.sku.type/finite
+                                                                                                       :store.item.sku.type/infinite)}])
+                                                          :store-id (:store-id route-params)})
+                                                      :query/store]))
                        (om/update-state! this dissoc :uploaded-photo))))
   (componentDidUpdate [this _ _]
     (let [{:keys [query/store]} (om/props this)
