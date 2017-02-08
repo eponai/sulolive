@@ -79,6 +79,12 @@
 
     :country - A two character string code for the country of the seller, e.g. 'US'.")
 
+  (delete-sku [this account-secret sku-id]
+    "Get a managed account for a seller from Stripe.
+    Opts is a map with following keys:
+
+    :country - A two character string code for the country of the seller, e.g. 'US'.")
+
   (get-products [this account-secret]
     "Get a managed account for a seller from Stripe.
     Opts is a map with following keys:
@@ -149,7 +155,7 @@
                                        (assoc "quantity" (c/parse-long quantity)))}
           SKU (SKU/create params)
           inventory (.getInventory SKU)]
-      {:id       (.getId SKU)
+      {:id       (java.util.UUID/fromString (.getId SKU))
        :type     (keyword "store.item.sku.type" (.getType inventory))
        :quantity (bigdec (.getQuantity inventory))
        :value    (get (.getAttributes SKU) "variation")}))
@@ -165,6 +171,13 @@
     (set-api-key account-secret)
     (let [product (Product/retrieve product-id)
           deleted (.delete product)]
+      {:id      (.getId deleted)
+       :deleted (.getDeleted deleted)}))
+
+  (delete-sku [_ account-secret sku-id]
+    (set-api-key account-secret)
+    (let [sku (SKU/retrieve sku-id)
+          deleted (.delete sku)]
       {:id      (.getId deleted)
        :deleted (.getDeleted deleted)})))
 

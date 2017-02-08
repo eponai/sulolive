@@ -184,7 +184,7 @@
  ;;; Stock item SKU
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :store.item.sku/uuid
-  :db/valueType          :db.type/bigdec
+  :db/valueType          :db.type/uuid
   :db/cardinality        :db.cardinality/one
   :db/unique             :db.unique/identity
   :db/doc                "Item SKU identifier."

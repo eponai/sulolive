@@ -47,20 +47,26 @@
         {:keys [proxy/photo-upload]} (om/props component)
         {:store.item/keys [price photos skus]
          item-name        :store.item/name} product
+        message-pending-fn (fn [m] (when m (msg/pending? m)))
         update-resp (msg/last-message component 'store/update-product)
         create-resp (msg/last-message component 'store/create-product)
-        is-loading? (cond (some? update-resp)
-                          (msg/pending? update-resp)
-                          (some? create-resp)
-                          (msg/pending? create-resp))]
+        delete-resp (msg/last-message component 'store/delete-product)
+        is-loading? (or (message-pending-fn update-resp) (message-pending-fn create-resp) (message-pending-fn delete-resp))]
     (debug "State: " (om/get-state component))
     (debug "Messages: " {:update update-resp :create create-resp})
     (dom/div nil
       (when is-loading?
         (common/loading-spinner nil))
-      (my-dom/div (->> (css/grid-row)
-                       (css/grid-column))
-                  (dom/h2 nil "Edit Product - " (dom/small nil item-name)))
+      (my-dom/div
+        (->> (css/grid-row))
+        (my-dom/div
+          (css/grid-column)
+          (dom/h2 nil "Edit Product - " (dom/small nil item-name)))
+        (my-dom/div
+          (->> (css/grid-column)
+               (css/text-align :right))
+          (dom/a #js {:className "button hollow"
+                      :onClick #(.delete-product component)} "Delete")))
 
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
@@ -252,6 +258,12 @@
   Object
   (initLocalState [_]
     {:selected-tab :products})
+  #?(:cljs
+     (delete-product
+       [this]
+       (let [{:keys [query/route-params]} (om/props this)
+             {:keys [product-id]} route-params]
+         (msg/om-transact! this `[(store/delete-product ~{:product {:db/id (c/parse-long product-id)}})]))))
 
   #?(:cljs
      (update-product [this]
@@ -287,7 +299,8 @@
           message-final-fn (fn [m] (when m (msg/final? m)))
           update-msg (msg/last-message this 'store/update-product)
           create-msg (msg/last-message this 'store/create-product)
-          action-finished? (or (message-final-fn update-msg) (message-final-fn create-msg))]
+          delete-msg (msg/last-message this 'store/delete-product)
+          action-finished? (or (message-final-fn update-msg) (message-final-fn create-msg) (message-final-fn delete-msg))]
       #?(:cljs
          (when action-finished?
            (set! js/window.location.href (route-store (:db/id store) "/products"))))))

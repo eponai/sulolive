@@ -26,13 +26,15 @@
         txs (cond-> [db-product
                      [:db/add store-id :store/items (:db/id db-product)]]
                     (some? photo-upload)
-                    (conj photo-upload [:db/add (:db/id db-product) :store.item/photos (:db/id photo-upload)])
+                    (conj photo-upload
+                          [:db/add (:db/id db-product) :store.item/photos (:db/id photo-upload)])
 
                     (some? stripe-sku)
-                    (conj stripe-sku [:db/add (:db/id db-product) :store.item/skus (:db/id stripe-sku)]))]
+                    (conj stripe-sku
+                          [:db/add (:db/id db-product) :store.item/skus (:db/id stripe-sku)]))]
     (debug "Created product in stripe: " stripe-p)
     ;(debug "Uploaded item photo: " photo-upload)
-    ;(info "Transacting new product: " txs)
+    (info "Transacting new product: " txs)
     (db/transact state txs)))
 
 (defn update-product [{:keys [state system]} store-id product-id {:keys [photo] :as params}]
@@ -63,12 +65,21 @@
     (db/transact state txs)))
 
 (defn delete-product [{:keys [state system]} product-id]
-  (let [{:keys [store.item/uuid]} (db/pull (db/db state) [:store.item/uuid] product-id)
+  (let [{:keys [store.item/uuid store.item/skus] :as item} (db/pull (db/db state) [:store.item/uuid {:store.item/skus [:db/id :store.item.sku/uuid]}] product-id)
+        _ (debug "Delete product: " product-id)
+        _ (debug "Got item: " (into {} (db/entity (db/db state) product-id)))
+        something (into {} (db/entity (db/db state) product-id))
         {:keys [stripe/secret]} (db/pull-one-with (db/db state) [:stripe/secret] {:where   '[[?s :store/items ?p]
                                                                                              [?s :store/stripe ?e]]
                                                                                   :symbols {'?p product-id}})
+        _ (debug "Got SKUs: " skus " something; " (mapv #(into {} %) (:store.item/skus something)))
+        deleted-skus (mapv (fn [sku]
+                            (stripe/delete-sku (:system/stripe system) secret (str (:store.item.sku/uuid sku))))
+                          skus)
         stripe-p (stripe/delete-product (:system/stripe system)
                                         secret
                                         (str uuid))]
+    (when (not-empty skus)
+      (debug "Deleted skus: " deleted-skus))
     (debug "Deleted product in stripe: " stripe-p)
     (db/transact state [[:db.fn/retractEntity product-id]])))

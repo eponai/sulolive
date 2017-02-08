@@ -87,8 +87,9 @@
    :store.item/name (:name params)
    :store.item/uuid (:id params)})
 
-(defn sku [{:keys [value type quantity]}]
+(defn sku [{:keys [id value type quantity]}]
   (cond-> {:db/id                (d/tempid :db.part/user)
+           :store.item.sku/uuid  id
            :store.item.sku/value value
            :store.item.sku/type  type}
           (some? quantity)
