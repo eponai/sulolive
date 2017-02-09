@@ -95,6 +95,12 @@
    (dom/link {:href "/lib/videojs/video-js.min.css"
               :rel "stylesheet"})
 
+
+   (dom/link {:href "//cdn.quilljs.com/1.2.0/quill.core.css"
+              :rel "stylesheet"})
+   (dom/link {:href "//cdn.quilljs.com/1.2.0/quill.snow.css"
+              :rel "stylesheet"})
+
    ;; Custom fonts
    (dom/link {:href (if release?
                       "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"

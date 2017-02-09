@@ -1,5 +1,6 @@
 (ns eponai.common.ui.store.store-dashboard
   (:require
+    [eponai.common.ui.om-quill :as quill]
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.product-item :as pi]
@@ -38,8 +39,12 @@
                    css/grid-column)
               (dom/div nil "Thes are the orders")))
 
+#?(:cljs
+   (defn get-element-by-id [id]
+     (.getElementById js/document id)))
+
 #?(:cljs (defn get-input-value [id]
-           (when-let [el (.getElementById js/document id)]
+           (when-let [el (get-element-by-id id)]
              (.-value el))))
 
 (defn product-edit-form [component & [product]]
@@ -67,48 +72,23 @@
                (css/text-align :right))
           (dom/a #js {:className "button hollow"
                       :onClick #(.delete-product component)} "Delete")))
-
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
-                  ;(dom/h3 nil (dom/span nil "Details"))
                   (dom/div #js {:className "callout transparent"}
-
-                    (my-dom/div
-                      (->> (css/grid-row)
-                           (css/add-class :photo-section))
-                      (my-dom/div
-                        (->> (css/grid-column)
-                             (css/grid-column-size {:small 12 :medium 4 :large 2}))
-                        (if-let [photo-url (or (:location uploaded-photo) (:photo/path (first photos)))]
-                          (photo/square {:src photo-url})
-                          (if-let [queue-url queue-photo]
-                            (photo/with-overlay nil (photo/square {:src queue-url}) (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"}))
-                            (dom/label #js {:htmlFor "file" :className "button secondary hollow expanded upload-button"}
-                                       ;(if loading?
-                                       ;  (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"}))
-                                       (dom/div nil
-                                         (dom/i #js {:className "fa fa-plus fa-3x"})))))
-                        #?(:cljs
-                           (pu/->PhotoUploader (om/computed
-                                                 photo-upload
-                                                 {:on-photo-queue  (fn [img-result]
-                                                                     ;(debug "Got photo: " photo)
-                                                                     (om/update-state! component assoc :queue-photo img-result :uploaded-photo nil))
-                                                  :on-photo-upload (fn [photo]
-                                                                     (om/update-state! component assoc :uploaded-photo photo :queue-photo nil))})))))
+                    (dom/h4 nil (dom/span nil "Details"))
 
                     (my-dom/div (->> (css/grid-row)
                                      (css/grid-column))
-                                (dom/label nil "Name")
+                                (dom/label nil "Title")
                                 (my-dom/input {:id           (get form-elements :input-name)
                                                :type         "text"
                                                :defaultValue (or item-name "")}))
                     (my-dom/div (->> (css/grid-row)
                                      (css/grid-column))
                                 (dom/label nil "Description")
-                                (my-dom/input {:id           (get form-elements :input-desc)
-                                               :type         "text"
-                                               :defaultValue ""}))
+                                (quill/->QuillEditor (om/computed {}
+                                                                  {:on-editor-created #(om/update-state! component assoc :quill-editor %)}))
+                                (my-dom/div {:id           (get form-elements :input-desc)}))
                     (my-dom/div (->> (css/grid-row))
                                 (my-dom/div
                                   (->> (css/grid-column)
@@ -131,11 +111,45 @@
                                 ;                           :type         "number"
                                 ;                           :disabled     true
                                 ;                           :defaultValue (or price "")}))
-                                )))
+                                )
+                    ))
+      (my-dom/div (->> (css/grid-row)
+                       css/grid-column)
+                  (dom/div #js {:className "callout transparent"}
+                    (dom/h4 nil "Images")
+                    (my-dom/div
+                      (->> (css/grid-row)
+                           (css/add-class :photo-section))
+                      (my-dom/div
+                        (->> (css/grid-column)
+                             (css/grid-column-size {:small 12 :medium 4 :large 2}))
+                        (if-let [photo-url (or (:location uploaded-photo) (:photo/path (first photos)))]
+                          (photo/square {:src photo-url})
+                          (if-let [queue-url queue-photo]
+                            (photo/with-overlay nil (photo/square {:src queue-url}) (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"}))
+                            (dom/label #js {:htmlFor "file" :className "button secondary hollow expanded upload-button"}
+                                       ;(if loading?
+                                       ;  (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"}))
+                                       (dom/div nil
+                                         (dom/i #js {:className "fa fa-plus fa-3x"})))))
+                        #?(:cljs
+                           (pu/->PhotoUploader (om/computed
+                                                 photo-upload
+                                                 {:on-photo-queue  (fn [img-result]
+                                                                     ;(debug "Got photo: " photo)
+                                                                     (om/update-state! component assoc :queue-photo img-result :uploaded-photo nil))
+                                                  :on-photo-upload (fn [photo]
+                                                                     (om/update-state! component assoc :uploaded-photo photo :queue-photo nil))})))))))
+
+      ;(my-dom/div (->> (css/grid-row)
+      ;                 (css/grid-column))
+      ;            (dom/div #js {:className "callout transparent"}
+      ;              (dom/h4 nil (dom/span nil "Pricing"))
+      ;              ))
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
-                  ;(dom/h3 nil (dom/span nil "Details"))
                   (dom/div #js {:className "callout transparent"}
+                  (dom/h4 nil (dom/span nil "Inventory"))
                     ;(map (fn [sku]
                     ;       (let [{:store.item.sku/keys [price value quantity]} sku]
                     ;         (my-dom/div (->> (css/grid-row))
@@ -268,32 +282,36 @@
   #?(:cljs
      (update-product [this]
                      (let [{:keys [query/route-params]} (om/props this)
-                           {:keys [uploaded-photo]} (om/get-state this)
+                           {:keys [uploaded-photo quill-editor]} (om/get-state this)
                            {:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements
                            product {:name     (get-input-value input-name)
                                     :price    (get-input-value input-price)
                                     :currency "CAD"
                                     :photo    uploaded-photo}]
+                       (debug "Editor content: " (quill/contents quill-editor))
+                       (debug "Editor content: " (js/JSON.stringify (quill/contents quill-editor)))
+                       (debug "Editor Delta" (js/Delta. (js/JSON.parse (js/JSON.stringify (quill/contents quill-editor)))))
 
-                       (cond (some? (:product-id route-params))
-                             (msg/om-transact! this `[(store/update-product ~{:product    product
-                                                                              :product-id (:product-id route-params)
-                                                                              :store-id   (:store-id route-params)})
-                                                  :query/store])
-
-                             (= (:action route-params) "create")
-                             (msg/om-transact! this `[(store/create-product
-                                                        ~{:product  (assoc product :id (db/squuid)
-                                                                                   :skus [{:id       (db/squuid)
-                                                                                           :price    (get-input-value input-sku-price)
-                                                                                           :value    (get-input-value input-sku-value)
-                                                                                           :quantity (get-input-value input-sku-quantity)
-                                                                                           :type     (if (get-input-value input-sku-value)
-                                                                                                       :store.item.sku.type/finite
-                                                                                                       :store.item.sku.type/infinite)}])
-                                                          :store-id (:store-id route-params)})
-                                                      :query/store]))
-                       (om/update-state! this dissoc :uploaded-photo))))
+                       ;(cond (some? (:product-id route-params))
+                       ;      (msg/om-transact! this `[(store/update-product ~{:product    product
+                       ;                                                       :product-id (:product-id route-params)
+                       ;                                                       :store-id   (:store-id route-params)})
+                       ;                           :query/store])
+                       ;
+                       ;      (= (:action route-params) "create")
+                       ;      (msg/om-transact! this `[(store/create-product
+                       ;                                 ~{:product  (assoc product :id (db/squuid)
+                       ;                                                            :skus [{:id       (db/squuid)
+                       ;                                                                    :price    (get-input-value input-sku-price)
+                       ;                                                                    :value    (get-input-value input-sku-value)
+                       ;                                                                    :quantity (get-input-value input-sku-quantity)
+                       ;                                                                    :type     (if (get-input-value input-sku-value)
+                       ;                                                                                :store.item.sku.type/finite
+                       ;                                                                                :store.item.sku.type/infinite)}])
+                       ;                                   :store-id (:store-id route-params)})
+                       ;                               :query/store]))
+                       ;(om/update-state! this dissoc :uploaded-photo)
+                       )))
   (componentDidUpdate [this _ _]
     (let [{:keys [query/store]} (om/props this)
           message-final-fn (fn [m] (when m (msg/final? m)))

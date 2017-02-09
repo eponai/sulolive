@@ -62,6 +62,7 @@
                  [datascript "0.15.4"]
                  [cljsjs/stripe "2.0-0"]
                  [cljsjs/nvd3 "1.8.2-1"]
+                 [cljsjs/quill "1.1.0-3"]
                  [bidi "2.0.10"]
                  [kibu/pushy "0.3.6"]
                  [binaryage/devtools "0.8.1"]
