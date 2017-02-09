@@ -56,6 +56,17 @@
                               :success? (success? x)
                               :obj      x} "]")))
 
+(extend-protocol IMutationMessage
+  nil
+  (final? [_] nil)
+  (pending? [_] nil)
+  (message [_] (throw (ex-info (str "(message) undefined for nil. "
+                                    "Use (final?) or (pending?) before calling (message).")
+                               {})))
+  (success? [_] (throw (ex-info (str "(success?) is undefined for nil."
+                                     "Use (final?) first to check if (success?) can be called.")
+                                {}))))
+
 (defn ->message-from-server [mutation-key message message-type]
   {:pre [(contains? #{::success-message ::error-message} message-type)]}
   (->MutationMessage mutation-key message message-type))

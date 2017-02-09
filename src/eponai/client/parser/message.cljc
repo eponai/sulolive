@@ -16,17 +16,6 @@
 ;; -----------------------------
 ;; -- Mutation message public api
 
-(extend-protocol parser/IMutationMessage
-  nil
-  (final? [_] nil)
-  (pending? [_] nil)
-  (message [_] (throw (ex-info (str "(message) undefined for nil. "
-                                    "Use (final?) or (pending?) before calling (message).")
-                               {})))
-  (success? [_] (throw (ex-info (str "(success?) is undefined for nil."
-                                     "Use (final?) first to check if (success?) can be called.")
-                                {}))))
-
 (defn mutation-message? [x]
   (and (satisfies? parser/IMutationMessage x)
        (some? (message x))))
