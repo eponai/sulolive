@@ -3,15 +3,11 @@
     [eponai.common.ui.om-quill :as quill]
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.navbar :as nav]
-    [eponai.common.ui.product-item :as pi]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.common :as common]
-    [eponai.common.ui.product :as item]
-    [eponai.common.ui.stream :as stream]
     #?(:cljs [eponai.web.utils :as utils])
     #?(:cljs [eponai.client.ui.photo-uploader :as pu])
     [eponai.common.ui.dom :as my-dom]
-    [eponai.common.format :as format]
     [om.dom :as dom]
     [om.next :as om #?(:clj :refer :cljs :refer-macros) [defui]]
     [taoensso.timbre :refer [debug]]
@@ -62,11 +58,10 @@
         create-resp (msg/last-message component 'store/create-product)
         delete-resp (msg/last-message component 'store/delete-product)
         is-loading? (or (message-pending-fn update-resp) (message-pending-fn create-resp) (message-pending-fn delete-resp))]
-    (debug "State: " (om/get-state component))
-    (debug "Messages: " {:update update-resp :create create-resp})
     (dom/div nil
-      (when is-loading?
-        (common/loading-spinner nil))
+      #?(:cljs (when is-loading?
+                 (common/loading-spinner nil))
+         :clj (common/loading-spinner nil))
       (my-dom/div
         (->> (css/grid-row))
         (my-dom/div
@@ -92,9 +87,7 @@
                                      (css/grid-column))
                                 (dom/label nil "Description")
                                 (quill/->QuillEditor (om/computed {:content (f/bytes->str description)}
-                                                                  {:on-editor-created #(om/update-state! component assoc :quill-editor %)}))
-                                ;(my-dom/div {:id           (get form-elements :input-desc)})
-                                )
+                                                                  {:on-editor-created #(om/update-state! component assoc :quill-editor %)})))
                     (my-dom/div (->> (css/grid-row))
                                 (my-dom/div
                                   (->> (css/grid-column)
@@ -105,20 +98,7 @@
                                                  :step         "0.01"
                                                  :min          0
                                                  :max          "99999999.99"
-                                                 :defaultValue (or price "")}))
-                                ;(my-dom/div (css/grid-column)
-                                ;            (dom/label nil "On Sale")
-                                ;            (my-dom/input {:id   (get form-elements :input-on-sale?)
-                                ;                           :type "checkbox"}))
-                                ;(my-dom/div (css/grid-column)
-                                ;            (dom/label nil "Sale Price")
-                                ;            (my-dom/input {:id           (get form-elements :input-sale-price)
-                                ;                           :className    "disabled"
-                                ;                           :type         "number"
-                                ;                           :disabled     true
-                                ;                           :defaultValue (or price "")}))
-                                )
-                    ))
+                                                 :defaultValue (or price "")})))))
       (my-dom/div (->> (css/grid-row)
                        css/grid-column)
                   (dom/div #js {:className "callout transparent"}
@@ -147,37 +127,10 @@
                                                   :on-photo-upload (fn [photo]
                                                                      (om/update-state! component assoc :uploaded-photo photo :queue-photo nil))})))))))
 
-      ;(my-dom/div (->> (css/grid-row)
-      ;                 (css/grid-column))
-      ;            (dom/div #js {:className "callout transparent"}
-      ;              (dom/h4 nil (dom/span nil "Pricing"))
-      ;              ))
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
                   (dom/div #js {:className "callout transparent"}
                   (dom/h4 nil (dom/span nil "Inventory"))
-                    ;(map (fn [sku]
-                    ;       (let [{:store.item.sku/keys [price value quantity]} sku]
-                    ;         (my-dom/div (->> (css/grid-row))
-                    ;                     (my-dom/div
-                    ;                       (css/grid-column)
-                    ;                       (dom/label nil "Variation")
-                    ;                       (my-dom/input {:id           (get form-elements :input-sku-value)
-                    ;                                      :type         "text"
-                    ;                                      :defaultValue (or value "")}))
-                    ;                     (my-dom/div
-                    ;                       (css/grid-column)
-                    ;                       (dom/label nil "Price")
-                    ;                       (my-dom/input {:id           (get form-elements :input-sku-price)
-                    ;                                      :type         "number"
-                    ;                                      :defaultValue (or price "Unlimited")}))
-                    ;                     (my-dom/div
-                    ;                       (css/grid-column)
-                    ;                       (dom/label nil "Quantity")
-                    ;                       (my-dom/input {:id           (get form-elements :input-sku-quantity)
-                    ;                                      :type         "text"
-                    ;                                      :defaultValue (or quantity "")})))))
-                    ;     skus)
                     (let [{:store.item.sku/keys [price value quantity]} (first skus)]
                       (my-dom/div (->> (css/grid-row))
                                   (my-dom/div
@@ -270,7 +223,6 @@
                                    {:store.item/skus [:store.item.sku/quantity
                                                       :store.item.sku/value]}]}
                     :store/collections]}
-     ;{:query/stripe [:stripe/account :stripe/products]}
      :query/route-params
      :query/messages
      #?(:cljs
@@ -296,8 +248,6 @@
                                     :currency    "CAD"
                                     :photo       uploaded-photo
                                     :description (js/JSON.stringify (quill/get-contents quill-editor))}]
-                       ;(debug "Editor content: " (quill/get-contents quill-editor))
-                       ;(debug "Editor content: " (js/JSON.stringify (quill/get-contents quill-editor)))
 
                        (cond (some? (:product-id route-params))
                              (msg/om-transact! this `[(store/update-product ~{:product    product
@@ -317,8 +267,8 @@
                                                                                                        :store.item.sku.type/infinite)}])
                                                           :store-id (:store-id route-params)})
                                                       :query/store]))
-                       (om/update-state! this dissoc :uploaded-photo)
-                       )))
+                       (om/update-state! this dissoc :uploaded-photo))))
+
   (componentDidUpdate [this _ _]
     (let [{:keys [query/store]} (om/props this)
           message-final-fn (fn [m] (when m (msg/final? m)))
@@ -333,9 +283,6 @@
   (render [this]
     (let [{:keys [proxy/navbar query/store query/route-params]} (om/props this)
           {:keys [dashboard-option]} route-params]
-      ;(debug "My Store: " store)
-      ;(debug "Route params: " route-params)
-      ;(debug "PRoducts: " stripe)
       (dom/div #js {:id "sulo-my-store" :className "sulo-page"}
         (common/page-container
           {:navbar navbar}
