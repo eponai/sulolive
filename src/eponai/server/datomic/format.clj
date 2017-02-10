@@ -70,22 +70,24 @@
 (defn user [& args]
   (throw (ex-info "TODO, implement this"
                   {:cause "datomic.format/user does not exist anymore."
-                   :args args})))
+                   :args  args})))
 
 (defn user-account-map [& args]
   (throw (ex-info "TODO, implement this"
                   {:cause "datomic.format/user-account-map does not exist anymore."
-                   :args args})))
+                   :args  args})))
 
 (defn photo [url]
   {:pre [(string? url)]}
-  {:db/id (d/tempid :db.part/user)
+  {:db/id      (d/tempid :db.part/user)
    :photo/path url})
 
 (defn product [params]
-  {:db/id           (d/tempid :db.part/user)
-   :store.item/name (:name params)
-   :store.item/uuid (:id params)})
+  (cond-> {:db/id           (d/tempid :db.part/user)
+           :store.item/name (:name params)
+           :store.item/uuid (:id params)}
+          (some? (:description params))
+          (assoc :store.item/description (.getBytes (:description params)))))
 
 (defn sku [{:keys [id value type quantity]}]
   (cond-> {:db/id                (d/tempid :db.part/user)

@@ -5,18 +5,25 @@
     [om.dom :as dom]
     [om.next :as om :refer [defui]]))
 
-(defn contents [editor]
+(defn get-contents [editor]
   (.getContents editor))
 
 (defui QuillEditor
   Object
   (componentDidMount [this]
-    (let [{:keys [on-editor-created]} (om/get-computed this)]
+    (let [{:keys [on-editor-created]} (om/get-computed this)
+          {:keys [content]} (om/props this)]
       #?(:cljs
          (let [element (.getElementById js/document "quill-editor")
                editor (js/Quill. element #js {:theme       "snow"
-                                       :modules     #js {:toolbar "#quill-toolbar"}
-                                       :placeholder "What's your product like?"})]
+                                              :modules     #js {:toolbar "#quill-toolbar"}
+                                              :placeholder "What's your product like?"})
+               ;content (clj->js [{:insert "Hello"}
+               ;                           {:insert "World!" :attributes {:bold true}}
+               ;                  {:insert "\n"}
+               ;                  ])
+               ]
+           (.setContents editor (js/JSON.parse content))
            (when on-editor-created
              (on-editor-created editor))))))
   (render [this]

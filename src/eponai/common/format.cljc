@@ -1,19 +1,22 @@
 (ns eponai.common.format
-  #?(:clj (:refer-clojure :exclude [ref]))
-  (:require [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn]]
-            [clojure.set :refer [rename-keys]]
-            [clojure.data :as diff]
-            [eponai.common.database :refer [tempid squuid]]
-            [eponai.common.database.functions :as dbfn]
-            [eponai.common.format.date :as date]
-            #?(:clj [datomic.api :as datomic])
-            [datascript.core :as datascript]
-            [datascript.db])
-  #?(:clj (:import [datomic Connection]
-                   [clojure.lang Atom])))
+  #?(:clj
+     (:refer-clojure :exclude [ref]))
+  (:require
+    [clojure.data :as diff]
+    [eponai.common.database :as db :refer [tempid squuid]]
+    [eponai.common.database.functions :as dbfn]
+    [eponai.common.format.date :as date]
+    #?(:cljs
+       [goog.crypt :as crypt])
+    ;[datascript.core :as datascript]
+    ;[datascript.db]
+    [taoensso.timbre :refer [debug error info warn]])
+  #?(:clj
+     (:import
+       (java.util UUID))))
 
 (defn str->uuid [str-uuid]
-  #?(:clj  (java.util.UUID/fromString str-uuid)
+  #?(:clj  (UUID/fromString str-uuid)
      :cljs (uuid str-uuid)))
 
 (defn str->number [n]
@@ -21,6 +24,16 @@
              (cljs.reader/read-string n)
              n)
      :clj  (bigdec n)))
+
+(defn str->bytes [s]
+  (when (some? s)
+    #?(:cljs (crypt/stringToUtf8ByteArray s)
+       :clj  (.getBytes s))))
+
+(defn bytes->str [bytes]
+  (when (some? bytes)
+    #?(:cljs (crypt/byteArrayToString bytes)
+       :clj  (apply str (map char bytes)))))
 
 ;; -------------------------- Database entities -----------------------------
 
@@ -135,7 +148,7 @@
                            dbfn/tempid? dbfn/tempid?-datascript
                            dbfn/update-edit dbfn/update-edit-datascript]
                    (debug [:eid eid :attr attr :old-new old-new])
-                   (dbfn/edit-attr (datascript/db (:state env)) created-at eid attr old-new))))
+                   (dbfn/edit-attr (db/db (:state env)) created-at eid attr old-new))))
        (vec)))
 
 (defn server-edit [env k params conform-fn]

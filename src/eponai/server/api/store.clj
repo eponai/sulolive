@@ -37,7 +37,7 @@
     (info "Transacting new product: " txs)
     (db/transact state txs)))
 
-(defn update-product [{:keys [state system]} store-id product-id {:keys [photo] :as params}]
+(defn update-product [{:keys [state system]} store-id product-id {:keys [photo description] :as params}]
   (let [{:keys [store.item/uuid store.item/photos]} (db/pull (db/db state) [:store.item/uuid :store.item/photos] product-id)
         {:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
         old-photo (first photos)
@@ -47,8 +47,10 @@
                                         secret
                                         (str uuid)
                                         params)
-        new-item {:store.item/uuid uuid
-                  :store.item/name (:name params)}
+        new-item (cond-> {:store.item/uuid uuid
+                          :store.item/name (:name params)}
+                         (some? description)
+                         (assoc :store.item/description (.getBytes description)))
 
         ;; Upload photo
         photo-upload (when photo (s3/upload-photo (:system/aws-s3 system) photo))
