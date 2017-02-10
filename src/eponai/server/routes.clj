@@ -9,6 +9,7 @@
     [ring.util.response :as r]
     [ring.util.request :as ring.request]
     [bidi.bidi :as bidi]
+    [bidi.ring :as bidi.ring]
     [eponai.common.routes :as common.routes]
     [eponai.common.parser.util :as parser.util]
     [eponai.server.parser.response :as parser.resp]
@@ -28,22 +29,18 @@
 (declare handle-parser-request)
 
 (defn request->props [request]
-  (let [path-info (ring.request/path-info request)
-        ui-route (bidi/match-route common.routes/routes path-info)]
-    (debug [:path-info path-info :ui-route ui-route])
-    {:empty-datascript-db            (::m/empty-datascript-db request)
-     :state                          (::m/conn request)
-     :system                         (::m/system request)
-     :release?                       (release? request)
-     :route-params                   (merge (:route-params ui-route)
-                                            (:params request))
-     ;; TODO: Un-hard code this.
-     :route                          (:handler ui-route)
-     :auth                           (:identity request)
-     ::server.ui/component->props-fn (fn [component]
-                                       (-> request
-                                           (assoc :body {:query (om/get-query component)})
-                                           (handle-parser-request)))}))
+  {:empty-datascript-db            (::m/empty-datascript-db request)
+   :state                          (::m/conn request)
+   :system                         (::m/system request)
+   :release?                       (release? request)
+   :route-params                   (merge (:route-params request)
+                                          (:params request))
+   :route                          (:handler request)
+   :auth                           (:identity request)
+   ::server.ui/component->props-fn (fn [component]
+                                     (-> request
+                                         (assoc :body {:query (om/get-query component)})
+                                         (handle-parser-request)))})
 
 ;----------API Routes
 
@@ -104,30 +101,13 @@
 
 (defroutes
   member-routes
-  ;;TODO: Use bidi->compojure routes:
-  (GET "/" request (server.ui/index-html (request->props request)))
-
-  ;; STORE ROUTES
-  (GET "/store" request (server.ui/store-html (request->props request)))
-  (GET "/store/:store-id" request (server.ui/store-html (request->props request)))
-  (GET "/store/:store-id/dashboard" request (server.ui/store-html (request->props request)))
-  (GET "/store/:store-id/dashboard/orders" request (server.ui/store-html (request->props request)))
-  (GET "/store/:store-id/dashboard/orders/:order-id" request (server.ui/store-html (request->props request)))
-  (GET "/store/:store-id/dashboard/products" request (server.ui/store-html (request->props request)))
-  (GET "/store/:store-id/dashboard/products/create" request (server.ui/store-html (request->props request)))
-  (GET "/store/:store-id/dashboard/products/:product-id" request (server.ui/store-html (request->props request)))
-
-  ;; GOODS ROUTES
-  (GET "/goods/:product-id" r (server.ui/product-html (request->props r)))
-  (GET "/goods" request (server.ui/goods-html (request->props request)))
-
-
-  (GET "/shopping-bag" request (server.ui/cart-html (request->props request)))
-  (GET "/checkout" request (server.ui/checkout-html (request->props request)))
-  (GET "/streams" request (server.ui/streams-html (request->props request)))
-  (GET "/business" request (server.ui/business-html (request->props request)))
-  (GET "/profile/:user-id" request (server.ui/profile-html (request->props request)))
-  (GET "/settings" request (server.ui/settings-html (request->props request))))
+  ;; Hooks in bidi routes with compojure.
+  (GET "*" _ (bidi.ring/make-handler common.routes/routes
+                                     (fn [route]
+                                       ;; Currently all routes render the same way.
+                                       ;; Enter route specific stuff here.
+                                       (fn [request]
+                                         (server.ui/render-page (request->props (assoc request :handler route))))))))
 
 (defroutes
   site-routes
@@ -147,8 +127,6 @@
   (route/resources "/")
   ;(POST "/stripe/main" request (r/response (stripe/webhook (::m/conn request) (:params request))))
   (POST "/stripe/connected" request (r/response (stripe/webhook (::m/conn request) (:body request))))
-  (GET "/coming-soon" request (server.ui/landing-html (request->props request)))
-  (GET "/sell/coming-soon" request (server.ui/landing-html (request->props request)))
   (GET "/auth" request (let [{:keys [redirect-url token]} (auth/auth0 request)]
                          (if token
                            (r/set-cookie (r/redirect redirect-url) "token" token)
@@ -164,7 +142,7 @@
 
   (context "/" [:as request]
     (cond-> member-routes
-            (or (::m/in-production? request) true)
+            (or (::m/in-production? request))
             (auth/restrict (auth/member-restrict-opts)))
     ;(if (release? request)
     ;  (auth/restrict member-routes (auth/member-restrict-opts))

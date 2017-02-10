@@ -70,15 +70,4 @@
         (html/render-html-without-reactid-tags
           (->component (assoc env ::root/app-html (render-page env))))))))
 
-(def auth-html (partial render-to-str auth/Auth))
-(def goods-html (makesite root/Root))
-(def product-html (makesite root/Root))
-(def index-html (makesite root/Root))
-(def landing-html (makesite root/Root))
-(def store-html (makesite root/Root))
-(def cart-html (makesite root/Root))
-(def checkout-html (makesite root/Root))
-(def streams-html (makesite root/Root))
-(def business-html (makesite root/Root))
-(def profile-html (makesite root/Root))
-(def settings-html (makesite root/Root))
+(def render-page (makesite root/Root))
