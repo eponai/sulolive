@@ -165,19 +165,19 @@
      goog.date.UtcDateTime
      (-equiv [this other] (date-eq this other))))
 
-(:cljs
-  (extend-type js/Uint8Array
-    ISeqable
-    (-seq [array] (array-seq array 0))
+#?(:cljs
+   (extend-type js/Uint8Array
+     ISeqable
+     (-seq [array] (array-seq array 0))
 
-    IComparable
-    (-compare [x y]
-      (letfn [(not-eq-int [[a b]]
-                (let [c (compare a b)]
-                  (when-not (zero? c)
-                    c)))]
-        (or (some not-eq-int (map vector (seq x) (seq y)))
-            0)))))
+     IComparable
+     (-compare [x y]
+       (letfn [(not-eq-int [[a b]]
+                 (let [c (compare a b)]
+                   (when-not (zero? c)
+                     c)))]
+         (or (some not-eq-int (map vector (seq x) (seq y)))
+             0)))))
 
 ;; ------ Util functions -----------
 
