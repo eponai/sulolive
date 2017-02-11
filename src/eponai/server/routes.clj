@@ -107,7 +107,7 @@
                                        ;; Currently all routes render the same way.
                                        ;; Enter route specific stuff here.
                                        (fn [request]
-                                         (server.ui/render-page (request->props (assoc request :handler route))))))))
+                                         (server.ui/render-site (request->props (assoc request :handler route))))))))
 
 (defroutes
   site-routes

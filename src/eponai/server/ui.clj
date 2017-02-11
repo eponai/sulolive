@@ -70,4 +70,4 @@
         (html/render-html-without-reactid-tags
           (->component (assoc env ::root/app-html (render-page env))))))))
 
-(def render-page (makesite root/Root))
+(def render-site (makesite root/Root))
