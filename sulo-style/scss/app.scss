@@ -66,5 +66,7 @@
 @import "profile";
 @import "spinner";
 @import "quill";
+@import "forms/forms";
 
 @include sulo-flex-video;
+@include sulo-forms;

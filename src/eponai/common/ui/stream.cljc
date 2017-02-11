@@ -4,7 +4,9 @@
     [eponai.common.ui.elements.css :as css]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :as timbre :refer [debug error info]]))
+    [taoensso.timbre :as timbre :refer [debug error info]]
+    [eponai.common.ui.elements.photo :as photo]
+    [eponai.common.ui.elements.menu :as menu]))
 
 #?(:cljs
    (defn url->store-id []
@@ -92,7 +94,18 @@
                         )
      )
   (render [this]
-    (let [{:keys [show-chat?]} (om/get-state this)]
+    (let [{:keys [show-chat?]} (om/get-state this)
+          messages [{:photo "/assets/img/collection-women.jpg"
+                     :text "this is some message"
+                     :user "Diana Gren"
+                     }
+                    {:photo "/assets/img/collection-women.jpg"
+                     :text "Hey there I was wondering something"
+                     :user "Diana Gren"
+                     }
+                    {:photo "/assets/img/collection-women.jpg"
+                     :user "Diana Gren"
+                     :text "Oh yeah mee too"}]]
       (debug "STREAM PROPS:" (om/props this))
       (dom/div #js {:id "sulo-video-container"}
         (dom/div #js {:id "sulo-video" :className "flex-video widescreen"}
@@ -122,6 +135,49 @@
                      ;#?(:cljs
                      ;   (dom/source #js {:src  (str "http://" (.server-url this) ":5080/live/" (url->store-id) ".m3u8")
                      ;                    :type "application/x-mpegURL"}))
-                     ))))))
+                     )
+          (my-dom/div
+            (cond->> (css/add-class ::css/stream-chat-container)
+                     show-chat?
+                     (css/add-class :show))
+            (dom/div #js {:className "content"}
+              (my-dom/div
+                (->> {:onClick #(om/update-state! this assoc :show-chat? (not show-chat?))}
+                     (css/add-class ::css/stream-toggle))
+                (my-dom/a (cond-> (css/add-class ::button)
+                                  show-chat?
+                                  (->> (css/add-class :secondary)
+                                       (css/add-class :hollow)))
+                          (if show-chat?
+                            (dom/span nil "Hide >>")
+                            (dom/i #js {:className "fa fa-comments fa-fw"}))))
+              (menu/vertical
+                (css/add-class :messages-list)
+                (map (fn [msg]
+                       (menu/item (css/add-class :message-container)
+                                  (my-dom/div
+                                    (->> (css/grid-row)
+                                         (css/align :middle))
+                                    (my-dom/div (->> (css/grid-column)
+                                                     (css/grid-column-size {:small 2}))
+                                                (photo/circle {:src (:photo msg)}))
+                                    (my-dom/div (css/grid-column)
+                                                (dom/small nil
+                                                           (dom/strong nil (str (:user msg) ": "))
+                                                           (dom/span nil (:text msg)))))))
+                     messages))
+              (dom/div #js {:className "input-container"}
+                (my-dom/div
+                  (css/grid-row)
+                  (my-dom/div
+                    (->> (css/grid-column)
+                         (css/grid-column-size {:small 10}))
+                    (dom/input #js {:className   ""
+                                    :type        "text"
+                                    :placeholder "Your message..."}))
+                  (my-dom/div (->> (css/grid-column)
+                                   (css/grid-column-size {:small 2}))
+                              (dom/a #js {:className "button expanded green small"}
+                                     (dom/span nil "Send"))))))))))))
 
 (def ->Stream (om/factory Stream))

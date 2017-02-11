@@ -1,0 +1,34 @@
+@mixin sl-form-element ($spacing: $form-spacing) {
+  $height: ($input-font-size + ($spacing * 1.5) - rem-calc(1));
+
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: $height;
+  padding: $spacing / 2;
+  border: $input-border;
+  margin: 0 0 $spacing;
+
+  font-family: $input-font-family;
+  font-size: $input-font-size;
+  color: $input-color;
+  background-color: $input-background;
+  box-shadow: $input-shadow;
+  border-radius: $input-radius;
+
+  @if has-value($input-transition) {
+    transition: $input-transition;
+  }
+
+  // Focus state
+  &:focus {
+    border: $input-border-focus;
+    background-color: $input-background-focus;
+    outline: none;
+    box-shadow: $input-shadow-focus;
+
+    @if has-value($input-transition) {
+      transition: $input-transition;
+    }
+  }
+}

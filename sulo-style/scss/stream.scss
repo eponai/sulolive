@@ -1,10 +1,13 @@
 $chat-zindex: 2;
 
+$chat-container-bg-color: $primary-color;
+$chat-container-box-shadow-color: $chat-container-bg-color;
+
 .stream-container {
 	// max-width: 75rem;
 	// position: relative;
 	padding-top: 1rem;
-	@include text-shadow(light);
+	// @include text-shadow(light);
 	span {
 		font-style: normal;
 	}
@@ -29,59 +32,90 @@ $chat-zindex: 2;
 .stream-chat-container {
 	z-index: $chat-zindex;
 	display: none;
-	background: rgba($white, 1);
-	border-left: 1px solid $light-gray;
-	// box-shadow: -1px 1px 2px 0 rgba($primary-color, 0.3	);
+	background: linear-gradient(to right, rgba($chat-container-bg-color, 0.25), rgba($chat-container-bg-color, 0.5));
+	// border-left: 1px solid rgba($bg-color, 0.05);
+	box-shadow: -1px 0 13px 0 rgba($chat-container-box-shadow-color, 0.25);
 	padding: 0;
 	position: absolute;
 	top: 0;
 	bottom: 0;
-	right: 0;
+	// right: 0;
 	width: $chat-width;
 	transition: right .25s ease-in-out;
+
 	&:not(.show) {
 		.button {
 			$button-color: map-get($foundation-palette, green);
 			background: rgba($button-color, 1);
 		}	
 	}
+	.content {
+		position: relative;
+		display: flex;		
+		flex-direction: column;
+		justify-content: flex-end;
+		flex: 1;
+	}
 	.stream-toggle {
+		margin: 1rem;
+		margin-right: 0;
 		&:not(.show) {
-			position:absolute;
-			right: 0;
-			}
-		top: $navbar-height;
+			right: $chat-width;
+		}
+		position: absolute;
+		top: 0;
 		right: 0;
-		width: 3rem;
-		transition: width 0.25s ease-in-out;
+		// width: 3rem;
+		transition: right 0.25s ease-in-out 1s;
 	}
 	@include breakpoint(large) {
 		display: flex;
-		flex-direction: column;
-		justify-content: flex-end;
+		// flex-direction: column;
 		right: -$chat-width;
 		&.show {
 			right: 0;
 			.stream-toggle {
-				// right: -$chat-width;
-				width: $chat-width;
+				left: 0;
+				right: auto;
+				// width: $chat-width;
+				.button {
+					border: none;
+				}
 			}
 		}
 	}
-	.stream-chat-content {
-		color: $black;
+	.messages-list {
+		margin-bottom: 0.5rem;
+	}
+	.message-container {
+		// padding: 0.5rem;
+		color: $white;
 		flex: 1 0 auto;
 		display: flex;
 		justify-content: flex-end;
 		flex-direction: column;
-		padding: 1rem;
-		font-weight: 500;
-		text-shadow: 0px 1px 1px rgba($white, 0.5);
+		// padding: 1rem;
+		$border: 1px solid rgba($light-gray, 0.15);
+		border-top: $border;
+		// border-bottom: $border;
+		.row {
+			margin: 0;
+		}
+		.column {
+			padding: 0.5rem;
+		}
 	}
-	.stream-chat-input {
-		padding: 0 0.5rem;
+	.input-container {
+		// padding: 0 0.5rem;
+		.row {
+			margin: 0;
+		}
+		.column {
+			padding: 0;
+		}
 		input {
 			margin: 0;
+			// background: $chat-container-bg-color;
 		}
 		.button {
 			margin-bottom: 0.5rem;
