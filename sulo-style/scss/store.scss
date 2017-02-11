@@ -36,14 +36,37 @@
 	}
 }
 
+@mixin sulo-flex-video {
+  .flex-video {
+    @include flex-video;
+
+    &.widescreen {
+    	padding-bottom: flex-video(16 by 9);
+    	@include breakpoint(medium) {
+      		padding-bottom: flex-video($flexvideo-ratio-widescreen);
+      	}
+    }
+
+    &.vimeo {
+      padding-top: 0;
+    }
+  }
+}
+
 #sulo-store {
-	@include chat-open(false);
-	&.chat-open {
-		@include chat-open(true);
+	.page-content {
+		padding-top: 1rem;
+		@include breakpoint(medium) {
+			padding-top: 0;
+		}
 	}
+	// @include chat-open(false);
+	// &.chat-open {
+	// 	@include chat-open(true);
+	// }
 	.cover {
 		// padding-bottom: 3%;
-		// padding-bottom: flex-video($flexvideo-ratio-widescreen);
+		// paddin g-bottom: flex-video($flexvideo-ratio-widescreen);
 	}
 	.store-container {
 		margin-top: 1rem;
@@ -86,6 +109,8 @@
 		// flex-direction: column;
 	// }
 	.stream-container {
+		// max-width: 75rem;
+		padding-top: 1rem;
 		@include text-shadow(light);
 		span {
 			font-style: normal;
@@ -103,7 +128,7 @@
 		// margin: 0 auto 1rem auto;
 		// min-height: 10rem;
 		@include breakpoint(large) {
-			padding: 1rem;
+			padding: 0;
 			// font-size: 1.25rem;
 		}
 	}

@@ -62,7 +62,9 @@
 @import "store";
 @import "video";
 @import "goods";
-@import "chat";
+@import "stream";
 @import "profile";
 @import "spinner";
 @import "quill";
+
+@include sulo-flex-video;

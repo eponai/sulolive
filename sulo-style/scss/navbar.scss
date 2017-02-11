@@ -68,7 +68,7 @@
 		// }
 	}
 	input {
-	//	@include form-element(rem-calc(16));
+		@include form-element(rem-calc(16));
 		margin: 0;
 	}
 }

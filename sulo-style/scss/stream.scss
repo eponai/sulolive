@@ -1,5 +1,31 @@
 $chat-zindex: 2;
 
+.stream-container {
+	// max-width: 75rem;
+	// position: relative;
+	padding-top: 1rem;
+	@include text-shadow(light);
+	span {
+		font-style: normal;
+	}
+	// visibility: hidden;
+	
+	// font-weight: bold;
+	// .fa-eye:before {
+	// 	vertical-align: middle;
+	// }
+	// h5 {
+	// 	@include single-line-text;
+	// }
+
+	// margin: 0 auto 1rem auto;
+	// min-height: 10rem;
+	@include breakpoint(large) {
+		padding: 0;
+		// font-size: 1.25rem;
+	}
+}
+
 .stream-chat-container {
 	z-index: $chat-zindex;
 	display: none;
@@ -7,8 +33,8 @@ $chat-zindex: 2;
 	border-left: 1px solid $light-gray;
 	// box-shadow: -1px 1px 2px 0 rgba($primary-color, 0.3	);
 	padding: 0;
-	position: fixed;
-	top: $navbar-height;
+	position: absolute;
+	top: 0;
 	bottom: 0;
 	right: 0;
 	width: $chat-width;
@@ -21,9 +47,9 @@ $chat-zindex: 2;
 	}
 	.stream-toggle {
 		&:not(.show) {
-
+			position:absolute;
+			right: 0;
 			}
-		position: fixed;
 		top: $navbar-height;
 		right: 0;
 		width: 3rem;
@@ -44,6 +70,10 @@ $chat-zindex: 2;
 	}
 	.stream-chat-content {
 		color: $black;
+		flex: 1 0 auto;
+		display: flex;
+		justify-content: flex-end;
+		flex-direction: column;
 		padding: 1rem;
 		font-weight: 500;
 		text-shadow: 0px 1px 1px rgba($white, 0.5);

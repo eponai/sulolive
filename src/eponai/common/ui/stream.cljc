@@ -1,5 +1,7 @@
 (ns eponai.common.ui.stream
   (:require
+    [eponai.common.ui.dom :as my-dom]
+    [eponai.common.ui.elements.css :as css]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :as timbre :refer [debug error info]]))
@@ -90,9 +92,36 @@
                         )
      )
   (render [this]
-    (debug "STREAM PROPS:" (om/props this))
-    (dom/div #js {:id "sulo-video-container"}
-      (dom/div #js {:id "sulo-video" :className "flex-video widescreen"}
-        (dom/video #js {:id "video"})))))
+    (let [{:keys [show-chat?]} (om/get-state this)]
+      (debug "STREAM PROPS:" (om/props this))
+      (dom/div #js {:id "sulo-video-container"}
+        (dom/div #js {:id "sulo-video" :className "flex-video widescreen"}
+          (my-dom/div
+            (cond->> (css/add-class ::css/stream-chat-container)
+                     show-chat?
+                     (css/add-class :show))
+            (my-dom/div
+              (->> {:onClick #(om/update-state! this assoc :show-chat? (not show-chat?))}
+                   (css/add-class ::css/stream-toggle))
+              (my-dom/a (cond-> (->> (css/add-class ::button)
+                                     (css/add-class :expanded))
+                                show-chat?
+                                (->> (css/add-class :secondary)
+                                     (css/add-class :hollow)))
+                        (if show-chat?
+                          (dom/span nil ">>")
+                          (dom/i #js {:className "fa fa-comments fa-fw"}))))
+            (dom/div #js {:className "stream-chat-content"}
+              (dom/span nil "This is a message"))
+            (dom/div #js {:className "stream-chat-input"}
+              (dom/input #js {:type        "text"
+                              :placeholder "Your message..."})
+              (dom/a #js {:className "button expanded green"}
+                     (dom/span nil "Send"))))
+          (dom/video #js {:id "video"}
+                     ;#?(:cljs
+                     ;   (dom/source #js {:src  (str "http://" (.server-url this) ":5080/live/" (url->store-id) ".m3u8")
+                     ;                    :type "application/x-mpegURL"}))
+                     ))))))
 
 (def ->Stream (om/factory Stream))

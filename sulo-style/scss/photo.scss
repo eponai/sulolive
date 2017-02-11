@@ -22,6 +22,12 @@ $primary-color: map-get($foundation-palette, primary);
 	&.circle {
 		border-radius: 50%;
 		overflow: hidden;
+		.photo {
+			border-radius: inherit;
+			img {
+				// border-radius:
+			}
+		}
 	}
 }
 
@@ -73,7 +79,11 @@ $primary-color: map-get($foundation-palette, primary);
 	width: 100%;
 	transition: background .25s ease-in-out;
 	position: relative;
+
+	border-radius: inherit;
+
 	img {
+		border-radius: inherit;
 		position: absolute;
 		top: 0;
 		left: 0;
