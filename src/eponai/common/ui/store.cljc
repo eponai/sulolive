@@ -14,13 +14,13 @@
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.menu :as menu]))
 
-(defn find-pos [el]
-  #?(:cljs (loop [cur-top 0
-                  obj el]
-             (if (.-offsetParent obj)
-               (recur (+ cur-top (.-offsetTop obj)) (.-offsetParent obj))
-               cur-top))
-     :clj  0))
+;(defn find-pos [el]
+;  #?(:cljs (loop [cur-top 0
+;                  obj el]
+;             (if (.-offsetParent obj)
+;               (recur (+ cur-top (.-offsetTop obj)) (.-offsetParent obj))
+;               cur-top))
+;     :clj  0))
 (defui Store
   static om/IQuery
   (query [_]
@@ -33,11 +33,6 @@
                     {:stream/_store [:stream/name]}
                     :store/name]}])
   Object
-  (componentWillReceiveProps [this next-props]
-    (let [{:keys [query/store]} next-props
-          stream (first (:stream/_store store))]
-      (when (some? stream)
-        (om/update-state! this assoc :show-chat? true))))
   (render [this]
     (let [st (om/get-state this)
           {:keys [query/store proxy/navbar] :as props} (om/props this)
@@ -86,7 +81,7 @@
                   (my-dom/div
                     (->> (css/grid-column)
                          (css/grid-column-size {:small 12 :medium 2 :large 1}))
-                    (photo/circle {:src (get-in store [:store/photo :photo/path])}))
+                    (photo/circle {:src (:photo/path photo)}))
                   (my-dom/div
                     (->> (css/grid-column)
                          (css/add-class :shrink))
@@ -108,54 +103,7 @@
                      (css/grid-column-order {:small 3 :medium 3}))
                 (my-dom/div
                   (css/text-align :center)
-                  (dom/span nil "Keep calm and wear pretty stuff"))))
-
-            ;(my-dom/div
-            ;  nil
-            ;  (my-dom/div
-            ;    (->> (css/grid-row)
-            ;         (css/add-class :collapse)
-            ;         (css/add-class :store-container))
-            ;    (my-dom/div
-            ;      (->> (css/grid-column)
-            ;           (css/grid-column-size {:small 12 :medium 3})
-            ;           (css/add-class :store-info)
-            ;           (css/text-align :center))
-            ;      (photo/circle
-            ;        {:src (:photo/path (:store/photo store))})
-            ;
-
-            ;      (dom/div nil (dom/a #js {:className "button expanded hollow"}
-            ;                          (dom/span nil "+ Follow")))
-            ;      (when-not has-stream?
-            ;        (dom/div nil (dom/a #js {:className "button expanded hollow"}
-            ;                            (dom/i #js {:className "fa fa-comment-o fa-fw"})
-            ;                            (dom/span nil "Contact")))))
-            ;    (my-dom/div
-            ;      (->> (css/grid-column))
-            ;      (photo/cover
-            ;        {:src (if cover
-            ;                (:photo/path cover)
-            ;                "")})))
-            ;  (my-dom/div
-            ;    (->> (css/grid-row)
-            ;         (css/align :center))
-            ;    (my-dom/div (->> (css/grid-column)
-            ;                     (css/grid-column-size {:small 12})
-            ;                     (css/text-align :center))
-            ;                (dom/span nil "Keep calm and wear pretty jewelry"))))
-
-
-            )
-          ;(my-dom/div
-          ;  nil
-          ;  (my-dom/div (->> (css/grid-row))
-          ;              (my-dom/div (css/grid-column)
-          ;                          (dom/a #js {:className "button hollow"} (dom/span nil "+ Follow")))
-          ;              (my-dom/div (css/grid-column)
-          ;                          (dom/a #js {:className "button hollow"} (dom/span nil "About")))
-          ;              (my-dom/div (css/grid-column)
-          ;                          (dom/a #js {:className "button hollow"} (dom/span nil "Contact")))))
+                  (dom/span nil "Keep calm and wear pretty stuff")))))
 
           (my-dom/div {:id "shop"}
                       (my-dom/div

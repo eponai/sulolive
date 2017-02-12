@@ -91,8 +91,9 @@
                         ;; (.subscribe-hls this)
                         ;(let [player (js/videojs "red5pro-subscriber")]
                         ;    (.play player))
-                        )
-     )
+                        ))
+  (initLocalState [_]
+    {:show-chat? true})
   (render [this]
     (let [{:keys [show-chat?]} (om/get-state this)
           {:keys [stream-name]} (om/get-computed this)
@@ -106,7 +107,7 @@
                      }
                     {:photo "/assets/img/collection-women.jpg"
                      :user "Diana Gren"
-                     :text "Oh yeah mee too"}]]
+                     :text "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}]]
       (debug "STREAM PROPS:" (om/props this))
       (dom/div #js {:id "sulo-video-container"}
         (dom/div #js {:id "sulo-video" :className "flex-video widescreen"}
@@ -138,30 +139,30 @@
                      ;                    :type "application/x-mpegURL"}))
                      )
           (dom/div #js {:className "stream-title-container"}
-            (dom/span nil stream-name)
-            )
+            (dom/span nil stream-name))
           (my-dom/div
             (cond->> (css/add-class ::css/stream-chat-container)
                      show-chat?
                      (css/add-class :show))
+            (dom/a #js {:className "button show-button"
+                        :onClick #(om/update-state! this assoc :show-chat? true)} (dom/i #js {:className "fa fa-comments fa-fw"}))
+            (my-dom/div
+              nil
+              (dom/a #js {:className "button hollow secondary hide-button"
+                          :onClick #(om/update-state! this assoc :show-chat? false)}
+                     (dom/i #js {:className "fa fa-chevron-right fa-fw"})))
+
+            ;(menu/horizontal nil
+            ;                 (menu/item nil
+            ;                            (dom/a nil "Chat")))
             (dom/div #js {:className "content"}
-              (my-dom/div
-                (->> {:onClick #(om/update-state! this assoc :show-chat? (not show-chat?))}
-                     (css/add-class ::css/stream-toggle))
-                (my-dom/a (cond-> (css/add-class ::button)
-                                  show-chat?
-                                  (->> (css/add-class :secondary)
-                                       (css/add-class :hollow)))
-                          (if show-chat?
-                            (dom/span nil "Hide >>")
-                            (dom/i #js {:className "fa fa-comments fa-fw"}))))
               (menu/vertical
                 (css/add-class :messages-list)
                 (map (fn [msg]
                        (menu/item (css/add-class :message-container)
                                   (my-dom/div
                                     (->> (css/grid-row)
-                                         (css/align :middle))
+                                         (css/align :top))
                                     (my-dom/div (->> (css/grid-column)
                                                      (css/grid-column-size {:small 2}))
                                                 (photo/circle {:src (:photo msg)}))

@@ -53,9 +53,14 @@
   }
 }
 
+$chat-available-breakpoint: medium;
+
 #sulo-store {
 	.store-container {
 		padding: 0.5rem 0;
+		@include breakpoint(medium) {
+			padding-bottom: 0;
+		}
 		a {
 			margin: 0;
 		}

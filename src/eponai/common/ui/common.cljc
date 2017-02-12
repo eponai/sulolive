@@ -184,7 +184,7 @@
                        (css/align :right))
                   ;(menu/item-link nil (dom/small nil "Privacy Policy"))
                   ;(menu/item-link nil (dom/small nil "Terms & Conditions"))
-                  (menu/item-text nil (dom/small #js {:className "copyright"} "© eponai handelsbolag 2017"))))))
+                  (menu/item-text nil (dom/small #js {:className "copyright"} "© eponai hb 2017"))))))
 
 (defn page-container [props & content]
   (dom/div #js {:className "page-container"}
