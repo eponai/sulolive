@@ -22,8 +22,8 @@
 (defn update-route-fn [reconciler-atom]
   (fn [{:keys [handler route-params] :as match}]
     (let [r @reconciler-atom]
-      (try (routes/set-route! r handler {:route-params route-params
-                                         :queue?       (some? (om/app-root r))})
+      (try (routes/transact-route! r handler {:route-params route-params
+                                              :queue?       (some? (om/app-root r))})
            (catch :default e
              (debug "Tried to set route: " match ", got error: " e))))))
 
@@ -85,6 +85,7 @@
                                    :remotes   remotes
                                    :send      send-fn
                                    :merge     (merge/merge!)
+                                   :shared    {:history history}
                                    :migrate   nil})]
     (reset! history-atom history)
     (reset! reconciler-atom reconciler)

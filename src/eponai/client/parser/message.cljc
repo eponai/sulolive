@@ -190,7 +190,7 @@
       (last messages))))
 
 (defn clear-messages! [component mutation-key]
-  (om/update-state! component ::component-messages dissoc mutation-key))
+  (om/update-state! component update ::component-messages dissoc mutation-key))
 
 (defn clear-one-message! [component mutation-key]
   (when (< 1 (count (message-ids-for-key component mutation-key)))

@@ -158,6 +158,12 @@
       {:id       (java.util.UUID/fromString (.getId SKU))
        :type     (keyword "store.item.sku.type" (.getType inventory))
        :quantity (bigdec (.getQuantity inventory))
+       ;; TODO: The price from stripe is smallest int depending on currency.
+       ;;       i.e. "100 cents to charge $1.00, or 100 to charge ¥100, Japanese Yen
+       ;;            being a 0-decimal currency"
+       ;;       Do we use the stripe number somehow, or do we use the price we were
+       ;;       passed? Gross.
+       :price    (bigdec price)
        :value    (get (.getAttributes SKU) "variation")}))
 
   (update-product [_ account-secret product-id params]

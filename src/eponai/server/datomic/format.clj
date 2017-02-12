@@ -83,14 +83,16 @@
    :photo/path url})
 
 (defn product [params]
-  (cond-> {:db/id           (d/tempid :db.part/user)
-           :store.item/name (:name params)
-           :store.item/uuid (:id params)}
+  (cond-> {:db/id            (d/tempid :db.part/user)
+           :store.item/price (bigdec (:price params))
+           :store.item/name  (:name params)
+           :store.item/uuid  (:id params)}
           (some? (:description params))
           (assoc :store.item/description (.getBytes (:description params)))))
 
-(defn sku [{:keys [id value type quantity]}]
+(defn sku [{:keys [id value type quantity price]}]
   (cond-> {:db/id                (d/tempid :db.part/user)
+           :store.item.sku/price (bigdec price)
            :store.item.sku/uuid  id
            :store.item.sku/value value
            :store.item.sku/type  type}

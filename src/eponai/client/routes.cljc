@@ -1,14 +1,19 @@
 (ns eponai.client.routes
   (:require
+    [bidi.bidi :as bidi]
+    #?(:cljs [pushy.core :as pushy])
+    [eponai.common.routes :as routes]
     [clojure.set :as set]
     [om.next :as om]
     [eponai.common.database :as db]
-    [taoensso.timbre :as timbre :refer [debug]]))
+    [taoensso.timbre :as timbre :refer [error debug warn]]))
 
 (def root-route-key :routing/app-root)
 
-(defn set-route!
-  "Set's the app route given either a reconciler or a component, and a route.
+(defn transact-route!
+  "Warning: Probably not what you want to use. See: (set-route!) instead.
+
+  Set's the app route given either a reconciler or a component, and a route.
    Also optinally takes
    :route-params - a map with route specific parameters.
    :queue? - re-renders from the root component, defaults to true
@@ -23,10 +28,10 @@
      (set-route! this :index {:tx [:cart/price]})
 
    Heavily inspired by compassus/set-route! (github.com/compassus/compassus),
-   which we doesn't use because it's to frameworky. We'd have to use it's parser
-   for example, and I'm not sure it works with datascript(?)."
+   which we doesn't use because it's too frameworky (We'd have to use its parser
+   for example, and I'm not sure it works with datascript(?))."
   ([x route]
-   (set-route! x route nil))
+   (transact-route! x route nil))
   ([x route {:keys [queue? route-params tx] :or {queue? true}}]
    {:pre [(or (om/reconciler? x) (om/component? x))
           (keyword? route)]}
@@ -37,6 +42,35 @@
                                                                  :route-params route-params})]
                                       :always (into tx)
                                       queue? (into (om/transform-reads reconciler [root-route-key])))))))
+
+(defn url
+  "Takes a route and its route-params and returns an url"
+  [route route-params]
+  (try
+    (apply bidi/path-for routes/routes route (reduce into [] route-params))
+    (catch #?@(:cljs [:default e]
+               :clj  [Throwable e])
+           (error "Error when trying to create url from route: " route
+                  " route-params: " route-params
+                  " error: " e)
+      nil)))
+
+(defn set-url!
+  "Sets the URL which will propagate the route changes, reads and everything else.
+
+  Example:
+  (set-url! this :store-dashboard/product {:store-id 1 :dashboard-option products :product-id 2})"
+  [component route route-params]
+  {:pre [(om/component? component)]}
+  (if-let [bidi-url (url route route-params)]
+    (do (debug "Will set url: " bidi-url " created with " [:route route :route-params route-params])
+        ;; There's no URL to set in clj land, so do nothing.
+        #?(:cljs
+           (if-let [history (:history (om/shared component))]
+             (pushy/set-token! history bidi-url)
+             (warn "No history found in shared for component: " component
+                   ". Make sure :history was passed to the reconciler."))))
+    (warn "Unable to create a url with route: " route " route-params: " route-params)))
 
 (defn- to-db
   "Transforms, components, reconcilers or connections to a database."

@@ -7,7 +7,8 @@
     [eponai.common.business.budget :as business.budget]
     [eponai.common.parser.read :as common.read]
     [om.next.impl.parser :as om.parser]
-    [eponai.client.routes :as routes]
+    [eponai.client.routes :as client.routes]
+    [eponai.common.ui.router :as router]
     [eponai.client.parser.message :as msg]
     [eponai.common :as c]
     [taoensso.timbre :refer [debug]]
@@ -161,13 +162,13 @@
 
 (defmethod client-read :query/current-route
   [{:keys [db]} k p]
-  {:value (routes/current-route db)})
+  {:value (client.routes/current-route db)})
 
 (defmethod client-read :routing/app-root
   [{:keys [db] :as env} k p]
-  (let [current-route (routes/current-route db)]
+  (let [current-route (client.routes/current-route db)]
     (debug "Reading app-root: " [k :route current-route])
-    (parser.util/read-union env k p (:route current-route))))
+    (parser.util/read-union env k p (router/normalize-route (:route current-route)))))
 
 (defmethod client-read :query/business-model
   [e k p]
