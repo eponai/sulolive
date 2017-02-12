@@ -26,6 +26,28 @@ $chat-available-breakpoint: medium;
 			opacity: 1;
 		}
 	}
+	#sulo-wowza {
+		position: absolute;
+		height: 100%;
+		width: 100%;
+		top: 0;
+		left: 0;
+	}
+	#sulo-video-container {
+		#sulo-wowza-MediaController {
+			width: auto;
+			right: 0;
+			transition: right .25s ease-in-out;
+		}
+		&.sulo-show-chat {
+			#sulo-wowza-MediaController {
+				right: $chat-width-small;
+				@include breakpoint(large) {
+					right: $chat-width-large
+				}
+			}
+		}
+	}
 }
 
 .stream-chat-container {

@@ -39,4 +39,5 @@
              (when release?
                (dom/script {:src "https://kickoffpages-kickofflabs.netdna-ssl.com/w/89256/144137.js"}))])
 
+          (dom/script {:src "//player.wowza.com/player/1.0-latest/wowzaplayer.min.js"})
           (common/inline-javascript ["env.web.main.runsulo()"]))))))

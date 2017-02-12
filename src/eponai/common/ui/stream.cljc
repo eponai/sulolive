@@ -73,80 +73,68 @@
                       (catch (fn [e]
                                (error "Subscribe error: " e))))
                   subscriber)))
-  #?(:cljs
-     (subscribe-hls [this]
-                     (let [video (.getElementById js/document "video")
-                           hls (js/Hls.)
-                           store-id (get-in (om/props this) [:query/current-route :route-params :store-id])]
-                       (debug "STREAM STORE ID: " store-id)
-                       (.loadSource hls (str "http://localhost:1935/live/" store-id "/playlist.m3u8"))
-                       (.attachMedia hls video)
-                       (.on hls js/Hls.Events.MANIFEST_PARSED (fn []
-                                                                (debug "IN MANIFEST PARSED. PLAYING!?")
-                                                                (.play video))))))
-  #?(:cljs
-     (componentDidMount [this]
-                        ;(.publish this)
-                        ;; THIS ONE IS THE REAL ONE:
-                        ;; (.subscribe-hls this)
-                        ;(let [player (js/videojs "red5pro-subscriber")]
-                        ;    (.play player))
-                        ))
+  ;#?(:cljs
+  ;   (subscribe-hls [this]
+  ;                   (let [video (.getElementById js/document "video")
+  ;                         hls (js/Hls.)
+  ;                         store-id (get-in (om/props this) [:query/current-route :route-params :store-id])]
+  ;                     (debug "STREAM STORE ID: " store-id)
+  ;                     (.loadSource hls (str "http://localhost:1935/live/" store-id "/playlist.m3u8"))
+  ;                     (.attachMedia hls video)
+  ;                     (.on hls js/Hls.Events.MANIFEST_PARSED (fn []
+  ;                                                              (debug "IN MANIFEST PARSED. PLAYING!?")
+  ;                                                              (.play video))))))
+  (componentDidMount [this]
+    #?(:cljs
+       (js/WowzaPlayer.create "sulo-wowza"
+                              (clj->js {:license   "PLAY1-aaEJk-4mGcn-jW3Yr-Fxaab-PAYm4"
+                                        :title     "THis is some crazy title!"
+                                        ;"description"          "",
+                                        :sourceURL "http://www.streambox.fr/playlists/x36xhzz/x36xhzz.m3u8"
+                                        :autoPlay  true
+                                        :volume "75"
+                                        :uiShowDurationVsTimeRemaining true
+                                        ;"mute"                 false,
+                                        ;"loop"                 false,
+                                        ;"audioOnly"            false,
+                                        ;"uiShowQuickRewind"    true,
+                                        ;"uiQuickRewindSeconds" "30"
+                                        }))))
   (initLocalState [_]
     {:show-chat? true})
+
   (render [this]
     (let [{:keys [show-chat?]} (om/get-state this)
           {:keys [stream-name]} (om/get-computed this)
           messages [{:photo "/assets/img/collection-women.jpg"
-                     :text "this is some message"
-                     :user "Diana Gren"
+                     :text  "this is some message"
+                     :user  "Diana Gren"
                      }
                     {:photo "/assets/img/collection-men.jpg"
-                     :text "Hey there I was wondering something"
-                     :user "Rick"
+                     :text  "Hey there I was wondering something"
+                     :user  "Rick"
                      }
                     {:photo "/assets/img/collection-women.jpg"
-                     :user "Diana Gren"
-                     :text "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
+                     :user  "Diana Gren"
+                     :text  "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
                     {:photo "/assets/img/collection-women.jpg"
-                     :user "Diana Gren"
-                     :text "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
+                     :user  "Diana Gren"
+                     :text  "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
                     {:photo "/assets/img/collection-women.jpg"
-                     :user "Diana Gren"
-                     :text "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
+                     :user  "Diana Gren"
+                     :text  "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
                     {:photo "/assets/img/collection-women.jpg"
-                     :user "Diana Gren"
-                     :text "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}]]
+                     :user  "Diana Gren"
+                     :text  "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}]]
       (debug "STREAM PROPS:" (om/props this))
-      (dom/div #js {:id "sulo-video-container"}
+      (dom/div #js {:id "sulo-video-container" :className (when show-chat? "sulo-show-chat")}
         (dom/div #js {:id "sulo-video" :className "flex-video widescreen"}
-          (my-dom/div
-            (cond->> (css/add-class ::css/stream-chat-container)
-                     show-chat?
-                     (css/add-class :show))
-            (my-dom/div
-              (->> {:onClick #(om/update-state! this assoc :show-chat? (not show-chat?))}
-                   (css/add-class ::css/stream-toggle))
-              (my-dom/a (cond-> (->> (css/add-class ::button)
-                                     (css/add-class :expanded))
-                                show-chat?
-                                (->> (css/add-class :secondary)
-                                     (css/add-class :hollow)))
-                        (if show-chat?
-                          (dom/span nil ">>")
-                          (dom/i #js {:className "fa fa-comments fa-fw"}))))
-            (dom/div #js {:className "stream-chat-content"}
-              (dom/span nil "This is a message"))
-            (dom/div #js {:className "stream-chat-input"}
-              (dom/input #js {:type        "text"
-                              :placeholder "Your message..."})
-              (dom/a #js {:className "button expanded green"}
-                     (dom/span nil "Send"))))
-          (dom/video #js {:id "video"}
-                     ;#?(:cljs
-                     ;   (dom/source #js {:src  (str "http://" (.server-url this) ":5080/live/" (url->store-id) ".m3u8")
-                     ;                    :type "application/x-mpegURL"}))
-                     )
+          (dom/div #js {:id "sulo-wowza"})
+          ;(dom/video #js {:id "video"}
+          ;           ;#?(:cljs
+          ;           ;   (dom/source #js {:src  (str "http://" (.server-url this) ":5080/live/" (url->store-id) ".m3u8")
+          ;           ;                    :type "application/x-mpegURL"}))
+          ;           )
           (dom/div #js {:className "stream-title-container"}
             (dom/span nil stream-name))
           (my-dom/div
@@ -154,11 +142,11 @@
                      show-chat?
                      (css/add-class :show))
             (dom/a #js {:className "button show-button"
-                        :onClick #(om/update-state! this assoc :show-chat? true)} (dom/i #js {:className "fa fa-comments fa-fw"}))
+                        :onClick   #(om/update-state! this assoc :show-chat? true)} (dom/i #js {:className "fa fa-comments fa-fw"}))
             (my-dom/div
               nil
               (dom/a #js {:className "button hollow secondary hide-button"
-                          :onClick #(om/update-state! this assoc :show-chat? false)}
+                          :onClick   #(om/update-state! this assoc :show-chat? false)}
                      (dom/i #js {:className "fa fa-chevron-right fa-fw"})))
 
             ;(menu/horizontal nil
@@ -167,8 +155,8 @@
             (dom/div #js {:className "content"}
               (menu/vertical
                 #?(:cljs
-                   (css/add-class :messages-list {:onMouseOver #(set! js/document.body.style.overflow "hidden")
-                                                  :onMouseOut  #(set! js/document.body.style.overflow "scroll")})
+                        (css/add-class :messages-list {:onMouseOver #(set! js/document.body.style.overflow "hidden")
+                                                       :onMouseOut  #(set! js/document.body.style.overflow "scroll")})
                    :clj (css/add-class :messages-list))
                 (map (fn [msg]
                        (menu/item (css/add-class :message-container)
@@ -187,9 +175,9 @@
                 (my-dom/div
                   (css/grid-row)
                   (my-dom/div (css/grid-column)
-                    (dom/input #js {:className   ""
-                                    :type        "text"
-                                    :placeholder "Your message..."}))
+                              (dom/input #js {:className   ""
+                                              :type        "text"
+                                              :placeholder "Your message..."}))
                   (my-dom/div (->> (css/grid-column)
                                    (css/add-class :shrink))
                               (dom/a #js {:className "button green small"}
