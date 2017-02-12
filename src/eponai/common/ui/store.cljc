@@ -62,13 +62,15 @@
               (my-dom/div
                 (->> (css/grid-column)
                      (css/grid-column-order {:small 2 :medium 1}))
-                (when (or (some? stream) cover)
-                  (dom/div #js {:className "stream-container"}
-                    (stream/->Stream (om/computed (:proxy/stream props)
-                                                  {:stream-name (:stream/name stream)}))
+                (cond (some? stream)
+                      (dom/div #js {:className "stream-container"}
+                        (stream/->Stream (om/computed (:proxy/stream props)
+                                                      {:stream-name (:stream/name stream)}))
                     ;(dom/div #js {:className "content-item-title-section"}
                     ;  (dom/span nil (:stream/name stream)))
-                    )))
+                    )
+                      (some? cover)
+                      (photo/cover {:src (:photo/path cover)})))
 
 
 
@@ -83,7 +85,7 @@
                        (css/align :center))
                   (my-dom/div
                     (->> (css/grid-column)
-                         (css/grid-column-size {:small 4 :medium 2 :large 1}))
+                         (css/grid-column-size {:small 12 :medium 2 :large 1}))
                     (photo/circle {:src (get-in store [:store/photo :photo/path])}))
                   (my-dom/div
                     (->> (css/grid-column)
@@ -98,9 +100,8 @@
                          (css/text-align :center)
                          (css/grid-column-size {:small 12 :medium 4 :large 3}))
                     (dom/div nil
-                      (dom/p nil
-                             (dom/a #js {:className "button"} "+ Follow")
-                             (dom/a #js {:className "button hollow"} "Contact"))))))
+                      (dom/a #js {:className "button"} "+ Follow")
+                      (dom/a #js {:className "button hollow"} "Contact")))))
               (my-dom/div
                 (->> (css/grid-column)
                      (css/add-class :quote-section)

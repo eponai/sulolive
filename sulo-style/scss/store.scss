@@ -54,49 +54,26 @@
 }
 
 #sulo-store {
-	.page-content {
-		padding-top: 1rem;
-		@include breakpoint(medium) {
-			padding-top: 0;
-		}
-	}
-	// @include chat-open(false);
-	// &.chat-open {
-	// 	@include chat-open(true);
-	// }
-	.cover {
-		// padding-bottom: 3%;
-		// paddin g-bottom: flex-video($flexvideo-ratio-widescreen);
-	}
 	.store-container {
 		padding: 0.5rem 0;
-		// background: $light-gray;
-		// padding: 0;
-		border-bottom: 1px solid $light-gray;
-		// box-shadow: 0 0 3px 0 rgba($primary-color, 0.2);
-		// background: rgba(map-get($foundation-palette, primary), 0.05);
-		.photo.cover, .store-info {
-			box-shadow: 0 1px 3px 0 rgba($medium-gray, 0.2);
+		a {
+			margin: 0;
 		}
-		.store-info {
-			// padding: 1rem;
-			border-right: 1px solid $light-gray;
-			// background: lighten($light-gray, 5%);
-			// border-right: none;
-		}
-		// .column:last-child {
-		// 	display: flex;
+		// .photo.cover, .store-info {
+		// 	box-shadow: 0 1px 3px 0 rgba($medium-gray, 0.2);
 		// }
+
 		.row:last-child {
 			margin: 1rem auto;
 		}
-		.photo.cover {
-			flex: 1;
-			height: auto;
+		// .photo.cover {
+			// flex: 1;
+			// height: auto;
 			// border: 1px solid $light-gray;
-		}
+		// }
 		.photo-container.circle {
 			max-width: 10rem;
+			margin: 0 auto;
 			// margin: 1rem auto;
 		}
 		.follow-section {
@@ -106,9 +83,11 @@
 			}
 		}
 	}
-			.quote-section {
-			margin: 2rem 0;
-		}
+	.quote-section {
+		margin: 2rem 0;
+		color: $dark-gray;
+		font-style: italic;
+	}
 	#sulo-video {
 		margin-bottom: 0;
 		border: 1px solid $light-gray;

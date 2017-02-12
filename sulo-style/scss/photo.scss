@@ -110,8 +110,13 @@ $primary-color: map-get($foundation-palette, primary);
 		}		
 	}
 	&.cover {
-		height: 100%;
-		padding: 0;
+		display: none;
+		@include breakpoint(medium) {
+			display: block;
+			height: 100%;
+			padding-top: 25%
+		}
+		// padding: 0;
 		// min-height: 20rem;
 	}
 

@@ -100,7 +100,7 @@
   [{:keys [db db-history query]} _ _]
   {:value (->> (query/all db db-history query {:where '[[?e :store.item/name]]})
                (take 5)
-               (feature-all db-history :item))})
+               (feature-all db-history :store.item))})
 
 (defmethod server-read :query/featured-stores
   [{:keys [db db-history query]} _ _]

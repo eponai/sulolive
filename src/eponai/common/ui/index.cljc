@@ -63,9 +63,10 @@
      :classes [:full]}
     (photo/with-overlay
       nil
-      (if full?
-        (photo/full {:src url})
-        (photo/photo {:src url}))
+      (photo/photo {:src url})
+      ;(if full?
+      ;  (photo/full {:src url})
+      ;  (photo/photo {:src url}))
       (my-dom/div
         (->> (css/text-align :center))
         (dom/p nil (dom/span nil title))))))
@@ -90,6 +91,7 @@
   (render [this]
     (let [{:keys [proxy/navbar query/featured-items query/featured-streams]} (om/props this)
           {:keys [input-search]} (om/get-state this)]
+      (debug "Featured items: " featured-items)
       (dom/div #js {:id "sulo-index" :className "sulo-page"}
         (common/page-container
           {:navbar navbar}
@@ -173,7 +175,8 @@
                                     "Shop by collection"
                                     (div nil
                                          (div
-                                           (->> (css/grid-row))
+                                           (->> (css/grid-row)
+                                                (css/grid-row-columns {:small 1 :medium 2}))
                                            (div
                                              (->> (css/grid-column)
                                                   (css/add-class :content-item))
@@ -181,13 +184,9 @@
                                                                   :title "Home"}))
                                            (div
                                              (->> (css/grid-column)
-                                                  (css/add-class :content-item)
-                                                  (css/grid-column-size {:small 12 :medium 5}))
+                                                  (css/add-class :content-item))
                                              (collection-element {:url   "/assets/img/collection-women.jpg"
-                                                                  :title "Women"
-                                                                  :full? true})))
-                                         (div
-                                           (->> (css/grid-row))
+                                                                  :title "Women"}))
                                            (div
                                              (->> (css/grid-column)
                                                   (css/add-class :content-item))
@@ -195,11 +194,9 @@
                                                                   :title "Men"}))
                                            (div
                                              (->> (css/grid-column)
-                                                  (css/add-class :content-item)
-                                                  (css/grid-column-size {:small 12 :medium 5}))
+                                                  (css/add-class :content-item))
                                              (collection-element {:url   "/assets/img/collection-kids.jpg"
-                                                                  :title "Kids"
-                                                                  :full? true}))))
+                                                                  :title "Kids"}))))
                                     ;(map (fn [s t]
                                     ;       (collection-element {:url (first (:store/featured-img-src s))
                                     ;                            :title t}))

@@ -100,9 +100,9 @@
                      :text "this is some message"
                      :user "Diana Gren"
                      }
-                    {:photo "/assets/img/collection-women.jpg"
+                    {:photo "/assets/img/collection-men.jpg"
                      :text "Hey there I was wondering something"
-                     :user "Diana Gren"
+                     :user "Rick"
                      }
                     {:photo "/assets/img/collection-women.jpg"
                      :user "Diana Gren"
