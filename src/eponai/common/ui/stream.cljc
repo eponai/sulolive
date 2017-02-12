@@ -107,6 +107,15 @@
                      }
                     {:photo "/assets/img/collection-women.jpg"
                      :user "Diana Gren"
+                     :text "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
+                    {:photo "/assets/img/collection-women.jpg"
+                     :user "Diana Gren"
+                     :text "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
+                    {:photo "/assets/img/collection-women.jpg"
+                     :user "Diana Gren"
+                     :text "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
+                    {:photo "/assets/img/collection-women.jpg"
+                     :user "Diana Gren"
                      :text "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}]]
       (debug "STREAM PROPS:" (om/props this))
       (dom/div #js {:id "sulo-video-container"}
@@ -157,7 +166,10 @@
             ;                            (dom/a nil "Chat")))
             (dom/div #js {:className "content"}
               (menu/vertical
-                (css/add-class :messages-list)
+                #?(:cljs
+                   (css/add-class :messages-list {:onMouseOver #(set! js/document.body.style.overflow "hidden")
+                                                  :onMouseOut  #(set! js/document.body.style.overflow "scroll")})
+                   :clj (css/add-class :messages-list))
                 (map (fn [msg]
                        (menu/item (css/add-class :message-container)
                                   (my-dom/div

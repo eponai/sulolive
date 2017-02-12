@@ -70,7 +70,7 @@ $input-radius: $global-radius !default;
 /// @type Number
 $button-radius: $global-radius !default;
 
-@mixin form-element ($spacing: $form-spacing) {
+@mixin sl-form-element ($spacing: $form-spacing) {
   $height: ($input-font-size + ($spacing * 1.5) - rem-calc(1));
 
   display: block;

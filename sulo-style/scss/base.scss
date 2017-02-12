@@ -15,8 +15,12 @@ $footer-height: 4rem;
 
 $navbar-zindex: 3;
 
-$chat-width: rem-calc(300);
+$chat-width-large: rem-calc(300);
+$chat-width-small: rem-calc(200);
 
+// ::-webkit-scrollbar {
+    // width: 10px;
+// }
 html, body {
 	overflow-x: hidden;
 	min-height: 100%;

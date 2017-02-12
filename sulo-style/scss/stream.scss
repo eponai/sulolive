@@ -3,7 +3,7 @@ $chat-zindex: 2;
 $chat-container-bg-color: $primary-color;
 $chat-container-box-shadow-color: $chat-container-bg-color;
 
-$chat-available-breakpoint: large;
+$chat-available-breakpoint: medium;
 
 .stream-container {
 	position: relative;
@@ -39,14 +39,20 @@ $chat-available-breakpoint: large;
 	top: 0;
 	bottom: 0;
 	// right: 0;
-	width: $chat-width;
+	width: $chat-width-small;
+	@include breakpoint(large) {
+		width: $chat-width-large;
+	}
 	transition: right .25s ease-in-out;
 	flex-direction: column;
 
 	.show-button {
 		margin-top: 1rem;
 		position: absolute;
-		right: $chat-width;
+		right: $chat-width-small;
+		@include breakpoint(large) {
+			right: $chat-width-large;
+		}
 		top: 0;
 		opacity: 1;
 		visibility: visible;
@@ -65,6 +71,13 @@ $chat-available-breakpoint: large;
 		}
 	}
 	.content {
+		ul {
+			-webkit-overflow-scrolling: touch;
+			overflow-y: scroll;
+			@include breakpoint(large) {
+				overflow-y: auto;
+			}
+		}
 		position: relative;
 		display: flex;		
 		flex-direction: column;
@@ -73,7 +86,10 @@ $chat-available-breakpoint: large;
 	}
 	@include breakpoint($chat-available-breakpoint) {
 		display: flex;
-		right: -$chat-width;
+		right: -$chat-width-small;
+		@include breakpoint(large) {
+			right: -$chat-width-large;
+		}
 		&.show {
 			right: 0;
 		}
