@@ -95,6 +95,7 @@
      )
   (render [this]
     (let [{:keys [show-chat?]} (om/get-state this)
+          {:keys [stream-name]} (om/get-computed this)
           messages [{:photo "/assets/img/collection-women.jpg"
                      :text "this is some message"
                      :user "Diana Gren"
@@ -136,6 +137,9 @@
                      ;   (dom/source #js {:src  (str "http://" (.server-url this) ":5080/live/" (url->store-id) ".m3u8")
                      ;                    :type "application/x-mpegURL"}))
                      )
+          (dom/div #js {:className "stream-title-container"}
+            (dom/span nil stream-name)
+            )
           (my-dom/div
             (cond->> (css/add-class ::css/stream-chat-container)
                      show-chat?

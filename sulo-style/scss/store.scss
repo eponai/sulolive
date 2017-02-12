@@ -69,23 +69,26 @@
 		// paddin g-bottom: flex-video($flexvideo-ratio-widescreen);
 	}
 	.store-container {
-		margin-top: 1rem;
-		margin-bottom: 1rem;
+		padding: 0.5rem 0;
+		// background: $light-gray;
 		// padding: 0;
-		border: 1px solid $light-gray;
+		border-bottom: 1px solid $light-gray;
 		// box-shadow: 0 0 3px 0 rgba($primary-color, 0.2);
 		// background: rgba(map-get($foundation-palette, primary), 0.05);
 		.photo.cover, .store-info {
 			box-shadow: 0 1px 3px 0 rgba($medium-gray, 0.2);
 		}
 		.store-info {
-			padding: 1rem;
+			// padding: 1rem;
 			border-right: 1px solid $light-gray;
 			// background: lighten($light-gray, 5%);
 			// border-right: none;
 		}
-		.column:last-child {
-			display: flex;
+		// .column:last-child {
+		// 	display: flex;
+		// }
+		.row:last-child {
+			margin: 1rem auto;
 		}
 		.photo.cover {
 			flex: 1;
@@ -94,9 +97,18 @@
 		}
 		.photo-container.circle {
 			max-width: 10rem;
-			margin: 1rem auto;
+			// margin: 1rem auto;
+		}
+		.follow-section {
+			margin-top: 1rem;
+			@include breakpoint(medium) {
+				margin-top: 0;
+			}
 		}
 	}
+			.quote-section {
+			margin: 2rem 0;
+		}
 	#sulo-video {
 		margin-bottom: 0;
 		border: 1px solid $light-gray;
@@ -110,7 +122,7 @@
 	// }
 	.stream-container {
 		// max-width: 75rem;
-		padding-top: 1rem;
+		// padding-top: 1rem;
 		// @include text-shadow(light);
 		span {
 			font-style: normal;
@@ -161,8 +173,7 @@
 		}
 		.menu-container {
 			.column {
-				padding-left: 0;
-				padding-right: 0;
+				padding: 0;
 			}
 			.menu {
 				padding: 1rem 0;

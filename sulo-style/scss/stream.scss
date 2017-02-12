@@ -6,8 +6,9 @@ $chat-container-box-shadow-color: $chat-container-bg-color;
 .stream-container {
 	// max-width: 75rem;
 	// position: relative;
-	padding-top: 1rem;
+	// padding-top: 1rem;
 	// @include text-shadow(light);
+	position: relative;
 	span {
 		font-style: normal;
 	}
@@ -24,8 +25,26 @@ $chat-container-box-shadow-color: $chat-container-bg-color;
 	// margin: 0 auto 1rem auto;
 	// min-height: 10rem;
 	@include breakpoint(large) {
-		padding: 0;
+		// padding: 0;
 		// font-size: 1.25rem;
+	}
+	&:hover {
+		.stream-title-container {
+			opacity: 1;
+		}
+	}
+
+	.stream-title-container {
+		opacity: 0;
+		padding: 1rem;
+		position: absolute;
+		top: 0;
+		left: 0;
+		color: $white;
+		font-size: 1.25rem;
+		transition: opacity .25s ease-in-out;
+		// width: 100%;
+		background: linear-gradient(rgba($chat-container-bg-color, 0.5), rgba($chat-container-bg-color, 0.25));
 	}
 }
 

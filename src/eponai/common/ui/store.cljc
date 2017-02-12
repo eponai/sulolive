@@ -64,14 +64,17 @@
                      (css/grid-column-order {:small 2 :medium 1}))
                 (when (or (some? stream) cover)
                   (dom/div #js {:className "stream-container"}
-                    (stream/->Stream (:proxy/stream props))
-                    (dom/div #js {:className "content-item-title-section"}
-                      (dom/span nil (:stream/name stream))))))
+                    (stream/->Stream (om/computed (:proxy/stream props)
+                                                  {:stream-name (:stream/name stream)}))
+                    ;(dom/div #js {:className "content-item-title-section"}
+                    ;  (dom/span nil (:stream/name stream)))
+                    )))
 
 
 
               (my-dom/div
                 (->> (css/grid-column)
+                     (css/add-class :store-container)
                      (css/grid-column-order {:small 1 :medium 2}))
                 (my-dom/div
                   (->> (css/grid-row)
@@ -88,16 +91,22 @@
                     (dom/div nil (dom/span nil (dom/strong #js {:className "store-name"} store-name)))
                     (dom/div nil (dom/p nil
                                         (dom/i #js {:className "fa fa-map-marker fa-fw"})
-                                        (dom/strong nil (dom/small nil "North Vancouver, BC"))))
+                                        (dom/strong nil (dom/small nil "North Vancouver, BC")))))
+                  (my-dom/div
+                    (->> (css/grid-column)
+                         (css/add-class :follow-section)
+                         (css/text-align :center)
+                         (css/grid-column-size {:small 12 :medium 4 :large 3}))
                     (dom/div nil
                       (dom/p nil
                              (dom/a #js {:className "button"} "+ Follow")
-                             (dom/a #js {:className "button hollow"} "Contact")))))
+                             (dom/a #js {:className "button hollow"} "Contact"))))))
+              (my-dom/div
+                (->> (css/grid-column)
+                     (css/add-class :quote-section)
+                     (css/grid-column-order {:small 3 :medium 3}))
                 (my-dom/div
-                  (->> (css/grid-row)
-                       css/grid-column
-                       (css/add-class :expanded)
-                       (css/text-align :center))
+                  (css/text-align :center)
                   (dom/span nil "Keep calm and wear pretty stuff"))))
 
             ;(my-dom/div
