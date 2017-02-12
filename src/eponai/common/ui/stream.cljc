@@ -43,7 +43,7 @@
 (defui Stream
   static om/IQuery
   (query [this]
-    [{:query/stream-config [:ui.singleton.stream-config/hostname]}])
+    [:query/current-route])
   Object
   #?(:cljs
      (server-url [this]
@@ -70,9 +70,21 @@
                                (error "Subscribe error: " e))))
                   subscriber)))
   #?(:cljs
+     (subscribe-hls [this]
+                     (let [video (.getElementById js/document "video")
+                           hls (js/Hls.)
+                           store-id (get-in (om/props this) [:query/current-route :route-params :store-id])]
+                       (debug "STREAM STORE ID: " store-id)
+                       (.loadSource hls (str "http://localhost:1935/live/" store-id "/playlist.m3u8"))
+                       (.attachMedia hls video)
+                       (.on hls js/Hls.Events.MANIFEST_PARSED (fn []
+                                                                (debug "IN MANIFEST PARSED. PLAYING!?")
+                                                                (.play video))))))
+  #?(:cljs
      (componentDidMount [this]
                         ;(.publish this)
-                        ;(.subscribe this)
+                        ;; THIS ONE IS THE REAL ONE:
+                        ;; (.subscribe-hls this)
                         ;(let [player (js/videojs "red5pro-subscriber")]
                         ;    (.play player))
                         )
@@ -81,10 +93,6 @@
     (debug "STREAM PROPS:" (om/props this))
     (dom/div #js {:id "sulo-video-container"}
       (dom/div #js {:id "sulo-video" :className "flex-video widescreen"}
-        (dom/video #js {:id "red5pro-subscriber" :controls true :className "video-element video-js vjs-sublime-skin"}
-                   ;#?(:cljs
-                   ;   (dom/source #js {:src  (str "http://" (.server-url this) ":5080/live/" (url->store-id) ".m3u8")
-                   ;                    :type "application/x-mpegURL"}))
-                   )))))
+        (dom/video #js {:id "video"})))))
 
 (def ->Stream (om/factory Stream))

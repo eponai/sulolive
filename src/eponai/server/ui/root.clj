@@ -27,7 +27,7 @@
 
           ;(dom/script {:src "https://cdn.auth0.com/js/lock/10.6/lock.min.js"})
 
-
+          (dom/script {:src "https://cdn.jsdelivr.net/hls.js/latest/hls.min.js"})
           (when  (= route :coming-soon)
             [
              (dom/script {:src "https://cdn.auth0.com/js/lock/10.6/lock.min.js"})
