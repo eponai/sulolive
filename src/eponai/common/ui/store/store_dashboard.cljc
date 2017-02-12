@@ -218,8 +218,16 @@
       (product-edit-form component selected-product))
     (products-list component store)))
 
-(defn store-stream [component store route-params]
-  )
+(defn store-stream [component store]
+  (let [message (msg/last-message component 'stream-token/generate)]
+    (debug ["STREAM_STORE_MESSAGE: " message :componen-state (om/get-state component)])
+    (dom/div #js {}
+      (dom/input #js {:value (if (msg/final? message)
+                               (:token (msg/message message))
+                               "Click ->>")})
+      (dom/a #js {:className "button"
+                  :onClick   #(msg/om-transact! component `[(stream-token/generate ~{:store-id (:db/id store)})])}
+             (dom/strong nil "Generate a token!")))))
 
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
@@ -314,10 +322,13 @@
                                "Products")
                 (menu/item-tab {:active? (= route :store-dashboard/orders)
                                 :href    (routes/url :store-dashboard/orders {:store-id (:db/id store)})}
-                               "Orders"))))
+                               "Orders")
+                (menu/item-tab {:active? (= route :store-dashboard/stream)
+                                :href    (routes/url :store-dashboard/stream {:store-id (:db/id store)})}
+                               "Stream"))))
           (condp = route
             :store-dashboard/orders (store-orders this store route-params)
-            :store-dashboard/stream (store-stream this store route-params)
+            :store-dashboard/stream (store-stream this store)
             :store-dashboard/product-list (products-list this store)
             :store-dashboard/create-product (product-edit-form this)
             :store-dashboard/product (product-edit-form this (find-product store (:product-id route-params)))

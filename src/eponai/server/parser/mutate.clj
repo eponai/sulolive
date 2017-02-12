@@ -9,6 +9,7 @@
     [eponai.server.api :as api]
     [eponai.server.external.stripe :as stripe]
     [eponai.common :as c]
+    [buddy.sign.jwt :as jwt]
     [eponai.server.api.store :as store]
     [eponai.server.external.aws-s3 :as s3]))
 
@@ -60,6 +61,27 @@
                    photo (s3/upload-photo (:system/aws-s3) (:photo params))]
                (db/transact state [photo [:db/add user-eid :user/photo (:db/id photo)]])))})
 
+(defmutation stream-token/generate
+  [{:keys [state db parser ::parser/return ::parser/exception auth system] :as env} k {:keys [store-id]}]
+  ;; Responing with a map works!
+  {:success return
+   :error   "Error generating stream token"}
+  {:action (fn []
+             (if-let [store (db/one-with db {:where   '[[?e :store/owners ?owner]
+                                                        [?owner :store.owner/user ?u]
+                                                        [?u :user/email ?email]]
+                                             :symbols {'?e     store-id
+                                                       '?email (:email auth)}})]
+               {:token (jwt/sign {:auth       (:email auth)
+                                  :streamName (str store)}
+                                 (or (env/env :jwt-secret-stream-tokens)
+                                     ;; TODO: Do we really want dev secret hardcoded?
+                                     ;; TODO: Make this a stubbable external.
+                                     "secret"))}
+               (throw (ex-info "Can only generate tokens for streams which you are owner for"
+                               {:store-id store-id
+                                :mutation k
+                                :auth     auth}))))})
 
 ;######## STRIPE ########
 
