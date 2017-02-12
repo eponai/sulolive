@@ -174,15 +174,13 @@
               (dom/div #js {:className "input-container"}
                 (my-dom/div
                   (css/grid-row)
-                  (my-dom/div
-                    (->> (css/grid-column)
-                         (css/grid-column-size {:small 10}))
+                  (my-dom/div (css/grid-column)
                     (dom/input #js {:className   ""
                                     :type        "text"
                                     :placeholder "Your message..."}))
                   (my-dom/div (->> (css/grid-column)
-                                   (css/grid-column-size {:small 2}))
-                              (dom/a #js {:className "button expanded green small"}
+                                   (css/add-class :shrink))
+                              (dom/a #js {:className "button green small"}
                                      (dom/span nil "Send"))))))))))))
 
 (def ->Stream (om/factory Stream))
