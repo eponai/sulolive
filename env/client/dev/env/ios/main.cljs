@@ -10,7 +10,7 @@
 (def ip "localhost")
 
 (figwheel/watch-and-reload
-  :websocket-url (str "ws://" ip ":3449/figwheel-ws")
+  :websocket-url (str "ws://" ip ":3450/figwheel-ws")
   :heads-up-display false
   :jsload-callback #(app/reload!))
 

@@ -182,7 +182,7 @@
                         :prep-tasks ["compile" "prod-build-web" "css"]}
 
              :mobile   {:dependencies 
-                                      [[org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT"
+                                      [[org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT-4"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
                                     ;; [[org.omcljs/om "1.0.0-alpha46"
                                     ;;   :exclusions [cljsjs/react cljsjs/react-dom]]
@@ -206,7 +206,7 @@
                                                                 :optimizations :none}}]}}
 
              :mob-prod {:dependencies 
-                                      [[org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT"
+                                      [[org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT-4"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]]
                                     ;; [[org.omcljs/om "1.0.0-alpha46"
                                     ;;   :exclusions [cljsjs/react cljsjs/react-dom]]]
