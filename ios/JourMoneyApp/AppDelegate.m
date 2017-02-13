@@ -13,26 +13,21 @@
 #import "RCTRootView.h"
 #import "RCTLinkingManager.h"
 
-#import <FBSDKCoreKit/FBSDKCoreKit.h>
-
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application openURL:(NSURL *)url
   sourceApplication:(NSString *)sourceApplication annotation:(id)annotation
 {
-  BOOL facebookHandled = [[FBSDKApplicationDelegate sharedInstance] application:application openURL:url sourceApplication:sourceApplication annotation:annotation];
 
-  return facebookHandled ?: [RCTLinkingManager application:application openURL:url
+  return [RCTLinkingManager application:application openURL:url
                                          sourceApplication:sourceApplication annotation:annotation];
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
-  [FBSDKAppEvents activateApp];
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-  [[FBSDKApplicationDelegate sharedInstance] application:application didFinishLaunchingWithOptions:launchOptions];
   NSURL *jsCodeLocation;
 
   /**
