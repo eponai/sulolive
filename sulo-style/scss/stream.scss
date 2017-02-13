@@ -1,6 +1,6 @@
 $chat-zindex: 2;
 
-$chat-container-bg-color: $primary-color;
+$chat-container-bg-color: $black;
 $chat-container-box-shadow-color: $chat-container-bg-color;
 
 $chat-available-breakpoint: medium;
@@ -28,34 +28,52 @@ $chat-available-breakpoint: medium;
 	}
 	#sulo-wowza {
 		position: absolute;
-		height: 100%;
-		width: 100%;
+		// height: 100%;
+		// width: 100%;
 		top: 0;
-		left: 0;
+		// left: 0;
+		bottom: 0;
+		// margin: 0 auto;
 	}
 	#sulo-video-container {
-		#sulo-wowza-MediaController {
+		.jw-controlbar {
+			transition: margin .25s ease-in-out;
+			margin-right: 0;
 			width: auto;
-			right: 0;
-			transition: right .25s ease-in-out;
 		}
+		// #sulo-wowza-MediaController {
+		// 	width: auto;
+		// 	right: 0;
+		// 	transition: right .25s ease-in-out;
+		// }
 		&.sulo-show-chat {
-			#sulo-wowza-MediaController {
-				right: $chat-width-small;
+			.jw-controlbar {
+				margin-right: $chat-width-small;
 				@include breakpoint(large) {
-					right: $chat-width-large
+					margin-right: $chat-width-large;
 				}
 			}
+			// #sulo-wowza-MediaController {
+			// 	right: $chat-width-small;
+			// 	@include breakpoint(large) {
+			// 		right: $chat-width-large
+			// 	}
+			// }
 		}
+	}
+}
+.fullscreen {
+	.stream-chat-container {
+		z-index: 2147483647;
 	}
 }
 
 .stream-chat-container {
 	z-index: $chat-zindex;
 	display: none;
-	background: linear-gradient(to right, rgba($chat-container-bg-color, 0.4), rgba($chat-container-bg-color, 0.6));
+	background: linear-gradient(to right, rgba($chat-container-bg-color, 0.5), rgba($chat-container-bg-color, 0.9));
 	// border-left: 1px solid rgba($bg-color, 0.05);
-	box-shadow: -1px 0 13px 0 rgba($chat-container-box-shadow-color, 0.25);
+	box-shadow: -1px 0 10rem 0 rgba($chat-container-box-shadow-color, 0.35);
 	padding: 0;
 	position: absolute;
 	top: 0;
@@ -158,7 +176,7 @@ $chat-available-breakpoint: medium;
 	}
 	.input-container {
 		padding: 0.5rem;
-		background: $chat-container-bg-color;
+		background: rgba($chat-container-bg-color, 0.25);
 		.row {
 			margin: 0;
 		}

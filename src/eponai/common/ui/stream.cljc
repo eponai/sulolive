@@ -52,27 +52,6 @@
   #?(:cljs
      (server-url [this]
                  (get-in (om/props this) [:query/stream-config :ui.singleton.stream-config/hostname])))
-  #?(:cljs
-     (subscribe [this]
-                (let [subscriber (new js/red5prosdk.Red5ProSubscriber)
-                      view (new js/red5prosdk.PlaybackView "red5pro-subscriber")
-                      _ (.attachSubscriber view subscriber)
-                      server-url (.server-url this)
-                      conf (video-config server-url)]
-                  (debug "subscriber: " subscriber " view " view)
-                  (debug (clj->js conf))
-                  ;;(.on subscriber "*" js/window.red5proHandleSubscriberEvent)
-                  (.. subscriber
-                      (setPlaybackOrder #js ["rtc"])
-                      (init (clj->js conf))
-                      (then (fn [sub]
-                              (debug "playing subscriber: " sub)
-                              (.play sub)
-                              ;;(.off subscriber "*" js/window.red5proHandleSubscriberEvent)
-                              ))
-                      (catch (fn [e]
-                               (error "Subscribe error: " e))))
-                  subscriber)))
   ;#?(:cljs
   ;   (subscribe-hls [this]
   ;                   (let [video (.getElementById js/document "video")
@@ -86,25 +65,40 @@
   ;                                                              (.play video))))))
   (componentDidMount [this]
     #?(:cljs
-       (js/WowzaPlayer.create "sulo-wowza"
-                              (clj->js {:license   "PLAY1-aaEJk-4mGcn-jW3Yr-Fxaab-PAYm4"
-                                        :title     "THis is some crazy title!"
-                                        ;"description"          "",
-                                        :sourceURL "http://www.streambox.fr/playlists/x36xhzz/x36xhzz.m3u8"
-                                        :autoPlay  true
-                                        :volume "75"
-                                        :uiShowDurationVsTimeRemaining true
-                                        ;"mute"                 false,
-                                        ;"loop"                 false,
-                                        ;"audioOnly"            false,
-                                        ;"uiShowQuickRewind"    true,
-                                        ;"uiQuickRewindSeconds" "30"
-                                        }))))
+       (do
+         (set! (.-key js/jwplayer) "UO97+AUXyaO4JyC16F+PtgrCT4+YBDrgXWTdYQ==")
+         (let [player (js/jwplayer "sulo-wowza")]
+           (.setup
+             player
+             (clj->js {:playlist "//content.jwplatform.com/feeds/F2YKWOWd.rss"
+                       :controls {:enableFullScreen true}
+                       :aspectratio "16:9"
+                       :stretching "uniform"
+                       :width "100%"}))
+           (.on player "fullscreen"
+                (fn [e]
+                  (debug "I am now fullscreen: " (.-fullscreen e))
+                  (om/update-state! this assoc :fullscreen? (.-fullscreen e))))))
+       ;(js/WowzaPlayer.create "sulo-wowza"
+       ;                       (clj->js {:license   "PLAY1-aaEJk-4mGcn-jW3Yr-Fxaab-PAYm4"
+       ;                                 :title     "THis is some crazy title!"
+       ;                                 ;"description"          "",
+       ;                                 :sourceURL "http://www.streambox.fr/playlists/x36xhzz/x36xhzz.m3u8"
+       ;                                 :autoPlay  true
+       ;                                 :volume "75"
+       ;                                 :uiShowDurationVsTimeRemaining true
+       ;                                 ;"mute"                 false,
+       ;                                 ;"loop"                 false,
+       ;                                 ;"audioOnly"            false,
+       ;                                 ;"uiShowQuickRewind"    true,
+       ;                                 ;"uiQuickRewindSeconds" "30"
+       ;                                 }))
+       ))
   (initLocalState [_]
     {:show-chat? true})
 
   (render [this]
-    (let [{:keys [show-chat?]} (om/get-state this)
+    (let [{:keys [show-chat? fullscreen?]} (om/get-state this)
           {:keys [stream-name]} (om/get-computed this)
           messages [{:photo "/assets/img/collection-women.jpg"
                      :text  "this is some message"
@@ -127,60 +121,62 @@
                      :user  "Diana Gren"
                      :text  "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}]]
       (debug "STREAM PROPS:" (om/props this))
-      (dom/div #js {:id "sulo-video-container" :className (when show-chat? "sulo-show-chat")}
-        (dom/div #js {:id "sulo-video" :className "flex-video widescreen"}
-          (dom/div #js {:id "sulo-wowza"})
-          ;(dom/video #js {:id "video"}
-          ;           ;#?(:cljs
-          ;           ;   (dom/source #js {:src  (str "http://" (.server-url this) ":5080/live/" (url->store-id) ".m3u8")
-          ;           ;                    :type "application/x-mpegURL"}))
-          ;           )
-          (dom/div #js {:className "stream-title-container"}
-            (dom/span nil stream-name))
+      (dom/div #js {:id "sulo-video-container" :className (str "flex-video widescreen "
+                                                               (when show-chat? "sulo-show-chat")
+                                                               (when fullscreen? " fullscreen"))}
+        ;(dom/div #js {:id "sulo-video"})
+        (dom/div #js {:id "sulo-wowza"})
+        ;(dom/video #js {:id "video"}
+        ;           ;#?(:cljs
+        ;           ;   (dom/source #js {:src  (str "http://" (.server-url this) ":5080/live/" (url->store-id) ".m3u8")
+        ;           ;                    :type "application/x-mpegURL"}))
+        ;           )
+        (dom/div #js {:className "stream-title-container"}
+          (dom/span nil stream-name))
+        (my-dom/div
+          (cond->> (css/add-class ::css/stream-chat-container)
+                   show-chat?
+                   (css/add-class :show))
+          (dom/a #js {:className "button show-button"
+                      :onClick   #(om/update-state! this assoc :show-chat? true)} (dom/i #js {:className "fa fa-comments fa-fw"}))
           (my-dom/div
-            (cond->> (css/add-class ::css/stream-chat-container)
-                     show-chat?
-                     (css/add-class :show))
-            (dom/a #js {:className "button show-button"
-                        :onClick   #(om/update-state! this assoc :show-chat? true)} (dom/i #js {:className "fa fa-comments fa-fw"}))
-            (my-dom/div
-              nil
-              (dom/a #js {:className "button hollow secondary hide-button"
-                          :onClick   #(om/update-state! this assoc :show-chat? false)}
-                     (dom/i #js {:className "fa fa-chevron-right fa-fw"})))
+            nil
+            (dom/a #js {:className "button hollow secondary hide-button"
+                        :onClick   #(om/update-state! this assoc :show-chat? false)}
+                   (dom/i #js {:className "fa fa-chevron-right fa-fw"})))
 
-            ;(menu/horizontal nil
-            ;                 (menu/item nil
-            ;                            (dom/a nil "Chat")))
-            (dom/div #js {:className "content"}
-              (menu/vertical
-                #?(:cljs
-                        (css/add-class :messages-list {:onMouseOver #(set! js/document.body.style.overflow "hidden")
-                                                       :onMouseOut  #(set! js/document.body.style.overflow "scroll")})
-                   :clj (css/add-class :messages-list))
-                (map (fn [msg]
-                       (menu/item (css/add-class :message-container)
-                                  (my-dom/div
-                                    (->> (css/grid-row)
-                                         (css/align :top))
-                                    (my-dom/div (->> (css/grid-column)
-                                                     (css/grid-column-size {:small 2}))
-                                                (photo/circle {:src (:photo msg)}))
-                                    (my-dom/div (css/grid-column)
-                                                (dom/small nil
-                                                           (dom/strong nil (str (:user msg) ": "))
-                                                           (dom/span nil (:text msg)))))))
-                     messages))
-              (dom/div #js {:className "input-container"}
-                (my-dom/div
-                  (css/grid-row)
-                  (my-dom/div (css/grid-column)
-                              (dom/input #js {:className   ""
-                                              :type        "text"
-                                              :placeholder "Your message..."}))
-                  (my-dom/div (->> (css/grid-column)
-                                   (css/add-class :shrink))
-                              (dom/a #js {:className "button green small"}
-                                     (dom/span nil "Send"))))))))))))
+          ;(menu/horizontal nil
+          ;                 (menu/item nil
+          ;                            (dom/a nil "Chat")))
+          (dom/div #js {:className "content"}
+            (menu/vertical
+              #?(:cljs
+                      (css/add-class :messages-list {:onMouseOver #(set! js/document.body.style.overflow "hidden")
+                                                     :onMouseOut  #(set! js/document.body.style.overflow "scroll")})
+                 :clj (css/add-class :messages-list))
+              (map (fn [msg]
+                     (menu/item (css/add-class :message-container)
+                                (my-dom/div
+                                  (->> (css/grid-row)
+                                       (css/align :top))
+                                  (my-dom/div (->> (css/grid-column)
+                                                   (css/grid-column-size {:small 2}))
+                                              (photo/circle {:src (:photo msg)}))
+                                  (my-dom/div (css/grid-column)
+                                              (dom/small nil
+                                                         (dom/strong nil (str (:user msg) ": "))
+                                                         (dom/span nil (:text msg)))))))
+                   messages))
+            (dom/div #js {:className "input-container"}
+              (my-dom/div
+                (css/grid-row)
+                (my-dom/div (css/grid-column)
+                            (dom/input #js {:className   ""
+                                            :type        "text"
+                                            :placeholder "Your message..."}))
+                (my-dom/div (->> (css/grid-column)
+                                 (css/add-class :shrink))
+                            (dom/a #js {:className "button green small"}
+                                   (dom/span nil "Send")))))))))))
 
 (def ->Stream (om/factory Stream))

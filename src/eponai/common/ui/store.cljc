@@ -125,6 +125,6 @@
                              (map (fn [p]
                                     (pi/->ProductItem (om/computed {:product p}
                                                                    {:display-content (item/->Product p)})))
-                                  items))))))))
+                                  (concat items items items)))))))))
 
 (def ->Store (om/factory Store))
