@@ -106,7 +106,7 @@
   :aliases {"all-deps"               ^{:doc "Fetches both clj, cljs and node dependencies."}
                                      ["do"
                                       ["deps"]
-                                      ["pod-deps"]
+                                   ;;   ["pod-deps"]
                                       ["npm-deps"]
                                       ["css"]]
             "npm-deps"               ["do"
