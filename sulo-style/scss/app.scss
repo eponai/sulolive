@@ -51,6 +51,11 @@
 @include motion-ui-transitions;
 @include motion-ui-animations;
 
+@import "mixins";
+@import "forms/forms";
+@include sulo-flex-video;
+@include sulo-forms;
+
 @import "base";
 @import "navbar";
 @import "start";
@@ -66,8 +71,5 @@
 @import "profile";
 @import "spinner";
 @import "quill";
-@import "forms/forms";
-@import "mixins";
 
-@include sulo-flex-video;
-@include sulo-forms;
+

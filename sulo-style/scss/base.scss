@@ -18,9 +18,16 @@ $navbar-zindex: 3;
 $chat-width-large: rem-calc(300);
 $chat-width-small: rem-calc(200);
 
-// ::-webkit-scrollbar {
-    // width: 10px;
-// }
+::-webkit-scrollbar {
+		width: 5px;
+		// background: $black;
+}
+::-webkit-scrollbar-track {
+		background: $white;
+}
+::-webkit-scrollbar-thumb {
+		background: map-get($foundation-palette,primary);
+}
 html, body {
 	overflow-x: hidden;
 	min-height: 100%;

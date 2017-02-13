@@ -13,7 +13,7 @@ $form-spacing: rem-calc(16) !default;
 // @import 'error';
 
 @mixin sulo-forms {
-  @include sl-form-text;
+  @include sulo-form-text;
   // @include foundation-form-checkbox;
   // @include foundation-form-label;
   // @include foundation-form-helptext;

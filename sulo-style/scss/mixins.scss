@@ -14,3 +14,20 @@
     overflow-y: hidden;
   }
 }
+
+@mixin sulo-flex-video {
+  .flex-video {
+    @include flex-video;
+
+    &.widescreen {
+      padding-bottom: flex-video(16 by 9);
+      @include breakpoint(large) {
+          padding-bottom: flex-video($flexvideo-ratio-widescreen);
+        }
+    }
+
+    &.vimeo {
+      padding-top: 0;
+    }
+  }
+}

@@ -43,6 +43,7 @@ $chat-available-breakpoint: medium;
 	@include breakpoint(large) {
 		width: $chat-width-large;
 	}
+
 	transition: right .25s ease-in-out;
 	flex-direction: column;
 
@@ -77,12 +78,23 @@ $chat-available-breakpoint: medium;
 			@include breakpoint(large) {
 				overflow-y: auto;
 			}
+			&::-webkit-scrollbar {
+	     		width: 0;
+	     		// background: $black;
+			}
+			&::-webkit-scrollbar-track {
+	      		background: $black;
+			}
+			&::-webkit-scrollbar-thumb {
+	      		background: map-get($foundation-palette,green);
+			}
 		}
 		position: relative;
 		display: flex;		
 		flex-direction: column;
 		justify-content: flex-end;
 		flex: 1;
+
 	}
 	@include breakpoint($chat-available-breakpoint) {
 		display: flex;

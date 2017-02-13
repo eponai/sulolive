@@ -68,7 +68,7 @@
 		// }
 	}
 	input {
-		@include form-element(rem-calc(16));
+		@include sulo-form-element(rem-calc(16));
 		margin: 0;
 	}
 }

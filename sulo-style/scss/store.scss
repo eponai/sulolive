@@ -36,23 +36,6 @@
 // 	}
 // }
 
-@mixin sulo-flex-video {
-  .flex-video {
-    @include flex-video;
-
-    &.widescreen {
-    	padding-bottom: flex-video(16 by 9);
-    	@include breakpoint(large) {
-      		padding-bottom: flex-video($flexvideo-ratio-widescreen);
-      	}
-    }
-
-    &.vimeo {
-      padding-top: 0;
-    }
-  }
-}
-
 #sulo-store {
 	.store-container {
 		padding: 0.5rem 0;

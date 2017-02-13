@@ -70,7 +70,7 @@ $input-radius: $global-radius !default;
 /// @type Number
 $button-radius: $global-radius !default;
 
-@mixin sl-form-element ($spacing: $form-spacing) {
+@mixin sulo-form-element ($spacing: $form-spacing) {
   $height: ($input-font-size + ($spacing * 1.5) - rem-calc(1));
 
   display: block;
@@ -105,14 +105,14 @@ $button-radius: $global-radius !default;
   }
 }
 
-@mixin sl-form-text {
+@mixin sulo-form-text {
   // Text inputs
   #{text-inputs()},
   textarea {
-    @include form-element;
+    @include sulo-form-element;
 
     &.large {
-      @include form-element(rem-calc(26));
+      @include sulo-form-element(rem-calc(26));
     }
     -webkit-appearance: none;
     -moz-appearance: none;
