@@ -1,4 +1,4 @@
-#!/bin/bash -eu
+#!/bin/bash -eux
 
 script_dir="$(dirname $0)"
 cd "$script_dir/.."
@@ -10,7 +10,7 @@ DOCKER_IMAGE="$2"
 docker push $DOCKER_IMAGE 
 
 function env_name_of_current_staging {
-  staging_url="sulo-stage.us-east-1"
+  staging_url="sulo-stage.us-east-1.elasticbeanstalk.com"
 
   aws --output text elasticbeanstalk describe-environments | \
     grep "$staging_url" | \
