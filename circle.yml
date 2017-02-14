@@ -25,9 +25,11 @@ dependencies:
     - npm install -g bower
     - npm install -g foundation-cli
   override:
-    - lein deps
+    - lein all-deps
     - lein npm-deps
     - lein css
+    - lein with-profile web deps
+    - lein with-profile mobile deps
 
 test:
   override:
