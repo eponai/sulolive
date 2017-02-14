@@ -18,7 +18,7 @@ dependencies:
   cache_directories:
     - sulo-style/node_modules
     - sulo-style/bower_components
-    - /opt/circleci/nodejs/v4.2.2/lib/node_modules
+    - /opt/circleci/nodejs/v4.2.2
   pre:
     - pip install awscli
     - npm install -g npm
