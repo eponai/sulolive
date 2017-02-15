@@ -22,7 +22,7 @@ dependencies:
     - sulo-style/bower_components
     - /opt/circleci/nodejs/v4.2.2
   pre:
-    - pip install awscli
+    - pip install -r requirements.txt
     - npm install -g npm
     - npm install -g bower
     - npm install -g foundation-cli
