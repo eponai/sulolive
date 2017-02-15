@@ -1,4 +1,6 @@
-(ns eponai.web.utils)
+(ns eponai.web.utils
+  (:require
+    [taoensso.timbre :refer [debug]]))
 
 (def breakpoints
   {:small   0
@@ -17,3 +19,28 @@
         (> size 1024) :large
         (> size 640) :medium
         :else :small))
+
+(defn elements-by-class
+  ([classname]
+    (elements-by-class js/document classname))
+  ([el classname]
+   (array-seq (.getElementsByClassName el classname))))
+
+(defn element-by-id [id]
+  (.getElementById js/document id))
+
+(defn elements-by-name [n]
+  (array-seq (.getElementsByName n)))
+
+(defn input-values-by-class
+  ([classname]
+    (input-values-by-class js/document classname))
+  ([el classname]
+   (map #(.-value %) (elements-by-class el classname))))
+
+(defn first-input-value-by-class
+  ([classname]
+    (first-input-value-by-class js/document classname))
+  ([el classname]
+   (not-empty (first (input-values-by-class el classname)))))
+
