@@ -25,6 +25,11 @@
           (dom/script {:src  (common/budget-js-path cljs-build-id)
                        :type common/text-javascript})
 
+          (dom/script {:src       "https://cdn.greta.io/greta.min.js"
+                       :type      common/text-javascript
+                       :id        "gretaScript"
+                       :data-ac   "b554c0b026bb448362dfe657846bf982"
+                       :data-lazy "true"})
           ;(dom/script {:src "https://cdn.auth0.com/js/lock/10.6/lock.min.js"})
 
           (dom/script {:src "https://cdn.jsdelivr.net/hls.js/latest/hls.min.js"})
