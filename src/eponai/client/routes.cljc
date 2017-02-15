@@ -41,7 +41,7 @@
      (om/transact! reconciler (cond-> [(list 'routes/set-route! {:route route
                                                                  :route-params route-params})]
                                       :always (into tx)
-                                      queue? (into (om/transform-reads reconciler [root-route-key])))))))
+                                      queue? (into (om/transform-reads reconciler [root-route-key :query/current-route])))))))
 
 (defn url
   "Takes a route and its route-params and returns an url"
