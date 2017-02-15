@@ -14,7 +14,8 @@ function env_name_of_current_staging {
 
   aws --output text elasticbeanstalk describe-environments | \
     grep "$staging_url" | \
-    grep -o 'sulo-stage\s\|sulo-green\s' 
+    grep -o 'sulo-stage\s\|sulo-green\s' | \
+    tr -d '[[:blank:]]'
 }
 
 # Elastic Beanstalk vars
