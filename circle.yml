@@ -16,6 +16,7 @@ machine:
 
 dependencies:
   cache_directories:
+    - "~/.cache/pip"
     - "~/docker"
     - node_modules
     - bower_components
