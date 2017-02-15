@@ -39,7 +39,7 @@
            (when on-editor-created
              (on-editor-created editor))))))
   (render [this]
-    (dom/div nil
+    (dom/div #js {:className "rich-text-input"}
       (dom/div #js {:id "quill-editor" :className "sl-quill-editor"}))))
 
 (def ->QuillEditor (om/factory QuillEditor))
