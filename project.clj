@@ -4,6 +4,7 @@
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [
+                 [org.clojure/clojure "1.9.0-alpha14"]
                  [amazonica "0.3.85"]
                  [org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT-4"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
@@ -22,7 +23,6 @@
                  [com.taoensso/timbre "4.7.4"]
                  [environ "1.0.1"]
                  [hiccup "1.0.5"]
-                 [org.clojure/clojure "1.9.0-alpha14"]
                  [org.clojure/data.generators "0.1.2"]
                  [org.clojure/core.async "0.2.391"]
                  [org.clojure/core.memoize "0.5.8"]         ; needed to work around lein+core.async dependency issue.
@@ -73,10 +73,14 @@
                  [natal-shell "0.3.0"]
 
                  ;; Testing
-                 [lein-doo "0.1.7"]
+                 [lein-doo "0.1.7"
+                  :exclusions [org.clojure/clojure]]
                  [devcards "0.2.1-6"]
                  [org.clojure/test.check "0.9.0"]]
-  :exclusions [[org.clojure/test.check][org.clojure/clojure][org.clojure/clojurescript]]
+
+  :exclusions [org.clojure/test.check
+               org.clojure/clojure
+               org.clojure/clojurescript]
 
   :jvm-opts ^:replace ["-Xms512m" "-Xmx2048m" "-server"
                        "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1"
@@ -86,10 +90,9 @@
   :plugins [
            ;; [lein-npm "0.6.1"]
             [lein-shell "0.5.0"]
-            [lein-doo "0.1.6"]
-            [lein-cljsbuild "1.1.5"]
-            [lein-figwheel "0.5.7"]
-            [lein-ring "0.9.7"]
+            [lein-doo "0.1.7" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
+            [lein-cljsbuild "1.1.5" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
+            [lein-figwheel "0.5.7" :exclusions [org.clojure/clojure]]
             [lein-test-out "0.3.1"]
             [lein-environ "1.0.1"]]
   
@@ -250,7 +253,8 @@
                                                              ;;   :pretty-print true
                                                              ;;   :verbose true
                                                              }}]}}
-             :web      {:dependencies [[figwheel-sidecar "0.5.7"]]
+             :web      {:exclusions [org.clojure/clojure org.clojure/clojurescript]
+                        :dependencies [[figwheel-sidecar "0.5.7"]]
                         :cljsbuild {:builds [{:id           "dev"
                                               :figwheel     {:on-jsload "eponai.web.figwheel/reload!"}
                                               :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
