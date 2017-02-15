@@ -16,6 +16,7 @@ machine:
 
 dependencies:
   cache_directories:
+    - "~/docker"
     - node_modules
     - bower_components
     - sulo-style/node_modules
