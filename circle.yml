@@ -22,6 +22,7 @@ dependencies:
     - sulo-style/node_modules
     - sulo-style/bower_components
     - /opt/circleci/nodejs/v4.2.2/bin
+    - /opt/circleci/nodejs/v4.2.2/lib
     - /opt/circleci/nodejs/v4.2.2/lib/node_modules
   pre:
     - pip install -r requirements.txt
