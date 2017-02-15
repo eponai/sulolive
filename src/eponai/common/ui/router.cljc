@@ -6,7 +6,7 @@
     [eponai.common.ui.shopping-bag :as bag]
     [eponai.common.ui.store :as store]
     [eponai.common.ui.store.new-store :as new-store]
-    [eponai.common.ui.store.store-dashboard :as store-dashboard]
+    [eponai.common.ui.store.dashboard :as store-dashboard]
     [eponai.common.ui.goods :as goods]
     [eponai.common.ui.index :as index]
     [eponai.common.ui.product :as product]
@@ -28,8 +28,8 @@
                      :factory   store/->Store}
    :new-store       {:component new-store/NewStore
                      :factory   new-store/->NewStore}
-   :store-dashboard {:component store-dashboard/StoreDashboard
-                     :factory   store-dashboard/->StoreDashboard}
+   :store-dashboard {:component store-dashboard/Dashboard
+                     :factory   store-dashboard/->Dashboard}
    :checkout        {:component bag/ShoppingBag
                      :factory   bag/->ShoppingBag}
    :shopping-bag    {:component bag/ShoppingBag

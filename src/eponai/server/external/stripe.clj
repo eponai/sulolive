@@ -11,7 +11,7 @@
   (:import
     (com.stripe Stripe)
     (com.stripe.exception CardException)
-    (com.stripe.model Customer Card Charge Subscription Account Product ExternalAccountCollection ExternalAccount BankAccount SKU Inventory)
+    (com.stripe.model Customer Card Charge Subscription Account Product ExternalAccountCollection ExternalAccount BankAccount SKU Inventory Order)
     (com.stripe.net RequestOptions)))
 
 (defn set-api-key [api-key]
@@ -89,7 +89,9 @@
     "Get a managed account for a seller from Stripe.
     Opts is a map with following keys:
 
-    :country - A two character string code for the country of the seller, e.g. 'US'."))
+    :country - A two character string code for the country of the seller, e.g. 'US'.")
+
+  (get-orders [this account-secret]))
 
 (defn request-options [account-id]
   (.setStripeAccount (RequestOptions/builder) account-id))
@@ -185,7 +187,16 @@
     (let [sku (SKU/retrieve sku-id)
           deleted (.delete sku)]
       {:id      (.getId deleted)
-       :deleted (.getDeleted deleted)})))
+       :deleted (.getDeleted deleted)}))
+
+  (get-orders [_ account-secret]
+    (set-api-key account-secret)
+    (let [orders (Order/list nil)]
+      (debug "STRIPE order list: " orders)
+      (map (fn [o]
+             {:id   (.getId o)
+              :name (.getItems o)})
+           (.getData orders)))))
 
 (defn stripe [api-key]
   (->StripeRecord api-key))

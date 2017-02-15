@@ -85,3 +85,9 @@
       (debug "Deleted skus: " deleted-skus))
     (debug "Deleted product in stripe: " stripe-p)
     (db/transact state [[:db.fn/retractEntity product-id]])))
+
+(defn get-orders [{:keys [db system]} store-id]
+  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)
+        orders (stripe/get-orders (:system/stripe system) secret)]
+    (debug "Got orders: " (into [] orders))
+    orders))

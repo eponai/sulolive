@@ -1,6 +1,5 @@
-(ns eponai.common.ui.store.store-dashboard
+(ns eponai.common.ui.store.dashboard
   (:require
-    [eponai.common.ui.om-quill :as quill]
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.elements.css :as css]
@@ -11,28 +10,14 @@
     [eponai.client.routes :as routes]
     [eponai.common.ui.dom :as my-dom]
     [om.dom :as dom]
-    [om.next :as om #?(:clj :refer :cljs :refer-macros) [defui]]
+    [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common :as c]
-    [eponai.common.database :as db]
+    [eponai.common.ui.store.order-list :as ol]
+    [eponai.common.ui.store.order-edit-form :as oef]
     [eponai.common.ui.store.product-list :as pl]
-    [eponai.common.ui.store.product-edit-form :as pef]
-    [eponai.common.format :as f]))
-
-(def form-elements
-  {:input-price        "input-price"
-   :input-on-sale?     "input-on-sale?"
-   :input-sale-price   "input-sale-price"
-   :input-name         "input-name"
-   :input-desc         "input-desc"
-
-   :input-sku-value    "input-sku-value"
-   :input-sku-price    "input-sku-price"
-   :input-sku-quantity "input-sku-quantity"
-
-   :input-sku-group    "input-sku-group"})
+    [eponai.common.ui.store.product-edit-form :as pef]))
 
 (defn store-orders [component store opts]
   (my-dom/div (->> (css/grid-row)
@@ -51,23 +36,16 @@
   #?(:cljs (cljs.reader/read-string s)
      :clj  (clojure.data.json/read-str s :key-fn keyword)))
 
-(defn product-edit-form [component & [product]]
-  )
-
-(defn products-list [component store])
 
 (defn find-product [store product-id]
   (let [product-id (c/parse-long product-id)]
     (some #(when (= (:db/id %) product-id) %)
           (:store/items store))))
 
-;(defn store-products [component store {:keys [product-id action] :as rp}]
-;  (if (or (= action "create") (some? product-id))
-;    (let [product-id (when (some? product-id)
-;                       (c/parse-long product-id))
-;          selected-product (some #(when (= (:db/id %) product-id) %) (:store/items store))]
-;      (product-edit-form component selected-product))
-;    (products-list component store)))
+(defn find-order [store order-id]
+  (let [order-id (c/parse-long order-id)]
+    (some #(when (= (:order/id %) order-id) %)
+          (:store/orders store))))
 
 (defn store-stream [component store]
   (let [message (msg/last-message component 'stream-token/generate)]
@@ -83,7 +61,7 @@
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
 
-(defui StoreDashboard
+(defui Dashboard
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
@@ -102,6 +80,7 @@
      :query/current-route
      :query/messages
      {:proxy/product-edit (om/get-query pef/ProductEditForm)}
+     {:proxy/order-list (om/get-query ol/OrderList)}
      ])
   Object
   (initLocalState [_]
@@ -110,7 +89,7 @@
     #?(:cljs
        (client-utils/shouldComponentUpdate this n p)))
   (render [this]
-    (let [{:keys [proxy/navbar query/store query/current-route proxy/product-edit]} (om/props this)
+    (let [{:keys [proxy/navbar query/store query/current-route proxy/product-edit proxy/order-list]} (om/props this)
           {:keys [route route-params]} current-route]
       (debug "Dashboard current route: " current-route)
       (dom/div #js {:id "sulo-my-store" :className "sulo-page"}
@@ -128,21 +107,26 @@
                 (menu/item-tab {:active? (= route :store-dashboard/product-list)
                                 :href    (routes/url :store-dashboard/product-list {:store-id (:db/id store)})}
                                "Products")
-                (menu/item-tab {:active? (= route :store-dashboard/orders)
-                                :href    (routes/url :store-dashboard/orders {:store-id (:db/id store)})}
+                (menu/item-tab {:active? (= route :store-dashboard/order-list)
+                                :href    (routes/url :store-dashboard/order-list {:store-id (:db/id store)})}
                                "Orders")
                 (menu/item-tab {:active? (= route :store-dashboard/stream)
                                 :href    (routes/url :store-dashboard/stream {:store-id (:db/id store)})}
                                "Stream"))))
           (condp = route
-            :store-dashboard/orders (store-orders this store route-params)
+            :store-dashboard/order-list (ol/->OrderList (om/computed order-list
+                                                                     {:store store}))
+            :store-dashboard/order (oef/->OrderEditForm (om/computed {}
+                                                                     {:order (find-order store (:order-id route-params))}))
+            :store-dashboard/create-order (oef/->OrderEditForm)
+
             :store-dashboard/stream (store-stream this store)
             :store-dashboard/product-list (pl/->ProductList store)
             :store-dashboard/create-product (pef/->ProductEditForm (om/computed product-edit
                                                                                 {:route-params route-params}))
             :store-dashboard/product (pef/->ProductEditForm (om/computed product-edit
                                                                          {:route-params route-params
-                                                                          :product (find-product store (:product-id route-params))}))
+                                                                          :product      (find-product store (:product-id route-params))}))
             nil))))))
 
-(def ->StoreDashboard (om/factory StoreDashboard))
+(def ->Dashboard (om/factory Dashboard))

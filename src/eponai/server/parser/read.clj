@@ -9,7 +9,8 @@
     [taoensso.timbre :refer [error debug trace warn]]
     [eponai.server.auth :as auth]
     [eponai.server.external.stripe :as stripe]
-    [eponai.server.external.wowza :as wowza]))
+    [eponai.server.external.wowza :as wowza]
+    [eponai.server.api.store :as store]))
 
 (defmethod server-read :datascript/schema
   [{:keys [db db-history]} _ _]
@@ -28,6 +29,10 @@
   [{:keys [db db-history query]} _ {:keys [store-id]}]
   {:value (query/one db db-history query {:where   '[[?e]]
                                           :symbols {'?e store-id}})})
+
+(defmethod server-read :query/orders
+  [env _ {:keys [store-id]}]
+  {:value (store/get-orders env store-id)})
 
 (defmethod server-read :query/my-store
   [{:keys [db db-history query auth]} _ _]

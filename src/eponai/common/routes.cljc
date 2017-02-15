@@ -6,7 +6,8 @@
                  "/products" {""                         :store-dashboard/product-list
                               ["/" [#"create" :action]]  :store-dashboard/create-product
                               ["/" [#"\d+" :product-id]] :store-dashboard/product}
-                 "/orders"   {""                       :store-dashboard/orders
+                 "/orders"   {""                       :store-dashboard/order-list
+                              ["/" [#"create" :action]] :store-dashboard/create-order
                               ["/" [#"\d+" :order-id]] :store-dashboard/order}
                  "/stream"   :store-dashboard/stream}})
 

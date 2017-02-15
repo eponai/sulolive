@@ -33,6 +33,13 @@
       {:remote (assoc-in ast [:params :store-id] store-id)}
       {:value (common.read/multiply-store-items store)})))
 
+(defmethod client-read :query/orders
+  [{:keys [db query target ast route-params] :as env} _ _]
+  (let [store-id (c/parse-long (:store-id route-params))]
+    (if target
+      {:remote (assoc-in ast [:params :store-id] store-id)}
+      {:value []})))
+
 (defmethod client-read :query/my-store
   [{:keys [db query target ast route-params] :as env} _ _]
   (let [user-eid (auth/current-auth db)
