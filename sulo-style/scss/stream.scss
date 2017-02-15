@@ -35,7 +35,16 @@ $chat-available-breakpoint: medium;
 		bottom: 0;
 		// margin: 0 auto;
 	}
+	.sulo-spinner-container {
+		height: 100%;
+		width: 100%;
+		position: absolute;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
 	#sulo-video-container {
+		background: black;
 		.jw-controlbar {
 			transition: margin .25s ease-in-out;
 			margin-right: 0;

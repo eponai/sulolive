@@ -2,6 +2,7 @@
   (:require
     [eponai.common.stream :as stream]
     [eponai.common.ui.dom :as my-dom]
+    [eponai.common.ui.common :as common]
     [eponai.common.ui.elements.css :as css]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
@@ -74,7 +75,7 @@
          (let [player (js/jwplayer "sulo-wowza")]
            (.setup
              player
-             (clj->js {:playlist "//content.jwplatform.com/feeds/F2YKWOWd.rss"
+             (clj->js {:file "https://www.youtube.com/watch?v=FAJaQbWvXEY"
                        :controls {:enableFullScreen true}
                        :aspectratio "16:9"
                        :stretching "uniform"
@@ -128,6 +129,9 @@
       (dom/div #js {:id "sulo-video-container" :className (str "flex-video widescreen "
                                                                (when show-chat? "sulo-show-chat")
                                                                (when fullscreen? " fullscreen"))}
+        ;(common/loading-spinner)
+        (dom/div #js {:className "sulo-spinner-container"}
+          (dom/i #js {:className "fa fa-spinner fa-spin fa-4x"}))
         ;(dom/div #js {:id "sulo-video"})
         (dom/div #js {:id "sulo-wowza"})
         ;(dom/video #js {:id "video"}

@@ -21,8 +21,8 @@
              content))))
 
 (defn loading-spinner [& [opts]]
-  (dom/div #js {:className "spinner-overlay"}
-    (dom/div #js {:className "spinner"}
+  (dom/div #js {:className "sulo-spinner-overlay"}
+    (dom/div #js {:className "sulo-spinner"}
       (dom/img #js {:src "/assets/img/auth0-icon.png"}))))
 
 (defn viewer-element [opts view-count]
