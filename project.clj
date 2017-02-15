@@ -241,7 +241,7 @@
                                                              :externs ["src-hacks/js/externs/stripe-checkout.js"
                                                                        "src-hacks/js/externs/red5pro.js"]
                                                              :language-in :ecmascript5
-                                                             ;;   :parallel-build true
+                                                             :parallel-build true
                                                              ;;   :pseudo-names true
                                                              ;;   :pretty-print true
                                                              ;;   :verbose true
@@ -273,6 +273,7 @@
                                                              :output-dir    "resources/public/test/js/out"
                                                              :asset-path    "/test/js/out"
                                                              :main          "eponai.client.figwheel.test-main"
+                                                             :parallel-build true
                                                              :optimizations :none
                                                              :source-map    true
                                                              }}
@@ -281,6 +282,7 @@
                                               :compiler     {:output-to     "resources/public/doo-test/js/out/budget.js"
                                                              :output-dir    "resources/public/doo-test/js/out"
                                                              :main          "eponai.client.tests"
+                                                             :parallel-build true
                                                              :optimizations :none
                                                              :source-map    true
                                                              }}]}}}
