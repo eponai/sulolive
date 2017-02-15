@@ -1,6 +1,6 @@
 machine:
   node:
-    version: 4.2.2
+    version: 6.9.5
   java:
     version: openjdk8
   services:
@@ -22,9 +22,9 @@ dependencies:
     - bower_components
     - sulo-style/node_modules
     - sulo-style/bower_components
-    - /opt/circleci/nodejs/v4.2.2/bin
-    - /opt/circleci/nodejs/v4.2.2/lib
-    - /opt/circleci/nodejs/v4.2.2/lib/node_modules
+    - /opt/circleci/nodejs/v6.9.5/bin
+    - /opt/circleci/nodejs/v6.9.5/lib
+    - /opt/circleci/nodejs/v6.9.5/lib/node_modules
   pre:
     - pip install -r requirements.txt
     - npm install -g npm
