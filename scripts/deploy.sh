@@ -12,8 +12,6 @@ docker push $DOCKER_IMAGE
 function env_name_of_current_staging {
   staging_url="sulo-stage.us-east-1.elasticbeanstalk.com"
 
-  echo "DEBUG aws output:"
-  echo $(aws --output text elasticbeanstalk describe-environments)
   aws --output text elasticbeanstalk describe-environments | \
     grep "$staging_url" | \
     grep -o 'sulo-stage\s\|sulo-green\s' 
