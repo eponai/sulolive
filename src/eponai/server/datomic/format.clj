@@ -84,11 +84,12 @@
 
 (defn product [params]
   (cond-> {:db/id            (d/tempid :db.part/user)
-           :store.item/price (bigdec (:price params))
            :store.item/name  (:name params)
            :store.item/uuid  (:id params)}
           (some? (:description params))
-          (assoc :store.item/description (.getBytes (:description params)))))
+          (assoc :store.item/description (.getBytes (:description params)))
+          (some? (:price params))
+          (assoc :store.item/price (bigdec (:price params)))))
 
 (defn sku [{:keys [id value type quantity price]}]
   (cond-> {:db/id                (d/tempid :db.part/user)

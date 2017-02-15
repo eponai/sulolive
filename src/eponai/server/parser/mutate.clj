@@ -125,3 +125,10 @@
    :error   "Could not delete product"}
   {:action (fn []
              (store/delete-product env (:db/id product)))})
+
+(defmutation store/create-order
+  [env _ {:keys [order store-id] :as p}]
+  {:success "Order created"
+   :error   "Could not create order"}
+  {:action (fn []
+             (store/create-order env (c/parse-long store-id) order))})

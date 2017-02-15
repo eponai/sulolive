@@ -33,8 +33,7 @@
               (dom/thead
                 nil
                 (dom/tr nil
-                        (dom/th nil (dom/span nil "Delete"))
-                        (dom/th nil "Order ID")
+                        (dom/th nil "ID")
                         (dom/th nil "Amount")
                         (dom/th nil "Last Updated")))
               (dom/tbody
@@ -44,8 +43,6 @@
                                                       {:store-id (:db/id store)
                                                        :order-id (:order/id o)})]
                          (dom/tr nil
-                                 (dom/td nil
-                                         (dom/input #js {:type "checkbox"}))
                                  (dom/td nil
                                          (dom/a #js {:href product-link}
                                                 (dom/span nil (:order/id o))))

@@ -44,3 +44,8 @@
   ([el classname]
    (not-empty (first (input-values-by-class el classname)))))
 
+(defn input-value-by-id [id]
+  (let [el (element-by-id id)]
+    (when el
+      (not-empty (.-value el)))))
+

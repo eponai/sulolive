@@ -80,6 +80,7 @@
      :query/current-route
      :query/messages
      {:proxy/product-edit (om/get-query pef/ProductEditForm)}
+     {:proxy/order-edit (om/get-query oef/OrderEditForm)}
      {:proxy/order-list (om/get-query ol/OrderList)}
      ])
   Object
@@ -89,7 +90,7 @@
     #?(:cljs
        (client-utils/shouldComponentUpdate this n p)))
   (render [this]
-    (let [{:keys [proxy/navbar query/store query/current-route proxy/product-edit proxy/order-list]} (om/props this)
+    (let [{:keys [proxy/navbar query/store query/current-route proxy/product-edit proxy/order-list proxy/order-edit]} (om/props this)
           {:keys [route route-params]} current-route]
       (debug "Dashboard current route: " current-route)
       (dom/div #js {:id "sulo-my-store" :className "sulo-page"}
@@ -116,9 +117,11 @@
           (condp = route
             :store-dashboard/order-list (ol/->OrderList (om/computed order-list
                                                                      {:store store}))
-            :store-dashboard/order (oef/->OrderEditForm (om/computed {}
-                                                                     {:order (find-order store (:order-id route-params))}))
-            :store-dashboard/create-order (oef/->OrderEditForm)
+            :store-dashboard/order (oef/->OrderEditForm (om/computed order-edit
+                                                                     {:route-params route-params
+                                                                      :order (find-order store (:order-id route-params))}))
+            :store-dashboard/create-order (oef/->OrderEditForm (om/computed order-edit
+                                                                            {:route-params route-params}))
 
             :store-dashboard/stream (store-stream this store)
             :store-dashboard/product-list (pl/->ProductList store)

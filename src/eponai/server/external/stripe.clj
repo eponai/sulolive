@@ -91,7 +91,10 @@
 
     :country - A two character string code for the country of the seller, e.g. 'US'.")
 
-  (get-orders [this account-secret]))
+
+  ;; Orders
+  (get-orders [this account-secret])
+  (create-order [this account-secret params]))
 
 (defn request-options [account-id]
   (.setStripeAccount (RequestOptions/builder) account-id))
@@ -170,9 +173,9 @@
 
   (update-product [_ account-secret product-id params]
     (set-api-key account-secret)
-    (let [params {"name" (:name params)}
+    (let [new-params {"name" (:name params)}
           old-product (Product/retrieve product-id)
-          new-product (.update old-product params)]
+          new-product (.update old-product new-params)]
       {:id (.getId new-product)}))
 
   (delete-product [_ account-secret product-id]
@@ -189,14 +192,33 @@
       {:id      (.getId deleted)
        :deleted (.getDeleted deleted)}))
 
+  ;; Orders
   (get-orders [_ account-secret]
     (set-api-key account-secret)
     (let [orders (Order/list nil)]
       (debug "STRIPE order list: " orders)
       (map (fn [o]
              {:id   (.getId o)
-              :name (.getItems o)})
-           (.getData orders)))))
+              :amount (.getAmount o)
+              :updated (.getUpdated o)})
+           (.getData orders))))
+
+  (create-order [_ account-secret order]
+    (set-api-key account-secret)
+    (let [params {"currency" (:currency order)
+                  "items"    [{"amount" (c/parse-long (:amount order))
+                               "type"   "sku"
+                               "parent" "58a4b30e-e33e-442f-b018-a18284604e13"}]
+                  "shipping" {"address" {"city"        nil
+                                         "country"     nil
+                                         "line1"       nil
+                                         "line2"       nil
+                                         "postal_code" nil
+                                         "state"       nil}
+                              "name"    "This is my name"}}
+          new-order (Order/create params)]
+      {:id (.getId new-order)
+       :amount (.getAmount new-order)})))
 
 (defn stripe [api-key]
   (->StripeRecord api-key))

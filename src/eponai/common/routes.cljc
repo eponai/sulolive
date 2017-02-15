@@ -8,7 +8,7 @@
                               ["/" [#"\d+" :product-id]] :store-dashboard/product}
                  "/orders"   {""                       :store-dashboard/order-list
                               ["/" [#"create" :action]] :store-dashboard/create-order
-                              ["/" [#"\d+" :order-id]] :store-dashboard/order}
+                              ["/" [#"\w+" :order-id]] :store-dashboard/order}
                  "/stream"   :store-dashboard/stream}})
 
 (def routes

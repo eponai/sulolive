@@ -91,3 +91,9 @@
         orders (stripe/get-orders (:system/stripe system) secret)]
     (debug "Got orders: " (into [] orders))
     orders))
+
+(defn create-order [{:keys [state system]} store-id order]
+  (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
+        new-order (stripe/create-order (:system/stripe system) secret order)]
+    (debug "Created new order in STRIPE: " new-order)
+    new-order))

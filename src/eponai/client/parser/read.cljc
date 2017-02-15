@@ -38,7 +38,7 @@
   (let [store-id (c/parse-long (:store-id route-params))]
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value []})))
+      {:value (db/pull-all-with db '[*] {:where '[[?e :order/id]]})})))
 
 (defmethod client-read :query/my-store
   [{:keys [db query target ast route-params] :as env} _ _]

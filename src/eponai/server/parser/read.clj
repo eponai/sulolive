@@ -32,7 +32,9 @@
 
 (defmethod server-read :query/orders
   [env _ {:keys [store-id]}]
-  {:value (store/get-orders env store-id)})
+  {:value (map (fn [o]
+                 (reduce-kv (fn [m k v] (assoc m (keyword "order" (name k)) v)) {} o))
+               (store/get-orders env store-id))})
 
 (defmethod server-read :query/my-store
   [{:keys [db db-history query auth]} _ _]
