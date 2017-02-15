@@ -43,9 +43,9 @@
           (:store/items store))))
 
 (defn find-order [store order-id]
-  (let [order-id (c/parse-long order-id)]
-    (some #(when (= (:order/id %) order-id) %)
-          (:store/orders store))))
+  ;(let [order-id (c/parse-long order-id)])
+  (some #(when (= (:order/id %) order-id) %)
+        (:store/orders store)))
 
 (defn store-stream [component store]
   (let [message (msg/last-message component 'stream-token/generate)]
@@ -118,8 +118,7 @@
             :store-dashboard/order-list (ol/->OrderList (om/computed order-list
                                                                      {:store store}))
             :store-dashboard/order (oef/->OrderEditForm (om/computed order-edit
-                                                                     {:route-params route-params
-                                                                      :order (find-order store (:order-id route-params))}))
+                                                                     {:route-params route-params}))
             :store-dashboard/create-order (oef/->OrderEditForm (om/computed order-edit
                                                                             {:route-params route-params}))
 

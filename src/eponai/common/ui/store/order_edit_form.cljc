@@ -20,7 +20,8 @@
 (defui OrderEditForm
   static om/IQuery
   (query [_]
-    [:query/messages])
+    [:query/messages
+     :query/order])
   Object
   #?(:cljs
      (create-order [this]
@@ -40,7 +41,7 @@
                                             :store-id store-id})
                                         :query/orders])))))
   (render [this]
-    (let [{:keys [order]} (om/get-computed this)
+    (let [{:keys [query/order]} (om/props this)
           {:order/keys [id amount currency]} order
           is-loading? false]
       (dom/div nil

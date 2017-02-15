@@ -4,7 +4,8 @@
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.elements.css :as css]
     [om.dom :as dom]
-    [om.next :as om :refer [defui]]))
+    [om.next :as om :refer [defui]]
+    [eponai.common.format.date :as date]))
 
 (defui OrderList
   static om/IQuery
@@ -51,7 +52,7 @@
                                                 (dom/span nil (:order/amount o))))
                                  (dom/td nil
                                          (dom/a #js {:href product-link}
-                                                (dom/span nil (:order/update o)))))))
+                                                (dom/span nil (date/date->string (* 1000 (:order/updated o)))))))))
                      orders)))))))))
 
 (def ->OrderList (om/factory OrderList))

@@ -68,13 +68,10 @@
 
 (defn delete-product [{:keys [state system]} product-id]
   (let [{:keys [store.item/uuid store.item/skus] :as item} (db/pull (db/db state) [:store.item/uuid {:store.item/skus [:db/id :store.item.sku/uuid]}] product-id)
-        _ (debug "Delete product: " product-id)
-        _ (debug "Got item: " (into {} (db/entity (db/db state) product-id)))
         something (into {} (db/entity (db/db state) product-id))
         {:keys [stripe/secret]} (db/pull-one-with (db/db state) [:stripe/secret] {:where   '[[?s :store/items ?p]
                                                                                              [?s :store/stripe ?e]]
                                                                                   :symbols {'?p product-id}})
-        _ (debug "Got SKUs: " skus " something; " (mapv #(into {} %) (:store.item/skus something)))
         deleted-skus (mapv (fn [sku]
                             (stripe/delete-sku (:system/stripe system) secret (str (:store.item.sku/uuid sku))))
                           skus)
@@ -86,9 +83,15 @@
     (debug "Deleted product in stripe: " stripe-p)
     (db/transact state [[:db.fn/retractEntity product-id]])))
 
-(defn get-orders [{:keys [db system]} store-id]
+(defn get-order [{:keys [db system]} store-id order-id]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)
-        orders (stripe/get-orders (:system/stripe system) secret)]
+        order (stripe/get-order (:system/stripe system) secret order-id)]
+    (debug "Got orders: " (into [] order))
+    order))
+
+(defn list-orders [{:keys [db system]} store-id]
+  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)
+        orders (stripe/list-orders (:system/stripe system) secret)]
     (debug "Got orders: " (into [] orders))
     orders))
 

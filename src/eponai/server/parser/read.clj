@@ -34,7 +34,11 @@
   [env _ {:keys [store-id]}]
   {:value (map (fn [o]
                  (reduce-kv (fn [m k v] (assoc m (keyword "order" (name k)) v)) {} o))
-               (store/get-orders env store-id))})
+               (store/list-orders env store-id))})
+
+(defmethod server-read :query/order
+  [env _ {:keys [order-id store-id]}]
+  {:value (store/get-order env store-id order-id)})
 
 (defmethod server-read :query/my-store
   [{:keys [db db-history query auth]} _ _]

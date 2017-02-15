@@ -85,7 +85,7 @@
 
     :country - A two character string code for the country of the seller, e.g. 'US'.")
 
-  (get-products [this account-secret]
+  (list-products [this account-secret]
     "Get a managed account for a seller from Stripe.
     Opts is a map with following keys:
 
@@ -93,7 +93,8 @@
 
 
   ;; Orders
-  (get-orders [this account-secret])
+  (get-order [this account-secret order-id])
+  (list-orders [this account-secret])
   (create-order [this account-secret params]))
 
 (defn request-options [account-id]
@@ -130,7 +131,7 @@
        :secret (.getSecret keys)
        :publ   (.getPublishable keys)}))
   IStripeAccount
-  (get-products [_ account-secret]
+  (list-products [_ account-secret]
     (set-api-key account-secret)
     (let [products (Product/list nil)]
       (map (fn [p]
@@ -193,14 +194,23 @@
        :deleted (.getDeleted deleted)}))
 
   ;; Orders
-  (get-orders [_ account-secret]
+  (get-order [_ account-secret order-id]
+    (set-api-key account-secret)
+    (let [order (Order/retrieve order-id)]
+      {:id       (.getId order)
+       :amount   (.getAmount order)
+       :updated  (.getUpdated order)
+       :currency (.getCurrency order)}))
+
+  (list-orders [_ account-secret]
     (set-api-key account-secret)
     (let [orders (Order/list nil)]
       (debug "STRIPE order list: " orders)
       (map (fn [o]
-             {:id   (.getId o)
-              :amount (.getAmount o)
-              :updated (.getUpdated o)})
+             {:id       (.getId o)
+              :amount   (.getAmount o)
+              :updated  (.getUpdated o)
+              :currency (.getCurrency o)})
            (.getData orders))))
 
   (create-order [_ account-secret order]
