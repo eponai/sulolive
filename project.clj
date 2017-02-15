@@ -73,10 +73,10 @@
                  [natal-shell "0.3.0"]
 
                  ;; Testing
-                 [lein-doo "0.1.6"]
+                 [lein-doo "0.1.7"]
                  [devcards "0.2.1-6"]
                  [org.clojure/test.check "0.9.0"]]
-  :exclusions [[org.clojure/test.check]]
+  :exclusions [[org.clojure/test.check][org.clojure/clojure][org.clojure/clojurescript]]
 
   :jvm-opts ^:replace ["-Xms512m" "-Xmx2048m" "-server"
                        "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1"
@@ -86,7 +86,7 @@
            ;; [lein-npm "0.6.1"]
             [lein-shell "0.5.0"]
             [lein-doo "0.1.6"]
-            [lein-cljsbuild "1.1.4"]
+            [lein-cljsbuild "1.1.5"]
             [lein-figwheel "0.5.7"]
             [lein-ring "0.9.7"]
             [lein-test-out "0.3.1"]
