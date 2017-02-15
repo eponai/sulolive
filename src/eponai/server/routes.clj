@@ -99,15 +99,16 @@
     {:result ret
      :meta   m}))
 
+(defn bidi-route-handler [route]
+  ;; Currently all routes render the same way.
+  ;; Enter route specific stuff here.
+  (fn [request]
+    (server.ui/render-site (request->props (assoc request :handler route)))))
+
 (defroutes
   member-routes
   ;; Hooks in bidi routes with compojure.
-  (GET "*" _ (bidi.ring/make-handler common.routes/routes
-                                     (fn [route]
-                                       ;; Currently all routes render the same way.
-                                       ;; Enter route specific stuff here.
-                                       (fn [request]
-                                         (server.ui/render-site (request->props (assoc request :handler route))))))))
+  (GET "*" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler)))
 
 (defroutes
   site-routes
@@ -140,6 +141,8 @@
   (GET "/logout" request (-> (r/redirect "/coming-soon")
                              (assoc-in [:cookies "token"] {:value "kill" :max-age 1})))
 
+  (GET "/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
+  (GET "/sell/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
   (context "/" [:as request]
     (cond-> member-routes
             (or (::m/in-production? request))
