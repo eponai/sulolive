@@ -306,6 +306,4 @@
   ;; cljs:
   ;;;;;;;;;;;;;
   :doo {:paths {:phantom "./node_modules/phantomjs/bin/phantomjs"}}
-  :test-commands {"frontend-unit-tests"
-                    ["node_modules/karma/bin/karma" "start" "karma.conf.js" "--single-run"]}
 )
