@@ -16,6 +16,8 @@ machine:
 
 dependencies:
   cache_directories:
+    - node_modules
+    - bower_components
     - sulo-style/node_modules
     - sulo-style/bower_components
     - /opt/circleci/nodejs/v4.2.2
