@@ -44,9 +44,9 @@
   [{:keys [db query target ast route-params] :as env} _ _]
   (let [{:keys [order-id store-id]} route-params]
     (if target
-      {:remote (-> ast
-                   (assoc-in [:params :store-id] (c/parse-long store-id))
-                   (assoc-in [:params :order-id] order-id))}
+      {:remote (when order-id (-> ast
+                                  (assoc-in [:params :store-id] (c/parse-long store-id))
+                                  (assoc-in [:params :order-id] order-id)))}
       {:value (when order-id
                 (db/pull-one-with db '[*] {:where   '[[?e :order/id ?order]]
                                             :symbols {'?order order-id}}))})))

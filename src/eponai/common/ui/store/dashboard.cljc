@@ -1,36 +1,19 @@
 (ns eponai.common.ui.store.dashboard
   (:require
-    [eponai.client.parser.message :as msg]
-    [eponai.common.ui.navbar :as nav]
-    [eponai.common.ui.elements.css :as css]
-    [eponai.common.ui.common :as common]
-    [eponai.client.utils :as client-utils]
-    #?(:cljs [eponai.web.utils :as utils])
-    #?(:cljs [eponai.client.ui.photo-uploader :as pu])
     [eponai.client.routes :as routes]
-    [eponai.common.ui.dom :as my-dom]
-    [om.dom :as dom]
-    [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]
-    [eponai.common.ui.elements.menu :as menu]
     [eponai.common :as c]
-    [eponai.common.ui.store.order-list :as ol]
+    [eponai.common.ui.common :as common]
+    [eponai.common.ui.elements.css :as css]
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.store.order-edit-form :as oef]
+    [eponai.common.ui.store.order-list :as ol]
+    [eponai.common.ui.store.product-edit-form :as pef]
     [eponai.common.ui.store.product-list :as pl]
-    [eponai.common.ui.store.product-edit-form :as pef]))
-
-(defn store-orders [component store opts]
-  (my-dom/div (->> (css/grid-row)
-                   css/grid-column)
-              (dom/div nil "Thes are the orders")))
-
-#?(:cljs
-   (defn get-element-by-id [id]
-     (.getElementById js/document id)))
-
-#?(:cljs (defn get-input-value [id]
-           (when-let [el (get-element-by-id id)]
-             (.-value el))))
+    [eponai.common.ui.store.stream-settings :as ss]
+    [eponai.common.ui.dom :as my-dom]
+    [om.next :as om :refer [defui]]
+    [taoensso.timbre :refer [debug]]))
 
 (defn str->json [s]
   #?(:cljs (cljs.reader/read-string s)
@@ -41,22 +24,6 @@
   (let [product-id (c/parse-long product-id)]
     (some #(when (= (:db/id %) product-id) %)
           (:store/items store))))
-
-(defn find-order [store order-id]
-  ;(let [order-id (c/parse-long order-id)])
-  (some #(when (= (:order/id %) order-id) %)
-        (:store/orders store)))
-
-(defn store-stream [component store]
-  (let [message (msg/last-message component 'stream-token/generate)]
-    (debug ["STREAM_STORE_MESSAGE: " message :componen-state (om/get-state component)])
-    (dom/div #js {}
-      (dom/input #js {:value (if (msg/final? message)
-                               (:token (msg/message message))
-                               "Click ->>")})
-      (dom/a #js {:className "button"
-                  :onClick   #(msg/om-transact! component `[(stream-token/generate ~{:store-id (:db/id store)})])}
-             (dom/strong nil "Generate a token!")))))
 
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
@@ -82,23 +49,22 @@
      {:proxy/product-edit (om/get-query pef/ProductEditForm)}
      {:proxy/order-edit (om/get-query oef/OrderEditForm)}
      {:proxy/order-list (om/get-query ol/OrderList)}
+     {:proxy/stream-settings (om/get-query ss/StreamSettings)}
      ])
   Object
   (initLocalState [_]
     {:selected-tab :products})
-  (shouldComponentUpdate [this n p]
-    #?(:cljs
-       (client-utils/shouldComponentUpdate this n p)))
   (render [this]
-    (let [{:keys [proxy/navbar query/store query/current-route proxy/product-edit proxy/order-list proxy/order-edit]} (om/props this)
+    (let [{:proxy/keys [product-edit order-edit order-list stream-settings]
+           :keys       [proxy/navbar query/store query/current-route]} (om/props this)
           {:keys [route route-params]} current-route]
-      (debug "Dashboard current route: " current-route)
-      (dom/div #js {:id "sulo-my-store" :className "sulo-page"}
+      (my-dom/div
+        (->> {:id "sulo-my-store"}
+             (css/add-class :sulo-page))
         (common/page-container
           {:navbar navbar}
           (my-dom/div
             (->> (css/grid-row))
-
             (my-dom/div
               (->> (css/grid-column))
               (menu/horizontal
@@ -122,7 +88,8 @@
             :store-dashboard/create-order (oef/->OrderEditForm (om/computed order-edit
                                                                             {:route-params route-params}))
 
-            :store-dashboard/stream (store-stream this store)
+            :store-dashboard/stream (ss/->StreamSettings (om/computed stream-settings
+                                                                      {:store store}))
             :store-dashboard/product-list (pl/->ProductList store)
             :store-dashboard/create-product (pef/->ProductEditForm (om/computed product-edit
                                                                                 {:route-params route-params}))

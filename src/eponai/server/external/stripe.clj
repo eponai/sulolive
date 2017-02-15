@@ -243,7 +243,9 @@
       (debug "DEV - Fake Stripe: get-acconunt with params: " params))
     (create-customer [_ _ params]
       (debug "DEV - Fake Stripe: create-customer with params: " params))
-    IStripeAccount))
+    IStripeAccount
+    (get-order [_ _ _])
+    (list-orders [_ _])))
 
 
 ;; ########### Stripe objects ################
