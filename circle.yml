@@ -33,6 +33,7 @@ dependencies:
     - lein all-deps
     - lein with-profile web deps
     - lein with-profile mobile deps
+    - lein with-profile tester deps
 
 test:
   override:

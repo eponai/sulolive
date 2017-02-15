@@ -82,6 +82,7 @@
                        "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1"
                       ]
   :resource-paths ["resources" "node_modules" "bower_components"]
+
   :plugins [
            ;; [lein-npm "0.6.1"]
             [lein-shell "0.5.0"]
@@ -175,7 +176,10 @@
       ;;       :reload-clj-files {:clj true :cljc true}
  }
 
-  :profiles {:uberjar  {:jvm-opts   ^:replace ["-Dclojure.compiler.direct-linking=true"
+  :profiles {:tester   {:dependencies [[lein-cljsbuild "1.1.5"]
+                                       [lein-doo "0.1.7"
+                                        :exclusions [org.clojure/clojure]]]}
+             :uberjar  {:jvm-opts   ^:replace ["-Dclojure.compiler.direct-linking=true"
                                                "-Xmx1g" "-server"]
                         :aot        :all
                         :resource-paths ^:replace ["resources"]
