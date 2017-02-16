@@ -203,7 +203,7 @@
                            (menu/item-dropdown
                              {:dropdown (cart-dropdown cart)
                               :href     "/shopping-bag"}
-                             (icons/shopping-bag))
+                             (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))
                            (menu/item-dropdown
                              {:href     "/shopping-bag"}
                              (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))))))))))))

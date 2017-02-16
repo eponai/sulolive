@@ -80,7 +80,8 @@
                                                           (.detachMedia hls)
                                                           (.loadSource hls "http://www.streambox.fr/playlists/x36xhzz/x36xhzz.m3u8")
                                                           (.attachMedia hls video)
-                                                          )))))))
+                                                          ))))
+                       (om/update-state! this assoc :hls hls))))
   ;#?(:cljs
   ;   (subscribe-jw-player
   ;     [this]
@@ -97,6 +98,10 @@
   ;            (fn [e]
   ;              (debug "I am now fullscreen: " (.-fullscreen e))
   ;              (om/update-state! this assoc :fullscreen? (.-fullscreen e)))))))
+  (componentWillUnmount [this]
+    #?(:cljs
+      (let [{:keys [hls]} (om/get-state this)]
+        (.destroy hls))))
   (componentDidMount [this]
     #?(:cljs
        (.subscribe-hls this))
@@ -147,26 +152,20 @@
   (render [this]
     (let [{:keys [show-chat? fullscreen? playing?]} (om/get-state this)
           {:keys [stream-name]} (om/get-computed this)
-          messages [{:photo "/assets/img/collection-women.jpg"
+          messages [{:photo "/assets/img/kids-new.jpg"
                      :text  "this is some message"
-                     :user  "Diana Gren"
+                     :user  "Seeley B"
                      }
-                    {:photo "/assets/img/collection-men.jpg"
+                    {:photo "/assets/img/men-new.jpg"
                      :text  "Hey there I was wondering something"
                      :user  "Rick"
                      }
-                    {:photo "/assets/img/collection-women.jpg"
+                    {:photo "/assets/img/women-new.jpg"
                      :user  "Diana Gren"
                      :text  "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
-                    {:photo "/assets/img/collection-women.jpg"
-                     :user  "Diana Gren"
-                     :text  "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
-                    {:photo "/assets/img/collection-women.jpg"
-                     :user  "Diana Gren"
-                     :text  "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
-                    {:photo "/assets/img/collection-women.jpg"
-                     :user  "Diana Gren"
-                     :text  "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}]]
+
+
+                    ]]
       (debug "STREAM PROPS:" (om/props this))
       (dom/div #js {:id "sulo-video-container" :className (str "flex-video widescreen "
                                                                (when show-chat? "sulo-show-chat")

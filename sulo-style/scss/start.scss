@@ -24,22 +24,6 @@ $section-footer-color: $primary-color;
 			}
 		}
 	}
-	#sulo-navbar {
-		.icon {
-			padding: 0;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			svg {
-				height: 26px;
-				width: 26px;
-				viewBox: 0 0 26 26;
-				g {
-					stroke-width: 2;
-				}
-			}
-		}
-	}
 	.page-content {
 		padding-bottom: 0;
 	}
@@ -121,6 +105,9 @@ $section-footer-color: $primary-color;
 			}
 		}
 		&.collections {
+			.section-footer {
+				visibility: hidden;
+			}
 			margin-bottom: 3rem;
 			.content-item:last-child {
 				display: flex;
@@ -131,14 +118,23 @@ $section-footer-color: $primary-color;
 				}
 				.overlay-container {
 					flex: 1;
-					justify-content: stretch;
+					// justify-content: stretch;
 				}
 			}
 			.content {
 				// background: rgba($white, 0.5);
+				display: flex;
+				justify-content: center;
+				> div {
+					display: inline-block;
+					padding: 0rem 1rem;
+					background: rgba($white, 0.75);
+					border-radius: 6px;
+				}
 				p {
 					margin-bottom: 0;
 					font-weight: 500;
+					color: $black;
 				}
 			}
 			.overlay-container {
@@ -146,9 +142,13 @@ $section-footer-color: $primary-color;
 					text-transform: uppercase;
 				}
 				font-size: 2rem;
-				text-shadow: 1px 1px 3px rgba($white, 0.25);
+				text-shadow: 1px 1px 0 rgba($white, 0.25);
 				// color: $white;
 			}
+		}
+		&.new-arrivals {
+			margin: 4rem 0;
+			// margin-top: 6rem;
 		}
 	}
 }

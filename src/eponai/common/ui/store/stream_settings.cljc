@@ -28,6 +28,7 @@
                                       :value       (when (msg/final? message)
                                                      (:token (msg/message message))
                                                      )
+                                      :defaultValue ""
                                       :placeholder "Click below to generate new token"}))
           (my-dom/div
             (->> (css/grid-column)

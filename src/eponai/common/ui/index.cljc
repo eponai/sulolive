@@ -135,7 +135,7 @@
                        (div (->> (css/grid-column)
                                  (css/grid-column-size {:small 4 :medium 3})
                                  (css/text-align :left))
-                            (dom/a #js {:className "button expanded pink drop-shadow"
+                            (dom/a #js {:className "button expanded green drop-shadow"
                                         :onClick   (fn []
                                                      #?(:cljs
                                                         (set! js/window.location (str "/goods?search=" input-search))))}
@@ -183,22 +183,22 @@
                                            (div
                                              (->> (css/grid-column)
                                                   (css/add-class :content-item))
-                                             (collection-element {:url   "/assets/img/collection-home.jpg"
+                                             (collection-element {:url   "/assets/img/home-new.jpg"
                                                                   :title "Home"}))
                                            (div
                                              (->> (css/grid-column)
                                                   (css/add-class :content-item))
-                                             (collection-element {:url   "/assets/img/collection-women.jpg"
+                                             (collection-element {:url   "/assets/img/women-new.jpg"
                                                                   :title "Women"}))
                                            (div
                                              (->> (css/grid-column)
                                                   (css/add-class :content-item))
-                                             (collection-element {:url   "/assets/img/collection-men.jpg"
+                                             (collection-element {:url   "/assets/img/men-new.jpg"
                                                                   :title "Men"}))
                                            (div
                                              (->> (css/grid-column)
                                                   (css/add-class :content-item))
-                                             (collection-element {:url   "/assets/img/collection-kids.jpg"
+                                             (collection-element {:url   "/assets/img/kids-new.jpg"
                                                                   :title "Kids"}))))
                                     ;(map (fn [s t]
                                     ;       (collection-element {:url (first (:store/featured-img-src s))

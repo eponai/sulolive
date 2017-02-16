@@ -1,15 +1,21 @@
-#sulo-navbar {
-	.icon {
-		padding: 1rem;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		svg {
-			height: 26px;
-			width: 26px;
-			viewBox: 0 0 26 26;
+
+	#sulo-index #sulo-navbar, #sulo-navbar {
+		.icon {
+			padding: 0;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			svg {
+				height: 26px;
+				width: 26px;
+				viewBox: 0 0 26 26;
+				g {
+					stroke-width: 2;
+				}
+			}
 		}
 	}
+#sulo-navbar {
 	.top-bar-right {
 		li {
 			padding-left: 0.5rem;

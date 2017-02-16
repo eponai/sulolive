@@ -26,7 +26,7 @@
      :file-upload? false
      ;;TODO: Resolve s3 paths to cloudfront paths
      ;;"https://s3.amazonaws.com/sulo-images/site/collection-women.jpg"
-     :photo-url "https://d30slnyi7gxcwc.cloudfront.net/site/collection-women.jpg"})
+     :photo-url "https://d30slnyi7gxcwc.cloudfront.net/site/women-new.jpg"})
   (render [this]
     (let [{:keys [query/user proxy/navbar proxy/photo-upload query/auth]} (om/props this)
           {:keys [tab file-upload? photo-url]} (om/get-state this)

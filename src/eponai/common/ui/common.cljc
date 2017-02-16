@@ -79,10 +79,10 @@
       )
 
     content
-    (when (not-empty footer)
-      (my-dom/div
-        (->> (css/grid-row) css/grid-column (css/add-class :section-footer) (css/text-align :center))
-        (dom/a #js {:href href :className "button hollow"} footer)))
+    ;(when (not-empty footer))
+    (my-dom/div
+      (->> (css/grid-row) css/grid-column (css/add-class :section-footer) (css/text-align :center))
+      (dom/a #js {:href href :className "button hollow"} footer))
     ))
 
 (defn rating-element [rating & [review-count]]
