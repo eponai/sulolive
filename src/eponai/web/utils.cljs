@@ -32,6 +32,9 @@
 (defn elements-by-name [n]
   (array-seq (.getElementsByName n)))
 
+(defn elements-by-tagname [n]
+  (array-seq (.getElementsByTagName js/document n)))
+
 (defn input-values-by-class
   ([classname]
     (input-values-by-class js/document classname))
@@ -48,4 +51,41 @@
   (let [el (element-by-id id)]
     (when el
       (not-empty (.-value el)))))
+
+(defn fullscreen-element []
+  ;(let [document js/document])
+  (or
+    (.-fullscreenElement js/document)
+    (.-webkitFullscreenElement js/document)
+    (.-mozFullScreenElement js/document)))
+
+
+(defn exit-fullscreen []
+  ;(let [document js/document])
+  (cond
+    ;; Standard fullscreen handler
+    (.-exitFullscreen js/document)
+    (.exitFullscreen js/document)
+
+    ;; Mozilla fallback
+    (.-mozCancelFullscreen js/document)
+    (.mozCancelFullscreen js/document)
+
+    ;; Safari & Chrome fallback
+    (.-webkitExitFullscreen js/document)
+    (.webkitExitFullscreen js/document)))
+
+(defn request-fullscreen [el]
+  (cond
+    ;; Standard fullscreen handler
+    (.-requestFullscreen el)
+    (.requestFullscreen el)
+
+    ;; Mozilla fallback
+    (.-mozRequestFullscreen el)
+    (.mozRequestFullscreen el)
+
+    ;; Safari & Chrome fallback
+    (.-webkitRequestFullscreen el)
+    (.webkitRequestFullscreen el)))
 

@@ -6,6 +6,7 @@
     [eponai.common.ui.elements.css :as css]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
+    #?(:cljs [eponai.web.utils :as utils])
     [taoensso.timbre :as timbre :refer [debug error info]]
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.menu :as menu]))
@@ -45,7 +46,9 @@
         :hls  (assoc common :protocol "http"
                             :port 5080
                             :mimeType "application/x-mpegURL")})))
-
+#?(:cljs
+   (defn video-element []
+     (first (utils/elements-by-tagname "video"))))
 (defui Stream
   static om/IQuery
   (query [this]
@@ -57,7 +60,7 @@
                  (get-in (om/props this) [:query/stream-config :ui.singleton.stream-config/subscriber-url])))
   #?(:cljs
      (subscribe-hls [this]
-                     (let [video (.getElementById js/document "video")
+                     (let [video (.getElementById js/document "sulo-wowza")
                            hls (js/Hls.)
                            store (:query/store (om/props this))
                            stream-name (stream/stream-name store)
@@ -68,40 +71,55 @@
                        (.on hls js/Hls.Events.MANIFEST_PARSED (fn []
                                                                 (debug "HLS manifest parsed. Will play hls.")
                                                                 (.play video))))))
+  ;#?(:cljs
+  ;   (subscribe-jw-player
+  ;     [this]
+  ;     (set! (.-key js/jwplayer) "UO97+AUXyaO4JyC16F+PtgrCT4+YBDrgXWTdYQ==")
+  ;     (let [player (js/jwplayer "sulo-wowza")]
+  ;       (.setup
+  ;         player
+  ;         (clj->js {:file        "https://www.youtube.com/watch?v=FAJaQbWvXEY"
+  ;                   :controls    {:enableFullScreen true}
+  ;                   :aspectratio "16:9"
+  ;                   :stretching  "uniform"
+  ;                   :width       "100%"}))
+  ;       (.on player "fullscreen"
+  ;            (fn [e]
+  ;              (debug "I am now fullscreen: " (.-fullscreen e))
+  ;              (om/update-state! this assoc :fullscreen? (.-fullscreen e)))))))
   (componentDidMount [this]
     #?(:cljs
-       (do
-         (set! (.-key js/jwplayer) "UO97+AUXyaO4JyC16F+PtgrCT4+YBDrgXWTdYQ==")
-         (let [player (js/jwplayer "sulo-wowza")]
-           (.setup
-             player
-             (clj->js {:file "https://www.youtube.com/watch?v=FAJaQbWvXEY"
-                       :controls {:enableFullScreen true}
-                       :aspectratio "16:9"
-                       :stretching "uniform"
-                       :width "100%"}))
-           (.on player "fullscreen"
-                (fn [e]
-                  (debug "I am now fullscreen: " (.-fullscreen e))
-                  (om/update-state! this assoc :fullscreen? (.-fullscreen e))))))
-       ;(js/WowzaPlayer.create "sulo-wowza"
-       ;                       (clj->js {:license   "PLAY1-aaEJk-4mGcn-jW3Yr-Fxaab-PAYm4"
-       ;                                 :title     "THis is some crazy title!"
-       ;                                 ;"description"          "",
-       ;                                 :sourceURL "http://www.streambox.fr/playlists/x36xhzz/x36xhzz.m3u8"
-       ;                                 :autoPlay  true
-       ;                                 :volume "75"
-       ;                                 :uiShowDurationVsTimeRemaining true
-       ;                                 ;"mute"                 false,
-       ;                                 ;"loop"                 false,
-       ;                                 ;"audioOnly"            false,
-       ;                                 ;"uiShowQuickRewind"    true,
-       ;                                 ;"uiQuickRewindSeconds" "30"
-       ;                                 }))
-       ))
-  (initLocalState [_]
-    {:show-chat? true})
+       (.subscribe-hls this))
 
+    ;(js/WowzaPlayer.create "sulo-wowza"
+    ;                       (clj->js {:license   "PLAY1-aaEJk-4mGcn-jW3Yr-Fxaab-PAYm4"
+    ;                                 :title     "THis is some crazy title!"
+    ;                                 ;"description"          "",
+    ;                                 :sourceURL "http://www.streambox.fr/playlists/x36xhzz/x36xhzz.m3u8"
+    ;                                 :autoPlay  true
+    ;                                 :volume "75"
+    ;                                 :uiShowDurationVsTimeRemaining true
+    ;                                 ;"mute"                 false,
+    ;                                 ;"loop"                 false,
+    ;                                 ;"audioOnly"            false,
+    ;                                 ;"uiShowQuickRewind"    true,
+    ;                                 ;"uiQuickRewindSeconds" "30"
+    ;                                 }))
+    )
+  (initLocalState [_]
+    {:show-chat?  true
+     :fullscreen? false})
+
+  #?(:cljs
+     (toggle-fullscreen
+       [this]
+       (let [fullscreen? (some? (utils/fullscreen-element))
+             v (video-element)]
+         (when v
+           (if fullscreen?
+             (utils/exit-fullscreen)
+             (utils/request-fullscreen v))
+           (om/update-state! this assoc :fullscreen? (not fullscreen?))))))
   (render [this]
     (let [{:keys [show-chat? fullscreen?]} (om/get-state this)
           {:keys [stream-name]} (om/get-computed this)
@@ -133,14 +151,26 @@
         (dom/div #js {:className "sulo-spinner-container"}
           (dom/i #js {:className "fa fa-spinner fa-spin fa-4x"}))
         ;(dom/div #js {:id "sulo-video"})
-        (dom/div #js {:id "sulo-wowza"})
+        (dom/video #js {:id "sulo-wowza"})
+        (dom/div #js {:id "video-controls"}
+          (dom/div nil
+            (dom/a #js {:className "button large"} (dom/i #js {:className "fa fa-play fa-fw"}))
+            ;(dom/input #js {:id "video-range"
+            ;                :type "range" :value 0})
+            (dom/a #js {:id        "video-mute"
+                        :className "button large"}
+                   (dom/i #js {:className "fa fa-volume-off fa-fw"})))
+          (dom/a #js {:id        "video-fullscreen"
+                      :className "button large"
+                      :onClick   #(.toggle-fullscreen this)}
+                 (dom/i #js {:className "fa fa-expand fa-fw"})))
         ;(dom/video #js {:id "video"}
         ;           ;#?(:cljs
         ;           ;   (dom/source #js {:src  (str "http://" (.server-url this) ":5080/live/" (url->store-id) ".m3u8")
         ;           ;                    :type "application/x-mpegURL"}))
         ;           )
-        (dom/div #js {:className "stream-title-container"}
-          (dom/span nil stream-name))
+        ;(dom/div #js {:className "stream-title-container"}
+        ;  (dom/p nil stream-name))
         (my-dom/div
           (cond->> (css/add-class ::css/stream-chat-container)
                    show-chat?
