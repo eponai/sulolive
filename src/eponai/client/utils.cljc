@@ -32,7 +32,7 @@
    {:ui/singleton :ui.singleton/auth}
    {:ui/component :ui.component/root}
    {:ui/component :ui.component/mutation-queue}
-   {:ui/component :ui.singleton/stream-config}])
+   {:ui/singleton :ui.singleton/stream-config}])
 
 (defn create-conn []
   (let [conn (d/create-conn (common.datascript/ui-schema))]
