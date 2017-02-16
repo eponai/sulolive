@@ -71,7 +71,16 @@
                        (.on hls js/Hls.Events.MANIFEST_PARSED (fn []
                                                                 (debug "HLS manifest parsed. Will play hls.")
                                                                 (.play video)
-                                                                (om/update-state! this assoc :playing? true))))))
+                                                                (om/update-state! this assoc :playing? true)))
+                       (.on hls js/Hls.Events.ERROR (fn [e d]
+                                                      (let [error-type (.-type d)]
+                                                        (debug "Error: " e)
+                                                        (debug "Data: " d)
+                                                        (when (= Hls.ErrorTypes.NETWORK_ERROR error-type)
+                                                          (.detachMedia hls)
+                                                          (.loadSource hls "http://www.streambox.fr/playlists/x36xhzz/x36xhzz.m3u8")
+                                                          (.attachMedia hls video)
+                                                          )))))))
   ;#?(:cljs
   ;   (subscribe-jw-player
   ;     [this]
