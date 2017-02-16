@@ -175,8 +175,7 @@
   [{:keys [db query]} k _]
   {:remote true
    :value  (db/pull-one-with db query
-                             {:where '[[?e :ui.singleton.stream-config/hostname]
-                                       [?e :ui/singleton :ui.singleton/stream-config]]})})
+                             {:where '[[?e :ui/singleton :ui.singleton/stream-config]]})})
 
 (defmethod client-read :query/current-route
   [{:keys [db]} k p]
