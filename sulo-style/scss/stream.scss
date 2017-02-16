@@ -60,7 +60,9 @@ $chat-available-breakpoint: medium;
 		// }
 		&:hover, &:focus {
 			#video-controls {
-				opacity: 1;
+				@include breakpoint(medium) {
+					opacity: 1;
+				}
 			}
 		}
 		&.sulo-show-chat {

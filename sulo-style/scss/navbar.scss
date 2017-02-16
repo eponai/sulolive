@@ -1,4 +1,15 @@
 #sulo-navbar {
+	.icon {
+		padding: 1rem;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		svg {
+			height: 26px;
+			width: 26px;
+			viewBox: 0 0 26 26;
+		}
+	}
 	.top-bar-right {
 		li {
 			padding-left: 0.5rem;

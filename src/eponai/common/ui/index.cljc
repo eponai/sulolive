@@ -11,6 +11,7 @@
     [eponai.client.parser.message :as msg]
     [eponai.client.auth :as auth]
     [eponai.client.utils :as utils]
+    [eponai.common.ui.icons :as icons]
     [eponai.common.ui.elements.menu :as menu]))
 
 (defn top-feature [opts icon title text]
@@ -20,7 +21,7 @@
            (css/add-class :align-middle))
       (div (->> (css/grid-column)
                 (css/grid-column-size {:small 2 :medium 12}))
-           (dom/i #js {:className (str "fa fa-fw " icon)}))
+           icon)
       (div (css/grid-column)
            (dom/strong #js {:className "feature-title"} title)
            (dom/p nil text)))))
@@ -146,17 +147,19 @@
               (dom/div #js {:className " row small-up-1 medium-up-3"}
                 (top-feature
                   nil
-                  "fa-shopping-bag"
+                  (icons/shopping-bag)
+                  ;(dom/img #js {:src "/assets/img/icons/shopping-bag.png"})
+                  ;(dom/i #js {:className (str "fa fa-fw fa-shopping-bag")})
                   "Shop and Discover"
                   "Get lost in a marketplace filled with your local gems.")
                 (top-feature
                   nil
-                  "fa-video-camera"
+                  (icons/video-camera)
                   "Watch, chat and follow"
                   "Hang out with your favourite local brands on SULO LIVE.")
                 (top-feature
                   nil
-                  "fa-heart"
+                  (icons/heart)
                   "Join the Community"
                   "Sign up and follow, like and share your faves with others.")))
 

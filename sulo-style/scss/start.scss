@@ -8,6 +8,38 @@ $banner-background-color: map-get($foundation-palette, banner);//rgba($primary-c
 $section-footer-color: $primary-color;
 
 #sulo-index {
+	.icon {
+		padding: 1rem;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		svg {
+			height: 36px;
+			width: 36px;
+			viewBox: 0 0 36 36;
+			@include breakpoint(medium) {
+				height: 56px;
+				width: 56px;
+				viewBox: 0 0 56 56;
+			}
+		}
+	}
+	#sulo-navbar {
+		.icon {
+			padding: 0;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			svg {
+				height: 26px;
+				width: 26px;
+				viewBox: 0 0 26 26;
+				g {
+					stroke-width: 2;
+				}
+			}
+		}
+	}
 	.page-content {
 		padding-bottom: 0;
 	}

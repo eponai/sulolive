@@ -7,7 +7,8 @@
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.photo :as photo]
     [taoensso.timbre :refer [debug error]]
-    [eponai.common.ui.elements.menu :as menu]))
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.common.ui.icons :as icons]))
 
 (defn cart-dropdown [{:keys [cart/items cart/price]}]
   (dom/div #js {:className "cart-container dropdown-pane"}
@@ -202,7 +203,7 @@
                            (menu/item-dropdown
                              {:dropdown (cart-dropdown cart)
                               :href     "/shopping-bag"}
-                             (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))
+                             (icons/shopping-bag))
                            (menu/item-dropdown
                              {:href     "/shopping-bag"}
                              (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))))))))))))

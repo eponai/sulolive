@@ -37,7 +37,7 @@
                      ;::m/send-email-fn     (e/send-email-fn conn)
                      ::email/send-verification-fn (partial email/send-verification-email @in-production?)
                      ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
-                     ::m/system                   {:system/wowza     (if (or @in-production?)
+                     ::m/system                   {:system/wowza     (if (or @in-production? true)
                                                                        (wowza/wowza {:secret         (env :wowza-jwt-secret)
                                                                                      :subscriber-url (env :wowza-subscriber-url)
                                                                                      :publisher-url  (env :wowza-publisher-url)})

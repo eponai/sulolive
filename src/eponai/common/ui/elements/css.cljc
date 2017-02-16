@@ -9,6 +9,8 @@
    ::text-right            "text-right"
    ::vertical              "vertical"
 
+   ::icon "icon"
+
    ::callout               "callout"
 
    ;; Menu
