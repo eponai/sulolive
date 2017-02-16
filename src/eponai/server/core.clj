@@ -37,7 +37,7 @@
                      ;::m/send-email-fn     (e/send-email-fn conn)
                      ::email/send-verification-fn (partial email/send-verification-email @in-production?)
                      ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
-                     ::m/system                   {:system/wowza     (if @in-production?
+                     ::m/system                   {:system/wowza     (if (or @in-production?)
                                                                        (wowza/wowza {:secret         (env :wowza-jwt-secret)
                                                                                      :subscriber-url (env :wowza-subscriber-url)
                                                                                      :publisher-url  (env :wowza-publisher-url)})
@@ -45,7 +45,7 @@
                                                    :system/mailchimp (if @in-production?
                                                                        (mailchimp/mail-chimp (env :mail-chimp-api-key))
                                                                        (mailchimp/mail-chimp-stub))
-                                                   :system/stripe    (if (or @in-production? true)
+                                                   :system/stripe    (if (or @in-production?)
                                                                        (stripe/stripe (env :stripe-secret-key))
                                                                        (stripe/stripe-stub))
                                                    :system/aws-s3    (if (or @in-production?)

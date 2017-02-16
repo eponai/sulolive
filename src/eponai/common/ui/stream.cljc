@@ -70,7 +70,8 @@
                        (.attachMedia hls video)
                        (.on hls js/Hls.Events.MANIFEST_PARSED (fn []
                                                                 (debug "HLS manifest parsed. Will play hls.")
-                                                                (.play video))))))
+                                                                (.play video)
+                                                                (om/update-state! this assoc :playing? true))))))
   ;#?(:cljs
   ;   (subscribe-jw-player
   ;     [this]
@@ -108,8 +109,22 @@
     )
   (initLocalState [_]
     {:show-chat?  true
-     :fullscreen? false})
+     :fullscreen? false
+     :playing? true})
 
+  #?(:cljs
+     (toggle-play
+       [this]
+       (let [v (video-element)
+             is-paused? (.-paused v)]
+         (when v
+           (if is-paused?
+             (do
+               (.play v)
+               (om/update-state! this assoc :playing? true))
+             (do
+               (.pause v)
+               (om/update-state! this assoc :playing? false)))))))
   #?(:cljs
      (toggle-fullscreen
        [this]
@@ -121,7 +136,7 @@
              (utils/request-fullscreen v))
            (om/update-state! this assoc :fullscreen? (not fullscreen?))))))
   (render [this]
-    (let [{:keys [show-chat? fullscreen?]} (om/get-state this)
+    (let [{:keys [show-chat? fullscreen? playing?]} (om/get-state this)
           {:keys [stream-name]} (om/get-computed this)
           messages [{:photo "/assets/img/collection-women.jpg"
                      :text  "this is some message"
@@ -154,7 +169,9 @@
         (dom/video #js {:id "sulo-wowza"})
         (dom/div #js {:id "video-controls"}
           (dom/div nil
-            (dom/a #js {:className "button large"} (dom/i #js {:className "fa fa-play fa-fw"}))
+            (dom/a #js {:className "button large"
+                        :onClick #(.toggle-play this)}
+                   (dom/i #js {:className (str "fa fa-fw " (if playing? "fa-pause" "fa-play"))}))
             ;(dom/input #js {:id "video-range"
             ;                :type "range" :value 0})
             (dom/a #js {:id        "video-mute"
