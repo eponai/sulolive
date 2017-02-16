@@ -7,4 +7,4 @@ export TIMBRE_LEVEL=":info"
 export PORT="8080"
 export CLJS_BUILD_ID="release"
 
-lein repl
+(echo "(core/-main)"; cat <&0) | lein repl

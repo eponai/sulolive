@@ -124,9 +124,9 @@
    (dom/meta {:name "theme-color" :content "#ffffff"})
    ])
 
-(defn budget-js-path [release?]
+(defn budget-js-path [cljs-build-id]
   (str "/"
-       (if release? "release" "dev")
+       (if (= cljs-build-id "release") "release" "dev")
        "/js/out/budget.js"))
 
 (defn red5pro-script-tags [release?]

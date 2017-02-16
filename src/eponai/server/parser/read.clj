@@ -8,7 +8,8 @@
     [datomic.api :as d]
     [taoensso.timbre :refer [error debug trace warn]]
     [eponai.server.auth :as auth]
-    [eponai.server.external.stripe :as stripe]))
+    [eponai.server.external.stripe :as stripe]
+    [eponai.server.external.wowza :as wowza]))
 
 (defmethod server-read :datascript/schema
   [{:keys [db db-history]} _ _]
@@ -110,13 +111,11 @@
                (feature-all db-history :store))})
 
 (defmethod server-read :query/stream-config
-  [{:keys [db db-history query]} k _]
+  [{:keys [db db-history query system]} k _]
   ;; Only query once. User will have to refresh the page to get another stream config
   ;; (For now).
   (when (nil? db-history)
-    (assert (= (every? {:db/id :stream-config/hostname} query))
-            (str "server read: " k
-                 " only supports pull-pattern : " [:stream-config/hostname :db/id]
-                 " was: " query))
-    {:value {:ui/singleton                        :ui.singleton/stream-config
-             :ui.singleton.stream-config/hostname (or (env/env :red5pro-server-url) "localhost")}}))
+    (let [wowza (:system/wowza system)]
+      {:value {:ui/singleton                              :ui.singleton/stream-config
+               :ui.singleton.stream-config/subscriber-url (wowza/subscriber-url wowza)
+               :ui.singleton.stream-config/publisher-url  (wowza/publisher-url wowza)}})))

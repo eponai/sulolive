@@ -15,6 +15,7 @@
     [eponai.server.middleware :as m]
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.mailchimp :as mailchimp]
+    [eponai.server.external.wowza :as wowza]
     [ring.adapter.jetty :as jetty]
     [taoensso.timbre :refer [debug error info]]
     ;; Dev/debug require
@@ -36,7 +37,12 @@
                      ;::m/send-email-fn     (e/send-email-fn conn)
                      ::email/send-verification-fn (partial email/send-verification-email @in-production?)
                      ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
-                     ::m/system                   {:system/mailchimp (if @in-production?
+                     ::m/system                   {:system/wowza     (if @in-production?
+                                                                       (wowza/wowza {:secret         (env :wowza-jwt-secret)
+                                                                                     :subscriber-url (env :wowza-subscriber-url)
+                                                                                     :publisher-url  (env :wowza-publisher-url)})
+                                                                       (wowza/wowza-stub))
+                                                   :system/mailchimp (if @in-production?
                                                                        (mailchimp/mail-chimp (env :mail-chimp-api-key))
                                                                        (mailchimp/mail-chimp-stub))
                                                    :system/stripe    (if (or @in-production?)
@@ -114,6 +120,7 @@
 
 (defn main-release-no-ssl
   []
+  (debug "Running repl in production mode without ssl")
   (start-server {:join? false ::disable-ssl true}))
 
 (defn start-server-for-tests [& [{:keys [email-chan conn port wrap-state] :as opts}]]

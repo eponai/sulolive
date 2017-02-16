@@ -9,7 +9,7 @@
 (defui Root
   Object
   (render [this]
-    (let [{:keys [release? ::app-html route]} (om/props this)]
+    (let [{:keys [release? ::app-html route cljs-build-id]} (om/props this)]
       (debug "app-html: " app-html)
       (debug "ROUTE: " route)
       (dom/html
@@ -22,7 +22,7 @@
 
           (common/red5pro-script-tags release?)
           (common/auth0-lock-passwordless release?)
-          (dom/script {:src  (common/budget-js-path release?)
+          (dom/script {:src  (common/budget-js-path cljs-build-id)
                        :type common/text-javascript})
 
           ;(dom/script {:src "https://cdn.auth0.com/js/lock/10.6/lock.min.js"})

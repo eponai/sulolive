@@ -1,5 +1,6 @@
 (ns eponai.common.ui.stream
   (:require
+    [eponai.common.stream :as stream]
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.elements.css :as css]
     [om.dom :as dom]
@@ -47,22 +48,25 @@
 (defui Stream
   static om/IQuery
   (query [this]
-    [:query/current-route])
+    [{:query/store [:db/id]}
+     {:query/stream-config [:ui.singleton.stream-config/subscriber-url]}])
   Object
   #?(:cljs
      (server-url [this]
-                 (get-in (om/props this) [:query/stream-config :ui.singleton.stream-config/hostname])))
-  ;#?(:cljs
-  ;   (subscribe-hls [this]
-  ;                   (let [video (.getElementById js/document "video")
-  ;                         hls (js/Hls.)
-  ;                         store-id (get-in (om/props this) [:query/current-route :route-params :store-id])]
-  ;                     (debug "STREAM STORE ID: " store-id)
-  ;                     (.loadSource hls (str "http://localhost:1935/live/" store-id "/playlist.m3u8"))
-  ;                     (.attachMedia hls video)
-  ;                     (.on hls js/Hls.Events.MANIFEST_PARSED (fn []
-  ;                                                              (debug "IN MANIFEST PARSED. PLAYING!?")
-  ;                                                              (.play video))))))
+                 (get-in (om/props this) [:query/stream-config :ui.singleton.stream-config/subscriber-url])))
+  #?(:cljs
+     (subscribe-hls [this]
+                     (let [video (.getElementById js/document "video")
+                           hls (js/Hls.)
+                           store (:query/store (om/props this))
+                           stream-name (stream/stream-name store)
+                           stream-url (stream/wowza-live-stream-url (.server-url this) stream-name)]
+                       (debug "Stream url: " stream-url)
+                       (.loadSource hls stream-url)
+                       (.attachMedia hls video)
+                       (.on hls js/Hls.Events.MANIFEST_PARSED (fn []
+                                                                (debug "HLS manifest parsed. Will play hls.")
+                                                                (.play video))))))
   (componentDidMount [this]
     #?(:cljs
        (do

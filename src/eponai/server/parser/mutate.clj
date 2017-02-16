@@ -2,12 +2,14 @@
   (:require
     [environ.core :as env]
     [eponai.common.database :as db]
+    [eponai.common.stream :as stream]
     [eponai.server.external.mailchimp :as mailchimp]
     [eponai.common.parser :as parser :refer [server-mutate server-message]]
     [taoensso.timbre :refer [debug info]]
     [clojure.data.json :as json]
     [eponai.server.api :as api]
     [eponai.server.external.stripe :as stripe]
+    [eponai.server.external.wowza :as wowza]
     [eponai.common :as c]
     [buddy.sign.jwt :as jwt]
     [eponai.server.api.store :as store]
@@ -73,11 +75,8 @@
                                              :symbols {'?e     store-id
                                                        '?email (:email auth)}})]
                {:token (jwt/sign {:auth       (:email auth)
-                                  :streamName (str store)}
-                                 (or (env/env :jwt-secret-stream-tokens)
-                                     ;; TODO: Do we really want dev secret hardcoded?
-                                     ;; TODO: Make this a stubbable external.
-                                     "secret"))}
+                                  :streamName (stream/stream-name (db/entity db store))}
+                                 (wowza/jwt-secret (:system/wowza system)))}
                (throw (ex-info "Can only generate tokens for streams which you are owner for"
                                {:store-id store-id
                                 :mutation k

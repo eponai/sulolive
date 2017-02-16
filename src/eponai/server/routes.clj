@@ -24,7 +24,7 @@
       (r/content-type "text/html")))
 
 (defn release? [request]
-  (= "release" (::m/cljs-build-id request)))
+  (true? (::m/in-production? request)))
 
 (declare handle-parser-request)
 
@@ -33,6 +33,7 @@
    :state                          (::m/conn request)
    :system                         (::m/system request)
    :release?                       (release? request)
+   :cljs-build-id                  (::m/cljs-build-id request)
    :route-params                   (merge (:route-params request)
                                           (:params request))
    :route                          (:handler request)
