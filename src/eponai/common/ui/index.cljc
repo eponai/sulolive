@@ -135,7 +135,7 @@
                        (div (->> (css/grid-column)
                                  (css/grid-column-size {:small 4 :medium 3})
                                  (css/text-align :left))
-                            (dom/a #js {:className "button expanded green drop-shadow"
+                            (dom/a #js {:className "button expanded search drop-shadow"
                                         :onClick   (fn []
                                                      #?(:cljs
                                                         (set! js/window.location (str "/goods?search=" input-search))))}
@@ -161,7 +161,7 @@
                   nil
                   (icons/heart)
                   "Join the Community"
-                  "Sign up and follow, like and share your faves with others.")))
+                  "Sign up to follow others and share your faves.")))
 
 
             (common/content-section {:href  "/streams"
@@ -208,7 +208,8 @@
                                     ""
                                     )
 
-            (common/content-section {:href "/goods"}
+            (common/content-section {:href "/goods"
+                                     :class "new-arrivals"}
                                     "New arrivals"
                                     (div (->> (css/grid-row)
                                               (css/grid-row-columns {:small 2 :medium 4 :large 5}))

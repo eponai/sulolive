@@ -68,7 +68,7 @@
            {:stream/name  "Old looking leather, how?"
             :stream/store #db/id[:db.part/user -3]}
            {:stream/name  "Talking wedding bands"
-            :stream/store #db/id[:db.part/user -4]}]
+            :stream/store #db/id[:db.part/user -5]}]
 
  :user    [{:db/id      #db/id[:db.part/user -500]
             :user/email "dev@sulo.live"
@@ -140,7 +140,7 @@
                            :store.item/price    34.00M
                            :store.item/photos   [#db/id[:db.part/user -31]]
                            :store.item/category "accessories"}]}
-           {:db/id       #db/id[:db.part/user -4]
+           {:db/id       #db/id[:db.part/user -5]
             :store/name  "Nafsika"
             :store/cover #db/id[:db.part/user -16]
             :store/photo #db/id[:db.part/user -17]
@@ -160,7 +160,7 @@
                            :store.item/photos   [#db/id[:db.part/user -35]]
                            :store.item/price    34.00M
                            :store.item/category "accessories"}]}
-           {:db/id       #db/id[:db.part/user -5]
+           {:db/id       #db/id[:db.part/user -4]
             :store/name  "FlowerRainbowNJ"
             :store/cover #db/id[:db.part/user -18]
             :store/photo #db/id[:db.part/user -18]
