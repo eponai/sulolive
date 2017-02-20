@@ -9,9 +9,21 @@
    ::text-right            "text-right"
    ::vertical              "vertical"
 
-   ::icon "icon"
+   ::icon                  "icon"
 
    ::callout               "callout"
+
+   ;; Button
+   ::button                "button"
+   ::button-hollow         "hollow"
+
+   ;; Color Styles
+   ::color-primary         "primary"
+   ::color-secondary       "secondary"
+   ::color-success         "success"
+   ::color-warning         "warning"
+   ::color-alert           "alert"
+
 
    ;; Menu
    ::menu                  "menu"
@@ -165,3 +177,18 @@
                      (warn "Ignoring column offset CSS class for invalid breakpoint: " k
                            ". Available are: " (keys breakpoints))))]
     (reduce (fn [m class] (add-class class m)) opts (map class-fn offsets))))
+
+
+;; ---------------------------------- Button ------------------------------
+
+(defn button [& [opts]]
+  (add-class ::button opts))
+
+(defn button-hollow [& [opts]]
+  (button (add-class ::button-hollow opts)))
+
+(defn add-color-style [color & [opts]]
+  (let [names (clojure.string/split (name color) "-")]
+    (when (not= (first names) "color")
+      (warn "Adding an unexpected style to button: " color))
+    (button (add-class color opts))))

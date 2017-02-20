@@ -19,7 +19,7 @@
 (defn element [el-fn {:keys [classes] :as opts} content]
   (let [react-opts (-> opts
                        (dissoc :classes)
-                       (assoc :className (css/keys->class-str classes))
+                       (update :className (fn [s] (clojure.string/join " " [s (css/keys->class-str classes)])))
                        #?(:cljs clj->js))
         content (flatten content)]
     (condp = (count content)
@@ -48,14 +48,32 @@
 (defn span [opts & content]
   (element dom/span opts content))
 
+(defn small [opts & content]
+  (element dom/small opts content))
+
 (defn label [opts & content]
   (element dom/label opts content))
+
+(defn h1 [opts & content]
+  (element dom/h1 opts content))
+
+(defn h2 [opts & content]
+  (element dom/h2 opts content))
 
 (defn h3 [opts & content]
   (element dom/h3 opts content))
 
+(defn h4 [opts & content]
+  (element dom/h4 opts content))
+
 (defn input [opts & content]
   (element dom/input opts content))
+
+(defn select [opts & content]
+  (element dom/select opts content))
+
+(defn option [opts & content]
+  (element dom/option opts content))
 
 (defn img [opts & content]
   (element dom/img opts content))

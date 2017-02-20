@@ -86,7 +86,8 @@
             :store-dashboard/order (oef/->OrderEditForm (om/computed order-edit
                                                                      {:route-params route-params}))
             :store-dashboard/create-order (oef/->OrderEditForm (om/computed order-edit
-                                                                            {:route-params route-params}))
+                                                                            {:route-params route-params
+                                                                             :products (:store/items store)}))
 
             :store-dashboard/stream (ss/->StreamSettings (om/computed stream-settings
                                                                       {:store store}))
