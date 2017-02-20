@@ -37,11 +37,12 @@
                      ;::m/send-email-fn     (e/send-email-fn conn)
                      ::email/send-verification-fn (partial email/send-verification-email @in-production?)
                      ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
-                     ::m/system                   {:system/wowza     (if (or @in-production? true)
-                                                                       (wowza/wowza {:secret         (env :wowza-jwt-secret)
-                                                                                     :subscriber-url (env :wowza-subscriber-url)
-                                                                                     :publisher-url  (env :wowza-publisher-url)})
-                                                                       (wowza/wowza-stub))
+                     ::m/system                   {:system/wowza     (let [p {:secret         (env :wowza-jwt-secret)
+                                                                              :subscriber-url (env :wowza-subscriber-url)
+                                                                              :publisher-url  (env :wowza-publisher-url)}]
+                                                                       (if (or @in-production?)
+                                                                         (wowza/wowza p)
+                                                                         (wowza/wowza-stub (select-keys p [:secret]))))
                                                    :system/mailchimp (if @in-production?
                                                                        (mailchimp/mail-chimp (env :mail-chimp-api-key))
                                                                        (mailchimp/mail-chimp-stub))
