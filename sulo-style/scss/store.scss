@@ -167,8 +167,13 @@
 	}
 	.callout {
 		box-shadow: 0 1px 3px 0 rgba($black, 0.1);
-		padding: 2rem;
-
+		padding: 0.5;
+		@include breakpoint(medium) {
+			padding: 2rem;
+		}
+		// display: flex;
+		// flex-direction: column;
+		// align-items: center;
 	}
 	// h3 {
 	// 	text-transform: none;
@@ -242,9 +247,15 @@
 	}
 
 	#sulo-edit-order {
+		.reveal-overlay {
+			// display: flex;
+			// align-items:center;
+			// vertical-align: middle;
+		}
 		$primary-color: map-get($foundation-palette, action);
 		table {
 			// color: $dark-gray;
+			margin: 0 auto;
 			th {
 				color: $dark-gray;
 				padding-top: 0.5rem;
@@ -272,6 +283,30 @@
 				// border: 1px solid rgba($primary-color, 0.1);
 				// background: rgba($primary-color, 0.05);
 				// color: $primary-color;
+			}
+		}
+		.order-action {
+			border: 1px solid $light-gray;
+			// background: $light-gray;
+			padding: 1rem;
+			// margin: 0 1rem;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			.button {
+				margin: 0;
+				// font-size: 80%;
+			}
+			// span {
+				text-transform: uppercase;
+				font-size: 80%;
+			// }
+			a {
+
+			}
+			i {
+				margin-right: 1rem;
+				color: $dark-gray;
 			}
 		}
 	}

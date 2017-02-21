@@ -25,8 +25,14 @@
 
 
 (defn edit-order [component]
-  (let [{:keys [query/order]} (om/props component)]
+  (let [{:keys [query/order]} (om/props component)
+        {:keys [order-menu-open?]} (om/get-state component)]
     (dom/div nil
+      (when order-menu-open?
+        (common/modal {:on-close #(om/update-state! component assoc :order-menu-open? false)}
+                      (dom/div nil "Are you sure you want to cancel this order?")
+                      (dom/a #js {:className "button"} "Yes, Cancel Order")
+                      (dom/a #js {:className "button hollow"} "Nevermind")))
       (my-dom/div (css/grid-row)
                   (my-dom/div (css/grid-column)
                               (dom/h2 nil "Edit Order - " (dom/small nil (:order/id order))))
@@ -34,13 +40,13 @@
                     (->> (css/grid-column)
                          (css/text-align :right))
                     (my-dom/a
-                      (->> {:onClick #(.delete-order component)}
-                           css/button-hollow)
-                      (my-dom/span nil "Delete"))))
+                      (->> {:onClick #(om/update-state! component assoc :order-menu-open? true)})
+                      (dom/i #js {:className "fa fa-ellipsis-h fa-fw"}))))
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
                   (my-dom/div {:className "callout transparent"}
                               (my-dom/h4 nil (dom/span nil "Details"))
+
 
                               (menu/vertical
                                 nil
@@ -70,7 +76,27 @@
                                              (dom/label nil "Email: "))
                                            (my-dom/div
                                              (->> (css/grid-column))
-                                             (dom/span nil (:order/email order))))))))))
+                                             (dom/span nil (:order/email order))))))
+                  (my-dom/div
+                    {:className "callout transparent"}
+                    (my-dom/div
+                      (css/grid-row)
+                      (my-dom/div
+                        (->> (css/grid-column)
+                             (css/grid-column-size {:small 12 :large 6}))
+                        (my-dom/div (css/add-class :order-action)
+                                (dom/div nil
+                                  (dom/i #js {:className "fa fa-credit-card fa-fw fa-2x"})
+                                  (dom/span nil "Unpaid"))
+                                (my-dom/a (css/button) "Mark as paid")))
+                      (my-dom/div
+                        (->> (css/grid-column)
+                             (css/grid-column-size {:small 12 :large 6}))
+                        (my-dom/div (css/add-class :order-action)
+                                    (dom/div nil
+                                      (dom/i #js {:className "fa fa-truck fa-fw fa-2x"})
+                                      (dom/span nil "Fullfill Items"))
+                                    (my-dom/a (css/button-hollow (css/button)) "Fullfill items")))))))))
 
 (defn create-order [component]
   (let [{:keys [products]} (om/get-computed component)]
@@ -182,7 +208,7 @@
                            nil
                            (my-dom/a
                              {:onClick #(om/update-state! this update :items disj (:db/id it))}
-                             "x"))))
+                             ""))))
                      skus)
                 (when (and tax shipping)
                   (map (fn [it]
@@ -214,20 +240,21 @@
                         (dom/td nil (:order/amount order))
                         (dom/td nil ))))))
 
-        (my-dom/div
-          (->> (css/grid-row)
-               (css/grid-column))
-          (my-dom/div nil
-                      (my-dom/a
-                        (->> (css/button)
-                             css/button-hollow)
-                        (my-dom/span nil "Cancel"))
-                      (my-dom/a
-                        (->> {:onClick #(when-not is-loading? (.create-order this))}
-                             (css/button))
-                        (if is-loading?
-                          (my-dom/i {:className "fa fa-spinner fa-spin"})
-                          (my-dom/span nil "Save")))))))))
+        (when-not order
+          (my-dom/div
+            (->> (css/grid-row)
+                 (css/grid-column))
+            (my-dom/div nil
+                        (my-dom/a
+                          (->> (css/button)
+                               css/button-hollow)
+                          (my-dom/span nil "Cancel"))
+                        (my-dom/a
+                          (->> {:onClick #(when-not is-loading? (.create-order this))}
+                               (css/button))
+                          (if is-loading?
+                            (my-dom/i {:className "fa fa-spinner fa-spin"})
+                            (my-dom/span nil "Save"))))))))))
 
 (def ->OrderEditForm (om/factory OrderEditForm))
 
