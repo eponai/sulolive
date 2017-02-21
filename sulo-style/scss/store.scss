@@ -288,19 +288,28 @@
 		.order-action {
 			border: 1px solid $light-gray;
 			// background: $light-gray;
+			height: 100%;
 			padding: 1rem;
-			// margin: 0 1rem;
+			// margin: 1rem 0;
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
+			> div{
+				display: flex;
+				align-items: center;
+			}
 			.button {
 				margin: 0;
+				i {
+					margin: 0;
+				}
+				// flex: 0;
 				// font-size: 80%;
 			}
-			// span {
-				text-transform: uppercase;
-				font-size: 80%;
-			// }
+			span {
+				// text-transform: uppercase;
+				// font-size: 80%;
+			}
 			a {
 
 			}

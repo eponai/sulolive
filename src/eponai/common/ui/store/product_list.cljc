@@ -35,6 +35,14 @@
                                                {:store-id (:store-id route-params)
                                                 :action   "create"})}
                    "Add product")))
+        (my-dom/div
+          (->> (css/grid-row)
+               (css/grid-column))
+          ;(my-dom/div
+          ;  {:className "callout transparent"})
+          (my-dom/input {:value       ""
+                         :placeholder "Search Products..."
+                         :type        "text"}))
 
         (my-dom/div
           (->> (css/grid-row))

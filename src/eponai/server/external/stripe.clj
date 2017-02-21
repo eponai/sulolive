@@ -95,7 +95,8 @@
   ;; Orders
   (get-order [this account-secret order-id])
   (list-orders [this account-secret])
-  (create-order [this account-secret params]))
+  (create-order [this account-secret params])
+  (update-order [this account-secret order-id params]))
 
 (defn request-options [account-id]
   (.setStripeAccount (RequestOptions/builder) account-id))
@@ -221,7 +222,15 @@
                               "name"    "This is my name"}}
           new-order (Order/create params)]
       {:id     (.getId new-order)
-       :amount (.getAmount new-order)})))
+       :amount (.getAmount new-order)}))
+
+  (update-order [_ account-secret order-id {:order/keys [status]}]
+    (set-api-key account-secret)
+    (let [params {"status" (name status)}
+          order (Order/retrieve order-id)
+          updated (.update order params)]
+      (debug "Stripe - Updated order: " order)
+      (f/order updated))))
 
 (defn stripe [api-key]
   (->StripeRecord api-key))

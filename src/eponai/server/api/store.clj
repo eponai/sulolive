@@ -98,3 +98,7 @@
 (defn create-order [{:keys [state system]} store-id order]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)]
     (stripe/create-order (:system/stripe system) secret order)))
+
+(defn update-order [{:keys [state system]} store-id order-id params]
+  (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)]
+    (stripe/update-order (:system/stripe system) secret order-id params)))

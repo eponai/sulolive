@@ -55,7 +55,7 @@
                          (dom/tr nil
                                  (dom/td nil
                                          (dom/a #js {:href product-link}
-                                                (dom/span nil (:order/status o))))
+                                                (dom/span #js {:className "label warning"} (name (:order/status o)))))
                                  (dom/td nil
                                          (dom/a #js {:href product-link}
                                                 (dom/span nil (:order/id o))))

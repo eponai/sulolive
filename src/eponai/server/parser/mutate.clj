@@ -154,3 +154,10 @@
                                  {:client-user-id (:db/id user)
                                   :server-user-id user-id
                                   :mutation       k})))))})
+
+(defmutation store/update-order
+  [env _ {:keys [order-id store-id params] :as p}]
+  {:success "Order created"
+   :error   "Could not create order"}
+  {:action (fn []
+             (store/update-order env (c/parse-long store-id) order-id params))})

@@ -23,19 +23,68 @@
 (defn get-route-params [component]
   (get (om/get-computed component) :route-params))
 
+(defn mark-as-paid [component]
+  (let [{:keys [modal/mark-as-paid?]} (om/get-state component)
+        {:keys [query/order]} (om/props component)
+        order-status (:order/status order)
+        message (msg/last-message component 'store/update-order)]
+    (dom/div nil
+      (when mark-as-paid?
+        (common/modal {:on-close #(om/update-state! component assoc :modal/mark-as-paid? false)}
+                      (dom/div nil
+                        (dom/h4 nil "Do you want to mark this order as paid?")
+                        (dom/div nil
+
+                          (dom/a #js {:onClick   #(do
+                                                   (om/update-state! component assoc :modal/mark-as-paid? false)
+                                                   (.update-order component {:order/status :order.status/paid}))
+                                      :className "button"} "Yes, Shoot!")
+                          (dom/a #js {:className "button hollow"} "No, it's not paid")))))
+      (my-dom/div (css/add-class :order-action)
+                  (dom/div nil
+                    (dom/i #js {:className "fa fa-credit-card fa-fw fa-2x"})
+                    (cond (= order-status :order.status/paid)
+                          (dom/span nil "Payment Accepted")
+
+                          (= order-status :order.status/created)
+                          (dom/span nil "Payment Pending"))))
+      (dom/div nil
+        ;(my-dom/a
+        ;  (cond->> (->> {:onClick #(om/update-state! component assoc :modal/mark-as-paid? true)}
+        ;               css/button)
+        ;           (msg/pending? message)
+        ;           (css/add-class :disabled))
+        ;  (if (msg/pending? message)
+        ;    (dom/i #js {:className "fa fa-spinner fa-spin fa-fw"})
+        ;    "Mark as Paid"))
+        ))))
+
+;(defn order-mark-as-paid-modal [component]
+;  (common/modal {:on-close #(om/update-state! component assoc :modal/mark-as-paid false)}
+;                (dom/div nil
+;                  (dom/h4 nil "Do you want to mark this order as paid?")
+;                  (dom/div nil
+;
+;                    (dom/a #js {:className "button"} "Yes, Shoot!")
+;                    (dom/a #js {:className "button hollow"} "No, it's not paid")))))
+
+;(defn show-modal [component]
+;  (let [{:keys [order-menu-open? modal/mark-as-paid]} (om/get-state component)]
+;    (cond order-menu-open?
+;          (common/modal {:on-close #(om/update-state! component assoc :order-menu-open? false)}
+;                        (dom/div nil "Are you sure you want to cancel this order?")
+;                        (dom/a #js {:className "button"} "Yes, Cancel Order")
+;                        (dom/a #js {:className "button hollow"} "Nevermind"))
+;          mark-as-paid
+;          (order-mark-as-paid-modal component))))
 
 (defn edit-order [component]
-  (let [{:keys [query/order]} (om/props component)
-        {:keys [order-menu-open?]} (om/get-state component)]
+  (let [{:keys [query/order]} (om/props component)]
     (dom/div nil
-      (when order-menu-open?
-        (common/modal {:on-close #(om/update-state! component assoc :order-menu-open? false)}
-                      (dom/div nil "Are you sure you want to cancel this order?")
-                      (dom/a #js {:className "button"} "Yes, Cancel Order")
-                      (dom/a #js {:className "button hollow"} "Nevermind")))
+      ;(show-modal component)
       (my-dom/div (css/grid-row)
                   (my-dom/div (css/grid-column)
-                              (dom/h2 nil "Edit Order - " (dom/small nil (:order/id order))))
+                              (dom/h2 nil "Edit Order - " (dom/small nil (:order/id order)) " " (dom/span #js {:className "label warning"} (name (:order/status order)))))
                   (my-dom/div
                     (->> (css/grid-column)
                          (css/text-align :right))
@@ -76,7 +125,9 @@
                                              (dom/label nil "Email: "))
                                            (my-dom/div
                                              (->> (css/grid-column))
-                                             (dom/span nil (:order/email order))))))
+                                             (dom/span nil (:order/email order)))))))
+      (my-dom/div (->> (css/grid-row)
+                       css/grid-column)
                   (my-dom/div
                     {:className "callout transparent"}
                     (my-dom/div
@@ -85,18 +136,24 @@
                         (->> (css/grid-column)
                              (css/grid-column-size {:small 12 :large 6}))
                         (my-dom/div (css/add-class :order-action)
-                                (dom/div nil
-                                  (dom/i #js {:className "fa fa-credit-card fa-fw fa-2x"})
-                                  (dom/span nil "Unpaid"))
-                                (my-dom/a (css/button) "Mark as paid")))
+                                    (dom/div nil
+                                      (dom/i #js {:className "fa fa-credit-card fa-fw fa-2x"})
+                                      (let [order-status (:order/status order)]
+                                        (cond (= order-status :order.status/paid)
+                                              (dom/span nil "Payment Accepted")
+
+                                              (= order-status :order.status/created)
+                                              (dom/span nil "Payment Pending"))))))
                       (my-dom/div
                         (->> (css/grid-column)
                              (css/grid-column-size {:small 12 :large 6}))
                         (my-dom/div (css/add-class :order-action)
                                     (dom/div nil
                                       (dom/i #js {:className "fa fa-truck fa-fw fa-2x"})
-                                      (dom/span nil "Fullfill Items"))
-                                    (my-dom/a (css/button-hollow (css/button)) "Fullfill items")))))))))
+                                      (dom/span nil "Fulfill Items"))
+                                    (my-dom/a (->> (css/button)
+                                                   css/button-hollow
+                                                   (css/add-class :disabled)) "Fulfill Items")))))))))
 
 (defn create-order [component]
   (let [{:keys [products]} (om/get-computed component)]
@@ -150,6 +207,14 @@
                                                       ~{:order    order
                                                         :store-id store-id})
                                                     :query/orders])))))
+  #?(:cljs
+     (update-order
+       [this params]
+       (let [{:keys [order-id store-id]} (get-route-params this)]
+         (msg/om-transact! this `[(store/update-order ~{:params    params
+                                                        :order-id order-id
+                                                        :store-id store-id})
+                                  :query/orders]))))
   (initLocalState [_]
     {:items #{}})
 
