@@ -13,6 +13,10 @@
           (some? quantity)
           (assoc :store.item.sku/quantity quantity)))
 
+(defn list-products [{:keys [db system]} store-id]
+  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)]
+    (stripe/list-products (:system/stripe system) secret)))
+
 (defn create-product [{:keys [state system]} store-id {:keys [id photo skus] product-name :name :as params}]
   {:pre [(string? product-name) (uuid? id)]}
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
@@ -84,19 +88,13 @@
     (db/transact state [[:db.fn/retractEntity product-id]])))
 
 (defn get-order [{:keys [db system]} store-id order-id]
-  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)
-        order (stripe/get-order (:system/stripe system) secret order-id)]
-    (debug "Got orders: " (into [] order))
-    order))
+  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)]
+    (stripe/get-order (:system/stripe system) secret order-id)))
 
 (defn list-orders [{:keys [db system]} store-id]
-  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)
-        orders (stripe/list-orders (:system/stripe system) secret)]
-    (debug "Got orders: " (into [] orders))
-    orders))
+  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)]
+    (stripe/list-orders (:system/stripe system) secret)))
 
 (defn create-order [{:keys [state system]} store-id order]
-  (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
-        new-order (stripe/create-order (:system/stripe system) secret order)]
-    (debug "Created new order in STRIPE: " new-order)
-    new-order))
+  (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)]
+    (stripe/create-order (:system/stripe system) secret order)))

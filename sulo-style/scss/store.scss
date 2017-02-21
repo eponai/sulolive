@@ -153,6 +153,15 @@
 }
 
 #sulo-my-store {
+	.button {
+		$color: map-get($foundation-palette, action);
+		&:not(.hollow) {
+			@include button-style($color, auto, auto);
+		}
+		&.hollow {
+			@include button-hollow-style($color);
+		}
+	}
 	.menu.store-nav {
 		margin: 2rem 0;
 	}
@@ -230,5 +239,40 @@
 	// }
 	.navbar, footer, .footer .row {
 		max-width: 100%;
+	}
+
+	#sulo-edit-order {
+		$primary-color: map-get($foundation-palette, action);
+		table {
+			// color: $dark-gray;
+			th {
+				color: $dark-gray;
+				padding-top: 0.5rem;
+				padding-bottom: 0.5rem;
+				font-size: 90%;
+			}
+			a {
+				// color: $primary-color;
+				font-weight: 500;
+				// color: map-get($foundation-palette, primary);
+			}
+			.sku {
+				border-bottom: $table-border;
+			}
+			.tax, .shipping, tfoot {
+				border: none;
+				td {
+					padding-top: 0.75rem;
+					padding-bottom: 0.75rem;
+					font-size: 90%;
+					// color: $dark-gray;
+				}
+			}
+			tfoot {
+				// border: 1px solid rgba($primary-color, 0.1);
+				// background: rgba($primary-color, 0.05);
+				// color: $primary-color;
+			}
+		}
 	}
 }

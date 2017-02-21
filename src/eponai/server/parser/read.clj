@@ -33,9 +33,13 @@
 
 (defmethod server-read :query/orders
   [env _ {:keys [store-id]}]
+  {:value (store/list-orders env store-id)})
+
+(defmethod server-read :query/inventory
+  [env _ {:keys [store-id]}]
   {:value (map (fn [o]
-                 (reduce-kv (fn [m k v] (assoc m (keyword "order" (name k)) v)) {} o))
-               (store/list-orders env store-id))})
+                 (reduce-kv (fn [m k v] (assoc m (keyword "product" (name k)) v)) {} o))
+               (store/list-products env store-id))})
 
 (defmethod server-read :query/order
   [env _ {:keys [order-id store-id]}]

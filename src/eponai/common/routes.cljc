@@ -5,7 +5,7 @@
    "/dashboard" {""          :store-dashboard
                  "/products" {""                         :store-dashboard/product-list
                               ["/" [#"create" :action]]  :store-dashboard/create-product
-                              ["/" [#"\d+" :product-id]] :store-dashboard/product}
+                              ["/" [#"(\d|\w|-)+" :product-id]] :store-dashboard/product}
                  "/orders"   {""                       :store-dashboard/order-list
                               ["/" [#"create" :action]] :store-dashboard/create-order
                               ["/" [#"\w+" :order-id]] :store-dashboard/order}

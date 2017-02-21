@@ -20,10 +20,10 @@
         (->> (css/grid-row)
              css/grid-column)
         (my-dom/div
-          (->> (css/grid-row)
+          (->> {:className "callout transparent"} (css/grid-row)
                (css/align :bottom))
           (my-dom/div (css/grid-column)
-                      (dom/label nil "Stream Key")
+                      (dom/h4 nil "Stream Key")
                       (dom/input #js {:type        "text"
                                       :value       (when (msg/final? message)
                                                      (:token (msg/message message))
@@ -36,6 +36,6 @@
                  (css/add-class :shrink))
             (dom/a #js {:className "button"
                         :onClick   #(msg/om-transact! this `[(stream-token/generate ~{:store-id (:db/id store)})])}
-                   (dom/strong nil "Generate New Key"))))))))
+                   (dom/span nil "Generate New Key"))))))))
 
 (def ->StreamSettings (om/factory StreamSettings))

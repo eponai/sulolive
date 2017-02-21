@@ -2,16 +2,16 @@
   (:require
     [datomic.api :as d]
     [eponai.common.database :as db]
-    [eponai.common.format :as f]
-    [eponai.server.email :as email]
+    ;[eponai.common.format :as f]
+    ;[eponai.server.email :as email]
     [eponai.server.http :as h]
     [taoensso.timbre :refer [debug error info]]
-    [clojure.data.json :as json]
+    ;[clojure.data.json :as json]
+    [eponai.server.external.stripe.format :as f]
     [eponai.common :as c])
   (:import
     (com.stripe Stripe)
-    (com.stripe.exception CardException)
-    (com.stripe.model Customer Card Charge Subscription Account Product ExternalAccountCollection ExternalAccount BankAccount SKU Inventory Order)
+    (com.stripe.model Customer Card Charge Subscription Account Product SKU Order ShippingDetails)
     (com.stripe.net RequestOptions)))
 
 (defn set-api-key [api-key]
@@ -135,8 +135,9 @@
     (set-api-key account-secret)
     (let [products (Product/list nil)]
       (map (fn [p]
-             {:id   (.getId p)
-              :name (.getName p)})
+             {:id      (.getId p)
+              :name    (.getName p)
+              :updated (.getUpdated p)})
            (.getData products))))
 
   (create-product [_ account-secret product]
@@ -151,7 +152,7 @@
   (create-sku [_ account-secret product-id sku]
     (set-api-key account-secret)
     (let [{:keys [price type quantity value id]} sku
-          params {"id" id
+          params {"id"         id
                   "product"    product-id
                   "price"      (or (c/parse-long price) 0)
                   "currency"   "CAD"
@@ -197,21 +198,13 @@
   (get-order [_ account-secret order-id]
     (set-api-key account-secret)
     (let [order (Order/retrieve order-id)]
-      {:id       (.getId order)
-       :amount   (.getAmount order)
-       :updated  (.getUpdated order)
-       :currency (.getCurrency order)}))
+      (f/order order)))
 
   (list-orders [_ account-secret]
     (set-api-key account-secret)
     (let [orders (Order/list nil)]
       (debug "STRIPE order list: " orders)
-      (map (fn [o]
-             {:id       (.getId o)
-              :amount   (.getAmount o)
-              :updated  (.getUpdated o)
-              :currency (.getCurrency o)})
-           (.getData orders))))
+      (map f/order (.getData orders))))
 
   (create-order [_ account-secret order]
     (set-api-key account-secret)
@@ -227,7 +220,7 @@
                                          "state"       nil}
                               "name"    "This is my name"}}
           new-order (Order/create params)]
-      {:id (.getId new-order)
+      {:id     (.getId new-order)
        :amount (.getAmount new-order)})))
 
 (defn stripe [api-key]
@@ -270,15 +263,15 @@
                  })})))
 ;; ######################################
 
-(defn obj->subscription-map [^Subscription stripe-obj]
-  {:stripe.subscription/id         (.getId stripe-obj)
-   :stripe.subscription/status     (keyword (.getStatus stripe-obj))
-   :stripe.subscription/period-end (* 1000 (.getCurrentPeriodEnd stripe-obj))})
+;(defn obj->subscription-map [^Subscription stripe-obj]
+;  {:stripe.subscription/id         (.getId stripe-obj)
+;   :stripe.subscription/status     (keyword (.getStatus stripe-obj))
+;   :stripe.subscription/period-end (* 1000 (.getCurrentPeriodEnd stripe-obj))})
 
-(defn json->subscription-map [{:keys [id current_period_end status]}]
-  {:stripe.subscription/id         id
-   :stripe.subscription/status     (keyword status)
-   :stripe.subscription/period-end (* 1000 current_period_end)})
+;(defn json->subscription-map [{:keys [id current_period_end status]}]
+;  {:stripe.subscription/id         id
+;   :stripe.subscription/status     (keyword status)
+;   :stripe.subscription/period-end (* 1000 current_period_end)})
 
 (declare stripe-action)
 

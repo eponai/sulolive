@@ -14,6 +14,7 @@
    :ui.component.cart/items {:db/cardinality :db.cardinality/many
                              :db/valueType :db.type/ref}
    :order/id {:db/unique :db.unique/identity}
+   :product/id {:db/unique :db.unique/identity}
    :db/ident {:db/unique :db.unique/identity}})
 
 (defn schema-datomic->datascript [datomic-schema]

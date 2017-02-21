@@ -48,7 +48,7 @@
                                                    :system/mailchimp (if @in-production?
                                                                        (mailchimp/mail-chimp (env :mail-chimp-api-key))
                                                                        (mailchimp/mail-chimp-stub))
-                                                   :system/stripe    (if (or @in-production?)
+                                                   :system/stripe    (if (or @in-production? true)
                                                                        (stripe/stripe (env :stripe-secret-key))
                                                                        (stripe/stripe-stub))
                                                    :system/aws-s3    (if (or @in-production?)

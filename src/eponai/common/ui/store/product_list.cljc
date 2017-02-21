@@ -4,14 +4,26 @@
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.elements.css :as css]
     [om.dom :as dom]
+    #?(:cljs
+       [goog.crypt.base64 :as crypt])
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.format.date :as date]))
 
 (defui ProductList
+  static om/IQuery
+  (query [_]
+    [:query/inventory])
   Object
   (render [this]
-    (let [store (om/props this)]
+    (let [{:keys [query/inventory]} (om/props this)
+          {:keys [route-params]} (om/get-computed this)]
       (debug "Render product list")
+      #?(:cljs
+         (do
+           (debug "Convert id: " (:product/id (first inventory)))
+           (let [b (crypt/encodeString (:product/id (first inventory)) true)]
+             (debug "Converted uuid: " b))))
       (dom/div nil
         (my-dom/div
           (->> (css/grid-row))
@@ -20,7 +32,7 @@
                  (css/text-align :right))
             (dom/a #js {:className "button"
                         :href      (routes/url :store-dashboard/create-product
-                                               {:store-id (:db/id store)
+                                               {:store-id (:store-id route-params)
                                                 :action   "create"})}
                    "Add product")))
 
@@ -41,20 +53,20 @@
                 nil
                 (map (fn [p]
                        (let [product-link (routes/url :store-dashboard/product
-                                                      {:store-id   (:db/id store)
-                                                       :product-id (:db/id p)})]
+                                                      {:store-id   (:store-id route-params)
+                                                       :product-id (:product/id p)})]
                          (dom/tr nil
                                  (dom/td nil
                                          (dom/input #js {:type "checkbox"}))
                                  (dom/td nil
                                          (dom/a #js {:href product-link}
-                                                (dom/span nil (:store.item/name p))))
+                                                (dom/span nil (:product/name p))))
                                  (dom/td nil
                                          (dom/a #js {:href product-link}
-                                                (dom/span nil (:store.item/price p))))
+                                                (dom/span nil (:product/price p))))
                                  (dom/td nil
                                          (dom/a #js {:href product-link}
-                                                (dom/span nil (:store.item/price p)))))))
-                     (:store/items store))))))))))
+                                                (dom/span nil (date/date->string (* 1000 (:product/updated p)))))))))
+                     inventory)))))))))
 
 (def ->ProductList (om/factory ProductList))

@@ -13,7 +13,8 @@
     [eponai.common.ui.store.stream-settings :as ss]
     [eponai.common.ui.dom :as my-dom]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.format :as f]))
 
 (defn str->json [s]
   #?(:cljs (cljs.reader/read-string s)
@@ -21,8 +22,8 @@
 
 
 (defn find-product [store product-id]
-  (let [product-id (c/parse-long product-id)]
-    (some #(when (= (:db/id %) product-id) %)
+  (let [product-id (f/str->uuid product-id)]
+    (some #(when (= (:store.item/uuid %) product-id) %)
           (:store/items store))))
 
 (defn get-route-params [component]
@@ -36,7 +37,8 @@
                     :store/name
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     :store/stripe
-                    {:store/items [:store.item/name
+                    {:store/items [:store.item/uuid
+                                   :store.item/name
                                    :store.item/description
                                    :store.item/price
                                    {:store.item/photos [:photo/path]}
@@ -46,6 +48,7 @@
                     :store/collections]}
      :query/current-route
      :query/messages
+     {:proxy/product-list (om/get-query pl/ProductList)}
      {:proxy/product-edit (om/get-query pef/ProductEditForm)}
      {:proxy/order-edit (om/get-query oef/OrderEditForm)}
      {:proxy/order-list (om/get-query ol/OrderList)}
@@ -55,7 +58,7 @@
   (initLocalState [_]
     {:selected-tab :products})
   (render [this]
-    (let [{:proxy/keys [product-edit order-edit order-list stream-settings]
+    (let [{:proxy/keys [product-edit product-list order-edit order-list stream-settings]
            :keys       [proxy/navbar query/store query/current-route]} (om/props this)
           {:keys [route route-params]} current-route]
       (my-dom/div
@@ -91,7 +94,8 @@
 
             :store-dashboard/stream (ss/->StreamSettings (om/computed stream-settings
                                                                       {:store store}))
-            :store-dashboard/product-list (pl/->ProductList store)
+            :store-dashboard/product-list (pl/->ProductList (om/computed product-list
+                                                                         {:route-params route-params}))
             :store-dashboard/create-product (pef/->ProductEditForm (om/computed product-edit
                                                                                 {:route-params route-params}))
             :store-dashboard/product (pef/->ProductEditForm (om/computed product-edit

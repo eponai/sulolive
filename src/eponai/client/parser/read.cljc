@@ -40,6 +40,13 @@
       {:remote (assoc-in ast [:params :store-id] store-id)}
       {:value (db/pull-all-with db '[*] {:where '[[?e :order/id]]})})))
 
+(defmethod client-read :query/inventory
+  [{:keys [db query target ast route-params] :as env} _ _]
+  (let [store-id (c/parse-long (:store-id route-params))]
+    (if target
+      {:remote (assoc-in ast [:params :store-id] store-id)}
+      {:value (db/pull-all-with db '[*] {:where '[[?e :product/id]]})})))
+
 (defmethod client-read :query/order
   [{:keys [db query target ast route-params] :as env} _ _]
   (let [{:keys [order-id store-id]} route-params]
