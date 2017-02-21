@@ -23,6 +23,13 @@
   :db/doc                "User profile photo."
   :db.install/_attribute :db.part/db}
 
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :user/stripe
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "User Stripe info."
+  :db.install/_attribute :db.part/db}
+
  ;; ########## STRIPE ##################
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :stripe/id

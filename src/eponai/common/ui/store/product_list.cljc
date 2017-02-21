@@ -18,11 +18,11 @@
   (render [this]
     (let [{:keys [query/inventory]} (om/props this)
           {:keys [route-params]} (om/get-computed this)]
-      (debug "Render product list")
+      (debug "Render product list: " inventory)
       #?(:cljs
          (do
-           (debug "Convert id: " (:product/id (first inventory)))
-           (let [b (crypt/encodeString (:product/id (first inventory)) true)]
+           (debug "Convert id: " (:store.item/uuid (first inventory)))
+           (let [b (crypt/encodeString (:store.item/uuid (first inventory)) true)]
              (debug "Converted uuid: " b))))
       (dom/div nil
         (my-dom/div
@@ -60,21 +60,22 @@
               (dom/tbody
                 nil
                 (map (fn [p]
+                       (debug "PRODUCT: " p)
                        (let [product-link (routes/url :store-dashboard/product
                                                       {:store-id   (:store-id route-params)
-                                                       :product-id (:product/id p)})]
+                                                       :product-id (:db/id p)})]
                          (dom/tr nil
                                  (dom/td nil
                                          (dom/input #js {:type "checkbox"}))
                                  (dom/td nil
                                          (dom/a #js {:href product-link}
-                                                (dom/span nil (:product/name p))))
+                                                (dom/span nil (:store.item/name p))))
                                  (dom/td nil
                                          (dom/a #js {:href product-link}
-                                                (dom/span nil (:product/price p))))
+                                                (dom/span nil (:store.item/price p))))
                                  (dom/td nil
                                          (dom/a #js {:href product-link}
-                                                (dom/span nil (date/date->string (* 1000 (:product/updated p)))))))))
+                                                (dom/span nil (date/date->string (* 1000 (:store.item/updated p)))))))))
                      inventory)))))))))
 
 (def ->ProductList (om/factory ProductList))

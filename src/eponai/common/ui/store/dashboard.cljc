@@ -42,7 +42,8 @@
                                    :store.item/description
                                    :store.item/price
                                    {:store.item/photos [:photo/path]}
-                                   {:store.item/skus [:store.item.sku/price
+                                   {:store.item/skus [:store.item.sku/uuid
+                                                      :store.item.sku/price
                                                       :store.item.sku/quantity
                                                       :store.item.sku/value]}]}
                     :store/collections]}

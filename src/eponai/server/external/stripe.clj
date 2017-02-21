@@ -85,7 +85,7 @@
 
     :country - A two character string code for the country of the seller, e.g. 'US'.")
 
-  (list-products [this account-secret]
+  (list-products [this account-secret opts]
     "Get a managed account for a seller from Stripe.
     Opts is a map with following keys:
 
@@ -132,14 +132,11 @@
        :secret (.getSecret keys)
        :publ   (.getPublishable keys)}))
   IStripeAccount
-  (list-products [_ account-secret]
+  (list-products [_ account-secret {:keys [ids]}]
     (set-api-key account-secret)
-    (let [products (Product/list nil)]
-      (map (fn [p]
-             {:id      (.getId p)
-              :name    (.getName p)
-              :updated (.getUpdated p)})
-           (.getData products))))
+    (let [params (when (not-empty ids) {"ids" ids})
+          products (Product/list params)]
+      (map f/product (.getData products))))
 
   (create-product [_ account-secret product]
     (set-api-key account-secret)

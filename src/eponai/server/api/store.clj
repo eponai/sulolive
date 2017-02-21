@@ -14,8 +14,9 @@
           (assoc :store.item.sku/quantity quantity)))
 
 (defn list-products [{:keys [db system]} store-id]
-  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)]
-    (stripe/list-products (:system/stripe system) secret)))
+  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)
+        {:keys [store/items]} (db/pull db [{:store/items [:store.item/uuid]}] store-id)]
+    (stripe/list-products (:system/stripe system) secret {:ids (map :store.item/uuid items)})))
 
 (defn create-product [{:keys [state system]} store-id {:keys [id photo skus] product-name :name :as params}]
   {:pre [(string? product-name) (uuid? id)]}

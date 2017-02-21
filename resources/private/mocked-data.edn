@@ -70,9 +70,10 @@
            {:stream/name  "Talking wedding bands"
             :stream/store #db/id[:db.part/user -5]}]
 
- :user    [{:db/id      #db/id[:db.part/user -500]
-            :user/email "dev@sulo.live"
-            :user/photo #db/id[:db.part/user -10]}]
+ :user    [{:db/id       #db/id[:db.part/user -500]
+            :user/email  "dev@sulo.live"
+            :user/photo  #db/id[:db.part/user -10]
+            :user/stripe {:stripe/id "cus_A9paOisnJJQ0wS"}}]
 
  :stores  [{:db/id        #db/id[:db.part/user -1]
             :store/name   "ikcha"
@@ -85,15 +86,31 @@
             :store/items  [{:store.item/name     "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
                             :store.item/price    318.00M
                             :store.item/photos   [#db/id[:db.part/user -24]]
-                            :store.item/category "accessories"}
+                            :store.item/category "accessories"
+                            :store.item/uuid     #uuid "58a4b30e-3c8b-49c4-ab08-796c05b4275b"
+                            :store.item/skus     [{:store.item.sku/uuid     #uuid "58a4b30e-e33e-442f-b018-a18284604e13"
+                                                   :store.item.sku/value    "S"
+                                                   :store.item.sku/type     :store.item.sku.type/finite
+                                                   :store.item.sku/quantity 321M
+                                                   }]}
                            {:store.item/name     "Emerald silver choker"
                             :store.item/price    219.00M
                             :store.item/photos   [#db/id[:db.part/user -25]]
-                            :store.item/category "accessories"}
+                            :store.item/category "accessories"
+                            :store.item/uuid     #uuid "58a4b2b8-4489-4661-9580-c0fe2d132966"
+                            :store.item/skus     [{:store.item.sku/uuid #uuid "58a4b2b8-9c8d-49e1-ab53-8d5c98374f79"
+                                                   :store.item.sku/value    "L"
+                                                   :store.item.sku/type     :store.item.sku.type/finite
+                                                   :store.item.sku/quantity 321M}]}
                            {:store.item/name     "Ear Floral Cuff in Sterling Silver"
                             :store.item/price    68.00M
                             :store.item/photos   [#db/id[:db.part/user -26]]
-                            :store.item/category "accessories"}
+                            :store.item/category "accessories"
+                            :store.item/uuid     #uuid "58a4b270-fd5d-4cd9-a5ec-ee6c683c679b"
+                            :store.item/skus     [{:store.item.sku/uuid #uuid "58a4b270-b918-4007-a9f4-93508411e496"
+                                                   :store.item.sku/value    "M"
+                                                   :store.item.sku/type     :store.item.sku.type/finite
+                                                   :store.item.sku/quantity 32M}]}
                            {:store.item/name     "Sun Stone geometrical Sterling Silver Ring"
                             :store.item/price    211.00M
                             :store.item/photos   [#db/id[:db.part/user -27]]

@@ -1,6 +1,20 @@
 (ns eponai.server.external.stripe.format
+  (:require [eponai.common.format :as f])
   (:import
-    (com.stripe.model OrderItem Order ShippingDetails Address)))
+    (com.stripe.model OrderItem Order ShippingDetails Address Product SKU)))
+
+(defn sku [s]
+  {:store.item.sku/uuid     (f/str->uuid (.getId s))
+   :store.item.sku/price    (.getPrice s)
+   ;:store.item.sku/quantity (.getQuantity s)
+   })
+
+(defn product
+  [p]
+  {:store.item/uuid (f/str->uuid (.getId p))
+   :store.item/name (.getName p)
+   :store.item/skus (map sku (.getData (.getSkus p)))})
+
 
 (defn order-item
   "Convert an OrderItem objec into a map:

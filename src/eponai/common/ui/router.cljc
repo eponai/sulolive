@@ -12,7 +12,7 @@
     [eponai.common.ui.product :as product]
     [eponai.common.ui.streams :as streams]
     [eponai.common.ui.business :as business]
-    [eponai.common.ui.profile :as profile]
+    [eponai.common.ui.user :as user]
     [eponai.common.ui.settings :as settings]))
 
 (def dom-app-id "the-sulo-app")
@@ -42,8 +42,8 @@
                      :factory   streams/->Streams}
    :business        {:component business/Business
                      :factory   business/->Business}
-   :profile         {:component profile/Profile
-                     :factory   profile/->Profile}
+   :user            {:component user/User
+                     :factory   user/->User}
    :settings        {:component settings/Settings
                      :factory   settings/->Settings}})
 

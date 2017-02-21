@@ -3,14 +3,18 @@
 (def store-routes
   {""           :store
    "/dashboard" {""          :store-dashboard
-                 "/products" {""                         :store-dashboard/product-list
-                              ["/" [#"create" :action]]  :store-dashboard/create-product
+                 "/products" {""                                :store-dashboard/product-list
+                              ["/" [#"create" :action]]         :store-dashboard/create-product
                               ["/" [#"(\d|\w|-)+" :product-id]] :store-dashboard/product}
-                 "/orders"   {""                       :store-dashboard/order-list
+                 "/orders"   {""                        :store-dashboard/order-list
                               ["/" [#"create" :action]] :store-dashboard/create-order
-                              ["/" [#"\w+" :order-id]] :store-dashboard/order}
+                              ["/" [#"\w+" :order-id]]  :store-dashboard/order}
                  "/stream"   :store-dashboard/stream}})
 
+(def user-routes
+  {""        :user
+   "/orders" {""                       :user/order-list
+              ["/" [#"\w+" :order-id]] :user/order}})
 (def routes
   ["/" {""                            :index
         "coming-soon"                 :coming-soon
@@ -23,7 +27,7 @@
         "checkout"                    :checkout
         "shopping-bag"                :shopping-bag
         "business"                    :business
-        ["profile/" :user-id]         :profile
+        ["user/" [#"\d+" :user-id]]   user-routes
         "settings"                    :settings}])
 
 ;; #################################################

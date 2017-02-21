@@ -8,7 +8,8 @@
     [eponai.common.ui.elements.photo :as photo]
     [taoensso.timbre :refer [debug error]]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.icons :as icons]))
+    [eponai.common.ui.icons :as icons]
+    [eponai.client.routes :as routes]))
 
 (defn cart-dropdown [{:keys [cart/items cart/price]}]
   (dom/div #js {:className "cart-container dropdown-pane"}
@@ -56,10 +57,13 @@
     (dom/div #js {:className "dropdown-pane"}
       (dom/ul #js {:className "menu vertical"}
               (dom/li nil
-                      (dom/a #js {:href (str "/profile/" (:db/id user))}
+                      (dom/a #js {:href (routes/url :user {:user-id (:db/id user)})}
                              "My Profile"))
               (dom/li nil
-                      (dom/a #js {:href (str "/store/" (:db/id store) "/dashboard")}
+                      (dom/a #js {:href (routes/url :user/order-list {:user-id (:db/id user)})}
+                             "My Orders"))
+              (dom/li nil
+                      (dom/a #js {:href (routes/url :store-dashboard {:store-id (:db/id store)})}
                              "My Store"))
               (dom/li nil
                       (dom/a #js {:href "/settings"}

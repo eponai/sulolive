@@ -37,9 +37,9 @@
 
 (defmethod server-read :query/inventory
   [env _ {:keys [store-id]}]
-  {:value (map (fn [o]
-                 (reduce-kv (fn [m k v] (assoc m (keyword "product" (name k)) v)) {} o))
-               (store/list-products env store-id))})
+  {:value (let [items (store/list-products env store-id)]
+            (debug "Found items: " (into [] items))
+            items)})
 
 (defmethod server-read :query/order
   [env _ {:keys [order-id store-id]}]
