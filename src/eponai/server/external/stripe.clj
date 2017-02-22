@@ -197,20 +197,21 @@
 
   (create-order [_ account-secret order]
     (set-api-key account-secret)
-    (let [params {"currency" (:currency order)
-                  "items"    [{"amount" (f/input->price (:amount order))
-                               "type"   "sku"
-                               "parent" "58a4b30e-e33e-442f-b018-a18284604e13"}]
-                  "shipping" {"address" {"city"        nil
-                                         "country"     nil
-                                         "line1"       nil
-                                         "line2"       nil
-                                         "postal_code" nil
-                                         "state"       nil}
-                              "name"    "This is my name"}}
-          new-order (Order/create params)]
-      {:id     (.getId new-order)
-       :amount (.getAmount new-order)}))
+    (let [params (merge {"shipping" {"address" {"city"        nil
+                                                "country"     nil
+                                                "line1"       nil
+                                                "line2"       nil
+                                                "postal_code" nil
+                                                "state"       nil}
+                                     "name"    "This is my name"}}
+                        (clojure.walk/stringify-keys order))
+          new-order (Order/create params)
+          ]
+      (debug "Create order with params: " params)
+      (f/stripe->order new-order)
+      ;{:id     (.getId new-order)
+      ; :amount (.getAmount new-order)}
+      ))
 
   (update-order [_ account-secret order-id {:order/keys [status]}]
     (set-api-key account-secret)

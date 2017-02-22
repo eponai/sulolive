@@ -8,7 +8,8 @@
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.utils :as utils]
     [eponai.common.ui.navbar :as nav]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.client.parser.message :as msg]))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -35,7 +36,7 @@
       (photo/square
         {:src (:photo/path (:store/photo s))}))))
 
-(defn store-checkout-element [store cart-items]
+(defn store-checkout-element [component store cart-items]
   (dom/div #js {:className "callout cart-checkout-item"}
     (my-dom/div
       (->> (css/grid-row))
@@ -97,19 +98,32 @@
                 (dom/tr #js {:className "total-price"}
                         (dom/td nil "Total")
                         (dom/td nil (utils/two-decimal-price (+ item-price shipping-price)))))))
-          (dom/a #js {:className "button gray"} "Checkout"))))))
+          (dom/a #js {:className "button gray"
+                      :onClick #(.checkout component store)} "Checkout"))))))
 
 
 (defui ShoppingBag
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:query/cart [{:cart/items [{:store.item/_skus [:store.item/price
+     {:query/cart [{:cart/items [:db/id
+                                 :store.item.sku/uuid
+                                 {:store.item/_skus [:store.item/price
                                                      {:store.item/photos [:photo/path]}
                                                      :store.item/name
                                                      {:store/_items [:store/name
                                                                      {:store/photo [:photo/path]}]}]}]}]}])
   Object
+  #?(:cljs
+     (checkout
+       [this store]
+       (let [{:keys [query/cart proxy/navbar]} (om/props this)
+             {:keys [cart/items]} cart
+             store-items (get (items-by-store items) store)]
+         (debug "Checkout store: " store)
+         (debug "Items for store: " items)
+         (msg/om-transact! this `[(user/checkout ~{:items (map :store.item.sku/uuid store-items)
+                                                   :store-id (:db/id store)})]))))
   (render [this]
     (let [{:keys [query/cart proxy/navbar]} (om/props this)
           {:keys [cart/items]} cart
@@ -127,7 +141,7 @@
               (dom/h3 nil "Shopping Bag")
               (apply dom/div nil
                      (map (fn [[s its]]
-                            (store-checkout-element s its))
+                            (store-checkout-element this s its))
                           (items-by-store items)))
               (when (< 1 (count (items-by-store items)))
                 (my-dom/div nil

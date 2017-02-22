@@ -164,3 +164,11 @@
    :error   "Could not create order"}
   {:action (fn []
              (store/update-order env (c/parse-long store-id) order-id params))})
+
+(defmutation user/checkout
+  [env _ {:keys [items store-id] :as p}]
+  {:success "Order created"
+   :error   "Could not create order"}
+  {:action (fn []
+             (store/create-order env store-id p)
+             (debug "Checkout items: " (into [] items)))})

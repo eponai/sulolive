@@ -111,7 +111,7 @@
   See https://stripe.com/docs/api#order_object for more info about the Order object."
   [o]
   (->> {:order/id                       (.getId o)
-        :order/amount                   (.getAmount o)
+        :order/amount                   (stripe->price (.getAmount o))
         ;:order/amount-returned          (.getAmountRefunded o)
         :order/application              (.getApplication o)
         :order/application-fee          (.getApplicationFee o)

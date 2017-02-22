@@ -128,3 +128,7 @@
                    (db/transact state (conj tx {:db/id                             message-id
                                                 :chat.message/client-side-message? true}))))})))
 
+(defmethod client-mutate 'user/checkout
+  [{:keys [target]} k p]
+  (if target
+    {:remote true}))
