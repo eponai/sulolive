@@ -144,8 +144,7 @@
                   "name"       (:name product)
                   "attributes" ["variation"]}
           new-product (Product/create params)]
-      {:id   (.getId new-product)
-       :name (.getName new-product)}))
+      (f/product new-product)))
 
   (create-sku [_ account-secret product-id sku]
     (set-api-key account-secret)
@@ -158,18 +157,8 @@
                   "inventory"  (cond-> {"type" (name type)}
                                        (some? quantity)
                                        (assoc "quantity" (c/parse-long quantity)))}
-          SKU (SKU/create params)
-          inventory (.getInventory SKU)]
-      {:id       (java.util.UUID/fromString (.getId SKU))
-       :type     (keyword "store.item.sku.type" (.getType inventory))
-       :quantity (bigdec (.getQuantity inventory))
-       ;; TODO: The price from stripe is smallest int depending on currency.
-       ;;       i.e. "100 cents to charge $1.00, or 100 to charge ¥100, Japanese Yen
-       ;;            being a 0-decimal currency"
-       ;;       Do we use the stripe number somehow, or do we use the price we were
-       ;;       passed? Gross.
-       :price    (bigdec price)
-       :value    (get (.getAttributes SKU) "variation")}))
+          SKU (SKU/create params)]
+      (f/sku SKU)))
 
   (update-product [_ account-secret product-id params]
     (set-api-key account-secret)

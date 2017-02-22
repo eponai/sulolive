@@ -21,55 +21,49 @@
 (defn create-product [{:keys [state system]} store-id {:keys [id photo skus] product-name :name :as params}]
   {:pre [(string? product-name) (uuid? id)]}
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
-        stripe-p (stripe/create-product (:system/stripe system) secret params)
-        _ (debug "Create product with params: " params)
-        stripe-sku (when (first skus)
-                     (f/sku (stripe/create-sku (:system/stripe system) secret (:id stripe-p) (first skus))))
-        photo-upload (when photo (s3/upload-photo (:system/aws-s3 system) photo))
+        db-product (f/product params)]
 
-        db-product (f/product params)
-        txs (cond-> [db-product
-                     [:db/add store-id :store/items (:db/id db-product)]]
-                    (some? photo-upload)
-                    (conj photo-upload
-                          [:db/add (:db/id db-product) :store.item/photos (:db/id photo-upload)])
+    (stripe/create-product (:system/stripe system) secret params)
+    ;; Transact new product into Datomic
+    (db/transact state [db-product
+                        [:db/add store-id :store/items (:db/id db-product)]])
+    (debug "Created product: " db-product)
 
-                    (some? stripe-sku)
-                    (conj stripe-sku
-                          [:db/add (:db/id db-product) :store.item/skus (:db/id stripe-sku)]))]
-    (debug "Created product in stripe: " stripe-p)
-    ;(debug "Uploaded item photo: " photo-upload)
-    (info "Transacting new product: " txs)
-    (db/transact state txs)))
+    ;; Create SKUs for product
+    (when (first skus)
+      (let [db-sku (f/sku (first skus))]
+        (stripe/create-sku (:system/stripe system) secret id (first skus))
+        (db/transact state [db-sku
+                            [:db/add [:store.item/uuid (:store.item/uuid db-product)] :store.item/skus (:db/id db-sku)]])))
+
+    ;; Upload product photos
+    (when photo
+      (let [photo-url (s3/upload-photo (:system/aws-s3 system) photo)
+            photo-upload (f/photo photo-url)]
+        (db/transact state [photo-upload
+                            [:db/add [:store.item/uuid (:store.item/uuid db-product)] :store.item/photos (:db/id photo-upload)]])))))
 
 (defn update-product [{:keys [state system]} store-id product-id {:keys [photo description] :as params}]
   (let [{:keys [store.item/uuid store.item/photos]} (db/pull (db/db state) [:store.item/uuid :store.item/photos] product-id)
         {:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
-        old-photo (first photos)
+        old-photo (first photos)]
 
-        ;; Update product in Stripe
-        stripe-p (stripe/update-product (:system/stripe system)
-                                        secret
-                                        (str uuid)
-                                        params)
-        new-item (cond-> {:store.item/uuid uuid
-                          :store.item/name (:name params)}
-                         (some? description)
-                         (assoc :store.item/description (.getBytes description)))
+    ;; Update product in Stripe
+    (stripe/update-product (:system/stripe system) secret (str uuid) params)
+    (let [new-product (cond-> {:store.item/uuid uuid
+                               :store.item/name (:name params)}
+                              (some? description)
+                              (assoc :store.item/description (.getBytes description)))]
+      (db/transact-one state new-product))
 
-        ;; Upload photo
-        photo-upload (when photo (s3/upload-photo (:system/aws-s3 system) photo))
-        txs (if (some? photo-upload)
-              (if (some? old-photo)
-                [new-item
-                 (assoc photo-upload :db/id (:db/id old-photo))]
-                [new-item
-                 photo-upload
-                 [:db/add [:store.item/uuid uuid] :store.item/photos (:db/id photo-upload)]])
-              [new-item])]
-    (debug "Updated product in stripe: " stripe-p)
-    (debug "Transaction into datomic: " txs)
-    (db/transact state txs)))
+    ;; Upload photo
+    (when photo
+      (let [photo-url (s3/upload-photo (:system/aws-s3 system) photo)
+            photo-upload (f/photo photo-url)]
+        (if (some? old-photo)
+          (db/transact-one state (assoc photo-upload :db/id (:db/id old-photo)))
+          (db/transact state [photo-upload
+                              [:db/add [:store.item/uuid uuid] :store.item/photos (:db/id photo-upload)]]))))))
 
 (defn delete-product [{:keys [state system]} product-id]
   (let [{:keys [store.item/uuid store.item/skus] :as item} (db/pull (db/db state) [:store.item/uuid {:store.item/skus [:db/id :store.item.sku/uuid]}] product-id)
@@ -78,8 +72,8 @@
                                                                                              [?s :store/stripe ?e]]
                                                                                   :symbols {'?p product-id}})
         deleted-skus (mapv (fn [sku]
-                            (stripe/delete-sku (:system/stripe system) secret (str (:store.item.sku/uuid sku))))
-                          skus)
+                             (stripe/delete-sku (:system/stripe system) secret (str (:store.item.sku/uuid sku))))
+                           skus)
         stripe-p (stripe/delete-product (:system/stripe system)
                                         secret
                                         (str uuid))]

@@ -4,17 +4,26 @@
     (com.stripe.model OrderItem Order ShippingDetails Address Product SKU)))
 
 (defn sku [s]
-  {:store.item.sku/uuid     (f/str->uuid (.getId s))
-   :store.item.sku/price    (.getPrice s)
-   ;:store.item.sku/quantity (.getQuantity s)
-   })
+  (let [inventory (.getInventory s)]
+    ;; TODO: The price from stripe is smallest int depending on currency.
+    ;;       i.e. "100 cents to charge $1.00, or 100 to charge ¥100, Japanese Yen
+    ;;            being a 0-decimal currency"
+    ;;       Do we use the stripe number somehow, or do we use the price we were
+    ;;       passed? Gross.
+    (cond-> {:store.item.sku/uuid  (f/str->uuid (.getId s))
+             :store.item.sku/price (.getPrice s)
+             :store.item.sku/value (get (.getAttributes s) "variation")}
+
+            (some? (.getQuantity inventory))
+            (assoc :store.item.sku/quantity (bigdec (.getQuantity inventory))))))
 
 (defn product
   [p]
-  {:store.item/uuid (f/str->uuid (.getId p))
-   :store.item/name (.getName p)
-   :store.item/skus (map sku (.getData (.getSkus p)))
-   :store.item/updated (.getUpdated p)})
+  {:store.item/uuid    (f/str->uuid (.getId p))
+   :store.item/name    (.getName p)
+   :store.item/skus    (map sku (.getData (.getSkus p)))
+   :store.item/updated (.getUpdated p)
+   :store.item/price   (.getPrice (first (.getData (.getSkus p))))})
 
 
 (defn order-item

@@ -191,8 +191,7 @@
                           (css/grid-column)
                           (dom/label nil "Variation"))
                         (my-dom/div
-                          (->> (css/grid-column)
-                               (css/text-align :right))
+                          (css/grid-column)
                           (dom/label nil "Quantity")))
                       (let [{:store.item.sku/keys [price value quantity]} (first skus)]
                         (my-dom/div
@@ -209,8 +208,7 @@
                             (my-dom/input
                               (->> {:type         "number"
                                     :defaultValue (or quantity "")}
-                                   (css/add-class :input-sku-quantity)
-                                   (css/text-align :right))))))))
+                                   (css/add-class :input-sku-quantity))))))))
         (my-dom/div (->> (css/grid-row)
                          (css/grid-column))
                     (dom/div nil
