@@ -272,7 +272,6 @@
         (my-dom/div (->> (css/grid-row)
                          (css/grid-column))
                     (dom/div nil
-                      (dom/a #js {:className "button hollow"} (dom/span nil "Cancel"))
                       (dom/a #js {:className "button"
                                   :onClick   #(when-not is-loading?
                                                (cond (some? product-id)
@@ -281,6 +280,8 @@
                                                      (.create-product this)))}
                              (if is-loading?
                                (dom/i #js {:className "fa fa-spinner fa-spin"})
-                               (dom/span nil "Save")))))))))
+                               (dom/span nil "Save")))
+                      (dom/a #js {:href (routes/url :store-dashboard/product-list {:store-id store-id})
+                                  :className "button hollow"} (dom/span nil "Cancel"))))))))
 
 (def ->ProductEditForm (om/factory ProductEditForm))

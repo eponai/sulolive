@@ -53,7 +53,7 @@
     (let [new-product (cond-> {:store.item/uuid uuid
                                :store.item/name (:name params)}
                               (some? price)
-                              (assoc :store.item/price (bigdec price))
+                              (assoc :store.item/price (f/input->price price))
                               (some? description)
                               (assoc :store.item/description (.getBytes description)))]
       (db/transact-one state new-product))
@@ -71,6 +71,7 @@
 
     ;; Upload photo
     (when photo
+      (debug "Upload photo: " photo)
       (let [photo-url (s3/upload-photo (:system/aws-s3 system) photo)
             photo-upload (f/photo photo-url)]
         (if (some? old-photo)

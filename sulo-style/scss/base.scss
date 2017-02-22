@@ -91,7 +91,7 @@ h3 {
 
 @mixin list-item-hover($color: $white, $hover-color: darken($color, 5%)) {
 	transition: background .25s ease-in-out;
-	&:hover {
+	&:hover, &:focus {
 		background: $hover-color;
 	}
 }

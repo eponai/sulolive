@@ -128,7 +128,6 @@
     (let [account (Account/create {"country" country
                                    "managed" true})
           keys (.getKeys account)]
-      (debug "Created account: " account)
       {:id     (.getId account)
        :secret (.getSecret keys)
        :publ   (.getPublishable keys)}))
@@ -137,30 +136,18 @@
     (set-api-key account-secret)
     (let [params (when (not-empty ids) {"ids" ids})
           products (Product/list params)]
-      (map f/product (.getData products))))
+      (map f/stripe->product (.getData products))))
 
-  (create-product [_ account-secret product]
+  (create-product [_ account-secret params]
     (set-api-key account-secret)
-    (let [params {"id"         (:id product)
-                  "name"       (:name product)
-                  "attributes" ["variation"]}
-          new-product (Product/create params)]
-      (f/product new-product)))
+    (let [new-product (Product/create (f/input->product params))]
+      (f/stripe->product new-product)))
 
   (create-sku [_ account-secret product-id sku]
     (set-api-key account-secret)
-    (let [{:keys [price type quantity value id]} sku
-          params {"id"         id
-                  "product"    product-id
-                  "price"      (or (c/parse-long price) 0)
-                  "currency"   "CAD"
-                  "attributes" {"variation" value}
-                  "inventory"  (cond-> {"type" "infinite"}
-                                       (some? quantity)
-                                       (assoc "quantity" (c/parse-long quantity)
-                                              "type" "finite"))}
-          SKU (SKU/create params)]
-      (f/sku SKU)))
+    (let [SKU (SKU/create (f/input->sku product-id sku))]
+      (f/stripe->sku SKU)))
+
   (update-sku [_this account-secret sku-id {:keys [quantity value price]}]
     (set-api-key account-secret)
     (let [params (cond-> {"inventory" {"type" "infinite"}}
@@ -171,17 +158,17 @@
                          (some? value)
                          (assoc-in ["attributes" "variation"] value)
                          (some? price)
-                         (assoc "price" (c/parse-long price)))
+                         (assoc "price" (f/input->price price)))
           old-sku (SKU/retrieve sku-id)
           new-sku (.update old-sku params)]
-      (f/sku new-sku)))
+      (f/stripe->sku new-sku)))
 
   (update-product [_ account-secret product-id params]
     (set-api-key account-secret)
     (let [new-params {"name" (:name params)}
           old-product (Product/retrieve product-id)
           new-product (.update old-product new-params)]
-      (f/product new-product)))
+      (f/stripe->product new-product)))
 
   (delete-product [_ account-secret product-id]
     (set-api-key account-secret)
@@ -201,18 +188,17 @@
   (get-order [_ account-secret order-id]
     (set-api-key account-secret)
     (let [order (Order/retrieve order-id)]
-      (f/order order)))
+      (f/stripe->order order)))
 
   (list-orders [_ account-secret]
     (set-api-key account-secret)
     (let [orders (Order/list nil)]
-      (debug "STRIPE order list: " orders)
-      (map f/order (.getData orders))))
+      (map f/stripe->order (.getData orders))))
 
   (create-order [_ account-secret order]
     (set-api-key account-secret)
     (let [params {"currency" (:currency order)
-                  "items"    [{"amount" (c/parse-long (:amount order))
+                  "items"    [{"amount" (f/input->price (:amount order))
                                "type"   "sku"
                                "parent" "58a4b30e-e33e-442f-b018-a18284604e13"}]
                   "shipping" {"address" {"city"        nil
@@ -232,7 +218,7 @@
           order (Order/retrieve order-id)
           updated (.update order params)]
       (debug "Stripe - Updated order: " order)
-      (f/order updated))))
+      (f/stripe->order updated))))
 
 (defn stripe [api-key]
   (->StripeRecord api-key))

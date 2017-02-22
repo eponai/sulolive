@@ -51,7 +51,7 @@
                                                    :system/stripe    (if (or @in-production? true)
                                                                        (stripe/stripe (env :stripe-secret-key))
                                                                        (stripe/stripe-stub))
-                                                   :system/aws-s3    (if (or @in-production?)
+                                                   :system/aws-s3    (if (or @in-production? true)
                                                                        (s3/aws-s3 {:bucket     (env :aws-s3-bucket-photos)
                                                                                    :zone       (env :aws-s3-bucket-photos-zone)
                                                                                    :access-key (env :aws-access-key-id)

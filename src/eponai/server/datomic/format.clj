@@ -98,6 +98,10 @@
           (some? quantity)
           (assoc :store.item.sku/quantity (bigdec quantity))))
 
+(defn input->price [price]
+  (when price
+    (* 100 (bigdec price))))
+
 (defn auth0->user [auth0]
   {:db/id         (d/tempid :db.part/user)
    :user/email    (:email auth0)

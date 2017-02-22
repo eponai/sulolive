@@ -56,12 +56,14 @@
   (let [store (get (first (get user :store.owner/_user)) :store/_owners)]
     (dom/div #js {:className "dropdown-pane"}
       (dom/ul #js {:className "menu vertical"}
-              (dom/li nil
-                      (dom/a #js {:href (routes/url :user {:user-id (:db/id user)})}
-                             "My Profile"))
-              (dom/li nil
-                      (dom/a #js {:href (routes/url :user/order-list {:user-id (:db/id user)})}
-                             "My Orders"))
+              (when user
+                (dom/li nil
+                        (dom/a #js {:href (routes/url :user {:user-id (:db/id user)})}
+                               "My Profile")))
+              (when user
+                (dom/li nil
+                        (dom/a #js {:href (routes/url :user/order-list {:user-id (:db/id user)})}
+                               "My Orders")))
               (when store
                 (dom/li nil
                         (dom/a #js {:href (routes/url :store-dashboard {:store-id (:db/id store)})}

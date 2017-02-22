@@ -8,7 +8,8 @@
        [goog.crypt.base64 :as crypt])
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date]
+    [eponai.common.ui.utils :as utils]))
 
 (defui ProductList
   static om/IQuery
@@ -72,7 +73,7 @@
                                                 (dom/span nil (:store.item/name p))))
                                  (dom/td nil
                                          (dom/a #js {:href product-link}
-                                                (dom/span nil (:store.item/price p))))
+                                                (dom/span nil (utils/two-decimal-price (:store.item/price p)))))
                                  (dom/td nil
                                          (when (:store.item/updated p)
                                            (dom/a #js {:href product-link}

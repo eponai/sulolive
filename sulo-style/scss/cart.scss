@@ -132,7 +132,7 @@
 		// 	background: darken($white, 2%);
 		// }
 	}
-	&:hover {
+	&:hover, &:focus {
 		.dropdown-pane {
 			@include breakpoint(large) {
 				visibility: visible;

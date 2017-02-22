@@ -1,9 +1,33 @@
 (ns eponai.server.external.stripe.format
-  (:require [eponai.common.format :as f])
+  (:require [eponai.common.format :as f]
+            [eponai.common :as c])
   (:import
     (com.stripe.model OrderItem Order ShippingDetails Address Product SKU)))
 
-(defn sku [s]
+(defn stripe->price [p]
+  (with-precision 10 (/ (bigdec p) 100)))
+
+(defn input->price [p]
+  (when p
+    (int (with-precision 10 (* 100 (bigdec p))))))
+
+(defn input->product [{:keys [id] p-name :name}]
+  {"id"         id
+   "name"       p-name
+   "attributes" ["variation"]})
+
+(defn input->sku [product-id {:keys [id price value quantity]}]
+  {"id"         id
+   "product"    product-id
+   "price"      (input->price (or (c/parse-long price) 0))
+   "currency"   "CAD"
+   "attributes" {"variation" (or value "default")}
+   "inventory"  (cond-> {"type" "infinite"}
+                        (some? quantity)
+                        (assoc "quantity" (c/parse-long quantity)
+                               "type" "finite"))})
+
+(defn stripe->sku [s]
   (let [inventory (.getInventory s)]
     ;; TODO: The price from stripe is smallest int depending on currency.
     ;;       i.e. "100 cents to charge $1.00, or 100 to charge ¥100, Japanese Yen
@@ -11,22 +35,22 @@
     ;;       Do we use the stripe number somehow, or do we use the price we were
     ;;       passed? Gross.
     (cond-> {:store.item.sku/uuid  (f/str->uuid (.getId s))
-             :store.item.sku/price (.getPrice s)
+             :store.item.sku/price (stripe->price (.getPrice s))
              :store.item.sku/value (get (.getAttributes s) "variation")}
 
             (some? (.getQuantity inventory))
             (assoc :store.item.sku/quantity (bigdec (.getQuantity inventory))))))
 
-(defn product
+(defn stripe->product
   [p]
   {:store.item/uuid    (f/str->uuid (.getId p))
    :store.item/name    (.getName p)
-   :store.item/skus    (map sku (.getData (.getSkus p)))
+   :store.item/skus    (map stripe->sku (.getData (.getSkus p)))
    :store.item/updated (.getUpdated p)
-   :store.item/price   (.getPrice (first (.getData (.getSkus p))))})
+   :store.item/price   (stripe->price (.getPrice (first (.getData (.getSkus p)))))})
 
 
-(defn order-item
+(defn stripe->order-item
   "Convert an OrderItem objec into a map:
 
   Fields;
@@ -54,15 +78,15 @@
     (some? (.getParent oi))
     (assoc :order.item/parent (.getParent oi))))
 
-(defn address [a]
+(defn stripe->address [a]
   {:city (.getCity a)})
 
-(defn shipping [s]
-  {:order.shipping/address (address (.getAddress s))
+(defn stripe->shipping [s]
+  {:order.shipping/address (stripe->address (.getAddress s))
    :order.shipping/name    (.getName s)
    :order.shipping/phone   (.getPhone s)})
 
-(defn order
+(defn stripe->order
   "Convert Java Order object to clojure map.
 
   Fields:
@@ -99,12 +123,12 @@
 
         :order/email                    (.getEmail o)
         :order/external-coupon-code     (.getExternalCouponCode o)
-        :order/items                    (map order-item (.getItems o))
+        :order/items                    (map stripe->order-item (.getItems o))
         :order/livemode                 (.getLivemode o)
         :order/metadata                 (.getMetadata o)
         ;:order/returns (.getReturns o)
         :order/selected-shipping-method (.getSelectedShippingMethod o)
-        :order/shipping                 (shipping (.getShipping o))
+        :order/shipping                 (stripe->shipping (.getShipping o))
 
         :order/status                   (keyword "order.status" (.getStatus o))
         :order/status-transitions       (.getStatusTransitions o)
