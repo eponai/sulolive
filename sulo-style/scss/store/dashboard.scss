@@ -17,7 +17,8 @@
       }
     }
 }
-#sulo-store-dashboard {
+
+@mixin sulo-action-buttons {
 	$primary-color: map-get($foundation-palette, action);
 	@include foundation-button;
 	.button {
@@ -32,7 +33,10 @@
 			border: none;
 		}
 	}
-
+}
+#sulo-store-dashboard {
+	.page-content {
+	@include sulo-action-buttons;
 	.menu.store-nav {
 		margin: 2rem 0;
 	}
@@ -91,7 +95,7 @@
 			margin: 0;
 		}
 	}
-
+}
 	.navbar, footer, .footer .row {
 		max-width: 100%;
 	}

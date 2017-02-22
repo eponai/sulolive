@@ -35,8 +35,8 @@
   (if target
     {:remote/user true}                                          ;(auth/is-logged-in?)
     {:action (fn []
-               (let [cart (db/one-with (db/db state) {:where '[[?e :cart/items]]})]
-                 (db/transact-one state [:db/add cart :cart/items (:db/id item)]))
+               ;(let [cart (db/one-with (db/db state) {:where '[[?e :cart/items]]})]
+               ;  (db/transact-one state [:db/add cart :cart/items (:db/id item)]))
 
                ;(if (auth/is-logged-in?)
                ;  (logged-in-update-cart state item)

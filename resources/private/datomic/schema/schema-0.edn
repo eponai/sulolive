@@ -283,19 +283,19 @@
   :db/doc                "Cart items."
   :db.install/_attribute :db.part/db}
 
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :cart.item/sku
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "SKU for this cart item."
-  :db.install/_attribute :db.part/db}
+ ;{:db/id                 #db/id[:db.part/db]
+ ; :db/ident              :cart.item/sku
+ ; :db/valueType          :db.type/ref
+ ; :db/cardinality        :db.cardinality/one
+ ; :db/doc                "SKU for this cart item."
+ ; :db.install/_attribute :db.part/db}
 
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :cart.item/quantity
-  :db/valueType          :db.type/bigdec
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Quantity cart item quantity."
-  :db.install/_attribute :db.part/db}
+ ;{:db/id                 #db/id[:db.part/db]
+ ; :db/ident              :cart.item/quantity
+ ; :db/valueType          :db.type/bigdec
+ ; :db/cardinality        :db.cardinality/one
+ ; :db/doc                "Quantity cart item quantity."
+ ; :db.install/_attribute :db.part/db}
 
  ;; Chat
 

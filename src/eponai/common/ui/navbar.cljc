@@ -16,8 +16,7 @@
     (apply menu/vertical
            {:classes [::css/cart]}
            (map (fn [i]
-                  (let [{:cart.item/keys [sku]} i
-                        {:store.item/keys [price photos] p-name :store.item/name :as item} (:store.item/_skus sku)]
+                  (let [{:store.item/keys [price photos] p-name :store.item/name :as item} (:store.item/_skus i)]
                     (menu/item-link
                       {:href    (str "/goods/" (:db/id item))
                        :classes [:cart-link]}
@@ -80,10 +79,10 @@
 (defui Navbar
   static om/IQuery
   (query [_]
-    [{:query/cart [{:cart/items [{:cart.item/sku [{:store.item/_skus [:store.item/price
-                                                                      {:store.item/photos [:photo/path]}
-                                                                      :store.item/name
-                                                                      {:store/_items [:store/name]}]}]}]}]}
+    [{:query/cart [{:cart/items [{:store.item/_skus [:store.item/price
+                                                     {:store.item/photos [:photo/path]}
+                                                     :store.item/name
+                                                     {:store/_items [:store/name]}]}]}]}
      {:query/auth [:db/id :user/email {:store.owner/_user [{:store/_owners [:store/name :db/id]}]}]}])
   Object
   #?(:cljs

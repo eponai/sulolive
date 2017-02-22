@@ -75,9 +75,7 @@
             :user/photo  #db/id[:db.part/user -10]
             :user/stripe {:stripe/id "cus_A9paOisnJJQ0wS"}
             :user/cart   {:db/id      #db/id[:db.part/user -1004]
-                          :cart/items [{:db/id              #db/id[:db.part/user -1001]
-                                        :cart.item/sku      #db/id[:db.part/user -1000]
-                                        :cart.item/quantity 1M}]}}]
+                          :cart/items [#db/id[:db.part/user -1000]]}}]
 
  :stores  [{:db/id        #db/id[:db.part/user -1]
             :store/name   "ikcha"
