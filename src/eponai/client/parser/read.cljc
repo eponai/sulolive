@@ -95,7 +95,7 @@
   (let [cart (db/pull-one-with db query {:where '[[?e :cart/items]]})]
     (if target
       {:remote true }
-      {:value (common.read/compute-cart-price cart)})))
+      {:value cart})))                                      ;(common.read/compute-cart-price cart)
 
 (defmethod client-read :query/items
   [{:keys [db query target route-params ast] :as env} _ p]

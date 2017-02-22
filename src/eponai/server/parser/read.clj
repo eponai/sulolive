@@ -19,10 +19,10 @@
               (eponai.datascript/schema-datomic->datascript))})
 
 (defmethod server-read :query/cart
-  [{:keys [db db-history query]} _ {:keys [items]}]
-  {:value (query/one db db-history query (cond-> {:where '[[?e :cart/items]]}
-                                                 (seq items)
-                                                 (db/merge-query {:symbols {'[?e ...] items}})))})
+  [{:keys [db db-history query auth]} _ {:keys [items]}]
+  {:value (query/one db db-history query {:where '[[?u :user/email ?email]
+                                                   [?u :user/cart ?e]]
+                                          :symbols {'?email (:email auth)}})})
 
 (defmethod read-basis-param-path :query/store [_ _ {:keys [store-id]}]
   [store-id])

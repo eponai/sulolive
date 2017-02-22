@@ -35,11 +35,13 @@
   nil)
 
 
-(defmutation shopping-cart/add-item
+(defmutation shopping-bag/add-item
   [{:keys [state auth]} _ {:keys [item]}]
   {}
   {:action (fn []
-             (let [cart (db/one-with (db/db state) {:where '[[?e :cart/items]]})]
+             (let [cart (db/one-with (db/db state) {:where   '[[?u :user/email ?email]
+                                                               [?e :cart/user ?u]]
+                                                    :symbols {'?email (:email auth)}})]
                (db/transact-one state [:db/add cart :cart/items (:db/id item)])))})
 
 (defmutation beta/vendor

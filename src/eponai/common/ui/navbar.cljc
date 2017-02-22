@@ -16,18 +16,20 @@
     (apply menu/vertical
            {:classes [::css/cart]}
            (map (fn [i]
-                  (menu/item-link
-                    {:href    (str "/goods/" (:db/id i))
-                     :classes [:cart-link]}
-                    ;(dom/div #js {})
-                    (photo/square
-                      {:src (:store.item/img-src i)})
-                    (dom/div #js {:className ""}
-                      (dom/div #js {:className "content-item-title-section"}
-                        (dom/p nil (dom/span #js {:className "name"} (:store.item/name i))))
-                      (dom/div #js {:className "content-item-subtitle-section"}
-                        (dom/strong #js {:className "price"}
-                                  (ui-utils/two-decimal-price (:store.item/price i)))))))
+                  (let [{:cart.item/keys [sku]} i
+                        {:store.item/keys [price photos] p-name :store.item/name :as item} (:store.item/_skus sku)]
+                    (menu/item-link
+                      {:href    (str "/goods/" (:db/id item))
+                       :classes [:cart-link]}
+                      ;(dom/div #js {})
+                      (photo/square
+                        {:src (:photo/path (first photos))})
+                      (dom/div #js {:className ""}
+                        (dom/div #js {:className "content-item-title-section"}
+                          (dom/p nil (dom/span #js {:className "name"} p-name)))
+                        (dom/div #js {:className "content-item-subtitle-section"}
+                          (dom/strong #js {:className "price"}
+                                      (ui-utils/two-decimal-price price)))))))
                 (take 3 items)))
 
     (dom/div #js {:className "callout transparent"}
@@ -78,11 +80,10 @@
 (defui Navbar
   static om/IQuery
   (query [_]
-    [{:query/cart [:cart/price
-                   {:cart/items [:store.item/price
-                                 {:store.item/photos [:photo/path]}
-                                 :store.item/name
-                                 {:store/_items [:store/name]}]}]}
+    [{:query/cart [{:cart/items [{:cart.item/sku [{:store.item/_skus [:store.item/price
+                                                                      {:store.item/photos [:photo/path]}
+                                                                      :store.item/name
+                                                                      {:store/_items [:store/name]}]}]}]}]}
      {:query/auth [:db/id :user/email {:store.owner/_user [{:store/_owners [:store/name :db/id]}]}]}])
   Object
   #?(:cljs

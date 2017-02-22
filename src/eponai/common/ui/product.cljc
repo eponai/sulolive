@@ -101,8 +101,8 @@
                 ;            (my-dom/div (css/grid-column)
                 ;                        (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
                 ;                                    :className "button expanded hollow"} "Save")))
-                (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
-                            :className "button expanded hollow"} "Save")
+                ;(dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
+                ;            :className "button expanded hollow"} "Save")
                 (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
                             :className "button expanded"} "Add to bag")
                 (dom/p #js {:className (str (when added-to-bag? "show"))} "Your shopping bag was updated" ))))
@@ -177,10 +177,9 @@
   Object
   (render [this]
     (let [{:keys [query/item proxy/navbar]} (om/props this)]
-      (dom/div
-        #js {:id "sulo-product-page" :className "sulo-page"}
-        (common/page-container
-          {:navbar navbar}
-          (->Product item))))))
+      (debug "MY ITEM: " item)
+      (common/page-container
+        {:navbar navbar :id "sulo-product-page"}
+        (->Product item)))))
 
 (def ->ProductPage (om/factory ProductPage))

@@ -73,7 +73,11 @@
  :user    [{:db/id       #db/id[:db.part/user -500]
             :user/email  "dev@sulo.live"
             :user/photo  #db/id[:db.part/user -10]
-            :user/stripe {:stripe/id "cus_A9paOisnJJQ0wS"}}]
+            :user/stripe {:stripe/id "cus_A9paOisnJJQ0wS"}
+            :user/cart   {:db/id      #db/id[:db.part/user -1004]
+                          :cart/items [{:db/id              #db/id[:db.part/user -1001]
+                                        :cart.item/sku      #db/id[:db.part/user -1000]
+                                        :cart.item/quantity 1M}]}}]
 
  :stores  [{:db/id        #db/id[:db.part/user -1]
             :store/name   "ikcha"
@@ -98,7 +102,7 @@
                             :store.item/photos   [#db/id[:db.part/user -25]]
                             :store.item/category "accessories"
                             :store.item/uuid     #uuid "58a4b2b8-4489-4661-9580-c0fe2d132966"
-                            :store.item/skus     [{:store.item.sku/uuid #uuid "58a4b2b8-9c8d-49e1-ab53-8d5c98374f79"
+                            :store.item/skus     [{:store.item.sku/uuid     #uuid "58a4b2b8-9c8d-49e1-ab53-8d5c98374f79"
                                                    :store.item.sku/value    "L"
                                                    :store.item.sku/type     :store.item.sku.type/finite
                                                    :store.item.sku/quantity 321M}]}
@@ -107,7 +111,8 @@
                             :store.item/photos   [#db/id[:db.part/user -26]]
                             :store.item/category "accessories"
                             :store.item/uuid     #uuid "58a4b270-fd5d-4cd9-a5ec-ee6c683c679b"
-                            :store.item/skus     [{:store.item.sku/uuid #uuid "58a4b270-b918-4007-a9f4-93508411e496"
+                            :store.item/skus     [{:db/id               #db/id[:db.part/user -1000]
+                                                   :store.item.sku/uuid     #uuid "58a4b270-b918-4007-a9f4-93508411e496"
                                                    :store.item.sku/value    "M"
                                                    :store.item.sku/type     :store.item.sku.type/finite
                                                    :store.item.sku/quantity 32M}]}
@@ -203,8 +208,8 @@
          {:chat/store #db/id[:db.part/user -5]}
          {:chat/store #db/id[:db.part/user -4]}]
 
- ;:cart [{:cart/items #{[:store.item/id "00"]
- ;                      [:store.item/id "01"]
- ;                      [:store.item/id "42"]
- ;                      [:store.item/id "43"]}}]
+ ;:cart    [{:db/id #db/id[:db.part/user -1004]
+ ;           :cart/items [{:db/id  #db/id[:db.part/user -1001]
+ ;                         :cart.item/sku      #db/id[:db.part/user -1000]
+ ;                         :cart.item/quantity 1M}]}]
  }
