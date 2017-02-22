@@ -36,14 +36,14 @@
 
 
 (defmutation shopping-bag/add-item
-  [{:keys [state auth]} _ {:keys [item]}]
+  [{:keys [state auth]} _ {:keys [sku]}]
   {:success "Item added to bag"
    :error "Did not add that item, sorry"}
   {:action (fn []
              (let [cart (db/one-with (db/db state) {:where   '[[?u :user/email ?email]
                                                                [?u :user/cart ?e]]
                                                     :symbols {'?email (:email auth)}})]
-               (db/transact-one state [:db/add cart :cart/items (:db/id item)])))})
+               (db/transact-one state [:db/add cart :cart/items (c/parse-long sku)])))})
 
 (defmutation beta/vendor
   [{:keys [state auth system] ::parser/keys [return exception]} _ {:keys [name site email]}]

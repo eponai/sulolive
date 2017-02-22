@@ -96,7 +96,9 @@
 		flex-direction: row;
 		.photo-container {
 			min-width: 25%;
+			width: 25%;
 			margin-right: 0.5rem;
+			flex: 0;
 		}
 	}
 }

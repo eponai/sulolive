@@ -4,6 +4,7 @@
     [eponai.common.ui.common :as c]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.utils :as utils]
+    #?(:cljs [eponai.web.utils :as web-utils])
     [om.next :as om :refer [defui]]
     [om.dom :as dom]
     [eponai.common.ui.common :as common]
@@ -24,6 +25,9 @@
                          )))
               reviews)))
 
+(def form-elements
+  {:selected-sku "selected-sku"})
+
 (defui Product
   static om/IQuery
   (query [_]
@@ -31,6 +35,7 @@
      :store.item/name
      :store.item/price
      {:store.item/photos [:photo/path]}
+     {:store.item/skus [:store.item.sku/value]}
      :store.item/details
      :store.item/category
      {:store/_items [{:store/photo [:photo/path]}
@@ -39,10 +44,12 @@
   (initLocalState [_]
     {:selected-tab :rating})
   #?(:cljs
-     (add-to-bag [this item]
-                 (om/transact! this `[(shopping-bag/add-item ~{:item (select-keys item [:db/id])})
-                                       :query/cart])
-                 (om/update-state! this assoc :added-to-bag? true)))
+     (add-to-bag [this]
+                 (let [selected-sku (web-utils/input-value-by-id (:selected-sku form-elements))]
+                   (debug "Selected sku value: " selected-sku)
+                   (om/transact! this `[(shopping-bag/add-item ~{:sku selected-sku})
+                                        :query/cart])
+                   (om/update-state! this assoc :added-to-bag? true))))
   #?(:cljs
      (componentDidUpdate [this prev-props prev-state]
                          (let [{:keys [added-to-bag?]} (om/get-state this)]
@@ -50,7 +57,7 @@
                              (js/setTimeout #(om/update-state! this assoc :added-to-bag? false) 2000)))))
   (render [this]
     (let [{:keys [selected-tab added-to-bag?]} (om/get-state this)
-          {:store.item/keys     [price photos details]
+          {:store.item/keys     [price photos details skus]
            item-name :store.item/name :as item} (om/props this)
           store (:store/_items item)
           photo-url (:photo/path (first photos))]
@@ -87,11 +94,12 @@
                 (dom/p #js {:className "title"} item-name)
                 (dom/p #js {:className "price"}
                         (utils/two-decimal-price price)))
-              (dom/div nil
-                (dom/select nil
-                            (dom/option #js {:value "S"} "S - Small")
-                            (dom/option #js {:value "M"} "M - Medium")
-                            (dom/option #js {:value "L"} "L - Large")))
+              (when (not-empty skus)
+                (dom/div nil
+                  (dom/select #js {:id (get form-elements :selected-sku)}
+                              (map (fn [sku]
+                                     (dom/option #js {:value (:db/id sku)} (:store.item.sku/value sku)))
+                                   skus))))
               (dom/div #js {:className "product-action-container"}
                 ;(my-dom/div (->> (css/grid-row))
                 ;            (my-dom/div (->> (css/grid-column)
@@ -103,7 +111,7 @@
                 ;                                    :className "button expanded hollow"} "Save")))
                 ;(dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
                 ;            :className "button expanded hollow"} "Save")
-                (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
+                (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this)))
                             :className "button expanded"} "Add to bag")
                 (dom/p #js {:className (str (when added-to-bag? "show"))} "Your shopping bag was updated" ))))
 
@@ -177,7 +185,6 @@
   Object
   (render [this]
     (let [{:keys [query/item proxy/navbar]} (om/props this)]
-      (debug "MY ITEM: " item)
       (common/page-container
         {:navbar navbar :id "sulo-product-page"}
         (->Product item)))))

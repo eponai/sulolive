@@ -11,6 +11,9 @@
     [eponai.common.ui.icons :as icons]
     [eponai.client.routes :as routes]))
 
+(defn compute-item-price [items]
+  (reduce + (map :store.item/price items)))
+
 (defn cart-dropdown [{:keys [cart/items cart/price]}]
   (dom/div #js {:className "cart-container dropdown-pane"}
     (apply menu/vertical
@@ -35,7 +38,7 @@
       (if (< 3 (count items))
         (dom/small nil (str "You have " (- (count items) 3) " more item(s) in your bag"))
         (dom/small nil (str "You have " (count items) " item(s) in your bag")))
-      (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price price))))
+      (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price (compute-item-price (map #(get % :store.item/_skus) items))))))
     (dom/a #js {:className "button expanded hollow gray"
                 :href      "/checkout"} "View My Bag")))
 
