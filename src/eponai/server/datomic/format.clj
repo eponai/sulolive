@@ -93,12 +93,10 @@
 
 (defn sku [{:keys [id value type quantity price]}]
   (cond-> {:db/id                (d/tempid :db.part/user)
-           :store.item.sku/price (bigdec price)
            :store.item.sku/uuid  id
-           :store.item.sku/value value
-           :store.item.sku/type  type}
+           :store.item.sku/value value}
           (some? quantity)
-          (assoc :store.item.sku/quantity quantity)))
+          (assoc :store.item.sku/quantity (bigdec quantity))))
 
 (defn auth0->user [auth0]
   {:db/id         (d/tempid :db.part/user)

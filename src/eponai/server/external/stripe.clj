@@ -66,6 +66,7 @@
     Opts is a map with following keys:
 
     :country - A two character string code for the country of the seller, e.g. 'US'.")
+  (update-sku [this account-secret sku-id params])
 
   (update-product [_ account-secret product-id params]
     "Get a managed account for a seller from Stripe.
@@ -154,11 +155,24 @@
                   "price"      (or (c/parse-long price) 0)
                   "currency"   "CAD"
                   "attributes" {"variation" value}
-                  "inventory"  (cond-> {"type" (name type)}
+                  "inventory"  (cond-> {"type" "infinite"}
                                        (some? quantity)
-                                       (assoc "quantity" (c/parse-long quantity)))}
+                                       (assoc "quantity" (c/parse-long quantity)
+                                              "type" "finite"))}
           SKU (SKU/create params)]
       (f/sku SKU)))
+  (update-sku [_this account-secret sku-id {:keys [quantity value]}]
+    (set-api-key account-secret)
+    (let [params (cond-> {"inventory" {"type" "infinite"}}
+                         (some? quantity)
+                         (assoc-in ["inventory" "quantity"] quantity)
+                         (some? quantity)
+                         (assoc-in ["inventory" "type"] "finite")
+                         (some? value)
+                         (assoc-in ["attributes" "variation"] value))
+          old-sku (SKU/retrieve sku-id)
+          new-sku (.update old-sku params)]
+      (f/sku new-sku)))
 
   (update-product [_ account-secret product-id params]
     (set-api-key account-secret)

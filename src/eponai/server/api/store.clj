@@ -43,7 +43,7 @@
         (db/transact state [photo-upload
                             [:db/add [:store.item/uuid (:store.item/uuid db-product)] :store.item/photos (:db/id photo-upload)]])))))
 
-(defn update-product [{:keys [state system]} store-id product-id {:keys [photo description] :as params}]
+(defn update-product [{:keys [state system]} store-id product-id {:keys [photo description skus] :as params}]
   (let [{:keys [store.item/uuid store.item/photos]} (db/pull (db/db state) [:store.item/uuid :store.item/photos] product-id)
         {:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
         old-photo (first photos)]
@@ -55,6 +55,13 @@
                               (some? description)
                               (assoc :store.item/description (.getBytes description)))]
       (db/transact-one state new-product))
+
+    (when-let [sku (first skus)]
+      (stripe/update-sku (:system/stripe system) secret (str (:id sku)) sku)
+      (let [db-sku (f/sku sku)]
+        (debug "Transact sku into datomic.")
+        (db/transact state [db-sku
+                            [:db/add product-id :store.item/skus (:db/id db-sku)]])))
 
     ;; Upload photo
     (when photo

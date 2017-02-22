@@ -42,6 +42,16 @@
            (when-let [el (get-element-by-id id)]
              (.-value el))))
 
+#?(:cljs
+   (defn input-product [component]
+     (let [{:keys [uploaded-photo quill-editor]} (om/get-state component)
+           {:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements]
+       {:name        (utils/input-value-by-id input-name)
+        :price       (utils/input-value-by-id input-price)
+        :currency    "CAD"
+        :photo       uploaded-photo
+        :description (js/JSON.stringify (quill/get-contents quill-editor))})))
+
 (defui ProductEditForm
   static om/IQuery
   (query [_]
@@ -66,7 +76,36 @@
          (msg/om-transact! this `[(store/delete-product ~{:product {:db/id (c/parse-long product-id)}})]))))
 
   #?(:cljs
-     (update-product [this]
+     (update-product
+       [this]
+       (debug "Updaeting;;")
+       (let [{:keys [product-id store-id]} (get-route-params this)
+             {:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements
+             skus (mapv (fn [el]
+                         ;(debug "ELEMENT: " (.-id el))
+                         (let [element-id (.-id el)
+                               value (utils/first-input-value-by-class el input-sku-value)
+                               quantity (utils/first-input-value-by-class el input-sku-quantity)]
+                           ;(debug "Quantity: " quantity)
+                           (cond-> {:id    (if (some? element-id)
+                                             (f/str->uuid element-id) (db/squuid))
+                                    :value value}
+                                   (some? quantity)
+                                   (assoc :quantity quantity))))
+                       (utils/elements-by-class (:input-sku-group form-elements)))
+             product (cond-> (input-product this)
+                             (not-empty skus)
+                             (assoc :skus skus))
+             ]
+         (debug "Yo: elements" (utils/elements-by-class (:input-sku-group form-elements)))
+         (msg/om-transact! this `[(store/update-product ~{:product    product
+                                                          :product-id product-id
+                                                          :store-id   store-id})
+                                  :query/store])
+         (om/update-state! this dissoc :uploaded-photo)
+         )))
+  #?(:cljs
+     (create-product [this]
                      (let [{:keys [product-id store-id action]} (get-route-params this)
                            {:keys [uploaded-photo quill-editor]} (om/get-state this)
                            {:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements
@@ -80,27 +119,21 @@
                                              value (utils/first-input-value-by-class el input-sku-value)
                                              quantity (utils/first-input-value-by-class el input-sku-quantity)]
                                          (debug "Quantity: " quantity)
-                                         (cond-> {:id       (db/squuid)
-                                                  :value    value}
+                                         (cond-> {:id    (db/squuid)
+                                                  :value value}
                                                  (some? quantity)
                                                  (assoc :quantity quantity))))
                                      (utils/elements-by-class (:input-sku-group form-elements)))]
 
-                       (cond (some? product-id)
-                             (msg/om-transact! this `[(store/update-product ~{:product    product
-                                                                              :product-id product-id
-                                                                              :store-id   store-id})
-                                                      :query/store])
-
-                             (= action "create")
-                             (msg/om-transact! this `[(store/create-product
-                                                        ~{:product  (assoc product :id (db/squuid)
-                                                                                   :skus skus)
-                                                          :store-id store-id})
-                                                      :query/store]))
+                       (msg/om-transact! this `[(store/create-product
+                                                  ~{:product  (assoc product :id (db/squuid)
+                                                                             :skus skus)
+                                                    :store-id store-id})
+                                                :query/store])
                        (om/update-state! this dissoc :uploaded-photo))))
   (render [this]
     (let [{:keys [uploaded-photo queue-photo variations?]} (om/get-state this)
+          {:keys [product-id store-id action]} (get-route-params this)
           {:keys [proxy/photo-upload]} (om/props this)
           {:keys [product]} (om/get-computed this)
           {:store.item/keys [price photos skus description]
@@ -193,28 +226,35 @@
                         (my-dom/div
                           (css/grid-column)
                           (dom/label nil "Quantity")))
-                      (let [{:store.item.sku/keys [price value quantity]} (first skus)]
-                        (my-dom/div
-                          (->> (css/grid-row)
-                               (css/add-class :input-sku-group))
-                          (my-dom/div
-                            (css/grid-column)
-                            (my-dom/input
-                              (->> {:type         "text"
-                                    :defaultValue (or value "")}
-                                   (css/add-class :input-sku-value))))
-                          (my-dom/div
-                            (css/grid-column)
-                            (my-dom/input
-                              (->> {:type         "number"
-                                    :defaultValue (or quantity "")}
-                                   (css/add-class :input-sku-quantity))))))))
+                      (map (fn [sku]
+                             (let [{:store.item.sku/keys [price value quantity]} sku]
+                               (my-dom/div
+                                 (->> {:id (str (:store.item.sku/uuid sku))}
+                                      (css/grid-row)
+                                      (css/add-class :input-sku-group))
+                                 (my-dom/div
+                                   (css/grid-column)
+                                   (my-dom/input
+                                     (->> {:type         "text"
+                                           :defaultValue (or value "")}
+                                          (css/add-class :input-sku-value))))
+                                 (my-dom/div
+                                   (css/grid-column)
+                                   (my-dom/input
+                                     (->> {:type         "number"
+                                           :defaultValue (or quantity "")}
+                                          (css/add-class :input-sku-quantity)))))))
+                           skus)))
         (my-dom/div (->> (css/grid-row)
                          (css/grid-column))
                     (dom/div nil
                       (dom/a #js {:className "button hollow"} (dom/span nil "Cancel"))
                       (dom/a #js {:className "button"
-                                  :onClick   #(when-not is-loading? (.update-product this))}
+                                  :onClick   #(when-not is-loading?
+                                               (cond (some? product-id)
+                                                     (.update-product this)
+                                                     (= action "create")
+                                                     (.create-product this)))}
                              (if is-loading?
                                (dom/i #js {:className "fa fa-spinner fa-spin"})
                                (dom/span nil "Save")))))))))
