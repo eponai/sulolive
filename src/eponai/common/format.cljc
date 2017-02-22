@@ -167,13 +167,17 @@
 (defn chat-message [db user store text]
   (when-not (db/dbid? (:db/id user))
     (throw (ex-info "No user id found in when sending chat message."
-                    {:store     store
+                    {:store        store
                      :text         text
                      :current-auth user})))
   (let [chat-id (or (db/one-with db {:where [['?e :chat/store (:db/id store)]]})
-                    (db/tempid :db.part/user))]
-    [{:db/id      chat-id
-      :chat/store (:db/id store)}
-     {:chat.message/chat chat-id
-      :chat.message/user (select-keys user [:db/id])
-      :chat.message/text text}]))
+                    (db/tempid :db.part/user))
+        message-id (db/tempid :db.part/user)]
+    (-> [{:db/id      chat-id
+          :chat/store (:db/id store)}
+         {:db/id             message-id
+          :chat.message/chat chat-id
+          :chat.message/user (select-keys user [:db/id])
+          :chat.message/text text}]
+        (with-meta {::message-id message-id
+                    ::chat-id    chat-id}))))

@@ -1,5 +1,7 @@
 (ns eponai.common.ui.stream
   (:require
+    [clojure.set :as set]
+    [eponai.client.parser.message :as msg]
     [eponai.common.stream :as stream]
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.common :as common]
@@ -65,6 +67,11 @@
    (defn video-element []
      (first (utils/elements-by-tagname "video"))))
 
+(defn get-messages [component]
+  (let [messages (get-in (om/props component) [:query/chat :chat.message/_chat])
+        {client-side true server-side false} (group-by (comp true? :chat.message/client-side-message?) messages)]
+    (concat server-side client-side)))
+
 (defui Stream
   static om/IQuery
   (query [this]
@@ -75,7 +82,8 @@
      {:query/chat [:chat/store
                    ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
                    :chat/modes
-                   {:chat.message/_chat [:chat.message/user
+                   {:chat.message/_chat [:chat.message/client-side-message?
+                                         {:chat.message/user [:user/email]}
                                          :chat.message/text
                                          :chat.message/timestamp]}]}])
   Object
@@ -100,13 +108,13 @@
                                                                  (om/update-state! this assoc :playing? true)))
                         (.on hls js/Hls.Events.ERROR (fn [e d]
                                                        (let [error-type (.-type d)]
-                                                         (error "HLS Error: " e)
-                                                         (debug "Data: " d)
-                                                         (when (= js/Hls.ErrorTypes.NETWORK_ERROR error-type)
-                                                           (.detachMedia hls)
-                                                           (.loadSource hls "http://www.streambox.fr/playlists/x36xhzz/x36xhzz.m3u8")
-                                                           (.attachMedia hls video)
-                                                           )))))
+                                                         (error "HLS Error: " e " type: " error-type " data: " d)
+                                                         (comment
+                                                           "Would start the cartoon, but turned off because it's irratating."
+                                                           (when (= js/Hls.ErrorTypes.NETWORK_ERROR error-type)
+                                                             (.detachMedia hls)
+                                                             (.loadSource hls "http://www.streambox.fr/playlists/x36xhzz/x36xhzz.m3u8")
+                                                             (.attachMedia hls video)))))))
                       (debug "Hasn't received server-url yet. Needs server-url to start stream."))))
   #?(:cljs (ensure-hls-subscription [this]
                                     (when (nil? (:hls (om/get-state this)))
@@ -185,9 +193,8 @@
   (render [this]
     (let [{:keys [show-chat? fullscreen? playing? chat-message]} (om/get-state this)
           {:keys [stream-name]} (om/get-computed this)
-          {:query/keys [store chat]} (om/props this)
-          messages (get-in chat [:chat.message/_chat])]
-      (debug "STREAM PROPS:" (om/props this))
+          {:query/keys [store]} (om/props this)
+          messages (get-messages this)]
       (dom/div #js {:id "sulo-video-container" :className (str "flex-video widescreen "
                                                                (when show-chat? "sulo-show-chat")
                                                                (when fullscreen? " fullscreen"))}
@@ -251,7 +258,8 @@
                                                                        (first fake-photos))}))
                                   (my-dom/div (css/grid-column)
                                               (dom/small nil
-                                                         (dom/strong nil (str (:chat.message/user msg) ": "))
+                                                         (dom/strong nil (str (get-in msg [:chat.message/user :user/email])
+                                                                              ": "))
                                                          (dom/span nil (:chat.message/text msg)))))))
                    messages))
             (dom/div #js {:className "input-container"}

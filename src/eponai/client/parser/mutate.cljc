@@ -113,5 +113,8 @@
     (if target
       {:remote/chat (assoc-in ast [:params :user :db/id] user-id)}
       {:action (fn []
-                 (db/transact state (format/chat-message db {:db/id user-id} store text)))})))
+                 (let [tx (format/chat-message db {:db/id user-id} store text)
+                       message-id (::format/message-id (meta tx))]
+                   (db/transact state (conj tx {:db/id                             message-id
+                                                :chat.message/client-side-message? true}))))})))
 

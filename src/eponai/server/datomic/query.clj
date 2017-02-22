@@ -178,7 +178,7 @@
 
 (defn retracts-only-from-eids [query path path-symbols path->pulled-eids]
   {:pre [(vector? path) (vector? path-symbols)]}
-  (let [pulled-eids (get-in path->pulled-eids path)
+  (let [pulled-eids (get-in path->pulled-eids (conj path ::eids))
         path-sym (peek path-symbols)
         exclude-sym (last (sym-seq path "exclude"))
         ret (cond-> query
@@ -268,7 +268,7 @@
                                                      ;;       the same pattern.
                                                      (let [cache-path (-> []
                                                                           (into (map normalize-attribute) (:path attr-path))
-                                                                          (conj attr))]
+                                                                          (conj attr ::eids))]
                                                        (swap! pulled-eids update-in cache-path
                                                               (fnil set/union #{}) vs))
                                                      (d/pull-many db (get attr->pattern attr) (seq vs))))
