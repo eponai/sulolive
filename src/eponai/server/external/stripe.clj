@@ -161,7 +161,7 @@
                                               "type" "finite"))}
           SKU (SKU/create params)]
       (f/sku SKU)))
-  (update-sku [_this account-secret sku-id {:keys [quantity value]}]
+  (update-sku [_this account-secret sku-id {:keys [quantity value price]}]
     (set-api-key account-secret)
     (let [params (cond-> {"inventory" {"type" "infinite"}}
                          (some? quantity)
@@ -169,7 +169,9 @@
                          (some? quantity)
                          (assoc-in ["inventory" "type"] "finite")
                          (some? value)
-                         (assoc-in ["attributes" "variation"] value))
+                         (assoc-in ["attributes" "variation"] value)
+                         (some? price)
+                         (assoc "price" (c/parse-long price)))
           old-sku (SKU/retrieve sku-id)
           new-sku (.update old-sku params)]
       (f/sku new-sku)))
@@ -179,7 +181,7 @@
     (let [new-params {"name" (:name params)}
           old-product (Product/retrieve product-id)
           new-product (.update old-product new-params)]
-      {:id (.getId new-product)}))
+      (f/product new-product)))
 
   (delete-product [_ account-secret product-id]
     (set-api-key account-secret)

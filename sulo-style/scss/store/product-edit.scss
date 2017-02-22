@@ -5,6 +5,9 @@
 		border: $table-border;
 		input {
 			margin: 0;
+			&::-webkit-input-placeholder {
+				color: $body-font-color;
+			}
 		}
 	}
 }

@@ -1,11 +1,35 @@
+@mixin action-button($color, $button-fill) {
+	@each $name, $color in $foundation-palette {
+      @if $button-fill != hollow {
+        &.#{$name} {
+          @include button-style($color, auto, auto);
+        }
+      }
+      @else {
+        &.#{$name} {
+          @include button-hollow-style($color);
+          border: none;
+        }
+
+        // &.#{$name}.dropdown::after {
+        //   border-top-color: $color;
+        // }
+      }
+    }
+}
 #sulo-store-dashboard {
+	$primary-color: map-get($foundation-palette, action);
+	@include foundation-button;
 	.button {
 		$color: map-get($foundation-palette, action);
 		&:not(.hollow) {
+			@include action-button($color, solid);
 			@include button-style($color, auto, auto);
 		}
 		&.hollow {
+			@include action-button($color, hollow);
 			@include button-hollow-style($color);
+			border: none;
 		}
 	}
 
@@ -70,79 +94,5 @@
 
 	.navbar, footer, .footer .row {
 		max-width: 100%;
-	}
-
-	#sulo-edit-order {
-		.reveal-overlay {
-			// display: flex;
-			// align-items:center;
-			// vertical-align: middle;
-		}
-		$primary-color: map-get($foundation-palette, action);
-		table {
-			// color: $dark-gray;
-			margin: 0 auto;
-			th {
-				color: $dark-gray;
-				padding-top: 0.5rem;
-				padding-bottom: 0.5rem;
-				font-size: 90%;
-			}
-			a {
-				// color: $primary-color;
-				font-weight: 500;
-				// color: map-get($foundation-palette, primary);
-			}
-			.sku {
-				border-bottom: $table-border;
-			}
-			.tax, .shipping, tfoot {
-				border: none;
-				td {
-					padding-top: 0.75rem;
-					padding-bottom: 0.75rem;
-					font-size: 90%;
-					// color: $dark-gray;
-				}
-			}
-			tfoot {
-				// border: 1px solid rgba($primary-color, 0.1);
-				// background: rgba($primary-color, 0.05);
-				// color: $primary-color;
-			}
-		}
-		.order-action {
-			border: 1px solid $light-gray;
-			// background: $light-gray;
-			height: 100%;
-			padding: 1rem;
-			// margin: 1rem 0;
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			> div{
-				display: flex;
-				align-items: center;
-			}
-			.button {
-				margin: 0;
-				i {
-					margin: 0;
-				}
-				// flex: 0;
-				// font-size: 80%;
-			}
-			span {
-				// text-transform: uppercase;
-				// font-size: 80%;
-			}
-			a {
-
-			}
-			i {
-				margin-right: 1rem;
-				color: $dark-gray;
-			}
-		}
 	}
 }

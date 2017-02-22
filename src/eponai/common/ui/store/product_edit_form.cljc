@@ -52,6 +52,22 @@
         :photo       uploaded-photo
         :description (js/JSON.stringify (quill/get-contents quill-editor))})))
 
+#?(:cljs
+   (defn input-skus [product]
+     (let [{:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements]
+       (map (fn [el]
+              (let [element-id (.-id el)
+                    value (utils/first-input-value-by-class el input-sku-value)
+                    quantity (utils/first-input-value-by-class el input-sku-quantity)]
+                (cond-> {:id    (if (some? element-id)
+                                  (f/str->uuid element-id)
+                                  (db/squuid))
+                         :value value
+                         :price (:price product)}
+                        (some? quantity)
+                        (assoc :quantity quantity))))
+            (utils/elements-by-class (:input-sku-group form-elements))))))
+
 (defui ProductEditForm
   static om/IQuery
   (query [_]
@@ -78,59 +94,29 @@
   #?(:cljs
      (update-product
        [this]
-       (debug "Updaeting;;")
        (let [{:keys [product-id store-id]} (get-route-params this)
-             {:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements
-             skus (mapv (fn [el]
-                         ;(debug "ELEMENT: " (.-id el))
-                         (let [element-id (.-id el)
-                               value (utils/first-input-value-by-class el input-sku-value)
-                               quantity (utils/first-input-value-by-class el input-sku-quantity)]
-                           ;(debug "Quantity: " quantity)
-                           (cond-> {:id    (if (some? element-id)
-                                             (f/str->uuid element-id) (db/squuid))
-                                    :value value}
-                                   (some? quantity)
-                                   (assoc :quantity quantity))))
-                       (utils/elements-by-class (:input-sku-group form-elements)))
-             product (cond-> (input-product this)
-                             (not-empty skus)
-                             (assoc :skus skus))
-             ]
-         (debug "Yo: elements" (utils/elements-by-class (:input-sku-group form-elements)))
-         (msg/om-transact! this `[(store/update-product ~{:product    product
+             product (input-product this)
+             skus (input-skus product)]
+         (msg/om-transact! this `[(store/update-product ~{:product    (cond-> product
+                                                                              (not-empty skus)
+                                                                              (assoc :skus skus))
                                                           :product-id product-id
                                                           :store-id   store-id})
                                   :query/store])
          (om/update-state! this dissoc :uploaded-photo)
          )))
   #?(:cljs
-     (create-product [this]
-                     (let [{:keys [product-id store-id action]} (get-route-params this)
-                           {:keys [uploaded-photo quill-editor]} (om/get-state this)
-                           {:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements
-                           product {:name        (utils/input-value-by-id input-name)
-                                    :price       (utils/input-value-by-id input-price)
-                                    :currency    "CAD"
-                                    :photo       uploaded-photo
-                                    :description (js/JSON.stringify (quill/get-contents quill-editor))}
-                           skus (map (fn [el]
-                                       (let [
-                                             value (utils/first-input-value-by-class el input-sku-value)
-                                             quantity (utils/first-input-value-by-class el input-sku-quantity)]
-                                         (debug "Quantity: " quantity)
-                                         (cond-> {:id    (db/squuid)
-                                                  :value value}
-                                                 (some? quantity)
-                                                 (assoc :quantity quantity))))
-                                     (utils/elements-by-class (:input-sku-group form-elements)))]
-
-                       (msg/om-transact! this `[(store/create-product
-                                                  ~{:product  (assoc product :id (db/squuid)
-                                                                             :skus skus)
-                                                    :store-id store-id})
-                                                :query/store])
-                       (om/update-state! this dissoc :uploaded-photo))))
+     (create-product
+       [this]
+       (let [{:keys [store-id]} (get-route-params this)
+             product (input-product this)
+             skus (input-skus product)]
+         (msg/om-transact! this `[(store/create-product ~{:product  (cond-> product
+                                                                            (not-empty skus)
+                                                                            (assoc :skus skus))
+                                                          :store-id store-id})
+                                  :query/store])
+         (om/update-state! this dissoc :uploaded-photo))))
   (render [this]
     (let [{:keys [uploaded-photo queue-photo variations?]} (om/get-state this)
           {:keys [product-id store-id action]} (get-route-params this)
@@ -151,40 +137,12 @@
           (->> (css/grid-row))
           (my-dom/div
             (css/grid-column)
-            (dom/h2 nil "Edit Product - " (dom/small nil item-name)))
+            (dom/h2 nil item-name " - " (dom/small nil product-id)))
           (my-dom/div
             (->> (css/grid-column)
                  (css/text-align :right))
-            (dom/a #js {:className "button hollow"
+            (dom/a #js {:className "button hollow alert"
                         :onClick   #(.delete-product this)} "Delete")))
-        (my-dom/div (->> (css/grid-row)
-                         (css/grid-column))
-                    (dom/div #js {:className "callout transparent"}
-                      (dom/h4 nil (dom/span nil "Details"))
-
-                      (my-dom/div (->> (css/grid-row)
-                                       (css/grid-column))
-                                  (dom/label nil "Title")
-                                  (my-dom/input {:id           (get form-elements :input-name)
-                                                 :type         "text"
-                                                 :defaultValue (or item-name "")}))
-                      (my-dom/div (->> (css/grid-row))
-                                  (my-dom/div
-                                    (->> (css/grid-column)
-                                         (css/grid-column-size {:medium 3}))
-                                    (dom/label nil "Price")
-                                    (my-dom/input {:id           (get form-elements :input-price)
-                                                   :type         "number"
-                                                   :step         "0.01"
-                                                   :min          0
-                                                   :max          "99999999.99"
-                                                   :defaultValue (or price "")})))
-                      (my-dom/div (->> (css/grid-row)
-                                       (css/grid-column))
-                                  (dom/label nil "Description")
-                                  (quill/->QuillEditor (om/computed {:content (f/bytes->str description)}
-                                                                    {:on-editor-created #(om/update-state! this assoc :quill-editor %)})))))
-
         (my-dom/div
           (->> (css/grid-row)
                css/grid-column)
@@ -192,10 +150,10 @@
             (dom/h4 nil "Images")
             (my-dom/div
               (->> (css/grid-row)
-                   (css/add-class :photo-section))
+                   (css/add-class :photo-section)
+                   (css/grid-row-columns {:small 2 :medium 3 :large 4}))
               (my-dom/div
-                (->> (css/grid-column)
-                     (css/grid-column-size {:small 12 :medium 4 :large 2}))
+                (->> (css/grid-column))
                 (if-let [photo-url (or (:location uploaded-photo) (:photo/path (first photos)))]
                   (photo/square {:src photo-url})
                   (if-let [queue-url queue-photo]
@@ -213,6 +171,71 @@
                                                              (om/update-state! this assoc :queue-photo img-result :uploaded-photo nil))
                                           :on-photo-upload (fn [photo]
                                                              (om/update-state! this assoc :uploaded-photo photo :queue-photo nil))})))))))
+
+        (my-dom/div (->> (css/grid-row)
+                         (css/grid-column))
+                    (dom/div #js {:className "callout transparent"}
+                      (dom/h4 nil (dom/span nil "Details"))
+
+                      (my-dom/div (->> (css/grid-row)
+                                       (css/grid-column))
+                                  (dom/label nil "Title")
+                                  (my-dom/input {:id           (get form-elements :input-name)
+                                                 :type         "text"
+                                                 :defaultValue (or item-name "")}))
+                      (my-dom/div (->> (css/grid-row)
+                                       (css/grid-column))
+                                  (dom/label nil "Description")
+                                  (quill/->QuillEditor (om/computed {:content (f/bytes->str description)}
+                                                                    {:on-editor-created #(om/update-state! this assoc :quill-editor %)})))
+
+                      ;(my-dom/div (->> (css/grid-row))
+                      ;            (my-dom/div
+                      ;              (->> (css/grid-column)
+                      ;                   (css/grid-column-size {:medium 3}))
+                      ;              (dom/label nil "Price")
+                      ;              (my-dom/input {:id           (get form-elements :input-price)
+                      ;                             :type         "number"
+                      ;                             :step         "0.01"
+                      ;                             :min          0
+                      ;                             :max          "99999999.99"
+                      ;                             :defaultValue (or price "")})))
+                      ))
+        (my-dom/div (->> (css/grid-row)
+                         (css/grid-column))
+                    (dom/div #js {:className "callout transparent"}
+                      (dom/h4 nil (dom/span nil "Pricing"))
+                      (my-dom/div (->> (css/grid-row))
+                                  (my-dom/div
+                                    (->> (css/grid-column))
+                                    (dom/label nil "Price")
+                                    (my-dom/input {:id           (get form-elements :input-price)
+                                                   :type         "number"
+                                                   :step         "0.01"
+                                                   :min          0
+                                                   :max          "99999999.99"
+                                                   :defaultValue (or price "")}))
+                                  (my-dom/div
+                                    (->> (css/grid-column))
+                                    ;(dom/label nil "On Sale")
+                                    ;(my-dom/input {:id           (get form-elements :input-price)
+                                    ;               :type         "checkbox"
+                                    ;               :step         "0.01"
+                                    ;               :min          0
+                                    ;               :max          "99999999.99"
+                                    ;               :defaultValue (or price "")})
+                                    )
+                                  (my-dom/div
+                                    (->> (css/grid-column))
+                                    ;(dom/label nil "Sale Price")
+                                    ;(my-dom/input {:id           (get form-elements :input-price)
+                                    ;               :type         "number"
+                                    ;               :step         "0.01"
+                                    ;               :min          0
+                                    ;               :max          "99999999.99"
+                                    ;               :defaultValue (or price "")})
+                                    )
+                                  )))
 
         (my-dom/div (->> (css/grid-row)
                          (css/grid-column))
@@ -242,7 +265,8 @@
                                    (css/grid-column)
                                    (my-dom/input
                                      (->> {:type         "number"
-                                           :defaultValue (or quantity "")}
+                                           :defaultValue (or quantity "")
+                                           :placeholder  "Unlimited"}
                                           (css/add-class :input-sku-quantity)))))))
                            skus)))
         (my-dom/div (->> (css/grid-row)

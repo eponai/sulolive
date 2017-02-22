@@ -6,12 +6,12 @@
     [eponai.server.external.stripe :as stripe]
     [taoensso.timbre :refer [debug info]]))
 
-(defn new-sku [{:keys [value type quantity]}]
-  (cond-> {:db/id                (db/tempid :db.part/user)
-           :store.item.sku/value value
-           :store.item.sku/type  type}
-          (some? quantity)
-          (assoc :store.item.sku/quantity quantity)))
+;(defn new-sku [{:keys [value type quantity]}]
+;  (cond-> {:db/id                (db/tempid :db.part/user)
+;           :store.item.sku/value value
+;           :store.item.sku/type  type}
+;          (some? quantity)
+;          (assoc :store.item.sku/quantity quantity)))
 
 (defn list-products [{:keys [db system]} store-id]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)
@@ -43,7 +43,7 @@
         (db/transact state [photo-upload
                             [:db/add [:store.item/uuid (:store.item/uuid db-product)] :store.item/photos (:db/id photo-upload)]])))))
 
-(defn update-product [{:keys [state system]} store-id product-id {:keys [photo description skus] :as params}]
+(defn update-product [{:keys [state system]} store-id product-id {:keys [photo description skus price] :as params}]
   (let [{:keys [store.item/uuid store.item/photos]} (db/pull (db/db state) [:store.item/uuid :store.item/photos] product-id)
         {:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
         old-photo (first photos)]
@@ -52,16 +52,22 @@
     (stripe/update-product (:system/stripe system) secret (str uuid) params)
     (let [new-product (cond-> {:store.item/uuid uuid
                                :store.item/name (:name params)}
+                              (some? price)
+                              (assoc :store.item/price (bigdec price))
                               (some? description)
                               (assoc :store.item/description (.getBytes description)))]
       (db/transact-one state new-product))
 
+    ;; Update SKUs in product
     (when-let [sku (first skus)]
       (stripe/update-sku (:system/stripe system) secret (str (:id sku)) sku)
-      (let [db-sku (f/sku sku)]
-        (debug "Transact sku into datomic.")
-        (db/transact state [db-sku
-                            [:db/add product-id :store.item/skus (:db/id db-sku)]])))
+      (let [db-sku (f/sku sku)
+            old-sku (db/pull (db/db state) [:db/id :store.item.sku/quantity] [:store.item.sku/uuid (:id sku)])]
+        (db/transact state (cond-> [db-sku
+                                    [:db/add product-id :store.item/skus (:db/id db-sku)]]
+                                   (and (some? (:store.item.sku/quantity old-sku))
+                                        (nil? (:store.item.sku/quantity db-sku)))
+                                   (conj [:db/retract (:db/id old-sku) :store.item.sku/quantity (:store.item.sku/quantity old-sku)])))))
 
     ;; Upload photo
     (when photo
