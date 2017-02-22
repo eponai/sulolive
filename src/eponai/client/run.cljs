@@ -64,13 +64,17 @@
                                                      query-params (medley/map-keys keyword (:query (url/url url)))]
                                                 ;;TODO: These are merged for now. Separate them?
                                                 (merge route-params query-params))}))
-        remotes [:remote :remote/user]
+        remotes [:remote :remote/user :remote/chat]
         send-fn (backend/send! reconciler-atom
+                               ;; TODO: Make each remote's basis-t isolated from another
+                               ;;       Maybe protocol it?
                                {:remote      (-> (remotes/post-to-url "/api")
                                                  (remotes/read-basis-t-remote-middleware conn))
                                 :remote/user (-> (remotes/post-to-url "/api/user")
                                                  (remotes/read-basis-t-remote-middleware conn)
-                                                 (remotes/wrap-auth))}
+                                                 (remotes/wrap-auth))
+                                :remote/chat (-> (remotes/post-to-url "/api/chat")
+                                                 (remotes/read-basis-t-remote-middleware conn))}
                                {:did-merge-fn #(when-not @init?
                                                 (reset! init? true)
                                                 (debug "First merge happened. Adding reconciler to root.")

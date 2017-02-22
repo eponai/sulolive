@@ -150,7 +150,7 @@
      (fn [env query & [target]]
        (let [map-parser-errors (fn [m k v]
                                  (cond-> m
-                                         (:om.next/error v)
+                                         (and (symbol? k) (:om.next/error v))
                                          (update-in [k :om.next/error] error->message)))]
          (try
            (trace "Calling parser with body: " query)
@@ -159,7 +159,7 @@
              (reduce-kv map-parser-errors ret ret))
            (catch Throwable e
              (error e)
-             {:om.next/error (error->message e)}))))))
+             {:om.next/error e}))))))
 
 #?(:clj
    (defn wrap-datomic-db

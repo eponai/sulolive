@@ -180,6 +180,11 @@
                            :store.item/photos   [#db/id[:db.part/user -39]]
                            :store.item/price    6.74M
                            :store.item/category "accessories"}]}]
+ :chats [{:chat/store #db/id[:db.part/user -1]}
+         {:chat/store #db/id[:db.part/user -2]}
+         {:chat/store #db/id[:db.part/user -3]}
+         {:chat/store #db/id[:db.part/user -5]}
+         {:chat/store #db/id[:db.part/user -4]}]
 
  ;:cart [{:cart/items #{[:store.item/id "00"]
  ;                      [:store.item/id "01"]

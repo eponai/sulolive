@@ -3,9 +3,10 @@
     [environ.core :as env]
     [eponai.common.database :as db]
     [eponai.common.stream :as stream]
+    [eponai.common.format :as format]
     [eponai.server.external.mailchimp :as mailchimp]
     [eponai.common.parser :as parser :refer [server-mutate server-message]]
-    [taoensso.timbre :refer [debug info]]
+    [taoensso.timbre :as timbre :refer [debug info]]
     [clojure.data.json :as json]
     [eponai.server.api :as api]
     [eponai.server.external.stripe :as stripe]
@@ -52,14 +53,21 @@
                                                             "SITE" site}})]
                ret))})
 
+(defn- query-user-id [{:keys [state auth]}]
+  (timbre/with-level
+    :trace
+    (db/one-with (db/db state) {:where   '[[?e :user/email ?email]]
+                               :symbols {'?email (:email auth)}})))
+
 (defmutation photo/upload
-  [{:keys [state ::parser/return ::parser/exception auth system]} _ params]
+  [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ params]
   {:success "Photo uploaded"
    :error   "Could not upload photo :("}
   {:action (fn []
              (debug "Upload photo for auth: " auth)
-             (let [user-eid (db/one-with (db/db state) {:where   '[[?e :user/email ?email]]
-                                                        :symbols {'?email (:email auth)}})
+             ;; TODO: Cache this query for each call to parser and auth, since more mutations
+             ;; and reads will use the user-eid
+             (let [user-eid (query-user-id env)
                    photo (s3/upload-photo (:system/aws-s3) (:photo params))]
                (db/transact state [photo [:db/add user-eid :user/photo (:db/id photo)]])))})
 
@@ -132,3 +140,22 @@
    :error   "Could not create order"}
   {:action (fn []
              (store/create-order env (c/parse-long store-id) order))})
+
+(defmutation chat/send-message
+  [{::parser/keys [exception] :keys [state target db] :as env} k {:keys [store text user]}]
+  {:success "Message sent"
+   :error   (if (some? exception)
+              (.getMessage exception)
+              "Someting went wrong!")}
+  (if target
+    {:remote/chat true}
+    {:action (fn []
+               (let [user-id (query-user-id env)]
+                 (if (= (:db/id user) user-id)
+                   (let [tx (format/chat-message db {:db/id user-id} store text)]
+                     (debug "Transacting chat-message: " tx)
+                     (db/transact state tx))
+                   (throw (ex-info "User authed does not match user who sent message."
+                                   {:client-user-id (:db/id user)
+                                    :server-user-id user-id
+                                    :mutation       k})))))}))

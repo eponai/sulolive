@@ -271,4 +271,44 @@
 
  ;; TODO: Add :cart/user, or something when we have a user.
 
+ ;; Chat
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :chat/store
+  :db/valueType          :db.type/ref
+  :db/unique             :db.unique/identity
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Ref to the chat's store"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :chat/mode
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Ref to the chat's store"
+  :db.install/_attribute :db.part/db}
+
+ ;; Chat Messages
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :chat.message/chat
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Ref to the chat the chat message belongs to"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :chat.message/text
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Text of the chat message"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :chat.message/user
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Ref to the user who wrote the chat message"
+  :db.install/_attribute :db.part/db}
+
  ]

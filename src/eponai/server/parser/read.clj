@@ -130,3 +130,25 @@
       {:value {:ui/singleton                              :ui.singleton/stream-config
                :ui.singleton.stream-config/subscriber-url (wowza/subscriber-url wowza)
                :ui.singleton.stream-config/publisher-url  (wowza/publisher-url wowza)}})))
+
+
+(defmethod read-basis-param-path :query/chat [_ _ params]
+  [(get-in params [:store :db/id])])
+(defmethod server-read :query/chat
+  [{:keys [db db-history query]} k {:keys [store] :as params}]
+  (let [store-id (:db/id store)
+        chat-query {:where   '[[?e :chat/store ?store-id]]
+                    :symbols {'?store-id store-id}}]
+    (cond
+      (nil? store-id)
+      (warn "No store-id passed in params for read: " k " with params: " params)
+
+      ;; TODO: Make this a system? (get-chat-room id), (get-messages id).
+      ;; First read, just get the chat objects.
+      (nil? db-history)
+      {:value (db/pull-one-with db ['*] chat-query)}
+
+      ;; Only get messages when we've read once. Get messages by pulling using query.
+      :else
+      {:value (query/all db db-history query {:where   '[[?e :chat/store ?store-id]]
+                                              :symbols {'?store-id store-id}})})))

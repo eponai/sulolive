@@ -194,3 +194,11 @@
 (defmethod client-read :query/messages
   [{:keys [db]} _ _]
   {:value (parser/get-messages db)})
+
+(defmethod client-read :query/chat
+  [{:keys [ast target db route-params query]} _ _]
+  (let [store-id (c/parse-long (:store-id route-params))]
+    (if (some? target)
+      {:remote/chat (assoc-in ast [:params :store :db/id] store-id)}
+      {:value (db/pull-one-with db query {:where   '[[?e :chat/store ?store-id]]
+                                          :symbols {'?store-id store-id}})})))

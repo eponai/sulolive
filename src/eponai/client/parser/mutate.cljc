@@ -1,6 +1,7 @@
 (ns eponai.client.parser.mutate
   (:require
     [eponai.common.parser :as parser :refer [client-mutate]]
+    [eponai.common.format :as format]
     [eponai.client.auth :as auth]
     [eponai.common.database :as db]
     [taoensso.timbre :refer [debug warn]]))
@@ -105,3 +106,12 @@
           (str ":store-id required for mutation: " k))
   (if target
     {:remote true}))
+
+(defmethod client-mutate 'chat/send-message
+  [{:keys [state target db ast]} k {:keys [store text]}]
+  (let [user-id (auth/current-auth db)]
+    (if target
+      {:remote/chat (assoc-in ast [:params :user :db/id] user-id)}
+      {:action (fn []
+                 (db/transact state (format/chat-message db {:db/id user-id} store text)))})))
+

@@ -11,6 +11,21 @@
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.menu :as menu]))
 
+(def fake-messages [{:photo "/assets/img/kids-new.jpg"
+                     :text  "this is some message"
+                     :user  "Seeley B"
+                     }
+                    {:photo "/assets/img/men-new.jpg"
+                     :text  "Hey there I was wondering something"
+                     :user  "Rick"
+                     }
+                    {:photo "/assets/img/women-new.jpg"
+                     :user  "Diana Gren"
+                     :text  "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
+                    ])
+
+(def fake-photos (mapv :photo fake-messages))
+
 #?(:cljs
    (defn url->store-id []
      ;; TODO: This logic is copied from store.cljc
@@ -53,8 +68,16 @@
 (defui Stream
   static om/IQuery
   (query [this]
-    [{:query/store [:db/id]}
-     {:query/stream-config [:ui.singleton.stream-config/subscriber-url]}])
+    [:query/messages
+     {:query/auth [:db/id]}
+     {:query/store [:db/id]}
+     {:query/stream-config [:ui.singleton.stream-config/subscriber-url]}
+     {:query/chat [:chat/store
+                   ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
+                   :chat/modes
+                   {:chat.message/_chat [:chat.message/user
+                                         :chat.message/text
+                                         :chat.message/timestamp]}]}])
   Object
   #?(:cljs
      (server-url [this]
@@ -160,22 +183,10 @@
              (utils/request-fullscreen v))
            (om/update-state! this assoc :fullscreen? (not fullscreen?))))))
   (render [this]
-    (let [{:keys [show-chat? fullscreen? playing?]} (om/get-state this)
+    (let [{:keys [show-chat? fullscreen? playing? chat-message]} (om/get-state this)
           {:keys [stream-name]} (om/get-computed this)
-          messages [{:photo "/assets/img/kids-new.jpg"
-                     :text  "this is some message"
-                     :user  "Seeley B"
-                     }
-                    {:photo "/assets/img/men-new.jpg"
-                     :text  "Hey there I was wondering something"
-                     :user  "Rick"
-                     }
-                    {:photo "/assets/img/women-new.jpg"
-                     :user  "Diana Gren"
-                     :text  "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
-
-
-                    ]]
+          {:query/keys [store chat]} (om/props this)
+          messages (get-in chat [:chat.message/_chat])]
       (debug "STREAM PROPS:" (om/props this))
       (dom/div #js {:id "sulo-video-container" :className (str "flex-video widescreen "
                                                                (when show-chat? "sulo-show-chat")
@@ -234,11 +245,14 @@
                                        (css/align :top))
                                   (my-dom/div (->> (css/grid-column)
                                                    (css/grid-column-size {:small 2}))
-                                              (photo/circle {:src (:photo msg)}))
+                                              (photo/circle {:src (nth fake-photos
+                                                                       (dec (mod (:chat.message/user msg)
+                                                                                 (count fake-photos)))
+                                                                       (first fake-photos))}))
                                   (my-dom/div (css/grid-column)
                                               (dom/small nil
-                                                         (dom/strong nil (str (:user msg) ": "))
-                                                         (dom/span nil (:text msg)))))))
+                                                         (dom/strong nil (str (:chat.message/user msg) ": "))
+                                                         (dom/span nil (:chat.message/text msg)))))))
                    messages))
             (dom/div #js {:className "input-container"}
               (my-dom/div
@@ -246,10 +260,20 @@
                 (my-dom/div (css/grid-column)
                             (dom/input #js {:className   ""
                                             :type        "text"
-                                            :placeholder "Your message..."}))
+                                            :placeholder "Your message..."
+                                            :value       (or chat-message "")
+                                            :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))}))
                 (my-dom/div (->> (css/grid-column)
                                  (css/add-class :shrink))
-                            (dom/a #js {:className "button green small"}
+                            (dom/a #js {:className "button green small"
+                                        :onClick   #(do
+                                                      (if (:query/auth (om/props this))
+                                                        (do (om/transact! this `[(chat/send-message
+                                                                                   ~{:store (select-keys store [:db/id])
+                                                                                     :text  chat-message})
+                                                                                 :query/chat])
+                                                            (om/update-state! this assoc :chat-message ""))
+                                                        #?(:cljs (js/alert "Log in to send chat messages"))))}
                                    (dom/span nil "Send")))))))))))
 
 (def ->Stream (om/factory Stream))
