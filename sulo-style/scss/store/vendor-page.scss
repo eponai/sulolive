@@ -1,0 +1,70 @@
+#sulo-store {
+	.store-container {
+		padding: 0.5rem 0;
+		@include breakpoint(medium) {
+			padding-bottom: 0;
+		}
+		a {
+			margin: 0;
+		}
+		.row:last-child {
+			margin: 1rem auto;
+		}
+
+		.photo-container.circle {
+			max-width: 10rem;
+			margin: 0 auto;
+		}
+		.follow-section {
+			margin-top: 1rem;
+			@include breakpoint(medium) {
+				margin-top: 0;
+			}
+		}
+	}
+	.quote-section {
+		margin: 2rem 0;
+		color: $dark-gray;
+		font-style: italic;
+	}
+	#sulo-video {
+		margin-bottom: 0;
+		border: 1px solid $light-gray;
+	}
+
+	.stream-container {
+		span {
+			font-style: normal;
+		}
+		@include breakpoint(large) {
+			padding: 0;
+		}
+	}
+	#shop {
+		ul {
+			font-weight: 500;
+			border-top: 1px solid $light-gray;
+			border-bottom: 1px solid $light-gray;
+		}
+		.about {
+			border-right: 1px solid $medium-gray;
+		}
+		.column {
+			padding: 1rem;
+			@include breakpoint(medium) {
+				padding: 1.5rem;
+			}
+			@include breakpoint(large) {
+				padding: 2rem;
+			}
+		}
+		.menu-container {
+			.column {
+				padding: 0;
+			}
+			.menu {
+				padding: 1rem 0;
+			}
+		}
+	}
+}

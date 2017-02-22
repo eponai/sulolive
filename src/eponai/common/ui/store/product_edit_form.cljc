@@ -76,22 +76,15 @@
                                     :photo       uploaded-photo
                                     :description (js/JSON.stringify (quill/get-contents quill-editor))}
                            skus (map (fn [el]
-                                       (let [price (utils/first-input-value-by-class el (get form-elements :input-sku-price))
-                                             value (utils/first-input-value-by-class el (get form-elements :input-sku-value))
-                                             quantity (utils/first-input-value-by-class el (get form-elements :input-sku-quantity))]
+                                       (let [
+                                             value (utils/first-input-value-by-class el input-sku-value)
+                                             quantity (utils/first-input-value-by-class el input-sku-quantity)]
                                          (debug "Quantity: " quantity)
-                                         {:id       (db/squuid)
-                                          :price    price
-                                          :value    value
-                                          :quantity quantity
-                                          :type     (if (some? quantity)
-                                                      :store.item.sku.type/finite
-                                                      :store.item.sku.type/infinite)}))
+                                         (cond-> {:id       (db/squuid)
+                                                  :value    value}
+                                                 (some? quantity)
+                                                 (assoc :quantity quantity))))
                                      (utils/elements-by-class (:input-sku-group form-elements)))]
-
-                       (debug "SKU els: " (utils/elements-by-class (:input-sku-group form-elements)))
-                       (debug "SKUS: " skus)
-                       (debug "Route params: " (get-route-params this))
 
                        (cond (some? product-id)
                              (msg/om-transact! this `[(store/update-product ~{:product    product
@@ -117,7 +110,7 @@
           create-resp (msg/last-message this 'store/create-product)
           delete-resp (msg/last-message this 'store/delete-product)
           is-loading? (or (message-pending-fn update-resp) (message-pending-fn create-resp) (message-pending-fn delete-resp))]
-      (dom/div nil
+      (dom/div #js {:id "sulo-edit-product"}
         #?(:cljs (when is-loading?
                    (common/loading-spinner nil))
            :clj  (common/loading-spinner nil))
@@ -192,31 +185,32 @@
                          (css/grid-column))
                     (dom/div #js {:className "callout transparent"}
                       (dom/h4 nil (dom/span nil "Inventory"))
+                      (my-dom/div
+                        (->> (css/grid-row))
+                        (my-dom/div
+                          (css/grid-column)
+                          (dom/label nil "Variation"))
+                        (my-dom/div
+                          (->> (css/grid-column)
+                               (css/text-align :right))
+                          (dom/label nil "Quantity")))
                       (let [{:store.item.sku/keys [price value quantity]} (first skus)]
                         (my-dom/div
                           (->> (css/grid-row)
                                (css/add-class :input-sku-group))
                           (my-dom/div
                             (css/grid-column)
-                            (dom/label nil "Variation")
                             (my-dom/input
                               (->> {:type         "text"
                                     :defaultValue (or value "")}
                                    (css/add-class :input-sku-value))))
                           (my-dom/div
                             (css/grid-column)
-                            (dom/label nil "Price")
-                            (my-dom/input
-                              (->> {:type         "number"
-                                    :defaultValue (or price "")}
-                                   (css/add-class :input-sku-price))))
-                          (my-dom/div
-                            (css/grid-column)
-                            (dom/label nil "Quantity")
                             (my-dom/input
                               (->> {:type         "number"
                                     :defaultValue (or quantity "")}
-                                   (css/add-class :input-sku-quantity))))))))
+                                   (css/add-class :input-sku-quantity)
+                                   (css/text-align :right))))))))
         (my-dom/div (->> (css/grid-row)
                          (css/grid-column))
                     (dom/div nil

@@ -13,7 +13,8 @@
   [p]
   {:store.item/uuid (f/str->uuid (.getId p))
    :store.item/name (.getName p)
-   :store.item/skus (map sku (.getData (.getSkus p)))})
+   :store.item/skus (map sku (.getData (.getSkus p)))
+   :store.item/updated (.getUpdated p)})
 
 
 (defn order-item

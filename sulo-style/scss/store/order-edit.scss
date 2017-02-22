@@ -1,0 +1,48 @@
+#sulo-edit-order {
+	$primary-color: map-get($foundation-palette, action);
+	table {
+		margin: 0 auto;
+		th {
+			color: $dark-gray;
+			padding-top: 0.5rem;
+			padding-bottom: 0.5rem;
+			font-size: 90%;
+		}
+		a {
+			font-weight: 500;
+		}
+		.sku {
+			border-bottom: $table-border;
+		}
+		.tax, .shipping, tfoot {
+			border: none;
+			td {
+				padding-top: 0.75rem;
+				padding-bottom: 0.75rem;
+				font-size: 90%;
+			}
+		}
+	}
+	.order-action {
+		border: 1px solid $light-gray;
+		height: 100%;
+		padding: 1rem;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		> div{
+			display: flex;
+			align-items: center;
+		}
+		.button {
+			margin: 0;
+			i {
+				margin: 0;
+			}
+		}
+		i {
+			margin-right: 1rem;
+			color: $dark-gray;
+		}
+	}
+}

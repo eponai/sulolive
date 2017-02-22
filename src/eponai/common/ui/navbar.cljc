@@ -62,9 +62,10 @@
               (dom/li nil
                       (dom/a #js {:href (routes/url :user/order-list {:user-id (:db/id user)})}
                              "My Orders"))
-              (dom/li nil
-                      (dom/a #js {:href (routes/url :store-dashboard {:store-id (:db/id store)})}
-                             "My Store"))
+              (when store
+                (dom/li nil
+                        (dom/a #js {:href (routes/url :store-dashboard {:store-id (:db/id store)})}
+                               "My Store")))
               (dom/li nil
                       (dom/a #js {:href "/settings"}
                              "Account Settings"))

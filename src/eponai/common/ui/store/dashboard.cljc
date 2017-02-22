@@ -22,8 +22,8 @@
 
 
 (defn find-product [store product-id]
-  (let [product-id (f/str->uuid product-id)]
-    (some #(when (= (:store.item/uuid %) product-id) %)
+  (let [product-id (c/parse-long product-id)]
+    (some #(when (= (:db/id %) product-id) %)
           (:store/items store))))
 
 (defn get-route-params [component]
@@ -43,7 +43,6 @@
                                    :store.item/price
                                    {:store.item/photos [:photo/path]}
                                    {:store.item/skus [:store.item.sku/uuid
-                                                      :store.item.sku/price
                                                       :store.item.sku/quantity
                                                       :store.item.sku/value]}]}
                     :store/collections]}
@@ -62,46 +61,44 @@
     (let [{:proxy/keys [product-edit product-list order-edit order-list stream-settings]
            :keys       [proxy/navbar query/store query/current-route]} (om/props this)
           {:keys [route route-params]} current-route]
-      (my-dom/div
-        (->> {:id "sulo-my-store"}
-             (css/add-class :sulo-page))
-        (common/page-container
-          {:navbar navbar}
+      (common/page-container
+        {:navbar navbar
+         :id     "sulo-store-dashboard"}
+        (my-dom/div
+          (->> (css/grid-row))
           (my-dom/div
-            (->> (css/grid-row))
-            (my-dom/div
-              (->> (css/grid-column))
-              (menu/horizontal
-                (css/add-class :store-nav)
-                ;(menu-item "/products" "Products" (= dashboard-option "products"))
-                ;(menu-item "/orders" "Orders" (= dashboard-option "orders"))
-                (menu/item-tab {:active? (= route :store-dashboard/product-list)
-                                :href    (routes/url :store-dashboard/product-list {:store-id (:db/id store)})}
-                               "Products")
-                (menu/item-tab {:active? (= route :store-dashboard/order-list)
-                                :href    (routes/url :store-dashboard/order-list {:store-id (:db/id store)})}
-                               "Orders")
-                (menu/item-tab {:active? (= route :store-dashboard/stream)
-                                :href    (routes/url :store-dashboard/stream {:store-id (:db/id store)})}
-                               "Stream"))))
-          (condp = route
-            :store-dashboard/order-list (ol/->OrderList (om/computed order-list
-                                                                     {:store store}))
-            :store-dashboard/order (oef/->OrderEditForm (om/computed order-edit
-                                                                     {:route-params route-params}))
-            :store-dashboard/create-order (oef/->OrderEditForm (om/computed order-edit
-                                                                            {:route-params route-params
-                                                                             :products (:store/items store)}))
+            (->> (css/grid-column))
+            (menu/horizontal
+              (css/add-class :store-nav)
+              ;(menu-item "/products" "Products" (= dashboard-option "products"))
+              ;(menu-item "/orders" "Orders" (= dashboard-option "orders"))
+              (menu/item-tab {:active? (= route :store-dashboard/product-list)
+                              :href    (routes/url :store-dashboard/product-list {:store-id (:db/id store)})}
+                             "Products")
+              (menu/item-tab {:active? (= route :store-dashboard/order-list)
+                              :href    (routes/url :store-dashboard/order-list {:store-id (:db/id store)})}
+                             "Orders")
+              (menu/item-tab {:active? (= route :store-dashboard/stream)
+                              :href    (routes/url :store-dashboard/stream {:store-id (:db/id store)})}
+                             "Stream"))))
+        (condp = route
+          :store-dashboard/order-list (ol/->OrderList (om/computed order-list
+                                                                   {:store store}))
+          :store-dashboard/order (oef/->OrderEditForm (om/computed order-edit
+                                                                   {:route-params route-params}))
+          :store-dashboard/create-order (oef/->OrderEditForm (om/computed order-edit
+                                                                          {:route-params route-params
+                                                                           :products     (:store/items store)}))
 
-            :store-dashboard/stream (ss/->StreamSettings (om/computed stream-settings
-                                                                      {:store store}))
-            :store-dashboard/product-list (pl/->ProductList (om/computed product-list
-                                                                         {:route-params route-params}))
-            :store-dashboard/create-product (pef/->ProductEditForm (om/computed product-edit
-                                                                                {:route-params route-params}))
-            :store-dashboard/product (pef/->ProductEditForm (om/computed product-edit
-                                                                         {:route-params route-params
-                                                                          :product      (find-product store (:product-id route-params))}))
-            nil))))))
+          :store-dashboard/stream (ss/->StreamSettings (om/computed stream-settings
+                                                                    {:store store}))
+          :store-dashboard/product-list (pl/->ProductList (om/computed product-list
+                                                                       {:route-params route-params}))
+          :store-dashboard/create-product (pef/->ProductEditForm (om/computed product-edit
+                                                                              {:route-params route-params}))
+          :store-dashboard/product (pef/->ProductEditForm (om/computed product-edit
+                                                                       {:route-params route-params
+                                                                        :product      (find-product store (:product-id route-params))}))
+          nil)))))
 
 (def ->Dashboard (om/factory Dashboard))

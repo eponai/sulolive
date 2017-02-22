@@ -74,8 +74,9 @@
                                          (dom/a #js {:href product-link}
                                                 (dom/span nil (:store.item/price p))))
                                  (dom/td nil
-                                         (dom/a #js {:href product-link}
-                                                (dom/span nil (date/date->string (* 1000 (:store.item/updated p)))))))))
+                                         (when (:store.item/updated p)
+                                           (dom/a #js {:href product-link}
+                                                  (dom/span nil (date/date->string (* 1000 (:store.item/updated p)) "MMM dd yyyy HH:mm"))))))))
                      inventory)))))))))
 
 (def ->ProductList (om/factory ProductList))

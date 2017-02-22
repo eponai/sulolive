@@ -187,10 +187,11 @@
                   ;(menu/item-link nil (dom/small nil "Terms & Conditions"))
                   (menu/item-text nil (dom/small #js {:className "copyright"} "© eponai hb 2017"))))))
 
-(defn page-container [props & content]
-  (dom/div #js {:className "page-container"}
-    (nav/navbar (:navbar props))
-    (dom/div #js {:key "content-container" :className "page-content-container"}
-      (apply dom/div #js {:className "page-content"}
-             content))
-    (footer nil)))
+(defn page-container [{:keys [navbar id]} & content]
+  (dom/div #js {:className "sulo-page" :id id}
+    (dom/div #js {:className "page-container"}
+      (nav/navbar navbar)
+      (dom/div #js {:key "content-container" :className "page-content-container"}
+        (apply dom/div #js {:className "page-content"}
+               content))
+      (footer nil))))

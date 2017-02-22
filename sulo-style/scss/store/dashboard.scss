@@ -1,0 +1,148 @@
+#sulo-store-dashboard {
+	.button {
+		$color: map-get($foundation-palette, action);
+		&:not(.hollow) {
+			@include button-style($color, auto, auto);
+		}
+		&.hollow {
+			@include button-hollow-style($color);
+		}
+	}
+
+	.menu.store-nav {
+		margin: 2rem 0;
+	}
+	.callout {
+		box-shadow: 0 1px 3px 0 rgba($black, 0.1);
+		padding: 0.5;
+		@include breakpoint(medium) {
+			padding: 2rem;
+		}
+	}
+	.photo-section {
+		padding: 1rem 0;
+		.upload-button {
+			margin: 0;
+		}
+	}
+	.photo-uploader {
+		label {
+			display: none;
+		}
+	}
+	.overlay-container {
+		.overlay {
+			background: rgba($white, 0.75);
+			.content {
+				margin: 0 auto;
+			}
+		}
+	}
+	.upload-button {
+		position: relative;
+		width: 100%;
+		padding-top: 100%;
+		> * {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: 100%;
+			width: 100%;
+			top: 0;
+			left: 0;
+			position: absolute;
+		}
+	}
+	.page-container {
+		$color: map-get($foundation-palette, primary);
+		background: rgba($color, 0.03);
+	}
+	tr {
+		// padding: 1rem 0;
+		border-top: 1px solid rgba($light-gray, 0.3);
+		&:first-child {
+			border-top: none;
+		}
+		input[type="checkbox"] {
+			margin: 0;
+		}
+	}
+
+	.navbar, footer, .footer .row {
+		max-width: 100%;
+	}
+
+	#sulo-edit-order {
+		.reveal-overlay {
+			// display: flex;
+			// align-items:center;
+			// vertical-align: middle;
+		}
+		$primary-color: map-get($foundation-palette, action);
+		table {
+			// color: $dark-gray;
+			margin: 0 auto;
+			th {
+				color: $dark-gray;
+				padding-top: 0.5rem;
+				padding-bottom: 0.5rem;
+				font-size: 90%;
+			}
+			a {
+				// color: $primary-color;
+				font-weight: 500;
+				// color: map-get($foundation-palette, primary);
+			}
+			.sku {
+				border-bottom: $table-border;
+			}
+			.tax, .shipping, tfoot {
+				border: none;
+				td {
+					padding-top: 0.75rem;
+					padding-bottom: 0.75rem;
+					font-size: 90%;
+					// color: $dark-gray;
+				}
+			}
+			tfoot {
+				// border: 1px solid rgba($primary-color, 0.1);
+				// background: rgba($primary-color, 0.05);
+				// color: $primary-color;
+			}
+		}
+		.order-action {
+			border: 1px solid $light-gray;
+			// background: $light-gray;
+			height: 100%;
+			padding: 1rem;
+			// margin: 1rem 0;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			> div{
+				display: flex;
+				align-items: center;
+			}
+			.button {
+				margin: 0;
+				i {
+					margin: 0;
+				}
+				// flex: 0;
+				// font-size: 80%;
+			}
+			span {
+				// text-transform: uppercase;
+				// font-size: 80%;
+			}
+			a {
+
+			}
+			i {
+				margin-right: 1rem;
+				color: $dark-gray;
+			}
+		}
+	}
+}
