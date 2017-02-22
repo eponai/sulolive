@@ -113,6 +113,9 @@
     (timeit (str "parsed: " k)
             (read-or-mutate env k p))))
 
+(defn user-email [env]
+  (:email (:auth env)))
+
 ;; ############ middlewares
 
 (defn assoc-ast-param [{:keys [ast target]} mutation-ret k v]
@@ -169,12 +172,12 @@
      [read-or-mutate]
      (fn [{:keys [state ::filter-atom] :as env} k p]
        (let [db (datomic/db state)
-             user-id (get-in env [:auth :username])
+             user-email (user-email env)
              update-filters (fn [old-filters]
                               (let [filters (or old-filters
-                                                (if user-id
-                                                  (do (debug "Using auth db for user:" user-id)
-                                                      (filter/authenticated-db-filters user-id))
+                                                (if user-email
+                                                  (do (debug "Using auth db for user:" user-email)
+                                                      (filter/authenticated-db-filters user-email))
                                                   (do (debug "Using non auth db")
                                                       (filter/not-authenticated-db-filters))))]
                                 (filter/update-filters db filters)))
@@ -204,7 +207,7 @@
   [parser]
   (fn [env query & [target]]
     (let [env (assoc env ::filter-atom (atom nil)
-                         :user-uuid (get-in env [:auth :username])
+                         ::user-email (user-email env)
                          ::server? true
                          ::force-read-without-history (atom #{}))
           ret (parser env query target)]
@@ -337,20 +340,20 @@
              _ (assert (or (nil? param-path) (sequential? param-path))
                        (str "Path returned from read-basis-param-path for key: " k " params: " p
                             " was not nil or sequential. Was: " param-path))
-             default-path [:eponai.common.parser/read-basis-t (str (:user-uuid env)) k]
+             default-path [:eponai.common.parser/read-basis-t (str (user-email env)) k]
              path (into default-path param-path)
              basis-t-for-this-key (get-in env path)
-             env (assoc env :db-since (when basis-t-for-this-key
-                                        (datomic/since db basis-t-for-this-key)))
              env (if (contains? @force-read-without-history k)
                    (do
                      ;; read the key without the db-history
                      (debug "Force reading key: " k)
                      (swap! force-read-without-history disj k)
                      (dissoc env :db-history))
-                   (assoc env :db-history (when basis-t-for-this-key
-                                            (datomic/since (datomic/history db)
-                                                           basis-t-for-this-key))))
+                   (assoc env
+                     ::basis-t-for-this-key basis-t-for-this-key
+                     :db-history (when basis-t-for-this-key
+                                   (datomic/since (datomic/history db)
+                                                  basis-t-for-this-key))))
              ret (read env k p)
              ret (cond-> ret
                          (nil? (:value ret))
@@ -424,11 +427,12 @@
 (defn mutate-with-tx-meta [mutate]
   (fn [env k p]
     {:pre [(::created-at env)]}
-    (let [tx-meta (cond-> {}
+    (let [email (user-email env)
+          tx-meta (cond-> {}
                           (number? (::created-at env))
                           (assoc :tx/mutation-created-at (::created-at env))
-                          (some? (:user-uuid env))
-                          (assoc :tx/mutation-created-by [:user/uuid (:user-uuid env)]))]
+                          (some? email)
+                          (assoc :tx/mutation-created-by [:user/email email]))]
       (update-action (mutate env k p)
                      (fn [action]
                        (fn []
@@ -560,6 +564,6 @@
 
 (defn parser-require-auth [parser]
   (fn [env query & [target]]
-    (assert (some? (get-in env [:auth :username]))
+    (assert (some? (user-email env))
             (str "No auth in parser's env: " env))
     (parser env query target)))

@@ -143,8 +143,14 @@
   "When authenticated, we can access entities specific to one user
   or entities which do not contain user data (e.g. dates)."
   [user-id]
-  [(or-filter (user-specific-entities-filter user-id)
-              (non-user-entities-filter-map))])
+  (comment
+    "TODO: Implement authed filters"
+    [(or-filter (user-specific-entities-filter user-id)
+                (non-user-entities-filter-map))])
+  [])
 
 (defn not-authenticated-db-filters []
-  [(non-user-entities-filter-map)])
+  (comment
+    "TODO: Implement public filters"
+    [(non-user-entities-filter-map)])
+  [])
