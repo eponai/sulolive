@@ -2,9 +2,31 @@
 	border: none;
 }
 #sulo-checkout {
+	.page-container {
+		$color: map-get($foundation-palette, primary);
+		background: rgba($color, 0.03);
+		.callout {
+			box-shadow: 0 1px 3px 0 rgba($black, 0.1);
+		}
+	}
+	.row.collapse {
+		.column {
+			padding-right: 1rem;
+			&:last-child {
+				padding-right: 0;
+			}
+		}
+		.button {
+			margin: 0;
+		}
+	}
 	.cart-checkout-item {
 		.callout {
 			margin: 0;
+			// border-top: 1px solid $light-gray;
+			border-top: 1px solid $light-gray;
+			box-shadow: none;
+			// margin-bottom: 1rem;
 		}
 	}
 	h3 {
@@ -12,10 +34,10 @@
 	}
 	a.name {
 		margin-bottom: 2%;
-		max-height: 1.5rem;
+		max-height: 4.5rem;
 		overflow: hidden;
 		display: -webkit-box;
-		-webkit-line-clamp: 1;
+		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		line-height: 1.5;
 		text-overflow: ellipsis;
@@ -32,7 +54,7 @@
 	}
 	.callout {
 		> .row > .column:first-child {
-			border-right: 1px solid $medium-gray;
+			// border-right: 1px solid $medium-gray;
 		}
 		table {
 			margin-top: 2rem;

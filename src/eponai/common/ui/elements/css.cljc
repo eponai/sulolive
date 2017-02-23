@@ -170,10 +170,10 @@
 (defn grid-column-offset [offsets & [opts]]
   (let [class-fn (fn [[k v]]
                    (if (contains? breakpoints k)
-                     (if (<= 1 v grid-cols)
+                     (if (<= 0 v grid-cols)
                        (str (get breakpoints k) "-offset-" v)
                        (warn "Ignoring column offset CSS class for invalid order value: " v
-                             ". Available values are " 1 "-" grid-cols))
+                             ". Available values are " 0 "-" grid-cols))
                      (warn "Ignoring column offset CSS class for invalid breakpoint: " k
                            ". Available are: " (keys breakpoints))))]
     (reduce (fn [m class] (add-class class m)) opts (map class-fn offsets))))
