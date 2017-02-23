@@ -39,5 +39,9 @@
              (when release?
                (dom/script {:src "https://kickoffpages-kickofflabs.netdna-ssl.com/w/89256/144137.js"}))])
 
+          (when (= route :checkout)
+            [(dom/script {:src "https://js.stripe.com/v2/"
+                          :type common/text-javascript})])
+
           (dom/script {:src "/lib/jwplayer-7.9.1/jwplayer.js"})
           (common/inline-javascript ["env.web.main.runsulo()"]))))))

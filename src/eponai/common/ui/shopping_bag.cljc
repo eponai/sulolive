@@ -1,5 +1,14 @@
 (ns eponai.common.ui.shopping-bag
+  #?(:cljs
+     (:require-macros
+       [cljs.core.async.macros :refer [go]]))
   (:require
+    #?(:cljs
+       [cljs.core.async :refer [chan <! put!]])
+    ;[clojure.core.async.macros :refer [go]]
+    ;[clojure.walk :refer [keywordize-keys]]
+    #?(:cljs
+       [goog.object :as gobj])
     [om.dom :as dom]
     [eponai.common.ui.dom :as my-dom]
     [om.next :as om :refer [defui]]
@@ -10,6 +19,39 @@
     [eponai.common.ui.navbar :as nav]
     [taoensso.timbre :refer [debug]]
     [eponai.client.parser.message :as msg]))
+
+#?(:cljs
+   (defn load-checkout [channel]
+     (-> (goog.net.jsloader.load "https://checkout.stripe.com/v2/checkout.js")
+         (.addCallback #(put! channel [:stripe-checkout-loaded :success])))))
+
+#?(:cljs
+   (defn stripe-token-recieved-cb [component]
+     (fn [token]
+       (let [clj-token (js->clj token)]
+         (debug "Recieved token from Stripe.")
+         ;(trace "Recieved token from Stripe: " clj-token)
+         (om/transact! component `[(stripe/update-card ~{:token clj-token})
+                                   :query/stripe])))))
+#?(:cljs
+   (defn checkout-loaded? []
+     (boolean (gobj/get js/window "StripeCheckout"))))
+
+#?(:cljs
+   (defn open-checkout [component email]
+     (let [checkout (.configure js/StripeCheckout
+                                (clj->js {:key    "pk_test_VhkTdX6J9LXMyp5nqIqUTemM"
+                                          :locale "auto"
+                                          :token  (stripe-token-recieved-cb component)}))]
+       (.open checkout
+              #js {:name            "SULO"
+                   :email           email
+                   :locale          "auto"
+                   :allowRememberMe false
+                   :opened          #(debug " StripeCheckout did open") ; #(.show-loading component false)
+                   :closed          #(debug "StripeCheckout did close.")
+                   :panelLabel      ""
+                   }))))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -112,18 +154,35 @@
                                                      {:store.item/photos [:photo/path]}
                                                      :store.item/name
                                                      {:store/_items [:store/name
-                                                                     {:store/photo [:photo/path]}]}]}]}]}])
+                                                                     {:store/photo [:photo/path]}]}]}]}]}
+     {:query/auth [:user/email]}])
   Object
   #?(:cljs
      (checkout
        [this store]
-       (let [{:keys [query/cart proxy/navbar]} (om/props this)
+       (let [{:keys [query/cart query/auth]} (om/props this)
              {:keys [cart/items]} cart
              store-items (get (items-by-store items) store)]
          (debug "Checkout store: " store)
          (debug "Items for store: " items)
-         (msg/om-transact! this `[(user/checkout ~{:items (map :store.item.sku/uuid store-items)
-                                                   :store-id (:db/id store)})]))))
+         (open-checkout this (:user/email auth))
+         ;(msg/om-transact! this `[(user/checkout ~{:items (map :store.item.sku/uuid store-items)
+         ;                                          :store-id (:db/id store)})])
+         )))
+  #?(:cljs
+     (initLocalState [_]
+                     (let [checkout-loaded (checkout-loaded?)]
+                       {:checkout-loaded?   checkout-loaded
+                        :load-checkout-chan (chan)
+                        :is-stripe-loading? (not checkout-loaded)})))
+  #?(:cljs
+     (componentWillMount [this]
+                         (let [{:keys [load-checkout-chan
+                                       checkout-loaded?]} (om/get-state this)]
+                           (when-not checkout-loaded?
+                             (go (<! load-checkout-chan)
+                                 (om/update-state! this assoc :checkout-loaded? true :is-stripe-loading? false))
+                             (load-checkout load-checkout-chan)))))
   (render [this]
     (let [{:keys [query/cart proxy/navbar]} (om/props this)
           {:keys [cart/items]} cart
