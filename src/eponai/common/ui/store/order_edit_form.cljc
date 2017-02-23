@@ -82,15 +82,18 @@
   (let [{:keys [query/order]} (om/props component)]
     (dom/div nil
       ;(show-modal component)
-      (my-dom/div (css/grid-row)
-                  (my-dom/div (css/grid-column)
-                              (dom/h2 nil "Edit Order - " (dom/small nil (:order/id order)) " " (dom/span #js {:className "label warning"} (name (:order/status order)))))
-                  (my-dom/div
-                    (->> (css/grid-column)
-                         (css/text-align :right))
-                    (my-dom/a
-                      (->> {:onClick #(om/update-state! component assoc :order-menu-open? true)})
-                      (dom/i #js {:className "fa fa-ellipsis-h fa-fw"}))))
+      (my-dom/div
+        (->> (css/grid-row)
+             (css/align :bottom))
+        (my-dom/div
+          (css/grid-column)
+          (dom/h2 nil "Edit Order - " (dom/small nil (:order/id order)) " " (dom/span #js {:className "label warning"} (name (:order/status order)))))
+        (my-dom/div
+          (->> (css/grid-column)
+               (css/add-class :shrink)
+               (css/text-align :right))
+          (dom/a #js {:className "button hollow alert"
+                      :onClick   #(.cancel-order component)} "Cancel Order")))
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
                   (my-dom/div {:className "callout transparent"}
@@ -207,6 +210,8 @@
                                                       ~{:order    order
                                                         :store-id store-id})
                                                     :query/orders])))))
+  #?(:cljs
+     (cancel-order [this]))
   #?(:cljs
      (update-order
        [this params]
