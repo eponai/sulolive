@@ -82,9 +82,11 @@
                 (my-dom/div (->> (css/grid-column)
                                  (css/grid-column-size {:small 8 :medium 6}))
                             (apply dom/div #js {:className "multi-photos-container"}
-                                   (map (fn [im]
-                                          (photo/thumbail
-                                            {:src im}))
+                                   (map-indexed
+                                     (fn [i im]
+                                          (dom/div #js {:key (str i)}
+                                            (photo/thumbail
+                                              {:src im})))
                                         (take 4 (repeat photo-url)))))))
 
             (my-dom/div
@@ -97,9 +99,11 @@
               (when (not-empty skus)
                 (dom/div nil
                   (dom/select #js {:id (get form-elements :selected-sku)}
-                              (map (fn [sku]
-                                     (dom/option #js {:value (:db/id sku)} (:store.item.sku/value sku)))
-                                   skus))))
+                              (map-indexed
+                                (fn [i sku]
+                                  (dom/option #js {:key   (str i)
+                                                   :value (:db/id sku)} (:store.item.sku/value sku)))
+                                skus))))
               (dom/div #js {:className "product-action-container"}
                 ;(my-dom/div (->> (css/grid-row))
                 ;            (my-dom/div (->> (css/grid-column)

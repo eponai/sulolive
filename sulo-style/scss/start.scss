@@ -102,6 +102,16 @@ $section-footer-color: $primary-color;
 				p, i {
 					font-size: 1.2rem;
 				}
+
+				.overlay {
+					transition: background .2s ease-in;
+					&:hover {
+						background: rgba($black, 0.5);
+						i {
+							color: $black;
+						}
+					}
+				}
 			}
 		}
 		&.collections {
@@ -119,6 +129,7 @@ $section-footer-color: $primary-color;
 				.overlay-container {
 					flex: 1;
 					// justify-content: stretch;
+
 				}
 			}
 			.content {
@@ -129,7 +140,7 @@ $section-footer-color: $primary-color;
 					display: inline-block;
 					padding: 0rem 1rem;
 					background: rgba($white, 0.75);
-					border-radius: 6px;
+					// border-radius: 6px;
 				}
 				p {
 					margin-bottom: 0;
@@ -144,6 +155,12 @@ $section-footer-color: $primary-color;
 				font-size: 2rem;
 				text-shadow: 1px 1px 0 rgba($white, 0.25);
 				// color: $white;
+				.overlay {
+					transition: background .2s ease-in;
+					&:hover {
+						background: rgba($black, 0.5);
+					}
+				}
 			}
 		}
 		&.new-arrivals {

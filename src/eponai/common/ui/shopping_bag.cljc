@@ -18,7 +18,8 @@
     [eponai.common.ui.utils :as utils]
     [eponai.common.ui.navbar :as nav]
     [taoensso.timbre :refer [debug]]
-    [eponai.client.parser.message :as msg]))
+    [eponai.client.parser.message :as msg]
+    [eponai.client.routes :as routes]))
 
 #?(:cljs
    (defn load-checkout [channel]
@@ -137,13 +138,11 @@
                       (css/grid-column-size {:small 8}))
 
                  (dom/div #js {:className ""}
-                             (dom/a #js {:href      (str "/goods/" product-id)
+                             (dom/a #js {:href      (routes/url :product {:product-id product-id})
                                          :className "name"}
                                     (dom/span nil item-name)))
                  (dom/div #js {:className ""}
-                   (dom/a #js {:href      (str "/goods/" product-id)
-                               :className "sku"}
-                          (dom/span nil (:store.item.sku/value sku)))))
+                   (dom/span nil (:store.item.sku/value sku))))
 
                (my-dom/div
                  (->> (css/grid-column)

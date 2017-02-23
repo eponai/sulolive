@@ -34,7 +34,7 @@
                      :factory   bag/->ShoppingBag}
    :shopping-bag    {:component bag/ShoppingBag
                      :factory   bag/->ShoppingBag}
-   :goods           {:component goods/Goods
+   :products           {:component goods/Goods
                      :factory   goods/->Goods}
    :product         {:component product/ProductPage
                      :factory   product/->ProductPage}

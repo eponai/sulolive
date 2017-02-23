@@ -259,9 +259,11 @@
                         (dom/th nil "")))
               (dom/tbody
                 nil
-                (map (fn [it]
+                (map-indexed
+                  (fn [i it]
                        (dom/tr
-                         #js {:className "sku"}
+                         #js {:className "sku"
+                              :key (str i)}
                          (dom/td
                            nil
                            (dom/a nil (:order.item/parent it)))
@@ -281,9 +283,10 @@
                              ""))))
                      skus)
                 (when (and tax shipping)
-                  (map (fn [it]
+                  (map-indexed (fn [i it]
                          (dom/tr
-                           #js {:className (name (:order.item/type it))}
+                           #js {:key (str i)
+                                :className (name (:order.item/type it))}
                            (dom/td
                              nil
                              (clojure.string/capitalize (name (:order.item/type it))))

@@ -249,26 +249,28 @@
                         (my-dom/div
                           (css/grid-column)
                           (dom/label nil "Quantity")))
-                      (map (fn [sku]
-                             (let [{:store.item.sku/keys [price value quantity]} sku]
-                               (my-dom/div
-                                 (->> {:id (str (:store.item.sku/uuid sku))}
-                                      (css/grid-row)
-                                      (css/add-class :input-sku-group))
-                                 (my-dom/div
-                                   (css/grid-column)
-                                   (my-dom/input
-                                     (->> {:type         "text"
-                                           :defaultValue (or value "")}
-                                          (css/add-class :input-sku-value))))
-                                 (my-dom/div
-                                   (css/grid-column)
-                                   (my-dom/input
-                                     (->> {:type         "number"
-                                           :defaultValue (or quantity "")
-                                           :placeholder  "Unlimited"}
-                                          (css/add-class :input-sku-quantity)))))))
-                           skus)))
+                      (map-indexed
+                        (fn [i sku]
+                          (let [{:store.item.sku/keys [price value quantity]} sku]
+                            (my-dom/div
+                              (->> {:key (str i)
+                                    :id (str (:store.item.sku/uuid sku))}
+                                   (css/grid-row)
+                                   (css/add-class :input-sku-group))
+                              (my-dom/div
+                                (css/grid-column)
+                                (my-dom/input
+                                  (->> {:type         "text"
+                                        :defaultValue (or value "")}
+                                       (css/add-class :input-sku-value))))
+                              (my-dom/div
+                                (css/grid-column)
+                                (my-dom/input
+                                  (->> {:type         "number"
+                                        :defaultValue (or quantity "")
+                                        :placeholder  "Unlimited"}
+                                       (css/add-class :input-sku-quantity)))))))
+                        skus)))
         (my-dom/div (->> (css/grid-row)
                          (css/grid-column))
                     (dom/div nil
@@ -281,7 +283,7 @@
                              (if is-loading?
                                (dom/i #js {:className "fa fa-spinner fa-spin"})
                                (dom/span nil "Save")))
-                      (dom/a #js {:href (routes/url :store-dashboard/product-list {:store-id store-id})
+                      (dom/a #js {:href      (routes/url :store-dashboard/product-list {:store-id store-id})
                                   :className "button hollow"} (dom/span nil "Cancel"))))))))
 
 (def ->ProductEditForm (om/factory ProductEditForm))

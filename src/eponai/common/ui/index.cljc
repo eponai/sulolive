@@ -9,6 +9,7 @@
     [eponai.common.ui.dom :as my-dom :refer [div a]]
     [eponai.common.ui.elements.css :as css]
     [eponai.client.parser.message :as msg]
+    [eponai.client.routes :as routes]
     [eponai.client.auth :as auth]
     [eponai.client.utils :as utils]
     [eponai.common.ui.icons :as icons]
@@ -208,14 +209,16 @@
                                     ""
                                     )
 
-            (common/content-section {:href "/goods"
+            (common/content-section {:href (routes/url :products nil)
                                      :class "new-arrivals"}
                                     "New arrivals"
                                     (div (->> (css/grid-row)
                                               (css/grid-row-columns {:small 2 :medium 4 :large 5}))
-                                         (map (fn [p]
-                                                (common/product-element {:open-url? true} p))
-                                              featured-items))
+                                         (map-indexed
+                                           (fn [i p]
+                                             ;(dom/div #js {:key (str i)})
+                                             (common/product-element {:open-url? true} p))
+                                           featured-items))
                                     "See More")
 
             (banner {:color :default}

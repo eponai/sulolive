@@ -25,10 +25,12 @@
           (my-dom/div (css/grid-column)
                       (dom/h4 nil "Stream Key")
                       (dom/input #js {:type        "text"
-                                      :value       (when (msg/final? message)
+                                      :value       (if (msg/final? message)
                                                      (:token (msg/message message))
-                                                     )
-                                      :defaultValue ""
+                                                     "")
+                                      ;:defaultValue (if (msg/final? message)
+                                      ;                (:token (msg/message message))
+                                      ;                "")
                                       :placeholder "Click below to generate new token"}))
           (my-dom/div
             (->> (css/grid-column)

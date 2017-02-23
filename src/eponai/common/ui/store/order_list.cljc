@@ -48,23 +48,24 @@
                         (dom/th nil "Last Updated")))
               (dom/tbody
                 nil
-                (map (fn [o]
-                       (let [product-link (routes/url :store-dashboard/order
-                                                      {:store-id (:db/id store)
-                                                       :order-id (:order/id o)})]
-                         (dom/tr nil
-                                 (dom/td nil
-                                         (dom/a #js {:href product-link}
-                                                (dom/span #js {:className "label warning"} (name (:order/status o)))))
-                                 (dom/td nil
-                                         (dom/a #js {:href product-link}
-                                                (dom/span nil (:order/id o))))
-                                 (dom/td nil
-                                         (dom/a #js {:href product-link}
-                                                (dom/span nil (:order/amount o))))
-                                 (dom/td nil
-                                         (dom/a #js {:href product-link}
-                                                (dom/span nil (date/date->string (* 1000 (:order/updated o)))))))))
-                     orders)))))))))
+                (map-indexed
+                  (fn [i o]
+                    (let [product-link (routes/url :store-dashboard/order
+                                                   {:store-id (:db/id store)
+                                                    :order-id (:order/id o)})]
+                      (dom/tr #js {:key (str i)}
+                              (dom/td nil
+                                      (dom/a #js {:href product-link}
+                                             (dom/span #js {:className "label warning"} (name (:order/status o)))))
+                              (dom/td nil
+                                      (dom/a #js {:href product-link}
+                                             (dom/span nil (:order/id o))))
+                              (dom/td nil
+                                      (dom/a #js {:href product-link}
+                                             (dom/span nil (:order/amount o))))
+                              (dom/td nil
+                                      (dom/a #js {:href product-link}
+                                             (dom/span nil (date/date->string (* 1000 (:order/updated o)))))))))
+                  orders)))))))))
 
 (def ->OrderList (om/factory OrderList))

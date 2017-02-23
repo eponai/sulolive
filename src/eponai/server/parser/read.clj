@@ -20,9 +20,10 @@
 
 (defmethod server-read :query/cart
   [{:keys [db db-history query auth]} _ {:keys [items]}]
-  {:value (query/one db db-history query {:where '[[?u :user/email ?email]
-                                                   [?u :user/cart ?e]]
-                                          :symbols {'?email (:email auth)}})})
+  {:value (when (:email auth)
+            (query/one db db-history query {:where   '[[?u :user/email ?email]
+                                                       [?u :user/cart ?e]]
+                                            :symbols {'?email (:email auth)}}))})
 
 (defmethod read-basis-param-path :query/store [_ _ {:keys [store-id]}]
   [store-id])

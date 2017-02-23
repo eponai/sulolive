@@ -21,8 +21,8 @@
         "sell/coming-soon"            :sell-soon
         "store/new"                   :new-store
         ["store/" [#"\d+" :store-id]] store-routes
-        "goods"                       :goods
-        ["goods/" :product-id]        :product
+        "products"                       :products
+        ["product/" :product-id]        :product
         "streams"                     :streams
         "checkout"                    :checkout
         "shopping-bag"                :shopping-bag

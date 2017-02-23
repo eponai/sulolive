@@ -60,12 +60,12 @@
                         (dom/th nil "Last Updated")))
               (dom/tbody
                 nil
-                (map (fn [p]
+                (map-indexed (fn [i p]
                        (debug "PRODUCT: " p)
                        (let [product-link (routes/url :store-dashboard/product
                                                       {:store-id   (:store-id route-params)
                                                        :product-id (:db/id p)})]
-                         (dom/tr nil
+                         (dom/tr #js {:key (str i)}
                                  (dom/td nil
                                          (dom/input #js {:type "checkbox"}))
                                  (dom/td nil

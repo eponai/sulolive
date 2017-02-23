@@ -65,9 +65,9 @@ $primary-color: map-get($foundation-palette, primary);
 	display: flex;
 	justify-content: center;
 	padding: 0.5rem 0;
-	.photo-container {
+	> * {
 		margin: 0 0.5rem;
-		width: 10%;
+		width: 20%;
 	}
 }
 
