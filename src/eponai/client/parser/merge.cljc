@@ -123,15 +123,15 @@
 
 (defn merge-meta [db novelty-meta]
   {:post [(db/db? %)]}
-  (let [new-map (:eponai.common.parser/read-basis-t novelty-meta)
+  (let [new-map (::parser/read-basis-t novelty-meta)
         old-map (:eponai.common.parser.read-basis-t/map
-                  (d/entity db [:db/ident :eponai.common.parser/read-basis-t]))
+                  (d/entity db [:db/ident ::parser/read-basis-t]))
         merged-map (utils/deep-merge old-map new-map)]
     ;; TODO: Only transact if the read-basis-t has changed?
     ;; (maybe it doesn't matter when there are a lot of users).
     (cond-> db
             (some? merged-map)
-            (transact {:db/ident                              :eponai.common.parser/read-basis-t
+            (transact {:db/ident                              ::parser/read-basis-t
                        :eponai.common.parser.read-basis-t/map merged-map}))))
 
 (defn merge!

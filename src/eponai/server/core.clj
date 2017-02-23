@@ -16,6 +16,7 @@
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.mailchimp :as mailchimp]
     [eponai.server.external.wowza :as wowza]
+    [eponai.server.external.chat :as chat]
     [ring.adapter.jetty :as jetty]
     [taoensso.timbre :refer [debug error info]]
     ;; Dev/debug require
@@ -37,7 +38,8 @@
                      ;::m/send-email-fn     (e/send-email-fn conn)
                      ::email/send-verification-fn (partial email/send-verification-email @in-production?)
                      ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
-                     ::m/system                   {:system/wowza     (let [p {:secret         (env :wowza-jwt-secret)
+                     ::m/system                   {:system/chat      (chat/->DatomicChat conn)
+                                                   :system/wowza     (let [p {:secret         (env :wowza-jwt-secret)
                                                                               :subscriber-url (env :wowza-subscriber-url)
                                                                               :publisher-url  (env :wowza-publisher-url)}]
                                                                        (if (or @in-production?)

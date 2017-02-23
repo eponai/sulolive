@@ -10,6 +10,7 @@
     [eponai.server.auth :as auth]
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.wowza :as wowza]
+    [eponai.server.external.chat :as chat]
     [eponai.server.api.store :as store]))
 
 (defmethod server-read :datascript/schema
@@ -135,20 +136,12 @@
 (defmethod read-basis-param-path :query/chat [_ _ params]
   [(get-in params [:store :db/id])])
 (defmethod server-read :query/chat
-  [{:keys [db db-history query]} k {:keys [store] :as params}]
-  (let [store-id (:db/id store)
-        chat-query {:where   '[[?e :chat/store ?store-id]]
-                    :symbols {'?store-id store-id}}]
-    (cond
-      (nil? store-id)
-      (warn "No store-id passed in params for read: " k " with params: " params)
-
-      ;; TODO: Make this a system? (get-chat-room id), (get-messages id).
-      ;; First read, just get the chat objects.
-      (nil? db-history)
-      {:value (db/pull-one-with db ['*] chat-query)}
-
-      ;; Only get messages when we've read once. Get messages by pulling using query.
-      :else
-      {:value (query/all db db-history query {:where   '[[?e :chat/store ?store-id]]
-                                              :symbols {'?store-id store-id}})})))
+  [{:keys [db-history query system] ::parser/keys [read-basis-t-for-this-key]} k {:keys [store] :as params}]
+  (let [chat (:system/chat system)]
+    (if (nil? (:db/id store))
+      (do (warn "No store :db/id passed in params for read: " k " with params: " params)
+          {:value (parser/value-with-basis-t {} read-basis-t-for-this-key)})
+      {:value (-> (if (nil? db-history)
+                    (chat/initial-read chat store query)
+                    (chat/read-messages chat store query read-basis-t-for-this-key))
+                  (parser/value-with-basis-t (chat/last-read chat)))})))

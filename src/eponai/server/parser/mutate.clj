@@ -11,6 +11,7 @@
     [eponai.server.api :as api]
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.wowza :as wowza]
+    [eponai.server.external.chat :as chat]
     [eponai.common :as c]
     [buddy.sign.jwt :as jwt]
     [eponai.server.api.store :as store]
@@ -142,7 +143,7 @@
              (store/create-order env (c/parse-long store-id) order))})
 
 (defmutation chat/send-message
-  [{::parser/keys [exception] :keys [state target db] :as env} k {:keys [store text user]}]
+  [{::parser/keys [exception] :keys [state target system] :as env} k {:keys [store text user]}]
   {:success "Message sent"
    :error   (if (some? exception)
               (.getMessage exception)
@@ -152,9 +153,7 @@
     {:action (fn []
                (let [user-id (query-user-id env)]
                  (if (= (:db/id user) user-id)
-                   (let [tx (format/chat-message db {:db/id user-id} store text)]
-                     (debug "Transacting chat-message: " tx)
-                     (db/transact state tx))
+                   (chat/write-message (:system/chat system) store user text)
                    (throw (ex-info "User authed does not match user who sent message."
                                    {:client-user-id (:db/id user)
                                     :server-user-id user-id

@@ -124,9 +124,9 @@
     (let [ret-target (get mutation-ret target false)
           ast (if (true? ret-target) ast ret-target)]
       (assoc mutation-ret target
-                 (cond-> ast
-                         (map? ast)
-                         (assoc-in [:params k] v))))))
+                          (cond-> ast
+                                  (map? ast)
+                                  (assoc-in [:params k] v))))))
 
 (defn update-action [mutation-ret update-fn]
   (cond-> mutation-ret
@@ -334,13 +334,13 @@
 
 #?(:clj
    (defn read-returning-basis-t [read]
-     (fn [{:keys [db ::force-read-without-history] :as env} k p]
+     (fn [{:keys [db] ::keys [force-read-without-history] :as env} k p]
        {:pre [(some? db)]}
        (let [param-path (read-basis-param-path env k p)
              _ (assert (or (nil? param-path) (sequential? param-path))
                        (str "Path returned from read-basis-param-path for key: " k " params: " p
                             " was not nil or sequential. Was: " param-path))
-             default-path [:eponai.common.parser/read-basis-t (str (user-email env)) k]
+             default-path [::read-basis-t (str (user-email env)) k]
              path (into default-path param-path)
              basis-t-for-this-key (get-in env path)
              env (if (contains? @force-read-without-history k)
@@ -350,18 +350,27 @@
                      (swap! force-read-without-history disj k)
                      (dissoc env :db-history))
                    (assoc env
-                     ::basis-t-for-this-key basis-t-for-this-key
+                     ::read-basis-t-for-this-key basis-t-for-this-key
                      :db-history (when basis-t-for-this-key
                                    (datomic/since (datomic/history db)
                                                   basis-t-for-this-key))))
              ret (read env k p)
-             ret (cond-> ret
-                         (nil? (:value ret))
-                         (assoc :value {})
-                         ;; Value has not already been set?
-                         (not (contains? (meta (:value ret)) :eponai.common.parser/read-basis-t))
-                         (update :value vary-meta assoc-in path (datomic/basis-t db)))]
+             new-basis-t (or (::value-read-basis-t (meta (:value ret)))
+                             (datomic/basis-t db))
+             ret (update ret :value (fnil vary-meta {}) (fn [meta]
+                                                          (-> meta
+                                                              (dissoc ::value-read-basis-t)
+                                                              (assoc-in path new-basis-t))))]
          ret))))
+
+(defn value-with-basis-t
+  "Use when you want to override the value of basis-t.
+
+  Param v is the value of the :value key returned by read.
+  Example usage in a read:
+  {:value (parser/value-with-basis-t {:foo 1} 1234)}"
+  [v basis-t]
+  ((fnil vary-meta {}) v assoc ::value-read-basis-t basis-t))
 
 #?(:clj
    (defn with-mutation-message [mutate]

@@ -11,6 +11,7 @@
     [bidi.bidi :as bidi]
     [bidi.ring :as bidi.ring]
     [eponai.common.routes :as common.routes]
+    [eponai.common.parser :as parser]
     [eponai.common.parser.util :as parser.util]
     [eponai.server.parser.response :as parser.resp]
     [taoensso.timbre :refer [debug error trace warn]]
@@ -50,11 +51,11 @@
   (debug "Handling parser request with body:" body)
   (debug "SYSTEM PARSER REQUEST: " system)
   (parser
-    {:eponai.common.parser/read-basis-t (:eponai.common.parser/read-basis-t body)
-     :state                             conn
-     :auth                              (:identity request)
-     :params                            (:params request)
-     :system                            system}
+    {::parser/read-basis-t (::parser/read-basis-t body)
+     :state                conn
+     :auth                 (:identity request)
+     :params               (:params request)
+     :system               system}
     (:query body)))
 
 (defn trace-parser-response-handlers

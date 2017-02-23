@@ -164,7 +164,7 @@
     (server-edit env k p conform-fn)
     (client-edit env k p conform-fn)))
 
-(defn chat-message [db user store text]
+(defn chat-message [db store user text]
   (when-not (db/dbid? (:db/id user))
     (throw (ex-info "No user id found in when sending chat message."
                     {:store        store

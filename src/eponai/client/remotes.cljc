@@ -51,9 +51,9 @@
           db (d/db conn)]
       ;; TODO: Create a protocol for the read-basis-t stuff?
       ;;       This would make it easier to understand what's stored in datascript.
-      (assoc-in ret [:opts :transit-params :eponai.common.parser/read-basis-t]
+      (assoc-in ret [:opts :transit-params ::parser/read-basis-t]
                 (:eponai.common.parser.read-basis-t/map
-                  (d/entity db [:db/ident :eponai.common.parser/read-basis-t]))))))
+                  (d/entity db [:db/ident ::parser/read-basis-t]))))))
 
 (defn- force-remote-read! [reconciler]
   (binding [parser/*parser-allow-local-read* false]
