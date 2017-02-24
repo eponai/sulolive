@@ -12,20 +12,15 @@
 
 (defui ProductItem
   Object
-  #?(:cljs
-     (initLocalState [this]
-                     {:resize-listener #(.on-window-resize this)
-                      :breakpoint      (utils/breakpoint js/window.innerWidth)}))
-
-  #?(:cljs
-     (on-window-resize [this]
-       (om/update-state! this assoc :breakpoint (utils/breakpoint js/window.innerWidth))))
-  #?(:cljs
-     (componentDidMount [this]
-       (.addEventListener js/window "resize" (:resize-listener (om/get-state this)))))
-  #?(:cljs
-     (componentWillUnmount [this]
-       (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
+  (initLocalState [this]
+    #?(:cljs {:resize-listener #(.on-window-resize this)
+              :breakpoint      (utils/breakpoint js/window.innerWidth)}))
+  (on-window-resize [this]
+    #?(:cljs (om/update-state! this assoc :breakpoint (utils/breakpoint js/window.innerWidth))))
+  (componentDidMount [this]
+    #?(:cljs (.addEventListener js/window "resize" (:resize-listener (om/get-state this)))))
+  (componentWillUnmount [this]
+    #?(:cljs (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
 
   (render [this]
     (let [{:keys [product]} (om/props this)
