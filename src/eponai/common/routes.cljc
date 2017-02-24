@@ -24,7 +24,7 @@
         "products"                    :products
         ["product/" :product-id]      :product
         "streams"                     :streams
-        ["checkout" :store-id]        :checkout
+        ["checkout/" :store-id]        :checkout
         "shopping-bag"                :shopping-bag
         "business"                    :business
         ["user/" [#"\d+" :user-id]]   user-routes

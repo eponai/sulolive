@@ -1,16 +1,5 @@
 (ns eponai.common.ui.shopping-bag
-  #?(:cljs
-     (:require-macros
-       [cljs.core.async.macros :refer [go]]))
   (:require
-    #?(:cljs
-       [cljs.core.async :refer [chan <! put!]]
-       :clj
-       [clojure.core.async :refer [chan <! put! go]])
-    ;[clojure.core.async.macros :refer [go]]
-    ;[clojure.walk :refer [keywordize-keys]]
-    #?(:cljs
-       [goog.object :as gobj])
     [om.dom :as dom]
     [eponai.common.ui.dom :as my-dom]
     [om.next :as om :refer [defui]]
@@ -22,39 +11,6 @@
     [taoensso.timbre :refer [debug]]
     [eponai.client.parser.message :as msg]
     [eponai.client.routes :as routes]))
-
-
-(defn load-checkout [channel]
-  #?(:cljs (-> (goog.net.jsloader.load "https://checkout.stripe.com/v2/checkout.js")
-               (.addCallback #(put! channel [:stripe-checkout-loaded :success])))))
-
-
-(defn stripe-token-recieved-cb [component]
-  #?(:cljs (fn [token]
-             (let [clj-token (js->clj token)]
-               (debug "Recieved token from Stripe.")
-               ;(trace "Recieved token from Stripe: " clj-token)
-               (om/transact! component `[(stripe/update-card ~{:token clj-token})
-                                         :query/stripe])))))
-
-(defn checkout-loaded? []
-  #?(:cljs (boolean (gobj/get js/window "StripeCheckout"))))
-
-
-(defn open-checkout [component email]
-  #?(:cljs (let [checkout (.configure js/StripeCheckout
-                                      (clj->js {:key    "pk_test_VhkTdX6J9LXMyp5nqIqUTemM"
-                                                :locale "auto"
-                                                :token  (stripe-token-recieved-cb component)}))]
-             (.open checkout
-                    #js {:name            "SULO"
-                         :email           email
-                         :locale          "auto"
-                         :allowRememberMe false
-                         :opened          #(debug " StripeCheckout did open") ; #(.show-loading component false)
-                         :closed          #(debug "StripeCheckout did close.")
-                         :panelLabel      ""
-                         }))))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -225,6 +181,7 @@
                                                                      {:store/photo [:photo/path]}]}]}]}]}
      {:query/auth [:user/email]}])
   Object
+<<<<<<< HEAD
   (checkout
     [this store]
     (let [{:keys [query/cart query/auth]} (om/props this)
@@ -250,6 +207,10 @@
         (load-checkout load-checkout-chan))))
   (componentDidMount [this]
     (om/update-state! this assoc :did-mount? true))
+=======
+
+
+>>>>>>> Integrate Stripe elements into UI.
   (render [this]
     (let [{:keys [query/cart proxy/navbar]} (om/props this)
           {:keys [cart/items]} cart
@@ -259,7 +220,7 @@
       (debug "CART ITEMS: " cart)
       (debug "GROUPED: " (items-by-store items))
       (common/page-container
-        {:navbar navbar :id "sulo-checkout"}
+        {:navbar navbar :id "sulo-shopping-bag"}
         (my-dom/div
           (-> (css/grid-column)
               css/grid-row)

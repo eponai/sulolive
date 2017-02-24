@@ -1,7 +1,7 @@
 .callout.transparent {
 	border: none;
 }
-#sulo-checkout {
+#sulo-shopping-bag {
 	.page-container {
 		$color: map-get($foundation-palette, primary);
 		background: rgba($color, 0.03);
@@ -12,13 +12,14 @@
 	.callout .callout {
 		box-shadow: none;
 	}
-	.row.collapse {
-		// .column {
-		// 	padding-right: 1rem;
-		// 	&:last-child {
-		// 		padding-right: 0;
-		// 	}
-		// }
+	.row.collapse.callout {
+		padding: 1rem 0;
+		.column {
+			padding-right: 1rem;
+			&:last-child {
+				padding-right: 0;
+			}
+		}
 		.button {
 			margin: 0;
 		}

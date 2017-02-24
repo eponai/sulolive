@@ -51,7 +51,7 @@
                (dom/script {:src "https://kickoffpages-kickofflabs.netdna-ssl.com/w/89256/144137.js"}))])
 
           (when (= route :checkout)
-            [(dom/script {:src "https://js.stripe.com/v2/"
+            [(dom/script {:src "https://js.stripe.com/v3/"
                           :type common/text-javascript})])
 
           (dom/script {:src "/lib/jwplayer-7.9.1/jwplayer.js"})
