@@ -176,8 +176,8 @@
     (-> [{:db/id      chat-id
           :chat/store (:db/id store)}
          {:db/id             message-id
-          :chat.message/chat chat-id
           :chat.message/user (select-keys user [:db/id])
-          :chat.message/text text}]
+          :chat.message/text text}
+         [:db/add chat-id :chat/messages message-id]]
         (with-meta {::message-id message-id
                     ::chat-id    chat-id}))))

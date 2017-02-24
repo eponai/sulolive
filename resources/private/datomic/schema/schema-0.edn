@@ -288,14 +288,15 @@
   :db/doc                "Ref to the chat's store"
   :db.install/_attribute :db.part/db}
 
- ;; Chat Messages
-
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :chat.message/chat
+  :db/ident              :chat/messages
   :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/one
+  :db/cardinality        :db.cardinality/many
+  :db/isComponent        true
   :db/doc                "Ref to the chat the chat message belongs to"
   :db.install/_attribute :db.part/db}
+
+ ;; Chat Messages
 
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :chat.message/text

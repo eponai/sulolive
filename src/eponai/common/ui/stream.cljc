@@ -68,7 +68,7 @@
      (first (utils/elements-by-tagname "video"))))
 
 (defn get-messages [component]
-  (let [messages (get-in (om/props component) [:query/chat :chat.message/_chat])
+  (let [messages (get-in (om/props component) [:query/chat :chat/messages])
         {client-side true server-side false} (group-by (comp true? :chat.message/client-side-message?) messages)]
     (concat server-side client-side)))
 
@@ -82,10 +82,10 @@
      {:query/chat [:chat/store
                    ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
                    :chat/modes
-                   {:chat.message/_chat [:chat.message/client-side-message?
-                                         {:chat.message/user [:user/email]}
-                                         :chat.message/text
-                                         :chat.message/timestamp]}]}])
+                   {:chat/messages [:chat.message/client-side-message?
+                                    {:chat.message/user [:user/email]}
+                                    :chat.message/text
+                                    :chat.message/timestamp]}]}])
   Object
   #?(:cljs
      (server-url [this]
