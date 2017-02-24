@@ -45,15 +45,16 @@
 
 (defn url
   "Takes a route and its route-params and returns an url"
-  [route route-params]
-  (try
-    (apply bidi/path-for routes/routes route (reduce into [] route-params))
-    (catch #?@(:cljs [:default e]
-               :clj  [Throwable e])
-           (error "Error when trying to create url from route: " route
-                  " route-params: " route-params
-                  " error: " e)
-      nil)))
+  ([route] (url route nil))
+  ([route route-params]
+   (try
+     (apply bidi/path-for routes/routes route (some->> route-params (reduce into [])))
+     (catch #?@(:cljs [:default e]
+                :clj  [Throwable e])
+            (error "Error when trying to create url from route: " route
+                   " route-params: " route-params
+                   " error: " e)
+       nil))))
 
 (defn set-url!
   "Sets the URL which will propagate the route changes, reads and everything else.

@@ -4,7 +4,9 @@
        [cljs.core.async.macros :refer [go]]))
   (:require
     #?(:cljs
-       [cljs.core.async :refer [chan <! put!]])
+       [cljs.core.async :refer [chan <! put!]]
+       :clj
+       [clojure.core.async :refer [chan <! put! go]])
     ;[clojure.core.async.macros :refer [go]]
     ;[clojure.walk :refer [keywordize-keys]]
     #?(:cljs
@@ -21,38 +23,38 @@
     [eponai.client.parser.message :as msg]
     [eponai.client.routes :as routes]))
 
-#?(:cljs
-   (defn load-checkout [channel]
-     (-> (goog.net.jsloader.load "https://checkout.stripe.com/v2/checkout.js")
-         (.addCallback #(put! channel [:stripe-checkout-loaded :success])))))
 
-#?(:cljs
-   (defn stripe-token-recieved-cb [component]
-     (fn [token]
-       (let [clj-token (js->clj token)]
-         (debug "Recieved token from Stripe.")
-         ;(trace "Recieved token from Stripe: " clj-token)
-         (om/transact! component `[(stripe/update-card ~{:token clj-token})
-                                   :query/stripe])))))
-#?(:cljs
-   (defn checkout-loaded? []
-     (boolean (gobj/get js/window "StripeCheckout"))))
+(defn load-checkout [channel]
+  #?(:cljs (-> (goog.net.jsloader.load "https://checkout.stripe.com/v2/checkout.js")
+               (.addCallback #(put! channel [:stripe-checkout-loaded :success])))))
 
-#?(:cljs
-   (defn open-checkout [component email]
-     (let [checkout (.configure js/StripeCheckout
-                                (clj->js {:key    "pk_test_VhkTdX6J9LXMyp5nqIqUTemM"
-                                          :locale "auto"
-                                          :token  (stripe-token-recieved-cb component)}))]
-       (.open checkout
-              #js {:name            "SULO"
-                   :email           email
-                   :locale          "auto"
-                   :allowRememberMe false
-                   :opened          #(debug " StripeCheckout did open") ; #(.show-loading component false)
-                   :closed          #(debug "StripeCheckout did close.")
-                   :panelLabel      ""
-                   }))))
+
+(defn stripe-token-recieved-cb [component]
+  #?(:cljs (fn [token]
+             (let [clj-token (js->clj token)]
+               (debug "Recieved token from Stripe.")
+               ;(trace "Recieved token from Stripe: " clj-token)
+               (om/transact! component `[(stripe/update-card ~{:token clj-token})
+                                         :query/stripe])))))
+
+(defn checkout-loaded? []
+  #?(:cljs (boolean (gobj/get js/window "StripeCheckout"))))
+
+
+(defn open-checkout [component email]
+  #?(:cljs (let [checkout (.configure js/StripeCheckout
+                                      (clj->js {:key    "pk_test_VhkTdX6J9LXMyp5nqIqUTemM"
+                                                :locale "auto"
+                                                :token  (stripe-token-recieved-cb component)}))]
+             (.open checkout
+                    #js {:name            "SULO"
+                         :email           email
+                         :locale          "auto"
+                         :allowRememberMe false
+                         :opened          #(debug " StripeCheckout did open") ; #(.show-loading component false)
+                         :closed          #(debug "StripeCheckout did close.")
+                         :panelLabel      ""
+                         }))))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -105,19 +107,21 @@
   ;      {:src (:photo/path (:store/photo s))})))
   )
 
-(defn store-checkout-element [component store cart-items]
-  (dom/div #js {:className "callout transparent cart-checkout-item"}
+(defn store-checkout-element [component key store cart-items]
+  (dom/div #js {:key key
+                :className "callout transparent cart-checkout-item"}
     (store-element store)
     ;(my-dom/div
     ;  (css/grid-row))
 
 
-    (map (fn [sku]
+    (map-indexed (fn [i sku]
            (let [{:store.item/keys [price photos]
                   product-id       :db/id
                   item-name        :store.item/name} (get sku :store.item/_skus)]
              (my-dom/div
-               (->> (css/grid-row)
+               (->> {:key i}
+                    (css/grid-row)
                     (css/add-class :collapse)
                     (css/align :middle)
                     (css/add-class :callout)
@@ -138,9 +142,9 @@
                       (css/grid-column-size {:small 8}))
 
                  (dom/div #js {:className ""}
-                             (dom/a #js {:href      (routes/url :product {:product-id product-id})
-                                         :className "name"}
-                                    (dom/span nil item-name)))
+                   (dom/a #js {:href      (routes/url :product {:product-id product-id})
+                               :className "name"}
+                          (dom/span nil item-name)))
                  (dom/div #js {:className ""}
                    (dom/span nil (:store.item.sku/value sku))))
 
@@ -150,7 +154,10 @@
                       (css/grid-column-size {:small 3 :medium 2 :large 1})
                       (css/grid-column-offset {:small 3 :large 0}))
                  (dom/input #js {:type         "number"
-                                 :defaultValue 1}))
+                                 :defaultValue 1
+                                 ;; :defaultValue doesn't work for clj dom/input.
+                                 ;; File om.next/dom bug?
+                                 #?@(:clj [:value 1])}))
                (my-dom/div
                  (->> (css/grid-column)
                       (css/text-align :right)
@@ -216,35 +223,35 @@
                                                                      {:store/photo [:photo/path]}]}]}]}]}
      {:query/auth [:user/email]}])
   Object
-  #?(:cljs
-     (checkout
-       [this store]
-       (let [{:keys [query/cart query/auth]} (om/props this)
-             {:keys [cart/items]} cart
-             store-items (get (items-by-store items) store)]
-         (debug "Checkout store: " store)
-         (debug "Items for store: " items)
-         (open-checkout this (:user/email auth))
-         ;(msg/om-transact! this `[(user/checkout ~{:items (map :store.item.sku/uuid store-items)
-         ;                                          :store-id (:db/id store)})])
-         )))
-  #?(:cljs
-     (initLocalState [_]
-                     (let [checkout-loaded (checkout-loaded?)]
-                       {:checkout-loaded?   checkout-loaded
-                        :load-checkout-chan (chan)
-                        :is-stripe-loading? (not checkout-loaded)})))
-  #?(:cljs
-     (componentWillMount [this]
-                         (let [{:keys [load-checkout-chan
-                                       checkout-loaded?]} (om/get-state this)]
-                           (when-not checkout-loaded?
-                             (go (<! load-checkout-chan)
-                                 (om/update-state! this assoc :checkout-loaded? true :is-stripe-loading? false))
-                             (load-checkout load-checkout-chan)))))
+  (checkout
+    [this store]
+    (let [{:keys [query/cart query/auth]} (om/props this)
+          {:keys [cart/items]} cart
+          store-items (get (items-by-store items) store)]
+      (debug "Checkout store: " store)
+      (debug "Items for store: " items)
+      (open-checkout this (:user/email auth))
+      ;(msg/om-transact! this `[(user/checkout ~{:items (map :store.item.sku/uuid store-items)
+      ;                                          :store-id (:db/id store)})])
+      ))
+  (initLocalState [_]
+    (let [checkout-loaded (checkout-loaded?)]
+      {:checkout-loaded?   checkout-loaded
+       :load-checkout-chan (chan)
+       :is-stripe-loading? (not checkout-loaded)}))
+  (componentWillMount [this]
+    (let [{:keys [load-checkout-chan
+                  checkout-loaded?]} (om/get-state this)]
+      (when-not checkout-loaded?
+        (go (<! load-checkout-chan)
+            (om/update-state! this assoc :checkout-loaded? true :is-stripe-loading? false))
+        (load-checkout load-checkout-chan))))
+  (componentDidMount [this]
+    (om/update-state! this assoc :did-mount true))
   (render [this]
     (let [{:keys [query/cart proxy/navbar]} (om/props this)
           {:keys [cart/items]} cart
+          {:keys [did-mount]} (om/get-state this)
           item-count (count items)]
 
       (debug "CART ITEMS: " cart)
@@ -258,9 +265,9 @@
             (dom/div nil
               (dom/h3 nil "Shopping Bag")
               (apply dom/div nil
-                     (map (fn [[s its]]
-                            (store-checkout-element this s its))
-                          (items-by-store items)))
+                     (map-indexed (fn [i [s its]]
+                                    (store-checkout-element this i s its))
+                                  (items-by-store items)))
               (when (< 1 (count (items-by-store items)))
                 (my-dom/div nil
                             (dom/h3 nil "or checkout all stores")
@@ -273,9 +280,10 @@
                                 ;; GRID COLUMN
                                 (apply my-dom/div
                                        (css/grid-column)
-                                       (map (fn [[s its]]
+                                       (map-indexed (fn [i [s its]]
                                               (my-dom/div
-                                                (css/grid-row {:classes [::css/grid-row-align-middle :padded :vertical]})
+                                                (css/grid-row {:key     i
+                                                               :classes [::css/grid-row-align-middle :padded :vertical]})
                                                 ;{:classes [::css/grid-row-align-middle :padded :vertical]}
                                                 (my-dom/div
                                                   (->> (css/grid-column)
@@ -316,11 +324,12 @@
                                                                 (dom/td nil (dom/h5 nil (utils/two-decimal-price (compute-item-price items)))))))
                                   (dom/a #js {:className "button gray"}
                                          "Checkout All Stores")))))))
-            #?(:cljs
-                    (dom/div #js {:className "cart-empty callout text-center"}
-                      (dom/h3 nil "Your shopping bag is empty")
-                      (dom/a #js {:href "/"} (dom/h5 nil "Go to the market - start shopping")))
-               :clj (dom/div {:className "cart-loading text-center"}
-                      (dom/i {:className "fa fa-spinner fa-spin fa-4x"})))))))))
+            (if-not did-mount
+              (dom/div {:className "cart-loading text-center"}
+                (dom/i {:className "fa fa-spinner fa-spin fa-4x"}))
+              (dom/div #js {:className "cart-empty callout text-center"}
+                (dom/h3 nil "Your shopping bag is empty")
+                (dom/a #js {:href (routes/url :index)}
+                       (dom/h5 nil "Go to the market - start shopping"))))))))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))
