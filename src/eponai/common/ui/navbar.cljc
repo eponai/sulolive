@@ -21,7 +21,7 @@
            (map (fn [i]
                   (let [{:store.item/keys [price photos] p-name :store.item/name :as item} (:store.item/_skus i)]
                     (menu/item-link
-                      {:href    (str "/goods/" (:db/id item))
+                      {:href    (routes/url :product {:product-id (:db/id item)})
                        :classes [:cart-link]}
                       ;(dom/div #js {})
                       (photo/square
@@ -40,7 +40,7 @@
         (dom/small nil (str "You have " (count items) " item(s) in your bag")))
       (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price (compute-item-price (map #(get % :store.item/_skus) items))))))
     (dom/a #js {:className "button expanded hollow gray"
-                :href      "/checkout"} "View My Bag")))
+                :href      (routes/url :shopping-bag nil)} "View My Bag")))
 
 (defn category-dropdown []
   (dom/div #js {:className "dropdown-pane"}

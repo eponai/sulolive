@@ -8,7 +8,8 @@
     [eponai.common.ui.navbar :as nav]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
-    [eponai.common.ui.elements.menu :as menu]))
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.client.routes :as routes]))
 
 (defn modal [opts & content]
   (let [{:keys [on-close size]} opts]
@@ -104,7 +105,7 @@
 
 (defn product-element [opts product & children]
   (let [{:keys [on-click open-url?]} opts
-        goods-href (when (or open-url? (nil? on-click)) (str "/goods/" (:db/id product)))
+        goods-href (when (or open-url? (nil? on-click)) (routes/url :product {:product-id (:db/id product)}))
         on-click (when-not open-url? on-click)
         {:store.item/keys [photos price]
          item-name :store.item/name

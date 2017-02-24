@@ -22,16 +22,17 @@
         (my-dom/div
           (->> {:className "callout transparent"} (css/grid-row)
                (css/align :bottom))
-          (my-dom/div (css/grid-column)
-                      (dom/h4 nil "Stream Key")
-                      (dom/input #js {:type        "text"
-                                      :value       (if (msg/final? message)
-                                                     (:token (msg/message message))
-                                                     "")
-                                      ;:defaultValue (if (msg/final? message)
-                                      ;                (:token (msg/message message))
-                                      ;                "")
-                                      :placeholder "Click below to generate new token"}))
+          (my-dom/div
+            (css/grid-column)
+            (dom/h4 nil "Stream Key")
+            (dom/input #js {:type        "text"
+                            :value       (if (msg/final? message)
+                                           (:token (msg/message message))
+                                           "")
+                            ;:defaultValue (if (msg/final? message)
+                            ;                (:token (msg/message message))
+                            ;                "")
+                            :placeholder "Click below to generate new token"}))
           (my-dom/div
             (->> (css/grid-column)
                  (css/text-align :right)
