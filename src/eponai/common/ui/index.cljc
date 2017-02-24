@@ -237,36 +237,35 @@
 
 (defui ComingSoonContent
   Object
-  #?(:cljs
-     (show-login [this]
-                 (let [{:keys [lock]} (om/get-state this)]
-                   (.show lock (clj->js {:allowedConnections ["Username-Password-Authentication"]
-                                         :auth               {:params {:state js/window.location.origin
-                                                                       :scope "openid email"}}})))))
-  #?(:cljs
-     (do-login [this auth-res]
-               (debug "Auth-result: " auth-res)))
-  #?(:cljs
-     (componentDidMount [this]
-                        (when js/Auth0Lock
-                          (let [lock (new js/Auth0Lock
-                                          "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh"
-                                          "sulo.auth0.com"
-                                          (clj->js {:auth               {:redirectUrl (str js/window.location.origin "/auth")}
-                                                    :languageDictionary {:title "SULO"}
-                                                    :theme              {:primaryColor "#39AC97"
-                                                                         :logo "/assets/img/auth0-icon.png"
-                                                                         :labeledSubmitButton false}}))]
-                            (.on lock "authenticated" (fn [res]
-                                                        (debug "Login result: " res)
-                                                        (.getUserInfo (.-accessToken res)
-                                                                      (fn [e p]
-                                                                        (if e
-                                                                          (error e)
-                                                                          (auth/set-logged-in-token (.-accessToken res)))))))
-                            (om/update-state! this assoc :lock lock)))))
+  (show-login [this]
+    (let [{:keys [lock]} (om/get-state this)]
+      #?(:cljs
+         (.show lock (clj->js {:allowedConnections ["Username-Password-Authentication"]
+                               :auth               {:params {:state js/window.location.origin
+                                                             :scope "openid email"}}})))))
+  (do-login [this auth-res]
+    (debug "Auth-result: " auth-res))
+  (componentDidMount [this]
+    #?(:cljs
+       (when js/Auth0Lock
+         (let [lock (new js/Auth0Lock
+                         "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh"
+                         "sulo.auth0.com"
+                         (clj->js {:auth               {:redirectUrl (str js/window.location.origin "/auth")}
+                                   :languageDictionary {:title "SULO"}
+                                   :theme              {:primaryColor        "#39AC97"
+                                                        :logo                "/assets/img/auth0-icon.png"
+                                                        :labeledSubmitButton false}}))]
+           (.on lock "authenticated" (fn [res]
+                                       (debug "Login result: " res)
+                                       (.getUserInfo (.-accessToken res)
+                                                     (fn [e p]
+                                                       (if e
+                                                         (error e)
+                                                         (auth/set-logged-in-token (.-accessToken res)))))))
+           (om/update-state! this assoc :lock lock)))))
   (initLocalState [this]
-    {:on-login-fn #?(:cljs #(.show-login this) :clj (fn [] nil))})
+    {:on-login-fn #(.show-login this)})
   (render [this]
     (let [{:keys [header-src]} (om/props this)
           {:keys [content-form]} (om/get-computed this)
@@ -381,27 +380,25 @@
      :query/messages])
 
   Object
-  #?(:cljs
-     (open-live-popup [this]
-                      (om/update-state! this assoc :live-open? true)))
-  #?(:cljs
-     (subscribe [this]
-                (let [form (.getElementById js/document "beta-vendor-subscribe-form")
-                      params {:name  (.-value (.getElementById js/document "beta-NAME"))
-                              :email (.-value (.getElementById js/document "beta-EMAIL"))
-                              :site  (.-value (.getElementById js/document "beta-SITE"))}]
-                  (if (and (not-empty (:name params))
-                           (not-empty (:email params))
-                           (utils/valid-email? (:email params)))
-                    (do (msg/om-transact! this `[(beta/vendor ~params)])
-                        (om/update-state! this assoc :client-msg nil))
-                    (let [message (cond (empty? (:email params))
-                                        "Please provide an email."
-                                        (not (utils/valid-email? (:email params)))
-                                        "Please provide a valid email."
-                                        (empty? (:name params))
-                                        "Please provide the name of your brand.")]
-                      (om/update-state! this assoc :client-msg message))))))
+  (open-live-popup [this]
+    (om/update-state! this assoc :live-open? true))
+  (subscribe [this]
+    #?(:cljs (let [form (.getElementById js/document "beta-vendor-subscribe-form")
+                   params {:name  (.-value (.getElementById js/document "beta-NAME"))
+                           :email (.-value (.getElementById js/document "beta-EMAIL"))
+                           :site  (.-value (.getElementById js/document "beta-SITE"))}]
+               (if (and (not-empty (:name params))
+                        (not-empty (:email params))
+                        (utils/valid-email? (:email params)))
+                 (do (msg/om-transact! this `[(beta/vendor ~params)])
+                     (om/update-state! this assoc :client-msg nil))
+                 (let [message (cond (empty? (:email params))
+                                     "Please provide an email."
+                                     (not (utils/valid-email? (:email params)))
+                                     "Please provide a valid email."
+                                     (empty? (:name params))
+                                     "Please provide the name of your brand.")]
+                   (om/update-state! this assoc :client-msg message))))))
   (componentDidUpdate [this _ _]
     #?(:cljs
        (let [{:keys [live-open?]} (om/get-state this)]
@@ -467,9 +464,9 @@
                                                                                            "Privacy Policy"))))
                                                          (div (->> (css/grid-row)
                                                                    (css/align :center))
-                                                              (dom/button #js {:className "button green" :onClick #?(:cljs #(do (.preventDefault %)
-                                                                                                                                (.subscribe this))
-                                                                                                                     :clj  nil)}
+                                                              (dom/button #js {:className "button green"
+                                                                               :onClick   #(do (.preventDefault %)
+                                                                                               (.subscribe this))}
                                                                           (if (msg/pending? message)
                                                                             (dom/i #js {:className "fa fa-spinner fa-spin fa-fw"})
                                                                             "Invite Me")))
