@@ -63,9 +63,9 @@
         :hls  (assoc common :protocol "http"
                             :port 5080
                             :mimeType "application/x-mpegURL")})))
-#?(:cljs
-   (defn video-element []
-     (first (utils/elements-by-tagname "video"))))
+
+(defn video-element []
+  #?(:cljs (first (utils/elements-by-tagname "video"))))
 
 (defn get-messages [component]
   (let [messages (get-in (om/props component) [:query/chat :chat/messages])
@@ -87,38 +87,37 @@
                                     :chat.message/text
                                     :chat.message/timestamp]}]}])
   Object
-  #?(:cljs
-     (server-url [this]
-                 (get-in (om/props this) [:query/stream-config :ui.singleton.stream-config/subscriber-url])))
-  #?(:cljs
-     (subscribe-hls [this]
-                    (if-let [server-url (.server-url this)]
-                      (let [video (.getElementById js/document "sulo-wowza")
-                            hls (js/Hls.)
-                            store (:query/store (om/props this))
-                            stream-name (stream/stream-name store)
-                            stream-url (stream/wowza-live-stream-url server-url stream-name)]
-                        (om/update-state! this assoc :hls hls)
-                        (debug "Stream url: " stream-url)
-                        (.loadSource hls stream-url)
-                        (.attachMedia hls video)
-                        (.on hls js/Hls.Events.MANIFEST_PARSED (fn []
-                                                                 (debug "HLS manifest parsed. Will play hls.")
-                                                                 (.play video)
-                                                                 (om/update-state! this assoc :playing? true)))
-                        (.on hls js/Hls.Events.ERROR (fn [e d]
-                                                       (let [error-type (.-type d)]
-                                                         (error "HLS Error: " e " type: " error-type " data: " d)
-                                                         (comment
-                                                           "Would start the cartoon, but turned off because it's irratating."
-                                                           (when (= js/Hls.ErrorTypes.NETWORK_ERROR error-type)
-                                                             (.detachMedia hls)
-                                                             (.loadSource hls "http://www.streambox.fr/playlists/x36xhzz/x36xhzz.m3u8")
-                                                             (.attachMedia hls video)))))))
-                      (debug "Hasn't received server-url yet. Needs server-url to start stream."))))
-  #?(:cljs (ensure-hls-subscription [this]
-                                    (when (nil? (:hls (om/get-state this)))
-                                      (.subscribe-hls this))))
+  (server-url [this]
+    (get-in (om/props this) [:query/stream-config :ui.singleton.stream-config/subscriber-url]))
+
+  (subscribe-hls [this]
+    #?(:cljs (if-let [server-url (.server-url this)]
+               (let [video (.getElementById js/document "sulo-wowza")
+                     hls (js/Hls.)
+                     store (:query/store (om/props this))
+                     stream-name (stream/stream-name store)
+                     stream-url (stream/wowza-live-stream-url server-url stream-name)]
+                 (om/update-state! this assoc :hls hls)
+                 (debug "Stream url: " stream-url)
+                 (.loadSource hls stream-url)
+                 (.attachMedia hls video)
+                 (.on hls js/Hls.Events.MANIFEST_PARSED (fn []
+                                                          (debug "HLS manifest parsed. Will play hls.")
+                                                          (.play video)
+                                                          (om/update-state! this assoc :playing? true)))
+                 (.on hls js/Hls.Events.ERROR (fn [e d]
+                                                (let [error-type (.-type d)]
+                                                  (error "HLS Error: " e " type: " error-type " data: " d)
+                                                  (comment
+                                                    "Would start the cartoon, but turned off because it's irratating."
+                                                    (when (= js/Hls.ErrorTypes.NETWORK_ERROR error-type)
+                                                      (.detachMedia hls)
+                                                      (.loadSource hls "http://www.streambox.fr/playlists/x36xhzz/x36xhzz.m3u8")
+                                                      (.attachMedia hls video)))))))
+               (debug "Hasn't received server-url yet. Needs server-url to start stream."))))
+  (ensure-hls-subscription [this]
+    (when (nil? (:hls (om/get-state this)))
+      (.subscribe-hls this)))
   ;#?(:cljs
   ;   (subscribe-jw-player
   ;     [this]
@@ -136,16 +135,13 @@
   ;              (debug "I am now fullscreen: " (.-fullscreen e))
   ;              (om/update-state! this assoc :fullscreen? (.-fullscreen e)))))))
   (componentWillUnmount [this]
-    #?(:cljs
-      (let [{:keys [hls]} (om/get-state this)]
-        (when hls
-          (.destroy hls)))))
+    (let [{:keys [hls]} (om/get-state this)]
+      (when hls
+        (.destroy hls))))
   (componentDidUpdate [this prev-props prev-state]
-    #?(:cljs
-       (.ensure-hls-subscription this)))
+    (.ensure-hls-subscription this))
   (componentDidMount [this]
-    #?(:cljs
-       (.ensure-hls-subscription this))
+    (.ensure-hls-subscription this)
 
     ;(js/WowzaPlayer.create "sulo-wowza"
     ;                       (clj->js {:license   "PLAY1-aaEJk-4mGcn-jW3Yr-Fxaab-PAYm4"
@@ -167,22 +163,22 @@
      :fullscreen? false
      :playing? true})
 
-  #?(:cljs
-     (toggle-play
-       [this]
-       (let [v (video-element)
-             is-paused? (.-paused v)]
-         (when v
-           (if is-paused?
-             (do
-               (.play v)
-               (om/update-state! this assoc :playing? true))
-             (do
-               (.pause v)
-               (om/update-state! this assoc :playing? false)))))))
-  #?(:cljs
-     (toggle-fullscreen
-       [this]
+  (toggle-play
+    [this]
+    (let [v (video-element)
+          is-paused? (.-paused v)]
+      (when v
+        (if is-paused?
+          (do
+            (.play v)
+            (om/update-state! this assoc :playing? true))
+          (do
+            (.pause v)
+            (om/update-state! this assoc :playing? false))))))
+
+  (toggle-fullscreen
+    [this]
+    #?(:cljs
        (let [fullscreen? (some? (utils/fullscreen-element))
              v (video-element)]
          (when v
@@ -229,7 +225,8 @@
                    show-chat?
                    (css/add-class :show))
           (dom/a #js {:className "button show-button"
-                      :onClick   #(om/update-state! this assoc :show-chat? true)} (dom/i #js {:className "fa fa-comments fa-fw"}))
+                      :onClick   #(om/update-state! this assoc :show-chat? true)}
+                 (dom/i #js {:className "fa fa-comments fa-fw"}))
           (my-dom/div
             nil
             (dom/a #js {:className "button hollow secondary hide-button"
