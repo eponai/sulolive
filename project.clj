@@ -6,7 +6,7 @@
   :dependencies [
                  [org.clojure/clojure "1.9.0-alpha14"]
                  [amazonica "0.3.85"]
-                 [org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT-4"]
+                 [org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
                  [clj-http "3.3.0"]
                  ;[clj-time "0.11.0"]
@@ -189,7 +189,7 @@
                         :prep-tasks ["compile" "prod-build-web" "css"]}
 
              :mobile   {:dependencies 
-                                      [[org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT-4"
+                                      [[org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
                                     ;; [[org.omcljs/om "1.0.0-alpha46"
                                     ;;   :exclusions [cljsjs/react cljsjs/react-dom]]
@@ -213,7 +213,7 @@
                                                                 :optimizations :none}}]}}
 
              :mob-prod {:dependencies 
-                                      [[org.clojars.petterik/om "1.0.0-alpha48-SNAPSHOT-4"
+                                      [[org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]]
                                     ;; [[org.omcljs/om "1.0.0-alpha46"
                                     ;;   :exclusions [cljsjs/react cljsjs/react-dom]]]
