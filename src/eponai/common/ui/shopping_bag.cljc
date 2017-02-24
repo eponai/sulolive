@@ -247,11 +247,11 @@
             (om/update-state! this assoc :checkout-loaded? true :is-stripe-loading? false))
         (load-checkout load-checkout-chan))))
   (componentDidMount [this]
-    (om/update-state! this assoc :did-mount true))
+    (om/update-state! this assoc :did-mount? true))
   (render [this]
     (let [{:keys [query/cart proxy/navbar]} (om/props this)
           {:keys [cart/items]} cart
-          {:keys [did-mount]} (om/get-state this)
+          {:keys [did-mount?]} (om/get-state this)
           item-count (count items)]
 
       (debug "CART ITEMS: " cart)
@@ -324,7 +324,7 @@
                                                                 (dom/td nil (dom/h5 nil (utils/two-decimal-price (compute-item-price items)))))))
                                   (dom/a #js {:className "button gray"}
                                          "Checkout All Stores")))))))
-            (if-not did-mount
+            (if-not did-mount?
               (dom/div {:className "cart-loading text-center"}
                 (dom/i {:className "fa fa-spinner fa-spin fa-4x"}))
               (dom/div #js {:className "cart-empty callout text-center"}

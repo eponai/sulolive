@@ -34,16 +34,17 @@
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
 
-#?(:cljs
-   (defn get-element-by-id [id]
-     (.getElementById js/document id)))
 
-#?(:cljs (defn get-input-value [id]
-           (when-let [el (get-element-by-id id)]
+(defn get-element-by-id [id]
+  #?(:cljs (.getElementById js/document id)))
+
+(defn get-input-value [id]
+  #?(:cljs (when-let [el (get-element-by-id id)]
              (.-value el))))
 
-#?(:cljs
-   (defn input-product [component]
+
+(defn input-product [component]
+  #?(:cljs
      (let [{:keys [uploaded-photo quill-editor]} (om/get-state component)
            {:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements]
        {:name        (utils/input-value-by-id input-name)
@@ -52,8 +53,8 @@
         :photo       uploaded-photo
         :description (js/JSON.stringify (quill/get-contents quill-editor))})))
 
-#?(:cljs
-   (defn input-skus [product]
+(defn input-skus [product]
+  #?(:cljs
      (let [{:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements]
        (map (fn [el]
               (let [element-id (.-id el)
@@ -77,48 +78,42 @@
         {:proxy/photo-upload (om/get-query pu/PhotoUploader)})])
   Object
   (componentDidUpdate [this _ _]
-    #?(:cljs
-       (when-let [action-finished (some #(when (msg/final? (msg/last-message this %)) %)
-                                        ['store/update-product
-                                         'store/create-product
-                                         'store/delete-product])]
-         (msg/clear-one-message! this action-finished)
-         ;(routes/set-url! this :store-dashboard/product-list {:store-id (:store-id (get-route-params this))})
-         )))
-  #?(:cljs
-     (delete-product
-       [this]
-       (let [{:keys [product-id]} (get-route-params this)]
-         (msg/om-transact! this `[(store/delete-product ~{:product {:db/id (c/parse-long product-id)}})]))))
+    (when-let [action-finished (some #(when (msg/final? (msg/last-message this %)) %)
+                                     ['store/update-product
+                                      'store/create-product
+                                      'store/delete-product])]
+      (msg/clear-one-message! this action-finished)
+      ;(routes/set-url! this :store-dashboard/product-list {:store-id (:store-id (get-route-params this))})
+      ))
+  (delete-product [this]
+    (let [{:keys [product-id]} (get-route-params this)]
+      (msg/om-transact! this `[(store/delete-product ~{:product {:db/id (c/parse-long product-id)}})])))
 
-  #?(:cljs
-     (update-product
-       [this]
-       (let [{:keys [product-id store-id]} (get-route-params this)
-             product (input-product this)
-             skus (input-skus product)]
-         (msg/om-transact! this `[(store/update-product ~{:product    (cond-> product
-                                                                              (not-empty skus)
-                                                                              (assoc :skus skus))
-                                                          :product-id product-id
-                                                          :store-id   store-id})
-                                  :query/store])
-         (om/update-state! this dissoc :uploaded-photo)
-         )))
-  #?(:cljs
-     (create-product
-       [this]
-       (let [{:keys [store-id]} (get-route-params this)
-             product (input-product this)
-             skus (input-skus product)]
-         (msg/om-transact! this `[(store/create-product ~{:product  (cond-> product
-                                                                            (not-empty skus)
-                                                                            (assoc :skus skus))
-                                                          :store-id store-id})
-                                  :query/store])
-         (om/update-state! this dissoc :uploaded-photo))))
+  (update-product [this]
+    (let [{:keys [product-id store-id]} (get-route-params this)
+          product (input-product this)
+          skus (input-skus product)]
+      (msg/om-transact! this `[(store/update-product ~{:product    (cond-> product
+                                                                           (not-empty skus)
+                                                                           (assoc :skus skus))
+                                                       :product-id product-id
+                                                       :store-id   store-id})
+                               :query/store])
+      (om/update-state! this dissoc :uploaded-photo)))
+  (create-product [this]
+    (let [{:keys [store-id]} (get-route-params this)
+          product (input-product this)
+          skus (input-skus product)]
+      (msg/om-transact! this `[(store/create-product ~{:product  (cond-> product
+                                                                         (not-empty skus)
+                                                                         (assoc :skus skus))
+                                                       :store-id store-id})
+                               :query/store])
+      (om/update-state! this dissoc :uploaded-photo)))
+  (componentDidMount [this]
+    (om/update-state! this assoc :did-mount? true))
   (render [this]
-    (let [{:keys [uploaded-photo queue-photo variations?]} (om/get-state this)
+    (let [{:keys [uploaded-photo queue-photo variations? did-mount?]} (om/get-state this)
           {:keys [product-id store-id action]} (get-route-params this)
           {:keys [proxy/photo-upload]} (om/props this)
           {:keys [product]} (om/get-computed this)
@@ -130,9 +125,8 @@
           delete-resp (msg/last-message this 'store/delete-product)
           is-loading? (or (message-pending-fn update-resp) (message-pending-fn create-resp) (message-pending-fn delete-resp))]
       (dom/div #js {:id "sulo-edit-product"}
-        #?(:cljs (when is-loading?
-                   (common/loading-spinner nil))
-           :clj  (common/loading-spinner nil))
+        (when (or (not did-mount?) is-loading?)
+          (common/loading-spinner nil))
         (my-dom/div
           (->> (css/grid-row))
           (my-dom/div
@@ -163,14 +157,15 @@
                                ;  (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"}))
                                (dom/div nil
                                  (dom/i #js {:className "fa fa-plus fa-3x"})))))
-                #?(:cljs
-                   (pu/->PhotoUploader (om/computed
-                                         photo-upload
-                                         {:on-photo-queue  (fn [img-result]
-                                                             ;(debug "Got photo: " photo)
-                                                             (om/update-state! this assoc :queue-photo img-result :uploaded-photo nil))
-                                          :on-photo-upload (fn [photo]
-                                                             (om/update-state! this assoc :uploaded-photo photo :queue-photo nil))})))))))
+                (when did-mount?
+                  #?(:cljs
+                     (pu/->PhotoUploader (om/computed
+                                           photo-upload
+                                           {:on-photo-queue  (fn [img-result]
+                                                               ;(debug "Got photo: " photo)
+                                                               (om/update-state! this assoc :queue-photo img-result :uploaded-photo nil))
+                                            :on-photo-upload (fn [photo]
+                                                               (om/update-state! this assoc :uploaded-photo photo :queue-photo nil))}))))))))
 
         (my-dom/div (->> (css/grid-row)
                          (css/grid-column))

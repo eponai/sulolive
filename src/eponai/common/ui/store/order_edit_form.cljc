@@ -221,20 +221,20 @@
   (initLocalState [_]
     {:items #{}})
   (componentDidMount [this]
-    (om/update-state! this assoc :did-mount true))
+    (om/update-state! this assoc :did-mount? true))
 
   (render [this]
     (let [{:keys [query/order]} (om/props this)
           {:keys [products]} (om/get-computed this)
           {:order/keys [id amount currency items]} order
-          {:keys [input-items did-mount]} (om/get-state this)
+          {:keys [input-items did-mount?]} (om/get-state this)
           is-loading? false
           filtered (filter #(contains? (set input-items) (:db/id %)) products)
           skus (filter #(= :sku (:order.item/type %)) items)
           tax (some #(when (= :tax (:order.item/type %)) %) items)
           shipping (some #(when (= :shipping (:order.item/type %)) %) items)]
       (dom/div #js {:id "sulo-edit-order"}
-        (when-not did-mount
+        (when-not did-mount?
           (common/loading-spinner nil))
         (if order
           (edit-order this)
