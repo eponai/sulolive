@@ -24,27 +24,33 @@
      ;;TODO: Resolve s3 paths to cloudfront paths
      ;;"https://s3.amazonaws.com/sulo-images/site/collection-women.jpg"
      :photo-url "https://d30slnyi7gxcwc.cloudfront.net/site/women-new.jpg"})
+  (componentDidMount [this]
+    (om/update-state! this assoc :did-mount? true))
   (render [this]
     (let [{:keys [proxy/photo-upload]} (om/props this)
-          {:keys [tab file-upload? photo-url]} (om/get-state this)
+          {:keys [tab file-upload? photo-url did-mount?]} (om/get-state this)
           {:keys [is-current-user? user]} (om/get-computed this)
           photo-url (or (get-in user [:user/photo :photo/path]) photo-url)]
       (dom/div #js {:className "header"}
-        #?(:cljs
-           (when file-upload?
-             (common/modal {:on-close #(om/update-state! this assoc :file-upload? false)}
-                           (dom/div nil
-                             (dom/h2 nil "Change Profile Photo")
-                             (menu/vertical nil
-                                            (menu/item nil
-                                                       (pu/->PhotoUploader (om/computed
-                                                                             photo-upload
-                                                                             {:on-photo-upload (fn [photo]
-                                                                                                 (om/transact! this `[(photo/upload ~{:photo photo})
-                                                                                                                      :query/user])
-                                                                                                 (om/update-state! this assoc :file-upload? false))})))
-                                            (menu/item nil
-                                                       (dom/a #js {:className "button hollow expanded"} "Remove Photo")))))))
+        (when file-upload?
+          (common/modal {:on-close #(om/update-state! this assoc :file-upload? false)}
+                        (dom/div nil
+                          (dom/h2 nil "Change Profile Photo")
+                          (menu/vertical
+                            nil
+                            (menu/item
+                              nil
+                              (when did-mount?
+                                #?(:cljs
+                                   (pu/->PhotoUploader
+                                     (om/computed
+                                       photo-upload
+                                       {:on-photo-upload (fn [photo]
+                                                           (om/transact! this `[(photo/upload ~{:photo photo})
+                                                                                :query/user])
+                                                           (om/update-state! this assoc :file-upload? false))})))))
+                            (menu/item nil
+                                       (dom/a #js {:className "button hollow expanded"} "Remove Photo"))))))
         (dom/div #js {:className "user-info"}
           (my-dom/div (->> (css/grid-row)
                            (css/align :center))
