@@ -28,7 +28,7 @@
   [store-id])
 (defmethod server-read :query/store
   [{:keys [db db-history query]} _ {:keys [store-id]}]
-  {:value (query/one db db-history query {:where   '[[?e]]
+  {:value (query/one db db-history query {:where   '[[?e :store/owners]]
                                           :symbols {'?e store-id}})})
 
 (defmethod server-read :query/orders

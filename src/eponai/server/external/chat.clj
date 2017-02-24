@@ -23,10 +23,12 @@
   db/ConnectionApi
   (db* [this]
     (d/db conn))
+
   IWriteStoreChat
   (write-message [this store user message]
     (let [tx (format/chat-message (db/db this) store user message)]
       (db/transact conn tx)))
+
   IReadStoreChat
   (initial-read [this store _]
     (db/pull-one-with (db/db this) ['*] (datomic-chat-entity-query store)))

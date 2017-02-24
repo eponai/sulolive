@@ -143,18 +143,16 @@
              (store/create-order env (c/parse-long store-id) order))})
 
 (defmutation chat/send-message
-  [{::parser/keys [exception] :keys [state target system] :as env} k {:keys [store text user]}]
+  [{::parser/keys [exception] :keys [state system] :as env} k {:keys [store text user]}]
   {:success "Message sent"
    :error   (if (some? exception)
               (.getMessage exception)
               "Someting went wrong!")}
-  (if target
-    {:remote/chat true}
-    {:action (fn []
-               (let [user-id (query-user-id env)]
-                 (if (= (:db/id user) user-id)
-                   (chat/write-message (:system/chat system) store user text)
-                   (throw (ex-info "User authed does not match user who sent message."
-                                   {:client-user-id (:db/id user)
-                                    :server-user-id user-id
-                                    :mutation       k})))))}))
+  {:action (fn []
+             (let [user-id (query-user-id env)]
+               (if (= (:db/id user) user-id)
+                 (chat/write-message (:system/chat system) store user text)
+                 (throw (ex-info "User authed does not match user who sent message."
+                                 {:client-user-id (:db/id user)
+                                  :server-user-id user-id
+                                  :mutation       k})))))})
