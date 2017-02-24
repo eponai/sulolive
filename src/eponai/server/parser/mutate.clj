@@ -55,10 +55,8 @@
                ret))})
 
 (defn- query-user-id [{:keys [state auth]}]
-  (timbre/with-level
-    :trace
-    (db/one-with (db/db state) {:where   '[[?e :user/email ?email]]
-                               :symbols {'?email (:email auth)}})))
+  (db/one-with (db/db state) {:where   '[[?e :user/email ?email]]
+                              :symbols {'?email (:email auth)}}))
 
 (defmutation photo/upload
   [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ params]
@@ -66,7 +64,7 @@
    :error   "Could not upload photo :("}
   {:action (fn []
              (debug "Upload photo for auth: " auth)
-             ;; TODO: Cache this query for each call to parser and auth, since more mutations
+             ;; TODO: Cache the user-id query for each call to parser and auth, since more mutations
              ;; and reads will use the user-eid
              (let [user-eid (query-user-id env)
                    photo (s3/upload-photo (:system/aws-s3) (:photo params))]
