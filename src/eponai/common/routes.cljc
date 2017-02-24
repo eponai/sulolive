@@ -21,10 +21,10 @@
         "sell/coming-soon"            :sell-soon
         "store/new"                   :new-store
         ["store/" [#"\d+" :store-id]] store-routes
-        "products"                       :products
-        ["product/" :product-id]        :product
+        "products"                    :products
+        ["product/" :product-id]      :product
         "streams"                     :streams
-        "checkout"                    :checkout
+        ["checkout" :store-id]        :checkout
         "shopping-bag"                :shopping-bag
         "business"                    :business
         ["user/" [#"\d+" :user-id]]   user-routes

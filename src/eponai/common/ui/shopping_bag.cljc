@@ -182,7 +182,9 @@
             (dom/span nil "Total: ")
             (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
           (dom/a #js {:className "button gray"
-                      :onClick   #(.checkout component store)} "Checkout")))
+                      :href (routes/url :checkout {:store-id (:db/id store)})
+                      ;:onClick   #(.checkout component store)
+                      } "Checkout")))
       )
     ;(my-dom/div
     ;  (->> (css/grid-column)

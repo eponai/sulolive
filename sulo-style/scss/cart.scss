@@ -5,23 +5,26 @@
 	.page-container {
 		$color: map-get($foundation-palette, primary);
 		background: rgba($color, 0.03);
-		.callout {
+		.page-content .callout {
 			box-shadow: 0 1px 3px 0 rgba($black, 0.1);
 		}
 	}
+	.callout .callout {
+		box-shadow: none;
+	}
 	.row.collapse {
-		.column {
-			padding-right: 1rem;
-			&:last-child {
-				padding-right: 0;
-			}
-		}
+		// .column {
+		// 	padding-right: 1rem;
+		// 	&:last-child {
+		// 		padding-right: 0;
+		// 	}
+		// }
 		.button {
 			margin: 0;
 		}
 	}
 	.cart-checkout-item {
-		.callout {
+		.item.callout {
 			margin: 0;
 			// border-top: 1px solid $light-gray;
 			border-top: 1px solid $light-gray;
@@ -49,9 +52,9 @@
 		text-transform: uppercase;
 	}
 	
-	input {
-		margin: 0; 
-	}
+	// input {
+		// margin: 0; 
+	// }
 	.callout {
 		> .row > .column:first-child {
 			// border-right: 1px solid $medium-gray;
@@ -131,6 +134,9 @@
 		transition: visibility 0s linear 0.25s, opacity 0.25s linear;
 		visibility: hidden;
 		opacity: 0;
+		.callout {
+			box-shadow: none;
+		}
 
 		// li {
 			// border-bottom: 1px solid $medium-gray;
