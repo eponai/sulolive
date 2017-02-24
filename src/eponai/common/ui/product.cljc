@@ -43,18 +43,17 @@
   Object
   (initLocalState [_]
     {:selected-tab :rating})
-  #?(:cljs
-     (add-to-bag [this]
-                 (let [selected-sku (web-utils/input-value-by-id (:selected-sku form-elements))]
-                   (debug "Selected sku value: " selected-sku)
-                   (om/transact! this `[(shopping-bag/add-item ~{:sku selected-sku})
-                                        :query/cart])
-                   (om/update-state! this assoc :added-to-bag? true))))
-  #?(:cljs
-     (componentDidUpdate [this prev-props prev-state]
-                         (let [{:keys [added-to-bag?]} (om/get-state this)]
-                           (if added-to-bag?
-                             (js/setTimeout #(om/update-state! this assoc :added-to-bag? false) 2000)))))
+
+  (add-to-bag [this]
+    #?(:cljs (let [selected-sku (web-utils/input-value-by-id (:selected-sku form-elements))]
+               (debug "Selected sku value: " selected-sku)
+               (om/transact! this `[(shopping-bag/add-item ~{:sku selected-sku})
+                                    :query/cart])
+               (om/update-state! this assoc :added-to-bag? true))))
+  (componentDidUpdate [this prev-props prev-state]
+    #?(:cljs (let [{:keys [added-to-bag?]} (om/get-state this)]
+               (if added-to-bag?
+                 (js/setTimeout #(om/update-state! this assoc :added-to-bag? false) 2000)))))
   (render [this]
     (let [{:keys [selected-tab added-to-bag?]} (om/get-state this)
           {:store.item/keys     [price photos details skus]
@@ -115,7 +114,7 @@
                 ;                                    :className "button expanded hollow"} "Save")))
                 ;(dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
                 ;            :className "button expanded hollow"} "Save")
-                (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this)))
+                (dom/a #js {:onClick   #(.add-to-bag this)
                             :className "button expanded"} "Add to bag")
                 (dom/p #js {:className (str (when added-to-bag? "show"))} "Your shopping bag was updated" ))))
 
@@ -177,15 +176,10 @@
 (def ->Product (om/factory Product))
 
 (defui ProductPage
-  static om/IQueryParams
-  (params [_]
-    #?(:cljs
-       (let [path js/window.location.pathname]
-         {:product-id (last (clojure.string/split path #"/"))})))
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     `({:query/item ~(om/get-query Product)} {:product-id ~'?product-id})])
+     {:query/item (om/get-query Product)}])
   Object
   (render [this]
     (let [{:keys [query/item proxy/navbar]} (om/props this)]
