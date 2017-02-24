@@ -88,10 +88,9 @@
                                                      {:store/_items [:store/name]}]}]}]}
      {:query/auth [:db/id :user/email {:store.owner/_user [{:store/_owners [:store/name :db/id]}]}]}])
   Object
-  #?(:cljs
-     (open-signin [this]
-                  (debug "Open signin")
-             (let [{:keys [lock]} (om/get-state this)
+  (open-signin [this]
+    (debug "Open signin")
+    #?(:cljs (let [{:keys [lock]} (om/get-state this)
                    current-url js/window.location.href
                    options (clj->js {:connections  ["facebook"]
                                      :callbackURL  (str js/window.location.origin "/auth")
@@ -112,15 +111,14 @@
     #?(:cljs
        (let [{:keys [lock on-scroll-fn]} (om/get-state this)]
          (.removeEventListener js/document.documentElement "scroll" on-scroll-fn))))
-  #?(:cljs
-     (componentDidMount
-       [this]
-       (let [{:keys [on-scroll-fn]} (om/get-state this)]
-         (when js/Auth0LockPasswordless
-           (let [lock (new js/Auth0LockPasswordless "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh" "sulo.auth0.com")]
-             (om/update-state! this assoc :lock lock)))
-         (.addEventListener js/document.documentElement "scroll" on-scroll-fn)
-         (om/update-state! this assoc :did-mount? true))))
+
+  (componentDidMount [this]
+    #?(:cljs (let [{:keys [on-scroll-fn]} (om/get-state this)]
+               (when js/Auth0LockPasswordless
+                 (let [lock (new js/Auth0LockPasswordless "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh" "sulo.auth0.com")]
+                   (om/update-state! this assoc :lock lock)))
+               (.addEventListener js/document.documentElement "scroll" on-scroll-fn)
+               (om/update-state! this assoc :did-mount? true))))
 
   (render [this]
     (let [{:keys [cart-open? signin-open? did-mount?]} (om/get-state this)
