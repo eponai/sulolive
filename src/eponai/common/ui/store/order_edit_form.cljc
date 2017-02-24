@@ -193,49 +193,49 @@
     [:query/messages
      :query/order])
   Object
-  #?(:cljs
-     (create-order [this]
-                   (let [{:keys [order-id store-id action]} (get-route-params this)
-                         order {:currency (utils/input-value-by-id (:input-currency form-elements))
-                                :amount   (utils/input-value-by-id (:input-price form-elements))}]
+  (create-order [this]
+    #?(:cljs
+       (let [{:keys [order-id store-id action]} (get-route-params this)
+             order {:currency (utils/input-value-by-id (:input-currency form-elements))
+                    :amount   (utils/input-value-by-id (:input-price form-elements))}]
 
-                     (cond (some? order-id)
-                           (msg/om-transact! this `[(store/update-order ~{:order    order
-                                                                          :order-id order-id
-                                                                          :store-id store-id})
-                                                    :query/store])
+         (cond (some? order-id)
+               (msg/om-transact! this `[(store/update-order ~{:order    order
+                                                              :order-id order-id
+                                                              :store-id store-id})
+                                        :query/store])
 
-                           (= action "create")
-                           (msg/om-transact! this `[(store/create-order
-                                                      ~{:order    order
-                                                        :store-id store-id})
-                                                    :query/orders])))))
-  #?(:cljs
-     (cancel-order [this]))
-  #?(:cljs
-     (update-order
-       [this params]
-       (let [{:keys [order-id store-id]} (get-route-params this)]
-         (msg/om-transact! this `[(store/update-order ~{:params    params
-                                                        :order-id order-id
-                                                        :store-id store-id})
-                                  :query/orders]))))
+               (= action "create")
+               (msg/om-transact! this `[(store/create-order
+                                          ~{:order    order
+                                            :store-id store-id})
+                                        :query/orders])))))
+  (cancel-order [this])
+
+  (update-order [this params]
+    (let [{:keys [order-id store-id]} (get-route-params this)]
+      (msg/om-transact! this `[(store/update-order ~{:params   params
+                                                     :order-id order-id
+                                                     :store-id store-id})
+                               :query/orders])))
   (initLocalState [_]
     {:items #{}})
+  (componentDidMount [this]
+    (om/update-state! this assoc :did-mount true))
 
   (render [this]
     (let [{:keys [query/order]} (om/props this)
           {:keys [products]} (om/get-computed this)
           {:order/keys [id amount currency items]} order
-          {:keys [input-items]} (om/get-state this)
+          {:keys [input-items did-mount]} (om/get-state this)
           is-loading? false
           filtered (filter #(contains? (set input-items) (:db/id %)) products)
           skus (filter #(= :sku (:order.item/type %)) items)
           tax (some #(when (= :tax (:order.item/type %)) %) items)
           shipping (some #(when (= :shipping (:order.item/type %)) %) items)]
-
       (dom/div #js {:id "sulo-edit-order"}
-        #?(:clj (common/loading-spinner nil))
+        (when-not did-mount
+          (common/loading-spinner nil))
         (if order
           (edit-order this)
           (create-order this))
