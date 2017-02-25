@@ -142,11 +142,15 @@
                                     (dom/div nil
                                       (dom/i #js {:className "fa fa-credit-card fa-fw fa-2x"})
                                       (let [order-status (:order/status order)]
-                                        (cond (= order-status :order.status/paid)
+                                        (cond (or (= order-status :order.status/paid)
+                                                  (= order-status :order.status/fulfilled))
                                               (dom/span nil "Payment Accepted")
 
                                               (= order-status :order.status/created)
-                                              (dom/span nil "Payment Pending"))))))
+                                              (dom/span nil "Payment Pending")
+
+                                              (= order-status :order.status/returned)
+                                              (dom/span nil "Payment Returned"))))))
                       (my-dom/div
                         (->> (css/grid-column)
                              (css/grid-column-size {:small 12 :large 6}))
@@ -154,9 +158,9 @@
                                     (dom/div nil
                                       (dom/i #js {:className "fa fa-truck fa-fw fa-2x"})
                                       (dom/span nil "Fulfill Items"))
-                                    (my-dom/a (->> (css/button)
-                                                   css/button-hollow
-                                                   (css/add-class :disabled)) "Fulfill Items")))))))))
+                                    (my-dom/a (cond->> (css/button)
+                                                       (not= (:order/status order) :order.status/paid)
+                                                       (css/add-class :disabled)) "Fulfill Items")))))))))
 
 (defn create-order [component]
   (let [{:keys [products]} (om/get-computed component)]

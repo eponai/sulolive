@@ -15,7 +15,9 @@
   (let [status-class (cond (= status :order.status/created)
                            "warning"
                            (= status :order.status/paid)
-                           "success")]
+                           "success"
+                           (= status :order.status/canceled)
+                           "secondary")]
     (dom/span #js {:className (str "label " status-class)} (name status))))
 
 (defn modal [opts & content]

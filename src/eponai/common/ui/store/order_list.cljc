@@ -17,14 +17,18 @@
     (let [{:keys [store]} (om/get-computed this)
           {:keys [query/orders]} (om/props this)]
       (dom/div nil
-        ;(my-dom/div
-        ;  (->> (css/grid-row))
-        ;  (my-dom/div
-        ;    (->> (css/grid-column)
-        ;         (css/text-align :right))
-        ;    (dom/a #js {:href      (routes/url :store-dashboard/create-order {:store-id (:db/id store)
-        ;                                                                      :action "create"})
-        ;                :className "button"} "Create Order")))
+
+        (my-dom/div
+          (->> (css/grid-row))
+          (my-dom/div
+            (->> (css/grid-column)
+                 ;(css/text-align :right)
+                 )
+            (dom/h3 nil "Orders")
+            ;(dom/a #js {:href      (routes/url :store-dashboard/create-order {:store-id (:db/id store)
+            ;                                                                  :action "create"})
+            ;            :className "button"} "Create Order")
+            ))
         (my-dom/div
           (->> (css/grid-row)
                (css/grid-column))
