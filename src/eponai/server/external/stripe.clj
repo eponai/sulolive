@@ -97,6 +97,7 @@
   (get-order [this account-secret order-id])
   (list-orders [this account-secret])
   (create-order [this account-secret params])
+  (pay-order [this account-secret order-id source])
   (update-order [this account-secret order-id params]))
 
 (defn request-options [account-id]
@@ -212,6 +213,12 @@
       ;{:id     (.getId new-order)
       ; :amount (.getAmount new-order)}
       ))
+
+  (pay-order [_ account-secret order-id source]
+    (set-api-key account-secret)
+    (let [order (Order/retrieve order-id)
+          paid-order (.pay order {"source" source})]
+      (f/stripe->order paid-order)))
 
   (update-order [_ account-secret order-id {:order/keys [status]}]
     (set-api-key account-secret)

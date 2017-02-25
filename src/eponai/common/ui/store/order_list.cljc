@@ -3,6 +3,7 @@
     [eponai.client.routes :as routes]
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.elements.css :as css]
+    [eponai.common.ui.common :as common]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.format.date :as date]))
@@ -16,14 +17,14 @@
     (let [{:keys [store]} (om/get-computed this)
           {:keys [query/orders]} (om/props this)]
       (dom/div nil
-        (my-dom/div
-          (->> (css/grid-row))
-          (my-dom/div
-            (->> (css/grid-column)
-                 (css/text-align :right))
-            (dom/a #js {:href      (routes/url :store-dashboard/create-order {:store-id (:db/id store)
-                                                                              :action "create"})
-                        :className "button"} "Create Order")))
+        ;(my-dom/div
+        ;  (->> (css/grid-row))
+        ;  (my-dom/div
+        ;    (->> (css/grid-column)
+        ;         (css/text-align :right))
+        ;    (dom/a #js {:href      (routes/url :store-dashboard/create-order {:store-id (:db/id store)
+        ;                                                                      :action "create"})
+        ;                :className "button"} "Create Order")))
         (my-dom/div
           (->> (css/grid-row)
                (css/grid-column))
@@ -56,7 +57,7 @@
                       (dom/tr #js {:key (str i)}
                               (dom/td nil
                                       (dom/a #js {:href product-link}
-                                             (dom/span #js {:className "label warning"} (name (:order/status o)))))
+                                             (common/order-status-element (:order/status o))))
                               (dom/td nil
                                       (dom/a #js {:href product-link}
                                              (dom/span nil (:order/id o))))

@@ -87,7 +87,7 @@
              (css/align :bottom))
         (my-dom/div
           (css/grid-column)
-          (dom/h2 nil "Edit Order - " (dom/small nil (:order/id order)) " " (dom/span #js {:className "label warning"} (name (:order/status order)))))
+          (dom/h2 nil "Edit Order - " (dom/small nil (:order/id order)) " " (common/order-status-element (:order/status order))))
         (my-dom/div
           (->> (css/grid-column)
                (css/add-class :shrink)

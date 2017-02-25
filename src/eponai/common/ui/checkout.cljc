@@ -11,7 +11,9 @@
     [eponai.common.ui.common :as common]
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.css :as css]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.client.parser.message :as msg]
+    [eponai.common :as c]))
 
 (defn store-element [s]
   (let [{:store/keys [photo] store-name :store/name} s]
@@ -234,13 +236,21 @@
   #?(:cljs
      (make-payment
        [this]
-       (let [{:keys [card]} (om/get-state this)]
-         (stripe/create-token card
-                              (fn [token]
-                                (debug "Got result: " token))
-                              (fn [error]
-                                (debug "Got error: " error)
-                                (om/update-state! this assoc :payment-error (.-message error)))))))
+       (let [{:query/keys [current-route cart auth]} (om/props this)
+             {:keys [card]} (om/get-state this)
+             {:keys [route-params]} current-route
+             {:keys [store-id]} route-params]
+         (stripe/create-token
+           card
+           (fn [token]
+             (debug "Got result: " token)
+             (let [items (filter #(= (c/parse-long store-id) (get-in % [:store.item/_skus :store/_items :db/id])) (:cart/items cart))]
+               (msg/om-transact! this `[(user/checkout ~{:source   (.-id token)
+                                                         :items    (map :store.item.sku/uuid items)
+                                                         :store-id (c/parse-long store-id)})])))
+           (fn [error]
+             (debug "Got error: " error)
+             (om/update-state! this assoc :payment-error (.-message error)))))))
   (componentDidMount [this]
     (debug "Stripe component did mount")
     #?(:cljs
@@ -248,12 +258,8 @@
          (om/update-state! this assoc :card card))))
 
   (render [this]
-    (let [{:query/keys [current-route cart auth]
-           :proxy/keys [navbar]} (om/props this)
-          {:keys [route route-params]} current-route
-          {:keys [store-id]} route-params
-
-          checkout-items (filter #(= store-id (get-in % [:store.item/_skus :store/_items :db/id])))]
+    (let [{:proxy/keys [navbar]} (om/props this)]
+      ;(debug "Items: " checkout-items)
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
         (my-dom/div

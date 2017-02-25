@@ -104,13 +104,15 @@
   (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)]
     (stripe/list-orders (:system/stripe system) secret)))
 
-(defn create-order [{:keys [state system auth]} store-id {:keys [items]}]
+(defn create-order [{:keys [state system auth]} store-id {:keys [items source]}]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
-        order {:currency "CAD"
-               :email (:email auth)
-               :items (map (fn [i] {:type "sku"
-                                    :parent (str i)}) items)}]
-    (stripe/create-order (:system/stripe system) secret order)))
+        order-params {:currency "CAD"
+                      :email    (:email auth)
+                      :items    (map (fn [i] {:type   "sku"
+                                              :parent (str i)}) items)}
+        order (stripe/create-order (:system/stripe system) secret order-params)]
+    (when source
+      (stripe/pay-order (:system/stripe system) secret (:order/id order) source))))
 
 (defn update-order [{:keys [state system]} store-id order-id params]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)]
