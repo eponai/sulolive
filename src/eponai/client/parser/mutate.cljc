@@ -13,22 +13,18 @@
 ;;     eponai.<platform>.parser.mutate
 
 (defmethod client-mutate 'session/signout
-  [_ _ _]
+  [{:keys [shared]} _ _]
   {:action (fn []
-             #?(:cljs
-                (.removeItem js/localStorage "idToken")))})
+             (auth/remove-auth-token (:local-storage shared)))})
 
 (defn logged-in-update-cart [state item]
   (let [cart (db/one-with (db/db state) {:where '[[?e :cart/items]]})]
     (db/transact-one state [:db/add cart :cart/items (:db/id item)])))
 
-(defn anon-update-cart [item]
-  #?(:cljs
-     (if-let [stored-cart (.getItem js/localStorage "cart")]
-       (let [cart (cljs.reader/read-string stored-cart)
-             new-cart (update cart :cart/items conj (:db/id item))]
-         (.setItem js/localStorage "cart" new-cart))
-       (.setItem js/localStorage "cart" {:cart/items [(:db/id item)]}))))
+(defmethod client-mutate 'session/set-token
+  [{:keys [shared]} _ {:keys [access-token]}]
+  {:action (fn []
+             (auth/set-logged-in-token (:local-storage shared) access-token))})
 
 (defmethod client-mutate 'shopping-bag/add-item
   [{:keys [target state]} _ {:keys [item]}]

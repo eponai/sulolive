@@ -262,7 +262,7 @@
                                                      (fn [e p]
                                                        (if e
                                                          (error e)
-                                                         (auth/set-logged-in-token (.-accessToken res)))))))
+                                                         (om/transact! this `[(session/set-token {:access-token (.-accessToken res)})]))))))
            (om/update-state! this assoc :lock lock)))))
   (initLocalState [this]
     {:on-login-fn #(.show-login this)})

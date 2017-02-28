@@ -15,6 +15,7 @@
     [cemerick.url :as url]
     [bidi.bidi :as bidi]
     [pushy.core :as pushy]
+    [eponai.client.local-storage :as local-storage]
     [eponai.client.routes :as routes]
     [eponai.common.routes :as common.routes]
     [eponai.common.ui.router :as router]))
@@ -56,6 +57,7 @@
         history (pushy/pushy update-route! (wrap-route-logging match-route))
         current-route-fn #(:handler (match-route (pushy/get-token history)))
         conn (utils/create-conn)
+        local-storage (local-storage/->local-storage)
         parser (parser/client-parser
                  (parser/client-parser-state
                    {::parser/get-route-params #(let [route-params (or (:route-params (routes/current-route conn))
@@ -72,7 +74,7 @@
                                                  (remotes/read-basis-t-remote-middleware conn))
                                 :remote/user (-> (remotes/post-to-url "/api/user")
                                                  (remotes/read-basis-t-remote-middleware conn)
-                                                 (remotes/wrap-auth))
+                                                 (remotes/wrap-auth local-storage))
                                 :remote/chat (-> (remotes/post-to-url "/api/chat")
                                                  (remotes/read-basis-t-remote-middleware conn))}
                                {:did-merge-fn #(when-not @init?
@@ -89,7 +91,8 @@
                                    :remotes   remotes
                                    :send      send-fn
                                    :merge     (merge/merge!)
-                                   :shared    {:history history}
+                                   :shared    {:history       history
+                                               :local-storage local-storage}
                                    :migrate   nil})]
     (reset! history-atom history)
     (reset! reconciler-atom reconciler)

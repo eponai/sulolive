@@ -3,6 +3,7 @@
     [datascript.core :as d]
     [taoensso.timbre :refer [debug]]
     [eponai.common.database :as db]
+    [eponai.client.local-storage :as local-storage]
     #?(:cljs
        [goog.crypt :as crypt])
     [eponai.common.format.date :as date]))
@@ -40,6 +41,11 @@
                        " being used, or implement this when we need it.")
                   {:todo :implement-function})))
 
-(defn set-logged-in-token [token]
-  #?(:cljs
-     (.setItem js/localStorage "idToken" token)))
+(defn set-logged-in-token [local-storage token]
+  (local-storage/set-item! local-storage "idToken" token))
+
+(defn remove-auth-token [local-storage]
+  (local-storage/remove-item! local-storage "idToken"))
+
+(defn get-auth-token [local-storage]
+  (local-storage/get-item local-storage "idToken"))
