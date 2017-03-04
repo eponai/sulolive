@@ -4,6 +4,7 @@
   (:require
     [cljs.core.async :refer [chan <! put!]]
     [goog.object :as gobj]
+    [eponai.web.utils :as utils]
     [om.next :as om]
     [taoensso.timbre :refer [debug]]))
 
@@ -39,6 +40,15 @@
 ;                :panelLabel      ""
 ;                })))
 
+(defn token->payment [token]
+  (when token
+    (let [card (js->clj (.-card token) :keywordize-keys true)
+          source (.-id token)
+          ret {:source source
+               :card card}]
+      (debug "Payment Ret : " ret )
+      ret)))
+
 (defn create-token [card on-success on-error]
   (let [stripe (js/Stripe "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")]
     (.. stripe
@@ -50,11 +60,12 @@
 
 (defn mount-payment-form [{:keys [element-id]}]
   (debug "Mount stripe")
-  (let [elements (.elements (js/Stripe "pk_test_VhkTdX6J9LXMyp5nqIqUTemM"))
-        card (.create elements "card" (clj->js {:style {:base {:color      "#32325d"
-                                                               :fontSmoothing "antialiased"
-                                                               :lineHeight "24px"
-                                                               :fontSize   "16px"
-                                                               "::placeholder" {:color "#aab7c4"}}}}))]
-    (.mount card (str "#" element-id))
-    card))
+  (when (utils/element-by-id element-id)
+    (let [elements (.elements (js/Stripe "pk_test_VhkTdX6J9LXMyp5nqIqUTemM"))
+          card (.create elements "card" (clj->js {:style {:base {:color          "#32325d"
+                                                                 :fontSmoothing  "antialiased"
+                                                                 :lineHeight     "24px"
+                                                                 :fontSize       "16px"
+                                                                 "::placeholder" {:color "#aab7c4"}}}}))]
+      (.mount card (str "#" element-id))
+      card)))

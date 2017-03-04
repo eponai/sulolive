@@ -16,6 +16,9 @@
 		// border-color: $light-gray;
 		// box-shadow: none;
 	}
+	.progress-meter {
+		transition: width .25s ease-in-out;
+	}
 }
 
 /**

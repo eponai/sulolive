@@ -36,60 +36,42 @@
              (css/text-align :center))
         (dom/div nil (dom/p nil (dom/strong #js {:className "store-name"} store-name)))))))
 
-;(defn store-checkout-element [component store cart-items]
-;  (dom/div #js {:className "callout transparent cart-checkout-item"}
-;    (store-element store)
-;    ;(my-dom/div
-;    ;  (css/grid-row))
-;
-;    (map (fn [sku]
-;           (let [{:store.item/keys [price photos]
-;                  product-id       :db/id
-;                  item-name        :store.item/name} (get sku :store.item/_skus)]
-;             (my-dom/div
-;               (->> (css/grid-row)
-;                    (css/add-class :collapse)
-;                    (css/align :middle)
-;                    (css/add-class :callout)
-;                    (css/add-class :transparent)
-;                    (css/add-class :item))
-;
-;               (my-dom/div
-;                 (->> (css/grid-column)
-;                      (css/grid-column-size {:small 3 :medium 2 :large 1}))
-;                 (photo/square
-;                   {:src (:photo/path (first photos))}))
-;
-;               ;(my-dom/div
-;               ;  (->> (css/grid-column))
-;               ;  (dom/a #js {:className "close-button"} (dom/small nil "x")))
-;               (my-dom/div
-;                 (->> (css/grid-column)
-;                      (css/grid-column-size {:small 8}))
-;
-;                 (dom/div #js {:className ""}
-;                   (dom/a #js {
-;                               ;:href      (routes/url :product {:product-id product-id})
-;                               :className "name"}
-;                          (dom/span nil item-name)))
-;                 (dom/div #js {:className ""}
-;                   (dom/span nil (:store.item.sku/value sku))))
-;
-;               (my-dom/div
-;                 (->> (css/grid-column)
-;                      (css/align :right)
-;                      (css/grid-column-size {:small 3 :medium 2 :large 1})
-;                      (css/grid-column-offset {:small 3 :large 0}))
-;                 (dom/input #js {:type         "number"
-;                                 :defaultValue 1}))
-;               (my-dom/div
-;                 (->> (css/grid-column)
-;                      (css/text-align :right)
-;                      )
-;                 (dom/div #js {:className ""}
-;                   (dom/span #js {:className "price"}
-;                             (utils/two-decimal-price price)))))))
-;         cart-items)))
+(defn confirm-element [component]
+  (let [{:checkout/keys [shipping payment]} (om/get-state component)
+        {:keys [card]} payment
+        {:query/keys [cart]} (om/props component)]
+    (dom/div nil
+      (my-dom/div
+        (css/grid-row)
+        (my-dom/div
+          (css/grid-column)
+          (dom/h3 nil "Confirm Purchase")))
+      (dom/div #js {:className "callout"}
+        (dom/h4 nil "Ship To")
+        (let [{:address/keys [street1 postal region locality country full-name]} shipping]
+          (my-dom/div
+            (->> (css/grid-row)
+                 (css/align :middle))
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/grid-column-size {:small 3 :medium 2}))
+              (dom/i #js {:className "fa fa-truck fa-2x"}))
+            (my-dom/div
+              (css/grid-column)
+              (dom/div nil
+                (dom/div nil (dom/strong nil full-name))
+                ;(dom/div nil (dom/span nil street1))
+                (dom/div nil (dom/span nil (clojure.string/join ", " (filter some? [ street1 postal locality region country])))))))))
+      (dom/div #js {:className "callout"}
+        (my-dom/div
+          (css/grid-row)
+          (my-dom/div
+            (css/grid-column)
+            (dom/i #js {:className "fa fa-credit-card fa-4x"}))
+          (my-dom/div
+            (css/grid-column)
+            (dom/p nil "Confirm your purchase, payment: " (str payment)))))
+      )))
 
 (defn geo-locate [component]
   #?(:cljs
@@ -109,7 +91,7 @@
 
 (def shipping-elements
   {:address/full-name "sulo-shipping-full-name"
-   :address/street    "sulo-shipping-street-address-1"
+   :address/street1   "sulo-shipping-street-address-1"
    :address/street2   "sulo-shipping-street-address-2"
    :address/postal    "sulo-shipping-postal-code"
    :address/locality  "sulo-shipping-locality"
@@ -120,8 +102,8 @@
    (defn prefill-address-form [place]
      (let [long-val (fn [k & [d]] (get-in place [k :long] d))
            short-val (fn [k & [d]] (get-in place [k :short] d))
-           {:address/keys [street postal locality region country]} shipping-elements]
-       (set! (.-value (web-utils/element-by-id street)) (long-val :address))
+           {:address/keys [street1 postal locality region country]} shipping-elements]
+       (set! (.-value (web-utils/element-by-id street1)) (long-val :address))
        (set! (.-value (web-utils/element-by-id postal)) (long-val :postal_code))
        (set! (.-value (web-utils/element-by-id locality)) (long-val :locality))
        (set! (.-value (web-utils/element-by-id country)) (short-val :country))
@@ -172,7 +154,7 @@
             (->> (css/grid-column)
                  (css/grid-column-size {:small 12 :medium 8}))
             (dom/label nil "Street Address")
-            (dom/input #js {:id           (:address/street shipping-elements)
+            (dom/input #js {:id           (:address/street1 shipping-elements)
                             :type         "text"
                             :name         "ship-address"
                             :autocomplete "shipping address-line2"
@@ -184,8 +166,7 @@
             (dom/input #js {:id           (:address/street2 shipping-elements)
                             :type         "text"
                             :name         "ship-address"
-                            :autocomplete "shipping address-line2"}))
-          )
+                            :autocomplete "shipping address-line2"})))
         (my-dom/div
           (css/grid-row)
           (my-dom/div
@@ -216,25 +197,22 @@
                             :required     true}))
           )
         )
-      ))
+      )
+    (my-dom/div (css/text-align :right)
+                (dom/a #js {:className "button"
+                            :onClick #(.save-shipping component)}
+                       "Next")))
   )
 
 (defn payment-element [component & [{:keys [sources]}]]
-  (let [{:keys [payment-error new-card?]} (om/get-state component)]
+  (let [{:keys [payment-error new-card? card]} (om/get-state component)]
+    #?(:cljs
+       (when-not card
+         (om/update-state! component assoc :card (stripe/mount-payment-form {:element-id "sulo-card-element"}))))
     (dom/div nil
       (dom/h3 nil "Payment")
       (my-dom/div
         (css/add-class ::css/callout)
-        ;(when (not-empty sources)
-        ;  (map (fn [source]
-        ;         (my-dom/div
-        ;           (css/grid-row)
-        ;           (my-dom/div
-        ;             (->> (css/grid-column))
-        ;             (dom/label #js {:htmlFor "card-element"} "Card number")
-        ;             (dom/div #js {:id "card-element"})
-        ;             (dom/div #js {:id "card-errors"}))))
-        ;       sources))
         (my-dom/div
           (css/grid-row)
           (my-dom/div
@@ -250,43 +228,11 @@
           (my-dom/div
             (->> (css/grid-column))
             (dom/a #js {:onClick   #(om/update-state! component assoc :new-card? true)
-                        :className "button hollow"} "Add card")))
-        ;(my-dom/div
-        ;  (css/grid-row)
-        ;  (my-dom/div
-        ;    (->> (css/grid-column))
-        ;    (dom/label nil "Card number")
-        ;    (dom/input #js {:type "text"})))
-        ;(my-dom/div
-        ;  (css/grid-row)
-        ;  (my-dom/div
-        ;    (->> (css/grid-column))
-        ;    (dom/label nil "Expiry month")
-        ;    (dom/select nil (map (fn [i]
-        ;                           (dom/option #js {:value i} (str (inc i))))
-        ;                         (range 12))))
-        ;  (my-dom/div
-        ;    (->> (css/grid-column))
-        ;    (dom/label nil "Expiry year")
-        ;    (dom/select nil (map (fn [i]
-        ;                           (dom/option #js {:value i} (str (+ 2017 i))))
-        ;                         (range 50)))))
-        ))))
-;function geolocate() {
-;                      if (navigator.geolocation) {
-;                                                  navigator.geolocation.getCurrentPosition(function(position) {
-;                                                                                                               var geolocation = {
-;                                                                                                                                  lat: position.coords.latitude,
-;                                                                                                                                  lng: position.coords.longitude
-;                                                                                                                                  };
-;                                                                                                               var circle = new google.maps.Circle({
-;                                                                                                                                                    center: geolocation,
-;                                                                                                                                                    radius: position.coords.accuracy
-;                                                                                                                                                    });
-;                                                                                                               autocomplete.setBounds(circle.getBounds());
-;                                                                                                               });
-;                                                  }
-;                      }
+                        :className "button hollow"} "Add card"))))
+      (my-dom/div (css/text-align :right)
+                  (dom/a #js {:className "button"
+                              :onClick #(.save-payment component)}
+                         "Next")))))
 
 (defui Checkout
   static om/IQuery
@@ -305,49 +251,47 @@
      {:query/auth [:user/email]}])
   Object
   ;#?(:cljs
-  ;   (add-new-card
-  ;     [this store]
-  ;     (let [{:keys [query/cart query/auth]} (om/props this)
-  ;           {:keys [cart/items]} cart
-  ;           ;store-items (get (items-by-store items) store)
-  ;           ]
-  ;       ;(debug "Checkout store: " store)
-  ;       ;(debug "Items for store: " items)
-  ;       (stripe/open-checkout this (:user/email auth))
-  ;       ;(msg/om-transact! this `[(user/checkout ~{:items (map :store.item.sku/uuid store-items)
-  ;       ;                                          :store-id (:db/id store)})])
-  ;       )))
-  ;#?(:cljs
-  ;   (componentWillMount
+  ;   (make-payment
   ;     [this]
-  ;     (let [{:keys [checkout-loaded?]} (om/get-state this)]
-  ;       (when-not checkout-loaded?
-  ;         (stripe/load-checkout (fn []
-  ;                                 (om/update-state! this assoc :checkout-loaded? true :is-stripe-loading? false)))))))
-  ;#?(:cljs
-  ;   (initLocalState
-  ;     [_]
-  ;     (let [checkout-loaded (stripe/checkout-loaded?)]
-  ;       {:checkout-loaded?   checkout-loaded
-  ;        :is-stripe-loading? (not checkout-loaded)})))
+  ;     (let [{:query/keys [current-route cart auth]} (om/props this)
+  ;           {:keys [card]} (om/get-state this)
+  ;           {:keys [route-params]} current-route
+  ;           {:keys [store-id]} route-params]
+  ;       (stripe/create-token
+  ;         card
+  ;         (fn [token]
+  ;           (debug "Got result: " token)
+  ;           (let [items (filter #(= (c/parse-long store-id) (get-in % [:store.item/_skus :store/_items :db/id])) (:cart/items cart))]
+  ;             (msg/om-transact! this `[(user/checkout ~{:source   (.-id token)
+  ;                                                       :items    (map :store.item.sku/uuid items)
+  ;                                                       :store-id (c/parse-long store-id)})])))
+  ;         (fn [error]
+  ;           (debug "Got error: " error)
+  ;           (om/update-state! this assoc :payment-error (.-message error)))))))
   #?(:cljs
-     (make-payment
+     (save-payment
        [this]
-       (let [{:query/keys [current-route cart auth]} (om/props this)
-             {:keys [card]} (om/get-state this)
-             {:keys [route-params]} current-route
-             {:keys [store-id]} route-params]
+       (let [{:keys [card]} (om/get-state this)]
          (stripe/create-token
            card
            (fn [token]
-             (debug "Got result: " token)
-             (let [items (filter #(= (c/parse-long store-id) (get-in % [:store.item/_skus :store/_items :db/id])) (:cart/items cart))]
-               (msg/om-transact! this `[(user/checkout ~{:source   (.-id token)
-                                                         :items    (map :store.item.sku/uuid items)
-                                                         :store-id (c/parse-long store-id)})])))
+             (debug "Got token: " token)
+             (om/update-state! this assoc :checkout/payment (stripe/token->payment token)))
            (fn [error]
              (debug "Got error: " error)
              (om/update-state! this assoc :payment-error (.-message error)))))))
+  #?(:cljs
+     (save-shipping
+       [this]
+       (let [{:address/keys [street1 street2 postal locality region country full-name]} shipping-elements
+             shipping {:address/full-name (web-utils/input-value-by-id full-name)
+                       :address/street1   (web-utils/input-value-by-id street1)
+                       :address/street2   (web-utils/input-value-by-id street2)
+                       :address/locality  (web-utils/input-value-by-id locality)
+                       :address/country   (web-utils/input-value-by-id country)
+                       :address/region    (web-utils/input-value-by-id region)
+                       :address/postal    (web-utils/input-value-by-id postal)}]
+         (om/update-state! this assoc :checkout/shipping shipping))))
   (componentDidMount [this]
     (debug "Stripe component did mount")
     #?(:cljs
@@ -357,8 +301,16 @@
                                                                                    (prefill-address-form place))})]
          (om/update-state! this assoc :card card :autocomplete autocomplete))))
 
+  (initLocalState [_]
+    {:checkout/shipping nil
+     :checkout/payment nil})
   (render [this]
-    (let [{:proxy/keys [navbar]} (om/props this)]
+    (let [{:proxy/keys [navbar]} (om/props this)
+          {:checkout/keys [shipping payment]} (om/get-state this)
+          progress (cond (nil? shipping) 1
+                         (nil? payment) 3
+                         :else 3)]
+      (debug "Progress: " progress " " (str (/ progress 3) "%"))
       ;(debug "Items: " checkout-items)
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
@@ -369,11 +321,12 @@
           (my-dom/div
             (->> (css/grid-column)
                  (css/grid-column-size {:small 12 :medium 8 :large 8}))
-            (shipping-element this)
-            (payment-element this)
-            (my-dom/div (css/text-align :right)
-                        (dom/a #js {:className "button"
-                                    :onClick #(.make-payment this)}
-                               "Next"))))))))
+            (dom/div #js {:className "progress"}
+              (dom/div #js {:className "progress-meter"
+                            :style     #js {:width (str (int (* 100 (/ progress 3))) "%")}}))
+            (condp = progress
+              1 (shipping-element this)
+              2 (payment-element this)
+              3 (confirm-element this))))))))
 
 (def ->Checkout (om/factory Checkout))
