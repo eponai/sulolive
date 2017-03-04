@@ -1,5 +1,21 @@
 (ns eponai.common.ui.checkout.google-places
-  (:require [eponai.web.utils :as web-utils]))
+  (:require
+    [eponai.web.utils :as web-utils]
+    [taoensso.timbre :refer [debug]]))
+
+(defn place->address [place]
+  (when place
+    (let [address-comps (.-address_components place)
+          ret
+          (reduce (fn [m c]
+                    (let [k (keyword (first (.-types c)))
+                          v {:short (.-short_name c)
+                             :long (.-long_name c)}]
+                      (assoc m k v)))
+                  {}
+                  address-comps)]
+      (debug "Ret : " ret)
+      ret)))
 
 (defn mount-places-address-autocomplete [{:keys [on-change element-id]}]
   (let [bounds-circle (js/google.maps.Circle. #js {:center #js {:lat 49.2827
@@ -10,4 +26,4 @@
                                                                :bounds (.getBounds bounds-circle)})]
     (.addListener autocomplete "place_changed" (fn []
                                                  (when on-change
-                                                   (on-change (.getPlace autocomplete)))))))
+                                                   (on-change (place->address (.getPlace autocomplete))))))))
