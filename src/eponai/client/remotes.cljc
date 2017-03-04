@@ -31,12 +31,6 @@
          :response-fn identity}
         #?(:cljs load-url-on-redirect))))
 
-(defn wrap-auth [remote-fn local-storage]
-  (fn [query]
-    (let [token (auth/get-auth-token local-storage)]
-      (debug "Associng header token: " token)
-      (assoc-in (remote-fn query) [:opts :headers "Authorization"] (str "Bearer " token)))))
-
 (defn wrap-update [remote-fn k f & args]
   (fn [query]
     (apply update (remote-fn query) k f args)))

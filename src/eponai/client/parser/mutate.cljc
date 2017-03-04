@@ -21,11 +21,6 @@
   (let [cart (db/one-with (db/db state) {:where '[[?e :cart/items]]})]
     (db/transact-one state [:db/add cart :cart/items (:db/id item)])))
 
-(defmethod client-mutate 'session/set-token
-  [{:keys [shared]} _ {:keys [access-token]}]
-  {:action (fn []
-             (auth/set-logged-in-token (:local-storage shared) access-token))})
-
 (defmethod client-mutate 'shopping-bag/add-item
   [{:keys [target state]} _ {:keys [item]}]
   (if target

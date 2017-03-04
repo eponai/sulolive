@@ -73,8 +73,7 @@
                                {:remote      (-> (remotes/post-to-url "/api")
                                                  (remotes/read-basis-t-remote-middleware conn))
                                 :remote/user (-> (remotes/post-to-url "/api/user")
-                                                 (remotes/read-basis-t-remote-middleware conn)
-                                                 (remotes/wrap-auth local-storage))
+                                                 (remotes/read-basis-t-remote-middleware conn))
                                 :remote/chat (-> (remotes/post-to-url "/api/chat")
                                                  (remotes/read-basis-t-remote-middleware conn))}
                                {:did-merge-fn #(when-not @init?

@@ -256,13 +256,6 @@
                                    :theme              {:primaryColor        "#39AC97"
                                                         :logo                "/assets/img/auth0-icon.png"
                                                         :labeledSubmitButton false}}))]
-           (.on lock "authenticated" (fn [res]
-                                       (debug "Login result: " res)
-                                       (.getUserInfo (.-accessToken res)
-                                                     (fn [e p]
-                                                       (if e
-                                                         (error e)
-                                                         (om/transact! this `[(session/set-token {:access-token (.-accessToken res)})]))))))
            (om/update-state! this assoc :lock lock)))))
   (initLocalState [this]
     {:on-login-fn #(.show-login this)})
