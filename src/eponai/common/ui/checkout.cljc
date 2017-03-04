@@ -91,24 +91,45 @@
 ;                             (utils/two-decimal-price price)))))))
 ;         cart-items)))
 
-;(defn geo-locate [autocomplete]
-;  #?(:cljs
-;     (if (.-geolocation js/navigator)
-;       (.. js/navigator
-;            -geolocation
-;           (getCurrentPosition (fn [p]
-;                                 (debug "Position: " p)
-;                                 (let [geolocation #js {:lat (.. p -coords -latitude)
-;                                                        :lng (.. p -coords -longitude)}
-;                                       circle (js/google.maps.Circle. #js {:center geolocation
-;                                                                          :radius (.. p -coords -accuracy)})]
-;                                   (.setBounds autocomplete (.getBounds circle)))))))
-;     )
-;  )
+(defn geo-locate [component]
+  #?(:cljs
+     (let [{:keys [autocomplete]} (om/get-state component)]
+       (when autocomplete
+         (if-let [geolocation (.-geolocation js/navigator)]
+           (.getCurrentPosition geolocation
+                                (fn [p]
+                                  (debug "Position: " p)
+                                  (let [geolocation #js {:lat (.. p -coords -latitude)
+                                                         :lng (.. p -coords -longitude)}
+                                        circle (js/google.maps.Circle. #js {:center geolocation
+                                                                            :radius (.. p -coords -accuracy)})]
+                                    (.setBounds autocomplete (.getBounds circle))))))))
+     )
+  )
+
+(def shipping-elements
+  {:address/full-name "sulo-shipping-full-name"
+   :address/street    "sulo-shipping-street-address-1"
+   :address/street2   "sulo-shipping-street-address-2"
+   :address/postal    "sulo-shipping-postal-code"
+   :address/locality  "sulo-shipping-locality"
+   :address/region    "sulo-shipping-region"
+   :address/country   "sulo-shipping-country"})
+
+#?(:cljs
+   (defn prefill-address-form [place]
+     (let [long-val (fn [k & [d]] (get-in place [k :long] d))
+           short-val (fn [k & [d]] (get-in place [k :short] d))
+           {:address/keys [street postal locality region country]} shipping-elements]
+       (set! (.-value (web-utils/element-by-id street)) (long-val :address))
+       (set! (.-value (web-utils/element-by-id postal)) (long-val :postal_code))
+       (set! (.-value (web-utils/element-by-id locality)) (long-val :locality))
+       (set! (.-value (web-utils/element-by-id country)) (short-val :country))
+       (set! (.-value (web-utils/element-by-id region)) (short-val :administrative_area_level_1)))))
 
 (defn shipping-element [component]
   (dom/div nil
-    (dom/h2 nil "Shipping")
+    (dom/h3 nil "Shipping")
     (my-dom/div
       (->> (css/add-class ::css/callout))
       (my-dom/div
@@ -116,7 +137,8 @@
         (my-dom/div
           (->> (css/grid-column))
           (dom/label nil "Full name")
-          (dom/input #js {:type         "text"
+          (dom/input #js {:id           (:address/full-name shipping-elements)
+                          :type         "text"
                           :name         "name"
                           :autocomplete "name"}))
         )
@@ -126,66 +148,81 @@
           (->> (css/grid-column))
           (dom/label nil "Address")
           (dom/input #js {:id   "auto-complete"
-                          :type "text"})))
-      ;(dom/hr nil)
-      ;(dom/div nil
-      ;  (my-dom/div
-      ;    (css/grid-row)
-      ;    (my-dom/div
-      ;      (->> (css/grid-column))
-      ;      (dom/label nil "Country")
-      ;      (dom/select nil
-      ;                  (dom/option #js {:value        "ca"
-      ;                                   :name         "ship-country"
-      ;                                   :autocomplete "shipping country"
-      ;                                   :required     true} "Canada"))))
-      ;
-      ;
-      ;  (my-dom/div
-      ;    (css/grid-row)
-      ;    (my-dom/div
-      ;      (->> (css/grid-column)
-      ;           (css/grid-column-size {:small 8}))
-      ;      (dom/label nil "Street Address")
-      ;      (dom/input #js {:type         "text"
-      ;                      :name         "ship-address"
-      ;                      :autocomplete "shipping street-address"
-      ;                      :required     true}))
-      ;    (my-dom/div
-      ;      (css/grid-column)
-      ;      (dom/label nil "Apt/Suite/Other")
-      ;      (dom/input #js {:type "text"}))
-      ;    )
-      ;  (my-dom/div
-      ;    (css/grid-row)
-      ;    (my-dom/div
-      ;      (->> (css/grid-column))
-      ;      (dom/label nil "City")
-      ;      (dom/input #js {:type         "text"
-      ;                      :name         "ship-city"
-      ;                      :autocomplete "shipping locality"
-      ;                      :required     true}))
-      ;    (my-dom/div
-      ;      (->> (css/grid-column))
-      ;      (dom/label nil "Province")
-      ;      (dom/select nil
-      ;                  (dom/option #js {:value "bc"} "British Columbia")))
-      ;    (my-dom/div
-      ;      (css/grid-column)
-      ;      (dom/label nil "Postal code")
-      ;      (dom/input #js {:type         "text"
-      ;                      :name         "ship-zip"
-      ;                      :autocomplete "shipping postal-code"
-      ;                      :required     true}))
-      ;    )
-      ;  )
+                          :type "text"
+                          :onFocus #(geo-locate component)})))
+      (dom/hr nil)
+      (dom/div nil
+        (my-dom/div
+          (css/grid-row)
+          (my-dom/div
+            (->> (css/grid-column))
+            (dom/label nil "Country")
+            (dom/select #js {:id           (:address/country shipping-elements)
+                             :name         "ship-country"
+                             :autocomplete "shipping country"
+                             :required     true}
+                        (dom/option #js {:value "CA"} "Canada")
+                        (dom/option #js {:value "SE"} "Sweden")
+                        (dom/option #js {:value "US"} "United States"))))
+
+
+        (my-dom/div
+          (css/grid-row)
+          (my-dom/div
+            (->> (css/grid-column)
+                 (css/grid-column-size {:small 12 :medium 8}))
+            (dom/label nil "Street Address")
+            (dom/input #js {:id           (:address/street shipping-elements)
+                            :type         "text"
+                            :name         "ship-address"
+                            :autocomplete "shipping address-line2"
+                            :required     true}))
+          (my-dom/div
+            (->> (css/grid-column)
+                 (css/grid-column-size {:small 12 :medium 4}))
+            (dom/label nil "Apt/Suite/Other")
+            (dom/input #js {:id           (:address/street2 shipping-elements)
+                            :type         "text"
+                            :name         "ship-address"
+                            :autocomplete "shipping address-line2"}))
+          )
+        (my-dom/div
+          (css/grid-row)
+          (my-dom/div
+            (->> (css/grid-column)
+                 (css/grid-column-size {:small 12 :large 4}))
+            (dom/label nil "City")
+            (dom/input #js {:id           (:address/locality shipping-elements)
+                            :type         "text"
+                            :name         "ship-city"
+                            :autocomplete "shipping locality"
+                            :required     true}))
+          (my-dom/div
+            (->> (css/grid-column))
+            (dom/label nil "Province")
+            (dom/select #js {:id           (:address/region shipping-elements)
+                             :name         "ship-state"
+                             :autocomplete "shipping region"
+                             :defaultValue ""}
+                        (dom/option #js {:disabled true} "Select Province")
+                        (dom/option #js {:value "bc"} "British Columbia")))
+          (my-dom/div
+            (css/grid-column)
+            (dom/label nil "Postal code")
+            (dom/input #js {:id           (:address/postal shipping-elements)
+                            :type         "text"
+                            :name         "ship-zip"
+                            :autocomplete "shipping postal-code"
+                            :required     true}))
+          )
+        )
       ))
   )
 
 (defn payment-element [component & [{:keys [sources]}]]
   (let [{:keys [payment-error new-card?]} (om/get-state component)]
     (dom/div nil
-      (dom/h2 nil "Payment")
+      (dom/h3 nil "Payment")
       (my-dom/div
         (css/add-class ::css/callout)
         ;(when (not-empty sources)
@@ -317,8 +354,7 @@
        (let [card (stripe/mount-payment-form {:element-id "sulo-card-element"})
              autocomplete (places/mount-places-address-autocomplete {:element-id "auto-complete"
                                                                      :on-change  (fn [place]
-                                                                                   (debug "place: " place)
-                                                                                   (debug "Text changed: " place))})]
+                                                                                   (prefill-address-form place))})]
          (om/update-state! this assoc :card card :autocomplete autocomplete))))
 
   (render [this]
