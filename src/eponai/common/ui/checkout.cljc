@@ -2,10 +2,13 @@
   (:require
     #?(:cljs
        [eponai.common.ui.checkout.stripe :as stripe])
+    #?(:cljs
+       [eponai.common.ui.checkout.google-places :as places])
     [eponai.common.ui.dom :as my-dom]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.utils :as utils]
+    #?(:cljs [eponai.web.utils :as web-utils])
     ;[eponai.client.routes :as routes]
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.common :as common]
@@ -88,55 +91,78 @@
 ;                             (utils/two-decimal-price price)))))))
 ;         cart-items)))
 
-(defn shipping-element []
-  (dom/div nil
-    (dom/h2 nil "Shipping")
-    (my-dom/div
-      (->> (css/add-class ::css/callout))
-      (my-dom/div
-        (css/grid-row)
-        (my-dom/div
-          (->> (css/grid-column))
-          (dom/label nil "Country")
-          (dom/select nil
-                      (dom/option #js {:value "ca"} "Canada"))))
+;(defn geo-locate [autocomplete]
+;  #?(:cljs
+;     (if (.-geolocation js/navigator)
+;       (.. js/navigator
+;            -geolocation
+;           (getCurrentPosition (fn [p]
+;                                 (debug "Position: " p)
+;                                 (let [geolocation #js {:lat (.. p -coords -latitude)
+;                                                        :lng (.. p -coords -longitude)}
+;                                       circle (js/google.maps.Circle. #js {:center geolocation
+;                                                                          :radius (.. p -coords -accuracy)})]
+;                                   (.setBounds autocomplete (.getBounds circle)))))))
+;     )
+;  )
 
+(defn shipping-element [component]
+  (let [{:keys [autocomplete]} (om/get-state component)]
+    (dom/div nil
+      (dom/h2 nil "Shipping")
       (my-dom/div
-        (css/grid-row)
+        (->> (css/add-class ::css/callout))
         (my-dom/div
-          (->> (css/grid-column))
-          (dom/label nil "Full name")
-          (dom/input #js {:type "text"}))
-        )
+          (css/grid-row)
+          (my-dom/div
+            (->> (css/grid-column))
+            (dom/input #js {:id      "auto-complete"
+                            :type    "text"})))
+        (my-dom/div
+          (css/grid-row)
+          (my-dom/div
+            (->> (css/grid-column))
+            (dom/label nil "Country")
+            (dom/select nil
+                        (dom/option #js {:value "ca"} "Canada"))))
 
-      (my-dom/div
-        (css/grid-row)
         (my-dom/div
-          (->> (css/grid-column)
-               (css/grid-column-size {:small 8}))
-          (dom/label nil "Address line 1")
-          (dom/input #js {:type "text"}))
+          (css/grid-row)
+          (my-dom/div
+            (->> (css/grid-column))
+            (dom/label nil "Full name")
+            (dom/input #js {:type "text"}))
+          )
+
         (my-dom/div
-          (css/grid-column)
-          (dom/label nil "Apt/Suite/Other")
-          (dom/input #js {:type "text"}))
-        )
-      (my-dom/div
-        (css/grid-row)
+          (css/grid-row)
+          (my-dom/div
+            (->> (css/grid-column)
+                 (css/grid-column-size {:small 8}))
+            (dom/label nil "Address line 1")
+            (dom/input #js {:type "text"}))
+          (my-dom/div
+            (css/grid-column)
+            (dom/label nil "Apt/Suite/Other")
+            (dom/input #js {:type "text"}))
+          )
         (my-dom/div
-          (->> (css/grid-column))
-          (dom/label nil "City")
-          (dom/input #js {:type "text"}))
-        (my-dom/div
-          (->> (css/grid-column))
-          (dom/label nil "Province")
-          (dom/select nil
-                      (dom/option {:value "bc"} "British Columbia")))
-        (my-dom/div
-          (css/grid-column)
-          (dom/label nil "Postal code")
-          (dom/input #js {:type "text"}))
-        ))))
+          (css/grid-row)
+          (my-dom/div
+            (->> (css/grid-column))
+            (dom/label nil "City")
+            (dom/input #js {:type "text"}))
+          (my-dom/div
+            (->> (css/grid-column))
+            (dom/label nil "Province")
+            (dom/select nil
+                        (dom/option #js {:value "bc"} "British Columbia")))
+          (my-dom/div
+            (css/grid-column)
+            (dom/label nil "Postal code")
+            (dom/input #js {:type "text"}))
+          ))))
+  )
 
 (defn payment-element [component & [{:keys [sources]}]]
   (let [{:keys [payment-error new-card?]} (om/get-state component)]
@@ -191,6 +217,22 @@
         ;                           (dom/option #js {:value i} (str (+ 2017 i))))
         ;                         (range 50)))))
         ))))
+;function geolocate() {
+;                      if (navigator.geolocation) {
+;                                                  navigator.geolocation.getCurrentPosition(function(position) {
+;                                                                                                               var geolocation = {
+;                                                                                                                                  lat: position.coords.latitude,
+;                                                                                                                                  lng: position.coords.longitude
+;                                                                                                                                  };
+;                                                                                                               var circle = new google.maps.Circle({
+;                                                                                                                                                    center: geolocation,
+;                                                                                                                                                    radius: position.coords.accuracy
+;                                                                                                                                                    });
+;                                                                                                               autocomplete.setBounds(circle.getBounds());
+;                                                                                                               });
+;                                                  }
+;                      }
+
 (defui Checkout
   static om/IQuery
   (query [_]
@@ -254,8 +296,11 @@
   (componentDidMount [this]
     (debug "Stripe component did mount")
     #?(:cljs
-       (let [card (stripe/mount-payment-form {:card-el "#sulo-card-element"})]
-         (om/update-state! this assoc :card card))))
+       (let [card (stripe/mount-payment-form {:element-id "sulo-card-element"})
+             autocomplete (places/mount-places-address-autocomplete {:element-id "auto-complete"
+                                                                     :on-change (fn [place]
+                                                                                  (debug "Text changed: " place))})]
+         (om/update-state! this assoc :card card :autocomplete autocomplete))))
 
   (render [this]
     (let [{:proxy/keys [navbar]} (om/props this)]
@@ -269,7 +314,7 @@
           (my-dom/div
             (->> (css/grid-column)
                  (css/grid-column-size {:small 12 :medium 8 :large 8}))
-            ;(shipping-element)
+            (shipping-element this)
             (payment-element this)
             (my-dom/div (css/text-align :right)
                         (dom/a #js {:className "button"

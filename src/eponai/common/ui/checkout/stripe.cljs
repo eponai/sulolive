@@ -48,7 +48,7 @@
                   (on-error (.-error res))
                   (on-success (.-token res))))))))
 
-(defn mount-payment-form [{:keys [card-el]}]
+(defn mount-payment-form [{:keys [element-id]}]
   (debug "Mount stripe")
   (let [elements (.elements (js/Stripe "pk_test_VhkTdX6J9LXMyp5nqIqUTemM"))
         card (.create elements "card" (clj->js {:style {:base {:color      "#32325d"
@@ -56,5 +56,5 @@
                                                                :lineHeight "24px"
                                                                :fontSize   "16px"
                                                                "::placeholder" {:color "#aab7c4"}}}}))]
-    (.mount card card-el)
+    (.mount card (str "#" element-id))
     card))
