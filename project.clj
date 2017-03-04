@@ -5,7 +5,6 @@
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [
                  [org.clojure/clojure "1.9.0-alpha14"]
-                 [amazonica "0.3.85"]
                  [org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
                  [clj-http "3.3.0"]
@@ -16,8 +15,9 @@
                  [com.cemerick/url "0.1.1"]
                  [com.datomic/datomic-pro "0.9.5544"
                   :exclusions [joda-time]]
-                 [com.amazonaws/aws-java-sdk-dynamodb "1.10.56"
+                 [com.amazonaws/aws-java-sdk-dynamodb "1.11.77"
                   :exclusions [joda-time org.clojure/test.check]]
+                 [amazonica "0.3.85"]
                  [com.draines/postal "2.0.1"]
                  [com.stripe/stripe-java "3.9.0"]
                  [com.taoensso/timbre "4.7.4"]
@@ -29,19 +29,18 @@
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.namespace "0.2.11"]
                  ;; Depending on transit-clj for faster cljs builds
-                 [com.cognitect/transit-clj "0.8.288"
-                  :exlusions [com.fasterxml.jackson.core/jackson-core]]
-                 [com.fasterxml.jackson.core/jackson-core "2.5.3"]
+                 [com.cognitect/transit-clj "0.8.297"]
                  ; ring helpers
                  [amalloy/ring-gzip-middleware "0.1.3"]
                  [ring/ring-core "1.5.0"]
                  [ring/ring-devel "1.5.0"]
                  [ring/ring-jetty-adapter "1.5.0"]
-                 [ring/ring-json "0.4.0"]
                  [ring/ring-defaults "0.2.1"]
                  [ring/ring-ssl "0.2.1"]
                  [ring/ring-anti-forgery "1.0.1"]
                  [ring-transit "0.1.6"]
+                 [ring/ring-json "0.4.0" :exclusions [cheshire]]
+                 [cheshire "5.6.3"]  ;; For ring-json
                  [prone "1.1.4"]
                  [medley "0.8.3"]
                  [org.martinklepsch/s3-beam "0.6.0-alpha1"]

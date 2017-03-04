@@ -9,7 +9,9 @@
     [eponai.server.email :as email]
     [eponai.server.datomic-dev :as datomic_dev]
     [eponai.server.parser.read]
+    [eponai.server.external.aws-ec2 :as ec2]
     [eponai.server.external.aws-s3 :as s3]
+    [eponai.server.external.aws-elb :as elb]
     [eponai.server.parser.mutate]
     [eponai.server.routes :refer [site-routes]]
     [eponai.server.middleware :as m]
@@ -25,47 +27,57 @@
 (defonce in-production? (atom true))
 
 (defn app* [conn {::keys [extra-middleware disable-anti-forgery disable-ssl] :as options}]
-  (-> (routes site-routes)
-      (cond-> (not @in-production?) (m/wrap-node-modules))
-      m/wrap-post-middlewares
-      (m/wrap-authenticate conn @in-production?)
-      (cond-> (some? extra-middleware) extra-middleware)
-      m/wrap-format
-      (m/wrap-state {::m/conn                     conn
-                     ::m/in-production?           @in-production?
-                     ::m/empty-datascript-db      (m/init-datascript-db conn)
-                     ::m/parser                   (parser/server-parser)
-                     ;::m/send-email-fn     (e/send-email-fn conn)
-                     ::email/send-verification-fn (partial email/send-verification-email @in-production?)
-                     ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
-                     ::m/system                   {:system/chat      (chat/->DatomicChat conn)
-                                                   :system/wowza     (let [p {:secret         (env :wowza-jwt-secret)
-                                                                              :subscriber-url (env :wowza-subscriber-url)
-                                                                              :publisher-url  (env :wowza-publisher-url)}]
-                                                                       (if (or @in-production?)
-                                                                         (wowza/wowza p)
-                                                                         (wowza/wowza-stub (select-keys p [:secret]))))
-                                                   :system/mailchimp (if @in-production?
-                                                                       (mailchimp/mail-chimp (env :mail-chimp-api-key))
-                                                                       (mailchimp/mail-chimp-stub))
-                                                   :system/stripe    (if (or @in-production? true)
-                                                                       (stripe/stripe (env :stripe-secret-key))
-                                                                       (stripe/stripe-stub))
-                                                   :system/aws-s3    (if (or @in-production? true)
-                                                                       (s3/aws-s3 {:bucket     (env :aws-s3-bucket-photos)
-                                                                                   :zone       (env :aws-s3-bucket-photos-zone)
-                                                                                   :access-key (env :aws-access-key-id)
-                                                                                   :secret     (env :aws-secret-access-key)})
-                                                                       (s3/aws-s3-stub))}
-                     ::m/cljs-build-id            (or (env :cljs-build-id) "dev")})
-      (m/wrap-defaults @in-production? disable-anti-forgery)
-      (m/wrap-error @in-production?)
-      m/wrap-trace-request
-      (cond-> (some? extra-middleware) extra-middleware)
-      (cond-> (and @in-production? (not disable-ssl))
-              m/wrap-ssl)
-      (cond-> (not @in-production?) reload/wrap-reload)
-      m/wrap-gzip))
+  (let [in-aws? (and @in-production? (some? (env :aws-elb)))
+        aws-ec2 (if in-aws?
+                  (ec2/aws-ec2)
+                  (ec2/aws-ec2-stub))]
+    (-> (routes site-routes)
+        (cond-> (not @in-production?) (m/wrap-node-modules))
+        m/wrap-post-middlewares
+        (m/wrap-authenticate conn @in-production?)
+        (cond-> (some? extra-middleware) extra-middleware)
+        m/wrap-format
+        (m/wrap-state {::m/conn                     conn
+                       ::m/in-production?           @in-production?
+                       ::m/empty-datascript-db      (m/init-datascript-db conn)
+                       ::m/parser                   (parser/server-parser)
+                       ;::m/send-email-fn     (e/send-email-fn conn)
+                       ::email/send-verification-fn (partial email/send-verification-email @in-production?)
+                       ::email/send-invitation-fn   (partial email/send-invitation-email @in-production?)
+                       ::m/system                   {:system/chat      (chat/->DatomicChat conn)
+                                                     :system/wowza     (let [p {:secret         (env :wowza-jwt-secret)
+                                                                                :subscriber-url (env :wowza-subscriber-url)
+                                                                                :publisher-url  (env :wowza-publisher-url)}]
+                                                                         (if (or @in-production?)
+                                                                           (wowza/wowza p)
+                                                                           (wowza/wowza-stub (select-keys p [:secret]))))
+                                                     :system/mailchimp (if @in-production?
+                                                                         (mailchimp/mail-chimp (env :mail-chimp-api-key))
+                                                                         (mailchimp/mail-chimp-stub))
+                                                     :system/stripe    (if (or @in-production? true)
+                                                                         (stripe/stripe (env :stripe-secret-key))
+                                                                         (stripe/stripe-stub))
+                                                     :system/aws-ec2   aws-ec2
+                                                     :system/aws-elb   (if in-aws?
+                                                                         (elb/aws-elastic-beanstalk (-> aws-ec2
+                                                                                                        (ec2/find-this-instance)
+                                                                                                        (ec2/elastic-beanstalk-env-name)))
+                                                                         (elb/aws-elastic-beanstalk-stub))
+                                                     :system/aws-s3    (if (or @in-production? true)
+                                                                         (s3/aws-s3 {:bucket     (env :aws-s3-bucket-photos)
+                                                                                     :zone       (env :aws-s3-bucket-photos-zone)
+                                                                                     :access-key (env :aws-access-key-id)
+                                                                                     :secret     (env :aws-secret-access-key)})
+                                                                         (s3/aws-s3-stub))}
+                       ::m/cljs-build-id            (or (env :cljs-build-id) "dev")})
+        (m/wrap-defaults @in-production? disable-anti-forgery)
+        (m/wrap-error @in-production?)
+        m/wrap-trace-request
+        (cond-> (some? extra-middleware) extra-middleware)
+        (cond-> (and @in-production? (not disable-ssl))
+                m/wrap-ssl)
+        (cond-> (not @in-production?) reload/wrap-reload)
+        m/wrap-gzip)))
 
 ;; Do a little re-def dance. Store the arguments to app* in a var, right before
 ;; it is redefined.

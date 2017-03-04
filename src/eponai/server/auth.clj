@@ -14,6 +14,7 @@
     [om.next :as om :refer [defui]]
     [ring.util.response :as r]
     [eponai.server.datomic.format :as f]
+    [eponai.server.external.aws-elb :as aws-elb]
     [eponai.common.database :as db]))
 
 (def http-realm "Sulo-Prototype")
@@ -23,11 +24,13 @@
 (defn is-logged-in? [identity]
   (= (:iss identity) "sulo.auth0.com"))
 
-(defn- auth0-code->token [code]
+(defn- auth0-code->token [code aws-elb]
   (json/read-json
     (:body (http/post "https://sulo.auth0.com/oauth/token"
                       {:form-params {:client_id     (env :auth0-client-id)
-                                     :redirect_uri  (str (env :server-url-schema) "://" (env :server-url-host) "/auth")
+                                     :redirect_uri  (if (aws-elb/is-staging? aws-elb)
+                                                      (str (aws-elb/env-url aws-elb) "/auth")
+                                                      (str (env :server-url-schema) "://" (env :server-url-host) "/auth"))
                                      :client_secret (env :auth0-client-secret)
                                      :code          code
                                      :grant_type    "authorization_code"}}))
@@ -41,9 +44,10 @@
 
 (defn auth0 [{:keys [params] :as req}]
   (debug "AUTHING REQUEST: " req)
-  (let [{:keys [code state]} params]
+  (let [{:keys [code state]} params
+        aws-elb (get-in req [:eponai.server.middleware/system :system/aws-elb])]
     (if (some? code)
-      (let [{:keys [id_token access_token token_type] :as to}  (auth0-code->token code)
+      (let [{:keys [id_token access_token token_type] :as to} (auth0-code->token code aws-elb)
             profile (auth0-token->profile access_token)]
         (debug "Got Token auth0: " to)
         {:token        id_token
