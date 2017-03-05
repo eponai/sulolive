@@ -1,4 +1,6 @@
-(ns eponai.common.routes)
+(ns eponai.common.routes
+  (:require [bidi.bidi :as bidi]
+            [taoensso.timbre :refer [debug error]]))
 
 (def store-routes
   {""           :store
@@ -28,7 +30,21 @@
         "shopping-bag"                :shopping-bag
         "business"                    :business
         ["user/" [#"\d+" :user-id]]   user-routes
-        "settings"                    :settings}])
+        "settings"                    :settings
+        "auth"                        :auth}])
+
+(defn path
+  "Takes a route and its route-params and returns a path"
+  ([route] (path route nil))
+  ([route route-params]
+   (try
+     (apply bidi/path-for routes route (some->> route-params (reduce into [])))
+     (catch #?@(:cljs [:default e]
+                :clj  [Throwable e])
+            (error "Error when trying to create url from route: " route
+                   " route-params: " route-params
+                   " error: " e)
+       nil))))
 
 ;; #################################################
 ;; WHERE IS THE MAPPING BETWEEN ROUTE AND COMPONENT?
