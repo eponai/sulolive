@@ -6,18 +6,13 @@
     [buddy.core.codecs.base64 :as b64]
     [buddy.auth.protocols :as auth.protocols]
     [environ.core :refer [env]]
-    [eponai.server.ui.common :as common]
     [taoensso.timbre :refer [error debug]]
     [clj-http.client :as http]
     [clojure.data.json :as json]
-    [om.dom :as dom]
-    [om.next :as om :refer [defui]]
     [ring.util.response :as r]
     [eponai.server.datomic.format :as f]
     [eponai.server.external.aws-elb :as aws-elb]
     [eponai.common.database :as db]))
-
-(def http-realm "Sulo-Prototype")
 
 (def restrict buddy/restrict)
 
@@ -60,13 +55,6 @@
   (debug "Authing request id: " (:identity request))
   (boolean (:identity request)))
 
-(defn http-basic-restrict-opts []
-  {:handler  authenticated?
-   :on-error (fn [a b]
-               {:status  401
-                :headers {"Content-Type"     "text/plain"
-                          "WWW-Authenticate" (format "Basic realm=\"%s\"" http-realm)}})})
-
 (defn member-restrict-opts []
   {:handler  authenticated?
    :on-error (fn [a b]
@@ -84,12 +72,6 @@
                {:status 401
                 :headers {}
                 :body "You fucked up"})})
-
-(defn- jwt-backend []
-  (backends/jws {:secret     (b64/decode (env :auth0-client-secret))
-                 :token-name "Bearer"
-                 :on-error   (fn [r e]
-                               (error e))}))
 
 (defn authenticate-auth0-user [conn auth0-user]
   (when auth0-user
@@ -116,41 +98,21 @@
       (-handle-unauthorized [_ request metadata]
         (auth.protocols/-handle-unauthorized jws-backend request metadata)))))
 
-(defn- http-backend []
-  (let [auth-fn (fn [req {:keys [username password] :as token}]
-                  (when (and (= password "hejsan") (= username "sulo"))
-                    {:user "admin"}))]
 
-    (backends/http-basic {:authfn auth-fn
-                          :realm  http-realm})))
+(def auth-token-cookie-name "sulo-auth-token")
 
 (defn wrap-auth [handler conn]
-  (let [auth-backend (jwt-cookie-backend conn "token")
-        basic-backend (http-backend)]
+  (let [auth-backend (jwt-cookie-backend conn auth-token-cookie-name)]
     (-> handler
         (wrap-authorization auth-backend)
-        (wrap-authentication auth-backend basic-backend))))
+        (wrap-authentication auth-backend))))
 
-(defn inline-auth-code [{:keys [token profile token-type redirect-url]}]
-  (let [new-location (if redirect-url (str "'" redirect-url "'") "window.location.origin")]
-    (cond-> []
-            (some? token)
-            (conj (str "localStorage.setItem('idToken', '" token "');"))
-            ;(some? profile)
-            ;(conj "localStorage.setItem('profile', '" (json/write-str profile) "');")
-            (some? token-type)
-            (conj (str "localStorage.setItem('tokenType', '" token-type "');"))
-            :always
-            (conj (str "window.location = '" redirect-url "'"))
-            )))
+(defn authenticate [request]
+  (let [{:keys [redirect-url token]} (auth0 request)]
+    (if token
+      (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name token)
+      (r/redirect "/coming-soon"))))
 
-(defui Auth
-  Object
-  (render [this]
-    (let [{:keys [token] :as props} (om/props this)]
-      (debug "Auth Props: " props)
-      (dom/html
-        {:lang "en"}
-        (dom/body
-          nil
-          (common/inline-javascript (inline-auth-code props)))))))
+(defn logout [request]
+  (-> (r/redirect "/coming-soon")
+      (assoc-in [:cookies auth-token-cookie-name] {:value "kill" :max-age 1})))

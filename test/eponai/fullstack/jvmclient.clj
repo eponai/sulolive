@@ -112,8 +112,7 @@
 (defn log-out! [client]
   (let [{:keys [::set-logged-out! ::callback-chan]} (meta client)]
     (set-logged-out!)
-    (om/transact! client `[(session/signout)])
-    (fs.utils/take-with-timeout callback-chan "logging out")
+    ;; TODO: Transact a mutation and wait for it to finish?
     ))
 
 (defn logged-in-client [idx server-url email-chan callback-chan teardown-atom]

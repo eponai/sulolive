@@ -133,18 +133,9 @@
   (route/resources "/")
   ;(POST "/stripe/main" request (r/response (stripe/webhook (::m/conn request) (:params request))))
   (POST "/stripe/connected" request (r/response (stripe/webhook (::m/conn request) (:body request))))
-  (GET "/auth" request (let [{:keys [redirect-url token]} (auth/auth0 request)]
-                         (if token
-                           (r/set-cookie (r/redirect redirect-url) "token" token)
-                           (r/redirect "/coming-soon"))))
-  (GET "/enter" request
-    (auth/restrict (fn [_] (r/redirect "/")) (auth/http-basic-restrict-opts))
-    ;(if (release? request)
-    ;  (auth/restrict (fn [_] (r/redirect "/")) (auth/http-basic-restrict-opts))
-    ;  (r/redirect "/"))
-    )
-  (GET "/logout" request (-> (r/redirect "/coming-soon")
-                             (assoc-in [:cookies "token"] {:value "kill" :max-age 1})))
+  (GET "/auth" request (auth/authenticate request))
+
+  (GET "/logout" request (auth/logout request))
 
   (GET "/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
   (GET "/sell/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))

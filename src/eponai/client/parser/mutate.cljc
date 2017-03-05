@@ -12,11 +12,6 @@
 ;; Local mutations should be defined in:
 ;;     eponai.<platform>.parser.mutate
 
-(defmethod client-mutate 'session/signout
-  [{:keys [shared]} _ _]
-  {:action (fn []
-             (auth/remove-auth-token (:local-storage shared)))})
-
 (defn logged-in-update-cart [state item]
   (let [cart (db/one-with (db/db state) {:where '[[?e :cart/items]]})]
     (db/transact-one state [:db/add cart :cart/items (:db/id item)])))
