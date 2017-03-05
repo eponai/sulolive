@@ -181,36 +181,6 @@
                                                                      {:store/photo [:photo/path]}]}]}]}]}
      {:query/auth [:user/email]}])
   Object
-<<<<<<< HEAD
-  (checkout
-    [this store]
-    (let [{:keys [query/cart query/auth]} (om/props this)
-          {:keys [cart/items]} cart
-          store-items (get (items-by-store items) store)]
-      (debug "Checkout store: " store)
-      (debug "Items for store: " items)
-      (open-checkout this (:user/email auth))
-      ;(msg/om-transact! this `[(user/checkout ~{:items (map :store.item.sku/uuid store-items)
-      ;                                          :store-id (:db/id store)})])
-      ))
-  (initLocalState [_]
-    (let [checkout-loaded (checkout-loaded?)]
-      {:checkout-loaded?   checkout-loaded
-       :load-checkout-chan (chan)
-       :is-stripe-loading? (not checkout-loaded)}))
-  (componentWillMount [this]
-    (let [{:keys [load-checkout-chan
-                  checkout-loaded?]} (om/get-state this)]
-      (when-not checkout-loaded?
-        (go (<! load-checkout-chan)
-            (om/update-state! this assoc :checkout-loaded? true :is-stripe-loading? false))
-        (load-checkout load-checkout-chan))))
-  (componentDidMount [this]
-    (om/update-state! this assoc :did-mount? true))
-=======
-
-
->>>>>>> Integrate Stripe elements into UI.
   (render [this]
     (let [{:keys [query/cart proxy/navbar]} (om/props this)
           {:keys [cart/items]} cart

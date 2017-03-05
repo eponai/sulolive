@@ -18,7 +18,11 @@
     [eponai.client.parser.message :as msg]
     [eponai.common :as c]))
 
+(defn compute-item-price [items]
+  (reduce + (map #(get-in % [:store.item/_skus :store.item/price]) items)))
+
 (defn store-element [s]
+  (debug "Store element: " s)
   (let [{:store/keys [photo] store-name :store/name} s]
     (my-dom/div
       (->> (css/grid-row)
@@ -28,7 +32,7 @@
            )
       (my-dom/div
         (->> (css/grid-column)
-             (css/grid-column-size {:small 3 :medium 2 :large 1}))
+             (css/grid-column-size {:small 3 :medium 2}))
         (photo/circle {:src (:photo/path photo)}))
       (my-dom/div
         (->> (css/grid-column)
@@ -39,38 +43,173 @@
 (defn confirm-element [component]
   (let [{:checkout/keys [shipping payment]} (om/get-state component)
         {:keys [card]} payment
-        {:query/keys [cart]} (om/props component)]
+        {:query/keys [cart]} (om/props component)
+        {:keys [cart/items]} cart
+        item-count (count items)]
     (dom/div nil
       (my-dom/div
         (css/grid-row)
         (my-dom/div
           (css/grid-column)
-          (dom/h3 nil "Confirm Purchase")))
+          (dom/h3 nil "Review & Confirm")))
       (dom/div #js {:className "callout"}
-        (dom/h4 nil "Ship To")
+
         (let [{:address/keys [street1 postal region locality country full-name]} shipping]
           (my-dom/div
             (->> (css/grid-row)
-                 (css/align :middle))
+                 (css/align :bottom))
             (my-dom/div
               (->> (css/grid-column)
                    (css/grid-column-size {:small 3 :medium 2}))
+              (dom/h4 nil "Ship to")
               (dom/i #js {:className "fa fa-truck fa-2x"}))
             (my-dom/div
               (css/grid-column)
               (dom/div nil
                 (dom/div nil (dom/strong nil full-name))
                 ;(dom/div nil (dom/span nil street1))
-                (dom/div nil (dom/span nil (clojure.string/join ", " (filter some? [ street1 postal locality region country])))))))))
+                (dom/div nil (dom/span nil (clojure.string/join ", " (filter some? [ street1 postal locality region country]))))))
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/add-class :shrink))
+              (dom/a #js {:className "button hollow"}
+                     (dom/i #js {:className "fa fa-pencil fa-fw"}))))))
       (dom/div #js {:className "callout"}
+        (let [{:keys [last4 exp_year exp_month brand]} (:card payment)]
+          (my-dom/div
+            (->> (css/grid-row)
+                 (css/align :bottom))
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/grid-column-size {:small 3 :medium 2}))
+              (dom/h4 nil "Payment")
+              (dom/i #js {:className "fa fa-credit-card fa-2x"}))
+            (my-dom/div
+              (css/grid-column)
+              (dom/div nil
+                (dom/div nil (dom/span nil brand))
+                (dom/div nil
+                  (dom/span nil "**** **** **** "
+                            (dom/strong nil last4)
+                            " "
+                            (dom/small nil (str exp_month "/" exp_year))))))
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/add-class :shrink))
+              (dom/a #js {:className "button hollow"}
+                     (dom/i #js {:className "fa fa-pencil fa-fw"}))))))
+      (dom/div #js {:className "callout"}
+        (let [store (:store/_items (:store.item/_skus (first items)))]
+          (debug "store: " store)
+          (store-element store))
+        (dom/div #js {:className "items"}
+          (map (fn [sku]
+                 (let [{:store.item/keys [price photos]
+                        product-id       :db/id
+                        item-name        :store.item/name} (get sku :store.item/_skus)]
+                   (my-dom/div
+                     (->> (css/grid-row)
+                          ;(css/add-class :collapse)
+                          (css/align :middle)
+                          ;(css/add-class :callout)
+                          (css/add-class :transparent)
+                          (css/add-class :item))
+
+                     (my-dom/div
+                       (->> (css/grid-column)
+                            (css/grid-column-size {:small 4 :medium 2}))
+                       (photo/square
+                         {:src (:photo/path (first photos))}))
+
+                     ;(my-dom/div
+                     ;  (->> (css/grid-column))
+                     ;  (dom/a #js {:className "close-button"} (dom/small nil "x")))
+                     (my-dom/div
+                       (->> (css/grid-column))
+
+                       (dom/div #js {:className ""}
+                         (dom/a #js {
+                                     ;:href      (routes/url :product {:product-id product-id})
+                                     :className "name"}
+                                (dom/span nil item-name)))
+                       (dom/div #js {:className ""}
+                         (dom/span nil (:store.item.sku/value sku))))
+
+                     (my-dom/div
+                       (->> (css/grid-column)
+                            (css/align :right)
+                            ;(css/add-class :shrink)
+                            (css/grid-column-size {:small 3 :medium 2})
+                            ;(css/grid-column-offset {:small 3 :large 0})
+                            )
+                       (dom/input #js {:type         "number"
+                                       :defaultValue 1})
+                       )
+                     (my-dom/div
+                       (->> (css/grid-column)
+                            (css/text-align :right)
+                            (css/add-class :shrink)
+                            )
+                       (dom/div #js {:className ""}
+                         (dom/span #js {:className "price"}
+                                   (utils/two-decimal-price price)))))))
+               items))
+        (dom/div #js {:className "receipt"}
+          (my-dom/div
+            (css/grid-row)
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/text-align :right))
+              (dom/span nil "Subtotal"))
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/text-align :right))
+              (dom/span nil (utils/two-decimal-price (compute-item-price items)))))
+          (my-dom/div
+            (css/grid-row)
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/text-align :right))
+              (dom/span nil "Shipping"))
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/text-align :right))
+              (dom/span nil (utils/two-decimal-price 5))))
+          (my-dom/div
+            (css/grid-row)
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/text-align :right))
+              (dom/span nil "Discount"))
+            ;(my-dom/div
+            ;  (->> (css/grid-column)
+            ;       (css/text-align :right))
+            ;  (dom/a nil "Add code"))
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/text-align :right))
+              (dom/span nil (utils/two-decimal-price 0))
+              (dom/br nil)
+              (dom/a nil "Add code")))
+          (my-dom/div
+            (css/add-class :total)
+            (my-dom/div
+              (css/grid-row)
+              (my-dom/div
+                (->> (css/grid-column)
+                     (css/text-align :right))
+                (dom/strong nil "Total"))
+              (my-dom/div
+                (->> (css/grid-column)
+                     (css/text-align :right))
+                (dom/strong nil (utils/two-decimal-price (+ 5 (compute-item-price items)))))))))
+      (my-dom/div
+        (css/grid-row)
         (my-dom/div
-          (css/grid-row)
-          (my-dom/div
-            (css/grid-column)
-            (dom/i #js {:className "fa fa-credit-card fa-4x"}))
-          (my-dom/div
-            (css/grid-column)
-            (dom/p nil "Confirm your purchase, payment: " (str payment)))))
+          (->> (css/grid-column)
+               (css/text-align :right))
+          (dom/div #js {:className "button"
+                        :onClick #(.place-order component)} "Place Order")))
       )))
 
 (defn geo-locate [component]
@@ -250,24 +389,19 @@
      :query/current-route
      {:query/auth [:user/email]}])
   Object
-  ;#?(:cljs
-  ;   (make-payment
-  ;     [this]
-  ;     (let [{:query/keys [current-route cart auth]} (om/props this)
-  ;           {:keys [card]} (om/get-state this)
-  ;           {:keys [route-params]} current-route
-  ;           {:keys [store-id]} route-params]
-  ;       (stripe/create-token
-  ;         card
-  ;         (fn [token]
-  ;           (debug "Got result: " token)
-  ;           (let [items (filter #(= (c/parse-long store-id) (get-in % [:store.item/_skus :store/_items :db/id])) (:cart/items cart))]
-  ;             (msg/om-transact! this `[(user/checkout ~{:source   (.-id token)
-  ;                                                       :items    (map :store.item.sku/uuid items)
-  ;                                                       :store-id (c/parse-long store-id)})])))
-  ;         (fn [error]
-  ;           (debug "Got error: " error)
-  ;           (om/update-state! this assoc :payment-error (.-message error)))))))
+  #?(:cljs
+     (place-order
+       [this]
+       (let [{:query/keys [current-route cart auth]} (om/props this)
+             {:checkout/keys [shipping payment]} (om/get-state this)
+             {:keys [card source]} payment
+             {:keys [route-params]} current-route
+             {:keys [store-id]} route-params]
+         (let [items (filter #(= (c/parse-long store-id) (get-in % [:store.item/_skus :store/_items :db/id])) (:cart/items cart))]
+           (msg/om-transact! this `[(user/checkout ~{:source   source
+                                                     :shipping shipping
+                                                     :items    (map :store.item.sku/uuid items)
+                                                     :store-id (c/parse-long store-id)})])))))
   #?(:cljs
      (save-payment
        [this]
@@ -308,7 +442,7 @@
     (let [{:proxy/keys [navbar]} (om/props this)
           {:checkout/keys [shipping payment]} (om/get-state this)
           progress (cond (nil? shipping) 1
-                         (nil? payment) 3
+                         (nil? payment) 2
                          :else 3)]
       (debug "Progress: " progress " " (str (/ progress 3) "%"))
       ;(debug "Items: " checkout-items)
@@ -324,6 +458,7 @@
             (dom/div #js {:className "progress"}
               (dom/div #js {:className "progress-meter"
                             :style     #js {:width (str (int (* 100 (/ progress 3))) "%")}}))
+            ;(shipping-element this )
             (condp = progress
               1 (shipping-element this)
               2 (payment-element this)

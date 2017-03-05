@@ -1,4 +1,7 @@
 #sulo-checkout {
+	$primary-color: map-get($foundation-palette, action);
+	$border-color: rgba($light-gray, 0.75);
+	$border: 1px solid $border-color;
 	@include sulo-action-buttons;
 	.page-container {
 		$color: map-get($foundation-palette, primary);
@@ -18,6 +21,32 @@
 	}
 	.progress-meter {
 		transition: width .25s ease-in-out;
+	}
+
+	.callout {
+		.items {
+			padding: 2rem 0;
+			border-top: $border;
+			border-bottom: $border;
+			margin-bottom: 0.5rem;
+		}
+		.receipt {
+			.row {
+				padding-bottom: 0.5rem;
+			}
+			a {
+				color: $primary-color;
+				font-weight: $global-weight-bold;
+			}
+			font-size: 0.9rem;
+			color: $dark-gray;
+			.total {
+				padding-top: 0.5rem;
+				border-top: $border;
+				font-size: 1rem;
+				color: $black;
+			}
+		}
 	}
 }
 

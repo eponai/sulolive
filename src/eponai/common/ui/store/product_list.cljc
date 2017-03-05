@@ -20,11 +20,11 @@
     (let [{:keys [query/inventory]} (om/props this)
           {:keys [route-params]} (om/get-computed this)]
       (debug "Render product list: " inventory)
-      #?(:cljs
-         (do
-           (debug "Convert id: " (:store.item/uuid (first inventory)))
-           (let [b (crypt/encodeString (:store.item/uuid (first inventory)) true)]
-             (debug "Converted uuid: " b))))
+      ;#?(:cljs
+      ;   (do
+      ;     (debug "Convert id: " (:store.item/uuid (first inventory)))
+      ;     (let [b (crypt/encodeString (:store.item/uuid (first inventory)) true)]
+      ;       (debug "Converted uuid: " b))))
       (dom/div nil
         (my-dom/div
           (->> (css/grid-row))
