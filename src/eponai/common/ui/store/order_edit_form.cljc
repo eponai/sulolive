@@ -23,65 +23,39 @@
 (defn get-route-params [component]
   (get (om/get-computed component) :route-params))
 
-(defn mark-as-paid [component]
-  (let [{:keys [modal/mark-as-paid?]} (om/get-state component)
-        {:keys [query/order]} (om/props component)
-        order-status (:order/status order)
-        message (msg/last-message component 'store/update-order)]
-    (dom/div nil
-      (when mark-as-paid?
-        (common/modal {:on-close #(om/update-state! component assoc :modal/mark-as-paid? false)}
-                      (dom/div nil
-                        (dom/h4 nil "Do you want to mark this order as paid?")
-                        (dom/div nil
+(def modal-order-status-keys
+  {:modal/mark-as-fulfilled? :order.status/fulfilled
+   :modal/mark-as-returned? :order.status/returned
+   :modal/mark-as-canceled? :order.status/canceled})
 
-                          (dom/a #js {:onClick   #(do
-                                                   (om/update-state! component assoc :modal/mark-as-paid? false)
-                                                   (.update-order component {:order/status :order.status/paid}))
-                                      :className "button"} "Yes, Shoot!")
-                          (dom/a #js {:className "button hollow"} "No, it's not paid")))))
-      (my-dom/div (css/add-class :order-action)
-                  (dom/div nil
-                    (dom/i #js {:className "fa fa-credit-card fa-fw fa-2x"})
-                    (cond (= order-status :order.status/paid)
-                          (dom/span nil "Payment Accepted")
+(def modal-message
+  {:modal/mark-as-fulfilled? "Do you want to fulfill items for this order?"
+   :modal/mark-as-returned? "Do you want to mark items as returned to customer?"
+   :modal/mark-as-canceled? "Do you want to cancel this order?"})
 
-                          (= order-status :order.status/created)
-                          (dom/span nil "Payment Pending"))))
-      (dom/div nil
-        ;(my-dom/a
-        ;  (cond->> (->> {:onClick #(om/update-state! component assoc :modal/mark-as-paid? true)}
-        ;               css/button)
-        ;           (msg/pending? message)
-        ;           (css/add-class :disabled))
-        ;  (if (msg/pending? message)
-        ;    (dom/i #js {:className "fa fa-spinner fa-spin fa-fw"})
-        ;    "Mark as Paid"))
-        ))))
+(defn order-status-modal [component]
+  (let [{:keys [modal]} (om/get-state component)
+        order-status (get modal-order-status-keys modal)
+        on-close #(om/update-state! component dissoc :modal)]
+    (when modal
+      (common/modal
+        {:on-close on-close}
+        (dom/div nil
+          (dom/h4 nil (get modal-message modal))
+          (dom/div nil
 
-;(defn order-mark-as-paid-modal [component]
-;  (common/modal {:on-close #(om/update-state! component assoc :modal/mark-as-paid false)}
-;                (dom/div nil
-;                  (dom/h4 nil "Do you want to mark this order as paid?")
-;                  (dom/div nil
-;
-;                    (dom/a #js {:className "button"} "Yes, Shoot!")
-;                    (dom/a #js {:className "button hollow"} "No, it's not paid")))))
-
-;(defn show-modal [component]
-;  (let [{:keys [order-menu-open? modal/mark-as-paid]} (om/get-state component)]
-;    (cond order-menu-open?
-;          (common/modal {:on-close #(om/update-state! component assoc :order-menu-open? false)}
-;                        (dom/div nil "Are you sure you want to cancel this order?")
-;                        (dom/a #js {:className "button"} "Yes, Cancel Order")
-;                        (dom/a #js {:className "button hollow"} "Nevermind"))
-;          mark-as-paid
-;          (order-mark-as-paid-modal component))))
+            (dom/a #js {:onClick   #(do
+                                     (on-close)
+                                     (.update-order component {:order/status order-status}))
+                        :className "button"} "Yes, Shoot!")
+            (dom/a #js {:className "button hollow"
+                        :onClick   on-close} "Oops, no thanks.")))))))
 
 (defn edit-order [component]
   (let [{:keys [query/order]} (om/props component)]
     (dom/div nil
-      ;(show-modal component)
+      (order-status-modal component)
+
       (my-dom/div
         (->> (css/grid-row)
              (css/align :bottom))
@@ -92,8 +66,10 @@
           (->> (css/grid-column)
                (css/add-class :shrink)
                (css/text-align :right))
-          (dom/a #js {:className "button hollow alert"
-                      :onClick   #(.cancel-order component)} "Cancel Order")))
+          (when (or (= (:order/status order) :order.status/created)
+                    (= (:order/status order) :order.status/paid))
+            (dom/a #js {:className "button hollow alert"
+                        :onClick   #(om/update-state! component assoc :modal :modal/mark-as-canceled?)} "Cancel Order"))))
       (my-dom/div (->> (css/grid-row)
                        (css/grid-column))
                   (my-dom/div {:className "callout transparent"}
@@ -154,13 +130,27 @@
                       (my-dom/div
                         (->> (css/grid-column)
                              (css/grid-column-size {:small 12 :large 6}))
-                        (my-dom/div (css/add-class :order-action)
-                                    (dom/div nil
-                                      (dom/i #js {:className "fa fa-truck fa-fw fa-2x"})
-                                      (dom/span nil "Fulfill Items"))
-                                    (my-dom/a (cond->> (css/button)
-                                                       (not= (:order/status order) :order.status/paid)
-                                                       (css/add-class :disabled)) "Fulfill Items")))))))))
+                        (let [order-status (:order/status order)]
+                          (my-dom/div (css/add-class :order-action)
+                                      (dom/div nil
+                                        (dom/i #js {:className "fa fa-truck fa-fw fa-2x"})
+                                        (cond (= order-status :order.status/fulfilled)
+                                              (dom/span nil "Items Fulfilled")
+                                              :else
+                                              (dom/span nil "Fulfill Items")))
+                                      (cond
+                                        (= order-status :order.status/fulfilled)
+                                        (my-dom/a
+                                          (->>
+                                            (css/button {:onClick #(om/update-state! component assoc :modal :modal/mark-as-returned?)})
+                                            (css/add-class :hollow))
+                                          "Return Items")
+                                        (= order-status :order.status/returned)
+                                        (dom/a nil "")
+                                        :else
+                                        (my-dom/a (cond->> (css/button {:onClick #(om/update-state! component assoc :modal :modal/mark-as-fulfilled?)})
+                                                           (not= (:order/status order) :order.status/paid)
+                                                           (css/add-class :disabled)) "Fulfill Items")))))))))))
 
 (defn create-order [component]
   (let [{:keys [products]} (om/get-computed component)]
@@ -202,19 +192,10 @@
        (let [{:keys [order-id store-id action]} (get-route-params this)
              order {:currency (utils/input-value-by-id (:input-currency form-elements))
                     :amount   (utils/input-value-by-id (:input-price form-elements))}]
-
-         (cond (some? order-id)
-               (msg/om-transact! this `[(store/update-order ~{:order    order
-                                                              :order-id order-id
-                                                              :store-id store-id})
-                                        :query/store])
-
-               (= action "create")
-               (msg/om-transact! this `[(store/create-order
-                                          ~{:order    order
-                                            :store-id store-id})
-                                        :query/orders])))))
-  (cancel-order [this])
+         (msg/om-transact! this `[(store/create-order
+                                    ~{:order    order
+                                      :store-id store-id})
+                                  :query/orders]))))
 
   (update-order [this params]
     (let [{:keys [order-id store-id]} (get-route-params this)]
@@ -243,7 +224,6 @@
         (if order
           (edit-order this)
           (create-order this))
-
 
         (my-dom/div
           (->> (css/grid-row)

@@ -23,7 +23,6 @@
                     (menu/item-link
                       {:href    (routes/url :product {:product-id (:db/id item)})
                        :classes [:cart-link]}
-                      ;(dom/div #js {})
                       (photo/square
                         {:src (:photo/path (first photos))})
                       (dom/div #js {:className ""}
@@ -111,9 +110,7 @@
             (->> {:dropdown (category-dropdown)}
                  (css/hide-for {:size :large})
                  (css/add-class :category))
-            (dom/span nil "Shop")
-            ;(dom/i #js {:className "fa fa-caret-down fa-fw"})
-            )
+            (dom/span nil "Shop"))
 
           (menu/item-link
             (->> (css/add-class :category {:href ""})
@@ -134,8 +131,7 @@
           (menu/item-link
             (->> (css/add-class :category {:href ""})
                  (css/show-for {:size :large}))
-            (dom/span nil "Art"))
-          ))
+            (dom/span nil "Art"))))
       (dom/div #js {:className "top-bar-right"}
         (if coming-soon?
           right-menu
@@ -156,12 +152,6 @@
                                                            (when (= 13 (.. e -keyCode))
                                                              (let [search-string (.. e -target -value)]
                                                                (set! js/window.location (str "/goods?search=" search-string))))))})))
-            ;(if (some? (not-empty auth))
-            ;  (menu/item-link nil (dom/a nil "You"))
-            ;  (menu/item nil (dom/a #js {:className "button hollow"
-            ;                             :onClick   #(do
-            ;                                          #?(:cljs
-            ;                                             (.open-signin this)))} "Sign in")))
             (menu/item-dropdown
               {:dropdown (user-dropdown component auth)}
               (dom/i #js {:className "fa fa-user fa-fw"}))
@@ -176,7 +166,7 @@
 
 (defn store-navbar [component]
   (let [{:keys [on-live-click]} (om/get-computed component)
-        {:query/keys [current-route]} (om/props component)
+        {:query/keys [current-route auth]} (om/props component)
         {:keys [route-params]} current-route
         {:keys [store-id]} route-params]
     (navbar-content
@@ -197,16 +187,7 @@
           (menu/item-link
             (->> (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
                  (css/show-for {:size :large}))
-            (dom/span nil "Stream"))
-          ;(menu/item-link
-          ;  (->> (css/add-class :category {:href ""})
-          ;       (css/show-for {:size :large}))
-          ;  (dom/span nil "Home"))
-          ;(menu/item-link
-          ;  (->> (css/add-class :category {:href ""})
-          ;       (css/show-for {:size :large}))
-          ;  (dom/span nil "Art"))
-          ))
+            (dom/span nil "Stream"))))
       (dom/div #js {:className "top-bar-right"}
 
         (menu/horizontal
@@ -225,16 +206,8 @@
                                                          (when (= 13 (.. e -keyCode))
                                                            (let [search-string (.. e -target -value)]
                                                              (set! js/window.location (str "/goods?search=" search-string))))))})))
-          ;(if (some? (not-empty auth))
-          ;  (menu/item-link nil (dom/a nil "You"))
-          ;  (menu/item nil (dom/a #js {:className "button hollow"
-          ;                             :onClick   #(do
-          ;                                          #?(:cljs
-          ;                                             (.open-signin this)))} "Sign in")))
           (menu/item-dropdown
-            {
-             ;:dropdown (user-dropdown component auth)
-             }
+            {:dropdown (user-dropdown component auth)}
             (dom/i #js {:className "fa fa-user fa-fw"}))
           (menu/item-dropdown
             {:href "/shopping-bag"}
@@ -287,7 +260,6 @@
           {:query/keys [cart auth current-route]} (om/props this)
           {:keys [route route-params]} current-route]
 
-      ;(debug "AUTH: " auth)
       (debug "Route: " route)
       (dom/header #js {:id "sulo-navbar"}
                   (dom/div #js {:className "navbar-container"}
