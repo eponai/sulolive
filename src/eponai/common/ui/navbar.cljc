@@ -292,7 +292,7 @@
       (dom/header #js {:id "sulo-navbar"}
                   (dom/div #js {:className "navbar-container"}
                     (dom/div #js {:className "top-bar navbar"}
-                      (cond (= (or (namespace route) (name route)) "store-dashboard")
+                      (cond (and route (= (or (namespace route) (name route)) "store-dashboard"))
                             (store-navbar this)
                             :else
                             (standard-navbar this))))))))
