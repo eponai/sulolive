@@ -29,6 +29,9 @@
         (my-dom/div
           (->> (css/grid-row))
           (my-dom/div
+            (css/grid-column)
+            (dom/h3 nil "Products"))
+          (my-dom/div
             (->> (css/grid-column)
                  (css/text-align :right))
             (dom/a #js {:className "button"

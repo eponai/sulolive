@@ -44,6 +44,7 @@
           show-chat? (:show-chat? st (some? stream))
           has-stream? (some? stream)]
       (debug "Store items: " items)
+      (debug "Store props: " (om/props this))
       (dom/div #js {:id "sulo-store" :className "sulo-page"}
         (common/page-container
           {:navbar navbar}

@@ -61,7 +61,7 @@
 (defn collection-element [{:keys [url title full?]}]
   ;; Use the whole thing as hover elem
   (my-dom/a
-    {:href    (str "/goods?category=" (.toLowerCase title))
+    {:href    (str "/products?category=" (.toLowerCase title))
      :classes [:full]}
     (photo/with-overlay
       nil
@@ -132,14 +132,14 @@
                                                            #?(:cljs
                                                               (when (= 13 (.. e -keyCode))
                                                                 (let [search-string (.. e -target -value)]
-                                                                  (set! js/window.location (str "/goods?search=" search-string))))))}))
+                                                                  (set! js/window.location (str "/products?search=" search-string))))))}))
                        (div (->> (css/grid-column)
                                  (css/grid-column-size {:small 4 :medium 3})
                                  (css/text-align :left))
                             (dom/a #js {:className "button expanded search drop-shadow"
                                         :onClick   (fn []
                                                      #?(:cljs
-                                                        (set! js/window.location (str "/goods?search=" input-search))))}
+                                                        (set! js/window.location (str "/products?search=" input-search))))}
                                    "Search"))
                        )
                   )))

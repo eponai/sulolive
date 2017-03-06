@@ -64,23 +64,6 @@
       (common/page-container
         {:navbar navbar
          :id     "sulo-store-dashboard"}
-        (my-dom/div
-          (->> (css/grid-row))
-          (my-dom/div
-            (->> (css/grid-column))
-            (menu/horizontal
-              (css/add-class :store-nav)
-              ;(menu-item "/products" "Products" (= dashboard-option "products"))
-              ;(menu-item "/orders" "Orders" (= dashboard-option "orders"))
-              (menu/item-tab {:active? (= route :store-dashboard/product-list)
-                              :href    (routes/url :store-dashboard/product-list {:store-id (:db/id store)})}
-                             "Products")
-              (menu/item-tab {:active? (= route :store-dashboard/order-list)
-                              :href    (routes/url :store-dashboard/order-list {:store-id (:db/id store)})}
-                             "Orders")
-              (menu/item-tab {:active? (= route :store-dashboard/stream)
-                              :href    (routes/url :store-dashboard/stream {:store-id (:db/id store)})}
-                             "Stream"))))
         (condp = route
           :store-dashboard/order-list (ol/->OrderList (om/computed order-list
                                                                    {:store store}))

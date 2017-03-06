@@ -387,7 +387,8 @@
                                                                      :store/name
                                                                      {:store/photo [:photo/path]}]}]}]}]}
      :query/current-route
-     {:query/auth [:user/email]}])
+     {:query/auth [:user/email]}
+     :query/messages])
   Object
   #?(:cljs
      (place-order

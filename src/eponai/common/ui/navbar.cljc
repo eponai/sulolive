@@ -23,7 +23,6 @@
                     (menu/item-link
                       {:href    (routes/url :product {:product-id (:db/id item)})
                        :classes [:cart-link]}
-                      ;(dom/div #js {})
                       (photo/square
                         {:src (:photo/path (first photos))})
                       (dom/div #js {:className ""}
@@ -79,6 +78,141 @@
                       (dom/a #js {:href "/logout"}
                              "Sign Out"))))))
 
+(defn navbar-content [& content]
+  (apply dom/div #js {:className "navbar top-bar"}
+         content))
+
+(defn standard-navbar [component]
+  (let [{:keys [cart-open? signin-open? did-mount?]} (om/get-state component)
+        {:keys [coming-soon? right-menu on-live-click]} (om/get-computed component)
+        {:query/keys [cart auth current-route]} (om/props component)]
+    (navbar-content
+      (dom/div #js {:className "top-bar-left"}
+        (menu/horizontal
+          nil
+          (menu/item-link {:href (if coming-soon? "/coming-soon" "/")
+                           :id   "navbar-brand"}
+                          (dom/span nil "Sulo"))
+          (menu/item-link
+            (->> (css/add-class ::css/highlight (cond-> {:onClick on-live-click}
+                                                        (not coming-soon?)
+                                                        (assoc :href "/streams")))
+                 (css/add-class :navbar-live))
+            (my-dom/strong
+              (css/hide-for {:size :small :only? true})
+              ;; Wrap in span for server and client to render the same html
+              (dom/span nil "Live"))
+            (my-dom/div
+              (css/show-for {:size :small :only? true})
+              (dom/i #js {:className "fa fa-video-camera fa-fw"})))
+
+          (menu/item-dropdown
+            (->> {:dropdown (category-dropdown)}
+                 (css/hide-for {:size :large})
+                 (css/add-class :category))
+            (dom/span nil "Shop"))
+
+          (menu/item-link
+            (->> (css/add-class :category {:href ""})
+                 (css/show-for {:size :large}))
+            (dom/span nil "Women"))
+          (menu/item-link
+            (->> (css/add-class :category {:href ""})
+                 (css/show-for {:size :large}))
+            (dom/span nil "Men"))
+          (menu/item-link
+            (->> (css/add-class :category {:href ""})
+                 (css/show-for {:size :large}))
+            (dom/span nil "Kids"))
+          (menu/item-link
+            (->> (css/add-class :category {:href ""})
+                 (css/show-for {:size :large}))
+            (dom/span nil "Home"))
+          (menu/item-link
+            (->> (css/add-class :category {:href ""})
+                 (css/show-for {:size :large}))
+            (dom/span nil "Art"))))
+      (dom/div #js {:className "top-bar-right"}
+        (if coming-soon?
+          right-menu
+
+          (menu/horizontal
+            nil
+            (menu/item nil
+                       (my-dom/a
+                         (->> {:id "search-icon"}
+                              (css/show-for {:size :small :only? true}))
+                         (dom/i #js {:className "fa fa-search fa-fw"}))
+                       (my-dom/div
+                         (css/hide-for {:size :small :only? true})
+                         (dom/input #js {:type        "text"
+                                         :placeholder "Search on SULO..."
+                                         :onKeyDown   (fn [e]
+                                                        #?(:cljs
+                                                           (when (= 13 (.. e -keyCode))
+                                                             (let [search-string (.. e -target -value)]
+                                                               (set! js/window.location (str "/goods?search=" search-string))))))})))
+            (menu/item-dropdown
+              {:dropdown (user-dropdown component auth)}
+              (dom/i #js {:className "fa fa-user fa-fw"}))
+            (if did-mount?
+              (menu/item-dropdown
+                {:dropdown (cart-dropdown cart)
+                 :href     "/shopping-bag"}
+                (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))
+              (menu/item-dropdown
+                {:href "/shopping-bag"}
+                (dom/i #js {:className "fa fa-shopping-cart fa-fw"})))))))))
+
+(defn store-navbar [component]
+  (let [{:keys [on-live-click]} (om/get-computed component)
+        {:query/keys [current-route auth]} (om/props component)
+        {:keys [route-params]} current-route
+        {:keys [store-id]} route-params]
+    (navbar-content
+      (dom/div #js {:className "top-bar-left"}
+        (menu/horizontal
+          nil
+          (menu/item-link {:href "/"
+                           :id   "navbar-brand"}
+                          (dom/span nil "Sulo"))
+          (menu/item-link
+            (->> (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
+                 (css/show-for {:size :large}))
+            (dom/span nil "Products"))
+          (menu/item-link
+            (->> (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
+                 (css/show-for {:size :large}))
+            (dom/span nil "Orders"))
+          (menu/item-link
+            (->> (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
+                 (css/show-for {:size :large}))
+            (dom/span nil "Stream"))))
+      (dom/div #js {:className "top-bar-right"}
+
+        (menu/horizontal
+          nil
+          (menu/item nil
+                     (my-dom/a
+                       (->> {:id "search-icon"}
+                            (css/show-for {:size :small :only? true}))
+                       (dom/i #js {:className "fa fa-search fa-fw"}))
+                     (my-dom/div
+                       (css/hide-for {:size :small :only? true})
+                       (dom/input #js {:type        "text"
+                                       :placeholder "Search on SULO..."
+                                       :onKeyDown   (fn [e]
+                                                      #?(:cljs
+                                                         (when (= 13 (.. e -keyCode))
+                                                           (let [search-string (.. e -target -value)]
+                                                             (set! js/window.location (str "/goods?search=" search-string))))))})))
+          (menu/item-dropdown
+            {:dropdown (user-dropdown component auth)}
+            (dom/i #js {:className "fa fa-user fa-fw"}))
+          (menu/item-dropdown
+            {:href "/shopping-bag"}
+            (dom/i #js {:className "fa fa-shopping-cart fa-fw"})))))))
+
 (defui Navbar
   static om/IQuery
   (query [_]
@@ -86,7 +220,8 @@
                                                      {:store.item/photos [:photo/path]}
                                                      :store.item/name
                                                      {:store/_items [:store/name]}]}]}]}
-     {:query/auth [:db/id :user/email {:store.owner/_user [{:store/_owners [:store/name :db/id]}]}]}])
+     {:query/auth [:db/id :user/email {:store.owner/_user [{:store/_owners [:store/name :db/id]}]}]}
+     :query/current-route])
   Object
   (open-signin [this]
     (debug "Open signin")
@@ -105,7 +240,7 @@
                (.socialOrMagiclink lock options))))
 
   (initLocalState [_]
-    {:cart-open? false
+    {:cart-open?   false
      :on-scroll-fn #(debug "Did scroll: " %)})
   (componentWillUnmount [this]
     #?(:cljs
@@ -121,100 +256,18 @@
                (om/update-state! this assoc :did-mount? true))))
 
   (render [this]
-    (let [{:keys [cart-open? signin-open? did-mount?]} (om/get-state this)
-          {:keys [query/cart query/auth]} (om/props this)
-          {:keys [coming-soon? right-menu on-live-click]} (om/get-computed this)]
+    (let [
+          {:query/keys [cart auth current-route]} (om/props this)
+          {:keys [route route-params]} current-route]
 
-      (debug "AUTH: " auth)
+      (debug "Route: " route)
       (dom/header #js {:id "sulo-navbar"}
-        (dom/div #js {:className "navbar-container"}
-                 (dom/div #js {:className "top-bar navbar"}
-                   (dom/div #js {:className "top-bar-left"}
-                     (menu/horizontal
-                       nil
-                       (menu/item-link {:href (if coming-soon? "/coming-soon" "/")
-                                        :id   "navbar-brand"}
-                                       (dom/span nil "Sulo"))
-                       (menu/item-link
-                         (->> (css/add-class ::css/highlight (cond-> {:onClick on-live-click}
-                                                                     (not coming-soon?)
-                                                                     (assoc :href "/streams")))
-                              (css/add-class :navbar-live))
-                         (my-dom/strong
-                           (css/hide-for {:size :small :only? true})
-                           ;; Wrap in span for server and client to render the same html
-                           (dom/span nil "Live"))
-                         (my-dom/div
-                           (css/show-for {:size :small :only? true})
-                           (dom/i #js {:className "fa fa-video-camera fa-fw"})))
-
-                       (menu/item-dropdown
-                         (->> {:dropdown (category-dropdown)}
-                              (css/hide-for {:size :large})
-                              (css/add-class :category))
-                         (dom/span nil "Shop")
-                         ;(dom/i #js {:className "fa fa-caret-down fa-fw"})
-                         )
-
-                       (menu/item-link
-                         (->> (css/add-class :category {:href ""})
-                              (css/show-for {:size :large}))
-                         (dom/span nil "Women"))
-                       (menu/item-link
-                         (->> (css/add-class :category {:href ""})
-                              (css/show-for {:size :large}))
-                         (dom/span nil "Men"))
-                       (menu/item-link
-                         (->> (css/add-class :category {:href ""})
-                              (css/show-for {:size :large}))
-                         (dom/span nil "Kids"))
-                       (menu/item-link
-                         (->> (css/add-class :category {:href ""})
-                              (css/show-for {:size :large}))
-                         (dom/span nil "Home"))
-                       (menu/item-link
-                         (->> (css/add-class :category {:href ""})
-                              (css/show-for {:size :large}))
-                         (dom/span nil "Art"))
-                       ))
-
-                   (dom/div #js {:className "top-bar-right"}
-                     (if coming-soon?
-                       right-menu
-
-                       (menu/horizontal
-                         nil
-                         (menu/item nil
-                                    (my-dom/a
-                                      (->> {:id "search-icon"}
-                                           (css/show-for {:size :small :only? true}))
-                                      (dom/i #js {:className "fa fa-search fa-fw"}))
-                                    (my-dom/div
-                                      (css/hide-for {:size :small :only? true})
-                                      (dom/input #js {:type        "text"
-                                                      :placeholder "Search on SULO..."
-                                                      :onKeyDown   (fn [e]
-                                                                     #?(:cljs
-                                                                        (when (= 13 (.. e -keyCode))
-                                                                          (let [search-string (.. e -target -value)]
-                                                                            (set! js/window.location (str "/goods?search=" search-string))))))})))
-                         ;(if (some? (not-empty auth))
-                         ;  (menu/item-link nil (dom/a nil "You"))
-                         ;  (menu/item nil (dom/a #js {:className "button hollow"
-                         ;                             :onClick   #(do
-                         ;                                          #?(:cljs
-                         ;                                             (.open-signin this)))} "Sign in")))
-                         (menu/item-dropdown
-                           {:dropdown (user-dropdown this auth)}
-                           (dom/i #js {:className "fa fa-user fa-fw"}))
-                         (if did-mount?
-                           (menu/item-dropdown
-                             {:dropdown (cart-dropdown cart)
-                              :href     "/shopping-bag"}
-                             (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))
-                           (menu/item-dropdown
-                             {:href     "/shopping-bag"}
-                             (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))))))))))))
+                  (dom/div #js {:className "navbar-container"}
+                    (dom/div #js {:className "top-bar navbar"}
+                      (cond (and route (= (or (namespace route) (name route)) "store-dashboard"))
+                            (store-navbar this)
+                            :else
+                            (standard-navbar this))))))))
 (def ->Navbar (om/factory Navbar))
 
 (defn navbar [props]

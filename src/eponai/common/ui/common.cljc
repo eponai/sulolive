@@ -13,9 +13,15 @@
 
 (defn order-status-element [status]
   (let [status-class (cond (= status :order.status/created)
-                           "warning"
+                           "secondary"
                            (= status :order.status/paid)
-                           "success")]
+                           "success"
+                           (= status :order.status/fulfilled)
+                           "green"
+                           (= status :order.status/returned)
+                           "green"
+                           (= status :order.status/canceled)
+                           "alert")]
     (dom/span #js {:className (str "label " status-class)} (name status))))
 
 (defn modal [opts & content]
@@ -122,17 +128,7 @@
              {:onClick on-click
               :href    goods-href}
              (photo/square
-               {:src (:photo/path (first photos))})
-             ;(my-dom/div
-             ;  (->> (css/text-align :center))
-             ;  (dom/p nil (dom/span nil (:store.item/name product)))
-             ;  (dom/strong nil (ui-utils/two-decimal-price (:store.item/price product)))
-             ;  (rating-element 4 11)
-             ;  (my-dom/div
-             ;    (->> (css/add-class :padded)
-             ;         (css/add-class :vertical)))
-             ;  )
-             )
+               {:src (:photo/path (first photos))}))
            (dom/div #js {:className "content-item-title-section text-center"}
              (dom/a #js {:onClick on-click
                          :href    goods-href}

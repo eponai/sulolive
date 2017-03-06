@@ -11,7 +11,8 @@
 (defui Streams
   static om/IQuery
   (query [_]
-    [{:query/streams [:stream/name {:stream/store [:store/name {:store/photo [:photo/path]}]}]}])
+    [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:query/streams [:stream/name {:stream/store [:store/name {:store/photo [:photo/path]}]}]}])
   Object
   (render [this]
     (let [{:keys [query/streams proxy/navbar]} (om/props this)]
