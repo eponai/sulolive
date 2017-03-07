@@ -63,10 +63,7 @@
           (merge-mutation-message history-id key (:om.next/error val) ::parser/error-message)
 
           (some? (get-in val [:result ::parser/mutation-message]))
-          (merge-mutation-message history-id key (:result val) ::parser/success-message)
-
-          (= key 'session/signout)
-          (merge-signout key val)))
+          (merge-mutation-message history-id key (:result val) ::parser/success-message)))
 
 (defn merge-read [merge-fn db key val]
   {:pre  [(or (nil? merge-fn) (methods merge-fn)) (db/db? db)]

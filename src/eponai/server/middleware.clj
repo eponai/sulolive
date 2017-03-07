@@ -103,8 +103,8 @@
 (defn wrap-gzip [handler]
   (gzip/wrap-gzip handler))
 
-(defn wrap-authenticate [handler conn in-prod?]
-  (auth/wrap-auth handler conn))
+(defn wrap-authenticate [handler conn auth0]
+  (auth/wrap-auth handler conn auth0))
 
 (defn config [in-prod? disable-anti-forgery]
   {:pre [(contains? env :session-cookie-store-key)

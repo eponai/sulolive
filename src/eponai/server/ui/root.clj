@@ -22,8 +22,7 @@
 
           (common/red5pro-script-tags release?)
           (common/auth0-lock-passwordless release?)
-          (dom/script {:src  (common/budget-js-path cljs-build-id)
-                       :type common/text-javascript})
+          (common/auth0-lock release?)
 
           (dom/script {:src (if release?
                               "https://cdn.jsdelivr.net/hls.js/latest/hls.min.js"
@@ -38,12 +37,8 @@
                          :data-lazy "true"}))
           ;(dom/script {:src "https://cdn.auth0.com/js/lock/10.6/lock.min.js"})
 
-          (when (= route :sell-soon)
-            [(dom/script {:src "https://cdn.auth0.com/js/lock/10.6/lock.min.js"})])
           (when  (= route :coming-soon)
-            [
-             (dom/script {:src "https://cdn.auth0.com/js/lock/10.6/lock.min.js"})
-             (dom/script {:src "https://code.jquery.com/jquery-1.11.0.min.js"})
+            [(dom/script {:src "https://code.jquery.com/jquery-1.11.0.min.js"})
              ;(common/inline-javascript ["window.jQuery || document.write('<scr' + 'ipt src=\"https://code.jquery.com/jquery-1.11.0.min.js\"><\\/sc' + 'ript>')"])
              (common/inline-javascript ["window.$kol_jquery = window.jQuery"])
              (when release?
@@ -54,6 +49,9 @@
           (dom/script {:src "https://js.stripe.com/v3/"
                        :type common/text-javascript})
           (dom/script {:src "https://maps.googleapis.com/maps/api/js?key=AIzaSyB8bKA0NO74KlYr5dpoJgM_k6CvtjV8rFQ&libraries=places"})
+
+          (dom/script {:src  (common/budget-js-path cljs-build-id)
+                       :type common/text-javascript})
 
           (dom/script {:src "/lib/jwplayer-7.9.1/jwplayer.js"})
           (common/inline-javascript ["env.web.main.runsulo()"]))))))

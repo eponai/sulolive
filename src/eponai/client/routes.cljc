@@ -43,18 +43,8 @@
                                       :always (into tx)
                                       queue? (into (om/transform-reads reconciler [root-route-key :query/current-route])))))))
 
-(defn url
-  "Takes a route and its route-params and returns an url"
-  ([route] (url route nil))
-  ([route route-params]
-   (try
-     (apply bidi/path-for routes/routes route (some->> route-params (reduce into [])))
-     (catch #?@(:cljs [:default e]
-                :clj  [Throwable e])
-            (error "Error when trying to create url from route: " route
-                   " route-params: " route-params
-                   " error: " e)
-       nil))))
+;; "Takes a route and its route-params and returns an url"
+(def url routes/path)
 
 (defn set-url!
   "Sets the URL which will propagate the route changes, reads and everything else.
@@ -67,7 +57,7 @@
     (do (debug "Will set url: " bidi-url " created with " [:route route :route-params route-params])
         ;; There's no URL to set in clj land, so do nothing.
         #?(:cljs
-           (if-let [history (:history (om/shared component))]
+           (if-let [history (:shared/history (om/shared component))]
              (pushy/set-token! history bidi-url)
              (warn "No history found in shared for component: " component
                    ". Make sure :history was passed to the reconciler."))))

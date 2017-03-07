@@ -1,6 +1,7 @@
 (ns eponai.client.run
   (:require
     [eponai.client.utils :as utils]
+    [eponai.client.auth :as auth]
     [eponai.common.parser :as parser]
     [eponai.client.parser.read]
     [eponai.client.parser.mutate]
@@ -15,6 +16,7 @@
     [cemerick.url :as url]
     [bidi.bidi :as bidi]
     [pushy.core :as pushy]
+    [eponai.client.local-storage :as local-storage]
     [eponai.client.routes :as routes]
     [eponai.common.routes :as common.routes]
     [eponai.common.ui.router :as router]))
@@ -46,7 +48,8 @@
 
 (defonce history-atom (atom nil))
 
-(defn run []
+(defn- run [{:keys [auth-lock]
+             :or   {auth-lock (auth/auth0-lock)}}]
   (let [init? (atom false)
         reconciler-atom (atom nil)
         _ (when-let [h @history-atom]
@@ -54,16 +57,18 @@
         match-route (partial bidi/match-route (common.routes/without-coming-soon-route common.routes/routes))
         update-route! (update-route-fn reconciler-atom)
         history (pushy/pushy update-route! (wrap-route-logging match-route))
+        _ (reset! history-atom history)
         current-route-fn #(:handler (match-route (pushy/get-token history)))
         conn (utils/create-conn)
+        local-storage (local-storage/->local-storage)
         parser (parser/client-parser
                  (parser/client-parser-state
                    {::parser/get-route-params #(let [route-params (or (:route-params (routes/current-route conn))
                                                                       (:route-params (current-route-fn)))
                                                      url (pushy/get-token history)
                                                      query-params (medley/map-keys keyword (:query (url/url url)))]
-                                                ;;TODO: These are merged for now. Separate them?
-                                                (merge route-params query-params))}))
+                                                 ;;TODO: These are merged for now. Separate them?
+                                                 (merge route-params query-params))}))
         remotes [:remote :remote/user :remote/chat]
         send-fn (backend/send! reconciler-atom
                                ;; TODO: Make each remote's basis-t isolated from another
@@ -71,15 +76,14 @@
                                {:remote      (-> (remotes/post-to-url "/api")
                                                  (remotes/read-basis-t-remote-middleware conn))
                                 :remote/user (-> (remotes/post-to-url "/api/user")
-                                                 (remotes/read-basis-t-remote-middleware conn)
-                                                 (remotes/wrap-auth))
+                                                 (remotes/read-basis-t-remote-middleware conn))
                                 :remote/chat (-> (remotes/post-to-url "/api/chat")
                                                  (remotes/read-basis-t-remote-middleware conn))}
                                {:did-merge-fn #(when-not @init?
-                                                (reset! init? true)
-                                                (debug "First merge happened. Adding reconciler to root.")
-                                                (binding [parser/*parser-allow-remote* false]
-                                                  (om/add-root! @reconciler-atom router/Router (gdom/getElement router/dom-app-id))))
+                                                 (reset! init? true)
+                                                 (debug "First merge happened. Adding reconciler to root.")
+                                                 (binding [parser/*parser-allow-remote* false]
+                                                   (om/add-root! @reconciler-atom router/Router (gdom/getElement router/dom-app-id))))
                                 :query-fn     (apply-once (fn [q]
                                                             {:pre [(sequential? q)]}
                                                             (into [:datascript/schema] q)))})
@@ -89,9 +93,10 @@
                                    :remotes   remotes
                                    :send      send-fn
                                    :merge     (merge/merge!)
-                                   :shared    {:history history}
+                                   :shared    {:shared/history       history
+                                               :shared/local-storage local-storage
+                                               :shared/auth-lock     auth-lock}
                                    :migrate   nil})]
-    (reset! history-atom history)
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
       (pushy/start! history)
@@ -101,3 +106,12 @@
         (when (contains? #{:coming-soon :sell-soon} (:handler match))
           (update-route! match))))
     (utils/init-state! reconciler remotes send-fn parser router/Router)))
+
+(defn run-prod []
+  (run {}))
+
+(defn run-dev []
+  (run {:auth-lock (auth/fake-lock)}))
+
+(defn on-reload! []
+  (run-dev))

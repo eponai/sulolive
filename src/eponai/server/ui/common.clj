@@ -145,3 +145,7 @@
 (defn auth0-lock-passwordless [release?]
   (dom/script {:src (if release? "https://cdn.auth0.com/js/lock-passwordless-2.2.min.js"
                                  "/bower_components/auth0-lock-passwordless/build/lock-passwordless.min.js")}))
+
+(defn auth0-lock [release?]
+  (dom/script {:src (if release? "https://cdn.auth0.com/js/lock/10.6/lock.min.js"
+                                 "/bower_components/auth0-lock/build/lock.js")}))

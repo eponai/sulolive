@@ -7,4 +7,4 @@
 
 (defn ^:export runsulo []
       (enable-console-print!)
-      (run/run))
+      (run/run-prod))

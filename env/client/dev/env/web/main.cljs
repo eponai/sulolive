@@ -7,4 +7,4 @@
 
 (defn ^:export runsulo []
       (utils/install-app)
-      (run/run))
+      (run/run-dev))
