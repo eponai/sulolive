@@ -1,4 +1,4 @@
-(ns eponai.common.ui.user.orders
+(ns eponai.common.ui.user.order-list
   (:require
     [eponai.common.ui.dom :as my-dom]
     [om.dom :as dom]
@@ -6,7 +6,7 @@
     [eponai.common.ui.elements.css :as css]))
 
 
-(defui Orders
+(defui OrderList
   static om/IQuery
   (query [_]
     [:query/orders])
@@ -17,4 +17,4 @@
            css/grid-column)
       (dom/div nil "These are user orders"))))
 
-(def ->Orders (om/factory Orders))
+(def ->OrderList (om/factory OrderList))

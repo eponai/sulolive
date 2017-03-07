@@ -57,6 +57,7 @@
 @include sulo-flex-video;
 @include sulo-forms;
 @import "store/store";
+@import "user/user";
 
 @import "base";
 @import "navbar";
@@ -70,7 +71,6 @@
 @import "video";
 @import "goods";
 @import "stream";
-@import "profile";
 @import "spinner";
 @import "quill";
 

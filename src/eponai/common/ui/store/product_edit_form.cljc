@@ -83,7 +83,7 @@
                                       'store/create-product
                                       'store/delete-product])]
       (msg/clear-one-message! this action-finished)
-      ;(routes/set-url! this :store-dashboard/product-list {:store-id (:store-id (get-route-params this))})
+      (routes/set-url! this :store-dashboard/product-list {:store-id (:store-id (get-route-params this))})
       ))
   (delete-product [this]
     (let [{:keys [product-id]} (get-route-params this)]

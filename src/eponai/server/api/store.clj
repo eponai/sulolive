@@ -121,6 +121,7 @@
     (debug "Created order: " order)
     (when source
       (stripe/pay-order (:system/stripe system) secret (:order/id order) source))
+    order
     ))
 
 (defn update-order [{:keys [state system]} store-id order-id params]
