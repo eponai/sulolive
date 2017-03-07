@@ -47,12 +47,10 @@
       match)))
 
 (defonce history-atom (atom nil))
-(defonce reconciler-atom (atom nil))
-(defonce init? (atom false))
 
 (defn- run [{:keys [auth-lock]
              :or   {auth-lock (auth/auth0-lock)}}]
-  (let [
+  (let [init? (atom false)
         reconciler-atom (atom nil)
         _ (when-let [h @history-atom]
             (pushy/stop! h))
@@ -116,10 +114,4 @@
   (run {:auth-lock (auth/fake-lock)}))
 
 (defn on-reload! []
-  (run-dev)
-  (comment
-    "We want to try to use this instead of re-building/initing everything."
-    "But for now we'll just (run-dev)."
-    (if-not @init?
-
-     (om/add-root! @reconciler-atom router/Router (gdom/getElement router/dom-app-id)))))
+  (run-dev))

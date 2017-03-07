@@ -40,7 +40,7 @@
                               (str))]
              (debug "Replacing the current url with auth-url: " auth-url)
              (js/window.location.replace auth-url))
-           (js/alert (str "Must enter an email to log in. Got email: " email)))))))
+           (debug "Cancelled log in."))))))
 
 
 (defn is-expired-token? [token]
