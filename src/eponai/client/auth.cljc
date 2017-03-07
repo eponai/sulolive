@@ -5,7 +5,6 @@
     [eponai.common.database :as db]
     #?(:cljs
        [goog.crypt :as crypt])
-    #?(:cljs [cljs-http.client :as http])
     [eponai.common.format.date :as date]
     [cemerick.url :as url]))
 
