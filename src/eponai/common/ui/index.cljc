@@ -238,25 +238,9 @@
 (defui ComingSoonContent
   Object
   (show-login [this]
-    (let [{:keys [lock]} (om/get-state this)]
-      #?(:cljs
-         (.show lock (clj->js {:allowedConnections ["Username-Password-Authentication"]
-                               :auth               {:params {:state js/window.location.origin
-                                                             :scope "openid email"}}})))))
+    (auth/show-lock (:shared/auth-lock (om/shared this))))
   (do-login [this auth-res]
     (debug "Auth-result: " auth-res))
-  (componentDidMount [this]
-    #?(:cljs
-       (when js/Auth0Lock
-         (let [lock (new js/Auth0Lock
-                         "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh"
-                         "sulo.auth0.com"
-                         (clj->js {:auth               {:redirectUrl (str js/window.location.origin "/auth")}
-                                   :languageDictionary {:title "SULO"}
-                                   :theme              {:primaryColor        "#39AC97"
-                                                        :logo                "/assets/img/auth0-icon.png"
-                                                        :labeledSubmitButton false}}))]
-           (om/update-state! this assoc :lock lock)))))
   (initLocalState [this]
     {:on-login-fn #(.show-login this)})
   (render [this]
@@ -308,7 +292,7 @@
            (om/update-state! this assoc :live-timer-started? true)))))
   (render [this]
     (let [{:keys [proxy/navbar]} (om/props this)
-          {:keys [lock on-login-fn live-open? client-msg]} (om/get-state this)]
+          {:keys [on-login-fn live-open? client-msg]} (om/get-state this)]
       (dom/div #js {:id "sulo-coming-soon" :className "sulo-page"}
         (common/page-container
           {:navbar (om/computed navbar {:coming-soon?  true
@@ -399,7 +383,7 @@
            (.setTimeout js/window (fn [] (om/update-state! this assoc :live-open? false)) 5000)))))
   (render [this]
     (let [{:keys [proxy/navbar]} (om/props this)
-          {:keys [lock on-login-fn live-open? client-msg]} (om/get-state this)
+          {:keys [on-login-fn live-open? client-msg]} (om/get-state this)
           message (msg/last-message this 'beta/vendor)]
       (dom/div #js {:id "sulo-sell-coming-soon" :className "sulo-page"}
         (common/page-container

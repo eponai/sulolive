@@ -9,6 +9,6 @@
   (let [url js/location.pathname]
     (if-let [matched (bidi/match-route routes/routes url)]
       (do (debug "Matched url to route: " matched " running the app.")
-          (run/run))
+          (run/on-reload!))
       (debug "Figwheel did not match the url: " url
              " to any route. Will not run anything."))))

@@ -43,9 +43,7 @@
                          (if @in-production?
                            (server-address/prod-server-address aws-elb serv-addr)
                            serv-addr))]
-    {:system/auth0     (if (or @in-production?
-                               ;; TODO: Implement auth0-stub then remove this "(or .. true)"
-                               true)
+    {:system/auth0     (if @in-production?
                          (auth0/auth0 (env :auth0-client-id)
                                       (env :auth0-client-secret)
                                       server-address)

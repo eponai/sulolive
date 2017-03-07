@@ -3,7 +3,7 @@
     [clj-http.client :as http]
     [clojure.data.json :as json]
     [buddy.core.codecs.base64 :as b64]
-    [buddy.sign.jws :as jws]
+    [buddy.sign.jwt :as jwt]
     [eponai.common.database :as db]
     [eponai.server.external.host :as server-address]
     [eponai.common.routes :as routes]
@@ -47,24 +47,25 @@
   "Gets authenticated as the email passed as code parameter"
   [conn]
   (reify IAuth0
-    (secret [this] (.getBytes "sulo-dev-secret"))
+    (secret [this]
+      (.getBytes "sulo-dev-secret"))
     (authenticate [this code state]
       ;; Fill this in with something we can use to auth with.
       ;; Example token:
       ;; {:access_token "MszrmhW0sXqYs0LW", :expires_in 86400, :id_token "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImRldkBzdWxvLmxpdmUiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6Ly9zdWxvLmF1dGgwLmNvbS8iLCJzdWIiOiJhdXRoMHw1ODgzZGFmYmRlMzVmNTBlOWMxNzlhNDMiLCJhdWQiOiJKTXFDQm5nSGdPY1NZQndsVkNHMmh0ckt4UUZsZHpEaCIsImV4cCI6MTQ4ODc4NjE4MywiaWF0IjoxNDg4NzUwMTgzfQ.MON-uQh4DqDkZQ0CvF_UlufELZ9Li-f3RNXYAYsqvn0", :token_type "Bearer"}
       ;; ->
       ;; {:email "dev@sulo.live", :email_verified true, :iss "https://sulo.auth0.com/", :sub "auth0|5883dafbde35f50e9c179a43", :aud "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh", :exp 1488786183, :iat 1488750183}
-      (if-let [email (:user/email (db/lookup-entity (db/db conn) [:user/email code]))
-               now (/ (System/currentTimeMillis) 1000)
-               tomorrow (+ now (* 24 3600))
-               auth-data {:email          email
-                          :email_verified true
-                          :iss            "localhost"
-                          :iat            now
-                          :exp            tomorrow}
-               jwt-secret (secret this)]
-        (do (debug "Authing self-signed jwt token on localhost with auth-data: " auth-data)
-            {:token        (jws/sign auth-data jwt-secret)
-             :token-type   "Bearer"
-             :redirect-url state})
+      (if-let [email (:user/email (db/lookup-entity (db/db conn) [:user/email code]))]
+        (let [now (long (/ (System/currentTimeMillis) 1000))
+              tomorrow (+ now (* 24 3600))
+              auth-data {:email          email
+                         :email_verified true
+                         :iss            "localhost"
+                         :iat            now
+                         :exp            tomorrow}
+              jwt-secret (secret this)]
+          (debug "Authing self-signed jwt token on localhost with auth-data: " auth-data)
+          {:token        (jwt/sign auth-data jwt-secret)
+           :token-type   "Bearer"
+           :redirect-url state})
         {:redirect-url state}))))
