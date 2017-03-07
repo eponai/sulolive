@@ -15,13 +15,11 @@
   (render [this]
     (let [{:query/keys [current-route order]} (om/props this)
           {:keys [route route-params]} current-route]
-      (debug "order: " order)
       (dom/div #js {:id "sulo-order-receipt"}
         (my-dom/div
           (->> (css/grid-row)
                css/grid-column)
           (dom/h3 nil "Order " (dom/small nil (:order-id route-params)))
-          (dom/div #js {:className "callout"}
-            ))))))
+          (dom/div #js {:className "callout"}))))))
 
 (def ->Order (om/factory Order))

@@ -171,4 +171,6 @@
    :error   "Could not create order"}
   {:action (fn []
              (debug "Checkout items: " (into [] items))
-             (store/create-order env store-id p))})
+             (let [order (store/create-order env store-id p)]
+               (debug "New order: " order)
+               order))})

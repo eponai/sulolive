@@ -95,7 +95,7 @@
 
   ;; Orders
   (get-order [this account-secret order-id])
-  (list-orders [this account-secret])
+  (list-orders [this account-secret params])
   (create-order [this account-secret params])
   (pay-order [this account-secret order-id source])
   (update-order [this account-secret order-id params]))
@@ -191,9 +191,10 @@
     (let [order (Order/retrieve order-id)]
       (f/stripe->order order)))
 
-  (list-orders [_ account-secret]
+  (list-orders [_ account-secret {:keys [ids]}]
     (set-api-key account-secret)
-    (let [orders (Order/list nil)]
+    (let [params (when (not-empty ids) {"ids" ids})
+          orders (Order/list params)]
       (map f/stripe->order (.getData orders))))
 
   (create-order [_ account-secret order]
@@ -243,7 +244,7 @@
       (debug "DEV - Fake Stripe: create-customer with params: " params))
     IStripeAccount
     (get-order [_ _ _])
-    (list-orders [_ _])))
+    (list-orders [_ _ _])))
 
 
 ;; ########### Stripe objects ################

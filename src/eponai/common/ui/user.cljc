@@ -17,10 +17,11 @@
      {:query/auth [:db/id]}
      {:proxy/profile (om/get-query profile/Profile)}
      {:proxy/order (om/get-query o/Order)}
+     {:proxy/order-list (om/get-query uo/OrderList)}
      :query/current-route])
   Object
   (render [this]
-    (let [{:proxy/keys [order navbar profile]
+    (let [{:proxy/keys [order navbar profile order-list]
            :query/keys [user auth current-route]} (om/props this)
           {:keys [route]} current-route]
       (dom/div
@@ -28,7 +29,7 @@
         (common/page-container
           {:navbar navbar}
           (condp = route
-            :user/order-list (uo/->OrderList)
+            :user/order-list (uo/->OrderList order-list)
             :user/order (o/->Order order)
             :user (profile/->Profile (om/computed profile
                                                   {:user             user

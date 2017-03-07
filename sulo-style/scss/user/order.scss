@@ -6,3 +6,19 @@
 		}
 	}
 }
+
+#sulo-user-order-list {
+	$border: 1px solid $light-gray;
+	.order-item-sku {
+		// padding: 1rem 0;
+		// border-top: $border;
+		// border-bottom: $border;
+	}
+	td {
+		padding: 0.5rem;
+	}
+	tfoot {
+		background: $white;
+		font-size: 0.9rem;
+	}
+}
