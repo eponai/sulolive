@@ -116,6 +116,10 @@
   (run {:auth-lock (auth/fake-lock)}))
 
 (defn on-reload! []
-  (if-not @init?
-    (run-dev)
-    (om/add-root! @reconciler-atom router/Router (gdom/getElement router/dom-app-id))))
+  (run-dev)
+  (comment
+    "We want to try to use this instead of re-building/initing everything."
+    "But for now we'll just (run-dev)."
+    (if-not @init?
+
+     (om/add-root! @reconciler-atom router/Router (gdom/getElement router/dom-app-id)))))
