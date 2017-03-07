@@ -5,6 +5,7 @@
     #?(:cljs
        [eponai.common.ui.checkout.google-places :as places])
     [eponai.common.ui.dom :as my-dom]
+    [eponai.client.routes :as routes]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.utils :as utils]
@@ -296,7 +297,7 @@
             (dom/input #js {:id           (:address/street1 shipping-elements)
                             :type         "text"
                             :name         "ship-address"
-                            :autocomplete "shipping address-line2"
+                            :autocomplete "shipping address-line1"
                             :required     true}))
           (my-dom/div
             (->> (css/grid-column)
@@ -373,6 +374,9 @@
                               :onClick #(.save-payment component)}
                          "Next")))))
 
+(defn get-route-params [component]
+  (get-in (om/props component) [:query/current-route :route-params]))
+
 (defui Checkout
   static om/IQuery
   (query [_]
@@ -387,7 +391,8 @@
                                                                      :store/name
                                                                      {:store/photo [:photo/path]}]}]}]}]}
      :query/current-route
-     {:query/auth [:user/email]}
+     {:query/auth [:db/id
+                   :user/email]}
      :query/messages])
   Object
   #?(:cljs
@@ -399,6 +404,7 @@
              {:keys [route-params]} current-route
              {:keys [store-id]} route-params]
          (let [items (filter #(= (c/parse-long store-id) (get-in % [:store.item/_skus :store/_items :db/id])) (:cart/items cart))]
+           (debug "Order items: " items)
            (msg/om-transact! this `[(user/checkout ~{:source   source
                                                      :shipping shipping
                                                      :items    (map :store.item.sku/uuid items)
@@ -439,16 +445,32 @@
   (initLocalState [_]
     {:checkout/shipping nil
      :checkout/payment nil})
+
+  (componentDidUpdate [this _ _]
+    (when-let [response (msg/last-message this 'user/checkout)]
+      (debug "Response: " response)
+      (if (msg/final? response)
+        (let [message (msg/message response)
+              {:query/keys [auth]} (om/props this)]
+          (debug "message: " message)
+          (msg/clear-messages! this 'user/checkout)
+          (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)})))))
+
   (render [this]
-    (let [{:proxy/keys [navbar]} (om/props this)
+    (let [{:proxy/keys [navbar]
+           :query/keys [cart current-route]} (om/props this)
           {:checkout/keys [shipping payment]} (om/get-state this)
           progress (cond (nil? shipping) 1
                          (nil? payment) 2
-                         :else 3)]
-      (debug "Progress: " progress " " (str (/ progress 3) "%"))
-      ;(debug "Items: " checkout-items)
+                         :else 3)
+          checkout-resp (msg/last-message this 'user/checkout)]
+      (debug "Checkout cart: " cart)
+      (debug "Items: " (filter #(= (c/parse-long (get-in current-route [:route-params :store-id])) (get-in % [:store.item/_skus :store/_items :db/id])) (:cart/items cart)))
+      (debug "UUIDs: " (map :store.item.sku/uuid (filter #(= (c/parse-long (get-in current-route [:route-params :store-id])) (get-in % [:store.item/_skus :store/_items :db/id])) (:cart/items cart))))
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
+        (when (msg/pending? checkout-resp)
+          (common/loading-spinner nil))
         (my-dom/div
           (->> (css/grid-row)
                (css/align :center)

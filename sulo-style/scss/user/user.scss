@@ -1,0 +1,15 @@
+
+#sulo-user {
+	.page-container {
+		$color: map-get($foundation-palette, primary);
+		background: rgba($color, 0.03);
+	}
+
+	tfoot {
+		background: $white;
+		font-size: 0.9rem;
+	}
+}
+
+@import "profile";
+@import "order";

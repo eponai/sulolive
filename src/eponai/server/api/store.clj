@@ -102,7 +102,7 @@
 
 (defn list-orders [{:keys [db system]} store-id]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)]
-    (stripe/list-orders (:system/stripe system) secret)))
+    (stripe/list-orders (:system/stripe system) secret nil)))
 
 (defn create-order [{:keys [state system auth]} store-id {:keys [items source shipping]}]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
@@ -116,11 +116,15 @@
                                            :city        locality
                                            :country     country
                                            :postal_code postal}}}
-        order (stripe/create-order (:system/stripe system) secret order-params)
-        ]
+        order (stripe/create-order (:system/stripe system) secret order-params)]
     (debug "Created order: " order)
+    (db/transact-one state {:db/id       (db/tempid :db.part/user)
+                            :order/id    (:order/id order)
+                            :order/store store-id
+                            :order/user  [:user/email (:email auth)]})
     (when source
       (stripe/pay-order (:system/stripe system) secret (:order/id order) source))
+    (db/pull (db/db state) [:db/id] [:order/id (:order/id order)])
     ))
 
 (defn update-order [{:keys [state system]} store-id order-id params]

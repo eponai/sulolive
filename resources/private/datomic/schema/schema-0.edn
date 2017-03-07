@@ -338,4 +338,26 @@
   :db/doc                "Ref to the user who wrote the chat message"
   :db.install/_attribute :db.part/db}
 
+ ;; Orders
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :order/id
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "Order ID received from Stripe."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :order/store
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Ref to the store this order is for."
+
+  :db.install/_attribute :db.part/db}
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :order/user
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Ref to the user who created the order."
+  :db.install/_attribute :db.part/db}
  ]

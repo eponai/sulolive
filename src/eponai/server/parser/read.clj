@@ -11,7 +11,8 @@
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.wowza :as wowza]
     [eponai.server.external.chat :as chat]
-    [eponai.server.api.store :as store]))
+    [eponai.server.api.store :as store]
+    [eponai.server.api.user :as user]))
 
 (defmethod server-read :datascript/schema
   [{:keys [db db-history]} _ _]
@@ -33,8 +34,13 @@
                                           :symbols {'?e store-id}})})
 
 (defmethod server-read :query/orders
-  [env _ {:keys [store-id]}]
-  {:value (store/list-orders env store-id)})
+  [env _ {:keys [store-id user-id]}]
+  {:value (cond (some? store-id)
+                (store/list-orders env store-id)
+                (some? user-id)
+                (let [os (user/list-orders env user-id)]
+                  (debug "Got user orders: " os)
+                  os))})
 
 (defmethod server-read :query/inventory
   [env _ {:keys [store-id]}]
@@ -43,8 +49,11 @@
             items)})
 
 (defmethod server-read :query/order
-  [env _ {:keys [order-id store-id]}]
-  {:value (store/get-order env store-id order-id)})
+  [env _ {:keys [order-id store-id user-id]}]
+  {:value (cond (some? store-id)
+                (store/get-order env store-id order-id)
+                (some? user-id)
+                (user/get-order env user-id order-id))})
 
 (defmethod server-read :query/my-store
   [{:keys [db db-history query auth]} _ _]

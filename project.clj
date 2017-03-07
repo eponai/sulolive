@@ -19,7 +19,7 @@
                   :exclusions [joda-time org.clojure/test.check]]
                  [amazonica "0.3.85"]
                  [com.draines/postal "2.0.1"]
-                 [com.stripe/stripe-java "3.9.0"]
+                 [com.stripe/stripe-java "3.11.0"]
                  [com.taoensso/timbre "4.7.4"]
                  [environ "1.0.1"]
                  [hiccup "1.0.5"]

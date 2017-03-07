@@ -185,7 +185,8 @@
   static om/IQuery
   (query [_]
     [:query/messages
-     :query/order])
+     {:query/order [:order/items
+                    {:order/store [:store/name {:store/photo [:photo/path]}]}]}])
   Object
   (create-order [this]
     #?(:cljs
