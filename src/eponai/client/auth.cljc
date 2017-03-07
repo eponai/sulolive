@@ -1,9 +1,7 @@
 (ns eponai.client.auth
   (:require
-    [datascript.core :as d]
     [taoensso.timbre :refer [debug]]
     [eponai.common.database :as db]
-    [eponai.client.local-storage :as local-storage]
     #?(:cljs
        [goog.crypt :as crypt])
     [eponai.common.format.date :as date]))
@@ -26,26 +24,5 @@
   ;      decoded)))
   )
 
-(defn props->user [props]
-  (let [{:keys [query/auth]} props]
-    (get auth :ui.singleton.auth/user)))
-
-(defn is-logged-in? []
-  ;#?(:cljs
-  ;   (let [user (logged-in-user)]
-  ;     (boolean user)))
-  )
-
 (defn has-active-user? [db]
-  (throw (ex-info (str "TODO: Either extract as an option to where it's"
-                       " being used, or implement this when we need it.")
-                  {:todo :implement-function})))
-
-(defn set-logged-in-token [local-storage token]
-  (local-storage/set-item! local-storage "idToken" token))
-
-(defn remove-auth-token [local-storage]
-  (local-storage/remove-item! local-storage "idToken"))
-
-(defn get-auth-token [local-storage]
-  (local-storage/get-item local-storage "idToken"))
+  (some? (current-auth db)))
