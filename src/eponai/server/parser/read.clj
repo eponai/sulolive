@@ -49,8 +49,11 @@
             items)})
 
 (defmethod server-read :query/order
-  [env _ {:keys [order-id store-id]}]
-  {:value (store/get-order env store-id order-id)})
+  [env _ {:keys [order-id store-id user-id]}]
+  {:value (cond (some? store-id)
+                (store/get-order env store-id order-id)
+                (some? user-id)
+                (user/get-order env user-id order-id))})
 
 (defmethod server-read :query/my-store
   [{:keys [db db-history query auth]} _ _]
