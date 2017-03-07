@@ -49,7 +49,7 @@
                          (auth0/auth0 (env :auth0-client-id)
                                       (env :auth0-client-secret)
                                       server-address)
-                         (auth0/auth0-stub))
+                         (auth0/auth0-stub conn))
      :system/chat      (chat/->DatomicChat conn)
      :system/wowza     (let [p {:secret         (env :wowza-jwt-secret)
                                 :subscriber-url (env :wowza-subscriber-url)
