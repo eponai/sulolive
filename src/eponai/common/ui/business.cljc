@@ -122,6 +122,10 @@
                   :conversion-rate/product-sales
                   :price/avg-product
                   :price/business-subscription
+                  :price/transaction-fees-rate
+                  :price/transaction-fees-sum
+                  :price/sales-tax
+                  :price/avg-shipping-cost
                   :product/commission-rate
                   :fixed/visitors
                   :fixed/businesses
@@ -140,7 +144,7 @@
   Object
   (initLocalState [this]
     {:model {:fixed/visitors   "2000"
-             :fixed/businesses "200"
+             :fixed/businesses "20"
              :fixed/days       (str b/days-per-month)}})
   (componentDidMount [this]
     (let [charts-by-graph-key

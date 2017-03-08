@@ -28,8 +28,8 @@
    :conversion-rate/viewer-subscribing     0
    :conversion-rate/viewer-watching-stream 0.5
    :product/commission-rate                0.10
-   :product/stripe-rate                    0.029
-   :product/stripe-fee                     0.30
+   :product/stripe-fees-rate               0.029
+   :product/stripe-fees-sum                0.30
    :price/ad-viewed                        0
    :price/business-subscription            (per-month->per-day (cad->usd 99))
    :price/avg-viewer-subscription          (per-month->per-day 5)
@@ -40,6 +40,10 @@
                                             ;; Streamroot CDN+p2p solution is $0.01/GB
                                             :cdn-streamroot 0.01
                                             :p2p-streamroot 0.005}
+   :price/avg-shipping-cost                10
+   :price/sales-tax                        0.10
+   :price/transaction-fees-rate            0.03
+   :price/transaction-fees-sum             0.30
 
    ;; ec2-server per month (m3.xlarge?)
    ;; TODO: Get real prices
@@ -98,19 +102,32 @@
 (defn viewier-subscription-income [world]
   (multiply world [:visitors :conversion-rate/viewer-subscribing]))
 
-(defn- our-comission-rate [world]
-  (- (:product/commission-rate world)
-     (:product/stripe-rate world)))
-
 
 (defn product-sales-income [world]
-  (let [products-sold (multiply world [:visitors
-                                       :conversion-rate/product-sales])]
-    (- (* products-sold
-          (:price/avg-product world)
-          (our-comission-rate world))
-       (* products-sold
-          (:product/stripe-fee world)))))
+  (let [products-sold (multiply world [:visitors :conversion-rate/product-sales])
+        ;; How much total product we've sold for
+        product-price (* products-sold (:price/avg-product world))
+        ;; Product + sales tax + shipping
+        total-price (+ product-price
+                       (* product-price
+                          (:price/sales-tax world))
+                       (* products-sold
+                          (:price/avg-shipping-cost world)))
+        ;; Our income: commission pre tax and shipping +
+        ;;             transaction rate on amount transfered to stripe +
+        ;;             transaction fee for each product sold.
+        income (+ (* product-price
+                     (:product/commission-rate world))
+                  (* total-price
+                     (:price/transaction-fees-rate world))
+                  (* products-sold
+                     (:price/transaction-fees-sum world)))
+        ;; Our expense: Stripe transaction fees
+        expense (+ (* total-price
+                      (:product/stripe-fees-rate world))
+                   (* products-sold
+                      (:product/stripe-fees-sum world)))]
+    (- income expense)))
 
 (defn stream-ads-income [world]
   (multiply world [:visitors
