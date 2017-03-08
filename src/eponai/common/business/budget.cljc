@@ -242,35 +242,17 @@
                                  :income/product-sales         product-sales-income
                                  :income/stream-ads            stream-ads-income})
                     world)
-          expense-map {:expense/stream-bandwidth streamroot-bandwidth-cost
+          expense-map {:expense/stream-bandwidth greta-bandwidth-cost
                        :expense/ec2-server-time  ec2-server-time-cost
                        :expense/red5-license     red5-server-license-cost}
-          expenses ((compute-sum expense-map) world)
-          expenses-with-greta ((compute-sum (assoc expense-map :expense/stream-bandwidth greta-bandwidth-cost))
-                                world)]
-      {:incomes             incomes
-       :expenses            expenses
-       :expenses-with-greta expenses-with-greta
-       :profit              (- (:total incomes)
-                               (:total expenses))
-       :profit-with-greta   (- (:total incomes)
-                               (:total expenses-with-greta))})))
+          expenses ((compute-sum expense-map) world)]
+      {:incomes  incomes
+       :expenses expenses
+       :profit   (- (:total incomes)
+                    (:total expenses))})))
 
 (defn revenue-in [businesses visitors]
   (-> world
       (add-businesses businesses)
       (add-visitors visitors)
       (revenue)))
-
-(defn always-pos-greta
-  "finds worlds where greta is always cheaper than streamroot, based on p2p-efficiency."
-  [world]
-  (let [p2p-efficiencies (take-while #(< % 1) (iterate (fn [x] (+ x 0.01)) 0.80))
-        non-positive (for [p2p p2p-efficiencies
-                           visitors (range 4267 8623 100)
-                           :let [world (assoc world :visitors visitors
-                                                    :stream/p2p-efficiency p2p)
-                                 diff (- (streamroot-bandwidth-cost world)
-                                         (greta-bandwidth-cost world))]]
-                       (when (neg? diff) p2p))]
-    (remove (set non-positive) p2p-efficiencies)))
