@@ -45,7 +45,7 @@
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
       (om/transact! reconciler [(list 'routes/set-route! (select-keys request-env [:route :route-params]))]))
-    (client.utils/init-state! reconciler remotes send-fn parser component)
+    (client.utils/init-state! reconciler send-fn parser component)
     reconciler))
 
 (defn render-page [env]

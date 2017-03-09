@@ -8,6 +8,7 @@
     [eponai.client.parser.merge :as merge]
     [eponai.client.backend :as backend]
     [eponai.client.remotes :as remotes]
+    [eponai.client.reconciler :as reconciler]
     [medley.core :as medley]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
@@ -64,18 +65,12 @@
         history (pushy/pushy update-route! (wrap-route-logging match-route))
         _ (reset! history-atom history)
         conn (utils/create-conn)
-        local-storage (local-storage/->local-storage)
         parser (parser/client-parser)
-        remotes [:remote :remote/user :remote/chat]
+        remote-config (reconciler/remote-config conn)
         send-fn (backend/send! reconciler-atom
                                ;; TODO: Make each remote's basis-t isolated from another
                                ;;       Maybe protocol it?
-                               {:remote      (-> (remotes/post-to-url "/api")
-                                                 (remotes/read-basis-t-remote-middleware conn))
-                                :remote/user (-> (remotes/post-to-url "/api/user")
-                                                 (remotes/read-basis-t-remote-middleware conn))
-                                :remote/chat (-> (remotes/post-to-url "/api/chat")
-                                                 (remotes/read-basis-t-remote-middleware conn))}
+                               remote-config
                                {:did-merge-fn (apply-once
                                                 (fn [reconciler]
                                                   (when-not @init?
@@ -86,16 +81,14 @@
                                 :query-fn     (apply-once (fn [q]
                                                             {:pre [(sequential? q)]}
                                                             (into [:datascript/schema] q)))})
-        reconciler (om/reconciler {:state     conn
-                                   :ui->props (utils/cached-ui->props-fn parser)
-                                   :parser    parser
-                                   :remotes   remotes
-                                   :send      send-fn
-                                   :merge     (merge/merge!)
-                                   :shared    {:shared/history       history
-                                               :shared/local-storage local-storage
-                                               :shared/auth-lock     auth-lock}
-                                   :migrate   nil})]
+        reconciler (reconciler/create {:conn conn
+                                       :parser parser
+                                       :ui->props (utils/cached-ui->props-fn parser)
+                                       :history history
+                                       :auth-lock auth-lock
+                                       :send-fn send-fn
+                                       :remotes (:order remote-config)})]
+
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
       (pushy/start! history)
@@ -103,7 +96,7 @@
       ;; We ensure that routes has been inited
       (when-not (:route (routes/current-route reconciler))
         (set-current-route! history update-route!)))
-    (utils/init-state! reconciler remotes send-fn parser router/Router)))
+    (utils/init-state! reconciler send-fn parser router/Router)))
 
 (defn run-prod []
   (run {}))
