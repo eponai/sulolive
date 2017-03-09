@@ -5,23 +5,24 @@
     [eponai.common.database :as db]
     [eponai.server.api.store :as store]
     [eponai.server.external.stripe :as stripe]
+    [eponai.server.external.stripe.protocols :as p]
     [eponai.server.test-util :refer [new-db]]
     [eponai.server.external.aws-s3 :as s3]
     [taoensso.timbre :refer [debug]]
     [eponai.server.datomic.format :as f]))
 
 (defn stripe-test [& [chan]]
-  (reify stripe/IStripeAccount
+  (reify p/IStripeAccount
     (create-product [this account-secret product]
       (when (and account-secret chan)
         (async/put! chan product)))
-    (update-product [_ account-secret _ params]
+    (-update-product [_ account-secret _ params]
       (when (and account-secret chan)
         (async/put! chan params)))
     (delete-product [_ account-secret product-id]
       (when (and account-secret chan)
         (async/put! chan product-id)))
-    stripe/IStripeConnect))
+    p/IStripeConnect))
 
 (defn s3-test [chan]
   (reify s3/IAWSS3Photo

@@ -132,7 +132,6 @@
 
   (route/resources "/")
   ;(POST "/stripe/main" request (r/response (stripe/webhook (::m/conn request) (:params request))))
-  (POST "/stripe/connected" request (r/response (stripe/webhook (::m/conn request) (:body request))))
   (GET "/auth" request (auth/authenticate request))
 
   (GET "/logout" request (auth/logout request))
