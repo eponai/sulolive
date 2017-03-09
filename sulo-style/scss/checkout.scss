@@ -66,7 +66,7 @@
   // -webkit-transition: box-shadow 150ms ease;
   // transition: box-shadow 150ms ease;
   &.StripeElement--invalid {
-		$background: map-get($foundation-palette, alert);
+		$background: $input-error-color;
 		$background-alpha: 0.025;
 	    background-color: rgba($background, $background-alpha);
 	    border-color: $background;
