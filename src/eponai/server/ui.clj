@@ -8,6 +8,7 @@
     [eponai.client.parser.merge :as merge]
     [eponai.client.parser.mutate]
     [eponai.client.parser.read]
+    [eponai.client.reconciler :as client.reconciler]
     [eponai.client.utils :as client.utils]
     [eponai.common.parser :as parser]
     [eponai.common.routes :as routes]
@@ -33,18 +34,14 @@
         ;; TODO: Is this parser wrapper needed?
         parser (fn [env query & [target]]
                  (parser (merge env (dissoc request-env :state :route-params)) query target))
-        remotes [:remote :remote/user :remote/chat]
         send-fn (server-send request-env reconciler-atom )
-        reconciler (om/reconciler {:state   (datascript/conn-from-db (:empty-datascript-db request-env))
-                                   :parser  parser
-                                   :remotes remotes
-                                   :send    send-fn
-                                   :merge   (merge/merge!)
-                                   :history 2
-                                   :migrate nil})]
+        reconciler (client.reconciler/create {:conn (datascript/conn-from-db (:empty-datascript-db request-env))
+                                              :parser parser
+                                              :send-fn send-fn
+                                              :cache 2
+                                              :route (:route request-env)
+                                              :route-params (:route-params request-env)})]
     (reset! reconciler-atom reconciler)
-    (binding [parser/*parser-allow-remote* false]
-      (om/transact! reconciler [(list 'routes/set-route! (select-keys request-env [:route :route-params]))]))
     (client.utils/init-state! reconciler send-fn parser component)
     reconciler))
 
