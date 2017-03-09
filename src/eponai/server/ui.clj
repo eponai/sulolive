@@ -31,9 +31,6 @@
 (defn make-reconciler [request-env component]
   (let [reconciler-atom (atom nil)
         parser (parser/client-parser)
-        ;; TODO: Is this parser wrapper needed?
-        parser (fn [env query & [target]]
-                 (parser (merge env (dissoc request-env :state :route-params)) query target))
         send-fn (server-send request-env reconciler-atom )
         reconciler (client.reconciler/create {:conn         (datascript/conn-from-db (:empty-datascript-db request-env))
                                               :parser       parser
