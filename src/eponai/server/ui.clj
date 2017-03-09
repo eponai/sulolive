@@ -29,7 +29,7 @@
 
 (defn make-reconciler [request-env component]
   (let [reconciler-atom (atom nil)
-        parser (parser/client-parser (parser/client-parser-state {::parser/get-route-params #(:route-params request-env)}))
+        parser (parser/client-parser)
         ;; TODO: Is this parser wrapper needed?
         parser (fn [env query & [target]]
                  (parser (merge env (dissoc request-env :state :route-params)) query target))

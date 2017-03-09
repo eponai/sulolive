@@ -8,7 +8,7 @@
             [taoensso.timbre :refer [debug error info]]))
 
 (defn create-new-inmemory-db
-  ([] (create-new-inmemory-db "test-db"))
+  ([] (create-new-inmemory-db (str (gensym "test-db"))))
   ([db-name]
    (let [uri (str "datomic:mem://" db-name)]
      (d/delete-database uri)

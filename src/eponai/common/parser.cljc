@@ -3,6 +3,8 @@
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn trace]]
             [om.next :as om]
             [om.next.cache :as om.cache]
+            [eponai.client.utils :as client.utils]
+            [eponai.client.routes :as client.routes]
             [eponai.common.database :as db]
             [eponai.common.format.date :as date]
             [datascript.core :as datascript]
@@ -10,7 +12,6 @@
             [datomic.api :as datomic])
     #?(:clj
             [eponai.server.datomic.filter :as filter])
-            [eponai.client.utils :as client.utils]
             [clojure.set :as set]
             [medley.core :as medley])
   #?(:clj
@@ -494,10 +495,12 @@
         (parser-mw state))))
 
 (defn client-parser-state [& [custom-state]]
-  (merge {:read           client-read
-          :mutate         client-mutate
-          :elide-paths    false
-          :txs-by-project (atom {})}
+  (merge {:read              client-read
+          :mutate            client-mutate
+          :elide-paths       false
+          :txs-by-project    (atom {})
+          ::conn->route-params (fn [conn]
+                               (:route-params (client.routes/current-route conn)))}
          custom-state))
 
 (defn client-parser
@@ -508,7 +511,7 @@
                 (fn [parser state]
                   (fn [env query & [target]]
                     (parser (assoc env ::server? false
-                                       :route-params ((::get-route-params state)))
+                                       :route-params ((::conn->route-params state) (:state env)))
                             query target)))
                 (fn [read {:keys [elide-paths txs-by-project] :as state}]
                   (-> read
