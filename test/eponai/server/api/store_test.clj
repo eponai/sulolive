@@ -294,7 +294,7 @@
       (is (:store.item/uuid old-product))
       (is (nil? new-db-product))
       (is (empty? (:store/items new-db-store)))             ;; Verify that our store has no products anymore
-      (is (= (async/poll! stripe-chan) (str (:store.item/uuid old-product))))  ;; Verify that we called Stripe with the UUID of the product to remove
+      (is (= (async/poll! stripe-chan) (:store.item/uuid old-product)))  ;; Verify that we called Stripe with the UUID of the product to remove
       )))
 
 (deftest delete-product-with-image
@@ -330,5 +330,5 @@
       (is (nil? new-db-product))                            ;;Verify that product was retracted from DB
       (is (nil? new-db-photo))                              ;;Verify that photo entity was retracted from DB
       (is (empty? (:store/items new-db-store)))             ;; Verify that our store has no products anymore
-      (is (= (async/poll! stripe-chan) (str (:store.item/uuid old-product))))  ;; Verify that we called Stripe with the UUID of the product to remove
+      (is (= (async/poll! stripe-chan) (:store.item/uuid old-product)))  ;; Verify that we called Stripe with the UUID of the product to remove
       )))

@@ -47,6 +47,8 @@
   (p/list-products stripe account-secret opts))
 
 (defn delete-product [stripe account-secret product-id]
+  (s/assert :ext.stripe/secret account-secret)
+  (s/assert :ext.stripe.product/uuid product-id)
   (p/delete-product stripe account-secret product-id))
 
 (defn create-sku [stripe account-secret product-id params]
@@ -93,4 +95,7 @@
                  :brand     (.getBrand card)
                  :id        (.getId card)
                  })})))
-;; ######################################
+;; ###################################### SPEC
+
+(s/def :ext.stripe/secret string?)
+(s/def :ext.stripe.product/uuid uuid?)

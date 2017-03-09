@@ -90,7 +90,7 @@
                            skus)
         stripe-p (stripe/delete-product (:system/stripe system)
                                         secret
-                                        (str uuid))]
+                                        uuid)]
     (when (not-empty skus)
       (debug "Deleted skus: " deleted-skus))
     (debug "Deleted product in stripe: " stripe-p)

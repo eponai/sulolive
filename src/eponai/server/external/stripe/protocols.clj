@@ -120,7 +120,7 @@
 
   (delete-product [_ account-secret product-id]
     (set-api-key account-secret)
-    (let [product (Product/retrieve product-id)
+    (let [product (Product/retrieve (str product-id))
           deleted (.delete product)]
       {:id      (.getId deleted)
        :deleted (.getDeleted deleted)}))

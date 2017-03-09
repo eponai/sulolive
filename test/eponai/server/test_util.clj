@@ -1,10 +1,14 @@
 (ns eponai.server.test-util
-  (:require [datomic.api :as d]
-            [eponai.common.parser :as parser]
-            [eponai.server.datomic-dev :as dev]
-            [eponai.common.database :as db]))
+  (:require
+    [clojure.spec :as s]
+    [datomic.api :as d]
+    [eponai.common.parser :as parser]
+    [eponai.server.datomic-dev :as dev]
+    [eponai.common.database :as db]))
 
 (def schema (dev/read-schema-files))
+
+(s/check-asserts true)
 
 (defn user-email->user-uuid [db user-email]
   (d/q '{:find  [?uuid .]
@@ -17,7 +21,7 @@
 (defn new-db
   "Creates an empty database and returns the connection."
   ([]
-    (new-db nil))
+   (new-db nil))
   ([txs]
    (let [uri "datomic:mem://test-db"]
      (d/delete-database uri)
