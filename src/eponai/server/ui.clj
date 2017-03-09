@@ -64,10 +64,10 @@
 
 (defn makesite [component]
   (let [->component (om/factory component)]
-    (fn [env]
+    (fn [props]
       (debug "COMPONENT: " (pr-str component))
       (with-doctype
         (html/render-html-without-reactid-tags
-          (->component (assoc env ::root/app-html (render-page env))))))))
+          (->component (assoc props ::root/app-html (render-page props))))))))
 
 (def render-site (makesite root/Root))

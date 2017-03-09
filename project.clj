@@ -75,7 +75,7 @@
                  ;; Testing
                  [lein-doo "0.1.7"
                   :exclusions [org.clojure/clojure]]
-                 [devcards "0.2.1-6"]
+                 [devcards "0.2.2"]
                  [org.clojure/test.check "0.9.0"]]
 
   :exclusions [org.clojure/test.check
@@ -110,12 +110,12 @@
   :aliases {"all-deps"               ^{:doc "Fetches both clj, cljs and node dependencies."}
                                      ["do"
                                       ["deps"]
-                                   ;;   ["pod-deps"]
+                                      ;;   ["pod-deps"]
                                       ["npm-deps"]
                                       ["css"]]
             "npm-deps"               ["do"
-                                       ["shell" "npm" "install"]
-                                       ["shell" "bower" "install"]]
+                                      ["shell" "npm" "install"]
+                                      ["shell" "bower" "install"]]
             "pod-deps"               ["shell" "pod" "install" "--project-directory=./ios"]
             "css"                    ["shell" "./scripts/compile-css.sh"]
             "css-watch"              ["shell" "./scripts/compile-css.sh" "watch"]
@@ -158,6 +158,10 @@
             "figwheel-web"           ^{:doc "Start figwheel for web"}
                                      ["do"
                                       ["with-profile" "web" "figwheel" "dev"]
+                                      ]
+            "figwheel-web+devcards"  ^{:doc "Start figwheel for web"}
+                                     ["do"
+                                      ["with-profile" "web" "figwheel" "dev" "devcards"]
                                       ]
             "figwheel-test"          ^{:doc "Start figwheel for web"}
                                      ["do"

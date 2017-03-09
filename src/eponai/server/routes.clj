@@ -17,7 +17,8 @@
     [taoensso.timbre :refer [debug error trace warn]]
     [eponai.server.ui :as server.ui]
     [om.next :as om]
-    [eponai.server.external.stripe :as stripe]))
+    [eponai.server.external.stripe :as stripe]
+    [eponai.server.ui.root :as root]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -132,10 +133,15 @@
 
   (route/resources "/")
   ;(POST "/stripe/main" request (r/response (stripe/webhook (::m/conn request) (:params request))))
-  (POST "/stripe/connected" request (r/response (stripe/webhook (::m/conn request) (:body request))))
   (GET "/auth" request (auth/authenticate request))
 
   (GET "/logout" request (auth/logout request))
+
+  (GET "/devcards" request
+    (when-not (::m/in-production? request)
+      (server.ui/render-to-str root/Root {:route         :devcards
+                                          :cljs-build-id "devcards"
+                                          :release?      false})))
 
   (GET "/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
   (GET "/sell/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))

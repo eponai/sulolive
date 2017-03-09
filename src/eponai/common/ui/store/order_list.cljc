@@ -57,14 +57,14 @@
                   (fn [i o]
                     (let [product-link (routes/url :store-dashboard/order
                                                    {:store-id (:db/id store)
-                                                    :order-id (:order/id o)})]
+                                                    :order-id (:db/id o)})]
                       (dom/tr #js {:key (str i)}
                               (dom/td nil
                                       (dom/a #js {:href product-link}
                                              (common/order-status-element (:order/status o))))
                               (dom/td nil
                                       (dom/a #js {:href product-link}
-                                             (dom/span nil (:order/id o))))
+                                             (dom/span nil (:db/id o))))
                               (dom/td nil
                                       (dom/a #js {:href product-link}
                                              (dom/span nil (:order/amount o))))

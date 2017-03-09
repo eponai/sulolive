@@ -49,7 +49,7 @@
         old-photo (first photos)]
 
     ;; Update product in Stripe
-    (stripe/update-product (:system/stripe system) secret (str uuid) params)
+    (stripe/update-product (:system/stripe system) secret uuid params)
     (let [new-product (cond-> {:store.item/uuid uuid
                                :store.item/name (:name params)}
                               (some? price)
@@ -90,19 +90,30 @@
                            skus)
         stripe-p (stripe/delete-product (:system/stripe system)
                                         secret
-                                        (str uuid))]
+                                        uuid)]
     (when (not-empty skus)
       (debug "Deleted skus: " deleted-skus))
     (debug "Deleted product in stripe: " stripe-p)
     (db/transact state [[:db.fn/retractEntity product-id]])))
 
+(defn ->order [state o store-id user-id]
+  (let [store (db/lookup-entity (db/db state) store-id)]
+    (assoc o :order/store store :order/user user-id)))
+
 (defn get-order [{:keys [db system]} store-id order-id]
-  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)]
-    (stripe/get-order (:system/stripe system) secret order-id)))
+  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)
+        {:keys [order/id]} (db/pull db [:order/id] order-id)]
+    (stripe/get-order (:system/stripe system) secret id)))
 
 (defn list-orders [{:keys [db system]} store-id]
-  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)]
-    (stripe/list-orders (:system/stripe system) secret nil)))
+  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)
+        orders (db/pull-all-with db [:db/id :order/id :order/store :order/user] {:where   '[[?e :order/store ?s]]
+                                                        :symbols {'?s store-id}})
+        stripe-orders (stripe/list-orders (:system/stripe system) secret {:ids (map :order/id orders)})]
+    (map (fn [o]
+           (let [db-order (some #(when (= (:order/id %) (:order/id o)) %) orders)]
+             (merge o db-order)))
+         stripe-orders)))
 
 (defn create-order [{:keys [state system auth]} store-id {:keys [items source shipping]}]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)

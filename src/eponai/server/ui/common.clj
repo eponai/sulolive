@@ -129,7 +129,9 @@
 
 (defn budget-js-path [cljs-build-id]
   (str "/"
-       (if (= cljs-build-id "release") "release" "dev")
+       (cond (= cljs-build-id "release") "release"
+             (= cljs-build-id "devcards") "devcards"
+             :else "dev")
        "/js/out/budget.js"))
 
 (defn red5pro-script-tags [release?]

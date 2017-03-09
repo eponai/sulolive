@@ -8,17 +8,7 @@
 (defn ->order [state o store-id user-id]
   (let [store (db/lookup-entity (db/db state) store-id)]
     (-> o
-        (assoc :order/store store :order/user user-id)
-        ;(update :order/items (fn [its]
-        ;                       (let [skus (filter #(= (:order.item/type %) :sku) its)
-        ;                             ;(debug "Order items: " (into [] skus))
-        ;                             ;(debug "UUIDs: " (mapv #(f/str->uuid (:order.item/parent %)) skus))
-        ;                             db-skus (db/pull-all-with (db/db state)
-        ;                                               '[:db/id :store.item/_skus :store.item.sku/uuid]
-        ;                                               {:where   '[[?e :store.item.sku/uuid ?uuid]]
-        ;                                                :symbols {'[?uuid ...] (mapv #(f/str->uuid (:order.item/parent %)) skus)}})]
-        ;                         db-skus)))
-        )))
+        (assoc :order/store store :order/user user-id))))
 
 (defn list-orders [{:keys [state system]} user-id]
   (let [orders (db/pull-all-with (db/db state)

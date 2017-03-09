@@ -24,7 +24,8 @@
     [ring.adapter.jetty :as jetty]
     [taoensso.timbre :refer [debug error info]]
     ;; Dev/debug require
-    [ring.middleware.reload :as reload]))
+    [ring.middleware.reload :as reload]
+    [clojure.spec :as s]))
 
 (defonce in-production? (atom true))
 
@@ -148,6 +149,7 @@
   [& [opts]]
   {:pre [(or (nil? opts) (map? opts))]}
   (reset! in-production? false)
+  (s/check-asserts true)
   (start-server (merge {:join? false} opts)))
 
 (defn main-release-no-ssl

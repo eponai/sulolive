@@ -86,7 +86,7 @@
                                              (dom/label nil "ID: "))
                                            (my-dom/div
                                              (->> (css/grid-column))
-                                             (dom/span nil (:order/id order))))
+                                             (dom/span nil (:db/id order))))
                                 (menu/item (css/grid-row)
                                            (my-dom/div
                                              (->> (css/grid-column)
@@ -186,6 +186,8 @@
   (query [_]
     [:query/messages
      {:query/order [:order/items
+                    :order/status
+                    :order/email
                     {:order/store [:store/name {:store/photo [:photo/path]}]}]}])
   Object
   (create-order [this]

@@ -38,6 +38,9 @@ html, body {
   		overflow-y: auto;
   	}
 }
+    .is-invalid-input {
+      @include form-input-error($background-alpha: 0.025);
+    }
 
 .tabs-title {
 	// a {
