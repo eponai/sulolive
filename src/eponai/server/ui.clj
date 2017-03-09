@@ -35,11 +35,11 @@
         parser (fn [env query & [target]]
                  (parser (merge env (dissoc request-env :state :route-params)) query target))
         send-fn (server-send request-env reconciler-atom )
-        reconciler (client.reconciler/create {:conn (datascript/conn-from-db (:empty-datascript-db request-env))
-                                              :parser parser
-                                              :send-fn send-fn
-                                              :cache 2
-                                              :route (:route request-env)
+        reconciler (client.reconciler/create {:conn         (datascript/conn-from-db (:empty-datascript-db request-env))
+                                              :parser       parser
+                                              :send-fn      send-fn
+                                              :history      2
+                                              :route        (:route request-env)
                                               :route-params (:route-params request-env)})]
     (reset! reconciler-atom reconciler)
     (client.utils/init-state! reconciler send-fn parser component)

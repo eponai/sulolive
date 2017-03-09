@@ -57,7 +57,7 @@
     (do (debug "Will set url: " bidi-url " created with " [:route route :route-params route-params])
         ;; There's no URL to set in clj land, so do nothing.
         #?(:cljs
-           (if-let [history (:shared/history (om/shared component))]
+           (if-let [history (:shared/browser-history (om/shared component))]
              (pushy/set-token! history bidi-url)
              (warn "No history found in shared for component: " component
                    ". Make sure :history was passed to the reconciler."))))

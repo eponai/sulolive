@@ -84,10 +84,10 @@
         reconciler (reconciler/create {:conn conn
                                        :parser parser
                                        :ui->props (utils/cached-ui->props-fn parser)
-                                       :history history
-                                       :auth-lock auth-lock
                                        :send-fn send-fn
-                                       :remotes (:order remote-config)})]
+                                       :remotes (:order remote-config)
+                                       :shared/browser-history history
+                                       :shared/auth-lock auth-lock})]
 
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
