@@ -269,7 +269,13 @@
 
                             ;; When the user is going through the checkout flow, don't let them navigate anywhere else.
                             (= route :checkout)
-                            nil
+                            (navbar-content
+                              (dom/div #js {:className "top-bar-left"}
+                                (menu/horizontal
+                                  nil
+                                  (menu/item-link {:href "/"
+                                                   :id   "navbar-brand"}
+                                                  (dom/span nil "Sulo")))))
                             :else
                             (standard-navbar this))))))))
 (def ->Navbar (om/factory Navbar))
