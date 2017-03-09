@@ -4,6 +4,7 @@
   (:require
     [cljs.core.async :refer [chan alts! put!]]
     [cljs.core]
+    [cljs.spec :as s]
     [goog.events :as events]
     [goog.crypt]
     [goog.crypt.Sha256]
@@ -22,6 +23,7 @@
 ;    (.drawImage ctx img 0 0 width height)
 ;    canvas))
 
+(s/def ::photo-size #(>= 5000000 %))
 (defn filelist-files [filelist]
   (let [filelist (.-files filelist)]
     (vec (for [k (js-keys filelist)
@@ -60,11 +62,11 @@
 (defn queue-file [e owner {:keys [upload-queue]}]
   (let [file (first (array-seq (.. e -target -files)))
         {:keys [on-photo-queue]} (om/get-computed owner)
-        ;resized (resize-image file 100 100)
-        ]
+        validation (s/explain-data ::photo-size (.-size file))]
     (debug {:original file})
-    (put! upload-queue {:file     file
-                        :metadata {:x-amz-meta-size (.-size file)}})
+    (when (nil? validation)
+      (put! upload-queue {:file     file
+                          :metadata {:x-amz-meta-size (.-size file)}}))
     (when on-photo-queue
       ;reader.onloadend = function() {
       ;                               img.src = reader.result;
@@ -74,7 +76,7 @@
         (set! (.-onloadend reader) (fn []
                                      (on-photo-queue (.-result reader))))
         (.readAsDataURL reader file)))
-    (om/update-state! owner assoc :loading? true)))
+    (om/update-state! owner assoc :loading? (nil? validation) :validation validation)))
 
 (defui PhotoUploader
   static om/IQuery
@@ -123,13 +125,15 @@
 
   (render [this]
     (let [{:query/keys [auth]} (om/props this)
-          {:keys [loading?] :as state} (om/get-state this)]
+          {:keys [loading? validation] :as state} (om/get-state this)]
       (debug "Authenticated user: " auth)
       (dom/div
         #js {:className "photo-uploader text-center"}
 
         ;(if loading?
         ;  (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"}))
+        (dom/p nil (dom/label #js {:className (if (nil? validation) "hide" "is-invalid-label")}
+                              "Sorry, your photo is too large. Please select a photo of max 5MB."))
         (dom/label #js {:htmlFor "file" :className "button hollow expanded"}
                    (if loading?
                      (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"})
