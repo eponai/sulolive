@@ -20,10 +20,6 @@
 ;; ---------------------
 ;; -- App initialization
 
-;; These atoms must only be used from the repl or in app initialization!
-(defonce reconciler-atom (atom nil))
-(defonce conn-atom (atom nil))
-
 (defn initial-ui-state []
   [{:ui/component :ui.component/cart
     :ui.component.cart/items #{}}
@@ -38,17 +34,6 @@
   (let [conn (d/create-conn (common.datascript/ui-schema))]
     (d/transact! conn (initial-ui-state))
     conn))
-
-(defn init-conn
-  "Sets up the datascript state. Caches the state so we can keep our app state between
-  figwheel reloads."
-  []
-  (if @conn-atom
-    (do
-      (debug "Reusing old conn. It currently has schema for attributes:" (-> @conn-atom deref :schema keys))
-      @conn-atom)
-    (reset! conn-atom (create-conn))))
-
 
 (defn init-state! [reconciler send-fn parser component]
   (let [remote-queries (into {}
