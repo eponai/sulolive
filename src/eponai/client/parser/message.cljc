@@ -159,9 +159,8 @@
 (defn find-message
   "Takes a component, a history id and a mutation-key which was used in the mutation
   and returns the message or nil if not found."
-  [component history-id mutation-key]
-  {:pre [(om/component? component)]}
-  (let [db (d/db (om/app-state (om/get-reconciler component)))
+  [x history-id mutation-key]
+  (let [db (database/to-db x)
         msg-fn (parser/get-message-fn db)]
     (msg-fn history-id mutation-key)))
 

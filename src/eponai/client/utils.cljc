@@ -35,11 +35,25 @@
     (d/transact! conn (initial-ui-state))
     conn))
 
-(defn init-state! [reconciler send-fn parser component]
+(defn reconciler-parser [reconciler]
+  (:parser (:config reconciler)))
+
+(defn reconciler-remotes [reconciler]
+  (:remotes (:config reconciler)))
+
+(defn parse [reconciler query & [target]]
+  (let [parser (reconciler-parser reconciler)
+        env (assoc (#'om/to-env reconciler)
+              :reconciler reconciler)]
+    (if target
+      (parser env query target)
+      (parser env query))))
+
+(defn init-state! [reconciler send-fn component]
   (let [remote-queries (into {}
                              (map (fn [remote]
-                                    [remote (parser (#'om/to-env reconciler) (om/get-query component) remote)]))
-                             (:remotes (:config reconciler)))]
+                                    [remote (parse reconciler (om/get-query component) remote)]))
+                             (reconciler-remotes reconciler))]
     (debug "Remote-queries: " remote-queries)
     (send-fn remote-queries
              (fn send-cb

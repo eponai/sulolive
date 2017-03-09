@@ -39,7 +39,7 @@
                                               :route        (:route request-env)
                                               :route-params (:route-params request-env)})]
     (reset! reconciler-atom reconciler)
-    (client.utils/init-state! reconciler send-fn parser component)
+    (client.utils/init-state! reconciler send-fn component)
     reconciler))
 
 (defn render-page [env]

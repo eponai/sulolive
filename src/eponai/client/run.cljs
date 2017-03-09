@@ -96,7 +96,7 @@
       ;; We ensure that routes has been inited
       (when-not (:route (routes/current-route reconciler))
         (set-current-route! history update-route!)))
-    (utils/init-state! reconciler send-fn parser router/Router)))
+    (utils/init-state! reconciler send-fn router/Router)))
 
 (defn run-prod []
   (run {}))

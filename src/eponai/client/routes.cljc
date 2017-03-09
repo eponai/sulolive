@@ -63,18 +63,8 @@
                    ". Make sure :history was passed to the reconciler."))))
     (warn "Unable to create a url with route: " route " route-params: " route-params)))
 
-(defn- to-db
-  "Transforms, components, reconcilers or connections to a database."
-  [x]
-  (reduce (fn [x [pred f]] (cond-> x (pred x) (f)))
-          x
-          [[om/component? om/get-reconciler]
-           [om/reconciler? om/app-state]
-           [db/connection? db/db]]))
-
 (defn current-route [x]
-  {:pre [(or (om/component? x) (om/reconciler? x) (db/connection? x) (db/database? x))]}
-  (-> (to-db x)
+  (-> (db/to-db x)
       (db/entity [:ui/singleton :ui.singleton/routes])
       (->> (into {}))
       (set/rename-keys {:ui.singleton.routes/current-route :route
