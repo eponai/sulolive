@@ -38,9 +38,11 @@
   (p/create-account stripe params))
 
 (defn create-product [stripe account-secret params]
+  (s/assert :ext.stripe.params/create-product params)
   (p/create-product stripe account-secret params))
 
 (defn update-product [stripe account-secret product-id params]
+  (s/assert :ext.stripe.product/id product-id)
   (p/-update-product stripe account-secret product-id params))
 
 (defn list-products [stripe account-secret opts]
@@ -48,7 +50,7 @@
 
 (defn delete-product [stripe account-secret product-id]
   (s/assert :ext.stripe/secret account-secret)
-  (s/assert :ext.stripe.product/uuid product-id)
+  (s/assert :ext.stripe.product/id product-id)
   (p/delete-product stripe account-secret product-id))
 
 (defn create-sku [stripe account-secret product-id params]
@@ -93,9 +95,20 @@
                  :name      (.getName card)
                  :last4     (.getLast4 card)
                  :brand     (.getBrand card)
-                 :id        (.getId card)
-                 })})))
+                 :id        (.getId card)})})))
+
 ;; ###################################### SPEC
 
 (s/def :ext.stripe/secret string?)
-(s/def :ext.stripe.product/uuid uuid?)
+
+(s/def :ext.stripe.product/id uuid?)
+(s/def :ext.stripe.product/name string?)
+(s/def :ext.stripe.product/price string?)
+
+(s/def :ext.stripe.sku/id uuid?)
+
+(s/def :ext.stripe.params/create-sku (s/keys :req-un
+                                             [:ext.stripe.sku/id]))
+(s/def :ext.stripe.params/create-product (s/keys :req-un
+                                                 [:ext.stripe.product/id
+                                                  :ext.stripe.product/name]))

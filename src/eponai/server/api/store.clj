@@ -49,7 +49,7 @@
         old-photo (first photos)]
 
     ;; Update product in Stripe
-    (stripe/update-product (:system/stripe system) secret (str uuid) params)
+    (stripe/update-product (:system/stripe system) secret uuid params)
     (let [new-product (cond-> {:store.item/uuid uuid
                                :store.item/name (:name params)}
                               (some? price)

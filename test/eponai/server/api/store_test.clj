@@ -52,7 +52,7 @@
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid new-store)])
 
           ;; Prepare data for creating new products
-          params {:name "product" :id (db/squuid)}
+          params {:name "product" :id (db/squuid) :price "10"}
           stripe-chan (async/chan 1)
           s3-chan (async/chan 1)]
       (store/create-product {:state  conn
@@ -63,8 +63,7 @@
       (let [result-db (db/db conn)
 
             ;; Pull new data after creation
-            new-db-store (db/pull result-db [:db/id {:store/items [:store.item/uuid
-                                                                            :store.item/photos]}] (:db/id db-store))
+            new-db-store (db/pull result-db [:db/id {:store/items [:store.item/uuid :store.item/photos]}] (:db/id db-store))
             db-product (first (get new-db-store :store/items))]
 
         ;; Verify
@@ -86,7 +85,7 @@
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
 
           ;; Prepare data for creating new products
-          params {:name "product" :id (db/squuid) :photo {:location "someurl.com"}}
+          params {:name "product" :id (db/squuid) :photo {:location "someurl.com"} :price "10"}
           stripe-chan (async/chan 1)
           s3-chan (async/chan 1)]
       (store/create-product {:state  conn
