@@ -1,10 +1,9 @@
 (ns eponai.common.ui.checkout
   (:require
     #?(:cljs
-       [eponai.common.ui.checkout.stripe :as stripe])
-    #?(:cljs
        [eponai.common.ui.checkout.google-places :as places])
     [eponai.common.ui.checkout.shipping :as ship]
+    [eponai.common.ui.checkout.payment :as pay]
     [eponai.common.ui.dom :as my-dom]
     [eponai.client.routes :as routes]
     [om.dom :as dom]
@@ -214,39 +213,7 @@
                         :onClick   #(.place-order component)} "Place Order")))
       )))
 
-(defn shipping-element [component]
-
-  )
-
-(defn payment-element [component & [{:keys [sources]}]]
-  (let [{:keys [payment-error new-card? card]} (om/get-state component)]
-    #?(:cljs
-       (when-not card
-         (om/update-state! component assoc :card (stripe/mount-payment-form {:element-id "sulo-card-element"}))))
-    (dom/div nil
-      (dom/h3 nil "Payment")
-      (my-dom/div
-        (css/add-class ::css/callout)
-        (my-dom/div
-          (css/grid-row)
-          (my-dom/div
-            (->> (css/grid-column))
-            (dom/label #js {:htmlFor   "sulo-card-element"
-                            :className (when-not new-card? "hide")} "Card")
-            (dom/div #js {:id "sulo-card-element" :className (when-not new-card? "hide")})
-            (dom/div #js {:id        "card-errors"
-                          :className "text-center"}
-              (dom/small nil payment-error))))
-        (my-dom/div
-          (css/grid-row)
-          (my-dom/div
-            (->> (css/grid-column))
-            (dom/a #js {:onClick   #(om/update-state! component assoc :new-card? true)
-                        :className "button hollow"} "Add card"))))
-      (my-dom/div (css/text-align :right)
-                  (dom/a #js {:className "button"
-                              :onClick   #(.save-payment component)}
-                         "Next")))))
+(defn payment-element [component & [{:keys [sources]}]])
 
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
@@ -283,24 +250,6 @@
                                                      :shipping shipping
                                                      :items    (map :store.item.sku/uuid items)
                                                      :store-id (c/parse-long store-id)})])))))
-  #?(:cljs
-     (save-payment
-       [this]
-       (let [{:keys [card]} (om/get-state this)]
-         (stripe/create-token
-           card
-           (fn [token]
-             (debug "Got token: " token)
-             (om/update-state! this assoc :checkout/payment (stripe/token->payment token)))
-           (fn [error]
-             (debug "Got error: " error)
-             (om/update-state! this assoc :payment-error (.-message error)))))))
-
-  (componentDidMount [this]
-    (debug "Stripe component did mount")
-    #?(:cljs
-       (let [card (stripe/mount-payment-form {:element-id "sulo-card-element"})]
-         (om/update-state! this assoc :card card))))
 
   (initLocalState [_]
     {:checkout/shipping nil
@@ -343,7 +292,8 @@
             (condp = progress
               1 (ship/->CheckoutShipping (om/computed {}
                                                       {:on-change #(om/update-state! this assoc :checkout/shipping %)}))
-              2 (payment-element this)
+              2 (pay/->CheckoutPayment (om/computed {}
+                                                    {:on-change #(om/update-state! this assoc :checkout/payment %)}))
               3 (confirm-element this))))))))
 
 (def ->Checkout (om/factory Checkout))
