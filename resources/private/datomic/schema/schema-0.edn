@@ -180,8 +180,8 @@
 
  ;; TODO: figure out how to handle categories of different granularities, check out how Etsy is doing this.
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store.item/category
-  :db/valueType          :db.type/string
+  :db/ident              :store.item/section
+  :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
   :db/fulltext           true
   :db/doc                "Category of the item"
@@ -359,5 +359,14 @@
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
   :db/doc                "Ref to the user who created the order."
+  :db.install/_attribute :db.part/db}
+
+ ;; Collections
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :collection/name
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "Category name."
   :db.install/_attribute :db.part/db}
  ]
