@@ -16,13 +16,9 @@
                 (b/add-businesses businesses)
                 (b/add-visitors visitors)
                 (b/revenue)
-                (select-keys [:incomes :expenses :profit
-                              :expenses-with-greta :profit-with-greta])
+                (select-keys [:incomes :expenses :profit])
                 (update :incomes :total)
-                (update :expenses :total)
-                (update :expenses-with-greta :total)
-                (set/rename-keys {:profit   :profit-with-streamroot
-                                  :expenses :expenses-with-streamroot})))]
+                (update :expenses :total)))]
     (->> (map vector biz-range vis-range)
          (map #(apply revenue %))
          (mapcat seq)
@@ -122,6 +118,10 @@
                   :conversion-rate/product-sales
                   :price/avg-product
                   :price/business-subscription
+                  :price/transaction-fees-rate
+                  :price/transaction-fees-sum
+                  :price/sales-tax
+                  :price/avg-shipping-cost
                   :product/commission-rate
                   :fixed/visitors
                   :fixed/businesses
@@ -140,7 +140,7 @@
   Object
   (initLocalState [this]
     {:model {:fixed/visitors   "2000"
-             :fixed/businesses "200"
+             :fixed/businesses "20"
              :fixed/days       (str b/days-per-month)}})
   (componentDidMount [this]
     (let [charts-by-graph-key
