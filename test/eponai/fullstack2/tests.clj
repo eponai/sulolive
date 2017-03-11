@@ -225,6 +225,13 @@
                (lock {:email email})))})
 
 
+;; TODO: Could define a multimethod for each mutation
+;;       that returns reads it should read
+;;       and for each read, pre and post paths that should hold.
+;;       (For :query/auth in this example, the pre path would
+;;       need to check for the current value of :user/email).
+;; WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOW...?
+;; We'd also need a generator params of the mutation.
 (defn test-store-login-2 []
   {::label   "Should be able to log in store"
    ::actions [{::tx   `[(fullstack/login {:user/email "dev@sulo.live"})
