@@ -26,10 +26,11 @@
    :conversion-rate/product-sales          0.02
    :conversion-rate/ads                    0
    :conversion-rate/viewer-subscribing     0
-   :conversion-rate/viewer-watching-stream 0.5
+   ;; Assuming everyone watches the stream
+   :conversion-rate/viewer-watching-stream 1
    :product/commission-rate                0.10
    :product/stripe-fees-rate               0.029
-   :product/stripe-fees-sum                0.30
+   :product/stripe-fees-fixed              0.30
    :price/ad-viewed                        0
    :price/business-subscription            (per-month->per-day (cad->usd 99))
    :price/avg-viewer-subscription          (per-month->per-day 5)
@@ -43,7 +44,7 @@
    :price/avg-shipping-cost                10
    :price/sales-tax                        0.10
    :price/transaction-fees-rate            0.03
-   :price/transaction-fees-sum             0.30
+   :price/transaction-fees-fixed           0.30
 
    ;; ec2-server per month (m3.xlarge?)
    ;; TODO: Get real prices
@@ -121,12 +122,12 @@
                   (* total-price
                      (:price/transaction-fees-rate world))
                   (* products-sold
-                     (:price/transaction-fees-sum world)))
+                     (:price/transaction-fees-fixed world)))
         ;; Our expense: Stripe transaction fees
         expense (+ (* total-price
                       (:product/stripe-fees-rate world))
                    (* products-sold
-                      (:product/stripe-fees-sum world)))]
+                      (:product/stripe-fees-fixed world)))]
     (- income expense)))
 
 (defn stream-ads-income [world]

@@ -2,6 +2,9 @@
   (:require
     [om.next :as om :refer [defui]]
     [om.dom :as dom]
+    [eponai.common :as common]
+    [eponai.common.ui.dom :as my-dom]
+    [eponai.common.ui.elements.css :as css]
     [eponai.common.business.budget :as b]
     [taoensso.timbre :refer [debug]]
     #?(:cljs [cljsjs.nvd3])
@@ -103,35 +106,55 @@
            (.call chart)))))
 
 (defn render-input-controls [this]
-  (let [model (:query/business-model (om/props this))
-        create-input (fn [i k]
-                       (dom/div #js {:key       i
-                                     :className "column"
-                                     :style     #js {:display        "flex"
-                                                     :justifyContent "space-between"}}
-                                (dom/span nil (str k))
-                                (dom/input #js {:value    (str (or (get-in (om/get-state this) [:model k])
-                                                                   (get model k)))
-                                                :onChange #(do
-                                                             (om/update-state! this assoc-in [:model k] (.-value (.-target %))))})))
-        controls [:visitor/stream-viewing-in-secs
-                  :conversion-rate/product-sales
-                  :price/avg-product
-                  :price/business-subscription
-                  :price/transaction-fees-rate
-                  :price/transaction-fees-sum
-                  :price/sales-tax
-                  :price/avg-shipping-cost
-                  :product/commission-rate
-                  :fixed/visitors
-                  :fixed/businesses
-                  :fixed/days
-                  :stream/avg-edges
-                  :website/avg-servers
-                  :stream/p2p-efficiency
-                  :cloudfront/reserved-capacity-savings]]
-    (dom/div #js {:className "row small-up-1"}
-             (into [] (map-indexed create-input) controls))))
+  (let [create-input (fn [i [k label unit]]
+                       (my-dom/div
+                         (css/grid-row {:key i})
+                         (my-dom/div
+                           (css/grid-column)
+                           (dom/label nil label))
+                         (my-dom/div
+                           (->> (css/grid-column)
+                                (css/grid-column-size {:small 4}))
+                           (my-dom/div
+                             (->> (css/grid-row)
+                                  (css/add-class :collapse)
+                                  (css/align :middle))
+                             (my-dom/div (->> (css/grid-column)
+                                              (css/text-align :right))
+                                         (dom/small nil unit))
+                             (my-dom/div (css/grid-column)
+                                         (dom/input #js {:type     "text"
+                                                         :style    #js {:margin 0}
+                                                         :value    (str (or (get-in (om/get-state this) [:model k])
+                                                                            (get-in (om/props this) [:query/business-model k])))
+                                                         :onChange #(om/update-state! this assoc-in [:model k] (.-value (.-target %)))}))))))
+        controls {:pricing   {:label    "Our pricing"
+                              :controls [[:price/business-subscription "Business subscription fee" "as $USD per day"]
+                                         [:product/commission-rate "Commission rate (pre tax, pre shipping)" "% as 0-1"]
+                                         [:price/transaction-fees-rate "Transaction fee rate" "% as 0-1"]
+                                         [:price/transaction-fees-fixed "Fixed transaction fee" "$USD"]]}
+                  :variables {:label    "Variables"
+                              :controls [[:visitor/stream-viewing-in-secs "Average time visitor watches a stream" "seconds"]
+                                         [:conversion-rate/product-sales "Product sales conversion rate" "$USD"]
+                                         [:price/avg-product "Average product price" "$USD"]
+                                         [:price/sales-tax "Sales tax" "% as 0-1"]
+                                         [:price/avg-shipping-cost "Average shipping cost" "$USD"]]}
+                  :tech      {:label    "Tech stuff"
+                              :controls [[:stream/avg-edges "Average streaming servers" "servers"]
+                                         [:website/avg-servers "Average website servers" "servers"]
+                                         [:stream/p2p-efficiency "Percent of how much is streamed p2p" "% as 0-1"]
+                                         [:cloudfront/reserved-capacity-savings "Cloudfront reserved capacity savings" "% as 0-1"]]}
+                  :graphs    {:label    "Graph settings"
+                              :controls [[:fixed/days "Normalize to number of days" "days"]
+                                         [:fixed/businesses "Adjust fixed business graph" "businesses"]
+                                         [:fixed/visitors "Adjust fixed visitor graph" "visitors"]]}}]
+
+    (dom/div nil
+      (map-indexed (fn [i {:keys [label controls]}]
+                     [(dom/h3 #js {:key (str "label-" i)} label)
+                      (dom/div #js {:key (str "controls-" i)}
+                        (into [] (map-indexed create-input) controls))])
+                   (map controls [:pricing :variables :graphs :tech])))))
 
 (defui Business
   static om/IQuery
