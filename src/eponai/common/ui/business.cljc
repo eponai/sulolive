@@ -135,7 +135,7 @@
                                          [:price/transaction-fees-fixed "Fixed transaction fee" "$USD"]]}
                   :variables {:label    "Variables"
                               :controls [[:visitor/stream-viewing-in-secs "Average time visitor watches a stream" "seconds"]
-                                         [:conversion-rate/product-sales "Product sales conversion rate" "$USD"]
+                                         [:conversion-rate/product-sales "Product sales conversion rate" "% as 0-1"]
                                          [:price/avg-product "Average product price" "$USD"]
                                          [:price/sales-tax "Sales tax" "% as 0-1"]
                                          [:price/avg-shipping-cost "Average shipping cost" "$USD"]]}

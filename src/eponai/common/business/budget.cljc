@@ -34,7 +34,7 @@
    :price/ad-viewed                        0
    :price/business-subscription            (per-month->per-day (cad->usd 99))
    :price/avg-viewer-subscription          (per-month->per-day 5)
-   :price/avg-product                      (cad->usd 60)
+   :price/avg-product                      (cad->usd 40)
    ;; cost of stream bandwidth per GB:
    :price/stream-bandwidth                 {:to-aws         0.00
                                             :from-ec2       0.05
