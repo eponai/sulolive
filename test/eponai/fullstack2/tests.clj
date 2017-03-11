@@ -102,7 +102,8 @@
         (binding [clj-http.core/*cookie-store* cookie-store]
           (let [endpoint (str server-url (routes/path :auth))
                 _ (debug "Requesting auth to endpoint: " endpoint)
-                response (http/get endpoint {:query-params {:code email :state "/"}})]
+                response (http/get endpoint {:follow-redirects false
+                                             :query-params {:code email :state "/"}})]
             (info "Got auth response: " response)))))))
 
 (defn create-client [{:keys [server] :as system} merge-chan]
@@ -240,9 +241,5 @@
                ::post {[:query/auth :user/email] "dev@sulo.live"}}]})
 
 (test/deftest full-stack-tests
-  (try
-    (timbre/set-level! :info)
-    (run-tests [test-store-login-2])
-    (finally
-      (timbre/set-level! :debug))))
+  (run-tests [test-store-login-2]))
 
