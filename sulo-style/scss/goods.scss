@@ -76,3 +76,15 @@
 		}
 	}
 }
+
+#sulo-items {
+	.navigation {
+		display: none;
+		@include breakpoint(large) {
+			display: block;
+		}
+	}
+	input, select {
+		margin: 0;
+	}
+}

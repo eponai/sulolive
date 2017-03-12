@@ -8,7 +8,12 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.product :as product]
     [eponai.common.ui.dom :as my-dom]
-    [eponai.common.ui.elements.css :as css]))
+    [eponai.common.ui.elements.css :as css]
+    [eponai.common.ui.elements.menu :as menu]))
+
+(def sorting-vals
+  {:sort/name-inc {:key :store.item/name :reverse? false}
+   :sort/name-dec {:key :store.item/name :reverse? true}})
 
 (defui Goods
   static om/IQuery
@@ -17,24 +22,65 @@
      {:query/items (om/get-query product/Product)}
      :query/current-route])
   Object
+  (initLocalState [_]
+    {:sorting {:key :store.item/name
+               :reverse? false}})
   (render [this]
     (let [{:keys [proxy/navbar]
-           :query/keys [current-route items]} (om/props this)]
+           :query/keys [current-route items]} (om/props this)
+          {:keys [sorting]} (om/get-state this)]
       ;#?(:cljs (debug "Got items to render: " (om/props this)))
-      ;(debug "Current route: " current-route)
+      (debug "Current route: " current-route)
       (debug "Got props: " (om/props this))
 
       (common/page-container
         {:navbar navbar :id "sulo-items"}
         (dom/div #js {:id "sulo-items-container"}
-          (apply my-dom/div
-                 (->> (css/grid-row)
-                      (css/grid-row-columns {:small 2 :medium 3 :large 4}))
-                 (map-indexed
-                   (fn [i p]
-                     (my-dom/div
-                       (css/grid-column {:key i})
-                       (pi/->ProductItem {:product p})))
-                   (sort-by :db/id items))))))))
+          (my-dom/div
+            (css/grid-row)
+            (my-dom/div
+              (css/grid-column)
+              (dom/h3 nil (get-in current-route [:query-params :category]))))
+          (my-dom/div
+            (css/grid-row)
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/add-class :navigation)
+                   (css/grid-column-size {:medium 3 :large 3}))
+              (menu/vertical
+                nil
+                (menu/item nil (dom/div nil "Test"))))
+            (my-dom/div
+              (css/grid-column)
+              (my-dom/div
+                (->> (css/grid-row)
+                     (css/align :middle))
+                (my-dom/div
+                  (css/grid-column)
+                  (dom/h4 nil "Showing " (count items) " items"))
+                (my-dom/div
+                  (->> (css/grid-column)
+                       (css/text-align :right))
+                  (dom/label nil "Sort"))
+                (my-dom/div
+                  (css/grid-column)
+                  (dom/div nil
+                    (dom/select #js {:defaultValue "a-z"
+                                     :onChange #(om/update-state! this assoc :sorting (get sorting-vals (keyword "sort" (.. % -target -value))))}
+                                (dom/option #js {:value (name :sort/name-inc)} "A-Z")
+                                (dom/option #js {:value (name :sort/name-dec)} "Z-A")))))
+              (apply my-dom/div
+                     (->> (css/grid-row)
+                          (css/grid-row-columns {:small 2 :medium 3}))
+                     (map-indexed
+                       (fn [i p]
+                         (my-dom/div
+                           (css/grid-column {:key i})
+                           (pi/->ProductItem {:product p})))
+                       (let [sorted (sort-by :store.item/name items)]
+                         (debug "Sorted items: " sorted)
+                         (if (:reverse? sorting)
+                           (reverse sorted)
+                           sorted)))))))))))
 
 (def ->Goods (om/factory Goods))
