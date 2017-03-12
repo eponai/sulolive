@@ -12,7 +12,8 @@
     [eponai.client.parser.message :as msg]
     [eponai.common :as c]
     [taoensso.timbre :refer [debug]]
-    [eponai.client.auth :as auth]))
+    [eponai.client.auth :as auth]
+    [eponai.common.api.products :as products]))
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
@@ -109,27 +110,14 @@
       {:value cart})))                                      ;(common.read/compute-cart-price cart)
 
 (defmethod client-read :query/items
-  [{:keys [db query target route-params ast] :as env} _ p]
-  (let [{:keys [category search]} route-params]
+  [{:keys [db query target query-params ast] :as env} _ p]
+  (let [{:keys [category search]} query-params]
     (if target
-      {:remote (cond-> ast
-                       (some? category)
-                       (assoc-in [:params :category] category)
-                       (some? search)
-                       (assoc-in [:params :search] search))}
-      {:value (let [pattern {:where '[[?e :store.item/name]]}]
-                (assert (some #{:db/id} query)
-                        (str "Query to :query/all-tiems must contain :db/id, was: " query))
-                (cond->> (db/pull-all-with db query pattern)
-                         (or search category)
-                         (filter #(cond (not-empty search)
-                                        (not-empty (re-find (re-pattern search) (.toLowerCase (:store.item/name %))))
-                                        (some? category)
-                                        (= category (:store.item/category %))
-                                        :else
-                                        true))
-                         :always
-                         (sort-by :db/id)))})))
+      {:remote (assoc-in ast [:params :category] category)}
+      {:value (cond (some? category)
+                    (db/pull-all-with db query (products/find-by-category category))
+                    :else
+                    (db/pull-all-with db query (products/find-all)))})))
 
 (defmethod client-read :query/item
   [{:keys [db query target route-params ast]} _ _]

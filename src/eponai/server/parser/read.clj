@@ -12,6 +12,7 @@
     [eponai.server.external.wowza :as wowza]
     [eponai.server.external.chat :as chat]
     [eponai.server.api.store :as store]
+    [eponai.common.api.products :as products]
     [eponai.server.api.user :as user]))
 
 (defmethod server-read :datascript/schema
@@ -87,8 +88,12 @@
                                           :symbols {'?e user-id}})})
 
 (defmethod server-read :query/items
-  [{:keys [db db-history query]} _ {:keys [category search]}]
-  {:value (query/all db db-history query {:where '[[?e :store.item/name]]})})
+  [{:keys [db db-history query query-params route-params]} _ {:keys [category search] :as p}]
+  {:value (let [c (or category (:category route-params))]
+            (cond (some? category)
+                  (query/all db db-history query (products/find-by-category c))
+                  :else
+                  (query/all db db-history query (products/find-all))))})
 
 (defmethod read-basis-param-path :query/item [_ _ {:keys [product-id]}]
   [product-id])

@@ -123,7 +123,7 @@
         {:store.item/keys [photos price]
          item-name :store.item/name
          store :store/_items} product]
-    (apply dom/div #js {:className "column content-item product-item"}
+    (apply dom/div #js {:className "content-item product-item"}
            (my-dom/a
              {:onClick on-click
               :href    goods-href}

@@ -216,8 +216,9 @@
                                               (css/grid-row-columns {:small 2 :medium 4 :large 5}))
                                          (map-indexed
                                            (fn [i p]
-                                             ;(dom/div #js {:key (str i)})
-                                             (common/product-element {:open-url? true} p))
+                                             (my-dom/div
+                                               (css/grid-column {:key (str i)})
+                                               (common/product-element {:open-url? true} p)))
                                            featured-items))
                                     "See More")
 

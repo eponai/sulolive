@@ -37,7 +37,8 @@
      {:store.item/photos [:photo/path]}
      {:store.item/skus [:store.item.sku/value]}
      :store.item/details
-     :store.item/category
+     {:store.item/collection [:collection/label
+                              :collection/id]}
      {:store/_items [{:store/photo [:photo/path]}
                      :store/name]}])
   Object
@@ -61,7 +62,7 @@
           store (:store/_items item)
           photo-url (:photo/path (first photos))]
 
-      (debug "Product props: " (om/props this))
+      ;(debug "Product props: " (om/props this))
       (dom/div
         #js {:id "sulo-product"}
 

@@ -58,15 +58,16 @@
               (my-dom/div
                 (->> (css/grid-column)
                      (css/grid-column-order {:small 2 :medium 1}))
-                (cond (some? stream)
-                      (dom/div #js {:className "stream-container"}
-                        (stream/->Stream (om/computed (:proxy/stream props)
-                                                      {:stream-name (:stream/name stream)}))
+                (cond
+                  (some? stream)
+                  (dom/div #js {:className "stream-container"}
+                    (stream/->Stream (om/computed (:proxy/stream props)
+                                                  {:stream-name (:stream/name stream)}))
                     ;(dom/div #js {:className "content-item-title-section"}
                     ;  (dom/span nil (:stream/name stream)))
                     )
-                      (some? cover)
-                      (photo/cover {:src (:photo/path cover)})))
+                  (some? cover)
+                  (photo/cover {:src (:photo/path cover)})))
 
 
 
@@ -124,8 +125,7 @@
                              (->> (css/grid-row)
                                   (css/grid-row-columns {:small 2 :medium 3}))
                              (map (fn [p]
-                                    (pi/->ProductItem (om/computed {:product p}
-                                                                   {:display-content (item/->Product p)})))
+                                    (pi/->ProductItem {:product p}))
                                   (concat items items items)))))))))
 
 (def ->Store (om/factory Store))
