@@ -94,5 +94,5 @@
   (debug "Reload!")
   (comment
     "Uncomment when we've got an ios app."
-    (om/add-root! @utils/reconciler-atom root/RootView root-node-id)))
+    (om/add-root! @reconciler-atom root/RootView root-node-id)))
 

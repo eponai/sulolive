@@ -38,6 +38,7 @@ dependencies:
 test:
   override:
     - ./scripts/run-cljs-tests.sh
+    - lein test
   post:
     - lein clean
     - lein uberjar

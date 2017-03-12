@@ -133,12 +133,6 @@
                                (assert (not-any? (partial has-edit? tx edit)
                                                  (remove (partial = client) clients)))))})))
 
-(defmethod print-method om.next.Reconciler [x writer]
-  (print-method (str "[Reconciler id=[" (get-in x [:config :id-key]) "]]") writer))
-
-(defmethod adispatch/color-dispatch om.next.Reconciler [x]
-  (adispatch/color-dispatch [(str "Reconciler" :id-key (get-in x [:config :id-key]))]))
-
 (defn set-amount [& [x]]
   (fn [tx]
     (assoc tx :transaction/amount (str (or x 4711)))))

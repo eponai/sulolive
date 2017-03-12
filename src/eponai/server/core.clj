@@ -157,7 +157,7 @@
   (debug "Running repl in production mode without ssl")
   (start-server {:join? false ::disable-ssl true}))
 
-(defn start-server-for-tests [& [{:keys [email-chan conn port wrap-state] :as opts}]]
+(defn start-server-for-tests [& [{:keys [conn port wrap-state] :as opts}]]
   {:pre [(or (nil? opts) (map? opts))]}
   (reset! in-production? false)
   (start-server
@@ -168,13 +168,5 @@
             ::stateless-server true
             ::extra-middleware #(cond-> %
                                         (some? wrap-state)
-                                        (m/wrap-state wrap-state)
-                                        (some? email-chan)
-                                        (m/wrap-state {::email/send-verification-fn
-                                                       (fn [verification params]
-                                                         (debug "Putting verification: " verification
-                                                                " on email-chan with params: " params)
-                                                         (async/put! email-chan
-                                                                     {:verification verification
-                                                                      :params       params}))}))}
+                                        (m/wrap-state wrap-state))}
            opts)))

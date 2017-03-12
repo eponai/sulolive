@@ -4,6 +4,7 @@
     [clojure.set :as set]
     [clojure.walk :as walk]
     [datascript.db]
+    [om.next :as om]
     #?(:clj [datomic.api :as datomic])
     [datascript.core :as datascript])
   #?(:clj
@@ -315,3 +316,15 @@
                                    (instance? datomic-tempid-type %)
                                    (datomic->ds-fn)))
            (into [])))))
+
+;; Helper fn
+
+(defn to-db
+  "Transforms, components, reconcilers or connections to a database."
+  [x]
+  {:pre [(or (om/component? x) (om/reconciler? x) (connection? x) (database? x))]}
+  (reduce (fn [x [pred f]] (cond-> x (pred x) (f)))
+          x
+          [[om/component? om/get-reconciler]
+           [om/reconciler? om/app-state]
+           [connection? db]]))

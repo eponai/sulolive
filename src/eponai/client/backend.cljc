@@ -478,15 +478,15 @@
             (did-merge-fn @reconciler-atom)))))))
 
 (defn send!
-  [reconciler-atom remote->send & [{:keys [did-merge-fn query-fn]}]]
-  {:pre [(map? remote->send)]}
+  [reconciler-atom remote-config & [{:keys [did-merge-fn query-fn]}]]
+  {:pre [(map? remote-config)]}
   (let [query-chan (async/chan 10000)
         ;; Make leeb listen to the query-chan:
         ;; TODO: Make it possible to exit the leeb go block (by closing query-chan?)
         _ (leeb reconciler-atom query-chan did-merge-fn)]
     (fn [queries cb]
      (run! (fn [[key query]]
-             (async/put! query-chan {:remote->send remote->send
+             (async/put! query-chan {:remote->send remote-config
                                      :cb           cb
                                      :query        (cond-> query (some? query-fn) (query-fn))
                                      :remote-key   key

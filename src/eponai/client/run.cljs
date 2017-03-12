@@ -8,6 +8,7 @@
     [eponai.client.parser.merge :as merge]
     [eponai.client.backend :as backend]
     [eponai.client.remotes :as remotes]
+    [eponai.client.reconciler :as reconciler]
     [medley.core :as medley]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
@@ -46,6 +47,11 @@
         (warn "Could not match url: " url " to any route."))
       match)))
 
+(defn set-current-route! [history update-route-fn]
+  (let [match-all-routes (partial bidi/match-route common.routes/routes)
+        match (match-all-routes (pushy/get-token history))]
+    (update-route-fn match)))
+
 (defonce history-atom (atom nil))
 
 (defn- run [{:keys [auth-lock]
@@ -58,54 +64,39 @@
         update-route! (update-route-fn reconciler-atom)
         history (pushy/pushy update-route! (wrap-route-logging match-route))
         _ (reset! history-atom history)
-        current-route-fn #(:handler (match-route (pushy/get-token history)))
         conn (utils/create-conn)
-        local-storage (local-storage/->local-storage)
-        parser (parser/client-parser
-                 (parser/client-parser-state
-                   {::parser/get-route-params #(let [route-params (or (:route-params (routes/current-route conn))
-                                                                      (:route-params (current-route-fn)))
-                                                     url (pushy/get-token history)
-                                                     query-params (medley/map-keys keyword (:query (url/url url)))]
-                                                 ;;TODO: These are merged for now. Separate them?
-                                                 (merge route-params query-params))}))
-        remotes [:remote :remote/user :remote/chat]
+        parser (parser/client-parser)
+        remote-config (reconciler/remote-config conn)
         send-fn (backend/send! reconciler-atom
                                ;; TODO: Make each remote's basis-t isolated from another
                                ;;       Maybe protocol it?
-                               {:remote      (-> (remotes/post-to-url "/api")
-                                                 (remotes/read-basis-t-remote-middleware conn))
-                                :remote/user (-> (remotes/post-to-url "/api/user")
-                                                 (remotes/read-basis-t-remote-middleware conn))
-                                :remote/chat (-> (remotes/post-to-url "/api/chat")
-                                                 (remotes/read-basis-t-remote-middleware conn))}
-                               {:did-merge-fn #(when-not @init?
-                                                 (reset! init? true)
-                                                 (debug "First merge happened. Adding reconciler to root.")
-                                                 (binding [parser/*parser-allow-remote* false]
-                                                   (om/add-root! @reconciler-atom router/Router (gdom/getElement router/dom-app-id))))
+                               remote-config
+                               {:did-merge-fn (apply-once
+                                                (fn [reconciler]
+                                                  (when-not @init?
+                                                    (reset! init? true)
+                                                    (debug "First merge happened. Adding reconciler to root.")
+                                                    (binding [parser/*parser-allow-remote* false]
+                                                      (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id))))))
                                 :query-fn     (apply-once (fn [q]
                                                             {:pre [(sequential? q)]}
                                                             (into [:datascript/schema] q)))})
-        reconciler (om/reconciler {:state     conn
-                                   :ui->props (utils/cached-ui->props-fn parser)
-                                   :parser    parser
-                                   :remotes   remotes
-                                   :send      send-fn
-                                   :merge     (merge/merge!)
-                                   :shared    {:shared/history       history
-                                               :shared/local-storage local-storage
-                                               :shared/auth-lock     auth-lock}
-                                   :migrate   nil})]
+        reconciler (reconciler/create {:conn conn
+                                       :parser parser
+                                       :ui->props (utils/cached-ui->props-fn parser)
+                                       :send-fn send-fn
+                                       :remotes (:order remote-config)
+                                       :shared/browser-history history
+                                       :shared/auth-lock auth-lock})]
+
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
       (pushy/start! history)
-      ;; For landing page stuff, which we don't want routing for right now.
-      (let [match-all-routes (partial bidi/match-route common.routes/routes)
-            match (match-all-routes (pushy/get-token history))]
-        (when (contains? #{:coming-soon :sell-soon} (:handler match))
-          (update-route! match))))
-    (utils/init-state! reconciler remotes send-fn parser router/Router)))
+      ;; Pushy is configured to not work with all routes.
+      ;; We ensure that routes has been inited
+      (when-not (:route (routes/current-route reconciler))
+        (set-current-route! history update-route!)))
+    (utils/init-state! reconciler send-fn router/Router)))
 
 (defn run-prod []
   (run {}))

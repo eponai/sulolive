@@ -20,10 +20,6 @@
 ;; ---------------------
 ;; -- App initialization
 
-;; These atoms must only be used from the repl or in app initialization!
-(defonce reconciler-atom (atom nil))
-(defonce conn-atom (atom nil))
-
 (defn initial-ui-state []
   [{:ui/component :ui.component/cart
     :ui.component.cart/items #{}}
@@ -39,22 +35,25 @@
     (d/transact! conn (initial-ui-state))
     conn))
 
-(defn init-conn
-  "Sets up the datascript state. Caches the state so we can keep our app state between
-  figwheel reloads."
-  []
-  (if @conn-atom
-    (do
-      (debug "Reusing old conn. It currently has schema for attributes:" (-> @conn-atom deref :schema keys))
-      @conn-atom)
-    (reset! conn-atom (create-conn))))
+(defn reconciler-parser [reconciler]
+  (:parser (:config reconciler)))
 
+(defn reconciler-remotes [reconciler]
+  (:remotes (:config reconciler)))
 
-(defn init-state! [reconciler remotes send-fn parser component]
+(defn parse [reconciler query & [target]]
+  (let [parser (reconciler-parser reconciler)
+        env (assoc (#'om/to-env reconciler)
+              :reconciler reconciler)]
+    (if target
+      (parser env query target)
+      (parser env query))))
+
+(defn init-state! [reconciler send-fn component]
   (let [remote-queries (into {}
                              (map (fn [remote]
-                                    [remote (parser (#'om/to-env reconciler) (om/get-query component) remote)]))
-                             remotes)]
+                                    [remote (parse reconciler (om/get-query component) remote)]))
+                             (reconciler-remotes reconciler))]
     (debug "Remote-queries: " remote-queries)
     (send-fn remote-queries
              (fn send-cb

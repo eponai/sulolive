@@ -3,6 +3,8 @@
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn trace]]
             [om.next :as om]
             [om.next.cache :as om.cache]
+            [eponai.client.utils :as client.utils]
+            [eponai.client.routes :as client.routes]
             [eponai.common.database :as db]
             [eponai.common.format.date :as date]
             [datascript.core :as datascript]
@@ -10,7 +12,6 @@
             [datomic.api :as datomic])
     #?(:clj
             [eponai.server.datomic.filter :as filter])
-            [eponai.client.utils :as client.utils]
             [clojure.set :as set]
             [medley.core :as medley])
   #?(:clj
@@ -268,6 +269,14 @@
                            :eponai.client.backend/mutation-db-history-id
                            history-id))))))
 
+(defn remote-mutation? [mutate env k p]
+  (let [remote-return (mutate (assoc env :target :any-remote) k p)]
+    (and (map? remote-return)
+         (or (:remote remote-return)
+             (some (fn [k]
+                     (when (= "remote" (namespace k))
+                       (get remote-return k)))
+                   (keys remote-return))))))
 
 (defn with-pending-message [mutate]
   (fn [{:keys [state target] :as env} k p]
@@ -275,22 +284,15 @@
       (if (or (some? target)
               (not (some-reconciler? env)))
         ret
-        (let [remote-return (mutate (assoc env :target :any-remote) k p)
-              remote-mutation? (and (map? remote-return)
-                                    (or (:remote remote-return)
-                                        (some (fn [k]
-                                                (when (= :remote (namespace k))
-                                                  (get remote-return k)))
-                                              (keys remote-return))))]
-          (cond-> ret
-                  remote-mutation?
-                  (update :action (fn [action]
-                                    (fn []
-                                      (when action (action))
-                                      (datascript/reset-conn! state (store-message
-                                                                      (datascript/db state)
-                                                                      (reconciler->history-id (:reconciler env))
-                                                                      (->pending-message k))))))))))))
+        (cond-> ret
+                (remote-mutation? mutate env k p)
+                (update :action (fn [action]
+                                  (fn []
+                                    (when action (action))
+                                    (datascript/reset-conn! state (store-message
+                                                                    (datascript/db state)
+                                                                    (reconciler->history-id (:reconciler env))
+                                                                    (->pending-message k)))))))))))
 
 
 #?(:clj
@@ -494,10 +496,12 @@
         (parser-mw state))))
 
 (defn client-parser-state [& [custom-state]]
-  (merge {:read           client-read
-          :mutate         client-mutate
-          :elide-paths    false
-          :txs-by-project (atom {})}
+  (merge {:read              client-read
+          :mutate            client-mutate
+          :elide-paths       false
+          :txs-by-project    (atom {})
+          ::conn->route-params (fn [conn]
+                               (:route-params (client.routes/current-route conn)))}
          custom-state))
 
 (defn client-parser
@@ -508,7 +512,7 @@
                 (fn [parser state]
                   (fn [env query & [target]]
                     (parser (assoc env ::server? false
-                                       :route-params ((::get-route-params state)))
+                                       :route-params ((::conn->route-params state) (:state env)))
                             query target)))
                 (fn [read {:keys [elide-paths txs-by-project] :as state}]
                   (-> read
@@ -564,11 +568,15 @@
 
 ;; Case by case middleware. Used when appropriate
 
+(defn mutation? [x]
+  (and (sequential? x)
+       (symbol? (first x))))
+
 (defn parse-without-mutations
   "Returns a parser that removes remote mutations before parsing."
   [parser]
   (fn [env query & [target]]
-    (let [query (->> query (into [] (remove #(and (sequential? %) (symbol? (first %))))))]
+    (let [query (into [] (remove mutation?) query)]
       (parser env query target))))
 
 (defn parser-require-auth [parser]
