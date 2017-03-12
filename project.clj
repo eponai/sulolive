@@ -31,10 +31,10 @@
                  ;; Depending on transit-clj for faster cljs builds
                  [com.cognitect/transit-clj "0.8.297"]
                  ; ring helpers
-                 [amalloy/ring-gzip-middleware "0.1.3"]
+                 [aleph "0.4.3"]
+                 [aleph-middleware "0.1.2" :exclusions [aleph]]
                  [ring/ring-core "1.5.0"]
                  [ring/ring-devel "1.5.0"]
-                 [ring/ring-jetty-adapter "1.5.0"]
                  [ring/ring-defaults "0.2.1"]
                  [ring/ring-ssl "0.2.1"]
                  [ring/ring-anti-forgery "1.0.1"]
@@ -92,7 +92,7 @@
             [lein-shell "0.5.0"]
             [lein-doo "0.1.7" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
             [lein-cljsbuild "1.1.5" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
-            [lein-figwheel "0.5.7" :exclusions [org.clojure/clojure]]
+            [lein-figwheel "0.5.9" :exclusions [org.clojure/clojure]]
             [lein-test-out "0.3.1"]
             [lein-environ "1.0.1"]]
   
@@ -197,7 +197,7 @@
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
                                     ;; [[org.omcljs/om "1.0.0-alpha46"
                                     ;;   :exclusions [cljsjs/react cljsjs/react-dom]]
-                                       [figwheel-sidecar "0.5.7"]
+                                       [figwheel-sidecar "0.5.9"]
                                        [com.cemerick/piggieback "0.2.1"]]
                         :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
                         :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
@@ -259,7 +259,7 @@
                                                              ;;   :verbose true
                                                              }}]}}
              :web      {:exclusions [org.clojure/clojure org.clojure/clojurescript]
-                        :dependencies [[figwheel-sidecar "0.5.7"]]
+                        :dependencies [[figwheel-sidecar "0.5.9"]]
                         :cljsbuild {:builds [{:id           "dev"
                                               :figwheel     {:on-jsload "eponai.web.figwheel/reload!"}
                                               :source-paths ["src/" "src-hacks/web/" "env/client/dev"]

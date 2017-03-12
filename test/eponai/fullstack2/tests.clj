@@ -14,14 +14,14 @@
     [eponai.client.backend :as backend]
     [eponai.client.remotes :as remotes]
     [om.next :as om]
+    [aleph.netty :as netty]
     [clojure.data :as data]
     [clj-http.cookies :as cookies]
     [clj-http.client :as http]
     [eponai.common.routes :as routes]
     [aprint.dispatch :as adispatch]
     [taoensso.timbre :as timbre])
-  (:import (org.eclipse.jetty.server Connector ServerConnector Server)
-           (om.next Reconciler)))
+  (:import (om.next Reconciler)))
 
 ;; Print method stuff
 
@@ -43,38 +43,24 @@
 ;; Start and stop system
 
 (defn get-port [server]
-  (.getPort (.getURI server)))
-
-(defn- stabilize-port [server]
-  ;; The server could be started with a random port.
-  ;; Set the selected port to the server so it
-  ;; keeps the same port between restarts
-  (let [connector (doto (ServerConnector. server) (.setPort (get-port server)))
-        server (doto server
-                 (.stop)
-                 (.join)
-                 (.setConnectors (into-array Connector [connector]))
-                 (.start))]
-    server))
+  (netty/port server))
 
 (defn- start-system [{:keys [db-schema] :as system}]
+  ;; TODO: Use datomic forking library, to setup and fork our datomic connection once.
   (let [conn (datomic-dev/create-new-inmemory-db)
         _ (datomic-dev/add-data-to-connection conn db-schema)
         server (core/start-server-for-tests {:conn conn
                                              ;; Re-use the server's port
                                              ;; to be more kind to the test system.
-                                             :port (:server-port system 0)})
-        server (stabilize-port server)
-        port (get-port server)]
+                                             :port (:server-port system 0)})]
     (assoc system :conn conn
                   :server server
-                  :server-port port)))
+                  :server-port (get-port server))))
 
-(defn- stop-system [system]
-  (datomic/release (:conn system))
-  (doto (:server system)
-    (.stop)
-    (.join))
+(defn- stop-system [{:keys [server conn] :as system}]
+  (datomic/release conn)
+  (.close server)
+  ;;(netty/wait-for-close server)
   system)
 
 (defn setup-system []
@@ -109,7 +95,7 @@
 (defn create-client [{:keys [server] :as system} merge-chan]
   (let [reconciler-atom (atom nil)
         conn (client.utils/create-conn)
-        server-url (str "http://localhost:" (.getPort (.getURI ^Server server)))
+        server-url (str "http://localhost:" (get-port server))
         cookie-store (cookies/cookie-store)
         remote-config (remote-config-with-server-url conn server-url cookie-store)
         reconciler (reconciler/create {:conn             conn
@@ -147,10 +133,13 @@
 (defn compare-paths [paths result]
   (let [actual (into {} (remove #(symbol? (key %))) result)]
     (->> paths
-         (map (fn [[path expected-val]]
-                (let [val (get-in actual path)]
-                  (when (not= val expected-val)
-                    {:expected expected-val
+         (map (fn [[path expected]]
+                (let [val ((apply comp (reverse path)) actual)
+                      compared (if (fn? expected)
+                                 (expected val)
+                                 (= val expected))]
+                  (when-not compared
+                    {:expected expected
                      :actual   val
                      :path     path
                      :in-map   result}))))
@@ -175,8 +164,8 @@
                       (reduced system))
                   (let [post-tx-parse (client.utils/parse client (vec (remove parser/mutation? tx)))
                         messages (action-messages client history-id tx)
-                        pre-compare (compare-paths pre pre-tx-parse)
-                        post-compare (compare-paths post post-tx-parse)
+                        pre-compare (when pre (compare-paths pre pre-tx-parse))
+                        post-compare (when post (compare-paths post post-tx-parse))
                         success-message? #(and (message/final? %) (message/success? %))
                         pass? (and (every? success-message? messages)
                                    (empty? pre-compare)
@@ -217,14 +206,16 @@
             test-fns)))
 
 (defmethod client-mutate 'fullstack/login
-  [{:keys [shared]} k {:user/keys [email]}]
+  [{:keys [parser shared] :as env} k {:user/keys [email]}]
   {:action (fn []
              ;; The auth lock for the jvm client cannot show an input dialog
              ;; So it returns a function that takes the email and does the authorization.
-             (let [lock (auth/show-lock (:shared/auth-lock shared))]
-               (assert (fn? lock) (str "show-lock did not return a function. Was: " lock))
-               (lock {:email email})))})
-
+             (let [parsed-auth (parser env [{:query/auth [:db/id]}])]
+               (debug "Parsed auth: " parsed-auth)
+               (when-not (:query/auth parsed-auth)
+                (let [lock (auth/show-lock (:shared/auth-lock shared))]
+                  (assert (fn? lock) (str "show-lock did not return a function. Was: " lock))
+                  (lock {:email email})))))})
 
 ;; TODO: Could define a multimethod for each mutation
 ;;       that returns reads it should read
@@ -234,12 +225,18 @@
 ;; WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOW...?
 ;; We'd also need a generator params of the mutation.
 (defn test-store-login-2 []
-  {::label   "Should be able to log in store"
-   ::actions [{::tx   `[(fullstack/login {:user/email "dev@sulo.live"})
-                        {:query/auth [:user/email]}]
-               ::pre  {[:query/auth :user/email] nil}
-               ::post {[:query/auth :user/email] "dev@sulo.live"}}]})
+  (let [test {::tx   `[(fullstack/login {:user/email "dev@sulo.live"})
+                       {:query/auth [:user/email]}]
+              ::pre  {[:query/auth :user/email] nil}
+              ::post {[:query/auth :user/email] "dev@sulo.live"}}]
+    {::label   "Should be able to log in store"
+    ::actions [test
+               (assoc test ::pre (::post test))]}))
+
 
 (test/deftest full-stack-tests
-  (run-tests [test-store-login-2]))
-
+  ;; Runs the test multiple times to make sure things are working
+  ;; after setup and tear down.
+  (run-tests [test-store-login-2
+              test-store-login-2
+              test-store-login-2]))
