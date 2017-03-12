@@ -8,12 +8,14 @@
             [eponai.common.database :as db]
             [eponai.common.format.date :as date]
             [datascript.core :as datascript]
+    #?(:cljs [pushy.core :as pushy])
     #?(:clj
             [datomic.api :as datomic])
     #?(:clj
             [eponai.server.datomic.filter :as filter])
             [clojure.set :as set]
-            [medley.core :as medley])
+            [medley.core :as medley]
+            [cemerick.url :as url])
   #?(:clj
      (:import (clojure.lang ExceptionInfo))))
 
@@ -504,6 +506,14 @@
                                (:route-params (client.routes/current-route conn)))}
          custom-state))
 
+(defn query-params [env]
+  #?(:cljs
+     (->> (:shared/browser-history (:shared env))
+          (pushy/get-token)
+          (url/url)
+          :query
+          (medley/map-keys keyword))))
+
 (defn client-parser
   ([] (client-parser (client-parser-state)))
   ([state]
@@ -512,7 +522,8 @@
                 (fn [parser state]
                   (fn [env query & [target]]
                     (parser (assoc env ::server? false
-                                       :route-params ((::conn->route-params state) (:state env)))
+                                       :route-params ((::conn->route-params state) (:state env))
+                                       :query-params (query-params env))
                             query target)))
                 (fn [read {:keys [elide-paths txs-by-project] :as state}]
                   (-> read

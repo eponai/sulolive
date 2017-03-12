@@ -197,8 +197,10 @@
                              {:where '[[?e :ui/singleton :ui.singleton/stream-config]]})})
 
 (defmethod client-read :query/current-route
-  [{:keys [db]} k p]
-  {:value (client.routes/current-route db)})
+  [{:keys [db query-params]} k p]
+  {:value (cond-> (client.routes/current-route db)
+                  (some? query-params)
+                  (assoc :query-params query-params))})
 
 (defmethod client-read :routing/app-root
   [{:keys [db] :as env} k p]
