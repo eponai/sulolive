@@ -363,10 +363,17 @@
 
  ;; Collections
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :collection/name
+  :db/ident              :collection/id
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
   :db/unique             :db.unique/identity
-  :db/doc                "Category name."
+  :db/doc                "Collection Identifier."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :collection/label
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Colleciton label."
   :db.install/_attribute :db.part/db}
  ]

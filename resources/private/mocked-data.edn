@@ -77,13 +77,17 @@
                 :user/cart   {:db/id      #db/id[:db.part/user -1004]
                               :cart/items [#db/id[:db.part/user -1000]]}}]
  :collections [{:db/id           #db/id[:db.part/user -600]
-                :collection/name "Women"}
+                :collection/id "women"
+                :collection/label "Women"}
                {:db/id           #db/id[:db.part/user -601]
-                :collection/name "Home"}
+                :collection/id "home"
+                :collection/label "Home"}
                {:db/id           #db/id[:db.part/user -602]
-                :collection/name "Men"}
+                :collection/id "men"
+                :collection/label "Men"}
                {:db/id           #db/id[:db.part/user -603]
-                :collection/name "Kids"}]
+                :collection/id "kids"
+                :collection/label "Kids"}]
 
  :stores      [{:db/id        #db/id[:db.part/user -1]
                 :store/name   "ikcha"
@@ -155,19 +159,19 @@
                 :store/items [{:store.item/name       "Glitter & Navy Blue Envelope Clutch"
                                :store.item/photos     [#db/id[:db.part/user -28]]
                                :store.item/price      34.00M
-                               :store.item/collection #db/id[:db.part/user -600]}
+                               :store.item/collection #db/id[:db.part/user -602]}
                               {:store.item/name       "Mint Green & Gold Scallop Canvas Clutch"
                                :store.item/photos     [#db/id[:db.part/user -29]]
                                :store.item/price      52.00M
-                               :store.item/collection #db/id[:db.part/user -600]}
+                               :store.item/collection #db/id[:db.part/user -602]}
                               {:store.item/name       "Modern Geometric Wood Bead Necklace"
                                :store.item/price      134.00M
                                :store.item/photos     [#db/id[:db.part/user -30]]
-                               :store.item/collection #db/id[:db.part/user -600]}
+                               :store.item/collection #db/id[:db.part/user -602]}
                               {:store.item/name       "Modern Wood Teardrop Stud Earrings"
                                :store.item/price      34.00M
                                :store.item/photos     [#db/id[:db.part/user -31]]
-                               :store.item/collection #db/id[:db.part/user -600]}]}
+                               :store.item/collection #db/id[:db.part/user -602]}]}
                {:db/id       #db/id[:db.part/user -5]
                 :store/name  "Nafsika"
                 :store/cover #db/id[:db.part/user -16]
