@@ -9,7 +9,8 @@
     [taoensso.timbre :refer [debug error]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.icons :as icons]
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [clojure.string :as s]))
 
 (defn compute-item-price [items]
   (reduce + (map :store.item/price items)))
@@ -82,6 +83,9 @@
   (apply dom/div #js {:className "navbar top-bar"}
          content))
 
+(defn navigation-collections []
+  ["women" "men" "kids" "home" "art"])
+
 (defn standard-navbar [component]
   (let [{:keys [cart-open? signin-open? did-mount?]} (om/get-state component)
         {:keys [coming-soon? right-menu on-live-click]} (om/get-computed component)
@@ -112,26 +116,14 @@
                  (css/add-class :category))
             (dom/span nil "Shop"))
 
-          (menu/item-link
-            (->> (css/add-class :category {:href ""})
-                 (css/show-for {:size :large}))
-            (dom/span nil "Women"))
-          (menu/item-link
-            (->> (css/add-class :category {:href ""})
-                 (css/show-for {:size :large}))
-            (dom/span nil "Men"))
-          (menu/item-link
-            (->> (css/add-class :category {:href ""})
-                 (css/show-for {:size :large}))
-            (dom/span nil "Kids"))
-          (menu/item-link
-            (->> (css/add-class :category {:href ""})
-                 (css/show-for {:size :large}))
-            (dom/span nil "Home"))
-          (menu/item-link
-            (->> (css/add-class :category {:href ""})
-                 (css/show-for {:size :large}))
-            (dom/span nil "Art"))))
+          (map-indexed
+            (fn [i c]
+              (menu/item-link
+                (->> (css/add-class :category {:key  i
+                                               :href (routes/url :products/collections {:collection (.toLowerCase c)})})
+                     (css/show-for {:size :large}))
+                (dom/span nil (s/capitalize c))))
+            ["women" "men" "kids" "home" "art"])))
       (dom/div #js {:className "top-bar-right"}
         (if coming-soon?
           right-menu

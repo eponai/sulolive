@@ -70,7 +70,7 @@
   See item for general opts."
   [opts & content]
   (item*
-    nil
+    {:key (:key opts)}
     (apply dom/a opts content)))
 
 (defn item-dropdown

@@ -46,12 +46,18 @@
               (css/grid-column)
               (dom/h1 nil (.toUpperCase current-category))))
           (my-dom/div
+            (->> (css/grid-row)
+                 (css/hide-for {:size :large}))
+            (my-dom/div
+              (css/grid-column)
+              (dom/a #js {:className "button hollow expanded"} "Filter Products")))
+          (my-dom/div
             (css/grid-row)
             (my-dom/div
               (->> (css/grid-column)
                    (css/add-class :navigation)
                    (css/show-for {:size :large})
-                   (css/grid-column-size {:small 0 :medium 3 :large 3}))
+                   (css/grid-column-size {:medium 3 :large 3}))
               ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
               (menu/vertical
                 nil
@@ -63,12 +69,6 @@
                                           (menu/item nil (dom/a nil "Shoes"))))))
             (my-dom/div
               (css/grid-column)
-              (my-dom/div
-                (->> (css/grid-row)
-                     (css/hide-for {:size :large}))
-                (my-dom/div
-                  (css/grid-column)
-                  (dom/a #js {:className "button hollow expanded"} "Filter Products")))
               (my-dom/div
                 (->> (css/grid-row)
                      (css/align :middle)
