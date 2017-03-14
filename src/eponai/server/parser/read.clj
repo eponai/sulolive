@@ -88,8 +88,8 @@
                                           :symbols {'?e user-id}})})
 
 (defmethod server-read :query/items
-  [{:keys [db db-history query query-params route-params]} _ {:keys [category search] :as p}]
-  {:value (let [c (or category (:category route-params))]
+  [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
+  {:value (let [c (or category (:collection route-params))]
             (cond (some? category)
                   (query/all db db-history query (products/find-by-category c))
                   :else

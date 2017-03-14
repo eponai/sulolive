@@ -30,7 +30,7 @@
     (let [{:keys [proxy/navbar]
            :query/keys [current-route items]} (om/props this)
           {:keys [sorting]} (om/get-state this)
-          current-category (get-in current-route [:query-params :category] "")]
+          current-category (get-in current-route [:route-params :collection] "")]
       ;#?(:cljs (debug "Got items to render: " (om/props this)))
       ;(debug "Current route: " current-route)
       ;(debug "Got props: " (om/props this))

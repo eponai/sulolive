@@ -17,14 +17,19 @@
   {""        :user
    "/orders" {""                       :user/order-list
               ["/" [#"\w+" :order-id]] :user/order}})
+
+(def product-routes
+  {""                         :products
+   "/collections"             {""                :products/all-collections
+                               ["/" :collection] :products/collections}
+   ["/" [#"\d+" :product-id]] :product})
 (def routes
   ["/" {""                            :index
         "coming-soon"                 :coming-soon
         "sell/coming-soon"            :sell-soon
         "store/new"                   :new-store
         ["store/" [#"\d+" :store-id]] store-routes
-        "products"                    :products
-        ["product/" :product-id]      :product
+        "products"                    product-routes
         "streams"                     :streams
         ["checkout/" :store-id]        :checkout
         "shopping-bag"                :shopping-bag

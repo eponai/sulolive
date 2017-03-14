@@ -110,12 +110,12 @@
       {:value cart})))                                      ;(common.read/compute-cart-price cart)
 
 (defmethod client-read :query/items
-  [{:keys [db query target query-params ast] :as env} _ p]
-  (let [{:keys [category search]} query-params]
+  [{:keys [db query target route-params ast] :as env} _ p]
+  (let [{:keys [collection search]} route-params]
     (if target
-      {:remote (assoc-in ast [:params :category] category)}
-      {:value (cond (some? category)
-                    (db/pull-all-with db query (products/find-by-category category))
+      {:remote (assoc-in ast [:params :category] collection)}
+      {:value (cond (some? collection)
+                    (db/pull-all-with db query (products/find-by-category collection))
                     :else
                     (db/pull-all-with db query (products/find-all)))})))
 

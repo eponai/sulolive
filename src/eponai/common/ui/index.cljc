@@ -61,7 +61,7 @@
 (defn collection-element [{:keys [url title full?]}]
   ;; Use the whole thing as hover elem
   (my-dom/a
-    {:href    (str "/products?category=" (.toLowerCase title))
+    {:href    (routes/url :products/collections {:collection (.toLowerCase title)})
      :classes [:full]}
     (photo/with-overlay
       nil
