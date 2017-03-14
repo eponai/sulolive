@@ -78,6 +78,20 @@
 }
 
 .sulo-browse {
+	.sort {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		select {
+			margin-left: 0.5rem;
+		}
+	}
+	.sulo-items-container {
+		select {
+			font-size: 90%;
+			font-weight: $global-weight-bold;
+		}
+	}
 	&#sulo-live {
 		h1 {
 			color: map-get($foundation-palette, highlight);

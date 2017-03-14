@@ -41,7 +41,7 @@
               (menu/item-link nil "Popular")))
           (my-dom/div
             (css/grid-column)
-            (dom/div #js {:id "sulo-items-container"}
+            (dom/div #js {:className "sulo-items-container"}
               (dom/strong nil "LIVE NOW")
               (apply dom/div #js {:className "row small-up-2 medium-up-3"}
                      (map (fn [s]

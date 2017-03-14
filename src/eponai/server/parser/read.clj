@@ -91,7 +91,8 @@
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
   {:value (let [c (or category (:collection route-params))]
             (cond (some? category)
-                  (query/all db db-history query (products/find-by-category c))
+                  (db/pull-all-with db query (products/find-by-category c))
+                  ;(query/all db db-history query (products/find-by-category c))
                   :else
                   (query/all db db-history query (products/find-all))))})
 

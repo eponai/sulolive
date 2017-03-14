@@ -36,70 +36,73 @@
 
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse"}
-        (dom/div #js {:id "sulo-items-container"}
+        (my-dom/div
+          (css/grid-row)
           (my-dom/div
-            (css/grid-row)
-            (my-dom/div
-              (css/grid-column)
-              (dom/h1 nil (.toUpperCase current-category))))
+            (css/grid-column)
+            (dom/h1 nil (.toUpperCase current-category))))
+        (my-dom/div
+          (->> (css/grid-row)
+               (css/hide-for {:size :large}))
           (my-dom/div
-            (->> (css/grid-row)
-                 (css/hide-for {:size :large}))
-            (my-dom/div
-              (css/grid-column)
-              (dom/a #js {:className "button hollow expanded"} "Filter Products")))
+            (css/grid-column)
+            (dom/a #js {:className "button hollow expanded"} "Filter Products")))
+        (my-dom/div
+          (css/grid-row)
           (my-dom/div
-            (css/grid-row)
-            (my-dom/div
-              (->> (css/grid-column)
-                   (css/add-class :navigation)
-                   (css/show-for {:size :large})
-                   (css/grid-column-size {:large 3}))
-              ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
-              (menu/vertical
-                nil
-                (menu/item nil
-                           (dom/a nil (dom/strong nil (s/capitalize current-category)))
-                           (menu/vertical
-                             {:classes [:nested]}
-                             (menu/item nil (dom/a nil "Accessories"))
-                             (menu/item nil (dom/a nil "Clothing"))
-                             (menu/item nil (dom/a nil "Jewelry"))
-                             (menu/item nil (dom/a nil "Shoes"))))))
-            (my-dom/div
-              (css/grid-column)
+            (->> (css/grid-column)
+                 (css/add-class :navigation)
+                 (css/show-for {:size :large})
+                 (css/grid-column-size {:large 3}))
+            ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
+            (menu/vertical
+              nil
+              (menu/item nil
+                         (dom/a nil (dom/strong nil (s/capitalize current-category)))
+                         (menu/vertical
+                           {:classes [:nested]}
+                           (menu/item nil (dom/a nil "Accessories"))
+                           (menu/item nil (dom/a nil "Clothing"))
+                           (menu/item nil (dom/a nil "Jewelry"))
+                           (menu/item nil (dom/a nil "Shoes"))))))
+          (my-dom/div
+            (css/grid-column)
+            (dom/div #js {:className "sulo-items-container"}
               (my-dom/div
                 (->> (css/grid-row)
-                     (css/align :middle)
+                     (css/align :bottom)
                      (css/show-for {:size :large}))
                 (my-dom/div
                   (css/grid-column)
+                  (dom/small nil (dom/strong nil "SHOWING ") (count items) " items")
                   ;(dom/h4 nil "Showing " (count items) " items")
                   )
+                ;(my-dom/div
+                ;  (->> (css/grid-column)
+                ;       (css/text-align :right))
+                ;  (dom/label nil "Sort"))
                 (my-dom/div
                   (->> (css/grid-column)
-                       (css/text-align :right))
-                  (dom/label nil "Sort"))
-                (my-dom/div
-                  (css/grid-column)
-                  (dom/div nil
-                    (dom/select #js {:defaultValue (name :sort/name-inc)
-                                     :onChange #(om/update-state! this assoc :sorting (get sorting-vals (keyword "sort" (.. % -target -value))))}
-                                (dom/option #js {:value (name :sort/name-inc)} "Alphabetical (ascending)")
-                                (dom/option #js {:value (name :sort/name-dec)} "Alphabetical (descending)")
-                                (dom/option #js {:value (name :sort/price-inc)} "Price (low to high)")
-                                (dom/option #js {:value (name :sort/price-dec)} "Price (high to low)")))))
-              (apply my-dom/div
-                     (->> (css/grid-row)
-                          (css/grid-row-columns {:small 2 :medium 3}))
-                     (map-indexed
-                       (fn [i p]
-                         (my-dom/div
-                           (css/grid-column {:key i})
-                           (pi/->ProductItem {:product p})))
-                       (let [sorted (sort-by (:key sorting) items)]
-                         (if (:reverse? sorting)
-                           (reverse sorted)
-                           sorted)))))))))))
+                       (css/add-class :sort)
+                       (css/grid-column-size {:large 4}))
+                  (dom/label nil (dom/small nil "Sort"))
+                  (dom/select #js {:defaultValue (name :sort/name-inc)
+                                   :onChange     #(om/update-state! this assoc :sorting (get sorting-vals (keyword "sort" (.. % -target -value))))}
+                              ;(dom/option #js {:value (name :sort/name-inc)} "Alphabetical (ascending)")
+                              ;(dom/option #js {:value (name :sort/name-dec)} "Alphabetical (descending)")
+                              (dom/option #js {:value (name :sort/price-inc)} "Price (low to high)")
+                              (dom/option #js {:value (name :sort/price-dec)} "Price (high to low)"))))
+              (my-dom/div
+                (->> (css/grid-row)
+                     (css/grid-row-columns {:small 2 :medium 3}))
+                (map-indexed
+                  (fn [i p]
+                    (my-dom/div
+                      (css/grid-column {:key i})
+                      (pi/->ProductItem {:product p})))
+                  (let [sorted (sort-by (:key sorting) items)]
+                    (if (:reverse? sorting)
+                      (reverse sorted)
+                      sorted)))))))))))
 
 (def ->Goods (om/factory Goods))
