@@ -14,7 +14,9 @@
 
 (def sorting-vals
   {:sort/name-inc {:key :store.item/name :reverse? false}
-   :sort/name-dec {:key :store.item/name :reverse? true}})
+   :sort/name-dec {:key :store.item/name :reverse? true}
+   :sort/price-inc {:key :store.item/price :reverse? false}
+   :sort/price-dec {:key :store.item/price :reverse? true}})
 
 (defui Goods
   static om/IQuery
@@ -31,17 +33,12 @@
            :query/keys [current-route items]} (om/props this)
           {:keys [sorting]} (om/get-state this)
           current-category (get-in current-route [:route-params :collection] "")]
-      ;#?(:cljs (debug "Got items to render: " (om/props this)))
-      ;(debug "Current route: " current-route)
-      ;(debug "Got props: " (om/props this))
 
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse"}
         (dom/div #js {:id "sulo-items-container"}
           (my-dom/div
-            (->> (css/grid-row)
-                 ;(css/hide-for {:size :large})
-                 )
+            (css/grid-row)
             (my-dom/div
               (css/grid-column)
               (dom/h1 nil (.toUpperCase current-category))))
@@ -63,11 +60,12 @@
                 nil
                 (menu/item nil
                            (dom/a nil (dom/strong nil (s/capitalize current-category)))
-                           (menu/vertical {:classes [:nested]}
-                                          (menu/item nil (dom/a nil "Accessories"))
-                                          (menu/item nil (dom/a nil "Clothing"))
-                                          (menu/item nil (dom/a nil "Jewelry"))
-                                          (menu/item nil (dom/a nil "Shoes"))))))
+                           (menu/vertical
+                             {:classes [:nested]}
+                             (menu/item nil (dom/a nil "Accessories"))
+                             (menu/item nil (dom/a nil "Clothing"))
+                             (menu/item nil (dom/a nil "Jewelry"))
+                             (menu/item nil (dom/a nil "Shoes"))))))
             (my-dom/div
               (css/grid-column)
               (my-dom/div
@@ -85,10 +83,12 @@
                 (my-dom/div
                   (css/grid-column)
                   (dom/div nil
-                    (dom/select #js {:defaultValue "a-z"
+                    (dom/select #js {:defaultValue (name :sort/name-inc)
                                      :onChange #(om/update-state! this assoc :sorting (get sorting-vals (keyword "sort" (.. % -target -value))))}
-                                (dom/option #js {:value (name :sort/name-inc)} "A-Z")
-                                (dom/option #js {:value (name :sort/name-dec)} "Z-A")))))
+                                (dom/option #js {:value (name :sort/name-inc)} "Alphabetical (ascending)")
+                                (dom/option #js {:value (name :sort/name-dec)} "Alphabetical (descending)")
+                                (dom/option #js {:value (name :sort/price-inc)} "Price (low to high)")
+                                (dom/option #js {:value (name :sort/price-dec)} "Price (high to low)")))))
               (apply my-dom/div
                      (->> (css/grid-row)
                           (css/grid-row-columns {:small 2 :medium 3}))
@@ -97,8 +97,7 @@
                          (my-dom/div
                            (css/grid-column {:key i})
                            (pi/->ProductItem {:product p})))
-                       (let [sorted (sort-by :store.item/name items)]
-                         (debug "Sorted items: " sorted)
+                       (let [sorted (sort-by (:key sorting) items)]
                          (if (:reverse? sorting)
                            (reverse sorted)
                            sorted)))))))))))
