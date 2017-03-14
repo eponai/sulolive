@@ -16,6 +16,11 @@
 	}
 
 }
+#sulo-index, #sulo-coming-soon, #sulo-sell-coming-soon {
+	h1, h2, h3, h4, h5, h6 {
+		font-family: $header-font-family-sans-serif;
+	}
+}
 #sulo-coming-soon, #sulo-sell-coming-soon {
 	p {
 		&.success {

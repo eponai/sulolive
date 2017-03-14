@@ -70,8 +70,8 @@
   See item for general opts."
   [opts & content]
   (item*
-    {:key (:key opts)}
-    (apply dom/a opts content)))
+    (select-keys opts [:key])
+    (apply dom/a (dissoc opts :key) content)))
 
 (defn item-dropdown
   "Menu item containg a link that opens a dropdown.

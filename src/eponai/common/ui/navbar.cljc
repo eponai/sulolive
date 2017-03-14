@@ -83,32 +83,72 @@
   (apply dom/div #js {:className "navbar top-bar"}
          content))
 
-(defn navigation-collections []
-  ["women" "men" "kids" "home" "art"])
+(defn collection-links [& [disabled?]]
+  (map-indexed
+    (fn [i c]
+      (let [opts (cond-> {:key  (str "nav-" c "-" i)}
+                         (not disabled?)
+                         (assoc :href (routes/url :products/collections {:collection (.toLowerCase c)})))]
+        (menu/item-link
+          (->> opts
+               (css/add-class :category)
+               (css/show-for {:size :large}))
+          (dom/span nil (s/capitalize c)))))
+    ["women" "men" "kids" "home" "art"]))
 
-(defn standard-navbar [component]
-  (let [{:keys [cart-open? signin-open? did-mount?]} (om/get-state component)
-        {:keys [coming-soon? right-menu on-live-click]} (om/get-computed component)
-        {:query/keys [cart auth current-route]} (om/props component)]
+(defn live-link [& [on-click]]
+  (let [opts (if on-click
+                 {:key "nav-live"
+                  :onClick on-click}
+                 {:key "nav-live"
+                  :href (routes/url :live)})]
+    (menu/item-link
+      (->> opts
+        (css/add-class ::css/highlight)
+        (css/add-class :navbar-live))
+      (my-dom/strong
+        (css/hide-for {:size :small :only? true})
+        ;; Wrap in span for server and client to render the same html
+        (dom/span nil "Live"))
+      (my-dom/div
+        (css/show-for {:size :small :only? true})
+        (dom/i #js {:className "fa fa-video-camera fa-fw"})))))
+
+(defn navbar-brand [& [href]]
+  (menu/item-link {:href (or href "/")
+                   :id   "navbar-brand"}
+                  (dom/span nil "Sulo")))
+
+(defn coming-soon-navbar [component]
+  (let [{:keys [coming-soon? right-menu on-live-click]} (om/get-computed component)]
     (navbar-content
       (dom/div #js {:className "top-bar-left"}
         (menu/horizontal
           nil
-          (menu/item-link {:href (if coming-soon? "/coming-soon" "/")
-                           :id   "navbar-brand"}
-                          (dom/span nil "Sulo"))
-          (menu/item-link
-            (->> (css/add-class ::css/highlight (cond-> {:onClick on-live-click}
-                                                        (not coming-soon?)
-                                                        (assoc :href "/streams")))
-                 (css/add-class :navbar-live))
-            (my-dom/strong
-              (css/hide-for {:size :small :only? true})
-              ;; Wrap in span for server and client to render the same html
-              (dom/span nil "Live"))
-            (my-dom/div
-              (css/show-for {:size :small :only? true})
-              (dom/i #js {:className "fa fa-video-camera fa-fw"})))
+          (navbar-brand (routes/url :coming-soon))
+
+          (live-link on-live-click)
+          (menu/item-dropdown
+            (->> {:dropdown (category-dropdown)}
+                 (css/hide-for {:size :large})
+                 (css/add-class :category))
+            (dom/span nil "Shop"))
+
+          (collection-links true)))
+
+      (dom/div #js {:className "top-bar-right"}
+        right-menu))))
+
+(defn standard-navbar [component]
+  (let [{:keys [did-mount?]} (om/get-state component)
+        {:keys [coming-soon?]} (om/get-computed component)
+        {:query/keys [cart auth]} (om/props component)]
+    (navbar-content
+      (dom/div #js {:className "top-bar-left"}
+        (menu/horizontal
+          nil
+          (navbar-brand)
+          (live-link)
 
           (menu/item-dropdown
             (->> {:dropdown (category-dropdown)}
@@ -116,49 +156,38 @@
                  (css/add-class :category))
             (dom/span nil "Shop"))
 
-          (map-indexed
-            (fn [i c]
-              (menu/item-link
-                (->> (css/add-class :category {:key  i
-                                               :href (routes/url :products/collections {:collection (.toLowerCase c)})})
-                     (css/show-for {:size :large}))
-                (dom/span nil (s/capitalize c))))
-            ["women" "men" "kids" "home" "art"])))
+          (collection-links)))
       (dom/div #js {:className "top-bar-right"}
-        (if coming-soon?
-          right-menu
-
-          (menu/horizontal
-            nil
-            (menu/item nil
-                       (my-dom/a
-                         (->> {:id "search-icon"}
-                              (css/show-for {:size :small :only? true}))
-                         (dom/i #js {:className "fa fa-search fa-fw"}))
-                       (my-dom/div
-                         (css/hide-for {:size :small :only? true})
-                         (dom/input #js {:type        "text"
-                                         :placeholder "Search on SULO..."
-                                         :onKeyDown   (fn [e]
-                                                        #?(:cljs
-                                                           (when (= 13 (.. e -keyCode))
-                                                             (let [search-string (.. e -target -value)]
-                                                               (set! js/window.location (str "/goods?search=" search-string))))))})))
+        (menu/horizontal
+          nil
+          (menu/item nil
+                     (my-dom/a
+                       (->> {:id "search-icon"}
+                            (css/show-for {:size :small :only? true}))
+                       (dom/i #js {:className "fa fa-search fa-fw"}))
+                     (my-dom/div
+                       (css/hide-for {:size :small :only? true})
+                       (dom/input #js {:type        "text"
+                                       :placeholder "Search on SULO..."
+                                       :onKeyDown   (fn [e]
+                                                      #?(:cljs
+                                                         (when (= 13 (.. e -keyCode))
+                                                           (let [search-string (.. e -target -value)]
+                                                             (set! js/window.location (str "/goods?search=" search-string))))))})))
+          (menu/item-dropdown
+            {:dropdown (user-dropdown component auth)}
+            (dom/i #js {:className "fa fa-user fa-fw"}))
+          (if did-mount?
             (menu/item-dropdown
-              {:dropdown (user-dropdown component auth)}
-              (dom/i #js {:className "fa fa-user fa-fw"}))
-            (if did-mount?
-              (menu/item-dropdown
-                {:dropdown (cart-dropdown cart)
-                 :href     "/shopping-bag"}
-                (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))
-              (menu/item-dropdown
-                {:href "/shopping-bag"}
-                (dom/i #js {:className "fa fa-shopping-cart fa-fw"})))))))))
+              {:dropdown (cart-dropdown cart)
+               :href     "/shopping-bag"}
+              (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))
+            (menu/item-dropdown
+              {:href "/shopping-bag"}
+              (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))))))))
 
 (defn store-navbar [component]
-  (let [{:keys [on-live-click]} (om/get-computed component)
-        {:query/keys [current-route auth]} (om/props component)
+  (let [{:query/keys [current-route auth]} (om/props component)
         {:keys [route-params]} current-route
         {:keys [store-id]} route-params]
     (navbar-content
@@ -268,6 +297,8 @@
                                   (menu/item-link {:href "/"
                                                    :id   "navbar-brand"}
                                                   (dom/span nil "Sulo")))))
+                            (or (= route :coming-soon) (= route :sell-soon))
+                            (coming-soon-navbar this)
                             :else
                             (standard-navbar this))))))))
 (def ->Navbar (om/factory Navbar))
