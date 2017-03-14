@@ -24,6 +24,9 @@ $section-footer-color: $primary-color;
 			}
 		}
 	}
+	h1, h2, h3, h4, h5, h6 {
+		font-family: $header-font-family-sans-serif;
+	}
 	.page-content {
 		padding-bottom: 0;
 	}
@@ -98,6 +101,9 @@ $section-footer-color: $primary-color;
 		}
 
 		&.online-channels {
+			.content-item {
+				padding: 1rem;
+			}
 			.overlay-container {
 				p, i {
 					font-size: 1.2rem;
@@ -119,6 +125,9 @@ $section-footer-color: $primary-color;
 				visibility: hidden;
 			}
 			margin-bottom: 3rem;
+			.content-item {
+				padding: 1rem;
+			}
 			.content-item:last-child {
 				display: flex;
 				> * {

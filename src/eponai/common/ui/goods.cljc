@@ -9,7 +9,8 @@
     [eponai.common.ui.product :as product]
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.elements.css :as css]
-    [eponai.common.ui.elements.menu :as menu]))
+    [eponai.common.ui.elements.menu :as menu]
+    [clojure.string :as s]))
 
 (def sorting-vals
   {:sort/name-inc {:key :store.item/name :reverse? false}
@@ -28,36 +29,54 @@
   (render [this]
     (let [{:keys [proxy/navbar]
            :query/keys [current-route items]} (om/props this)
-          {:keys [sorting]} (om/get-state this)]
+          {:keys [sorting]} (om/get-state this)
+          current-category (get-in current-route [:query-params :category] "")]
       ;#?(:cljs (debug "Got items to render: " (om/props this)))
-      (debug "Current route: " current-route)
-      (debug "Got props: " (om/props this))
+      ;(debug "Current route: " current-route)
+      ;(debug "Got props: " (om/props this))
 
       (common/page-container
         {:navbar navbar :id "sulo-items"}
         (dom/div #js {:id "sulo-items-container"}
           (my-dom/div
-            (css/grid-row)
+            (->> (css/grid-row)
+                 ;(css/hide-for {:size :large})
+                 )
             (my-dom/div
               (css/grid-column)
-              (dom/h3 nil (get-in current-route [:query-params :category]))))
+              (dom/h1 nil (.toUpperCase current-category))))
           (my-dom/div
             (css/grid-row)
             (my-dom/div
               (->> (css/grid-column)
                    (css/add-class :navigation)
-                   (css/grid-column-size {:medium 3 :large 3}))
+                   (css/show-for {:size :large})
+                   (css/grid-column-size {:small 0 :medium 3 :large 3}))
+              ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
               (menu/vertical
                 nil
-                (menu/item nil (dom/div nil "Test"))))
+                (menu/item nil (dom/a nil (dom/strong nil (s/capitalize current-category)))
+                           (menu/vertical {:classes [:nested]}
+                                          (menu/item nil (dom/a nil "Accessories"))
+                                          (menu/item nil (dom/a nil "Clothing"))
+                                          (menu/item nil (dom/a nil "Jewelry"))
+                                          (menu/item nil (dom/a nil "Shoes"))))))
             (my-dom/div
               (css/grid-column)
               (my-dom/div
                 (->> (css/grid-row)
-                     (css/align :middle))
+                     (css/hide-for {:size :large}))
                 (my-dom/div
                   (css/grid-column)
-                  (dom/h4 nil "Showing " (count items) " items"))
+                  (dom/a #js {:className "button hollow expanded"} "Filter Products")))
+              (my-dom/div
+                (->> (css/grid-row)
+                     (css/align :middle)
+                     (css/show-for {:size :large}))
+                (my-dom/div
+                  (css/grid-column)
+                  ;(dom/h4 nil "Showing " (count items) " items")
+                  )
                 (my-dom/div
                   (->> (css/grid-column)
                        (css/text-align :right))

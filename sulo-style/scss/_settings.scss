@@ -109,13 +109,15 @@ $block-grid-max: 8;
 // 4. Base Typography
 // ------------------
 
-$header-font-family: Arial, sans-serif;//$body-font-family;
-$header-font-weight: normal;//$global-weight-normal;
+$header-font-family-sans-serif: 'Helvetica Neue',Helvetica, Arial, sans-serif;//$body-font-family;
+$header-font-family-serif: Georgia, serif;
+$header-font-family: $header-font-family-serif;
+$header-font-weight: $global-weight-normal;
 $header-font-style: normal;
 $font-family-monospace: Consolas, 'Liberation Mono', Courier, monospace;
 $header-sizes: (
   small: (
-    'h1': 78,
+    'h1': 36,
     'h2': 20,
     'h3': 19,
     'h4': 18,
@@ -123,7 +125,7 @@ $header-sizes: (
     'h6': 16,
   ),
   medium: (
-    'h1': 110,
+    'h1': 42,
     'h2': 24,//40,
     'h3': 20,
     'h4': 18,
@@ -132,7 +134,7 @@ $header-sizes: (
   ),
 
   xlarge: (
-    'h1': 120,
+    'h1': 42,
     'h2': 24,//40,
     'h3': 20,
     'h4': 18,
