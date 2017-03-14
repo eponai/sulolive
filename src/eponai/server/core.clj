@@ -25,7 +25,10 @@
     [taoensso.timbre :refer [debug error info]]
     ;; Dev/debug require
     [ring.middleware.reload :as reload]
-    [clojure.spec :as s]))
+    [clojure.spec :as s])
+  (:import (io.netty.handler.codec.http HttpContentCompressor)
+           (io.netty.handler.stream ChunkedWriteHandler)
+           (io.netty.channel ChannelPipeline)))
 
 (defonce in-production? (atom true))
 
@@ -134,11 +137,17 @@
                     (Long/parseLong (env :port))
                     (catch Exception e
                       nil))
-         port (or (:port opts) env-port default-port)]
+         port (or (:port opts) env-port default-port)
+         netty-pipeline (fn [^ChannelPipeline pipeline]
+                          (doto pipeline
+                            (.addBefore "request-handler" "deflater" (HttpContentCompressor.))
+                            (.addBefore "request-handler" "streamer" (ChunkedWriteHandler.))))]
      ;; by passing (var app) to run-jetty, it'll be forced to
      ;; evaluate app as code changes.
      (info "Using port: " port)
-     (aleph/start-server handler (merge {:port port} (dissoc opts :port))))))
+     (aleph/start-server handler (merge {:pipeline-transform netty-pipeline
+                                         :port  port}
+                                        (dissoc opts :port))))))
 
 (defn -main [& _]
   (start-server))

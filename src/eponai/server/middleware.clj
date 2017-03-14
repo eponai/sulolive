@@ -25,6 +25,7 @@
     [eponai.server.datomic.query :as query]
     ;; Debug/dev require
     [prone.middleware :as prone]
+    [prone.debug]
     [cheshire.core :as json])
   (:import (datomic.query EntityMap)))
 
@@ -65,7 +66,8 @@
                   (deferred/catch Throwable
                     (fn [e]
                       (.printStackTrace e)
-                      (prone/exceptions-response request e '[eponai]))))))]
+                      (binding [prone.debug/*debug-data* (atom [])]
+                        (prone/exceptions-response request e '[eponai])))))))]
     (if in-prod?
       (wrap-error-prod handler)
       (wrap-prone-aleph handler))))
@@ -102,29 +104,29 @@
         (ring-transit/wrap-transit-body)
         (deferred-transit-response))))
 
+
+
 (defn wrap-format [handler]
-  (fn [r]
-    (let [content-type (:content-type r)]
-      ;(debug "Found content type: " content-type)
-      (if (and (some? content-type)
-               (re-find #"application/json" content-type))
-        (do
-          ;(debug "Wrapping JSON request.")
-          ((wrap-json handler) r))
-        (do
-          ;(debug "Wrapping transit request")
-          ((wrap-transit handler) r))))))
+  (let [json-request? (fn [request]
+                        (when-let [type (ring.response/get-header request "Content-Type")]
+                          (not (empty? (re-find #"application/json" type)))))
+        json-wrapper (wrap-json handler)
+        transit-wrapper (wrap-transit handler)]
+    (fn [request]
+      (if (json-request? request)
+        (json-wrapper request)
+        (transit-wrapper request)))))
 
 (defn wrap-post-middlewares [handler]
   (fn [request]
-    (trace "Request after middlewares:" request)
+    (trace "Request after middlewares:" (into {} request))
     (handler request)))
 
 (defn wrap-trace-request [handler]
   (fn [request]
-    (trace "Request:" request)
+    (trace "Request:" (into {} request))
     (deferred/let-flow [response (handler request)]
-                       (trace "Response: " response)
+                       (trace "Response: " (into {} response))
                        response)))
 
 (defn wrap-state [handler opts]
@@ -147,32 +149,27 @@
             in-prod?
             (assoc-in [:session :cookie-attrs :secure] true))))
 
-(defn defer-x-headers [handler security-options]
-  (let [xss-header
-        (memoize
-          (fn [xss-options]
-            ["X-XSS-Protection" (str (if (:enable? xss-options true) "1" "0")
-                                     (if (dissoc xss-options :enable?) "; mode=block"))]))
-        frame-options
-        (memoize
-          (fn [frame-options]
-            ["X-Frame-Options" (#'x-headers/format-frame-options frame-options)]))
-        content-type-options
-        (memoize
-          (fn [content-type-options]
-            ["X-Content-Type-Options" (name content-type-options)]))
-        add-header
-        (fn [response header-fn options]
-          (if options
-            (apply ring.response/header response (header-fn options))
-            response))]
-    (fn [request]
-      (deferred/let-flow
-        [response (handler request)]
-        (-> response
-            (add-header xss-header (:xss-protection security-options false))
-            (add-header frame-options (:frame-options security-options false))
-            (add-header content-type-options (:content-type-options security-options false)))))))
+(defn defer-x-headers [handler config]
+  (let [xss-header (when-let [xss-options (:xss-protection config)]
+                     ["X-XSS-Protection" (str (if (:enable? xss-options true) "1" "0")
+                                              (if (dissoc xss-options :enable?) "; mode=block"))])
+
+        frame-options (when-let [frame-options (:frame-options config)]
+                        ["X-Frame-Options" (#'x-headers/format-frame-options frame-options)])
+
+        content-type-options (when-let [content-type-options (:content-type-options config)]
+                               ["X-Content-Type-Options" (name content-type-options)])]
+    (letfn [(add-header [response header]
+              (if header
+                (apply ring.response/header response header)
+                response))]
+      (fn [request]
+        (deferred/let-flow
+          [response (handler request)]
+          (-> response
+              (add-header xss-header)
+              (add-header frame-options)
+              (add-header content-type-options)))))))
 
 (defn wrap-aleph-replacements [handler config]
   ;; copy of r/wrap which is private.

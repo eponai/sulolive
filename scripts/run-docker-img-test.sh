@@ -3,11 +3,8 @@
 HOST=$1
 PORT=$2
 
-echo "This test is disabled until we get ssl certificate for sulo.live"
-exit 0
-
 echo "Test with forwarding (which in production is done by load balancer)"
-wget -O- --user=sulo --password=hejsan --header "x-forwarded-proto: https" --max-redirect 0 --retry-connrefused -t 30 http://$HOST:$PORT
+wget -O- --header "x-forwarded-proto: https" --max-redirect 0 --retry-connrefused -t 30 http://$HOST:$PORT
 
 exit_code=$?
 if [ "$exit_code" = "0" ]; then
@@ -18,7 +15,7 @@ else
 fi
 
 echo "Test with redirect"
-wget -O- --user=sulo --password=hejsan --max-redirect 0 --retry-connrefused -t 10 http://$HOST:$PORT
+wget -O- --max-redirect 0 --retry-connrefused -t 10 http://$HOST:$PORT
 exit_code=$?
 
 if [ "$exit_code" = "8" ]; then
