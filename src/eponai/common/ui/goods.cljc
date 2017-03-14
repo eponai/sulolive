@@ -36,7 +36,7 @@
       ;(debug "Got props: " (om/props this))
 
       (common/page-container
-        {:navbar navbar :id "sulo-items"}
+        {:navbar navbar :id "sulo-items" :class-name "sulo-browse"}
         (dom/div #js {:id "sulo-items-container"}
           (my-dom/div
             (->> (css/grid-row)
@@ -57,11 +57,12 @@
               (->> (css/grid-column)
                    (css/add-class :navigation)
                    (css/show-for {:size :large})
-                   (css/grid-column-size {:medium 3 :large 3}))
+                   (css/grid-column-size {:large 3}))
               ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
               (menu/vertical
                 nil
-                (menu/item nil (dom/a nil (dom/strong nil (s/capitalize current-category)))
+                (menu/item nil
+                           (dom/a nil (dom/strong nil (s/capitalize current-category)))
                            (menu/vertical {:classes [:nested]}
                                           (menu/item nil (dom/a nil "Accessories"))
                                           (menu/item nil (dom/a nil "Clothing"))

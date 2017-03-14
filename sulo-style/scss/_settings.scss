@@ -111,7 +111,7 @@ $block-grid-max: 8;
 
 $header-font-family-sans-serif: 'Helvetica Neue',Helvetica, Arial, sans-serif;//$body-font-family;
 $header-font-family-serif: Georgia, serif;
-$header-font-family: $header-font-family-serif;
+$header-font-family: $header-font-family-sans-serif;
 $header-font-weight: $global-weight-normal;
 $header-font-style: normal;
 $font-family-monospace: Consolas, 'Liberation Mono', Courier, monospace;

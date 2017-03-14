@@ -62,6 +62,10 @@ html, body {
 		padding-right: 2rem;
 	}
 }
+h1 {
+	text-transform: uppercase;
+	font-family: $header-font-family-serif;
+}
 
 h3 {
 	text-transform: uppercase;
@@ -134,6 +138,7 @@ h3 {
 a {
 	@include sulo-colors;
 }
+
 .sulo-page {
 	height: 100vh;
 }

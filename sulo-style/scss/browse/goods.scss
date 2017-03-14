@@ -77,7 +77,12 @@
 	}
 }
 
-#sulo-items {
+.sulo-browse {
+	&#sulo-live {
+		h1 {
+			color: map-get($foundation-palette, highlight);
+		}
+	}
 	.navigation {
 		// display: none;
 		@include breakpoint(large) {
