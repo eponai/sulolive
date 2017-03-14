@@ -2,9 +2,6 @@
 .content-item {
 	padding-top: 1.5rem;
 	text-align: left;
-	@include breakpoint(large) {
-		padding: 1rem 0rem;
-	}
 	&.row {
 		.content-item-title-section,
 		.content-item-subtitle-section {

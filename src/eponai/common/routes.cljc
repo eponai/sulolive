@@ -27,11 +27,11 @@
   ["/" {""                            :index
         "coming-soon"                 :coming-soon
         "sell/coming-soon"            :sell-soon
+        "live"                        :live
         "store/new"                   :new-store
         ["store/" [#"\d+" :store-id]] store-routes
         "products"                    product-routes
-        "streams"                     :streams
-        ["checkout/" :store-id]        :checkout
+        ["checkout/" :store-id]       :checkout
         "shopping-bag"                :shopping-bag
         "business"                    :business
         ["user/" [#"\d+" :user-id]]   user-routes

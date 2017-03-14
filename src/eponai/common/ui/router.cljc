@@ -39,7 +39,7 @@
                      :factory   goods/->Goods}
    :product         {:component product/ProductPage
                      :factory   product/->ProductPage}
-   :streams         {:component streams/Streams
+   :live            {:component streams/Streams
                      :factory   streams/->Streams}
    :business        {:component business/Business
                      :factory   business/->Business}
