@@ -52,12 +52,14 @@
                                               (atom {})
                                               stop-fn)
            event-handler (fn [{:keys [event id ?data send-fn] :as ws-event}]
-                           (let [[event-id event-data] event]
+                           (let [[event-id event-data] event
+                                 [our-id our-data] event-data]
                              (cond
-                               (= :store-chat/update event-id)
+                               (and (= :chsk/recv event-id)
+                                    (= :store-chat/update our-id))
                                (do
                                  (debug "Got store-chat/update event: " ws-event)
-                                 (has-update chat-listener (:store-id event-data)))
+                                 (has-update chat-listener (:store-id our-data)))
                                :else
                                (debug "Unrecognized event-id: " event-id " whole event: " ws-event))))]
        ;; TODO:
@@ -68,6 +70,7 @@
          (loop []
            (try
              (let [[v c] (a/alts! [ch-recv control-chan])]
+               (debug "Got value in store-chat listener: " [v c])
                (if (= c control-chan)
                  (do (debug "Control-chan was closed. Shutting down chat-store-listener..")
                      (sente/-chsk-disconnect! (:chsk sente-channel) :requested-disconnect))

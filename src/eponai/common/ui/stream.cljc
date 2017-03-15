@@ -84,7 +84,7 @@
                    ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
                    :chat/modes
                    {:chat/messages [:chat.message/client-side-message?
-                                    {:chat.message/user [:user/email]}
+                                    {:chat.message/user [:db/id :user/email]}
                                     :chat.message/text
                                     :chat.message/timestamp]}]}])
   client.chat/IStoreChatListener
@@ -264,7 +264,7 @@
                                   (my-dom/div (->> (css/grid-column)
                                                    (css/grid-column-size {:small 2}))
                                               (photo/circle {:src (nth fake-photos
-                                                                       (dec (mod (:chat.message/user msg)
+                                                                       (dec (mod (:db/id (:chat.message/user msg) 1)
                                                                                  (count fake-photos)))
                                                                        (first fake-photos))}))
                                   (my-dom/div (css/grid-column)
