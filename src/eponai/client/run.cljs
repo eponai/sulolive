@@ -9,6 +9,7 @@
     [eponai.client.backend :as backend]
     [eponai.client.remotes :as remotes]
     [eponai.client.reconciler :as reconciler]
+    [eponai.client.chat :as chat]
     [medley.core :as medley]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
@@ -53,11 +54,11 @@
     (update-route-fn match)))
 
 (defonce history-atom (atom nil))
+(defonce reconciler-atom (atom nil))
 
 (defn- run [{:keys [auth-lock]
              :or   {auth-lock (auth/auth0-lock)}}]
   (let [init? (atom false)
-        reconciler-atom (atom nil)
         _ (when-let [h @history-atom]
             (pushy/stop! h))
         match-route (partial bidi/match-route (common.routes/without-coming-soon-route common.routes/routes))
@@ -81,13 +82,14 @@
                                 :query-fn     (apply-once (fn [q]
                                                             {:pre [(sequential? q)]}
                                                             (into [:datascript/schema] q)))})
-        reconciler (reconciler/create {:conn conn
-                                       :parser parser
-                                       :ui->props (utils/cached-ui->props-fn parser)
-                                       :send-fn send-fn
-                                       :remotes (:order remote-config)
-                                       :shared/browser-history history
-                                       :shared/auth-lock auth-lock})]
+        reconciler (reconciler/create {:conn                       conn
+                                       :parser                     parser
+                                       :ui->props                  (utils/cached-ui->props-fn parser)
+                                       :send-fn                    send-fn
+                                       :remotes                    (:order remote-config)
+                                       :shared/browser-history     history
+                                       :shared/store-chat-listener (chat/store-chat-listener reconciler-atom)
+                                       :shared/auth-lock           auth-lock})]
 
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
@@ -105,4 +107,6 @@
   (run {:auth-lock (auth/fake-lock)}))
 
 (defn on-reload! []
+  (when-let [chat-listener (some-> reconciler-atom (deref) :config :shared :shared/store-chat-listener)]
+    (chat/shutdown! chat-listener))
   (run-dev))

@@ -149,11 +149,11 @@
 
   ;; Websockets
   (GET "/ws/chat" {::m/keys [system] :as request}
-    ((get-in system [:system/sente :ring-ajax-get-or-ws-handshake]) request))
+    (debug "chat-websocket: " (keys (:system/chat-websocket system)))
+    ((get-in system [:system/chat-websocket :ajax-get-or-ws-handshake-fn]) request))
   (POST "/ws/chat" {::m/keys [system] :as request}
-    ((get-in system [:system/sente :ring-ajax-post]) request))
+    ((get-in system [:system/chat-websocket :ajax-post-fn]) request))
 
-  (POST "/ws/chat" {::m/keys [system] :as request} ((:system/sente system) request))
   (context "/" [:as request]
     (cond-> member-routes
             (or (::m/in-production? request))

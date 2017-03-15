@@ -14,6 +14,7 @@
     [eponai.server.external.aws-elb :as elb]
     [eponai.server.parser.mutate]
     [eponai.server.routes :refer [site-routes]]
+    [eponai.server.websocket :as websocket]
     [eponai.server.middleware :as m]
     [eponai.server.external.auth0 :as auth0]
     [eponai.server.external.stripe :as stripe]
@@ -50,33 +51,33 @@
                          (if @in-production?
                            (server-address/prod-server-address aws-elb serv-addr)
                            serv-addr))]
-    {:system/auth0     (if @in-production?
-                         (auth0/auth0 (env :auth0-client-id)
-                                      (env :auth0-client-secret)
-                                      server-address)
-                         (auth0/auth0-stub conn))
-     :system/chat      (chat/->DatomicChat conn)
-     :system/sente     (sente/make-channel-socket! (sente.aleph/get-sch-adapter))
-     :system/wowza     (let [p {:secret         (env :wowza-jwt-secret)
-                                :subscriber-url (env :wowza-subscriber-url)
-                                :publisher-url  (env :wowza-publisher-url)}]
-                         (if (or @in-production?)
-                           (wowza/wowza p)
-                           (wowza/wowza-stub (select-keys p [:secret]))))
-     :system/mailchimp (if @in-production?
-                         (mailchimp/mail-chimp (env :mail-chimp-api-key))
-                         (mailchimp/mail-chimp-stub))
-     :system/stripe    (if (or @in-production? true)
-                         (stripe/stripe (env :stripe-secret-key))
-                         (stripe/stripe-stub))
-     :system/aws-ec2   aws-ec2
-     :system/aws-elb   aws-elb
-     :system/aws-s3    (if (or @in-production? true)
-                         (s3/aws-s3 {:bucket     (env :aws-s3-bucket-photos)
-                                     :zone       (env :aws-s3-bucket-photos-zone)
-                                     :access-key (env :aws-access-key-id)
-                                     :secret     (env :aws-secret-access-key)})
-                         (s3/aws-s3-stub))}))
+    {:system/auth0          (if @in-production?
+                              (auth0/auth0 (env :auth0-client-id)
+                                           (env :auth0-client-secret)
+                                           server-address)
+                              (auth0/auth0-stub conn))
+     :system/chat           (chat/->DatomicChat conn)
+     :system/chat-websocket (websocket/chat-websocket)
+     :system/wowza          (let [p {:secret         (env :wowza-jwt-secret)
+                                     :subscriber-url (env :wowza-subscriber-url)
+                                     :publisher-url  (env :wowza-publisher-url)}]
+                              (if (or @in-production?)
+                                (wowza/wowza p)
+                                (wowza/wowza-stub (select-keys p [:secret]))))
+     :system/mailchimp      (if @in-production?
+                              (mailchimp/mail-chimp (env :mail-chimp-api-key))
+                              (mailchimp/mail-chimp-stub))
+     :system/stripe         (if (or @in-production? true)
+                              (stripe/stripe (env :stripe-secret-key))
+                              (stripe/stripe-stub))
+     :system/aws-ec2        aws-ec2
+     :system/aws-elb        aws-elb
+     :system/aws-s3         (if (or @in-production? true)
+                              (s3/aws-s3 {:bucket     (env :aws-s3-bucket-photos)
+                                          :zone       (env :aws-s3-bucket-photos-zone)
+                                          :access-key (env :aws-access-key-id)
+                                          :secret     (env :aws-secret-access-key)})
+                              (s3/aws-s3-stub))}))
 
 (defn app* [conn {::keys [extra-middleware disable-anti-forgery disable-ssl] :as options}]
   (let [system (make-system conn options)]
