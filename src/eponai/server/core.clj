@@ -50,14 +50,15 @@
                                                                       (env :server-url-host))]
                          (if @in-production?
                            (server-address/prod-server-address aws-elb serv-addr)
-                           serv-addr))]
+                           serv-addr))
+        datomic-chat (chat/->DatomicChat conn)]
     {:system/auth0          (if @in-production?
                               (auth0/auth0 (env :auth0-client-id)
                                            (env :auth0-client-secret)
                                            server-address)
                               (auth0/auth0-stub conn))
-     :system/chat           (chat/->DatomicChat conn)
-     :system/chat-websocket (websocket/chat-websocket)
+     :system/chat           datomic-chat
+     :system/chat-websocket (websocket/chat-websocket datomic-chat)
      :system/wowza          (let [p {:secret         (env :wowza-jwt-secret)
                                      :subscriber-url (env :wowza-subscriber-url)
                                      :publisher-url  (env :wowza-publisher-url)}]
