@@ -1,0 +1,171 @@
+
+.reveal {
+	#sulo-product {
+		padding: 0;
+	}
+}
+
+.store-name {
+	margin: 0;
+}
+
+.breadcrumbs {
+	margin-top: 1rem;
+}
+
+#sulo-product {
+	padding: 3% 0;
+	hr {
+		border-color: $light-gray;
+	}
+	.section {
+		.header {
+			a {
+				font-weight: bold;
+				text-transform: none;
+			}
+		}
+	}
+	.product-info-container {
+		display: flex;
+		flex-direction: column;
+		// justify-content: space-between;
+		.title {
+			font-weight: 500;
+			font-size: 1.3rem;
+			text-transform: uppercase;
+			margin-bottom: 0.1rem;
+		}
+		.price {
+			font-size: 1.25rem;
+		}
+	}
+
+	.product-action-container {
+		> p {
+			// overflow-y: hidden;
+			text-align: center;
+			// font-weight: bold;
+			color: map-get($foundation-palette, success);
+			opacity: 0;
+			transition: opacity .25s ease-in-out, visibility .25s ease-in-out,;
+			visibility: hidden;
+			&.show {
+				visibility: visible;
+				opacity: 1;
+			}
+		}
+	}
+	h4 {
+		font-weight: 500;
+		color: map-get($foundation-palette, primary);
+	}
+
+	.store-info {
+		.title {
+			text-transform: uppercase;
+			// font-weight: 200;
+			font-size: 90%;
+		}
+		.store-name {
+			font-size: 1.5rem;
+		}
+		.store-tagline {
+			// font-style: italic;
+			color: $dark-gray; 
+			font-weight: 200;
+		}
+		a {
+			// font-size: 1.5rem;
+		}
+	}
+}
+
+.sulo-browse {
+	.breadcrumbs.invisible {
+		// opacity: 0;
+	}
+	.categories {
+		margin-bottom: 2rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid $medium-gray;
+		strong {
+			text-transform: uppercase;
+		}
+
+		.column {
+			padding-bottom: 1.2rem;
+			@include breakpoint(medium) {
+				padding-top: 0;
+			}
+		}
+		.content {
+			font-size: 1rem;
+			> div {
+				padding: 0.2rem 0.5rem;
+			}
+			// padding: 1rem;
+		}
+		.overlay {
+			$overlay: map-get($foundation-palette, primary);
+			background: rgba($overlay, 0.3);
+			&:hover {
+				background: rgba($overlay, 0.1);
+			}
+		}
+		&:hover .photo {
+			background-size: 120%;
+		}
+		.photo {
+			background-size: 100%;
+		}
+	}
+	.sort {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		select {
+			margin-left: 0.5rem;
+		}
+	}
+	.sulo-items-container {
+		select {
+			font-size: 90%;
+			font-weight: $global-weight-bold;
+		}
+	}
+	&#sulo-live {
+		h1 {
+			color: map-get($foundation-palette, highlight);
+		}
+	}
+	.navigation {
+		// display: none;
+		@include breakpoint(large) {
+			// display: block;
+		}
+		ul {
+			border-top: 1px solid $medium-gray;
+			&.nested {
+				border: none;
+			}
+			li.is-active {
+				font-weight: $global-weight-bold;
+				background: rgba($black, 0.05); 
+				a {
+					color: $black;
+				}
+			}
+		}
+	}
+	input, select {
+		margin: 0;
+	}
+	h1 {
+		@include breakpoint(large) {
+			// margin-bottom: 0;
+		}
+		// margin-bottom: 0;
+		margin-top: 2%;
+	}
+}

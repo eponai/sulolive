@@ -39,6 +39,7 @@
    :route-params                   (merge (:route-params request)
                                           (:params request))
    :route                          (:handler request)
+   :query-params                   (:params request)
    :auth                           (:identity request)
    ::server.ui/component->props-fn (fn [component]
                                      (-> request

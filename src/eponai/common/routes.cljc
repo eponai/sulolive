@@ -17,16 +17,21 @@
   {""        :user
    "/orders" {""                       :user/order-list
               ["/" [#"\w+" :order-id]] :user/order}})
+
+(def product-routes
+  {""                         :products
+   "/categories"              {""              :products/all-categories
+                               ["/" :category] :products/categories}
+   ["/" [#"\d+" :product-id]] :product})
 (def routes
   ["/" {""                            :index
         "coming-soon"                 :coming-soon
         "sell/coming-soon"            :sell-soon
+        "live"                        :live
         "store/new"                   :new-store
         ["store/" [#"\d+" :store-id]] store-routes
-        "products"                    :products
-        ["product/" :product-id]      :product
-        "streams"                     :streams
-        ["checkout/" :store-id]        :checkout
+        "products"                    product-routes
+        ["checkout/" :store-id]       :checkout
         "shopping-bag"                :shopping-bag
         "business"                    :business
         ["user/" [#"\d+" :user-id]]   user-routes

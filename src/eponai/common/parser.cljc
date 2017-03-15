@@ -506,13 +506,15 @@
                                (:route-params (client.routes/current-route conn)))}
          custom-state))
 
-(defn query-params [env]
+(defn query-params [env parser-state]
   #?(:cljs
-     (->> (:shared/browser-history (:shared env))
-          (pushy/get-token)
-          (url/url)
-          :query
-          (medley/map-keys keyword))))
+          (->> (:shared/browser-history (:shared env))
+               (pushy/get-token)
+               (url/url)
+               :query
+               (medley/map-keys keyword))
+     ;;TODO: Implement a shared protocol to get the query params
+     :clj (:query-params parser-state)))
 
 (defn client-parser
   ([] (client-parser (client-parser-state)))
@@ -523,7 +525,7 @@
                   (fn [env query & [target]]
                     (parser (assoc env ::server? false
                                        :route-params ((::conn->route-params state) (:state env))
-                                       :query-params (query-params env))
+                                       :query-params (query-params env state))
                             query target)))
                 (fn [read {:keys [elide-paths txs-by-project] :as state}]
                   (-> read

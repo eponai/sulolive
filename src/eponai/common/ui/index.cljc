@@ -37,32 +37,11 @@
                                               " medium-offset-4 text-right"))}
                content)))))
 
-;(defn content-section [{:keys [href class sizes]} header content footer]
-;  (div
-;    (->> {:classes [class]}
-;         (css/add-class :section))
-;    ;(div
-;    ;  (->> (css/grid-row) css/grid-column))
-;    (div
-;      (->> (css/grid-row) (css/add-class :section-header) (css/add-class :small-unstack))
-;      (div (->> (css/grid-column) (css/add-class :middle-border)))
-;      (div (->> (css/grid-column) (css/add-class :shrink))
-;           (dom/h3 nil header))
-;      (div (->> (css/grid-column) (css/add-class :middle-border)))
-;      )
-;
-;    content
-;    (when (not-empty footer)
-;      (div
-;        (->> (css/grid-row) css/grid-column (css/add-class :section-footer) (css/text-align :center))
-;        (dom/a #js {:href href :className "button hollow"} footer)))
-;    ))
-
 (defn collection-element [{:keys [url title full?]}]
   ;; Use the whole thing as hover elem
   (my-dom/a
-    {:href    (str "/products?category=" (.toLowerCase title))
-     :classes [:full]}
+    {:href    (routes/url :products/categories {:category (.toLowerCase title)})
+     :classes [:full :category-photo]}
     (photo/with-overlay
       nil
       (photo/photo {:src url})
@@ -216,8 +195,9 @@
                                               (css/grid-row-columns {:small 2 :medium 4 :large 5}))
                                          (map-indexed
                                            (fn [i p]
-                                             ;(dom/div #js {:key (str i)})
-                                             (common/product-element {:open-url? true} p))
+                                             (my-dom/div
+                                               (css/grid-column {:key (str i)})
+                                               (common/product-element {:open-url? true} p)))
                                            featured-items))
                                     "See More")
 

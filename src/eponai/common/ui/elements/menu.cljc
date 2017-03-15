@@ -17,6 +17,9 @@
 (defn tabs [opts & content]
   (apply menu* (css/add-class ::css/tabs opts) content))
 
+(defn breadcrumbs [opts & content]
+  (apply dom/ul (css/add-class :css/breadcrumbs opts) content))
+
 (defn horizontal
   "Menu in horizontal layout.
 
@@ -70,8 +73,8 @@
   See item for general opts."
   [opts & content]
   (item*
-    nil
-    (apply dom/a opts content)))
+    (select-keys opts [:key])
+    (apply dom/a (dissoc opts :key) content)))
 
 (defn item-dropdown
   "Menu item containg a link that opens a dropdown.

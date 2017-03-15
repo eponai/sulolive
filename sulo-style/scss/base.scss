@@ -62,6 +62,10 @@ html, body {
 		padding-right: 2rem;
 	}
 }
+h1 {
+	text-transform: uppercase;
+	font-family: $header-font-family-serif;
+}
 
 h3 {
 	text-transform: uppercase;
@@ -90,6 +94,10 @@ h3 {
 	right: 0;
 	border: 1px solid rgba($primary-color, 0.2);
 	// box-shadow: 1px 1px 3px 0 rgba($primary-color, 0.1);
+}
+
+.drilldown-submenu-cover-previous {
+	min-height: 100%;
 }
 
 @mixin list-item-hover($color: $white, $hover-color: darken($color, 5%)) {
@@ -134,6 +142,7 @@ h3 {
 a {
 	@include sulo-colors;
 }
+
 .sulo-page {
 	height: 100vh;
 }
