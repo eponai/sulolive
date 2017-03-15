@@ -486,10 +486,11 @@
         _ (leeb reconciler-atom query-chan did-merge-fn)]
     (fn [queries cb]
      (run! (fn [[key query]]
-             (async/put! query-chan {:remote->send remote-config
-                                     :cb           cb
-                                     :query        (cond-> query (some? query-fn) (query-fn))
-                                     :remote-key   key
-                                     :query-db     (db-before-mutation @reconciler-atom
-                                                                       (query-history-id query))}))
+             (when (seq query)
+               (async/put! query-chan {:remote->send remote-config
+                                       :cb           cb
+                                       :query        (cond-> query (some? query-fn) (query-fn))
+                                       :remote-key   key
+                                       :query-db     (db-before-mutation @reconciler-atom
+                                                                         (query-history-id query))})))
            queries))))
