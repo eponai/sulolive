@@ -41,7 +41,7 @@
   ;; Use the whole thing as hover elem
   (my-dom/a
     {:href    (routes/url :products/categories {:category (.toLowerCase title)})
-     :classes [:full]}
+     :classes [:full :category-photo]}
     (photo/with-overlay
       nil
       (photo/photo {:src url})

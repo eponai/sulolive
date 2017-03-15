@@ -11,6 +11,7 @@
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.menu :as menu]
+    [eponai.common.ui.elements.photo :as photo]
     [clojure.string :as s]))
 
 (def sorting-vals
@@ -23,24 +24,30 @@
   (let [items (loop [c category
                      l '()]
                 (if (some? c)
-                  (let [parent (first (:category/_children c))]
-                    (recur parent (conj l (menu/item nil (dom/a #js {:href (routes/url :products/categories {:category (:category/path c)})}
-                                                                (:category/label c))))))
+                  (let [{:category/keys [_children]} c
+                        parent (if (map? _children) _children (first _children))]
+                    (recur parent
+                           (conj l (menu/item nil (dom/a #js {:href (routes/url :products/categories {:category (:category/path c)})}
+                                                         (:category/label c))))))
                   l))]
-    (when (< 1 (count items))
-      (dom/nav #js {:role "navigation"}
-               (menu/breadcrumbs
-                 nil
-                 items)))))
+    (menu/breadcrumbs
+      (when-not (< 1 (count items))
+        {:classes [:invisible]})
+      items)))
+
+(defn category-parent [c]
+  (let [{:category/keys [_children]} c]
+    (if (map? _children)
+      _children
+      (first _children))))
 
 (defui Goods
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/items (om/get-query product/Product)}
-     '{:query/category [:category/label
-                       :category/path
-                       {:category/_children ...}
+     '{:query/category [:category/label {:category/photo [:photo/path]} :category/path
+                        {:category/_children ...}
                         {:category/children ...}]}
      :query/current-route])
   Object
@@ -49,10 +56,10 @@
                :reverse? false}})
   (render [this]
     (let [{:keys [proxy/navbar]
-           :query/keys [current-route items category top-categories]} (om/props this)
+           :query/keys [current-route items category]} (om/props this)
           {:keys [sorting]} (om/get-state this)
-          current-category (get-in current-route [:route-params :category] "")]
-
+          current-category (get-in current-route [:route-params :category] "")
+          parent (category-parent category)]
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse"}
         (my-dom/div
@@ -81,31 +88,53 @@
               nil
               (menu/item
                 nil
-                (dom/a nil (dom/strong nil (:category/label category)))
+                (dom/a #js {:href (routes/url :products/categories {:category (if parent
+                                                                                (:category/path parent)
+                                                                                (:category/path category))})}
+                       (dom/strong nil (if parent
+                                         (:category/label parent)
+                                         (:category/label category))))
                 (menu/vertical
                   (css/add-class :nested)
                   (map-indexed (fn [i c]
                                  (let [{:category/keys [label path]} c]
-                                   (menu/item {:key i}
-                                              (dom/a #js {:href (routes/url :products/categories {:category path})}
+                                   (menu/item
+                                     (cond->> {:key i}
+                                              (= path current-category)
+                                              (css/add-class ::css/is-active))
+                                     (dom/a #js {:href (routes/url :products/categories {:category path})}
                                                      (dom/span nil label)))))
-                               (:category/children category)))))
-            ;(if (not-empty current-category)
-            ;  (menu/vertical
-            ;    nil
-            ;    (menu/item nil (dom/a #js {:href    (routes/url :products/collections {:collection "women"})}
-            ;                          (dom/strong nil "Women")))
-            ;    (menu/item nil (dom/a #js {:href (routes/url :products/collections {:collection "men"})}
-            ;                          (dom/strong nil "Men")))
-            ;    (menu/item nil (dom/a #js {:href (routes/url :products/collections {:collection "kids"})}
-            ;                          (dom/strong nil "Kids")))
-            ;    (menu/item nil (dom/a #js {:href (routes/url :products/collections {:collection "home"})}
-            ;                          (dom/strong nil "Home")))
-            ;    (menu/item nil (dom/a #js {:href (routes/url :products/collections {:collection "art"})}
-            ;                          (dom/strong nil "Art")))))
-            )
+                               (if parent
+                                 (:category/children parent)
+                                 (:category/children category)))))))
           (my-dom/div
-            (css/grid-column)
+            (->> (css/grid-column)
+                 (css/grid-column-size {:small 12 :large 9}))
+            (when (not-empty (map :category/photo (:category/children category)))
+              (dom/div #js {:className "categories"}
+                (my-dom/div
+                  (css/grid-row)
+                  (my-dom/div
+                    (css/grid-column)
+                    (dom/strong nil "Categories")))
+                (my-dom/div
+                  (->> (css/grid-row)
+                       (css/grid-row-columns {:small 2 :medium 3}))
+                  (map-indexed
+                    (fn [i c]
+                      (let [{:category/keys [photo label path]} c]
+                        (my-dom/div
+                          (css/grid-column)
+                          (my-dom/a
+                            (->> {:href (routes/url :products/categories {:category path})}
+                                 (css/add-class :category-photo))
+                            (photo/with-overlay
+                              nil
+                              (photo/photo {:src (:photo/path photo)})
+                              (my-dom/div
+                                (->> (css/text-align :center))
+                                (dom/p nil (dom/span nil label))))))))
+                    (filter #(some? (:category/photo %)) (:category/children category))))))
             (dom/div #js {:className "sulo-items-container"}
               (my-dom/div
                 (->> (css/grid-row)
@@ -113,13 +142,8 @@
                      (css/show-for {:size :large}))
                 (my-dom/div
                   (css/grid-column)
-                  (dom/small nil (dom/strong nil "SHOWING ") (count items) " items")
-                  ;(dom/h4 nil "Showing " (count items) " items")
-                  )
-                ;(my-dom/div
-                ;  (->> (css/grid-column)
-                ;       (css/text-align :right))
-                ;  (dom/label nil "Sort"))
+                  (dom/small nil (dom/strong nil "SHOWING ") (count items) " items"))
+
                 (my-dom/div
                   (->> (css/grid-column)
                        (css/add-class :sort)

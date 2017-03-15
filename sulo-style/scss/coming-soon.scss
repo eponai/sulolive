@@ -20,6 +20,12 @@
 	h1, h2, h3, h4, h5, h6 {
 		font-family: $header-font-family-sans-serif;
 	}
+	h1 {
+		font-size: 48px;
+		@include breakpoint(medium) {
+			font-size: 72px;
+		}
+	}
 }
 #sulo-coming-soon, #sulo-sell-coming-soon {
 	p {
