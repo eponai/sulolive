@@ -17,6 +17,9 @@
 (defn tabs [opts & content]
   (apply menu* (css/add-class ::css/tabs opts) content))
 
+(defn breadcrumbs [opts & content]
+  (apply dom/ul (css/add-class :css/breadcrumbs opts) content))
+
 (defn horizontal
   "Menu in horizontal layout.
 

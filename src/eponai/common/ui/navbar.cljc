@@ -242,8 +242,7 @@
                                                      :store.item/name
                                                      {:store/_items [:store/name]}]}]}]}
      {:query/auth [:db/id :user/email {:store.owner/_user [{:store/_owners [:store/name :db/id]}]}]}
-     {:query/top-categories [:category/label :category/path :category/level
-                             {:category/children [:category/label :category/path]}]}
+     '{:query/top-categories [:category/label :category/path :category/level {:category/children ...}]}
      :query/current-route])
   Object
   (open-signin [this]

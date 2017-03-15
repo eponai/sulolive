@@ -96,6 +96,10 @@ h3 {
 	// box-shadow: 1px 1px 3px 0 rgba($primary-color, 0.1);
 }
 
+.drilldown-submenu-cover-previous {
+	min-height: 100%;
+}
+
 @mixin list-item-hover($color: $white, $hover-color: darken($color, 5%)) {
 	transition: background .25s ease-in-out;
 	&:hover, &:focus {

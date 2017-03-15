@@ -379,6 +379,7 @@
 
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :category/children
+  :db/isComponent        true
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/many
   :db/doc                "Category subcategories."

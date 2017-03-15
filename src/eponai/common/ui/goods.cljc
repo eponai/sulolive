@@ -19,14 +19,29 @@
    :sort/price-inc {:key :store.item/price :reverse? false}
    :sort/price-dec {:key :store.item/price :reverse? true}})
 
+(defn breadcrumbs [category]
+  (let [items (loop [c category
+                     l '()]
+                (if (some? c)
+                  (let [parent (first (:category/_children c))]
+                    (recur parent (conj l (menu/item nil (dom/a #js {:href (routes/url :products/categories {:category (:category/path c)})}
+                                                                (:category/label c))))))
+                  l))]
+    (when (< 1 (count items))
+      (dom/nav #js {:role "navigation"}
+               (menu/breadcrumbs
+                 nil
+                 items)))))
+
 (defui Goods
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/items (om/get-query product/Product)}
-     {:query/category [:category/label
+     '{:query/category [:category/label
                        :category/path
-                       {:category/children [:category/label :category/path]}]}
+                       {:category/_children ...}
+                        {:category/children ...}]}
      :query/current-route])
   Object
   (initLocalState [_]
@@ -34,19 +49,17 @@
                :reverse? false}})
   (render [this]
     (let [{:keys [proxy/navbar]
-           :query/keys [current-route items category]} (om/props this)
+           :query/keys [current-route items category top-categories]} (om/props this)
           {:keys [sorting]} (om/get-state this)
           current-category (get-in current-route [:route-params :category] "")]
 
-      (debug "Categories: " category)
-      (debug "Current category: " current-category)
-      (debug "Items: " items)
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse"}
         (my-dom/div
           (css/grid-row)
           (my-dom/div
             (css/grid-column)
+            (breadcrumbs category)
             (dom/h1 nil (.toUpperCase (if (not-empty current-category)
                                         (:category/label category "")
                                         "All")))))
@@ -64,16 +77,19 @@
                  (css/show-for {:size :large})
                  (css/grid-column-size {:large 3}))
             ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
-              (menu/vertical
+            (menu/vertical
+              nil
+              (menu/item
                 nil
-                (menu/item nil
-                           (dom/a nil (dom/strong nil (:category/label category)))
-                           (menu/vertical
-                             {:classes [:nested]}
-                             (map-indexed (fn [i subcategory]
-                                            (let [{:category/keys [label path]} subcategory]
-                                              (menu/item {:key i} (dom/a #js {:href (routes/url :products/categories {:category path})} label))))
-                                          (:category/children category)))))
+                (dom/a nil (dom/strong nil (:category/label category)))
+                (menu/vertical
+                  (css/add-class :nested)
+                  (map-indexed (fn [i c]
+                                 (let [{:category/keys [label path]} c]
+                                   (menu/item {:key i}
+                                              (dom/a #js {:href (routes/url :products/categories {:category path})}
+                                                     (dom/span nil label)))))
+                               (:category/children category)))))
             ;(if (not-empty current-category)
             ;  (menu/vertical
             ;    nil
