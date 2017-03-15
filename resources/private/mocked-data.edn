@@ -1,222 +1,252 @@
-{:photos      [{:db/id      #db/id[:db.part/user -10]
-                :photo/path "https://img1.etsystatic.com/151/0/6380862/isla_500x500.24111301_nvjpi6zo.jpg"}
-               {:db/id      #db/id[:db.part/user -11]
-                :photo/path "https://img0.etsystatic.com/125/0/11651126/isla_500x500.17338368_6u0a6c4s.jpg"}
-               {:db/id      #db/id[:db.part/user -12]
-                :photo/path "https://img0.etsystatic.com/151/0/11651126/isbl_3360x840.22956500_1bj341c6.jpg"}
-               {:db/id      #db/id[:db.part/user -13]
-                :photo/path "https://imgix.ttcdn.co/i/wallpaper/original/0/175704-27dcee8b2fd94212b2cc7dcbe43bb80c.jpeg?q=50&w=2000&auto=format%2Ccompress&fm=jpeg&h=1333&crop=faces%2Centropy&fit=crop"}
-               {:db/id      #db/id[:db.part/user -14]
-                :photo/path "https://imgix.ttcdn.co/i/logotype/original/0/175704-48d2e8b257b04ce7ac0f975c20e9faaf.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
-               {:db/id      #db/id[:db.part/user -15]
-                :photo/path "https://img1.etsystatic.com/121/0/6396625/isla_500x500.17289961_hkw1djlp.jpg"}
-               {:db/id      #db/id[:db.part/user -16]
-                :photo/path "https://img1.etsystatic.com/133/0/5243597/isbl_3360x840.20468865_f7kumdbt.jpg"}
-               {:db/id      #db/id[:db.part/user -17]
-                :photo/path "https://img0.etsystatic.com/139/0/5243597/isla_500x500.22177516_ath1ugrh.jpg"}
-               {:db/id      #db/id[:db.part/user -18]
-                :photo/path "https://imgix.ttcdn.co/i/wallpaper/original/0/449892-2b1249e4cb424d5a937a0f67fb22ccc0.jpeg?q=50&w=2000&auto=format%2Ccompress&fm=jpeg&h=1333&crop=faces%2Centropy&fit=crop"}
-               {:db/id      #db/id[:db.part/user -19]
-                :photo/path "https://imgix.ttcdn.co/i/logotype/original/0/449892-f55c1afa37734a7fa5c9b144a3ea8ace.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
+{:photos     [{:db/id      #db/id[:db.part/user -10]
+               :photo/path "https://img1.etsystatic.com/151/0/6380862/isla_500x500.24111301_nvjpi6zo.jpg"}
+              {:db/id      #db/id[:db.part/user -11]
+               :photo/path "https://img0.etsystatic.com/125/0/11651126/isla_500x500.17338368_6u0a6c4s.jpg"}
+              {:db/id      #db/id[:db.part/user -12]
+               :photo/path "https://img0.etsystatic.com/151/0/11651126/isbl_3360x840.22956500_1bj341c6.jpg"}
+              {:db/id      #db/id[:db.part/user -13]
+               :photo/path "https://imgix.ttcdn.co/i/wallpaper/original/0/175704-27dcee8b2fd94212b2cc7dcbe43bb80c.jpeg?q=50&w=2000&auto=format%2Ccompress&fm=jpeg&h=1333&crop=faces%2Centropy&fit=crop"}
+              {:db/id      #db/id[:db.part/user -14]
+               :photo/path "https://imgix.ttcdn.co/i/logotype/original/0/175704-48d2e8b257b04ce7ac0f975c20e9faaf.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
+              {:db/id      #db/id[:db.part/user -15]
+               :photo/path "https://img1.etsystatic.com/121/0/6396625/isla_500x500.17289961_hkw1djlp.jpg"}
+              {:db/id      #db/id[:db.part/user -16]
+               :photo/path "https://img1.etsystatic.com/133/0/5243597/isbl_3360x840.20468865_f7kumdbt.jpg"}
+              {:db/id      #db/id[:db.part/user -17]
+               :photo/path "https://img0.etsystatic.com/139/0/5243597/isla_500x500.22177516_ath1ugrh.jpg"}
+              {:db/id      #db/id[:db.part/user -18]
+               :photo/path "https://imgix.ttcdn.co/i/wallpaper/original/0/449892-2b1249e4cb424d5a937a0f67fb22ccc0.jpeg?q=50&w=2000&auto=format%2Ccompress&fm=jpeg&h=1333&crop=faces%2Centropy&fit=crop"}
+              {:db/id      #db/id[:db.part/user -19]
+               :photo/path "https://imgix.ttcdn.co/i/logotype/original/0/449892-f55c1afa37734a7fa5c9b144a3ea8ace.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
 
-               {:db/id      #db/id[:db.part/user -20]
-                :photo/path "https://img1.etsystatic.com/141/1/11651126/il_570xN.1142044641_1j6c.jpg"}
-               {:db/id      #db/id[:db.part/user -21]
-                :photo/path "https://img0.etsystatic.com/137/0/11651126/il_570xN.1003284712_ip5e.jpg"}
-               {:db/id      #db/id[:db.part/user -22]
-                :photo/path "https://img0.etsystatic.com/133/0/11651126/il_570xN.915745904_opjr.jpg"}
-               {:db/id      #db/id[:db.part/user -23]
-                :photo/path "https://img1.etsystatic.com/126/0/11651126/il_570xN.1098073811_5ca0.jpg"}
-               {:db/id      #db/id[:db.part/user -24]
-                :photo/path "https://img1.etsystatic.com/106/1/6380862/il_570xN.883668651_pp7m.jpg"}
-               {:db/id      #db/id[:db.part/user -25]
-                :photo/path "https://img1.etsystatic.com/178/0/6380862/il_570xN.1122315115_m1kt.jpg"}
-               {:db/id      #db/id[:db.part/user -26]
-                :photo/path "https://img1.etsystatic.com/124/0/6380862/il_570xN.883522367_34xx.jpg"}
-               {:db/id      #db/id[:db.part/user -27]
-                :photo/path "https://img0.etsystatic.com/130/1/6380862/il_570xN.883902058_swjc.jpg"}
-               {:db/id      #db/id[:db.part/user -28]
-                :photo/path "https://imgix.ttcdn.co/i/product/original/0/175704-f4b3f5a3acdd4997a3a4ea18186cca19.jpeg?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
-               {:db/id      #db/id[:db.part/user -29]
-                :photo/path "https://imgix.ttcdn.co/i/product/original/0/175704-78f7ed01cfc44fa690640e04ee83a81e.jpeg?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
+              {:db/id      #db/id[:db.part/user -20]
+               :photo/path "https://img1.etsystatic.com/141/1/11651126/il_570xN.1142044641_1j6c.jpg"}
+              {:db/id      #db/id[:db.part/user -21]
+               :photo/path "https://img0.etsystatic.com/137/0/11651126/il_570xN.1003284712_ip5e.jpg"}
+              {:db/id      #db/id[:db.part/user -22]
+               :photo/path "https://img0.etsystatic.com/133/0/11651126/il_570xN.915745904_opjr.jpg"}
+              {:db/id      #db/id[:db.part/user -23]
+               :photo/path "https://img1.etsystatic.com/126/0/11651126/il_570xN.1098073811_5ca0.jpg"}
+              {:db/id      #db/id[:db.part/user -24]
+               :photo/path "https://img1.etsystatic.com/106/1/6380862/il_570xN.883668651_pp7m.jpg"}
+              {:db/id      #db/id[:db.part/user -25]
+               :photo/path "https://img1.etsystatic.com/178/0/6380862/il_570xN.1122315115_m1kt.jpg"}
+              {:db/id      #db/id[:db.part/user -26]
+               :photo/path "https://img1.etsystatic.com/124/0/6380862/il_570xN.883522367_34xx.jpg"}
+              {:db/id      #db/id[:db.part/user -27]
+               :photo/path "https://img0.etsystatic.com/130/1/6380862/il_570xN.883902058_swjc.jpg"}
+              {:db/id      #db/id[:db.part/user -28]
+               :photo/path "https://imgix.ttcdn.co/i/product/original/0/175704-f4b3f5a3acdd4997a3a4ea18186cca19.jpeg?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
+              {:db/id      #db/id[:db.part/user -29]
+               :photo/path "https://imgix.ttcdn.co/i/product/original/0/175704-78f7ed01cfc44fa690640e04ee83a81e.jpeg?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
 
-               {:db/id      #db/id[:db.part/user -30]
-                :photo/path "https://imgix.ttcdn.co/i/product/original/0/175704-bae48bd385d64dc0bb6ebad3190cc317.jpeg?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
-               {:db/id      #db/id[:db.part/user -31]
-                :photo/path "https://imgix.ttcdn.co/i/product/original/0/175704-ba70e3b49b0f4a9084ce14f569d1cf60.jpeg?q=50&w=1000&auto=format%2Ccompress&fm=jpeg"}
-               {:db/id      #db/id[:db.part/user -32]
-                :photo/path "https://img0.etsystatic.com/036/1/5243597/il_570xN.654738182_2k08.jpg"}
-               {:db/id      #db/id[:db.part/user -33]
-                :photo/path "https://img0.etsystatic.com/024/0/5243597/il_570xN.519102094_4gu0.jpg"}
-               {:db/id      #db/id[:db.part/user -34]
-                :photo/path "https://img0.etsystatic.com/140/1/5243597/il_570xN.964805038_b4eq.jpg"}
-               {:db/id      #db/id[:db.part/user -35]
-                :photo/path "https://img0.etsystatic.com/139/3/5243597/il_570xN.931188156_qhqe.jpg"}
-               {:db/id      #db/id[:db.part/user -36]
-                :photo/path "https://imgix.ttcdn.co/i/product/original/0/449892-c7eed40ca74a4ed7abc555640c0936ad.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
-               {:db/id      #db/id[:db.part/user -37]
-                :photo/path "https://imgix.ttcdn.co/i/product/original/0/449892-7340ea71653e4b53a9057de4f64c1018.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
-               {:db/id      #db/id[:db.part/user -38]
-                :photo/path "https://imgix.ttcdn.co/i/product/original/0/449892-4603b04cdd4e4a41b281a4aff4a39fe0.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
-               {:db/id      #db/id[:db.part/user -39]
-                :photo/path "https://imgix.ttcdn.co/i/product/original/0/449892-18406d9dfa7e449e8d36627c088c92c1.png?q=50&w=1000&auto=format%2Ccompress&fm=jpeg"}]
+              {:db/id      #db/id[:db.part/user -30]
+               :photo/path "https://imgix.ttcdn.co/i/product/original/0/175704-bae48bd385d64dc0bb6ebad3190cc317.jpeg?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
+              {:db/id      #db/id[:db.part/user -31]
+               :photo/path "https://imgix.ttcdn.co/i/product/original/0/175704-ba70e3b49b0f4a9084ce14f569d1cf60.jpeg?q=50&w=1000&auto=format%2Ccompress&fm=jpeg"}
 
- :streams     [{:stream/name  "Handcrafted jewlery"
-                :stream/store #db/id[:db.part/user -1]}
-               {:stream/name  "What's up with thread count"
-                :stream/store #db/id[:db.part/user -2]}
-               {:stream/name  "Old looking leather, how?"
-                :stream/store #db/id[:db.part/user -3]}
-               {:stream/name  "Talking wedding bands"
-                :stream/store #db/id[:db.part/user -5]}]
+              ;; Nafsika
+              {:db/id      #db/id[:db.part/user -32]
+               :photo/path "https://img0.etsystatic.com/164/1/7745893/il_570xN.1094898766_ewls.jpg"}
+              {:db/id      #db/id[:db.part/user -33]
+               :photo/path "https://img1.etsystatic.com/121/1/7745893/il_570xN.1116392641_6zg2.jpg"}
+              {:db/id      #db/id[:db.part/user -34]
+               :photo/path "https://img0.etsystatic.com/127/0/7745893/il_570xN.988546292_nvbz.jpg"}
+              {:db/id      #db/id[:db.part/user -35]
+               :photo/path "https://img0.etsystatic.com/123/1/7745893/il_570xN.987968604_8ix5.jpg"}
 
- :user        [{:db/id       #db/id[:db.part/user -500]
-                :user/email  "dev@sulo.live"
-                :user/photo  #db/id[:db.part/user -10]
-                :user/stripe {:stripe/id "cus_A9paOisnJJQ0wS"}
-                :user/cart   {:db/id      #db/id[:db.part/user -1004]
-                              :cart/items [#db/id[:db.part/user -1000]]}}]
- :collections [{:db/id           #db/id[:db.part/user -600]
-                :collection/id "women"
-                :collection/label "Women"}
-               {:db/id           #db/id[:db.part/user -601]
-                :collection/id "home"
-                :collection/label "Home"}
-               {:db/id           #db/id[:db.part/user -602]
-                :collection/id "men"
-                :collection/label "Men"}
-               {:db/id           #db/id[:db.part/user -603]
-                :collection/id "kids"
-                :collection/label "Kids"}]
+              ;; FlowerRainbowNJ
+              {:db/id      #db/id[:db.part/user -36]
+               :photo/path "https://imgix.ttcdn.co/i/product/original/0/449892-c7eed40ca74a4ed7abc555640c0936ad.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
+              {:db/id      #db/id[:db.part/user -37]
+               :photo/path "https://imgix.ttcdn.co/i/product/original/0/449892-7340ea71653e4b53a9057de4f64c1018.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
+              {:db/id      #db/id[:db.part/user -38]
+               :photo/path "https://imgix.ttcdn.co/i/product/original/0/449892-4603b04cdd4e4a41b281a4aff4a39fe0.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg"}
+              {:db/id      #db/id[:db.part/user -39]
+               :photo/path "https://imgix.ttcdn.co/i/product/original/0/449892-18406d9dfa7e449e8d36627c088c92c1.png?q=50&w=1000&auto=format%2Ccompress&fm=jpeg"}]
 
- :stores      [{:db/id        #db/id[:db.part/user -1]
-                :store/name   "ikcha"
-                :store/stripe {:stripe/id     "acct_19k3ozC0YaFL9qxh"
-                               :stripe/publ   "pk_test_zkG9ip9pZ984hIVoNN1dApoi"
-                               :stripe/secret "sk_test_NnEAbrZu6mCMn2Z8Bs8Bvw4T"}
-                :store/owners {:store.owner/user #db/id[:db.part/user -500]
-                               :store.owner/role :store.owner.role/admin}
-                :store/photo  #db/id[:db.part/user -10]
-                :store/items  [{:store.item/name       "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
-                                :store.item/price      318.00M
-                                :store.item/photos     [#db/id[:db.part/user -24]]
-                                :store.item/collection #db/id[:db.part/user -600]
-                                :store.item/uuid       #uuid "58a4b30e-3c8b-49c4-ab08-796c05b4275b"
-                                :store.item/skus       [{:store.item.sku/uuid     #uuid "58a4b30e-e33e-442f-b018-a18284604e13"
-                                                         :store.item.sku/value    "S"
-                                                         :store.item.sku/type     :store.item.sku.type/finite
-                                                         :store.item.sku/quantity 321M
-                                                         }]}
-                               {:store.item/name       "Emerald silver choker"
-                                :store.item/price      219.00M
-                                :store.item/photos     [#db/id[:db.part/user -25]]
-                                :store.item/collection #db/id[:db.part/user -600]
-                                :store.item/uuid       #uuid "58a4b2b8-4489-4661-9580-c0fe2d132966"
-                                :store.item/skus       [{:store.item.sku/uuid     #uuid "58a4b2b8-9c8d-49e1-ab53-8d5c98374f79"
-                                                         :store.item.sku/value    "L"
-                                                         :store.item.sku/type     :store.item.sku.type/finite
-                                                         :store.item.sku/quantity 321M}]}
-                               {:store.item/name       "Ear Floral Cuff in Sterling Silver"
-                                :store.item/price      68.00M
-                                :store.item/photos     [#db/id[:db.part/user -26]]
-                                :store.item/collection #db/id[:db.part/user -600]
-                                :store.item/uuid       #uuid "58a4b270-fd5d-4cd9-a5ec-ee6c683c679b"
-                                :store.item/skus       [{:db/id                   #db/id[:db.part/user -1000]
-                                                         :store.item.sku/uuid     #uuid "58a4b270-b918-4007-a9f4-93508411e496"
-                                                         :store.item.sku/value    "M"
-                                                         :store.item.sku/type     :store.item.sku.type/finite
-                                                         :store.item.sku/quantity 32M}]}
-                               {:store.item/name       "Sun Stone geometrical Sterling Silver Ring"
-                                :store.item/price      211.00M
-                                :store.item/photos     [#db/id[:db.part/user -27]]
-                                :store.item/collection #db/id[:db.part/user -600]}]
-                }
-               {:db/id       #db/id[:db.part/user -2]
-                :store/name  "MagicLinen"
-                :store/cover #db/id[:db.part/user -12]
-                :store/photo #db/id[:db.part/user -11]
-                :store/items [{:store.item/name       "Linen duvet cover - Woodrose"
-                               :store.item/price      34.00M
-                               :store.item/photos     [#db/id[:db.part/user -20]]
-                               :store.item/collection #db/id[:db.part/user -601]}
-                              {:store.item/name       "Linen pillowcases with ribbons"
-                               :store.item/price      52.00M
-                               :store.item/photos     [#db/id[:db.part/user -21]]
-                               :store.item/collection #db/id[:db.part/user -601]}
-                              {:store.item/name       "Stone washed linen duvet cover"
-                               :store.item/price      134.00M
-                               :store.item/photos     [#db/id[:db.part/user -22]]
-                               :store.item/collection #db/id[:db.part/user -601]}
-                              {:store.item/name       "Linen fitted sheet - Aquamarine"
-                               :store.item/price      34.00M
-                               :store.item/photos     [#db/id[:db.part/user -23]]
-                               :store.item/collection #db/id[:db.part/user -601]}]}
+ :streams    [{:stream/name  "Handcrafted jewlery"
+               :stream/store #db/id[:db.part/user -1]}
+              {:stream/name  "What's up with thread count"
+               :stream/store #db/id[:db.part/user -2]}
+              {:stream/name  "Old looking leather, how?"
+               :stream/store #db/id[:db.part/user -3]}
+              {:stream/name  "Talking wedding bands"
+               :stream/store #db/id[:db.part/user -5]}]
 
-               {:db/id       #db/id[:db.part/user -3]
-                :store/name  "thislovesthat"
-                :store/cover #db/id[:db.part/user -13]
-                :store/photo #db/id[:db.part/user -13]
-                :store/items [{:store.item/name       "Glitter & Navy Blue Envelope Clutch"
-                               :store.item/photos     [#db/id[:db.part/user -28]]
-                               :store.item/price      34.00M
-                               :store.item/collection #db/id[:db.part/user -602]}
-                              {:store.item/name       "Mint Green & Gold Scallop Canvas Clutch"
-                               :store.item/photos     [#db/id[:db.part/user -29]]
-                               :store.item/price      52.00M
-                               :store.item/collection #db/id[:db.part/user -602]}
-                              {:store.item/name       "Modern Geometric Wood Bead Necklace"
-                               :store.item/price      134.00M
-                               :store.item/photos     [#db/id[:db.part/user -30]]
-                               :store.item/collection #db/id[:db.part/user -602]}
-                              {:store.item/name       "Modern Wood Teardrop Stud Earrings"
-                               :store.item/price      34.00M
-                               :store.item/photos     [#db/id[:db.part/user -31]]
-                               :store.item/collection #db/id[:db.part/user -602]}]}
-               {:db/id       #db/id[:db.part/user -5]
-                :store/name  "Nafsika"
-                :store/cover #db/id[:db.part/user -16]
-                :store/photo #db/id[:db.part/user -17]
-                :store/items [{:store.item/name       "Silver Twig Ring Milky"
-                               :store.item/photos     [#db/id[:db.part/user -32]]
-                               :store.item/price      34.00M
-                               :store.item/collection #db/id[:db.part/user -600]}
-                              {:store.item/name       "Bunny Charm Necklace"
-                               :store.item/photos     [#db/id[:db.part/user -33]]
-                               :store.item/price      52.00M
-                               :store.item/collection #db/id[:db.part/user -600]}
-                              {:store.item/name       "Red Moss Planter Fall Cube Necklace"
-                               :store.item/photos     [#db/id[:db.part/user -34]]
-                               :store.item/price      134.00M
-                               :store.item/collection #db/id[:db.part/user -600]}
-                              {:store.item/name       "Elvish Twig Ring"
-                               :store.item/photos     [#db/id[:db.part/user -35]]
-                               :store.item/price      34.00M
-                               :store.item/collection #db/id[:db.part/user -600]}]}
-               {:db/id       #db/id[:db.part/user -4]
-                :store/name  "FlowerRainbowNJ"
-                :store/cover #db/id[:db.part/user -18]
-                :store/photo #db/id[:db.part/user -18]
-                :store/items [{:store.item/name       "Nose Stud"
-                               :store.item/photos     [#db/id[:db.part/user -36]]
-                               :store.item/price      24.74M
-                               :store.item/collection #db/id[:db.part/user -600]}
-                              {:store.item/name       "Tragus Earring"
-                               :store.item/photos     [#db/id[:db.part/user -37]]
-                               :store.item/price      4.49M
-                               :store.item/collection #db/id[:db.part/user -600]}
-                              {:store.item/name       "Nose Ring"
-                               :store.item/photos     [#db/id[:db.part/user -38]]
-                               :store.item/price      6.37M
-                               :store.item/collection #db/id[:db.part/user -600]}
-                              {:store.item/name       "Nose Ring"
-                               :store.item/photos     [#db/id[:db.part/user -39]]
-                               :store.item/price      6.74M
-                               :store.item/collection #db/id[:db.part/user -600]}]}]
- :chats       [{:chat/store #db/id[:db.part/user -1]}
-               {:chat/store #db/id[:db.part/user -2]}
-               {:chat/store #db/id[:db.part/user -3]}
-               {:chat/store #db/id[:db.part/user -5]}
-               {:chat/store #db/id[:db.part/user -4]}]
+ :user       [{:db/id       #db/id[:db.part/user -500]
+               :user/email  "dev@sulo.live"
+               :user/photo  #db/id[:db.part/user -10]
+               :user/stripe {:stripe/id "cus_A9paOisnJJQ0wS"}
+               :user/cart   {:db/id      #db/id[:db.part/user -1004]
+                             :cart/items [#db/id[:db.part/user -1000]]}}]
+ :categories [{:db/id          #db/id[:db.part/user -604]
+               :category/path  "women-jewelry"
+               :category/label "Jewelry"
+               :category/level 1}
+              {:db/id             #db/id[:db.part/user -600]
+               :category/path     "women"
+               :category/label    "Women"
+               :category/children [#db/id[:db.part/user -604]]
+               :category/level 0}
+              {:db/id          #db/id[:db.part/user -601]
+               :category/path  "home"
+               :category/label "Home"
+               :category/level 0}
+              {:db/id          #db/id[:db.part/user -605]
+               :category/path  "men-bags"
+               :category/label "Bags"
+               :category/level 1}
+              {:db/id          #db/id[:db.part/user -602]
+               :category/path  "men"
+               :category/label "Men"
+               :category/children [#db/id[:db.part/user -605]]
+               :category/level 0}
+              {:db/id          #db/id[:db.part/user -603]
+               :category/path  "kids"
+               :category/label "Kids"
+               :category/level 0}
+              {:db/id          #db/id[:db.part/user -606]
+               :category/path  "art"
+               :category/label "Art"
+               :category/level 0}]
+
+ :stores     [{:db/id        #db/id[:db.part/user -1]
+               :store/name   "ikcha"
+               :store/stripe {:stripe/id     "acct_19k3ozC0YaFL9qxh"
+                              :stripe/publ   "pk_test_zkG9ip9pZ984hIVoNN1dApoi"
+                              :stripe/secret "sk_test_NnEAbrZu6mCMn2Z8Bs8Bvw4T"}
+               :store/owners {:store.owner/user #db/id[:db.part/user -500]
+                              :store.owner/role :store.owner.role/admin}
+               :store/photo  #db/id[:db.part/user -10]
+               :store/items  [{:store.item/name       "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
+                               :store.item/price      318.00M
+                               :store.item/photos     [#db/id[:db.part/user -24]]
+                               :store.item/categories [#db/id[:db.part/user -600]
+                                                       #db/id[:db.part/user -604]]
+                               :store.item/uuid       #uuid "58a4b30e-3c8b-49c4-ab08-796c05b4275b"
+                               :store.item/skus       [{:store.item.sku/uuid     #uuid "58a4b30e-e33e-442f-b018-a18284604e13"
+                                                        :store.item.sku/value    "S"
+                                                        :store.item.sku/type     :store.item.sku.type/finite
+                                                        :store.item.sku/quantity 321M
+                                                        }]}
+                              {:store.item/name       "Emerald silver choker"
+                               :store.item/price      219.00M
+                               :store.item/photos     [#db/id[:db.part/user -25]]
+                               :store.item/categories [#db/id[:db.part/user -600]
+                                                       #db/id[:db.part/user -604]]
+                               :store.item/uuid       #uuid "58a4b2b8-4489-4661-9580-c0fe2d132966"
+                               :store.item/skus       [{:store.item.sku/uuid     #uuid "58a4b2b8-9c8d-49e1-ab53-8d5c98374f79"
+                                                        :store.item.sku/value    "L"
+                                                        :store.item.sku/type     :store.item.sku.type/finite
+                                                        :store.item.sku/quantity 321M}]}
+                              {:store.item/name       "Ear Floral Cuff in Sterling Silver"
+                               :store.item/price      68.00M
+                               :store.item/photos     [#db/id[:db.part/user -26]]
+                               :store.item/categories [#db/id[:db.part/user -600]
+                                                       #db/id[:db.part/user -604]]
+                               :store.item/uuid       #uuid "58a4b270-fd5d-4cd9-a5ec-ee6c683c679b"
+                               :store.item/skus       [{:db/id                   #db/id[:db.part/user -1000]
+                                                        :store.item.sku/uuid     #uuid "58a4b270-b918-4007-a9f4-93508411e496"
+                                                        :store.item.sku/value    "M"
+                                                        :store.item.sku/type     :store.item.sku.type/finite
+                                                        :store.item.sku/quantity 32M}]}
+                              {:store.item/name       "Sun Stone geometrical Sterling Silver Ring"
+                               :store.item/price      211.00M
+                               :store.item/photos     [#db/id[:db.part/user -27]]
+                               :store.item/categories [#db/id[:db.part/user -600]
+                                                       #db/id[:db.part/user -604]]}]
+               }
+              {:db/id       #db/id[:db.part/user -2]
+               :store/name  "MagicLinen"
+               :store/cover #db/id[:db.part/user -12]
+               :store/photo #db/id[:db.part/user -11]
+               :store/items [{:store.item/name       "Linen duvet cover - Woodrose"
+                              :store.item/price      34.00M
+                              :store.item/photos     [#db/id[:db.part/user -20]]
+                              :store.item/categories [#db/id[:db.part/user -601]]}
+                             {:store.item/name       "Linen pillowcases with ribbons"
+                              :store.item/price      52.00M
+                              :store.item/photos     [#db/id[:db.part/user -21]]
+                              :store.item/categories [#db/id[:db.part/user -601]]}
+                             {:store.item/name       "Stone washed linen duvet cover"
+                              :store.item/price      134.00M
+                              :store.item/photos     [#db/id[:db.part/user -22]]
+                              :store.item/categories [#db/id[:db.part/user -601]]}
+                             {:store.item/name       "Linen fitted sheet - Aquamarine"
+                              :store.item/price      34.00M
+                              :store.item/photos     [#db/id[:db.part/user -23]]
+                              :store.item/categories [#db/id[:db.part/user -601]]}]}
+
+              {:db/id       #db/id[:db.part/user -3]
+               :store/name  "thislovesthat"
+               :store/cover #db/id[:db.part/user -13]
+               :store/photo #db/id[:db.part/user -13]
+               :store/items [{:store.item/name       "Glitter & Navy Blue Envelope Clutch"
+                              :store.item/photos     [#db/id[:db.part/user -28]]
+                              :store.item/price      34.00M
+                              :store.item/categories [#db/id[:db.part/user -602]
+                                                      #db/id[:db.part/user -605]]}
+                             {:store.item/name       "Mint Green & Gold Scallop Canvas Clutch"
+                              :store.item/photos     [#db/id[:db.part/user -29]]
+                              :store.item/price      52.00M
+                              :store.item/categories [#db/id[:db.part/user -602]
+                                                      #db/id[:db.part/user -605]]}
+                             {:store.item/name       "Modern Geometric Wood Bead Necklace"
+                              :store.item/price      134.00M
+                              :store.item/photos     [#db/id[:db.part/user -30]]
+                              :store.item/categories [#db/id[:db.part/user -602]
+                                                      #db/id[:db.part/user -605]]}
+                             {:store.item/name       "Modern Wood Teardrop Stud Earrings"
+                              :store.item/price      34.00M
+                              :store.item/photos     [#db/id[:db.part/user -31]]
+                              :store.item/categories [#db/id[:db.part/user -602]
+                                                      #db/id[:db.part/user -605]]}]}
+              {:db/id       #db/id[:db.part/user -5]
+               :store/name  "Nafsika"
+               :store/cover #db/id[:db.part/user -16]
+               :store/photo #db/id[:db.part/user -17]
+               :store/items [{:store.item/name       "Silver Twig Ring Milky"
+                              :store.item/photos     [#db/id[:db.part/user -32]]
+                              :store.item/price      34.00M
+                              :store.item/categories [#db/id[:db.part/user -600]]}
+                             {:store.item/name       "Bunny Charm Necklace"
+                              :store.item/photos     [#db/id[:db.part/user -33]]
+                              :store.item/price      52.00M
+                              :store.item/categories [#db/id[:db.part/user -600]]}
+                             {:store.item/name       "Red Moss Planter Fall Cube Necklace"
+                              :store.item/photos     [#db/id[:db.part/user -34]]
+                              :store.item/price      134.00M
+                              :store.item/categories [#db/id[:db.part/user -600]]}
+                             {:store.item/name       "Elvish Twig Ring"
+                              :store.item/photos     [#db/id[:db.part/user -35]]
+                              :store.item/price      34.00M
+                              :store.item/categories [#db/id[:db.part/user -600]]}]}
+              {:db/id       #db/id[:db.part/user -4]
+               :store/name  "FlowerRainbowNJ"
+               :store/cover #db/id[:db.part/user -18]
+               :store/photo #db/id[:db.part/user -18]
+               :store/items [{:store.item/name       "Nose Stud"
+                              :store.item/photos     [#db/id[:db.part/user -36]]
+                              :store.item/price      24.74M
+                              :store.item/categories [#db/id[:db.part/user -600]]}
+                             {:store.item/name       "Tragus Earring"
+                              :store.item/photos     [#db/id[:db.part/user -37]]
+                              :store.item/price      4.49M
+                              :store.item/categories [#db/id[:db.part/user -600]]}
+                             {:store.item/name       "Nose Ring"
+                              :store.item/photos     [#db/id[:db.part/user -38]]
+                              :store.item/price      6.37M
+                              :store.item/categories [#db/id[:db.part/user -600]]}
+                             {:store.item/name       "Nose Ring"
+                              :store.item/photos     [#db/id[:db.part/user -39]]
+                              :store.item/price      6.74M
+                              :store.item/categories [#db/id[:db.part/user -600]]}]}]
+ :chats      [{:chat/store #db/id[:db.part/user -1]}
+              {:chat/store #db/id[:db.part/user -2]}
+              {:chat/store #db/id[:db.part/user -3]}
+              {:chat/store #db/id[:db.part/user -5]}
+              {:chat/store #db/id[:db.part/user -4]}]
 
  ;:cart    [{:db/id #db/id[:db.part/user -1004]
  ;           :cart/items [{:db/id  #db/id[:db.part/user -1001]

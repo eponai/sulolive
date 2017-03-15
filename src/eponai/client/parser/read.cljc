@@ -111,13 +111,27 @@
 
 (defmethod client-read :query/items
   [{:keys [db query target route-params ast] :as env} _ p]
-  (let [{:keys [collection search]} route-params]
+  (let [{:keys [category search]} route-params]
     (if target
-      {:remote (assoc-in ast [:params :category] collection)}
-      {:value (cond (some? collection)
-                    (db/pull-all-with db query (products/find-by-category collection))
+      {:remote (assoc-in ast [:params :category] category)}
+      {:value (cond (some? category)
+                    (db/pull-all-with db query (products/find-by-category category))
                     :else
                     (db/pull-all-with db query (products/find-all)))})))
+
+(defmethod client-read :query/top-categories
+  [{:keys [db target query route-params]} _ {:keys [category search] :as p}]
+  (if target
+    {:remote true}
+    {:value (db/pull-all-with db query {:where '[[?e :category/level 0]]})}))
+
+(defmethod client-read :query/category
+  [{:keys [db query target route-params ast] :as env} _ p]
+  (let [{:keys [category]} route-params]
+    (if target
+      {:remote (assoc-in ast [:params :category] category)}
+      {:value (db/pull-one-with db query {:where   '[[?e :category/path ?p]]
+                                 :symbols {'?p category}})})))
 
 (defmethod client-read :query/item
   [{:keys [db query target route-params ast]} _ _]

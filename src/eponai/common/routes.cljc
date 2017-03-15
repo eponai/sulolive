@@ -20,8 +20,8 @@
 
 (def product-routes
   {""                         :products
-   "/collections"             {""                :products/all-collections
-                               ["/" :collection] :products/collections}
+   "/categories"              {""              :products/all-categories
+                               ["/" :category] :products/categories}
    ["/" [#"\d+" :product-id]] :product})
 (def routes
   ["/" {""                            :index

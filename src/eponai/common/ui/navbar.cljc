@@ -88,7 +88,7 @@
     (fn [i c]
       (let [opts (cond-> {:key  (str "nav-" c "-" i)}
                          (not disabled?)
-                         (assoc :href (routes/url :products/collections {:collection (.toLowerCase c)})))]
+                         (assoc :href (routes/url :products/categories {:category (.toLowerCase c)})))]
         (menu/item-link
           (->> opts
                (css/add-class :category)
@@ -242,6 +242,8 @@
                                                      :store.item/name
                                                      {:store/_items [:store/name]}]}]}]}
      {:query/auth [:db/id :user/email {:store.owner/_user [{:store/_owners [:store/name :db/id]}]}]}
+     {:query/top-categories [:category/label :category/path :category/level
+                             {:category/children [:category/label :category/path]}]}
      :query/current-route])
   Object
   (open-signin [this]
@@ -278,9 +280,10 @@
 
   (render [this]
     (let [
-          {:query/keys [cart auth current-route]} (om/props this)
+          {:query/keys [cart auth current-route top-categories]} (om/props this)
           {:keys [route route-params]} current-route]
 
+      (debug "Navbar categories: " top-categories)
       (debug "Route: " route)
       (dom/header #js {:id "sulo-navbar"}
                   (dom/div #js {:className "navbar-container"}

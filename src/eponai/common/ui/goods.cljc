@@ -2,6 +2,7 @@
   (:require
     [eponai.common.ui.common :as common]
     [eponai.common.ui.product-item :as pi]
+    [eponai.client.routes :as routes]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.navbar :as nav]
@@ -23,6 +24,9 @@
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/items (om/get-query product/Product)}
+     {:query/category [:category/label
+                       :category/path
+                       {:category/children [:category/label :category/path]}]}
      :query/current-route])
   Object
   (initLocalState [_]
@@ -30,17 +34,22 @@
                :reverse? false}})
   (render [this]
     (let [{:keys [proxy/navbar]
-           :query/keys [current-route items]} (om/props this)
+           :query/keys [current-route items category]} (om/props this)
           {:keys [sorting]} (om/get-state this)
-          current-category (get-in current-route [:route-params :collection] "")]
+          current-category (get-in current-route [:route-params :category] "")]
 
+      (debug "Categories: " category)
+      (debug "Current category: " current-category)
+      (debug "Items: " items)
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse"}
         (my-dom/div
           (css/grid-row)
           (my-dom/div
             (css/grid-column)
-            (dom/h1 nil (.toUpperCase current-category))))
+            (dom/h1 nil (.toUpperCase (if (not-empty current-category)
+                                        (:category/label category "")
+                                        "All")))))
         (my-dom/div
           (->> (css/grid-row)
                (css/hide-for {:size :large}))
@@ -55,16 +64,30 @@
                  (css/show-for {:size :large})
                  (css/grid-column-size {:large 3}))
             ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
-            (menu/vertical
-              nil
-              (menu/item nil
-                         (dom/a nil (dom/strong nil (s/capitalize current-category)))
-                         (menu/vertical
-                           {:classes [:nested]}
-                           (menu/item nil (dom/a nil "Accessories"))
-                           (menu/item nil (dom/a nil "Clothing"))
-                           (menu/item nil (dom/a nil "Jewelry"))
-                           (menu/item nil (dom/a nil "Shoes"))))))
+              (menu/vertical
+                nil
+                (menu/item nil
+                           (dom/a nil (dom/strong nil (:category/label category)))
+                           (menu/vertical
+                             {:classes [:nested]}
+                             (map-indexed (fn [i subcategory]
+                                            (let [{:category/keys [label path]} subcategory]
+                                              (menu/item {:key i} (dom/a #js {:href (routes/url :products/categories {:category path})} label))))
+                                          (:category/children category)))))
+            ;(if (not-empty current-category)
+            ;  (menu/vertical
+            ;    nil
+            ;    (menu/item nil (dom/a #js {:href    (routes/url :products/collections {:collection "women"})}
+            ;                          (dom/strong nil "Women")))
+            ;    (menu/item nil (dom/a #js {:href (routes/url :products/collections {:collection "men"})}
+            ;                          (dom/strong nil "Men")))
+            ;    (menu/item nil (dom/a #js {:href (routes/url :products/collections {:collection "kids"})}
+            ;                          (dom/strong nil "Kids")))
+            ;    (menu/item nil (dom/a #js {:href (routes/url :products/collections {:collection "home"})}
+            ;                          (dom/strong nil "Home")))
+            ;    (menu/item nil (dom/a #js {:href (routes/url :products/collections {:collection "art"})}
+            ;                          (dom/strong nil "Art")))))
+            )
           (my-dom/div
             (css/grid-column)
             (dom/div #js {:className "sulo-items-container"}

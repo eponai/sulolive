@@ -37,8 +37,8 @@
      {:store.item/photos [:photo/path]}
      {:store.item/skus [:store.item.sku/value]}
      :store.item/details
-     {:store.item/collection [:collection/label
-                              :collection/id]}
+     {:store.item/categories [:category/label
+                              :category/path]}
      {:store/_items [{:store/photo [:photo/path]}
                      :store/name]}])
   Object

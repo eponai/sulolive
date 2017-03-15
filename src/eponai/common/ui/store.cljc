@@ -124,8 +124,11 @@
                       (apply my-dom/div
                              (->> (css/grid-row)
                                   (css/grid-row-columns {:small 2 :medium 3}))
-                             (map (fn [p]
-                                    (pi/->ProductItem {:product p}))
+                             (map-indexed
+                               (fn [i p]
+                                    (my-dom/div
+                                      (css/grid-column {:key i})
+                                      (pi/->ProductItem {:product p})))
                                   (concat items items items)))))))))
 
 (def ->Store (om/factory Store))

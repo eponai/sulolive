@@ -172,10 +172,10 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store.item/collection
+  :db/ident              :store.item/categories
   :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Collections this item belongs to."
+  :db/cardinality        :db.cardinality/many
+  :db/doc                "Categories this item belongs to."
   :db.install/_attribute :db.part/db}
 
  ;; TODO: figure out how to handle categories of different granularities, check out how Etsy is doing this.
@@ -363,17 +363,31 @@
 
  ;; Collections
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :collection/id
+  :db/ident              :category/path
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
   :db/unique             :db.unique/identity
-  :db/doc                "Collection Identifier."
+  :db/doc                "Category path identifier."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :collection/label
+  :db/ident              :category/label
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Colleciton label."
+  :db/doc                "Category label."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :category/children
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/many
+  :db/doc                "Category subcategories."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :category/level
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Category level."
   :db.install/_attribute :db.part/db}
  ]

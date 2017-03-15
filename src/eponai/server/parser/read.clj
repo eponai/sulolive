@@ -31,7 +31,7 @@
   [store-id])
 (defmethod server-read :query/store
   [{:keys [db db-history query]} _ {:keys [store-id]}]
-  {:value (query/one db db-history query {:where   '[[?e :store/owners]]
+  {:value (query/one db db-history query {:where   '[[?e :store/name]]
                                           :symbols {'?e store-id}})})
 
 (defmethod server-read :query/orders
@@ -89,12 +89,22 @@
 
 (defmethod server-read :query/items
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
-  {:value (let [c (or category (:collection route-params))]
+  {:value (let [c (or category (:category route-params))]
             (cond (some? category)
                   (db/pull-all-with db query (products/find-by-category c))
                   ;(query/all db db-history query (products/find-by-category c))
                   :else
                   (query/all db db-history query (products/find-all))))})
+
+(defmethod server-read :query/top-categories
+  [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
+  {:value (db/pull-all-with db query {:where '[[?e :category/level 0]]})})
+
+(defmethod server-read :query/category
+  [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
+  {:value (let [c (or category (:category route-params))]
+            (db/pull-one-with db query {:where   '[[?e :category/path ?p]]
+                                        :symbols {'?p c}}))})
 
 (defmethod read-basis-param-path :query/item [_ _ {:keys [product-id]}]
   [product-id])
