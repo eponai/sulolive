@@ -5,13 +5,16 @@
     [environ.core :refer [env]]
     [ring.util.request :as ring.request]
     [ring.util.response :as ring.response]
+    [manifold.deferred :as deferred]
+    [aleph.middleware.util :as aleph.m]
+    [aleph.middleware.cookies]
+    [aleph.middleware.session]
+    [aleph.middleware.content-type]
+    [ring.middleware.x-headers :as x-headers]
     [ring.middleware.defaults :as r]
-    [ring.middleware.gzip :as gzip]
-    [ring.middleware.json :refer [wrap-json-body
-                                  wrap-json-response]]
+    [ring.middleware.json :as ring-json]
     [ring.middleware.ssl :as ssl]
-    [ring.middleware.transit :refer [wrap-transit-response
-                                     wrap-transit-body]]
+    [ring.middleware.transit :as ring-transit]
     [taoensso.timbre :refer [debug error trace]]
     [eponai.client.utils :as client.utils]
     [eponai.common.parser.util :as parser.util]
@@ -21,12 +24,19 @@
     [eponai.server.http :as h]
     [eponai.server.datomic.query :as query]
     ;; Debug/dev require
-    [prone.middleware :as prone])
+    [prone.middleware :as prone]
+    [prone.debug]
+    [cheshire.core :as json])
   (:import (datomic.query EntityMap)))
 
 (defn wrap-timing [handler]
   (fn [request]
     (parser.util/timeit "Request timer" (handler request))))
+
+(defn defer-response-fn [handler response-fn & response-fn-args]
+  (fn [request]
+    (deferred/let-flow [response (handler request)]
+                       (apply response-fn response response-fn-args))))
 
 (defn wrap-ssl [handler]
   (-> handler
@@ -37,23 +47,30 @@
       ssl/wrap-forwarded-scheme
       ;; This ensures the browser will only use HTTPS for future requests to the domain.
       ;; The value 86400 (24 hours) is taken from what instagram.com uses.
-      (ssl/wrap-hsts {:max-age 86400 :include-subdomains? false})))
+      (defer-response-fn ring.response/header "Strict-Transport-Security" (#'ssl/build-hsts-header {:max-age 86400 :include-subdomains? false}))))
 
 (defn wrap-error [handler in-prod?]
   (letfn [(wrap-error-prod [handler]
             (fn [request]
-              (try
-                (handler request)
-                (catch Throwable e
-                  (error "Error for request: " request " message: " (.getMessage e))
-                  (error e)
-                  (let [error (ex-data e)
-                        code (h/error-codes (or (:status error) ::h/internal-error))]
-                    {:status code :body error})))))]
+              (-> (handler request)
+                  (deferred/catch Throwable
+                    (fn [e]
+                      (error "Error for request: " request " message: " (.getMessage e))
+                      (error e)
+                      (let [error (ex-data e)
+                            code (h/error-codes (or (:status error) ::h/internal-error))]
+                        {:status code :body error}))))))
+          (wrap-prone-aleph [handler]
+            (fn [request]
+              (-> (handler request)
+                  (deferred/catch Throwable
+                    (fn [e]
+                      (.printStackTrace e)
+                      (binding [prone.debug/*debug-data* (atom [])]
+                        (prone/exceptions-response request e '[eponai])))))))]
     (if in-prod?
       (wrap-error-prod handler)
-      (prone/wrap-exceptions handler {:app-namespaces     '[eponai]
-                                      :print-stacktraces? true}))))
+      (wrap-prone-aleph handler))))
 
 (def datomic-transit
   (transit/write-handler
@@ -61,47 +78,60 @@
     #(into {:db/id (:db/id %)} %)))
 
 (defn wrap-json [handler]
-  (-> handler
-      (wrap-json-body {:keywords? true})
-      wrap-json-response))
+  (letfn [(deferred-json-response [handler & [{:as options}]]
+            (defer-response-fn handler (fn [response]
+                                         (if (coll? (:body response))
+                                           (let [json-response (update-in response [:body] json/generate-string options)]
+                                             (if (contains? (:headers response) "Content-Type")
+                                               json-response
+                                               (ring.response/content-type json-response "application/json; charset=utf-8")))
+                                           response))))]
+    (-> handler
+        (ring-json/wrap-json-body {:keywords? true})
+        (deferred-json-response))))
 
 (defn wrap-transit [handler]
-  (-> handler
-      wrap-transit-body
-      (wrap-transit-response {:opts     {:handlers {EntityMap datomic-transit}}
-                              :encoding :json})))
+  (letfn [(deferred-transit-response [handler]
+            (fn [request]
+              (deferred/let-flow
+                [response (handler request)]
+                (ring-transit/transit-response
+                     response request
+                     (#'ring-transit/transit-response-options
+                       {:opts     {:handlers {EntityMap datomic-transit}}
+                        :encoding :json})))))]
+    (-> handler
+        (ring-transit/wrap-transit-body)
+        (deferred-transit-response))))
+
+
 
 (defn wrap-format [handler]
-  (fn [r]
-    (let [content-type (:content-type r)]
-      ;(debug "Found content type: " content-type)
-      (if (and (some? content-type)
-               (re-find #"application/json" content-type))
-        (do
-          ;(debug "Wrapping JSON request.")
-          ((wrap-json handler) r))
-        (do
-          ;(debug "Wrapping transit request")
-          ((wrap-transit handler) r))))))
+  (let [json-request? (fn [request]
+                        (when-let [type (ring.response/get-header request "Content-Type")]
+                          (not (empty? (re-find #"application/json" type)))))
+        json-wrapper (wrap-json handler)
+        transit-wrapper (wrap-transit handler)]
+    (fn [request]
+      (if (json-request? request)
+        (json-wrapper request)
+        (transit-wrapper request)))))
 
 (defn wrap-post-middlewares [handler]
   (fn [request]
-    (trace "Request after middlewares:" request)
+    (trace "Request after middlewares:" (into {} request))
     (handler request)))
 
 (defn wrap-trace-request [handler]
   (fn [request]
-    (trace "Request:" request)
-    (let [response (handler request)]
-      (trace "Response: " response)
-      response)))
+    (trace "Request:" (into {} request))
+    (deferred/let-flow [response (handler request)]
+                       (trace "Response: " (into {} response))
+                       response)))
 
 (defn wrap-state [handler opts]
   (fn [request]
     (handler (merge request opts))))
-
-(defn wrap-gzip [handler]
-  (gzip/wrap-gzip handler))
 
 (defn wrap-authenticate [handler conn auth0]
   (auth/wrap-auth handler conn auth0))
@@ -119,8 +149,52 @@
             in-prod?
             (assoc-in [:session :cookie-attrs :secure] true))))
 
+(defn defer-x-headers [handler config]
+  (let [xss-header (when-let [xss-options (:xss-protection config)]
+                     ["X-XSS-Protection" (str (if (:enable? xss-options true) "1" "0")
+                                              (if (dissoc xss-options :enable?) "; mode=block"))])
+
+        frame-options (when-let [frame-options (:frame-options config)]
+                        ["X-Frame-Options" (#'x-headers/format-frame-options frame-options)])
+
+        content-type-options (when-let [content-type-options (:content-type-options config)]
+                               ["X-Content-Type-Options" (name content-type-options)])]
+    (letfn [(add-header [response header]
+              (if header
+                (apply ring.response/header response header)
+                response))]
+      (fn [request]
+        (deferred/let-flow
+          [response (handler request)]
+          (-> response
+              (add-header xss-header)
+              (add-header frame-options)
+              (add-header content-type-options)))))))
+
+(defn wrap-aleph-replacements [handler config]
+  ;; copy of r/wrap which is private.
+  (letfn [(wrap [handler middleware options]
+            (if (true? options)
+              (middleware handler)
+              (cond-> handler options (middleware options))))]
+    (-> handler
+        (wrap aleph.middleware.cookies/wrap-cookies (get-in config [:cookies]))
+        (wrap aleph.middleware.session/wrap-session (get-in config [:session]))
+        (wrap aleph.middleware.content-type/wrap-content-type (get-in config [:responses :content-types]))
+        (wrap defer-x-headers (get-in config [:security])))))
+
 (defn wrap-defaults [handler in-prod? disable-anti-forgery]
-  (r/wrap-defaults handler (config in-prod? disable-anti-forgery)))
+  (let [conf (config in-prod? disable-anti-forgery)]
+    (-> handler
+        (r/wrap-defaults (-> conf
+                             (assoc-in [:cookies] false)
+                             (assoc-in [:session] false)
+                             (assoc-in [:responses :content-types] false)
+                             (update-in [:security] dissoc
+                                        :xss-protection
+                                        :frame-options
+                                        :content-type-options)))
+        (wrap-aleph-replacements conf))))
 
 (defn wrap-node-modules [handler]
   (fn [request]

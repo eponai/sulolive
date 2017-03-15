@@ -21,11 +21,14 @@
     [eponai.server.external.wowza :as wowza]
     [eponai.server.external.host :as server-address]
     [eponai.server.external.chat :as chat]
-    [ring.adapter.jetty :as jetty]
+    [aleph.http :as aleph]
     [taoensso.timbre :refer [debug error info]]
     ;; Dev/debug require
     [ring.middleware.reload :as reload]
-    [clojure.spec :as s]))
+    [clojure.spec :as s])
+  (:import (io.netty.handler.codec.http HttpContentCompressor)
+           (io.netty.handler.stream ChunkedWriteHandler)
+           (io.netty.channel ChannelPipeline)))
 
 (defonce in-production? (atom true))
 
@@ -89,13 +92,12 @@
                        ::m/system                   system
                        ::m/cljs-build-id            (or (env :cljs-build-id) "dev")})
         (m/wrap-defaults @in-production? disable-anti-forgery)
-        (m/wrap-error @in-production?)
         m/wrap-trace-request
         (cond-> (some? extra-middleware) extra-middleware)
         (cond-> (and @in-production? (not disable-ssl))
                 m/wrap-ssl)
-        (cond-> (not @in-production?) reload/wrap-reload)
-        m/wrap-gzip)))
+        (m/wrap-error @in-production?)
+        (cond-> (not @in-production?) reload/wrap-reload))))
 
 ;; Do a little re-def dance. Store the arguments to app* in a var, right before
 ;; it is redefined.
@@ -135,17 +137,23 @@
                     (Long/parseLong (env :port))
                     (catch Exception e
                       nil))
-         port (or (:port opts) env-port default-port)]
+         port (or (:port opts) env-port default-port)
+         netty-pipeline (fn [^ChannelPipeline pipeline]
+                          (doto pipeline
+                            (.addBefore "request-handler" "deflater" (HttpContentCompressor.))
+                            (.addBefore "request-handler" "streamer" (ChunkedWriteHandler.))))]
      ;; by passing (var app) to run-jetty, it'll be forced to
      ;; evaluate app as code changes.
      (info "Using port: " port)
-     (jetty/run-jetty handler (merge {:port port} (dissoc opts :port))))))
+     (aleph/start-server handler (merge {:pipeline-transform netty-pipeline
+                                         :port  port}
+                                        (dissoc opts :port))))))
 
 (defn -main [& _]
   (start-server))
 
 (defn main-debug
-  "For repl, debug and test usages. Takes an optional map. Returns the jetty-server."
+  "For repl, debug and test usages. Takes an optional map. Returns the aleph-server."
   [& [opts]]
   {:pre [(or (nil? opts) (map? opts))]}
   (reset! in-production? false)

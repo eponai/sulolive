@@ -5,6 +5,7 @@
             [datomic.api :as datomic]
             [clojure.tools.namespace.repl :as ns.repl]
             [taoensso.timbre :as timbre]
+            [aleph.netty :as netty]
             [clojure.repl :refer :all]))
 
 (defn init []
@@ -23,7 +24,9 @@
   (prn "****************************************************"))
 
 (defn stop [server]
-  (.stop server))
+  (when server
+    (.close server)
+    (netty/wait-for-close server)))
 
 (def server-atom (atom nil))
 
