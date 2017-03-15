@@ -20,7 +20,7 @@
                  [amazonica "0.3.85"]
                  [com.draines/postal "2.0.1"]
                  [com.stripe/stripe-java "3.11.0"]
-                 [com.taoensso/timbre "4.7.4"]
+                 [com.taoensso/timbre "4.8.0"]
                  [environ "1.0.1"]
                  [hiccup "1.0.5"]
                  [org.clojure/data.generators "0.1.2"]
@@ -44,6 +44,7 @@
                  [prone "1.1.4"]
                  [medley "0.8.3"]
                  [org.martinklepsch/s3-beam "0.6.0-alpha1"]
+                 [com.taoensso/sente "1.11.0"]
 
                  ;; CLJS
                  [cljsjs/react "15.4.2-2"]

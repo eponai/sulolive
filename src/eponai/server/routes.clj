@@ -146,6 +146,14 @@
 
   (GET "/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
   (GET "/sell/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
+
+  ;; Websockets
+  (GET "/ws/chat" {::m/keys [system] :as request}
+    ((get-in system [:system/sente :ring-ajax-get-or-ws-handshake]) request))
+  (POST "/ws/chat" {::m/keys [system] :as request}
+    ((get-in system [:system/sente :ring-ajax-post]) request))
+
+  (POST "/ws/chat" {::m/keys [system] :as request} ((:system/sente system) request))
   (context "/" [:as request]
     (cond-> member-routes
             (or (::m/in-production? request))

@@ -23,6 +23,8 @@
     [eponai.server.external.chat :as chat]
     [aleph.http :as aleph]
     [aleph.netty]
+    [taoensso.sente :as sente]
+    [taoensso.sente.server-adapters.aleph :as sente.aleph]
     [taoensso.timbre :refer [debug error info]]
     ;; Dev/debug require
     [ring.middleware.reload :as reload]
@@ -54,6 +56,7 @@
                                       server-address)
                          (auth0/auth0-stub conn))
      :system/chat      (chat/->DatomicChat conn)
+     :system/sente     (sente/make-channel-socket! (sente.aleph/get-sch-adapter))
      :system/wowza     (let [p {:secret         (env :wowza-jwt-secret)
                                 :subscriber-url (env :wowza-subscriber-url)
                                 :publisher-url  (env :wowza-publisher-url)}]
