@@ -3,6 +3,7 @@
             [eponai.common.format :as format]
             [eponai.common.database :as db]
             [eponai.server.datomic.query :as query]
+            [com.stuartsierra.component :as component]
             [clojure.core.async :as async]
             [taoensso.timbre :refer [debug error]]))
 
@@ -34,15 +35,53 @@
   {:where   '[[?e :chat/store ?store-id]]
    :symbols {'?store-id (:db/id store)}})
 
-(defrecord DatomicChat [conn]
+(defrecord DatomicChat [datomic]
+  component/Lifecycle
+  (start [this]
+    (let [conn (:conn datomic)
+          store-id-chan (async/chan (async/sliding-buffer 1000))
+          control-chan (async/chan)
+          tx-report-queue (d/tx-report-queue conn)]
+      (async/thread
+        (try
+          (loop []
+            (let [tx-report (.take tx-report-queue)]
+              (when-not (= ::finished tx-report)
+                (try
+                  (doseq [store-id (updated-store-ids tx-report)]
+                    (async/put! store-id-chan {:event-type :store-id
+                                               :store-id   store-id}))
+                  (catch Throwable e
+                    (error "Error in DatomicChat thread reading tx-report-queue: " e)
+                    (async/put! store-id-chan {:exception  e
+                                               :event-type :exception})))
+                (recur))))
+          (catch InterruptedException e
+            (error "Error in DatomicChat thread reading tx-report-queue: " e)))
+        (debug "Exiting DatomicChat async/thread..")
+        (async/close! control-chan))
+      (assoc this :conn conn
+                  :tx-report-queue tx-report-queue
+                  :control-chan control-chan
+                  :store-id-chan store-id-chan)))
+  (stop [this]
+    (d/remove-tx-report-queue (:conn this))
+    (.add (:tx-report-queue this) ::finished)
+    (let [[v c] (async/alts!! [(:control-chan this) (async/timeout 1000)])]
+      (if (= c (:control-chan this))
+        (debug "DatomicChat successfully stopped.")
+        (debug "DatomicChat timedout when stopping.")))
+    ;; Closing :store-id-chan once we've closed the tx-report stuff.
+    (async/close! (:store-id-chan this)))
+
   db/ConnectionApi
   (db* [this]
-    (d/db conn))
+    (d/db (:conn this)))
 
   IWriteStoreChat
   (write-message [this store user message]
     (let [tx (format/chat-message (db/db this) store user message)]
-      (db/transact conn tx)))
+      (db/transact (:conn this) tx)))
 
   IReadStoreChat
   (initial-read [this store _]
@@ -54,24 +93,6 @@
   (last-read [this]
     (d/basis-t (db/db this)))
   (chat-update-stream [this]
-    (let [tx-report-queue (d/tx-report-queue conn)
-          out-chan (async/chan (async/sliding-buffer 1000))]
-      ;; TODO: We need to call d/remove-tx-report-queue on this conn.
-      ;; TODO: Which means we finally need to implement stuartsierra's Component lib.
-      (async/thread
-        (try
-          (loop []
-            (let [tx-report (.take tx-report-queue)]
-              (try
-                (doseq [store-id (updated-store-ids tx-report)]
-                  (async/put! out-chan {:event-type :store-id
-                                        :store-id   store-id}))
-                (catch Throwable e
-                  (error "Error in DatomicChat thread reading tx-report-queue: " e)
-                  (async/put! out-chan {:exception  e
-                                        :event-type :exception})))))
-          (catch InterruptedException e
-            (error "Error in DatomicChat thread reading tx-report-queue: " e))))
-      out-chan)))
+    (:store-id-chan this)))
 
 ;; ### Datomic implementation END
