@@ -28,6 +28,8 @@
                  [org.clojure/core.memoize "0.5.8"]         ; needed to work around lein+core.async dependency issue.
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.namespace "0.2.11"]
+                 [com.stuartsierra/component "0.3.2"]
+                 [vvvvalvalval/datomock "0.2.0"]
                  ;; Depending on transit-clj for faster cljs builds
                  [com.cognitect/transit-clj "0.8.297"]
                  ; ring helpers
