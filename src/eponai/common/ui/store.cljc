@@ -6,6 +6,7 @@
     [eponai.common.ui.common :as common]
     [eponai.common.ui.product :as item]
     [eponai.common.ui.stream :as stream]
+    [eponai.client.routes :as routes]
     #?(:cljs [eponai.web.utils :as utils])
     [eponai.common.ui.dom :as my-dom]
     [om.dom :as dom]
@@ -29,22 +30,28 @@
      {:query/store [:db/id
                     {:store/cover [:photo/path]}
                     {:store/photo [:photo/path]}
-                    {:store/items (om/get-query item/Product)}
+                    {:store/navigations [:store.navigation/label :store.navigation/path]}
+                    ;{:store/items (om/get-query item/Product)}
                     {:stream/_store [:stream/name]}
-                    :store/name]}])
+                    :store/name]}
+     {:query/store-items (om/get-query item/Product)}
+     :query/current-route])
   Object
   (render [this]
     (let [st (om/get-state this)
-          {:keys [query/store proxy/navbar] :as props} (om/props this)
+          {:query/keys [store store-items current-route]
+           :proxy/keys [navbar] :as props} (om/props this)
           {:store/keys [cover photo]
            stream      :stream/_store
-           items       :store/items
+           ;items       :store/items
            store-name  :store/name} store
           stream (first stream)
           show-chat? (:show-chat? st (some? stream))
-          has-stream? (some? stream)]
-      (debug "Store items: " items)
-      (debug "Store props: " (om/props this))
+          has-stream? (some? stream)
+          {:keys [route route-params]} current-route]
+      ;(debug "Store items: " store-items)
+      ;(debug "Store props: " (om/props this))
+      (debug "Current route: " current-route)
       (dom/div #js {:id "sulo-store" :className "sulo-page"}
         (common/page-container
           {:navbar navbar}
@@ -116,10 +123,28 @@
                           (css/grid-column)
                           (menu/horizontal
                             (css/align :center)
-                            (menu/item-link {:classes [:about]} (dom/span nil "About"))
-                            (menu/item-link nil (dom/span nil "Sheets"))
-                            (menu/item-link nil (dom/span nil "Pillows"))
-                            (menu/item-link nil (dom/span nil "Duvets")))))
+
+                            (menu/item (cond->> (css/add-class :about)
+                                                (= route :store/about)
+                                                (css/add-class ::css/is-active))
+                              (dom/a #js {:href (routes/url :store/about {:store-id (:db/id store)})}
+                                     (dom/span nil "About")))
+                            (menu/item (when (= :store route)
+                                         (css/add-class ::css/is-active))
+                                       (dom/a #js {:href (routes/url :store {:store-id (:db/id store)})}
+                                              (dom/span nil "All Items")))
+                            (map-indexed
+                              (fn [i n]
+                                (let [{:store.navigation/keys [path label]} n
+                                      is-active? (= path (:navigation route-params))]
+                                  (menu/item
+                                    (cond->> {:key (+ 10 i)}
+                                             is-active?
+                                             (css/add-class ::css/is-active))
+                                    (dom/a #js {:href (routes/url :store/navigation {:navigation path
+                                                                                              :store-id (:db/id store)})}
+                                                    (dom/span nil label)))))
+                              (:store/navigations store)))))
 
                       (apply my-dom/div
                              (->> (css/grid-row)
@@ -129,6 +154,6 @@
                                     (my-dom/div
                                       (css/grid-column {:key i})
                                       (pi/->ProductItem {:product p})))
-                                  (concat items items items)))))))))
+                                  (concat store-items store-items store-items)))))))))
 
 (def ->Store (om/factory Store))

@@ -36,6 +36,7 @@
      :store.item/price
      {:store.item/photos [:photo/path]}
      {:store.item/skus [:store.item.sku/value]}
+     :store.item/navigation
      :store.item/details
      {:store.item/categories [:category/label
                               :category/path]}

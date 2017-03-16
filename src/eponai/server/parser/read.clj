@@ -34,6 +34,21 @@
   {:value (query/one db db-history query {:where   '[[?e :store/name]]
                                           :symbols {'?e store-id}})})
 
+(defmethod server-read :query/store-items
+  [{:keys [db db-history query]} _ {:keys [store-id navigation]}]
+  {:value (let [params (if (not-empty navigation)
+                         {:where   '[[?s :store/items ?e]
+                                     [?e :store.item/navigation ?n]
+                                     [?n :store.navigation/path ?p]]
+                          :symbols {'?s store-id
+                                    '?p navigation}}
+
+                         {:where   '[[?s :store/items ?e]]
+                          :symbols {'?s store-id}}
+
+                         )]
+            (query/all db db-history query params))})
+
 (defmethod server-read :query/orders
   [env _ {:keys [store-id user-id]}]
   {:value (cond (some? store-id)

@@ -34,6 +34,25 @@
       {:remote (assoc-in ast [:params :store-id] store-id)}
       {:value (common.read/multiply-store-items store)})))
 
+(defmethod client-read :query/store-items
+  [{:keys [db query target ast route-params]} _ _]
+  (let [store-id (c/parse-long (:store-id route-params))
+        navigation (:navigation route-params)]
+    (debug "REad store items with nav: " navigation " store- id : ")
+    (if target
+      {:remote (-> ast
+                   (assoc-in [:params :store-id] store-id)
+                   (assoc-in [:params :navigation] navigation))}
+      {:value (let [params (if (not-empty navigation)
+                             {:where   '[[?s :store/items ?e]
+                                         [?e :store.item/navigation ?n]
+                                         [?n :store.navigation/path ?p]]
+                              :symbols {'?s store-id
+                                        '?p navigation}}
+                             {:where   '[[?s :store/items ?e]]
+                              :symbols {'?s store-id}})]
+                (db/pull-all-with db query params))})))
+
 (defmethod client-read :query/orders
   [{:keys [db query target ast route-params] :as env} _ _]
   (let [{:keys [store-id user-id]} route-params

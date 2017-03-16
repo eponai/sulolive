@@ -59,6 +59,24 @@
 			}
 		}
 		.menu-container {
+			// font-family: $header-font-family-serif;
+			// text-transform: uppercase;
+			font-weight: $global-weight-normal;
+			// font-size: 90%;
+			a {
+				font-weight: $global-weight-normal;
+				color: $dark-gray;
+				&:hover {
+					color: $black;
+				}
+			}
+			.is-active {
+				// background: rgba($black, 0.05);
+				a {
+					color: $black;
+					font-weight: $global-weight-bold;
+				}
+			}
 			.column {
 				padding: 0;
 			}
