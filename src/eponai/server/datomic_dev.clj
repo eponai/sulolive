@@ -2,6 +2,7 @@
   (:require [datomic.api :as d]
             [environ.core :refer [env]]
             [clojure.tools.reader.edn :as edn]
+            [eponai.server.datomic.mocked-data :as mocked]
             [clojure.java.io :as io]
             [eponai.common.database :as db]
             [eponai.common.database.functions :as dbfn]
@@ -35,19 +36,12 @@
    (let [schema (into [] (mapcat parse-resource) schema-files)]
      (conj schema (database-functions-schema)))))
 
-(defn add-test-data [conn]
-  (let [mocked-data (parse-resource (clojure.java.io/resource "private/mocked-data.edn"))
-        txs (into [] cat (vals (dissoc mocked-data :cart)))]
-    (db/transact conn txs)
-    ;; Transact the cart once we have the store and item data.
-    (db/transact conn (:cart mocked-data))))
-
 (defn add-data-to-connection
   ([conn & [schema]]
    (let [schema (or schema (read-schema-files))]
      (db/transact conn schema)
      (debug "Schema added.")
-     (add-test-data conn)
+     (mocked/add-data conn)
      (debug "Test data added."))))
 
 (defonce connection (atom nil))

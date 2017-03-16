@@ -75,7 +75,8 @@
             (my-dom/div
               (->> (css/grid-column)
                    (css/grid-column-size {:small 12 :medium 8}))
-              (photo/photo {:src photo-url})
+              (photo/photo
+                (css/add-class :contain {:src photo-url}))
 
               (my-dom/div
                 (->> (css/grid-row)
