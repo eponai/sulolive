@@ -50,23 +50,25 @@
      (add-test-data conn)
      (debug "Test data added."))))
 
-(defonce connection (atom nil))
+(defn create-connection
+  ([] (create-connection (env :db-url)))
+  ([uri]
+   (try
+     (if (contains? #{nil "" "test"} uri)
+       (let [mem-conn (create-new-inmemory-db)]
+         (info "Setting up inmemory db because uri is set to:" uri)
+         (add-data-to-connection mem-conn)
+         (debug "Successfully set up inmemory db!")
+         mem-conn)
+       (do
+         (info "Setting up remote db.")
+         (d/connect uri)))
+     (catch Exception e
+       (error "Exception:" e " when trying to connect to datomic=" uri)
+       (throw e)))))
 
-(defn create-connection []
-  (let [uri (env :db-url)]
-    (try
-      (if (contains? #{nil "" "test"} uri)
-        (let [mem-conn (create-new-inmemory-db)]
-          (info "Setting up inmemory db because uri is set to:" uri)
-          (add-data-to-connection mem-conn)
-          (debug "Successfully set up inmemory db!")
-          mem-conn)
-        (do
-          (info "Setting up remote db.")
-          (d/connect uri)))
-      (catch Exception e
-        (error "Exception:" e " when trying to connect to datomic=" uri)
-        (throw e)))))
+
+(defonce connection (atom nil))
 
 (defn connect!
   "Returns a connection. Caches the connection when it has successfully connected."
