@@ -1,5 +1,7 @@
 (ns eponai.server.external.aws-ec2
-  (:require [amazonica.aws.ec2 :as ec2])
+  (:require
+    [amazonica.aws.ec2 :as ec2]
+    [com.stuartsierra.component :as component])
   (:import [com.amazonaws.util EC2MetadataUtils]))
 
 (defprotocol IAWSEc2
@@ -25,7 +27,8 @@
                                            i)))))))))))
 
 (defn aws-ec2 []
-  (reify IAWSEc2
+  (reify
+    IAWSEc2
     (find-instance [this instance-id]
       (find-the-instance (ec2/describe-instances :instance-ids [instance-id])
                          instance-id))

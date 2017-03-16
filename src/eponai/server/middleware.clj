@@ -26,7 +26,8 @@
     ;; Debug/dev require
     [prone.middleware :as prone]
     [prone.debug]
-    [cheshire.core :as json])
+    [cheshire.core :as json]
+    [medley.core :as medley])
   (:import (datomic.query EntityMap)))
 
 (defn wrap-timing [handler]
@@ -129,9 +130,11 @@
                        (trace "Response: " (into {} response))
                        response)))
 
-(defn wrap-state [handler opts]
+(defn wrap-state [handler state state-fns]
   (fn [request]
-    (handler (merge request opts))))
+    (handler (merge request
+                    state
+                    (medley/map-vals (fn [v] (v)) state-fns)))))
 
 (defn wrap-authenticate [handler conn auth0]
   (auth/wrap-auth handler conn auth0))
