@@ -1,6 +1,7 @@
 (ns eponai.server.external.aleph
   (:require [com.stuartsierra.component :as component]
-            [aleph.http :as aleph])
+            [aleph.http :as aleph]
+            [taoensso.timbre :refer [debug]])
   (:import (io.netty.channel ChannelPipeline)
            (io.netty.handler.codec.http HttpContentCompressor)
            (io.netty.handler.stream ChunkedWriteHandler)))
@@ -24,5 +25,8 @@
           server (aleph/start-server (:handler handler) server-options)]
       (assoc this :server server)))
   (stop [this]
-    (when-let [server (:server this)]
-      (.close server))))
+    (if-let [server (:server this)]
+      (do (debug "Stopping aleph..")
+          (.close server))
+      (debug "There was no server to stop :o"))
+    (dissoc this :server)))

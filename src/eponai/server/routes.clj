@@ -18,6 +18,7 @@
     [eponai.server.ui :as server.ui]
     [om.next :as om]
     [eponai.server.external.stripe :as stripe]
+    [eponai.server.websocket :as websocket]
     [eponai.server.ui.root :as root]))
 
 (defn html [& path]
@@ -150,9 +151,11 @@
   ;; Websockets
   (GET "/ws/chat" {::m/keys [system] :as request}
     (debug "chat-websocket: " (keys (:system/chat-websocket system)))
-    ((get-in system [:system/chat-websocket :ajax-get-or-ws-handshake-fn]) request))
+    (websocket/handle-get-request (:system/chat-websocket system)
+                                  request))
   (POST "/ws/chat" {::m/keys [system] :as request}
-    ((get-in system [:system/chat-websocket :ajax-post-fn]) request))
+    (websocket/handler-post-request (:system/chat-websocket system)
+                                    request))
 
   (context "/" [:as request]
     (cond-> member-routes

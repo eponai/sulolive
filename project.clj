@@ -76,6 +76,8 @@
                  [natal-shell "0.3.0"]
 
                  ;; Testing
+                 [reloaded.repl "0.2.3" 
+                  :exclusions [com.stuartsierra/component]]
                  [lein-doo "0.1.7"
                   :exclusions [org.clojure/clojure]]
                  [devcards "0.2.2"]
