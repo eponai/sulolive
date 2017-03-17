@@ -44,12 +44,12 @@
 (defn main-release-no-ssl
   []
   (debug "Running repl in production mode without ssl")
-  (start-system {::disable-ssl true}))
+  (start-system {::system/disable-ssl true}))
 
 (defn start-server-for-tests [& [{:keys [conn port] :as opts}]]
   {:pre [(or (nil? opts) (map? opts))]}
   (start-system
     (merge {::dev-system       true
             :port              (or port 0)
-            ::provided-conn    conn}
+            ::system/provided-conn    conn}
            opts)))

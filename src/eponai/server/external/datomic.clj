@@ -4,10 +4,10 @@
             [datomic.api :as datomic]
             [taoensso.timbre :refer [debug]]))
 
-(defrecord Datomic [db-url]
+(defrecord Datomic [db-url provided-conn]
   component/Lifecycle
   (start [this]
-    (let [conn (datomic-dev/create-connection db-url)]
+    (let [conn (or provided-conn (datomic-dev/create-connection db-url))]
       (assoc this :conn conn)))
   (stop [this]
     (datomic/release (:conn this))
