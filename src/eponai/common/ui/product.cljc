@@ -36,6 +36,7 @@
      :store.item/price
      {:store.item/photos [:photo/path]}
      {:store.item/skus [:store.item.sku/value]}
+     :store.item/navigation
      :store.item/details
      {:store.item/categories [:category/label
                               :category/path]}
@@ -43,20 +44,22 @@
                      :store/name]}])
   Object
   (initLocalState [_]
-    {:selected-tab :rating})
+    {:selected-tab       :rating
+     :active-photo-index 0})
 
   (add-to-bag [this]
     #?(:cljs (let [selected-sku (web-utils/input-value-by-id (:selected-sku form-elements))]
                (debug "Selected sku value: " selected-sku)
-               (om/transact! this `[(shopping-bag/add-item ~{:sku selected-sku})
-                                    :query/cart])
-               (om/update-state! this assoc :added-to-bag? true))))
+               (when (some? selected-sku)
+                 (om/transact! this `[(shopping-bag/add-item ~{:sku selected-sku})
+                                      :query/cart])
+                 (om/update-state! this assoc :added-to-bag? true)))))
   (componentDidUpdate [this prev-props prev-state]
     #?(:cljs (let [{:keys [added-to-bag?]} (om/get-state this)]
                (if added-to-bag?
                  (js/setTimeout #(om/update-state! this assoc :added-to-bag? false) 2000)))))
   (render [this]
-    (let [{:keys [selected-tab added-to-bag?]} (om/get-state this)
+    (let [{:keys [selected-tab added-to-bag? active-photo-index]} (om/get-state this)
           {:store.item/keys     [price photos details skus]
            item-name :store.item/name :as item} (om/props this)
           store (:store/_items item)
@@ -74,20 +77,57 @@
             (my-dom/div
               (->> (css/grid-column)
                    (css/grid-column-size {:small 12 :medium 8}))
-              (photo/photo {:src photo-url})
+              ;(photo/photo
+              ;  (css/add-class :contain {:src photo-url}))
 
-              (my-dom/div
-                (->> (css/grid-row)
-                     (css/align :center))
-                (my-dom/div (->> (css/grid-column)
-                                 (css/grid-column-size {:small 8 :medium 6}))
-                            (apply dom/div #js {:className "multi-photos-container"}
-                                   (map-indexed
-                                     (fn [i im]
-                                          (dom/div #js {:key (str i)}
-                                            (photo/thumbail
-                                              {:src im})))
-                                        (take 4 (repeat photo-url)))))))
+              (dom/div #js {:className "orbit"}
+                (menu/horizontal
+                  (css/add-class :orbit-container)
+                  ;(dom/button #js {:className "orbit-next"
+                  ;                 :onClick   #(when (> (dec (count photos)) active-photo-index)
+                  ;                              (om/update-state! this update :active-photo-index inc))}
+                  ;            (dom/i #js {:className "fa fa-caret-right fa-2x"}))
+                  ;(dom/button #js {:className "orbit-previous"
+                  ;                 :onClick #(when (< 0 active-photo-index)
+                  ;                            (om/update-state! this update :active-photo-index dec))}
+                  ;            (dom/i #js {:className "fa fa-caret-left fa-2x"}))
+                  (map-indexed
+                    (fn [i p]
+                      (menu/item
+                        (cond->> (css/add-class :orbit-slide {:key (+ 10 i)})
+                                 (= active-photo-index i)
+                                 (css/add-class ::css/is-active)
+                                 (= active-photo-index i)
+                                 (css/add-class ::css/is-in))
+                        (photo/photo
+                          (->> {:src (:photo/path p)}
+                               (css/add-class :orbit-image)
+                               (css/add-class :contain)))
+                        ;(dom/figcaption #js {:className "orbit-caption"} "Photo")
+                        ))
+                    photos))
+                (dom/nav #js {:className "orbit-bullets"}
+                         (map-indexed
+                           (fn [i p]
+                             (dom/button #js {:key (str i)
+                                              :onClick #(om/update-state! this assoc :active-photo-index i)}
+                               (photo/thumbail
+                                 {:src (:photo/path p)})))
+                           photos)))
+
+              ;(my-dom/div
+              ;  (->> (css/grid-row)
+              ;       (css/align :center))
+              ;  (my-dom/div (->> (css/grid-column)
+              ;                   (css/grid-column-size {:small 8 :medium 6}))
+              ;              (apply dom/div #js {:className "multi-photos-container"}
+              ;                     (map-indexed
+              ;                       (fn [i p]
+              ;                            (dom/div #js {:key (str i)}
+              ;                              (photo/thumbail
+              ;                                {:src (:photo/path p)})))
+              ;                          photos))))
+              )
 
             (my-dom/div
               (->> (css/grid-column)
@@ -115,9 +155,11 @@
                 ;                                    :className "button expanded hollow"} "Save")))
                 ;(dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
                 ;            :className "button expanded hollow"} "Save")
-                (dom/a #js {:onClick   #(.add-to-bag this)
-                            :className "button expanded"} "Add to bag")
-                (dom/p #js {:className (str (when added-to-bag? "show"))} "Your shopping bag was updated" ))))
+                (dom/a #js {:onClick   #(when (not-empty skus)
+                                         (.add-to-bag this))
+                            :className (str "button expanded" (when (empty? skus) " disabled"))} "Add to bag")
+                (dom/p #js {:className (str "text-success " (when added-to-bag? "show"))} "Your shopping bag was updated" )
+                (dom/p #js {:className (str "text-alert " (when (empty? skus) "show"))} "Out of stock" ))))
 
 
 
@@ -130,7 +172,7 @@
                         (my-dom/div
                           (->> (css/grid-column)
                                (css/grid-column-size {:small 3 :medium 2}))
-                          (photo/square
+                          (photo/circle
                             {:src (:photo/path (:store/photo store))}))
 
                         (my-dom/div
@@ -139,7 +181,7 @@
                           (dom/div #js {:className "store-name"}
                             (dom/a #js {:href (str "/store/" (:db/id store))}
                                    (dom/span nil (:store/name store))))
-                          (dom/div #js {:className "store-tagline"} (dom/p nil "Some awesome tagline for the store"))
+                          (dom/div #js {:className "store-tagline"} (dom/p nil (:store/description store)))
                           (dom/div nil (dom/a #js {:className "button hollow"} "+ Follow"))))
                       (dom/hr nil))
 

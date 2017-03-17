@@ -46,7 +46,7 @@
 			// overflow-y: hidden;
 			text-align: center;
 			// font-weight: bold;
-			color: map-get($foundation-palette, success);
+			// color: map-get($foundation-palette, success);
 			opacity: 0;
 			transition: opacity .25s ease-in-out, visibility .25s ease-in-out,;
 			visibility: hidden;

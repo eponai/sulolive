@@ -120,6 +120,13 @@ $primary-color: map-get($foundation-palette, primary);
 		// min-height: 20rem;
 	}
 
+	&.contain {
+		background-size: contain;
+		img {
+			object-fit: contain;
+		}
+	}
+
 	&.header {
 		img {
 			display: none;
