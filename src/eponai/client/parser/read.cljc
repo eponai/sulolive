@@ -148,7 +148,7 @@
   [{:keys [db query target route-params ast] :as env} _ p]
   (let [{:keys [category]} route-params]
     (if target
-      {:remote (assoc-in ast [:params :category] category)}
+      {:remote (when (not-empty category) (assoc-in ast [:params :category] category))}
       {:value (db/pull-one-with db query {:where   '[[?e :category/path ?p]]
                                  :symbols {'?p category}})})))
 

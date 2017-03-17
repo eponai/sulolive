@@ -49,6 +49,7 @@
      '{:query/category [:category/label {:category/photo [:photo/path]} :category/path
                         {:category/_children ...}
                         {:category/children ...}]}
+     {:query/top-categories [:category/label :category/path]}
      :query/current-route])
   Object
   (initLocalState [_]
@@ -56,10 +57,12 @@
                :reverse? false}})
   (render [this]
     (let [{:keys [proxy/navbar]
-           :query/keys [current-route items category]} (om/props this)
+           :query/keys [current-route items category top-categories]} (om/props this)
           {:keys [sorting]} (om/get-state this)
           current-category (get-in current-route [:route-params :category] "")
           parent (category-parent category)]
+      (debug "Top categories: " top-categories)
+      (debug "Current-category: " current-category)
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse"}
         (my-dom/div
@@ -84,29 +87,41 @@
                  (css/show-for {:size :large})
                  (css/grid-column-size {:large 3}))
             ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
-            (menu/vertical
-              nil
-              (menu/item
+            (if (not-empty current-category)
+              (menu/vertical
                 nil
-                (dom/a #js {:href (routes/url :products/categories {:category (if parent
-                                                                                (:category/path parent)
-                                                                                (:category/path category))})}
-                       (dom/strong nil (if parent
-                                         (:category/label parent)
-                                         (:category/label category))))
-                (menu/vertical
-                  (css/add-class :nested)
-                  (map-indexed (fn [i c]
-                                 (let [{:category/keys [label path]} c]
-                                   (menu/item
-                                     (cond->> {:key i}
-                                              (= path current-category)
-                                              (css/add-class ::css/is-active))
-                                     (dom/a #js {:href (routes/url :products/categories {:category path})}
-                                                     (dom/span nil label)))))
-                               (if parent
-                                 (:category/children parent)
-                                 (:category/children category)))))))
+                (menu/item
+                  nil
+                  (dom/a #js {:href (routes/url :products/categories {:category (if parent
+                                                                                  (:category/path parent)
+                                                                                  (:category/path category))})}
+                         (dom/strong nil (if parent
+                                           (:category/label parent)
+                                           (:category/label category))))
+                  (menu/vertical
+                    (css/add-class :nested)
+                    (map-indexed (fn [i c]
+                                   (let [{:category/keys [label path]} c]
+                                     (menu/item
+                                       (cond->> {:key i}
+                                                (= path current-category)
+                                                (css/add-class ::css/is-active))
+                                       (dom/a #js {:href (routes/url :products/categories {:category path})}
+                                              (dom/span nil label)))))
+                                 (if parent
+                                   (:category/children parent)
+                                   (:category/children category))))))
+              (menu/vertical
+                nil
+                (map-indexed (fn [i c]
+                               (let [{:category/keys [label path]} c]
+                                 (menu/item
+                                   (cond->> {:key i}
+                                            (= path current-category)
+                                            (css/add-class ::css/is-active))
+                                   (dom/a #js {:href (routes/url :products/categories {:category path})}
+                                          (dom/strong nil label)))))
+                             top-categories))))
           (my-dom/div
             (->> (css/grid-column)
                  (css/grid-column-size {:small 12 :large 9}))

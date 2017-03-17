@@ -33,6 +33,7 @@
                     {:store/navigations [:store.navigation/label :store.navigation/path]}
                     ;{:store/items (om/get-query item/Product)}
                     {:stream/_store [:stream/name]}
+                    :store/description
                     :store/name]}
      {:query/store-items (om/get-query item/Product)}
      :query/current-route])
@@ -112,7 +113,7 @@
                      (css/grid-column-order {:small 3 :medium 3}))
                 (my-dom/div
                   (css/text-align :center)
-                  (dom/span nil "Keep calm and wear pretty stuff")))))
+                  (dom/span nil (:store/description store))))))
 
           (my-dom/div {:id "shop"}
                       (my-dom/div

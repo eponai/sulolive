@@ -180,7 +180,8 @@
     :store/cover (photo "https://img1.etsystatic.com/133/0/5243597/isbl_3360x840.20468865_f7kumdbt.jpg")
     :store/photo (photo "https://img0.etsystatic.com/139/0/5243597/isla_500x500.22177516_ath1ugrh.jpg")
     :store/items [{:store.item/name       "Silver Twig Ring Milky"
-                   :store.item/photos     [(photo "https://img0.etsystatic.com/164/1/7745893/il_570xN.1094898766_ewls.jpg")]
+                   :store.item/photos     [(photo "https://img0.etsystatic.com/164/1/7745893/il_570xN.1094898766_ewls.jpg")
+                                           (photo "https://img0.etsystatic.com/156/0/7745893/il_570xN.1094898750_jnvm.jpg")]
                    :store.item/price      34.00M
                    :store.item/categories [[:category/path "women"]
                                            [:category/path "women-jewelry"]]}
@@ -203,6 +204,7 @@
    ;; FlowerRainbowNJ
    {:db/id       (db/tempid :db.part/user)
     :store/name  "FlowerRainbowNJ"
+    :store/description "Keep calm and wear pretty jewelry."
     :store/cover (photo "https://imgix.ttcdn.co/i/wallpaper/original/0/449892-2b1249e4cb424d5a937a0f67fb22ccc0.jpeg?q=50&w=2000&auto=format%2Ccompress&fm=jpeg&h=1333&crop=faces%2Centropy&fit=crop")
     :store/photo (photo "https://imgix.ttcdn.co/i/wallpaper/original/0/449892-2b1249e4cb424d5a937a0f67fb22ccc0.jpeg?q=50&w=2000&auto=format%2Ccompress&fm=jpeg&h=1333&crop=faces%2Centropy&fit=crop")
     :store/items [{:store.item/name       "Nose Stud"
@@ -232,15 +234,23 @@
     :store/cover (photo "https://img1.etsystatic.com/142/0/8829348/isbl_3360x840.24031443_roffucs6.jpg")
     :store/photo (photo "https://img1.etsystatic.com/136/0/8829348/isla_500x500.18128391_dro0qzqd.jpg")
     :store/items [{:store.item/name       "Leather Shoes (silver)"
-                   :store.item/photos     [(photo "https://img1.etsystatic.com/138/1/8829348/il_570xN.1040522475_mbon.jpg")]
+                   :store.item/photos     [(photo "https://img1.etsystatic.com/138/1/8829348/il_570xN.1040522475_mbon.jpg")
+                                           (photo "https://img0.etsystatic.com/133/0/8829348/il_570xN.993989824_3pdl.jpg")]
                    :store.item/price      24.74M
                    :store.item/categories [[:category/path "women"]
                                            [:category/path "women-shoes"]]}
                   {:store.item/name       "Leather Shoes (yellow)"
-                   :store.item/photos     [(photo "https://img1.etsystatic.com/120/0/8829348/il_570xN.988317879_5pik.jpg")]
+                   :store.item/photos     [(photo "https://img1.etsystatic.com/120/0/8829348/il_570xN.988317879_5pik.jpg")
+                                           (photo "https://img1.etsystatic.com/125/0/8829348/il_570xN.988317889_kzc9.jpg")]
                    :store.item/price      4.49M
                    :store.item/categories [[:category/path "women"]
                                            [:category/path "women-shoes"]]}
+                  ;{:store.item/name       "Leather Shoes (green)"
+                  ; :store.item/photos     [(photo "https://img1.etsystatic.com/032/0/8829348/il_570xN.636027815_eg26.jpg")
+                  ;                         (photo "https://img1.etsystatic.com/028/0/8829348/il_570xN.636027807_ozll.jpg")]
+                  ; :store.item/price      4.49M
+                  ; :store.item/categories [[:category/path "women"]
+                  ;                         [:category/path "women-shoes"]]}
                   {:store.item/name       "Leather Boots"
                    :store.item/photos     [(photo "https://img0.etsystatic.com/172/4/8829348/il_570xN.1104988862_cb12.jpg")]
                    :store.item/price      6.37M
@@ -250,20 +260,25 @@
    ;; MIRIMIRIFASHION
    {:db/id       (db/tempid :db.part/user)
     :store/name  "MIRIMIRIFASHION"
+    :store/description "Handmade exclusive fashion designer shop."
     ;:store/cover #db/id[:db.part/user -51]
     :store/photo (photo "https://img0.etsystatic.com/132/0/5695768/isla_500x500.17344782_h4dngp5g.jpg")
-    :store/items [{:store.item/name       "Leather Shoes (silver)"
-                   :store.item/photos     [(photo "https://img1.etsystatic.com/109/1/5695768/il_570xN.1088263217_thkk.jpg")]
+    :store/items [{:store.item/name       "Hoodie Dress"
+                   :store.item/photos     [(photo "https://img1.etsystatic.com/109/1/5695768/il_570xN.1088263217_thkk.jpg")
+                                           (photo "https://img0.etsystatic.com/119/0/5695768/il_570xN.1041709156_noxy.jpg")
+                                           (photo "https://img0.etsystatic.com/108/0/5695768/il_570xN.1041709214_ae4i.jpg")]
                    :store.item/price      24.74M
                    :store.item/categories [[:category/path "women"]
                                            [:category/path "women-clothing"]]}
-                  {:store.item/name       "Leather Shoes (yellow)"
-                   :store.item/photos     [(photo "https://img0.etsystatic.com/000/0/5695768/il_570xN.272372530.jpg")]
+                  {:store.item/name       "Maxi skirt"
+                   :store.item/photos     [(photo "https://img0.etsystatic.com/000/0/5695768/il_570xN.272372530.jpg")
+                                           (photo "https://img0.etsystatic.com/000/0/5695768/il_570xN.272372548.jpg")]
                    :store.item/price      4.49M
                    :store.item/categories [[:category/path "women"]
                                            [:category/path "women-clothing"]]}
                   {:store.item/name       "Leather Boots"
-                   :store.item/photos     [(photo "https://img1.etsystatic.com/136/1/5695768/il_570xN.1087733031_du1y.jpg")]
+                   :store.item/photos     [(photo "https://img1.etsystatic.com/136/1/5695768/il_570xN.1087733031_du1y.jpg")
+                                           (photo "https://img1.etsystatic.com/125/0/5695768/il_570xN.1087733249_hz9c.jpg")]
                    :store.item/price      6.37M
                    :store.item/categories [[:category/path "women"]
                                            [:category/path "women-clothing"]]}]}

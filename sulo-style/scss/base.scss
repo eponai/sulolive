@@ -18,6 +18,14 @@ $navbar-zindex: 3;
 $chat-width-large: rem-calc(300);
 $chat-width-small: rem-calc(200);
 
+@mixin sulo-typography() {
+	@each $name, $color in $foundation-palette {
+		.text-#{$name} {
+			color: $color;
+		}
+    }
+}
+
 ::-webkit-scrollbar {
 		width: 5px;
 		// background: $black;
