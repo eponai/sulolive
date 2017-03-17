@@ -72,7 +72,8 @@
         (debug "DatomicChat successfully stopped.")
         (debug "DatomicChat timedout when stopping.")))
     ;; Closing :store-id-chan once we've closed the tx-report stuff.
-    (async/close! (:store-id-chan this)))
+    (async/close! (:store-id-chan this))
+    (dissoc this :conn :tx-report-queue :control-chan :store-id-chan))
 
   db/ConnectionApi
   (db* [this]

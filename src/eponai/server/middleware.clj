@@ -130,11 +130,9 @@
                        (trace "Response: " (into {} response))
                        response)))
 
-(defn wrap-state [handler state state-fns]
+(defn wrap-state [handler state]
   (fn [request]
-    (handler (merge request
-                    state
-                    (medley/map-vals (fn [v] (v)) state-fns)))))
+    (handler (merge request state))))
 
 (defn wrap-authenticate [handler conn auth0]
   (auth/wrap-auth handler conn auth0))
