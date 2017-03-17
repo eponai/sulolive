@@ -49,7 +49,7 @@
   (secret [this]
     (.getBytes "sulo-dev-secret"))
   (authenticate [this code state]
-    (if-let [email (:user/email (db/lookup-entity (db/db (:conn datomic)) [:user/email code]))]
+    (if-let [email (:user/email (db/lookup-entity (db/db (:conn (:datomic this))) [:user/email code]))]
       (let [now (long (/ (System/currentTimeMillis) 1000))
             tomorrow (+ now (* 24 3600))
             auth-data {:email          email
