@@ -65,8 +65,7 @@
                                            {:datomic :system/datomic})
                      :system/chat-websocket (c/using (websocket/map->StoreChatWebsocket {})
                                                      {:chat :system/chat})
-                     :system/datomic (datomic/map->Datomic {:db-url (:db-url env)
-                                                            :fork?  (not in-prod?)})
+                     :system/datomic (datomic/map->Datomic {:db-url (:db-url env)})
                      :system/handler (c/using (map->RequestHandler {:disable-ssl          (::disable-ssl config)
                                                                     :disable-anti-forgery (::disable-anti-forgery config)
                                                                     :in-production?       in-prod?

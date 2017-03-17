@@ -21,7 +21,7 @@
                                                                      (gzip-pipeline)
                                                                      (some? current-transform)
                                                                      (current-transform))))))
-          server (aleph/start-server handler server-options)]
+          server (aleph/start-server (:handler handler) server-options)]
       (assoc this :server server)))
   (stop [this]
     (when-let [server (:server this)]
