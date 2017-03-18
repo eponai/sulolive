@@ -1,11 +1,13 @@
 (ns eponai.server.external.aleph
   (:require [com.stuartsierra.component :as component]
+            [suspendable.core :as suspendable]
             [aleph.http :as aleph]
             [aleph.netty]
             [taoensso.timbre :refer [debug error]])
   (:import (io.netty.channel ChannelPipeline)
            (io.netty.handler.codec.http HttpContentCompressor)
-           (io.netty.handler.stream ChunkedWriteHandler)))
+           (io.netty.handler.stream ChunkedWriteHandler)
+           (java.net BindException)))
 
 (defrecord Aleph [handler port netty-options]
   component/Lifecycle
@@ -25,7 +27,10 @@
                                                                        (gzip-pipeline)
                                                                        (some? current-transform)
                                                                        (current-transform))))))
-            server (aleph/start-server (:handler handler) server-options)]
+            server (try
+                     (aleph/start-server (:handler handler) server-options)
+                     (catch BindException e
+                       (error "Unable to start aleph: " e)))]
         (assoc this :server server))))
   (stop [this]
     (when-let [server (:server this)]
@@ -33,4 +38,21 @@
       (.close server)
       ;; (aleph.netty/wait-for-close server)
       (debug "Stopped aleph!"))
-    (dissoc this :server)))
+    (dissoc this :server))
+  suspendable/Suspendable
+  (suspend [this]
+    (some-> (:server this)
+            (.close))
+    this)
+  (resume [this old-this]
+    (if (:server this)
+      this
+      ;; Wait for the old one to really close, then try restarting this one.
+      (do
+        (some-> (:server old-this) (aleph.netty/wait-for-close))
+        (let [restarted (component/start this)]
+          (if (:server restarted)
+            (do (debug "Successfully restarted Aleph.")
+                restarted)
+            (do (debug "Unable to restart Aleph!")
+                (throw (ex-info "Unable to resume Aleph" {:component this})))))))))
