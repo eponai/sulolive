@@ -55,6 +55,12 @@
                                  (reset! ready? (:open? state-data))
                                  (when @ready?
                                    (loop []
+                                     ;; TODO: Re-write the send code so that we only send
+                                     ;; when the state is open? (instead of using an atom).
+                                     ;; Also, maybe we should keep sending the
+                                     ;; :store-chat/start-listening! event everytime
+                                     ;; we get a new handshake?
+                                     ;; Rename to :store-chat/listen-to-id ?
                                      (when-let [queued (a/poll! send-on-ready-chan)]
                                        (send-fn queued)
                                        (recur)))))
