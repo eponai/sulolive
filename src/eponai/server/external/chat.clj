@@ -38,42 +38,46 @@
 (defrecord DatomicChat [datomic]
   component/Lifecycle
   (start [this]
-    (let [conn (:conn datomic)
-          store-id-chan (async/chan (async/sliding-buffer 1000))
-          control-chan (async/chan)
-          tx-report-queue (d/tx-report-queue conn)]
-      (async/thread
-        (try
-          (loop []
-            (let [tx-report (.take tx-report-queue)]
-              (when-not (= ::finished tx-report)
-                (try
-                  (doseq [store-id (updated-store-ids tx-report)]
-                    (async/put! store-id-chan {:event-type :store-id
-                                               :store-id   store-id}))
-                  (catch Throwable e
-                    (error "Error in DatomicChat thread reading tx-report-queue: " e)
-                    (async/put! store-id-chan {:exception  e
-                                               :event-type :exception})))
-                (recur))))
-          (catch InterruptedException e
-            (error "Error in DatomicChat thread reading tx-report-queue: " e)))
-        (debug "Exiting DatomicChat async/thread..")
-        (async/close! control-chan))
-      (assoc this :conn conn
-                  :tx-report-queue tx-report-queue
-                  :control-chan control-chan
-                  :store-id-chan store-id-chan)))
+    (if (::started? this)
+      this
+      (let [conn (:conn datomic)
+            store-id-chan (async/chan (async/sliding-buffer 1000))
+            control-chan (async/chan)
+            tx-report-queue (d/tx-report-queue conn)]
+        (async/thread
+          (try
+            (loop []
+              (let [tx-report (.take tx-report-queue)]
+                (when-not (= ::finished tx-report)
+                  (try
+                    (doseq [store-id (updated-store-ids tx-report)]
+                      (async/put! store-id-chan {:event-type :store-id
+                                                 :store-id   store-id}))
+                    (catch Throwable e
+                      (error "Error in DatomicChat thread reading tx-report-queue: " e)
+                      (async/put! store-id-chan {:exception  e
+                                                 :event-type :exception})))
+                  (recur))))
+            (catch InterruptedException e
+              (error "Error in DatomicChat thread reading tx-report-queue: " e)))
+          (debug "Exiting DatomicChat async/thread..")
+          (async/close! control-chan))
+        (assoc this ::started? true
+                    :conn conn
+                    :tx-report-queue tx-report-queue
+                    :control-chan control-chan
+                    :store-id-chan store-id-chan))))
   (stop [this]
-    (d/remove-tx-report-queue (:conn this))
-    (.add (:tx-report-queue this) ::finished)
-    (let [[v c] (async/alts!! [(:control-chan this) (async/timeout 1000)])]
-      (if (= c (:control-chan this))
-        (debug "DatomicChat successfully stopped.")
-        (debug "DatomicChat timedout when stopping.")))
-    ;; Closing :store-id-chan once we've closed the tx-report stuff.
-    (async/close! (:store-id-chan this))
-    (dissoc this :conn :tx-report-queue :control-chan :store-id-chan))
+    (when (::started? this)
+      (d/remove-tx-report-queue (:conn this))
+      (.add (:tx-report-queue this) ::finished)
+      (let [[v c] (async/alts!! [(:control-chan this) (async/timeout 1000)])]
+        (if (= c (:control-chan this))
+          (debug "DatomicChat successfully stopped.")
+          (debug "DatomicChat timedout when stopping.")))
+      ;; Closing :store-id-chan once we've closed the tx-report stuff.
+      (async/close! (:store-id-chan this)))
+    (dissoc this ::started? :conn :tx-report-queue :control-chan :store-id-chan))
 
   db/ConnectionApi
   (db* [this]

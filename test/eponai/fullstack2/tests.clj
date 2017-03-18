@@ -49,13 +49,10 @@
 
 (defn- start-system [system]
   ;; TODO: Use datomic forking library, to setup and fork our datomic connection once.
-  (let [system (or system
-                   (core/start-server-for-tests {:conn (::forked-conn system)
-                                                 ;; Re-use the server's port
-                                                 ;; to be more kind to the test system.
-                                                 :port (::server-port system 0)}))
-        system (component/start-system system)]
-    (debug "Real port: " (get-port system))
+  (let [system (core/start-server-for-tests {:conn (::forked-conn system)
+                                             ;; Re-use the server's port
+                                             ;; to be more kind to the test system.
+                                             :port (::server-port system 0)})]
     (assoc system ::server-port (get-port system)
                   ::forked-conn (dato-mock/fork-conn (get-in system [:system/datomic :conn])))))
 

@@ -29,20 +29,22 @@
 (defrecord AwsElasticBeanstalk [aws-ec2]
   component/Lifecycle
   (start [this]
-    (letfn [(is-in-staging? [environment-name]
-              (when-let [env (find-environment environment-name)]
-                (= (or (env/env :aws-elb-staging-url-prefix)
-                       "sulo-staging")
-                   (-> (:cname env)
-                       (str/split #"\.")
-                       (first)))))]
-      ;; We can cache this because we'll only go from staging->production once
-      ;; before restarting or upgrading it.
-      ;; TODO: Figure out if this will bite us in the ass.
-      (assoc this :is-in-staging? (cached-once-false is-in-staging?)
-                  :environment-name (some-> aws-ec2
-                                            (ec2/find-this-instance)
-                                            (ec2/elastic-beanstalk-env-name)))))
+    (if (:is-in-staging? this)
+      this
+      (letfn [(is-in-staging? [environment-name]
+                (when-let [env (find-environment environment-name)]
+                  (= (or (env/env :aws-elb-staging-url-prefix)
+                         "sulo-staging")
+                     (-> (:cname env)
+                         (str/split #"\.")
+                         (first)))))]
+        ;; We can cache this because we'll only go from staging->production once
+        ;; before restarting or upgrading it.
+        ;; TODO: Figure out if this will bite us in the ass.
+        (assoc this :is-in-staging? (cached-once-false is-in-staging?)
+                    :environment-name (some-> aws-ec2
+                                              (ec2/find-this-instance)
+                                              (ec2/elastic-beanstalk-env-name))))))
   (stop [this]
     (dissoc this :is-in-staging? :environment-name))
   IAWSElasticBeanstalk
