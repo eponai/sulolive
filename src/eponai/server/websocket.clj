@@ -116,7 +116,12 @@
     (component/stop this))
   (resume [this old-this]
     ;; Keep the store-id->uids, since they are registered with a message sent once.
-    (update this :store-id->uids swap! (fn [uids] (merge-with merge @(:store-id->uids old-this) uids))))
+    ;; TODO: This is not realistic though. A user could lose connection and we should handle
+    ;; this differently: WEB-256
+    (let [store-id->uids (:store-id->uids this)]
+      (swap! store-id->uids (fn [uids]
+                              (merge-with merge (some-> (:store-id->uids old-this) (deref)) uids)))
+      (assoc this :store-id->uids store-id->uids)))
 
   IWebsocket
   (handle-get-request [this request]
