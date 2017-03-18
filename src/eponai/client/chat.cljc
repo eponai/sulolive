@@ -47,24 +47,28 @@
      (let [{:keys [send-fn ch-recv] :as sente-channel} (sente-chat-channel!)
            send-on-ready-chan (a/chan)
            ready? (atom false)
-           event-handler (fn [{:keys [event id ?data send-fn] :as ws-event}]
-                           (let [[event-id event-data] event
-                                 [our-id our-data] event-data]
+           event-handler (fn [{:keys [event send-fn] :as ws-event}]
+                           (let [[event-id event-data] event]
                              (cond
                                (= :chsk/state event-id)
-                               (do
-                                 (reset! ready? (:open? our-data))
+                               (let [[_ state-data] event-data]
+                                 (reset! ready? (:open? state-data))
                                  (when @ready?
-                                   (loop [queued (a/poll! send-on-ready-chan)]
-                                     (when queued
-                                       (send-fn queued)))))
-                               (and (= :chsk/recv event-id)
-                                    (= :store-chat/update our-id))
-                               (do
-                                 (debug "Got store-chat/update event: " ws-event)
-                                 (has-update @chat-listener-atom (:store-id our-data)))
+                                   (loop []
+                                     (when-let [queued (a/poll! send-on-ready-chan)]
+                                       (send-fn queued)
+                                       (recur)))))
+                               (= :chsk/recv event-id)
+                               (let [[our-id our-data] event-data]
+                                 (cond
+                                   (= :store-chat/update our-id)
+                                   (do
+                                     (debug "Got store-chat/update event: " ws-event)
+                                     (has-update @chat-listener-atom (:store-id our-data)))
+                                   :else
+                                   (debug "Not handling our event, event-id: " our-id " whole event: " event)))
                                :else
-                               (debug "Unrecognized event-id: " event-id " whole event: " event))))]
+                               (debug "Sente event we don't care about right now: " event))))]
        (go
          (loop []
            (try
