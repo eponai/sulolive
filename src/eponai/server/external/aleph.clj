@@ -9,6 +9,11 @@
            (io.netty.handler.stream ChunkedWriteHandler)
            (java.net BindException)))
 
+(defn close-quietly [server]
+  (try
+    (some-> server (.close))
+    (catch Throwable e)))
+
 (defrecord Aleph [handler port netty-options]
   component/Lifecycle
   (start [this]
@@ -35,14 +40,13 @@
   (stop [this]
     (when-let [server (:server this)]
       (debug "Stopping aleph..")
-      (.close server)
+      (close-quietly server)
       ;; (aleph.netty/wait-for-close server)
       (debug "Stopped aleph!"))
     (dissoc this :server))
   suspendable/Suspendable
   (suspend [this]
-    (some-> (:server this)
-            (.close))
+    (close-quietly (:server this))
     this)
   (resume [this old-this]
     (if (:server this)
