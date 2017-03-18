@@ -79,29 +79,33 @@
 (defrecord StoreChatWebsocket [chat]
   component/Lifecycle
   (start [this]
-    (let [{:keys [ch-recv] :as sente} (sente/make-channel-socket!
-                                        (sente.aleph/get-sch-adapter)
-                                        {:packer     (sente-transit/get-transit-packer)
-                                         :user-id-fn (fn [ring-req]
-                                                       (or (get-in ring-req [:identity :email])
-                                                           ;; client-id is assoc'ed by sente
-                                                           ;; before calling this fn.
-                                                           (:client-id ring-req)))})
-          control-chan (a/chan 1)
-          sends-chan (<send-store-ids-to-clients sente control-chan (chat/chat-update-stream chat))]
-      (assoc this :sente sente
-                  :ch-recv ch-recv
-                  :sends-chan sends-chan
-                  :stop-fn #(a/close! control-chan))))
+    (if (::started? this)
+      this
+      (let [{:keys [ch-recv] :as sente} (sente/make-channel-socket!
+                                          (sente.aleph/get-sch-adapter)
+                                          {:packer     (sente-transit/get-transit-packer)
+                                           :user-id-fn (fn [ring-req]
+                                                         (or (get-in ring-req [:identity :email])
+                                                             ;; client-id is assoc'ed by sente
+                                                             ;; before calling this fn.
+                                                             (:client-id ring-req)))})
+            control-chan (a/chan 1)
+            sends-chan (<send-store-ids-to-clients sente control-chan (chat/chat-update-stream chat))]
+        (assoc this ::started? true
+                    :sente sente
+                    :ch-recv ch-recv
+                    :sends-chan sends-chan
+                    :stop-fn #(a/close! control-chan)))))
   (stop [this]
-    ((:stop-fn this))
-    (a/close! (:ch-recv this))
-    (let [sends (:sends-chan this)
-          [_ c] (a/alts!! [sends (a/timeout 3000)])]
-      (if (= c sends)
-        (debug "Stopped StoreChatWebsocket successfully")
-        (debug "Timed out stopping StoreChatWebsocket...")))
-    (dissoc this :sente :ch-recv :stop-fn :sends-chan))
+    (when (::started? this)
+      ((:stop-fn this))
+      (a/close! (:ch-recv this))
+      (let [sends (:sends-chan this)
+            [_ c] (a/alts!! [sends (a/timeout 3000)])]
+        (if (= c sends)
+          (debug "Stopped StoreChatWebsocket successfully")
+          (debug "Timed out stopping StoreChatWebsocket..."))))
+    (dissoc this ::started? :sente :ch-recv :stop-fn :sends-chan))
   IWebsocket
   (handle-get-request [this request]
     ((get-in this [:sente :ajax-get-or-ws-handshake-fn])

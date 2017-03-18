@@ -7,8 +7,11 @@
 (defrecord Datomic [db-url provided-conn]
   component/Lifecycle
   (start [this]
-    (let [conn (or provided-conn (datomic-dev/create-connection db-url))]
-      (assoc this :conn conn)))
+    (if (:conn this)
+      this
+      (let [conn (or provided-conn (datomic-dev/create-connection db-url))]
+        (assoc this :conn conn))))
   (stop [this]
-    (datomic/release (:conn this))
+    (when-let [conn (:conn this)]
+      (datomic/release conn))
     (dissoc this :conn)))

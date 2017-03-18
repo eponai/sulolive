@@ -24,28 +24,30 @@
 (defrecord RequestHandler [in-production? cljs-build-id disable-ssl disable-anti-forgery]
   c/Lifecycle
   (start [this]
-    (let [system (into {}
-                       (comp (filter #(= "system" (namespace %)))
-                             (map (juxt identity #(get this %))))
-                       (keys this))
-          conn (:conn (:system/datomic system))
-          handler (-> (compojure/routes server-routes/site-routes)
-                      (cond-> (not in-production?) (m/wrap-node-modules))
-                      m/wrap-post-middlewares
-                      (m/wrap-authenticate conn (:system/auth0 system))
-                      m/wrap-format
-                      (m/wrap-state {::m/conn                conn
-                                     ::m/in-production?      in-production?
-                                     ::m/empty-datascript-db (m/init-datascript-db conn)
-                                     ::m/parser              (parser/server-parser)
-                                     ::m/cljs-build-id       (or cljs-build-id "dev")
-                                     ::m/system              system})
-                      (m/wrap-defaults in-production? disable-anti-forgery)
-                      m/wrap-trace-request
-                      (cond-> (and in-production? (not disable-ssl))
-                              m/wrap-ssl)
-                      (m/wrap-error in-production?))]
-      (assoc this :handler handler)))
+    (if (:handler this)
+      this
+      (let [system (into {}
+                         (comp (filter #(= "system" (namespace %)))
+                               (map (juxt identity #(get this %))))
+                         (keys this))
+            conn (:conn (:system/datomic system))
+            handler (-> (compojure/routes server-routes/site-routes)
+                        (cond-> (not in-production?) (m/wrap-node-modules))
+                        m/wrap-post-middlewares
+                        (m/wrap-authenticate conn (:system/auth0 system))
+                        m/wrap-format
+                        (m/wrap-state {::m/conn                conn
+                                       ::m/in-production?      in-production?
+                                       ::m/empty-datascript-db (m/init-datascript-db conn)
+                                       ::m/parser              (parser/server-parser)
+                                       ::m/cljs-build-id       (or cljs-build-id "dev")
+                                       ::m/system              system})
+                        (m/wrap-defaults in-production? disable-anti-forgery)
+                        m/wrap-trace-request
+                        (cond-> (and in-production? (not disable-ssl))
+                                m/wrap-ssl)
+                        (m/wrap-error in-production?))]
+        (assoc this :handler handler))))
   (stop [this]
     (dissoc this :handler)))
 
