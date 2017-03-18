@@ -56,18 +56,13 @@
                                 (try
                                   (if (nil? store-id)
                                     (warn "No store-id found in value returned from store-id stream. Value was: " v)
-                                    (let [uids-listening-for-id (get @store-id->uids store-id)
-                                          connected @connected-uids]
+                                    (let [uids-listening-for-id (get @store-id->uids store-id)]
                                       (debug "Uids listening for store-id: " store-id " -> " (vec uids-listening-for-id))
-                                      (debug "Connected-uids!!!!!!!: " (:any connected))
                                       (doseq [uid uids-listening-for-id]
                                        (if (contains? (:any @connected-uids) uid)
                                          (do
                                            (debug "Sending store id update to uid: " uid [:store-id store-id])
-                                           (timbre/with-level
-                                             :trace
-                                             (send-fn uid
-                                                      [:store-chat/update {:store-id store-id}]))
+                                           (send-fn uid [:store-chat/update {:store-id store-id}])
                                            (debug "Sent store id update to uid: " uid))
                                          (do
                                            (debug "uid was no longer connected to the server(?). Removing: " uid
