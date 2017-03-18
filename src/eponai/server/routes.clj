@@ -149,7 +149,6 @@
 
   ;; Websockets
   (GET "/ws/chat" {::m/keys [system] :as request}
-    (debug "chat-websocket: " (keys (:system/chat-websocket system)))
     (websocket/handle-get-request (:system/chat-websocket system)
                                   request))
   (POST "/ws/chat" {::m/keys [system] :as request}

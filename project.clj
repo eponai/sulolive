@@ -24,7 +24,7 @@
                  [environ "1.0.1"]
                  [hiccup "1.0.5"]
                  [org.clojure/data.generators "0.1.2"]
-                 [org.clojure/core.async "0.2.391"]
+                 [org.clojure/core.async "0.3.442"]
                  [org.clojure/core.memoize "0.5.8"]         ; needed to work around lein+core.async dependency issue.
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.namespace "0.2.11"]
@@ -78,6 +78,7 @@
                  ;; Testing
                  [reloaded.repl "0.2.3" 
                   :exclusions [com.stuartsierra/component]]
+                 [suspendable "0.1.1"]
                  [lein-doo "0.1.7"
                   :exclusions [org.clojure/clojure]]
                  [devcards "0.2.2"]
