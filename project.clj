@@ -92,7 +92,7 @@
             [lein-shell "0.5.0"]
             [lein-doo "0.1.7" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
             [lein-cljsbuild "1.1.5" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
-            [lein-figwheel "0.5.9" :exclusions [org.clojure/clojure]]
+            [lein-figwheel "0.5.7" :exclusions [org.clojure/clojure]]
             [lein-test-out "0.3.1"]
             [lein-environ "1.0.1"]]
   
@@ -197,7 +197,7 @@
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
                                     ;; [[org.omcljs/om "1.0.0-alpha46"
                                     ;;   :exclusions [cljsjs/react cljsjs/react-dom]]
-                                       [figwheel-sidecar "0.5.9"]
+                                       [figwheel-sidecar "0.5.7"]
                                        [com.cemerick/piggieback "0.2.1"]]
                         :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
                         :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
@@ -259,7 +259,7 @@
                                                              ;;   :verbose true
                                                              }}]}}
              :web      {:exclusions [org.clojure/clojure org.clojure/clojurescript]
-                        :dependencies [[figwheel-sidecar "0.5.9"]]
+                        :dependencies [[figwheel-sidecar "0.5.7"]]
                         :cljsbuild {:builds [{:id           "dev"
                                               :figwheel     {:on-jsload "eponai.web.figwheel/reload!"}
                                               :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
