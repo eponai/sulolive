@@ -52,7 +52,6 @@
 (defn handle-parser-request
   [{:keys [body] ::m/keys [conn parser system] :as request}]
   (debug "Handling parser request with body:" body)
-  (debug "SYSTEM PARSER REQUEST: " system)
   (parser
     {::parser/read-basis-t (::parser/read-basis-t body)
      :state                conn

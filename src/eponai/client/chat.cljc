@@ -3,11 +3,13 @@
   (:require
     [eponai.client.routes :as routes]
     #?(:cljs [cljs.core.async :as a]
-        :clj [clojure.core.async :as a :refer [go]])
+       :clj
+    [clojure.core.async :as a :refer [go]])
     [om.next :as om]
-    [taoensso.sente  :as sente]
+    [taoensso.sente :as sente]
     [taoensso.sente.packers.transit :as sente.transit]
-    [taoensso.timbre :refer [debug error]]))
+    [taoensso.timbre :refer [debug error]]
+    [taoensso.timbre :as timbre]))
 
 (defprotocol IStoreChatListener
   (start-listening! [this store-id])
@@ -16,14 +18,12 @@
   (shutdown! [this]))
 
 #?(:cljs
-   (defrecord StoreChatListener [reconciler-atom sente-channel id->listeners stop-fn]
+   (defrecord StoreChatListener [reconciler-atom send-fn stop-fn]
      IStoreChatListener
      (start-listening! [this store-id]
-       (let [msg [:store-chat/start-listening! {:store-id store-id}]]
-         (debug "Putting message on sente-channel: " msg " sente: " sente-channel)
-         ((:send-fn sente-channel) msg)))
+       ((force send-fn) [:store-chat/start-listening! {:store-id store-id}]))
      (stop-listening! [this store-id]
-       ((:send-fn sente-channel) [:store-chat/stop-listening! {:store-id store-id}]))
+       ((force send-fn) [:store-chat/stop-listening! {:store-id store-id}]))
      (has-update [this store-id]
        (let [current-store-id (get-in (routes/current-route @reconciler-atom) [:route-params :store-id])]
          (if (= (str store-id) (str current-store-id))
@@ -43,34 +43,32 @@
                                              :type   :auto})))
 
 #?(:cljs
-   (defn store-chat-listener [reconciler-atom]
-     (let [{:keys [ch-recv] :as sente-channel} (sente-chat-channel!)
-           control-chan (a/chan)
-           stop-fn #(a/close! control-chan)
-           chat-listener (->StoreChatListener reconciler-atom
-                                              sente-channel
-                                              (atom {})
-                                              stop-fn)
+   (defn start-sente! [chat-listener-atom control-chan]
+     (let [{:keys [send-fn ch-recv] :as sente-channel} (sente-chat-channel!)
+           send-on-ready-chan (a/chan)
+           ready? (atom false)
            event-handler (fn [{:keys [event id ?data send-fn] :as ws-event}]
                            (let [[event-id event-data] event
                                  [our-id our-data] event-data]
                              (cond
+                               (= :chsk/state event-id)
+                               (do
+                                 (reset! ready? (:open? our-data))
+                                 (when @ready?
+                                   (loop [queued (a/poll! send-on-ready-chan)]
+                                     (when queued
+                                       (send-fn queued)))))
                                (and (= :chsk/recv event-id)
                                     (= :store-chat/update our-id))
                                (do
                                  (debug "Got store-chat/update event: " ws-event)
-                                 (has-update chat-listener (:store-id our-data)))
+                                 (has-update @chat-listener-atom (:store-id our-data)))
                                :else
-                               (debug "Unrecognized event-id: " event-id " whole event: " ws-event))))]
-       ;; TODO:
-       ;; Maybe start the connection only on (start-listening!)
-       ;; and close it if we stop listening to all store-ids?
-       ;; (How do we stop it?)
+                               (debug "Unrecognized event-id: " event-id " whole event: " event))))]
        (go
          (loop []
            (try
              (let [[v c] (a/alts! [ch-recv control-chan])]
-               (debug "Got value in store-chat listener: " [v c])
                (if (= c control-chan)
                  (do (debug "Control-chan was closed. Shutting down chat-store-listener..")
                      (sente/-chsk-disconnect! (:chsk sente-channel) :requested-disconnect))
@@ -79,4 +77,19 @@
                    (recur))))
              (catch :default e
                (debug "Exception in websocket loop: " e ", will keep going.")))))
+       (fn [event]
+         (debug "Sending websocket event: " event)
+         (if @ready?
+           (send-fn event)
+           (go
+             (a/>! send-on-ready-chan event)))))))
+
+#?(:cljs
+   (defn store-chat-listener [reconciler-atom]
+     (let [control-chan (a/chan)
+           stop-fn #(a/close! control-chan)
+           chat-listener-atom (atom nil)
+           send-fn (delay (start-sente! chat-listener-atom control-chan))
+           chat-listener (->StoreChatListener reconciler-atom send-fn stop-fn)]
+       (reset! chat-listener-atom chat-listener)
        chat-listener)))
