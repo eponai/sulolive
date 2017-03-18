@@ -3,6 +3,7 @@
     [clojure.core.async :as a :refer [go <!]]
     [eponai.server.external.chat :as chat]
     [com.stuartsierra.component :as component]
+    [suspendable.core :as suspendable]
     [taoensso.sente :as sente]
     [taoensso.sente.server-adapters.aleph :as sente.aleph]
     [taoensso.sente.packers.transit :as sente-transit]
@@ -13,19 +14,22 @@
   (handle-get-request [this request])
   (handler-post-request [this request]))
 
-(defn- <send-store-ids-to-clients [sente control-chan store-id-stream]
+(defn- <send-store-ids-to-clients [sente control-chan store-id-stream store-id->uids]
   (let [{:keys [ch-recv connected-uids send-fn]} sente
-        store-id->uids (atom {})
         event-handler (fn [{:keys [event id ?data ?reply-fn uid ring-req client-id]}]
                         (let [[event-id event-data] event]
                           (condp = event-id
                             :store-chat/start-listening!
                             (if (some? (:store-id event-data))
-                              (swap! store-id->uids update (:store-id event-data) (fnil conj #{}) uid)
+                              (do
+                                (debug "Adding :uid: " uid " to store listening on: " (:store-id event-data))
+                                (swap! store-id->uids update (:store-id event-data) (fnil conj #{}) uid))
                               (debug "No :store-id key found in event: " event))
                             :store-chat/stop-listening!
                             (if (some? (:store-id event-data))
-                              (swap! store-id->uids update (:store-id event-data (fnil disj #{}) uid))
+                              (do
+                                (debug "Removing :uid: " uid " to store listening on: " (:store-id event-data))
+                                (swap! store-id->uids update (:store-id event-data (fnil disj #{}) uid)))
                               (debug "No :store-id key found in event: " event))
                             (debug "Unhandled event: " [:uid uid :event event]))))]
     (go
@@ -36,6 +40,7 @@
             control-chan (debug "Exiting chat websocket due to value on control-channel: " v)
             ch-recv (do
                       (try
+                        (debug "Websocket event: " (dissoc v :ring-req))
                         (event-handler v)
                         (catch Exception e
                           (error "Exception in chat-websocket: " e)
@@ -47,25 +52,29 @@
             store-id-stream (if-not v
                               (debug "store-id-stream closed. Bailing out.")
                               (let [store-id (:store-id v)]
+                                (debug "Got store-id: " store-id)
                                 (try
                                   (if (nil? store-id)
                                     (warn "No store-id found in value returned from store-id stream. Value was: " v)
-                                    (doseq [uid (get @store-id->uids store-id)]
-                                      (if (contains? (:any @connected-uids) uid)
-                                        (do
-                                          (debug "Sending store id update to uid: " uid [:store-id store-id])
-                                          (timbre/with-level
-                                            :trace
-                                            (send-fn uid
-                                                     [:store-chat/update {:store-id store-id}]
-                                                     {:flush? true}))
-                                          (debug "Sent store id update to uid: " uid))
-                                        (do
-                                          (debug "uid was no longer connected to the server(?). Removing: " uid
-                                                 " from " store-id)
-                                          ;; TODO: REMOVE THIS debug, it's for testing only right now.
-                                          (debug "connected-uids: " @connected-uids)
-                                          (swap! store-id->uids update store-id disj uid)))))
+                                    (let [uids-listening-for-id (get @store-id->uids store-id)
+                                          connected @connected-uids]
+                                      (debug "Uids listening for store-id: " store-id " -> " (vec uids-listening-for-id))
+                                      (debug "Connected-uids!!!!!!!: " (:any connected))
+                                      (doseq [uid uids-listening-for-id]
+                                       (if (contains? (:any @connected-uids) uid)
+                                         (do
+                                           (debug "Sending store id update to uid: " uid [:store-id store-id])
+                                           (timbre/with-level
+                                             :trace
+                                             (send-fn uid
+                                                      [:store-chat/update {:store-id store-id}]))
+                                           (debug "Sent store id update to uid: " uid))
+                                         (do
+                                           (debug "uid was no longer connected to the server(?). Removing: " uid
+                                                  " from " store-id)
+                                           ;; TODO: REMOVE THIS debug, it's for testing only right now.
+                                           (debug "connected-uids: " @connected-uids)
+                                           (swap! store-id->uids update store-id disj uid))))))
                                   ;; TODO: DRY this (it's a copy from the handler above
                                   (catch Exception e
                                     (error "Exception in chat-websocket: " e)
@@ -89,9 +98,11 @@
                                                              ;; before calling this fn.
                                                              (:client-id ring-req)))})
             control-chan (a/chan 1)
-            sends-chan (<send-store-ids-to-clients sente control-chan (chat/chat-update-stream chat))]
+            store-id->uids (atom {})
+            sends-chan (<send-store-ids-to-clients sente control-chan (chat/chat-update-stream chat) store-id->uids)]
         (assoc this ::started? true
                     :sente sente
+                    :store-id->uids store-id->uids
                     :ch-recv ch-recv
                     :sends-chan sends-chan
                     :stop-fn #(a/close! control-chan)))))
@@ -105,6 +116,13 @@
           (debug "Stopped StoreChatWebsocket successfully")
           (debug "Timed out stopping StoreChatWebsocket..."))))
     (dissoc this ::started? :sente :ch-recv :stop-fn :sends-chan))
+  suspendable/Suspendable
+  (suspend [this]
+    (component/stop this))
+  (resume [this old-this]
+    ;; Keep the store-id->uids, since they are registered with a message sent once.
+    (update this :store-id->uids swap! (fn [uids] (merge-with merge @(:store-id->uids old-this) uids))))
+
   IWebsocket
   (handle-get-request [this request]
     ((get-in this [:sente :ajax-get-or-ws-handshake-fn])

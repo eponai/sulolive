@@ -4,6 +4,7 @@
             [eponai.common.database :as db]
             [eponai.server.datomic.query :as query]
             [com.stuartsierra.component :as component]
+            [suspendable.core :as suspendable]
             [clojure.core.async :as async]
             [taoensso.timbre :refer [debug error]]))
 

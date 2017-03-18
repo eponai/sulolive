@@ -1,7 +1,7 @@
 (ns eponai.repl
   (:require [eponai.server.core :as core]
             [clojure.tools.namespace.repl :as ns.repl]
-            [reloaded.repl :refer [system start stop go reset reset-all]]
+            [reloaded.repl :refer [system start stop go]]
             [taoensso.timbre :as timbre :refer [debug]]
             [ns-tracker.core :refer [ns-tracker]])
   (:import (java.util.concurrent LinkedBlockingQueue)))
@@ -91,3 +91,17 @@
 
 (defn set-debug []
   (set-level :debug))
+
+(defn- with-no-reload [f]
+  (stop-reloading)
+  (try
+    (f)
+    (catch Throwable t
+      (.printStackTrace t)
+      (start-reloading))))
+
+(defn reset []
+  (with-no-reload #(reloaded.repl/reset)))
+
+(defn reset-all []
+  (with-no-reload #(reloaded.repl/reset-all)))
