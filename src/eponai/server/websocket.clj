@@ -32,7 +32,6 @@
       (loop []
         (debug "Awaiting new value for websocket")
         (let [[v c] (a/alts! [ch-recv store-id-stream control-chan])]
-          (debug "Got value from channel: " c)
           (condp = c
             control-chan (debug "Exiting chat websocket due to value on control-channel: " v)
             ch-recv (do

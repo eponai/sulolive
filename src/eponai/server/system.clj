@@ -24,7 +24,7 @@
 (defrecord RequestHandler [in-production? cljs-build-id disable-ssl disable-anti-forgery]
   c/Lifecycle
   (start [this]
-    (if (:handler this)
+    (if (::started? this)
       this
       (let [system (into {}
                          (comp (filter #(= "system" (namespace %)))
@@ -47,9 +47,10 @@
                         (cond-> (and in-production? (not disable-ssl))
                                 m/wrap-ssl)
                         (m/wrap-error in-production?))]
-        (assoc this :handler handler))))
+        (assoc this ::started? true
+                    :handler handler))))
   (stop [this]
-    (dissoc this :handler)))
+    (dissoc this ::started? :handler)))
 
 (defn- system [in-prod? {:keys [env] :as config}]
   (let [system-map (c/system-map
