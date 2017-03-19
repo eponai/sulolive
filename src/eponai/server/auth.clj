@@ -23,7 +23,6 @@
 (defn member-restrict-opts []
   {:handler  authenticated?
    :on-error (fn [a b]
-               (debug "A: " a " B: " b)
                (r/redirect "/coming-soon")
                ;{:status  401
                ; :headers {"Content-Type"     "text/plain"

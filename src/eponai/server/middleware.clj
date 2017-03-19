@@ -55,7 +55,7 @@
               (-> (handler request)
                   (deferred/catch Throwable
                     (fn [e]
-                      (error "Error for request: " request " message: " (.getMessage e))
+                      (error "Error for request: " (into {} request) " message: " (.getMessage e))
                       (error e)
                       (let [error (ex-data e)
                             code (h/error-codes (or (:status error) ::h/internal-error))]
