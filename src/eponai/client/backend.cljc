@@ -485,12 +485,12 @@
         ;; TODO: Make it possible to exit the leeb go block (by closing query-chan?)
         _ (leeb reconciler-atom query-chan did-merge-fn)]
     (fn [queries cb]
-     (run! (fn [[key query]]
+     (run! (fn [[remote query]]
              (when (seq query)
                (async/put! query-chan {:remote->send remote-config
                                        :cb           cb
-                                       :query        (cond-> query (some? query-fn) (query-fn))
-                                       :remote-key   key
+                                       :query        (cond-> query (some? query-fn) (query-fn remote))
+                                       :remote-key   remote
                                        :query-db     (db-before-mutation @reconciler-atom
                                                                          (query-history-id query))})))
            queries))))

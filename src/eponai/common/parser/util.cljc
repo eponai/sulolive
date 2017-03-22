@@ -48,32 +48,6 @@
                 [(select-keys parsed-result keys-to-process-first)
                  (apply dissoc parsed-result keys-to-process-first)]))))))
 
-;; TODO, make a special function for caching our transactions.
-;; (That's the only thing we use this for anyway).
-(defn cache-last-read
-  "Takes a read function caches its last call if data
-  arguments are equal. (e.g. params, :db, :target and :query)."
-  [f]
-  (let [last-call (atom nil)]
-    (fn [& [env k params :as args]]
-      (let [[[last-env _ last-params] last-ret] @last-call
-            equal-key? (fn [k] (= (get env k)
-                                  (get last-env k)))]
-        (let [ret (if (and (identical? (:db env) (:db last-env))
-                           (= params last-params)
-                           (every? equal-key? [:query :target]))
-                    (do
-                      (debug (str "Returning cached for:" k))
-                      last-ret)
-                    ;; Cache miss, call the function.
-                    (f (assoc env ::last-db (:db last-env))
-                       k params))]
-          ;; Always reset the last call args, to possibly
-          ;; hit true on cljs.core/identical? for the
-          ;; equality checks.
-          (reset! last-call [args ret])
-          ret)))))
-
 (defn put-db-id-in-query [query]
   (cond (map? query)
         (reduce-kv (fn [q k v]
@@ -82,12 +56,10 @@
                    query)
 
         (sequential? query)
-        (->> query
-             (remove #(= :db/id %))
-             (map put-db-id-in-query)
-             (cons :db/id)
-             (into []))
-
+        (into [:db/id]
+              (comp (remove #(= :db/id %))
+                    (map put-db-id-in-query))
+              query)
         :else
         query))
 
@@ -109,14 +81,3 @@
                  " in query: " query
                  " resulting in route-query: " route-query))
     (read-join (assoc env :query route-query) k p)))
-
-(defn return
-  "Special read key (special like :proxy) that just returns
-  whatever it is bound to.
-
-  Example:
-  om/IQuery
-  (query [this] ['(:return/foo {:value 1 :remote true})])
-  Will always return 1 and be remote true."
-  [_ _ p]
-  p)

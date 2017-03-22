@@ -84,9 +84,6 @@
     (= "proxy" (namespace k))
     (util/read-join e k p)
 
-    (= "return" (namespace k))
-    (util/return e k p)
-
     (and (= type :server) (= "routing" (namespace k)))
     (util/read-join e k p)
 
@@ -200,7 +197,7 @@
   (fn [{:keys [query] :as env} k p]
     (let [env (if-not query
                 env
-                (assoc env :query (if (#{"return" "proxy" "routing"} (namespace k))
+                (assoc env :query (if (#{"proxy" "routing"} (namespace k))
                                     query
                                     (util/put-db-id-in-query query))))]
       (read env k p))))
@@ -338,7 +335,7 @@
 
 #?(:clj
    (defn read-returning-basis-t [read]
-     (fn [{:keys [db] ::keys [force-read-without-history] :as env} k p]
+     (fn [{:keys [db] ::keys [force-read-without-history query] :as env} k p]
        {:pre [(some? db)]}
        (let [param-path (read-basis-param-path env k p)
              _ (assert (or (nil? param-path) (sequential? param-path))
