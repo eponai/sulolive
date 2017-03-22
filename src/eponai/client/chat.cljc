@@ -14,7 +14,7 @@
 (defprotocol IStoreChatListener
   (start-listening! [this store-id])
   (stop-listening! [this store-id])
-  (has-update [this store-id])
+  (has-update [this store-id basis-t] "Has update on a store-id with datomic db basis-t")
   (shutdown! [this]))
 
 #?(:cljs
@@ -24,7 +24,7 @@
        ((force send-fn) [:store-chat/start-listening! {:store-id store-id}]))
      (stop-listening! [this store-id]
        ((force send-fn) [:store-chat/stop-listening! {:store-id store-id}]))
-     (has-update [this store-id]
+     (has-update [this store-id basis-t]
        (let [current-store-id (get-in (routes/current-route @reconciler-atom) [:route-params :store-id])]
          (if (= (str store-id) (str current-store-id))
            (do
@@ -70,7 +70,7 @@
                                    (= :store-chat/update our-id)
                                    (do
                                      (debug "Got store-chat/update event: " ws-event)
-                                     (has-update @chat-listener-atom (:store-id our-data)))
+                                     (has-update @chat-listener-atom (:store-id our-data) (:basis-t our-data)))
                                    :else
                                    (debug "Not handling our event, event-id: " our-id " whole event: " event)))
                                :else

@@ -68,6 +68,9 @@
         conn (utils/create-conn)
         parser (parser/client-parser)
         remote-config (reconciler/remote-config conn)
+        add-schema-to-query-once (apply-once (fn [q]
+                                          {:pre [(sequential? q)]}
+                                          (into [:datascript/schema] q)))
         send-fn (backend/send! reconciler-atom
                                ;; TODO: Make each remote's basis-t isolated from another
                                ;;       Maybe protocol it?
@@ -79,9 +82,8 @@
                                                     (debug "First merge happened. Adding reconciler to root.")
                                                     (binding [parser/*parser-allow-remote* false]
                                                       (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id))))))
-                                :query-fn     (apply-once (fn [q]
-                                                            {:pre [(sequential? q)]}
-                                                            (into [:datascript/schema] q)))})
+                                :query-fn     (fn [query remote]
+                                                (cond-> query (= :remote remote) (add-schema-to-query-once)))})
         reconciler (reconciler/create {:conn                       conn
                                        :parser                     parser
                                        :ui->props                  (utils/cached-ui->props-fn parser)

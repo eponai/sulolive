@@ -62,7 +62,7 @@
                                        (if (contains? (:any @connected-uids) uid)
                                          (do
                                            (debug "Sending store id update to uid: " uid [:store-id store-id])
-                                           (send-fn uid [:store-chat/update {:store-id store-id}])
+                                           (send-fn uid [:store-chat/update (select-keys v [:store-id :basis-t])])
                                            (debug "Sent store id update to uid: " uid))
                                          (do
                                            (debug "uid was no longer connected to the server(?). Removing: " uid

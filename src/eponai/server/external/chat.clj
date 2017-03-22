@@ -20,15 +20,15 @@
 ;; #############################
 ;; ### Datomic implementation
 
-(defn- updated-store-ids [tx-report]
+(defn- updated-store-ids [{:keys [db-after] :as tx-report}]
   (let [ret (d/q '{:find  [[?store-id ...]]
                    :where [[$ ?chat ?chat-messages-attr _]
                            [$db ?chat ?chat-store-attr ?store-id]]
                    :in    [$ $db ?chat-messages-attr ?chat-store-attr]}
                  (:tx-data tx-report)
-                 (:db-after tx-report)
-                 (:id (d/attribute (:db-after tx-report) :chat/messages))
-                 (:id (d/attribute (:db-after tx-report) :chat/store)))]
+                 db-after
+                 (:id (d/attribute db-after :chat/messages))
+                 (:id (d/attribute db-after :chat/store)))]
     (debug "Found store-ids: " ret " in tx-report: " tx-report)
     ret))
 
@@ -53,7 +53,8 @@
                   (try
                     (doseq [store-id (updated-store-ids tx-report)]
                       (async/put! store-id-chan {:event-type :store-id
-                                                 :store-id   store-id}))
+                                                 :store-id   store-id
+                                                 :basis-t    (d/basis-t (:db-after tx-report))}))
                     (catch Throwable e
                       (error "Error in DatomicChat thread reading tx-report-queue: " e)
                       (async/put! store-id-chan {:exception  e
