@@ -22,6 +22,7 @@
     [eponai.server.external.host :as server-address]
     [eponai.server.external.chat :as chat]
     [aleph.http :as aleph]
+    [aleph.netty]
     [taoensso.timbre :refer [debug error info]]
     ;; Dev/debug require
     [ring.middleware.reload :as reload]
@@ -150,7 +151,8 @@
                                         (dissoc opts :port))))))
 
 (defn -main [& _]
-  (start-server))
+  (let [server (start-server)]
+    (aleph.netty/wait-for-close server)))
 
 (defn main-debug
   "For repl, debug and test usages. Takes an optional map. Returns the aleph-server."
