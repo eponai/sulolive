@@ -16,6 +16,7 @@
   (query [_]
     [:query/messages
      {:proxy/stream (om/get-query stream/Stream)}
+     {:query/stream-config [:ui.singleton.stream-config/publisher-url]}
      {:query/chat [:chat/store
                    ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
                    :chat/modes
@@ -27,7 +28,8 @@
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
           {:proxy/keys [stream]
-           :query/keys [chat]} (om/props this)
+           :query/keys [chat stream-config]} (om/props this)
+          {:keys [video-status]} (om/get-state this)
           message (msg/last-message this 'stream-token/generate)]
       (debug ["STREAM_STORE_MESSAGE:  " message :component-state (om/get-state this)])
       (my-dom/div
@@ -43,8 +45,9 @@
           (my-dom/div
             (css/grid-column)
             (my-dom/div
-              (->> (css/add-class ::css/callout)
-                   (css/add-class ::css/primary))
+              (cond->> {:classes [::css/callout :status-callout]}
+                       (not= ::stream/online video-status)
+                       (css/add-class ::css/primary))
               (my-dom/div
                 (->> (css/grid-row)
                      (css/align :middle))
@@ -52,13 +55,22 @@
                   (->> (css/grid-column)
                        (css/add-class :shrink)
                        (css/add-class :stream-status-container))
-                  (dom/span #js {:className "badge alert"} "off")
-                  (dom/span #js {:className "badge success"} "on")
-                  (dom/h3 nil "Offline"))
+                  ;(dom/span #js {:className "badge alert"} "off")
+                  ;(dom/span #js {:className "badge success"} "on")
+                  (if (= ::stream/online video-status)
+                    (dom/div #js {:className "sulo-stream-status online"}
+                      (dom/i #js {:className "fa fa-check-circle fa-2x"})
+                      (dom/h3 nil "Online"))
+                    ;(dom/div nil
+                        ;  (dom/h3 nil (dom/strong #js {:className "highlight"} "Go Live!")))
+                    (dom/div #js {:className "sulo-stream-status offline"}
+                      (dom/i #js {:className "fa fa-circle fa-2x"})
+                      (dom/h3 nil "Offline"))))
                 (my-dom/div
                   (->> (css/grid-column)
-                       (css/text-align :center))
-                  (dom/h4 nil "Welcome"))))
+                       (css/text-align :right))
+                  (dom/a #js {:className (str "button highlight large" (when-not (= ::stream/online video-status) " invisible"))} (dom/strong nil "Go Live!")))
+                ))
 
             (my-dom/div
               (css/add-class ::css/callout)
@@ -75,7 +87,8 @@
                   (stream/->Stream (om/computed stream
                                                 {:hide-chat? true
                                                  :store store
-                                                 :on-video-load (fn [status] (debug "Video status: " status))})))
+                                                 :on-video-load (fn [status]
+                                                                  (om/update-state! this assoc :video-status status ))})))
                 (my-dom/div
                   (->> (css/grid-column)
                        (css/grid-column-size {:small 12 :medium 8 :large 4})
@@ -123,9 +136,8 @@
                           (->> (css/grid-column)
                                (css/grid-column-size {:small 12 :medium 8}))
                           (dom/label nil "Server URL")
-                          ; TODO fetch the real server URL from somewhere @petter
                           (dom/input #js {:type  "text"
-                                          :value "rtmp://rtmp.sulo.live:1935/live"}))
+                                          :value (:ui.singleton.stream-config/publisher-url stream-config)}))
                         (my-dom/div
                           (->> (css/grid-column))
                           (dom/a #js {:className "button hollow"}
@@ -147,7 +159,7 @@
                                           :placeholder "Click below to generate new token"}))
                         (my-dom/div
                           (->> (css/grid-column))
-                          (dom/a #js {:className "button"
+                          (dom/a #js {:className "button hollow"
                                       :onClick   #(msg/om-transact! this `[(stream-token/generate ~{:store-id (:db/id store)})])}
                                  (dom/span nil "Generate Key")))))))
                 (my-dom/div

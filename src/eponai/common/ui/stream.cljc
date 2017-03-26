@@ -86,19 +86,19 @@
                    (.on hls js/Hls.Events.MANIFEST_PARSED (fn []
                                                             (debug "HLS manifest parsed. Will play hls.")
                                                             (.play video)
-                                                            (om/update-state! this assoc :playing? true :status :stream.status/online)
+                                                            (om/update-state! this assoc :playing? true :status ::online)
                                                             (when on-video-load
-                                                              (on-video-load :stream.status/online))))
+                                                              (on-video-load ::online))))
                    (.on hls js/Hls.Events.ERROR (fn [e d]
                                                   (let [error-type (.-type d)]
                                                     (error "HLS Error: " e " type: " error-type " data: " d)
-                                                    (om/update-state! this assoc :status :stream.status/offline)
-                                                    (when on-video-load
-                                                      (on-video-load :stream.status/offline))
+                                                    (when (= js/Hls.ErrorTypes.NETWORK_ERROR error-type)
+                                                      (om/update-state! this assoc :status ::offline)
+                                                      (when on-video-load
+                                                        (on-video-load ::offline)))
                                                     (comment
                                                       "Would start the cartoon, but turned off because it's irratating."
                                                       (when (= js/Hls.ErrorTypes.NETWORK_ERROR error-type)
-                                                        (.detachMedia hls)
                                                         (.loadSource hls "http://www.streambox.fr/playlists/x36xhzz/x36xhzz.m3u8")
                                                         (.attachMedia hls video)))))))
                  (debug "Hasn't received server-url yet. Needs server-url to start stream.")))))
@@ -192,7 +192,7 @@
         ;(common/loading-spinner)
         (dom/div #js {:className (str "sulo-spinner-container " (when (some? status) " hide"))}
           (dom/i #js {:className "fa fa-spinner fa-spin fa-4x"}))
-        (dom/div #js {:className (str "sulo-status-overlay " (when (= status :stream.status/offline) " show"))}
+        (dom/div #js {:className (str "sulo-status-overlay " (when (= status ::offline) " show"))}
           (dom/h4 nil "This stream is " (dom/strong nil "OFFLINE")))
         ;(dom/div #js {:id "sulo-video"})
         (dom/video #js {:id "sulo-wowza"})

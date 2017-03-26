@@ -66,7 +66,7 @@
               (my-dom/div (css/grid-column)
                           (dom/input #js {:className   ""
                                           :type        "text"
-                                          :placeholder "Your message..."
+                                          :placeholder "Say something..."
                                           :value       (or chat-message "")
                                           :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))}))
               (my-dom/div (->> (css/grid-column)

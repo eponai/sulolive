@@ -198,17 +198,17 @@
                            :id   "navbar-brand"}
                           (dom/span nil "Sulo"))
           (menu/item-link
+            (->> (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
+                 (css/show-for {:size :large}))
+            (dom/span nil "Stream"))
+          (menu/item-link
             (->> (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
                  (css/show-for {:size :large}))
             (dom/span nil "Products"))
           (menu/item-link
             (->> (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
                  (css/show-for {:size :large}))
-            (dom/span nil "Orders"))
-          (menu/item-link
-            (->> (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
-                 (css/show-for {:size :large}))
-            (dom/span nil "Stream"))))
+            (dom/span nil "Orders"))))
       (dom/div #js {:className "top-bar-right"}
 
         (menu/horizontal
