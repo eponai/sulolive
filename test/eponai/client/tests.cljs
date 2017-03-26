@@ -4,6 +4,7 @@
             [eponai.common.datascript_test]
             [eponai.common.diff-test]
             [eponai.common.format.date-test]
+            [eponai.common.parser.util_test]
             [doo.runner :refer-macros [doo-tests]]
             [taoensso.timbre :refer-macros [info error]]))
 
@@ -27,5 +28,6 @@
 (doo-tests 'eponai.common.datascript_test
            'eponai.common.format.date-test
            'eponai.common.diff-test
+           'eponai.common.parser.util_test
            )
 
