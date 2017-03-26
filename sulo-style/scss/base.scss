@@ -26,17 +26,20 @@ $chat-width-small: rem-calc(200);
     }
 }
 
-::-webkit-scrollbar {
+#the-sulo-app::-webkit-scrollbar {
 		width: 5px;
 		// background: $black;
 }
-::-webkit-scrollbar-track {
+#the-sulo-app::-webkit-scrollbar-track {
 		background: $white;
 }
-::-webkit-scrollbar-thumb {
+#the-sulo-app::-webkit-scrollbar-thumb {
 		background: map-get($foundation-palette,primary);
 }
 html, body {
+	overflow: hidden;
+}
+#the-sulo-app {
 	overflow-x: hidden;
 	min-height: 100%;
 	width: 100%;

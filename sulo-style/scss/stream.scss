@@ -24,26 +24,7 @@ $chat-available-breakpoint: medium;
 			}
 		}
 	}
-	&.sulo-show-chat {
-		// .jw-controlbar {
-		// 	margin-right: $chat-width-small;
-		// 	@include breakpoint(large) {
-		// 		margin-right: $chat-width-large;
-		// 	}
-		// }
-		// #sulo-wowza-MediaController {
-		// 	right: $chat-width-small;
-		// 	@include breakpoint(large) {
-		// 		right: $chat-width-large
-		// 	}
-		// }
-		#video-controls {
-			right: $chat-width-small;
-			@include breakpoint(large) {
-				right: $chat-width-large;
-			}
-		}
-	}
+
 	// .icon-fullscreen {
 	// 	// &:before {
 	// 	// 	content: "/F0B2";
@@ -121,6 +102,27 @@ $chat-available-breakpoint: medium;
 	&:hover, &:focus {
 		.stream-title-container {
 			opacity: 1;
+		}
+	}
+		&.sulo-show-chat {
+		// .jw-controlbar {
+		// 	margin-right: $chat-width-small;
+		// 	@include breakpoint(large) {
+		// 		margin-right: $chat-width-large;
+		// 	}
+		// }
+		// #sulo-wowza-MediaController {
+		// 	right: $chat-width-small;
+		// 	@include breakpoint(large) {
+		// 		right: $chat-width-large
+		// 	}
+		// }
+		 
+		#sulo-video-container #video-controls {
+			right: $chat-width-small;
+			@include breakpoint(large) {
+				right: $chat-width-large;
+			}
 		}
 	}
 }

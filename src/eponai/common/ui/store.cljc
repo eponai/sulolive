@@ -3,6 +3,7 @@
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.product-item :as pi]
     [eponai.common.ui.elements.css :as css]
+    [eponai.common.ui.chat :as chat]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.product :as item]
     [eponai.common.ui.stream :as stream]
@@ -27,6 +28,7 @@
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:proxy/stream (om/get-query stream/Stream)}
+     {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/store [:db/id
                     {:store/cover [:photo/path]}
                     {:store/photo [:photo/path]}
@@ -68,10 +70,20 @@
                      (css/grid-column-order {:small 2 :medium 1}))
                 (cond
                   (some? stream)
-                  (dom/div #js {:className "stream-container"}
+                  (my-dom/div
+                    (cond->> (css/add-class :stream-container)
+                             show-chat?
+                             (css/add-class :sulo-show-chat))
                     (stream/->Stream (om/computed (:proxy/stream props)
                                                   {:stream-name (:stream/name stream)
-                                                   :widescreen? true}))
+                                                   :widescreen? true
+                                                   :store store}))
+                    (chat/->StreamChat (om/computed (:proxy/chat props)
+                                                    {:on-toggle-chat (fn [show?]
+                                                                       (om/update-state! this assoc :show-chat? show?))
+                                                     :store store
+                                                     :show? (some? stream)}))
+
                     ;(dom/div #js {:className "content-item-title-section"}
                     ;  (dom/span nil (:stream/name stream)))
                     )

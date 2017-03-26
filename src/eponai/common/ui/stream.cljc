@@ -14,20 +14,6 @@
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.menu :as menu]))
 
-(def fake-messages [{:photo "/assets/img/kids-new.jpg"
-                     :text  "this is some message"
-                     :user  "Seeley B"
-                     }
-                    {:photo "/assets/img/men-new.jpg"
-                     :text  "Hey there I was wondering something"
-                     :user  "Rick"
-                     }
-                    {:photo "/assets/img/women-new.jpg"
-                     :user  "Diana Gren"
-                     :text  "Oh yeah mee too, I was wondering how really long messages would show up in the chat list. I mean it could look really really ugly worst case..."}
-                    ])
-
-(def fake-photos (mapv :photo fake-messages))
 
 #?(:cljs
    (defn url->store-id []
@@ -68,31 +54,19 @@
 (defn video-element []
   #?(:cljs (first (utils/elements-by-tagname "video"))))
 
-(defn get-messages [component]
-  (let [messages (get-in (om/props component) [:query/chat :chat/messages])
-        {client-side true server-side false} (group-by (comp true? :chat.message/client-side-message?) messages)]
-    (concat server-side client-side)))
 
 (defui Stream
   static om/IQuery
   (query [this]
     [:query/messages
-     {:query/auth [:db/id]}
-     {:query/store [:db/id]}
-     {:query/stream-config [:ui.singleton.stream-config/subscriber-url]}
-     {:query/chat [:chat/store
-                   ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
-                   :chat/modes
-                   {:chat/messages [:chat.message/client-side-message?
-                                    {:chat.message/user [:db/id :user/email]}
-                                    :chat.message/text
-                                    :chat.message/timestamp]}]}])
+     {:query/stream-config [:ui.singleton.stream-config/subscriber-url]}])
   client.chat/IStoreChatListener
   (start-listening! [this store-id]
     (debug "Will start listening to store-id: " store-id)
     (client.chat/start-listening! (:shared/store-chat-listener (om/shared this)) store-id))
   (stop-listening! [this store-id]
     (client.chat/stop-listening! (:shared/store-chat-listener (om/shared this)) store-id))
+
   Object
   (server-url [this]
     (get-in (om/props this) [:query/stream-config :ui.singleton.stream-config/subscriber-url]))
@@ -101,7 +75,7 @@
     #?(:cljs (if-let [server-url (.server-url this)]
                (let [video (.getElementById js/document "sulo-wowza")
                      hls (js/Hls.)
-                     store (:query/store (om/props this))
+                     store (:store (om/get-computed this))
                      stream-name (stream/stream-name store)
                      stream-url (stream/wowza-live-stream-url server-url stream-name)]
                  (om/update-state! this assoc :hls hls)
@@ -202,13 +176,12 @@
              (utils/request-fullscreen v))
            (om/update-state! this assoc :fullscreen? (not fullscreen?))))))
   (render [this]
-    (let [{:keys [show-chat? fullscreen? playing? chat-message]} (om/get-state this)
+    (let [{:keys [show-chat? fullscreen? playing?]} (om/get-state this)
           {:keys [stream-name widescreen?]} (om/get-computed this)
-          {:query/keys [store]} (om/props this)
-          messages (get-messages this)]
+
+          ]
       (dom/div #js {:id "sulo-video-container" :className (str "flex-video"
                                                                (when widescreen? " widescreen")
-                                                               (when show-chat? " sulo-show-chat")
                                                                (when fullscreen? " fullscreen"))}
         ;(common/loading-spinner)
         (dom/div #js {:className "sulo-spinner-container"}
@@ -236,65 +209,6 @@
         ;           )
         ;(dom/div #js {:className "stream-title-container"}
         ;  (dom/p nil stream-name))
-        (my-dom/div
-          (cond->> (css/add-class ::css/stream-chat-container)
-                   show-chat?
-                   (css/add-class :show))
-          (dom/a #js {:className "button show-button"
-                      :onClick   #(om/update-state! this assoc :show-chat? true)}
-                 (dom/i #js {:className "fa fa-comments fa-fw"}))
-          (my-dom/div
-            nil
-            (dom/a #js {:className "button hollow secondary hide-button"
-                        :onClick   #(om/update-state! this assoc :show-chat? false)}
-                   (dom/i #js {:className "fa fa-chevron-right fa-fw"})))
-
-          ;(menu/horizontal nil
-          ;                 (menu/item nil
-          ;                            (dom/a nil "Chat")))
-          (dom/div #js {:className "content"}
-            (menu/vertical
-              #?(:cljs
-                      (css/add-class :messages-list {:onMouseOver #(set! js/document.body.style.overflow "hidden")
-                                                     :onMouseOut  #(set! js/document.body.style.overflow "scroll")})
-                 :clj (css/add-class :messages-list))
-              (map (fn [msg]
-                     (menu/item (css/add-class :message-container)
-                                (my-dom/div
-                                  (->> (css/grid-row)
-                                       (css/align :top))
-                                  (my-dom/div (->> (css/grid-column)
-                                                   (css/grid-column-size {:small 2}))
-                                              (photo/circle {:src (nth fake-photos
-                                                                       (dec (mod (:db/id (:chat.message/user msg) 1)
-                                                                                 (count fake-photos)))
-                                                                       (first fake-photos))}))
-                                  (my-dom/div (css/grid-column)
-                                              (dom/small nil
-                                                         (dom/strong nil (str (get-in msg [:chat.message/user :user/email])
-                                                                              ": "))
-                                                         (dom/span nil (:chat.message/text msg)))))))
-                   messages))
-            (dom/div #js {:className "input-container"}
-              (my-dom/div
-                (css/grid-row)
-                (my-dom/div (css/grid-column)
-                            (dom/input #js {:className   ""
-                                            :type        "text"
-                                            :placeholder "Your message..."
-                                            :value       (or chat-message "")
-                                            :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))}))
-                (my-dom/div (->> (css/grid-column)
-                                 (css/add-class :shrink))
-                            (dom/a #js {:className "button green small"
-                                        :onClick   #(do
-                                                      (if (:query/auth (om/props this))
-                                                        (do (om/transact! this `[(chat/send-message
-                                                                                   ~{:store (select-keys store [:db/id])
-                                                                                     :text  chat-message})
-                                                                                 :query/chat])
-                                                            (om/update-state! this assoc :chat-message ""))
-                                                        #?(:cljs (js/alert "Log in to send chat messages"))))}
-                                   (dom/span nil "Send")))))))))))
+        ))))
 
 (def ->Stream (om/factory Stream))
