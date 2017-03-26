@@ -12,7 +12,7 @@
                               ["/" [#"create" :action]] :store-dashboard/create-order
                               ["/" [#"\w+" :order-id]]  :store-dashboard/order}
                  "/stream"   :store-dashboard/stream}
-   "/nav"       {"/about" :store/about
+   "/nav"       {"/about"                          :store/about
                  ["/" [#"(\d|\w|-)+" :navigation]] :store/navigation}})
 
 (def user-routes
@@ -29,6 +29,7 @@
         "sell/coming-soon"            :sell-soon
         "live"                        :live
         "store/new"                   :new-store
+        "store"                       :index
         ["store/" [#"\d+" :store-id]] store-routes
         "products"                    product-routes
         "categories"                  {""              :products/all-categories
