@@ -70,7 +70,8 @@
                   (some? stream)
                   (dom/div #js {:className "stream-container"}
                     (stream/->Stream (om/computed (:proxy/stream props)
-                                                  {:stream-name (:stream/name stream)}))
+                                                  {:stream-name (:stream/name stream)
+                                                   :widescreen? true}))
                     ;(dom/div #js {:className "content-item-title-section"}
                     ;  (dom/span nil (:stream/name stream)))
                     )

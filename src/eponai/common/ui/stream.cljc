@@ -172,10 +172,11 @@
     ;                                 ;"uiQuickRewindSeconds" "30"
     ;                                 }))
     )
-  (initLocalState [_]
-    {:show-chat?  true
-     :fullscreen? false
-     :playing? true})
+  (initLocalState [this]
+    (let [{:keys [hide-chat?]} (om/get-computed this)]
+      {:show-chat?  (not hide-chat?)
+       :fullscreen? false
+       :playing?    true}))
 
   (toggle-play
     [this]
@@ -202,11 +203,12 @@
            (om/update-state! this assoc :fullscreen? (not fullscreen?))))))
   (render [this]
     (let [{:keys [show-chat? fullscreen? playing? chat-message]} (om/get-state this)
-          {:keys [stream-name]} (om/get-computed this)
+          {:keys [stream-name widescreen?]} (om/get-computed this)
           {:query/keys [store]} (om/props this)
           messages (get-messages this)]
-      (dom/div #js {:id "sulo-video-container" :className (str "flex-video widescreen "
-                                                               (when show-chat? "sulo-show-chat")
+      (dom/div #js {:id "sulo-video-container" :className (str "flex-video"
+                                                               (when widescreen? " widescreen")
+                                                               (when show-chat? " sulo-show-chat")
                                                                (when fullscreen? " fullscreen"))}
         ;(common/loading-spinner)
         (dom/div #js {:className "sulo-spinner-container"}

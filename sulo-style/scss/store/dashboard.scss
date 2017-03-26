@@ -36,6 +36,12 @@
 	}
 }
 #sulo-store-dashboard {
+	.row {
+		max-width: 80rem;
+	}
+	#sulo-navbar {
+		position: absolute;
+	}
 	.page-content {
 	@include sulo-action-buttons;
 	h3 {

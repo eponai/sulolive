@@ -5,6 +5,100 @@ $chat-container-box-shadow-color: $chat-container-bg-color;
 
 $chat-available-breakpoint: medium;
 
+#sulo-video-container {
+	background: black;
+	// .jw-controlbar {
+	// 	transition: margin .25s ease-in-out;
+	// 	margin-right: 0;
+	// 	width: auto;
+	// }
+	// #sulo-wowza-MediaController {
+	// 	width: auto;
+	// 	right: 0;
+	// 	transition: right .25s ease-in-out;
+	// }
+	&:hover, &:focus {
+		#video-controls {
+			@include breakpoint(medium) {
+				opacity: 1;
+			}
+		}
+	}
+	&.sulo-show-chat {
+		// .jw-controlbar {
+		// 	margin-right: $chat-width-small;
+		// 	@include breakpoint(large) {
+		// 		margin-right: $chat-width-large;
+		// 	}
+		// }
+		// #sulo-wowza-MediaController {
+		// 	right: $chat-width-small;
+		// 	@include breakpoint(large) {
+		// 		right: $chat-width-large
+		// 	}
+		// }
+		#video-controls {
+			right: $chat-width-small;
+			@include breakpoint(large) {
+				right: $chat-width-large;
+			}
+		}
+	}
+	// .icon-fullscreen {
+	// 	// &:before {
+	// 	// 	content: "/F0B2";
+	// 	// }
+	// }
+
+	#video-controls {
+		opacity: 0;
+		transition: opacity .25s ease-in-out, right .25s ease-in-out;
+		background: linear-gradient(to bottom, rgba($chat-container-bg-color, 0), rgba($chat-container-bg-color, 0.9));
+		position: absolute;
+		display: flex;
+		justify-content: space-between;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		.button {
+			margin: 0;
+			margin-top: 2rem;
+			background: transparent;// rgba($chat-container-bg-color, 1);
+			&:hover, &:focus {
+				color: darken($white, 50%);
+				// background: rgba($chat-container-bg-color, 1);					
+			}
+		}
+		input[type="range"] {
+
+			flex: 1;
+			margin: 0 1rem;
+		}
+	}
+
+	::-webkit-media-controls, video::-webkit-media-controls, video::-webkit-media-controls-enclosure {
+		display: none !important;
+	}
+
+	#sulo-wowza {
+		position: absolute;
+		// height: 100%;
+		// width: 100%;
+		top: 0;
+		// left: 0;
+		bottom: 0;
+		// margin: 0 auto;
+	}
+	.sulo-spinner-container {
+		height: 100%;
+		width: 100%;
+		position: absolute;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+}
+
 .stream-container {
 	position: relative;
 	.stream-title-container {
@@ -27,98 +121,6 @@ $chat-available-breakpoint: medium;
 	&:hover, &:focus {
 		.stream-title-container {
 			opacity: 1;
-		}
-	}
-	#sulo-wowza {
-		position: absolute;
-		// height: 100%;
-		// width: 100%;
-		top: 0;
-		// left: 0;
-		bottom: 0;
-		// margin: 0 auto;
-	}
-	.sulo-spinner-container {
-		height: 100%;
-		width: 100%;
-		position: absolute;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-	#sulo-video-container {
-		background: black;
-		// .jw-controlbar {
-		// 	transition: margin .25s ease-in-out;
-		// 	margin-right: 0;
-		// 	width: auto;
-		// }
-		// #sulo-wowza-MediaController {
-		// 	width: auto;
-		// 	right: 0;
-		// 	transition: right .25s ease-in-out;
-		// }
-		&:hover, &:focus {
-			#video-controls {
-				@include breakpoint(medium) {
-					opacity: 1;
-				}
-			}
-		}
-		&.sulo-show-chat {
-			// .jw-controlbar {
-			// 	margin-right: $chat-width-small;
-			// 	@include breakpoint(large) {
-			// 		margin-right: $chat-width-large;
-			// 	}
-			// }
-			// #sulo-wowza-MediaController {
-			// 	right: $chat-width-small;
-			// 	@include breakpoint(large) {
-			// 		right: $chat-width-large
-			// 	}
-			// }
-			#video-controls {
-				right: $chat-width-small;
-				@include breakpoint(large) {
-					right: $chat-width-large;
-				}
-			}
-		}
-		// .icon-fullscreen {
-		// 	// &:before {
-		// 	// 	content: "/F0B2";
-		// 	// }
-		// }
-
-		#video-controls {
-			opacity: 0;
-			transition: opacity .25s ease-in-out, right .25s ease-in-out;
-			background: linear-gradient(to bottom, rgba($chat-container-bg-color, 0), rgba($chat-container-bg-color, 0.9));
-			position: absolute;
-			display: flex;
-			justify-content: space-between;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			.button {
-				margin: 0;
-				margin-top: 2rem;
-				background: transparent;// rgba($chat-container-bg-color, 1);
-				&:hover, &:focus {
-					color: darken($white, 50%);
-					// background: rgba($chat-container-bg-color, 1);					
-				}
-			}
-			input[type="range"] {
-
-				flex: 1;
-				margin: 0 1rem;
-			}
-		}
-
-		::-webkit-media-controls, video::-webkit-media-controls, video::-webkit-media-controls-enclosure {
-			display: none !important;
 		}
 	}
 }
