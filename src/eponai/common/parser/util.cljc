@@ -81,3 +81,75 @@
                  " in query: " query
                  " resulting in route-query: " route-query))
     (read-join (assoc env :query route-query) k p)))
+
+(defprotocol IReadAtBasisT
+  (set-basis-t [this key basis-t params] "Sets basis-t for key and its params as [[k v]...]")
+  (get-basis-t [this key params] "Gets basis-t for key and its params as [[k v]...]")
+  (to-obj [this])
+  (from-obj [this]))
+
+;; Graph implementation:
+
+(defn- find-basis-t [{:keys [node values] :as graph} node-values]
+  (when (some? node)
+    (let [node-val (get node-values node :not-found)]
+      (cond
+        (= :basis-t node)
+        graph
+
+        (empty? values)
+        nil
+
+        (= :not-found node-val)
+        (if (= 1 (count values))
+          (recur (val (first values)) node-values)
+          (throw (ex-info (str "Was not passed param value for node: " node
+                               ", where multiple values could be matched.")
+                          {:node   node
+                           :params node-values
+                           :values values})))
+
+        (some? node-val)
+        (recur (get values node-val) node-values)
+
+        :else
+        (throw (ex-info "Unknown graph state" {:graph graph :node-values node-values}))))))
+
+(defrecord GraphReadAtBasisT [graph]
+  IReadAtBasisT
+  (set-basis-t [this key basis-t params]
+    (assert (vector? params) (str "params have to be an ordered pair of kv-pairs when setting basis-t"))
+    ;; Do some updates-in with non-tco recursion.
+    ;; something like (fn self [] ... (assoc m k (self v (rest params))))
+    (letfn [(update-in-graph [{:keys [node] :as graph} [[k v] :as params]]
+              (cond
+                (= node :basis-t)
+                (if (empty? params)
+                  (assoc graph :value basis-t)
+                  (throw (ex-info "Unable to set additional keys for a path once it has been set."
+                                  {:params params
+                                   :key    key})))
+
+                (empty? params)
+                (assoc graph :node :basis-t
+                             :value basis-t)
+
+                :else
+                (do (when (and (some? node) (not= node k))
+                      (throw (ex-info "Set failed. Graphs node order was different from the passed params"
+                                      {:key       key
+                                       :basis-t   basis-t
+                                       :params    params
+                                       :graph     graph
+                                       :current-k k
+                                       :current-v v
+                                       :node      node})))
+                    (-> graph
+                        (assoc :node k)
+                        (update-in [:values v] update-in-graph (rest params))))))]
+      (update this :graph #(update-in-graph % (cons [:key key] params)))))
+  (get-basis-t [this key params]
+    (:value (find-basis-t graph (into {:key key} params)))))
+
+(defn graph-read-at-basis-t [& graph]
+  (->GraphReadAtBasisT (or graph {})))
