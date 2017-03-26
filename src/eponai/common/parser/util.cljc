@@ -85,8 +85,9 @@
 (defprotocol IReadAtBasisT
   (set-basis-t [this key basis-t params] "Sets basis-t for key and its params as [[k v]...]")
   (get-basis-t [this key params] "Gets basis-t for key and its params as [[k v]...]")
-  (to-obj [this])
-  (from-obj [this]))
+  ;; TODO: Write a set-all function based on key-param-set.
+  ;; (key-param-set [this])
+  )
 
 ;; Graph implementation:
 
@@ -147,9 +148,23 @@
                     (-> graph
                         (assoc :node k)
                         (update-in [:values v] update-in-graph (rest params))))))]
-      (update this :graph #(update-in-graph % (cons [:key key] params)))))
+      (update-in this [:graph key] #(update-in-graph % params))))
   (get-basis-t [this key params]
-    (:value (find-basis-t graph (into {:key key} params)))))
+    (:value (find-basis-t (get graph key) params))))
+
+;; TODO: Base this off of protocol functions instead of implementation detail of the graph?
+(defn merge-graphs [a b]
+  (letfn [(deep-merge [a b]
+            (if-not (and a b)
+              (or a b)
+              (cond
+                (map? b)
+                (merge-with deep-merge a b)
+                (coll? b)
+                (into a b)
+                :else
+                b)))]
+    (->GraphReadAtBasisT (deep-merge (:graph a) (:graph b)))))
 
 (defn graph-read-at-basis-t [& graph]
   (->GraphReadAtBasisT (or graph {})))
