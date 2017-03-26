@@ -8,9 +8,9 @@
 (deftest graph-read-at-basis-t-tests
   (let [graph (u/graph-read-at-basis-t)
         set-many (fn [graph setter-params]
-                   (reduce (fn [g {:keys [basis-t params]}]
+                   (reduce (fn [g {:keys [basis-t params key]}]
                              {:pre [(every? vector? params)]}
-                             (u/set-basis-t g :foo basis-t params))
+                             (u/set-basis-t g (or key :foo) basis-t params))
                            graph
                            setter-params))]
     (is (= nil (u/get-basis-t graph :foo [])))
@@ -36,9 +36,10 @@
                      (-> (set-many graph setters)
                          (u/get-basis-t :foo get-params))))
              (catch #?@(:clj [Exception e] :cljs [ExceptionInfo e])
-                    (or (re-find basis-t-or-msg #?(:cljs (.-message e)
-                                                      :clj (.getMessage e)))
-                        (throw e))))
+                    (if (number? basis-t-or-msg)
+                      (throw e)
+                      (re-find basis-t-or-msg #?(:cljs (.-message e)
+                                                 :clj  (.getMessage e))))))
         [{:basis-t 1 :params [[:bar 1]]}
          {:basis-t 2 :params [[:bar 2]]}]
         []
@@ -64,6 +65,20 @@
         [{:basis-t 47 :params [[:bar 1]]}
          {:basis-t 11 :params [[:bar 1] [:baz 1]]}]
         {:bar 1 :baz 1}
-        #"additional keys"
+        #"additional keys"))
+    (test/testing "Merging of 2 graphs is the same applying all setters on them"
+      (are [setters1 setters2] (= (u/merge-graphs (set-many graph setters1)
+                                                  (set-many graph setters2))
+                                  (u/merge-graphs (set-many graph setters2)
+                                                  (set-many graph setters1))
+                                  (set-many graph (concat setters1 setters2))
+                                  (set-many graph (concat setters2 setters1)))
+        [{:basis-t 1 :params [[:bar 1]]}]
+        [{:basis-t 2 :params [[:bar 2]]}]
 
+        [{:basis-t 1 :params [[:bar 1] [:baz 2] [:fisk "lul"]]}]
+        [{:basis-t 2 :params [[:bar 1] [:baz 3] [:fisk "lel"]]}]
+
+        [{:key :query/foo :basis-t 1 :params [[:abc 1]]}]
+        [{:key :query/bar :basis-t 2 :params [[:xyz 2]]}]
         ))))
