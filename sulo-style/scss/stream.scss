@@ -17,6 +17,21 @@ $chat-available-breakpoint: medium;
 	// 	right: 0;
 	// 	transition: right .25s ease-in-out;
 	// }
+	.sulo-status-overlay {
+		visibility: hidden;
+		color: $white;
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		&.show {
+			visibility: visible;
+		}
+	}
 	&:hover, &:focus {
 		#video-controls {
 			@include breakpoint(medium) {

@@ -74,7 +74,8 @@
                   ;(dom/h4 nil "Stream preview")
                   (stream/->Stream (om/computed stream
                                                 {:hide-chat? true
-                                                 :store store})))
+                                                 :store store
+                                                 :on-video-load (fn [status] (debug "Video status: " status))})))
                 (my-dom/div
                   (->> (css/grid-column)
                        (css/grid-column-size {:small 12 :medium 8 :large 4})

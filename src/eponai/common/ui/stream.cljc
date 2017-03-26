@@ -72,30 +72,36 @@
     (get-in (om/props this) [:query/stream-config :ui.singleton.stream-config/subscriber-url]))
 
   (subscribe-hls [this]
-    #?(:cljs (if-let [server-url (.server-url this)]
-               (let [video (.getElementById js/document "sulo-wowza")
-                     hls (js/Hls.)
-                     store (:store (om/get-computed this))
-                     stream-name (stream/stream-name store)
-                     stream-url (stream/wowza-live-stream-url server-url stream-name)]
-                 (om/update-state! this assoc :hls hls)
-                 (debug "Stream url: " stream-url)
-                 (.loadSource hls stream-url)
-                 (.attachMedia hls video)
-                 (.on hls js/Hls.Events.MANIFEST_PARSED (fn []
-                                                          (debug "HLS manifest parsed. Will play hls.")
-                                                          (.play video)
-                                                          (om/update-state! this assoc :playing? true)))
-                 (.on hls js/Hls.Events.ERROR (fn [e d]
-                                                (let [error-type (.-type d)]
-                                                  (error "HLS Error: " e " type: " error-type " data: " d)
-                                                  (comment
-                                                    "Would start the cartoon, but turned off because it's irratating."
-                                                    (when (= js/Hls.ErrorTypes.NETWORK_ERROR error-type)
-                                                      (.detachMedia hls)
-                                                      (.loadSource hls "http://www.streambox.fr/playlists/x36xhzz/x36xhzz.m3u8")
-                                                      (.attachMedia hls video)))))))
-               (debug "Hasn't received server-url yet. Needs server-url to start stream."))))
+    (let [{:keys [on-video-load]} (om/get-computed this)]
+      #?(:cljs (if-let [server-url (.server-url this)]
+                 (let [video (.getElementById js/document "sulo-wowza")
+                       hls (js/Hls.)
+                       store (:store (om/get-computed this))
+                       stream-name (stream/stream-name store)
+                       stream-url (stream/wowza-live-stream-url server-url stream-name)]
+                   (om/update-state! this assoc :hls hls)
+                   (debug "Stream url: " stream-url)
+                   (.loadSource hls stream-url)
+                   (.attachMedia hls video)
+                   (.on hls js/Hls.Events.MANIFEST_PARSED (fn []
+                                                            (debug "HLS manifest parsed. Will play hls.")
+                                                            (.play video)
+                                                            (om/update-state! this assoc :playing? true :status :stream.status/online)
+                                                            (when on-video-load
+                                                              (on-video-load :stream.status/online))))
+                   (.on hls js/Hls.Events.ERROR (fn [e d]
+                                                  (let [error-type (.-type d)]
+                                                    (error "HLS Error: " e " type: " error-type " data: " d)
+                                                    (om/update-state! this assoc :status :stream.status/offline)
+                                                    (when on-video-load
+                                                      (on-video-load :stream.status/offline))
+                                                    (comment
+                                                      "Would start the cartoon, but turned off because it's irratating."
+                                                      (when (= js/Hls.ErrorTypes.NETWORK_ERROR error-type)
+                                                        (.detachMedia hls)
+                                                        (.loadSource hls "http://www.streambox.fr/playlists/x36xhzz/x36xhzz.m3u8")
+                                                        (.attachMedia hls video)))))))
+                 (debug "Hasn't received server-url yet. Needs server-url to start stream.")))))
   (ensure-hls-subscription [this]
     (when (nil? (:hls (om/get-state this)))
       (.subscribe-hls this)))
@@ -176,7 +182,7 @@
              (utils/request-fullscreen v))
            (om/update-state! this assoc :fullscreen? (not fullscreen?))))))
   (render [this]
-    (let [{:keys [show-chat? fullscreen? playing?]} (om/get-state this)
+    (let [{:keys [show-chat? fullscreen? playing? status]} (om/get-state this)
           {:keys [stream-name widescreen?]} (om/get-computed this)
 
           ]
@@ -184,8 +190,10 @@
                                                                (when widescreen? " widescreen")
                                                                (when fullscreen? " fullscreen"))}
         ;(common/loading-spinner)
-        (dom/div #js {:className "sulo-spinner-container"}
+        (dom/div #js {:className (str "sulo-spinner-container " (when (some? status) " hide"))}
           (dom/i #js {:className "fa fa-spinner fa-spin fa-4x"}))
+        (dom/div #js {:className (str "sulo-status-overlay " (when (= status :stream.status/offline) " show"))}
+          (dom/h4 nil "This stream is " (dom/strong nil "OFFLINE")))
         ;(dom/div #js {:id "sulo-video"})
         (dom/video #js {:id "sulo-wowza"})
         (dom/div #js {:id "video-controls"}
