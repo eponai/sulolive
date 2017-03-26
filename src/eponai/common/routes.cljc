@@ -22,8 +22,6 @@
 
 (def product-routes
   {""                         :products
-   "/categories"              {""              :products/all-categories
-                               ["/" :category] :products/categories}
    ["/" [#"\d+" :product-id]] :product})
 (def routes
   ["/" {""                            :index
@@ -33,6 +31,8 @@
         "store/new"                   :new-store
         ["store/" [#"\d+" :store-id]] store-routes
         "products"                    product-routes
+        "categories"                  {""              :products/all-categories
+                                       ["/" :category] :products/categories}
         ["checkout/" :store-id]       :checkout
         "shopping-bag"                :shopping-bag
         "business"                    :business
