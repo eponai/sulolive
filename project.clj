@@ -82,6 +82,7 @@
                  [lein-doo "0.1.7"
                   :exclusions [org.clojure/clojure]]
                  [devcards "0.2.2"]
+                 [plomber "0.1.0"]
                  [org.clojure/test.check "0.9.0"]]
 
   :exclusions [org.clojure/test.check

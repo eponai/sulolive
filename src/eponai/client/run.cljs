@@ -13,6 +13,7 @@
     [medley.core :as medley]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
+    [plomber.core :as plomber]
     [taoensso.timbre :refer [error debug warn]]
     ;; Routing
     [cemerick.url :as url]
@@ -57,7 +58,8 @@
 (defonce reconciler-atom (atom nil))
 
 (defn- run [{:keys [auth-lock]
-             :or   {auth-lock (auth/auth0-lock)}}]
+             :or   {auth-lock (auth/auth0-lock)}
+             :as run-options}]
   (let [init? (atom false)
         _ (when-let [h @history-atom]
             (pushy/stop! h))
@@ -91,7 +93,8 @@
                                        :remotes                    (:order remote-config)
                                        :shared/browser-history     history
                                        :shared/store-chat-listener (chat/store-chat-listener reconciler-atom)
-                                       :shared/auth-lock           auth-lock})]
+                                       :shared/auth-lock           auth-lock
+                                       :instrument                 (::plomber run-options)})]
 
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
@@ -106,7 +109,9 @@
   (run {}))
 
 (defn run-dev []
-  (run {:auth-lock (auth/fake-lock)}))
+  (run {:auth-lock (auth/fake-lock)
+        ;;::plomber   (plomber/instrument)
+        }))
 
 (defn on-reload! []
   (when-let [chat-listener (some-> reconciler-atom (deref) :config :shared :shared/store-chat-listener)]
