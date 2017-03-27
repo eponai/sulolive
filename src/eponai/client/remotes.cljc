@@ -2,9 +2,12 @@
   (:require [datascript.core :as d]
             [eponai.common.parser :as parser]
             [eponai.common.parser.util :as p.util]
+            [eponai.common.database :as db]
+            [eponai.client.backend :as backend]
             [eponai.client.auth :as auth]
             [om.next :as om]
-            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug]]))
+            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug]]
+            [eponai.client.chat :as chat]))
 
 
 #?(:cljs
@@ -42,13 +45,10 @@
   read a key from the remote db."
   [remote-fn conn]
   (fn [query]
-    (let [ret (remote-fn query)
-          db (d/db conn)]
-      ;; TODO: Create a protocol for the read-basis-t stuff?
-      ;;       This would make it easier to understand what's stored in datascript.
+    (let [ret (remote-fn query)]
       (assoc-in ret [:opts :transit-params ::parser/read-basis-t]
-                (:eponai.common.parser.read-basis-t/graph
-                  (d/entity db [:db/ident ::parser/read-basis-t]))))))
+                (::parser/read-basis-t-graph
+                  (d/entity (d/db conn) [:ui/singleton ::parser/read-basis-t]))))))
 
 (defn- force-remote-read! [reconciler]
   (binding [parser/*parser-allow-local-read* false]
@@ -111,3 +111,31 @@
                                 [:pre logged-in? :post logged-in-after-merge?])
                           (force-remote-read! reconciler))
                       (debug "Logged in status hasn't change in post merge. Is still: " logged-in?)))))))))
+
+(defn send-with-chat-update-basis-t [remote-fn reconciler-atom]
+  (fn [query]
+    ;; include chat-update-basis-t for read-only queries.
+    (if (some parser/mutation? query)
+      (do
+        (debug "Found mutation in query: " query " Won't include chat-update-basis-t with it.")
+        (remote-fn query))
+      (let [db (db/to-db @reconciler-atom)
+            store-id (chat/current-store-id db)]
+
+        (if-not (some? store-id)
+          (do
+            (debug "Could not get a store-id. Avoiding send of query: " query)
+            {::backend/skip? true})
+          (let [chat-update-basis-t (chat/queued-basis-t db store-id)
+                current-basis-t (chat/chat-basis-t db store-id)]
+            (if (and (some? current-basis-t) (>= current-basis-t (or chat-update-basis-t 0)))
+              (do
+                (debug "Current basis-t >= chat-update basis-t: " {:current-basis-t current-basis-t :update-basis-t chat-update-basis-t}
+                       " Avoiding send of query: " query)
+                {::backend/skip? true})
+              (do
+                (debug "Will really send the chat read-only request for: " {:store-id            store-id
+                                                                            :current-basis-t     current-basis-t
+                                                                            :chat-update-basis-t chat-update-basis-t})
+                (-> (remote-fn query)
+                    (assoc-in [:opts :transit-params ::parser/chat-update-basis-t] chat-update-basis-t))))))))))

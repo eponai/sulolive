@@ -69,7 +69,8 @@
         _ (reset! history-atom history)
         conn (utils/create-conn)
         parser (parser/client-parser)
-        remote-config (reconciler/remote-config conn)
+        remote-config (-> (reconciler/remote-config conn)
+                          (update :remote/chat #(remotes/send-with-chat-update-basis-t % reconciler-atom)))
         add-schema-to-query-once (apply-once (fn [q]
                                           {:pre [(sequential? q)]}
                                           (into [:datascript/schema] q)))

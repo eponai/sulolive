@@ -6,6 +6,10 @@
        :clj
     [clojure.core.async :as a :refer [go]])
     [om.next :as om]
+    [eponai.common]
+    [eponai.common.database :as db]
+    [eponai.common.parser :as parser]
+    [eponai.common.parser.util :as p.util]
     [taoensso.sente :as sente]
     [taoensso.sente.packers.transit :as sente.transit]
     [taoensso.timbre :refer [debug error]]
@@ -17,6 +21,39 @@
   (has-update [this store-id basis-t] "Has update on a store-id with datomic db basis-t")
   (shutdown! [this]))
 
+(defn- read-basis-t-graph [db]
+  (::parser/read-basis-t-graph
+    (db/entity db [:ui/singleton ::parser/read-basis-t])))
+
+(defn chat-basis-t [db store-id]
+  (try
+    (p.util/get-basis-t (read-basis-t-graph db) :query/chat {:store-id store-id})
+    (catch #?@(:clj [Exception e] :cljs [:default e])
+           (error "Error getting current basis-t for chat: " e)
+      ;; TODO: We should be able to display some kind of "something went wrong"
+      ;;       display/banner to the user. For now this just disables the chat.
+      (throw e))))
+
+(defn queue-basis-t-tx
+  "Returns a transaction for adding a basis-t to a store's chat queue (request queue)."
+  [store-id basis-t]
+  [{:ui.store-chat-queue/store-id store-id
+    :ui.store-chat-queue/basis-t  basis-t}])
+
+(defn queued-basis-t [db store-id]
+  (db/one-with db {:where   '[[?queue :ui.store-chat-queue/store-id ?store-id]
+                              [?queue :ui.store-chat-queue/basis-t ?e]]
+                   :symbols {'?store-id store-id}}))
+
+(defn current-store-id
+  "Given a reconciler, component, app-state(conn) or db, returns the current store-id.
+  It's based on routing, so we'll only return a store-id if we're at a store."
+  [x]
+  {:post [(or (nil? %) (number? %))]}
+  (some-> (routes/current-route x)
+          (get-in [:route-params :store-id])
+          (eponai.common/parse-long)))
+
 #?(:cljs
    (defrecord StoreChatListener [reconciler-atom send-fn stop-fn]
      IStoreChatListener
@@ -25,14 +62,20 @@
      (stop-listening! [this store-id]
        ((force send-fn) [:store-chat/stop-listening! {:store-id store-id}]))
      (has-update [this store-id basis-t]
-       (let [current-store-id (get-in (routes/current-route @reconciler-atom) [:route-params :store-id])]
-         (if (= (str store-id) (str current-store-id))
-           (do
-             (debug "Got update for store-id: " store-id)
-             (om/transact! @reconciler-atom (om/transform-reads @reconciler-atom [:query/chat])))
+       (let [reconciler @reconciler-atom
+             curr-store-id (current-store-id reconciler)]
+         (if-not (= store-id curr-store-id)
            (debug "Message store-id and current route store id differ. Ignoring update. "
-                  {:current-store-id current-store-id
-                   :message-store-id store-id}))))
+                  {:current-store-id curr-store-id
+                   :message-store-id store-id})
+           (let [db (db/to-db reconciler)
+                 current-basis-t (chat-basis-t db store-id)]
+             (debug "Got update for store-id: " store-id " basis-t: " basis-t "current-basis-t: " current-basis-t)
+             (if (and (some? current-basis-t) (>= current-basis-t basis-t))
+               (debug "Already had the chat update.")
+               (do (debug "Will request query chat because we're not up to date.")
+                   (om/transact! reconciler (into [`(chat/queue-update ~{:store-id store-id :basis-t basis-t})]
+                                                  (om/transform-reads reconciler [:query/chat])))))))))
      (shutdown! [this]
        (debug "Shutting down ChatStoreListener: " this)
        (stop-fn))))
@@ -86,7 +129,7 @@
                    (event-handler v)
                    (recur))))
              (catch :default e
-               (debug "Exception in websocket loop: " e ", will keep going.")))))
+               (error "Exception in websocket loop: " e ", will keep going.")))))
        (fn [event]
          (debug "Sending websocket event: " event)
          (if @ready?
