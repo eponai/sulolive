@@ -1,6 +1,7 @@
 (ns eponai.common.parser.util
   (:refer-clojure :exclude [proxy])
-  (:require [taoensso.timbre :refer [debug error]]))
+  (:require [taoensso.timbre :refer [debug error]]
+            [cognitect.transit :as transit]))
 
 (defn get-time []
   #?(:clj (. System (currentTimeMillis))
@@ -150,21 +151,31 @@
                         (update-in [:values v] update-in-graph (rest params))))))]
       (update-in this [:graph key] #(update-in-graph % params))))
   (get-basis-t [this key params]
-    (:value (find-basis-t (get graph key) params))))
+    (:value (find-basis-t (get graph key) (into {} params)))))
+
+(defn graph-read-at-basis-t
+  ([] (graph-read-at-basis-t {} false))
+  ([graph from-wire?]
+   (let [graph (cond-> graph
+                       ;; When sending over wire, the record will be sent as a map
+                       ;; and we can extract the graph from the map.
+                       (and from-wire? (some? (:graph graph)))
+                       :graph)]
+     (->GraphReadAtBasisT (or graph {})))))
 
 ;; TODO: Base this off of protocol functions instead of implementation detail of the graph?
 (defn merge-graphs [a b]
   (letfn [(deep-merge [a b]
-            (if-not (and a b)
-              (or a b)
-              (cond
-                (map? b)
-                (merge-with deep-merge a b)
-                (coll? b)
-                (into a b)
-                :else
-                b)))]
-    (->GraphReadAtBasisT (deep-merge (:graph a) (:graph b)))))
-
-(defn graph-read-at-basis-t [& graph]
-  (->GraphReadAtBasisT (or graph {})))
+            (when (or a b)
+              (if-not (and a b)
+                (or a b)
+                (cond
+                  (map? b)
+                  (merge-with deep-merge a b)
+                  (coll? b)
+                  (into a b)
+                  :else
+                  b))))]
+    (if (and a b)
+      (->GraphReadAtBasisT (deep-merge (:graph a) (:graph b)))
+      (or a b (graph-read-at-basis-t)))))

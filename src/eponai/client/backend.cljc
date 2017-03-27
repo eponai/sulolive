@@ -3,6 +3,7 @@
             [eponai.client.utils :as client.utils]
     ;; Routes should be a configuration.
             [eponai.client.routes :as routes]
+            [eponai.common.parser.util :as p.util]
             [datascript.impl.entity :as e]
             [om.next :as om]
             [cognitect.transit :as transit]
@@ -22,13 +23,17 @@
             [eponai.common.datascript :as common.datascript])
   #?(:cljs (:require-macros [cljs.core.async.macros :refer [go]]))
   #?(:clj (:import [datascript.impl.entity Entity]
-                   [java.util UUID]))
+                   [java.util UUID]
+                   [eponai.common.parser.util GraphReadAtBasisT]))
   #?(:clj (:refer-clojure :exclude [send])))
 
 (def max-retry-time-ms 2000)
 
 (def DatascriptEntityAsMap (transit/write-handler (constantly "map")
                                                   (fn [v] (into {} v))))
+
+(def GraphReadAtBasisTAsMap (transit/write-handler (constantly "map")
+                                                   (fn [v] (into {} v))))
 
 ;; TODO: Create a new namespace for eponai.client.http ?
 
@@ -65,7 +70,8 @@
 (defn send [send-fn url opts]
   (let [transit-opts {:transit-opts
                       {:encoding-opts
-                       {:handlers {#?(:clj Entity :cljs e/Entity) DatascriptEntityAsMap}}
+                       {:handlers {#?(:clj Entity :cljs e/Entity)    DatascriptEntityAsMap
+                                   #?(:clj GraphReadAtBasisT :cljs p.util/GraphReadAtBasisT) GraphReadAtBasisTAsMap}}
                        :decoding-opts
                        ;; favor ClojureScript UUIDs instead of Transit UUIDs
                        ;; https://github.com/cognitect/transit-cljs/pull/10
