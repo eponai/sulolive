@@ -51,7 +51,7 @@
 
 (defn handle-parser-request
   [{:keys [body] ::m/keys [conn parser system] :as request}]
-  (debug "Handling parser request with body:" body)
+  (debug "Handling parser request with query:" (:query body))
   (let [read-basis-t-graph (some-> (::parser/read-basis-t body)
                                    (parser.util/graph-read-at-basis-t true)
                                    (atom))]
