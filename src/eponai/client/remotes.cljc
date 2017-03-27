@@ -1,6 +1,7 @@
 (ns eponai.client.remotes
   (:require [datascript.core :as d]
             [eponai.common.parser :as parser]
+            [eponai.common.parser.util :as p.util]
             [eponai.client.auth :as auth]
             [om.next :as om]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug]]))
@@ -46,7 +47,7 @@
       ;; TODO: Create a protocol for the read-basis-t stuff?
       ;;       This would make it easier to understand what's stored in datascript.
       (assoc-in ret [:opts :transit-params ::parser/read-basis-t]
-                (:eponai.common.parser.read-basis-t/map
+                (:eponai.common.parser.read-basis-t/graph
                   (d/entity db [:db/ident ::parser/read-basis-t]))))))
 
 (defn- force-remote-read! [reconciler]

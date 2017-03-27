@@ -2,6 +2,7 @@
   (:require [datascript.core :as d]
             [datascript.db :as db]
             [eponai.common.parser :as parser]
+            [eponai.common.parser.util :as p.util]
             [eponai.client.parser.message :as message]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug error trace warn]]
             [eponai.client.utils :as utils]))
@@ -37,7 +38,7 @@
                   (d/datoms db :aevt attr)))]
     (transact db (into [] (comp (mapcat all-entities-with-attr)
                                 (map #(vector :db.fn/retractEntity %)))
-                       [:eponai.common.parser.read-basis-t/map]))))
+                       [:eponai.common.parser.read-basis-t/graph]))))
 
 (defn merge-auth [db key val]
   (if (some? (:db/id val))
@@ -120,16 +121,15 @@
 
 (defn merge-meta [db novelty-meta]
   {:post [(db/db? %)]}
-  (let [new-map (::parser/read-basis-t novelty-meta)
-        old-map (:eponai.common.parser.read-basis-t/map
-                  (d/entity db [:db/ident ::parser/read-basis-t]))
-        merged-map (utils/deep-merge old-map new-map)]
-    ;; TODO: Only transact if the read-basis-t has changed?
-    ;; (maybe it doesn't matter when there are a lot of users).
+  (let [new-graph (some-> (::parser/read-basis-t novelty-meta)
+                          (p.util/graph-read-at-basis-t true))
+        old-graph (:eponai.common.parser.read-basis-t/graph
+                    (d/entity db [:db/ident ::parser/read-basis-t]))
+        merged-graph (p.util/merge-graphs old-graph new-graph)]
     (cond-> db
-            (some? merged-map)
-            (transact {:db/ident                              ::parser/read-basis-t
-                       :eponai.common.parser.read-basis-t/map merged-map}))))
+            (not= old-graph merged-graph)
+            (transact {:db/ident                                ::parser/read-basis-t
+                       :eponai.common.parser.read-basis-t/graph merged-graph}))))
 
 (defn merge!
   "Takes a merge-fn which is passed [db key params] and
