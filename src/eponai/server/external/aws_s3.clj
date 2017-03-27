@@ -15,28 +15,28 @@
   (upload-photo [this params]
     "Move photo from temp folder to real folder."))
 
-(defn aws-s3 [{:keys [bucket access-key secret zone]}]
-  (reify IAWSS3Photo
-    (sign [_]
-      (s3/s3-sign bucket zone access-key secret))
+(defrecord AwsS3 [bucket access-key secret zone]
+  IAWSS3Photo
+  (sign [_]
+    (s3/s3-sign bucket zone access-key secret))
 
-    (convert-to-real-key [this old-key]
-      (clojure.string/join "/" (assoc (clojure.string/split old-key #"/") 1 "real")))
+  (convert-to-real-key [this old-key]
+    (clojure.string/join "/" (assoc (clojure.string/split old-key #"/") 1 "real")))
 
-    (move-photo [_ bucket old-key new-key]
-      (aws-s3/copy-object bucket old-key bucket new-key)
-      (aws-s3/set-object-acl bucket new-key CannedAccessControlList/PublicRead)
-      (aws-s3/delete-object bucket old-key))
+  (move-photo [_ bucket old-key new-key]
+    (aws-s3/copy-object bucket old-key bucket new-key)
+    (aws-s3/set-object-acl bucket new-key CannedAccessControlList/PublicRead)
+    (aws-s3/delete-object bucket old-key))
 
-    (upload-photo [this {:keys [bucket key] :as p}]
-      (try
-        ;(debug "Try to upload photo: " p)
-        (let [real-key (convert-to-real-key this key)
-              s3-upload-url (str "https://s3.amazonaws.com/" bucket "/" real-key)]
-          (move-photo this bucket key real-key)
-          s3-upload-url)
-        (catch AmazonS3Exception e
-          (throw (ex-info (.getMessage e) {:message (.getMessage e)})))))))
+  (upload-photo [this {:keys [bucket key] :as p}]
+    (try
+      ;(debug "Try to upload photo: " p)
+      (let [real-key (convert-to-real-key this key)
+            s3-upload-url (str "https://s3.amazonaws.com/" bucket "/" real-key)]
+        (move-photo this bucket key real-key)
+        s3-upload-url)
+      (catch AmazonS3Exception e
+        (throw (ex-info (.getMessage e) {:message (.getMessage e)}))))))
 
 (defn aws-s3-stub []
   (reify IAWSS3Photo

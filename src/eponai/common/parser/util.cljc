@@ -1,6 +1,7 @@
 (ns eponai.common.parser.util
   (:refer-clojure :exclude [proxy])
-  (:require [taoensso.timbre :refer [debug error]]))
+  (:require [taoensso.timbre :refer [debug error]]
+            [cognitect.transit :as transit]))
 
 (defn get-time []
   #?(:clj (. System (currentTimeMillis))
@@ -48,32 +49,6 @@
                 [(select-keys parsed-result keys-to-process-first)
                  (apply dissoc parsed-result keys-to-process-first)]))))))
 
-;; TODO, make a special function for caching our transactions.
-;; (That's the only thing we use this for anyway).
-(defn cache-last-read
-  "Takes a read function caches its last call if data
-  arguments are equal. (e.g. params, :db, :target and :query)."
-  [f]
-  (let [last-call (atom nil)]
-    (fn [& [env k params :as args]]
-      (let [[[last-env _ last-params] last-ret] @last-call
-            equal-key? (fn [k] (= (get env k)
-                                  (get last-env k)))]
-        (let [ret (if (and (identical? (:db env) (:db last-env))
-                           (= params last-params)
-                           (every? equal-key? [:query :target]))
-                    (do
-                      (debug (str "Returning cached for:" k))
-                      last-ret)
-                    ;; Cache miss, call the function.
-                    (f (assoc env ::last-db (:db last-env))
-                       k params))]
-          ;; Always reset the last call args, to possibly
-          ;; hit true on cljs.core/identical? for the
-          ;; equality checks.
-          (reset! last-call [args ret])
-          ret)))))
-
 (defn put-db-id-in-query [query]
   (cond (map? query)
         (reduce-kv (fn [q k v]
@@ -82,12 +57,10 @@
                    query)
 
         (sequential? query)
-        (->> query
-             (remove #(= :db/id %))
-             (map put-db-id-in-query)
-             (cons :db/id)
-             (into []))
-
+        (into [:db/id]
+              (comp (remove #(= :db/id %))
+                    (map put-db-id-in-query))
+              query)
         :else
         query))
 
@@ -110,13 +83,99 @@
                  " resulting in route-query: " route-query))
     (read-join (assoc env :query route-query) k p)))
 
-(defn return
-  "Special read key (special like :proxy) that just returns
-  whatever it is bound to.
+(defprotocol IReadAtBasisT
+  (set-basis-t [this key basis-t params] "Sets basis-t for key and its params as [[k v]...]")
+  (get-basis-t [this key params] "Gets basis-t for key and its params as [[k v]...]")
+  ;; TODO: Write a set-all function based on key-param-set.
+  ;; (key-param-set [this])
+  )
 
-  Example:
-  om/IQuery
-  (query [this] ['(:return/foo {:value 1 :remote true})])
-  Will always return 1 and be remote true."
-  [_ _ p]
-  p)
+;; Graph implementation:
+
+(defn- find-basis-t [{:keys [node values] :as graph} node-values]
+  (when (some? node)
+    (let [node-val (get node-values node :not-found)]
+      (cond
+        (= :basis-t node)
+        graph
+
+        (empty? values)
+        nil
+
+        (= :not-found node-val)
+        (if (= 1 (count values))
+          (recur (val (first values)) node-values)
+          (throw (ex-info (str "Was not passed param value for node: " node
+                               ", where multiple values could be matched.")
+                          {:node   node
+                           :params node-values
+                           :values values})))
+
+        (some? node-val)
+        (recur (get values node-val) node-values)
+
+        :else
+        (throw (ex-info "Unknown graph state" {:graph graph :node-values node-values}))))))
+
+(defrecord GraphReadAtBasisT [graph]
+  IReadAtBasisT
+  (set-basis-t [this key basis-t params]
+    (assert (vector? params) (str "params have to be an ordered pair of kv-pairs when setting basis-t"))
+    ;; Do some updates-in with non-tco recursion.
+    ;; something like (fn self [] ... (assoc m k (self v (rest params))))
+    (letfn [(update-in-graph [{:keys [node] :as graph} [[k v] :as params]]
+              (cond
+                (= node :basis-t)
+                (if (empty? params)
+                  (assoc graph :value basis-t)
+                  (throw (ex-info "Unable to set additional keys for a path once it has been set."
+                                  {:params params
+                                   :key    key})))
+
+                (empty? params)
+                (assoc graph :node :basis-t
+                             :value basis-t)
+
+                :else
+                (do (when (and (some? node) (not= node k))
+                      (throw (ex-info "Set failed. Graphs node order was different from the passed params"
+                                      {:key       key
+                                       :basis-t   basis-t
+                                       :params    params
+                                       :graph     graph
+                                       :current-k k
+                                       :current-v v
+                                       :node      node})))
+                    (-> graph
+                        (assoc :node k)
+                        (update-in [:values v] update-in-graph (rest params))))))]
+      (update-in this [:graph key] #(update-in-graph % params))))
+  (get-basis-t [this key params]
+    (:value (find-basis-t (get graph key) (into {} params)))))
+
+(defn graph-read-at-basis-t
+  ([] (graph-read-at-basis-t {} false))
+  ([graph from-wire?]
+   (let [graph (cond-> graph
+                       ;; When sending over wire, the record will be sent as a map
+                       ;; and we can extract the graph from the map.
+                       (and from-wire? (some? (:graph graph)))
+                       :graph)]
+     (->GraphReadAtBasisT (or graph {})))))
+
+;; TODO: Base this off of protocol functions instead of implementation detail of the graph?
+(defn merge-graphs [a b]
+  (letfn [(deep-merge [a b]
+            (when (or a b)
+              (if-not (and a b)
+                (or a b)
+                (cond
+                  (map? b)
+                  (merge-with deep-merge a b)
+                  (coll? b)
+                  (into a b)
+                  :else
+                  b))))]
+    (if (and a b)
+      (->GraphReadAtBasisT (deep-merge (:graph a) (:graph b)))
+      (or a b (graph-read-at-basis-t)))))

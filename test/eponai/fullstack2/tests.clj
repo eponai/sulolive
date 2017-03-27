@@ -10,9 +10,11 @@
     [eponai.common.parser :as parser :refer [client-mutate server-mutate]]
     [eponai.server.datomic-dev :as datomic-dev]
     [datomic.api :as datomic]
+    [datomock.core :as dato-mock]
     [taoensso.timbre :refer [info debug]]
     [eponai.client.backend :as backend]
     [eponai.client.remotes :as remotes]
+    [com.stuartsierra.component :as component]
     [om.next :as om]
     [aleph.netty :as netty]
     [clojure.data :as data]
@@ -42,30 +44,23 @@
 
 ;; Start and stop system
 
-(defn get-port [server]
-  (netty/port server))
+(defn- get-port [system]
+  (netty/port (get-in system [:system/aleph :server])))
 
-(defn- start-system [{:keys [db-schema] :as system}]
+(defn- start-system [system]
   ;; TODO: Use datomic forking library, to setup and fork our datomic connection once.
-  (let [conn (datomic-dev/create-new-inmemory-db)
-        _ (datomic-dev/add-data-to-connection conn db-schema)
-        server (core/start-server-for-tests {:conn conn
+  (let [system (core/start-server-for-tests {:conn (::forked-conn system)
                                              ;; Re-use the server's port
                                              ;; to be more kind to the test system.
-                                             :port (:server-port system 0)})]
-    (assoc system :conn conn
-                  :server server
-                  :server-port (get-port server))))
+                                             :port (::server-port system 0)})]
+    (assoc system ::server-port (get-port system)
+                  ::forked-conn (dato-mock/fork-conn (get-in system [:system/datomic :conn])))))
 
-(defn- stop-system [{:keys [server conn] :as system}]
-  (datomic/release conn)
-  (.close server)
-  ;;(netty/wait-for-close server)
-  system)
+(defn- stop-system [system]
+  (component/stop-system system))
 
 (defn setup-system []
-  {:results-atom (atom [])
-   :db-schema    (datomic-dev/read-schema-files)})
+  nil)
 
 ;; END System
 
@@ -92,10 +87,10 @@
                                              :query-params {:code email :state "/"}})]
             (info "Got auth response: " response)))))))
 
-(defn create-client [{:keys [server] :as system} merge-chan]
+(defn create-client [system merge-chan]
   (let [reconciler-atom (atom nil)
         conn (client.utils/create-conn)
-        server-url (str "http://localhost:" (get-port server))
+        server-url (str "http://localhost:" (get-port system))
         cookie-store (cookies/cookie-store)
         remote-config (remote-config-with-server-url conn server-url cookie-store)
         reconciler (reconciler/create {:conn             conn

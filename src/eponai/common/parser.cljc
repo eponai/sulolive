@@ -79,15 +79,18 @@
 
 ;; -------- No matching dispatch
 
+(defn- is-proxy? [k]
+  (= "proxy" (namespace k)))
+
+(defn- is-routing? [k]
+  (= "routing" (namespace k)))
+
 (defn default-read [e k p type]
   (cond
-    (= "proxy" (namespace k))
+    (is-proxy? k)
     (util/read-join e k p)
 
-    (= "return" (namespace k))
-    (util/return e k p)
-
-    (and (= type :server) (= "routing" (namespace k)))
+    (and (= type :server) (is-routing? k))
     (util/read-join e k p)
 
     :else
@@ -200,7 +203,7 @@
   (fn [{:keys [query] :as env} k p]
     (let [env (if-not query
                 env
-                (assoc env :query (if (#{"return" "proxy" "routing"} (namespace k))
+                (assoc env :query (if (#{"proxy" "routing"} (namespace k))
                                     query
                                     (util/put-db-id-in-query query))))]
       (read env k p))))
@@ -209,16 +212,19 @@
   "Returns a parser with a filter-atom assoc'ed in the env."
   [parser]
   (fn [env query & [target]]
-    (let [env (assoc env ::filter-atom (atom nil)
+    (let [graph-atom (or (::read-basis-t-graph env)
+                         (atom (util/graph-read-at-basis-t)))
+          env (assoc env ::filter-atom (atom nil)
                          ::user-email (user-email env)
                          ::server? true
-                         ::force-read-without-history (atom #{}))
+                         ::force-read-without-history (atom #{})
+                         ::read-basis-t-graph graph-atom)
           ret (parser env query target)]
       (when-let [keys-to-force-read (not-empty @(::force-read-without-history env))]
         (warn "Did not force read all keys during parse. "
               " Keys left to force read: " keys-to-force-read
               " query: " query))
-      ret)))
+      (vary-meta ret assoc ::read-basis-t-graph graph-atom))))
 
 
 (comment
@@ -330,42 +336,46 @@
 ;path: [1234567890]"
 
 #?(:clj
-   (defmulti read-basis-param-path (fn [_ k _] k)))
+   (defmulti read-basis-params (fn [_ k _] k)))
 #?(:clj
-   (defmethod read-basis-param-path :default
+   (defmethod read-basis-params :default
      [_ _ _]
      []))
 
 #?(:clj
    (defn read-returning-basis-t [read]
-     (fn [{:keys [db] ::keys [force-read-without-history] :as env} k p]
+     (fn [{:keys [db query]
+           ::keys [force-read-without-history read-basis-t-graph] :as env} k p]
        {:pre [(some? db)]}
-       (let [param-path (read-basis-param-path env k p)
-             _ (assert (or (nil? param-path) (sequential? param-path))
-                       (str "Path returned from read-basis-param-path for key: " k " params: " p
-                            " was not nil or sequential. Was: " param-path))
-             default-path [::read-basis-t (str (user-email env)) k]
-             path (into default-path param-path)
-             basis-t-for-this-key (get-in env path)
-             env (if (contains? @force-read-without-history k)
-                   (do
-                     ;; read the key without the db-history
-                     (debug "Force reading key: " k)
-                     (swap! force-read-without-history disj k)
-                     (dissoc env :db-history))
-                   (assoc env
-                     ::read-basis-t-for-this-key basis-t-for-this-key
-                     :db-history (when basis-t-for-this-key
-                                   (datomic/since (datomic/history db)
-                                                  basis-t-for-this-key))))
-             ret (read env k p)
-             new-basis-t (or (::value-read-basis-t (meta (:value ret)))
-                             (datomic/basis-t db))
-             ret (update ret :value (fnil vary-meta {}) (fn [meta]
-                                                          (-> meta
-                                                              (dissoc ::value-read-basis-t)
-                                                              (assoc-in path new-basis-t))))]
-         ret))))
+       (if (or (is-proxy? k) (is-routing? k))
+         ;; Do nothing special for routing and proxy keys
+         (read env k p)
+         (let [read-basis-params (read-basis-params env k p)
+               _ (assert (or (nil? read-basis-params)
+                             (and (sequential? read-basis-params)
+                                  (every? #(and (vector? %) (= 2 (count %)))
+                                          read-basis-params)))
+                         (str "Path returned from read-basis-param-path for key: " k
+                              " params: " p
+                              " was not nil or sequential with [k v] pairs. Was: " read-basis-params))
+               read-basis-params (into [[:query-hash (hash query)]] read-basis-params)
+               basis-t-for-this-key (util/get-basis-t @read-basis-t-graph k read-basis-params)
+               env (if (contains? @force-read-without-history k)
+                     (do
+                       ;; read the key without the db-history
+                       (debug "Force reading key: " k)
+                       (swap! force-read-without-history disj k)
+                       (dissoc env :db-history))
+                     (assoc env
+                       ::read-basis-t-for-this-key basis-t-for-this-key
+                       :db-history (when basis-t-for-this-key
+                                     (datomic/since (datomic/history db)
+                                                    basis-t-for-this-key))))
+               ret (read env k p)
+               new-basis-t (or (::value-read-basis-t (meta (:value ret)))
+                               (datomic/basis-t db))]
+           (swap! read-basis-t-graph util/set-basis-t k new-basis-t read-basis-params)
+           ret)))))
 
 (defn value-with-basis-t
   "Use when you want to override the value of basis-t.

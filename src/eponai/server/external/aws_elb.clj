@@ -1,7 +1,9 @@
 (ns eponai.server.external.aws-elb
   (:require [amazonica.aws.elasticbeanstalk :as elb]
             [clojure.string :as str]
-            [environ.core :as env])
+            [environ.core :as env]
+            [com.stuartsierra.component :as component]
+            [eponai.server.external.aws-ec2 :as ec2])
   (:import [com.amazonaws.regions Regions]))
 
 (defprotocol IAWSElasticBeanstalk
@@ -24,24 +26,32 @@
     (some #(when (= (:environment-name %) env-name) %)
           (:environments envs))))
 
-(defn aws-elastic-beanstalk [environment-name]
-  (let [is-in-staging? (fn []
-                         (let [env (find-environment environment-name)]
-                           (= (or (env/env :aws-elb-staging-url-prefix)
-                                  "sulo-staging")
-                              (-> (:cname env)
-                                  (str/split #"\.")
-                                  (first)))))
+(defrecord AwsElasticBeanstalk [aws-ec2]
+  component/Lifecycle
+  (start [this]
+    (if (:is-in-staging? this)
+      this
+      (letfn [(is-in-staging? [environment-name]
+                (when-let [env (find-environment environment-name)]
+                  (= (or (env/env :aws-elb-staging-url-prefix)
+                         "sulo-staging")
+                     (-> (:cname env)
+                         (str/split #"\.")
+                         (first)))))]
         ;; We can cache this because we'll only go from staging->production once
         ;; before restarting or upgrading it.
         ;; TODO: Figure out if this will bite us in the ass.
-        is-in-staging? (cached-once-false is-in-staging?)]
-    (reify
-      IAWSElasticBeanstalk
-      (is-staging? [_]
-        (is-in-staging?))
-      (env-url [_]
-        (str "https://" (:cname (find-environment environment-name)))))))
+        (assoc this :is-in-staging? (cached-once-false is-in-staging?)
+                    :environment-name (some-> aws-ec2
+                                              (ec2/find-this-instance)
+                                              (ec2/elastic-beanstalk-env-name))))))
+  (stop [this]
+    (dissoc this :is-in-staging? :environment-name))
+  IAWSElasticBeanstalk
+  (is-staging? [this]
+    ((:is-in-staging? this) (:environment-name this)))
+  (env-url [this]
+    (str "https://" (:cname (find-environment (:environment-name this))))))
 
 (defn aws-elastic-beanstalk-stub []
   (reify

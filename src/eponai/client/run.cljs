@@ -9,9 +9,11 @@
     [eponai.client.backend :as backend]
     [eponai.client.remotes :as remotes]
     [eponai.client.reconciler :as reconciler]
+    [eponai.client.chat :as chat]
     [medley.core :as medley]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
+    [plomber.core :as plomber]
     [taoensso.timbre :refer [error debug warn]]
     ;; Routing
     [cemerick.url :as url]
@@ -53,11 +55,12 @@
     (update-route-fn match)))
 
 (defonce history-atom (atom nil))
+(defonce reconciler-atom (atom nil))
 
 (defn- run [{:keys [auth-lock]
-             :or   {auth-lock (auth/auth0-lock)}}]
+             :or   {auth-lock (auth/auth0-lock)}
+             :as run-options}]
   (let [init? (atom false)
-        reconciler-atom (atom nil)
         _ (when-let [h @history-atom]
             (pushy/stop! h))
         match-route (partial bidi/match-route (common.routes/without-coming-soon-route common.routes/routes))
@@ -67,6 +70,9 @@
         conn (utils/create-conn)
         parser (parser/client-parser)
         remote-config (reconciler/remote-config conn)
+        add-schema-to-query-once (apply-once (fn [q]
+                                          {:pre [(sequential? q)]}
+                                          (into [:datascript/schema] q)))
         send-fn (backend/send! reconciler-atom
                                ;; TODO: Make each remote's basis-t isolated from another
                                ;;       Maybe protocol it?
@@ -78,16 +84,17 @@
                                                     (debug "First merge happened. Adding reconciler to root.")
                                                     (binding [parser/*parser-allow-remote* false]
                                                       (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id))))))
-                                :query-fn     (apply-once (fn [q]
-                                                            {:pre [(sequential? q)]}
-                                                            (into [:datascript/schema] q)))})
-        reconciler (reconciler/create {:conn conn
-                                       :parser parser
-                                       :ui->props (utils/cached-ui->props-fn parser)
-                                       :send-fn send-fn
-                                       :remotes (:order remote-config)
-                                       :shared/browser-history history
-                                       :shared/auth-lock auth-lock})]
+                                :query-fn     (fn [query remote]
+                                                (cond-> query (= :remote remote) (add-schema-to-query-once)))})
+        reconciler (reconciler/create {:conn                       conn
+                                       :parser                     parser
+                                       :ui->props                  (utils/cached-ui->props-fn parser)
+                                       :send-fn                    send-fn
+                                       :remotes                    (:order remote-config)
+                                       :shared/browser-history     history
+                                       :shared/store-chat-listener (chat/store-chat-listener reconciler-atom)
+                                       :shared/auth-lock           auth-lock
+                                       :instrument                 (::plomber run-options)})]
 
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
@@ -102,7 +109,11 @@
   (run {}))
 
 (defn run-dev []
-  (run {:auth-lock (auth/fake-lock)}))
+  (run {:auth-lock (auth/fake-lock)
+        ;;::plomber   (plomber/instrument)
+        }))
 
 (defn on-reload! []
+  (when-let [chat-listener (some-> reconciler-atom (deref) :config :shared :shared/store-chat-listener)]
+    (chat/shutdown! chat-listener))
   (run-dev))

@@ -2,6 +2,7 @@
   (:require
     [clojure.set :as set]
     [eponai.client.parser.message :as msg]
+    [eponai.client.chat :as client.chat]
     [eponai.common.stream :as stream]
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.common :as common]
@@ -83,9 +84,15 @@
                    ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
                    :chat/modes
                    {:chat/messages [:chat.message/client-side-message?
-                                    {:chat.message/user [:user/email]}
+                                    {:chat.message/user [:db/id :user/email]}
                                     :chat.message/text
                                     :chat.message/timestamp]}]}])
+  client.chat/IStoreChatListener
+  (start-listening! [this store-id]
+    (debug "Will start listening to store-id: " store-id)
+    (client.chat/start-listening! (:shared/store-chat-listener (om/shared this)) store-id))
+  (stop-listening! [this store-id]
+    (client.chat/stop-listening! (:shared/store-chat-listener (om/shared this)) store-id))
   Object
   (server-url [this]
     (get-in (om/props this) [:query/stream-config :ui.singleton.stream-config/subscriber-url]))
@@ -137,11 +144,18 @@
   (componentWillUnmount [this]
     (let [{:keys [hls]} (om/get-state this)]
       (when hls
-        (.destroy hls))))
+        (.destroy hls)))
+    (client.chat/stop-listening! this (:db/id (:query/store (om/props this)))))
   (componentDidUpdate [this prev-props prev-state]
-    (.ensure-hls-subscription this))
+    (.ensure-hls-subscription this)
+    (let [old-store (:db/id (:query/store prev-props))
+          new-store (:db/id (:query/store (om/props this)))]
+      (when (not= old-store new-store)
+        (client.chat/stop-listening! this old-store)
+        (client.chat/start-listening! this new-store))))
   (componentDidMount [this]
     (.ensure-hls-subscription this)
+    (client.chat/start-listening! this (:db/id (:query/store (om/props this))))
 
     ;(js/WowzaPlayer.create "sulo-wowza"
     ;                       (clj->js {:license   "PLAY1-aaEJk-4mGcn-jW3Yr-Fxaab-PAYm4"
@@ -250,7 +264,7 @@
                                   (my-dom/div (->> (css/grid-column)
                                                    (css/grid-column-size {:small 2}))
                                               (photo/circle {:src (nth fake-photos
-                                                                       (dec (mod (:chat.message/user msg)
+                                                                       (dec (mod (:db/id (:chat.message/user msg) 1)
                                                                                  (count fake-photos)))
                                                                        (first fake-photos))}))
                                   (my-dom/div (css/grid-column)

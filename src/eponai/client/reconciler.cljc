@@ -36,28 +36,32 @@
                       history
                       route
                       route-params
+                      instrument
                       ;; With defaults:
                       conn
                       remotes
                       merge]
                :shared/keys [browser-history
                              auth-lock
-                             local-storage]
+                             local-storage
+                             store-chat-listener]
                :or   {conn          (utils/create-conn)
                       local-storage (local-storage/->local-storage)
                       remotes       (remote-order)
                       merge         (merge/merge!)}}]
-  (let [reconciler (om/reconciler {:state     conn
-                                   :ui->props ui->props
-                                   :parser    parser
-                                   :remotes   remotes
-                                   :send      send-fn
-                                   :merge     merge
-                                   :shared    {:shared/browser-history browser-history
-                                               :shared/local-storage   local-storage
-                                               :shared/auth-lock       auth-lock}
-                                   :history   history
-                                   :migrate   nil})]
+  (let [reconciler (om/reconciler {:state      conn
+                                   :ui->props  ui->props
+                                   :parser     parser
+                                   :remotes    remotes
+                                   :send       send-fn
+                                   :merge      merge
+                                   :shared     {:shared/browser-history     browser-history
+                                                :shared/local-storage       local-storage
+                                                :shared/auth-lock           auth-lock
+                                                :shared/store-chat-listener store-chat-listener}
+                                   :history    history
+                                   :migrate    nil
+                                   :instrument instrument})]
     (when (some? route)
       (routes/transact-route! reconciler route {:route-params route-params
                                                 :queue?       false}))

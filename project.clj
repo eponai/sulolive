@@ -20,14 +20,16 @@
                  [amazonica "0.3.85"]
                  [com.draines/postal "2.0.1"]
                  [com.stripe/stripe-java "3.11.0"]
-                 [com.taoensso/timbre "4.7.4"]
+                 [com.taoensso/timbre "4.8.0"]
                  [environ "1.0.1"]
                  [hiccup "1.0.5"]
                  [org.clojure/data.generators "0.1.2"]
-                 [org.clojure/core.async "0.2.391"]
+                 [org.clojure/core.async "0.3.442"]
                  [org.clojure/core.memoize "0.5.8"]         ; needed to work around lein+core.async dependency issue.
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.namespace "0.2.11"]
+                 [com.stuartsierra/component "0.3.2"]
+                 [vvvvalvalval/datomock "0.2.0"]
                  ;; Depending on transit-clj for faster cljs builds
                  [com.cognitect/transit-clj "0.8.297"]
                  ; ring helpers
@@ -44,6 +46,7 @@
                  [prone "1.1.4"]
                  [medley "0.8.3"]
                  [org.martinklepsch/s3-beam "0.6.0-alpha1"]
+                 [com.taoensso/sente "1.11.0"]
 
                  ;; CLJS
                  [cljsjs/react "15.4.2-2"]
@@ -73,9 +76,13 @@
                  [natal-shell "0.3.0"]
 
                  ;; Testing
+                 [reloaded.repl "0.2.3" 
+                  :exclusions [com.stuartsierra/component]]
+                 [suspendable "0.1.1"]
                  [lein-doo "0.1.7"
                   :exclusions [org.clojure/clojure]]
                  [devcards "0.2.2"]
+                 [plomber "0.1.0"]
                  [org.clojure/test.check "0.9.0"]]
 
   :exclusions [org.clojure/test.check

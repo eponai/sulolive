@@ -18,6 +18,7 @@
     [eponai.server.ui :as server.ui]
     [om.next :as om]
     [eponai.server.external.stripe :as stripe]
+    [eponai.server.websocket :as websocket]
     [eponai.server.ui.root :as root]))
 
 (defn html [& path]
@@ -50,15 +51,17 @@
 
 (defn handle-parser-request
   [{:keys [body] ::m/keys [conn parser system] :as request}]
-  (debug "Handling parser request with body:" body)
-  (debug "SYSTEM PARSER REQUEST: " system)
-  (parser
-    {::parser/read-basis-t (::parser/read-basis-t body)
-     :state                conn
-     :auth                 (:identity request)
-     :params               (:params request)
-     :system               system}
-    (:query body)))
+  (debug "Handling parser request with query:" (:query body))
+  (let [read-basis-t-graph (some-> (::parser/read-basis-t body)
+                                   (parser.util/graph-read-at-basis-t true)
+                                   (atom))]
+    (parser
+      {::parser/read-basis-t-graph read-basis-t-graph
+       :state                      conn
+       :auth                       (:identity request)
+       :params                     (:params request)
+       :system                     system}
+      (:query body))))
 
 (defn trace-parser-response-handlers
   "Wrapper with logging for parser.response/response-handler."
@@ -66,42 +69,18 @@
   (trace "handling parser response for key:" key "value:" params)
   (parser.resp/response-handler env key params))
 
-(defn meta-from-keys [x]
-  {:post [(or (nil? %) (map? %))]}
-  (letfn [(deep-merge-fn [a b]
-            (if (map? a)
-              (merge-with deep-merge-fn a b)
-              b))]
-    (cond
-      (map? x)
-      (reduce-kv (fn [m k v]
-                   (if (keyword? k)
-                     (merge-with deep-merge-fn
-                                 m
-                                 (meta v)
-                                 (meta-from-keys v))
-                     m))
-                 {}
-                 x)
-      (sequential? x)
-      (apply merge (mapv meta-from-keys x))
-      :else (reduce-kv (fn [m k v]
-                         (cond-> m (some? v) (assoc k v)))
-                       nil
-                       (meta x)))))
-
 (def handle-parser-response
   "Will call response-handler for each key value in the parsed result."
   (-> (parser.util/post-process-parse trace-parser-response-handlers [])))
 
 (defn call-parser [{:keys [::m/conn] :as request}]
   (let [ret (handle-parser-request request)
-        m (meta-from-keys ret)
+        basis-t-graph (some-> ret (meta) (::parser/read-basis-t-graph) (deref))
         ret (->> ret
                  (handle-parser-response (assoc request :state conn))
                  (parser.resp/remove-mutation-tx-reports))]
     {:result ret
-     :meta   m}))
+     :meta   {::parser/read-basis-t basis-t-graph}}))
 
 (defn bidi-route-handler [route]
   ;; Currently all routes render the same way.
@@ -146,6 +125,15 @@
 
   (GET "/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
   (GET "/sell/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
+
+  ;; Websockets
+  (GET "/ws/chat" {::m/keys [system] :as request}
+    (websocket/handle-get-request (:system/chat-websocket system)
+                                  request))
+  (POST "/ws/chat" {::m/keys [system] :as request}
+    (websocket/handler-post-request (:system/chat-websocket system)
+                                    request))
+
   (context "/" [:as request]
     (cond-> member-routes
             (or (::m/in-production? request))

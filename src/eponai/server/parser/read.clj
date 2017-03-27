@@ -2,7 +2,7 @@
   (:require
     [eponai.common.database :as db]
     [eponai.common.datascript :as eponai.datascript]
-    [eponai.common.parser :as parser :refer [server-read read-basis-param-path]]
+    [eponai.common.parser :as parser :refer [server-read read-basis-params]]
     [eponai.server.datomic.query :as query]
     [environ.core :as env]
     [datomic.api :as d]
@@ -27,8 +27,8 @@
                                                        [?u :user/cart ?e]]
                                             :symbols {'?email (:email auth)}}))})
 
-(defmethod read-basis-param-path :query/store [_ _ {:keys [store-id]}]
-  [store-id])
+(defmethod read-basis-params :query/store [_ _ {:keys [store-id]}]
+  [[:store-id store-id]])
 (defmethod server-read :query/store
   [{:keys [db db-history query]} _ {:keys [store-id]}]
   {:value (query/one db db-history query {:where   '[[?e :store/name]]
@@ -121,8 +121,8 @@
             (db/pull-one-with db query {:where   '[[?e :category/path ?p]]
                                         :symbols {'?p c}}))})
 
-(defmethod read-basis-param-path :query/item [_ _ {:keys [product-id]}]
-  [product-id])
+(defmethod read-basis-params :query/item [_ _ {:keys [product-id]}]
+  [[:product-id product-id]])
 
 (defmethod server-read :query/item
   [{:keys [db db-history query]} _ {:keys [product-id]}]
@@ -178,8 +178,8 @@
                :ui.singleton.stream-config/publisher-url  (wowza/publisher-url wowza)}})))
 
 
-(defmethod read-basis-param-path :query/chat [_ _ params]
-  [(get-in params [:store :db/id])])
+(defmethod read-basis-params :query/chat [_ _ params]
+  [[:store-id (get-in params [:store :db/id])]])
 (defmethod server-read :query/chat
   [{:keys [db-history query system] ::parser/keys [read-basis-t-for-this-key]} k {:keys [store] :as params}]
   (let [chat (:system/chat system)]
