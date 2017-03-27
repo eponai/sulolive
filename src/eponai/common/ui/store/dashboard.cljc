@@ -12,6 +12,7 @@
     [eponai.common.ui.store.product-list :as pl]
     [eponai.common.ui.store.stream-settings :as ss]
     [eponai.common.ui.dom :as my-dom]
+    [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.common.format :as f]))
@@ -60,10 +61,45 @@
   (render [this]
     (let [{:proxy/keys [product-edit product-list order-edit order-list stream-settings]
            :keys       [proxy/navbar query/store query/current-route]} (om/props this)
-          {:keys [route route-params]} current-route]
+          {:keys [route route-params]} current-route
+          store-id (:db/id store)]
       (common/page-container
         {:navbar navbar
          :id     "sulo-store-dashboard"}
+        (dom/div #js {:className "navbar-container" :id "store-navbar"}
+          (dom/nav #js {:className "top-bar navbar"}
+                   (menu/horizontal
+                     nil
+                     (menu/item (when (= route :store-dashboard)
+                                  (css/add-class ::css/is-active))
+                                (my-dom/a
+                                  (css/add-class :category {:href (routes/url :store-dashboard {:store-id store-id})})
+                                  (my-dom/span (css/show-for {:size :medium}) "Dashboard")
+                                  (my-dom/i
+                                    (css/hide-for {:size :medium} {:classes [:fa :fa-dashboard :fa-fw]}))))
+                     (menu/item (when (= route :store-dashboard/stream)
+                                      (css/add-class ::css/is-active))
+                                (my-dom/a
+                                  (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
+                                  (my-dom/span (css/show-for {:size :medium}) "Stream")
+                                  (my-dom/i
+                                    (css/hide-for {:size :medium} {:classes [:fa :fa-video-camera :fa-fw]}))))
+                     (menu/item
+                       (when (= route :store-dashboard/product-list)
+                         (css/add-class ::css/is-active))
+                       (my-dom/a
+                         (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
+                         (my-dom/span (css/show-for {:size :medium}) "Products")
+                         (my-dom/i
+                           (css/hide-for {:size :medium} {:classes [:fa :fa-gift :fa-fw]}))))
+                     (menu/item
+                       (when (= route :store-dashboard/order-list)
+                         (css/add-class ::css/is-active))
+                       (my-dom/a
+                         (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
+                         (my-dom/span (css/show-for {:size :medium}) "Orders")
+                         (my-dom/i
+                           (css/hide-for {:size :medium} {:classes [:fa :fa-file-text-o :fa-fw]})))))))
         (condp = route
           :store-dashboard/order-list (ol/->OrderList (om/computed order-list
                                                                    {:store store}))

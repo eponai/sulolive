@@ -287,8 +287,9 @@
       (dom/header #js {:id "sulo-navbar"}
                   (dom/div #js {:className "navbar-container"}
                     (dom/div #js {:className "top-bar navbar"}
-                      (cond (and route (= (or (namespace route) (name route)) "store-dashboard"))
-                            (store-navbar this)
+                      (cond
+                        ;(and route (= (or (namespace route) (name route)) "store-dashboard"))
+                        ;(store-navbar this)
 
                             ;; When the user is going through the checkout flow, don't let them navigate anywhere else.
                             (= route :checkout)
