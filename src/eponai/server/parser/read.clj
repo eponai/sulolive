@@ -181,8 +181,11 @@
 (defmethod read-basis-params :query/chat [_ _ params]
   [[:store-id (get-in params [:store :db/id])]])
 (defmethod server-read :query/chat
-  [{:keys [db-history query system] ::parser/keys [read-basis-t-for-this-key]} k {:keys [store] :as params}]
+  [{:keys [db-history query system]
+    ::parser/keys [read-basis-t-for-this-key chat-update-basis-t]} k {:keys [store] :as params}]
   (let [chat (:system/chat system)]
+    (when chat-update-basis-t
+      (chat/sync-up-to! chat chat-update-basis-t))
     (if (nil? (:db/id store))
       (do (warn "No store :db/id passed in params for read: " k " with params: " params)
           {:value (parser/value-with-basis-t {} read-basis-t-for-this-key)})

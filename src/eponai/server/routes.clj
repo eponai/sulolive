@@ -41,11 +41,7 @@
                                           (:params request))
    :route                          (:handler request)
    :query-params                   (:params request)
-   :auth                           (:identity request)
-   ::server.ui/component->props-fn (fn [component]
-                                     (-> request
-                                         (assoc :body {:query (om/get-query component)})
-                                         (handle-parser-request)))})
+   :auth                           (:identity request)})
 
 ;----------API Routes
 
@@ -57,6 +53,7 @@
                                    (atom))]
     (parser
       {::parser/read-basis-t-graph read-basis-t-graph
+       ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
        :state                      conn
        :auth                       (:identity request)
        :params                     (:params request)
