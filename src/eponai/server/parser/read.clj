@@ -49,6 +49,8 @@
                          )]
             (query/all db db-history query params))})
 
+(defmethod read-basis-params :query/orders [_ _ {:keys [store-id user-id]}]
+  [[:user-id user-id] [:store-id store-id]])
 (defmethod server-read :query/orders
   [env _ {:keys [store-id user-id]}]
   {:value (cond (some? store-id)
@@ -58,12 +60,16 @@
                   (debug "Got user orders: " os)
                   os))})
 
+(defmethod read-basis-params :query/inventory [_ _ {:keys [store-id]}]
+  [[:store-id store-id]])
 (defmethod server-read :query/inventory
   [env _ {:keys [store-id]}]
   {:value (let [items (store/list-products env store-id)]
             (debug "Found items: " (into [] items))
             items)})
 
+(defmethod read-basis-params :query/order [_ _ {:keys [order-id store-id user-id]}]
+  [[:user-id user-id] [:store-id store-id] [:order-id order-id]])
 (defmethod server-read :query/order
   [env _ {:keys [order-id store-id user-id]}]
   {:value (cond (some? store-id)
@@ -97,11 +103,15 @@
 ;             :stripe/account  stripe-account
 ;             :stripe/products products})})
 
+(defmethod read-basis-params :query/user [_ _ {:keys [user-id]}]
+  [[:user-id user-id]])
 (defmethod server-read :query/user
   [{:keys [db db-history query]} _ {:keys [user-id]}]
   {:value (query/one db db-history query {:where   '[[?e]]
                                           :symbols {'?e user-id}})})
 
+(defmethod read-basis-params :query/items [{:keys [route-params]} _ {:keys [category]}]
+  [[:category (or category (:category route-params))]])
 (defmethod server-read :query/items
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
   {:value (let [c (or category (:category route-params))]
@@ -115,6 +125,8 @@
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
   {:value (db/pull-all-with db query {:where '[[?e :category/level 0]]})})
 
+(defmethod read-basis-params :query/category [{:keys [route-params]} _ {:keys [category]}]
+  [[:category (or category (:category route-params))]])
 (defmethod server-read :query/category
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
   {:value (let [c (or category (:category route-params))]
@@ -123,7 +135,6 @@
 
 (defmethod read-basis-params :query/item [_ _ {:keys [product-id]}]
   [[:product-id product-id]])
-
 (defmethod server-read :query/item
   [{:keys [db db-history query]} _ {:keys [product-id]}]
   {:value (query/one db db-history query
