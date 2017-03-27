@@ -40,6 +40,9 @@
 }
 
 .stream-status-container {
+	h3 {
+		margin: 0;
+	}
 	border-right: 1px solid $light-gray;
 	display: flex;
 	align-items: center;

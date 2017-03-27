@@ -1,0 +1,25 @@
+#sulo-account-settings {
+	.row .row {
+		margin-bottom: 1rem;
+		.row {
+			margin-bottom: 0;
+		}
+	}
+
+	.bank-account {
+		display: flex;
+		padding: 0.5rem 1rem;
+		$border: 1px solid $light-gray;
+		border: $border;
+		border-top: none;
+		&:first-child {
+			border-top: $border;
+		}
+		.bank-detail {
+			margin-right: 1rem;
+			&.currency {
+				font-weight: $global-weight-bold;
+			}
+		}
+	}
+}

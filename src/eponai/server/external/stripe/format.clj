@@ -2,7 +2,36 @@
   (:require [eponai.common.format :as f]
             [eponai.common :as c])
   (:import
-    (com.stripe.model OrderItem Order ShippingDetails Address Product SKU)))
+    (com.stripe.model OrderItem Order ShippingDetails Address Product SKU Account Account$Verification LegalEntity BankAccount)))
+
+(defn stripe->verification [^Account$Verification v]
+  (cond-> {:stripe.verification/fields-needed (.getFieldsNeeded v)}
+          (some? (.getDueBy v))
+          (assoc :stripe.verification/due-by (.getDueBy v))))
+
+(defn stripe->legal-entity [^LegalEntity le]
+  {:stripe.legal-entity/first-name (or (.getFirstName le) "")
+   :stripe.legal-entity/last-name  (or (.getLastName le) "")})
+
+(defn stripe->bank-account [^BankAccount ba]
+  {:stripe.external-account/bank-name (.getBankName ba)
+   :stripe.external-account/status    (.getStatus ba)
+   :stripe.external-account/last4     (.getLast4 ba)})
+
+(defn stripe->account [^Account a]
+  (cond-> {:stripe/id           (.getId a)
+           :stripe/country      (.getCountry a)
+           :stripe/verification (stripe->verification (.getVerification a))
+           :stripe/legal-entity (stripe->legal-entity (.getLegalEntity a))
+           :stripe/external-accounts  [{:stripe.external-account/currency "CAD"
+                                        :stripe.external-account/bank-name "Wells Fargo"
+                                        :stripe.external-account/last4 "1234"
+                                        :stripe.external-account/country "CA"}]                      ;(map stripe->bank-account (.getExternalAccounts a))
+           }
+          (some? (.getBusinessName a))
+          (assoc :stripe/business-name (.getBusinessName a))
+          (some? (.getBusinessURL a))
+          (assoc :stripe/business-url (.getBusinessURL a))))
 
 (defn stripe->price [p]
   (with-precision 10 (/ (bigdec p) 100)))

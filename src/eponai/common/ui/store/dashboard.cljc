@@ -6,6 +6,7 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.navbar :as nav]
+    [eponai.common.ui.store.account-settings :as as]
     [eponai.common.ui.store.order-edit-form :as oef]
     [eponai.common.ui.store.order-list :as ol]
     [eponai.common.ui.store.product-edit-form :as pef]
@@ -53,7 +54,7 @@
                               (my-dom/span (css/show-for {:size :medium}) "Stream")
                               (my-dom/i
                                 (css/hide-for {:size :medium} {:classes [:fa :fa-video-camera :fa-fw]}))))
-                 (menu/item (when (= route :store-dashboard/account)
+                 (menu/item (when (= route :store-dashboard/settings)
                               (css/add-class ::css/is-active))
                             (my-dom/a
                               (css/add-class :category {:href (routes/url :store-dashboard/settings {:store-id store-id})})
@@ -103,13 +104,15 @@
      {:proxy/order-edit (om/get-query oef/OrderEditForm)}
      {:proxy/order-list (om/get-query ol/OrderList)}
      {:proxy/stream-settings (om/get-query ss/StreamSettings)}
+     {:proxy/account-settings (om/get-query as/AccountSettings)}
+     {:query/stripe-account [:stripe/legal-entity :stripe/verification]}
      ])
   Object
   (initLocalState [_]
     {:selected-tab :products})
   (render [this]
-    (let [{:proxy/keys [product-edit product-list order-edit order-list stream-settings]
-           :keys       [proxy/navbar query/store query/current-route]} (om/props this)
+    (let [{:proxy/keys [navbar product-edit product-list order-edit order-list stream-settings account-settings]
+           :query/keys       [store current-route stripe-account]} (om/props this)
           {:keys [route route-params]} current-route
           store-id (:db/id store)]
       (common/page-container
@@ -127,7 +130,8 @@
 
           :store-dashboard/stream (ss/->StreamSettings (om/computed stream-settings
                                                                     {:store store}))
-          :store-dashboard/settings (my-dom/div (css/grid-row) "Account")
+          :store-dashboard/settings (as/->AccountSettings (om/computed account-settings
+                                                                       {:store store}))
           :store-dashboard/product-list (pl/->ProductList (om/computed product-list
                                                                        {:route-params route-params}))
           :store-dashboard/create-product (pef/->ProductEditForm (om/computed product-edit
@@ -151,7 +155,8 @@
                   (dom/a #js {:className "button hollow"
                               :href (routes/url :store {:store-id store-id})} "View Store")
                   (dom/a #js {:className "button hollow"
-                              :href (routes/url :store-dashboard/settings {:store-id store-id})} "Edit Settings"))))
+                              :href (routes/url :store-dashboard/settings {:store-id store-id})} "Edit Settings")))
+              )
             (my-dom/div
               (->> (css/grid-column)
                    (css/grid-column-size {:small 12 :medium 8 :large 9}))
@@ -176,7 +181,25 @@
                              (css/text-align :right))
                         (dom/a #js {:className "button highlight hollow"
                                     :href (routes/url :store-dashboard/stream {:store-id store-id})}
-                               (dom/span nil "Stream Settings") (dom/i #js {:className "fa fa-chevron-right fa-fw"}))))
-                    ))))))))))
+                               (dom/span nil "Setup Stream")
+                               (dom/i #js {:className "fa fa-chevron-right fa-fw"}))))
+                    )
+                  (when (not-empty (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed]))
+                    (my-dom/div
+                      (->> (css/add-class ::css/callout)
+                           (css/add-class ::css/color-warning))
+                      (my-dom/div
+                        (->> (css/grid-row)
+                             (css/align :middle))
+                        (my-dom/div
+                          (css/grid-column)
+                          (dom/span nil "Business information still needed to activate account"))
+                        (my-dom/div
+                          (->> (css/grid-column)
+                               (css/text-align :right))
+                          (dom/a #js {:className "button hollow warning"
+                                      :href (routes/url :store-dashboard/settings {:store-id store-id})}
+                                 (dom/span nil "Update Settings")
+                                 (dom/i #js {:className "fa fa-chevron-right fa-fw"})))))))))))))))
 
 (def ->Dashboard (om/factory Dashboard))

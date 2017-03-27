@@ -93,7 +93,7 @@
 	.page-content {
 		@include sulo-action-buttons;
 		h3 {
-			margin: 0;
+			margin-top: 0;
 		}
 		padding-top: 5rem;
 		// .menu.store-nav {
@@ -104,6 +104,9 @@
 			padding: 0.5rem;
 			@include breakpoint(medium) {
 				padding: 2rem;
+			}
+			.button {
+				margin: 0;
 			}
 		}
 		.photo-section {
