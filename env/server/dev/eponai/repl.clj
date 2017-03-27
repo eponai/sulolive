@@ -45,13 +45,18 @@
             reload! (reloader ["src" "test" "env"] true)]
         (doto
           (Thread. (fn []
-                     (while (not @done)
-                       (try
-                         (reload!)
-                         (catch Throwable e
-                           (.printStackTrace e)
-                           (debug "Error when reloading.. Will retry.")))
-                       (Thread/sleep 300))))
+                     (let [min-timeout 300
+                           max-timeout 2000
+                           timeout (atom min-timeout)]
+                       (while (not @done)
+                         (try
+                           (reload!)
+                           (reset! timeout min-timeout)
+                           (catch Throwable e
+                             (.printStackTrace e)
+                             (swap! timeout #(min (* 2 %) max-timeout))
+                             (debug "Error when reloading.. Increased timeout to: " @timeout)))
+                         (Thread/sleep @timeout)))))
           (.setDaemon true)
           (.start))
         (reset! reloader-atom (fn [] (reset! done false)))
