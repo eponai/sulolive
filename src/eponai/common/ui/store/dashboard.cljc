@@ -15,7 +15,8 @@
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.format :as f]))
+    [eponai.common.format :as f]
+    [eponai.common.ui.elements.photo :as photo]))
 
 (defn str->json [s]
   #?(:cljs (cljs.reader/read-string s)
@@ -30,6 +31,52 @@
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
 
+(defn sub-navbar [component]
+  (let [{:query/keys [current-route store]} (om/props component)
+        {:keys [route]} current-route
+        store-id (:db/id store)]
+    (dom/div #js {:className "navbar-container" :id "store-navbar"}
+      (dom/nav #js {:className "top-bar navbar"}
+               (menu/horizontal
+                 nil
+                 (menu/item (when (= route :store-dashboard)
+                              (css/add-class ::css/is-active))
+                            (my-dom/a
+                              (css/add-class :category {:href (routes/url :store-dashboard {:store-id store-id})})
+                              (my-dom/span (css/show-for {:size :medium}) "Dashboard")
+                              (my-dom/i
+                                (css/hide-for {:size :medium} {:classes [:fa :fa-dashboard :fa-fw]}))))
+                 (menu/item (when (= route :store-dashboard/stream)
+                              (css/add-class ::css/is-active))
+                            (my-dom/a
+                              (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
+                              (my-dom/span (css/show-for {:size :medium}) "Stream")
+                              (my-dom/i
+                                (css/hide-for {:size :medium} {:classes [:fa :fa-video-camera :fa-fw]}))))
+                 (menu/item (when (= route :store-dashboard/account)
+                              (css/add-class ::css/is-active))
+                            (my-dom/a
+                              (css/add-class :category {:href (routes/url :store-dashboard/settings {:store-id store-id})})
+                              (my-dom/span (css/show-for {:size :medium}) "Settings")
+                              (my-dom/i
+                                (css/hide-for {:size :medium} {:classes [:fa :fa-video-camera :fa-fw]}))))
+                 (menu/item
+                   (when (= route :store-dashboard/product-list)
+                     (css/add-class ::css/is-active))
+                   (my-dom/a
+                     (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
+                     (my-dom/span (css/show-for {:size :medium}) "Products")
+                     (my-dom/i
+                       (css/hide-for {:size :medium} {:classes [:fa :fa-gift :fa-fw]}))))
+                 (menu/item
+                   (when (= route :store-dashboard/order-list)
+                     (css/add-class ::css/is-active))
+                   (my-dom/a
+                     (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
+                     (my-dom/span (css/show-for {:size :medium}) "Orders")
+                     (my-dom/i
+                       (css/hide-for {:size :medium} {:classes [:fa :fa-file-text-o :fa-fw]})))))))))
+
 (defui Dashboard
   static om/IQuery
   (query [_]
@@ -37,6 +84,7 @@
      {:query/store [:store/uuid
                     :store/name
                     {:store/owners [{:store.owner/user [:user/email]}]}
+                    {:store/photo [:photo/path]}
                     :store/stripe
                     {:store/items [:store.item/uuid
                                    :store.item/name
@@ -46,7 +94,8 @@
                                    {:store.item/skus [:store.item.sku/uuid
                                                       :store.item.sku/quantity
                                                       :store.item.sku/value]}]}
-                    :store/collections]}
+                    :store/collections
+                    {:stream/_store [:stream/status]}]}
      :query/current-route
      :query/messages
      {:proxy/product-list (om/get-query pl/ProductList)}
@@ -66,40 +115,7 @@
       (common/page-container
         {:navbar navbar
          :id     "sulo-store-dashboard"}
-        (dom/div #js {:className "navbar-container" :id "store-navbar"}
-          (dom/nav #js {:className "top-bar navbar"}
-                   (menu/horizontal
-                     nil
-                     (menu/item (when (= route :store-dashboard)
-                                  (css/add-class ::css/is-active))
-                                (my-dom/a
-                                  (css/add-class :category {:href (routes/url :store-dashboard {:store-id store-id})})
-                                  (my-dom/span (css/show-for {:size :medium}) "Dashboard")
-                                  (my-dom/i
-                                    (css/hide-for {:size :medium} {:classes [:fa :fa-dashboard :fa-fw]}))))
-                     (menu/item (when (= route :store-dashboard/stream)
-                                      (css/add-class ::css/is-active))
-                                (my-dom/a
-                                  (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
-                                  (my-dom/span (css/show-for {:size :medium}) "Stream")
-                                  (my-dom/i
-                                    (css/hide-for {:size :medium} {:classes [:fa :fa-video-camera :fa-fw]}))))
-                     (menu/item
-                       (when (= route :store-dashboard/product-list)
-                         (css/add-class ::css/is-active))
-                       (my-dom/a
-                         (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
-                         (my-dom/span (css/show-for {:size :medium}) "Products")
-                         (my-dom/i
-                           (css/hide-for {:size :medium} {:classes [:fa :fa-gift :fa-fw]}))))
-                     (menu/item
-                       (when (= route :store-dashboard/order-list)
-                         (css/add-class ::css/is-active))
-                       (my-dom/a
-                         (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
-                         (my-dom/span (css/show-for {:size :medium}) "Orders")
-                         (my-dom/i
-                           (css/hide-for {:size :medium} {:classes [:fa :fa-file-text-o :fa-fw]})))))))
+        (sub-navbar this)
         (condp = route
           :store-dashboard/order-list (ol/->OrderList (om/computed order-list
                                                                    {:store store}))
@@ -111,6 +127,7 @@
 
           :store-dashboard/stream (ss/->StreamSettings (om/computed stream-settings
                                                                     {:store store}))
+          :store-dashboard/settings (my-dom/div (css/grid-row) "Account")
           :store-dashboard/product-list (pl/->ProductList (om/computed product-list
                                                                        {:route-params route-params}))
           :store-dashboard/create-product (pef/->ProductEditForm (om/computed product-edit
@@ -118,6 +135,48 @@
           :store-dashboard/product (pef/->ProductEditForm (om/computed product-edit
                                                                        {:route-params route-params
                                                                         :product      (find-product store (:product-id route-params))}))
-          nil)))))
+          :store-dashboard
+          (my-dom/div
+            (->> (css/grid-row {:id "sulo-main-dashboard"})
+                 (css/align :center))
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/grid-column-size {:small 10 :medium 4 :large 3}))
+              (my-dom/div
+                (->> (css/add-class ::css/callout)
+                     (css/add-class :profile-photo-container))
+                (photo/circle {:src (get-in store [:store/photo :photo/path])})
+                (my-dom/div
+                  (css/add-class :button-container)
+                  (dom/a #js {:className "button hollow"
+                              :href (routes/url :store {:store-id store-id})} "View Store")
+                  (dom/a #js {:className "button hollow"
+                              :href (routes/url :store-dashboard/settings {:store-id store-id})} "Edit Settings"))))
+            (my-dom/div
+              (->> (css/grid-column)
+                   (css/grid-column-size {:small 12 :medium 8 :large 9}))
+              (my-dom/div
+                (css/grid-row)
+                (my-dom/div
+                  (css/grid-column)
+                  (my-dom/div
+                    (->> {:classes [::css/callout :status-callout]})
+                    (my-dom/div
+                      (css/grid-row)
+                      (my-dom/div
+                        (->> (css/grid-column)
+                             (css/grid-column-size {:small 12 :medium 6})
+                             (css/add-class :stream-status-container))
+                        (dom/div #js {:className "sulo-stream-status offline"}
+                          (dom/i #js {:className "fa fa-circle fa-2x"})
+                          ;(dom/span nil "You are currently")
+                          (dom/span nil "You are currently OFFLINE")))
+                      (my-dom/div
+                        (->> (css/grid-column)
+                             (css/text-align :right))
+                        (dom/a #js {:className "button highlight hollow"
+                                    :href (routes/url :store-dashboard/stream {:store-id store-id})}
+                               (dom/span nil "Stream Settings") (dom/i #js {:className "fa fa-chevron-right fa-fw"}))))
+                    ))))))))))
 
 (def ->Dashboard (om/factory Dashboard))

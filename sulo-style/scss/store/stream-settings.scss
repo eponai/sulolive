@@ -4,35 +4,6 @@
 			padding: 1rem 2rem !important;
 		}
 	}
-	.stream-status-container {
-		border-right: 1px solid $light-gray;
-		display: flex;
-		align-items: center;
-		> * {
-			margin: 0;
-			margin-right: 1rem;
-		}
-		.highlight {
-			color: map-get($foundation-palette, highlight);
-		}
-		.sulo-stream-status {
-			display: flex;
-			align-items: center;
-			> * {
-				margin-right: 1rem;
-			}
-			&.online {
-				i {
-					color: $success-color;
-				}
-			}
-			&.offline {
-				i {
-					color: $dark-gray;
-				}
-			}
-		}
-	}
 	.stream-chat-container {
 		// display: none;
 		position: relative;
@@ -58,6 +29,43 @@
 			// input {
 			// 	// margin: 0;
 			// }
+		}
+	}
+}
+
+.status-callout {
+	.button {
+		margin: 0 !important;
+	}
+}
+
+.stream-status-container {
+	border-right: 1px solid $light-gray;
+	display: flex;
+	align-items: center;
+	> * {
+		margin: 0;
+		margin-right: 1rem;
+	}
+	.highlight {
+		color: map-get($foundation-palette, highlight);
+	}
+
+	.sulo-stream-status {
+		display: flex;
+		align-items: center;
+		> * {
+			margin-right: 1rem;
+		}
+		&.online {
+			i {
+				color: $success-color;
+			}
+		}
+		&.offline {
+			i {
+				color: $dark-gray;
+			}
 		}
 	}
 }

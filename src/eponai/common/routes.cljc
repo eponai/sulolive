@@ -5,6 +5,7 @@
 (def store-routes
   {""           :store
    "/dashboard" {""          :store-dashboard
+                 "/settings" :store-dashboard/settings
                  "/products" {""                                :store-dashboard/product-list
                               ["/" [#"create" :action]]         :store-dashboard/create-product
                               ["/" [#"(\d|\w|-)+" :product-id]] :store-dashboard/product}
