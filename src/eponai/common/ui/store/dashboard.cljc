@@ -149,7 +149,7 @@
               (my-dom/div
                 (->> (css/add-class ::css/callout)
                      (css/add-class :profile-photo-container))
-                (photo/circle {:src (get-in store [:store/photo :photo/path])})
+                (photo/store-photo store)
                 (my-dom/div
                   (css/text-align :center)
                   (dom/h4 nil (:store/name store)))

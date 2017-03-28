@@ -104,7 +104,7 @@
                   (my-dom/div
                     (->> (css/grid-column)
                          (css/grid-column-size {:small 12 :medium 2 :large 1}))
-                    (photo/circle {:src (:photo/path photo)}))
+                    (photo/store-photo store))
                   (my-dom/div
                     (->> (css/grid-column)
                          (css/add-class :shrink))

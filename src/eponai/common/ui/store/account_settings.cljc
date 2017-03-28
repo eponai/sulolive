@@ -208,7 +208,7 @@
              (css/text-align :center)
              (css/grid-column-size {:small 6 :medium 4 :large 3}))
         ;(dom/div #js {:className "profile-photo-edit"})
-        (photo/circle {:src (get-in store [:store/photo :photo/path])})
+        (photo/store-photo store)
         (dom/a #js {:className "button hollow"} "Upload Photo"))
       (my-dom/div
         (css/grid-column)
