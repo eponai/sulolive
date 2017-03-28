@@ -19,7 +19,8 @@
 (def user-routes
   {""        :user
    "/orders" {""                       :user/order-list
-              ["/" [#"\w+" :order-id]] :user/order}})
+              ["/" [#"\w+" :order-id]] :user/order}
+   "/profile" :user/profile})
 
 (def product-routes
   {""                         :products

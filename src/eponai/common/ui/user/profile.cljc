@@ -10,7 +10,8 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.menu :as menu]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.client.routes :as routes]))
 
 (defui Profile
   static om/IQuery
@@ -48,11 +49,18 @@
                                          photo-upload
                                          {:on-photo-upload (fn [photo]
                                                              (om/transact! this [(list 'photo/upload {:photo photo})
-                                                                                  :query/user])
+                                                                                 :query/user])
                                                              (om/update-state! this assoc :file-upload? false))})))))
                               (menu/item nil
                                          (dom/a #js {:className "button hollow expanded"} "Remove Photo"))))))
           (dom/div #js {:className "user-info"}
+            (my-dom/div
+              (css/grid-row)
+              (my-dom/div
+                (->> (css/grid-column)
+                     (css/text-align :center))
+                (dom/h1 nil (:user/name user))))
+
             (my-dom/div (->> (css/grid-row)
                              (css/align :center))
                         (my-dom/div (cond->> (->> (css/grid-column)
@@ -63,12 +71,16 @@
                                     (dom/a #js {:onClick #(when is-current-user? (om/update-state! this assoc :file-upload? true))}
                                            (photo/circle
                                              {:src photo-url}))))
+
             (my-dom/div (->> (css/grid-row)
                              (css/align :center))
                         (my-dom/div (->> (css/grid-column)
                                          (css/grid-column-size {:small 4 :medium 3 :large 2})
                                          (css/text-align :center))
-                                    (dom/a #js {:className "button gray hollow"} (dom/span nil "+ Follow"))))
+                                    (if is-current-user?
+                                      (dom/a #js {:className "button gray hollow"
+                                                  :href      (routes/url :user/profile {:user-id (:db/id user)})} (dom/span nil "Edit Profile"))
+                                      (dom/a #js {:className "button gray"} (dom/span nil "+ Follow")))))
             (my-dom/div (->> (css/grid-row)
 
                              css/grid-column)
@@ -81,7 +93,16 @@
                           (menu/item-tab {:active?  (= tab :products)
                                           :on-click #(om/update-state! this assoc :tab :products)} "Products")
                           (menu/item-tab {:active?  (= tab :about)
-                                          :on-click #(om/update-state! this assoc :tab :about)} "About"))))))
+                                          :on-click #(om/update-state! this assoc :tab :about)} "About")))))
+        (my-dom/div
+          (->> (css/grid-row)
+               css/grid-column
+               (css/text-align :center))
+          (condp = tab
+            :following (my-dom/div (css/add-class ::css/callout) (dom/span nil "NOt following anyone :("))
+            :followers (my-dom/div (css/add-class ::css/callout) (dom/span nil "NO follwers yet"))
+            :products (my-dom/div (css/add-class ::css/callout) (dom/span nil "No products"))
+            :about (my-dom/div (css/add-class ::css/callout) (dom/span nil "Abount section")))))
       )))
 
 (def ->Profile (om/factory Profile))

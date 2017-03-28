@@ -1,51 +1,44 @@
-#sulo-profile .page-content {
+#sulo-profile {
 	.header {
 		border-bottom: 1px solid $light-gray;
-		.photo-container {
-		// 	border-radius: 50%;
-		// 	overflow: hidden;
-			// margin: 2rem 0;
+	}
+	.user-info {
+		h1 {
+			margin-top: 2rem;
+			margin-bottom: 0;
 		}
 	}
 
-	ul {
-		// text-transform: uppercase;
-	}
-
-	.user-info {
-		$color: map-get($foundation-palette, green);
-		// background: rgba($color, 0.05);
-	}
 	.profile-photo {
-		margin: 1.75rem auto;
+		margin: 1rem auto;
 		a {
 			cursor: auto;
 		}
-		// .overlay {
-		// 	display: none;
-		// 	transition: opacity .25s ease-in-out;
-		// 	background: rgba($white, 0.4);
-		// 	.content {
-		// 		margin: 0 auto;
-		// 	}
 
-		// }
 		&.edit-enabled {
 			a {
 				cursor: pointer;
 			}
-			// .overlay {
-			// 	opacity: 0;
-			// 	display: flex;
-			// 	border-radius: 50%;
-			// 	overflow: hidden;
-			// 	// justify-content: flex-end;
-
-			// 	// cursor: pointer;
-			// 	&:hover {
-			// 		opacity: 1;
-			// 	}
-			// }
 		}
 	}
+}
+
+#sulo-profile-edit {
+			.callout {
+			border: 1px solid $light-gray;
+			// box-shadow: 0 1px 2px 0 rgba($primary-color, 0.1);
+			padding: 0.5rem;
+			@include breakpoint(medium) {
+				padding: 2rem;
+			}
+			.button {
+				margin: 0;
+			}
+			.header {
+				font-weight: $global-weight-bold;
+				border-bottom: 1px solid $light-gray;
+				padding-bottom: 0.5rem;
+				margin-bottom: 2rem;
+			}
+		}
 }
