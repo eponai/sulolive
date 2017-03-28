@@ -6,7 +6,8 @@
     [eponai.common.ui.common :as common]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date]
+    [taoensso.timbre :refer [debug]]))
 
 (defui OrderList
   static om/IQuery

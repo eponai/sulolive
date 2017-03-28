@@ -151,12 +151,14 @@
                      (css/add-class :profile-photo-container))
                 (photo/circle {:src (get-in store [:store/photo :photo/path])})
                 (my-dom/div
+                  (css/text-align :center)
+                  (dom/h4 nil (:store/name store)))
+                (my-dom/div
                   (css/add-class :button-container)
                   (dom/a #js {:className "button hollow"
                               :href (routes/url :store {:store-id store-id})} "View Store")
                   (dom/a #js {:className "button hollow"
-                              :href (routes/url :store-dashboard/settings {:store-id store-id})} "Edit Settings")))
-              )
+                              :href (routes/url :store-dashboard/settings {:store-id store-id})} "Edit Store"))))
             (my-dom/div
               (->> (css/grid-column)
                    (css/grid-column-size {:small 12 :medium 8 :large 9}))
@@ -165,7 +167,7 @@
                 (my-dom/div
                   (css/grid-column)
                   (my-dom/div
-                    (->> {:classes [::css/callout :status-callout]})
+                    (->> {:classes [::css/callout :status-callout ::css/notification]})
                     (my-dom/div
                       (css/grid-row)
                       (my-dom/div
@@ -182,22 +184,25 @@
                         (dom/a #js {:className "button highlight hollow"
                                     :href (routes/url :store-dashboard/stream {:store-id store-id})}
                                (dom/span nil "Setup Stream")
-                               (dom/i #js {:className "fa fa-chevron-right fa-fw"}))))
-                    )
+                               (dom/i #js {:className "fa fa-chevron-right fa-fw"})))))
                   (when (not-empty (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed]))
                     (my-dom/div
                       (->> (css/add-class ::css/callout)
-                           (css/add-class ::css/color-warning))
+                           (css/add-class ::css/action)
+                           (css/add-class ::css/notification))
                       (my-dom/div
                         (->> (css/grid-row)
                              (css/align :middle))
                         (my-dom/div
                           (css/grid-column)
-                          (dom/span nil "Business information still needed to activate account"))
+                          (dom/span nil "Business information needed")
+                          (map (fn [n]
+                                 (dom/div nil (dom/span nil n)))
+                               (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed])))
                         (my-dom/div
                           (->> (css/grid-column)
                                (css/text-align :right))
-                          (dom/a #js {:className "button hollow warning"
+                          (dom/a #js {:className "button hollow action"
                                       :href (routes/url :store-dashboard/settings {:store-id store-id})}
                                  (dom/span nil "Update Settings")
                                  (dom/i #js {:className "fa fa-chevron-right fa-fw"})))))))))))))))

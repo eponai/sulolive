@@ -1,5 +1,5 @@
 #sulo-account-settings {
-	.row .row {
+	.row .row .row {
 		margin-bottom: 1rem;
 		.row {
 			margin-bottom: 0;
@@ -21,5 +21,9 @@
 				font-weight: $global-weight-bold;
 			}
 		}
+	}
+
+	.profile-photo-edit {
+		background: $light-gray;
 	}
 }
