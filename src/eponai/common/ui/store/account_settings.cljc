@@ -1,7 +1,11 @@
 (ns eponai.common.ui.store.account-settings
   (:require
+    #?(:cljs [cljs.spec :as s]
+       :clj [clojure.spec :as s])
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.elements.css :as css]
+    [eponai.common.format :as f]
+    [eponai.common.ui.elements.input-validate :as validate]
     #?(:cljs
        [eponai.web.utils :as utils])
     [om.dom :as dom]
@@ -19,37 +23,45 @@
    :stripe.addess/state            "str-business-address-state"
    :stripe.legal-entity/first-name "str-le-first-name"
    :stripe.legal-entity/last-name  "str-le-last-name"
-   :stripe.legal-entity/dob-year   "str-le-dob-year"
-   :stripe.legal-entity/dob-month  "str-le-dob-month"
-   :stripe.legal-entity/dob-day    "str-le-dob-day"})
+   :stripe.legal-entity.dob/year   "str-le-dob-year"
+   :stripe.legal-entity.dob/month  "str-le-dob-month"
+   :stripe.legal-entity.dob/day    "str-le-dob-day"})
+
+(s/def :stripe.legal-entity.dob/day number?)
+(s/def :stripe.legal-entity.dob/month number?)
+(s/def :stripe.legal-entity.dob/year number?)
+(s/def :stripe.legal-entity/first-name (s/and string? #(not-empty %)))
+(s/def :stripe.legal-entity/last-name (s/and string? #(not-empty %)))
+(s/def :stripe.legal-entity/dob (s/keys :req [:stripe.legal-entity.dob/year
+                                              :stripe.legal-entity.dob/month
+                                              :stripe.legal-entity.dob/day]))
+(s/def :stripe/legal-entity (s/keys :opt [:stripe.legal-entity/dob
+                                          :stripe.legal-entity/first_name
+                                          :stripe.legal-entity/last_name]))
 
 (defn legal-entity []
   #?(:cljs
-     (let [{:stripe.legal-entity/keys [dob-year dob-month dob-day first-name last-name]} form-elements
-           dob-y (c/parse-long-safe (utils/input-value-by-id dob-year))
-           dob-m (c/parse-long-safe (utils/input-value-by-id dob-month))
-           dob-d (c/parse-long-safe (utils/input-value-by-id dob-day))
+     (let [{:stripe.legal-entity/keys [first-name last-name]
+            :stripe.legal-entity.dob/keys [year month day]} form-elements
+           y (c/parse-long-safe (utils/input-value-by-id year))
+           m (c/parse-long-safe (utils/input-value-by-id month))
+           d (c/parse-long-safe (utils/input-value-by-id day))
            fn (utils/input-value-by-id first-name)
            ln (utils/input-value-by-id last-name)
 
-           dob (not-empty (cond-> {}
-                                  (some? dob-y)
-                                  (assoc :year dob-y)
-                                  (some? dob-m)
-                                  (assoc :month dob-m)
-                                  (some? dob-d)
-                                  (assoc :day dob-d)))]
+           dob (when (or y m d)
+                 {:stripe.legal-entity.dob/year  y
+                  :stripe.legal-entity.dob/month m
+                  :stripe.legal-entity.dob/day   d})]
        (not-empty
-         (cond-> {}
-                 (not-empty fn)
-                 (assoc :first_name fn)
-                 (not-empty ln)
-                 (assoc :last_name ln)
-                 (not-empty dob)
-                 (assoc :dob dob))))))
+         (f/remove-nil-keys
+           {:stripe.legal-entity/first_name fn
+            :stripe.legal-entity/last_name ln
+            :stripe.legal-entity/dob dob})))))
 
 (defn personal-details [component]
-  (let [{:query/keys [stripe-account]} (om/props component)]
+  (let [{:query/keys [stripe-account]} (om/props component)
+        {:keys [validation-error]} (om/get-state component)]
     (my-dom/div
       (->> (css/grid-row)
            (css/align :center))
@@ -90,28 +102,39 @@
               (css/grid-row)
               (my-dom/div
                 (css/grid-column)
-                (dom/input #js {:type         "text"
-                                :id           (:stripe.legal-entity/dob-day form-elements)
-                                :placeholder  "Day"
-                                :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/dob :stripe.legal-entity.dob/day])}))
+                (validate/input
+                  :stripe.legal-entity.dob/day
+                  {:id (:stripe.legal-entity.dob/day form-elements)
+                   :type "number"
+                   :placeholder "Day"
+                   :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/dob :stripe.legal-entity.dob/day])}
+                  validation-error)
+                ;(dom/input #js {:type         "text"
+                ;                :id           (:stripe.legal-entity.dob/day form-elements)
+                ;                :placeholder  "Day"
+                ;                :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/dob :stripe.legal-entity.dob/day])})
+                )
               (my-dom/div
                 (css/grid-column)
-                (dom/input #js {:type         "text"
-                                :id           (:stripe.legal-entity/dob-month form-elements)
-                                :placeholder  "Month"
-                                :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/dob :stripe.legal-entity.dob/month])}))
+                (validate/input
+                  :stripe.legal-entity.dob/month
+                  {:type         "number"
+                   :id           (:stripe.legal-entity.dob/month form-elements)
+                   :placeholder  "Month"
+                   :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/dob :stripe.legal-entity.dob/month])}
+                  validation-error))
+
               (my-dom/div
                 (css/grid-column)
-                (dom/input #js {:type         "text"
-                                :id           (:stripe.legal-entity/dob-year form-elements)
-                                :placeholder  "Year"
-                                :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/dob :stripe.legal-entity.dob/year])})))))))))
+                (validate/input
+                  :stripe.legal-entity.dob/year
+                  {:type         "number"
+                   :id           (:stripe.legal-entity.dob/year form-elements)
+                   :placeholder  "Year"
+                   :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/dob :stripe.legal-entity.dob/year])}
+                  validation-error)))))))))
 
 (defn account-details [component]
-
-  ;(dom/fieldset
-  ;  #js {:className "fieldset"}
-  ;  (dom/legend nil "Account Details"))
   (my-dom/div
     (->> (css/grid-row)
          (css/align :center))
@@ -233,11 +256,19 @@
      (save-settings
        [this]
        (let [{:keys [store]} (om/get-computed this)
-             legal-entity-params (legal-entity)]
-         (when legal-entity-params
-           (om/transact! this `[(stripe/update-account ~{:params   {:legal_entity legal-entity-params}
+             le (legal-entity)
+             validation-error (s/explain-data :stripe/legal-entity le)]
+         (debug "Legal entity: " le)
+         (debug "LEGAL ENTITY VALIDATION: " validation-error)
+         (when (nil? validation-error)
+           (om/transact! this `[(stripe/update-account ~{:params   {:legal_entity le}
                                                          :store-id (:db/id store)})
-                                :query/stripe-account])))))
+                                :query/stripe-account]))
+         (om/update-state! this assoc :validation-error validation-error))))
+  #?(:cljs
+     (validate-input
+       [this]
+       (om/update-state! this assoc :validation-error (s/explain-data :stripe/legal-entity (legal-entity)))))
   (render [this]
     (let [{:query/keys [stripe-account]} (om/props this)
           {:keys [store]} (om/get-computed this)]

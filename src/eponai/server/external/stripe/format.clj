@@ -4,22 +4,19 @@
   (:import
     (com.stripe.model OrderItem Order ShippingDetails Address Product SKU Account Account$Verification LegalEntity BankAccount LegalEntity$DateOfBirth)))
 
-(defn remove-nil-keys [m]
-  (into {} (remove (fn [[k v]] (nil? v)) m)))
-
 (defn stripe->verification [^Account$Verification v]
-  (remove-nil-keys
+  (f/remove-nil-keys
     {:stripe.verification/fields-needed (.getFieldsNeeded v)
      :stripe.verification/due-by        (.getDueBy v)}))
 
 
 (defn stripe->legal-entity [^LegalEntity le]
   (let [dob* (fn [dob]
-               (remove-nil-keys
+               (f/remove-nil-keys
                  {:stripe.legal-entity.dob/year  (.getYear dob)
                   :stripe.legal-entity.dob/month (.getMonth dob)
                   :stripe.legal-entity.dob/day   (.getDay dob)}))]
-    (remove-nil-keys
+    (f/remove-nil-keys
       {:stripe.legal-entity/first-name (.getFirstName le)
        :stripe.legal-entity/last-name  (.getLastName le)
        :stripe.legal-entity/dob        (dob* (.getDob le))})))
@@ -30,7 +27,7 @@
    :stripe.external-account/last4     (.getLast4 ba)})
 
 (defn stripe->account [^Account a]
-  (remove-nil-keys
+  (f/remove-nil-keys
     {:stripe/id                (.getId a)
      :stripe/country           (.getCountry a)
      :stripe/verification      (stripe->verification (.getVerification a))
@@ -72,13 +69,13 @@
     ;;            being a 0-decimal currency"
     ;;       Do we use the stripe number somehow, or do we use the price we were
     ;;       passed? Gross.
-    (remove-nil-keys
+    (f/remove-nil-keys
       {:store.item.sku/uuid  (f/str->uuid (.getId s))
        :store.item.sku/price (stripe->price (.getPrice s))
        :store.item.sku/value (get (.getAttributes s) "variation")})))
 
 (defn stripe->product [^Product p]
-  (remove-nil-keys
+  (f/remove-nil-keys
     {:store.item/uuid    (f/str->uuid (.getId p))
      :store.item/name    (.getName p)
      :store.item/skus    (map stripe->sku (.getData (.getSkus p)))
@@ -101,7 +98,7 @@
 
   see https://stripe.com/docs/api#order_item_object for more information about OrderItem."
   [^OrderItem oi]
-  (remove-nil-keys
+  (f/remove-nil-keys
     {:order.item/amount      (.getAmount oi)
      :order.item/currency    (.getCurrency oi)
      :order.item/description (.getDescription oi)
@@ -145,7 +142,7 @@
 
   See https://stripe.com/docs/api#order_object for more info about the Order object."
   [^Order o]
-  (remove-nil-keys
+  (f/remove-nil-keys
     {:order/id                       (.getId o)
      :order/amount                   (stripe->price (.getAmount o))
      ;:order/amount-returned          (.getAmountRefunded o)

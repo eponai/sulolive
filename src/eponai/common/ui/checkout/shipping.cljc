@@ -5,8 +5,7 @@
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     #?(:cljs [cljs.spec :as s]
-       :clj
-    [clojure.spec :as s])
+       :clj [clojure.spec :as s])
     #?(:cljs
        [eponai.web.utils :as web-utils])
     #?(:cljs
