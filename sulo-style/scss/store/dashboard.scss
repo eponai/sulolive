@@ -37,6 +37,10 @@
 }
 
 #sulo-store-dashboard {
+	#sulo-navbar .navbar-container {
+		box-shadow: none;
+		border-bottom: 1px solid $light-gray;
+	}
 	.row {
 		max-width: 80rem;
 	}

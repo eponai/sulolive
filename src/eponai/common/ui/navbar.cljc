@@ -16,68 +16,87 @@
   (reduce + (map :store.item/price items)))
 
 (defn cart-dropdown [{:keys [cart/items cart/price]}]
-  (dom/div #js {:className "cart-container dropdown-pane"}
-    (apply menu/vertical
-           {:classes [::css/cart]}
-           (map (fn [i]
-                  (let [{:store.item/keys [price photos] p-name :store.item/name :as item} (:store.item/_skus i)]
-                    (menu/item-link
-                      {:href    (routes/url :product {:product-id (:db/id item)})
-                       :classes [:cart-link]}
-                      (photo/square
-                        {:src (:photo/path (first photos))})
-                      (dom/div #js {:className ""}
-                        (dom/div #js {:className "content-item-title-section"}
-                          (dom/p nil (dom/span #js {:className "name"} p-name)))
-                        (dom/div #js {:className "content-item-subtitle-section"}
-                          (dom/strong #js {:className "price"}
-                                      (ui-utils/two-decimal-price price)))))))
-                (take 3 items)))
-
-    (dom/div #js {:className "callout transparent"}
-      (if (< 3 (count items))
-        (dom/small nil (str "You have " (- (count items) 3) " more item(s) in your bag"))
-        (dom/small nil (str "You have " (count items) " item(s) in your bag")))
-      (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price (compute-item-price (map #(get % :store.item/_skus) items))))))
-    (dom/a #js {:className "button expanded hollow gray"
-                :href      (routes/url :shopping-bag nil)} "View My Bag")))
+  (dom/div #js {:className "cart-dropdown dropdown-pane"}
+    (menu/vertical
+      {:classes [::css/cart]}
+      (menu/item nil
+                 (menu/vertical
+                   (css/add-class :nested)
+                   (map (fn [i]
+                          (let [{:store.item/keys [price photos] p-name :store.item/name :as item} (:store.item/_skus i)]
+                            (menu/item-link
+                              {:href    (routes/url :product {:product-id (:db/id item)})
+                               :classes [:cart-link]}
+                              (photo/square
+                                {:src (:photo/path (first photos))})
+                              (dom/div #js {:className ""}
+                                (dom/div #js {:className "content-item-title-section"}
+                                  (dom/p nil (dom/span #js {:className "name"} p-name)))
+                                (dom/div #js {:className "content-item-subtitle-section"}
+                                  (dom/strong #js {:className "price"}
+                                              (ui-utils/two-decimal-price price)))))))
+                        (take 3 items))))
+      (menu/item nil (dom/div #js {:className "callout transparent"}
+                       (if (< 3 (count items))
+                         (dom/small nil (str "You have " (- (count items) 3) " more item(s) in your bag"))
+                         (dom/small nil (str "You have " (count items) " item(s) in your bag")))
+                       (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price (compute-item-price (map #(get % :store.item/_skus) items)))))))
+      (menu/item (css/text-align :center)
+                 (dom/a #js {:className "button expanded gray"
+                             :href      (routes/url :shopping-bag nil)} "View My Bag")))))
 
 (defn category-dropdown []
-  (dom/div #js {:className "dropdown-pane"}
+  (dom/div #js {:className "dropdown-pane collection-dropdown"}
     (menu/vertical
       {:classes [::css/categories]}
-      (menu/item-link
-        {:href (str "/goods?category=clothing")}
-        (dom/span nil "Clothing"))
-      (menu/item-link
-        {:href (str "/goods?category=accessories")}
-        (dom/span nil "Accessories"))
-      (menu/item-link
-        {:href (str "/goods?category=home")}
-        (dom/span nil "Home")))))
+      (map-indexed
+        (fn [i c]
+          (menu/item-link {:href (routes/url :products/categories {:category c})}
+                          (dom/span nil (s/capitalize c))))
+        ["women" "men" "kids" "home" "art"]))))
 
 (defn user-dropdown [component user]
   (let [store (get (first (get user :store.owner/_user)) :store/_owners)]
-    (dom/div #js {:className "dropdown-pane"}
-      (dom/ul #js {:className "menu vertical"}
-              (when user
-                (dom/li nil
-                        (dom/a #js {:href (routes/url :user {:user-id (:db/id user)})}
-                               "My Profile")))
-              (when user
-                (dom/li nil
-                        (dom/a #js {:href (routes/url :user/order-list {:user-id (:db/id user)})}
-                               "My Orders")))
-              (when store
-                (dom/li nil
-                        (dom/a #js {:href (routes/url :store-dashboard {:store-id (:db/id store)})}
-                               "My Store")))
-              (dom/li nil
-                      (dom/a #js {:href "/settings"}
-                             "Account Settings"))
-              (dom/li nil
-                      (dom/a #js {:href "/logout"}
-                             "Sign Out"))))))
+    (my-dom/div
+      (->> (css/add-class :dropdown-pane)
+           (css/add-class :user-dropdown))
+      (menu/vertical
+        (css/add-class :user-dropdown-menu)
+
+        ;(when user
+        ;  (menu/item
+        ;    (css/add-class :user-info)
+        ;    (dom/a #js {:href (routes/url :user/order-list {:user-id (:db/id user)})}
+        ;           (dom/span nil "Purchases"))))
+        ;(when user
+        ;  (menu/item
+        ;    (css/add-class :user-info)
+        ;    (dom/a #js {:href (routes/url :user {:user-id (:db/id user)})}
+        ;           (dom/span nil "Profile"))))
+        (when store
+          (menu/item
+            (css/add-class :my-stores)
+            (dom/label nil (dom/small nil "Manage Store"))
+            (menu/vertical
+              (css/add-class :nested)
+              (menu/item-link
+                {:href (routes/url :store-dashboard {:store-id (:db/id store)})}
+                (:store/name store)))))
+        (when user
+          (menu/item
+            (css/add-class :user-info)
+            (menu/vertical
+              (css/add-class :nested)
+              (dom/label nil (dom/small nil "Your Account"))
+              (menu/item-link {:href (routes/url :user {:user-id (:db/id user)})}
+                              (dom/small nil "Profile"))
+              (menu/item-link {:href (routes/url :user/order-list {:user-id (:db/id user)})}
+                              (dom/small nil "Purchases")))))
+        (menu/item nil
+                   (menu/vertical
+                     (css/add-class :nested))
+                   (menu/item-link {:href "/logout"}
+                                   (dom/small nil "Sign out")))))))
 
 (defn navbar-content [& content]
   (apply dom/div #js {:className "navbar top-bar"}
@@ -174,18 +193,24 @@
                                                          (when (= 13 (.. e -keyCode))
                                                            (let [search-string (.. e -target -value)]
                                                              (set! js/window.location (str "/goods?search=" search-string))))))})))
+          ;(when-let [store (get (first (get auth :store.owner/_user)) :store/_owners)]
+          ;  (menu/item {:classes [:store-photo-item]}
+          ;             (dom/a #js {:href (routes/url :store-dashboard {:store-id (:db/id store)})}
+          ;                    (photo/store-photo store))))
+
           (menu/item-dropdown
             {:dropdown (user-dropdown component auth)
              :classes [:user-photo-item]}
             (photo/user-photo auth))
+
           (if did-mount?
             (menu/item-dropdown
               {:dropdown (cart-dropdown cart)
-               :href     "/shopping-bag"}
+               :href (routes/url :shopping-bag)}
               (icons/shopping-bag))
             (menu/item-dropdown
-              {:href "/shopping-bag"}
-              (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))))))))
+              {:href (routes/url :shopping-bag)}
+              (icons/shopping-bag))))))))
 
 (defui Navbar
   static om/IQuery
@@ -197,7 +222,8 @@
      {:query/auth [:db/id
                    :user/email
                    {:user/photo [:photo/path]}
-                   {:store.owner/_user [{:store/_owners [:store/name :db/id]}]}]}
+                   {:store.owner/_user [{:store/_owners [:store/name :db/id
+                                                         {:store/photo [:photo/path]}]}]}]}
      '{:query/top-categories [:category/label :category/path :category/level {:category/children ...}]}
      :query/current-route])
   Object
