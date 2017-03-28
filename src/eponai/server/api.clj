@@ -106,7 +106,7 @@
   ;(debug "Sign req: " (get-in req [:params :x-amz-meta-size]))
   (let [image-size (Long/parseLong (get-in req [:params :x-amz-meta-size]))
         aws-s3 (get-in req [:eponai.server.middleware/system :system/aws-s3])]
-    (if (< image-size 1000000)
+    (if (< image-size 5000000)
       (let [signature (s3/sign aws-s3)]
         (debug "SIGNED: " signature)
         signature)

@@ -47,7 +47,7 @@
                                        (om/computed
                                          photo-upload
                                          {:on-photo-upload (fn [photo]
-                                                             (om/transact! this `[(photo/upload ~{:photo photo})
+                                                             (om/transact! this [(list 'photo/upload {:photo photo})
                                                                                   :query/user])
                                                              (om/update-state! this assoc :file-upload? false))})))))
                               (menu/item nil

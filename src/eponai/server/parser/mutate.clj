@@ -15,7 +15,8 @@
     [eponai.common :as c]
     [buddy.sign.jwt :as jwt]
     [eponai.server.api.store :as store]
-    [eponai.server.external.aws-s3 :as s3]))
+    [eponai.server.external.aws-s3 :as s3]
+    [eponai.common.format :as f]))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -70,8 +71,9 @@
              ;; TODO: Cache the user-id query for each call to parser and auth, since more mutations
              ;; and reads will use the user-eid
              (let [user-eid (query-user-id env)
-                   photo (s3/upload-photo (:system/aws-s3) (:photo params))]
-               (db/transact state [photo [:db/add user-eid :user/photo (:db/id photo)]])))})
+                   photo (f/photo (s3/upload-photo (:system/aws-s3 system) (:photo params)))]
+               (db/transact state [photo
+                                   [:db/add user-eid :user/photo (:db/id photo)]])))})
 
 (defmutation stream-token/generate
   [{:keys [state db parser ::parser/return ::parser/exception auth system] :as env} k {:keys [store-id]}]

@@ -175,64 +175,17 @@
                                                            (let [search-string (.. e -target -value)]
                                                              (set! js/window.location (str "/goods?search=" search-string))))))})))
           (menu/item-dropdown
-            {:dropdown (user-dropdown component auth)}
-            (dom/i #js {:className "fa fa-user fa-fw"}))
+            {:dropdown (user-dropdown component auth)
+             :classes [:user-photo-item]}
+            (photo/user-photo auth))
           (if did-mount?
             (menu/item-dropdown
               {:dropdown (cart-dropdown cart)
                :href     "/shopping-bag"}
-              (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))
+              (icons/shopping-bag))
             (menu/item-dropdown
               {:href "/shopping-bag"}
               (dom/i #js {:className "fa fa-shopping-cart fa-fw"}))))))))
-
-(defn store-navbar [component]
-  (let [{:query/keys [current-route auth]} (om/props component)
-        {:keys [route-params]} current-route
-        {:keys [store-id]} route-params]
-    (navbar-content
-      (dom/div #js {:className "top-bar-left"}
-        (menu/horizontal
-          nil
-          (menu/item-link {:href "/"
-                           :id   "navbar-brand"}
-                          (dom/span nil "Sulo"))
-          (menu/item-link
-            (->> (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
-                 (css/show-for {:size :large}))
-            (dom/span nil "Stream"))
-          (menu/item-link
-            (->> (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
-                 (css/show-for {:size :large}))
-            (dom/span nil "Products"))
-          (menu/item-link
-            (->> (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
-                 (css/show-for {:size :large}))
-            (dom/span nil "Orders"))))
-      (dom/div #js {:className "top-bar-right"}
-
-        (menu/horizontal
-          nil
-          (menu/item nil
-                     (my-dom/a
-                       (->> {:id "search-icon"}
-                            (css/show-for {:size :small :only? true}))
-                       (dom/i #js {:className "fa fa-search fa-fw"}))
-                     (my-dom/div
-                       (css/hide-for {:size :small :only? true})
-                       (dom/input #js {:type        "text"
-                                       :placeholder "Search on SULO..."
-                                       :onKeyDown   (fn [e]
-                                                      #?(:cljs
-                                                         (when (= 13 (.. e -keyCode))
-                                                           (let [search-string (.. e -target -value)]
-                                                             (set! js/window.location (str "/goods?search=" search-string))))))})))
-          (menu/item-dropdown
-            {:dropdown (user-dropdown component auth)}
-            (dom/i #js {:className "fa fa-user fa-fw"}))
-          (menu/item-dropdown
-            {:href "/shopping-bag"}
-            (dom/i #js {:className "fa fa-shopping-cart fa-fw"})))))))
 
 (defui Navbar
   static om/IQuery
@@ -241,7 +194,10 @@
                                                      {:store.item/photos [:photo/path]}
                                                      :store.item/name
                                                      {:store/_items [:store/name]}]}]}]}
-     {:query/auth [:db/id :user/email {:store.owner/_user [{:store/_owners [:store/name :db/id]}]}]}
+     {:query/auth [:db/id
+                   :user/email
+                   {:user/photo [:photo/path]}
+                   {:store.owner/_user [{:store/_owners [:store/name :db/id]}]}]}
      '{:query/top-categories [:category/label :category/path :category/level {:category/children ...}]}
      :query/current-route])
   Object
@@ -288,9 +244,6 @@
                   (dom/div #js {:className "navbar-container"}
                     (dom/div #js {:className "top-bar navbar"}
                       (cond
-                        ;(and route (= (or (namespace route) (name route)) "store-dashboard"))
-                        ;(store-navbar this)
-
                             ;; When the user is going through the checkout flow, don't let them navigate anywhere else.
                             (= route :checkout)
                             (navbar-content

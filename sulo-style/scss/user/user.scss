@@ -2,7 +2,10 @@
 #sulo-user {
 	.page-container {
 		$color: map-get($foundation-palette, primary);
-		background: rgba($color, 0.03);
+		// background: rgba($color, 0.03);
+		.profile-photo {
+			margin: 1rem 0;
+		}
 	}
 
 	tfoot {

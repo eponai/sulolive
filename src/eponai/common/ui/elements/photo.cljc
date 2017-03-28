@@ -90,3 +90,9 @@
         photo-src (get-in store [:store/photo :photo/path] default-src)]
     (circle {:src photo-src
              :classes [:store-photo]})))
+
+(defn user-photo [user]
+  (let [default-src "/assets/img/storefront.jpg"
+        photo-src (get-in user [:user/photo :photo/path] default-src)]
+    (circle {:src photo-src
+             :classes [:user-photo]})))
