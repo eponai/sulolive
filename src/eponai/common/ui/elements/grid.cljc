@@ -35,3 +35,25 @@
                      (warn "Ignoring column offset CSS class for invalid breakpoint: " k
                            ". Available are: " (keys css/breakpoints))))]
     (reduce (fn [m class] (css/add-class class m)) opts (map class-fn offsets))))
+
+(defn column-order [orders & [opts]]
+  (let [class-fn (fn [[k v]]
+                   (if (contains? css/breakpoints k)
+                     (if (<= 1 v grid-cols)
+                       (str (get css/breakpoints k) "-order-" v)
+                       (warn "Ignoring column order CSS class for invalid order value: " v
+                             ". Available values are " 1 "-" grid-cols))
+                     (warn "Ignoring column order CSS class for invalid breakpoint: " k
+                           ". Available are: " (keys css/breakpoints))))]
+    (reduce (fn [m class] (css/add-class class m)) opts (map class-fn orders))))
+
+(defn columns-in-row [counts & [opts]]
+  (let [class-fn (fn [[k v]]
+                   (if (contains? css/breakpoints k)
+                     (if (<= 1 v grid-cols)
+                       (str (get css/breakpoints k) "-up-" v)
+                       (warn "Ignoring row column count CSS class for invalid column count: " v
+                             ". Available values are 1-" grid-cols))
+                     (warn "Ignoring row column count CSS class for invalid breakpoint: " k
+                           ". Available are: " (keys css/breakpoints))))]
+    (reduce #(css/add-class %2 %1) opts (map class-fn counts))))
