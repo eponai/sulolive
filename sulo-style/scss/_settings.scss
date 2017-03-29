@@ -80,6 +80,9 @@ $global-text-direction: ltr;
 $global-flexbox: true;
 $print-transparent-backgrounds: true;
 
+$global-border: 1px solid $light-gray;
+$global-border-secondary: 1px solid rgba($light-gray, 0.5);
+
 @include add-foundation-colors;
 
 // 2. Breakpoints

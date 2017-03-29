@@ -1,41 +1,28 @@
-.callout.transparent {
-	border: none;
-}
+
 #sulo-shopping-bag {
-	.page-container {
-		$color: map-get($foundation-palette, primary);
-		background: rgba($color, 0.03);
-		.page-content .callout {
-			box-shadow: 0 1px 3px 0 rgba($black, 0.1);
-		}
+	.button {
+		margin: 0;
 	}
-	.callout .callout {
-		box-shadow: none;
-	}
-	.row.collapse.callout {
-		padding: 1rem 0;
-		.column {
-			padding-right: 1rem;
-			&:last-child {
-				padding-right: 0;
-			}
-		}
-		.button {
-			margin: 0;
+	.page-content {
+		padding-top: 2rem;
+		.callout {
+			border: $global-border;
 		}
 	}
 	.cart-checkout-item {
-		.item.callout {
-			margin: 0;
-			// border-top: 1px solid $light-gray;
-			border-top: 1px solid $light-gray;
-			box-shadow: none;
-			// margin-bottom: 1rem;
+		.menu {
+			border-top: $global-border;			
+			border-bottom: $global-border;
+			li {
+				border-top: $global-border-secondary;
+				&:first-child {
+					border: none;
+				}
+				padding: 0.5rem 0;
+			}
 		}
 	}
-	h3 {
-		// margin-top: 4%;
-	}
+
 	a.name {
 		margin-bottom: 2%;
 		max-height: 4.5rem;
@@ -49,42 +36,7 @@
 			line-height: 1.5;
 		}
 	}
-	h3 {
-		text-transform: uppercase;
-	}
-	
-	// input {
-		// margin: 0; 
-	// }
-	.callout {
-		> .row > .column:first-child {
-			// border-right: 1px solid $medium-gray;
-		}
-		table {
-			margin-top: 2rem;
-			tbody {
-				border: none;
-				td {
-					padding: 0;
-					padding-bottom: 0.25rem;
-				}
-			}
-			// $border-color: $dark-gray;//map-get($foundation-palette, success);
-			// $border: 1px solid rgba(10,10,10,0.1);
-		}
-	}
-	tbody {
-		background-color: transparent;
-	}
-	tr {
-		$border-color: $black;
-		$border: 1px solid rgba($border-color, 0.05);
-		background: transparent;
-		&.total-price {
-			border-top: $border;
-			font-weight: bold;
-		}
-	}
+
 
 	.cart-empty, .cart-loading {
 		padding: 1.5rem;
@@ -93,6 +45,7 @@
 		}
 		padding: 2.5rem;
 	}
+	
 	.cart-loading {
 		color: rgba($black, 0.2);
 	}

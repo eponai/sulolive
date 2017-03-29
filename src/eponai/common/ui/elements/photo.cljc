@@ -96,3 +96,6 @@
         photo-src (get-in user [:user/photo :photo/path] default-src)]
     (circle {:src photo-src
              :classes [:user-photo]})))
+
+(defn product-photo [photo]
+  (square {:src (:photo/path photo)}))

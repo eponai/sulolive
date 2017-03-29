@@ -94,9 +94,9 @@
                               (dom/small nil "Purchases")))))
         (menu/item nil
                    (menu/vertical
-                     (css/add-class :nested))
-                   (menu/item-link {:href "/logout"}
-                                   (dom/small nil "Sign out")))))))
+                     (css/add-class :nested)
+                     (menu/item-link {:href "/logout"}
+                                     (dom/small nil "Sign out"))))))))
 
 (defn navbar-content [& content]
   (apply dom/div #js {:className "navbar top-bar"}

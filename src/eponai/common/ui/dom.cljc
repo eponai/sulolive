@@ -45,6 +45,9 @@
 (defn i [opts & content]
   (element dom/i opts content))
 
+(defn p [opts & content]
+  (element dom/p opts content))
+
 (defn span [opts & content]
   (element dom/span opts content))
 
@@ -65,6 +68,9 @@
 
 (defn h4 [opts & content]
   (element dom/h4 opts content))
+
+(defn h5 [opts & content]
+  (element dom/h5 opts content))
 
 (defn input [opts & content]
   (element dom/input opts content))
