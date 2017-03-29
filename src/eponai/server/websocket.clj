@@ -1,83 +1,134 @@
 (ns eponai.server.websocket
   (:require
-    [clojure.core.async :as a :refer [go <!]]
+    [clojure.core.async :as a :refer [go <! go-loop]]
     [eponai.server.external.chat :as chat]
     [com.stuartsierra.component :as component]
-    [suspendable.core :as suspendable]
     [taoensso.sente :as sente]
     [taoensso.sente.server-adapters.aleph :as sente.aleph]
     [taoensso.sente.packers.transit :as sente-transit]
     [taoensso.timbre :refer [debug error warn]]
-    [taoensso.timbre :as timbre]))
+    [datascript.core :as d]
+    [eponai.common.database :as db]))
 
 (defprotocol IWebsocket
   (handle-get-request [this request])
   (handler-post-request [this request]))
 
-(defn- <send-store-ids-to-clients [sente control-chan store-id-stream store-id->uids]
+(defprotocol ISubscriptionStore
+  (subscribe-to-store [this store-id uid])
+  (unsubscribe-from-store [this store-id uid])
+  (get-subscribers [this store-id])
+  (remove-subscriber [this uid]))
+
+(defn- update-subscriber [this store-id uid db-fn]
+  (let [temp-store (d/tempid :db/user)
+        temp-sub (d/tempid :db/user)]
+    (update this :db d/db-with [{:db/id    temp-store
+                                 :store/id store-id}
+                                {:db/id          temp-sub
+                                 :subscriber/uid uid}
+                                [db-fn temp-sub :subscriber/subscriptions temp-store]])))
+
+(defrecord DatascriptSubscriptionStore [db]
+  ISubscriptionStore
+  (subscribe-to-store [this store-id uid]
+    (debug "Adding :uid: " uid " to store listening on: " store-id)
+    (update-subscriber this store-id uid :db/add))
+  (unsubscribe-from-store [this store-id uid]
+    (debug "Removing :uid: " uid " to store listening on: " store-id)
+    (update-subscriber this store-id uid :db/retract))
+  (get-subscribers [this store-id]
+    (db/all-with db {:where   '[[?store :store/id ?store-id]
+                                [?sub :subscriber/subscriptions ?store]
+                                [?sub :subscriber/uid ?e]]
+                     :symbols {'?store-id store-id}}))
+  (remove-subscriber [this uid]
+    (debug "Removing :uid: " uid)
+    (let [sub (db/one-with db {:where   '[[?e :subscriber/uid ?uid]]
+                               :symbols {'?uid uid}})]
+      (cond-> this
+              (some? sub)
+              (update :db d/db-with [[:db.fn/retractEntity sub]])))))
+
+(defn datascript-subscription-store []
+  (-> (d/create-conn {:store/id                 {:db/unique :db.unique/identity}
+                      :subscriber/uid           {:db/unique :db.unique/identity}
+                      :subscriber/subscriptions {:db/cardinality :db.cardinality/many
+                                                 :db/valueType   :db.type/ref}})
+      (d/db)
+      (->DatascriptSubscriptionStore)))
+
+(defn- <send-store-ids-to-clients [sente control-chan store-id-stream subscription-store]
   (let [{:keys [ch-recv connected-uids send-fn]} sente
-        event-handler (fn [{:keys [event id ?data ?reply-fn uid ring-req client-id]}]
-                        (let [[event-id event-data] event]
-                          (condp = event-id
-                            :store-chat/start-listening!
-                            (if (some? (:store-id event-data))
-                              (do
-                                (debug "Adding :uid: " uid " to store listening on: " (:store-id event-data))
-                                (swap! store-id->uids update (:store-id event-data) (fnil conj #{}) uid))
-                              (debug "No :store-id key found in event: " event))
-                            :store-chat/stop-listening!
-                            (if (some? (:store-id event-data))
-                              (do
-                                (debug "Removing :uid: " uid " to store listening on: " (:store-id event-data))
-                                (swap! store-id->uids update (:store-id event-data (fnil disj #{}) uid)))
-                              (debug "No :store-id key found in event: " event))
-                            (debug "Unhandled event: " [:uid uid :event event]))))]
-    (go
-      (loop []
-        (debug "Awaiting new value for websocket")
-        (let [[v c] (a/alts! [ch-recv store-id-stream control-chan])]
-          (condp = c
-            control-chan (debug "Exiting chat websocket due to value on control-channel: " v)
-            ch-recv (do
-                      (try
-                        (debug "Websocket event: " (dissoc v :ring-req))
-                        (event-handler v)
-                        (catch Exception e
-                          (error "Exception in chat-websocket: " e)
-                          (debug "Will continue chat-websocket until there's an Error."))
-                        (catch Error e
-                          (error "Error in chat-websocket: " e)
-                          (a/put! control-chan e)))
-                      (recur))
-            store-id-stream (if-not v
-                              (debug "store-id-stream closed. Bailing out.")
-                              (let [store-id (:store-id v)]
-                                (debug "Got store-id: " store-id)
-                                (try
-                                  (if (nil? store-id)
-                                    (warn "No store-id found in value returned from store-id stream. Value was: " v)
-                                    (let [uids-listening-for-id (get @store-id->uids store-id)]
-                                      (debug "Uids listening for store-id: " store-id " -> " (vec uids-listening-for-id))
-                                      (doseq [uid uids-listening-for-id]
-                                       (if (contains? (:any @connected-uids) uid)
-                                         (do
-                                           (debug "Sending store id update to uid: " uid [:store-id store-id])
-                                           (send-fn uid [:store-chat/update (select-keys v [:store-id :basis-t])])
-                                           (debug "Sent store id update to uid: " uid))
-                                         (do
-                                           (debug "uid was no longer connected to the server(?). Removing: " uid
-                                                  " from " store-id)
-                                           ;; TODO: REMOVE THIS debug, it's for testing only right now.
-                                           (debug "connected-uids: " @connected-uids)
-                                           (swap! store-id->uids update store-id disj uid))))))
-                                  ;; TODO: DRY this (it's a copy from the handler above
-                                  (catch Exception e
-                                    (error "Exception in chat-websocket: " e)
-                                    (debug "Will continue chat-websocket until there's an Error."))
-                                  (catch Error e
-                                    (error "Error in chat-websocket: " e)
-                                    (a/put! control-chan e)))
-                                (recur)))))))))
+        handler-wrapper (fn [event-handler handler-name v]
+                          (try
+                            (event-handler v)
+                            (catch Exception e
+                              (.printStackTrace e)
+                              (error "Exception in " handler-name ": " e)
+                              (debug "Will continue " handler-name " until there's an Error."))
+                            (catch Error e
+                              (.printStackTrace e)
+                              (error "Error in " handler-name ": " e)
+                              (a/put! control-chan e))))
+        sente-event-handler
+        (fn [{:keys [event uid client-id] :as v}]
+          (let [[event-id event-data] event]
+            (cond
+              (= event-id :store-chat/start-listening!)
+              (if (some? (:store-id event-data))
+                (swap! subscription-store subscribe-to-store (:store-id event-data) uid)
+                (debug "No :store-id key found in event: " event))
+
+              (= event-id :store-chat/stop-listening!)
+              (if (some? (:store-id event-data))
+                (swap! subscription-store unsubscribe-from-store (:store-id event-data) uid)
+                (debug "No :store-id key found in event: " event))
+
+              (= event-id :chsk/uidport-close)
+              (let [uid event-data]
+                (swap! subscription-store remove-subscriber uid))
+
+              ;; Ignored events
+              (#{:chsk/ws-ping :chsk/uidport-open :chsk/bad-event :chsk/bad-package} event-id)
+              nil
+
+              :else
+              (debug "Unhandled event: " [:uid uid :event event]))))
+        store-id-stream-handler
+        (fn [v]
+          (let [store-id (:store-id v)]
+            (debug "Got store-id: " store-id)
+            (if (nil? store-id)
+              (warn "No store-id found in value returned from store-id stream. Value was: " v)
+              (let [uids-listening-for-id (get-subscribers @subscription-store store-id)]
+                ;; TODO: Remove this because it's huge.
+                (debug "Uids listening for store-id: " store-id " -> " (vec uids-listening-for-id))
+                (doseq [uid uids-listening-for-id]
+                  (if (contains? (:any @connected-uids) uid)
+                    (do
+                      (debug "Sending store id update to uid: " uid [:store-id store-id])
+                      (send-fn uid [:store-chat/update (select-keys v [:store-id :basis-t])])
+                      (debug "Sent store id update to uid: " uid))
+                    (do
+                      (debug "uid was no longer connected to the server: " uid " for " store-id)
+                      (swap! subscription-store unsubscribe-from-store store-id uid))))))))]
+
+    (go-loop []
+      (let [[v c] (a/alts! [ch-recv store-id-stream control-chan])]
+        (condp = c
+          control-chan
+          (debug "Exiting chat websocket due to value on control-channel: " v)
+          ch-recv
+          (do
+            (handler-wrapper sente-event-handler "chat-websocket" v)
+            (recur))
+          store-id-stream
+          (if-not v
+            (debug "store-id-stream closed. Bailing out.")
+            (do
+              (handler-wrapper store-id-stream-handler "store-stream-handler" v)
+              (recur))))))))
 
 (defrecord StoreChatWebsocket [chat]
   component/Lifecycle
@@ -87,17 +138,20 @@
       (let [{:keys [ch-recv] :as sente} (sente/make-channel-socket!
                                           (sente.aleph/get-sch-adapter)
                                           {:packer     (sente-transit/get-transit-packer)
-                                           :user-id-fn (fn [ring-req]
-                                                         (or (get-in ring-req [:identity :email])
-                                                             ;; client-id is assoc'ed by sente
-                                                             ;; before calling this fn.
-                                                             (:client-id ring-req)))})
+                                           :user-id-fn (fn [{:keys [client-id] :as ring-req}]
+                                                         ;; client-id is assoc'ed by sente
+                                                         ;; before calling this fn.
+                                                         client-id
+                                                         ;; TODO: Figure out if we want the uid to be the same for
+                                                         ;; all users for some reason with this code:
+                                                         ;; (get-in ring-req [:identity :email])
+                                                         )})
             control-chan (a/chan 1)
-            store-id->uids (atom {})
-            sends-chan (<send-store-ids-to-clients sente control-chan (chat/chat-update-stream chat) store-id->uids)]
+            subscription-store (atom (datascript-subscription-store))
+            sends-chan (<send-store-ids-to-clients sente control-chan (chat/chat-update-stream chat) subscription-store)]
         (assoc this ::started? true
                     :sente sente
-                    :store-id->uids store-id->uids
+                    :subscription-store subscription-store
                     :ch-recv ch-recv
                     :sends-chan sends-chan
                     :stop-fn #(a/close! control-chan)))))
@@ -110,18 +164,7 @@
         (if (= c sends)
           (debug "Stopped StoreChatWebsocket successfully")
           (debug "Timed out stopping StoreChatWebsocket..."))))
-    (dissoc this ::started? :sente :ch-recv :stop-fn :sends-chan))
-  suspendable/Suspendable
-  (suspend [this]
-    (component/stop this))
-  (resume [this old-this]
-    ;; Keep the store-id->uids, since they are registered with a message sent once.
-    ;; TODO: This is not realistic though. A user could lose connection and we should handle
-    ;; this differently: WEB-256
-    (let [store-id->uids (:store-id->uids this)]
-      (swap! store-id->uids (fn [uids]
-                              (merge-with merge (some-> (:store-id->uids old-this) (deref)) uids)))
-      (assoc this :store-id->uids store-id->uids)))
+    (dissoc this ::started? :sente :ch-recv :stop-fn :sends-chan :subscription-store))
 
   IWebsocket
   (handle-get-request [this request]
