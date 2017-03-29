@@ -112,7 +112,7 @@
    a stoppable object that can subscribe, unsubscribe and send events to the server.
    Received events are given to every event-handler."
   [endpoint event-handlers]
-  (let [{:keys [send-fn ch-recv]} (sente/make-channel-socket! endpoint {:packer (sente.transit/get-transit-packer)
+  (let [{:keys [send-fn ch-recv chsk]} (sente/make-channel-socket! endpoint {:packer (sente.transit/get-transit-packer)
                                                                         :type   :auto})
         send-chan (a/chan (a/sliding-buffer 1000))
         handler (sente-handler event-handlers send-fn)
@@ -120,6 +120,7 @@
     (reify
       IStopSente
       (stop-sente! [this]
+        (sente/chsk-disconnect! chsk)
         (close-fn))
       ISenteSender
       (send-event [this event]

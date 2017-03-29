@@ -32,10 +32,10 @@
 (defrecord DatascriptSubscriptionStore [db]
   ISubscriptionStore
   (subscribe-to-store [this store-id uid]
-    (debug "Adding :uid: " uid " to store listening on: " store-id)
+    (debug "Adding uid: " uid " to store listening on: " store-id)
     (update-subscriber this store-id uid :db/add))
   (unsubscribe-from-store [this store-id uid]
-    (debug "Removing :uid: " uid " to store listening on: " store-id)
+    (debug "Removing uid: " uid " to store listening on: " store-id)
     (update-subscriber this store-id uid :db/retract))
   (get-subscribers [this store-id]
     (db/all-with db {:where   '[[?store :store/id ?store-id]
