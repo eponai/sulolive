@@ -138,13 +138,6 @@
                           (dom/span nil label)))))
                   (:store/navigations store)))))
 
-          (grid/row
-            (grid/columns-in-row {:small 2 :medium 3})
-            (map-indexed
-              (fn [i p]
-                (grid/column
-                  nil
-                  (pi/->ProductItem {:product p})))
-              (concat store-items store-items store-items))))))))
+          (grid/products (concat store-items store-items store-items)))))))
 
 (def ->Store (om/factory Store))

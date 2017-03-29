@@ -2,6 +2,7 @@
   (:require
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
+    [eponai.common.ui.product-item :as pi]
     [taoensso.timbre :refer [warn]]))
 
 (def grid-cols 12)
@@ -57,3 +58,15 @@
                      (warn "Ignoring row column count CSS class for invalid breakpoint: " k
                            ". Available are: " (keys css/breakpoints))))]
     (reduce #(css/add-class %2 %1) opts (map class-fn counts))))
+
+;; Custom grids
+
+(defn products [ps & [el-fn]]
+  (row
+    (columns-in-row {:small 2 :medium 3})
+    (map
+      (fn [p]
+        (column
+          nil
+          (pi/->ProductItem {:product p})))
+      ps)))

@@ -32,7 +32,7 @@
             (->> (css/grid-column)
                  (css/add-class :navigation)
                  (css/grid-column-size {:large 3})
-                 (css/show-for {:size :large}))
+                 (css/show-for :large))
             (menu/vertical
               nil
               (menu/item-link nil "Live now")

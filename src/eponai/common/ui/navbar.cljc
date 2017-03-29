@@ -12,54 +12,70 @@
     [eponai.client.routes :as routes]
     [clojure.string :as s]))
 
+(def dropdown-elements
+  {:dropdown/user       "sl-user-dropdown"
+   :dropdown/bag        "sl-shopping-bag-dropdown"
+   :dropdown/collection "sl-collection-dropdown"})
+
 (defn compute-item-price [items]
   (reduce + (map :store.item/price items)))
 
-(defn cart-dropdown [{:keys [cart/items cart/price]}]
-  (dom/div #js {:className "cart-dropdown dropdown-pane"}
-    (menu/vertical
-      {:classes [::css/cart]}
-      (menu/item nil
-                 (menu/vertical
-                   (css/add-class :nested)
-                   (map (fn [i]
-                          (let [{:store.item/keys [price photos] p-name :store.item/name :as item} (:store.item/_skus i)]
-                            (menu/item-link
-                              {:href    (routes/url :product {:product-id (:db/id item)})
-                               :classes [:cart-link]}
-                              (photo/square
-                                {:src (:photo/path (first photos))})
-                              (dom/div #js {:className ""}
-                                (dom/div #js {:className "content-item-title-section"}
-                                  (dom/p nil (dom/span #js {:className "name"} p-name)))
-                                (dom/div #js {:className "content-item-subtitle-section"}
-                                  (dom/strong #js {:className "price"}
-                                              (ui-utils/two-decimal-price price)))))))
-                        (take 3 items))))
-      (menu/item nil (dom/div #js {:className "callout transparent"}
-                       (if (< 3 (count items))
-                         (dom/small nil (str "You have " (- (count items) 3) " more item(s) in your bag"))
-                         (dom/small nil (str "You have " (count items) " item(s) in your bag")))
-                       (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price (compute-item-price (map #(get % :store.item/_skus) items)))))))
-      (menu/item (css/text-align :center)
-                 (dom/a #js {:className "button expanded gray"
-                             :href      (routes/url :shopping-bag nil)} "View My Bag")))))
+(defn cart-dropdown [component {:keys [cart/items cart/price]}]
+  (let [{:keys [dropdown-key]} (om/get-state component)]
+    (my-dom/div
+      (cond->> {:classes [:dropdown-pane :cart-dropdown]}
+               (= dropdown-key :dropdown/bag)
+               (css/add-class :is-open))
+      (menu/vertical
+        {:classes [::css/cart]}
+        (menu/item nil
+                   (menu/vertical
+                     (css/add-class :nested)
+                     (map (fn [i]
+                            (let [{:store.item/keys [price photos] p-name :store.item/name :as item} (:store.item/_skus i)]
+                              (menu/item-link
+                                {:href    (routes/url :product {:product-id (:db/id item)})
+                                 :classes [:cart-link]}
+                                (photo/square
+                                  {:src (:photo/path (first photos))})
+                                (dom/div #js {:className ""}
+                                  (dom/div #js {:className "content-item-title-section"}
+                                    (dom/p nil (dom/span #js {:className "name"} p-name)))
+                                  (dom/div #js {:className "content-item-subtitle-section"}
+                                    (dom/strong #js {:className "price"}
+                                                (ui-utils/two-decimal-price price)))))))
+                          (take 3 items))))
+        (menu/item nil (dom/div #js {:className "callout transparent"}
+                         (if (< 3 (count items))
+                           (dom/small nil (str "You have " (- (count items) 3) " more item(s) in your bag"))
+                           (dom/small nil (str "You have " (count items) " item(s) in your bag")))
+                         (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price (compute-item-price (map #(get % :store.item/_skus) items)))))))
+        (menu/item (css/text-align :center)
+                   (dom/a #js {:className "button expanded gray"
+                               :href      (routes/url :shopping-bag nil)} "View My Bag"))))))
 
-(defn category-dropdown []
-  (dom/div #js {:className "dropdown-pane collection-dropdown"}
-    (menu/vertical
-      {:classes [::css/categories]}
-      (map-indexed
-        (fn [i c]
-          (menu/item-link {:href (routes/url :products/categories {:category c})}
-                          (dom/span nil (s/capitalize c))))
-        ["women" "men" "kids" "home" "art"]))))
+(defn category-dropdown [component]
+  (let [{:keys [dropdown-key]} (om/get-state component)]
+    (my-dom/div
+      (cond->> {:classes [:dropdown-pane :collection-dropdown]}
+               (= dropdown-key :dropdown/collection)
+               (css/add-class :is-open))
+      (menu/vertical
+        {:classes [::css/categories]}
+        (map-indexed
+          (fn [i c]
+            (menu/item-link {:href (routes/url :products/categories {:category c})}
+                            (dom/span nil (s/capitalize c))))
+          ["women" "men" "kids" "home" "art"])))))
 
 (defn user-dropdown [component user]
-  (let [store (get (first (get user :store.owner/_user)) :store/_owners)]
+  (let [store (get (first (get user :store.owner/_user)) :store/_owners)
+        {:keys [dropdown-key]} (om/get-state component)]
     (my-dom/div
-      (->> (css/add-class :dropdown-pane)
-           (css/add-class :user-dropdown))
+      (cond->> (->> (css/add-class :dropdown-pane)
+                    (css/add-class :user-dropdown))
+               (= dropdown-key :dropdown/user)
+               (css/add-class :is-open))
       (menu/vertical
         (css/add-class :user-dropdown-menu)
 
@@ -111,7 +127,7 @@
         (menu/item-link
           (->> opts
                (css/add-class :category)
-               (css/show-for {:size :large}))
+               (css/show-for :large))
           (dom/span nil (s/capitalize c)))))
     ["women" "men" "kids" "home" "art"]))
 
@@ -126,11 +142,11 @@
         (css/add-class ::css/highlight)
         (css/add-class :navbar-live))
       (my-dom/strong
-        (css/hide-for {:size :small :only? true})
+        (css/show-for :medium)
         ;; Wrap in span for server and client to render the same html
         (dom/span nil "Live"))
       (my-dom/div
-        (css/show-for {:size :small :only? true})
+        (css/hide-for :medium)
         (dom/i #js {:className "fa fa-video-camera fa-fw"})))))
 
 (defn navbar-brand [& [href]]
@@ -148,8 +164,9 @@
 
           (live-link on-live-click)
           (menu/item-dropdown
-            (->> {:dropdown (category-dropdown)}
-                 (css/hide-for {:size :large})
+            (->> {:dropdown (category-dropdown component)
+                  :onClick #(.open-dropdown component :dropdown/collection)}
+                 (css/hide-for :large)
                  (css/add-class :category))
             (dom/span nil "Shop"))
 
@@ -170,8 +187,10 @@
           (live-link)
 
           (menu/item-dropdown
-            (->> {:dropdown (category-dropdown)}
-                 (css/hide-for {:size :large})
+            (->> {:dropdown (category-dropdown component)
+                  :href "#"
+                  :onClick #(.open-dropdown component :dropdown/collection)}
+                 (css/hide-for :large)
                  (css/add-class :category))
             (dom/span nil "Shop"))
 
@@ -182,10 +201,10 @@
           (menu/item nil
                      (my-dom/a
                        (->> {:id "search-icon"}
-                            (css/show-for {:size :small :only? true}))
+                            (css/hide-for :medium))
                        (dom/i #js {:className "fa fa-search fa-fw"}))
                      (my-dom/div
-                       (css/hide-for {:size :small :only? true})
+                       (css/show-for :medium)
                        (dom/input #js {:type        "text"
                                        :placeholder "Search on SULO..."
                                        :onKeyDown   (fn [e]
@@ -200,12 +219,14 @@
 
           (menu/item-dropdown
             {:dropdown (user-dropdown component auth)
-             :classes [:user-photo-item]}
+             :classes  [:user-photo-item]
+             :href "#"
+             :onClick  #(.open-dropdown component :dropdown/user)}
             (photo/user-photo auth))
 
           (if did-mount?
             (menu/item-dropdown
-              {:dropdown (cart-dropdown cart)
+              {:dropdown (cart-dropdown component cart)
                :href (routes/url :shopping-bag)}
               (icons/shopping-bag))
             (menu/item-dropdown
@@ -227,6 +248,23 @@
      '{:query/top-categories [:category/label :category/path :category/level {:category/children ...}]}
      :query/current-route])
   Object
+  #?(:cljs
+     (open-dropdown
+       [this dd-key]
+       (let [{:keys [on-click-event-fn]} (om/get-state this)]
+         (om/update-state! this assoc :dropdown-key dd-key)
+         (.addEventListener js/document "click" on-click-event-fn))))
+
+  #?(:cljs
+     (close-dropdown
+       [this event]
+       (let [{:keys [dropdown-key on-click-event-fn]} (om/get-state this)
+             id (get dropdown-elements dropdown-key)]
+         (debug "Clicked: " event)
+         (when-not (= (.-id (.-target event)) id)
+           (om/update-state! this dissoc :dropdown-key)
+           (.removeEventListener js/document "click" on-click-event-fn)))))
+
   (open-signin [this]
     (debug "Open signin")
     #?(:cljs (let [{:keys [lock]} (om/get-state this)
@@ -243,20 +281,19 @@
                                      })]
                (.socialOrMagiclink lock options))))
 
-  (initLocalState [_]
+  (initLocalState [this]
     {:cart-open?   false
-     :on-scroll-fn #(debug "Did scroll: " %)})
+     #?@(:cljs [:on-click-event-fn #(.close-dropdown this %)])})
   (componentWillUnmount [this]
     #?(:cljs
-       (let [{:keys [lock on-scroll-fn]} (om/get-state this)]
-         (.removeEventListener js/document.documentElement "scroll" on-scroll-fn))))
+       (let [{:keys [lock on-click-event-fn]} (om/get-state this)]
+         (.removeEventListener js/document "click" on-click-event-fn))))
 
   (componentDidMount [this]
-    #?(:cljs (let [{:keys [on-scroll-fn]} (om/get-state this)]
+    #?(:cljs (do
                (when js/Auth0LockPasswordless
                  (let [lock (new js/Auth0LockPasswordless "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh" "sulo.auth0.com")]
                    (om/update-state! this assoc :lock lock)))
-               (.addEventListener js/document.documentElement "scroll" on-scroll-fn)
                (om/update-state! this assoc :did-mount? true))))
 
   (render [this]
