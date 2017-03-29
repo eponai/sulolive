@@ -2,7 +2,7 @@
 	position: relative;
 	.dropdown-pane {
 		position: fixed;
-		transition: visibility 0s linear .25s, opacity .25s ease-in-out;
+		transition: visibility 0s linear .1s, opacity .1s ease-in-out;
 		visibility: hidden;
 		opacity: 0;
 		right: 0;
@@ -43,7 +43,7 @@
 				}
 			}
 			li.my-stores, li.user-info {
-				border-bottom: 1px solid rgba($light-gray, 0.5);
+				border-bottom: $global-border-secondary;
 			}
 			ul.nested {
 				margin: 0;
@@ -59,7 +59,7 @@
 			li {
 				padding: 0.1rem 1rem;
 				border: none;
-				border-bottom: 1px solid rgba($light-gray, 0.5);
+				border-bottom: $global-border-secondary;
 				font-size: 0.9rem;
 				&:last-child {
 					border: none !important;
@@ -76,7 +76,7 @@
 			}
 			ul.nested {
 				margin: 0;
-				border-bottom: 1px solid rgba($light-gray, 0.5);
+				border-bottom: $global-border-secondary;
 			}
 			li {
 				padding: 0 0.5rem;
@@ -113,11 +113,11 @@
 			}
 		}
 	}
-	&:hover, &:focus {
-		.dropdown-pane {
+	// &:hover, &:focus {
+		.dropdown-pane.is-open {
 			visibility: visible;
 			opacity: 1;
 			transition-delay: 0s;
 		}
-	}
+	// }
 }

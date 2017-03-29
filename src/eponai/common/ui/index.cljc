@@ -281,7 +281,7 @@
                                                          nil
                                                          (menu/item-link
                                                            (css/add-class :contact {:href "/sell/coming-soon"})
-                                                           (my-dom/span (css/show-for {:size :small}) (dom/span nil "Sell on SULO?"))
+                                                           (my-dom/span nil (dom/span nil "Sell on SULO?"))
                                                            (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
 
           (photo/header
@@ -373,7 +373,7 @@
                                                          nil
                                                          (menu/item-link
                                                            (css/add-class :contact {:href "/coming-soon"})
-                                                           (my-dom/span (css/show-for {:size :small}) (dom/span nil "Shop on SULO?"))
+                                                           (my-dom/span nil (dom/span nil "Shop on SULO?"))
                                                            (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
           (debug "Live opene: " live-open?)
           (photo/header

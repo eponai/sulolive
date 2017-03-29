@@ -103,20 +103,20 @@
         (warn "Ignoring alignment CSS class with invalid alignment: " alignment ". Available keys are: " available)
         opts))))
 
-(defn hide-for [{:keys [size only?]} & [opts]]
+(defn hide-for [size & [opts]]
   (let [s (get breakpoints size)]
     (if (some? s)
-      (let [c (str "hide-for-" s (when only? "-only"))]
+      (let [c (str "hide-for-" s)]
         (add-class (keyword c) opts))
       (do
         (warn "Ignoring column visibility CSS class for invalid breakpoint: " size
               ". Available are: " (keys breakpoints))
         opts))))
 
-(defn show-for [{:keys [size only?]} & [opts]]
+(defn show-for [size & [opts]]
   (let [s (get breakpoints size)]
     (if (some? s)
-      (let [c (str "show-for-" s (when only? "-only"))]
+      (let [c (str "show-for-" s)]
         (add-class (keyword c) opts))
       (do
         (warn "Ignoring column visibility CSS class for invalid breakpoint: " size

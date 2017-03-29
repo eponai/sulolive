@@ -35,7 +35,8 @@
 (defn sub-navbar [component]
   (let [{:query/keys [current-route store]} (om/props component)
         {:keys [route]} current-route
-        store-id (:db/id store)]
+        store-id (:db/id store)
+        nav-breakpoint :medium]
     (dom/div #js {:className "navbar-container" :id "store-navbar"}
       (dom/nav #js {:className "top-bar navbar"}
                (menu/horizontal
@@ -44,39 +45,39 @@
                               (css/add-class ::css/is-active))
                             (my-dom/a
                               (css/add-class :category {:href (routes/url :store-dashboard {:store-id store-id})})
-                              (my-dom/span (css/show-for {:size :medium}) "Dashboard")
+                              (my-dom/span (css/show-for nav-breakpoint) "Dashboard")
                               (my-dom/i
-                                (css/hide-for {:size :medium} {:classes [:fa :fa-dashboard :fa-fw]}))))
+                                (css/hide-for nav-breakpoint {:classes [:fa :fa-dashboard :fa-fw]}))))
                  (menu/item (when (= route :store-dashboard/stream)
                               (css/add-class ::css/is-active))
                             (my-dom/a
                               (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
-                              (my-dom/span (css/show-for {:size :medium}) "Stream")
+                              (my-dom/span (css/show-for nav-breakpoint) "Stream")
                               (my-dom/i
-                                (css/hide-for {:size :medium} {:classes [:fa :fa-video-camera :fa-fw]}))))
+                                (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]}))))
                  (menu/item (when (= route :store-dashboard/settings)
                               (css/add-class ::css/is-active))
                             (my-dom/a
                               (css/add-class :category {:href (routes/url :store-dashboard/settings {:store-id store-id})})
-                              (my-dom/span (css/show-for {:size :medium}) "Settings")
+                              (my-dom/span (css/show-for nav-breakpoint) "Settings")
                               (my-dom/i
-                                (css/hide-for {:size :medium} {:classes [:fa :fa-video-camera :fa-fw]}))))
+                                (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]}))))
                  (menu/item
                    (when (= route :store-dashboard/product-list)
                      (css/add-class ::css/is-active))
                    (my-dom/a
                      (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
-                     (my-dom/span (css/show-for {:size :medium}) "Products")
+                     (my-dom/span (css/show-for nav-breakpoint) "Products")
                      (my-dom/i
-                       (css/hide-for {:size :medium} {:classes [:fa :fa-gift :fa-fw]}))))
+                       (css/hide-for nav-breakpoint {:classes [:fa :fa-gift :fa-fw]}))))
                  (menu/item
                    (when (= route :store-dashboard/order-list)
                      (css/add-class ::css/is-active))
                    (my-dom/a
                      (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
-                     (my-dom/span (css/show-for {:size :medium}) "Orders")
+                     (my-dom/span (css/show-for nav-breakpoint) "Orders")
                      (my-dom/i
-                       (css/hide-for {:size :medium} {:classes [:fa :fa-file-text-o :fa-fw]})))))))))
+                       (css/hide-for nav-breakpoint {:classes [:fa :fa-file-text-o :fa-fw]})))))))))
 
 (defui Dashboard
   static om/IQuery

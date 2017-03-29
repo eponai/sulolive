@@ -1,16 +1,16 @@
 (ns eponai.common.ui.shopping-bag
   (:require
-    [om.dom :as dom]
-    [eponai.common.ui.dom :as my-dom]
+    [eponai.common.ui.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.elements.photo :as photo]
+    [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.utils :as utils]
     [eponai.common.ui.navbar :as nav]
     [taoensso.timbre :refer [debug]]
-    [eponai.client.parser.message :as msg]
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [eponai.common.ui.elements.menu :as menu]))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -19,153 +19,92 @@
   (reduce + (map :store.item/price items)))
 
 (defn store-element [s]
-  (let [{:store/keys [photo] store-name :store/name} s]
-    (my-dom/div
-      (->> (css/grid-row)
-           (css/add-class :expanded)
-           (css/add-class :store-container)
-           (css/align :center)
-           )
-      (my-dom/div
-        (->> (css/grid-column)
-             (css/grid-column-size {:small 3 :medium 2 :large 1}))
-        (photo/circle {:src (:photo/path photo)}))
-      (my-dom/div
-        (->> (css/grid-column)
-             (css/grid-column-size {:small 12})
+  (let [{store-name :store/name} s]
+    (grid/row
+      (->> (css/add-class :store-container)
+           (css/align :center))
+
+      (grid/column
+        (grid/column-size {:small 3 :medium 2 :large 1})
+        (photo/store-photo s))
+
+      (grid/column
+        (->> (grid/column-size {:small 12})
              (css/text-align :center))
-        (dom/div nil (dom/p nil (dom/strong #js {:className "store-name"} store-name))))
-      ;(my-dom/div
-      ;  (->> (css/grid-column)
-      ;       (css/add-class :follow-section)
-      ;       (css/text-align :center)
-      ;       (css/grid-column-size {:small 12 :medium 4 :large 3}))
-      ;  (dom/div nil
-      ;    (dom/a #js {:className "button"} "+ Follow")
-      ;    (dom/a #js {:className "button hollow"} "Contact")))
-      ))
-  ;(my-dom/div
-  ;  (->> (css/grid-row)
-  ;       (css/align :middle)
-  ;       (css/add-class :store)
-  ;       (css/text-align :right))
-  ;
-  ;  (my-dom/div
-  ;    (->> (css/grid-column))
-  ;    (dom/a #js {:href (str "/store/" (:db/id s))}
-  ;           (dom/span nil (:store/name s)))
-  ;    ;(common/rating-element (:store/rating s) (:store/review-count s))
-  ;    )
-  ;  (my-dom/div
-  ;    (->> (css/grid-column)
-  ;         (css/grid-column-size {:small 2 :medium 4}))
-  ;    (photo/square
-  ;      {:src (:photo/path (:store/photo s))})))
-  )
+        (dom/p nil
+               (dom/strong
+                 (css/add-class :store-name) store-name))))))
 
-(defn store-checkout-element [component key store cart-items]
-  (dom/div #js {:key key
-                :className "callout transparent cart-checkout-item"}
-    (store-element store)
-    ;(my-dom/div
-    ;  (css/grid-row))
+(defn sku-menu-item [sku]
+  (let [{:store.item/keys [price photos]
+         product-id       :db/id
+         item-name        :store.item/name} (get sku :store.item/_skus)]
+    (menu/item
+      nil
+      (grid/row
+        (->> (css/align :middle)
+             (css/add-class :item))
+        (grid/column
+          (grid/column-size {:small 3 :medium 2 :large 1})
+          (photo/product-photo (first photos)))
 
+        (grid/column
+          (grid/column-size {:small 8})
 
-    (map-indexed (fn [i sku]
-           (let [{:store.item/keys [price photos]
-                  product-id       :db/id
-                  item-name        :store.item/name} (get sku :store.item/_skus)]
-             (my-dom/div
-               (->> {:key i}
-                    (css/grid-row)
-                    (css/add-class :collapse)
-                    (css/align :middle)
-                    (css/add-class :callout)
-                    (css/add-class :transparent)
-                    (css/add-class :item))
-
-               (my-dom/div
-                 (->> (css/grid-column)
-                      (css/grid-column-size {:small 3 :medium 2 :large 1}))
-                 (photo/square
-                   {:src (:photo/path (first photos))}))
-
-               ;(my-dom/div
-               ;  (->> (css/grid-column))
-               ;  (dom/a #js {:className "close-button"} (dom/small nil "x")))
-               (my-dom/div
-                 (->> (css/grid-column)
-                      (css/grid-column-size {:small 8}))
-
-                 (dom/div #js {:className ""}
-                   (dom/a #js {:href      (routes/url :product {:product-id product-id})
-                               :className "name"}
-                          (dom/span nil item-name)))
-                 (dom/div #js {:className ""}
+          (dom/div nil
+                   (dom/a
+                     (->> {:href      (routes/url :product {:product-id product-id})}
+                   (css/add-class :name))
+                     (dom/span nil item-name)))
+          (dom/div nil
                    (dom/span nil (:store.item.sku/value sku))))
 
-               (my-dom/div
-                 (->> (css/grid-column)
-                      (css/align :right)
-                      (css/grid-column-size {:small 3 :medium 2 :large 1})
-                      (css/grid-column-offset {:small 3 :large 0}))
-                 (dom/input #js {:type         "number"
-                                 :defaultValue 1
-                                 ;; :defaultValue doesn't work for clj dom/input.
-                                 ;; File om.next/dom bug?
-                                 #?@(:clj [:value 1])}))
-               (my-dom/div
-                 (->> (css/grid-column)
-                      (css/text-align :right)
-                      )
-                 (dom/div #js {:className ""}
-                   (dom/span #js {:className "price"}
-                             (utils/two-decimal-price price)))))))
-         cart-items)
-    (my-dom/div
-      (->> (css/grid-row)
-           (css/add-class :collapse)
-           (css/align :middle)
-           (css/add-class :callout)
-           (css/add-class :transparent)
-           (css/add-class :item)
-           (css/text-align :right))
-      (let [item-price (compute-item-price (map #(get % :store.item/_skus) cart-items))
-            shipping-price 0]
-        (my-dom/div
-          (css/grid-column)
-          (dom/p nil
-            (dom/span nil "Total: ")
-            (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
-          (dom/a #js {:className "button gray"
-                      :href (routes/url :checkout {:store-id (:db/id store)})
-                      ;:onClick   #(.checkout component store)
-                      } "Checkout")))
-      )
-    ;(my-dom/div
-    ;  (->> (css/grid-column)
-    ;       (css/text-align :right)
-    ;       (css/add-class :price-info))
-    ;  (dom/div #js {:className "total-price-section"}
-    ;    (let [item-price (compute-item-price (map #(get % :store.item/_skus) cart-items))
-    ;          shipping-price 0]
-    ;      (dom/table
-    ;        nil
-    ;        (dom/tbody
-    ;          nil
-    ;          (dom/tr nil
-    ;                  (dom/td nil "Item Price")
-    ;                  (dom/td nil (utils/two-decimal-price item-price)))
-    ;          (dom/tr nil
-    ;                  (dom/td nil "Shipping")
-    ;                  (dom/td nil (utils/two-decimal-price shipping-price)))
-    ;          (dom/tr #js {:className "total-price"}
-    ;                  (dom/td nil "Total")
-    ;                  (dom/td nil (utils/two-decimal-price (+ item-price shipping-price)))))))
-    ;    (dom/a #js {:className "button gray"
-    ;                :onClick #(.checkout component store)} "Checkout")))
-    ))
+        (grid/column
+          (->> (grid/column-size {:small 3 :medium 2 :large 1})
+               (grid/column-offset {:small 3 :large 0})
+               (css/align :right))
+          (dom/input {:type             "number"
+                         ;; :defaultValue doesn't work for clj dom/input.
+                         ;; File om.next/dom bug?
+                          :defaultValue 1
+                          #?@(:clj [:value 1])}))
 
+        (grid/column
+          (css/text-align :right)
+          (dom/div nil
+                   (dom/span
+              (css/add-class :price)
+              (utils/two-decimal-price price))))))))
+
+(defn store-items-element [component skus-by-store]
+  (let [{:query/keys [cart]} (om/props component)
+        {:keys [cart/items]} cart]
+    (dom/div
+      nil
+      (map
+        (fn [[s skus]]
+          (dom/div
+            (->> (css/callout)
+                 (css/add-class :cart-checkout-item))
+            (store-element s)
+            (menu/vertical
+              nil
+              (map sku-menu-item skus))
+            (grid/row
+              (->> (css/align :middle)
+                   (css/text-align :right)
+                   (css/add-class :item))
+              (let [item-price (compute-item-price (map #(get % :store.item/_skus) skus))
+                    shipping-price 0]
+                (grid/column
+                  nil
+                  (dom/p nil
+                         (dom/span nil "Total: ")
+                         (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
+                  (dom/a
+                    (->> {:href (routes/url :checkout {:store-id (:db/id s)})}
+                         (css/button)) "Checkout"))))))
+        skus-by-store))))
 
 (defui ShoppingBag
   static om/IQuery
@@ -183,86 +122,30 @@
   Object
   (render [this]
     (let [{:keys [query/cart proxy/navbar]} (om/props this)
-          {:keys [cart/items]} cart
           {:keys [did-mount?]} (om/get-state this)
-          item-count (count items)]
-
-      (debug "CART ITEMS: " cart)
-      (debug "GROUPED: " (items-by-store items))
+          {:keys [cart/items]} cart
+          skus-by-store (items-by-store items)]
       (common/page-container
         {:navbar navbar :id "sulo-shopping-bag"}
-        (my-dom/div
-          (-> (css/grid-column)
-              css/grid-row)
+        (grid/row-column
+          nil
           (if (not-empty items)
             (dom/div nil
-              (dom/h3 nil "Shopping Bag")
-              (apply dom/div nil
-                     (map-indexed (fn [i [s its]]
-                                    (store-checkout-element this i s its))
-                                  (items-by-store items)))
-              (when (< 1 (count (items-by-store items)))
-                (my-dom/div nil
-                            (dom/h3 nil "or checkout all stores")
-                            (my-dom/div
-                              (css/callout)
-                              ;; GRID ROW
-                              (my-dom/div
-                                (css/grid-row)
-
-                                ;; GRID COLUMN
-                                (apply my-dom/div
-                                       (css/grid-column)
-                                       (map-indexed (fn [i [s its]]
-                                              (my-dom/div
-                                                (css/grid-row {:key     i
-                                                               :classes [::css/grid-row-align-middle :padded :vertical]})
-                                                ;{:classes [::css/grid-row-align-middle :padded :vertical]}
-                                                (my-dom/div
-                                                  (->> (css/grid-column)
-                                                       (css/grid-column-size {:small 2}))
-                                                  (photo/square
-                                                    {:src (:store/photo s)}))
-                                                (my-dom/div
-                                                  (css/grid-column)
-                                                  (dom/a #js {:href (str "/store/" (:db/id s))}
-                                                         (dom/strong #js {:className "store-name"} (:store/name s)))
-                                                  (common/rating-element (:store/rating s) (:store/review-count s)))
-
-                                                (my-dom/div
-                                                  (-> (css/text-align :right)
-                                                      css/grid-column)
-                                                  (dom/span nil
-                                                            (str (count its) " items"))
-                                                  (dom/br nil)
-                                                  (dom/strong nil (utils/two-decimal-price (compute-item-price its))))))
-                                            (items-by-store items)))
-
-                                ;; GRID COLUMN
-                                (my-dom/div
-                                  (->> (css/grid-column)
-                                       (css/grid-column-size {:small  12
-                                                              :medium 4})
-                                       (css/text-align :right))
-                                  (dom/table nil
-                                             (dom/tbody nil
-                                                        (dom/tr nil
-                                                                (dom/td nil "Item Price")
-                                                                (dom/td nil (utils/two-decimal-price (compute-item-price items))))
-                                                        (dom/tr nil
-                                                                (dom/td nil "Shipping")
-                                                                (dom/td nil (utils/two-decimal-price 0)))
-                                                        (dom/tr #js {:className "total-price"}
-                                                                (dom/td nil (dom/h5 nil "Total"))
-                                                                (dom/td nil (dom/h5 nil (utils/two-decimal-price (compute-item-price items)))))))
-                                  (dom/a #js {:className "button gray"}
-                                         "Checkout All Stores")))))))
+                     (dom/h1 nil "Shopping Bag")
+                     (store-items-element this skus-by-store))
             (if-not did-mount?
-              (dom/div {:className "cart-loading text-center"}
-                (dom/i {:className "fa fa-spinner fa-spin fa-4x"}))
-              (dom/div #js {:className "cart-empty callout text-center"}
+              (dom/div
+                (->> (css/text-align :center)
+                     (css/add-class :cart-loading))
+                (dom/i
+                  {:classes ["fa fa-spinner fa-spin fa-4x"]}))
+              (dom/div
+                (->> (css/callout)
+                     (css/text-align :center)
+                     (css/add-class :cart-empty))
                 (dom/h3 nil "Your shopping bag is empty")
-                (dom/a #js {:href (routes/url :index)}
-                       (dom/h5 nil "Go to the market - start shopping"))))))))))
+                (dom/a
+                  {:href (routes/url :index)}
+                  (dom/h5 nil "Go to the market - start shopping"))))))))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))

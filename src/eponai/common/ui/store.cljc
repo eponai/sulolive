@@ -9,20 +9,13 @@
     [eponai.common.ui.stream :as stream]
     [eponai.client.routes :as routes]
     #?(:cljs [eponai.web.utils :as utils])
-    [eponai.common.ui.dom :as my-dom]
-    [om.dom :as dom]
+    [eponai.common.ui.dom :as dom]
     [om.next :as om #?(:clj :refer :cljs :refer-macros) [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.photo :as photo]
-    [eponai.common.ui.elements.menu :as menu]))
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.common.ui.elements.grid :as grid]))
 
-;(defn find-pos [el]
-;  #?(:cljs (loop [cur-top 0
-;                  obj el]
-;             (if (.-offsetParent obj)
-;               (recur (+ cur-top (.-offsetTop obj)) (.-offsetParent obj))
-;               cur-top))
-;     :clj  0))
 (defui Store
   static om/IQuery
   (query [_]
@@ -46,128 +39,105 @@
            :proxy/keys [navbar] :as props} (om/props this)
           {:store/keys [cover photo]
            stream      :stream/_store
-           ;items       :store/items
            store-name  :store/name} store
           stream (first stream)
           show-chat? (:show-chat? st (some? stream))
-          has-stream? (some? stream)
           {:keys [route route-params]} current-route]
-      ;(debug "Store items: " store-items)
-      ;(debug "Store props: " (om/props this))
-      (debug "Current route: " current-route)
-      (dom/div #js {:id "sulo-store" :className "sulo-page"}
-        (common/page-container
-          {:navbar navbar}
-          (my-dom/div
-            nil
-            (my-dom/div
-              (->> (css/grid-row)
-                   (css/grid-row-columns {:small 1})
-                   (css/add-class :collapse)
-                   (css/add-class :expanded))
-              (my-dom/div
-                (->> (css/grid-column)
-                     (css/grid-column-order {:small 2 :medium 1}))
-                (cond
-                  (some? stream)
-                  (my-dom/div
-                    (cond->> (css/add-class :stream-container)
-                             show-chat?
-                             (css/add-class :sulo-show-chat))
-                    (stream/->Stream (om/computed (:proxy/stream props)
-                                                  {:stream-name (:stream/name stream)
-                                                   :widescreen? true
-                                                   :store store}))
-                    (chat/->StreamChat (om/computed (:proxy/chat props)
-                                                    {:on-toggle-chat (fn [show?]
-                                                                       (om/update-state! this assoc :show-chat? show?))
-                                                     :store store
-                                                     :show? (some? stream)}))
-
-                    ;(dom/div #js {:className "content-item-title-section"}
-                    ;  (dom/span nil (:stream/name stream)))
-                    )
-                  (some? cover)
-                  (photo/cover {:src (:photo/path cover)})))
+      (common/page-container
+        {:navbar navbar
+         :id     "sulo-store"}
+        (dom/div
+          nil
+          (grid/row
+            (->> (grid/columns-in-row {:small 1})
+                 (css/add-class :collapse)
+                 (css/add-class :expanded))
+            (grid/column
+              (grid/column-order {:small 2 :medium 1})
+              (cond
+                (some? stream)
+                (dom/div
+                  (cond->> (css/add-class :stream-container)
+                           show-chat?
+                           (css/add-class :sulo-show-chat))
+                  (stream/->Stream (om/computed (:proxy/stream props)
+                                                {:stream-name (:stream/name stream)
+                                                 :widescreen? true
+                                                 :store       store}))
+                  (chat/->StreamChat (om/computed (:proxy/chat props)
+                                                  {:on-toggle-chat (fn [show?]
+                                                                     (om/update-state! this assoc :show-chat? show?))
+                                                   :store          store
+                                                   :show?          (some? stream)})))
+                (some? cover)
+                (photo/cover {:src (:photo/path cover)})))
 
 
 
-              (my-dom/div
-                (->> (css/grid-column)
-                     (css/add-class :store-container)
-                     (css/grid-column-order {:small 1 :medium 2}))
-                (my-dom/div
-                  (->> (css/grid-row)
-                       (css/add-class :expanded)
-                       (css/align :middle)
-                       (css/align :center))
-                  (my-dom/div
-                    (->> (css/grid-column)
-                         (css/grid-column-size {:small 12 :medium 2 :large 1}))
-                    (photo/store-photo store))
-                  (my-dom/div
-                    (->> (css/grid-column)
-                         (css/add-class :shrink))
-                    (dom/div nil (dom/span nil (dom/strong #js {:className "store-name"} store-name)))
-                    (dom/div nil (dom/p nil
-                                        (dom/i #js {:className "fa fa-map-marker fa-fw"})
-                                        (dom/strong nil (dom/small nil "North Vancouver, BC")))))
-                  (my-dom/div
-                    (->> (css/grid-column)
-                         (css/add-class :follow-section)
-                         (css/text-align :center)
-                         (css/grid-column-size {:small 12 :medium 4 :large 3}))
-                    (dom/div nil
-                      (dom/a #js {:className "button"} "+ Follow")
-                      (dom/a #js {:className "button hollow"} "Contact")))))
-              (my-dom/div
-                (->> (css/grid-column)
-                     (css/add-class :quote-section)
-                     (css/grid-column-order {:small 3 :medium 3}))
-                (my-dom/div
-                  (css/text-align :center)
-                  (dom/span nil (:store/description store))))))
+            (grid/column
+              (->> (grid/column-order {:small 1 :medium 2})
+                   (css/add-class :store-container))
 
-          (my-dom/div {:id "shop"}
-                      (my-dom/div
-                        (->> (css/grid-row)
-                             (css/add-class :collapse)
-                             (css/add-class :menu-container))
-                        (my-dom/div
-                          (css/grid-column)
-                          (menu/horizontal
-                            (css/align :center)
+              (grid/row
+                (->> (css/align :middle)
+                     (css/align :center))
 
-                            (menu/item (cond->> (css/add-class :about)
-                                                (= route :store/about)
-                                                (css/add-class ::css/is-active))
-                              (dom/a #js {:href (routes/url :store/about {:store-id (:db/id store)})}
-                                     (dom/span nil "About")))
-                            (menu/item (when (= :store route)
-                                         (css/add-class ::css/is-active))
-                                       (dom/a #js {:href (routes/url :store {:store-id (:db/id store)})}
-                                              (dom/span nil "All Items")))
-                            (map-indexed
-                              (fn [i n]
-                                (let [{:store.navigation/keys [path label]} n
-                                      is-active? (= path (:navigation route-params))]
-                                  (menu/item
-                                    (cond->> {:key (+ 10 i)}
-                                             is-active?
-                                             (css/add-class ::css/is-active))
-                                    (dom/a #js {:href (routes/url :store/navigation {:navigation path
-                                                                                              :store-id (:db/id store)})}
-                                                    (dom/span nil label)))))
-                              (:store/navigations store)))))
+                (grid/column
+                  (grid/column-size {:small 12 :medium 2})
+                  (photo/store-photo store))
 
-                      (apply my-dom/div
-                             (->> (css/grid-row)
-                                  (css/grid-row-columns {:small 2 :medium 3}))
-                             (map-indexed
-                               (fn [i p]
-                                    (my-dom/div
-                                      (css/grid-column {:key i})
-                                      (pi/->ProductItem {:product p})))
-                                  (concat store-items store-items store-items)))))))))
+                (grid/column
+                  (css/add-class :shrink)
+                  (dom/div nil (dom/strong (css/add-class :store-name) store-name))
+                  (dom/p nil
+                         (dom/i
+                              (css/add-class "fa fa-map-marker fa-fw"))
+                         (dom/strong nil (dom/small nil "North Vancouver, BC"))))
+                (grid/column
+                  (->> (grid/column-size {:small 12 :medium 4 :large 3})
+                       (css/text-align :center)
+                       (css/add-class :follow-section))
+                  (dom/div nil
+                           (dom/a (css/button) "+ Follow")
+                           (dom/a (css/button-hollow) "Contact")))))
+            (grid/column
+              (->> (grid/column-order {:small 3 :medium 3})
+                   (css/add-class :quote-section)
+                   (css/text-align :center))
+              (dom/span nil (:store/description store)))))
+
+        (dom/div
+          {:id "shop"}
+          (grid/row
+            (->> (css/add-class :collapse)
+                 (css/add-class :menu-container))
+            (grid/column
+              nil
+              (menu/horizontal
+                (css/align :center)
+
+                (menu/item (cond->> (css/add-class :about)
+                                    (= route :store/about)
+                                    (css/add-class ::css/is-active))
+                           (dom/a {:href (routes/url :store/about {:store-id (:db/id store)})}
+                                  (dom/span nil "About")))
+                (menu/item (when (= :store route)
+                             (css/add-class ::css/is-active))
+                           (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
+                                  (dom/span nil "All Items")))
+                (map-indexed
+                  (fn [i n]
+                    (let [{:store.navigation/keys [path label]} n
+                          is-active? (= path (:navigation route-params))]
+                      (menu/item
+                        (cond->> {:key (+ 10 i)}
+                                 is-active?
+                                 (css/add-class ::css/is-active))
+                        (dom/a
+                          {:href (routes/url :store/navigation {:navigation path :store-id   (:db/id store)})}
+                          (dom/span nil label)))))
+                  (:store/navigations store)))))
+
+          (grid/products (concat store-items store-items store-items)))))))
 
 (def ->Store (om/factory Store))
