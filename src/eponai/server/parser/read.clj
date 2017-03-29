@@ -86,6 +86,10 @@
                                                        [?e :store/owners ?owner]]
                                             :symbols {'?email email}}))})
 
+(defmethod server-read :query/stripe-account
+  [env _ {:keys [store-id]}]
+  {:value (store/account env store-id)})
+
 ;(defmethod server-read :query/stripe
 ;  [{:keys [db db-history query system auth]} _ _]
 ;  (debug "SYSTEM: " system)

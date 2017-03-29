@@ -121,7 +121,7 @@
                              {:datomic :system/datomic})
       :system/aws-elb (elb/aws-elastic-beanstalk-stub)
       :system/aws-ec2 (ec2/aws-ec2-stub)
-      :system/aws-s3 (s3/aws-s3-stub)
+      ;:system/aws-s3 (s3/aws-s3-stub)
       :system/wowza (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})
       :system/mailchimp (mailchimp/mail-chimp-stub)
       ;; :system/stripe (stripe/stripe-stub)

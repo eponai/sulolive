@@ -48,6 +48,26 @@
 		align-items: center;
 		font-size: 80%;
 	}
+	.user-photo-item > a {
+		padding: 0 0.5rem;
+		.photo-container {
+			border-color: $medium-gray;
+			min-width: 2rem;
+		}
+		// .user-photo {
+		// 	min-width: 2rem;
+		// }
+	}
+	.store-photo-item > a {
+		padding: 0 0.5rem;
+		.photo-container {
+			border-radius: 6px;
+			min-width: 2rem;
+			// .store-photo {
+			// 	min-width: 2rem;
+			// }
+		}
+	}
 }
 
 .navbar-container {

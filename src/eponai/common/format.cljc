@@ -35,6 +35,9 @@
     #?(:cljs (crypt/byteArrayToString bytes)
        :clj  (apply str (map char bytes)))))
 
+(defn remove-nil-keys [m]
+  (into {} (remove (fn [[k v]] (nil? v)) m)))
+
 ;; -------------------------- Database entities -----------------------------
 
 (defn add-tempid

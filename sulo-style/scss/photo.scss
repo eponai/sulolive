@@ -6,7 +6,8 @@ $primary-color: map-get($foundation-palette, primary);
 	}
 }
 .photo-container {
-	box-shadow: 0 1px 3px 0 rgba($primary-color, 0.1);
+	// border: 1px solid $light-gray;
+	// box-shadow: 0 1px 3px 0 rgba($primary-color, 0.1);
 	flex: 1;
 	display: flex;
 	&.collage {
@@ -28,6 +29,7 @@ $primary-color: map-get($foundation-palette, primary);
 				// border-radius:
 			}
 		}
+		border: 1px solid $light-gray;
 	}
 }
 

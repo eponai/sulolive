@@ -141,3 +141,9 @@
 (defn update-order [{:keys [state system]} store-id order-id params]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)]
     (stripe/update-order (:system/stripe system) secret order-id params)))
+
+(defn account [{:keys [state system]} store-id]
+  (let [{:keys [stripe/id] :as s} (stripe/pull-stripe (db/db state) store-id)]
+    (when (some? id)
+      (merge s
+             (stripe/get-account (:system/stripe system) id)))))

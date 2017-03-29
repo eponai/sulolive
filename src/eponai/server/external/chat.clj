@@ -92,8 +92,8 @@
       (db/transact (:conn this) tx)))
 
   IReadStoreChat
-  (initial-read [this store _]
-    (db/pull-one-with (db/db this) ['*] (datomic-chat-entity-query store)))
+  (initial-read [this store query]
+    (db/pull-one-with (db/db this) query (datomic-chat-entity-query store)))
   (read-messages [this store query last-read]
     (let [db (db/db this)
           db-history (d/since (d/history db) last-read)]

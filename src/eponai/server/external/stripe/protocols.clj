@@ -18,6 +18,8 @@
     Opts is a map with following keys:
     :country - A two character string code for the country of the seller, e.g. 'US'.")
 
+  (update-account [this account-id params])
+
   (create-customer [this account-id opts])
 
   (charge [this opts]))
@@ -64,8 +66,14 @@
     (set-api-key api-key)
     (let [account (Account/retrieve ^String account-id)
           external-accounts (.getExternalAccounts account)]
-      {:id      (.getId account)
-       :country (.getCountry account)}))
+      (f/stripe->account account)))
+
+  (update-account [_ account-id params]
+    (set-api-key api-key)
+    (let [account (Account/retrieve ^String account-id)
+          updated (.update account (clojure.walk/stringify-keys params))]
+      (debug "Update stripe account: " updated)
+      (f/stripe->account updated)))
 
   (create-customer [_ account-id {:keys [email]}]
     (let [customer (Customer/create {"email" email} ^RequestOptions (request-options account-id))]

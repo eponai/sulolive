@@ -5,6 +5,7 @@
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.user.profile :as profile]
+    [eponai.common.ui.user.profile-edit :as pe]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]))
@@ -13,7 +14,10 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:query/user [:db/id :user/email {:user/photo [:photo/path]}]}
+     {:query/user [:db/id
+                   :user/email
+                   {:user/photo [:photo/path]}
+                   :user/name]}
      {:query/auth [:db/id]}
      {:proxy/profile (om/get-query profile/Profile)}
      {:proxy/order (om/get-query o/Order)}
@@ -31,6 +35,8 @@
           (condp = route
             :user/order-list (uo/->OrderList order-list)
             :user/order (o/->Order order)
+            :user/profile (pe/->ProfileEdit (om/computed {}
+                                                         {:user user}))
             :user (profile/->Profile (om/computed profile
                                                   {:user             user
                                                    :is-current-user? (= (:db/id user) (:db/id auth))}))))))))

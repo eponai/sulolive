@@ -5,6 +5,7 @@
 (def store-routes
   {""           :store
    "/dashboard" {""          :store-dashboard
+                 "/settings" :store-dashboard/settings
                  "/products" {""                                :store-dashboard/product-list
                               ["/" [#"create" :action]]         :store-dashboard/create-product
                               ["/" [#"(\d|\w|-)+" :product-id]] :store-dashboard/product}
@@ -12,18 +13,17 @@
                               ["/" [#"create" :action]] :store-dashboard/create-order
                               ["/" [#"\w+" :order-id]]  :store-dashboard/order}
                  "/stream"   :store-dashboard/stream}
-   "/nav"       {"/about" :store/about
+   "/nav"       {"/about"                          :store/about
                  ["/" [#"(\d|\w|-)+" :navigation]] :store/navigation}})
 
 (def user-routes
   {""        :user
    "/orders" {""                       :user/order-list
-              ["/" [#"\w+" :order-id]] :user/order}})
+              ["/" [#"\w+" :order-id]] :user/order}
+   "/profile" :user/profile})
 
 (def product-routes
   {""                         :products
-   "/categories"              {""              :products/all-categories
-                               ["/" :category] :products/categories}
    ["/" [#"\d+" :product-id]] :product})
 (def routes
   ["/" {""                            :index
@@ -31,8 +31,11 @@
         "sell/coming-soon"            :sell-soon
         "live"                        :live
         "store/new"                   :new-store
+        "store"                       :index
         ["store/" [#"\d+" :store-id]] store-routes
         "products"                    product-routes
+        "categories"                  {""              :products/all-categories
+                                       ["/" :category] :products/categories}
         ["checkout/" :store-id]       :checkout
         "shopping-bag"                :shopping-bag
         "business"                    :business

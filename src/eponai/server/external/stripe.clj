@@ -34,8 +34,15 @@
     (get-order [_ _ _])
     (list-orders [_ _ _])))
 
+(defn get-account [stripe account-id]
+  (p/get-account stripe account-id))
+
 (defn create-account [stripe params]
   (p/create-account stripe params))
+
+(defn update-account [stripe account-id params]
+  (s/assert :ext.stripe.params/update-account params)
+  (p/update-account stripe account-id params))
 
 (defn create-product [stripe account-secret params]
   (s/assert :ext.stripe.params/create-product params)
@@ -112,3 +119,17 @@
 (s/def :ext.stripe.params/create-product (s/keys :req-un
                                                  [:ext.stripe.product/id
                                                   :ext.stripe.product/name]))
+
+(s/def :ext.stripe.legal-entity.dob/year number?)
+(s/def :ext.stripe.legal-entity.dob/month number?)
+(s/def :ext.stripe.legal-entity.dob/day number?)
+(s/def :ext.stripe.legal-entity/first_name string?)
+(s/def :ext.stripe.legal-entity/last_name string?)
+(s/def :ext.stripe.legal-entity/dob (s/keys :req-un [:ext.stripe.legal-entity.dob/year
+                                                     :ext.stripe.legal-entity.dob/month
+                                                     :ext.stripe.legal-entity.dob/day]))
+(s/def :ext.stripe/legal_entity (s/keys :opt-un [:ext.stripe.legal-entity/first_name
+                                                 :ext.stripe.legal-entity/last_name
+                                                 :ext.stripe.legal-entity/dob]))
+(s/def :ext.stripe.params/update-account (s/keys :opt-un
+                                                 [:ext.stripe/legal_entity]))

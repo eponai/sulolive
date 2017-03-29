@@ -15,7 +15,7 @@ $footer-height: 4rem;
 
 $navbar-zindex: 3;
 
-$chat-width-large: rem-calc(300);
+$chat-width-large: rem-calc(400);
 $chat-width-small: rem-calc(200);
 
 @mixin sulo-typography() {
@@ -26,17 +26,21 @@ $chat-width-small: rem-calc(200);
     }
 }
 
-::-webkit-scrollbar {
+#the-sulo-app::-webkit-scrollbar {
 		width: 5px;
 		// background: $black;
 }
-::-webkit-scrollbar-track {
+#the-sulo-app::-webkit-scrollbar-track {
 		background: $white;
 }
-::-webkit-scrollbar-thumb {
+#the-sulo-app::-webkit-scrollbar-thumb {
 		background: map-get($foundation-palette,primary);
 }
 html, body {
+	overflow: hidden;
+}
+
+#the-sulo-app {
 	overflow-x: hidden;
 	min-height: 100%;
 	width: 100%;
@@ -93,27 +97,16 @@ h3 {
 	}
 }
 
-.dropdown-pane {
-	visibility: hidden;
-	background: $white;
-	@include breakpoint(medium) {
-		visibility: visible;
-	}
-	right: 0;
-	border: 1px solid rgba($primary-color, 0.2);
-	// box-shadow: 1px 1px 3px 0 rgba($primary-color, 0.1);
-}
-
 .drilldown-submenu-cover-previous {
 	min-height: 100%;
 }
 
-@mixin list-item-hover($color: $white, $hover-color: darken($color, 5%)) {
-	transition: background .25s ease-in-out;
-	&:hover, &:focus {
-		background: $hover-color;
-	}
-}
+// @mixin list-item-hover($color: $white, $hover-color: darken($color, 5%)) {
+// 	transition: background .25s ease-in-out;
+// 	&:hover, &:focus {
+// 		background: $hover-color;
+// 	}
+// }
 
 @mixin wrap-text($font-size: 1, $lines: 1) {
 	overflow: hidden; 

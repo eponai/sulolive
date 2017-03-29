@@ -67,6 +67,12 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'stripe/update-account
+  [{:keys [target]} _ p]
+  (debug "stripe/update-account with params: " p)
+  (if target
+    {:remote true}))
+
 (defmethod client-mutate 'store/create-product
   [{:keys [target]} _ p]
   (debug "store/create-product with params: " p)
