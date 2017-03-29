@@ -5,12 +5,14 @@
             [suspendable.core :as suspendable]
             [taoensso.timbre :refer [debug]]))
 
-(defrecord Datomic [db-url provided-conn]
+(defrecord Datomic [db-url provided-conn add-mocked-data?]
   component/Lifecycle
   (start [this]
     (if (:conn this)
       this
-      (let [conn (or provided-conn (datomic-dev/create-connection db-url))]
+      (let [conn (or provided-conn
+                     (datomic-dev/create-connection db-url
+                                                    {::datomic-dev/add-data? add-mocked-data?}))]
         (assoc this :conn conn))))
   (stop [this]
     (when-let [conn (:conn this)]

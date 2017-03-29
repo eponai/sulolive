@@ -7,6 +7,7 @@
     [eponai.common.ui.elements :as elements]
     #?(:cljs
        [eponai.web.utils :as utils])
+    [eponai.client.chat :as client.chat]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]))
@@ -26,8 +27,25 @@
                                     {:chat.message/user [:user/email {:user/photo [:photo/path]}]}
                                     :chat.message/text
                                     :chat.message/timestamp]}]}
+     {:query/store [:db/id]}
      {:query/auth [:db/id]}])
+  client.chat/IStoreChatListener
+  (start-listening! [this store-id]
+    (debug "Will start listening to store-id: " store-id)
+    (client.chat/start-listening! (:shared/store-chat-listener (om/shared this)) store-id))
+  (stop-listening! [this store-id]
+    (client.chat/stop-listening! (:shared/store-chat-listener (om/shared this)) store-id))
   Object
+  (componentWillUnmount [this]
+    (client.chat/stop-listening! this (:db/id (:query/store (om/props this)))))
+  (componentDidUpdate [this prev-props prev-state]
+    (let [old-store (:db/id (:query/store prev-props))
+          new-store (:db/id (:query/store (om/props this)))]
+      (when (not= old-store new-store)
+        (client.chat/stop-listening! this old-store)
+        (client.chat/start-listening! this new-store))))
+  (componentDidMount [this]
+    (client.chat/start-listening! this (:db/id (:query/store (om/props this)))))
   #?(:cljs
      (toggle-chat
        [this show?]

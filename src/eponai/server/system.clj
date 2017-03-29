@@ -67,11 +67,17 @@
                                                     :access-key (:aws-access-key-id env)
                                                     :secret     (:aws-secret-access-key env)})
                      :system/chat (c/using (chat/map->DatomicChat {})
-                                           {:datomic :system/datomic})
+                                           {:chat-datomic :system/chat-datomic
+                                            :sulo-datomic :system/datomic})
+                     :system/chat-datomic (datomic/map->Datomic
+                                            {:db-url           (:chat-db-url env)
+                                             :add-mocked-data? false})
                      :system/chat-websocket (c/using (websocket/map->StoreChatWebsocket {})
                                                      {:chat :system/chat})
-                     :system/datomic (datomic/map->Datomic {:db-url (:db-url env)
-                                                            :provided-conn (::provided-conn config)})
+                     :system/datomic (datomic/map->Datomic
+                                       {:db-url           (:db-url env)
+                                        :provided-conn    (::provided-conn config)
+                                        :add-mocked-data? true})
                      :system/mailchimp (mailchimp/mail-chimp (:mail-chimp-api-key env))
                      :system/server-address (c/using (server-address/map->ServerAddress {:schema (:server-url-schema env)
                                                                                          :host   (:server-url-host env)})

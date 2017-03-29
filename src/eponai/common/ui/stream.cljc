@@ -60,13 +60,6 @@
   (query [this]
     [:query/messages
      {:query/stream-config [:ui.singleton.stream-config/subscriber-url]}])
-  client.chat/IStoreChatListener
-  (start-listening! [this store-id]
-    (debug "Will start listening to store-id: " store-id)
-    (client.chat/start-listening! (:shared/store-chat-listener (om/shared this)) store-id))
-  (stop-listening! [this store-id]
-    (client.chat/stop-listening! (:shared/store-chat-listener (om/shared this)) store-id))
-
   Object
   (server-url [this]
     (get-in (om/props this) [:query/stream-config :ui.singleton.stream-config/subscriber-url]))
@@ -124,18 +117,11 @@
   (componentWillUnmount [this]
     (let [{:keys [hls]} (om/get-state this)]
       (when hls
-        (.destroy hls)))
-    (client.chat/stop-listening! this (:db/id (:query/store (om/props this)))))
+        (.destroy hls))))
   (componentDidUpdate [this prev-props prev-state]
-    (.ensure-hls-subscription this)
-    (let [old-store (:db/id (:query/store prev-props))
-          new-store (:db/id (:query/store (om/props this)))]
-      (when (not= old-store new-store)
-        (client.chat/stop-listening! this old-store)
-        (client.chat/start-listening! this new-store))))
+    (.ensure-hls-subscription this))
   (componentDidMount [this]
     (.ensure-hls-subscription this)
-    (client.chat/start-listening! this (:db/id (:query/store (om/props this))))
 
     ;(js/WowzaPlayer.create "sulo-wowza"
     ;                       (clj->js {:license   "PLAY1-aaEJk-4mGcn-jW3Yr-Fxaab-PAYm4"

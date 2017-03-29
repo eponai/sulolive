@@ -37,40 +37,27 @@
      (conj schema (database-functions-schema)))))
 
 (defn add-data-to-connection
-  ([conn & [schema]]
+  ([conn add-data? & [schema]]
    (let [schema (or schema (read-schema-files))]
      (db/transact conn schema)
      (debug "Schema added.")
-     (mocked/add-data conn)
-     (debug "Test data added."))))
+     (when add-data?
+       (mocked/add-data conn)
+       (debug "Test data added.")))))
 
 (defn create-connection
-  ([] (create-connection (env :db-url)))
-  ([uri]
-   (try
-     (if (contains? #{nil "" "test"} uri)
-       (let [mem-conn (create-new-inmemory-db)]
-         (info "Setting up inmemory db because uri is set to:" uri)
-         (add-data-to-connection mem-conn)
-         (debug "Successfully set up inmemory db!")
-         mem-conn)
-       (do
-         (info "Setting up remote db.")
-         (d/connect uri)))
-     (catch Exception e
-       (error "Exception:" e " when trying to connect to datomic=" uri)
-       (throw e)))))
+  [uri {::keys [add-data?]}]
+  (try
+    (if (contains? #{nil "" "test"} uri)
 
-
-(defonce connection (atom nil))
-
-(defn connect!
-  "Returns a connection. Caches the connection when it has successfully connected."
-  []
-  (debug "Will try to set the database connection...")
-  ;; Just set the connection once. Using an atom that's only defined once because,
-  ;; there's a ring middleware which (seems to) redefine all vars, unless using defonce.
-  (if-let [c @connection]
-    (do (debug "Already had a connection. Returning the old one: " c)
-        c)
-    (reset! connection (create-connection))))
+      (let [_ (info "Setting up inmemory db because uri is set to:" uri)
+            mem-conn (create-new-inmemory-db)]
+        (add-data-to-connection mem-conn add-data?)
+        (debug "Successfully set up inmemory db!")
+        mem-conn)
+      (do
+        (info "Setting up remote db.")
+        (d/connect uri)))
+    (catch Exception e
+      (error "Exception:" e " when trying to connect to datomic=" uri)
+      (throw e))))
