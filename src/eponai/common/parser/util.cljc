@@ -111,11 +111,11 @@
                            :params node-values
                            :values values})))
 
-        (some? node-val)
-        (recur (get values node-val) node-values)
-
         :else
-        (throw (ex-info "Unknown graph state" {:graph graph :node-values node-values}))))))
+        (if-let [next-graph (get values node-val :not-in-values)]
+          (when-not (= next-graph :not-in-values)
+            (recur next-graph node-values))
+          (throw (ex-info "Unknown graph state" {:graph graph :node-values node-values})))))))
 
 (defrecord GraphReadAtBasisT [graph]
   IReadAtBasisT

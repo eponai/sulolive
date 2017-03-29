@@ -13,6 +13,7 @@
    :ui/component {:db/unique :db.unique/identity}
    :ui.component.cart/items {:db/cardinality :db.cardinality/many
                              :db/valueType :db.type/ref}
+   :ui.store-chat-queue/store-id {:db/unique :db.unique/identity}
    :order/id {:db/unique :db.unique/identity}
    ;:store.item/uuid {:db/unique :db.unique/identity}
    :db/ident {:db/unique :db.unique/identity}})

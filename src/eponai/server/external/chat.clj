@@ -15,7 +15,8 @@
   (initial-read [this store query] "Initial call to get chat entity and (maybe?) some of its messages.")
   (read-messages [this store query last-read] "Read messages from last time.")
   (last-read [this] "Some identifier that can be used in read-messages to only get what's changed.")
-  (chat-update-stream [this] "Stream of store-id's which have new messages"))
+  (chat-update-stream [this] "Stream of store-id's which have new messages")
+  (sync-up-to! [this t]))
 
 ;; #############################
 ;; ### Datomic implementation
@@ -100,6 +101,10 @@
   (last-read [this]
     (d/basis-t (db/db this)))
   (chat-update-stream [this]
-    (:store-id-chan this)))
+    (:store-id-chan this))
+  (sync-up-to! [this basis-t]
+    (when basis-t
+      (debug "Syncing chat up to basis-t: " basis-t)
+      (deref (d/sync (:conn this) basis-t) 1000 nil))))
 
 ;; ### Datomic implementation END

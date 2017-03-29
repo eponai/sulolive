@@ -28,7 +28,11 @@
         [[:bar 1] [:baz 2]] {:bar 1}
         [[:bar 1] [:baz 2]] [[:bar 1]]
         [[:bar 1] [:baz 2]] {:bar 1 :baz 2}
-        [[:bar 1] [:baz 2]] [[:bar 1] [:baz 2]]))
+        [[:bar 1] [:baz 2]] [[:bar 1] [:baz 2]]
+        ;; Setting nil:
+        [[:bar nil]] []
+        [[:bar nil]] {:bar nil}
+        [[:bar nil]] [[:bar nil]]))
     (test/testing "multiple sets, can get basis-t with fewer params iff there's only one path"
       (are [setters get-params basis-t-or-msg]
            (try
@@ -36,7 +40,7 @@
                      (-> (set-many graph setters)
                          (u/get-basis-t :foo get-params))))
              (catch #?@(:clj [Exception e] :cljs [ExceptionInfo e])
-                    (if (number? basis-t-or-msg)
+                    (if (or (nil? basis-t-or-msg) (number? basis-t-or-msg))
                       (throw e)
                       (re-find basis-t-or-msg #?(:cljs (.-message e)
                                                  :clj  (.getMessage e))))))
@@ -65,7 +69,24 @@
         [{:basis-t 47 :params [[:bar 1]]}
          {:basis-t 11 :params [[:bar 1] [:baz 1]]}]
         {:bar 1 :baz 1}
-        #"additional keys"))
+        #"additional keys"
+
+        ;; Testing nil vals:
+        [{:basis-t 47 :params [[:bar nil]]}
+         {:basis-t 11 :params [[:bar 1]]}]
+        {:bar nil}
+        47
+
+        [{:basis-t 47 :params [[:bar nil]]}
+         {:basis-t 11 :params [[:bar 1]]}]
+        {:bar 1}
+        11
+
+        [{:basis-t 47 :params [[:bar nil] [:baz 2]]}
+         {:basis-t 11 :params [[:bar 1] [:baz 1]]}]
+        {:bar nil}
+        47
+        ))
     (test/testing "Merging of 2 graphs is the same applying all setters on them"
       (are [setters1 setters2] (= (u/merge-graphs (set-many graph setters1)
                                                   (set-many graph setters2))

@@ -104,50 +104,56 @@
   (go
     (try
       (loop [retry-time-ms 500]
-        (let [{:keys [method url opts response-fn post-merge-fn shutting-down?
-                      redirect-fn]}
-              ((get remote->send remote-key) query)
-              _ (debug "Sending to " " url: " url " remote: " remote-key " query: " query
-                       "method: " method  "opts: " opts)
-              {:keys [success body status headers error-code] :as response}
-              (response-fn (if shutting-down?
-                             {:success false}
-                             (<! (send (condp = method
-                                         :get http/get
-                                         :post http/post)
-                                       url opts))))]
-          (cond
-            (true? success)
-            (do
-              #?(:cljs (debug "Recieved response from remote:" body "status:" status))
-              {:response      body
-               :post-merge-fn post-merge-fn})
-            (= :offline error-code)
-            (do
-              (<! (timeout retry-time-ms))
-              (recur (min max-retry-time-ms (* 2 retry-time-ms))))
+        (let [{:keys  [method url opts response-fn post-merge-fn shutting-down?
+                       redirect-fn]
+               ::keys [skip?]}
+              ((get remote->send remote-key) query)]
+          (if skip?
+            (do (debug "Skipping send of query: " query)
+                {::skip? true})
+            (let [_ (debug "Sending to " " url: " url " remote: " remote-key " query: " query
+                           "method: " method "opts: " opts)
+                  {:keys  [success body status headers error-code] :as response}
+                  (response-fn (cond
+                                 shutting-down?
+                                 {:success false}
+                                 :else
+                                 (<! (send (condp = method
+                                             :get http/get
+                                             :post http/post)
+                                           url opts))))]
+              (cond
+                (true? success)
+                (do
+                  #?(:cljs (debug "Recieved response from remote:" body "status:" status))
+                  {:response      body
+                   :post-merge-fn post-merge-fn})
+                (= :offline error-code)
+                (do
+                  (<! (timeout retry-time-ms))
+                  (recur (min max-retry-time-ms (* 2 retry-time-ms))))
 
-            ;; Redirect
-            (and (number? status) (<= 300 status 399))
-            (do
-              (debug "Redirect. What to do?")
-              (if redirect-fn
+                ;; Redirect
+                (and (number? status) (<= 300 status 399))
                 (do
-                  (debug "Calling redirect function: " redirect-fn
-                         " with response: " response)
-                  (redirect-fn response))
-                (do
-                  (debug "No redirect-fn to handle redirect: " response
-                         ". Doing nothing.")
-                  {:response      nil
-                   :post-merge-fn post-merge-fn})))
-            :else
-            (throw (ex-info "Not 2xx response remote."
-                            {:remote remote-key
-                             :status status
-                             :url    url
-                             :body   body
-                             :query  query})))))
+                  (debug "Redirect. What to do?")
+                  (if redirect-fn
+                    (do
+                      (debug "Calling redirect function: " redirect-fn
+                             " with response: " response)
+                      (redirect-fn response))
+                    (do
+                      (debug "No redirect-fn to handle redirect: " response
+                             ". Doing nothing.")
+                      {:response      nil
+                       :post-merge-fn post-merge-fn})))
+                :else
+                (throw (ex-info "Not 2xx response remote."
+                                {:remote remote-key
+                                 :status status
+                                 :url    url
+                                 :body   body
+                                 :query  query})))))))
       (catch :default e
         ;; TODO: Do something about errors.
         ;; We'll know what to do once we start with messages?
@@ -316,17 +322,23 @@
     db-after))
 
 (defn- merge-response! [cb stable-db received history-id]
-  (let [{:keys [response error]} received
+  (let [{:keys [response error] ::keys [skip?]} received
         {:keys [result meta]} response]
     ;; Reset db and apply response
-    (if (nil? error)
-      (do (cb {:db     stable-db
-               :result result
-               :meta   meta
-               :history-id history-id}))
+    (cond
+      skip?
+      (cb {:db stable-db})
+
+      (some? error)
       (do
         (debug "Error: " error)
-        (cb {:db stable-db})))))
+        (cb {:db stable-db}))
+
+      :else
+      (cb {:db         stable-db
+           :result     result
+           :meta       meta
+           :history-id history-id}))))
 
 (defn- <stream-chunked-response
   "Stream chunked responses. Return the new stable-db and the current mutation-queue."
@@ -337,10 +349,10 @@
          (satisfies? client.utils/IQueueMutations mutation-queue)
          (map? received)
          (fn? is-remote-fn)]}
-  (let [{:keys [response error]} received
+  (let [{:keys [response error] ::keys [skip?]} received
         app-state (om/app-state reconciler)]
     (go
-      (when (nil? error)
+      (when (and (nil? error) (not skip?))
         (when-let [chunked-txs (seq (chunk-response response))]
           (loop [stable-db stable-db mutation-queue mutation-queue txs chunked-txs]
             (let [[head tail] (split-at 50 txs)]

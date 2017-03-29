@@ -3,6 +3,7 @@
     [eponai.common.parser :as parser :refer [client-mutate]]
     [eponai.common.format :as format]
     [eponai.client.auth :as auth]
+    [eponai.client.chat :as chat]
     [eponai.common.database :as db]
     [taoensso.timbre :refer [debug warn]]))
 
@@ -113,6 +114,14 @@
                        message-id (::format/message-id (meta tx))]
                    (db/transact state (conj tx {:db/id                             message-id
                                                 :chat.message/client-side-message? true}))))})))
+
+(defmethod client-mutate 'chat/queue-update
+  [{:keys [state target]} k {:keys [store-id basis-t]}]
+  (when-not target
+    {:action (fn []
+               (let [last-basis-t (chat/queued-basis-t (db/db state) store-id)]
+                 (when (or (nil? last-basis-t) (< last-basis-t basis-t))
+                   (db/transact state (chat/queue-basis-t-tx store-id basis-t)))))}))
 
 (defmethod client-mutate 'user/checkout
   [{:keys [target]} k p]
