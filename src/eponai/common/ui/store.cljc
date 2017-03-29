@@ -138,6 +138,8 @@
                           (dom/span nil label)))))
                   (:store/navigations store)))))
 
-          (grid/products (concat store-items store-items store-items)))))))
+          (grid/products (concat store-items store-items store-items)
+                         (fn [p]
+                           (pi/->ProductItem {:product p}))))))))
 
 (def ->Store (om/factory Store))

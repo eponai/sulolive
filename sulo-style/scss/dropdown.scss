@@ -93,7 +93,7 @@
 				.content-item-title-section, .content-item-subtitle-section {
 					span, small, strong {
 						font-size: 0.9rem;
-						@include wrap-text(1.1, 1);
+						@include wrap-text-multiline(1.1, 1);
 					}
 				}
 				.cart-link {

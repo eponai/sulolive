@@ -3,6 +3,7 @@
     [eponai.common.ui.common :as common]
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.elements.photo :as photo]
+    [eponai.common.ui.product-item :as pi]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug error]]
@@ -13,7 +14,8 @@
     [eponai.client.auth :as auth]
     [eponai.client.utils :as utils]
     [eponai.common.ui.icons :as icons]
-    [eponai.common.ui.elements.menu :as menu]))
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.common.ui.elements.grid :as grid]))
 
 (defn top-feature [opts icon title text]
   (dom/div #js {:className "feature-item column"}
@@ -27,15 +29,21 @@
            (dom/strong #js {:className "feature-title"} title)
            (dom/p nil text)))))
 
-(defn banner [{:keys [color align] :as opts} & content]
+(defn banner [{:keys [color align] :as opts} primary secondary]
   (let [align (or align :left)
         color (or color :default)]
     (dom/div #js {:className (str "banner " (name color))}
-      (dom/div #js {:className "row"}
-        (apply dom/div #js {:className (str "column small-12 medium-8"
-                                            (when (= (name align) "right")
-                                              " medium-offset-4 text-right"))}
-               content)))))
+      (grid/row
+        nil
+        (grid/column
+          (cond->> (->> (grid/column-size {:small 9 :medium 8})
+                       (css/text-align align))
+                  (= align :right)
+                  (grid/column-offset {:small 3 :medium 4}))
+          primary)
+        (grid/column
+          (css/align :right)
+          secondary)))))
 
 (defn collection-element [{:keys [url title full?]}]
   ;; Use the whole thing as hover elem
@@ -50,7 +58,7 @@
       ;  (photo/photo {:src url}))
       (my-dom/div
         (->> (css/text-align :center))
-        (dom/p nil (dom/span nil title))))))
+        (dom/span nil title)))))
 
 (defui Index
   static om/IQuery
@@ -157,27 +165,26 @@
             (common/content-section {:class "collections"}
                                     "Shop by collection"
                                     (div nil
-                                         (div
-                                           (->> (css/grid-row)
-                                                (css/grid-row-columns {:small 1 :medium 2}))
-                                           (div
-                                             (->> (css/grid-column)
-                                                  (css/add-class :content-item))
+                                         (grid/row
+                                           (grid/columns-in-row {:small 1 :medium 2})
+                                           (grid/column
+                                             (->> (css/add-class :content-item)
+                                                  (css/add-class :collection-item))
                                              (collection-element {:url   "/assets/img/home-new.jpg"
                                                                   :title "Home"}))
-                                           (div
-                                             (->> (css/grid-column)
-                                                  (css/add-class :content-item))
+                                           (grid/column
+                                             (->> (css/add-class :content-item)
+                                                  (css/add-class :collection-item))
                                              (collection-element {:url   "/assets/img/women-new.jpg"
                                                                   :title "Women"}))
-                                           (div
-                                             (->> (css/grid-column)
-                                                  (css/add-class :content-item))
+                                           (grid/column
+                                             (->> (css/add-class :content-item)
+                                                  (css/add-class :collection-item))
                                              (collection-element {:url   "/assets/img/men-new.jpg"
                                                                   :title "Men"}))
-                                           (div
-                                             (->> (css/grid-column)
-                                                  (css/add-class :content-item))
+                                           (grid/column
+                                             (->> (css/add-class :content-item)
+                                                  (css/add-class :collection-item))
                                              (collection-element {:url   "/assets/img/kids-new.jpg"
                                                                   :title "Kids"}))))
                                     ;(map (fn [s t]
@@ -192,25 +199,29 @@
                                      :class "new-arrivals"}
                                     "New arrivals"
                                     (div (->> (css/grid-row)
-                                              (css/grid-row-columns {:small 2 :medium 4 :large 5}))
+                                              (css/grid-row-columns {:small 2 :medium 4}))
                                          (map-indexed
                                            (fn [i p]
                                              (my-dom/div
                                                (css/grid-column {:key (str i)})
-                                               (common/product-element {:open-url? true} p)))
-                                           featured-items))
+                                               (pi/product-element {:open-url? true} p)))
+                                           (take 4 featured-items)))
                                     "See More")
 
             (banner {:color :default}
-                    (dom/h2 nil "Watch, shop and chat with your favorite vendors and artisans.")
-                    (dom/p nil "Follow and stay up-to-date on when they're online to meet you!")
-                    (dom/a #js {:className "button"} "Join"))
+                    (dom/div nil
+                      (dom/h2 nil "Watch, shop and chat with your favorite vendors and artisans.")
+                      (dom/p nil "Follow and stay up-to-date on when they're online to meet you!")
+                      (dom/a #js {:className "button"} "Join"))
+                    (icons/heart-drawing))
 
             (banner {:color :white
                      :align :right}
-                    (dom/h2 nil "Open your own shop on SULO and tell your story to Vancouver.")
-                    (dom/p nil "Enjoy a community that lives for local.")
-                    (dom/a #js {:className "button gray hollow"} "Contact Us"))))))))
+                    (dom/div nil
+                      (dom/h2 nil "Open your own shop on SULO and tell your story to Vancouver.")
+                      (dom/p nil "Enjoy a community that lives for local.")
+                      (dom/a #js {:className "button gray hollow"} "Contact Us"))
+                    nil)))))))
 
 
 (def ->Index (om/factory Index))

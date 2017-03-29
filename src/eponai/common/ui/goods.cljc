@@ -151,13 +151,14 @@
                           (css/add-class :expand)
                           (dom/a
                             (->> {:href (routes/url :products/categories {:category path})}
-                                 (css/add-class :category-photo))
+                                 (css/add-class :content-item)
+                                 (css/add-class :collection-item))
                             (photo/with-overlay
                               nil
                               (photo/photo {:src (:photo/path photo)})
                               (dom/div
                                 (->> (css/text-align :center))
-                                (dom/p nil (dom/span nil label))))))))
+                                (dom/span nil label)))))))
                     (filter #(some? (:category/photo %)) (:category/children category))))))
 
             (dom/div
@@ -187,6 +188,8 @@
                     ordered-products (if (:reverse? sorting)
                                        (reverse sorted)
                                        sorted)]
-                (grid/products ordered-products)))))))))
+                (grid/products ordered-products
+                               (fn [p]
+                                 (pi/->ProductItem {:product p})))))))))))
 
 (def ->Goods (om/factory Goods))
