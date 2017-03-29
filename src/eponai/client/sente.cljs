@@ -112,8 +112,11 @@
    a stoppable object that can subscribe, unsubscribe and send events to the server.
    Received events are given to every event-handler."
   [endpoint event-handlers]
-  (let [{:keys [send-fn ch-recv chsk]} (sente/make-channel-socket! endpoint {:packer (sente.transit/get-transit-packer)
-                                                                        :type   :auto})
+  (let [{:keys [send-fn ch-recv chsk]}
+        (sente/make-channel-socket! endpoint {:packer (sente.transit/get-transit-packer)
+                                              ;; TODO: Use :ws for websockets once we've
+                                              ;;       enabled elastic beanstalk to run websockets.
+                                              :type   :ajax})
         send-chan (a/chan (a/sliding-buffer 1000))
         handler (sente-handler event-handlers send-fn)
         close-fn (sente-loop handler ch-recv send-chan)]
