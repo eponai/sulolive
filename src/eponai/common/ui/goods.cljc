@@ -50,13 +50,15 @@
                         {:category/_children ...}
                         {:category/children ...}]}
      {:query/top-categories [:category/label :category/path]}
+     {:proxy/product-filters (om/get-query pf/ProductFilters)}
      :query/current-route])
   Object
   (initLocalState [_]
     {:sorting {:key      :store.item/name
-               :reverse? false}})
+               :reverse? false}
+     :filters-open? false})
   (render [this]
-    (let [{:keys       [proxy/navbar]
+    (let [{:proxy/keys       [navbar product-filters]
            :query/keys [current-route items category top-categories]} (om/props this)
           {:keys [sorting filters-open?]} (om/get-state this)
           current-category (get-in current-route [:route-params :category] "")
@@ -69,7 +71,8 @@
             {:id "sl-product-filters"}
             (common/modal {:on-close #(om/update-state! this assoc :filters-open? false)
                            :size     "full"}
-                          (pf/->ProductFilters))))
+                          (pf/->ProductFilters (om/computed product-filters
+                                                            {:on-change #(om/update-state! this assoc :filters-open? false)})))))
         (grid/row
           nil
           (grid/column

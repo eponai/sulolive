@@ -98,6 +98,20 @@
 			@include breakpoint(medium) {
 				padding-top: 0;
 			}
+			&:nth-child(3n) {
+				max-width: 100%;
+				flex: 1;
+				.photo {
+					padding-top: 33%;
+				}
+				@include breakpoint(medium) {
+					flex: 1 0 33%;
+					max-width: 33%;
+					.photo {
+						padding-top: 67%;
+					}
+				}
+			}
 		}
 		.content {
 			// font-size: 1rem;
