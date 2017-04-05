@@ -29,6 +29,7 @@ figwheel_server.log
 #
 /node_modules
 npm-debug.log
+yarn-error.log
 /bower_components
 
 ## Generated clojurescript->javascript output
