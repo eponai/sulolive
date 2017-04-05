@@ -25,7 +25,7 @@
       (dom/a
         (->> {:onClick on-click
               :href    goods-href}
-             :primary-photo)
+             (css/add-class :primary-photo))
         (photo/product-photo (first photos)))
 
       (dom/div
@@ -63,14 +63,13 @@
     (let [{:keys [product]} (om/props this)
           {:keys [display-content]} (om/get-computed this)
           {:keys [show-item? breakpoint]} (om/get-state this)
-          open-url? #?(:cljs (utils/bp-compare :large breakpoint >) :clj false)
-          on-click (when-not open-url? #(om/update-state! this assoc :show-item? true))
-          product-href (when (or open-url? (nil? on-click))
-                         (routes/url :product {:product-id (:db/id product)}))]
+          on-click #(om/update-state! this assoc :show-item? true)
+          #?@(:cljs [open-url? (utils/bp-compare :large breakpoint >)]
+              :clj  [open-url? false])]
 
       (product-element
         {:on-click on-click
-         :href     product-href}
+         :open-url? open-url?}
         product
         (when show-item?
           (common/modal {:on-close #(om/update-state! this assoc :show-item? false)

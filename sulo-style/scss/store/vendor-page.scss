@@ -15,6 +15,14 @@
 			max-width: 10rem;
 			margin: 0 auto;
 		}
+		.store-name {
+			margin-top: 1rem;
+			text-align: center;
+			@include breakpoint(medium) {
+				margin-top: 0;
+				text-align: left;
+			}
+		}
 		.follow-section {
 			margin-top: 1rem;
 			@include breakpoint(medium) {
@@ -49,15 +57,7 @@
 		.about {
 			border-right: 1px solid $medium-gray;
 		}
-		.column {
-			padding: 1rem;
-			@include breakpoint(medium) {
-				padding: 1.5rem;
-			}
-			@include breakpoint(large) {
-				padding: 2rem;
-			}
-		}
+
 		.menu-container {
 			// font-family: $header-font-family-serif;
 			// text-transform: uppercase;

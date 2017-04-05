@@ -40,6 +40,46 @@ html, body {
 	overflow: hidden;
 }
 
+.product-grid {
+	.column {
+		padding: 1rem;
+		@include breakpoint(small only) {
+			&:nth-child(2n+1) {
+				padding-left: 0;
+			}
+			&:nth-child(2n) {
+				padding-right: 0;
+			}
+		}
+		@include breakpoint(medium) {
+			padding: 1.5rem;
+			&:nth-child(3n+1) {
+				padding-left: 0;
+			}
+			&:nth-child(3n+2) {
+				padding-right: 0.75rem;
+				padding-left: 0.75rem;
+			}
+			&:nth-child(3n) {
+				padding-right: 0;
+			}
+		}
+		@include breakpoint(large) {
+			padding: 1.5rem 2rem;
+			&:nth-child(3n+1) {
+				padding-left: 0;
+			}
+			&:nth-child(3n+2) {
+				padding-right: 1rem;
+				padding-left: 1rem;
+			}
+			&:nth-child(3n) {
+				padding-right: 0;
+			}
+		}
+	}
+}
+
 #the-sulo-app {
 	overflow-x: hidden;
 	min-height: 100%;
