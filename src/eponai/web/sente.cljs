@@ -1,4 +1,4 @@
-(ns eponai.client.sente
+(ns eponai.web.sente
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require
     [cljs.core.async :as a]
