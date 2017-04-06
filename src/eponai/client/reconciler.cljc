@@ -48,13 +48,8 @@
                       remotes       (remote-order)
                       merge         (merge/merge!)}
                :as reconciler-config}]
-  (let [optional (into {}
-                       (comp (filter #(contains? reconciler-config %))
-                             (map (juxt identity reconciler-config)))
-                       [:logger
-                        :root-render
-                        :root-unmount])
-        reconciler (om/reconciler (into optional
+  (let [overwrites (select-keys reconciler-config [:logger :root-render :root-unmount])
+        reconciler (om/reconciler (into overwrites
                                         {:state      conn
                                          :ui->props  ui->props
                                          :parser     parser
