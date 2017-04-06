@@ -1,4 +1,4 @@
-package com.jourmoneyapp;
+package com.suloliveapp;
 
 import android.app.Application;
 

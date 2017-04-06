@@ -6,9 +6,8 @@ export TIMBRE_LEVEL=":info"
 export SESSION_COOKIE_STORE_KEY="a 16 bits secret"
 export SESSION_COOKIE_name="cookie-name"
 export CLJS_BUILD_ID=release 
-export JOURMONEY_SERVER_URL_SCHEMA="http"
-export JOURMONEY_SERVER_URL_SCHEMA="http"
-export JOURMONEY_SERVER_URL_HOST="localhost:3000"
+export SERVER_URL_SCHEMA="http"
+export SERVER_URL_HOST="localhost:3000"
 
 cd "$script_dir"
 lein uberjar

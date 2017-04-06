@@ -29,9 +29,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2D02E47A1E0B4A5D006451C7"
-               BuildableName = "JourMoneyApp-tvOS.app"
-               BlueprintName = "JourMoneyApp-tvOS"
-               ReferencedContainer = "container:JourMoneyApp.xcodeproj">
+               BuildableName = "SuloLiveApp-tvOS.app"
+               BlueprintName = "SuloLiveApp-tvOS"
+               ReferencedContainer = "container:SuloLiveApp.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -43,9 +43,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2D02E48F1E0B4A5D006451C7"
-               BuildableName = "JourMoneyApp-tvOSTests.xctest"
-               BlueprintName = "JourMoneyApp-tvOSTests"
-               ReferencedContainer = "container:JourMoneyApp.xcodeproj">
+               BuildableName = "SuloLiveApp-tvOSTests.xctest"
+               BlueprintName = "SuloLiveApp-tvOSTests"
+               ReferencedContainer = "container:SuloLiveApp.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -61,9 +61,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2D02E48F1E0B4A5D006451C7"
-               BuildableName = "JourMoneyApp-tvOSTests.xctest"
-               BlueprintName = "JourMoneyApp-tvOSTests"
-               ReferencedContainer = "container:JourMoneyApp.xcodeproj">
+               BuildableName = "SuloLiveApp-tvOSTests.xctest"
+               BlueprintName = "SuloLiveApp-tvOSTests"
+               ReferencedContainer = "container:SuloLiveApp.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -71,9 +71,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2D02E47A1E0B4A5D006451C7"
-            BuildableName = "JourMoneyApp-tvOS.app"
-            BlueprintName = "JourMoneyApp-tvOS"
-            ReferencedContainer = "container:JourMoneyApp.xcodeproj">
+            BuildableName = "SuloLiveApp-tvOS.app"
+            BlueprintName = "SuloLiveApp-tvOS"
+            ReferencedContainer = "container:SuloLiveApp.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -94,9 +94,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2D02E47A1E0B4A5D006451C7"
-            BuildableName = "JourMoneyApp-tvOS.app"
-            BlueprintName = "JourMoneyApp-tvOS"
-            ReferencedContainer = "container:JourMoneyApp.xcodeproj">
+            BuildableName = "SuloLiveApp-tvOS.app"
+            BlueprintName = "SuloLiveApp-tvOS"
+            ReferencedContainer = "container:SuloLiveApp.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <AdditionalOptions>
@@ -113,9 +113,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2D02E47A1E0B4A5D006451C7"
-            BuildableName = "JourMoneyApp-tvOS.app"
-            BlueprintName = "JourMoneyApp-tvOS"
-            ReferencedContainer = "container:JourMoneyApp.xcodeproj">
+            BuildableName = "SuloLiveApp-tvOS.app"
+            BlueprintName = "SuloLiveApp-tvOS"
+            ReferencedContainer = "container:SuloLiveApp.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

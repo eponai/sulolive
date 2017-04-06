@@ -50,7 +50,7 @@
                :as reconciler-config}]
   (let [optional (into {}
                        (comp (filter #(contains? reconciler-config %))
-                             (juxt identity reconciler-config))
+                             (map (juxt identity reconciler-config)))
                        [:logger
                         :root-render
                         :root-unmount])
