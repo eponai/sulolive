@@ -12,13 +12,15 @@
   (show-lock [this]))
 
 #?(:cljs
-   (extend-type js/Auth0Lock
-     IAuthLock
-     (show-lock [this]
-       (.show this (clj->js {:allowedConnections ["Username-Password-Authentication"]
-                             :auth               {:params {:state js/window.location.origin
+   (try
+     (extend-type js/Auth0Lock
+       IAuthLock
+       (show-lock [this]
+         (.show this (clj->js {:allowedConnections ["Username-Password-Authentication"]
+                               :auth               {:params {:state js/window.location.origin
 
-                                                           :scope "openid email"}}})))))
+                                                             :scope "openid email"}}}))))
+     (catch :default e)))
 
 #?(:cljs
    (defn auth0-lock []
