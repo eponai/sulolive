@@ -34,7 +34,7 @@
      :query/current-route])
   Object
   (render [this]
-    (let [st (om/get-state this)
+    (let [{:keys [fullscreen?] :as st} (om/get-state this)
           {:query/keys [store store-items current-route]
            :proxy/keys [navbar] :as props} (om/props this)
           {:store/keys [cover photo]
@@ -59,11 +59,14 @@
                 (dom/div
                   (cond->> (css/add-class :stream-container)
                            show-chat?
-                           (css/add-class :sulo-show-chat))
+                           (css/add-class :sulo-show-chat)
+                           fullscreen?
+                           (css/add-class :fullscreen))
                   (stream/->Stream (om/computed (:proxy/stream props)
                                                 {:stream-name (:stream/name stream)
                                                  :widescreen? true
-                                                 :store       store}))
+                                                 :store       store
+                                                 :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
                   (chat/->StreamChat (om/computed (:proxy/chat props)
                                                   {:on-toggle-chat (fn [show?]
                                                                      (om/update-state! this assoc :show-chat? show?))

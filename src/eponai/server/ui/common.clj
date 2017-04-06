@@ -3,8 +3,7 @@
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [clojure.string :as string]
-    [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]
-    [eponai.common.ui.navbar :as nav]))
+    [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]))
 
 ;; Utils
 
@@ -125,6 +124,10 @@
    (dom/meta {:name    "msapplication-TileImage"
               :content "/assets/img/favicon/ms-icon-144x144.png"})
    (dom/meta {:name "theme-color" :content "#ffffff"})
+   (dom/script {:src "//player.wowza.com/player/latest/wowzaplayer.min.js"})
+   ;(dom/script {:src (if release?
+   ;                    "//player.wowza.com/player/latest/wowzaplayer.min.js"
+   ;                    "/bower_components/wowzaplayer/wowzaplayer.min.js")})
    ])
 
 (defn budget-js-path [cljs-build-id]
