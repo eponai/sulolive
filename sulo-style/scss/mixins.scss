@@ -31,3 +31,23 @@
     }
   }
 }
+
+@mixin wrap-text-multiline($font-size: 1, $lines: 1) {
+  overflow: hidden; 
+  max-height: $font-size * $lines + rem;
+  line-height: $font-size + rem;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical; 
+    // line-height: 1.2rem;
+  text-overflow: ellipsis;
+}
+
+@mixin wrap-text() {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+

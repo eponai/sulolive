@@ -34,7 +34,7 @@
      :query/current-route])
   Object
   (render [this]
-    (let [st (om/get-state this)
+    (let [{:keys [fullscreen?] :as st} (om/get-state this)
           {:query/keys [store store-items current-route]
            :proxy/keys [navbar] :as props} (om/props this)
           {:store/keys [cover photo]
@@ -59,11 +59,14 @@
                 (dom/div
                   (cond->> (css/add-class :stream-container)
                            show-chat?
-                           (css/add-class :sulo-show-chat))
+                           (css/add-class :sulo-show-chat)
+                           fullscreen?
+                           (css/add-class :fullscreen))
                   (stream/->Stream (om/computed (:proxy/stream props)
                                                 {:stream-name (:stream/name stream)
                                                  :widescreen? true
-                                                 :store       store}))
+                                                 :store       store
+                                                 :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
                   (chat/->StreamChat (om/computed (:proxy/chat props)
                                                   {:on-toggle-chat (fn [show?]
                                                                      (om/update-state! this assoc :show-chat? show?))
@@ -88,11 +91,11 @@
 
                 (grid/column
                   (css/add-class :shrink)
-                  (dom/div nil (dom/strong (css/add-class :store-name) store-name))
+                  (dom/div (css/add-class :store-name) (dom/strong nil store-name))
                   (dom/p nil
-                         (dom/i
-                              (css/add-class "fa fa-map-marker fa-fw"))
-                         (dom/strong nil (dom/small nil "North Vancouver, BC"))))
+                         ;(dom/i
+                         ;     (css/add-class "fa fa-map-marker fa-fw"))
+                         (dom/small nil "North Vancouver, BC")))
                 (grid/column
                   (->> (grid/column-size {:small 12 :medium 4 :large 3})
                        (css/text-align :center)
@@ -138,6 +141,8 @@
                           (dom/span nil label)))))
                   (:store/navigations store)))))
 
-          (grid/products (concat store-items store-items store-items)))))))
+          (grid/products (concat store-items store-items store-items)
+                         (fn [p]
+                           (pi/->ProductItem {:product p}))))))))
 
 (def ->Store (om/factory Store))

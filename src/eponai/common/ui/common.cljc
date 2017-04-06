@@ -9,7 +9,8 @@
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [eponai.common.ui.elements.grid :as grid]))
 
 (defn order-status-element [status]
   (let [status-class (cond (= status :order.status/created)
@@ -55,28 +56,30 @@
          stream-name :stream/name} channel
         {:store/keys [photo]} store
         store-link (link-to-store store)]
-    (my-dom/div
-      (->> (css/grid-column)
-           (css/add-class :content-item))
-      ;(dom/div #js {:className "column content-item online-channel"})
-      (my-dom/a {:href store-link}
-                (photo/with-overlay
-                  nil
-                  (photo/square
-                    {:src (:photo/path photo)})
-                  (my-dom/div (css/add-class :video) (dom/i #js {:className "fa fa-play fa-fw"}))))
+    (grid/column
+      (->> (css/add-class :content-item)
+           (css/add-class :stream-item))
+      (my-dom/a
+        {:href store-link}
+        (photo/with-overlay
+          nil
+          (photo/square
+            {:src (:photo/path photo)})
+          (my-dom/div (css/add-class :video)
+                      (my-dom/i {:classes ["fa fa-play fa-fw"]}))))
       (my-dom/div
-        nil
-        (dom/div #js {:className "content-item-title-section text-center"}
-          (dom/a #js {:href store-link}
-                 (dom/span nil stream-name)))
-        (dom/div #js {:className "content-item-subtitle-section"}
-          (dom/a #js {:href store-link} (dom/strong nil (:store/name store))))
-        (dom/div #js {:className "content-item-subtitle-section"}
-          (viewer-element nil "x")))
-      ;(dom/div #js {:className "content-item-subtitle-section"}
-      ;  (dom/a #js {:href store-link} (:store/name store)))
-      )))
+        (->> (css/add-class :text)
+             (css/add-class :header))
+        (my-dom/a {:href store-link}
+               (my-dom/span nil stream-name)))
+
+      (my-dom/div
+        (css/add-class :text)
+        (my-dom/a {:href store-link}
+                  (my-dom/strong nil (:store/name store))))
+      (my-dom/div
+        (css/add-class :text)
+        (viewer-element nil "x")))))
 
 (defn content-section [{:keys [href class sizes]} header content footer]
   (my-dom/div
@@ -115,30 +118,6 @@
                   all-stars))
       (when (some? review-count)
         (dom/span nil (str "(" review-count ")"))))))
-
-(defn product-element [opts product & children]
-  (let [{:keys [on-click open-url?]} opts
-        goods-href (when (or open-url? (nil? on-click)) (routes/url :product {:product-id (:db/id product)}))
-        on-click (when-not open-url? on-click)
-        {:store.item/keys [photos price]
-         item-name :store.item/name
-         store :store/_items} product]
-    (apply dom/div #js {:className "content-item product-item"}
-           (my-dom/a
-             {:onClick on-click
-              :href    goods-href}
-             (photo/square
-               {:src (:photo/path (first photos))}))
-           (dom/div #js {:className "content-item-title-section text-center"}
-             (dom/a #js {:onClick on-click
-                         :href    goods-href}
-                    item-name))
-           (dom/div #js {:className "content-item-subtitle-section"}
-             (dom/small nil (dom/span nil "by") (dom/a #js {:href (link-to-store store)} (:store/name store))))
-           (dom/div #js {:className "content-item-subtitle-section"}
-             (dom/strong nil (ui-utils/two-decimal-price price)))
-           children
-           )))
 
 (defn footer [opts]
   (dom/div #js {:key "footer" :className "footer"}

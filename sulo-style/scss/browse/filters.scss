@@ -1,8 +1,45 @@
 #sl-product-filters {
 	.reveal {
-		background: rgba($white, 0.95);
+		background: rgba($white, 0.97);
 	}
 	.button.hollow {
 		background: $white;
+	}
+
+	.menu.navigation {
+		padding: 1rem 0;
+		> li {
+			border-bottom: $global-border;
+			&:first-child {
+				border-top: $global-border;
+			}
+		}
+	}
+
+	.submenu {
+		// display: none;
+		overflow: hidden;
+		li {
+			height: 0;
+			transition: height .25s ease-in-out;
+		}
+		&.is-active {
+			// display: block;
+			li {
+				height: 2.5rem;
+			}
+		}
+	}
+
+	li > div {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 0.5rem 1rem;
+		a:last-child {
+			flex: 1;
+			text-align: right;
+		}
+		// padding-bottom: 0;
 	}
 }

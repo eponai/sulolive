@@ -40,6 +40,46 @@ html, body {
 	overflow: hidden;
 }
 
+.product-grid {
+	.column {
+		padding: 1rem;
+		@include breakpoint(small only) {
+			&:nth-child(2n+1) {
+				padding-left: 0;
+			}
+			&:nth-child(2n) {
+				padding-right: 0;
+			}
+		}
+		@include breakpoint(medium) {
+			padding: 1.5rem;
+			&:nth-child(3n+1) {
+				padding-left: 0;
+			}
+			&:nth-child(3n+2) {
+				padding-right: 0.75rem;
+				padding-left: 0.75rem;
+			}
+			&:nth-child(3n) {
+				padding-right: 0;
+			}
+		}
+		@include breakpoint(large) {
+			padding: 1.5rem 2rem;
+			&:nth-child(3n+1) {
+				padding-left: 0;
+			}
+			&:nth-child(3n+2) {
+				padding-right: 1rem;
+				padding-left: 1rem;
+			}
+			&:nth-child(3n) {
+				padding-right: 0;
+			}
+		}
+	}
+}
+
 #the-sulo-app {
 	overflow-x: hidden;
 	min-height: 100%;
@@ -108,27 +148,6 @@ h3 {
 // 	}
 // }
 
-@mixin wrap-text($font-size: 1, $lines: 1) {
-	overflow: hidden; 
-	max-height: $font-size * $lines + rem;
-	line-height: $font-size + rem;
-	white-space: normal;
-
-		// max-height: 4.8rem;
-		// overflow: hidden;
-		display: -webkit-box;
-		-webkit-line-clamp: 4;
-		-webkit-box-orient: vertical;
-		// line-height: 1.2rem;
-		text-overflow: ellipsis;
-}
-
-@mixin single-line-text() {
-	text-overflow: ellipsis;
-	overflow: hidden;
-	white-space: nowrap;
-	font-weight: bold;
-}
 
 @mixin sulo-colors {
 	@each $name, $color in $foundation-palette {

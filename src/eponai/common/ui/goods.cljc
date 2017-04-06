@@ -50,13 +50,15 @@
                         {:category/_children ...}
                         {:category/children ...}]}
      {:query/top-categories [:category/label :category/path]}
+     {:proxy/product-filters (om/get-query pf/ProductFilters)}
      :query/current-route])
   Object
   (initLocalState [_]
     {:sorting {:key      :store.item/name
-               :reverse? false}})
+               :reverse? false}
+     :filters-open? false})
   (render [this]
-    (let [{:keys       [proxy/navbar]
+    (let [{:proxy/keys       [navbar product-filters]
            :query/keys [current-route items category top-categories]} (om/props this)
           {:keys [sorting filters-open?]} (om/get-state this)
           current-category (get-in current-route [:route-params :category] "")
@@ -69,7 +71,8 @@
             {:id "sl-product-filters"}
             (common/modal {:on-close #(om/update-state! this assoc :filters-open? false)
                            :size     "full"}
-                          (pf/->ProductFilters))))
+                          (pf/->ProductFilters (om/computed product-filters
+                                                            {:on-change #(om/update-state! this assoc :filters-open? false)})))))
         (grid/row
           nil
           (grid/column
@@ -151,13 +154,14 @@
                           (css/add-class :expand)
                           (dom/a
                             (->> {:href (routes/url :products/categories {:category path})}
-                                 (css/add-class :category-photo))
+                                 (css/add-class :content-item)
+                                 (css/add-class :collection-item))
                             (photo/with-overlay
                               nil
                               (photo/photo {:src (:photo/path photo)})
                               (dom/div
                                 (->> (css/text-align :center))
-                                (dom/p nil (dom/span nil label))))))))
+                                (dom/span nil label)))))))
                     (filter #(some? (:category/photo %)) (:category/children category))))))
 
             (dom/div
@@ -187,6 +191,8 @@
                     ordered-products (if (:reverse? sorting)
                                        (reverse sorted)
                                        sorted)]
-                (grid/products ordered-products)))))))))
+                (grid/products ordered-products
+                               (fn [p]
+                                 (pi/->ProductItem {:product p})))))))))))
 
 (def ->Goods (om/factory Goods))

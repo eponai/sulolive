@@ -3,13 +3,49 @@
     [eponai.common.ui.product :as product]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.utils :as ui-utils]
-    [om.dom :as dom]
+    [eponai.common.ui.dom :as dom]
     [om.next :as om :refer [defui]]
     #?(:cljs
        [eponai.web.utils :as utils])
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.photo :as photo]
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [eponai.common.ui.elements.css :as css]))
+
+(defn product-element [opts product & children]
+  (let [{:keys [on-click open-url?]} opts
+        goods-href (when (or open-url? (nil? on-click)) (routes/url :product {:product-id (:db/id product)}))
+        on-click (when-not open-url? on-click)
+        {:store.item/keys [photos price]
+         item-name        :store.item/name
+         store            :store/_items} product]
+    (dom/div
+      (->> (css/add-class :content-item)
+           (css/add-class :product-item))
+      (dom/a
+        (->> {:onClick on-click
+              :href    goods-href}
+             (css/add-class :primary-photo))
+        (photo/product-photo (first photos)))
+
+      (dom/div
+        (->> (css/add-class :header)
+            (css/add-class :text))
+        (dom/a {:onClick on-click
+                :href    goods-href}
+               (dom/span nil item-name)))
+      (dom/div
+        (css/add-class :text)
+        (dom/small
+          nil
+          (dom/span nil "by ")
+          (dom/a {:href (common/link-to-store store)}
+                 (dom/span nil (:store/name store)))))
+
+      (dom/div
+        (css/add-class :text)
+        (dom/strong nil (ui-utils/two-decimal-price price)))
+      children)))
 
 (defui ProductItem
   Object
@@ -27,16 +63,13 @@
     (let [{:keys [product]} (om/props this)
           {:keys [display-content]} (om/get-computed this)
           {:keys [show-item? breakpoint]} (om/get-state this)
-          open-url? #?(:cljs (utils/bp-compare :large breakpoint >) :clj false)
-          on-click (when-not open-url? #(om/update-state! this assoc :show-item? true))
-          product-href (when (or open-url? (nil? on-click))
-                         (routes/url :product {:product-id (:db/id product)}))]
+          on-click #(om/update-state! this assoc :show-item? true)
+          #?@(:cljs [open-url? (utils/bp-compare :large breakpoint >)]
+              :clj  [open-url? false])]
 
-      ;; TODO: Very similar to eponai.common.ui.common/product-element
-      ;;       Extract?
-      (common/product-element
+      (product-element
         {:on-click on-click
-         :href     product-href}
+         :open-url? open-url?}
         product
         (when show-item?
           (common/modal {:on-close #(om/update-state! this assoc :show-item? false)

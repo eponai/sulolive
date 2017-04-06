@@ -2,7 +2,6 @@
   (:require
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
-    [eponai.common.ui.product-item :as pi]
     [taoensso.timbre :refer [warn]]))
 
 (def grid-cols 12)
@@ -61,12 +60,13 @@
 
 ;; Custom grids
 
-(defn products [ps & [el-fn]]
+(defn products [ps el-fn]
   (row
-    (columns-in-row {:small 2 :medium 3})
+    (->> (columns-in-row {:small 2 :medium 3})
+         (css/add-class :product-grid))
     (map
       (fn [p]
         (column
           nil
-          (pi/->ProductItem {:product p})))
+          (el-fn p)))
       ps)))

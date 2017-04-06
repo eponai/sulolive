@@ -12,17 +12,6 @@ $section-footer-color: $primary-color;
 		padding: 1rem;
 		display: flex;
 		justify-content: center;
-		align-items: center;
-		svg {
-			height: 36px;
-			width: 36px;
-			viewBox: 0 0 36 36;
-			@include breakpoint(medium) {
-				height: 56px;
-				width: 56px;
-				viewBox: 0 0 56 56;
-			}
-		}
 	}
 	h1, h2, h3, h4, h5, h6 {
 		font-family: $header-font-family-sans-serif;
@@ -30,23 +19,15 @@ $section-footer-color: $primary-color;
 	.page-content {
 		padding-bottom: 0;
 	}
-	overflow-x: hidden;
 	.intro-header {
 		min-height: 30rem;
 		height: 75vh;
-		// text-shadow: 1px 1px 0 rgba($white, 0.5);
-		> * {
-			vertical-align: middle;
-		}
 		.header {
 			text-transform: uppercase;
 			font-weight: bold;
 		}
 		.button {
-			font-weight: bold;
-		}
-		.drop-shadow {
-			box-shadow: 0px 1px 3px 0px rgba($black, 0.15);
+			font-weight: $global-weight-bold;
 		}
 	}
 
@@ -77,68 +58,40 @@ $section-footer-color: $primary-color;
 		&.white {
 			background: $white;
 			border-bottom: 1px solid rgba($primary-color, 0.1);
+		}
+		.align-right {
+			display: flex;
+			justify-content: flex-end;
+		}
+		.icon {
+			// display: none;
+			padding: 0;
+			max-width: 100%;
+			svg {
+				height: 100%;
+				width: 100%;
+			}
+			@include breakpoint(medium) {
+				max-width: 12rem;	
+			}
 		}	
 	}
 
 	.section {
 		margin-top: 3%;
+		margin-bottom: 3rem;
 		.section-footer {
-			padding: 1rem 0;
 			margin-top: $global-margin;
-			@include breakpoint(large) {
-				padding: 0 0 1rem 0;
-			}
-			a {
-				// color: $section-footer-color;
-				// font-weight: bold;
-			}
-		}
-		.section-header {
-			padding: 0 $global-padding;
-			// font-weight: 500;
-			// margin-bottom: 2rem;
-			text-transform: uppercase;
 		}
 
-		&.online-channels {
-			.overlay-container {
-				p, i {
-					font-size: 1.2rem;
-				}
-
-				.overlay {
-					transition: background .2s ease-in;
-					&:hover {
-						background: rgba($black, 0.5);
-						i {
-							color: $black;
-						}
-					}
-				}
-			}
-		}
 		&.collections {
+			font-size: 1.7rem;
 			.section-footer {
 				visibility: hidden;
-			}
-			margin-bottom: 3rem;
-			.content-item:last-child {
-				display: flex;
-				> * {
-					display: flex;
-					flex: 1;
-					justify-content: stretch;
-				}
-				.overlay-container {
-					flex: 1;
-					// justify-content: stretch;
-
-				}
 			}
 		}
 		&.new-arrivals {
 			margin-bottom: 4rem;
-			// margin-top: 6rem;
 		}
 	}
 }

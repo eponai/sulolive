@@ -24,9 +24,7 @@
           (common/auth0-lock-passwordless release?)
           (common/auth0-lock release?)
 
-          (dom/script {:src (if release?
-                              "https://cdn.jsdelivr.net/hls.js/latest/hls.min.js"
-                              "/bower_components/hls.js/dist/hls.js")})
+
           (when release?
             (dom/script {:src       "https://cdn.greta.io/greta.min.js"
                          :type      common/text-javascript
@@ -53,5 +51,4 @@
           (dom/script {:src  (common/budget-js-path cljs-build-id)
                        :type common/text-javascript})
 
-          (dom/script {:src "/lib/jwplayer-7.9.1/jwplayer.js"})
           (common/inline-javascript ["env.web.main.runsulo()"]))))))

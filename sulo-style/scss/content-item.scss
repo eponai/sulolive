@@ -1,43 +1,84 @@
 
+$box-shadow: 0 0 5px 0 rgba($black, 0.2);
 .content-item {
 	padding-top: 1.5rem;
-	text-align: left;
-	&.row {
-		.content-item-title-section,
-		.content-item-subtitle-section {
-			padding: 0;
-			margin-left: 0.5rem;
+	.photo-container {
+		margin-bottom: 0.5rem;
+	}
+	.text {
+		a, small {
+			@include wrap-text;
+		}
+		display: flex;
+		justify-content: center;
+	}
+
+	&.stream-item {
+		.photo-container {
+			margin: 0;
+		}
+		.overlay-container {
+			margin-bottom: 0.5rem;
+
+			.overlay {
+				// transition: background .2s ease-in-out;
+				&:hover {
+					// background: rgba($black, 0.5);
+					.content .video {
+						height: 5rem;
+						width: 5rem;
+						font-size: 1.5rem;
+					}
+				}
+				.content {
+					padding: $global-padding;
+					display: flex;
+					justify-content: center;
+					.video {
+						box-shadow: $box-shadow;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						border-radius: 50%;
+						height: 4rem;
+						width: 4rem;
+						transition: all .25s ease-in-out;
+						background: rgba($white, 0.85);
+					}
+				}
+			}
 		}
 	}
 
-	.content-item-title-section {
-		a {
-			flex: 1;
+	&.collection-item {
+		.photo-container {
+			margin: 0;
 		}
-		span, a {
-			text-overflow: ellipsis;
-			overflow: hidden;
-			white-space: nowrap;
-			color: $body-font-color;
-			font-style: italic;
-			font-weight: 500;
-		}
-		padding-top: 0.5rem;
-		display: flex;	
-		flex-direction: column;
-		@include breakpoint(large) {
-			flex-direction: row;
-			justify-content: space-between;
-			align-items: center;
-		}
-	}
-	.content-item-subtitle-section {
-		text-align: center;
-		display: flex;
-		flex-direction: column;
-		// justify-content: center;
-		span {
-			margin-right: 0.25rem;
+		.overlay-container {
+			 .content {
+				display: flex;
+				justify-content: center;
+				> div {
+					padding: 0.2rem 1rem;
+					background: rgba($white, 0.75);
+					box-shadow: $box-shadow;
+					span {
+						// margin-bottom: 0;
+						font-weight: $global-weight-bold;
+						// color: $black;
+						text-transform: uppercase;
+					}
+				}
+			}
+			// font-size: inherit;
+			.overlay {
+				transition: all .2s ease-in;
+				&:hover {
+					// background: rgba($black, 0.5);
+					font-size: 125%;
+				}
+			}
 		}
 	}
 }
+
