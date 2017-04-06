@@ -6,6 +6,7 @@
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.photo :as photo]
+    [eponai.client.auth :as auth]
     [taoensso.timbre :refer [debug error]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.icons :as icons]
@@ -217,12 +218,17 @@
           ;             (dom/a #js {:href (routes/url :store-dashboard {:store-id (:db/id store)})}
           ;                    (photo/store-photo store))))
 
-          (menu/item-dropdown
-            {:dropdown (user-dropdown component auth)
-             :classes  [:user-photo-item]
-             :href "#"
-             :onClick  #(.open-dropdown component :dropdown/user)}
-            (photo/user-photo auth))
+          (if (some? auth)
+            (menu/item-dropdown
+              {:dropdown (user-dropdown component auth)
+               :classes  [:user-photo-item]
+               :href     "#"
+               :onClick  #(.open-dropdown component :dropdown/user)}
+              (photo/user-photo auth))
+            (my-dom/a
+              (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
+                   (css/button-hollow))
+              (dom/span nil "Sign in")))
 
           (if did-mount?
             (menu/item-dropdown
