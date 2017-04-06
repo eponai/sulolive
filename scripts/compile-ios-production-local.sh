@@ -1,7 +1,7 @@
 #!/bin/bash -eu
 
 echo "Will compile an ios build which runs against your own"
-echo " jourmoney server, i.e. lein repl, (start-server)"
+echo " sulo live server, i.e. lein repl, (start-server)"
 
 export TIMBRE_LEVEL=":info"
 
@@ -21,7 +21,7 @@ echo "  -      and we don't have enough memory by default."
 echo "  - TODO: Script this or add this to an env variable somewhere."
 echo "#######"
 echo "Xcode steps:"
-echo "1. In ios/JourMoneyApp/AppDelegate.m:"
+echo "1. In ios/SuloLiveApp/AppDelegate.m:"
 echo '  - Uncomment jsCodeLocation = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];'
 echo "2. On the build drop down - between Stop and Device dropdown -"
 echo "  - click on Edit Scheme..."

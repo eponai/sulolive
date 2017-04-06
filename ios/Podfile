@@ -1,16 +1,16 @@
 platform :ios, '9.0'
 source 'https://github.com/CocoaPods/Specs.git'
 
-target 'JourMoneyApp' do
+target 'SuloLiveApp' do
   # Uncomment this line if you're using Swift or would like to use dynamic frameworks
   # use_frameworks!
 
-  # Pods for JourMoneyApp 
+  # Pods for SuloLiveApp
   pod 'FBSDKCoreKit', '~> 4.11'
   pod 'FBSDKShareKit', '~> 4.11'
   pod 'FBSDKLoginKit', '~> 4.11'
 
-  target 'JourMoneyAppTests' do
+  target 'SuloLiveAppTests' do
     inherit! :search_paths
     # Pods for testing
   end

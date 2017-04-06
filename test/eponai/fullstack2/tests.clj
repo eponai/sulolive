@@ -70,8 +70,8 @@
   (reduce (fn [m k]
             (update m k (fn [remote-fn]
                           (-> remote-fn
-                              (remotes/wrap-update :url #(str server-url %))
-                              (remotes/wrap-update :opts assoc :cookie-store cookie-store)))))
+                              (remotes/update-key :url #(str server-url %))
+                              (remotes/update-key :opts assoc :cookie-store cookie-store)))))
           (reconciler/remote-config conn)
           (reconciler/remote-order)))
 
