@@ -1,7 +1,7 @@
-(ns eponai.client.run
+(ns eponai.web.run
   (:require
     [eponai.client.utils :as utils]
-    [eponai.client.auth :as auth]
+    [eponai.web.auth :as auth]
     [eponai.common.parser :as parser]
     [eponai.client.parser.read]
     [eponai.client.parser.mutate]
@@ -9,7 +9,7 @@
     [eponai.client.backend :as backend]
     [eponai.client.remotes :as remotes]
     [eponai.client.reconciler :as reconciler]
-    [eponai.client.chat :as chat]
+    [eponai.web.chat :as chat]
     [medley.core :as medley]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]

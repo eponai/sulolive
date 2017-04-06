@@ -1,6 +1,6 @@
 (ns eponai.web.figwheel
   (:require
-    [eponai.client.run :as run]
+    [eponai.web.run :as run]
     [eponai.common.routes :as routes]
     [bidi.bidi :as bidi]
     [taoensso.timbre :refer-macros [warn debug]]))
