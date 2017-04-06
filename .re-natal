@@ -4,7 +4,6 @@
   "androidHost": "localhost",
   "iosHost": "localhost",
   "modules": [
-    "react-native-fbsdk"
   ],
   "imageDirs": [
     "images"
