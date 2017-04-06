@@ -80,7 +80,4 @@
 ;; For figwheel. See env/dev/ios/main.cljs
 (defn reload! []
   (debug "Reload!")
-  (comment
-    "Uncomment when we've got an ios app."
-    (om/add-root! @reconciler-atom root/RootView root-node-id)))
-
+  (om/add-root! @reconciler-atom root/Root root-node-id))
