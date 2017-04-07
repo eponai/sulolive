@@ -1,7 +1,10 @@
-(ns eponai.mobile.react-helper)
+(ns eponai.mobile.react-helper
+  (:require [taoensso.timbre :refer [error]]))
 
 (set! js/window.React (js/require "react"))
 (set! js/window.ReactNative (js/require "react-native"))
+(set! js/document #js {:createElement (fn [& args]
+                                        (error "Calling create-element on js/document!"))})
 (def ReactNative js/window.ReactNative)
 
 (defn create-element [rn-comp opts & children]

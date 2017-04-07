@@ -1,12 +1,10 @@
 (ns eponai.client.auth
   (:require
     [taoensso.timbre :refer [debug]]
-    [eponai.client.routes :as routes]
     [eponai.common.database :as db]
     #?(:cljs
        [goog.crypt :as crypt])
-    [eponai.common.format.date :as date]
-    [cemerick.url :as url]))
+    [eponai.common.format.date :as date]))
 
 (defprotocol IAuthLock
   (show-lock [this]))

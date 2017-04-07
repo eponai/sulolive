@@ -518,11 +518,11 @@
 
 (defn query-params [env parser-state]
   #?(:cljs
-          (->> (:shared/browser-history (:shared env))
-               (pushy/get-token)
-               (url/url)
-               :query
-               (medley/map-keys keyword))
+          (some->> (:shared/browser-history (:shared env))
+                   (pushy/get-token)
+                   (url/url)
+                   :query
+                   (medley/map-keys keyword))
      ;;TODO: Implement a shared protocol to get the query params
      :clj (:query-params parser-state)))
 

@@ -8,10 +8,7 @@
 (defn components []
   (let [not-yet-included ["Picker"
                           "Picker.Item"
-                          "Navigator.NavigationBar"
-                          "NavigationExperimental.CardStack"
-                          "NavigationExperimental.Header"
-                          "NavigationExperimental.Header.Title"]]
+                          "Navigator.NavigationBar"]]
     (into (set cl/components) not-yet-included)))
 
 (defn wrap-component-fn [js-name]

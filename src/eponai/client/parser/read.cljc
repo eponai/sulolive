@@ -1,15 +1,10 @@
 (ns eponai.client.parser.read
   (:require
-    [clojure.set :as set]
     [eponai.common.parser :as parser :refer [client-read]]
-    [eponai.common.parser.util :as parser.util]
     [eponai.common.database :as db]
     [eponai.common.business.budget :as business.budget]
     [eponai.common.parser.read :as common.read]
-    [om.next.impl.parser :as om.parser]
     [eponai.client.routes :as client.routes]
-    [eponai.common.ui.router :as router]
-    [eponai.client.parser.message :as msg]
     [eponai.common :as c]
     [taoensso.timbre :refer [debug]]
     [eponai.client.auth :as auth]
@@ -25,6 +20,11 @@
 ;;     eponai.<platform>.parser.read
 
 ;; ----------
+
+(defmethod client-read :datascript/schema
+  [env k p]
+  (when (:target env)
+    {:remote true}))
 
 (defmethod client-read :query/store
   [{:keys [db query target ast route-params] :as env} _ _]
@@ -232,12 +232,6 @@
   {:value (cond-> (client.routes/current-route db)
                   (some? query-params)
                   (assoc :query-params query-params))})
-
-(defmethod client-read :routing/app-root
-  [{:keys [db] :as env} k p]
-  (let [current-route (client.routes/current-route db)]
-    (debug "Reading app-root: " [k :route current-route])
-    (parser.util/read-union env k p (router/normalize-route (:route current-route)))))
 
 (defmethod client-read :query/business-model
   [e k p]

@@ -10,6 +10,8 @@
             [eponai.client.remotes :as remotes]
             [eponai.client.backend :as backend]
             [eponai.client.parser.merge :as merge]
+            [eponai.client.parser.read]
+            [eponai.client.parser.mutate]
             [eponai.client.reconciler :as reconciler]
             [eponai.web.chat :as web.chat]))
 
@@ -31,13 +33,18 @@
                                              ]))
 
 (defn prepend-server-url [remote-config server-url]
-  (reduce-kv (fn [remotes remote-key]
-               (update remotes remote-key remotes/update-key :url #(str server-url %)))
-             remote-config
-             (:order remote-config)))
+  (reduce (fn [remotes remote-key]
+            (debug "Updating key: " remote-key " with server-url: " server-url)
+            (update remotes remote-key remotes/update-key :url #(str server-url %)))
+          remote-config
+          (:order remote-config)))
+
+(defonce config-atom (atom nil))
 
 (defn initialize-app [config]
   {:pre [(:server-address config)]}
+  ;; For reload
+  (reset! config-atom config)
   (debug "Initializing App")
   ;; (ignore-yellow-box-warnings!)
   (let [conn (utils/create-conn)

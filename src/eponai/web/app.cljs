@@ -3,6 +3,7 @@
     [eponai.client.utils :as utils]
     [eponai.web.auth :as auth]
     [eponai.common.parser :as parser]
+    [eponai.web.parser.read]
     [eponai.client.parser.read]
     [eponai.client.parser.mutate]
     [eponai.client.parser.merge :as merge]

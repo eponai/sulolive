@@ -3,7 +3,6 @@
     [eponai.mobile.components :refer [view text scroll-view]]
     [eponai.mobile.navigate :as navigate]
     [eponai.mobile.react-helper :as e]
-    [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]))
 
@@ -73,7 +72,7 @@
 
 (def SimpleStack (navigate/create-stack-navigator routes))
 
-(def styles
+(def banner-styles
   {:banner
    {:backgroundColor "#673ab7"
     :flexDirection "row"
@@ -97,9 +96,9 @@
 (defui Banner
   Object
   (render [this]
-    (e/view {:style (:banner styles)}
-            (e/image {:source logo-img :style (:image styles)})
-            (e/text {:style (:title styles)} "React Navigation Examples"))))
+    (e/view {:style (:banner banner-styles)}
+            (e/image {:source logo-img :style (:image banner-styles)})
+            (e/text {:style (:title banner-styles)} "React Navigation Examples"))))
 
 (def ->Banner (om/factory Banner))
 
@@ -107,7 +106,25 @@
                                    :description "A card stack"
                                    :screen      SimpleStack}})
 
+(def main-styles {:item        {:backgroundColor   "#fff"
+                                :paddingHorizontal 16
+                                :paddingVertical   12
+                                :borderBottomWidth 1
+                                :borderBottomColor "#ddd"}
+                  :image       {:width        120
+                                :height       120
+                                :alignSelf    "center"
+                                :marginBottom 20
+                                :resizeMode   "contain"}
+                  :title       {:fontSize   16
+                                :fontWeight "bold"
+                                :color      "#444"}
+                  :description {:fontSize 13
+                                :color    "#999"}})
+
 (defui MainScreen
+  static om/IQuery
+  (query [this] [:datascript/schema])
   Object
   (render [this]
     (e/scroll-view nil
@@ -116,12 +133,10 @@
                      (fn [[key {:keys [name description screen]}]]
                        (e/touchable-opacity {:key     key
                                              :onPress #(navigate/navigate-to this key)}
-                                            (e/view {:style (:item styles)}
-                                                    (e/text {:style (:name styles)} name)
-                                                    (e/text {:style (:description styles)} description))))
-                     {:SimpleStack {:name        "Stack Example"
-                                    :description "A card stack"
-                                    :screen      SimpleStack}}))))
+                                            (e/view {:style (:item main-styles)}
+                                                    (e/text {:style (:name main-styles)} name)
+                                                    (e/text {:style (:description main-styles)} description))))
+                     example-routes))))
 
 (def Root (navigate/create-stack-navigator
             (assoc example-routes :Index {:screen MainScreen})
