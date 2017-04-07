@@ -81,14 +81,16 @@
   (prn " (set-level level) - set logger level to level")
   (prn " eponai.server.core is aliased :as core")
   (prn "****************************************************")
-  (reloaded.repl/set-init! #(core/main-debug)))
+  (reloaded.repl/set-init! #(core/make-dev-system)))
 
 (defn init-system []
   (reloaded.repl/init)
   (start-reloading))
 
 ;; start-server was the old command we've gotten used to:
-(def start-server init-system)
+(defn start-server []
+  (init-system)
+  (start))
 
 (defn set-level [level]
   (timbre/set-level! level))

@@ -12,47 +12,43 @@
     [taoensso.timbre :refer [debug error info]]
     ;; Dev/debug require
     [eponai.server.system :as system]
-    [clojure.spec :as s]
-    ))
+    [clojure.spec :as s]))
 
-(defn- start-system
-  ([] (start-system {}))
-  ([opts]
-   (let [default-port 3000
-         env-port (try
-                    (Long/parseLong (env/env :port))
-                    (catch Exception e
-                      nil))
-         port (or (:port opts) env-port default-port)
-         _ (info "Using port: " port)
-         config (merge {:port port :env env/env}
-                       opts)
-         system (if (::dev-system config)
-                  (system/dev-system config)
-                  (system/prod-system config))]
-     (component/start-system system))))
+(defn- make-system [opts]
+  (let [default-port 3000
+        env-port (try
+                   (Long/parseLong (env/env :port))
+                   (catch Exception e
+                     nil))
+        port (or (:port opts) env-port default-port)
+        _ (info "Using port: " port)
+        config (merge {:port port :env env/env} opts)]
+    (if (::dev-system config)
+      (system/dev-system config)
+      (system/prod-system config))))
 
 (defn -main [& _]
-  (let [system (start-system)
+  (let [system (component/start-system (make-system {}))
         server (get-in system [:system/aleph :server])]
     (aleph.netty/wait-for-close server)))
-
-(defn main-debug
-  "For repl, debug and test usages. Takes an optional map. Returns the aleph-server."
-  [& [opts]]
-  {:pre [(or (nil? opts) (map? opts))]}
-  (s/check-asserts true)
-  (start-system (merge {::dev-system true} opts)))
 
 (defn main-release-no-ssl
   []
   (debug "Running repl in production mode without ssl")
-  (start-system {::system/disable-ssl true}))
+  (component/start-system
+    (make-system {::system/disable-ssl true})))
+
+(defn make-dev-system
+  "For repl, debug and test usages. Takes an optional map. Returns the aleph-server."
+  [& [opts]]
+  {:pre [(or (nil? opts) (map? opts))]}
+  (s/check-asserts true)
+  (make-system (merge {::dev-system true} opts)))
 
 (defn start-server-for-tests [& [{:keys [conn port] :as opts}]]
   {:pre [(or (nil? opts) (map? opts))]}
-  (start-system
-    (merge {::dev-system       true
-            :port              (or port 0)
-            ::system/provided-conn    conn}
-           opts)))
+  (component/start-system
+    (make-dev-system
+      (merge {:port                  (or port 0)
+              ::system/provided-conn conn}
+             opts))))
