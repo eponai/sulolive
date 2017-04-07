@@ -65,7 +65,7 @@
 (defmethod server-read :query/inventory
   [env _ {:keys [store-id]}]
   {:value (let [items (store/list-products env store-id)]
-            (debug "Found items: " (into [] items))
+            ;(debug "Found items: " (into [] items))
             items)})
 
 (defmethod read-basis-params :query/order [_ _ {:keys [order-id store-id user-id]}]
