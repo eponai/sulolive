@@ -124,7 +124,7 @@
    (dom/meta {:name    "msapplication-TileImage"
               :content "/assets/img/favicon/ms-icon-144x144.png"})
    (dom/meta {:name "theme-color" :content "#ffffff"})
-   (dom/script {:src "//player.wowza.com/player/latest/wowzaplayer.min.js"})
+   (dom/script {:src "//player.wowza.com/player/1.0.07.4414/wowzaplayer.min.js"})
    ;(dom/script {:src (if release?
    ;                    "//player.wowza.com/player/latest/wowzaplayer.min.js"
    ;                    "/bower_components/wowzaplayer/wowzaplayer.min.js")})
