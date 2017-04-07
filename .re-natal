@@ -4,6 +4,7 @@
   "androidHost": "localhost",
   "iosHost": "localhost",
   "modules": [
+    "react-navigation"
   ],
   "imageDirs": [
     "images"
