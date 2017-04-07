@@ -23,11 +23,26 @@
 (defn- update-subscriber [this store-id uid db-fn]
   (let [temp-store (d/tempid :db/user)
         temp-sub (d/tempid :db/user)]
-    (update this :db d/db-with [{:db/id    temp-store
-                                 :store/id store-id}
-                                {:db/id          temp-sub
-                                 :subscriber/uid uid}
-                                [db-fn temp-sub :subscriber/subscriptions temp-store]])))
+    (update this :db
+            (fn [db]
+              (let [tx (condp = db-fn
+                         :db/add [{:store/id store-id
+                                   :db/id    temp-store}
+                                  {:subscriber/uid uid
+                                   :db/id          temp-sub}
+                                  [:db/add temp-sub :subscriber/subscriptions temp-store]]
+                         :db/retract (when-let [[sub store] (-> db
+                                                                (db/find-with
+                                                                  {:find    '[?sub ?store]
+                                                                   :where   '[[?sub :subscriber/uid ?uid]
+                                                                              [?store :store/id ?store-id]
+                                                                              [?sub :subscriber/subscriptions ?store]]
+                                                                   :symbols {'?uid      uid
+                                                                             '?store-id store-id}})
+                                                                (first))]
+                                       [[:db/retract sub :subscriber/subscriptions store]]))]
+                (cond-> db (some? tx) (d/db-with tx)))))))
+
 
 (defrecord DatascriptSubscriptionStore [db]
   ISubscriptionStore
