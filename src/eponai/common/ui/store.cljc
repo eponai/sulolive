@@ -66,23 +66,23 @@
             (grid/column
               (grid/column-order {:small 2 :medium 1})
               (cond
-                ;(some? stream)
-                ;(dom/div
-                ;  (cond->> (css/add-class :stream-container)
-                ;           show-chat?
-                ;           (css/add-class :sulo-show-chat)
-                ;           fullscreen?
-                ;           (css/add-class :fullscreen))
-                ;  (stream/->Stream (om/computed (:proxy/stream props)
-                ;                                {:stream-name (:stream/name stream)
-                ;                                 :widescreen? true
-                ;                                 :store       store
-                ;                                 :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
-                ;  (chat/->StreamChat (om/computed (:proxy/chat props)
-                ;                                  {:on-toggle-chat (fn [show?]
-                ;                                                     (om/update-state! this assoc :show-chat? show?))
-                ;                                   :store          store
-                ;                                   :show?          (some? stream)})))
+                (some? stream)
+                (dom/div
+                  (cond->> (css/add-class :stream-container)
+                           show-chat?
+                           (css/add-class :sulo-show-chat)
+                           fullscreen?
+                           (css/add-class :fullscreen))
+                  (stream/->Stream (om/computed (:proxy/stream props)
+                                                {:stream-name (:stream/name stream)
+                                                 :widescreen? true
+                                                 :store       store
+                                                 :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
+                  (chat/->StreamChat (om/computed (:proxy/chat props)
+                                                  {:on-toggle-chat (fn [show?]
+                                                                     (om/update-state! this assoc :show-chat? show?))
+                                                   :store          store
+                                                   :show?          (some? stream)})))
                 (some? cover)
                 (photo/cover {:src (:photo/path cover)})))
 

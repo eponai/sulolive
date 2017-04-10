@@ -85,8 +85,6 @@
    (comment (dom/meta {:http-equiv "Content-Type"
                        :content    "text/html; charset=utf-8"}))
    (dom/title nil "Vancouver's local marketplace online - SULO Live")
-   (dom/link {:href "/assets/css/app.css"
-              :rel  "stylesheet"})
    (dom/link {:href (if release?
                       "https://cdn.rawgit.com/novus/nvd3/v1.8.1/build/nv.d3.css"
                       "/bower_components/nvd3/build/nv.d3.css")
@@ -97,9 +95,13 @@
 
    (dom/link {:href "//cdn.quilljs.com/1.2.0/quill.core.css"
               :rel "stylesheet"})
+
+   ;;TODO: https://cdn.quilljs.com/1.0.0/quill.snow.css if want to save to local in dev mode
    (dom/link {:href "//cdn.quilljs.com/1.2.0/quill.snow.css"
               :rel "stylesheet"})
 
+   (dom/link {:href "/assets/css/app.css"
+              :rel  "stylesheet"})
    ;; Custom fonts
    (dom/link {:href (if release?
                       "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"

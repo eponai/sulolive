@@ -2,28 +2,45 @@
   (:require
     #?(:cljs
        [cljsjs.quill])
+    #?(:clj
+       [autoclave.core :as a])
     [om.dom :as dom]
-    [om.next :as om :refer [defui]]))
+    [om.next :as om :refer [defui]]
+    [taoensso.timbre :refer [debug]]))
 
 (defn get-contents [editor]
   #?(:cljs
      (js/JSON.stringify (.getContents editor))))
 
+(defn sanitize-html [dirty-html]
+  (when (not-empty dirty-html)
+    (let [allowed-classes ["ql-align-right" "ql-align-center" "ql-size-small" "ql-size-large"]
+          allowed-tags ["p" "span" "strong" "ul" "ol" "li" "u" "s" "i" "em" "br"]]
+
+      #?(:cljs (let [policy (clj->js {:allowedTags    allowed-tags
+                                      :allowedClasses {"*" allowed-classes}})]
+                 (js/sanitizeHtml dirty-html policy))
+         :clj  (let [policy (a/html-policy :allow-common-inline-formatting-elements
+                                           :allow-common-block-elements
+                                           :allow-attributes ["class"
+                                                              :globally
+                                                              :matching [(fn [_ _ value]
+                                                                           (some #(when (clojure.string/includes? value %) %)
+                                                                                 allowed-classes))]])]
+                 (a/html-sanitize policy dirty-html))))))
+
 (defn get-HTML [editor]
   #?(:cljs
-     (.. editor -root -innerHTML)))
-
-;(defn delta->html [delta-map]
-;  #?(:cljs (js/Quill )))
+     (sanitize-html (.. editor -root -innerHTML))))
 
 (defn toolbar-opts []
   #?(:cljs
      (clj->js [[{"size" ["small" false "large"]}],
                ["bold", "italic", "underline", "strike"],
-               [{"list" "ordered"}, {"list" "bullet"}, {"indent" "-1"}, {"indent" "+1"}],
+               [{"list" "ordered"}, {"list" "bullet"}],
                [{"align" []}]
                ;["link"],
-               [{"color" []} {"background" []}]
+               ;[{"color" []} {"background" []}]
                ["clean"]
                ])),)
 (defui QuillEditor
@@ -42,7 +59,7 @@
                ]
            ;(js/Quill.register (quill-style "size", "font-size", #js {:scope (.. parchment -Scope -INLINE)}), true)
            ;(.setContents editor (js/JSON.parse content))
-           (.. editor -clipboard (dangerouslyPasteHTML content))
+           (.. editor -clipboard (dangerouslyPasteHTML (sanitize-html content)))
            (when on-editor-created
              (on-editor-created editor))))))
   (render [this]
@@ -56,8 +73,7 @@
   (render [this]
     (let [{:keys [html]} (om/props this)]
       (dom/div
-        #js {:className "ql-editor"}
-        (dom/div
-          #js {:dangerouslySetInnerHTML #js {:__html html}})))))
+        #js {:className               "ql-editor"
+             :dangerouslySetInnerHTML #js {:__html (sanitize-html html)}}))))
 
 (def ->QuillRenderer (om/factory QuillRenderer))

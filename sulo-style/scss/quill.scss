@@ -1,6 +1,12 @@
 
-.ql-editor {
-	// font-family: $header-font-family-serif;
+.ql-editor, #quill-editor-container .ql-editor {
+	font-family: $header-font-family-serif;
+	strong {
+		font-weight: bold;
+	}
+	.ql-size-large {
+		font-size: 1.25rem;
+	}
 }
 #quill-editor-container {
 	min-height: 18rem;
@@ -17,7 +23,7 @@
 		min-height: 3rem;
 		border: $global-border;
 		border-bottom: none;
-			// font-family: $header-font-family-serif;
+			font-family: $header-font-family-serif;
 
 	}
 	.ql-disabled {
