@@ -8,6 +8,7 @@
     #?(:cljs
        [eponai.web.utils :as utils])
     [eponai.client.chat :as client.chat]
+    [clojure.string :as str]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]))
@@ -64,14 +65,14 @@
       {:show-chat? show?}))
   (send-message [this]
     (let [{:keys [chat-message]} (om/get-state this)]
-      (when (seq chat-message)
+      (when-not (str/blank? chat-message)
         (if (get-in (om/props this) [:query/auth :db/id])
           (do (om/transact! this `[(chat/send-message
                                      ~{:store (select-keys (get-store this) [:db/id])
                                        :text  chat-message})
-                                   :query/chat])
-              (om/update-state! this assoc :chat-message ""))
-          #?(:cljs (js/alert "Log in to send chat messages"))))))
+                                   :query/chat]))
+          #?(:cljs (js/alert "Log in to send chat messages")))))
+    (om/update-state! this assoc :chat-message ""))
   (render [this]
     (let [{:keys [show-chat? chat-message]} (om/get-state this)
           messages (get-messages this)]
