@@ -17,8 +17,6 @@
   A remote function is a 1-arity function taking a query and returning
   a map describing a request to the remote."
   [conn]
-  ;; TODO: Make each remote's basis-t isolated from another
-  ;;       Maybe protocol it?
   {:order       (remote-order)
    :remote      (-> (remotes/post-to-url "/api")
                     (remotes/read-basis-t-remote-middleware conn))
@@ -48,20 +46,23 @@
                :or   {conn          (utils/create-conn)
                       local-storage (local-storage/->local-storage)
                       remotes       (remote-order)
-                      merge         (merge/merge!)}}]
-  (let [reconciler (om/reconciler {:state      conn
-                                   :ui->props  ui->props
-                                   :parser     parser
-                                   :remotes    remotes
-                                   :send       send-fn
-                                   :merge      merge
-                                   :shared     {:shared/browser-history     browser-history
-                                                :shared/local-storage       local-storage
-                                                :shared/auth-lock           auth-lock
-                                                :shared/store-chat-listener store-chat-listener}
-                                   :history    history
-                                   :migrate    nil
-                                   :instrument instrument})]
+                      merge         (merge/merge!)}
+               :as reconciler-config}]
+  (let [overwrites (select-keys reconciler-config [:logger :root-render :root-unmount])
+        reconciler (om/reconciler (into overwrites
+                                        {:state      conn
+                                         :ui->props  ui->props
+                                         :parser     parser
+                                         :remotes    remotes
+                                         :send       send-fn
+                                         :merge      merge
+                                         :shared     {:shared/browser-history     browser-history
+                                                      :shared/local-storage       local-storage
+                                                      :shared/auth-lock           auth-lock
+                                                      :shared/store-chat-listener store-chat-listener}
+                                         :history    history
+                                         :migrate    nil
+                                         :instrument instrument}))]
     (when (some? route)
       (routes/transact-route! reconciler route {:route-params route-params
                                                 :queue?       false}))

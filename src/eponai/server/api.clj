@@ -77,7 +77,7 @@
 ;                         (:verification/uuid verification))
 ;    (info "Newsletter subscribe successful, transacting user into datomic.")
 ;    (comment
-;      ;; TODO: Actually transact this if we want to release jourmoney ^^
+;      ;; TODO: Actually transact this if we want to release jour money ^^
 ;      (transact-map conn account))))
 
 

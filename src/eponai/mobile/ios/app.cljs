@@ -9,7 +9,9 @@
             [eponai.common.parser :as parser]
             [eponai.client.remotes :as remotes]
             [eponai.client.backend :as backend]
-            [eponai.client.parser.merge :as merge]))
+            [eponai.client.parser.merge :as merge]
+            [eponai.client.reconciler :as reconciler]
+            [eponai.web.chat :as web.chat]))
 
 (def app-registry (.-AppRegistry js/ReactNative))
 (def logo-img (js/require "./images/cljs.png"))
@@ -28,63 +30,49 @@
                                              "Warning: Failed propType"
                                              ]))
 
-(defn init-conn
-  "Sets up the datascript state. Caches the state so we can keep our app state between
-  figwheel reloads."
-  []
-  (if @conn-atom
-    (do
-      (debug "Reusing old conn. It currently has schema for attributes:" (-> @conn-atom deref :schema keys))
-      @conn-atom)
-    (let [ui-state [{:ui/singleton :ui.singleton/auth}
-                    ;{:ui/component           :ui.component/app
-                    ; :ui.component.app/route routes/default-route}
-                    {:ui/component :ui.component/root}
-                    {:ui/component :ui.component/loading
-                     :ui.component.loading/is-logged-in? false}
-                    {:ui/singleton :ui.singleton/configuration}
-                    {:ui/component :ui.component/mutation-queue}]
-          conn (utils/create-conn)]
-      (db/transact conn ui-state)
-      (reset! conn-atom conn))))
+(defn prepend-server-url [remote-config server-url]
+  (reduce-kv (fn [remotes remote-key]
+               (update remotes remote-key remotes/update-key :url #(str server-url %)))
+             remote-config
+             (:order remote-config)))
 
-(defn initialize-app [config conn]
+(defn initialize-app [config]
   {:pre [(:server-address config)]}
   (debug "Initializing App")
-  (ignore-yellow-box-warnings!)
-  (let [server (:server-address config)
+  ;; (ignore-yellow-box-warnings!)
+  (let [conn (utils/create-conn)
         parser (parser/client-parser)
-        _ (db/transact conn [{:ui/singleton                                  :ui.singleton/configuration
-                              :ui.singleton.configuration.endpoints/user-api (str server "/api/user")
-                              :ui.singleton.configuration.endpoints/api      (str server "/api")}])
-        remote (-> (remotes/switching-remote conn)
-                   (remotes/read-remote-on-auth-change reconciler-atom)
-                   (remotes/read-basis-t-remote-middleware conn))
-        reconciler (om/reconciler {:state        conn
-                                   :parser       parser
-                                   :ui->props    (utils/cached-ui->props-fn parser)
-                                   ;; :ui->props    (web.utils/debug-ui->props-fn parser)
-                                   :remotes      [:remote :http/call]
-                                   :send         (backend/send!
-                                                   reconciler-atom
-                                                   {:remote    remote
-                                                    :http/call (remotes/http-call-remote reconciler-atom)})
-                                   :merge        (merge/merge! m-merge/mobile-merge)
-                                   :root-render  sup/root-render
-                                   :root-unmount sup/root-unmount ;#(.unmountComponentAtNode js/ReactDOM %)
-                                   :logger       nil
-                                   :migrate      nil})]
+        remote-config (-> (reconciler/remote-config conn)
+                          (prepend-server-url (:server-address config)))
+
+        ;; Use reconciler/create instead of this vvvvvvvvvv
+        reconciler (reconciler/create {:conn                       conn
+                                       :parser                     parser
+                                       :ui->props                  (utils/cached-ui->props-fn parser)
+                                       :merge                      (merge/merge! m-merge/mobile-merge)
+                                       :send-fn                    (backend/send!
+                                                                     reconciler-atom
+                                                                     remote-config)
+                                       :remotes                    (:order remote-config)
+                                       ;; We can use websockets in react-native?!
+                                       :shared/store-chat-listener (web.chat/store-chat-listener reconciler-atom)
+                                       :shared/local-storage       nil
+                                       :logger                     nil
+                                       :migrate                    nil
+                                       :root-render                sup/root-render
+                                       :root-unmount               sup/root-unmount
+                                       })]
     (reset! reconciler-atom reconciler)
     (om/add-root! reconciler root/Root root-node-id)
-    (.registerComponent app-registry "JourMoney" (fn [] app-root))
+    (.registerComponent app-registry "SuloLive" (fn [] app-root))
     (debug "Done initializing app")))
 
 (defn run [config]
   (info "Run called in: " (namespace ::foo))
-  (set! js/console.disableYellowBox true)
-  (debug "Disabled yellow box warnings")
+  ;; (set! js/console.disableYellowBox true)
+  ;; (debug "Disabled yellow box warnings")
   (try
-    (initialize-app config (init-conn))
+    (initialize-app config)
     (catch :default e
       (error "Initialization error:" e)
       (throw e))))
@@ -92,7 +80,4 @@
 ;; For figwheel. See env/dev/ios/main.cljs
 (defn reload! []
   (debug "Reload!")
-  (comment
-    "Uncomment when we've got an ios app."
-    (om/add-root! @reconciler-atom root/RootView root-node-id)))
-
+  (om/add-root! @reconciler-atom root/Root root-node-id))

@@ -44,7 +44,7 @@
                       :migrate nil})]
     (reset! reconciler-atom reconciler)
     (om/add-root! reconciler AppRoot 1))
-  (.registerComponent app-registry "JourMoneyApp" (fn [] app-root)))
+  (.registerComponent app-registry "SuloLiveApp" (fn [] app-root)))
 
 (defn reload! []
   #(om/add-root! @reconciler-atom AppRoot 1))

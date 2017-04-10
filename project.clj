@@ -235,8 +235,7 @@
                                                                 :output-dir    "target/ios"
                                                                 :optimizations :simple}}
                                                 {:id           "ios-local"
-                                                 ;; A production build, run against a local/laptop
-                                                 ;; jourmoney server.
+                                                 ;; A production build, run against a local/laptop server.
                                                  :source-paths ["src" "src-hacks/react-native" "env/client/prod"]
                                                  :compiler     {:output-to     "index.ios.js"
                                                                 :main          "env.ios.local-main"
