@@ -20,7 +20,8 @@
 
 (defn chat-basis-t [db store-id]
   (try
-    (p.util/get-basis-t (read-basis-t-graph db) :query/chat {:store-id store-id})
+    (some-> (read-basis-t-graph db)
+            (p.util/get-basis-t :query/chat {:store-id store-id}))
     (catch #?@(:clj [Exception e] :cljs [:default e])
            (error "Error getting current basis-t for chat: " e)
       ;; TODO: We should be able to display some kind of "something went wrong"
