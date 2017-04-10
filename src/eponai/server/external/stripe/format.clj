@@ -164,5 +164,5 @@
      :order/shipping                 (stripe->shipping (.getShipping o))
 
      :order/status                   (keyword "order.status" (.getStatus o))
-     :order/status-transitions       (.getStatusTransitions o)
+     ;:order/status-transitions       (.getStatusTransitions o)
      :order/updated                  (.getUpdated o)}))

@@ -16,7 +16,8 @@
     [buddy.sign.jwt :as jwt]
     [eponai.server.api.store :as store]
     [eponai.server.external.aws-s3 :as s3]
-    [eponai.common.format :as f]))
+    [eponai.common.format :as f]
+    [eponai.common.ui.om-quill :as quill]))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -93,6 +94,20 @@
                                {:store-id store-id
                                 :mutation k
                                 :auth     auth}))))})
+
+;########### STORE @############
+(defmutation store/update-info
+  [{:keys [state ::parser/return ::parser/exception auth system]} _ store]
+  {:success "Your store info was updated"
+   :error   "Could not update store info"}
+  {:action (fn []
+             (let [{:keys       [db/id]
+                    :store/keys [description]} store
+                   s {:db/id             (:db/id store)
+                      :store/name        (:store/name store)
+                      :store/description (f/str->bytes (quill/sanitize-html (:store/description store)))}]
+               (debug "store/update-info with params: " s)
+               (db/transact-one state s)))})
 
 ;######## STRIPE ########
 

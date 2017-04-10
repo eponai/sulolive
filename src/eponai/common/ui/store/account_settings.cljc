@@ -5,6 +5,7 @@
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.format :as f]
+    [eponai.common.ui.om-quill :as quill]
     [eponai.common.ui.elements.input-validate :as validate]
     #?(:cljs
        [eponai.web.utils :as utils])
@@ -13,7 +14,8 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.photo :as photo]
-    [eponai.common :as c]))
+    [eponai.common :as c]
+    [eponai.common.ui.elements.grid :as grid]))
 
 (def form-elements
   {:stripe/business-name           "str-business-name"
@@ -25,7 +27,9 @@
    :stripe.legal-entity/last-name  "str-le-last-name"
    :stripe.legal-entity.dob/year   "str-le-dob-year"
    :stripe.legal-entity.dob/month  "str-le-dob-month"
-   :stripe.legal-entity.dob/day    "str-le-dob-day"})
+   :stripe.legal-entity.dob/day    "str-le-dob-day"
+
+   :store.info/name                "store-info-name"})
 
 (s/def :stripe.legal-entity.dob/day number?)
 (s/def :stripe.legal-entity.dob/month number?)
@@ -200,7 +204,8 @@
                               :placeholder "Province"}))))))))
 
 (defn public-profile [component]
-  (let [{:keys [store]} (om/get-computed component)]
+  (let [{:keys [store]} (om/get-computed component)
+        {:store/keys [description]} store]
     (my-dom/div
       (css/grid-row)
       (my-dom/div
@@ -222,6 +227,7 @@
           (my-dom/div
             (css/grid-column)
             (dom/input #js {:type         "text"
+                            :id           (:store.info/name form-elements)
                             :defaultValue (:store/name store)})))
         (my-dom/div
           (css/grid-row)
@@ -240,7 +246,18 @@
                         (dom/option #js {:value "unisex"} "Unisex")))
           (my-dom/div
             (css/grid-column)
-            (dom/select nil)))))))
+            (dom/select nil)))
+        (grid/row
+          nil
+          (grid/column
+            (->> (css/text-align :right)
+                 (grid/column-size {:small 4 :medium 3 :large 2}))
+            (dom/label nil "About"))
+          (grid/column
+            nil
+            (quill/->QuillEditor (om/computed {:content (f/bytes->str description)
+                                               :placeholder "What's your story?"}
+                                              {:on-editor-created #(om/update-state! component assoc :quill-editor %)}))))))))
 
 (defui AccountSettings
   static om/IQuery
@@ -256,13 +273,18 @@
      (save-settings
        [this]
        (let [{:keys [store]} (om/get-computed this)
+             {:keys [quill-editor]} (om/get-state this)
              le (legal-entity)
              validation-error (s/explain-data :stripe/legal-entity le)]
          (debug "Legal entity: " le)
          (debug "LEGAL ENTITY VALIDATION: " validation-error)
          (when (nil? validation-error)
-           (om/transact! this `[(stripe/update-account ~{:params   {:legal_entity le}
+           (om/transact! this `[(store/update-info ~(-> store
+                                                        (assoc :store/description (quill/get-HTML quill-editor))
+                                                        (assoc :store/name (utils/input-value-by-id (:store.info/name form-elements)))))
+                                (stripe/update-account ~{:params   {:legal_entity le}
                                                          :store-id (:db/id store)})
+                                :query/store
                                 :query/stripe-account]))
          (om/update-state! this assoc :validation-error validation-error))))
   #?(:cljs

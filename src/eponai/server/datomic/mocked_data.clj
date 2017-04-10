@@ -205,7 +205,7 @@
    ;; FlowerRainbowNJ
    {:db/id       (db/tempid :db.part/user)
     :store/name  "FlowerRainbowNJ"
-    :store/description "Keep calm and wear pretty jewelry."
+    :store/tagline "Keep calm and wear pretty jewelry."
     :store/cover (photo "https://imgix.ttcdn.co/i/wallpaper/original/0/449892-2b1249e4cb424d5a937a0f67fb22ccc0.jpeg?q=50&w=2000&auto=format%2Ccompress&fm=jpeg&h=1333&crop=faces%2Centropy&fit=crop")
     :store/photo (photo "https://imgix.ttcdn.co/i/wallpaper/original/0/449892-2b1249e4cb424d5a937a0f67fb22ccc0.jpeg?q=50&w=2000&auto=format%2Ccompress&fm=jpeg&h=1333&crop=faces%2Centropy&fit=crop")
     :store/items [{:store.item/name       "Nose Stud"
@@ -261,7 +261,7 @@
    ;; MIRIMIRIFASHION
    {:db/id       (db/tempid :db.part/user)
     :store/name  "MIRIMIRIFASHION"
-    :store/description "Handmade exclusive fashion designer shop."
+    :store/tagline "Handmade exclusive fashion designer shop."
     ;:store/cover #db/id[:db.part/user -51]
     :store/photo (photo "https://img0.etsystatic.com/132/0/5695768/isla_500x500.17344782_h4dngp5g.jpg")
     :store/items [{:store.item/name       "Hoodie Dress"

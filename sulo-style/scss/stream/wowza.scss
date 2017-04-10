@@ -1,6 +1,11 @@
 #sulo-wowza {
 	$default-color: $black;//map-get($foundation-palette, primary);
 	$mc-color: map-get($foundation-palette, highlight);
+	position: absolute;
+	height: 100%;
+	width: 100%;
+	top: 0;
+	bottom: 0;
 	#sulo-wowza-UI {
 		#sulo-wowza-OverlayPlay, #sulo-wowza-SeekBarPlayed {
 			background: rgba($default-color, 0.8);

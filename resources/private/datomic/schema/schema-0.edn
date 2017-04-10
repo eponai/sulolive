@@ -117,6 +117,14 @@
 
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :store/description
+  :db/valueType          :db.type/bytes
+  :db/cardinality        :db.cardinality/one
+  :db/fulltext           true
+  :db/doc                "Name of a store"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store/tagline
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
   :db/fulltext           true

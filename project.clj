@@ -11,6 +11,7 @@
                  ;[clj-time "0.11.0"]
                  [compojure "1.5.1"]
                  [aprint "0.1.3"]
+                 [alxlit/autoclave "0.2.0"]
                  [buddy/buddy-auth "1.3.0"]
                  [com.cemerick/url "0.1.1"]
                  [com.datomic/datomic-pro "0.9.5544"

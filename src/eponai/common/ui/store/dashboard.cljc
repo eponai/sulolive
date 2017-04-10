@@ -88,6 +88,7 @@
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     {:store/photo [:photo/path]}
                     :store/stripe
+                    :store/description
                     {:store/items [:store.item/uuid
                                    :store.item/name
                                    :store.item/description

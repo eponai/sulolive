@@ -2,44 +2,78 @@
   (:require
     #?(:cljs
        [cljsjs.quill])
+    #?(:clj
+       [autoclave.core :as a])
     [om.dom :as dom]
-    [om.next :as om :refer [defui]]))
+    [om.next :as om :refer [defui]]
+    [taoensso.timbre :refer [debug]]))
 
 (defn get-contents [editor]
-  (.getContents editor))
+  #?(:cljs
+     (js/JSON.stringify (.getContents editor))))
 
-;(defn delta->html [delta-map]
-;  #?(:cljs (js/Quill )))
+(defn sanitize-html [dirty-html]
+  (when (not-empty dirty-html)
+    (let [allowed-classes ["ql-align-right" "ql-align-center" "ql-size-small" "ql-size-large"]
+          allowed-tags ["p" "span" "strong" "ul" "ol" "li" "u" "s" "i" "em" "br"]]
+
+      #?(:cljs (let [policy (clj->js {:allowedTags    allowed-tags
+                                      :allowedClasses {"*" allowed-classes}})]
+                 (js/sanitizeHtml dirty-html policy))
+         :clj  (let [policy (a/html-policy :allow-common-inline-formatting-elements
+                                           :allow-common-block-elements
+                                           :allow-attributes ["class"
+                                                              :globally
+                                                              :matching [(fn [_ _ value]
+                                                                           (some #(when (clojure.string/includes? value %) %)
+                                                                                 allowed-classes))]])]
+                 (a/html-sanitize policy dirty-html))))))
+
+(defn get-HTML [editor]
+  #?(:cljs
+     (sanitize-html (.. editor -root -innerHTML))))
 
 (defn toolbar-opts []
   #?(:cljs
      (clj->js [[{"size" ["small" false "large"]}],
                ["bold", "italic", "underline", "strike"],
-               [{"list" "ordered"}, {"list" "bullet"}, {"indent" "-1"}, {"indent" "+1"}],
+               [{"list" "ordered"}, {"list" "bullet"}],
+               [{"align" []}]
                ;["link"],
-               [{"color" []} {"background" []}]
+               ;[{"color" []} {"background" []}]
                ["clean"]
                ])),)
 (defui QuillEditor
   Object
   (componentDidMount [this]
     (let [{:keys [on-editor-created]} (om/get-computed this)
-          {:keys [content]} (om/props this)]
+          {:keys [content placeholder theme]} (om/props this)]
       #?(:cljs
          (let [element (.getElementById js/document "quill-editor")
                editor (js/Quill. element (clj->js
-                                           {:theme       "snow"
+                                           {:theme       (or theme "snow")
                                             :modules     {:toolbar (toolbar-opts)}
-                                            :placeholder "What's your product like?"}))
+                                            :placeholder placeholder}))
                ;parchment (js/Quill.import "parchment")
                ;quill-style (.. parchment -Attributor -Style)
                ]
            ;(js/Quill.register (quill-style "size", "font-size", #js {:scope (.. parchment -Scope -INLINE)}), true)
-           (.setContents editor (js/JSON.parse content))
+           ;(.setContents editor (js/JSON.parse content))
+           (.. editor -clipboard (dangerouslyPasteHTML (sanitize-html content)))
            (when on-editor-created
              (on-editor-created editor))))))
   (render [this]
-    (dom/div #js {:className "rich-text-input"}
+    (dom/div #js {:id "quill-editor-container" :className "rich-text-input"}
       (dom/div #js {:id "quill-editor" :className "sl-quill-editor"}))))
 
 (def ->QuillEditor (om/factory QuillEditor))
+
+(defui QuillRenderer
+  Object
+  (render [this]
+    (let [{:keys [html]} (om/props this)]
+      (dom/div
+        #js {:className               "ql-editor"
+             :dangerouslySetInnerHTML #js {:__html (sanitize-html html)}}))))
+
+(def ->QuillRenderer (om/factory QuillRenderer))

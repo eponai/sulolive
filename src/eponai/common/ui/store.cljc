@@ -7,6 +7,8 @@
     [eponai.common.ui.common :as common]
     [eponai.common.ui.product :as item]
     [eponai.common.ui.stream :as stream]
+    [eponai.common.ui.om-quill :as quill]
+    [eponai.common.format :as f]
     [eponai.client.routes :as routes]
     #?(:cljs [eponai.web.utils :as utils])
     [eponai.common.ui.dom :as dom]
@@ -15,6 +17,14 @@
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]))
+
+
+(defn about-section [component]
+  (let [{:query/keys [store]} (om/props component)
+        {:store/keys [description]} store]
+    (grid/row-column
+      nil
+      (quill/->QuillRenderer {:html (f/bytes->str description)}))))
 
 (defui Store
   static om/IQuery
@@ -29,6 +39,7 @@
                     ;{:store/items (om/get-query item/Product)}
                     {:stream/_store [:stream/name]}
                     :store/description
+                    :store/tagline
                     :store/name]}
      {:query/store-items (om/get-query item/Product)}
      :query/current-route])
@@ -107,7 +118,7 @@
               (->> (grid/column-order {:small 3 :medium 3})
                    (css/add-class :quote-section)
                    (css/text-align :center))
-              (dom/span nil (:store/description store)))))
+              (dom/span nil (:store/tagline store)))))
 
         (dom/div
           {:id "shop"}
@@ -140,9 +151,11 @@
                           {:href (routes/url :store/navigation {:navigation path :store-id   (:db/id store)})}
                           (dom/span nil label)))))
                   (:store/navigations store)))))
+          (if (= route :store/about)
+            (about-section this)
 
-          (grid/products (concat store-items store-items store-items)
-                         (fn [p]
-                           (pi/->ProductItem {:product p}))))))))
+            (grid/products (concat store-items store-items store-items)
+                           (fn [p]
+                             (pi/->ProductItem {:product p})))))))))
 
 (def ->Store (om/factory Store))

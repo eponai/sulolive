@@ -42,7 +42,6 @@
   #?(:cljs (when-let [el (get-element-by-id id)]
              (.-value el))))
 
-
 (defn input-product [component]
   #?(:cljs
      (let [{:keys [uploaded-photo quill-editor]} (om/get-state component)
@@ -51,7 +50,7 @@
         :price       (utils/input-value-by-id input-price)
         :currency    "CAD"
         :photo       uploaded-photo
-        :description (js/JSON.stringify (quill/get-contents quill-editor))})))
+        :description (quill/get-contents quill-editor)})))
 
 (defn input-skus [product]
   #?(:cljs
@@ -181,7 +180,8 @@
                       (my-dom/div (->> (css/grid-row)
                                        (css/grid-column))
                                   (dom/label nil "Description")
-                                  (quill/->QuillEditor (om/computed {:content (f/bytes->str description)}
+                                  (quill/->QuillEditor (om/computed {:content (f/bytes->str description)
+                                                                     :placeholder "What's your product like?"}
                                                                     {:on-editor-created #(om/update-state! this assoc :quill-editor %)})))
 
                       ;(my-dom/div (->> (css/grid-row))
