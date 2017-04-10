@@ -20,7 +20,7 @@
                   (if (and (some? current-basis-t) (>= current-basis-t basis-t))
                     (debug "Already had the chat update.")
                     (do (debug "Will request query chat because we're not up to date.")
-                        (om/transact! reconciler (into [`(chat/queue-update ~{:store-id store-id :basis-t basis-t})]
+                        (om/transact! reconciler (into [(list 'chat/queue-update {:store-id store-id :basis-t basis-t})]
                                                        (om/transform-reads reconciler [:query/chat])))))))))]
     (reify
       sente/ISenteEventHandler
