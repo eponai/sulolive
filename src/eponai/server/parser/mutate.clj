@@ -77,18 +77,20 @@
 
 (defmutation stream-token/generate
   [{:keys [state db parser ::parser/return ::parser/exception auth system] :as env} k {:keys [store-id]}]
-  ;; Responing with a map works!
   {:success return
    :error   "Error generating stream token"}
   {:action (fn []
+             ;; TODO: This if-let has to do with auth. Generalize?
              (if-let [store (db/one-with db {:where   '[[?e :store/owners ?owner]
                                                         [?owner :store.owner/user ?u]
                                                         [?u :user/email ?email]]
                                              :symbols {'?e     store-id
                                                        '?email (:email auth)}})]
-               {:token (jwt/sign {:auth       (:email auth)
-                                  :streamName (stream/stream-name (db/entity db store))}
-                                 (wowza/jwt-secret (:system/wowza system)))}
+               (let [store (db/entity db store)]
+                 {:token (jwt/sign {:user/email  (:email auth)
+                                    :store/id    (:db/id store)
+                                    :stream/name (stream/stream-name store)}
+                                   (wowza/jwt-secret (:system/wowza system)))})
                (throw (ex-info "Can only generate tokens for streams which you are owner for"
                                {:store-id store-id
                                 :mutation k
