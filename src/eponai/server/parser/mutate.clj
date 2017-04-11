@@ -86,11 +86,15 @@
                                                         [?u :user/email ?email]]
                                              :symbols {'?e     store-id
                                                        '?email (:email auth)}})]
-               (let [store (db/entity db store)]
-                 {:token (jwt/sign {:user/email  (:email auth)
-                                    :store/id    (:db/id store)
-                                    :stream/name (stream/stream-name store)}
-                                   (wowza/jwt-secret (:system/wowza system)))})
+               (let [store (db/entity db store)
+                     token (jwt/sign {:uuid        (str (db/squuid))
+                                      :user/email  (:email auth)
+                                      :store/id    (:db/id store)
+                                      :stream/name (stream/stream-name store)}
+                                     (wowza/jwt-secret (:system/wowza system)))]
+                 (db/transact state [{:stream/store (:db/id store)
+                                      :stream/token token}])
+                 {:token token})
                (throw (ex-info "Can only generate tokens for streams which you are owner for"
                                {:store-id store-id
                                 :mutation k
