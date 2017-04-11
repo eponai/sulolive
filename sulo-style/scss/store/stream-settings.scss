@@ -1,4 +1,7 @@
 #sulo-stream-settings {
+	.row {
+		max-width: 75rem;
+	}
 	.status-callout {
 		@include breakpoint(medium) {
 			padding: 1rem 2rem !important;

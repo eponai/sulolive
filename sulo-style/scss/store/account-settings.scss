@@ -1,8 +1,14 @@
+
 #sulo-account-settings {
 	.row .row .row {
 		margin-bottom: 1rem;
 		.row {
 			margin-bottom: 0;
+		}
+	}
+	label {
+		@include breakpoint(large) {
+			text-align: right;
 		}
 	}
 
@@ -25,5 +31,24 @@
 
 	.profile-photo-edit {
 		background: $light-gray;
+	}
+
+	.tabs {
+		a {
+			color: $dark-gray;
+			background: $white;
+		}
+		.is-active {
+			border-bottom: 2px solid $primary-color;
+			a {
+				color: $black;
+				font-weight: $global-weight-bold;
+			}
+		}
+	}
+	.tabs-content {
+		.callout {
+			border: none !important;
+		}
 	}
 }

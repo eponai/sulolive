@@ -56,13 +56,6 @@
                               (my-dom/span (css/show-for nav-breakpoint) "Stream")
                               (my-dom/i
                                 (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]}))))
-                 (menu/item (when (= route :store-dashboard/settings)
-                              (css/add-class ::css/is-active))
-                            (my-dom/a
-                              (css/add-class :category {:href (routes/url :store-dashboard/settings {:store-id store-id})})
-                              (my-dom/span (css/show-for nav-breakpoint) "Settings")
-                              (my-dom/i
-                                (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]}))))
                  (menu/item
                    (when (= route :store-dashboard/product-list)
                      (css/add-class ::css/is-active))
@@ -78,7 +71,15 @@
                      (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
                      (my-dom/span (css/show-for nav-breakpoint) "Orders")
                      (my-dom/i
-                       (css/hide-for nav-breakpoint {:classes [:fa :fa-file-text-o :fa-fw]})))))))))
+                       (css/hide-for nav-breakpoint {:classes [:fa :fa-file-text-o :fa-fw]}))))
+                 (menu/item
+                   (when (= route :store-dashboard/settings)
+                     (css/add-class ::css/is-active))
+                   (my-dom/a
+                     (css/add-class :category {:href (routes/url :store-dashboard/settings {:store-id store-id})})
+                     (my-dom/span (css/show-for nav-breakpoint) "Settings")
+                     (my-dom/i
+                       (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]})))))))))
 
 (def compute-route-params #(select-keys % [:route-params]))
 (def compute-store #(select-keys % [:store]))

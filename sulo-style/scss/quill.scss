@@ -8,22 +8,28 @@
 		font-size: 1.25rem;
 	}
 }
+#sulo-store-dashboard {
+	#quill-editor-container {
+		border: $global-border;
+	}
+}
+
 #quill-editor-container {
-	min-height: 18rem;
+	min-height: 23rem;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	.ql-container {
 		font-size: $global-font-size;
-		min-height: 15rem;
-		height: 15rem;
-		border: $global-border;
+		min-height: 20rem;
+		height: 20rem;
+		border: none;
 	}
 	.ql-toolbar {
 		min-height: 3rem;
-		border: $global-border;
-		border-bottom: none;
-			font-family: $header-font-family-serif;
+		border: none;
+		border-bottom: $global-border;
+		font-family: $header-font-family-serif;
 
 	}
 	.ql-disabled {

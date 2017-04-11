@@ -37,15 +37,17 @@
 }
 
 #sulo-store-dashboard {
+	$dashboard-max-width: 75rem;
 	#sulo-navbar .navbar-container {
 		box-shadow: none;
 		border-bottom: 1px solid $light-gray;
 	}
-	.row {
-		max-width: 80rem;
-	}
+
 	#sulo-navbar {
 		position: absolute;
+	}
+	.row {
+		max-width: $dashboard-max-width;
 	}
 
 	#store-navbar {
@@ -69,7 +71,7 @@
 		width: 100%;
 		height: 2.5rem;
 		.navbar {
-			max-width: 80rem;
+			max-width: $dashboard-max-width;
 			margin: 0 auto;
 			height: 100%;
 		}
@@ -170,7 +172,7 @@
 		// background: rgba($color, 0.03);
 	}
 	.navbar, footer, .footer .row {
-		max-width: 80rem;
+		max-width: $dashboard-max-width;
 	}
 
 	.profile-photo-container {

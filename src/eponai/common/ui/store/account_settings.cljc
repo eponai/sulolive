@@ -66,51 +66,48 @@
 (defn personal-details [component]
   (let [{:query/keys [stripe-account]} (om/props component)
         {:keys [validation-error]} (om/get-state component)]
-    (my-dom/div
-      (->> (css/grid-row)
-           (css/align :center))
-      (my-dom/div
-        (->> (css/grid-column)
-             (css/grid-column-size {:small 12 :medium 10 :large 8}))
-        (my-dom/div
-          (css/grid-row)
-          (my-dom/div
-            (->> (css/grid-column)
-                 (css/grid-column-size {:small 4 :medium 3 :large 2}))
+    (grid/row
+      (css/align :center)
+      (grid/column
+        (grid/column-size {:small 12 :medium 10 :large 8})
+
+        (grid/row
+          nil
+          (grid/column
+            (grid/column-size {:small 4 :medium 3 :large 2})
             (dom/label nil "Legal Name"))
-          (my-dom/div
-            (css/grid-column)
-            (my-dom/div
-              (css/grid-row)
-              (my-dom/div
-                (css/grid-column)
+          (grid/column
+            nil
+            (grid/row
+              nil
+              (grid/column
+                nil
                 (dom/input #js {:type         "text"
                                 :id           (:stripe.legal-entity/first-name form-elements)
                                 :placeholder  "First"
                                 :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/first-name])}))
-              (my-dom/div
-                (css/grid-column)
+              (grid/column
+                nil
                 (dom/input #js {:type         "text"
                                 :id           (:stripe.legal-entity/last-name form-elements)
                                 :placeholder  "Last"
                                 :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/last-name])})))))
-        (my-dom/div
-          (css/grid-row)
-          (my-dom/div
-            (->> (css/grid-column)
-                 (css/grid-column-size {:small 4 :medium 3 :large 2}))
+        (grid/row
+          nil
+          (grid/column
+            (grid/column-size {:small 4 :medium 3 :large 2})
             (dom/label nil "Date of birth"))
-          (my-dom/div
-            (css/grid-column)
-            (my-dom/div
-              (css/grid-row)
-              (my-dom/div
-                (css/grid-column)
+          (grid/column
+            nil
+            (grid/row
+              nil
+              (grid/column
+                nil
                 (validate/input
                   :stripe.legal-entity.dob/day
-                  {:id (:stripe.legal-entity.dob/day form-elements)
-                   :type "number"
-                   :placeholder "Day"
+                  {:id           (:stripe.legal-entity.dob/day form-elements)
+                   :type         "number"
+                   :placeholder  "Day"
                    :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/dob :stripe.legal-entity.dob/day])}
                   validation-error)
                 ;(dom/input #js {:type         "text"
@@ -118,8 +115,8 @@
                 ;                :placeholder  "Day"
                 ;                :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/dob :stripe.legal-entity.dob/day])})
                 )
-              (my-dom/div
-                (css/grid-column)
+              (grid/column
+                nil
                 (validate/input
                   :stripe.legal-entity.dob/month
                   {:type         "number"
@@ -128,8 +125,8 @@
                    :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/dob :stripe.legal-entity.dob/month])}
                   validation-error))
 
-              (my-dom/div
-                (css/grid-column)
+              (grid/column
+                nil
                 (validate/input
                   :stripe.legal-entity.dob/year
                   {:type         "number"
@@ -206,52 +203,48 @@
 (defn public-profile [component]
   (let [{:keys [store]} (om/get-computed component)
         {:store/keys [description]} store]
-    (my-dom/div
-      (css/grid-row)
-      (my-dom/div
-        (->> (css/grid-column)
-             (css/text-align :center)
-             (css/grid-column-size {:small 6 :medium 4 :large 3}))
+    (grid/row
+      (css/align :center)
+      (grid/column
+        (->> (css/text-align :center)
+             (grid/column-size {:small 6 :medium 4 :large 3}))
         ;(dom/div #js {:className "profile-photo-edit"})
         (photo/store-photo store)
         (dom/a #js {:className "button hollow"} "Upload Photo"))
-      (my-dom/div
-        (css/grid-column)
-        (my-dom/div
-          (css/grid-row)
-          (my-dom/div
-            (->> (css/grid-column)
-                 (css/text-align :right)
-                 (css/grid-column-size {:small 4 :medium 3 :large 2}))
-            (dom/label nil "Store Name"))
-          (my-dom/div
-            (css/grid-column)
-            (dom/input #js {:type         "text"
-                            :id           (:store.info/name form-elements)
-                            :defaultValue (:store/name store)})))
-        (my-dom/div
-          (css/grid-row)
-          (my-dom/div
-            (->> (css/grid-column)
-                 (css/text-align :right)
-                 (css/grid-column-size {:small 4 :medium 3 :large 2}))
-            (dom/label nil "Category"))
-          (my-dom/div
-            (css/grid-column)
-            (dom/select nil
-                        (dom/option #js {:value "home"} "Home")
-                        (dom/option #js {:value "kids"} "Kids")
-                        (dom/option #js {:value "men"} "Men")
-                        (dom/option #js {:value "women"} "Women")
-                        (dom/option #js {:value "unisex"} "Unisex")))
-          (my-dom/div
-            (css/grid-column)
-            (dom/select nil)))
+      (grid/column
+        (grid/column-size {:small 12 :large 9})
         (grid/row
           nil
           (grid/column
-            (->> (css/text-align :right)
-                 (grid/column-size {:small 4 :medium 3 :large 2}))
+            (grid/column-size {:small 12 :large 2})
+            (dom/label nil "Store Name"))
+          (grid/column
+            nil
+            (my-dom/input {:type         "text"
+                            :id           (:store.info/name form-elements)
+                            :defaultValue (:store/name store)})))
+        ;(my-dom/div
+        ;  (css/grid-row)
+        ;  (my-dom/div
+        ;    (->> (css/grid-column)
+        ;         (css/text-align :right)
+        ;         (css/grid-column-size {:small 4 :medium 3 :large 2}))
+        ;    (dom/label nil "Category"))
+        ;  (my-dom/div
+        ;    (css/grid-column)
+        ;    (dom/select nil
+        ;                (dom/option #js {:value "home"} "Home")
+        ;                (dom/option #js {:value "kids"} "Kids")
+        ;                (dom/option #js {:value "men"} "Men")
+        ;                (dom/option #js {:value "women"} "Women")
+        ;                (dom/option #js {:value "unisex"} "Unisex")))
+        ;  (my-dom/div
+        ;    (css/grid-column)
+        ;    (dom/select nil)))
+        (grid/row
+          nil
+          (grid/column
+            (grid/column-size {:small 12 :large 2})
             (dom/label nil "About"))
           (grid/column
             nil
@@ -291,9 +284,12 @@
      (validate-input
        [this]
        (om/update-state! this assoc :validation-error (s/explain-data :stripe/legal-entity (legal-entity)))))
+  (initLocalState [_]
+    {:active-tab :profile})
   (render [this]
     (let [{:query/keys [stripe-account]} (om/props this)
-          {:keys [store]} (om/get-computed this)]
+          {:keys [store]} (om/get-computed this)
+          {:keys [active-tab]} (om/get-state this)]
       (dom/div #js {:id "sulo-account-settings"}
         (my-dom/div
           (css/grid-row)
@@ -301,20 +297,53 @@
             (css/grid-column)
             (dom/h3 nil "Settings")
 
-            (my-dom/div
-              (css/add-class ::css/callout)
-              (dom/h4 #js {:className "header"} "Public Profile")
-              (public-profile this))
+            (menu/horizontal
+              (css/add-class :tabs)
+              (menu/item
+                (cond->> (css/add-class :tabs-title)
+                         (= active-tab :profile)
+                         (css/add-class ::css/is-active))
+                (my-dom/a
+                  {:onClick #(om/update-state! this assoc :active-tab :profile)}
+                  (my-dom/small nil "Profile")))
+              (menu/item
+                (cond->> (css/add-class :tabs-title)
+                         (= active-tab :business-settings)
+                         (css/add-class ::css/is-active))
+                (my-dom/a
+                  {:onClick #(om/update-state! this assoc :active-tab :business-settings)}
+                  (my-dom/small nil "Business Settings"))))
+
 
             (my-dom/div
-              (css/add-class ::css/callout)
-              (dom/h4 #js {:className "header"} "Account Details")
-              (account-details this))
+               (css/add-class :tabs-content)
+              (my-dom/div
+                (cond->> (css/add-class :tabs-panel)
+                         (= active-tab :profile)
+                         (css/add-class ::css/is-active))
+                (public-profile this))
+              (my-dom/div
+                (cond->> (css/add-class :tabs-panel)
+                         (= active-tab :business-settings)
+                         (css/add-class ::css/is-active))
+                (account-details this)
+                (personal-details this)))
 
-            (my-dom/div
-              (css/add-class ::css/callout)
-              (dom/h4 #js {:className "header"} "Personal Details")
-              (personal-details this))))
+            ;(my-dom/div
+            ;  (css/add-class ::css/callout)
+            ;  (dom/h4 #js {:className "header"} "Public Profile")
+            ;  (public-profile this))
+            ;
+            ;(my-dom/div
+            ;  (css/add-class ::css/callout)
+            ;  (dom/h4 #js {:className "header"} "Account Details")
+            ;  (account-details this))
+            ;
+            ;(my-dom/div
+            ;  (css/add-class ::css/callout)
+            ;  (dom/h4 #js {:className "header"} "Personal Details")
+            ;  (personal-details this))
+            ))
 
         ;(dom/fieldset #js {:className "fieldset"}
         ;              (dom/legend nil "Payments")
@@ -347,12 +376,13 @@
         ;                                     (dom/div #js {:className "bank-detail country"}
         ;                                       (dom/span nil (str "(" country ")"))))))
         ;                      (:stripe/external-accounts stripe-account))))))
-        (my-dom/div
-          (css/grid-row)
-          (my-dom/div
-            (->> (css/grid-column)
-                 (css/text-align :right))
-            (dom/a #js {:className "button"
-                        :onClick   #(.save-settings this)} "Save")))))))
+        ;(my-dom/div
+        ;  (css/grid-row)
+        ;  (my-dom/div
+        ;    (->> (css/grid-column)
+        ;         (css/text-align :right))
+        ;    (dom/a #js {:className "button"
+        ;                :onClick   #(.save-settings this)} "Save")))
+        ))))
 
 (def ->AccountSettings (om/factory AccountSettings))
