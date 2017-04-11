@@ -298,15 +298,7 @@
  ;; Stream
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :stream/uuid
-  :db/valueType          :db.type/uuid
-  :db/cardinality        :db.cardinality/one
-  :db/unique             :db.unique/identity
-  :db/doc                "Unique identifier of stream."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :stream/name
+  :db/ident              :stream/title
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
   :db/doc                "Name (title) of the stream."
@@ -316,28 +308,22 @@
   :db/ident              :stream/store
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
   :db/doc                "Ref to the streams store."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :stream/status
+  :db/ident              :stream/state
   :db/valueType          :db.type/keyword
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Status of this stream (e.g. :stream.status/offline or :stream.status/online)."
+  :db/doc                "State of this stream (e.g. :stream.status/offline or :stream.status/online)."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :stream/key
+  :db/ident              :stream/token
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Stream key the user has generated earlier."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :stream/photo
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Tumbnail photo for the stream"
+  :db/doc                "Stream token the user has generated last."
   :db.install/_attribute :db.part/db}
 
 
