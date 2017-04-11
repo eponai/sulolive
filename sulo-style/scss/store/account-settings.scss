@@ -1,9 +1,16 @@
 
 #sulo-account-settings {
-	.row .row .row {
+	.payment-methods {
+		display: flex;
+		flex-direction: row;
+	}
+	.row .row {
 		margin-bottom: 1rem;
+	}
+	.row .row .row {
+		// margin-bottom: 1rem;
 		.row {
-			margin-bottom: 0;
+			// margin-bottom: 0;
 		}
 	}
 	label {
@@ -11,13 +18,30 @@
 			text-align: right;
 		}
 	}
+	input.tagline-input {
+		font-style: italic;
+		// &::placeholder {
+			// font-style: italic;
+		// }
+	}
+	.icon {
+		$size: 32px;
+		margin-right: 0.5rem;
+		svg {
+			width: $size;
+			height: $size;
+		}
+		// max-width: 2rem;
+	}
 
 	.bank-account {
 		display: flex;
 		padding: 0.5rem 1rem;
+		align-items: center;
 		$border: 1px solid $light-gray;
 		border: $border;
 		border-top: none;
+		border-radius: $global-radius;
 		&:first-child {
 			border-top: $border;
 		}
@@ -28,26 +52,64 @@
 			}
 		}
 	}
+	.payout-schedule {
+		// border: $global-border;
+		border-radius: $global-radius;
+		display: flex;
+		// align-items: center;
+	}
 
 	.profile-photo-edit {
 		background: $light-gray;
 	}
 
 	.tabs {
+		border-right: none;
 		a {
 			color: $dark-gray;
 			background: $white;
 		}
-		.is-active {
-			border-bottom: 2px solid $primary-color;
+		li {
+			margin-right: 0.5rem;
+			border-right: 2px solid transparent;
+			transition: border .25s ease-in-out;
+			// border-bottom: $global-border;
+			// padding: 0.25rem 0;
+			// border-right: none;
+			&:last-child {
+				border: none;
+				border-right: 2px solid transparent;
+			}
 			a {
-				color: $black;
+				transition: all .25s ease-in-out;
+			}
+			&.is-active, &:hover {
+				border-right: 2px solid $primary-color;
+				a {
+					color: $black;
+				}
+			}
+			&.is-active a {
 				font-weight: $global-weight-bold;
 			}
 		}
 	}
 	.tabs-content {
+		margin-top: 1rem;
+		padding: 0.5rem;
+		@include breakpoint(medium) {
+			margin-top: 0;
+		}
+		border: $global-border;
 		.callout {
+			padding: 0;
+			margin-bottom: 2.5rem;
+			&:last-child {
+				margin-bottom: 0;
+			}
+			.button {
+				margin-bottom: 0;
+			}
 			border: none !important;
 		}
 	}

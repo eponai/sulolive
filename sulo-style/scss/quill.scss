@@ -1,8 +1,8 @@
-
+$editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
 .ql-editor, #quill-editor-container .ql-editor {
-	font-family: $header-font-family-serif;
+	font-family: $editor-font-family;
 	strong {
-		font-weight: bold;
+		// font-weight: bold;
 	}
 	.ql-size-large {
 		font-size: 1.25rem;
@@ -29,7 +29,7 @@
 		min-height: 3rem;
 		border: none;
 		border-bottom: $global-border;
-		font-family: $header-font-family-serif;
+		font-family: $editor-font-family;
 
 	}
 	.ql-disabled {

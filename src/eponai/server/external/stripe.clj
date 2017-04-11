@@ -27,7 +27,19 @@
     (create-account [_ params]
       (debug "DEV - Fake Stripe: create-account with params: " params))
     (get-account [_ params]
-      (debug "DEV - Fake Stripe: get-acconunt with params: " params))
+      {:stripe/id                "acct_19k3ozC0YaFL9qxh"
+       :stripe/country           "CA"
+       :stripe/legal-entity      {:stripe.legal-entity/first-name "First"
+                                  :stripe.legal-entity/last-name  "Last"
+                                  :stripe.legal-entity/dob        {:stripe.legal-entity.dob/year  1970
+                                                                   :stripe.legal-entity.dob/month 1
+                                                                   :stripe.legal-entity.dob/day   1}}
+       :stripe/external-accounts [{:stripe.external-account/currency  "CAD"
+                                   :stripe.external-account/bank-name "Wells Fargo"
+                                   :stripe.external-account/last4     "1234"
+                                   :stripe.external-account/country   "CA"}] ;(map stripe->bank-account (.getExternalAccounts a))
+       :stripe/business-name     "My business Name"
+       :stripe/business-url      "My business URL"})
     (create-customer [_ _ params]
       (debug "DEV - Fake Stripe: create-customer with params: " params))
     p/IStripeAccount
