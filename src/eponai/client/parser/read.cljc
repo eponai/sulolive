@@ -247,6 +247,12 @@
     (debug "Reading app-root: " [k :route current-route])
     (parser.util/read-union env k p (router/normalize-route (:route current-route)))))
 
+(defmethod client-read :routing/store-dashboard
+  [{:keys [db] :as env} k p]
+  (let [current-route (client.routes/current-route db)]
+    (debug "Reading routing/store-dashboard: " [k :route current-route])
+    (parser.util/read-union env k p (:route current-route))))
+
 (defmethod client-read :query/business-model
   [e k p]
   {:value business.budget/world})

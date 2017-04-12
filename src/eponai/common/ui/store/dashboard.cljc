@@ -17,7 +17,8 @@
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.common.format :as f]
-    [eponai.common.ui.elements.photo :as photo]))
+    [eponai.common.ui.elements.photo :as photo]
+    [medley.core :as medley]))
 
 (defn str->json [s]
   #?(:cljs (cljs.reader/read-string s)
@@ -79,6 +80,30 @@
                      (my-dom/i
                        (css/hide-for nav-breakpoint {:classes [:fa :fa-file-text-o :fa-fw]})))))))))
 
+(def compute-route-params #(select-keys % [:route-params]))
+(def compute-store #(select-keys % [:store]))
+
+(def route-map {:store-dashboard/order-list     {:component   ol/OrderList
+                                                 :computed-fn compute-store}
+                :store-dashboard/order          {:component   oef/OrderEditForm
+                                                 :computed-fn compute-route-params}
+                :store-dashboard/create-order   {:component   oef/OrderEditForm
+                                                 :computed-fn (fn [{:keys [store route-params]}]
+                                                                {:route-params route-params
+                                                                 :products     (:store/items store)})}
+                :store-dashboard/stream         {:component   ss/StreamSettings
+                                                 :computed-fn compute-store}
+                :store-dashboard/settings       {:component   as/AccountSettings
+                                                 :computed-fn compute-store}
+                :store-dashboard/product-list   {:component   pl/ProductList
+                                                 :computed-fn compute-route-params}
+                :store-dashboard/create-product {:component   pef/ProductEditForm
+                                                 :computed-fn compute-route-params}
+                :store-dashboard/product        {:component   pef/ProductEditForm
+                                                 :computed-fn (fn [{:keys [store route-params]}]
+                                                                {:route-params route-params
+                                                                 :product      (find-product store (:product-id route-params))})}})
+
 (defui Dashboard
   static om/IQuery
   (query [_]
@@ -102,20 +127,17 @@
                     {:stream/_store [:stream/state]}]}
      :query/current-route
      :query/messages
-     {:proxy/product-list (om/get-query pl/ProductList)}
-     {:proxy/product-edit (om/get-query pef/ProductEditForm)}
-     {:proxy/order-edit (om/get-query oef/OrderEditForm)}
-     {:proxy/order-list (om/get-query ol/OrderList)}
-     {:proxy/stream-settings (om/get-query ss/StreamSettings)}
-     {:proxy/account-settings (om/get-query as/AccountSettings)}
+     {:routing/store-dashboard (-> (medley/map-vals (comp om/get-query :component) route-map)
+                                   (assoc :store-dashboard []))}
      {:query/stripe-account [:stripe/legal-entity :stripe/verification]}
      ])
   Object
   (initLocalState [_]
     {:selected-tab :products})
   (render [this]
-    (let [{:proxy/keys [navbar product-edit product-list order-edit order-list stream-settings account-settings]
-           :query/keys       [store current-route stripe-account]} (om/props this)
+    (let [{:proxy/keys [navbar]
+           :query/keys [store current-route stripe-account]
+           :as         props} (om/props this)
           {:keys [route route-params]} current-route
           store-id (:db/id store)
           ;; Implement a :query/stream-by-store-id ?
@@ -126,27 +148,13 @@
         {:navbar navbar
          :id     "sulo-store-dashboard"}
         (sub-navbar this)
-        (condp = route
-          :store-dashboard/order-list (ol/->OrderList (om/computed order-list
-                                                                   {:store store}))
-          :store-dashboard/order (oef/->OrderEditForm (om/computed order-edit
-                                                                   {:route-params route-params}))
-          :store-dashboard/create-order (oef/->OrderEditForm (om/computed order-edit
-                                                                          {:route-params route-params
-                                                                           :products     (:store/items store)}))
-
-          :store-dashboard/stream (ss/->StreamSettings (om/computed stream-settings
-                                                                    {:store store}))
-          :store-dashboard/settings (as/->AccountSettings (om/computed account-settings
-                                                                       {:store store}))
-          :store-dashboard/product-list (pl/->ProductList (om/computed product-list
-                                                                       {:route-params route-params}))
-          :store-dashboard/create-product (pef/->ProductEditForm (om/computed product-edit
-                                                                              {:route-params route-params}))
-          :store-dashboard/product (pef/->ProductEditForm (om/computed product-edit
-                                                                       {:route-params route-params
-                                                                        :product      (find-product store (:product-id route-params))}))
-          :store-dashboard
+        (if-not (= route :store-dashboard)
+          ;; Dispatch on the routed component:
+          (let [{:keys [component computed-fn factory]} (get route-map route)
+                factory (or factory (om/factory component))
+                routed-props (:routing/store-dashboard props)]
+            (factory (om/computed routed-props (computed-fn (assoc props :store store :route-params route-params)))))
+          ;; Render the store's dashboard:
           (my-dom/div
             (->> (css/grid-row {:id "sulo-main-dashboard"})
                  (css/align :center))
