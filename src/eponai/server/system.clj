@@ -145,14 +145,16 @@
   (let [{:keys [env] :as config} (assoc config :env environ/env
                                                ::disable-ssl true
                                                ::disable-anti-forgery true)]
-    (assoc (system false config)
-      ;; Comment out things to use the production ones.
-      :system/auth0 (c/using (auth0/map->FakeAuth0 {})
-                             {:datomic :system/datomic})
-      :system/aws-elb (elb/aws-elastic-beanstalk-stub)
-      :system/aws-ec2 (ec2/aws-ec2-stub)
-      ;:system/aws-s3 (s3/aws-s3-stub)
-      ;:system/wowza (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})
-      :system/mailchimp (mailchimp/mail-chimp-stub)
-      ;; :system/stripe (stripe/stripe-stub)
-      )))
+    (cond-> (assoc (system false config)
+              ;; Comment out things to use the production ones.
+              :system/auth0 (c/using (auth0/map->FakeAuth0 {})
+                                     {:datomic :system/datomic})
+              :system/aws-elb (elb/aws-elastic-beanstalk-stub)
+              :system/aws-ec2 (ec2/aws-ec2-stub)
+              ;:system/aws-s3 (s3/aws-s3-stub)
+              :system/mailchimp (mailchimp/mail-chimp-stub))
+            ;; Conditionals for common ones to try real implementation of:
+            (nil? (env :use-real-stripe))
+            (assoc :system/stripe (stripe/stripe-stub))
+            (nil? (env :use-real-wowza))
+            (assoc :system/wowza (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})))))
