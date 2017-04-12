@@ -191,7 +191,7 @@
                                (css/grid-column-size {:small 12 :medium 8}))
                           (dom/label nil "Server URL")
                           (dom/input #js {:type  "text"
-                                          :value (:ui.singleton.stream-config/publisher-url stream-config)}))
+                                          :value (or (:ui.singleton.stream-config/publisher-url stream-config) "")}))
                         (my-dom/div
                           (->> (css/grid-column))
                           (dom/a #js {:className "button hollow"}
