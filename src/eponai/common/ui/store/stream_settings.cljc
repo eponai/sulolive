@@ -12,7 +12,8 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements :as elements]
     #?(:cljs
-       [eponai.web.utils :as utils])))
+       [eponai.web.utils :as utils])
+    [eponai.common.parser :as parser]))
 
 (defn- get-store [component-or-props]
   (get-in (om/get-computed component-or-props) [:store]))
@@ -66,7 +67,6 @@
           stream-state (:stream/state stream)
           chat-message (:chat-message (om/get-state this))
           message (msg/last-message this 'stream-token/generate)]
-      (debug ["STREAM_STORE_MESSAGE:  " message :component-state (om/get-state this)])
       (my-dom/div
         {:id "sulo-stream-settings"}
         ;(my-dom/div
@@ -108,9 +108,19 @@
                 (my-dom/div
                   (->> (css/grid-column)
                        (css/text-align :right))
-                  (dom/a #js {:onClick   #(om/transact! this [(list 'stream/go-live {:store-id (:db/id store)}) :query/stream])
-                              :className (str "button highlight large" (when-not (= :stream.state/online stream-state) " invisible"))}
-                         (dom/strong nil "Go Live!")))))
+                  (condp = stream-state
+                    :stream.state/online
+                    (dom/a #js {:onClick   #(om/transact! this [(list 'stream/go-live {:store-id (:db/id store)}) :query/stream])
+                                :className "button highlight large"}
+                          (dom/strong nil "Go Live!"))
+                    :stream.state/offline
+                    (dom/a #js {:onClick   #(binding [parser/*parser-allow-local-read* false]
+                                              (om/transact! this [{:query/stream [:stream/state]}]))
+                                :className "button large"}
+                           (dom/strong nil "Refresh"))
+                    :stream.state/live
+                    (dom/a #js {:className "button large invisible"}
+                           (dom/strong nil "You're live"))))))
 
             (my-dom/div
               (css/add-class ::css/callout)
