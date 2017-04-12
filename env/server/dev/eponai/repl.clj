@@ -10,26 +10,24 @@
 (ns.repl/set-refresh-dirs "src" "test" "env")
 
 ;; Reloading code inspired by:
-;; Ring wrap-reload
-;; https://github.com/ring-clojure/ring/blob/master/ring-devel/src/ring/middleware/reload.clj#L7
 ;; Pedestal - auto-server-reload
 ;; https://github.com/pedestal/samples/blob/master/auto-reload-server/dev/dev.clj#L38
-(defn- reloader [dirs reload-compile-errors?]
-  (let [modified-namespaces (ns-tracker dirs)
-        load-queue (LinkedBlockingQueue.)]
+(defn- reloader [dirs]
+  (let [tracker (ns-tracker dirs)
+        reload-ns (fn [ns-sym]
+                    (try
+                      (require ns-sym :reload)
+                      (catch Throwable e
+                        (.printStackTrace e))))]
     (fn []
-      (locking load-queue
-        (doseq [ns-sym (modified-namespaces)]
-          (.offer load-queue ns-sym))
-        (when (seq load-queue)
+      (let [modified-namespaces (tracker)]
+        (when (seq modified-namespaces)
           (reloaded.repl/suspend))
-        (loop [reloaded? false]
-          (if-let [ns-sym (.peek load-queue)]
-            (do (if reload-compile-errors?
-                  (do (require ns-sym :reload) (.remove load-queue))
-                  (do (.remove load-queue) (require ns-sym :reload)))
-                (recur true))
-            (when reloaded?
+        (try
+          (doseq [ns-sym modified-namespaces]
+            (reload-ns ns-sym))
+          (finally
+            (when (seq modified-namespaces)
               (reloaded.repl/resume))))))))
 
 (let [reloader-atom (atom nil)]
@@ -42,21 +40,15 @@
     (if-let [stop-reload! @reloader-atom]
       stop-reload!
       (let [done (atom false)
-            reload! (reloader ["src" "test" "env"] true)]
+            reload! (reloader ["src" "test" "env"])]
         (doto
           (Thread. (fn []
-                     (let [min-timeout 300
-                           max-timeout 2000
-                           timeout (atom min-timeout)]
-                       (while (not @done)
-                         (try
-                           (reload!)
-                           (reset! timeout min-timeout)
-                           (catch Throwable e
-                             (.printStackTrace e)
-                             (swap! timeout #(min (* 2 %) max-timeout))
-                             (debug "Error when reloading.. Increased timeout to: " @timeout)))
-                         (Thread/sleep @timeout)))))
+                     (while (not @done)
+                       (try
+                         (reload!)
+                         (catch Throwable e
+                           (debug "Error when reloading: " e)))
+                       (Thread/sleep 500))))
           (.setDaemon true)
           (.start))
         (reset! reloader-atom (fn [] (reset! done false)))

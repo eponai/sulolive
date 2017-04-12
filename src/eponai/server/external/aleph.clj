@@ -46,17 +46,9 @@
     (dissoc this :server))
   suspendable/Suspendable
   (suspend [this]
-    (close-quietly (:server this))
     this)
   (resume [this old-this]
-    (if (:server this)
-      this
-      ;; Wait for the old one to really close, then try restarting this one.
-      (do
-        (some-> (:server old-this) (aleph.netty/wait-for-close))
-        (let [restarted (component/start this)]
-          (if (:server restarted)
-            (do (debug "Successfully restarted Aleph.")
-                restarted)
-            (do (debug "Unable to restart Aleph!")
-                (throw (ex-info "Unable to resume Aleph" {:component this})))))))))
+    (if-let [server (:server old-this)]
+      (assoc this :server server)
+      (do (component/stop old-this)
+          (component/start this)))))
