@@ -45,10 +45,8 @@
   ;; This chat store listener is a copy of what's in ui.chat
   client.chat/IStoreChatListener
   (start-listening! [this store-id]
-    (debug "LISTENING TO STORE_ID: " store-id)
     (client.chat/start-listening! (:shared/store-chat-listener (om/shared this)) store-id))
   (stop-listening! [this store-id]
-    (debug "NOOOOOOOOPE, not LISTENING TO STORE_ID: " store-id)
     (client.chat/stop-listening! (:shared/store-chat-listener (om/shared this)) store-id))
   Object
   (componentWillUnmount [this]
