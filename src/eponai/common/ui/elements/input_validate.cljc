@@ -9,7 +9,7 @@
 
 (defn is-invalid-path? [id-key error]
   (if error
-    (let [problems (::s/problems error)
+    (let [problems (::s/problems (:explain-data error))
           invalid-paths (map (fn [p] (some #(= % id-key) p))
                              (map :path problems))]
       (debug "Invalid paths: " invalid-paths)
@@ -35,9 +35,16 @@
     ;    children))
     ))
 
-(defn input [id-key opts error]
-  (let [is-invalid-input? (is-invalid-path? id-key error)]
-    (my-dom/input
-      (cond->> opts
-              is-invalid-input?
-              (css/add-class :is-invalid-input)))))
+(defn input
+  ([opts error]
+   (let [is-invalid-input? (some #(= % (:id opts)) (:invalid-paths error))]
+     (my-dom/input
+       (cond->> opts
+                is-invalid-input?
+                (css/add-class :is-invalid-input)))))
+  ([id-key opts error]
+   (let [is-invalid-input? (is-invalid-path? id-key error)]
+     (my-dom/input
+       (cond->> opts
+                is-invalid-input?
+                (css/add-class :is-invalid-input))))))

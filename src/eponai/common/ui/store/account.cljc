@@ -21,52 +21,25 @@
         [eponai.common :as c]
         [eponai.common.ui.elements.grid :as grid]))
 
-(def form-elements
-  {:stripe/business-name           "str-business-name"
-   :stripe.address/street          "str-business-address-street"
-   :stripe.address/postal          "str-business-address-postal"
-   :stripe.address/locality        "str-business-address-locality"
-   :stripe.addess/state            "str-business-address-state"
-   :stripe.legal-entity/first-name "str-le-first-name"
-   :stripe.legal-entity/last-name  "str-le-last-name"
-   :stripe.legal-entity.dob/year   "str-le-dob-year"
-   :stripe.legal-entity.dob/month  "str-le-dob-month"
-   :stripe.legal-entity.dob/day    "str-le-dob-day"
-
-   :store.info/name                "store-info-name"
-   :store.into/tagline             "store-info-tagline"})
-
-(s/def :stripe.legal-entity.dob/day number?)
-(s/def :stripe.legal-entity.dob/month number?)
-(s/def :stripe.legal-entity.dob/year number?)
-(s/def :stripe.legal-entity/first-name (s/and string? #(not-empty %)))
-(s/def :stripe.legal-entity/last-name (s/and string? #(not-empty %)))
-(s/def :stripe.legal-entity/dob (s/keys :req [:stripe.legal-entity.dob/year
-                                              :stripe.legal-entity.dob/month
-                                              :stripe.legal-entity.dob/day]))
-(s/def :stripe/legal-entity (s/keys :opt [:stripe.legal-entity/dob
-                                          :stripe.legal-entity/first_name
-                                          :stripe.legal-entity/last_name]))
-
-(defn legal-entity []
-  #?(:cljs
-     (let [{:stripe.legal-entity/keys     [first-name last-name]
-            :stripe.legal-entity.dob/keys [year month day]} form-elements
-           y (c/parse-long-safe (utils/input-value-by-id year))
-           m (c/parse-long-safe (utils/input-value-by-id month))
-           d (c/parse-long-safe (utils/input-value-by-id day))
-           fn (utils/input-value-by-id first-name)
-           ln (utils/input-value-by-id last-name)
-
-           dob (when (or y m d)
-                 {:stripe.legal-entity.dob/year  y
-                  :stripe.legal-entity.dob/month m
-                  :stripe.legal-entity.dob/day   d})]
-       (not-empty
-         (f/remove-nil-keys
-           {:stripe.legal-entity/first_name fn
-            :stripe.legal-entity/last_name  ln
-            :stripe.legal-entity/dob        dob})))))
+;(defn legal-entity []
+;  #?(:cljs
+;     (let [{:stripe.legal-entity/keys     [first-name last-name]
+;            :stripe.legal-entity.dob/keys [year month day]} form-elements
+;           y (c/parse-long-safe (utils/input-value-by-id year))
+;           m (c/parse-long-safe (utils/input-value-by-id month))
+;           d (c/parse-long-safe (utils/input-value-by-id day))
+;           fn (utils/input-value-by-id first-name)
+;           ln (utils/input-value-by-id last-name)
+;
+;           dob (when (or y m d)
+;                 {:stripe.legal-entity.dob/year  y
+;                  :stripe.legal-entity.dob/month m
+;                  :stripe.legal-entity.dob/day   d})]
+;       (not-empty
+;         (f/remove-nil-keys
+;           {:stripe.legal-entity/first_name fn
+;            :stripe.legal-entity/last_name  ln
+;            :stripe.legal-entity/dob        dob})))))
 
 
 
@@ -96,31 +69,30 @@
      {:proxy/activate-account (om/get-query activate/Activate)}])
 
   Object
-  #?(:cljs
-     (save-settings
-       [this]
-       (let [{:keys [store]} (om/get-computed this)
-             {:keys [quill-editor]} (om/get-state this)
-             le (legal-entity)
-             validation-error (s/explain-data :stripe/legal-entity le)]
-
-
-         (when (nil? validation-error)
-           (om/transact! this `[(store/update-info ~(-> store
-                                                        (assoc :store/description (quill/get-HTML quill-editor))
-                                                        (assoc :store/name (utils/input-value-by-id (:store.info/name form-elements)))))
-                                (stripe/update-account ~{:params   {:legal_entity le}
-                                                         :store-id (:db/id store)})
-                                :query/store
-                                :query/stripe-account]))
-         (om/update-state! this assoc :validation-error validation-error))))
+  ;#?(:cljs
+  ;   (save-settings
+  ;     [this]
+  ;     (let [{:keys [store]} (om/get-computed this)
+  ;           {:keys [quill-editor]} (om/get-state this)
+  ;           le (legal-entity)
+  ;           validation-error (s/explain-data :stripe/legal-entity le)]
+  ;
+  ;
+  ;       (when (nil? validation-error)
+  ;         (om/transact! this `[(store/update-info ~(-> store
+  ;                                                      (assoc :store/description (quill/get-HTML quill-editor))
+  ;                                                      (assoc :store/name (utils/input-value-by-id (:store.info/name form-elements)))))
+  ;                              (stripe/update-account ~{:params   {:legal_entity le}
+  ;                                                       :store-id (:db/id store)})
+  ;                              :query/store
+  ;                              :query/stripe-account]))
+  ;       (om/update-state! this assoc :validation-error validation-error))))
   ;#?(:cljs
   ;   (validate-input
   ;     [this]
   ;     (om/update-state! this assoc :validation-error (s/explain-data :stripe/legal-entity (legal-entity)))))
   (initLocalState [_]
-    {:active-tab    :activate
-     :form-elements form-elements})
+    {:active-tab    :activate})
   (render [this]
     (let [{:query/keys [stripe-account]
            :proxy/keys [activate-account]} (om/props this)
@@ -181,14 +153,15 @@
 
 
               (tabs-panel (= active-tab :business-settings)
-                          (dom/div
-                            (css/callout)
-                            (dom/p (css/add-class :header) "Business details")
-                            (business/account-details this))
-                          (dom/div
-                            (css/callout)
-                            (dom/p (css/add-class :header) "Personal details")
-                            (business/personal-details this)))))))
+                          ;(dom/div
+                          ;  (css/callout)
+                          ;  (dom/p (css/add-class :header) "Business details")
+                          ;  (business/account-details this))
+                          ;(dom/div
+                          ;  (css/callout)
+                          ;  (dom/p (css/add-class :header) "Personal details")
+                          ;  (business/personal-details this))
+                          )))))
 
       ;(my-dom/div
       ;  (css/grid-row)

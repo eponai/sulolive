@@ -2,6 +2,10 @@
 	input, select {
 		// max-width: 20rem;
 		margin: 0;
+		&[disabled] {
+			background: $white;
+			font-weight: $global-weight-bold;
+		}
 	}
 	.business-type {
 		label {
