@@ -16,6 +16,7 @@
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/streams [:stream/title
+                      :stream/state
                       {:stream/store [:store/name {:store/photo [:photo/path]}]}]}])
   Object
   (render [this]
