@@ -3,13 +3,22 @@
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.stream :as stream]
     [eponai.client.parser.message :as msg]
+    [eponai.client.chat :as client.chat]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.chat :as chat]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.elements :as elements]))
+    [eponai.common.ui.elements :as elements]
+    #?(:cljs
+       [eponai.web.utils :as utils])))
+
+(defn- get-store [component-or-props]
+  (get-in (om/get-computed component-or-props) [:store]))
+
+(defn- get-store-id [component-or-props]
+  (:db/id (get-store component-or-props)))
 
 (defui StreamSettings
   static om/IQuery
@@ -25,12 +34,36 @@
                                     {:chat.message/user [:user/email {:user/photo [:photo/path]}]}
                                     :chat.message/text
                                     :chat.message/timestamp]}]}])
+  chat/IHaveChatMessage
+  (get-chat-message [this]
+    (:chat-message (om/get-state this)))
+  (reset-chat-message! [this]
+    (om/update-state! this assoc :chat-message ""))
+  ;; This chat store listener is a copy of what's in ui.chat
+  client.chat/IStoreChatListener
+  (start-listening! [this store-id]
+    (debug "LISTENING TO STORE_ID: " store-id)
+    (client.chat/start-listening! (:shared/store-chat-listener (om/shared this)) store-id))
+  (stop-listening! [this store-id]
+    (debug "NOOOOOOOOPE, not LISTENING TO STORE_ID: " store-id)
+    (client.chat/stop-listening! (:shared/store-chat-listener (om/shared this)) store-id))
   Object
+  (componentWillUnmount [this]
+    (client.chat/stop-listening! this (get-store-id this)))
+  (componentDidUpdate [this prev-props prev-state]
+    (let [old-store (get-store-id prev-props)
+          new-store (get-store-id (om/props this))]
+      (when (not= old-store new-store)
+        (client.chat/stop-listening! this old-store)
+        (client.chat/start-listening! this new-store))))
+  (componentDidMount [this]
+    (client.chat/start-listening! this (get-store-id this)))
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
           {:query/keys [stream chat stream-config]
            :as         props} (om/props this)
           stream-state (:stream/state stream)
+          chat-message (:chat-message (om/get-state this))
           message (msg/last-message this 'stream-token/generate)]
       (debug ["STREAM_STORE_MESSAGE:  " message :component-state (om/get-state this)])
       (my-dom/div
@@ -109,10 +142,16 @@
                                             (dom/input #js {:className   ""
                                                             :type        "text"
                                                             :placeholder "Say someting..."
+                                                            :value       (or chat-message "")
+                                                            :onKeyDown   #?(:cljs
+                                                                            #(when (utils/enter-pressed? %)
+                                                                               (chat/send-message this))
+                                                                            :clj identity)
                                                             :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))}))
                                 (my-dom/div (->> (css/grid-column)
                                                  (css/add-class :shrink))
-                                            (dom/a #js {:className "button hollow primary large"}
+                                            (dom/a #js {:className "button hollow primary large"
+                                                        :onClick   #(chat/send-message this)}
                                                    (dom/i #js {:className "fa fa-send-o fa-fw"})))))
                             ;(dom/input #js {:type "text"
                             ;                :placeholder "Say something..."})

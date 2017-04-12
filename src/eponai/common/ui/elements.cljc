@@ -46,7 +46,4 @@
               (css/add-class :messages-list {:onMouseOver #(set! (.. (utils/element-by-id "the-sulo-app") -style -overflow-y) "hidden")
                                              :onMouseOut  #(set! (.. (utils/element-by-id "the-sulo-app") -style -overflow-y) "scroll")})
          :clj (css/add-class :messages-list))
-      (map (fn [msg]
-             (debug "MSG " msg)
-             (message-item msg))
-           messages))))
+      (map message-item messages))))

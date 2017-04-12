@@ -2,6 +2,9 @@
   (:require
     [taoensso.timbre :refer [debug]]))
 
+(defn enter-pressed? [e]
+  (= 13 (.-keyCode e)))
+
 (def breakpoints
   {:small   0
    :medium  640
