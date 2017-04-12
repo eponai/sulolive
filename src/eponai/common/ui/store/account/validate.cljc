@@ -11,28 +11,28 @@
         [taoensso.timbre :refer [debug]]))
 
 (def stripe-verifications
-  {:account.business.address/street "legal_entity.address.line1"
-   :account.business.address/postal "legal_entity.address.postal_code"
-   :account.business.address/city   "legal_entity.address.city"
-   :account.business.address/state  "legal_entity.address.state"
+  {:field.legal-entity.address/line1   "legal_entity.address.line1"
+   :field.legal-entity.address/postal  "legal_entity.address.postal_code"
+   :field.legal-entity.address/city    "legal_entity.address.city"
+   :field.legal-entity.address/state   "legal_entity.address.state"
 
-   :account.business/name           "legal_entity.business_name"
-   :account.business/tax-id         "legal_entity.business_tax_id"
+   :field.legal-entity/business-name   "legal_entity.business_name"
+   :field.legal-entity/business-tax-id "legal_entity.business_tax_id"
 
-   :account.personal.dob/day        "legal_entity.dob.day"
-   :account.personal.dob/month      "legal_entity.dob.month"
-   :account.personal.dob/year       "legal_entity.dob.year"
+   :field.legal-entity.dob/day         "legal_entity.dob.day"
+   :field.legal-entity.dob/month       "legal_entity.dob.month"
+   :field.legal-entity.dob/year        "legal_entity.dob.year"
 
-   :account.personal/first-name     "legal_entity.first_name"
-   :account.personal/last-name      "legal_entity.last_name"
+   :field.legal-entity/first-name      "legal_entity.first_name"
+   :field.legal-entity/last-name       "legal_entity.last_name"
 
-   :account/external-account            "external_account"})
+   :field/external-account             "external_account"})
 
 (def form-inputs
   (merge stripe-verifications
-         {:account.bank-account/transit-number     "external_account.transit_number"
-          :account.bank-account/institution-number "external_account.institution_number"
-          :account.bank-account/account-number     "external_account.account_number"}))
+         {:field.external-account/transit-number     "external_account.transit_number"
+          :field.external-account/institution-number "external_account.institution_number"
+          :field.external-account/account-number     "external_account.account_number"}))
 
 (defn validate [m]
   (when-let [err (s/explain-data :account/activate m)]
@@ -45,36 +45,36 @@
 
 ;; ############## Specs #########################
 
-(s/def :account.business.address/street (s/and string? #(not-empty %)))
-(s/def :account.business.address/postal (s/and string? #(not-empty %)))
-(s/def :account.business.address/city (s/and string? #(not-empty %)))
-(s/def :account.business.address/state (s/and string? #(not-empty %)))
+(s/def :field.legal-entity.address/line1 (s/and string? #(not-empty %)))
+(s/def :field.legal-entity.address/postal (s/and string? #(not-empty %)))
+(s/def :field.legal-entity.address/city (s/and string? #(not-empty %)))
+(s/def :field.legal-entity.address/state (s/and string? #(not-empty %)))
 
-(s/def :account.personal.dob/day number?)
-(s/def :account.personal.dob/month number?)
-(s/def :account.personal.dob/year number?)
+(s/def :field.legal-entity.dob/day number?)
+(s/def :field.legal-entity.dob/month number?)
+(s/def :field.legal-entity.dob/year number?)
 
-(s/def :account.business/address (s/keys :opt [:account.business.address/street
-                                               :account.business.address/postal
-                                               :account.business.address/city
-                                               :account.business.address/state]))
+(s/def :field.legal-entity/address (s/keys :opt [:field.legal-entity.address/line1
+                                               :field.legal-entity.address/postal
+                                               :field.legal-entity.address/city
+                                               :field.legal-entity.address/state]))
 
-(s/def :account.personal/dob (s/keys :req [:account.personal.dob/day
-                                           :account.personal.dob/month
-                                           :account.personal.dob/year]))
-(s/def :account.personal/first-name (s/and string? #(not-empty %)))
-(s/def :account.personal/last-name (s/and string? #(not-empty %)))
+(s/def :field.legal-entity/dob (s/keys :req [:field.legal-entity.dob/day
+                                           :field.legal-entity.dob/month
+                                           :field.legal-entity.dob/year]))
+(s/def :field.legal-entity/first-name (s/and string? #(not-empty %)))
+(s/def :field.legal-entity/last-name (s/and string? #(not-empty %)))
 
-(s/def :account/activate (s/keys :opt [:account.business/address
-                                       :account.personal/dob
-                                       :account.personal/first-name
-                                       :account.personal/last-name
-                                       :account/bank-account]))
+(s/def :account/activate (s/keys :opt [:field.legal-entity/address
+                                       :field.legal-entity/dob
+                                       :field.legal-entity/first-name
+                                       :field.legal-entity/last-name
+                                       :field/external-account]))
 
-(s/def :account.bank-account/transit-number (s/and string? #(= 5 (count %)) #(number? (c/parse-long-safe %))))
-(s/def :account.bank-account/institution-number (s/and string? #(= 3 (count %)) #(number? (c/parse-long-safe %))))
-(s/def :account.bank-account/account-number number?)
+(s/def :field.external-account/transit-number (s/and string? #(= 5 (count %)) #(number? (c/parse-long-safe %))))
+(s/def :field.external-account/institution-number (s/and string? #(= 3 (count %)) #(number? (c/parse-long-safe %))))
+(s/def :field.external-account/account-number number?)
 
-(s/def :account/bank-account (s/keys :opt [:account.bank-account/transit-number
-                                           :account.bank-account/institution-number
-                                           :account.bank-account/account-number]))
+(s/def :field/external-account (s/keys :opt [:field.external-account/transit-number
+                                           :field.external-account/institution-number
+                                           :field.external-account/account-number]))

@@ -130,7 +130,8 @@
               (->> (css/add-class :tabs-content)
                    (css/add-class ::css/vertical))
               (tabs-panel (= active-tab :activate)
-                          (activate/->Activate activate-account))
+                          (activate/->Activate (om/computed activate-account
+                                                            {:store store})))
 
               (tabs-panel (= active-tab :profile)
                           (general/public-profile this))

@@ -151,12 +151,12 @@
                                    [:db/add store :store/stripe (:db/id stripe-info)]])))})
 
 (defmutation stripe/update-account
-  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [store-id params]}]
+  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [store-id account-params]}]
   {:success "Your account was created"
    :error   "Could not create Stripe account"}
   {:action (fn []
              (let [{:stripe/keys [id]} (stripe/pull-stripe (db/db state) store-id)]
-               (stripe/update-account (:system/stripe system) id params)))})
+               (stripe/update-account (:system/stripe system) id account-params)))})
 
 (defmutation store/create-product
   [env _ {:keys [product store-id] :as p}]

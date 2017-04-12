@@ -71,8 +71,9 @@
   (p/create-account stripe params))
 
 (defn update-account [stripe account-id params]
-  (s/assert :ext.stripe.params/update-account params)
-  (p/update-account stripe account-id params))
+  (let [account (f/input->account-params params)]
+    (s/assert :ext.stripe.params/update-account account)
+    (p/update-account stripe account-id account)))
 
 (defn create-product [stripe account-secret params]
   (s/assert :ext.stripe.params/create-product params)

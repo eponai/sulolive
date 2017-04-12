@@ -56,6 +56,35 @@
 (defn stripe->price [p]
   (with-precision 10 (/ (bigdec p) 100)))
 
+
+;{:field.legal-entity.address/line1   "legal_entity.address.line1"
+; :field.legal-entity.address/postal  "legal_entity.address.postal_code"
+; :field.legal-entity.address/city    "legal_entity.address.city"
+; :field.legal-entity.address/state   "legal_entity.address.state"
+;
+; :field.legal-entity/business-name   "legal_entity.business_name"
+; :field.legal-entity/business-tax-id "legal_entity.business_tax_id"
+;
+; :field.legal-entity.dob/day         "legal_entity.dob.day"
+; :field.legal-entity.dob/month       "legal_entity.dob.month"
+; :field.legal-entity.dob/year        "legal_entity.dob.year"
+;
+; :field.legal-entity/first-name      "legal_entity.first_name"
+; :field.legal-entity/last-name       "legal_entity.last_name"
+;
+; :field/external-account             "external_account"}
+
+(defn input->account-params [account-params]
+  (let [{:field/keys [legal-entity external-account]} account-params
+        {:field.legal-entity/keys [address business-name business-tax-id first-name last-name dob]} legal-entity
+        {:field.legal-entity.address/keys [line1 postal city state]} address
+        {:field.legal-entity.dob/keys [day month year]} dob]
+    {:legal_entity {:first_name first-name
+                    :last_name  last-name
+                    :dob        {:day   day
+                                 :month month
+                                 :year  year}}}))
+
 (defn input->price [p]
   (when p
     (int (with-precision 10 (* 100 (bigdec p))))))

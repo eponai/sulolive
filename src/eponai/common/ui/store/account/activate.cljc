@@ -11,25 +11,6 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common :as c]))
 
-;(def stripe-verifications
-;  {:account.business.address/street "legal_entity.address.line1"
-;   :account.business.address/postal "legal_entity.address.postal_code"
-;   :account.business.address/city   "legal_entity.address.city"
-;   :account.business.address/state  "legal_entity.address.state"
-;
-;   :account.business/name           "legal_entity.business_name"
-;   :account.business/tax-id         "legal_entity.business_tax_id"
-;
-;   :account.personal.dob/day        "legal_entity.dob.day"
-;   :account.personal.dob/month      "legal_entity.dob.month"
-;   :account.personal.dob/year       "legal_entity.dob.year"
-;
-;   :account.personal/first-name     "legal_entity.first_name"
-;   :account.personal/last-name      "legal_entity.last_name"
-;
-;   :account/bank-account            "external_account"})
-
-
 (defn minimum-fields [spec type]
   (cond (= type :individual)
         (get-in spec [:country-spec/verification-fields :country-spec.verification-fields/individual :country-spec.verification-fields.individual/minimum])
@@ -56,36 +37,41 @@
      (activate-account
        [this]
        (let [{:query/keys [stripe-country-spec]} (om/props this)
+             {:keys [store]} (om/get-computed this)
              {:keys [entity-type]} (om/get-state this)
-             street (utils/input-value-by-id (:account.business.address/street v/form-inputs))
-             postal (utils/input-value-by-id (:account.business.address/postal v/form-inputs))
-             city (utils/input-value-by-id (:account.business.address/city v/form-inputs))
-             state (utils/input-value-by-id (:account.business.address/state v/form-inputs))
+             street (utils/input-value-by-id (:field.legal-entity.address/line1 v/form-inputs))
+             postal (utils/input-value-by-id (:field.legal-entity.address/postal v/form-inputs))
+             city (utils/input-value-by-id (:field.legal-entity.address/city v/form-inputs))
+             state (utils/input-value-by-id (:field.legal-entity.address/state v/form-inputs))
 
-             year (c/parse-long-safe (utils/input-value-by-id (:account.personal.dob/year v/form-inputs)))
-             month (c/parse-long-safe (utils/input-value-by-id (:account.personal.dob/month v/form-inputs)))
-             day (c/parse-long-safe (utils/input-value-by-id (:account.personal.dob/day v/form-inputs)))
+             year (c/parse-long-safe (utils/input-value-by-id (:field.legal-entity.dob/year v/form-inputs)))
+             month (c/parse-long-safe (utils/input-value-by-id (:field.legal-entity.dob/month v/form-inputs)))
+             day (c/parse-long-safe (utils/input-value-by-id (:field.legal-entity.dob/day v/form-inputs)))
 
-             first-name (utils/input-value-by-id (:account.personal/first-name v/form-inputs))
-             last-name (utils/input-value-by-id (:account.personal/last-name v/form-inputs))
+             first-name (utils/input-value-by-id (:field.legal-entity/first-name v/form-inputs))
+             last-name (utils/input-value-by-id (:field.legal-entity/last-name v/form-inputs))
 
-             transit (utils/input-value-by-id (:account.bank-account/transit-number v/form-inputs))
-             institution (utils/input-value-by-id (:account.bank-account/institution-number v/form-inputs))
-             account (c/parse-long-safe (utils/input-value-by-id (:account.bank-account/account-number v/form-inputs)))
+             transit (utils/input-value-by-id (:field.external-account/transit-number v/form-inputs))
+             institution (utils/input-value-by-id (:field.external-account/institution-number v/form-inputs))
+             account (c/parse-long-safe (utils/input-value-by-id (:field.external-account/account-number v/form-inputs)))
 
-             validation (v/validate {:account.business/address {:account.business.address/street street
-                                                                :account.business.address/postal postal
-                                                                :account.business.address/city   city
-                                                                :account.business.address/state  state}
-                                     :account.personal/dob {:account.personal.dob/year year
-                                                            :account.personal.dob/month month
-                                                            :account.personal.dob/day day}
-                                     :account.personal/first-name first-name
-                                     :account.personal/last-name last-name
-                                     :account/bank-account {:account.bank-account/institution-number institution
-                                                            :account.bank-account/transit-number transit
-                                                            :account.bank-account/account-number account}})]
-         (debug "Validation: " validation)
+             input-map {:field/legal-entity {:field.legal-entity/address    {:field.legal-entity.address/line1  street
+                                                                             :field.legal-entity.address/postal postal
+                                                                             :field.legal-entity.address/city   city
+                                                                             :field.legal-entity.address/state  state}
+                                             :field.legal-entity/dob        {:field.legal-entity.dob/year  year
+                                                                             :field.legal-entity.dob/month month
+                                                                             :field.legal-entity.dob/day   day}
+                                             :field.legal-entity/first-name first-name
+                                             :field.legal-entity/last-name  last-name}
+                        :field/external-account        {:field.external-account/institution-number institution
+                                                        :field.external-account/transit-number     transit
+                                                        :field.external-account/account-number     account}}
+
+             validation (v/validate input-map)]
+         (when (nil? validation)
+           (om/transact! this `[(stripe/update-account ~{:account-params input-map
+                                                         :store-id (:db/id store)})]))
          (om/update-state! this assoc :input-validation validation))))
   (initLocalState [this]
     {:entity-type :individual})
@@ -97,20 +83,6 @@
       (debug "Country spec: " stripe-country-spec)
       (dom/div
         {:id "sulo-activate-account-form"}
-        ;(dom/div
-        ;  (css/callout)
-        ;  (dom/p (css/add-class :header) "Where are you based?")
-        ;  (grid/row
-        ;    nil
-        ;    (label-column
-        ;      nil
-        ;      (dom/label nil "Country"))
-        ;    (grid/column
-        ;      nil
-        ;      (dom/select
-        ;        {:defaultValue "ca"}
-        ;        (dom/option {:value "ca"} "Canada")))))
-
         (dom/div
           (css/callout)
           (dom/p (css/add-class :header) "Account details")
@@ -144,7 +116,7 @@
                           :onChange #(om/update-state! this assoc :entity-type :company)})
               (dom/label {:htmlFor "entity-type-company"} "Company")
               ))
-          (when (field-required? fields-needed :account.business/name)
+          (when (field-required? fields-needed :field.legal-entity/business-name)
             (grid/row
               nil
               (label-column
@@ -157,9 +129,9 @@
                   (v-input/input
                     {:type        "text"
                      :placeholder "Company, LTD"
-                     :id          (:account.business/name v/form-inputs)}
+                     :id          (:field.legal-entity/business-name v/form-inputs)}
                     input-validation)))))
-          (when (field-required? fields-needed :account.business/tax-id)
+          (when (field-required? fields-needed :field.legal-entity/business-tax-id)
             (grid/row
               nil
               (label-column
@@ -172,9 +144,9 @@
                   (dom/input
                     {:type        "text"
                      :placeholder "123123123"
-                     :id (:account.business/tax-id v/form-inputs)})
+                     :id (:field.legal-entity/business-tax-id v/form-inputs)})
                   (dom/small nil "We only need your 9-digit Business Number. Don't have one yet? Apply online.")))))
-          (when (field-required? fields-needed :account.business.address/street)
+          (when (field-required? fields-needed :field.legal-entity.address/line1)
             (grid/row
               nil
               (label-column
@@ -187,33 +159,33 @@
                   (v-input/input
                     {:type        "text"
                      :placeholder "Street"
-                     :id          (:account.business.address/street v/form-inputs)}
+                     :id          (:field.legal-entity.address/line1 v/form-inputs)}
                     input-validation))
                 (grid/row
                   nil
-                  (when (field-required? fields-needed :account.business.address/postal)
+                  (when (field-required? fields-needed :field.legal-entity.address/postal)
                     (grid/column
                       nil
                       (v-input/input
                         {:type        "text"
                          :placeholder "Postal code"
-                         :id          (:account.business.address/postal v/form-inputs)}
+                         :id          (:field.legal-entity.address/postal v/form-inputs)}
                         input-validation)))
-                  (when (field-required? fields-needed :account.business.address/city)
+                  (when (field-required? fields-needed :field.legal-entity.address/city)
                     (grid/column
                       nil
                       (v-input/input
                         {:type        "text"
                          :placeholder "City"
-                         :id (:account.business.address/city v/form-inputs)}
+                         :id (:field.legal-entity.address/city v/form-inputs)}
                         input-validation)))
-                  (when (field-required? fields-needed :account.business.address/state)
+                  (when (field-required? fields-needed :field.legal-entity.address/state)
                     (grid/column
                       nil
                       (v-input/input
                         {:type        "text"
                          :placeholder "State"
-                         :id (:account.business.address/state v/form-inputs)}
+                         :id (:field.legal-entity.address/state v/form-inputs)}
                         input-validation))))))))
 
         (dom/div
@@ -222,7 +194,7 @@
                  (if (= entity-type :individual)
                    "Your personal details"
                    "You, the company representative"))
-          (when (field-required? fields-needed :account.personal/first-name)
+          (when (field-required? fields-needed :field.legal-entity/first-name)
             (grid/row
               nil
               (label-column
@@ -233,17 +205,17 @@
                 (v-input/input
                   {:type        "text"
                    :placeholder "First"
-                   :id (:account.personal/first-name v/form-inputs)}
+                   :id (:field.legal-entity/first-name v/form-inputs)}
                   input-validation))
               (grid/column
                 nil
                 (v-input/input
                   {:type        "text"
                    :placeholder "Last"
-                   :id (:account.personal/last-name v/form-inputs)}
+                   :id (:field.legal-entity/last-name v/form-inputs)}
                   input-validation))))
 
-          (when (field-required? fields-needed :account.personal.dob/day)
+          (when (field-required? fields-needed :field.legal-entity.dob/day)
             (grid/row
               nil
               (label-column
@@ -254,23 +226,23 @@
                 (v-input/input
                   {:type        "text"
                    :placeholder "Month"
-                   :id (:account.personal.dob/month v/form-inputs)}
+                   :id (:field.legal-entity.dob/month v/form-inputs)}
                   input-validation))
               (grid/column
                 nil
                 (v-input/input
                   {:type        "text"
                    :placeholder "Day"
-                   :id (:account.personal.dob/day v/form-inputs)}
+                   :id (:field.legal-entity.dob/day v/form-inputs)}
                   input-validation))
               (grid/column
                 nil
                 (v-input/input
                   {:type        "text"
                    :placeholder "Year"
-                   :id (:account.personal.dob/year v/form-inputs)}
+                   :id (:field.legal-entity.dob/year v/form-inputs)}
                   input-validation)))))
-        (when (field-required? fields-needed :account/external-account)
+        (when (field-required? fields-needed :field/external-account)
           (dom/div
             (css/callout)
             (dom/p (css/add-class :header) "Bank details")
@@ -298,7 +270,7 @@
                 (v-input/input
                   {:type        "text"
                    :placeholder "12345"
-                   :id (:account.bank-account/transit-number v/form-inputs)}
+                   :id (:field.external-account/transit-number v/form-inputs)}
                   input-validation)))
             (grid/row
               nil
@@ -310,7 +282,7 @@
                 (v-input/input
                   {:type        "text"
                    :placeholder "000"
-                   :id (:account.bank-account/institution-number v/form-inputs)}
+                   :id (:field.external-account/institution-number v/form-inputs)}
                   input-validation)))
             (grid/row
               nil
@@ -322,7 +294,7 @@
                 (v-input/input
                   {:type        "text"
                    :placeholder ""
-                   :id (:account.bank-account/account-number v/form-inputs)}
+                   :id (:field.external-account/account-number v/form-inputs)}
                   input-validation)))))
         (dom/div
           (->>  (css/callout)
