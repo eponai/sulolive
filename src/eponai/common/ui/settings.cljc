@@ -9,18 +9,6 @@
     [eponai.common.ui.elements.menu :as menu]
     [taoensso.timbre :refer [debug]]))
 
-
-(defn menu-tab-item [component k n]
-  (let [{:keys [selected-tab]} (om/get-state component)]
-    (menu/item-tab {:active?  (= selected-tab k)
-                    :on-click #(om/update-state! component assoc :selected-tab k)} n)))
-
-(defn tab-panel [component k & content]
-  (let [{:keys [selected-tab]} (om/get-state component)]
-    (apply div (cond->> (css/add-class :tabs-panel)
-                      (= selected-tab k)
-                      (css/add-class ::css/is-active))
-             content)))
 (defui Settings
   static om/IQuery
   (query [_]

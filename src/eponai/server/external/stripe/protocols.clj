@@ -5,9 +5,10 @@
     [taoensso.timbre :refer [debug]])
   (:import (com.stripe Stripe)
            (com.stripe.net RequestOptions)
-           (com.stripe.model Account Customer Charge Product SKU Order)))
+           (com.stripe.model Account Customer Charge Product SKU Order CountrySpec)))
 
 (defprotocol IStripeConnect
+  (get-country-spec [this code])
   (create-account [this opts]
     "Create a managed account on Stripe for a a seller.
     Opts is a map with following keys:
@@ -54,6 +55,10 @@
 
 (defrecord StripeRecord [api-key]
   IStripeConnect
+  (get-country-spec [_ code]
+    (set-api-key api-key)
+    (f/stripe->country-spec (CountrySpec/retrieve code)))
+
   (charge [_ {:keys [amount currency source destination]}]
     (let [params {"amount"      amount
                   "currency"    currency

@@ -15,6 +15,7 @@
                              :db/valueType :db.type/ref}
    :ui.store-chat-queue/store-id {:db/unique :db.unique/identity}
    :order/id {:db/unique :db.unique/identity}
+   :country-spec/id {:db/unique :db.unique/identity}
    ;:store.item/uuid {:db/unique :db.unique/identity}
    :db/ident {:db/unique :db.unique/identity}})
 

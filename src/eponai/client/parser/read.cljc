@@ -111,6 +111,12 @@
                 (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
                                             :symbols {'?s store-id}}))})))
 
+(defmethod client-read :query/stripe-country-spec
+  [{:keys [route-params ast target db]} _ _]
+  (if target
+    {:remote true}
+    {:value (db/lookup-entity db (db/one-with db {:where '[[?e :country-spec/id]]}))}))
+
 (defmethod client-read :query/stripe
   [{:keys [db query target ast route-params] :as env} _ _]
   (if target

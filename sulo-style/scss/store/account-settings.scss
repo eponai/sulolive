@@ -1,18 +1,31 @@
-
+#sulo-activate-account-form {
+	input, select {
+		// max-width: 20rem;
+		margin: 0;
+	}
+	.business-type {
+		label {
+			color: $black;
+			font-weight: $global-weight-normal;
+		}
+	}
+	.callout > .row {
+		margin-bottom: 1rem;
+		.row {
+			margin-bottom: 1rem;
+		}
+	}
+}
 #sulo-account-settings {
+
 	.payment-methods {
 		display: flex;
 		flex-direction: row;
 	}
-	.row .row {
-		margin-bottom: 1rem;
-	}
-	.row .row .row {
-		// margin-bottom: 1rem;
-		.row {
-			// margin-bottom: 0;
-		}
-	}
+	// .row .row {
+	// 	margin-bottom: 1rem;
+	// }
+
 	label {
 		@include breakpoint(large) {
 			text-align: right;

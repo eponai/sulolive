@@ -55,6 +55,11 @@
     (when el
       (not-empty (.-value el)))))
 
+(defn input-checked-by-id? [id]
+  (let [el (element-by-id id)]
+    (when el
+      (.-checked el))))
+
 (defn fullscreen-element []
   ;(let [document js/document])
   (or

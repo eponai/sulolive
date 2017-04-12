@@ -61,6 +61,9 @@
     (pay-order [this account-secret order-id source])
     (update-order [this account-secret order-id params])))
 
+(defn get-country-spec [stripe code]
+  (p/get-country-spec stripe code))
+
 (defn get-account [stripe account-id]
   (p/get-account stripe account-id))
 

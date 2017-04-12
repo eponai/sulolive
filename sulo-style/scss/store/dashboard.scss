@@ -106,7 +106,7 @@
 			// margin: 2rem 0;
 		// }
 		.callout {
-			border: 1px solid $light-gray;
+			border: $global-border;
 			// box-shadow: 0 1px 2px 0 rgba($primary-color, 0.1);
 			padding: 0.5rem;
 			@include breakpoint(medium) {
@@ -117,9 +117,9 @@
 			}
 			.header {
 				font-weight: $global-weight-bold;
-				border-bottom: 1px solid $light-gray;
-				padding-bottom: 0.5rem;
-				margin-bottom: 1rem;
+				border-bottom: $global-border;
+				// padding-bottom: 0.5rem;
+				margin-bottom: 1.5rem;
 			}
 		}
 		.photo-section {

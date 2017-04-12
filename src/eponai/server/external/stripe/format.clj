@@ -2,7 +2,21 @@
   (:require [eponai.common.format :as f]
             [eponai.common :as c])
   (:import
-    (com.stripe.model OrderItem Order ShippingDetails Address Product SKU Account Account$Verification LegalEntity BankAccount LegalEntity$DateOfBirth)))
+    (com.stripe.model OrderItem Order ShippingDetails Address Product SKU Account Account$Verification LegalEntity BankAccount LegalEntity$DateOfBirth CountrySpec VerificationFields VerificationFieldsDetails)))
+
+(defn stripe->verification-fields [^VerificationFields v]
+  (let [min-fields (fn [^VerificationFieldsDetails field-details]
+                     (.getMinimum field-details))]
+    {:country-spec.verification-fields/individual {:country-spec.verification-fields.individual/minimum (min-fields (.getIndividual v))}
+     :country-spec.verification-fields/company    {:country-spec.verification-fields.company/minimum (min-fields (.getCompany v))}}))
+
+(defn stripe->country-spec [^CountrySpec c]
+  {:country-spec/id                                (.getId c)
+   :country-spec/default-currency                  (.getDefaultCurrency c)
+   :country-spec/supported-payment-currencies      (.getSupportedPaymentCurrencies c)
+   :country-spec/supported-bank-account-currencies (.getSupportedBankAccountCurrencies c)
+   :country-spec/supported-payment-methods         (.getSupportedPaymentMethods c)
+   :country-spec/verification-fields               (stripe->verification-fields (.getVerificationFields c))})
 
 (defn stripe->verification [^Account$Verification v]
   (f/remove-nil-keys
@@ -105,10 +119,10 @@
      :order.item/type        (keyword (.getType oi))
 
      ;; Quantity may be nil in case of type :shipping or :tax)
-     :order.item/quantity (.getQuantity oi)
+     :order.item/quantity    (.getQuantity oi)
 
      ;; Parent can be nil when SKU type is tax
-     :order.item/parent (.getParent oi)}))
+     :order.item/parent      (.getParent oi)}))
 
 (defn stripe->address [a]
   {:city (.getCity a)})
