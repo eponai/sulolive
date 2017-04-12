@@ -37,7 +37,7 @@
                     {:store/photo [:photo/path]}
                     {:store/navigations [:store.navigation/label :store.navigation/path]}
                     ;{:store/items (om/get-query item/Product)}
-                    {:stream/_store [:stream/name]}
+                    {:stream/_store [:stream/state :stream/title]}
                     :store/description
                     :store/tagline
                     :store/name]}
@@ -52,7 +52,8 @@
            stream      :stream/_store
            store-name  :store/name} store
           stream (first stream)
-          show-chat? (:show-chat? st (some? stream))
+          is-live? (= :stream.state/live (:stream/state stream))
+          show-chat? (:show-chat? st is-live?)
           {:keys [route route-params]} current-route]
       (common/page-container
         {:navbar navbar
@@ -66,7 +67,7 @@
             (grid/column
               (grid/column-order {:small 2 :medium 1})
               (cond
-                (some? stream)
+                is-live?
                 (dom/div
                   (cond->> (css/add-class :stream-container)
                            show-chat?
@@ -74,15 +75,15 @@
                            fullscreen?
                            (css/add-class :fullscreen))
                   (stream/->Stream (om/computed (:proxy/stream props)
-                                                {:stream-name (:stream/name stream)
-                                                 :widescreen? true
-                                                 :store       store
+                                                {:stream-title         (:stream/title stream)
+                                                 :widescreen?          true
+                                                 :store                store
                                                  :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
                   (chat/->StreamChat (om/computed (:proxy/chat props)
                                                   {:on-toggle-chat (fn [show?]
                                                                      (om/update-state! this assoc :show-chat? show?))
                                                    :store          store
-                                                   :show?          (some? stream)})))
+                                                   :show?          is-live?})))
                 (some? cover)
                 (photo/cover {:src (:photo/path cover)})))
 

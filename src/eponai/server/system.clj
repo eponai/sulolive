@@ -1,6 +1,7 @@
 (ns eponai.server.system
   (:require
     [com.stuartsierra.component :as c]
+    [suspendable.core :as suspendable]
     [compojure.core :as compojure]
     [taoensso.timbre :refer [debug]]
     [eponai.server.middleware :as m]
@@ -46,11 +47,34 @@
                         m/wrap-trace-request
                         (cond-> (and in-production? (not disable-ssl))
                                 m/wrap-ssl)
-                        (m/wrap-error in-production?))]
+                        (m/wrap-error in-production?))
+            ;; Wraps handler in an atom in development, so we can swap implementation
+            ;; at runtime/reload-time.
+            handler-atom (atom handler)
+            handler (if in-production?
+                      handler
+                      (fn [request]
+                        (@handler-atom request)))]
         (assoc this ::started? true
+                    ::handler-atom handler-atom
                     :handler handler))))
   (stop [this]
-    (dissoc this ::started? :handler)))
+    (dissoc this ::started? ::handler-atom :handler))
+  suspendable/Suspendable
+  (suspend [this]
+    this)
+  (resume [this old-this]
+    (let [this (c/start this)]
+      (let [old-handler (:handler old-this)
+            old-atom (::handler-atom old-this)]
+        (if (and old-handler old-atom)
+          (do
+            (reset! old-atom @(::handler-atom this))
+            (assoc this :handler old-handler
+                        ::handler-atom old-atom))
+          (do
+            (c/stop old-this)
+            this))))))
 
 (defn- system [in-prod? {:keys [env] :as config}]
   (let [system-map (c/system-map

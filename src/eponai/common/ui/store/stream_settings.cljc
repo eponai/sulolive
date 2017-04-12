@@ -3,19 +3,30 @@
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.stream :as stream]
     [eponai.client.parser.message :as msg]
+    [eponai.client.chat :as client.chat]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.chat :as chat]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.elements :as elements]))
+    [eponai.common.ui.elements :as elements]
+    #?(:cljs
+       [eponai.web.utils :as utils])
+    [eponai.common.parser :as parser]))
+
+(defn- get-store [component-or-props]
+  (get-in (om/get-computed component-or-props) [:store]))
+
+(defn- get-store-id [component-or-props]
+  (:db/id (get-store component-or-props)))
 
 (defui StreamSettings
   static om/IQuery
   (query [_]
     [:query/messages
      {:proxy/stream (om/get-query stream/Stream)}
+     {:query/stream [:stream/state]}
      {:query/stream-config [:ui.singleton.stream-config/publisher-url]}
      {:query/chat [:chat/store
                    ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
@@ -23,15 +34,39 @@
                    {:chat/messages [:chat.message/client-side-message?
                                     {:chat.message/user [:user/email {:user/photo [:photo/path]}]}
                                     :chat.message/text
-                                    :chat.message/timestamp]}]}])
+                                    :chat.message/timestamp]}]}
+     {:query/auth [:db/id]}])
+  chat/ISendChatMessage
+  (get-chat-message [this]
+    (:chat-message (om/get-state this)))
+  (reset-chat-message! [this]
+    (om/update-state! this assoc :chat-message ""))
+  (is-logged-in? [this]
+    (some? (get-in (om/props this) [:query/auth :db/id])))
+  ;; This chat store listener is a copy of what's in ui.chat
+  client.chat/IStoreChatListener
+  (start-listening! [this store-id]
+    (client.chat/start-listening! (:shared/store-chat-listener (om/shared this)) store-id))
+  (stop-listening! [this store-id]
+    (client.chat/stop-listening! (:shared/store-chat-listener (om/shared this)) store-id))
   Object
+  (componentWillUnmount [this]
+    (client.chat/stop-listening! this (get-store-id this)))
+  (componentDidUpdate [this prev-props prev-state]
+    (let [old-store (get-store-id prev-props)
+          new-store (get-store-id (om/props this))]
+      (when (not= old-store new-store)
+        (client.chat/stop-listening! this old-store)
+        (client.chat/start-listening! this new-store))))
+  (componentDidMount [this]
+    (client.chat/start-listening! this (get-store-id this)))
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
-          {:proxy/keys [stream]
-           :query/keys [chat stream-config]} (om/props this)
-          {:keys [video-status]} (om/get-state this)
+          {:query/keys [stream chat stream-config]
+           :as         props} (om/props this)
+          stream-state (:stream/state stream)
+          chat-message (:chat-message (om/get-state this))
           message (msg/last-message this 'stream-token/generate)]
-      (debug ["STREAM_STORE_MESSAGE:  " message :component-state (om/get-state this)])
       (my-dom/div
         {:id "sulo-stream-settings"}
         ;(my-dom/div
@@ -46,7 +81,7 @@
             (css/grid-column)
             (my-dom/div
               (cond->> {:classes [::css/callout :status-callout]}
-                       (not= ::stream/online video-status)
+                       (not= ::stream/online stream-state)
                        (css/add-class ::css/primary))
               (my-dom/div
                 (->> (css/grid-row)
@@ -57,20 +92,35 @@
                        (css/add-class :stream-status-container))
                   ;(dom/span #js {:className "badge alert"} "off")
                   ;(dom/span #js {:className "badge success"} "on")
-                  (if (= ::stream/online video-status)
-                    (dom/div #js {:className "sulo-stream-status online"}
-                      (dom/i #js {:className "fa fa-check-circle fa-2x"})
-                      (dom/h3 nil "Online"))
-                    ;(dom/div nil
-                        ;  (dom/h3 nil (dom/strong #js {:className "highlight"} "Go Live!")))
+                  (if (or (nil? stream-state)
+                          (= :stream.state/offline stream-state))
                     (dom/div #js {:className "sulo-stream-status offline"}
                       (dom/i #js {:className "fa fa-circle fa-2x"})
-                      (dom/h3 nil "Offline"))))
+                      (dom/h3 nil "Offline"))
+                    (dom/div #js {:className "sulo-stream-status online"}
+                      (dom/i #js {:className "fa fa-check-circle fa-2x"})
+                      (dom/h3 nil (condp = stream-state
+                                    :stream.state/online "Online"
+                                    :stream.state/live "Live")))
+                    ;(dom/div nil
+                    ;  (dom/h3 nil (dom/strong #js {:className "highlight"} "Go Live!")))
+                    ))
                 (my-dom/div
                   (->> (css/grid-column)
                        (css/text-align :right))
-                  (dom/a #js {:className (str "button highlight large" (when-not (= ::stream/online video-status) " invisible"))} (dom/strong nil "Go Live!")))
-                ))
+                  (condp = stream-state
+                    :stream.state/online
+                    (dom/a #js {:onClick   #(om/transact! this [(list 'stream/go-live {:store-id (:db/id store)}) :query/stream])
+                                :className "button highlight large"}
+                          (dom/strong nil "Go Live!"))
+                    :stream.state/offline
+                    (dom/a #js {:onClick   #(binding [parser/*parser-allow-local-read* false]
+                                              (om/transact! this [{:query/stream [:stream/state]}]))
+                                :className "button large"}
+                           (dom/strong nil "Refresh"))
+                    :stream.state/live
+                    (dom/a #js {:className "button large invisible"}
+                           (dom/strong nil "You're live"))))))
 
             (my-dom/div
               (css/add-class ::css/callout)
@@ -84,11 +134,9 @@
                   (->> (css/grid-column)
                        (css/grid-column-size {:small 12 :large 8}))
                   ;(dom/h4 nil "Stream preview")
-                  (stream/->Stream (om/computed stream
+                  (stream/->Stream (om/computed (:proxy/stream props)
                                                 {:hide-chat? true
-                                                 :store store
-                                                 :on-video-load (fn [status]
-                                                                  (om/update-state! this assoc :video-status status ))})))
+                                                 :store store})))
                 (my-dom/div
                   (->> (css/grid-column)
                        (css/grid-column-size {:small 12 :medium 8 :large 4})
@@ -96,7 +144,7 @@
                   (dom/h4 nil "Live Chat")
                   (dom/div #js {:className "chat-content"}
                             (dom/div #js {:className "chat-messages"}
-                              (elements/message-list (:chat/messages chat)))
+                              (elements/message-list (chat/get-messages this)))
                             (dom/div #js {:className "chat-input"}
                               (my-dom/div
                                 (->> (css/grid-row)
@@ -105,10 +153,16 @@
                                             (dom/input #js {:className   ""
                                                             :type        "text"
                                                             :placeholder "Say someting..."
+                                                            :value       (or chat-message "")
+                                                            :onKeyDown   #?(:cljs
+                                                                            #(when (utils/enter-pressed? %)
+                                                                               (chat/send-message this))
+                                                                            :clj identity)
                                                             :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))}))
                                 (my-dom/div (->> (css/grid-column)
                                                  (css/add-class :shrink))
-                                            (dom/a #js {:className "button hollow primary large"}
+                                            (dom/a #js {:className "button hollow primary large"
+                                                        :onClick   #(chat/send-message this)}
                                                    (dom/i #js {:className "fa fa-send-o fa-fw"})))))
                             ;(dom/input #js {:type "text"
                             ;                :placeholder "Say something..."})

@@ -180,12 +180,20 @@
                   user (auth/current-auth db)]
               (db/pull db query user))}))
 
+(defmethod client-read :query/stream
+  [{:keys [db query target ast route-params] :as env} _ _]
+  (let [store-id (c/parse-long (:store-id route-params))]
+    (if target
+      {:remote (assoc-in ast [:params :store-id] store-id)}
+      {:value (db/pull-one-with db query {:where   '[[?e :stream/store ?store-id]]
+                                          :symbols {'?store-id store-id}})})))
+
 (defmethod client-read :query/streams
   [{:keys [db query target]} _ _]
   ;(debug "Read query/auth: ")
   (if target
     {:remote true}
-    {:value (db/pull-all-with db query {:where '[[?e :stream/name]]})}))
+    {:value (db/pull-all-with db query {:where '[[?e :stream/state :stream.state/live]]})}))
 
 ; ### FEATURED ### ;
 

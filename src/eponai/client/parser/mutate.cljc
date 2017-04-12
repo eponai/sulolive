@@ -137,6 +137,11 @@
                  (when (or (nil? last-basis-t) (< last-basis-t basis-t))
                    (db/transact state (chat/queue-basis-t-tx store-id basis-t)))))}))
 
+(defmethod client-mutate 'stream/go-live
+  [{:keys [state target]} _ {:keys [store-id]}]
+  (when target
+    {:remote true}))
+
 (defmethod client-mutate 'user/checkout
   [{:keys [target]} k p]
   (if target

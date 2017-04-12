@@ -31,8 +31,23 @@
     (create-customer [_ _ params]
       (debug "DEV - Fake Stripe: create-customer with params: " params))
     p/IStripeAccount
-    (get-order [_ _ _])
-    (list-orders [_ _ _])))
+    ;; Producs
+    (create-product [this account-secret product])
+    (-update-product [_ account-secret product-id params])
+    (delete-product [this account-secret product-id])
+    (list-products [this account-secret opts])
+
+    ;; SKUs
+    (create-sku [this account-secret product-id sku])
+    (update-sku [this account-secret sku-id params])
+    (delete-sku [this account-secret sku-id])
+
+    ;; Orders
+    (get-order [this account-secret order-id])
+    (list-orders [this account-secret params])
+    (create-order [this account-secret params])
+    (pay-order [this account-secret order-id source])
+    (update-order [this account-secret order-id params])))
 
 (defn get-account [stripe account-id]
   (p/get-account stripe account-id))

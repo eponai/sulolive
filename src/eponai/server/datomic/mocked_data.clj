@@ -314,7 +314,8 @@
 (defn mock-streams [stores]
   (vec (map-indexed
          (fn [i s]
-           {:stream/name  (str "Stream " i)
+           {:stream/title (str "Stream " i)
+            :stream/state :stream.state/offline
             :stream/store (:db/id s)})
          stores)))
 

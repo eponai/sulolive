@@ -53,7 +53,7 @@
 
 (defn online-channel-element [channel]
   (let [{:stream/keys [store]
-         stream-name :stream/name} channel
+         stream-name :stream/title} channel
         {:store/keys [photo]} store
         store-link (link-to-store store)]
     (grid/column

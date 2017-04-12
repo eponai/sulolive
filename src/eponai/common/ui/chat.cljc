@@ -13,9 +13,6 @@
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]))
 
-(defn enter-pressed? [e]
-  (= 13 (.-keyCode e)))
-
 (defn get-messages [component]
   (let [messages (get-in (om/props component) [:query/chat :chat/messages])
         {client-side true server-side false} (group-by (comp true? :chat.message/client-side-message?) messages)]
@@ -26,6 +23,23 @@
 
 (defn- get-store-id [component-or-props]
   (:db/id (get-store component-or-props)))
+
+;; TODO: This ISendChatMessage stuff should probably be done without a protocol.
+(defprotocol ISendChatMessage
+  (get-chat-message [this])
+  (reset-chat-message! [this])
+  (is-logged-in? [this]))
+
+(defn send-message [component]
+  (let [chat-message (get-chat-message component)]
+    (when-not (str/blank? chat-message)
+      (if (is-logged-in? component)
+        (do (om/transact! component `[(chat/send-message
+                                        ~{:store (select-keys (get-store component) [:db/id])
+                                          :text  chat-message})
+                                      :query/chat]))
+        #?(:cljs (js/alert "Log in to send chat messages")))))
+  (reset-chat-message! component))
 
 (defui StreamChat
   static om/IQuery
@@ -44,6 +58,13 @@
     (client.chat/start-listening! (:shared/store-chat-listener (om/shared this)) store-id))
   (stop-listening! [this store-id]
     (client.chat/stop-listening! (:shared/store-chat-listener (om/shared this)) store-id))
+  ISendChatMessage
+  (get-chat-message [this]
+    (:chat-message (om/get-state this)))
+  (reset-chat-message! [this]
+    (om/update-state! this assoc :chat-message ""))
+  (is-logged-in? [this]
+    (some? (get-in (om/props this) [:query/auth :db/id])))
   Object
   (componentWillUnmount [this]
     (client.chat/stop-listening! this (get-store-id this)))
@@ -63,16 +84,6 @@
   (initLocalState [this]
     (let [{:keys [show?]} (om/get-computed this)]
       {:show-chat? show?}))
-  (send-message [this]
-    (let [{:keys [chat-message]} (om/get-state this)]
-      (when-not (str/blank? chat-message)
-        (if (get-in (om/props this) [:query/auth :db/id])
-          (do (om/transact! this `[(chat/send-message
-                                     ~{:store (select-keys (get-store this) [:db/id])
-                                       :text  chat-message})
-                                   :query/chat]))
-          #?(:cljs (js/alert "Log in to send chat messages")))))
-    (om/update-state! this assoc :chat-message ""))
   (render [this]
     (let [{:keys [show-chat? chat-message]} (om/get-state this)
           messages (get-messages this)]
@@ -102,13 +113,14 @@
                                           :type        "text"
                                           :placeholder "Say something..."
                                           :value       (or chat-message "")
-                                          :onKeyDown   #(when (enter-pressed? %)
-                                                          (.send-message this))
+                                          :onKeyDown   #?(:cljs #(when (utils/enter-pressed? %)
+                                                                   (send-message this))
+                                                          :clj  identity)
                                           :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))}))
               (my-dom/div (->> (css/grid-column)
                                (css/add-class :shrink))
                           (dom/a #js {:className "button green small"
-                                      :onClick   #(.send-message this)}
+                                      :onClick   #(send-message this)}
                                  (dom/span nil "Send"))))))
         ))))
 

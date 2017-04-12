@@ -22,8 +22,7 @@
 (defui Stream
   static om/IQuery
   (query [this]
-    [:query/messages
-     {:query/stream-config [:ui.singleton.stream-config/subscriber-url]}])
+    [{:query/stream-config [:ui.singleton.stream-config/subscriber-url]}])
   Object
   (subscriber-host [this]
     (get-in (om/props this) [:query/stream-config :ui.singleton.stream-config/subscriber-url]))
@@ -33,9 +32,9 @@
       #?(:cljs
          (if-let [subscriber-host (.subscriber-host this)]
            (let [store (:store (om/get-computed this))
-                 stream-name (stream/stream-name store)
+                 stream-id (stream/stream-id store)
                  photo-url (get-in store [:store/photo :photo/path] "/assets/img/storefront.jpg")
-                 stream-url (stream/wowza-live-stream-url subscriber-host stream-name)
+                 stream-url (stream/wowza-live-stream-url subscriber-host stream-id)
                  _ (debug "photo: url: " photo-url)
                  player (js/WowzaPlayer.create
                           wowza-element-id
@@ -52,8 +51,8 @@
                                ;:posterFrameURL                photo-url
                                ;:endPosterFrameURL             photo-url
                                ;:uiPosterFrameFillMode         "fill"
-                               :uiShowQuickRewind    false
-                               :uiShowBitrateSelector false
+                               :uiShowQuickRewind             false
+                               :uiShowBitrateSelector         false
                                ;"uiQuickRewindSeconds" "30"
                                })]
              (add-fullscreen-listener on-fullscreen-change))
@@ -82,12 +81,12 @@
        :fullscreen?          false
        :playing?             true
        :on-fullscreen-change #(let [{:keys [fullscreen?]} (om/get-state this)]
-                               (om/update-state! this update :fullscreen? not)
-                               (when on-fullscreen-change
-                                 (on-fullscreen-change (not fullscreen?))))}))
+                                (om/update-state! this update :fullscreen? not)
+                                (when on-fullscreen-change
+                                  (on-fullscreen-change (not fullscreen?))))}))
 
   (render [this]
-    (let [{:keys [stream-name widescreen?]} (om/get-computed this)]
+    (let [{:keys [stream-title widescreen?]} (om/get-computed this)]
       (dom/div #js {:id "sulo-video-container" :className (str "flex-video"
                                                                (when widescreen? " widescreen"))}
         (dom/div #js {:className (str "sulo-spinner-container")}
