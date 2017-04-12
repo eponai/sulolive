@@ -33,12 +33,15 @@
                    {:chat/messages [:chat.message/client-side-message?
                                     {:chat.message/user [:user/email {:user/photo [:photo/path]}]}
                                     :chat.message/text
-                                    :chat.message/timestamp]}]}])
-  chat/IHaveChatMessage
+                                    :chat.message/timestamp]}]}
+     {:query/auth [:db/id]}])
+  chat/ISendChatMessage
   (get-chat-message [this]
     (:chat-message (om/get-state this)))
   (reset-chat-message! [this]
     (om/update-state! this assoc :chat-message ""))
+  (is-logged-in? [this]
+    (some? (get-in (om/props this) [:query/auth :db/id])))
   ;; This chat store listener is a copy of what's in ui.chat
   client.chat/IStoreChatListener
   (start-listening! [this store-id]
@@ -133,7 +136,7 @@
                   (dom/h4 nil "Live Chat")
                   (dom/div #js {:className "chat-content"}
                             (dom/div #js {:className "chat-messages"}
-                              (elements/message-list (:chat/messages chat)))
+                              (elements/message-list (chat/get-messages this)))
                             (dom/div #js {:className "chat-input"}
                               (my-dom/div
                                 (->> (css/grid-row)

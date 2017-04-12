@@ -24,14 +24,16 @@
 (defn- get-store-id [component-or-props]
   (:db/id (get-store component-or-props)))
 
-(defprotocol IHaveChatMessage
+;; TODO: This ISendChatMessage stuff should probably be done without a protocol.
+(defprotocol ISendChatMessage
   (get-chat-message [this])
-  (reset-chat-message! [this]))
+  (reset-chat-message! [this])
+  (is-logged-in? [this]))
 
 (defn send-message [component]
   (let [chat-message (get-chat-message component)]
     (when-not (str/blank? chat-message)
-      (if (get-in (om/props component) [:query/auth :db/id])
+      (if (is-logged-in? component)
         (do (om/transact! component `[(chat/send-message
                                         ~{:store (select-keys (get-store component) [:db/id])
                                           :text  chat-message})
@@ -56,11 +58,13 @@
     (client.chat/start-listening! (:shared/store-chat-listener (om/shared this)) store-id))
   (stop-listening! [this store-id]
     (client.chat/stop-listening! (:shared/store-chat-listener (om/shared this)) store-id))
-  IHaveChatMessage
+  ISendChatMessage
   (get-chat-message [this]
     (:chat-message (om/get-state this)))
   (reset-chat-message! [this]
     (om/update-state! this assoc :chat-message ""))
+  (is-logged-in? [this]
+    (some? (get-in (om/props this) [:query/auth :db/id])))
   Object
   (componentWillUnmount [this]
     (client.chat/stop-listening! this (get-store-id this)))
