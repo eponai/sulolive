@@ -27,7 +27,7 @@
                     {:store/photo [:photo/path]}
                     {:store/navigations [:store.navigation/label :store.navigation/path]}
                     ;{:store/items (om/get-query item/Product)}
-                    {:stream/_store [:stream/name]}
+                    {:stream/_store [:stream/title]}
                     :store/description
                     :store/name]}
      {:query/store-items (om/get-query item/Product)}
@@ -63,7 +63,7 @@
                            fullscreen?
                            (css/add-class :fullscreen))
                   (stream/->Stream (om/computed (:proxy/stream props)
-                                                {:stream-name (:stream/name stream)
+                                                {:stream-title (:stream/title stream)
                                                  :widescreen? true
                                                  :store       store
                                                  :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))

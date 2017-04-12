@@ -16,6 +16,7 @@
   (query [_]
     [:query/messages
      {:proxy/stream (om/get-query stream/Stream)}
+     {:query/stream [:stream/state]}
      {:query/stream-config [:ui.singleton.stream-config/publisher-url]}
      {:query/chat [:chat/store
                    ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
@@ -27,9 +28,9 @@
   Object
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
-          {:proxy/keys [stream]
-           :query/keys [chat stream-config]} (om/props this)
-          {:keys [video-status]} (om/get-state this)
+          {:query/keys [stream chat stream-config]
+           :as         props} (om/props this)
+          stream-state (:stream/state stream)
           message (msg/last-message this 'stream-token/generate)]
       (debug ["STREAM_STORE_MESSAGE:  " message :component-state (om/get-state this)])
       (my-dom/div
@@ -46,7 +47,7 @@
             (css/grid-column)
             (my-dom/div
               (cond->> {:classes [::css/callout :status-callout]}
-                       (not= ::stream/online video-status)
+                       (not= ::stream/online stream-state)
                        (css/add-class ::css/primary))
               (my-dom/div
                 (->> (css/grid-row)
@@ -57,20 +58,25 @@
                        (css/add-class :stream-status-container))
                   ;(dom/span #js {:className "badge alert"} "off")
                   ;(dom/span #js {:className "badge success"} "on")
-                  (if (= ::stream/online video-status)
-                    (dom/div #js {:className "sulo-stream-status online"}
-                      (dom/i #js {:className "fa fa-check-circle fa-2x"})
-                      (dom/h3 nil "Online"))
-                    ;(dom/div nil
-                        ;  (dom/h3 nil (dom/strong #js {:className "highlight"} "Go Live!")))
+                  (if (or (nil? stream-state)
+                          (= :stream.state/offline stream-state))
                     (dom/div #js {:className "sulo-stream-status offline"}
                       (dom/i #js {:className "fa fa-circle fa-2x"})
-                      (dom/h3 nil "Offline"))))
+                      (dom/h3 nil "Offline"))
+                    (dom/div #js {:className "sulo-stream-status online"}
+                      (dom/i #js {:className "fa fa-check-circle fa-2x"})
+                      (dom/h3 nil (condp = stream-state
+                                    :stream.state/online "Online"
+                                    :stream.state/live "Live")))
+                    ;(dom/div nil
+                    ;  (dom/h3 nil (dom/strong #js {:className "highlight"} "Go Live!")))
+                    ))
                 (my-dom/div
                   (->> (css/grid-column)
                        (css/text-align :right))
-                  (dom/a #js {:className (str "button highlight large" (when-not (= ::stream/online video-status) " invisible"))} (dom/strong nil "Go Live!")))
-                ))
+                  (dom/a #js {:onClick   #(om/transact! this [(list 'stream/go-live {:store-id (:db/id store)}) :query/stream])
+                              :className (str "button highlight large" (when-not (= :stream.state/online stream-state) " invisible"))}
+                         (dom/strong nil "Go Live!")))))
 
             (my-dom/div
               (css/add-class ::css/callout)
@@ -84,11 +90,9 @@
                   (->> (css/grid-column)
                        (css/grid-column-size {:small 12 :large 8}))
                   ;(dom/h4 nil "Stream preview")
-                  (stream/->Stream (om/computed stream
+                  (stream/->Stream (om/computed (:proxy/stream props)
                                                 {:hide-chat? true
-                                                 :store store
-                                                 :on-video-load (fn [status]
-                                                                  (om/update-state! this assoc :video-status status ))})))
+                                                 :store store})))
                 (my-dom/div
                   (->> (css/grid-column)
                        (css/grid-column-size {:small 12 :medium 8 :large 4})

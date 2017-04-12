@@ -75,7 +75,7 @@
                               :store/featured-img-src
                               {:store/photo [:photo/path]}
                               {:store/items [:db/id {:store.item/photos [:photo/path]}]}]}
-     {:query/featured-streams [:db/id :stream/name {:stream/store [:db/id :store/name {:store/photo [:photo/path]}]}]}])
+     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id :store/name {:store/photo [:photo/path]}]}]}])
   Object
   (render [this]
     (let [{:keys [proxy/navbar query/featured-items query/featured-streams]} (om/props this)

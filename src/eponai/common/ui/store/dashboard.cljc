@@ -83,7 +83,8 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:query/store [:store/uuid
+     {:query/store [:db/id
+                    :store/uuid
                     :store/name
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     {:store/photo [:photo/path]}
@@ -97,7 +98,7 @@
                                                       :store.item.sku/quantity
                                                       :store.item.sku/value]}]}
                     :store/collections
-                    {:stream/_store [:stream/status]}]}
+                    {:stream/_store [:stream/state]}]}
      :query/current-route
      :query/messages
      {:proxy/product-list (om/get-query pl/ProductList)}
@@ -115,7 +116,11 @@
     (let [{:proxy/keys [navbar product-edit product-list order-edit order-list stream-settings account-settings]
            :query/keys       [store current-route stripe-account]} (om/props this)
           {:keys [route route-params]} current-route
-          store-id (:db/id store)]
+          store-id (:db/id store)
+          ;; Implement a :query/stream-by-store-id ?
+          stream-state (-> store :stream/_store first :stream/state)]
+      (debug "Stream-state: " stream-state)
+      (debug "Store: " store)
       (common/page-container
         {:navbar navbar
          :id     "sulo-store-dashboard"}
@@ -175,10 +180,17 @@
                         (->> (css/grid-column)
                              (css/grid-column-size {:small 12 :medium 6})
                              (css/add-class :stream-status-container))
-                        (dom/div #js {:className "sulo-stream-status offline"}
-                          (dom/i #js {:className "fa fa-circle fa-2x"})
-                          ;(dom/span nil "You are currently")
-                          (dom/span nil "You are currently OFFLINE")))
+                        (if (or (nil? stream-state) (= stream-state :stream.state/offline))
+                          (dom/div #js {:className "sulo-stream-status offline"}
+                            (dom/i #js {:className "fa fa-circle fa-2x"})
+                            ;(dom/span nil "You are currently")
+                            (dom/span nil "You are currently OFFLINE"))
+                          (dom/div #js {:className "sulo-stream-status online"}
+                            (dom/i #js {:className "fa fa-circle fa-2x"})
+                            ;(dom/span nil "You are currently")
+                            (dom/span nil (condp = stream-state
+                                            :stream.state/live "You are currently LIVE"
+                                            :stream.state/online "All set to go live")))))
                       (my-dom/div
                         (->> (css/grid-column)
                              (css/text-align :right))

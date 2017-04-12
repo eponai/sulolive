@@ -153,9 +153,16 @@
               (db/pull-one-with db query {:where   '[[?e :user/email ?email]]
                                           :symbols {'?email (:email auth)}})))})
 
+(defmethod read-basis-params :query/stream [_ _ {:keys [store-id]}]
+  [[:store-id store-id]])
+(defmethod server-read :query/stream
+  [{:keys [db db-history query]} _ {:keys [store-id]}]
+  {:value (query/one db db-history query {:where   '[[?e :stream/store ?store-id]]
+                                          :symbols {'?store-id store-id}})})
+
 (defmethod server-read :query/streams
-  [{:keys [db query]} _ _]
-  {:value (db/pull-all-with db query {:where '[[?e :stream/name]]})})
+  [{:keys [db db-history query]} _ _]
+  {:value (query/all db db-history query {:where '[[?e :stream/state :stream.state/live]]})})
 
 ; #### FEATURED ### ;
 

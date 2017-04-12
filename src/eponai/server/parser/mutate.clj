@@ -75,30 +75,44 @@
                (db/transact state [photo
                                    [:db/add user-eid :user/photo (:db/id photo)]])))})
 
+(defn- with-store [{:keys [state auth db]} k {:keys [store-id]} f]
+  (if-let [store (db/one-with db {:where   '[[?e :store/owners ?owner]
+                                             [?owner :store.owner/user ?u]
+                                             [?u :user/email ?email]]
+                                  :symbols {'?e     store-id
+                                            '?email (:email auth)}})]
+    (f (db/entity db store))
+    (throw (ex-info "Can only generate tokens for streams which you are owner for"
+                    {:store-id store-id
+                     :mutation k
+                     :auth     auth}))))
+
 (defmutation stream-token/generate
-  [{:keys [state db parser ::parser/return ::parser/exception auth system] :as env} k {:keys [store-id]}]
+  [{:keys [state db parser ::parser/return ::parser/exception auth system] :as env} k {:keys [store-id] :as p}]
   {:success return
    :error   "Error generating stream token"}
   {:action (fn []
              ;; TODO: This if-let has to do with auth. Generalize?
-             (if-let [store (db/one-with db {:where   '[[?e :store/owners ?owner]
-                                                        [?owner :store.owner/user ?u]
-                                                        [?u :user/email ?email]]
-                                             :symbols {'?e     store-id
-                                                       '?email (:email auth)}})]
-               (let [store (db/entity db store)
-                     token (jwt/sign {:uuid        (str (db/squuid))
-                                      :user/email  (:email auth)
-                                      :store/id    (:db/id store)
-                                      :stream/name (stream/stream-name store)}
-                                     (wowza/jwt-secret (:system/wowza system)))]
+             (with-store env k p
+               (fn [store]
+                 (let [token (jwt/sign {:uuid              (str (db/squuid))
+                                        :user/email        (:email auth)
+                                        :store/id          (:db/id store)
+                                        :wowza/stream-name (stream/stream-id store)}
+                                       (wowza/jwt-secret (:system/wowza system)))]
+                   (db/transact state [{:stream/store (:db/id store)
+                                        :stream/token token}])
+                   {:token token}))))})
+
+(defmutation stream/go-live
+  [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
+  {:success "Went live!"
+   :error   "Could not go live"}
+  {:action (fn []
+             (with-store env k p
+               (fn [store]
                  (db/transact state [{:stream/store (:db/id store)
-                                      :stream/token token}])
-                 {:token token})
-               (throw (ex-info "Can only generate tokens for streams which you are owner for"
-                               {:store-id store-id
-                                :mutation k
-                                :auth     auth}))))})
+                                      :stream/state :stream.state/live}]))))})
 
 ;######## STRIPE ########
 
